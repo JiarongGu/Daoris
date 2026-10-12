@@ -35,6 +35,7 @@ import {
   applyOpinionEdit, opinionGate, opinionListed, opinionSays, opinionsOf, sameAgentOf, type OpinionEdit,
   type OpinionRule, type OpinionSetting,
 } from './opinions.ts';
+import { applyHelperEdit, helperListed, helpersOf, type HelperEdit, type HelperRule } from './helpers.ts';
 import { workflowChoicesOf, writtenChoices, type WorkflowChoice } from './workflowchoice.ts';
 import type { CommandArgs } from './types.ts';
 import type { ExitCode } from './errors.ts';
@@ -130,6 +131,14 @@ export interface DriverChoices {
   /** A workspace's second-opinion rule, for every repository in it that sets none of its own. */
   workspaceOpinions: Record<string, OpinionRule>;
   /**
+   * What a helper an agent asks for does in each repository (MIXAGENT2a-i, D163 point 5): a mode and the agents it may ask; it
+   * replaces its workspace's whole, and absent is `ask`. The driver's `DriverConfig.Helpers` is the twin, read by one shared
+   * table (`helpers.ts`).
+   */
+  helpers: Record<string, HelperRule>;
+  /** A workspace's helpers rule, for every repository in it that sets none of its own. */
+  workspaceHelpers: Record<string, HelperRule>;
+  /**
    * Which workflow each repository's work follows (WORKFLOW1e, D157 point 10): a default and a workflow for each of its
    * workspace's kinds; it replaces its workspace's whole. The driver's `DriverConfig.Workflows` is the twin, read by one shared
    * table (`workflowchoice.ts`).
@@ -218,7 +227,8 @@ const EMPTY: DriverChoices = {
   drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', notify: true,
   strikes: 3, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, intakeAdapter: null, helperAdapter: null, timeoutMinutes: null, cooloff: null, lines: {}, workspaceLines: {},
   landings: {}, workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, languages: {},
-  workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, workflows: {}, workspaceWorkflows: {},
+  workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, helpers: {}, workspaceHelpers: {},
+  workflows: {}, workspaceWorkflows: {},
   rest: {},
 };
 
@@ -384,15 +394,16 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     return {
       ...EMPTY, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, lines: {}, workspaceLines: {}, landings: {},
       workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, languages: {},
-      workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, workflows: {},
-      workspaceWorkflows: {}, rest: {},
+      workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, helpers: {}, workspaceHelpers: {},
+      workflows: {}, workspaceWorkflows: {}, rest: {},
     };
   }
 
   const {
     drivable, holds, trees, cap, adapter, notify, strikes, forgiven, released, intakeAdapter, helperAdapter, timeoutMinutes,
     cooloff, lines, workspaceLines, landings, workspaceLandings, readAcross, workspaceReadAcross, writeAcross, standing,
-    languages, workspaceLanguages, reviews, workspaceReviews, opinions, workspaceOpinions, workflows, workspaceWorkflows, ...rest
+    languages, workspaceLanguages, reviews, workspaceReviews, opinions, workspaceOpinions, helpers, workspaceHelpers, workflows,
+    workspaceWorkflows, ...rest
   } = parsed;
   return {
     drivable: names(drivable),
@@ -450,6 +461,9 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     // As the driver reads them (XAGENT1a): a rule with a problem is not read, and `false` only for a repository.
     opinions: opinionsOf(opinions, true),
     workspaceOpinions: opinionsOf(workspaceOpinions, false),
+    // As the driver reads them (MIXAGENT2a-i): a rule with a problem is not read.
+    helpers: helpersOf(helpers),
+    workspaceHelpers: helpersOf(workspaceHelpers),
     // As the driver reads them (WORKFLOW1e): an entry with a problem, or naming nothing, is not read.
     workflows: workflowChoicesOf(workflows, false),
     workspaceWorkflows: workflowChoicesOf(workspaceWorkflows, true),
@@ -507,6 +521,9 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
     // Written only when set (XAGENT1a), as the driver writes them: absent is no second opinion, today's behaviour.
     ...(Object.keys(choices.opinions).length > 0 ? { opinions: choices.opinions } : {}),
     ...(Object.keys(choices.workspaceOpinions).length > 0 ? { workspaceOpinions: choices.workspaceOpinions } : {}),
+    // Written only when set (MIXAGENT2a-i), as the driver writes them: absent is the default, `ask`.
+    ...(Object.keys(choices.helpers).length > 0 ? { helpers: choices.helpers } : {}),
+    ...(Object.keys(choices.workspaceHelpers).length > 0 ? { workspaceHelpers: choices.workspaceHelpers } : {}),
     // Written only when set (WORKFLOW1e), as the driver writes them: absent is Current, today's behaviour.
     ...(Object.keys(choices.workflows).length > 0 ? { workflows: writtenChoices(choices.workflows, false) } : {}),
     ...(Object.keys(choices.workspaceWorkflows).length > 0
@@ -1127,6 +1144,12 @@ export function commandDriver(
     case 'opinion':
       return opinion();
 
+    // What a helper an agent asks for does (MIXAGENT2a-i, D163 point 5, design §5): for a repository, or with `--workspace` for each
+    // repository there that sets none of its own. `--mode` and `--agents` set what they name over the rule set there; `--clear`.
+    // Declared only until the driver's helper session reads it (MIXAGENT2a-ii).
+    case 'helpers':
+      return helpers();
+
     // How work here moves (D157, design §4.7): Current, drawn from the rules as they stand (WORKFLOW1a), and the workflows the
     // person names, each a file of versions beside this one (WORKFLOW1d). The door is handed in (`WorkflowDoor` says why).
     case 'workflow':
@@ -1135,7 +1158,7 @@ export function commandDriver(
     default:
       throw new DaorisError(
         `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, line, landing, across, standing, `
-        + 'language, review, opinion, workflow, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper');
+        + 'language, review, opinion, helpers, workflow, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper');
   }
 
   function list(): ExitCode {
@@ -1283,6 +1306,20 @@ export function commandDriver(
         + '--reviewers <adapter>` declares one');
     }
 
+    // MIXAGENT2a-i: each helpers rule and where it was set; a workspace's is said for the repositories there that set none.
+    for (const [repository, rule] of Object.entries(choices.helpers)) {
+      write(`  helpers    ${repository}  ${helperListed(rule)}`);
+    }
+
+    for (const [workspace, rule] of Object.entries(choices.workspaceHelpers)) {
+      write(`  helpers    workspace ${workspace}  ${helperListed(rule)}  (for each repository there that sets none)`);
+    }
+
+    if (Object.keys(choices.helpers).length === 0 && Object.keys(choices.workspaceHelpers).length === 0) {
+      write('  helpers    none set — each helper an agent asks for waits for your yes; `daoris driver helpers <repository> '
+        + '--mode on|off` sets one');
+    }
+
     // A hold on something not opted in is inert, and saying so is the point: it reads as protection
     // and is not. Reported even when NOTHING is drivable — which is exactly the machine where a
     // person is most likely to believe a hold is what is stopping things.
@@ -1411,6 +1448,66 @@ export function commandDriver(
       write(`  Written to ${path}.`);
       return 0 as ExitCode;
     });
+  }
+
+  /**
+   * `helpers` (MIXAGENT2a-i): the person's words made one edit, judged by the twin's table (`helpers.ts`), and said plainly:
+   * what a helper an agent asks for now does here. Nothing starts a helper yet, so it says what is kept and that the rule is read
+   * when the driver starts its helper sessions.
+   */
+  function helpers(): ExitCode {
+    const valued = new Set(['--workspace', '--mode', '--agents']);
+    const usage = '`driver helpers` needs <repository>|--workspace <name>, then --mode ask|on|off and/or --agents <adapter,adapter>, '
+      + 'or --clear — e.g. `daoris driver helpers web-app --mode on --agents codex-acp`.';
+    for (let at = 1; at < argv.length; at += 1) {
+      const token = argv[at]!;
+      if (valued.has(token)) at += 1;
+      else if (token.startsWith('--') && token !== '--clear') {
+        throw new DaorisError(`\`${token}\` is not a flag \`driver helpers\` takes — ${usage}`);
+      }
+    }
+
+    const workspace = flagValue(argv, '--workspace');
+    const name = workspace ?? operands(argv, valued).slice(1).shift();
+    const clear = argv.includes('--clear');
+    const mode = flagValue(argv, '--mode');
+    const agents = flagValue(argv, '--agents')?.split(',').map((each) => each.trim());
+    // The same set the screen and Ask Daoris send: each part only where it was said.
+    const set: Record<string, unknown> = {
+      ...(mode !== undefined ? { mode } : {}),
+      ...(agents !== undefined ? { agents } : {}),
+    };
+    if (!name || (!clear && Object.keys(set).length === 0)) throw new DaorisError(usage);
+
+    const edit: HelperEdit = {
+      ...(workspace ? { workspace } : { repository: name }),
+      ...(Object.keys(set).length > 0 ? { set } : {}),
+      ...(clear ? { clear: true } : {}),
+    };
+    const after = applyHelperEdit(choices, edit);
+    writeDriverChoices(path, { ...choices, ...after });
+
+    const map = workspace ? after.workspaceHelpers : after.helpers;
+    const key = Object.keys(map).find((each) => sameName(each, name))
+      ?? Object.keys(workspace ? choices.workspaceHelpers : choices.helpers).find((each) => sameName(each, name)) ?? name;
+    const rule = map[key];
+    if (rule === undefined) {
+      write(workspace
+        ? `daoris: repositories in the workspace \`${key}\` keep their own helpers rule, else each helper waits for your yes.`
+        : `daoris: \`${key}\` takes its workspace's helpers rule again, else each helper waits for your yes.`);
+    } else {
+      write(workspace
+        ? `daoris: helpers for repositories in the workspace \`${key}\` that set none of their own: ${helperListed(rule)}.`
+        : `daoris: helpers for \`${key}\`: ${helperListed(rule)}.`);
+      write(rule.mode === 'ask'
+        ? '  Each helper an agent asks for waits for your yes.'
+        : rule.mode === 'on'
+          ? '  A helper an agent asks for starts at once, within the limits: two at once for a session, one turn each.'
+          : '  A helper is not offered to a session here: only your own press asks one.');
+    }
+
+    write(`  Written to ${path}.`);
+    return 0;
   }
 
   /**
