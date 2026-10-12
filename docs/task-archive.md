@@ -13930,3 +13930,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **USAGEREAD3a — the pace warning is not near** (driver/modules/cli/web note lines). Claude Code's `allowed_warning` recorded as `warned`, never near alone (`NearBy.Word` gone); an old stored `near` read as `warned`; the log writes `warned`; the start's note says *ahead of its pace, by its own word* with its page twin. Design §1.3.
 
 **Outcome** 2026-10-13: built as the row says: `allowed_warning` is the standing `warned` and never near on its own; an old `near` reads as `warned` in both twins; the log writes `warned`; the start's line is `opening.said-warned`, the old codes kept declared for records already written. The page's rows are USAGEREAD3b's. Detail: D165's USAGEREAD3a note; the fix log.
+
+## STRUCT2a — `Plugins` into its folder (2026-10-13, D166)
+
+> - [ ] **STRUCT2a — `Plugins` into its folder** (driver). The first module move (design §6's order), files as they are (the csproj's `plugin-kit/` includes follow, their logical names pinned), its tests into `Driver.Tests/Plugins/`, the map's `root` shrunk; and a structure rule that the driver's tests mirror its modules. The rest follow as STRUCT2b–n, one row filed as each is due.
+
+**Outcome** 2026-10-13: the Plugins module moved whole, 16 files and `plugin-kit/` into `Driver/Plugins/` and 16 tests into `Driver.Tests/Plugins/`, 36 renames at 100% in a commit of their own; the `mirror` rule with the map's `tests` table holds a moved module's tests, and a test folder must be a module's. Detail: D166's STRUCT2a note.
