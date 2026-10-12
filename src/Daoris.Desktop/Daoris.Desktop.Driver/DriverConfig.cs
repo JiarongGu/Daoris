@@ -276,6 +276,19 @@ public sealed record DriverConfig(
         new Dictionary<string, OpinionRule>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// What a helper an agent asks for does in each repository (MIXAGENT2a-i, D163 point 5; the mixed agents design §5): a mode
+    /// (<c>ask</c>, <c>on</c>, <c>off</c>) and the agents it may ask. A repository's rule replaces its workspace's whole
+    /// (<see cref="HelperRules.Resolve"/>); absent is the default, <c>ask</c>. Edited only through <see cref="HelperRules.Apply"/>;
+    /// the CLI's <c>driverconfig.ts</c> reads it the same way, by one shared table (<c>HelperRulesTests</c>).
+    /// </summary>
+    public IReadOnlyDictionary<string, HelperRule> Helpers { get; init; } =
+        new Dictionary<string, HelperRule>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A workspace's helpers rule, for every repository in it that sets none of its own.</summary>
+    public IReadOnlyDictionary<string, HelperRule> WorkspaceHelpers { get; init; } =
+        new Dictionary<string, HelperRule>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Which workflow each repository's work follows (WORKFLOW1e, D157 point 10, the workflow design §2.5, §4.1), by repository: a
     /// default and a workflow for each of its workspace's kinds. A repository that names any replaces its workspace's whole
     /// (<see cref="WorkflowSelection.Resolve"/>); absent is its workspace's, then Current, which is today's behaviour. Edited only
@@ -624,6 +637,9 @@ public sealed record DriverConfig(
             // Written only when set (XAGENT1a), as the CLI writes them: absent is no second opinion, today's behaviour.
             OpinionRules.WriteMap(writer, "opinions", Opinions);
             OpinionRules.WriteMap(writer, "workspaceOpinions", WorkspaceOpinions);
+            // Written only when set (MIXAGENT2a-i), as the CLI writes them: absent is the default, `ask`.
+            HelperRules.WriteMap(writer, "helpers", Helpers);
+            HelperRules.WriteMap(writer, "workspaceHelpers", WorkspaceHelpers);
             // Written only when set (WORKFLOW1e), as the CLI writes them: absent is Current, today's behaviour.
             WorkflowSelection.WriteMap(writer, "workflows", Workflows, workspace: false);
             WorkflowSelection.WriteMap(writer, "workspaceWorkflows", WorkspaceWorkflows, workspace: true);
@@ -987,6 +1003,8 @@ public sealed record DriverConfig(
             // A rule with a problem is not read, and `false` only for a repository (XAGENT1a).
             Opinions = OpinionRules.Map(root, "opinions", allowNone: true),
             WorkspaceOpinions = OpinionRules.Map(root, "workspaceOpinions", allowNone: false),
+            Helpers = HelperRules.Map(root, "helpers"),
+            WorkspaceHelpers = HelperRules.Map(root, "workspaceHelpers"),
             // An entry with a problem, or naming nothing, is not read (WORKFLOW1e).
             Workflows = WorkflowSelection.Map(root, "workflows", workspace: false),
             WorkspaceWorkflows = WorkflowSelection.Map(root, "workspaceWorkflows", workspace: true),

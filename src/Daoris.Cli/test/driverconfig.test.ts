@@ -13,6 +13,7 @@ import {
 import {
   OPINION_DECLARED_ONLY, applyOpinionEdit, oneFamily, opinionFor, opinionGate, opinionRuleOf, opinionSays, sameAgentOf,
 } from '../src/opinions.ts';
+import { applyHelperEdit, helperFor, helperListed, helperRuleOf } from '../src/helpers.ts';
 import { MANIFEST, pluginsRoot, readPlugins } from '../src/plugins.ts';
 import {
   applyWorkflowEdit, keptVersions, resolveWorkflow, workflowChoiceOf, type WorkflowChoiceEdit, type WorkflowTaskChoice,
@@ -596,7 +597,7 @@ test('an unknown verb names the ones that exist', () => {
 
   assert.match(error.message, /unknown driver verb 'frobnicate'/);
   assert.match(
-    error.message, /list, drive, undrive, hold, resume, trees, line, landing, across, standing, language, review, opinion, workflow, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper/);
+    error.message, /list, drive, undrive, hold, resume, trees, line, landing, across, standing, language, review, opinion, helpers, workflow, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper/);
   fx.cleanup();
 });
 
@@ -2049,5 +2050,98 @@ test('a workflow choice keeps its kinds in the order written, and a verb that kn
   assert.equal('workflows' in none, false);
   assert.equal('workspaceWorkflows' in none, false);
   fresh.cleanup();
+  fx.cleanup();
+});
+
+/**
+ * The helpers rule, `helpers` and `workspaceHelpers` (MIXAGENT2a-i, D163 point 5, the mixed agents design §5).
+ * 🔴 A TWIN with the driver's `HelperRules`: both hold ONE table, the driver suite's `fixtures/helper-rules.json`, cell for cell —
+ * the reading and its precedence, every refusal in the same words, how a rule is listed and the edits both doors make. The
+ * driver's `HelperRulesTests` reads the same file.
+ */
+const HELPER_TABLE = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
+  'Daoris.Desktop.Driver.Tests', 'fixtures', 'helper-rules.json'), 'utf8')) as {
+  read: [name: string, file: string, repository: string, workspace: string | null, source: string, rule: string][];
+  problems: [name: string, value: string, problem: string | null][];
+  listed: [name: string, rule: string, said: string][];
+  edits: [name: string, file: string, edit: string, after: string | null, refusal: string | null][];
+};
+
+test('a helpers rule resolves as the driver resolves it (the shared table)', () => {
+  const fx = makeFixture('driver-helpers-read');
+  assert.ok(HELPER_TABLE.read.length > 0, 'the table holds read rows');
+  for (const [name, file, repository, workspace, source, rule] of HELPER_TABLE.read) {
+    writeFileSync(at(fx), file, 'utf8');
+    const read = helperFor(readDriverChoices(at(fx)), repository, workspace);
+    assert.equal(read.source, source, name);
+    assert.deepEqual(read.rule, JSON.parse(rule), `${name}: the rule`);
+  }
+  fx.cleanup();
+});
+
+test('a helpers rule\'s first problem is the driver\'s, in its words, and a rule is listed in its words (the shared table)', () => {
+  for (const [name, value, problem] of HELPER_TABLE.problems) {
+    assert.equal(helperRuleOf(JSON.parse(value)).problem, problem, name);
+  }
+  for (const [name, rule, said] of HELPER_TABLE.listed) {
+    assert.equal(helperListed(helperRuleOf(JSON.parse(rule)).rule!), said, name);
+  }
+});
+
+test('a helpers edit writes what the driver writes, or refuses in its words (the shared table)', () => {
+  const fx = makeFixture('driver-helpers-edits');
+  for (const [name, file, edit, after, refusal] of HELPER_TABLE.edits) {
+    writeFileSync(at(fx), file, 'utf8');
+    const choices = readDriverChoices(at(fx));
+    if (refusal !== null) {
+      assert.equal(captureError(() => applyHelperEdit(choices, JSON.parse(edit))).message, refusal, name);
+      continue;
+    }
+
+    writeDriverChoices(at(fx), { ...choices, ...applyHelperEdit(choices, JSON.parse(edit)) });
+    const written = JSON.parse(readFileSync(at(fx), 'utf8'));
+    const maps = Object.fromEntries(['helpers', 'workspaceHelpers'].filter((key) => key in written).map((key) => [key, written[key]]));
+    assert.deepEqual(maps, JSON.parse(after!), name);
+  }
+  fx.cleanup();
+});
+
+test('helpers declares a repository\'s rule, keeps what it does not name, says it, lists it and clears it', () => {
+  const fx = makeFixture('driver-helpers');
+  assert.match(run(['list'], at(fx)).out, /helpers\s+none set/);
+
+  const said = run(['helpers', 'web-app', '--mode', 'on', '--agents', 'codex-acp, dsh'], at(fx));
+  assert.equal(said.code, 0);
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).helpers, { 'web-app': { mode: 'on', agents: ['codex-acp', 'dsh'] } });
+  assert.match(said.out, /helpers for `web-app`: on: `codex-acp`, else `dsh`\./);
+  assert.match(said.out, /starts at once, within the limits/);
+  assert.match(run(['list'], at(fx)).out, /helpers\s+web-app\s+on: `codex-acp`, else `dsh`/);
+
+  run(['helpers', 'Web-App', '--mode', 'off'], at(fx));
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).helpers, { 'web-app': { mode: 'off', agents: ['codex-acp', 'dsh'] } });
+
+  const workspace = run(['helpers', '--workspace', 'work', '--mode', 'ask'], at(fx));
+  assert.match(workspace.out, /helpers for repositories in the workspace `work` that set none of their own: ask\./);
+  assert.match(workspace.out, /waits for your yes/);
+
+  const cleared = run(['helpers', 'web-app', '--clear'], at(fx));
+  assert.match(cleared.out, /`web-app` takes its workspace's helpers rule again/);
+  assert.equal('helpers' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  assert.match(captureError(() => run(['helpers', 'web-app'], at(fx))).message, /`driver helpers` needs/);
+  assert.match(captureError(() => run(['helpers', 'web-app', '--mode', 'always'], at(fx))).message, /`mode` is `ask`, `on` or `off`/);
+  assert.match(captureError(() => run(['helpers', 'web-app', '--force'], at(fx))).message, /is not a flag `driver helpers` takes/);
+  fx.cleanup();
+});
+
+test('a driver.json keeps a helpers rule the CLI did not write, and writes none where none is set', () => {
+  const fx = makeFixture('driver-helpers-kept');
+  writeFileSync(at(fx), JSON.stringify({ cap: 3, helpers: { 'web-app': { mode: 'on', agents: ['dsh'] } } }), 'utf8');
+  const choices = readDriverChoices(at(fx));
+  writeDriverChoices(at(fx), { ...choices, cap: 4 });
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).helpers, { 'web-app': { mode: 'on', agents: ['dsh'] } });
+  writeFileSync(at(fx), '{}', 'utf8');
+  writeDriverChoices(at(fx), readDriverChoices(at(fx)));
+  assert.equal('helpers' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  assert.equal('workspaceHelpers' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
   fx.cleanup();
 });

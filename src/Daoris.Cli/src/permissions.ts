@@ -65,12 +65,14 @@ export interface PermissionFile {
  * own tab, and saying what it showed gives no verdict, which is the person's. `opinion_give` and `opinion_answer` (XAGENT1c2,
  * D155; the second agent design §5.4, §6.1, §6.4) are answered for an opinion's own reviewer and for the working session
  * handed it only: each says a claim, and neither asks for an opinion, lands the work or answers a dispute, which is the
- * person's.
+ * person's. `helper_ask` and `helper_answer` (MIXAGENT2a-i, D163 point 2) write a file each under the home and nothing else: an ask
+ * the driver takes under the person's `helpers` rule, and a helper's answer, which reaches the asker as another agent's claim,
+ * never the person's.
  */
 const CONNECTOR_TOOLS = [
   'registry', 'knowledge_search', 'knowledge_get', 'knowledge_repositories',
   'knowledge_convergence', 'quest_list', 'quest_respond', 'quest_publish', 'permission_propose', 'go_ahead_ask',
-  'review_serve', 'review_ready', 'opinion_give', 'opinion_answer',
+  'review_serve', 'review_ready', 'opinion_give', 'opinion_answer', 'helper_ask', 'helper_answer',
 ];
 
 /** What Daoris ships. 🔴 The driver's `PermissionRules` (`Permissions.cs`) holds the same table, and a test reads this one. */

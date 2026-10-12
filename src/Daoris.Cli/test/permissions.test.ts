@@ -33,6 +33,8 @@ const CONNECTOR = [
   'mcp__daoris-knowledge__review_ready',
   'mcp__daoris-knowledge__opinion_give',
   'mcp__daoris-knowledge__opinion_answer',
+  'mcp__daoris-knowledge__helper_ask',
+  'mcp__daoris-knowledge__helper_answer',
 ];
 
 function run(argv: string[], home: string): { code: number; out: string } {
@@ -157,7 +159,8 @@ test('the opinion tools reach a session by default: saying an opinion, and answe
   const fx = makeFixture('permissions-opinion-tools');
   try {
     const { allow } = composeRules(readPermissions(at(fx.root)), 'default', 'engine');
-    for (const tool of ['opinion_give', 'opinion_answer']) {
+    // MIXAGENT2a-i: and the helper's two, each a file under the home.
+    for (const tool of ['opinion_give', 'opinion_answer', 'helper_ask', 'helper_answer']) {
       assert.ok(allow.includes(`mcp__daoris-knowledge__${tool}`), `\`${tool}\` is not allowed: ${allow.join(', ')}`);
     }
   } finally {

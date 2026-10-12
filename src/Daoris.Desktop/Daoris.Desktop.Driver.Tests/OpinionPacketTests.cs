@@ -151,7 +151,7 @@ public sealed class OpinionPacketTests : IDisposable
         foreach (var tool in new[]
                  {
                      "quest_respond", "quest_publish", "go_ahead_ask", "permission_propose", "review_serve", "review_ready",
-                     "opinion_answer",
+                     "opinion_answer", "helper_ask", "helper_answer",
                  })
         {
             Assert.False(PermissionRules.AllowsConnector(handed, tool), tool);

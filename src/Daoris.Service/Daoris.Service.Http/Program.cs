@@ -2077,10 +2077,12 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     // The note's lines by code (LANG1a), beside it and cleaned as it is for any other caller.
     NoteParts: NoteParts.Element(loopback ? s.NoteParts : NoteParts.ForAnotherMachine(s.NoteParts, s)),
     // The second opinion a reviewer's record reads for (XAGENT1c): this machine's, like the opinion, so answered to it only.
-    Opinion: loopback ? s.Opinion : null);
+    Opinion: loopback ? s.Opinion : null,
+    // The session a helper's record answers (MIXAGENT2a-i): this machine's, like the opinion, so answered to it only.
+    Serves: loopback ? s.Serves : null);
 
 // A word with whose it is (XAGENT1c): `by` names the second opinion whose findings these are, and is absent for the person's.
-static SaidWordResponse ToSaid(SaidWord word) => new(word.Id, word.Text, word.At, word.Files, word.Reopens, word.By);
+static SaidWordResponse ToSaid(SaidWord word) => new(word.Id, word.Text, word.At, word.Files, word.Reopens, word.By, word.Helper);
 
 // An opinion as this machine's doors answer it (XAGENT1c), with where its pass stands, derived when read.
 static OpinionResponse ToOpinion(OpinionStanding standing)
@@ -2117,6 +2119,7 @@ static string SayRefusal(SessionSayRefusal refusal) => refusal switch
     SessionSayRefusal.Intake => "intake",
     SessionSayRefusal.StoodDown => "stood-down",
     SessionSayRefusal.Opinion => "opinion",
+    SessionSayRefusal.Helper => "helper",
     _ => "running",
 };
 

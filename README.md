@@ -61,7 +61,7 @@ below can contact services or download tools when invoked.
 | `import` | Registers a folder's subdirectories in one go, safe to re-run; `--workspace` names their circle |
 | `remote` | This machine's remotes, one per workspace: `list`, `add <workspace> --url … [--key …]`, `remove <workspace>`. **Edits one file under the home; talks to nothing** |
 | `agent` | Agents (Claude Code, Codex, DeepSeek Harness as `dsh`) and the accounts they run as: `list`, `install`/`update`/`login <agent>`, `profile list\|add\|remove\|default\|rename\|join …`. **Spawns each agent's own tooling; keeps no sign-in** |
-| `driver` | Configure driving, holds, lines, landing, retries, session language, review environments, second opinions and workflows. `driver list` shows current choices and paused work. Configuration edits the Daoris home; execution and review doors are described in the [desktop guide](src/Daoris.Desktop/README.md). |
+| `driver` | Configure driving, holds, lines, landing, retries, session language, review environments, second opinions, helpers (`driver helpers`, what a helper an agent asks for does) and workflows. `driver list` shows current choices and paused work. Configuration edits the Daoris home; execution and review doors are described in the [desktop guide](src/Daoris.Desktop/README.md). |
 | `plugin` | This machine's plugins: `list`, `add <folder>`, `remove <id>`, `enable`/`disable <id>`. **Edits under the home's `plugins/`; loads no code** |
 | `browser` | Daoris's browser: `favorite list\|add\|remove`, `extensions offer\|refuse`, `use daoris\|edge`. **Edits files under the home** |
 | `tool` | Which Git, Node.js, PowerShell, GitHub CLI and Azure CLI Daoris runs. **One file under the home** |

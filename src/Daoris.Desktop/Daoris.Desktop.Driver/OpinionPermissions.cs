@@ -31,12 +31,13 @@ public static class OpinionPermissions
 
     /// <summary>
     /// Its connector's tools it is never given (§5.4): a quest's take and close, a publish, a go-ahead's ask, a rule's proposal,
-    /// a set-up's serving and its ready, a working session's answer, and the machine's own index rebuild.
+    /// a set-up's serving and its ready, a working session's answer, a helper's ask and answer (MIXAGENT2a-i: a reviewer asks for
+    /// no helper, and is none), and the machine's own index rebuild.
     /// </summary>
     private static readonly string[] Acting =
     [
         "quest_respond", "quest_publish", "go_ahead_ask", "permission_propose", "review_serve", "review_ready", "opinion_answer",
-        "knowledge_refresh",
+        "helper_ask", "helper_answer", "knowledge_refresh",
     ];
 
     /// <summary>What it reads its history with: git's reading commands, and the <c>cd</c> an agent prefixes one with.</summary>
