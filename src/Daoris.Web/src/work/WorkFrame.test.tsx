@@ -2763,6 +2763,88 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
+   * MIXAGENT1b-i (D163): *Go on with another agent…* folds into the head's ⋯ and asks under the head: the agent chip lists the
+   * agents but the conversation's own; *Hand over* asks `SESSION_HAND_OVER`, and the page attends the conversation it opened.
+   */
+  const TWO_AGENTS = {
+    ...ROSTER,
+    harnesses: [
+      { harness: 'stub', present: true, version: 'stub 1.0.0', problem: null, machineDefault: null, profiles: [], structured: true },
+      { harness: 'codex', present: true, version: 'codex 1.0.0', problem: null, machineDefault: null, profiles: [{ name: 'team', home: 'x', login: 'in' }] },
+    ],
+  };
+
+  const openHandOver = async (name: string) => {
+    const user = userEvent.setup();
+    const acts = within(await screen.findByRole('group', { name: 'Session actions' }));
+    expect(acts.queryByRole('button', { name: 'Stop and hand over…' })).toBeNull();
+    acts.getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(await screen.findByRole('menuitem', { name }));
+    return { user, ask: await screen.findByRole('group', { name: 'go on with another agent' }) };
+  };
+
+  it('hands an idle conversation over from the head: the ask lists the other agents, and the page attends the new one', async () => {
+    SESSIONS = [{ ...CHAT, state: 'completed' }];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return TWO_AGENTS;
+      if (type === 'SESSION_HAND_OVER') return { sessionId: 'n3wn3w00', kept: true, why: null, message: 'goes on.' };
+      return DRIVER_STATE;
+    });
+    const { onSelect } = show('c0ffee11');
+
+    const { user, ask } = await openHandOver('Go on with another agent…');
+    expect(within(ask).getByRole('button', { name: /Agent and account: codex · / })).toBeInTheDocument();
+    await user.click(within(ask).getByRole('button', { name: 'Hand over' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HAND_OVER', { payload: { id: 'c0ffee11', agent: 'codex', why: 'press' } });
+    await waitFor(() => expect(onSelect).toHaveBeenCalledWith('n3wn3w00'));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'CANCEL_TURN', expect.anything());
+  });
+
+  it('stops and hands over a conversation that works: the hand-over is asked first, then its turn is stopped', async () => {
+    SESSIONS = [CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return TWO_AGENTS;
+      if (type === 'SESSION_HAND_OVER') return { sessionId: null, kept: true, why: null, message: 'kept.' };
+      if (type === 'CANCEL_TURN') return { cancelled: true, withdrawn: [] };
+      return DRIVER_STATE;
+    });
+    show('c0ffee11');
+
+    const acts = within(await screen.findByRole('group', { name: 'Session actions' }));
+    expect(acts.getByRole('button', { name: 'Stop…' })).toBeInTheDocument();
+    const user = userEvent.setup();
+    acts.getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(await screen.findByRole('menuitem', { name: 'Stop and hand over…' }));
+    const ask = await screen.findByRole('group', { name: 'go on with another agent' });
+    await user.click(within(ask).getByRole('button', { name: 'Hand over' }));
+
+    await waitFor(() => expect(within(screen.getByRole('group', { name: 'go on with another agent' }))
+      .getByText('It goes on with codex when its turn ends, in a conversation of its own.')).toBeInTheDocument());
+    expect(invoke.mock.calls.map((call) => call[1]).filter((type) => type === 'SESSION_HAND_OVER' || type === 'CANCEL_TURN'))
+      .toEqual(['SESSION_HAND_OVER', 'CANCEL_TURN']);
+  });
+
+  it('says a refused hand-over in the ask and keeps the choice', async () => {
+    SESSIONS = [{ ...CHAT, state: 'completed' }];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return TWO_AGENTS;
+      if (type === 'SESSION_HAND_OVER') return { sessionId: null, kept: false, why: 'tree-gone', message: 'x' };
+      return DRIVER_STATE;
+    });
+    show('c0ffee11');
+
+    const { user, ask } = await openHandOver('Go on with another agent…');
+    await user.click(within(ask).getByRole('button', { name: 'Hand over' }));
+
+    expect(await within(ask).findByRole('alert')).toHaveTextContent('The folder it worked in is gone, so there is nothing to go on in.');
+    expect(within(ask).getByRole('button', { name: 'Hand over' })).toBeEnabled();
+    expect(within(ask).getByRole('button', { name: /Agent and account: codex · / })).toBeInTheDocument();
+  });
+
+  /**
    * SESSUX1f (D126 §5.4): an ended conversation the reader says is deletable offers *Delete…* in its header's ⋯; it asks
    * once under the header, deletes nothing until its second press, and a driven session's ⋯ offers none.
    */

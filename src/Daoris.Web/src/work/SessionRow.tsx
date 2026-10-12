@@ -166,7 +166,7 @@ export function SessionRow({
 
   // What the rule offered, each absent where it does not apply and never disabled (D119 §3.2); nothing at all where there
   // is nowhere to report a press. One list for its ⋯ and its right-click (CTX1).
-  const actions = actMenu(onAct ? acts : [], t, (act) => onAct?.(act, session.id));
+  const actions = actMenu(onAct ? acts : [], t, (act) => onAct?.(act, session.id), false, session);
 
   return (
     // A group, so the menu's trigger shows on the row's hover and focus and stays out of the way else;

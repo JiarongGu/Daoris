@@ -11,12 +11,12 @@ import type { SessionWhere } from './SessionRow';
 
 /** Every act a session's doors offer, by the name `sessionActs.ts` runs it by. Finish and Decline… stay its card's. */
 export type SessionActId =
-  | 'answer' | 'stop' | 'pauseQuest' | 'pauseAsk' | 'resumeQuest' | 'resumeAsk' | 'retry' | 'review' | 'openFolder'
+  | 'answer' | 'stop' | 'handOver' | 'pauseQuest' | 'pauseAsk' | 'resumeQuest' | 'resumeAsk' | 'retry' | 'review' | 'openFolder'
   | 'terminal' | 'detach' | 'archive' | 'unarchive' | 'delete' | 'copy';
 
 /** §3.1's order, the order a menu lists them in; a pause beside the stop, and a resume where *Try again* stands (D132 §7.1). */
 export const ACT_ORDER: readonly SessionActId[] = [
-  'answer', 'stop', 'pauseQuest', 'pauseAsk', 'resumeQuest', 'resumeAsk', 'retry', 'review', 'openFolder', 'terminal',
+  'answer', 'stop', 'handOver', 'pauseQuest', 'pauseAsk', 'resumeQuest', 'resumeAsk', 'retry', 'review', 'openFolder', 'terminal',
   'detach', 'archive', 'unarchive', 'delete', 'copy',
 ];
 
@@ -27,6 +27,8 @@ export const ACT_ORDER: readonly SessionActId[] = [
 export const ACT_LOOK: Record<SessionActId, { label: string; icon: IconName; danger?: boolean }> = {
   answer: { label: 'work.act.answer', icon: 'answer' },
   stop: { label: 'work.act.stop', icon: 'stop', danger: true },
+  // MIXAGENT1b-i: one act with two names by state (`handOverLabel`); never a second danger button beside Stop… (D163).
+  handOver: { label: 'work.act.handOver', icon: 'redo' },
   // PAUSE1e: the player's pause and play, since a pause keeps everything and Resume carries it on where it stood.
   pauseQuest: { label: 'work.act.pauseQuest', icon: 'pause' },
   pauseAsk: { label: 'work.act.pauseAsk', icon: 'pause' },
@@ -50,10 +52,17 @@ export const ACT_LOOK: Record<SessionActId, { label: string; icon: IconName; dan
  */
 export function actMenu(
   acts: readonly SessionActId[], t: (key: string) => string, press: (act: SessionActId) => void, disabled = false,
+  session?: Session,
 ): MenuAct[] {
   return acts.map((act) => ({
-    id: act, label: t(ACT_LOOK[act].label), icon: ACT_LOOK[act].icon, disabled, onSelect: () => press(act),
+    id: act, label: t(act === 'handOver' && session ? handOverLabel(session) : ACT_LOOK[act].label), icon: ACT_LOOK[act].icon,
+    disabled, onSelect: () => press(act),
   }));
+}
+
+/** The hand-over's one name by state (MIXAGENT1b-i): *Go on with another agent…* idle, *Stop and hand over…* while it works. */
+export function handOverLabel(session: Session): string {
+  return SESSION_ACTIVE.has(session.state) ? 'work.act.handOverStop' : 'work.act.handOver';
 }
 
 /** What decides a session's acts: its record, where the list's reader placed it, its repository's checkout, and where its work is. */
@@ -90,6 +99,8 @@ export function folderOf({ session, root, where }: ActFacts): string | null {
  *   answered, which goes on at the driver's next look and has no box to answer in (ANSWER1c).
  * - **Stop…** for a live session this machine runs. **Try again** for a parked quest's last session, and a stopped one
  *   whose stop holds its quest. **Review** where there is work to read: its tree, its landing, or a place in To review.
+ * - **Go on with another agent…** (or **Stop and hand over…** while it works) for a conversation of this machine's own: not
+ *   an intake, Ask Daoris's, nor a quest's session (MIXAGENT1b-i, D163). One act with two names; it asks under the header.
  * - **Open folder** and **Open a terminal here** where its folder is on this machine (`folderOf`).
  * - **Archive** where the reader placed it in Ended, **Unarchive** wherever its mark stands, **Copy session ID** always.
  * - **Delete…** where the reader says the delete would be taken (SESSUX1f, D126 §5.4): a conversation that served no
@@ -112,6 +123,8 @@ export function offeredActs(facts: ActFacts, door: 'row' | 'header'): SessionAct
   if (here) {
     if (door === 'row' && session.state === 'awaiting-person' && !answeredPark(session) && !intake) offered.add('answer');
     if (live) offered.add('stop');
+    // A conversation of this machine's own: not an intake, Ask Daoris's, nor a quest's session, each of which has its own door.
+    if (session.kind === 'chat' && !session.quest && !intake && !isHelp(session)) offered.add('handOver');
     const driven = live && Boolean(session.quest) && session.kind !== 'chat' && !intake && !isHelp(session);
     if (driven && !pausedBy) {
       offered.add('pauseQuest');

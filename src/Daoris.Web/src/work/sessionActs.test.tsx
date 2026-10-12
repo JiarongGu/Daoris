@@ -247,6 +247,92 @@ describe('the acts on a session', () => {
       "Resumed ask #a1b2c3: the driver's next look plans its work as it would have.", 'ok'));
   });
 
+  /**
+   * MIXAGENT1b-i (D163): *Go on with another agent…*'s press asks `SESSION_HAND_OVER` with the reason `press`; a conversation
+   * that is not talking goes on at once, so the ask closes and the page attends the new conversation.
+   */
+  it('hands an idle conversation over by its press, closes the ask and attends the one it opened', async () => {
+    invoke.mockImplementation(async () => ({ sessionId: 'c2', kept: true, message: 'conversation `c2` goes on.' }));
+    const attend = vi.fn();
+    const { result } = acts({ attend });
+    const told = { done: vi.fn(), refused: vi.fn(), kept: vi.fn() };
+
+    act(() => result.current.handOverNow(session({ kind: 'chat', quest: null, state: 'completed' }), { agent: 'codex', account: 'team', name: 'Codex' }, told));
+
+    await waitFor(() => expect(told.done).toHaveBeenCalled());
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HAND_OVER', { payload: { id: 's1a2b3c4', agent: 'codex', account: 'team', why: 'press' } });
+    expect(attend).toHaveBeenCalledWith('c2');
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'CANCEL_TURN', expect.anything());
+    expect(told.refused).not.toHaveBeenCalled();
+  });
+
+  it('says a refusal in the ask, in the page’s own words by its code, and keeps the choice', async () => {
+    invoke.mockImplementation(async () => ({ sessionId: null, kept: false, why: 'same-agent', message: 'x already runs on y.' }));
+    const attend = vi.fn();
+    const { result } = acts({ attend });
+    const told = { done: vi.fn(), refused: vi.fn(), kept: vi.fn() };
+
+    act(() => result.current.handOverNow(session({ kind: 'chat', quest: null, state: 'completed' }), { agent: 'codex', account: '', name: 'Codex' }, told));
+
+    await waitFor(() => expect(told.refused).toHaveBeenCalledWith('It already runs on that agent and account: choose another agent.'));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HAND_OVER', { payload: { id: 's1a2b3c4', agent: 'codex', why: 'press' } });
+    expect(told.done).not.toHaveBeenCalled();
+    expect(attend).not.toHaveBeenCalled();
+  });
+
+  it('says what never goes on as the box says it, and a code a newer driver adds in the driver’s sentence', async () => {
+    invoke.mockImplementationOnce(async () => ({ sessionId: null, kept: false, why: 'teammate', message: 'x' }));
+    const { result } = acts();
+    const told = { done: vi.fn(), refused: vi.fn(), kept: vi.fn() };
+    act(() => result.current.handOverNow(session({ kind: 'chat', quest: null }), { agent: 'codex', account: '', name: 'Codex' }, told));
+    await waitFor(() => expect(told.refused).toHaveBeenCalledWith(expect.stringMatching(/conversation is on its own machine|where its conversation is/)));
+
+    invoke.mockImplementationOnce(async () => ({ sessionId: null, kept: false, why: 'tomorrow', message: 'The driver’s own sentence.' }));
+    act(() => result.current.handOverNow(session({ kind: 'chat', quest: null }), { agent: 'codex', account: '', name: 'Codex' }, told));
+    await waitFor(() => expect(told.refused).toHaveBeenLastCalledWith('The driver’s own sentence.'));
+  });
+
+  /** Stop and hand over: the hand-over is asked first and kept, then the turn is stopped, and its end takes it. */
+  it('asks a working conversation’s hand-over first, then stops its turn, and says it goes on when the turn ends', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'CANCEL_TURN'
+      ? { cancelled: true, withdrawn: [] }
+      : { sessionId: null, kept: true, message: 'it goes on.' }));
+    const { result } = acts();
+    const told = { done: vi.fn(), refused: vi.fn(), kept: vi.fn() };
+
+    act(() => result.current.handOverNow(session({ kind: 'chat', quest: null, state: 'working' }), { agent: 'codex', account: '', name: 'Codex' }, told));
+
+    await waitFor(() => expect(told.kept).toHaveBeenCalledWith('It goes on with Codex when its turn ends, in a conversation of its own.'));
+    expect(invoke.mock.calls.map((call) => call[1])).toEqual(['SESSION_HAND_OVER', 'CANCEL_TURN']);
+    expect(invoke).toHaveBeenLastCalledWith('DAORIS.DRIVER', 'CANCEL_TURN', { payload: { id: 's1a2b3c4' } });
+    expect(told.done).not.toHaveBeenCalled();
+  });
+
+  it('keeps a refused working hand-over from stopping its turn', async () => {
+    invoke.mockImplementation(async () => ({ sessionId: null, kept: false, why: 'waiting', message: 'x' }));
+    const { result } = acts();
+    const told = { done: vi.fn(), refused: vi.fn(), kept: vi.fn() };
+
+    act(() => result.current.handOverNow(session({ kind: 'chat', quest: null, state: 'working' }), { agent: 'codex', account: '', name: 'Codex' }, told));
+
+    await waitFor(() => expect(told.refused).toHaveBeenCalledWith('It is already waiting to be handed over.'));
+    expect(invoke.mock.calls.map((call) => call[1])).toEqual(['SESSION_HAND_OVER']);
+  });
+
+  it('says an answer whose briefing did not reach the new conversation, which opened all the same', async () => {
+    invoke.mockImplementation(async () => ({ sessionId: 'c2', kept: true, why: 'unbriefed', message: 'x' }));
+    const attend = vi.fn();
+    const { result, notify } = acts({ attend });
+    const told = { done: vi.fn(), refused: vi.fn(), kept: vi.fn() };
+
+    act(() => result.current.handOverNow(session({ kind: 'chat', quest: null, state: 'completed' }), { agent: 'codex', account: '', name: 'Codex' }, told));
+
+    await waitFor(() => expect(told.done).toHaveBeenCalled());
+    expect(attend).toHaveBeenCalledWith('c2');
+    expect(notify).toHaveBeenCalledWith(expect.stringMatching(/^The new conversation opened, but what Daoris kept of this one did not reach/));
+    expect(told.refused).not.toHaveBeenCalled();
+  });
+
   /** UXFIX2: a refusal is said in the ask that was pressed, in the catalogue's words, and the ask stays open. */
   it('says a delete the host refused in the catalogue’s words, inside the ask, which stays open', async () => {
     invoke.mockImplementation(async () => { throw refusal('SESSION_SERVED_QUEST', { session: 's1a2b3c4', quest: 'abc123' }); });

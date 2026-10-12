@@ -13821,3 +13821,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **MIXAGENT2a — helpers on other agents** (service/driver). `helper_ask` and its box under the `helpers` rule: read-only helper sessions on the reviewer's machinery, two at once at most, depth one, the answer as the asker's next turn marked as the helper's, `serves` on the record. Design §3, §5.
 
 **Outcome** 2026-10-12: the service's half. `helper_ask` writes an immutable ask and `helper_answer` its answer under `<home>/helpers/`, beside a state the driver alone writes; a helper, a reviewer or an intake cannot ask (depth one). `serves` is on the session record (this machine's only), a said word carries a `Helper` mark apart from an opinion's `By`, and `helpers`/`workspaceHelpers` (`ask` default, `on`, `off`, an agent list) are in `driver.json` with the CLI twin and `daoris driver helpers`; both tools are in the connector default, denied a reviewer. The driver's helper session is MIXAGENT2a-ii; the setting's other doors MIXAGENT2c. Detail: D163's MIXAGENT2a-i note.
+
+## MIXAGENT1b-i — *Go on with another agent…*, the press (2026-10-12, D163)
+
+> - [ ] **MIXAGENT1b — *Go on with another agent…*** (modules/web; after 1a). The session page's press with the composer's agent and account chips, *Stop and hand over*, and Daoris's offer when the account is near or cut. Design §2, §5.
+
+**Outcome** 2026-10-12: the press's half. `SESSION_HAND_OVER` and `useHandOver`; a conversation's ⋯ offers *Go on with another agent…*, or *Stop and hand over…* while it works (asked first, then the turn stopped, so its end takes it); the ask under the head chooses the agent and account with the composer's chip, factored out as `AgentChip`; a taken answer attends the new conversation, and the old one's last line opens it. Daoris's offer when an account runs low is MIXAGENT1b-ii. Detail: D163's MIXAGENT1b-i note.

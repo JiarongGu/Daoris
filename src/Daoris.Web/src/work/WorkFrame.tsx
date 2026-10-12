@@ -54,6 +54,7 @@ import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } 
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
 import { sessionFacts } from './headFacts';
 import type { Answered } from './InlineConfirm';
+import { HandOverAsk, type HandOverRoster } from './HandOverAsk';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { type SessionDoors, useSessionActs } from './sessionActs';
 import { ListMore } from './ListPane';
@@ -286,6 +287,8 @@ export function WorkFrame({
   const [stopAsking, setStopAsking] = useState<string | null>(null);
   // The session whose delete asks under the header (SESSUX1f, D126 §5.4), the stop's way: of that session only.
   const [deleteAsking, setDeleteAsking] = useState<string | null>(null);
+  // The session whose hand-over asks under the header (MIXAGENT1b-i, D163), the stop's way: of that session only.
+  const [handOverAsking, setHandOverAsking] = useState<string | null>(null);
   // The session whose pause asks under the header (PAUSE1e, D132 §2.6), with the work it pauses: of that session only.
   const [pauseAsking, setPauseAsking] = useState<{ session: string; target: WorkTarget } | null>(null);
   // *Answer…* from a row (D126 §3.1): the session it was pressed for, and a count, so the box at its foot takes the focus
@@ -495,6 +498,7 @@ export function WorkFrame({
   useEffect(() => {
     setStopAsking((asked) => (asked === selected ? asked : null));
     setDeleteAsking((asked) => (asked === selected ? asked : null));
+    setHandOverAsking((asked) => (asked === selected ? asked : null));
     setPauseAsking((asked) => (asked?.session === selected ? asked : null));
   }, [selected]);
 
@@ -1082,6 +1086,24 @@ export function WorkFrame({
   // What a person calls an account (ACCTNAME1, D152 §4.2): the roster's one namer, so the head's facts, its Details, its
   // chain and its trace say the name the agent's page leads its row with.
   const nameOf = namer(t, roster);
+  // The agents a conversation may be started or handed over on, with their accounts: *New conversation*'s chips and the
+  // hand-over's ask (MIXAGENT1b-i) choose from the one roster.
+  const agentRoster: HandOverRoster = {
+    harnesses: roster.filter((row) => row.present).map((row) => row.harness),
+    labels: Object.fromEntries(roster.map((row) => [row.harness, doorLabel(t, row)])),
+    names: Object.fromEntries(roster.map((row) => [row.harness, row.product || row.harness])),
+    accounts: Object.fromEntries(roster.map((row) => [row.harness, Array.isArray(row.profiles) ? row.profiles : []])),
+    // The list a start in that repository may run on (D130 §3.2): its workspace's own, else this machine's, by the
+    // accounts' owner (AGT7), from the files the frame already reads; the picker sets the rest apart.
+    scopeOf: (repository, harness) => {
+      const door = roster.find((row) => row.harness === harness);
+      const use = door ? agentOf(accounts.data, toolOf(door)) : null;
+      if (!use) return null;
+      const workspace = (registry.data ?? []).find((row) => row.repository === repository)?.workspace || 'default';
+      const own = workspaceScope(use, workspace);
+      return own ? { workspace, list: own.list } : { workspace: null, list: machineScope(use).list };
+    },
+  };
   // Words a cooling account holds (MSG1g2, D137 §2.2): a driven record of this machine's between runs, parked or ended, whose
   // own account cools. A running one hears words at its door, and a chat's go on with the next word said to it.
   const between = attended && here && attended.kind !== 'chat'
@@ -1100,6 +1122,7 @@ export function WorkFrame({
       chosen();
       attend(id);
       setDeleteAsking(null);
+      setHandOverAsking(null);
       setPauseAsking(null);
       setStopAsking(id);
     },
@@ -1108,8 +1131,23 @@ export function WorkFrame({
       chosen();
       attend(id);
       setStopAsking(null);
+      setHandOverAsking(null);
       setPauseAsking(null);
       setDeleteAsking(id);
+    },
+    // *Go on with another agent…* and *Stop and hand over…* (MIXAGENT1b-i): attended, the hand-over's ask under its header.
+    handOver: (id) => {
+      chosen();
+      attend(id);
+      setStopAsking(null);
+      setDeleteAsking(null);
+      setPauseAsking(null);
+      setHandOverAsking(id);
+    },
+    // The conversation a hand-over opened, attended as a start's is (MIXAGENT1b-i).
+    attend: (id) => {
+      chosen();
+      attend(id);
     },
     // *Pause quest…* and *Pause ask…* (PAUSE1e): attended, the pause's ask under its header, as a stop asks.
     pause: (id, target) => {
@@ -1117,6 +1155,7 @@ export function WorkFrame({
       attend(id);
       setStopAsking(null);
       setDeleteAsking(null);
+      setHandOverAsking(null);
       setPauseAsking({ session: id, target });
     },
     // Its review: attended, with the dock open on its work.
@@ -1246,7 +1285,7 @@ export function WorkFrame({
   const pageMenu = attended && attendedFacts
     ? {
       label: attendedTitle,
-      acts: actMenu(headerActs(headActs, headPrimary).all, t, (act) => actions.run(act, attendedFacts), actions.busy),
+      acts: actMenu(headerActs(headActs, headPrimary).all, t, (act) => actions.run(act, attendedFacts), actions.busy, attended),
     }
     : null;
   const attendedShown = attended ? shownOf(attended, grouping, taking[attended.id]) : null;
@@ -1284,6 +1323,17 @@ export function WorkFrame({
           busy={actions.deleting}
           onDelete={(answered) => actions.deleteNow(attended, answered)}
           onClose={() => setDeleteAsking((was) => (was === attended.id ? null : was))}
+        />
+      ) : handOverAsking === attended.id && headActs.includes('handOver') ? (
+        <HandOverAsk
+          key={attended.id}
+          from={attended.adapter}
+          repository={attended.repository}
+          working={SESSION_ACTIVE.has(attended.state)}
+          roster={agentRoster}
+          busy={actions.handingOver}
+          onHandOver={(choice, told) => actions.handOverNow(attended, choice, told)}
+          onClose={() => setHandOverAsking((was) => (was === attended.id ? null : was))}
         />
       ) : pausing && !pauseQuiet ? (
         <PauseAsk
@@ -1405,21 +1455,12 @@ export function WorkFrame({
       remembered={chosenStart}
       attended={pressedFrom}
       onChoose={chooseStart}
-      harnesses={roster.filter((row) => row.present).map((row) => row.harness)}
-      labels={Object.fromEntries(roster.map((row) => [row.harness, doorLabel(t, row)]))}
-      names={Object.fromEntries(roster.map((row) => [row.harness, row.product || row.harness]))}
+      harnesses={agentRoster.harnesses}
+      labels={agentRoster.labels}
+      names={agentRoster.names}
       defaultHarness={spawning?.harness}
-      accounts={Object.fromEntries(roster.map((row) => [row.harness, Array.isArray(row.profiles) ? row.profiles : []]))}
-      // The list a start in that repository may run on (D130 §3.2): its workspace's own, else this machine's, by the
-      // accounts' owner (AGT7), from the files the frame already reads; the picker sets the rest apart.
-      scopeOf={(repository, harness) => {
-        const door = roster.find((row) => row.harness === harness);
-        const use = door ? agentOf(accounts.data, toolOf(door)) : null;
-        if (!use) return null;
-        const workspace = registered.find((row) => row.repository === repository)?.workspace || 'default';
-        const own = workspaceScope(use, workspace);
-        return own ? { workspace, list: own.list } : { workspace: null, list: machineScope(use).list };
-      }}
+      accounts={agentRoster.accounts}
+      scopeOf={agentRoster.scopeOf}
       draft={newDraft}
       onDraft={setNewDraft}
       carried={newCarry}

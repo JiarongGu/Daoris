@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Quest, Session } from '../api';
 import type { SessionGrouping } from './groups';
-import { folderOf, offeredActs, primaryAct, stopAsk, workTargetOf } from './acts';
+import { folderOf, handOverLabel, offeredActs, primaryAct, stopAsk, workTargetOf } from './acts';
 
 // Which acts a session is offered, by the one rule its row's ⋯ and its page header share (SESSUX1d, D126 §3.1): each
 // offered where it applies and absent where it does not, never disabled (D119 §3.2). Pure, so every session a person
@@ -113,7 +113,7 @@ describe('the acts a session is offered', () => {
   it('offers Delete… only where the reader says deletable, after the archive marks and before the id', () => {
     const chat = session({ quest: null, kind: 'chat', state: 'completed', tree: null });
     const deletable = { session: chat, grouping: placed({ group: 'ended', shown: 'completed', deletable: true }), root: ROOT };
-    expect(offeredActs(deletable, 'row')).toEqual(['openFolder', 'terminal', 'detach', 'archive', 'delete', 'copy']);
+    expect(offeredActs(deletable, 'row')).toEqual(['handOver', 'openFolder', 'terminal', 'detach', 'archive', 'delete', 'copy']);
     expect(offeredActs(deletable, 'header')).toContain('delete');
 
     expect(offeredActs({ ...deletable, grouping: placed({ group: 'ended', shown: 'completed' }) }, 'row')).not.toContain('delete');
@@ -143,6 +143,22 @@ describe('the acts a session is offered', () => {
     // An intake runs in Daoris's own room, and Ask Daoris in none of a repository's.
     const intake = session({ quest: null, kind: 'chat', ask: '0fda18', repository: 'ask #0fda18', tree: 'C:/somewhere/data/intake/default' });
     expect(offeredActs({ session: intake, root: null }, 'row')).toEqual(['stop', 'detach', 'copy']);
+  });
+
+  it('offers a conversation of this machine its hand-over after its stop, working or not, and no other session', () => {
+    const chat = session({ quest: null, kind: 'chat', state: 'completed', tree: TREE });
+    expect(offeredActs({ session: chat, root: ROOT }, 'header')).toEqual(['handOver', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
+    expect(offeredActs({ session: { ...chat, state: 'working' }, root: ROOT }, 'header').slice(0, 2)).toEqual(['stop', 'handOver']);
+    // Not a quest's session, an intake, Ask Daoris's, nor a teammate's: each has its own door or none (MIXAGENT1a-i, D163).
+    expect(offeredActs({ session: session(), root: ROOT }, 'row')).not.toContain('handOver');
+    expect(offeredActs({ session: { ...chat, ask: '0fda18' }, root: null }, 'row')).not.toContain('handOver');
+    expect(offeredActs({ session: { ...chat, repository: 'daoris:help' }, root: null }, 'row')).not.toContain('handOver');
+    expect(offeredActs({ session: { ...chat, id: 'person@machine-b/c1' }, root: null }, 'row')).not.toContain('handOver');
+  });
+
+  it('names the hand-over by whether the conversation is working: go on, or stop and hand over', () => {
+    expect(handOverLabel(session({ kind: 'chat', quest: null, state: 'working' }))).toBe('work.act.handOverStop');
+    expect(handOverLabel(session({ kind: 'chat', quest: null, state: 'completed' }))).toBe('work.act.handOver');
   });
 
   it('offers Review where there is work to read, and leads with it in To review', () => {
