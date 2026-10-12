@@ -79,7 +79,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/TraceTests.cs` | 41 | 691 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/AccountRotation.cs` | 66 | 1091 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Acp.cs` | 91 | 1854 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 113 | 2023 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 114 | 2026 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 86 | 1622 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.Continue.cs` | 44 | 743 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 164 | 2783 |

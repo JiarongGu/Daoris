@@ -49,6 +49,9 @@ public static class AccountWindows
     /// </summary>
     public const string Own = "";
 
+    /// <summary>A window's <c>source</c> (USAGEREAD2a): asked of its agent's own server, or a session's frame.</summary>
+    public const string SourceRead = "read", SourceSaid = "said";
+
     /// <summary>How far a fixed weekly reset is carried each time it passes (C1).</summary>
     public static readonly TimeSpan Week = TimeSpan.FromDays(7);
 
@@ -106,8 +109,14 @@ public static class AccountWindows
     /// reading — its reset, its use where said, its standing and credits where said, when, and on which session — and
     /// everything else kept as written. The weekly window's reset is the account's week from then on (§16.3 step 4).
     /// </summary>
+    /// <remarks>
+    /// A window already kept as seen later stands (USAGEREAD2a): a session's frame written after a read must not put back an
+    /// older number, nor a read an older one over a frame's. On a tie a read wins, a frame never replacing a read. The
+    /// <paramref name="source"/> is written only for a read: an entry with none reads as said, as every earlier one does.
+    /// </remarks>
     public static void Said(
-        string home, string agent, string account, IReadOnlyList<WindowReading> readings, DateTimeOffset seen, string? session)
+        string home, string agent, string account, IReadOnlyList<WindowReading> readings, DateTimeOffset seen, string? session,
+        string source = SourceSaid)
     {
         if (readings.Count == 0) return;
         lock (Gate)
@@ -117,12 +126,20 @@ public static class AccountWindows
             var held = Child(owner, account) ?? (JsonObject)(owner[account] = new JsonObject());
             foreach (var reading in readings)
             {
+                if (Key(held, reading.Window) is { } existing && held[existing] is JsonObject kept
+                    && Moment(kept, "seen") is { } keptSeen
+                    && (keptSeen > seen || (keptSeen == seen && Text(kept, "source") == SourceRead && source != SourceRead)))
+                {
+                    continue;
+                }
+
                 var window = new JsonObject { ["reset"] = AccountCooling.Stamp(reading.Reset) };
                 if (reading.Used is { } used) window["used"] = used;
                 if (reading.Standing is { Length: > 0 } standing) window["standing"] = standing;
                 if (reading.Credits) window["credits"] = true;
                 window["seen"] = AccountCooling.Stamp(seen);
                 if (session is { Length: > 0 }) window["session"] = session;
+                if (source == SourceRead) window["source"] = SourceRead;
                 if (Key(held, reading.Window) is { } was) held.Remove(was);
                 held[reading.Window] = window;
             }
@@ -155,7 +172,8 @@ public static class AccountWindows
                 ? number : (double?)null;
             var standing = Text(entry, "standing");
             if (used is null && standing is null && !Flag(entry, "credits")) continue;
-            windows.Add(new WindowSaid(name, used, reset, standing, Flag(entry, "credits"), seen, Text(entry, "session")));
+            var source = Text(entry, "source") == SourceRead ? SourceRead : SourceSaid;
+            windows.Add(new WindowSaid(name, used, reset, standing, Flag(entry, "credits"), seen, Text(entry, "session"), source));
         }
 
         return windows.Count == 0 ? null : new AccountSaid(windows);
