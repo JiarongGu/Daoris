@@ -54,6 +54,7 @@
     "ChatTurns.cs": "Conversations",
     "ClaudeStreams.cs": "Agents",
     "ClaudeTrust.cs": "Accounts",
+    "ClaudeUsage.cs": "Accounts",
     "CodeMapFile.cs": "Agents",
     "CodexAccounts.cs": "Accounts",
     "CodexUsage.cs": "Accounts",
