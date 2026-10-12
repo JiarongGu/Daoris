@@ -35,6 +35,7 @@ import {
   applyOpinionEdit, opinionGate, opinionListed, opinionSays, opinionsOf, sameAgentOf, type OpinionEdit,
   type OpinionRule, type OpinionSetting,
 } from './opinions.ts';
+import { applyCommitEdit, commitListed, commitsOf, type CommitEdit, type CommitRule } from './commits.ts';
 import { applyHelperEdit, helperListed, helpersOf, type HelperEdit, type HelperRule } from './helpers.ts';
 import { workflowChoicesOf, writtenChoices, type WorkflowChoice } from './workflowchoice.ts';
 import type { CommandArgs } from './types.ts';
@@ -139,6 +140,14 @@ export interface DriverChoices {
   /** A workspace's helpers rule, for every repository in it that sets none of its own. */
   workspaceHelpers: Record<string, HelperRule>;
   /**
+   * How work is committed in each repository (PROCESS1a, D164's amendment point 1): a mode and an optional convention; it
+   * replaces its workspace's whole, and absent is `as-you-go`. The driver's `DriverConfig.Commits` is the twin, read by one
+   * shared table (`commits.ts`).
+   */
+  commits: Record<string, CommitRule>;
+  /** A workspace's commit rule, for every repository in it that sets none of its own. */
+  workspaceCommits: Record<string, CommitRule>;
+  /**
    * Which workflow each repository's work follows (WORKFLOW1e, D157 point 10): a default and a workflow for each of its
    * workspace's kinds; it replaces its workspace's whole. The driver's `DriverConfig.Workflows` is the twin, read by one shared
    * table (`workflowchoice.ts`).
@@ -228,6 +237,7 @@ const EMPTY: DriverChoices = {
   strikes: 3, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, intakeAdapter: null, helperAdapter: null, timeoutMinutes: null, cooloff: null, lines: {}, workspaceLines: {},
   landings: {}, workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, languages: {},
   workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, helpers: {}, workspaceHelpers: {},
+  commits: {}, workspaceCommits: {},
   workflows: {}, workspaceWorkflows: {},
   rest: {},
 };
@@ -395,6 +405,7 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
       ...EMPTY, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, lines: {}, workspaceLines: {}, landings: {},
       workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, languages: {},
       workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, helpers: {}, workspaceHelpers: {},
+  commits: {}, workspaceCommits: {},
       workflows: {}, workspaceWorkflows: {}, rest: {},
     };
   }
@@ -402,8 +413,8 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
   const {
     drivable, holds, trees, cap, adapter, notify, strikes, forgiven, released, intakeAdapter, helperAdapter, timeoutMinutes,
     cooloff, lines, workspaceLines, landings, workspaceLandings, readAcross, workspaceReadAcross, writeAcross, standing,
-    languages, workspaceLanguages, reviews, workspaceReviews, opinions, workspaceOpinions, helpers, workspaceHelpers, workflows,
-    workspaceWorkflows, ...rest
+    languages, workspaceLanguages, reviews, workspaceReviews, opinions, workspaceOpinions, helpers, workspaceHelpers, commits, workspaceCommits,
+    workflows, workspaceWorkflows, ...rest
   } = parsed;
   return {
     drivable: names(drivable),
@@ -464,6 +475,9 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     // As the driver reads them (MIXAGENT2a-i): a rule with a problem is not read.
     helpers: helpersOf(helpers),
     workspaceHelpers: helpersOf(workspaceHelpers),
+    // As the driver reads them (PROCESS1a): a rule with a problem is not read.
+    commits: commitsOf(commits),
+    workspaceCommits: commitsOf(workspaceCommits),
     // As the driver reads them (WORKFLOW1e): an entry with a problem, or naming nothing, is not read.
     workflows: workflowChoicesOf(workflows, false),
     workspaceWorkflows: workflowChoicesOf(workspaceWorkflows, true),
@@ -524,6 +538,8 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
     // Written only when set (MIXAGENT2a-i), as the driver writes them: absent is the default, `ask`.
     ...(Object.keys(choices.helpers).length > 0 ? { helpers: choices.helpers } : {}),
     ...(Object.keys(choices.workspaceHelpers).length > 0 ? { workspaceHelpers: choices.workspaceHelpers } : {}),
+    ...(Object.keys(choices.commits).length > 0 ? { commits: choices.commits } : {}),
+    ...(Object.keys(choices.workspaceCommits).length > 0 ? { workspaceCommits: choices.workspaceCommits } : {}),
     // Written only when set (WORKFLOW1e), as the driver writes them: absent is Current, today's behaviour.
     ...(Object.keys(choices.workflows).length > 0 ? { workflows: writtenChoices(choices.workflows, false) } : {}),
     ...(Object.keys(choices.workspaceWorkflows).length > 0
@@ -1150,6 +1166,12 @@ export function commandDriver(
     case 'helpers':
       return helpers();
 
+    // How work is committed (PROCESS1a, D164's amendment point 1): for a repository, or with `--workspace` for each repository
+    // there that sets none of its own. `--mode` and `--convention` set what they name over the rule set there; `--clear`.
+    // Declared only until sessions are told it (PROCESS1d).
+    case 'commits':
+      return commits();
+
     // How work here moves (D157, design §4.7): Current, drawn from the rules as they stand (WORKFLOW1a), and the workflows the
     // person names, each a file of versions beside this one (WORKFLOW1d). The door is handed in (`WorkflowDoor` says why).
     case 'workflow':
@@ -1158,7 +1180,7 @@ export function commandDriver(
     default:
       throw new DaorisError(
         `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, line, landing, across, standing, `
-        + 'language, review, opinion, helpers, workflow, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper');
+        + 'language, review, opinion, helpers, commits, workflow, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper');
   }
 
   function list(): ExitCode {
@@ -1318,6 +1340,20 @@ export function commandDriver(
     if (Object.keys(choices.helpers).length === 0 && Object.keys(choices.workspaceHelpers).length === 0) {
       write('  helpers    none set — each helper an agent asks for waits for your yes; `daoris driver helpers <repository> '
         + '--mode on|off` sets one');
+    }
+
+    // PROCESS1a: each commit rule and where it was set; a workspace's is said for the repositories there that set none.
+    for (const [repository, rule] of Object.entries(choices.commits)) {
+      write(`  commits    ${repository}  ${commitListed(rule)}`);
+    }
+
+    for (const [workspace, rule] of Object.entries(choices.workspaceCommits)) {
+      write(`  commits    workspace ${workspace}  ${commitListed(rule)}  (for each repository there that sets none)`);
+    }
+
+    if (Object.keys(choices.commits).length === 0 && Object.keys(choices.workspaceCommits).length === 0) {
+      write('  commits    none set — work is committed as it goes; `daoris driver commits <repository> '
+        + '--mode ask|at-end` sets one');
     }
 
     // A hold on something not opted in is inert, and saying so is the point: it reads as protection
@@ -1504,6 +1540,68 @@ export function commandDriver(
         : rule.mode === 'on'
           ? '  A helper an agent asks for starts at once, within the limits: two at once for a session, one turn each.'
           : '  A helper is not offered to a session here: only your own press asks one.');
+    }
+
+    write(`  Written to ${path}.`);
+    return 0;
+  }
+
+  /**
+   * `commits` (PROCESS1a): the person's words made one edit, judged by the twin's table (`commits.ts`), and said plainly: how
+   * work is committed here now. Nothing yet tells a session, so it says what is kept and that sessions are told in a later row.
+   */
+  function commits(): ExitCode {
+    const valued = new Set(['--workspace', '--mode', '--convention']);
+    const usage = '`driver commits` needs <repository>|--workspace <name>, then --mode as-you-go|ask|at-end and/or '
+      + '--convention "<your words>" (one paragraph, at most 400 characters) or --no-convention, or --clear — '
+      + 'e.g. `daoris driver commits web-app --mode ask --convention "Imperative subject line."`.';
+    for (let at = 1; at < argv.length; at += 1) {
+      const token = argv[at]!;
+      if (valued.has(token)) at += 1;
+      else if (token.startsWith('--') && token !== '--clear' && token !== '--no-convention') {
+        throw new DaorisError(`\`${token}\` is not a flag \`driver commits\` takes — ${usage}`);
+      }
+    }
+
+    const workspace = flagValue(argv, '--workspace');
+    const name = workspace ?? operands(argv, valued).slice(1).shift();
+    const clear = argv.includes('--clear');
+    const mode = flagValue(argv, '--mode');
+    // `--no-convention` is the empty convention, which takes the standing one away (a flag cannot carry an empty value).
+    if (argv.includes('--no-convention') && argv.includes('--convention')) throw new DaorisError(usage);
+    const convention = argv.includes('--no-convention') ? '' : flagValue(argv, '--convention');
+    // The same set the screen and Ask Daoris send: each part only where it was said.
+    const set: Record<string, unknown> = {
+      ...(mode !== undefined ? { mode } : {}),
+      ...(convention !== undefined ? { convention } : {}),
+    };
+    if (!name || (!clear && Object.keys(set).length === 0)) throw new DaorisError(usage);
+
+    const edit: CommitEdit = {
+      ...(workspace ? { workspace } : { repository: name }),
+      ...(Object.keys(set).length > 0 ? { set } : {}),
+      ...(clear ? { clear: true } : {}),
+    };
+    const after = applyCommitEdit(choices, edit);
+    writeDriverChoices(path, { ...choices, ...after });
+
+    const map = workspace ? after.workspaceCommits : after.commits;
+    const key = Object.keys(map).find((each) => sameName(each, name))
+      ?? Object.keys(workspace ? choices.workspaceCommits : choices.commits).find((each) => sameName(each, name)) ?? name;
+    const rule = map[key];
+    if (rule === undefined) {
+      write(workspace
+        ? `daoris: repositories in the workspace \`${key}\` keep their own commit rule, else work is committed as it goes.`
+        : `daoris: \`${key}\` takes its workspace's commit rule again, else work is committed as it goes.`);
+    } else {
+      write(workspace
+        ? `daoris: commits for repositories in the workspace \`${key}\` that set none of their own: ${commitListed(rule)}`
+        : `daoris: commits for \`${key}\`: ${commitListed(rule)}`);
+      write(rule.mode === 'ask'
+        ? '  Each commit waits for your yes before it is made.'
+        : rule.mode === 'at-end'
+          ? '  One commit is made when the work is done.'
+          : '  Each piece that passes its checks is committed as the work goes.');
     }
 
     write(`  Written to ${path}.`);

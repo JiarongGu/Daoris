@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A repository's or workspace's commit rule says how its work is committed: as you go, asking you first, or once at the end,
+  with an optional convention in your words on how a commit is written (one paragraph, at most 400 characters). Set it with
+  `daoris driver commits <repository>|--workspace <name> [--mode as-you-go|ask|at-end] [--convention "…"]`; a repository's own
+  rule replaces its workspace's, and none set is as you go.
 - A quest's session can go on with another agent from the terminal (`daoris-driver sessions hand-over <id> --agent <adapter>
   [--account <name>]`): the driver stops it, then carries the quest on in the same tree on the agent you name, told it was
   handed over from the first agent's session, and it stays on that agent until the quest closes or leaves this machine.

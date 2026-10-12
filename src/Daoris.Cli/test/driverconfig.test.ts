@@ -13,6 +13,7 @@ import {
 import {
   OPINION_DECLARED_ONLY, applyOpinionEdit, oneFamily, opinionFor, opinionGate, opinionRuleOf, opinionSays, sameAgentOf,
 } from '../src/opinions.ts';
+import { applyCommitEdit, commitFor, commitListed, commitRuleOf } from '../src/commits.ts';
 import { applyHelperEdit, helperFor, helperListed, helperRuleOf } from '../src/helpers.ts';
 import { MANIFEST, pluginsRoot, readPlugins } from '../src/plugins.ts';
 import {
@@ -597,7 +598,7 @@ test('an unknown verb names the ones that exist', () => {
 
   assert.match(error.message, /unknown driver verb 'frobnicate'/);
   assert.match(
-    error.message, /list, drive, undrive, hold, resume, trees, line, landing, across, standing, language, review, opinion, helpers, workflow, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper/);
+    error.message, /list, drive, undrive, hold, resume, trees, line, landing, across, standing, language, review, opinion, helpers, commits, workflow, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper/);
   fx.cleanup();
 });
 
@@ -2143,5 +2144,102 @@ test('a driver.json keeps a helpers rule the CLI did not write, and writes none 
   writeDriverChoices(at(fx), readDriverChoices(at(fx)));
   assert.equal('helpers' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
   assert.equal('workspaceHelpers' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  fx.cleanup();
+});
+
+/**
+ * The commit rule, `commits` and `workspaceCommits` (PROCESS1a, D164's amendment point 1).
+ * 🔴 A TWIN with the driver's `CommitRules`: both hold ONE table, the driver suite's `fixtures/commit-rules.json`, cell for cell —
+ * the reading and its precedence, every refusal in the same words, how a rule is listed and the edits both doors make. The
+ * driver's `CommitRulesTests` reads the same file; a cell's `CONV400` and `CONV401` stand for a convention of that many characters.
+ */
+const COMMIT_TABLE = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
+  'Daoris.Desktop.Driver.Tests', 'fixtures', 'commit-rules.json'), 'utf8')
+  .replaceAll('CONV400', 'x'.repeat(400)).replaceAll('CONV401', 'x'.repeat(401))) as {
+  read: [name: string, file: string, repository: string, workspace: string | null, source: string, rule: string][];
+  problems: [name: string, value: string, problem: string | null][];
+  listed: [name: string, rule: string, said: string][];
+  edits: [name: string, file: string, edit: string, after: string | null, refusal: string | null][];
+};
+
+test('a commit rule resolves as the driver resolves it (the shared table)', () => {
+  const fx = makeFixture('driver-commits-read');
+  assert.ok(COMMIT_TABLE.read.length > 0, 'the table holds read rows');
+  for (const [name, file, repository, workspace, source, rule] of COMMIT_TABLE.read) {
+    writeFileSync(at(fx), file, 'utf8');
+    const read = commitFor(readDriverChoices(at(fx)), repository, workspace);
+    assert.equal(read.source, source, name);
+    assert.deepEqual(read.rule, JSON.parse(rule), `${name}: the rule`);
+  }
+  fx.cleanup();
+});
+
+test('a commit rule\'s first problem is the driver\'s, in its words, and a rule is listed in its words (the shared table)', () => {
+  for (const [name, value, problem] of COMMIT_TABLE.problems) {
+    assert.equal(commitRuleOf(JSON.parse(value)).problem, problem, name);
+  }
+  for (const [name, rule, said] of COMMIT_TABLE.listed) {
+    assert.equal(commitListed(commitRuleOf(JSON.parse(rule)).rule!), said, name);
+  }
+});
+
+test('a commit edit writes what the driver writes, or refuses in its words (the shared table)', () => {
+  const fx = makeFixture('driver-commits-edits');
+  for (const [name, file, edit, after, refusal] of COMMIT_TABLE.edits) {
+    writeFileSync(at(fx), file, 'utf8');
+    const choices = readDriverChoices(at(fx));
+    if (refusal !== null) {
+      assert.equal(captureError(() => applyCommitEdit(choices, JSON.parse(edit))).message, refusal, name);
+      continue;
+    }
+
+    writeDriverChoices(at(fx), { ...choices, ...applyCommitEdit(choices, JSON.parse(edit)) });
+    const written = JSON.parse(readFileSync(at(fx), 'utf8'));
+    const maps = Object.fromEntries(['commits', 'workspaceCommits'].filter((key) => key in written).map((key) => [key, written[key]]));
+    assert.deepEqual(maps, JSON.parse(after!), name);
+  }
+  fx.cleanup();
+});
+
+test('commits declares a repository\'s rule, keeps what it does not name, says it, lists it and clears it', () => {
+  const fx = makeFixture('driver-commits');
+  assert.match(run(['list'], at(fx)).out, /commits\s+none set/);
+
+  const said = run(['commits', 'web-app', '--mode', 'ask', '--convention', 'Imperative subject.'], at(fx));
+  assert.equal(said.code, 0);
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).commits, { 'web-app': { mode: 'ask', convention: 'Imperative subject.' } });
+  assert.match(said.out, /commits for `web-app`: ask: Imperative subject\.\n/);
+  assert.match(said.out, /waits for your yes before it is made/);
+  assert.match(run(['list'], at(fx)).out, /commits\s+web-app\s+ask: Imperative subject\./);
+
+  run(['commits', 'Web-App', '--mode', 'at-end'], at(fx));
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).commits, { 'web-app': { mode: 'at-end', convention: 'Imperative subject.' } });
+  run(['commits', 'web-app', '--no-convention'], at(fx));
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).commits, { 'web-app': { mode: 'at-end' } });
+
+  const workspace = run(['commits', '--workspace', 'work', '--mode', 'as-you-go'], at(fx));
+  assert.match(workspace.out, /commits for repositories in the workspace `work` that set none of their own: as-you-go\n/);
+  assert.match(workspace.out, /Each piece that passes its checks/);
+
+  const cleared = run(['commits', 'web-app', '--clear'], at(fx));
+  assert.match(cleared.out, /`web-app` takes its workspace's commit rule again/);
+  assert.equal('commits' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  assert.match(captureError(() => run(['commits', 'web-app'], at(fx))).message, /`driver commits` needs/);
+  assert.match(captureError(() => run(['commits', 'web-app', '--mode', 'always'], at(fx))).message, /`mode` is `as-you-go`, `ask` or `at-end`/);
+  assert.match(captureError(() => run(['commits', 'web-app', '--convention', 'x'.repeat(401)], at(fx))).message, /at most 400 characters/);
+  assert.match(captureError(() => run(['commits', 'web-app', '--force'], at(fx))).message, /is not a flag `driver commits` takes/);
+  fx.cleanup();
+});
+
+test('a driver.json keeps a commit rule the CLI did not write, and writes none where none is set', () => {
+  const fx = makeFixture('driver-commits-kept');
+  writeFileSync(at(fx), JSON.stringify({ cap: 3, commits: { 'web-app': { mode: 'ask', convention: 'Short.' } } }), 'utf8');
+  const choices = readDriverChoices(at(fx));
+  writeDriverChoices(at(fx), { ...choices, cap: 4 });
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).commits, { 'web-app': { mode: 'ask', convention: 'Short.' } });
+  writeFileSync(at(fx), '{}', 'utf8');
+  writeDriverChoices(at(fx), readDriverChoices(at(fx)));
+  assert.equal('commits' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  assert.equal('workspaceCommits' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
   fx.cleanup();
 });
