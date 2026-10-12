@@ -214,7 +214,7 @@ public sealed class HandOverTests : IDisposable
             {
                 taken.Calls.Add($"say {session}");
                 taken.Said = message;
-                return taken.Reached;
+                return Task.FromResult(taken.Reached);
             });
     }
 
@@ -287,10 +287,14 @@ public sealed class HandOverTests : IDisposable
 
         var handed = await TakeAsync(new Room([Chat("c0nv0001")]), taken, Ask());
 
-        Assert.Equal(("n3w00001", true), (handed.SessionId, handed.Kept));
+        Assert.Equal(("n3w00001", true, HandOver.Unbriefed), (handed.SessionId, handed.Kept, handed.Why));
         Assert.Equal(
             "conversation `n3w00001` opened with codex-acp, but what Daoris kept of `c0nv0001` did not reach it: tell it where you were.",
             handed.Message);
+        // Said in the new conversation's record, by a code, and the old one still names the new one.
+        var unsaid = Assert.Single(Events.Page("n3w00001", limit: SessionEvents.MaxPage).Events, e => e.Kind == SessionEventKind.Note);
+        Assert.Equal(["chat.briefing-unsaid"], NoteAssert.Codes(unsaid.Parts!));
+        Assert.Contains(Events.Page("c0nv0001", limit: SessionEvents.MaxPage).Events, e => e.Parts?.Any(part => part.Code == "chat.handed-over") == true);
     }
 
     /// <summary>The request is the person's first message, whole; a driven session's composed target is none.</summary>

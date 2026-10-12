@@ -466,6 +466,7 @@ public static class NoteCodes
     // conversation it went to, the new one's first line where it came from and why. Facts only: never an account's name or a path.
     public static readonly NoteCode ChatHandedOver = new("chat.handed-over", ["agent", "session"]);
     public static readonly NoteCode ChatTakenOver = new("chat.taken-over", ["agent", "session", "why"]) { Why = Handed };
+    public static readonly NoteCode ChatBriefingUnsaid = new("chat.briefing-unsaid", []);
 
     // ——— Where the person's words went, after the record's earlier parts.
     public static readonly NoteCode WentCannot = new("went.cannot", ["why"], Key: "work.say.cannot") { Why = Continue };

@@ -124,6 +124,7 @@
   "note.chat.told-browser": "The agent was told it has Daoris's browser:",
   "note.chat.handed-over": "This conversation went on with {{agent}}, in conversation {{session}}.",
   "note.chat.taken-over": "This conversation went on from {{agent}} conversation {{session}}, handed over because {{why}}.",
+  "note.chat.briefing-unsaid": "What Daoris kept of the earlier conversation did not reach the agent: tell it where you were.",
   "note.handed.why.press": "you asked for it",
   "note.handed.why.near": "its account was near its limit",
   "note.handed.why.limit": "its account reached its limit",

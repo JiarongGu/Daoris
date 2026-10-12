@@ -100,6 +100,8 @@ public sealed class HandOverProcessTests : IDisposable
         await Poll.Until(() => Ended(ledger.State(old)), () => Seen(ledger, events, old));
         Assert.Equal(2, ledger.Count);
         Assert.Equal(_root, (await client.RecordAsync(next))!.Tree);
+        // The briefing is said after the old conversation ended, so its note is waited for.
+        await Poll.Until(() => events.After(next, 0).Events.Any(e => CodeOf(e) == "chat.taken-over"), () => Seen(ledger, events, next));
         var record = events.After(next, 0).Events;
         Assert.Equal("chat.taken-over", record.Select(CodeOf).First(code => code is not null));
         Assert.DoesNotContain(record, e => e.Kind == SessionEventKind.User && e.Origin == "person");
@@ -170,6 +172,7 @@ public sealed class HandOverProcessTests : IDisposable
         Assert.NotNull(started.SessionId);
         Assert.Equal(2, ledger.Count);
         Assert.Null(new HandOverBox(_home).Read(old));
+        await Poll.Until(() => events.After(started.SessionId!, 0).Events.Any(e => CodeOf(e) == "chat.taken-over"), () => Seen(ledger, events, started.SessionId!));
         var opening = events.After(started.SessionId!, 0).Events.First(e => CodeOf(e) == "chat.taken-over").Parts![0];
         Assert.Equal("near", opening.Value("why"));
         Assert.Equal("chat.handed-over", events.After(old, 0).Events.Select(CodeOf).Last(code => code is not null));

@@ -200,6 +200,9 @@ public static class HandOver
     /// <summary>It runs in another Daoris process, which this one cannot end (the chat runner's own refusal).</summary>
     public const string Running = "running";
 
+    /// <summary>The new conversation opened, but Daoris's briefing did not reach its agent (an answer of the take, not a refusal).</summary>
+    public const string Unbriefed = "unbriefed";
+
     /// <summary>Another hand-over of it waits.</summary>
     public const string Waiting = "waiting";
 
@@ -364,7 +367,7 @@ public static class HandOverTake
     public static async Task<HandedOver> RunAsync(
         ServiceClient service, string home, SessionEvents events, SessionOutput? output, string id, HandOverRequest ask,
         Func<string, IReadOnlyList<string>?> accountsOf, Func<string, Task> end,
-        Func<PriorSession, HandOverRequest, CancellationToken, Task<ChatStart>> start, Func<string, ChatMessage, bool> say,
+        Func<PriorSession, HandOverRequest, CancellationToken, Task<ChatStart>> start, Func<string, ChatMessage, Task<bool>> say,
         CancellationToken ct = default)
     {
         var box = new HandOverBox(home);
@@ -388,15 +391,23 @@ public static class HandOverTake
                     $"{id} ended, but the conversation with {ask.Agent} did not start: {started.Message} Its tree is as it was.");
             }
 
-            var taken = say(to, new ChatMessage("", []) { Briefing = briefing, TakenOver = HandOverNotes.TakenOver(from, id, ask.Why) });
+            var taken = await say(to, new ChatMessage("", []) { Briefing = briefing, TakenOver = HandOverNotes.TakenOver(from, id, ask.Why) }).ConfigureAwait(false);
 
             // Where it went, where the person wrote it: the old conversation's last line, after its own end.
             var went = HandOverNotes.HandedOver(ask.Agent, to);
             output?.Append(id, went.Note);
             events.Keep(id, new SessionEvent { Kind = SessionEventKind.Note, Text = went.Note, Parts = went.Parts }, say: null);
 
+            // A briefing nobody took is no success: the new conversation says so, by a code, and the answer carries it.
+            if (!taken)
+            {
+                var unsaid = HandOverNotes.Unsaid();
+                output?.Append(to, unsaid.Note);
+                events.Keep(to, new SessionEvent { Kind = SessionEventKind.Note, Text = unsaid.Note, Parts = unsaid.Parts }, say: null);
+            }
+
             return new HandedOver(
-                to, true, null,
+                to, true, taken ? null : HandOver.Unbriefed,
                 taken
                     ? $"conversation `{to}` goes on from `{id}` with {ask.Agent}."
                     : $"conversation `{to}` opened with {ask.Agent}, but what Daoris kept of `{id}` did not reach it: tell it where you were.");
@@ -429,6 +440,10 @@ public static class HandOverNotes
         Noted.Of(
             NoteCodes.ChatHandedOver, $"The conversation went on with {agent}, in conversation {session}.",
             ("agent", agent), ("session", session));
+
+    /// <summary>The new conversation's line where Daoris's briefing did not reach its agent.</summary>
+    public static Noted Unsaid() =>
+        Noted.Of(NoteCodes.ChatBriefingUnsaid, "What Daoris kept of the earlier conversation did not reach the agent: tell it where you were.");
 
     /// <summary>The new conversation's first line: where it came from and why.</summary>
     public static Noted TakenOver(string agent, string session, string why) =>

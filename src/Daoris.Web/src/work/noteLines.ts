@@ -178,6 +178,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // A conversation handed to another agent (MIXAGENT1a-i): where the old one went, and where the new one came from and why.
   'chat.handed-over': { values: ['agent', 'session'] },
   'chat.taken-over': { values: ['agent', 'session', 'why'], why: 'handed' },
+  'chat.briefing-unsaid': { values: [] },
   // A session's own background work (CONVNOTE2f): the work's names as code, a state as the harness said it; a program's words
   // follow `unread`.
   'background.unread': { values: [] },

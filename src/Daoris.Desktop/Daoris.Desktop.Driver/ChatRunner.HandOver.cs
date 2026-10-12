@@ -156,14 +156,28 @@ public sealed partial class ChatRunner
     /// The new conversation's first message (MIXAGENT1a-i): Daoris's briefing, with the browser's line after it where it was handed
     /// one, never the person's words, and recorded as the note of where it came from (<see cref="ChatMessage.TakenOver"/>).
     /// </summary>
-    private bool SayHandedOver(string sessionId, ChatMessage message)
+    private async Task<bool> SayHandedOver(string sessionId, ChatMessage message)
     {
         if (!_turned.ContainsKey(sessionId) && !_talking.ContainsKey(sessionId)) return false;
 
         if (_browsers.TryRemove(sessionId, out var browser)) message = message with { Briefing = $"{message.Briefing}\n\n{browser}" };
         if (_turned.TryGetValue(sessionId, out var chat)) return chat.Turns.Take(message) is not null;
 
+        // A text door has no turns to record it as they are sent: the note is kept here, with what is sent, so no path says nothing.
+        // Its process is tracked a moment after the start returns, and a send before that reaches nothing: tried again, bounded.
         var framed = _talking.TryGetValue(sessionId, out var adapter) ? adapter.FrameMessage(message.Prompt) : message.Prompt;
-        return _processes.Send(sessionId, framed);
+        for (var attempt = 0; attempt < 50; attempt++)
+        {
+            if (_processes.Send(sessionId, framed))
+            {
+                foreach (var recorded in Recorded(message)) Record(sessionId, recorded);
+                return true;
+            }
+
+            if (!_talking.ContainsKey(sessionId)) return false;
+            await Task.Delay(100).ConfigureAwait(false);
+        }
+
+        return false;
     }
 }
