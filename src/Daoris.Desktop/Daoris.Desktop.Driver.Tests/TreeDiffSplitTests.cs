@@ -307,6 +307,104 @@ public sealed class TreeDiffSplitTests
         Assert.Single(git.Calls);
     }
 
+    /// <summary>The plan's count asks only a tree this home opened: a folder it did not make (a person's checkout) is not counted (D49 §3).</summary>
+    [Fact]
+    public async Task The_plan_s_uncommitted_count_is_not_asked_of_a_folder_this_home_did_not_open()
+    {
+        Assert.Null(await new SessionTrees(Root).UncommittedAsync(Root));
+    }
+
+    /// <summary>git that answers each kind of ask its own way, as the uncommitted read makes three of them (REVIEWDIRTY1-a).</summary>
+    private static WorkingTree.GitRead Dirty(string range, string status, Func<string, (int Code, string Text)> noIndex, List<IReadOnlyList<string>>? calls = null) =>
+        (root, arguments, take, ct) =>
+        {
+            calls?.Add([.. arguments]);
+            var (code, text) = arguments switch
+            {
+                _ when arguments.Contains("--show-toplevel") => (0, root.Replace('\\', '/') + "\n"),
+                _ when arguments.Contains("--no-index") => noIndex(arguments[^1]),
+                _ when arguments.Contains("status") => (0, status),
+                _ => (0, range),
+            };
+            take(text.AsMemory());
+            return Task.FromResult(code);
+        };
+
+    /// <summary>REVIEWDIRTY1-a: the splitter is agnostic to the revision, so `HEAD` (the index and the files against it) reads as a range does.</summary>
+    [Fact]
+    public async Task The_uncommitted_read_splits_a_head_range_as_it_splits_a_committed_one()
+    {
+        var calls = new List<IReadOnlyList<string>>();
+
+        var diff = await WorkingTree.UncommittedDiffAsync(Root, Dirty(Captured, "", _ => (1, ""), calls), CancellationToken.None);
+
+        Assert.NotNull(diff);
+        Assert.Equal(12, diff!.Files.Count);
+        Assert.Equal(Patches.Readme, diff.Files[0].Patch);
+        Assert.Null(diff.Truncated);
+        Assert.Contains(calls, call => call[^1] == "HEAD" && call.Contains("--raw"));
+    }
+
+    /// <summary>An untracked file is listed `A`, with the patch git's no-index diff gives and the lines it added counted.</summary>
+    [Fact]
+    public async Task An_untracked_file_is_listed_added_with_its_no_index_patch()
+    {
+        const string patch = "diff --git a/fresh.txt b/fresh.txt\nnew file mode 100644\nindex 0000000..3e75765\n--- /dev/null\n+++ b/fresh.txt\n@@ -0,0 +1,2 @@\n+one\n+two\n";
+        var status = " M README.md\0?? fresh.txt\0?? dir/blob.bin\0";
+        var git = Dirty(Captured, status, path => path == "fresh.txt"
+            ? (1, patch)
+            : (1, "diff --git a/dir/blob.bin b/dir/blob.bin\nnew file mode 100644\nindex 0000000..d652de3\nBinary files /dev/null and b/dir/blob.bin differ\n"));
+
+        var diff = await WorkingTree.UncommittedDiffAsync(Root, git, CancellationToken.None);
+
+        var fresh = diff!.Files.Single(file => file.Path == "fresh.txt");
+        Assert.Equal("added", fresh.Status);
+        Assert.Equal(2, fresh.Added);
+        Assert.Equal(0, fresh.Removed);
+        Assert.Equal(patch, fresh.Patch);
+        // Binary: listed, with no patch and no count.
+        var blob = diff.Files.Single(file => file.Path == "dir/blob.bin");
+        Assert.Equal("added", blob.Status);
+        Assert.Null(blob.Patch);
+        Assert.Null(blob.Added);
+    }
+
+    /// <summary>A file over 200 KB is listed with no patch, and git is not asked for it.</summary>
+    [Fact]
+    public async Task An_untracked_file_over_two_hundred_kilobytes_is_listed_with_no_patch()
+    {
+        var name = $"big-{Guid.NewGuid():N}.txt";
+        var path = Path.Combine(Root, name);
+        await File.WriteAllTextAsync(path, new string('x', WorkingTree.UntrackedPatchLimit + 1));
+        try
+        {
+            var asked = new List<string>();
+            var git = Dirty("", $"?? {name}\0", file => { asked.Add(file); return (1, "x"); });
+
+            var diff = await WorkingTree.UncommittedDiffAsync(Root, git, CancellationToken.None);
+
+            var file = Assert.Single(diff!.Files);
+            Assert.Equal(("added", null), (file.Status, file.Patch));
+            Assert.Empty(asked);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    /// <summary>Nothing uncommitted is an empty answer, not null; a root git places elsewhere, or git failing, is null.</summary>
+    [Fact]
+    public async Task A_clean_tree_is_no_files_and_a_tree_git_cannot_read_is_null()
+    {
+        var clean = await WorkingTree.UncommittedDiffAsync(Root, Dirty("", "", _ => (1, "")), CancellationToken.None);
+        Assert.Empty(clean!.Files);
+        Assert.Null(clean.Truncated);
+
+        Assert.Null(await WorkingTree.UncommittedDiffAsync(Root, new FakeGit(Captured, topLevel: Path.GetTempPath()).Read, CancellationToken.None));
+        Assert.Null(await WorkingTree.UncommittedDiffAsync(Root, new FakeGit("", code: 128).Read, CancellationToken.None));
+    }
+
     /// <summary>The answer for these files, as git writes it: each one modified, counted 1 and 1, and its patch.</summary>
     private static string Answer(IReadOnlyList<(string Path, string Patch)> files) =>
         string.Concat(files.Select(file => $":100644 100644 1111111 2222222 M\0{file.Path}\0"))

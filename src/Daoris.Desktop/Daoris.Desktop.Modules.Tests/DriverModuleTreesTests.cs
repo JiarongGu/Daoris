@@ -179,6 +179,46 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         Assert.Equal("src/chunk.ts", answer.GetProperty("files")[0].GetProperty("path").GetString());
     }
 
+    /// <summary>REVIEWDIRTY1-a (D164 point 4): a tree's uncommitted work rides beside the committed list, in its shape, and says when it was cut.</summary>
+    [Fact]
+    public void A_trees_uncommitted_work_is_answered_beside_the_committed_files()
+    {
+        var dirty = new WorkingTree.TreeDiff(
+            [new WorkingTree.DiffFile("new.txt", "added", 1, 0, "@@ -0,0 +1 @@\n+x")], "1 more untracked file; their patches are not shown here.", "HEAD");
+
+        var answer = JsonSerializer.SerializeToElement(
+            DriverModule.ReviewAnswer("s1a2b3c4", Diff("abc1234567890"), "tree", null, treeGone: false, uncommitted: dirty), Camel);
+
+        var uncommitted = answer.GetProperty("uncommitted");
+        Assert.Equal("new.txt", uncommitted.GetProperty("files")[0].GetProperty("path").GetString());
+        Assert.Equal("added", uncommitted.GetProperty("files")[0].GetProperty("status").GetString());
+        Assert.True(uncommitted.GetProperty("truncated").GetBoolean());
+        Assert.Equal("src/chunk.ts", answer.GetProperty("files")[0].GetProperty("path").GetString());
+    }
+
+    /// <summary>Nothing uncommitted, a source that is not the session's own tree, and a branch's review all say null.</summary>
+    [Fact]
+    public void Uncommitted_is_null_where_nothing_is_uncommitted_or_the_source_is_not_the_sessions_own_tree()
+    {
+        var clean = new WorkingTree.TreeDiff([], null, "HEAD");
+
+        var none = JsonSerializer.SerializeToElement(DriverModule.ReviewAnswer("s1", Diff("abc"), "tree", null, treeGone: false), Camel);
+        var empty = JsonSerializer.SerializeToElement(DriverModule.ReviewAnswer("s1", Diff("abc"), "tree", null, treeGone: false, uncommitted: clean), Camel);
+        var branch = JsonSerializer.SerializeToElement(DriverModule.ReviewAnswer("s1", Diff("abc"), "branch", null, treeGone: true, uncommitted: clean), Camel);
+
+        Assert.Equal(JsonValueKind.Null, none.GetProperty("uncommitted").ValueKind);
+        Assert.Equal(JsonValueKind.Null, empty.GetProperty("uncommitted").ValueKind);
+        Assert.Equal(JsonValueKind.Null, branch.GetProperty("uncommitted").ValueKind);
+    }
+
+    /// <summary>The landing plan's count: 0 where clean or not asked, else the paths the tree holds uncommitted.</summary>
+    [Fact]
+    public void The_landing_plan_says_how_many_paths_are_uncommitted()
+    {
+        Assert.Equal(0, DriverModule.UncommittedCount(null));
+        Assert.Equal(5, DriverModule.UncommittedCount(5));
+    }
+
     /// <summary>
     /// The installed window's case: the tree is gone and the landed branch stands. The review is the branch's changes,
     /// says where and when the work landed and the pull request a plugin opened, and reads as landed.

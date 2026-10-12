@@ -62,6 +62,38 @@ public sealed class TreeDiffTests : IDisposable
     }
 
     /// <summary>
+    /// REVIEWDIRTY1-a (D164 point 4): a modified file, a staged one and an untracked one are all the tree's uncommitted work, each with
+    /// its patch; the committed list is unchanged by them, and a clean tree reads empty.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_s_uncommitted_work_is_listed_apart_from_what_it_committed()
+    {
+        var root = await MakeRepositoryAsync();
+        var before = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
+        Assert.Empty((await WorkingTree.UncommittedDiffAsync(root))!.Files);
+
+        await File.WriteAllTextAsync(Path.Combine(root, "README.md"), "# changed\n");
+        await File.WriteAllTextAsync(Path.Combine(root, "staged.txt"), "staged\n");
+        await GitAsync(root, "add", "staged.txt");
+        await File.WriteAllTextAsync(Path.Combine(root, "fresh.txt"), "fresh\nlines\n");
+
+        var dirty = await WorkingTree.UncommittedDiffAsync(root);
+
+        Assert.NotNull(dirty);
+        var byPath = dirty!.Files.ToDictionary(file => file.Path);
+        Assert.Equal(["README.md", "fresh.txt", "staged.txt"], byPath.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal("modified", byPath["README.md"].Status);
+        Assert.Contains("+# changed", byPath["README.md"].Patch);
+        Assert.Equal("added", byPath["staged.txt"].Status);
+        Assert.Contains("+staged", byPath["staged.txt"].Patch);
+        Assert.Equal(("added", 2), (byPath["fresh.txt"].Status, byPath["fresh.txt"].Added!.Value));
+        Assert.Contains("+lines", byPath["fresh.txt"].Patch);
+
+        var committed = await WorkingTree.DiffAsync(root, before);
+        Assert.Empty(committed!.Files);
+    }
+
+    /// <summary>
     /// A session that committed nothing changed nothing, and that is an ANSWER — an empty list, not
     /// a null. Null means git could not say, which reads very differently to a person.
     /// </summary>

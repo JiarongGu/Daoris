@@ -53,6 +53,31 @@ public sealed partial class SessionTrees
     }
 
     /// <summary>
+    /// How many paths the session's own tree holds that no commit does (REVIEWDIRTY1-a, D164 point 4): what the landing's plan says
+    /// before the press, since Accept refuses until they are committed. Null where the tree is not one this home opened (a person's
+    /// checkout is never counted, D49 §3), is gone, or git cannot say; one <c>git status</c>, where <see cref="WorkAsync"/> reads the commits too.
+    /// </summary>
+    public async Task<int?> UncommittedAsync(string tree, CancellationToken ct = default)
+    {
+        bool held;
+        try
+        {
+            held = Holds(tree);
+        }
+        catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return null;
+        }
+
+        if (!held || TreeGone(tree) || !await WorkingTree.IsTopLevelAsync(tree, ct).ConfigureAwait(false)) return null;
+
+        var (code, porcelain, _) = await WorkingTree.GitAsync(tree, ["status", "--porcelain"], ct).ConfigureAwait(false);
+        return code != 0
+            ? null
+            : porcelain.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length;
+    }
+
+    /// <summary>
     /// What a tree offers where the line, or a branch of the person's, holds its commits by content (SQUASHTIDY1b): the session's
     /// head's own judgement (<see cref="WorkAsync"/>, then <see cref="DiscardOffer.Of"/>), which every landing asks before anything
     /// is made (SQUASHTIDY1f) and the terminal's plan says. Null where nothing holds them, or there is no tree of this home's to ask.

@@ -48,6 +48,10 @@ public sealed partial class DriverModule
         var landing = trees.Recorded.Landing(id);
         var gone = SessionTrees.TreeGone(tree);
 
+        // What the session's OWN tree holds that no commit does, read apart (REVIEWDIRTY1-a, D164 point 4); never for a conversation in
+        // the person's checkout, whose uncommitted work is not knowably the session's (D49 §3).
+        var dirty = gone || !OwnTree(trees, tree) ? null : await WorkingTree.UncommittedDiffAsync(tree!, cancellationToken);
+
         if (!gone && !string.IsNullOrWhiteSpace(baseCommit))
         {
             // A tree brought up to date since (WSR6) no longer holds the commit its session began at: the review measures
@@ -59,7 +63,7 @@ public sealed partial class DriverModule
                 var standing = landing is null
                     ? null
                     : await trees.LandedReviewAsync(await CheckoutOfAsync(service, landing.Repository, cancellationToken), landing, changes: false, cancellationToken);
-                return ReviewAnswer(id, diff, ReviewSource.Tree, standing, treeGone: false);
+                return ReviewAnswer(id, diff, ReviewSource.Tree, standing, treeGone: false, uncommitted: dirty);
             }
         }
 
@@ -70,8 +74,32 @@ public sealed partial class DriverModule
             return ReviewAnswer(id, review.Changes, ReviewSource.Branch, review, treeGone: gone);
         }
 
+        // Nothing committed is readable (no base, or a range git cannot read), but the tree holds uncommitted work: that is the review,
+        // rather than a refusal that says there is nothing to see.
+        if (dirty is { Files.Count: > 0 })
+        {
+            return ReviewAnswer(id, new WorkingTree.TreeDiff([], null, ""), ReviewSource.Tree, null, treeGone: false, uncommitted: dirty);
+        }
+
         throw Unreviewable(id, tree, baseCommit);
     }
+
+    /// <summary>Whether <paramref name="tree"/> is one this home opened for a session, which ran in it alone (D49 §3); a person's checkout is not.</summary>
+    private static bool OwnTree(SessionTrees trees, string? tree)
+    {
+        if (string.IsNullOrWhiteSpace(tree)) return false;
+        try
+        {
+            return trees.Holds(tree);
+        }
+        catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>The landing plan's count of uncommitted paths in the session's own tree: 0 where clean or not asked (REVIEWDIRTY1-a).</summary>
+    public static int UncommittedCount(int? held) => held ?? 0;
 
     /// <summary>Where a review's files are read from (REVIEW2): the session's own tree, or its landed branch once the tree cannot be read.</summary>
     public static class ReviewSource
@@ -87,7 +115,8 @@ public sealed partial class DriverModule
     /// shape is tested without a service.
     /// </summary>
     /// <remarks>Never a machine path: the checkout the branch was read in is the registry's, and the page has no use for it.</remarks>
-    public static object ReviewAnswer(string session, WorkingTree.TreeDiff? diff, string source, LandedReview? landed, bool treeGone) => new
+    public static object ReviewAnswer(
+        string session, WorkingTree.TreeDiff? diff, string source, LandedReview? landed, bool treeGone, WorkingTree.TreeDiff? uncommitted = null) => new
     {
         Session = session,
         Base = diff?.Base ?? "",
@@ -101,6 +130,15 @@ public sealed partial class DriverModule
             file.Patch,
         }).ToArray(),
         Source = source,
+        // The session's own tree's uncommitted work (REVIEWDIRTY1-a, D164 point 4), apart from the committed list: null where the
+        // source is not that tree or nothing is uncommitted. A shape added, so an answer without it reads as it did.
+        Uncommitted = source == ReviewSource.Tree && uncommitted is { Files.Count: > 0 }
+            ? new
+            {
+                Files = uncommitted.Files.Select(file => new { file.Path, file.Status, file.Added, file.Removed, file.Patch }).ToArray(),
+                Truncated = uncommitted.Truncated is not null,
+            }
+            : null,
         Landed = landed is null ? null : new
         {
             landed.Entry.Branch,
@@ -413,9 +451,11 @@ public sealed partial class DriverModule
         {
             // How it lands, by the process the gate read (WORKFLOW1f): a named workflow's landing step, or the rule.
             var plan = await trees.PlanAsync(tree, subject, cancellationToken, gate.Process);
+            // Accept refuses until the tree's uncommitted paths are committed (D164 point 4): the page says so before the press.
+            var uncommitted = UncommittedCount(await trees.UncommittedAsync(tree, cancellationToken));
             return new
             {
-                Session = id, plan.Form, plan.Target, plan.Source, plan.Plugin, plan.Problem,
+                Session = id, plan.Form, plan.Target, plan.Source, plan.Plugin, plan.Problem, Uncommitted = uncommitted,
                 Workflow = WorkflowWaits(gate.Workflow), Review = Waits(gate.Review), Opinion = Opinion(gate.Opinion),
             };
         }

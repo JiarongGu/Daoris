@@ -98,7 +98,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/StagedBuild.cs` | 46 | 959 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trace.Chain.cs` | 57 | 1264 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkAbandoning.cs` | 54 | 990 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkingTree.cs` | 48 | 1017 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkingTree.cs` | 54 | 1114 |
 
 ### Desktop modules (`modules`)
 
@@ -108,7 +108,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs` | 51 | 921 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 65 | 1189 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Help.cs` | 55 | 949 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Trees.cs` | 40 | 730 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Trees.cs` | 42 | 770 |
 
 ### Service (`service`)
 
