@@ -58,11 +58,16 @@ import { flagValue, operands } from './args.ts';
 
 /** The `agent` flags that take a value — so that value is never read as an operand. */
 const AGENT_VALUED: ReadonlySet<string> = new Set([
-  '--profile', '--workspace', '--account', '--for', '--keep', '--early', '--near', '--name', '--join',
+  '--profile', '--workspace', '--account', '--for', '--keep', '--switch', '--curve', '--early', '--near', '--name', '--join',
 ]);
 
-/** `agent profile use`'s flags (TOOL6a, D130 §16.6); any other is refused rather than read as a choice. */
-const USE_FLAGS: ReadonlySet<string> = new Set(['--keep', '--no-keep', '--early', '--near', '--workspace', '--clear']);
+/**
+ * `agent profile use`'s flags (TOOL6a, D130 §16.6; D165 §6, SWITCH1a); any other is refused rather than read as a choice.
+ * `--early` and `--near` are the old names of `--switch` and the session window's curve, taken as `UseChange` maps them.
+ */
+const USE_FLAGS: ReadonlySet<string> = new Set([
+  '--keep', '--no-keep', '--switch', '--curve', '--no-curve', '--early', '--near', '--workspace', '--clear',
+]);
 
 /**
  * What the terminal says for each *use accounts* choice (D130 §16.6): its name, and what it costs where the screen says
@@ -74,8 +79,12 @@ export const USE_WORDS: Record<UseMode, { name: string; cost: string | null }> =
 };
 
 /** `agent profile use`'s shape, as a refusal names it. */
-const USE_SHAPE = `[${USE_MODES.join('|')}] [--keep <account>|--no-keep] [--early on|off] [--near <percent>] [--workspace W], `
-  + 'or --clear';
+const USE_SHAPE = `[${USE_MODES.join('|')}] [--keep <account>|--no-keep] [--switch ${SWITCHES.join('|')}] `
+  + '[--curve <window>=<elapsed>:<used>,…]… [--no-curve] [--workspace W], or --clear (--early on|off and --near <percent> '
+  + 'are the old names)';
+
+/** How a curve is given at the terminal (the switch design §5), as a refusal shows it. */
+const CURVE_EXAMPLE = '`--curve weekly=0:30,50:70,100:100`';
 
 /** A scope named in a sentence: this machine, or one workspace. */
 function where(workspace: string | null): string {
@@ -109,11 +118,14 @@ import { commandRules } from './permissions.ts';
 import { PROPOSAL_VERBS, commandProposals } from './ruleproposals.ts';
 import { grantTrust, TRUST_FILE } from './trust.ts';
 import {
-  NEAR_HIGHEST, NEAR_LOWEST, USE_FIELDS, USE_MODES, joinProblem, joinRefusal, placesOf, readOrderCircles, readOrders,
-  readUse, readUseCircles, readUses, resolveRotation, resolveScope, rotationProblem, rotationRefusal, scopeProblem,
-  withJoined, withRotation, withUse, withoutAccount, writtenOrderCircles, writtenOrders, writtenUseCircles, writtenUses,
+  CURVE_WINDOWS, NEAR_HIGHEST, NEAR_LOWEST, OLD_FIELDS, SWITCHES, USE_FIELDS, USE_MODES, curveProblem, joinProblem,
+  joinRefusal, placesOf, readOrderCircles, readOrders, readUse, readUseCircles, readUses, resolveRotation, resolveScope,
+  rotationProblem, rotationRefusal, scopeProblem, withJoined, withRotation, withUse, withoutAccount, writtenOrderCircles,
+  writtenOrders, writtenUseCircles, writtenUses,
 } from './rotation.ts';
-import type { AccountPlace, Orders, Scope, ScopeProblem, UseChange, UseMode, Uses } from './rotation.ts';
+import type {
+  AccountPlace, Curve, CurvePoint, Orders, RotationUse, Scope, ScopeProblem, Switch, UseChange, UseMode, Uses,
+} from './rotation.ts';
 import {
   accountNames, accountsPath, forgetName, nameFor, nameProblem, newAccountId, renameAccount, resolveAccount, shownAs,
   signInRefusal, signInTarget, AccountNameError,
@@ -1238,12 +1250,16 @@ export function useLines(
   const rows: [string, string][] = [
     ['use accounts', `${mode.name}${mode.cost ? ` — ${mode.cost}` : ''}`],
     ['kept for conversations', use.keep === null ? 'none' : shown(use.keep)],
+    // Until SWITCH1b moves the walk to the curve, a start passes an account near by `near`, derived from the switch and
+    // the curve (D165 §6): the words say what the walk does today.
     ['switch before the limit', !use.early
-      ? `off (near: ${use.near}%)`
+      ? use.switch
       : says
-        ? `on, at ${use.near}% — a start passes an account ${product} says is near its limit, or that has used ${use.near}% of a window`
-        : `on, at ${use.near}% — ${product}'s sessions here do not say how near their limits are`],
+        ? `${use.switch}, at ${use.near}% — a start passes an account ${product} says is near its limit, or that has used ${use.near}% of a window`
+        : `${use.switch}, at ${use.near}% — ${product}'s sessions here do not say how near their limits are`],
   ];
+  const curve = curveLine(use);
+  if (curve !== null) rows.push(['curve', curve]);
 
   const notes: string[] = [];
   const problem = scopeProblem({ default: scope.default, list: scope.list, keep: use.keep });
@@ -1255,9 +1271,26 @@ export function useLines(
   for (const name of scope.unknown) {
     notes.push((USE_FIELDS as readonly string[]).includes(name)
       ? `\`${name}\` holds a value this build does not know, so it reads as today's default; it is kept as written`
-      : `\`${name}\` is a setting this build does not know: nothing here reads it, and it is kept as written`);
+      : (OLD_FIELDS as readonly string[]).includes(name)
+        ? `\`${name}\` is an old name of the switch, and holds a value this build does not read: nothing reads it, and the `
+          + 'next write takes it out'
+        : `\`${name}\` is a setting this build does not know: nothing here reads it, and it is kept as written`);
   }
   return { rows, notes };
+}
+
+/**
+ * The person's curve in the terminal's words (D165 point 2): each window it names, its points as `elapsed:used`, and where
+ * the switch is not `curve`, that it is kept and read only there. Null where there is no curve to show: none set, under a
+ * switch other than `curve`.
+ */
+function curveLine(use: RotationUse): string | null {
+  const windows = CURVE_WINDOWS.filter((window) => use.curve[window] !== undefined);
+  if (windows.length === 0) return use.switch === 'curve' ? 'none of your own — each window takes Daoris\'s smart curve' : null;
+  const said = windows
+    .map((window) => `${window} ${use.curve[window]!.map(([elapsed, used]) => `${elapsed}:${used}`).join(', ')}`)
+    .join('; ');
+  return use.switch === 'curve' ? said : `${said} — kept, and read only under curve`;
 }
 
 /**
@@ -2174,9 +2207,11 @@ export function commandHarness(
     }
 
     /**
-     * `profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>] [--workspace <name>]`,
-     * or `--clear` (D130 §16.6). A scope with no list of its own has nothing to use and is refused, naming the door that
-     * gives it one; a kept account is one of the list and leaves driven work another (§4.6).
+     * `profile use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off]
+     * [--curve <window>=<elapsed>:<used>,…]… [--no-curve] [--workspace <name>]`, or `--clear` (D130 §16.6; D165 §6, the
+     * switch design §5); `--early on|off` and `--near <percent>`, the old names, are taken as `UseChange` maps them. A scope
+     * with no list of its own has nothing to use and is refused, naming the door that gives it one; a kept account is one
+     * of the list and leaves driven work another (§4.6); a curve is refused in the sentence the driver says.
      */
     function useVerb(): ExitCode {
       const name = accountsOf(operand(argv, 2), 'profile use');
@@ -2251,6 +2286,23 @@ export function commandHarness(
     /** The settings `profile use`'s flags name, each refused unless it is one; none named is an empty change. */
     function useChangeOf(name: string): UseChange {
       const change: UseChange = {};
+      const switched = useValue('--switch');
+      if (switched !== undefined) {
+        if (!(SWITCHES as readonly string[]).includes(switched)) {
+          throw new DaorisError('`--switch` is smart, curve or off — smart, Daoris\'s curve; curve, your own (`--curve`); off, '
+            + 'no switch while a session runs.');
+        }
+        change.switch = switched as Switch;
+      }
+
+      const curves = useValues('--curve');
+      if (curves.length > 0 && argv.includes('--no-curve')) {
+        throw new DaorisError('`--curve` and `--no-curve` together say two things — set a window of your curve, or take the '
+          + 'curve out.');
+      }
+      if (curves.length > 0) change.curve = curveOf(curves);
+      if (argv.includes('--no-curve')) change.curve = null;
+
       const early = onOff('--early', 'switch before the limit, or not');
       if (early !== undefined) change.early = early;
 
@@ -2275,13 +2327,47 @@ export function commandHarness(
 
     /** A `profile use` flag's value, refusing the flag with none after it. */
     function useValue(flag: string): string | undefined {
-      const at = argv.indexOf(flag);
-      if (at === -1) return undefined;
-      const value = argv[at + 1];
-      if (value === undefined || value.startsWith('--') || value.trim() === '') {
-        throw new DaorisError(`\`${flag}\` needs a value — it takes ${USE_SHAPE}.`);
+      return useValues(flag)[0];
+    }
+
+    /** Each value a repeatable `profile use` flag is given, in order, refusing the flag with none after it. */
+    function useValues(flag: string): string[] {
+      const values: string[] = [];
+      for (const [at, token] of argv.entries()) {
+        if (token !== flag) continue;
+        const value = argv[at + 1];
+        if (value === undefined || value.startsWith('--') || value.trim() === '') {
+          throw new DaorisError(`\`${flag}\` needs a value — it takes ${USE_SHAPE}.`);
+        }
+        values.push(value);
       }
-      return value;
+      return values;
+    }
+
+    /**
+     * The curve `--curve <window>=<elapsed>:<used>,…` gives, once per window (the switch design §5): each window's points as
+     * whole numbers, then held to the curve's rules in the sentence the driver says (`curveProblem`).
+     */
+    function curveOf(given: string[]): Curve {
+      const windows: [string, CurvePoint[]][] = [];
+      for (const value of given) {
+        const match = /^([^=]+)=(\d+:\d+(?:,\d+:\d+)*)$/.exec(value);
+        if (!match) {
+          throw new DaorisError(`\`--curve ${value}\` is not a window and its points — it takes \`<window>=<elapsed>:<used>,…\`, `
+            + `each a whole percent, e.g. ${CURVE_EXAMPLE}.`);
+        }
+        const [, window, points] = match as unknown as [string, string, string];
+        if (windows.some(([named]) => named === window)) {
+          throw new DaorisError(`\`--curve\` names \`${window}\` twice — give each window once.`);
+        }
+        windows.push([window, points.split(',').map((point) => point.split(':').map(Number) as CurvePoint)]);
+      }
+      const curve = Object.fromEntries(windows);
+      const problem = curveProblem(curve);
+      if (problem !== null) {
+        throw new DaorisError(`${problem} \`--curve\` takes <window>=<elapsed>:<used>,…, e.g. ${CURVE_EXAMPLE}.`);
+      }
+      return curve as Curve;
     }
 
     function onOff(flag: string, meaning: string): boolean | undefined {

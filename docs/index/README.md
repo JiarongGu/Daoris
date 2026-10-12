@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (138)
+## Files over 40 KB (137)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -141,14 +141,13 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/src/driverconfig.ts` | 106 | 1948 |
 | `src/Daoris.Cli/src/materialize.ts` | 47 | 936 |
 | `src/Daoris.Cli/src/plugins.ts` | 69 | 1383 |
-| `src/Daoris.Cli/src/toolchain.ts` | 143 | 2789 |
+| `src/Daoris.Cli/src/toolchain.ts` | 148 | 2875 |
 | `src/Daoris.Cli/src/workflowdoor.ts` | 46 | 836 |
 | `src/Daoris.Cli/test/desktop-publish.test.ts` | 56 | 1006 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 43 | 826 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 46 | 821 |
 | `src/Daoris.Cli/test/driverconfig.test.ts` | 121 | 2245 |
-| `src/Daoris.Cli/test/merge-branch.test.ts` | 179 | 2784 |
-| `src/Daoris.Cli/test/rotation-use.test.ts` | 44 | 550 |
+| `src/Daoris.Cli/test/merge-branch.test.ts` | 179 | 2786 |
 | `src/Daoris.Cli/test/setup-kit.test.ts` | 52 | 955 |
 | `src/Daoris.Cli/test/toolchain.test.ts` | 100 | 1931 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1226 |
@@ -162,7 +161,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 51 | 1052 |
 | `tools/family-rehearsal.mjs` | 339 | 5982 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 131 | 2394 |
+| `tools/merge-branch.mjs` | 131 | 2395 |
 | `tools/orient-index.mjs` | 65 | 1409 |
 | `tools/rehearsal-kit.mjs` | 42 | 812 |
 | `tools/usage-report.mjs` | 57 | 1254 |
@@ -171,7 +170,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 70 | 130 |
+| `.claude/knowledge/twins.md` | 71 | 133 |
 | `docs/2026-09-19-platform-ux.md` | 64 | 673 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 53 | 353 |

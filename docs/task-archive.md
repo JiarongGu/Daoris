@@ -13906,3 +13906,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **USAGEREAD2a — Daoris reads each Claude account's real use** (driver). `ClaudeUsage` beside `CodexUsage` (Claude Code's `get_usage`, `docs/2026-10-12-usage-read-evidence.md`) declared as the native door's `Usage:`, so the start's walk (`FreshenAsync`) and the Accounts press read it; `windows.json` entries gain `source` (`read` or `said`), the newer by `seen` winning and a read winning a tie; a once-a-minute floor and a ten-second bound; a five-hour window not yet opened read as 0 until its length has passed. A Process case on a stub CLI. D165 point 1; design §1.1-§1.2.
 
 **Outcome** 2026-10-12: built as the row says: `ClaudeUsage` asks `get_usage` under the account's home in an empty `usage-read` folder of its own, and the walk and the Accounts press read Claude accounts through the existing wiring; a read writes `source: read`, a session's frame none (absent reads as `said`); the busy account is still skipped. Its Process cases passed on the merge. Detail: D165's USAGEREAD2a note.
+
+## SWITCH1a — the `switch` and `curve` settings (2026-10-12, D165)
+
+> - [ ] **SWITCH1a — the `switch` and `curve` settings** (driver/cli). `switch` (`smart` default, `curve`, `off`) and `curve` per window in `rotationUse` and `workspaceRotationUse`, both twins from one table fixture, `early` and `near` read on and dropped on write, a refused curve saying what is wrong. Design §2, §6.
+
+**Outcome** 2026-10-12: both twins read, write and refuse `switch` and `curve` from `src/Daoris.Cli/test/fixtures/rotation-use.json`; `early` and `near` are read on as a change applies them and never written; the walk's `Early`/`Near` are derived until SWITCH1b; `profile use` takes `--switch`, `--curve`, `--no-curve`. Detail: D165's SWITCH1a note.

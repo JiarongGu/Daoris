@@ -4,27 +4,35 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// How a scope's list is used (TOOL6a; D130 §2, §3.1, §4.6, §14 as §16.6 amends them;
-/// <c>docs/2026-10-02-account-use-design.md</c>): <c>rotationUse</c> for the machine and <c>workspaceRotationUse</c> for
-/// one workspace, per agent, beside the lists — <i>use accounts</i> (<c>use</c>: <c>goal</c>, make the most of them, or
-/// <c>order</c>, one by one in order), <i>keep for conversations</i> (<c>keep</c>) and <i>switch before the limit</i>
-/// (<c>early</c>, <c>near</c>).
+/// <c>docs/2026-10-02-account-use-design.md</c>; D165 point 2 and <c>docs/2026-10-12-account-switch-design.md</c> §2 and §6,
+/// SWITCH1a): <c>rotationUse</c> for the machine and <c>workspaceRotationUse</c> for one workspace, per agent, beside the
+/// lists — <i>use accounts</i> (<c>use</c>: <c>goal</c>, make the most of them, or <c>order</c>, one by one in order),
+/// <i>keep for conversations</i> (<c>keep</c>) and when to switch (<c>switch</c>: <c>smart</c>, <c>curve</c> or
+/// <c>off</c>; and <c>curve</c>, the person's own points per window), read on from the old names <c>early</c> and
+/// <c>near</c>.
 /// </summary>
 /// <remarks>
-/// <para><b>A twin</b> of the CLI's <c>rotation.ts</c> (<c>readUse</c>, <c>resolveScope</c>, <c>withUse</c>,
-/// <c>scopeProblem</c>), which <c>daoris agent profile use</c> writes; <c>RotationUseTwinTests</c> and the CLI's
-/// <c>rotation-use.test.ts</c> hold the same tables, row for row. The rules both keep:</para>
+/// <para><b>A twin</b> of the CLI's <c>rotation.ts</c> (<c>readUse</c>, <c>curveProblem</c>, <c>resolveScope</c>,
+/// <c>withUse</c>, <c>scopeProblem</c>), which <c>daoris agent profile use</c> writes; <c>RotationUseTwinTests</c> and the
+/// CLI's <c>rotation-use.test.ts</c> read one table, the CLI's <c>test/fixtures/rotation-use.json</c>, row for row. The
+/// rules both keep:</para>
 /// <para>Read: an entry is an object, kept whole but for <c>prefer</c> and <c>parallel</c>, which §16.6 retired and nothing
 /// released wrote: skipped, and gone at the next write. Each other field is a value this build knows, or one it does not,
 /// which reads as today's default and is said (<see cref="RotationScope.Unknown"/>); a field this build has no name for is
 /// kept and said too, so a newer build's setting outlives this one's save.</para>
+/// <para>The old names read on (D165 §6): <c>early</c> and <c>near</c>, which only an older build writes, are taken out and
+/// applied as a change applies them (<see cref="UseChange"/>), over the entry's own switch and curve; a value of theirs
+/// that does not read is said, and goes.</para>
 /// <para>Resolved as one scope (§2 rule 1): the workspace's, when it names a default or a list of its own for the agent,
 /// else the machine's. A scope's settings are read only with its list; with none it is its default alone. A kept
 /// account not in the list is none, and a default outside it leaves the list to win.</para>
 /// <para>Written as chosen: a choice equal to today's default is still written, so a later default never overturns a
-/// person's choice; absence alone means <see cref="RotationUse.Default"/>, the one place today's defaults live.</para>
+/// person's choice; absence alone means <see cref="RotationUse.Default"/>, the one place today's defaults live. The old
+/// names are never written: a writer writes <c>switch</c> and <c>curve</c>.</para>
 /// <para><see cref="HarnessRoster.SelectAsync"/> reads them through <see cref="ResolveScope"/> (TOOL6b): <c>use</c> and
-/// <c>keep</c> choose a start's account (<see cref="AccountRotation"/>), and <c>early</c> and <c>near</c> pass an account its
-/// agent said is near (TOOL6c), where its door carries that word into <c>windows.json</c>.</para>
+/// <c>keep</c> choose a start's account (<see cref="AccountRotation"/>), and until SWITCH1b moves the walk to the curve,
+/// <see cref="RotationUse.Early"/> and <see cref="RotationUse.Near"/>, derived from the switch and the curve, pass an account
+/// its agent said is near (TOOL6c), where its door carries that word into <c>windows.json</c>.</para>
 /// </remarks>
 public sealed partial record HarnessSettings
 {
@@ -136,9 +144,10 @@ public sealed partial record HarnessSettings
     /// <summary>A settings section, written only where an entry is set: agents in order of name.</summary>
     private static void WriteUses(Utf8JsonWriter writer, string property, IReadOnlyDictionary<string, UseEntry> uses)
     {
-        if (!uses.Any(entry => !entry.Value.IsEmpty)) return;
+        var written = Written(uses);
+        if (written.Count == 0) return;
         writer.WriteStartObject(property);
-        WriteEntries(writer, uses);
+        WriteEntries(writer, written);
         writer.WriteEndObject();
     }
 
@@ -146,11 +155,14 @@ public sealed partial record HarnessSettings
     private static void WriteUseCircles(
         Utf8JsonWriter writer, string property, IReadOnlyDictionary<string, IReadOnlyDictionary<string, UseEntry>> circles)
     {
-        if (!circles.Any(circle => circle.Value.Any(entry => !entry.Value.IsEmpty))) return;
+        var written = circles.OrderBy(e => e.Key, StringComparer.Ordinal)
+            .Select(circle => (Workspace: circle.Key, Uses: Written(circle.Value)))
+            .Where(circle => circle.Uses.Count > 0)
+            .ToList();
+        if (written.Count == 0) return;
         writer.WriteStartObject(property);
-        foreach (var (workspace, uses) in circles.OrderBy(e => e.Key, StringComparer.Ordinal))
+        foreach (var (workspace, uses) in written)
         {
-            if (!uses.Any(entry => !entry.Value.IsEmpty)) continue;
             writer.WriteStartObject(workspace);
             WriteEntries(writer, uses);
             writer.WriteEndObject();
@@ -159,11 +171,16 @@ public sealed partial record HarnessSettings
         writer.WriteEndObject();
     }
 
-    private static void WriteEntries(Utf8JsonWriter writer, IReadOnlyDictionary<string, UseEntry> uses)
+    /// <summary>Each agent's entry as written (<see cref="UseEntry.Written"/>), in order of name, one written as nothing left out.</summary>
+    private static List<(string Agent, UseEntry Entry)> Written(IReadOnlyDictionary<string, UseEntry> uses) =>
+        [.. uses.OrderBy(e => e.Key, StringComparer.Ordinal)
+            .Select(entry => (Agent: entry.Key, Entry: entry.Value.Written()))
+            .Where(entry => !entry.Entry.IsEmpty)];
+
+    private static void WriteEntries(Utf8JsonWriter writer, List<(string Agent, UseEntry Entry)> uses)
     {
-        foreach (var (agent, entry) in uses.OrderBy(e => e.Key, StringComparer.Ordinal))
+        foreach (var (agent, entry) in uses)
         {
-            if (entry.IsEmpty) continue;
             writer.WriteStartObject(agent);
             entry.WriteTo(writer);
             writer.WriteEndObject();
@@ -171,35 +188,75 @@ public sealed partial record HarnessSettings
     }
 }
 
-/// <summary>How one scope's list is used, each setting's value as a start reads it (D130 §16.6).</summary>
+/// <summary>How one scope's list is used, each setting's value as a start reads it (D130 §16.6; D165 point 2).</summary>
 /// <param name="Use"><i>Use accounts</i>: one of <see cref="Modes"/> — <c>goal</c>, §16.3's walk (<see cref="AccountRotation.Order"/>), or
 /// <c>order</c>, D125's walk.</param>
 /// <param name="Keep">The account kept for conversations, or none.</param>
-/// <param name="Early"><i>Switch before the limit</i>.</param>
-/// <param name="Near">Where an account is near its limit, as a percent of a window, where its agent gives only a number.</param>
-public sealed record RotationUse(string Use, string? Keep, bool Early, int Near)
+/// <param name="Switch">When to switch: one of <see cref="Switches"/> — <c>smart</c>, Daoris's curve; <c>curve</c>, the
+/// person's own; <c>off</c>, no switch while a session runs.</param>
+/// <param name="Curve">The person's curve, <see cref="UseCurve.None"/> for none; kept whatever <paramref name="Switch"/>
+/// says, and read only under <c>curve</c>.</param>
+public sealed record RotationUse(string Use, string? Keep, string Switch, UseCurve Curve)
 {
-    /// <summary>Today's defaults (D130 §16.6), and the one place they live: what absence means for each setting.</summary>
-    public static readonly RotationUse Default = new("goal", Keep: null, Early: true, Near: 90);
+    /// <summary>
+    /// The settings as the old names spelled them (D130 §16.6), read on as a file's are (D165 §6): <c>early</c> false is
+    /// <c>off</c>, and <c>near</c> other than 90 the session window flat at it, under <c>curve</c> unless off.
+    /// </summary>
+    public RotationUse(string use, string? keep, bool early, int near)
+        : this(
+            use,
+            keep,
+            !early ? "off" : near != SmartSession ? "curve" : "smart",
+            near != SmartSession ? UseCurve.Flat("session", near) : UseCurve.None)
+    {
+    }
+
+    /// <summary>Today's defaults (D130 §16.6, D165 point 2), and the one place they live: what absence means for each setting.</summary>
+    public static readonly RotationUse Default = new("goal", Keep: null, Switch: "smart", Curve: UseCurve.None);
 
     /// <summary><i>Use accounts</i>' choices (§16.6): make the most of them, one by one in order. A new choice is a row here.</summary>
     public static readonly IReadOnlyList<string> Modes = ["goal", "order"];
 
-    /// <summary><i>Near</i>'s range (§14): a whole percent from the one to the other.</summary>
+    /// <summary>When to switch (D165 point 2): Daoris's curve, the person's own, or no switch while a session runs.</summary>
+    public static readonly IReadOnlyList<string> Switches = ["smart", "curve", "off"];
+
+    /// <summary>
+    /// The smart curve's five-hour window, flat (D165 point 2; D130 §6's 90): what <i>near</i> meant where none was set, and
+    /// the old name's value that reads as no curve. The CLI's <c>SMART_SESSION</c>.
+    /// </summary>
+    public const int SmartSession = 90;
+
+    /// <summary><i>Near</i>'s range (§14), which the old name still takes at a door: a whole percent from the one to the other.</summary>
     public const int NearLowest = 50;
 
     /// <inheritdoc cref="NearLowest"/>
     public const int NearHighest = 99;
 
     /// <summary>The settings this build knows, in the order they are written.</summary>
-    public static readonly IReadOnlyList<string> Fields = ["use", "keep", "early", "near"];
+    public static readonly IReadOnlyList<string> Fields = ["use", "keep", "switch", "curve"];
+
+    /// <summary>The old names (D130 §16.6), which D165 §6 replaced: read on, and never written.</summary>
+    public static readonly IReadOnlyList<string> OldNames = ["early", "near"];
 
     /// <summary>The settings §16.6 retired, which nothing released wrote: skipped by the reader, so gone at the next write.</summary>
     public static readonly IReadOnlyList<string> Retired = ["prefer", "parallel"];
 
     /// <summary>
-    /// An entry's settings: today's default where it says nothing or holds what this build does not know, and the names
-    /// of what it does not know — the known settings first, in their order, then the ones it has no name for.
+    /// <i>Switch before the limit</i>, as the walk reads it until SWITCH1b moves it to the curve (D165 §6): the switch is not
+    /// <c>off</c>.
+    /// </summary>
+    public bool Early => Switch != "off";
+
+    /// <summary>
+    /// Where an account is near its limit, as a percent of a window, where its agent gives only a number — as the walk reads
+    /// it until SWITCH1b (D165 §6): the session window's one point under <c>curve</c>, else the smart curve's 90.
+    /// </summary>
+    public int Near => Switch == "curve" && Curve["session"] is [var only] ? only.Used : SmartSession;
+
+    /// <summary>
+    /// An entry's settings, its old names read on: today's default where it says nothing or holds what this build does not
+    /// know, and the names of what it does not know — the known settings first, in their order, then an old name whose
+    /// value does not read, then the ones it has no name for.
     /// </summary>
     public static (RotationUse Use, IReadOnlyList<string> Unknown) Read(UseEntry? entry)
     {
@@ -207,25 +264,32 @@ public sealed record RotationUse(string Use, string? Keep, bool Early, int Near)
         var unknown = new List<string>();
         if (entry is null) return (use, unknown);
 
+        var folded = entry.Folded();
         foreach (var field in Fields)
         {
-            if (entry[field] is not { } raw) continue;
+            if (folded[field] is not { } raw) continue;
             switch (field)
             {
                 case "use" when ModeOf(raw) is { } mode: use = use with { Use = mode }; break;
                 case "keep" when KeepOf(raw) is { } keep: use = use with { Keep = keep }; break;
-                case "early" when FlagOf(raw) is { } early: use = use with { Early = early }; break;
-                case "near" when NearOf(raw) is { } near: use = use with { Near = near }; break;
+                case "switch" when SwitchOf(raw) is { } switched: use = use with { Switch = switched }; break;
+                case "curve" when UseCurve.Read(raw) is { } curve: use = use with { Curve = curve }; break;
                 default: unknown.Add(field); break;
             }
         }
 
-        unknown.AddRange(entry.Fields.Select(field => field.Key).Where(name => !Fields.Contains(name, StringComparer.Ordinal)));
+        if (entry["early"] is { } early && FlagOf(early) is null) unknown.Add("early");
+        if (entry["near"] is { } near && NearOf(near) is null) unknown.Add("near");
+        unknown.AddRange(entry.Fields.Select(field => field.Key)
+            .Where(name => !Fields.Contains(name, StringComparer.Ordinal) && !OldNames.Contains(name, StringComparer.Ordinal)));
         return (use, unknown);
     }
 
     internal static string? ModeOf(JsonElement raw) =>
         raw.ValueKind == JsonValueKind.String && Modes.Contains(raw.GetString()!, StringComparer.Ordinal) ? raw.GetString() : null;
+
+    internal static string? SwitchOf(JsonElement raw) =>
+        raw.ValueKind == JsonValueKind.String && Switches.Contains(raw.GetString()!, StringComparer.Ordinal) ? raw.GetString() : null;
 
     internal static bool? FlagOf(JsonElement raw) => raw.ValueKind switch
     {
@@ -289,20 +353,81 @@ public sealed record UseEntry(IReadOnlyList<KeyValuePair<string, JsonElement>> F
         return new UseEntry(fields);
     }
 
-    internal UseEntry Changed(UseChange change)
+    /// <summary>A change made over what the entry means: its old names read on first, then the change applied.</summary>
+    internal UseEntry Changed(UseChange change) => Folded().Applied(change);
+
+    /// <summary>
+    /// The old names read on (D165 §6): <c>early</c> and <c>near</c> taken out, and what reads of them applied as a change
+    /// applies them, over the entry's own switch and curve — as the CLI's <c>foldedUse</c> does.
+    /// </summary>
+    internal UseEntry Folded()
+    {
+        if (this["early"] is null && this["near"] is null) return this;
+        var early = this["early"] is { } flag ? RotationUse.FlagOf(flag) : null;
+        var near = this["near"] is { } percent ? RotationUse.NearOf(percent) : null;
+        return With("early", null).With("near", null).Applied(new UseChange(Early: early, Near: near));
+    }
+
+    /// <summary>
+    /// The entry as written: its old names read on, and a curve that reads but names no window taken out — as the CLI's
+    /// <c>writtenUse</c> leaves it. An entry written as nothing is not written.
+    /// </summary>
+    internal UseEntry Written()
+    {
+        var folded = Folded();
+        return folded["curve"] is { } raw && UseCurve.Read(raw) is { IsEmpty: true } ? folded.With("curve", null) : folded;
+    }
+
+    /// <summary>A change applied to an entry whose old names are read on already: the old names first, then the new.</summary>
+    private UseEntry Applied(UseChange change)
     {
         var entry = this;
         if (change.Use is { } mode) entry = entry.With("use", Element(writer => writer.WriteStringValue(mode)));
         if (change.NoKeep) entry = entry.With("keep", null);
         else if (change.Keep?.Trim() is { Length: > 0 } keep) entry = entry.With("keep", Element(writer => writer.WriteStringValue(keep)));
-        if (change.Early is { } early) entry = entry.With("early", Element(writer => writer.WriteBooleanValue(early)));
-        if (change.Near is { } near) entry = entry.With("near", Element(writer => writer.WriteNumberValue(near)));
+
+        if (change.Early == false) entry = entry.Switched("off");
+        else if (change.Early == true && entry.IsOff) entry = entry.Switched("smart");
+        if (change.Near is { } near && near != RotationUse.SmartSession)
+        {
+            entry = entry.WithWindow("session", [new CurvePoint(0, near)]);
+            if (!entry.IsOff) entry = entry.Switched("curve");
+        }
+        else if (change.Near == RotationUse.SmartSession)
+        {
+            entry = entry.WithWindow("session", null);
+        }
+
+        if (change.Switch is { } switched) entry = entry.Switched(switched);
+        if (change.NoCurve) entry = entry.With("curve", null);
+        else if (change.Curve is { } curve)
+        {
+            foreach (var window in UseCurve.Windows)
+            {
+                if (curve[window] is { } points) entry = entry.WithWindow(window, points);
+            }
+        }
+
         return entry;
+    }
+
+    private bool IsOff => this["switch"] is { } raw && RotationUse.SwitchOf(raw) == "off";
+
+    private UseEntry Switched(string to) => With("switch", Element(writer => writer.WriteStringValue(to)));
+
+    /// <summary>One window of the curve set, or taken out where <paramref name="points"/> is null; a curve left naming none goes.</summary>
+    private UseEntry WithWindow(string window, IReadOnlyList<CurvePoint>? points)
+    {
+        var windows = this["curve"] is { ValueKind: JsonValueKind.Object } curve
+            ? new UseEntry([.. curve.EnumerateObject().Select(each => KeyValuePair.Create(each.Name, each.Value.Clone()))])
+            : Empty;
+        windows = windows.With(window, points is null ? null : Element(writer => UseCurve.WritePoints(writer, points)));
+        return windows.IsEmpty ? With("curve", null) : With("curve", Element(windows.WriteFields));
     }
 
     /// <summary>
     /// The entry as written: the settings this build knows in their order, a value it knows normalised, then the rest as
-    /// read — as the CLI's <c>writtenUse</c> writes it.
+    /// read — as the CLI's <c>writtenUse</c> writes it. Called on <see cref="Written"/>'s entry, so no old name is left.
     /// </summary>
     internal void WriteTo(Utf8JsonWriter writer)
     {
@@ -313,14 +438,15 @@ public sealed record UseEntry(IReadOnlyList<KeyValuePair<string, JsonElement>> F
             switch (field)
             {
                 case "use" when RotationUse.ModeOf(raw) is { } mode: writer.WriteStringValue(mode); break;
-                case "early" when RotationUse.FlagOf(raw) is { } flag: writer.WriteBooleanValue(flag); break;
                 case "keep" when RotationUse.KeepOf(raw) is { } keep: writer.WriteStringValue(keep); break;
-                case "near" when RotationUse.NearOf(raw) is { } near: writer.WriteNumberValue(near); break;
+                case "switch" when RotationUse.SwitchOf(raw) is { } switched: writer.WriteStringValue(switched); break;
+                case "curve" when UseCurve.Read(raw) is { } curve: curve.WriteTo(writer); break;
                 default: raw.WriteTo(writer); break;
             }
         }
 
         foreach (var (name, value) in Fields.Where(field => !RotationUse.Fields.Contains(field.Key, StringComparer.Ordinal)
+            && !RotationUse.OldNames.Contains(field.Key, StringComparer.Ordinal)
             && !RotationUse.Retired.Contains(field.Key, StringComparer.Ordinal)))
         {
             writer.WritePropertyName(name);
@@ -328,7 +454,20 @@ public sealed record UseEntry(IReadOnlyList<KeyValuePair<string, JsonElement>> F
         }
     }
 
-    private static JsonElement Element(Action<Utf8JsonWriter> write)
+    /// <summary>The fields as one object, each as held.</summary>
+    private void WriteFields(Utf8JsonWriter writer)
+    {
+        writer.WriteStartObject();
+        foreach (var (name, value) in Fields)
+        {
+            writer.WritePropertyName(name);
+            value.WriteTo(writer);
+        }
+
+        writer.WriteEndObject();
+    }
+
+    internal static JsonElement Element(Action<Utf8JsonWriter> write)
     {
         using var stream = new MemoryStream();
         using (var writer = new Utf8JsonWriter(stream)) write(writer);
@@ -338,10 +477,162 @@ public sealed record UseEntry(IReadOnlyList<KeyValuePair<string, JsonElement>> F
 }
 
 /// <summary>
-/// A change to one scope's settings: a field null is left as it was; <paramref name="NoKeep"/> keeps none. A door
-/// validates each value first; <see cref="HarnessSettings.WithUse"/> writes it as given.
+/// A point of a curve (D165 point 2): how much of the window's time has passed, and the most of it an account should have
+/// used by then, each a whole percent.
 /// </summary>
-public sealed record UseChange(string? Use = null, string? Keep = null, bool NoKeep = false, bool? Early = null, int? Near = null);
+public readonly record struct CurvePoint(int Elapsed, int Used);
+
+/// <summary>
+/// The person's curve (D165 point 2; the switch design §2, §6): per window, the most of it an account should have used by
+/// each point of its time, the points joined by straight lines, flat before the first and after the last. A window left
+/// out takes the smart curve's. A twin of the CLI's <c>Curve</c>, <c>readCurve</c> and <c>curveProblem</c>: the shared
+/// table's <c>refusal</c> rows hold the sentences, word for word.
+/// </summary>
+public sealed record UseCurve
+{
+    /// <summary>A curve's windows, as <c>windows.json</c> names them (the switch design §5), in the order they are written.</summary>
+    public static readonly IReadOnlyList<string> Windows = ["session", "weekly"];
+
+    /// <summary>A window's curve has one point to this many (the switch design §6).</summary>
+    public const int MostPoints = 12;
+
+    /// <summary>No curve of the person's own: every window the smart curve's.</summary>
+    public static readonly UseCurve None = new(new Dictionary<string, IReadOnlyList<CurvePoint>>());
+
+    public UseCurve(IReadOnlyDictionary<string, IReadOnlyList<CurvePoint>> points) => Points = points;
+
+    /// <summary>Each window the curve names, by name.</summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<CurvePoint>> Points { get; }
+
+    /// <summary>The window's points, or null where the curve leaves it to the smart curve.</summary>
+    public IReadOnlyList<CurvePoint>? this[string window] => Points.GetValueOrDefault(window);
+
+    public bool IsEmpty => Points.Count == 0;
+
+    /// <summary>One window flat at <paramref name="used"/>: a single point.</summary>
+    public static UseCurve Flat(string window, int used) =>
+        new(new Dictionary<string, IReadOnlyList<CurvePoint>> { [window] = [new CurvePoint(0, used)] });
+
+    public bool Equals(UseCurve? other) =>
+        other is not null && Points.Count == other.Points.Count
+        && Points.All(window => other[window.Key] is { } theirs && theirs.SequenceEqual(window.Value));
+
+    public override int GetHashCode() => Points.Count;
+
+    /// <summary>A curve as read: each window it names, or null where it breaks a rule (<see cref="Problem"/>).</summary>
+    public static UseCurve? Read(JsonElement raw)
+    {
+        if (Problem(raw) is not null) return null;
+        var points = new Dictionary<string, IReadOnlyList<CurvePoint>>(StringComparer.Ordinal);
+        foreach (var window in raw.EnumerateObject())
+        {
+            points[window.Name] = [.. window.Value.EnumerateArray().Select(point => new CurvePoint((int)point[0].GetDouble(), (int)point[1].GetDouble()))];
+        }
+
+        return new UseCurve(points);
+    }
+
+    /// <summary>
+    /// The first problem with a curve a door is handed, in the sentence both twins say, or null. Window by window in the
+    /// order written, then point by point: its shape, elapsed from 0 to 100, used from 0 to 100, elapsed rising, used never
+    /// falling — the CLI's <c>curveProblem</c>.
+    /// </summary>
+    public static string? Problem(JsonElement raw)
+    {
+        if (raw.ValueKind != JsonValueKind.Object) return "A curve is an object of windows, `session` or `weekly`, each a list of points [elapsed, used].";
+        foreach (var window in raw.EnumerateObject())
+        {
+            var name = window.Name;
+            if (!Windows.Contains(name, StringComparer.Ordinal)) return $"`{name}` is not a window — a curve's windows are `session` and `weekly`.";
+            if (window.Value.ValueKind != JsonValueKind.Array) return $"`{name}` is not a list of points [elapsed, used].";
+            var count = window.Value.GetArrayLength();
+            if (count is < 1 or > MostPoints) return $"`{name}` has {count} points — a window's curve has one to twelve.";
+
+            (double Elapsed, double Used)? before = null;
+            var at = 0;
+            foreach (var point in window.Value.EnumerateArray())
+            {
+                at++;
+                if (PointOf(point) is not { } read) return $"`{name}`'s point {at} is not two whole numbers [elapsed, used].";
+                var (elapsed, used) = read;
+                if (elapsed is < 0 or > 100) return $"`{name}`'s point {at} is at {Said(elapsed)}% of the window's time — elapsed is from 0 to 100.";
+                if (used is < 0 or > 100) return $"`{name}`'s point {at} has used {Said(used)}% — used is from 0 to 100.";
+                if (before is { } earlier && elapsed <= earlier.Elapsed)
+                {
+                    return $"`{name}`'s point {at} is at {Said(elapsed)}% of the window's time, not after point {at - 1}'s "
+                        + $"{Said(earlier.Elapsed)}% — elapsed rises from point to point.";
+                }
+
+                if (before is { } had && used < had.Used)
+                {
+                    return $"`{name}`'s point {at} has used {Said(used)}%, less than point {at - 1}'s {Said(had.Used)}% — used never falls.";
+                }
+
+                before = (elapsed, used);
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>The curve as written: its windows in <see cref="Windows"/>' order, each point <c>[elapsed, used]</c>.</summary>
+    internal void WriteTo(Utf8JsonWriter writer)
+    {
+        writer.WriteStartObject();
+        foreach (var window in Windows)
+        {
+            if (this[window] is not { } points) continue;
+            writer.WritePropertyName(window);
+            WritePoints(writer, points);
+        }
+
+        writer.WriteEndObject();
+    }
+
+    internal static void WritePoints(Utf8JsonWriter writer, IReadOnlyList<CurvePoint> points)
+    {
+        writer.WriteStartArray();
+        foreach (var point in points)
+        {
+            writer.WriteStartArray();
+            writer.WriteNumberValue(point.Elapsed);
+            writer.WriteNumberValue(point.Used);
+            writer.WriteEndArray();
+        }
+
+        writer.WriteEndArray();
+    }
+
+    /// <summary>A point that is two whole numbers, however each is spelled (<c>30.0</c> is 30); null for any other.</summary>
+    private static (double Elapsed, double Used)? PointOf(JsonElement point) =>
+        point.ValueKind == JsonValueKind.Array && point.GetArrayLength() == 2 && Whole(point[0]) is { } elapsed && Whole(point[1]) is { } used
+            ? (elapsed, used)
+            : null;
+
+    private static double? Whole(JsonElement number) =>
+        number.ValueKind == JsonValueKind.Number && number.TryGetDouble(out var value) && double.IsFinite(value) && value == Math.Floor(value)
+            ? value
+            : null;
+
+    /// <summary>A whole number as both twins say it.</summary>
+    private static string Said(double value) => value.ToString("0", System.Globalization.CultureInfo.InvariantCulture);
+}
+
+/// <summary>
+/// A change to one scope's settings: a field null is left as it was; <paramref name="NoKeep"/> keeps none;
+/// <paramref name="Curve"/> sets each window it names, keeping the others, and <paramref name="NoCurve"/> takes the curve
+/// out. A door validates each value first; <see cref="HarnessSettings.WithUse"/> writes it as given.
+/// </summary>
+/// <remarks>
+/// <paramref name="Early"/> and <paramref name="Near"/> are the old names (D165 §6), which the modules' <c>ACCOUNT_USE</c>
+/// and Ask Daoris's <c>use</c> door still take until SWITCH1d: <c>Early</c> false is <c>switch: off</c>, and true is
+/// <c>smart</c> where it was off; <c>Near</c> other than 90 is the session window flat at it, and <c>switch: curve</c> unless
+/// it is off, and 90 takes the session window back to the smart curve's. They are applied before <paramref name="Switch"/>
+/// and <paramref name="Curve"/>, so a new name beside an old one is the one written — as the CLI's <c>UseChange</c>.
+/// </remarks>
+public sealed record UseChange(
+    string? Use = null, string? Keep = null, bool NoKeep = false, bool? Early = null, int? Near = null,
+    string? Switch = null, UseCurve? Curve = null, bool NoCurve = false);
 
 /// <summary>The scope a start reads (D130 §2 rule 1).</summary>
 /// <param name="From">Whose scope: <see cref="ChoiceFrom.Workspace"/> or <see cref="ChoiceFrom.Machine"/>.</param>
