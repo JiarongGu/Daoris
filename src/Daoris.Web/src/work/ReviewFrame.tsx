@@ -62,18 +62,29 @@ function Reading({ words, since, className }: { words: string; since?: number | 
  * **Work not based on the latest line is said here** (REVIEWBASE1, D164's note): where the latest line the host knows has commits
  * the work does not, one line names the line, how many, and *Updates*, the door that says whether the tree can be brought up to
  * date (WSR6). Nothing is said where it has none, or the line was not read.
+ *
+ * **A detached tree names no branch** (REVIEWBASE4, D164's note): in the branch's place it says *detached HEAD*. Where the tree holds
+ * nothing beyond the line, its HEAD is the commit the review is measured from, so one fact says both: *detached HEAD at* that commit.
  */
-export function ReviewHead({ title, repository, branch, base, commits, refreshing, behind }: ReviewKnown & {
+export function ReviewHead({ title, repository, branch, base, commits, refreshing, behind, detached = false }: ReviewKnown & {
   /** When a newer read began, while one is on its way and the last answer is still shown. */
   refreshing?: number | null;
   /** How the tree stands against its line, from the review's answer: absent before it answers, null where not read. */
   behind?: LineBehind | null;
+  /** Whether the review answered that the tree's HEAD is on no branch: said where the branch would be, which is then not named. */
+  detached?: boolean;
 }) {
   const { t } = useTranslation();
+  // HEAD is the base where the tree holds nothing the line does not: the base is the newest commit HEAD shares with the line.
+  const at = detached && base && behind?.ahead === 0 ? base : null;
   const facts = [
     repository ? <span key="repository" className="text-ink-soft">{repository}</span> : null,
-    branch ? <span key="branch" className="font-mono wrap-anywhere">{branch}</span> : null,
-    base ? <span key="base" className="font-mono">{t('work.review.since', { base: base.slice(0, 8) })}</span> : null,
+    at
+      ? <span key="detached" className="font-mono">{t('work.review.detachedAt', { base: at.slice(0, 8) })}</span>
+      : detached
+        ? <span key="detached" className="font-mono">{t('work.review.detached')}</span>
+        : branch ? <span key="branch" className="font-mono wrap-anywhere">{branch}</span> : null,
+    base && !at ? <span key="base" className="font-mono">{t('work.review.since', { base: base.slice(0, 8) })}</span> : null,
     commits ? <span key="commits" className="tabular-nums">{t('work.review.commits', { count: commits })}</span> : null,
   ].filter((fact) => fact !== null);
   const reading = refreshing !== null && refreshing !== undefined;
@@ -98,6 +109,16 @@ export function ReviewHead({ title, repository, branch, base, commits, refreshin
         </p>
       )}
     </header>
+  );
+}
+
+/** What the review's foot says where *Accept* would be, for a tree holding nothing beyond its line (REVIEWBASE4, D164's note). */
+export function NothingToLand({ line }: { line: string }) {
+  const { t } = useTranslation();
+  return (
+    <p className="m-0 text-small text-ink-soft">
+      <Inline text={t('work.review.nothingToLand', { line })} />
+    </p>
   );
 }
 
