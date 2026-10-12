@@ -31,7 +31,9 @@ with a door to that session, or its id where the list holds none; the row says *
 the record's own `from` and `serves` joined in the rail; and a helper is titled *Helper* and, as a reviewer is, offered
 no box. Review reads a session's work against its line (REVIEWBASE1): the head says, in one line, when the latest line the
 host knows has commits the work does not, naming *Updates* on the workspace's *Branches*; a tree holding nothing beyond the
-line says so where *Nothing landed* would be false.
+line says so where *Nothing landed* would be false. Such a tree has nothing to land (REVIEWBASE4): the foot says so where
+*Accept* would be, offers neither *Accept* nor *Send back…*, and *Discard tree* leads; the head names the branch the tree
+stands on once the review answers, over the record's `daoris/` guess, and *detached HEAD* where it stands on none.
 With nothing attended, Sessions asks what to work on (NEW1b, D162): *New conversation* takes the words, a repository, a
 tree and an agent with its account, and opens the conversation on them. Ctrl+N and Workspace › *New conversation…* open it.
 The repository list's foot adds one or imports a folder (NEW1c) through Repositories' own drawers, opened over Sessions with the

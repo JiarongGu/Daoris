@@ -11,7 +11,7 @@ import {
   useDiscardSessionTree, useHandOff, useHandOffPress, useLandSessionTree, useLanding, useReadingSince, useSessionDiff,
 } from '../shell';
 import { Button, EmptyState, Inline, SESSION_ACTIVE } from '../ui';
-import { reviewKnown } from './diff';
+import { reviewBranch, reviewKnown } from './diff';
 import type { DiscardOffer } from './groups';
 import { HeldDiscardAsk, HeldDiscardButton, heldDiscardable } from './HeldDiscard';
 import { type Answered, InlineConfirm } from './InlineConfirm';
@@ -19,7 +19,7 @@ import { LandedNote } from './LandedNote';
 import type { DiffLayout } from './PatchView';
 import { opinionHolds, opinionState } from './opinion';
 import { reviewHolds, reviewState } from './review';
-import { ReviewFailed, ReviewFiles, ReviewHead, ReviewReading } from './ReviewFrame';
+import { NothingToLand, ReviewFailed, ReviewFiles, ReviewHead, ReviewReading } from './ReviewFrame';
 
 /** How a reader likes the changes laid out (REVIEW2) — a per-viewer convenience, like the frame's widths. */
 const LAYOUT = 'daoris.reviewLayout';
@@ -61,6 +61,11 @@ const LAYOUT = 'daoris.reviewLayout';
  * reads), the landing door refuses them, so no *Accept* stands: in its place the driver's sentence says where the work is, and
  * the head's *Discard branch…* asks once with the ref the commits stay at, pressed through the head's own press. The review's
  * two-step Discard stands only where that one would not go unforced, since the tree holds what no commit does.
+ *
+ * **A tree with nothing beyond its line has nothing to land** (REVIEWBASE4, D164's note). Where the review's answer says the tree
+ * holds no commit past the line, lists no file and nothing uncommitted, the foot says so where *Accept* would be, offers neither
+ * *Accept* nor *Send back…*, and *Discard tree* leads. The head names the branch the tree stands on once the answer says it, over
+ * the record's `daoris/` guess, and none where the tree is detached.
  *
  * **It says what it is doing while git reads** (REVIEW4). The frame stands at once with what the record holds —
  * the title, the repository, its own branch, the base and the commits it reported — and the files and the patch as
@@ -123,8 +128,15 @@ export function DiffPane({
   // Work the line holds by content (SQUASHTIDY1f): the landing door refuses it, so its discard stands where Accept would.
   const held = treeHere && !asLanded && discards ? discards : null;
   const heldPress = held && heldDiscardable(held, onDiscardTree) ? onDiscardTree! : null;
-  const plannable = treeHere && !asLanded && !held;
-  const sendBack = asLanded ? undefined : onSendBack;
+  // A tree that holds nothing beyond its line, committed or not (REVIEWBASE4, D164's note): there is nothing to land, so no plan is
+  // asked, neither *Accept* nor *Send back…* is offered, and *Discard tree* leads. Where the line was not read, as before.
+  const answered = diff.data;
+  const nothingBeyond = treeHere && !held && answered?.behind?.ahead === 0 && answered.files.length === 0
+    && !answered.uncommitted?.files.length
+    ? answered.behind
+    : null;
+  const plannable = treeHere && !asLanded && !held && !nothingBeyond;
+  const sendBack = asLanded || nothingBeyond ? undefined : onSendBack;
   const land = useLandSessionTree();
   // What a press would do, asked only where there is a tree to land and the review does not read as landed.
   const landing = useLanding(plannable ? session : null);
@@ -244,8 +256,17 @@ export function DiffPane({
   const known = own
     ? reviewKnown(own, { title, ownTree: hasTree })
     : { title, repository: null, branch: null, base: null, commits: null, machine: null };
+  // The branch the tree stands on once the answer names it, over the record's guess (REVIEWBASE4); none where it is detached.
+  const named = reviewBranch(known, diff.data);
   const head = (
-    <ReviewHead {...known} base={diff.data?.base || known.base} refreshing={refreshing ? since : null} behind={diff.data?.behind} />
+    <ReviewHead
+      {...known}
+      branch={named.branch}
+      detached={named.detached}
+      base={diff.data?.base || known.base}
+      refreshing={refreshing ? since : null}
+      behind={diff.data?.behind}
+    />
   );
 
   // Git is reading: the frame, then what is read and for how long over the skeleton. Nothing acts on a tree whose
@@ -276,6 +297,8 @@ export function DiffPane({
           </ExternalLink>
         </p>
       )}
+      {/* Where Accept would be, a tree with nothing beyond its line (REVIEWBASE4): a landed one's note already says where it went. */}
+      {!said && nothingBeyond && !asLanded && <NothingToLand line={nothingBeyond.line} />}
       {/* Where a press sends the work, before it is pressed (D87) — and who pushes it where a plugin
           does (D100). A shell older than the rule answers no form, and the pane then claims nothing. */}
       {!said && canAccept && landing.data?.form === 'branch' && landing.data.target && (
@@ -359,7 +382,8 @@ export function DiffPane({
           ? null
           : (
             <Button
-              variant="ghost"
+              // The next move where nothing is beyond the line, so it leads (REVIEWBASE4); beside *Accept*, it stays quiet.
+              variant={nothingBeyond ? 'primary' : 'ghost'}
               disabled={discard.isPending}
               // Unforced. A tree with nothing to lose is simply removed; one holding uncommitted
               // work or unmerged commits comes back REFUSED with the sentence naming what would go —

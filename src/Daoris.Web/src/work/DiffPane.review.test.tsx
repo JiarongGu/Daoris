@@ -17,6 +17,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import '../i18n';
+import type { Session } from '../api';
 import { DiffPane } from './DiffPane';
 
 const FILES = [{ path: 'src/report/compare.ts', status: 'modified', added: 4, removed: 1, patch: '@@ -1 +1,2 @@\n-a\n+b' }];
@@ -271,5 +272,117 @@ describe('the review against the latest line', () => {
 
     expect(await screen.findByText('Nothing landed')).toBeInTheDocument();
     expect(screen.queryByText('Nothing beyond the line')).toBeNull();
+  });
+});
+
+/**
+ * REVIEWBASE4 (D164's note): a tree that holds nothing beyond the line has nothing to land. Its review says so where *Accept*
+ * would be, offers neither *Accept* nor *Send back…*, asks no landing plan, and leads with *Discard tree*. Its head names the
+ * branch the tree stands on once the review answers, over the record's guess, and none where the tree is detached.
+ */
+describe('the review of a tree with nothing beyond the line', () => {
+  afterEach(() => { invoke.mockReset(); });
+
+  const RECORD: Session = {
+    id: 's1a2b3c4',
+    quest: 'abc123',
+    repository: 'portal-ui',
+    adapter: 'claude-code',
+    state: 'completed',
+    kind: 'driven',
+    created: '2026-10-03T08:00:00Z',
+    updated: '2026-10-03T09:00:00Z',
+    workspace: 'default',
+    tree: 'C:/somewhere/.daoris/trees/default/portal-ui/s-aeefe837',
+    baseCommit: '0fda18c2b7e4a9d1',
+  };
+  // The seen case: the rule lands on a branch, so the pane once said Accept would put the work on one.
+  const BRANCH_PLAN = { session: 's1a2b3c4', form: 'branch', target: 'feature/aeefe837-fix-the-gap', source: 'workspace' };
+  const EVEN = { files: [], base: '9c41e07d2b5a8f13', behind: { line: 'main', commits: 0, ahead: 0 } };
+  const landings = () => invoke.mock.calls.filter(([, type]) => type === 'LANDING');
+
+  function drive(diff: Record<string, unknown>) {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_DIFF') return { ...DIFF, ...diff };
+      if (type === 'HANDOFF_PLAN') return { session: 's1a2b3c4', branch: null };
+      if (type === 'LANDING') return BRANCH_PLAN;
+      return {};
+    });
+  }
+
+  function attended() {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <DiffPane session="s1a2b3c4" record={RECORD} title="Fix the gap" hasTree onSendBack={vi.fn()} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+  }
+
+  it('says there is nothing to land where Accept would be, and offers neither Accept nor Send back', async () => {
+    drive(EVEN);
+    attended();
+
+    expect(await screen.findByText('Nothing beyond the line')).toBeInTheDocument();
+    expect(screen.getByText(/nothing to land/)).toHaveTextContent('There is nothing to land: everything its tree holds is on main already.');
+    expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send back…' })).toBeNull();
+    expect(screen.queryByText(/Accepting puts this work/)).toBeNull();
+    // Nothing would land, so no plan is asked for: `useLanding` is handed no session.
+    expect(landings()).toHaveLength(0);
+  });
+
+  it('leads with Discard tree', async () => {
+    drive(EVEN);
+    attended();
+
+    await screen.findByText('Nothing beyond the line');
+    expect(screen.getByRole('button', { name: 'Discard tree' }).className).toContain('bg-accent');
+  });
+
+  it.each([
+    ['holds commits beyond the line', { files: [], behind: { line: 'main', commits: 0, ahead: 2 } }],
+    ['holds uncommitted work', {
+      files: [],
+      behind: { line: 'main', commits: 0, ahead: 0 },
+      uncommitted: { files: [{ path: 'src/draft.ts', status: 'modified', added: 1, removed: 0, patch: '@@ -1 +1 @@\n+x' }], truncated: false },
+    }],
+    ['was not measured against its line', { files: [], behind: null }],
+  ])('offers Accept as before where the tree %s', async (_case, diff) => {
+    drive(diff);
+    attended();
+
+    expect(await screen.findByRole('button', { name: 'Accept' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send back…' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Discard tree' }).className).toContain('bg-transparent');
+    expect(screen.queryByText(/nothing to land/)).toBeNull();
+  });
+
+  it("names the branch its tree stands on once the review answers, over the record's guess", async () => {
+    drive({ treeBranch: 'feature/TK-9-gap' });
+    attended();
+
+    expect(await screen.findByText('feature/TK-9-gap')).toBeInTheDocument();
+    expect(screen.queryByText('daoris/s-aeefe837')).toBeNull();
+  });
+
+  it('names no branch for a detached tree, and says it is detached at the commit the line holds', async () => {
+    drive({ ...EVEN, treeBranch: null });
+    attended();
+
+    expect(await screen.findByText('detached HEAD at 9c41e07d')).toBeInTheDocument();
+    expect(screen.queryByText('daoris/s-aeefe837')).toBeNull();
+    expect(screen.queryByText(/^since /)).toBeNull();
+  });
+
+  it("keeps the record's branch where the answer names none, as a host older than REVIEWBASE4 answers", async () => {
+    drive({});
+    attended();
+
+    expect(await screen.findByText('src/report/compare.ts')).toBeInTheDocument();
+    expect(screen.getByText('daoris/s-aeefe837')).toBeInTheDocument();
+    expect(screen.queryByText(/detached HEAD/)).toBeNull();
   });
 });
