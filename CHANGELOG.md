@@ -19,6 +19,10 @@ with the version and date at release.
   subjects, made as your repository's own `user.name` and `user.email` (Accept says how to set them where git has none). A
   chain's later step adds one more commit to the same branch, and the session's head, Discard and the clean-up read the
   squashed session as landed. A session that committed on a branch of its own still lands as it stands.
+- Ask Daoris can propose a repository's or a workspace's commit rule and helpers rule, and a landing rule's ticket key and
+  squash, each as a card you apply with its terminal command beside it. It may quote your repository's own instructions (its
+  branch names, how it writes a commit), which become the process only once you apply the card. A landing card that names
+  neither the key nor the squash keeps the ones already set there.
 - Daoris reads each Claude account's real plan usage, the five-hour and weekly windows Claude Code's `/usage` shows, with no
   prompt and no usage spent, so a start chooses its account on what is really left, the person's own use included, rather
   than on what Daoris's last session there said hours before.
