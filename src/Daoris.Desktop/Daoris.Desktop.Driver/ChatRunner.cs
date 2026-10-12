@@ -861,8 +861,8 @@ public sealed partial class ChatRunner : IDisposable
     /// </summary>
     /// <summary>
     /// What a turn's message puts in the record as it is sent, in order: the browser, the process (PROCESS1d-ii) and where the
-    /// person is as their notes, then the person's message. A conversation handed over from another agent opens with Daoris's briefing instead (MIXAGENT1a-i): its
-    /// one note says where it came from, since no person spoke.
+    /// person is as their notes, then the person's message. A conversation handed over from another agent opens with Daoris's
+    /// briefing instead (MIXAGENT1a-i): its one note says where it came from, since no person spoke.
     /// </summary>
     internal static IEnumerable<SessionEvent> Recorded(ChatMessage message)
     {
