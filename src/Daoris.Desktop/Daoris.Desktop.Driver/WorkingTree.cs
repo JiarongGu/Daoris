@@ -282,7 +282,9 @@ public static class WorkingTree
     /// evidence string counts, so the two can never disagree about what the session did. Uncommitted
     /// changes in the tree are deliberately not here: a chat may open on a dirty tree (D49 §3), so
     /// what is uncommitted is not knowably the session's, and attributing somebody else's work in
-    /// flight to an agent is the `reaching-in` mistake in a read-only disguise.</para>
+    /// flight to an agent is the `reaching-in` mistake in a read-only disguise. Only a session's OWN
+    /// tree, which it ran in alone, has its uncommitted work read, and apart: <see cref="UncommittedDiffAsync(string, CancellationToken)"/>
+    /// (REVIEWDIRTY1-a, D164 point 4).</para>
     ///
     /// <para>Null when git cannot answer — no repository, an unknown base, a tree that has moved
     /// away. A caller says so rather than showing an empty diff, which reads as "it changed
@@ -300,6 +302,100 @@ public static class WorkingTree
         if (!await IsTopLevelAsync(root, git, ct).ConfigureAwait(false)) return null;
 
         return await RangeAsync(root, before, $"{before}..HEAD", "`git diff` in the tree has all of it.", git, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>The size above which an untracked file is listed with no patch (REVIEWDIRTY1-a): a read of one costs a git start and a page of text.</summary>
+    public const int UntrackedPatchLimit = 200 * 1024;
+
+    /// <summary>
+    /// What a session's OWN tree holds that no commit does (REVIEWDIRTY1-a, D164 point 4): the tracked changes, staged and
+    /// unstaged together, against <c>HEAD</c>, and each untracked file as an addition. Null where git cannot answer.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 <b>Only for a tree the session ran in alone.</b> A conversation in the person's checkout may have opened on a dirty
+    /// tree (D49 §3), so what is uncommitted there is not knowably the session's and is never read through this: the caller
+    /// asks only of a tree this home made. Reads only (<c>git diff</c>, <c>git status</c>); the index is not refreshed to disk.
+    /// The files are bounded as the committed list is: <see cref="PatchBudget"/> and <see cref="PatchCap"/>.
+    /// </remarks>
+    public static Task<TreeDiff?> UncommittedDiffAsync(string root, CancellationToken ct = default) =>
+        UncommittedDiffAsync(root, ReadGitAsync, ct);
+
+    /// <inheritdoc cref="UncommittedDiffAsync(string, CancellationToken)"/>
+    /// <param name="git">How the review reads git: the seam its tests count processes through (REVIEW3).</param>
+    internal static async Task<TreeDiff?> UncommittedDiffAsync(string root, GitRead git, CancellationToken ct)
+    {
+        if (!await IsTopLevelAsync(root, git, ct).ConfigureAwait(false)) return null;
+
+        const string rest = "`git diff HEAD` in the tree has all of it.";
+        var tracked = await RangeAsync(root, "HEAD", "HEAD", rest, git, ct).ConfigureAwait(false);
+        if (tracked is null) return null;
+
+        var status = new StringBuilder();
+        var code = await git(
+            root, ["status", "--porcelain", "-z", "--untracked-files=all"], piece => { status.Append(piece.Span); return true; }, ct)
+            .ConfigureAwait(false);
+        if (code != 0) return null;
+
+        var files = new List<DiffFile>(tracked.Files);
+        var spent = tracked.Files.Sum(file => file.Patch?.Length ?? 0);
+        var dropped = 0;
+        var entries = status.ToString().Split('\0');
+        for (var at = 0; at < entries.Length; at++)
+        {
+            var entry = entries[at];
+            if (entry.Length < 4) continue;
+            // A rename's or a copy's source follows its entry, and is no path of its own.
+            if (entry[0] is 'R' or 'C' || entry[1] is 'R' or 'C') at++;
+            if (!entry.StartsWith("?? ", StringComparison.Ordinal)) continue;
+
+            var path = entry[3..];
+            if (spent >= PatchBudget)
+            {
+                dropped++;
+                files.Add(new DiffFile(path, "A", null, null, null));
+                continue;
+            }
+
+            var (patch, added) = await UntrackedPatchAsync(root, path, git, ct).ConfigureAwait(false);
+            spent += patch?.Length ?? 0;
+            files.Add(new DiffFile(path, "A", added, added is null ? null : 0, patch));
+        }
+
+        var truncated = tracked.Truncated ?? (dropped == 0
+            ? null
+            : $"{dropped} more untracked file{(dropped == 1 ? "" : "s")}; their patches are not shown here. {rest}");
+        return new TreeDiff(files, truncated, "HEAD");
+    }
+
+    /// <summary>An untracked file as the patch that adds it, with the lines it adds; none for a binary, an oversize or an unreadable one.</summary>
+    private static async Task<(string? Patch, int? Added)> UntrackedPatchAsync(string root, string path, GitRead git, CancellationToken ct)
+    {
+        try
+        {
+            if (new FileInfo(Path.Combine(root, path)) is { Exists: true, Length: > UntrackedPatchLimit }) return (null, null);
+        }
+        catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException or IOException)
+        {
+            return (null, null);
+        }
+
+        var text = new StringBuilder();
+        var code = await git(
+            root,
+            [
+                "-c", "core.quotePath=false", "diff", "--no-index", "--no-color", "--no-ext-diff", "--src-prefix=a/", "--dst-prefix=b/",
+                "--", "/dev/null", path,
+            ],
+            piece => { text.Append(piece.Span); return true; },
+            ct).ConfigureAwait(false);
+        // --no-index exits 1 where the files differ, which a new file always does.
+        if (code is not (0 or 1) || text.Length == 0) return (null, null);
+
+        var patch = text.ToString();
+        if (patch.Contains("\nBinary files ", StringComparison.Ordinal) || patch.Contains("\nGIT binary patch", StringComparison.Ordinal)) return (null, null);
+
+        var added = patch.Split('\n').Count(line => line.StartsWith('+') && !line.StartsWith("+++", StringComparison.Ordinal));
+        return (patch.Length > PatchCap ? patch[..PatchCap] + "\n… this file's patch is longer than the surface renders." : patch, added);
     }
 
     /// <summary>
