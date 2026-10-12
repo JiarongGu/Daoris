@@ -197,6 +197,16 @@ public sealed partial class HelpCoverageTests
         + "proposes none; it can name `daoris-driver sessions start-from` and the screen's press.");
 
     /// <summary>
+    /// MIXAGENT1a-i's <c>daoris-driver sessions hand-over</c> (D163, D50), a verb of the headless host: exempt, since it ends the
+    /// person's conversation to go on with another agent's, an exchange of their agent and their allowance that stays theirs. The
+    /// page's press is MIXAGENT1b's row.
+    /// </summary>
+    private static readonly Exempt HandOverDoor = new(
+        "handing a conversation to another agent ends it and goes on with an agent and an account the person did not choose it on "
+        + "(D163), a choice that stays the person's (D133 §1), so Ask Daoris proposes none; it can name "
+        + "`daoris-driver sessions hand-over` and the screen's press once the page has it.");
+
+    /// <summary>
     /// TRACE1's <c>daoris-driver trace</c> (D143), a verb of the headless host: exempt, since it reads the records back to an ask
     /// and changes nothing, as <c>driver list</c> is (D110 §4). A screen's door to the same read is a row of its own.
     /// </summary>
@@ -796,6 +806,7 @@ public sealed partial class HelpCoverageTests
             .Append(SayDoor)
             .Append(GoOnNewDoor)
             .Append(StartFromDoor)
+            .Append(HandOverDoor)
             .Append(TraceDoor)
             .Append(WorkflowRunDoor)
             .Append(WorkflowKeepDoor)

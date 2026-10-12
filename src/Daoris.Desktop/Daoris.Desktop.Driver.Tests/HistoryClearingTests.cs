@@ -51,6 +51,7 @@ public sealed class HistoryClearingTests : IDisposable
         File.WriteAllText(Path.Combine(Sessions, id + ".pid"), "1 1");
         File.WriteAllText(Path.Combine(Sessions, id + GoOnMarks.Suffix), "{}");
         File.WriteAllText(Path.Combine(Sessions, id + NewSessionChoices.Suffix), "{}");
+        File.WriteAllText(Path.Combine(Sessions, id + HandOverBox.Suffix), "{}");
         Directory.CreateDirectory(Path.Combine(_home, SpawnServers.Folder));
         File.WriteAllText(Path.Combine(_home, SpawnServers.Folder, $"{id}.mcp.json"), "{}");
         File.WriteAllText(Path.Combine(_home, SpawnServers.Folder, $"{id}.settings.json"), "{}");
@@ -58,7 +59,7 @@ public sealed class HistoryClearingTests : IDisposable
 
     private string[] KeptOf(string id) =>
     [
-        .. new[] { ".events.jsonl", ".log", HarnessConversations.Suffix, ".pid", GoOnMarks.Suffix, NewSessionChoices.Suffix }
+        .. new[] { ".events.jsonl", ".log", HarnessConversations.Suffix, ".pid", GoOnMarks.Suffix, NewSessionChoices.Suffix, HandOverBox.Suffix }
             .Select(suffix => Path.Combine(Sessions, id + suffix))
             .Where(File.Exists),
         .. new[] { ".mcp.json", ".settings.json" }.Select(suffix => Path.Combine(_home, SpawnServers.Folder, id + suffix)).Where(File.Exists),

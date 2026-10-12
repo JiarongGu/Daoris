@@ -13809,3 +13809,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ORIENT2h8 — a label's count leaves the id** (service). Five ids still move between ORIENT2h7's two commits: Decisions-table rows whose label ends in a note count (*· 8 notes*). Strip a label's trailing count beside `Unnumbered`, in both readers; the same two-commit measurement, five to none. D151's ORIENT2h7 note.
 
 **Outcome** 2026-10-12: an index entry's id, in both readers, ignores a label's trailing ` · N note(s)` (`IndexRows.Unnoted`, after `Unnumbered`). Over h7's two commits, 5,921 entries pair; the reader before moved 6 ids (the Decisions items), this one moves none. Detail: D151's ORIENT2h8 note.
+
+## MIXAGENT1a-i — a conversation handed to another agent (2026-10-12, D163)
+
+> - [ ] **MIXAGENT1a-i — a conversation handed to another agent** (driver; note twins). The `<id>.hand-over.json` box and its refusals; a conversation handed over at once when idle, or at its turn's end, to a new conversation on the named agent in the same tree, whose first prompt is Daoris's briefing of the record; the old one ended with a coded note; `daoris-driver sessions hand-over <id> --agent … [--account …]`. Design §2.
+
+**Outcome** 2026-10-12: the box and its refusals; the shell's chat runner takes it at once, at its turn's end or at come-up; the old conversation ends (`chat.handed-over`) before the new one starts in its tree on the named agent and account, told Daoris's briefing with no person's words (`chat.taken-over`), or says the briefing did not reach it (`chat.briefing-unsaid`); the terminal verb reaches the runner as `start-from` does. Its first merge was aborted when `HandOverProcessTests` showed the briefing never said on real stand-ins; the fix passed them. A quest's session is 1a-ii; the page's press is MIXAGENT1b. Detail: D163's MIXAGENT1a-i note.

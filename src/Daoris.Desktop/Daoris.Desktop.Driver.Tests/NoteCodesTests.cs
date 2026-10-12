@@ -68,7 +68,7 @@ public sealed class NoteCodesTests
     public void Every_reason_a_why_may_name_has_an_entry_that_says_its_own_values(string language)
     {
         var catalogue = Catalogue(language);
-        foreach (var reasons in new[] { NoteCodes.Continue, NoteCodes.Cooling, NoteCodes.Opening, NoteCodes.Resumed, NoteCodes.Unreached })
+        foreach (var reasons in new[] { NoteCodes.Continue, NoteCodes.Cooling, NoteCodes.Opening, NoteCodes.Resumed, NoteCodes.Unreached, NoteCodes.Handed })
         {
             foreach (var reason in reasons.All)
             {
@@ -361,6 +361,29 @@ public sealed class WordsNotesTests
         {
             Assert.All(code.Values.Where(value => value != "why"), value => Assert.False(NoteCodes.Unreached.Carries(value), $"`{code.Code}`'s `{value}` is a reason's too"));
         }
+    }
+
+    /// <summary>MIXAGENT1a-i: why a conversation was handed over is a family of its own, each reason declared once; the two lines carry facts only.</summary>
+    [Fact]
+    public void A_conversation_handed_over_says_where_it_went_and_why_by_code_with_facts_only()
+    {
+        var reasons = typeof(HandOverWhy).GetFields()
+            .Where(field => field.IsLiteral && field.FieldType == typeof(string))
+            .Select(field => (string)field.GetRawConstantValue()!)
+            .Order(StringComparer.Ordinal);
+        Assert.Equal(reasons, NoteCodes.Handed.All.Select(reason => reason.Code).Order(StringComparer.Ordinal));
+        Assert.Equal(["agent", "limit", "near", "press"], reasons);
+
+        var went = HandOverNotes.HandedOver("codex-acp", "ab12cd34");
+        Assert.Equal("The conversation went on with codex-acp, in conversation ab12cd34.", went.Note);
+        Assert.Equal(["chat.handed-over"], NoteAssert.Codes(went.Parts));
+        Assert.Equal(("codex-acp", "ab12cd34"), (went.Parts[0].Value("agent"), went.Parts[0].Value("session")));
+        NoteAssert.Holds(went);
+
+        var took = HandOverNotes.TakenOver("claude-code", "ab12cd34", HandOverWhy.Limit);
+        Assert.Equal("The conversation went on from claude-code conversation ab12cd34, handed over because its account reached its limit.", took.Note);
+        Assert.Equal(("claude-code", "ab12cd34", "limit"), (took.Parts[0].Value("agent"), took.Parts[0].Value("session"), took.Parts[0].Value("why")));
+        NoteAssert.Holds(took);
     }
 }
 

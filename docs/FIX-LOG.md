@@ -1388,7 +1388,9 @@ a timeout, so a reset ends the run instead of failing the check with its words; 
 `landing-plugins.test.ts:246` (*at an advance the github-pull-request plugin pushes to the open pull request …*) failed at
 NEW1a's merge, 2026-10-12 (a driver and modules change; no CLI file), with three branch-workers building beside it: its
 fixture's `git checkout --quiet main` exited -1 (4294967295), a spawn failure, the same file's git-spawn shape as UXFIX5b's
-and WORKFLOW1a's sightings above.
+and WORKFLOW1a's sightings above. Again at MIXAGENT1a-i's merge the same day (driver and page notes; no CLI file), with one
+branch-worker building beside it: the azure-devops plugin's case (`:250`) met its fixture's `git push --quiet origin …`
+exiting -1; `--rerun cli` on the open merge.
 `OrphanedSessionTests.A_torn_driver_json_is_said_and_watched_never_the_end_of_the_loop` (driver, Process) failed in the
 full set on `19f72d0`, 2026-10-12 (819/820, 27 m 43 s), with no worker building beside it, and passed alone: not the
 test's assertion but its stand-in service's teardown, `HttpListenerException: An operation was attempted on a nonexistent

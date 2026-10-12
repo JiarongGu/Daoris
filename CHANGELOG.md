@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A conversation can go on with another agent from the terminal (`daoris-driver sessions hand-over <id> --agent <adapter>
+  [--account <name>]`), as when its account's allowance runs low: it ends, and a new conversation starts in the same tree on
+  the agent you name, told what Daoris kept of it (your request, its last plan and words, what is uncommitted); both say
+  where it went. The page's press follows.
 - A session's own scratch files in an ignored folder (such as `devtools/.tmp`) are no longer removed with its tree unasked:
   accepting the work keeps the tree and says which files; build and dependency folders still go with it.
 - A Codex session is handed Daoris's knowledge tools again: they failed to start under Codex, which passes an MCP server

@@ -15,7 +15,7 @@ type Translate = (key: string, options?: Record<string, unknown>) => string;
  * the step that chose a conversation's account (`note.opening.why.*`, UX7d-1), or whose words a resumed conversation goes on
  * with (`note.resumed.why.*`, CONVNOTE2a), or why the person's words never reached it (`note.words.why.*`, CONVNOTE2d1).
  */
-type Why = 'continue' | 'cooling' | 'opening' | 'resumed' | 'unreached';
+type Why = 'continue' | 'cooling' | 'opening' | 'resumed' | 'unreached' | 'handed';
 
 /** A code the page words: the values its sentence says, its key where it is not `note.<code>`, and the reasons a `why` names. */
 export type NoteCode = { values: readonly string[]; key?: string; why?: Why };
@@ -175,6 +175,10 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'browser.none-up': { values: [] },
   // The line a chat's agent was told of the browser it was handed (BRWHINT1a): the line follows as a program's words.
   'chat.told-browser': { values: [] },
+  // A conversation handed to another agent (MIXAGENT1a-i): where the old one went, and where the new one came from and why.
+  'chat.handed-over': { values: ['agent', 'session'] },
+  'chat.taken-over': { values: ['agent', 'session', 'why'], why: 'handed' },
+  'chat.briefing-unsaid': { values: [] },
   // A session's own background work (CONVNOTE2f): the work's names as code, a state as the harness said it; a program's words
   // follow `unread`.
   'background.unread': { values: [] },
@@ -272,6 +276,17 @@ export const RESUMED_REASONS: Readonly<Record<string, { key: string; values: rea
 export const UNREACHED_REASONS: Readonly<Record<string, { key: string; values: readonly string[] }>> = {
   'ended-first': { key: 'note.words.why.ended-first', values: [] },
   unkept: { key: 'note.words.why.unkept', values: [] },
+};
+
+/**
+ * Why a conversation was handed to another agent (MIXAGENT1a-i; the driver's `NoteCodes.Handed`), each its entry; none carries
+ * a value of its own. `locales/note.test.ts` holds this map to the driver's declaration key for key.
+ */
+export const HANDED_REASONS: Readonly<Record<string, { key: string; values: readonly string[] }>> = {
+  press: { key: 'note.handed.why.press', values: [] },
+  near: { key: 'note.handed.why.near', values: [] },
+  limit: { key: 'note.handed.why.limit', values: [] },
+  agent: { key: 'note.handed.why.agent', values: [] },
 };
 
 /**
@@ -422,6 +437,7 @@ function said(
       if (code.why === 'opening') return opening(t, why, values, code, language, names);
       if (code.why === 'resumed') return RESUMED_REASONS[why] ? t(RESUMED_REASONS[why].key) : null;
       if (code.why === 'unreached') return UNREACHED_REASONS[why] ? t(UNREACHED_REASONS[why].key) : null;
+      if (code.why === 'handed') return HANDED_REASONS[why] ? t(HANDED_REASONS[why].key) : null;
       return reasonOf(t, why, {
         from: text(values.from), to: text(values.to), adapter: text(values.adapter), agent: text(values.agent),
       });

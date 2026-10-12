@@ -40,6 +40,12 @@ public sealed record SessionsAsk(string Verb)
 
     /// <summary>A say's files, each as the person named its path.</summary>
     public IReadOnlyList<string> Files { get; init; } = [];
+
+    /// <summary>A hand-over's agent (MIXAGENT1a-i): the adapter the conversation goes on with.</summary>
+    public string? Agent { get; init; }
+
+    /// <summary>A hand-over's account, or null for the one the roster picks.</summary>
+    public string? Account { get; init; }
 }
 
 /// <summary>
@@ -86,6 +92,13 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     /// Null where nothing here can hold a conversation.
     /// </summary>
     public Func<string, CancellationToken, Task<int>>? StartFrom { get; init; }
+
+    /// <summary>
+    /// The terminal's own door for a conversation handed to another agent (MIXAGENT1a-i, D163, D50): the host's chat door, which
+    /// runs the chat runner's one hand-over, as <see cref="StartFrom"/> runs its start, and answers its exit. Takes the session,
+    /// the agent and the account, or null for the roster's pick. Null where nothing here can hold a conversation.
+    /// </summary>
+    public Func<string, string, string?, CancellationToken, Task<int>>? HandOver { get; init; }
 }
 
 /// <summary>
@@ -123,6 +136,7 @@ public static class SessionsCommand
                daoris-driver sessions say <id> "…" [--file <path>]…
                daoris-driver sessions go-on-new <id>
                daoris-driver sessions start-from <id>
+               daoris-driver sessions hand-over <id> --agent <adapter> [--account <name>]
         """;
 
     /// <summary>The fields of a row in <c>--json</c>, in order: <c>SESSION_GROUPS</c>' row, field for field.</summary>
@@ -183,6 +197,13 @@ public static class SessionsCommand
                 return new SessionsAsk("start-from") { Ids = [id] };
             case ["start-from", ..]:
                 problem = "`start-from` takes one session's id.";
+                return null;
+            case ["hand-over", var id, "--agent", var agent] when Id(id) && Id(agent):
+                return new SessionsAsk("hand-over") { Ids = [id], Agent = agent };
+            case ["hand-over", var id, "--agent", var agent, "--account", var account] when Id(id) && Id(agent) && Id(account):
+                return new SessionsAsk("hand-over") { Ids = [id], Agent = agent, Account = account };
+            case ["hand-over", ..]:
+                problem = "`hand-over` takes one session's id, `--agent <adapter>` and, where one is wanted, `--account <name>`.";
                 return null;
         }
 
@@ -248,6 +269,7 @@ public static class SessionsCommand
             "say" => await SayAsync(world, ask, output, ct).ConfigureAwait(false),
             "go-on-new" => await GoOnNewAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
             "start-from" => await StartFromAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
+            "hand-over" => await HandOverAsync(world, ask, output, ct).ConfigureAwait(false),
             "stop" => await StopAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
             "finish" or "decline" => await ResolveAsync(world, ask, output, ct).ConfigureAwait(false),
             "archive" when ask.Ended => await ArchiveEndedAsync(world, ask.Yes, output, ct).ConfigureAwait(false),
@@ -1069,6 +1091,30 @@ public static class SessionsCommand
     {
         output.WriteLine($"sessions: {started.Message}");
         return started.SessionId is null ? 1 : null;
+    }
+
+    // ——— Hand a conversation over (MIXAGENT1a-i, D163, D50): the page's press follows with MIXAGENT1b.
+
+    /// <summary>
+    /// A conversation goes on with another agent: opened by the host's chat door, as start-from's is, since a conversation lives in
+    /// the shell's chat runner; its exit is the door's. A world with no door has nothing to hand it to.
+    /// </summary>
+    private static async Task<int> HandOverAsync(SessionsWorld world, SessionsAsk ask, TextWriter output, CancellationToken ct)
+    {
+        if (world.HandOver is { } open) return await open(ask.Ids[0], ask.Agent!, ask.Account, ct).ConfigureAwait(false);
+
+        output.WriteLine($"sessions: nothing here can hand a conversation over; run `daoris-driver sessions hand-over {ask.Ids[0]} --agent {ask.Agent}` at a terminal.");
+        return 2;
+    }
+
+    /// <summary>
+    /// What the chat runner's hand-over came to, in one line: null where the new conversation opened, which then runs on in this
+    /// terminal; else the exit, 0 where the ask is kept for the conversation's turn to end, 1 where it is refused.
+    /// </summary>
+    public static int? HandedOver(HandedOver handed, TextWriter output)
+    {
+        output.WriteLine($"sessions: {handed.Message}");
+        return handed.SessionId is not null ? null : handed.Kept ? 0 : 1;
     }
 
     // ——— Archive, unarchive and delete: the screen's owners.

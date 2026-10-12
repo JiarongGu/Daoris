@@ -531,6 +531,21 @@ describe('noteLines', () => {
       expect(noteLines(zh, { parts: [unreached('ended-first', 'two')] }, 'zh')[0].kind).toBe('recorded');
     });
 
+    it('words a conversation handed to another agent at both ends, and why by reason (MIXAGENT1a-i)', () => {
+      const went = coded('chat.handed-over', 'The conversation went on with codex-acp, in conversation ab12cd34.', { agent: 'codex-acp', session: 'ab12cd34' });
+      expect(noteLines(t, { parts: [went] }, 'en')[0].text).toBe('This conversation went on with codex-acp, in conversation ab12cd34.');
+      expect(noteLines(zh, { parts: [went] }, 'zh')[0].text).toBe('这段对话已转交给 codex-acp 继续，新对话为 ab12cd34。');
+
+      const took = (why: string) =>
+        coded('chat.taken-over', 'The conversation went on from claude-code conversation ab12cd34, …', { agent: 'claude-code', session: 'ab12cd34', why });
+      expect(noteLines(t, { parts: [took('limit')] }, 'en')[0].text)
+        .toBe('This conversation went on from claude-code conversation ab12cd34, handed over because its account reached its limit.');
+      expect(noteLines(zh, { parts: [took('press')] }, 'zh')[0].text)
+        .toBe('这段对话是从 claude-code 的对话 ab12cd34 转交过来继续的，原因：你要求转交。');
+      // A reason this build does not know leaves the line as recorded.
+      expect(noteLines(t, { parts: [took('moved-on')] }, 'en')[0].kind).toBe('recorded');
+    });
+
     it('words a take that failed and leaves the service’s message as written', () => {
       const parts = [coded('words.not-taken', '— your words could not be taken off its record:'), words('no record at D:/x', 'program')];
       expect(noteLines(zh, { parts }, 'zh')).toEqual([
