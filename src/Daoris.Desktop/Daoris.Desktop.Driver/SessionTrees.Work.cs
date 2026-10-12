@@ -91,7 +91,7 @@ public sealed partial class SessionTrees
             var holds = await HoldsAsync(full, root, ct).ConfigureAwait(false);
             var stays = holds is null ? "Daoris cannot tell what it holds beyond its commits"
                 : holds.Uncommitted.Count > 0 ? $"it has {holds.Uncommitted.Count} uncommitted path(s), which a discard would destroy"
-                : holds.Ignored.Count > 0 ? $"it holds {holds.IgnoredSaid}, which a discard would destroy"
+                : holds.OwnSaid is { } own ? $"it holds {own}, which a discard would destroy"
                 : null;
             if (stays is not null) return new HeldWork(held, null, stays);
 

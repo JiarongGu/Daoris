@@ -875,7 +875,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             if (holds is null) return (Item(SweepKind.Dirty, detail: "git could not say what its tree holds") with { Unread = true }, null);
             shared = holds.Shared.Count;
             if (holds.Uncommitted.Count > 0) return (Item(SweepKind.Dirty, detail: $"{holds.Uncommitted.Count} path(s) uncommitted"), null);
-            if (holds.Ignored.Count > 0) return (Item(SweepKind.Dirty, detail: holds.IgnoredSaid), null);
+            if (holds.OwnSaid is { } own) return (Item(SweepKind.Dirty, detail: own), null);
         }
 
         var (tipCode, tipOut, tipErr) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}^{{commit}}"], ct)
@@ -1223,10 +1223,10 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                     + "destroy that work; commit it there or say it again with --force, meaning it.");
             }
 
-            if (holds.Ignored.Count > 0)
+            if (holds.OwnSaid is { } own)
             {
                 return new(false,
-                    $"the tree at {path} holds {holds.IgnoredSaid}. Removing it would destroy them; move them somewhere "
+                    $"the tree at {path} holds {own}. Removing it would destroy them; move them somewhere "
                     + "of yours, or say it again with --force, meaning it.");
             }
 

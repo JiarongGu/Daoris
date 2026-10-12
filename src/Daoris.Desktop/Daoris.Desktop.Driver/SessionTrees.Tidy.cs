@@ -104,7 +104,7 @@ public sealed partial class SessionTrees
                 var holds = await HoldsAsync(tree, root, ct).ConfigureAwait(false);
                 if (holds is null) return Kept("git could not say what its tree holds");
                 if (holds.Uncommitted.Count > 0) return Kept($"its tree has {holds.Uncommitted.Count} path(s) uncommitted");
-                if (holds.Ignored.Count > 0) return Kept($"its tree holds {holds.IgnoredSaid}");
+                if (holds.OwnSaid is { } own) return Kept($"its tree holds {own}");
             }
         }
 
