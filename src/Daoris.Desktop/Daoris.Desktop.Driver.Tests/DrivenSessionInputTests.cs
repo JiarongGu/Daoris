@@ -315,6 +315,39 @@ public sealed class DrivenSessionInputTests : IDisposable
         Assert.Equal(shell, first.Contains(InAppBrowserServers.Told(["browser"])!, StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// PROCESS1d-i (Process: it runs a stand-in harness): a driven session in a tree of its own is told its process in its first
+    /// prompt, the commit rule set for its repository with the person's convention quoted, beside where its work goes; one in the
+    /// person's checkout is told nothing of either.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_driven_sessions_first_prompt_tells_it_its_process_only_in_a_tree_of_its_own(bool ownTree)
+    {
+        await using var service = StandInService.Start(_repository);
+        var prompts = Path.Combine(_home, "prompts.txt");
+        var driver = Driver(
+            "acp-turns", prompts, service, new SessionProcesses(),
+            configure: config => config with
+            {
+                Trees = ownTree ? ["engine"] : [],
+                Commits = new Dictionary<string, CommitRule>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["engine"] = new(CommitRules.Ask, "Subject in the imperative."),
+                },
+            });
+
+        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+
+        var first = System.Text.Json.JsonSerializer.Deserialize<string>(File.ReadAllLines(prompts)[0])!;
+        Assert.Equal(ownTree, first.Contains("This repository's process on this machine, set for its repository:", StringComparison.Ordinal));
+        Assert.Equal(ownTree, first.Contains("- Ask the person before each commit, and commit only on their yes.", StringComparison.Ordinal));
+        Assert.Equal(ownTree, first.Contains("\n> Subject in the imperative.\n", StringComparison.Ordinal));
+        // No landing rule is set, so a tree of its own merges into its line when the person accepts it.
+        Assert.Equal(ownTree, first.Contains("When the person accepts, this tree's branch is merged into `main`.", StringComparison.Ordinal));
+    }
+
     private sealed class AnsweringBrowser(string endpoint) : IInAppBrowser
     {
         public Task<string?> EnsureAsync(CancellationToken ct = default) => Task.FromResult<string?>(endpoint);
@@ -326,7 +359,7 @@ public sealed class DrivenSessionInputTests : IDisposable
 
     private Daoris.Driver.Driver Driver(
         string adapter, string heard, StandInService service, SessionProcesses processes, RemoteSyncSet? sync = null,
-        string turns = "quick", IInAppBrowser? browser = null)
+        string turns = "quick", IInAppBrowser? browser = null, Func<DriverConfig, DriverConfig>? configure = null)
     {
         var config = DriverConfig.Empty with
         {
@@ -344,7 +377,7 @@ public sealed class DrivenSessionInputTests : IDisposable
         };
         var adapters = AdapterSet.Built();
         return new Daoris.Driver.Driver(
-            new ServiceClient(service.Url, null), config, adapters, _home, processes: processes, sync: sync,
+            new ServiceClient(service.Url, null), configure?.Invoke(config) ?? config, adapters, _home, processes: processes, sync: sync,
             harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")), browser: browser);
     }
 
