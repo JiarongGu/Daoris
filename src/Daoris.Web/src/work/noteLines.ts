@@ -155,7 +155,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'opening.said-warned': { values: ['window'] },
   'opening.said-credits': { values: [] },
   'opening.said-used': { values: ['used', 'window'] },
+  // The scope's one number, no longer written (SWITCH1b-ii); a line written before keeps it. Over its curve since.
   'opening.said-near-at': { values: ['near'] },
+  'opening.said-over': { values: ['window', 'curve'] },
   'opening.said-clear': { values: [] },
   // A resumed conversation's first line (CONVNOTE2a): the adapter and whose words, a version that moved riding inside it.
   'resumed.opening': { values: ['adapter', 'why'], why: 'resumed' },
@@ -184,6 +186,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'browser.none-up': { values: [] },
   // The line a chat's agent was told of the browser it was handed (BRWHINT1a): the line follows as a program's words.
   'chat.told-browser': { values: [] },
+  // The repository's process a chat in a tree of its own was told (PROCESS1d-ii): its commit rule's mode and where it was set,
+  // the words following as a program's.
+  'chat.told-process': { values: ['mode', 'source'] },
   // A conversation handed to another agent (MIXAGENT1a-i): where the old one went, and where the new one came from and why.
   'chat.handed-over': { values: ['agent', 'session'] },
   'chat.taken-over': { values: ['agent', 'session', 'why'], why: 'handed' },
@@ -351,11 +356,15 @@ export const OPENING_REASONS: Readonly<Record<string, { key: string; values: rea
   // No longer written (USAGEREAD3a: the pace warning is not near); a line written before keeps it.
   'near-word': { key: 'note.opening.why.near-word', values: ['over', 'window'] },
   'near-credits': { key: 'note.opening.why.near-credits', values: ['over'] },
+  // No longer written (SWITCH1b-ii: near is the curve, and both near are said by the other's reason); a line written before keeps them.
   'near-used': { key: 'note.opening.why.near-used', values: ['over', 'used', 'window', 'near'] },
+  'over-curve': { key: 'note.opening.why.over-curve', values: ['over', 'window', 'used', 'curve'] },
   near: { key: 'note.opening.why.near', values: ['over'] },
   room: { key: 'note.opening.why.room', values: ['over', 'used', 'against'] },
   fewest: { key: 'note.opening.why.fewest', values: [] },
   lapsing: { key: 'note.opening.why.lapsing', values: ['at'] },
+  'most-room': { key: 'note.opening.why.most-room', values: ['room', 'window'] },
+  // The week's pace, written under `switch: off` only since the curve (SWITCH1b-ii).
   behind: { key: 'note.opening.why.behind', values: ['used', 'gone'] },
   ahead: { key: 'note.opening.why.ahead', values: ['over', 'used', 'gone'] },
   'not-started': { key: 'note.opening.why.not-started', values: [] },
@@ -376,17 +385,23 @@ export const OPENING_REASONS: Readonly<Record<string, { key: string; values: rea
 export const NOTE_VALUES: Readonly<
   Record<
     string,
-    'id' | 'ids' | 'names' | 'moment' | 'number' | 'count' | 'percent' | 'text' | 'why' | 'cooling' | 'window' | 'account' | 'accounts' | 'bgstate'
+    | 'id' | 'ids' | 'names' | 'moment' | 'number' | 'count' | 'percent' | 'text' | 'why' | 'cooling' | 'window' | 'account' | 'accounts'
+    | 'bgstate' | 'setAt'
   >
 > = {
+  // A commit rule's mode, its own word set as code by the sentence, and where it was set (PROCESS1d-ii).
+  mode: 'text', source: 'setAt',
   awaits: 'id', answered: 'id', ask: 'id', quest: 'id', session: 'id', opinion: 'id',
   quests: 'ids',
   servers: 'names', works: 'names',
   option: 'text', chosen: 'text', work: 'text', state: 'bgstate', repository: 'text',
   until: 'moment', at: 'moment', seen: 'moment',
   exit: 'number', minutes: 'number', paths: 'number', turn: 'number',
+  // An account's room under its usage curve, in whole percent points (SWITCH1b-ii).
+  room: 'number',
   tokens: 'count', count: 'count',
-  used: 'percent', near: 'percent', gone: 'percent', against: 'percent',
+  // A curve's value now is a whole percent, as a window's use is (SWITCH1b-ii).
+  used: 'percent', near: 'percent', gone: 'percent', against: 'percent', curve: 'percent',
   adapter: 'text', now: 'text', then: 'text',
   // An account id is worded by the name the person gave it where the page knows it (NOTENAME1); `owner` is the agent.
   account: 'account', over: 'account', first: 'account',
@@ -403,6 +418,16 @@ export const NOTE_VALUES: Readonly<
 
 /** A cool-off's four reasons (TOOL4d), each its `harness.cooling.why.*` entry. */
 const COOLING = new Set(['stated', 'assumed', 'default', 'notBelieved']);
+
+/**
+ * Where a rule was set (PROCESS1d-ii), worded as the handed account words a section's source: the default is none set. A source
+ * this page does not know shows the line as recorded.
+ */
+const SET_AT: Readonly<Record<string, string>> = {
+  repository: 'work.handed.source.repository',
+  workspace: 'work.handed.source.workspace',
+  default: 'work.handed.none.not-set',
+};
 
 /**
  * One line of a note as the page shows it:
@@ -466,6 +491,10 @@ function said(
     case 'cooling': {
       const why = text(value);
       return why && COOLING.has(why) ? t(`harness.cooling.why.${why}`) : null;
+    }
+    case 'setAt': {
+      const source = text(value);
+      return source && Object.hasOwn(SET_AT, source) ? t(SET_AT[source]) : null;
     }
     case 'why': {
       const why = text(value);

@@ -13978,3 +13978,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PROCESS1b-ii — Accept squashes where the rule asks** (driver/cli). `squash` on the branch form: the pull request's branch as one commit from the session's tree, Daoris's first commit, as D164's PROCESS1b-ii note decides (the record names the tip it squashed, which proves the session landed; a chain's later landing adds one commit; the message bounded; git's own identity, refused without one). Both twins of the rule; a Process class beside LandingTidyTests. D164's amendment point 2.
 
 **Outcome** 2026-10-13: `squash` on a branch landing rule, on both twins; Accept makes the pull request's branch one commit as git's own identity and refuses without one; the record's squashed tip proves the session landed to the head, Discard, the clean-up and the automatic landing; a chain's later landing adds one commit. Its six real-git cases and the 130 landing Process cases passed on the merge. Detail: D164's PROCESS1b-ii notes; PROCESS1d-iii tells sessions of it.
+
+## SWITCH1b-ii — the walk by the curve (2026-10-13, D165)
+
+> - [ ] **SWITCH1b-ii — the walk by the curve** (driver/web note lines; after 1b-i, USAGEREAD3a). D130 §16.3's step 2 becomes over its curve last (the least over first), step 5 most room under its curve first; `off` reads the smart curve for step 2 and keeps D130's pace for step 5; limit reached and credits stay passed; the start's reasons and their page twins. Design §3.
+
+**Outcome** 2026-10-13: the start's walk ranks by the usage curve: step 2 passes an account over its curve (least over first) under every switch, step 5 takes the most room under its curve, `off` keeping D130's pace; the log, the next-start hold and the Accounts answer's near list read the same judgement; reasons `over-curve`, `most-room` and `opening.said-over`, the old codes kept declared. An account exactly on its curve is not over it. Its Process cases passed on the merge. Detail: D165's SWITCH1b-ii note.
+
+## PROCESS1d-ii — a conversation is told its process (2026-10-13, D164)
+
+> - [ ] **PROCESS1d-ii — a conversation is told its process** (driver/web note line). The first message's briefing in a tree of its own says the commit rule and the landing's form and target, and that Daoris names the branch from the repository's rule (`ProcessWords`, Trees/Domain); never the checkout, a going-on, a hand-over or a helper (a map of its own, not the browser's); a note `chat.told-process` with its en/zh lines; and the page's source line for the landing section names the commit rule too (`work.handed.source.landing`, HANDEDSRC1). D164's amendment point 4.
+
+**Outcome** 2026-10-13: a conversation in a tree of its own is told its process with its first message (`ProcessWords.Conversation`, seeded in a map of its own and popped once in `Say`) and records it as `chat.told-process` with its mode and source; the landing section's source line names the commit rule too. No Process case grows a chat tree yet: PROCESS1d-iii proves it on the wire. Detail: D164's PROCESS1d-ii note.

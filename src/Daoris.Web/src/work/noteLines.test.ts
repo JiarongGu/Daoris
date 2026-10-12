@@ -180,6 +180,42 @@ describe('noteLines', () => {
       expect(noteLines(zh, { parts: before }, 'zh')[1]).toEqual({ kind: 'said', text: '它说接近5 小时上限。' });
     });
 
+    /**
+     * SWITCH1b-ii (D165 point 2): an account passed over its curve says the window, its use and the curve's value now; the
+     * account with the most room under its curve says its room on its tightest window. A line written before by the scope's
+     * one number (`near-used`, `opening.said-near-at`) keeps being worded as it was, as do the pace's under `off`.
+     */
+    it('words over its curve and the most room under it, in English and 中文', () => {
+      const over = [
+        coded('opening.opened', 'opened on `account-2`: …', {
+          account: 'account-2', why: 'over-curve', over: 'account-1', window: 'weekly', used: 70, curve: 63,
+        }),
+        coded('opening.said-at', '`account-1` 10 min ago', { account: 'account-1', seen }),
+        coded('opening.said-used', '70% of its weekly limit', { used: 70, window: 'weekly' }),
+        coded('opening.said-over', "over its weekly curve's 63%", { window: 'weekly', curve: 63 }),
+      ];
+      const room = coded('opening.opened', 'opened on `account-3`: …', { account: 'account-3', why: 'most-room', room: 53, window: 'weekly' });
+
+      expect(noteLines(t, { parts: over }, 'en').map((line) => line.text)).toEqual([
+        "Opened on `account-2`: `account-1` has used 70% of its weekly limit, over its curve's 63%.",
+        `\`account-1\` last said what it has left at ${moment(seen, 'en')}.`,
+        'It had used 70% of its weekly limit.',
+        "That is over its weekly curve's 63%.",
+      ]);
+      expect(noteLines(zh, { parts: over }, 'zh').map((line) => line.text)).toEqual([
+        '在账户 `account-2` 上开始：`account-1` 的每周上限已用 70%，超出其曲线此刻的 63%。',
+        `\`account-1\` 最近一次说明剩余用量是在 ${moment(seen, 'zh')}。`,
+        '它的每周上限已用 70%。',
+        '这超出了其每周曲线此刻的 63%。',
+      ]);
+      expect(noteLines(t, { parts: [room] }, 'en')[0].text)
+        .toBe('Opened on `account-3`: it has the most room under its curve, 53 points on its weekly window.');
+      expect(noteLines(zh, { parts: [room] }, 'zh')[0].text).toBe('在账户 `account-3` 上开始：它在曲线下的余量最多：每周窗口还有 53 个百分点。');
+      // A value the reason needs that is absent: the line is shown as recorded.
+      const short = coded('opening.opened', 'opened on `account-3`: it has the most room', { account: 'account-3', why: 'most-room', window: 'weekly' });
+      expect(noteLines(t, { parts: [short] }, 'en')[0]).toEqual({ kind: 'recorded', text: 'opened on `account-3`: it has the most room' });
+    });
+
     it('words a passed account’s cool-off with its reset and its own reason, and a workspace’s list by name', () => {
       const cooling = coded('opening.opened', 'opened on `account-2`: …', {
         account: 'account-2', why: 'cooling', agent: 'claude-code', over: 'account-1', until: '2026-10-03T18:00:00Z', cooling: 'stated',
@@ -297,6 +333,21 @@ describe('noteLines', () => {
         { kind: 'said', text: '已告知智能体你所在的位置：' },
         { kind: 'words', text: 'Sessions', by: 'program' },
       ]);
+    });
+
+    it('words the process a conversation was told by its commit rule and where it was set, under its own lead', () => {
+      // PROCESS1d-ii: never the browser's lead; the words after it are Daoris's English to the agent, shown as written.
+      const told = (source: string) => coded('chat.told-process', "told the agent this repository's process, …:", { mode: 'ask', source });
+      const process = words("This repository's process on this machine, set for its repository: …", 'program');
+      expect(noteLines(t, { parts: [told('repository'), process] }, 'en')).toEqual([
+        { kind: 'said', text: "The agent was told this repository's process, its commit rule `ask` (set on this machine for its repository):" },
+        { kind: 'words', text: process.words, by: 'program' },
+      ]);
+      expect(noteLines(t, { parts: [told('workspace')] }, 'en')[0].text).toContain('`ask` (set on this machine for its workspace):');
+      expect(noteLines(zh, { parts: [told('default')] }, 'zh')[0].text).toBe('已告知智能体这个仓库的流程，提交规则 `ask`（本机没有设定）：');
+      // A source this page does not know, or a part missing its mode, shows as recorded rather than guessed.
+      expect(noteLines(t, { parts: [told('elsewhere')] }, 'en')[0].kind).toBe('recorded');
+      expect(noteLines(t, { parts: [coded('chat.told-process', '…', { source: 'default' })] }, 'en')[0].kind).toBe('recorded');
     });
 
     it('words a withheld server by name and why, an exception’s words as written', () => {

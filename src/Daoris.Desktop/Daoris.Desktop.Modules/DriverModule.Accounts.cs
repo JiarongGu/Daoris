@@ -87,7 +87,7 @@ public sealed partial class DriverModule
                             Running = running is null ? (int?)null : running.GetValueOrDefault(Key(agent, account)),
                         }).ToArray(),
                         Scopes = ScopesOf(settings, agent)
-                            .Select(scope => ScopeShown(scope.Workspace, scope.Scope, scope.Keep, said, NextOf(roster, agent, scope.Workspace)))
+                            .Select(scope => ScopeShown(scope.Workspace, scope.Scope, scope.Keep, said, NextOf(roster, agent, scope.Workspace), now))
                             .ToArray(),
                     };
                 })
@@ -132,7 +132,7 @@ public sealed partial class DriverModule
     }
 
     private static object ScopeShown(
-        string? workspace, RotationScope scope, string? keep, IReadOnlyDictionary<string, AccountSaid?> said, object? next) => new
+        string? workspace, RotationScope scope, string? keep, IReadOnlyDictionary<string, AccountSaid?> said, object? next, DateTimeOffset now) => new
     {
         Workspace = workspace,
         scope.Default,
@@ -144,11 +144,12 @@ public sealed partial class DriverModule
         Problem = ScopeProblem.Of(scope.Default, scope.List, keep) is { } problem
             ? new { Kind = JsonNamingPolicy.CamelCase.ConvertName(problem.Kind.ToString()), problem.Account }
             : null,
-        // Near by the scope's own *near* (D130 §6 as TOOL6c reads it): its agent's word that a limit was reached, credits, or a
-        // window at or over it; `by` is `refused`, `credits` or `number`. Its agent's pace warning is never near alone, and
-        // rides on the account's reading as its standing, `warned` (USAGEREAD3a).
+        // Near as the walk reads it (D130 §6 as TOOL6c reads it, D165 point 2): its agent's word that a limit was reached,
+        // credits, or a window over the scope's curve now, `off` reading the smart one (SWITCH1b-ii), so the page's near pill
+        // names the accounts a start passes; `by` is `refused`, `credits` or `number`. Its agent's pace warning is never near
+        // alone, and rides on the account's reading as its standing, `warned` (USAGEREAD3a).
         Near = scope.List
-            .Select(account => (Account: account, Near: AccountReadings.NearWindow(said.GetValueOrDefault(account), scope.Use.Near)))
+            .Select(account => (Account: account, Near: AccountReadings.NearWindow(said.GetValueOrDefault(account), scope.Use, now)))
             .Where(each => each.Near is not null)
             .Select(each => new { each.Account, each.Near!.Value.Window.Window, By = JsonNamingPolicy.CamelCase.ConvertName(each.Near.Value.By.ToString()) })
             .ToArray(),

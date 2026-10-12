@@ -42,6 +42,13 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     public string? Briefing { get; init; }
 
     /// <summary>
+    /// The repository's process a conversation in a tree of its own is told with its first message (PROCESS1d-ii, D164's amendment
+    /// point 4), after the browser's line: a field of its own, so the record keeps it as its own note, never under the browser's.
+    /// Null for every other message.
+    /// </summary>
+    public ProcessBriefing? Process { get; init; }
+
+    /// <summary>
     /// The line a conversation handed over from another agent opens with (MIXAGENT1a-i, D163 §3): its first message is Daoris's
     /// briefing, never the person's words, so the record keeps this note in place of the person's message and of the browser's
     /// line. Null for every other message.
@@ -65,14 +72,20 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     /// </summary>
     internal bool OnRecord => GoesOn is not null || Helped is not null;
 
-    /// <summary>What the agent is handed: the briefing, the preface, then the person's words, each after a blank line.</summary>
+    /// <summary>What the agent is handed: the briefing, the process, the preface, then the person's words, each after a blank line.</summary>
     public string Prompt => string.Join(
-        "\n\n", new[] { Briefing, Preface }.Where(part => !string.IsNullOrEmpty(part)).Append(Text));
+        "\n\n", new[] { Briefing, Process?.Words, Preface }.Where(part => !string.IsNullOrEmpty(part)).Append(Text));
 
     /// <summary>A preface as a message carries it: trimmed, bounded, and null when there is none.</summary>
     public static string? Bound(string? preface) =>
         preface?.Trim() is { Length: > 0 } said ? said.Length > PrefaceLimit ? said[..PrefaceLimit] : said : null;
 }
+
+/// <summary>
+/// The process a conversation is told at its start (PROCESS1d-ii): the words, <see cref="ProcessWords.Conversation"/>'s one-copy
+/// English (D142 point 6), and the facts its note carries, the commit rule's mode and where it was set.
+/// </summary>
+public sealed record ProcessBriefing(string Words, string Mode, string Source);
 
 /// <summary>
 /// What a person attaches to a conversation (CONV4c), kept under the home for the session it was sent

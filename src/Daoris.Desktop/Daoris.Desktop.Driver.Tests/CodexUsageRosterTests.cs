@@ -110,11 +110,12 @@ public sealed class CodexUsageRosterTests : IDisposable
 
         Assert.Equal(["fake/account-1", "fake/account-2"], Asked().Order(StringComparer.Ordinal));
         Assert.Equal("account-2", selection.Profile);
-        // Near reads the number, at or over the scope's near (90%), whichever window it is in.
+        // Near reads the number against the scope's curve now (SWITCH1b-ii), whichever window it is in: three sevenths of the
+        // week gone, the smart curve stands at 63% of it.
         Assert.Equal(WalkStep.Near, selection.Choice?.Step);
-        Assert.Equal("`account-1` has used 95% of its weekly limit, at or over the 90% that counts as near", selection.Choice?.Clause);
+        Assert.Equal("`account-1` has used 95% of its weekly limit, over its curve's 63%", selection.Choice?.Clause);
         Assert.Equal(
-            "What each account said: `account-1` just now, 20% of its session limit and 95% of its weekly limit used, near at 90%; "
+            "What each account said: `account-1` just now, 20% of its session limit and 95% of its weekly limit used, over its weekly curve's 63%; "
             + "`account-2` just now, 10% of its session limit and 30% of its weekly limit used.",
             selection.SaidLine);
 

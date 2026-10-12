@@ -30,9 +30,8 @@ namespace Daoris.Driver;
 /// person's choice; absence alone means <see cref="RotationUse.Default"/>, the one place today's defaults live. The old
 /// names are never written: a writer writes <c>switch</c> and <c>curve</c>.</para>
 /// <para><see cref="HarnessRoster.SelectAsync"/> reads them through <see cref="ResolveScope"/> (TOOL6b): <c>use</c> and
-/// <c>keep</c> choose a start's account (<see cref="AccountRotation"/>), and until SWITCH1b moves the walk to the curve,
-/// <see cref="RotationUse.Early"/> and <see cref="RotationUse.Near"/>, derived from the switch and the curve, pass an account
-/// its agent said is near (TOOL6c), where its door carries that word into <c>windows.json</c>.</para>
+/// <c>keep</c> choose a start's account (<see cref="AccountRotation"/>), and the switch and the curve pass an account whose
+/// use, as its agent said it into <c>windows.json</c> (TOOL6c), is over the curve now (<see cref="UsageCurves"/>, SWITCH1b-ii).</para>
 /// </remarks>
 public sealed partial record HarnessSettings
 {
@@ -242,14 +241,14 @@ public sealed record RotationUse(string Use, string? Keep, string Switch, UseCur
     public static readonly IReadOnlyList<string> Retired = ["prefer", "parallel"];
 
     /// <summary>
-    /// <i>Switch before the limit</i>, as the walk reads it until SWITCH1b moves it to the curve (D165 §6): the switch is not
-    /// <c>off</c>.
+    /// <i>Switch before the limit</i> in the old name's terms (D165 §6): the switch is not <c>off</c>. The walk reads the curve
+    /// since SWITCH1b-ii; this stays for the doors that still speak the old names (the modules' answer, Ask Daoris).
     /// </summary>
     public bool Early => Switch != "off";
 
     /// <summary>
-    /// Where an account is near its limit, as a percent of a window, where its agent gives only a number — as the walk reads
-    /// it until SWITCH1b (D165 §6): the session window's one point under <c>curve</c>, else the smart curve's 90.
+    /// <i>Near</i> in the old name's terms (D165 §6): the session window's one point under <c>curve</c>, else the smart curve's
+    /// 90. The walk reads the curve since SWITCH1b-ii; this stays for the doors that still speak the old names.
     /// </summary>
     public int Near => Switch == "curve" && Curve["session"] is [var only] ? only.Used : SmartSession;
 

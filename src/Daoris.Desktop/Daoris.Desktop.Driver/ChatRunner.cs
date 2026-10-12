@@ -112,6 +112,11 @@ public sealed partial class ChatRunner : IDisposable
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ITurnedChat> _turned =
         new(StringComparer.OrdinalIgnoreCase);
 
+    // The process a new conversation in a tree of its own is told with its first message (PROCESS1d-ii), held until then. A map of
+    // its own, never the browser's, which a hand-over's briefing appends: a conversation handed over is told Daoris's record instead.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ProcessBriefing> _toldProcess =
+        new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>
     /// Where a conversation's turns stand — whether one is in flight, and what the person sent that is
     /// not at the harness yet — each time that changes (CONV4a). The page shows the waiting messages as
@@ -252,10 +257,24 @@ public sealed partial class ChatRunner : IDisposable
         // opening: its account is its process's home, set at spawn. Its first line says which account and why.
         RotatedOpening.Say(_service, _events, sessionId, resolved.Name, selection, carried: null);
 
-        return await RunAsync(
-            sessionId, message, resolved, selection, config,
-            RepositoryPlace(config, snapshot.Repositories, known, repository, workTree),
-            onEnded, ct).ConfigureAwait(false);
+        // A conversation in a tree it grew is told its repository's process with its first message (PROCESS1d-ii, D164's amendment
+        // point 4), as a driven session is in its instruction. Never the person's checkout, nor a tree handed over, whose new
+        // conversation is briefed with Daoris's record.
+        if (opened is not null) _toldProcess[sessionId] = await ProcessToldAsync(opened.Path, sessionId, config, known, ct).ConfigureAwait(false);
+
+        ChatStart? started = null;
+        try
+        {
+            return started = await RunAsync(
+                sessionId, message, resolved, selection, config,
+                RepositoryPlace(config, snapshot.Repositories, known, repository, workTree),
+                onEnded, ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            // A start that failed, or was cancelled, has no first message to tell it with.
+            if (started?.SessionId is null) _toldProcess.TryRemove(sessionId, out _);
+        }
     }
 
     /// <summary>
@@ -714,7 +733,9 @@ public sealed partial class ChatRunner : IDisposable
 
         // The browser it was handed is told once, ahead of the first message's words (BRWHINT1a).
         var briefing = held && _browsers.TryRemove(sessionId, out var browserLine) ? browserLine : null;
-        var said = new ChatMessage(message, kept) { Preface = ChatMessage.Bound(preface), Briefing = briefing };
+        // So is the repository's process, for a conversation in a tree it grew (PROCESS1d-ii).
+        var process = held && _toldProcess.TryRemove(sessionId, out var told) ? told : null;
+        var said = new ChatMessage(message, kept) { Preface = ChatMessage.Bound(preface), Briefing = briefing, Process = process };
 
         if (_turned.TryGetValue(sessionId, out var chat))
         {
@@ -839,9 +860,9 @@ public sealed partial class ChatRunner : IDisposable
     /// attached — never the kept paths, nor the lines or links a door added to reach them.
     /// </summary>
     /// <summary>
-    /// What a turn's message puts in the record as it is sent, in order: the browser and where the person is as their notes, then
-    /// the person's message. A conversation handed over from another agent opens with Daoris's briefing instead (MIXAGENT1a-i): its
-    /// one note says where it came from, since no person spoke.
+    /// What a turn's message puts in the record as it is sent, in order: the browser, the process (PROCESS1d-ii) and where the
+    /// person is as their notes, then the person's message. A conversation handed over from another agent opens with Daoris's
+    /// briefing instead (MIXAGENT1a-i): its one note says where it came from, since no person spoke.
     /// </summary>
     internal static IEnumerable<SessionEvent> Recorded(ChatMessage message)
     {
@@ -860,6 +881,7 @@ public sealed partial class ChatRunner : IDisposable
         }
 
         if (ToldBrowser(message) is { } toldBrowser) yield return toldBrowser;
+        if (ToldProcess(message) is { } toldProcess) yield return toldProcess;
         if (Told(message) is { } told) yield return told;
         yield return Asked(message);
     }
@@ -893,6 +915,48 @@ public sealed partial class ChatRunner : IDisposable
         if (message.Briefing is not { Length: > 0 } line) return null;
         var told = Noted.Of(NoteCodes.ChatToldBrowser, "told the agent:").Then(" ", Noted.Said(line, NoteBy.Program));
         return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };
+    }
+
+    /// <summary>
+    /// The repository's process the agent was told with the person's first words (PROCESS1d-ii), as the record keeps it: a note of
+    /// its own under its own lead, the commit rule's mode and where it was set as facts, the words Daoris's one-copy English.
+    /// </summary>
+    internal static SessionEvent? ToldProcess(ChatMessage message)
+    {
+        if (message.Process is not { Words.Length: > 0 } process) return null;
+        var set = process.Source == CommitRules.DefaultSource ? "by default" : $"set for its {process.Source}";
+        var told = Noted.Of(
+                NoteCodes.ChatToldProcess, $"told the agent this repository's process, its commit rule `{process.Mode}` {set}:",
+                ("mode", process.Mode), ("source", process.Source))
+            .Then(" ", Noted.Said(process.Words, NoteBy.Program));
+        return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };
+    }
+
+    /// <summary>
+    /// What a conversation in a tree of its own is told of its process (PROCESS1d-ii, D164's amendment point 4): the commit rule
+    /// standing for its repository and its landing, in <see cref="ProcessWords.Conversation"/>'s words with the rule's facts.
+    /// </summary>
+    internal static ProcessBriefing ProcessTold(ResolvedCommits commits, LandingPlan? plan) =>
+        new(ProcessWords.Conversation(commits, plan), commits.Rule.Mode, commits.Source);
+
+    /// <summary>
+    /// <see cref="ProcessTold"/> for the tree a new conversation just grew: its landing read as Review's press would read it. A
+    /// landing that cannot be read leaves its lead unsaid, never the start: the record is open, so the run that follows concludes
+    /// it, cancelled or not, and the commit rule is said either way.
+    /// </summary>
+    private async Task<ProcessBriefing> ProcessToldAsync(string tree, string sessionId, DriverConfig config, RepoView known, CancellationToken ct)
+    {
+        LandingPlan? plan;
+        try
+        {
+            plan = await new SessionTrees(_home).PlanAsync(tree, new LandingSubject(sessionId, null, null), ct).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            plan = null;
+        }
+
+        return ProcessTold(CommitRules.Resolve(config, known.Repository, known.Workspace), plan);
     }
 
     /// <summary>
@@ -998,6 +1062,7 @@ public sealed partial class ChatRunner : IDisposable
             _rooms.TryRemove(sessionId, out _);
             _handing.TryRemove(sessionId, out _);
             _browsers.TryRemove(sessionId, out _);
+            _toldProcess.TryRemove(sessionId, out _);
             // Nothing waiting will be sent now, and the page is told its queue emptied.
             chat?.Turns.Gone();
             native?.Gone();
