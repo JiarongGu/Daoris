@@ -36,6 +36,10 @@ with the version and date at release.
   start still passes an account over Daoris's curve, and ranks the rest by its week's pace as before. A conversation's first
   line says the window, its use and the curve's value, in both languages, and an account's settings mark the same accounts
   *near its limit*.
+- `daoris agent profile use`, `daoris agent list` and an agent's account settings say what passes an account at a start, its
+  limit reached, usage credits or its use over its curve, and the next start's steps by the curve, in both languages; the next
+  start's reason names which of the three passed an account and on which window. `daoris agent profile use` marks a reading
+  over the scope's curve with the curve's value now, *over its weekly curve's 63%*, where it said *near at 90%* before.
 - A session whose agent committed its work on a branch of its own (as its repository's rules ask) is followed: its work, Review
   and Accept read that branch, Accept lands it as it stands instead of making another, and the tidy no longer warns it cannot read
   the tree of the emptied `daoris/…` branch the agent left behind.
