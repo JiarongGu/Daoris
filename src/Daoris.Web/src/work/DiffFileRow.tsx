@@ -34,8 +34,10 @@ const MARK: Record<string, { letter: string; tone: string }> = {
  * **Its patch is drawn by `PatchView`** (REVIEW2): numbered, highlighted in the file's language, and
  * in the layout the pane chose — unified, or the old side beside the new.
  */
-export function DiffFileRow({ file, open, viewed, layout = 'unified', onToggle, onViewed, onPreview }: {
+export function DiffFileRow({ file, open, viewed, layout = 'unified', onToggle, onViewed, onPreview, uncommitted = false }: {
   file: DiffFile;
+  /** An uncommitted file (REVIEWDIRTY1): when it has no patch, the words say why, since `git diff` does not list it. */
+  uncommitted?: boolean;
   open: boolean;
   viewed: boolean;
   /** Unified, or side by side — the pane's choice, the same for every file in it. */
@@ -119,7 +121,7 @@ export function DiffFileRow({ file, open, viewed, layout = 'unified', onToggle, 
           )
           : (
             <p className="m-0 border-t border-line px-3 py-2 text-small text-ink-faint">
-              <Inline text={t('work.review.noPatch')} />
+              <Inline text={uncommitted ? t('work.review.uncommittedNoPatch') : t('work.review.noPatch')} />
             </p>
           )
       )}

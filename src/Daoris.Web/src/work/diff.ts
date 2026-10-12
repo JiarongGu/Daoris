@@ -107,4 +107,10 @@ export type SessionDiff = {
   source?: 'tree' | 'branch';
   /** Where this session's work landed, where this machine's landing record holds it. */
   landed?: LandedWork | null;
+  /**
+   * What the session's own tree holds that no commit does (REVIEWDIRTY1, D164 point 4): the modified and the untracked,
+   * each file as the committed ones are (status `added` for an untracked one, its patch empty where large or not text).
+   * Absent or null where nothing is uncommitted or the files were read from a branch; a host older than REVIEWDIRTY1 names none.
+   */
+  uncommitted?: { files: DiffFile[]; truncated: boolean } | null;
 };

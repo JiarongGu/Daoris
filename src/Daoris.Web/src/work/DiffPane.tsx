@@ -258,6 +258,7 @@ export function DiffPane({
   }
 
   const files = diff.data?.files ?? [];
+  const uncommitted = diff.data?.uncommitted?.files ?? [];
 
   // Gated on the TREE, not on the diff: a session whose range git cannot read may still hold a tree
   // worth discarding, and one whose record travelled here holds none at all. Sending the work back
@@ -285,6 +286,12 @@ export function DiffPane({
       {!said && canAccept && landing.data?.problem && (
         <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
           {t('work.review.landingProblem', { problem: landing.data.problem })}
+        </p>
+      )}
+      {/* Said before the press, which stays open: its own refusal still answers (D164 point 4, REVIEWDIRTY1). */}
+      {!said && canAccept && (landing.data?.uncommitted ?? 0) > 0 && (
+        <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
+          {t('work.review.landingUncommitted', { count: landing.data!.uncommitted })}
         </p>
       )}
       {!said && canAccept && landing.data?.form === 'merge' && landing.data.target && (
@@ -430,7 +437,7 @@ export function DiffPane({
 
   // The acts are about the TREE, not the diff — so a session that landed NOTHING still gets them.
   // Its tree is real, it is holding a slot, and discarding it is exactly what a person wants next.
-  if (files.length === 0) {
+  if (files.length === 0 && uncommitted.length === 0) {
     return (
       <section className="flex min-h-0 flex-col">
         {head}
@@ -467,6 +474,7 @@ export function DiffPane({
             onViewed={(path, next) => setViewed((was) => ({ ...was, [path]: next }))}
             onPreview={onPreview}
             truncated={diff.data?.truncated}
+            uncommitted={diff.data?.uncommitted}
           />
         </>,
       )}

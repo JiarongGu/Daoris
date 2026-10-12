@@ -94,7 +94,7 @@ export function ReviewHead({ title, repository, branch, base, commits, refreshin
  * multibuffer, IDE study §2) and the host's bound, said as it said it. The reader's marks arrive as props: which file
  * is open and which viewed are the pane's, kept per session and never written down.
  */
-export function ReviewFiles({ files, open, viewed, layout, onLayout, onToggle, onViewed, onPreview, truncated }: {
+export function ReviewFiles({ files, open, viewed, layout, onLayout, onToggle, onViewed, onPreview, truncated, uncommitted }: {
   files: DiffFile[];
   open: Record<string, boolean>;
   viewed: Record<string, boolean>;
@@ -106,6 +106,8 @@ export function ReviewFiles({ files, open, viewed, layout, onLayout, onToggle, o
   onPreview?: (path: string) => void;
   /** What the bound dropped, in the host's words. */
   truncated?: string | null;
+  /** The tree's uncommitted work, read beside the committed files (REVIEWDIRTY1, D164 point 4). */
+  uncommitted?: { files: DiffFile[]; truncated: boolean } | null;
 }) {
   const { t } = useTranslation();
   const done = files.filter((file) => viewed[file.path]).length;
@@ -113,7 +115,7 @@ export function ReviewFiles({ files, open, viewed, layout, onLayout, onToggle, o
     <>
       <header className="flex shrink-0 flex-wrap items-baseline gap-x-2 gap-y-1 border-b border-line px-3 py-1.5">
         <span className="text-meta uppercase tracking-[0.06em] text-ink-faint">
-          {t('work.review.files', { count: files.length })}
+          {files.length === 0 ? t('work.review.committedNothing') : t('work.review.files', { count: files.length })}
         </span>
         {done > 0 && (
           <span className="text-meta tabular-nums text-ink-faint">
@@ -134,25 +136,58 @@ export function ReviewFiles({ files, open, viewed, layout, onLayout, onToggle, o
         </span>
       </header>
 
-      <ul className="m-0 min-h-0 flex-1 list-none overflow-y-auto p-0">
-        {files.map((file) => (
-          <DiffFileRow
-            key={file.path}
-            file={file}
-            open={open[file.path] ?? false}
-            viewed={viewed[file.path] ?? false}
-            layout={layout}
-            onToggle={() => onToggle(file.path)}
-            onViewed={(next) => onViewed(file.path, next)}
-            onPreview={onPreview ? () => onPreview(file.path) : undefined}
-          />
-        ))}
-      </ul>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <ul className="m-0 list-none p-0">
+          {files.map((file) => (
+            <DiffFileRow
+              key={file.path}
+              file={file}
+              open={open[file.path] ?? false}
+              viewed={viewed[file.path] ?? false}
+              layout={layout}
+              onToggle={() => onToggle(file.path)}
+              onViewed={(next) => onViewed(file.path, next)}
+              onPreview={onPreview ? () => onPreview(file.path) : undefined}
+            />
+          ))}
+        </ul>
 
-      {/* The bound is the host's sentence, shown rather than summarised — it names where the rest is. */}
-      {truncated && (
-        <p className="m-0 shrink-0 border-t border-line px-3 py-2 text-meta text-ink-faint">{truncated}</p>
-      )}
+        {/* The bound is the host's sentence, shown rather than summarised — it names where the rest is. */}
+        {truncated && (
+          <p className="m-0 border-t border-line px-3 py-2 text-meta text-ink-faint">{truncated}</p>
+        )}
+
+        {/* What the tree holds that no commit does (REVIEWDIRTY1): apart from the committed list and after it, through the same
+            rows. Its marks are kept under their own keys, since a path can be committed and edited again. */}
+        {uncommitted && uncommitted.files.length > 0 && (
+          <section aria-label={t('work.review.uncommitted', { count: uncommitted.files.length })}>
+            <h3 className="m-0 border-y border-line px-3 py-1.5 text-meta font-normal uppercase tracking-[0.06em] text-ink-faint">
+              {t('work.review.uncommitted', { count: uncommitted.files.length })}
+            </h3>
+            <ul className="m-0 list-none p-0">
+              {uncommitted.files.map((file) => {
+                const key = `uncommitted:${file.path}`;
+                return (
+                  <DiffFileRow
+                    key={key}
+                    uncommitted
+                    file={file}
+                    open={open[key] ?? false}
+                    viewed={viewed[key] ?? false}
+                    layout={layout}
+                    onToggle={() => onToggle(key)}
+                    onViewed={(next) => onViewed(key, next)}
+                    onPreview={onPreview ? () => onPreview(file.path) : undefined}
+                  />
+                );
+              })}
+            </ul>
+            {uncommitted.truncated && (
+              <p className="m-0 border-t border-line px-3 py-2 text-meta text-ink-faint">{t('work.review.uncommittedTruncated')}</p>
+            )}
+          </section>
+        )}
+      </div>
     </>
   );
 }

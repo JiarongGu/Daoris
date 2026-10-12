@@ -169,6 +169,49 @@ export const ReadyDark: Story = { ...Ready, decorators: [dark] };
 /** Loaded, in 中文. */
 export const ReadyChinese: Story = { ...Ready, decorators: [chinese] };
 
+/** A tree holding work no commit does (REVIEWDIRTY1): the committed files, then the uncommitted under their own heading, at 680 px. */
+function Dirty({ committed = true }: { committed?: boolean }) {
+  const [open, setOpen] = useState<Record<string, boolean>>({ 'uncommitted:src/report/draft.ts': true });
+  const [viewed, setViewed] = useState<Record<string, boolean>>({});
+  const [layout, setLayout] = useState<DiffLayout>('unified');
+  return (
+    <section className="flex h-[34rem] w-[680px] max-w-full flex-col border border-line bg-page">
+      <ReviewHead {...KNOWN} />
+      <div className="flex min-h-0 flex-1 flex-col">
+        <ReviewFiles
+          files={committed ? FILES.slice(0, 2) : []}
+          open={open}
+          viewed={viewed}
+          layout={layout}
+          onLayout={setLayout}
+          onToggle={(path) => setOpen((was) => ({ ...was, [path]: !was[path] }))}
+          onViewed={(path, next) => setViewed((was) => ({ ...was, [path]: next }))}
+          uncommitted={{
+            files: [
+              { path: 'src/report/draft.ts', status: 'modified', added: 3, removed: 1, patch: '@@ -1 +1,3 @@\n-sticky=false\n+sticky\n+pinned\n+totals\n' },
+              { path: 'src/report/notes.md', status: 'added', added: 12, removed: 0, patch: '@@ -0,0 +1 @@\n+# Notes\n' },
+              { path: 'assets/export.bin', status: 'added', added: null, removed: null, patch: '' },
+            ],
+            truncated: false,
+          }}
+        />
+      </div>
+    </section>
+  );
+}
+
+/** Uncommitted work beside committed work, apart under its own heading. */
+export const DirtyTree: Story = { render: () => <Dirty /> };
+
+/** The same, in dark. */
+export const DirtyTreeDark: Story = { ...DirtyTree, decorators: [dark] };
+
+/** The same, in 中文. */
+export const DirtyTreeChinese: Story = { ...DirtyTree, decorators: [chinese] };
+
+/** Only uncommitted work: the session has committed nothing yet, and its work is below. */
+export const DirtyTreeNothingCommitted: Story = { render: () => <Dirty committed={false} /> };
+
 /** A live session's second open: the last answer held dimmed while git reads again, the head saying so. */
 export const ReadingAgain: Story = { render: () => <Loaded refreshing={Date.now() - 6_000} /> };
 

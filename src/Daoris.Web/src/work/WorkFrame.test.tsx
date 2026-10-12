@@ -3313,6 +3313,19 @@ describe('reviewing what a session landed', () => {
 
     expect(await screen.findByText('Nothing landed')).toBeTruthy();
   });
+
+  /** REVIEWDIRTY1-b: a tree holding only uncommitted work shows it, and does not say nothing landed. */
+  it('shows a session\'s uncommitted work where it committed nothing', async () => {
+    const uncommitted = { files: [{ path: 'src/draft.ts', status: 'modified', added: 1, removed: 0, patch: '@@ -1 +1 @@\n-a\n+b' }], truncated: false };
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'SESSION_DIFF' ? { ...DIFF, files: [], uncommitted } : DRIVER_STATE));
+
+    show('s1a2b3c4');
+    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+
+    expect(await screen.findByText('src/draft.ts')).toBeTruthy();
+    expect(screen.queryByText('Nothing landed')).toBeNull();
+  });
 });
 
 /**

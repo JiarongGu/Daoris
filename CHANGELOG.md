@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- Review shows the work a session's tree holds that it has not committed, apart from what it committed, under *Not committed
+  yet*, and no longer says "Nothing landed" over it; where Accept would refuse until those files are committed, the review says
+  so before the press, in both languages.
 - A quest's session can go on with another agent from the terminal (`daoris-driver sessions hand-over <id> --agent <adapter>
   [--account <name>]`): the driver stops it, then carries the quest on in the same tree on the agent you name, told it was
   handed over from the first agent's session, and it stays on that agent until the quest closes or leaves this machine.
