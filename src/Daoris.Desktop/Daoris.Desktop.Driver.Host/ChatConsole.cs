@@ -41,6 +41,25 @@ internal static class ChatConsole
     /// </summary>
     public static Task<int> StartFromAsync(string session) => DoorAsync("sessions", () => FromAsync(session));
 
+    /// <summary>
+    /// `daoris-driver sessions hand-over <id> --agent <adapter> [--account <name>]` (MIXAGENT1a-i, D163): a conversation goes on
+    /// with another agent, in this terminal, through <see cref="ChatRunner.HandOverAsync"/>, as start-from goes through its act;
+    /// from the new conversation's first message on it is this door's conversation, with the same contract as `chat`.
+    /// </summary>
+    public static Task<int> HandOverAsync(string session, string agent, string? account) =>
+        DoorAsync("sessions", () => HandedAsync(session, agent, account));
+
+    private static async Task<int> HandedAsync(string session, string agent, string? account)
+    {
+        var configPath = DriverConfig.ResolvePath();
+        var config = DriverConfig.Load(configPath);
+        return await ConverseAsync(configPath, async (runner, onEnded) =>
+        {
+            var handed = await runner.HandOverAsync(session, agent, account, HandOverWhy.Press, HandOverBy.Person, config, onEnded).ConfigureAwait(false);
+            return (handed.SessionId, SessionsCommand.HandedOver(handed, Console.Error));
+        }).ConfigureAwait(false);
+    }
+
     private static async Task<int> DoorAsync(string door, Func<Task<int>> run)
     {
         try

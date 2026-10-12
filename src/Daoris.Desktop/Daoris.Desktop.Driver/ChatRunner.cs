@@ -533,7 +533,12 @@ public sealed partial class ChatRunner : IDisposable
         ProtocolChat? chat = null;
         NativeChat? native = null;
         var mapper = resolved.StructuredOutput();
-        void Changed(ChatQueue queue) => QueueChanged?.Invoke(sessionId, queue);
+        void Changed(ChatQueue queue)
+        {
+            QueueChanged?.Invoke(sessionId, queue);
+            // A conversation asked to go on with another agent while it talked is handed over as its turn ends (MIXAGENT1a-i).
+            HandOverDue(sessionId, queue, config, onEnded);
+        }
         // A conversation going on hands its words to the native door only once its process is tracked, so a word the person
         // says meanwhile goes after them; the protocol door waits for its session to open anyway (MSG1c).
         var tracked = goOn is null ? null : new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);

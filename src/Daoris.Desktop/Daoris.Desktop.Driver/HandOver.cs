@@ -197,6 +197,9 @@ public static class HandOver
     /// <summary>It already runs on that agent and account.</summary>
     public const string SameAgent = "same-agent";
 
+    /// <summary>It runs in another Daoris process, which this one cannot end (the chat runner's own refusal).</summary>
+    public const string Running = "running";
+
     /// <summary>Another hand-over of it waits.</summary>
     public const string Waiting = "waiting";
 
