@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-12 — a landing branch was named from a web address in the title (LANDNAME2, built by PROCESS1b-i)
+
+- **Symptom:** *Accept* would have put a report's work on `feature/https-…-browse-a267d192`: the session's title was its
+  ticket's address, and the pattern's `{slug}` spelled the address, where the agent itself proposed `feature/<ticket>-<words>`.
+- **Root cause:** `LandingRules.Slug` lower-cased the title and split it on anything but letters and digits, so an address's
+  scheme, host and path were words like any other; nothing found the ticket the address carried, and no placeholder could name it.
+- **Fix:** `Slug` removes every web address (`http://`, `https://`, a bare `www.` word) before splitting, and a title that was
+  only an address leaves an empty slug whose separator `Expand` drops; the pattern may say `{ticket}`, found by the rule's `key`
+  in the title, the request's body, then its links (D164's PROCESS1b-i note).
+- **Verify:** `QuestNameTests` (the driver's fast half): the LANDNAME2 title under `feature/{ticket}-{slug}` is `feature/ABC-123`,
+  and under `feature/{quest}-{slug}` `feature/q1`.
+
 ## 2026-10-12 — a helper's answer was counted before the door had told it delivered (MIXAGENT2a-iii's test)
 
 - **Symptom:** `ChatTurnsTests.A_helpers_answer_waits_for_the_turn_to_end_unlisted_and_is_told_delivered_once_sent` (driver,

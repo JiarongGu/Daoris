@@ -271,6 +271,80 @@ export interface LandingRule {
    * `LandingRule.AutoAccept` is the twin; the driver lands a released done under it at a look (LAND2b).
    */
   autoAccept?: boolean;
+  /**
+   * The shape of the repository's ticket keys (PROCESS1b-i, D164's amendment point 2): a regular expression the pattern's
+   * `{ticket}` is found by in the title, then the request, then its links. Absent is `DEFAULT_KEY`. Only a branch rule whose
+   * pattern says `{ticket}` takes one. The driver's `LandingRule.Key` is the twin, and the driver does the finding.
+   */
+  key?: string;
+}
+
+/** The shape of a ticket's key where a rule names none — the driver's `LandingRules.DefaultKey`. */
+export const DEFAULT_KEY = '[A-Z][A-Z0-9]+-\\d+';
+
+/** How long a ticket's key may be — the driver's `LandingRules.KeyLimit`. */
+const KEY_LIMIT = 64;
+
+/**
+ * The letters a key may escape (PROCESS1b-i): the classes and controls .NET and JavaScript read alike — the driver's
+ * `LandingRules.SharedEscapes`. `\x`, `\u`, `\c`, `\p` and the rest differ, or are refused by one engine.
+ */
+const SHARED_ESCAPES = 'dDwWsSbBnrtfv';
+
+/**
+ * What is wrong with a ticket's key, in a sentence, or null where both readers of a rule take it the same way (PROCESS1b-i):
+ * the driver matches it in .NET and this checks it in JavaScript, so it is held to what the two engines read alike — no `(?`
+ * group, no back-reference, a letter escaped only as one of `SHARED_ESCAPES` (a punctuation mark may be escaped), no empty
+ * class — and each engine's own compile is the last word. The driver's `LandingRules.KeyProblem` is the twin, sentence for
+ * sentence. 🔴 KEYPARITY: a key only JavaScript takes (`TK\_\d+`, `\x`, `[^]`) was written here and not read by the driver.
+ */
+export function keyProblem(key: string): string | null {
+  if (key.trim().length === 0) return `a ticket's key needs a shape — e.g. \`${DEFAULT_KEY}\`, the one read where a rule names none.`;
+  if (key.length > KEY_LIMIT) return `a ticket's key is at most ${KEY_LIMIT} characters, and this one is ${key.length}.`;
+
+  let inClass = false;
+  for (let at = 0; at < key.length; at += 1) {
+    const next = key[at + 1] ?? '';
+    if (key[at] === '\\') {
+      if (/^[k1-9]$/.test(next)) {
+        return 'a ticket\'s key may not refer back to a group (`\\k` or `\\1` to `\\9`), which the driver and the CLI read differently.';
+      }
+      // A punctuation mark or symbol escaped is itself in both; `_`, a digit, a space and any other letter are not read alike.
+      const punctuation = /^[!-/:-@[-^`{-~]$/.test(next);
+      if (next !== '' && !SHARED_ESCAPES.includes(next) && !punctuation) {
+        return `a ticket's key may escape only a punctuation mark or one of \`${[...SHARED_ESCAPES].map((c) => `\\${c}`).join(' ')}\`, `
+          + `which the driver and the CLI read alike, and \`\\${next}\` is neither.`;
+      }
+      at += 1; // the escaped character is the escape's own: `\\1` is a backslash and a one, `\(?` a bracket made optional
+    } else if (inClass) {
+      if (key[at] === ']') inClass = false;
+    } else if (key[at] === '(' && next === '?') {
+      return 'a ticket\'s key may not use `(?` — a lookaround, a named group or an inline option, which the driver and the '
+        + 'CLI read differently.';
+    } else if (key[at] === '[') {
+      // `[]` and `[^]` are an empty class in JavaScript, and a class holding `]` in .NET.
+      if (next === ']' || (next === '^' && key[at + 2] === ']')) {
+        return 'a ticket\'s key may not hold an empty class, `[]` or `[^]`, which the driver and the CLI read differently.';
+      }
+      inClass = true;
+    }
+  }
+
+  try {
+    new RegExp(key);
+    return null;
+  } catch {
+    return `a ticket's key \`${key}\` is not a regular expression — e.g. \`${DEFAULT_KEY}\`.`;
+  }
+}
+
+/**
+ * What a door says of `{ticket}` as a rule with it is set (PROCESS1b-i): the shape it is found by, where it is searched, and
+ * what stands in where none is found.
+ */
+export function ticketSays(key: string | undefined): string {
+  return `\`{ticket}\` is the first match of \`${key ?? DEFAULT_KEY}\` in the title, then the request, then its links, as written`
+    + `${key === undefined ? ' (the default shape)' : ''}; where none is found, the session's id stands in.`;
 }
 
 /**
@@ -289,11 +363,16 @@ export function autoAcceptSays(plugin: string | undefined): string {
 /** The point a plugin lands work on — the driver's `HookPoints.Land`. */
 export const LAND_POINT = 'work/land';
 
-/** What a pattern may say — the driver's `LandingRules.Placeholders`. One of the first two is required. */
-const PLACEHOLDERS = ['quest', 'session', 'slug', 'repository'];
+/**
+ * What a pattern may say — the driver's `LandingRules.Placeholders`. One of the first three is required: a ticket names a
+ * branch as a quest does (PROCESS1b-i).
+ */
+const PLACEHOLDERS = ['quest', 'session', 'ticket', 'slug', 'repository'];
 
 /** What a pattern is tried against before it is kept — the driver tries the same names. */
-const SAMPLE: Record<string, string> = { quest: '0fda18', session: 's1a2b3c4', slug: 'sample-work', repository: 'engine' };
+const SAMPLE: Record<string, string> = {
+  quest: '0fda18', session: 's1a2b3c4', ticket: 'ABC-123', slug: 'sample-work', repository: 'engine',
+};
 
 /**
  * What is wrong with a landing rule's shape, in a sentence, or null when it can land work.
@@ -309,9 +388,13 @@ export function landingProblem(rule: LandingRule): string | null {
     }
     // A merge writes into the person's checkout, and with no press nothing would stand between the work and the line
     // (D145 point 1, D51 rule 6).
-    return rule.autoAccept
-      ? 'only a branch rule accepts automatically — a merge writes into your checkout, and with no press nothing would '
-        + 'stand between the work and the line. `branch <pattern> --auto-accept` is the form that does.'
+    if (rule.autoAccept) {
+      return 'only a branch rule accepts automatically — a merge writes into your checkout, and with no press nothing would '
+        + 'stand between the work and the line. `branch <pattern> --auto-accept` is the form that does.';
+    }
+    // A ticket's key names a branch (PROCESS1b-i), and a merge makes none.
+    return rule.key !== undefined
+      ? 'only a branch rule reads a ticket\'s key — a merge makes no branch to name. `branch <pattern> --key <shape>` is the form that does.'
       : null;
   }
   if (rule.form !== 'branch') {
@@ -329,7 +412,8 @@ export function landingProblem(rule: LandingRule): string | null {
     }
   }
 
-  if (!pattern.includes('{quest}') && !pattern.includes('{session}')) {
+  // A ticket names a branch as a quest does (PROCESS1b-i); the sentence still offers the two that are one per session.
+  if (!pattern.includes('{quest}') && !pattern.includes('{session}') && !pattern.includes('{ticket}')) {
     return 'a pattern needs `{quest}` or `{session}`, or every session\'s work would be put on one branch.';
   }
 
@@ -339,9 +423,15 @@ export function landingProblem(rule: LandingRule): string | null {
   }
 
   // A plugin's id is the catalogue's own shape, asked of its one owner (REFAC1), so a rule never names a path.
-  return rule.plugin !== undefined && !isPluginId(rule.plugin)
-    ? `\`${rule.plugin}\` is not a plugin id — one is lowercase letters, digits, dots and dashes, like \`example.github-pull-request\`.`
-    : null;
+  if (rule.plugin !== undefined && !isPluginId(rule.plugin)) {
+    return `\`${rule.plugin}\` is not a plugin id — one is lowercase letters, digits, dots and dashes, like \`example.github-pull-request\`.`;
+  }
+
+  // A ticket's key is read only for `{ticket}` (PROCESS1b-i), and held to the shape both readers take.
+  if (rule.key === undefined) return null;
+  return pattern.includes('{ticket}')
+    ? keyProblem(rule.key)
+    : `a ticket's key is read only for \`{ticket}\`, and \`${pattern}\` does not say it — add \`{ticket}\` to the pattern, or take the key away.`;
 }
 
 /**
@@ -902,20 +992,31 @@ export function commandDriver(
     // How work lands (WSR1, D87) — for one repository, or with `--workspace` for every repository in
     // it that sets none of its own: `merge` into the line, or `branch <pattern>` for the person to push,
     // or for the plugin `--plugin` names to push and open the pull request from (WSR4, D100), and on a branch
-    // `--auto-accept` for a quest's done to land it with no press (LAND2a, D145). Unset, it is the merge it
+    // `--auto-accept` for a quest's done to land it with no press (LAND2a, D145), and where the pattern says
+    // `{ticket}`, `--key <shape>` for the shape of the repository's ticket keys (PROCESS1b-i). Unset, it is the merge it
     // always was. Daoris itself never pushes.
     case 'landing': {
       const workspace = flagValue(argv, '--workspace');
       const clear = argv.includes('--clear');
-      const words = operands(argv, new Set(['--workspace', '--plugin'])).slice(1);
+      const words = operands(argv, new Set(['--workspace', '--plugin', '--key'])).slice(1);
       const name = workspace ?? words.shift();
       const [form, pattern] = words;
       if (!name || (!clear && !form)) {
         throw new DaorisError(
           '`driver landing` needs <repository>|--workspace <name>, then merge|branch <pattern>|--clear — '
           + 'e.g. `daoris driver landing --workspace aurora branch "feature/{quest}-{slug}"`, and on a branch '
-          + '`--plugin <id>` for an installed plugin that pushes it and opens the pull request, and `--auto-accept` '
-          + 'for a quest\'s done to land it with no press.');
+          + '`--plugin <id>` for an installed plugin that pushes it and opens the pull request, `--auto-accept` '
+          + 'for a quest\'s done to land it with no press, and `--key <shape>` for the shape `{ticket}` is found by.');
+      }
+
+      // The ticket's key (PROCESS1b-i): `--no-key` says the default shape out loud, as a rule replaces the one above whole.
+      const keyAt = argv.indexOf('--key');
+      const key = keyAt === -1 ? undefined : argv[keyAt + 1];
+      if (keyAt !== -1 && (key === undefined || key.startsWith('--'))) {
+        throw new DaorisError(`\`--key\` needs the shape of a ticket's key — \`--key <shape>\`, e.g. \`--key "${DEFAULT_KEY}"\`.`);
+      }
+      if (key !== undefined && argv.includes('--no-key')) {
+        throw new DaorisError('a rule names its ticket\'s key or reads the default — say `--key <shape>` or `--no-key`, not both.');
       }
 
       const pluginAt = argv.indexOf('--plugin');
@@ -935,6 +1036,7 @@ export function commandDriver(
       const rule: LandingRule | null = clear ? null : {
         form: form!,
         ...(pattern !== undefined ? { pattern } : {}),
+        ...(key !== undefined ? { key } : {}),
         ...(argv.includes('--tidy') ? { tidy: true } : {}),
         ...(plugin !== undefined ? { plugin } : {}),
         ...(autoAccept ? { autoAccept: true } : {}),
@@ -965,6 +1067,9 @@ export function commandDriver(
         write('  from the session\'s branch, with nothing merged and no checkout touched. You push it and open');
         write('  the pull request: Daoris never pushes (D87).');
       }
+
+      // What names the branch's ticket, said where the pattern asks for one (PROCESS1b-i).
+      if (rule?.form === 'branch' && rule.pattern?.includes('{ticket}')) write(`  ${ticketSays(rule.key)}`);
 
       if (rule?.tidy) {
         write('  Once a press lands the work, its tree and its branch go — only where git proves the work is on a');
@@ -1258,6 +1363,7 @@ export function commandDriver(
 
     const spelled = (rule: LandingRule) =>
       (rule.form === 'branch' ? `branch ${rule.pattern}` : rule.form)
+      + (rule.key ? `, key ${rule.key}` : '')
       + (rule.plugin ? `, plugin ${rule.plugin}` : '') + (rule.tidy ? ', tidy' : '') + (rule.autoAccept ? ', accept automatically' : '');
     for (const [repository, rule] of Object.entries(choices.landings)) {
       write(`  landing    ${repository}  ${spelled(rule)}`);
@@ -1908,22 +2014,30 @@ function targetMap(value: unknown): Record<string, string[]> {
   return held;
 }
 
-/** A map of names to landing rules; one that could not land work is skipped, as the driver skips it. */
+/**
+ * A map of names to landing rules; one that could not land work is skipped, as the driver skips it, and a ticket's key it
+ * refuses is ignored, the rest of the rule standing.
+ */
 function ruleMap(value: unknown): Record<string, LandingRule> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const held: Record<string, LandingRule> = {};
   for (const [name, rule] of Object.entries(value as Record<string, unknown>)) {
     if (!rule || typeof rule !== 'object') continue;
-    const { form, pattern, tidy, plugin, autoAccept } = rule as Record<string, unknown>;
+    const { form, pattern, key, tidy, plugin, autoAccept } = rule as Record<string, unknown>;
     const read: LandingRule = {
       form: typeof form === 'string' ? form : '',
       ...(typeof pattern === 'string' ? { pattern } : {}),
+      // An empty key is none, as the driver reads it (PROCESS1b-i).
+      ...(typeof key === 'string' && key.length > 0 ? { key } : {}),
       ...(tidy === true ? { tidy: true } : {}),
       // An empty name is no name, as the driver reads it.
       ...(typeof plugin === 'string' && plugin.length > 0 ? { plugin } : {}),
       // Only JSON `true` (LAND2a): `"true"` or 1 is not the person's say-so for a push with no press.
       ...(autoAccept === true ? { autoAccept: true } : {}),
     };
+    // A key refused here is ignored and the rest of the rule stands (PROCESS1b-i), as the driver reads it: a key another reader
+    // took never drops the rule, which would land the repository's work by its workspace's rule or a merge unasked.
+    if (read.key !== undefined && landingProblem(read) !== null) delete read.key;
     if (landingProblem(read) === null) held[name] = kept(read);
   }
 
@@ -1931,12 +2045,13 @@ function ruleMap(value: unknown): Record<string, LandingRule> {
 }
 
 /**
- * A rule as it is kept: a merge carries no pattern, a plugin only on a branch, and the tidy and the automatic
- * acceptance only when on, in that order — the driver keeps it the same way.
+ * A rule as it is kept: a merge carries no pattern, a ticket's key only after a branch's pattern, a plugin only on a
+ * branch, and the tidy and the automatic acceptance only when on, in that order — the driver keeps it the same way.
  */
 function kept(rule: LandingRule): LandingRule {
   return {
     ...(rule.form === 'merge' ? { form: 'merge' } : { form: rule.form, pattern: rule.pattern! }),
+    ...(rule.form !== 'merge' && rule.key ? { key: rule.key } : {}),
     ...(rule.form !== 'merge' && rule.plugin ? { plugin: rule.plugin } : {}),
     ...(rule.tidy ? { tidy: true } : {}),
     ...(rule.form !== 'merge' && rule.autoAccept ? { autoAccept: true } : {}),

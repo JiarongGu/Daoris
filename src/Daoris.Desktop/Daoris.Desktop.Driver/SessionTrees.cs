@@ -389,7 +389,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 { Own = true };
             }
 
-            var name = BranchNamed(subject, landing.Rule.Pattern!, repository);
+            var name = BranchNamed(subject, landing.Rule, repository);
             // A name the press would refuse is said before it (LANDNAME1a), where the plan keeps the sentence a press is refused with.
             var problem = subject.EnteredName is not null && !BranchName.IsValid(name) ? EnteredInvalid(name)
                 : plugin is null ? null : _plugins.Problem(plugin);
@@ -506,7 +506,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             }
 
             var branched = await BranchAsync(full, workspace, repository,
-                BranchNamed(subject, landing.Rule.Pattern!, repository), handedOn: plugin is not null, ct,
+                BranchNamed(subject, landing.Rule, repository), handedOn: plugin is not null, ct,
                 entered: subject.EnteredName is not null).ConfigureAwait(false);
             landed = branched.Landing;
             // Recorded the moment it exists (WSR5): the branch is Daoris's to judge and to hand on only
@@ -1193,12 +1193,12 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     private const string EnteredMerge = "the rule for this repository merges the work into its line and makes no branch, so there is no "
         + "branch name to enter. Leave it blank, or change the rule with `daoris driver landing`.";
 
-    /// <summary>What names the branch: the person's entered name where there is one (LANDNAME1a), else the rule's pattern expanded.</summary>
-    private static string BranchNamed(LandingSubject subject, string pattern, string repository) =>
-        subject.EnteredName ?? LandingRules.Expand(pattern, NamesOf(subject, repository));
-
-    private static LandingNames NamesOf(LandingSubject subject, string repository) =>
-        new(subject.Quest ?? subject.Session, subject.Slug, repository, subject.Session);
+    /// <summary>
+    /// What names the branch: the person's entered name where there is one (LANDNAME1a), else the rule's pattern expanded, its
+    /// <c>{ticket}</c> found by the rule's key (PROCESS1b-i). The plan and the press both ask it, so they name one branch.
+    /// </summary>
+    private static string BranchNamed(LandingSubject subject, LandingRule rule, string repository) =>
+        subject.EnteredName ?? LandingRules.Branch(subject, rule, repository);
 
     /// <summary>
     /// Remove a session tree — <b>and only a session tree</b>: anything outside the trees home is

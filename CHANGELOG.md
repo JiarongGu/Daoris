@@ -9,6 +9,11 @@ with the version and date at release.
   `--curve session=0:85` or `--curve weekly=0:30,50:70,100:100` (`--no-curve` takes it out), and prints both; a curve that
   breaks its rules is refused saying which window, which point and why. `--early` and `--near` still work as the old names,
   and settings saved with them are read as the switch and the curve they meant, and saved that way.
+- A landing rule names the pull request's branch as your repository names its own: its pattern may say `{ticket}`, the
+  ticket key found in the title, then the request, then its links (`TK-2202` by default, or the shape `--key` names, as in
+  `daoris driver landing <repository> branch "feature/{ticket}-{slug}" --key "[A-Z]+-\d+"`), the session's id where none is
+  found. A branch's words are never cut from a web address, so a title that was only a ticket's address no longer makes
+  `feature/https-…`.
 - Daoris reads each Claude account's real plan usage, the five-hour and weekly windows Claude Code's `/usage` shows, with no
   prompt and no usage spent, so a start chooses its account on what is really left, the person's own use included, rather
   than on what Daoris's last session there said hours before.

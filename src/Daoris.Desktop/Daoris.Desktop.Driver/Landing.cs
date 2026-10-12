@@ -33,7 +33,13 @@ public static class LandingForm
 /// its workspace's switch with the rest of it. LAND2b acts on it: a session concluding on a done quest becomes due
 /// (<see cref="AutoLandings"/>), and the next look lands it (<see cref="AutoLander"/>).
 /// </param>
-public sealed record LandingRule(string Form, string? Pattern = null, bool Tidy = false, string? Plugin = null, bool AutoAccept = false)
+/// <param name="Key">
+/// The shape of the repository's ticket keys (PROCESS1b-i, D164's amendment point 2): a regular expression the pattern's
+/// <c>{ticket}</c> is found by, in the title, then the request, then its links (<see cref="LandingRules.Ticket"/>). Null is
+/// <see cref="LandingRules.DefaultKey"/>. Only a branch rule whose pattern says <c>{ticket}</c> takes one.
+/// </param>
+public sealed record LandingRule(
+    string Form, string? Pattern = null, bool Tidy = false, string? Plugin = null, bool AutoAccept = false, string? Key = null)
 {
     public static readonly LandingRule Merge = new(LandingForm.Merge);
 }
@@ -49,8 +55,11 @@ public static class LandingSource
 /// <summary>A repository's landing rule and what said so.</summary>
 public sealed record Landing(LandingRule Rule, string Source);
 
-/// <summary>What a pattern is expanded from: the session's quest (or the session itself), its title's words, the repository.</summary>
-public sealed record LandingNames(string Quest, string Slug, string Repository, string Session);
+/// <summary>
+/// What a pattern is expanded from: the session's quest (or the session itself), its title's words, the repository, and the
+/// ticket its rule's key found (PROCESS1b-i), the session standing in where it found none.
+/// </summary>
+public sealed record LandingNames(string Quest, string Slug, string Repository, string Session, string? Ticket = null);
 
 /// <summary>The session a press lands: its id, and its quest and that quest's title where it has one.</summary>
 public sealed record LandingSubject(string Session, string? Quest, string? Title)
@@ -70,12 +79,28 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
     /// <summary>The entered name trimmed, or null where none was entered.</summary>
     public string? EnteredName => string.IsNullOrWhiteSpace(Entered) ? null : Entered.Trim();
 
+    /// <summary>
+    /// The request's body (PROCESS1b-i), where a ticket's key is searched after the title: the quest's, null where it is blank or
+    /// there is no quest. A conversation's words are its opening, its <see cref="Title"/>.
+    /// </summary>
+    public string? Body { get; init; }
+
+    /// <summary>The request's links, searched last for a ticket's key (PROCESS1b-i), each as given; null where it carries none.</summary>
+    public IReadOnlyList<string>? Links { get; init; }
+
     /// <summary>The branch pattern's <c>{slug}</c>: the quest's name in the words git takes, its title where it has no other.</summary>
     public string Slug => LandingRules.Slug(Name ?? Title);
 
-    /// <summary>The subject a quest is landed as: its title for the record, and its name for the branch where they differ.</summary>
-    public static LandingSubject Of(string session, QuestView quest) =>
-        new(session, quest.Id, quest.Title) { Name = quest.Name == quest.Title ? null : quest.Name };
+    /// <summary>
+    /// The subject a quest is landed as: its title for the record, its name for the branch where they differ, and its body and
+    /// links for a ticket's key to be found in. Blank and empty are carried as none, so a quest without them is the subject it was.
+    /// </summary>
+    public static LandingSubject Of(string session, QuestView quest) => new(session, quest.Id, quest.Title)
+    {
+        Name = quest.Name == quest.Title ? null : quest.Name,
+        Body = string.IsNullOrWhiteSpace(quest.Body) ? null : quest.Body,
+        Links = quest.Links.Count > 0 ? quest.Links : null,
+    };
 }
 
 /// <summary>What a press would do: the form, where the work would go (the line, or the branch it would make), and what said so.</summary>
@@ -346,13 +371,37 @@ public sealed record SweepResult(SweepItem Item, bool Removed, string Message)
 /// </summary>
 public static class LandingRules
 {
-    /// <summary>What a pattern may say. One of the first two is required, or every session's work would go to one branch.</summary>
-    public static readonly IReadOnlyList<string> Placeholders = ["quest", "session", "slug", "repository"];
+    /// <summary>
+    /// What a pattern may say. One of the first three is required, or every session's work would go to one branch: a ticket names
+    /// a branch as the quest does (PROCESS1b-i), two sessions on one ticket meeting the second's <c>exists</c> refusal.
+    /// </summary>
+    public static readonly IReadOnlyList<string> Placeholders = ["quest", "session", "ticket", "slug", "repository"];
 
     /// <summary>What a pattern is tried against before it is kept — the CLI's twin tries the same names.</summary>
-    private static readonly LandingNames Sample = new("0fda18", "sample-work", "engine", "s1a2b3c4");
+    private static readonly LandingNames Sample = new("0fda18", "sample-work", "engine", "s1a2b3c4", "ABC-123");
 
     private static readonly Regex Placeholder = new(@"\{([^{}]*)\}", RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// The shape of a ticket's key where the rule names none (PROCESS1b-i, D164's amendment point 2): a project's capitals, a dash
+    /// and its number, as <c>TK-2202</c>. The CLI's <c>driverconfig.ts</c> names the same shape.
+    /// </summary>
+    public const string DefaultKey = @"[A-Z][A-Z0-9]+-\d+";
+
+    /// <summary>How long a key may be: a shape, not a program. The CLI's twin holds the same bound.</summary>
+    public const int KeyLimit = 64;
+
+    /// <summary>
+    /// The letters a key may escape (PROCESS1b-i): the classes and controls .NET and JavaScript read alike. <c>\x</c>, <c>\u</c>,
+    /// <c>\c</c>, <c>\p</c> and the rest differ, or are refused by one engine. The CLI's <c>SHARED_ESCAPES</c> is the same list.
+    /// </summary>
+    public const string SharedEscapes = "dDwWsSbBnrtfv";
+
+    /// <summary>How long one search for a key may run before its words are passed over: a key is the person's, and need not be quick.</summary>
+    private static readonly TimeSpan KeyTimeout = TimeSpan.FromMilliseconds(100);
+
+    /// <summary>A web address in a title (LANDNAME2): never a branch's words, as <c>feature/https-…-browse-a267d192</c> was.</summary>
+    private static readonly Regex WebAddress = new(@"\b(?:https?://|www\.)\S*", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
     /// <summary>
     /// What is wrong with a rule's shape, in a sentence, or null when it can land work. Whether its plugin
@@ -369,11 +418,14 @@ public static class LandingRules
         LandingForm.Merge when rule.AutoAccept =>
             "only a branch rule accepts automatically — a merge writes into your checkout, and with no press nothing would "
             + "stand between the work and the line. `branch <pattern> --auto-accept` is the form that does.",
+        // A ticket's key names a branch (PROCESS1b-i), and a merge makes none.
+        LandingForm.Merge when rule.Key is not null =>
+            "only a branch rule reads a ticket's key — a merge makes no branch to name. `branch <pattern> --key <shape>` is the form that does.",
         LandingForm.Merge => null,
         // A plugin's id is the catalogue's own shape, asked of its one owner (REFAC1), so a rule never names a path.
         LandingForm.Branch => Problem(rule.Pattern ?? "") ?? (rule.Plugin is { } plugin && !PluginCatalog.IsId(plugin)
             ? $"`{plugin}` is not a plugin id — one is lowercase letters, digits, dots and dashes, like `example.github-pull-request`."
-            : null),
+            : null) ?? KeyProblem(rule),
         _ => $"`{rule.Form}` is not a way work lands here — `{LandingForm.Merge}` or `{LandingForm.Branch}`. "
              + "Pushing and opening a pull request is a plugin's to do, named on the branch form: "
              + "`branch <pattern> --plugin <id>`.",
@@ -472,7 +524,9 @@ public static class LandingRules
             }
         }
 
-        if (!pattern.Contains("{quest}", StringComparison.Ordinal) && !pattern.Contains("{session}", StringComparison.Ordinal))
+        // A ticket names a branch as a quest does (PROCESS1b-i); the sentence still offers the two that are one per session.
+        if (!pattern.Contains("{quest}", StringComparison.Ordinal) && !pattern.Contains("{session}", StringComparison.Ordinal)
+            && !pattern.Contains("{ticket}", StringComparison.Ordinal))
         {
             return "a pattern needs `{quest}` or `{session}`, or every session's work would be put on one branch.";
         }
@@ -483,28 +537,217 @@ public static class LandingRules
             : null;
     }
 
-    public static string Expand(string pattern, LandingNames names) => pattern
-        .Replace("{quest}", names.Quest, StringComparison.Ordinal)
-        .Replace("{session}", names.Session, StringComparison.Ordinal)
-        .Replace("{slug}", names.Slug, StringComparison.Ordinal)
-        .Replace("{repository}", names.Repository, StringComparison.Ordinal);
+    /// <summary>
+    /// What is wrong with a rule's ticket key, in a sentence, or null where it has none or can name a branch (PROCESS1b-i): read
+    /// only for <c>{ticket}</c>, and held to <see cref="KeyProblem(string)"/>'s shape.
+    /// </summary>
+    private static string? KeyProblem(LandingRule rule) => rule.Key is not { } key ? null
+        : !(rule.Pattern ?? "").Contains("{ticket}", StringComparison.Ordinal)
+            ? $"a ticket's key is read only for `{{ticket}}`, and `{rule.Pattern}` does not say it — add `{{ticket}}` to the pattern, or take the key away."
+            : KeyProblem(key);
 
     /// <summary>
-    /// A title in the words git takes: lower-case letters and digits, joined by hyphens, whole words up to
-    /// 40 characters. A title with none of those — one written in another script — is `work`.
+    /// What is wrong with a ticket's key, in a sentence, or null where both readers of a rule take it the same way (PROCESS1b-i):
+    /// the driver matches it in .NET and the CLI checks it in JavaScript, so it is held to what the two engines read alike — at
+    /// most <see cref="KeyLimit"/> characters, no <c>(?</c> group (lookaround, named group, inline option), no back-reference,
+    /// a letter escaped only as one of <see cref="SharedEscapes"/> (a punctuation mark may be escaped), and no empty class. Each
+    /// engine's own compile is the last word. The CLI's <c>keyProblem</c> is the twin, sentence for sentence.
     /// </summary>
-    public static string Slug(string? title)
+    /// <remarks>
+    /// 🔴 KEYPARITY: a key one engine takes and the other refuses was written by the CLI and then not read by the driver
+    /// (<c>TK\_\d+</c>, <c>\x</c> with no digits, <c>[^]</c>); <c>[]a]</c> compiles in both and means two things.
+    /// </remarks>
+    public static string? KeyProblem(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return $"a ticket's key needs a shape — e.g. `{DefaultKey}`, the one read where a rule names none.";
+        }
+
+        if (key.Length > KeyLimit) return $"a ticket's key is at most {KeyLimit} characters, and this one is {key.Length}.";
+
+        var inClass = false;
+        for (var at = 0; at < key.Length; at++)
+        {
+            var next = at + 1 < key.Length ? key[at + 1] : '\0';
+            if (key[at] == '\\')
+            {
+                if (next is 'k' or (>= '1' and <= '9'))
+                {
+                    return "a ticket's key may not refer back to a group (`\\k` or `\\1` to `\\9`), which the driver and the CLI read differently.";
+                }
+
+                // A punctuation mark or symbol escaped is itself in both; `_`, a digit, a space and any other letter are not read alike.
+                var punctuation = next is > ' ' and < '\x7f' && !char.IsAsciiLetterOrDigit(next) && next != '_';
+                if (next != '\0' && !SharedEscapes.Contains(next) && !punctuation)
+                {
+                    return $"a ticket's key may escape only a punctuation mark or one of `{string.Join(' ', SharedEscapes.Select(c => $"\\{c}"))}`, "
+                        + $"which the driver and the CLI read alike, and `\\{next}` is neither.";
+                }
+
+                at++; // the escaped character is the escape's own: `\\1` is a backslash and a one, `\(?` a bracket made optional
+            }
+            else if (inClass)
+            {
+                if (key[at] == ']') inClass = false;
+            }
+            else if (key[at] == '(' && next == '?')
+            {
+                return "a ticket's key may not use `(?` — a lookaround, a named group or an inline option, which the driver and the "
+                    + "CLI read differently.";
+            }
+            else if (key[at] == '[')
+            {
+                // `[]` and `[^]` are an empty class in JavaScript, and a class holding `]` in .NET.
+                if (next == ']' || (next == '^' && at + 2 < key.Length && key[at + 2] == ']'))
+                {
+                    return "a ticket's key may not hold an empty class, `[]` or `[^]`, which the driver and the CLI read differently.";
+                }
+
+                inClass = true;
+            }
+        }
+
+        try
+        {
+            _ = new Regex(key, RegexOptions.CultureInvariant, KeyTimeout);
+            return null;
+        }
+        catch (ArgumentException)
+        {
+            return $"a ticket's key `{key}` is not a regular expression — e.g. `{DefaultKey}`.";
+        }
+    }
+
+    /// <summary>
+    /// A pattern filled with one session's names. A name that is empty — a title that was only a web address leaves no slug —
+    /// takes with it the separator (<c>-</c>, <c>_</c>, <c>.</c>, <c>/</c>) it would leave doubled, leading or trailing, keeping a
+    /// <c>/</c> where the other side's is not one. A ticket the key did not find is the session's id.
+    /// </summary>
+    public static string Expand(string pattern, LandingNames names)
+    {
+        var text = new StringBuilder();
+        var gaps = new List<int>();
+        var from = 0;
+        foreach (Match used in Placeholder.Matches(pattern))
+        {
+            text.Append(pattern, from, used.Index - from);
+            from = used.Index + used.Length;
+            var value = used.Groups[1].Value switch
+            {
+                "quest" => names.Quest,
+                "session" => names.Session,
+                "ticket" => names.Ticket ?? names.Session,
+                "slug" => names.Slug,
+                "repository" => names.Repository,
+                _ => used.Value,
+            };
+            // Two empty names side by side leave one gap.
+            if (value.Length > 0) text.Append(value);
+            else if (gaps.Count == 0 || gaps[^1] != text.Length) gaps.Add(text.Length);
+        }
+
+        text.Append(pattern, from, pattern.Length - from);
+
+        // From the last gap back, so a removal never moves a gap still to come.
+        for (var at = gaps.Count - 1; at >= 0; at--)
+        {
+            var gap = gaps[at];
+            var before = gap > 0 && IsSeparator(text[gap - 1]);
+            var after = gap < text.Length && IsSeparator(text[gap]);
+            if (before && after) text.Remove(text[gap - 1] == '/' && text[gap] != '/' ? gap : gap - 1, 1);
+            else if (before && gap == text.Length) text.Remove(gap - 1, 1);
+            else if (after && gap == 0) text.Remove(gap, 1);
+        }
+
+        return text.ToString();
+    }
+
+    private static bool IsSeparator(char c) => c is '-' or '_' or '.' or '/';
+
+    /// <summary>
+    /// A title in the words git takes: lower-case letters and digits, joined by hyphens, whole words up to 40 characters, with
+    /// every web address left out (LANDNAME2). A title with no words git takes — one written in another script — is `work`; a
+    /// title whose words were all an address leaves nothing, and <see cref="Expand"/> takes its separator with it.
+    /// </summary>
+    public static string Slug(string? title) => Slug(title, ticket: null);
+
+    /// <summary>
+    /// The slug of a title the pattern also names by its ticket (PROCESS1b-i): the ticket's own words left out too, in any case,
+    /// so the branch does not say them twice; a title that was only the ticket leaves nothing.
+    /// </summary>
+    public static string Slug(string? title, string? ticket)
+    {
+        var text = WebAddress.Replace(title ?? "", " ");
+        if (ticket is { Length: > 0 }) text = text.Replace(ticket, " ", StringComparison.OrdinalIgnoreCase);
+        var slug = Words(text);
+        return slug.Length > 0 ? slug : Words(title).Length > 0 ? "" : "work";
+    }
+
+    private static string Words(string? text)
     {
         var slug = new StringBuilder();
-        foreach (var word in Regex.Split((title ?? "").ToLowerInvariant(), "[^a-z0-9]+").Where(word => word.Length > 0))
+        foreach (var word in Regex.Split((text ?? "").ToLowerInvariant(), "[^a-z0-9]+").Where(word => word.Length > 0))
         {
             if (slug.Length + (slug.Length > 0 ? 1 : 0) + word.Length > 40) break;
             if (slug.Length > 0) slug.Append('-');
             slug.Append(word);
         }
 
-        return slug.Length > 0 ? slug.ToString() : "work";
+        return slug.ToString();
     }
+
+    /// <summary>
+    /// The ticket a subject's work is for (PROCESS1b-i, D164's amendment point 2): the first match of <paramref name="key"/>, else
+    /// <see cref="DefaultKey"/>, in its name, its title, its request's body, then each of its links, in that order, as written. A
+    /// match git would not take in a branch's name is passed over, as are words a search runs past its time on. Null where none is
+    /// found: the session's id stands in.
+    /// </summary>
+    public static string? Ticket(LandingSubject subject, string? key)
+    {
+        Regex shape;
+        try
+        {
+            shape = new Regex(key ?? DefaultKey, RegexOptions.CultureInvariant, KeyTimeout);
+        }
+        catch (ArgumentException)
+        {
+            return null; // a key the rule's own check refuses is never kept, so none is found by it
+        }
+
+        string?[] sources = [subject.Name, subject.Title, subject.Body, .. subject.Links ?? []];
+        foreach (var source in sources.OfType<string>())
+        {
+            try
+            {
+                for (var match = shape.Match(source); match.Success; match = match.NextMatch())
+                {
+                    if (BranchName.IsValid(match.Value)) return match.Value;
+                }
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                // These words took the key too long; the next source is searched.
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// What one session's branch is named from under a rule: where the pattern says <c>{ticket}</c>, the ticket its key finds, and
+    /// the slug without it (PROCESS1b-i); otherwise the names as they always were.
+    /// </summary>
+    public static LandingNames Names(LandingSubject subject, LandingRule rule, string repository)
+    {
+        var ticket = (rule.Pattern ?? "").Contains("{ticket}", StringComparison.Ordinal) ? Ticket(subject, rule.Key) : null;
+        var slug = ticket is null ? subject.Slug : Slug(subject.Name ?? subject.Title, ticket);
+        return new(subject.Quest ?? subject.Session, slug, repository, subject.Session, ticket);
+    }
+
+    /// <summary>The branch a branch rule's pattern names for one session: what the plan says and the press makes.</summary>
+    public static string Branch(LandingSubject subject, LandingRule rule, string repository) =>
+        Expand(rule.Pattern ?? "", Names(subject, rule, repository));
 
     /// <summary>
     /// What a landing is named for (WSR5): the session, and the chain's FIRST quest with its title — the

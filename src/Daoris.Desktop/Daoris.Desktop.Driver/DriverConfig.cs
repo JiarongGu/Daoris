@@ -858,6 +858,8 @@ public sealed record DriverConfig(
             writer.WriteStartObject(key);
             writer.WriteString("form", rule.Form);
             if (rule.Pattern is not null) writer.WriteString("pattern", rule.Pattern);
+            // Written only when named, after the pattern it serves (PROCESS1b-i): absent is the default key. The CLI writes it here too.
+            if (rule.Key is not null) writer.WriteString("key", rule.Key);
             // Written only when named (D100): absent is the branch left for the person to push.
             if (rule.Plugin is not null) writer.WriteString("plugin", rule.Plugin);
             // Written only when on: absent is the tree staying, as it always has.
@@ -872,8 +874,9 @@ public sealed record DriverConfig(
 
     /// <summary>
     /// A map of names to landing rules; one that could not land work — an unknown form, a pattern that
-    /// names no branch, a merge naming a plugin or accepting automatically — is skipped. A plugin not installed here is still read:
-    /// the press says so, and the file stays what the person wrote.
+    /// names no branch, a merge naming a plugin or accepting automatically — is skipped. A ticket's key it refuses is ignored, the
+    /// rest of the rule standing. A plugin not installed here is still read: the press says so, and the file stays what the
+    /// person wrote. An empty key is none.
     /// </summary>
     private static IReadOnlyDictionary<string, LandingRule> RuleMap(JsonElement root, string name)
     {
@@ -889,7 +892,11 @@ public sealed record DriverConfig(
                     String(property.Value, "form") ?? "", String(property.Value, "pattern"),
                     property.Value.TryGetProperty("tidy", out var tidy) && tidy.ValueKind == JsonValueKind.True,
                     String(property.Value, "plugin"),
-                    property.Value.TryGetProperty("autoAccept", out var auto) && auto.ValueKind == JsonValueKind.True);
+                    property.Value.TryGetProperty("autoAccept", out var auto) && auto.ValueKind == JsonValueKind.True,
+                    String(property.Value, "key"));
+                // A key refused here is ignored and the rest of the rule stands (PROCESS1b-i): a key another reader took never
+                // drops the rule, which would land the repository's work by its workspace's rule or a merge unasked.
+                if (rule.Key is not null && LandingRules.Problem(rule) is not null) rule = rule with { Key = null };
                 if (LandingRules.Problem(rule) is null) map[property.Name] = Kept(rule);
             }
         }

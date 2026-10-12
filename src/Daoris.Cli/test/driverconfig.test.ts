@@ -279,6 +279,7 @@ test('the lines survive edits made by verbs that do not know them, and one git w
  */
 const PATTERNS: [string, boolean][] = [
   ['feature/{quest}-{slug}', true], ['review/{session}', true], ['team/{repository}/{quest}', true],
+  ['feature/{ticket}-{slug}', true], ['feature/{ticket}', true],
   ['', false], ['feature/fixed', false], ['feature/{slug}', false], ['feature/{nope}-{quest}', false],
   ['feature/{quest', false], ['feature/{quest}..x', false], ['feature {quest}', false],
 ];
@@ -525,6 +526,118 @@ test('landing refuses a merge that accepts automatically, and both switches at o
   assert.match(captureError(() => run(['landing', 'engine', 'branch', 'review/{session}', '--auto-accept', '--no-auto-accept'], at(fx))).message,
     /`--auto-accept` or `--no-auto-accept`/);
   assert.deepEqual(readDriverChoices(at(fx)).landings, {});
+  fx.cleanup();
+});
+
+/**
+ * PROCESS1b-i (D164's amendment point 2): a branch rule whose pattern says `{ticket}` may name the shape of its repository's
+ * ticket keys, a regular expression both readers take alike: at most 64 characters, no `(?` group, no back-reference, a letter
+ * escaped only as a class or control both engines share, no empty class. 🔴 A TWIN with the driver's `LandingRules.Problem`:
+ * `QuestNameTests.cs` holds these cases, answer for answer.
+ */
+const KEY_SHAPES: [form: string, pattern: string | null, key: string | null, problem: string | null][] = [
+  ['branch', 'feature/{ticket}-{slug}', null, null],
+  ['branch', 'feature/{ticket}-{slug}', '[A-Z]+-\\d+', null],
+  ['branch', 'feature/{ticket}', '\\d{4,}', null],
+  ['branch', 'feature/{ticket}', 'TK\\\\1', null],
+  ['branch', 'feature/{ticket}-{slug}', 'TK\\-\\d+', null],
+  ['branch', 'feature/{ticket}-{slug}', '[A-Z]{2,5}-\\d+', null],
+  ['branch', 'feature/{ticket}-{slug}', 'TK\\_\\d+', 'may escape only'],
+  ['branch', 'feature/{ticket}-{slug}', '\\x', 'may escape only'],
+  ['branch', 'feature/{ticket}-{slug}', '[^]', 'empty class'],
+  ['branch', 'feature/{ticket}-{slug}', '[]', 'empty class'],
+  ['branch', 'feature/{quest}-{slug}', '[A-Z]+-\\d+', 'only for `{ticket}`'],
+  ['merge', null, '[A-Z]+-\\d+', 'only a branch rule reads a ticket\'s key'],
+  ['branch', 'feature/{ticket}-{slug}', '  ', 'needs a shape'],
+  ['branch', 'feature/{ticket}-{slug}', 'ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDE', 'at most 64 characters'],
+  ['branch', 'feature/{ticket}-{slug}', '(?<key>[A-Z]+-\\d+)', 'may not use `(?`'],
+  ['branch', 'feature/{ticket}-{slug}', '[A-Z]+(?=-)', 'may not use `(?`'],
+  ['branch', 'feature/{ticket}-{slug}', '(?i)tk-\\d+', 'may not use `(?`'],
+  ['branch', 'feature/{ticket}-{slug}', '([A-Z]+)-\\1', 'may not refer back'],
+  ['branch', 'feature/{ticket}-{slug}', '(?<k>A)\\k<k>', 'may not use `(?`'],
+  ['branch', 'feature/{ticket}-{slug}', 'A\\k<k>', 'may not refer back'],
+  ['branch', 'feature/{ticket}-{slug}', '[A-Z+', 'is not a regular expression'],
+];
+
+test('a ticket\'s key is a shape both readers take, and only for {ticket} (the twin\'s shapes)', () => {
+  for (const [form, pattern, key, problem] of KEY_SHAPES) {
+    const said = landingProblem({ form, ...(pattern ? { pattern } : {}), ...(key !== null ? { key } : {}) });
+    if (problem === null) assert.equal(said, null, JSON.stringify([form, pattern, key]));
+    else assert.ok(said?.includes(problem), `${JSON.stringify([form, pattern, key])}: ${said}`);
+  }
+});
+
+test('landing --key names the ticket\'s shape after the pattern, is listed, and survives other verbs (PROCESS1b-i)', () => {
+  const fx = makeFixture('driver-landing-key');
+
+  const said = run(['landing', '--workspace', 'aurora', 'branch', 'feature/{ticket}-{slug}', '--key', '[A-Z]+-\\d+'], at(fx));
+  assert.match(said.out, /`\{ticket\}` is the first match of `\[A-Z\]\+-\\d\+` in the title, then the request, then its links/);
+  assert.deepEqual(readDriverChoices(at(fx)).workspaceLandings, {
+    aurora: { form: 'branch', pattern: 'feature/{ticket}-{slug}', key: '[A-Z]+-\\d+' },
+  });
+  // The same key in the same place the driver writes it: after the pattern.
+  assert.match(readFileSync(at(fx), 'utf8'), /"pattern": "feature\/\{ticket\}-\{slug\}",\s*"key": /);
+  assert.match(run(['list'], at(fx)).out, /landing\s+workspace aurora\s+branch feature\/\{ticket\}-\{slug\}, key \[A-Z\]\+-\\d\+/);
+
+  run(['cap', '2'], at(fx));
+  assert.equal(readDriverChoices(at(fx)).workspaceLandings.aurora?.key, '[A-Z]+-\\d+', 'another verb keeps it');
+
+  // `--no-key` (or none) is the default shape, said out loud where the pattern says `{ticket}`.
+  const plain = run(['landing', '--workspace', 'aurora', 'branch', 'feature/{ticket}-{slug}', '--no-key'], at(fx));
+  assert.match(plain.out, /`\{ticket\}` is the first match of `\[A-Z\]\[A-Z0-9\]\+-\\d\+`/);
+  assert.equal(JSON.parse(readFileSync(at(fx), 'utf8')).workspaceLandings.aurora.key, undefined);
+  fx.cleanup();
+});
+
+test('landing refuses a key on a merge, a key with no {ticket}, a key with no shape, and both key flags, and writes nothing', () => {
+  const fx = makeFixture('driver-landing-key-refused');
+
+  assert.match(captureError(() => run(['landing', 'engine', 'merge', '--key', '[A-Z]+-\\d+'], at(fx))).message,
+    /only a branch rule reads a ticket's key/);
+  assert.match(captureError(() => run(['landing', 'engine', 'branch', 'feature/{quest}-{slug}', '--key', '[A-Z]+-\\d+'], at(fx))).message,
+    /only for `\{ticket\}`/);
+  assert.match(captureError(() => run(['landing', 'engine', 'branch', 'feature/{ticket}', '--key', '(?i)tk-\\d+'], at(fx))).message,
+    /may not use `\(\?`/);
+  assert.match(captureError(() => run(['landing', 'engine', 'branch', 'feature/{ticket}', '--key'], at(fx))).message,
+    /`--key` needs the shape of a ticket's key/);
+  assert.match(captureError(() => run(['landing', 'engine', 'branch', 'feature/{ticket}', '--key', 'TK-\\d+', '--no-key'], at(fx))).message,
+    /`--key <shape>` or `--no-key`/);
+  assert.deepEqual(readDriverChoices(at(fx)).landings, {});
+  fx.cleanup();
+});
+
+/**
+ * A ticket's key is read as the driver reads it: an empty one is none, and one refused is ignored with the rest of its rule
+ * standing, so another reader's key never drops the rule. `QuestNameTests.A_rule_whose_key_is_refused_is_read_without_it`
+ * reads the same file.
+ */
+test('a ticket\'s key is read as the driver reads it: an empty one is none, and one refused is ignored, the rule standing', () => {
+  const fx = makeFixture('driver-landing-key-read');
+  writeFileSync(at(fx), JSON.stringify({
+    landings: {
+      engine: {
+        form: 'branch', pattern: 'feature/{ticket}', key: '(?i)tk-\\d+', plugin: 'example.github-pull-request', tidy: true, autoAccept: true,
+      },
+      parity: { form: 'branch', pattern: 'feature/{ticket}-{slug}', key: 'TK\\_\\d+' },
+      unasked: { form: 'branch', pattern: 'feature/{quest}', key: '[A-Z]+-\\d+' },
+      line: { form: 'merge', key: '[A-Z]+-\\d+' },
+      bad: { form: 'branch', pattern: 'fixed', key: '[A-Z]+-\\d+' },
+      game: { form: 'branch', pattern: 'feature/{ticket}', key: '' },
+      web: { form: 'branch', pattern: 'feature/{ticket}', key: '\\d{4,}' },
+    },
+  }));
+
+  assert.deepEqual(readDriverChoices(at(fx)).landings, {
+    engine: { form: 'branch', pattern: 'feature/{ticket}', plugin: 'example.github-pull-request', tidy: true, autoAccept: true },
+    parity: { form: 'branch', pattern: 'feature/{ticket}-{slug}' },
+    unasked: { form: 'branch', pattern: 'feature/{quest}' },
+    line: { form: 'merge' },
+    game: { form: 'branch', pattern: 'feature/{ticket}' },
+    web: { form: 'branch', pattern: 'feature/{ticket}', key: '\\d{4,}' },
+  });
+  // The door that sets one still refuses it.
+  assert.match(captureError(() => run(['landing', 'engine', 'branch', 'feature/{ticket}', '--key', 'TK\\_\\d+'], at(fx))).message,
+    /may escape only a punctuation mark or one of `\\d \\D \\w \\W \\s \\S \\b \\B \\n \\r \\t \\f \\v`, which the driver and the CLI read alike, and `\\_` is neither/);
   fx.cleanup();
 });
 

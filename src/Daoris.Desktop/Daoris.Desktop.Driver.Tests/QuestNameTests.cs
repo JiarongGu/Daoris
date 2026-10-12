@@ -71,7 +71,162 @@ public sealed class QuestNameTests
         var same = await Daoris.Driver.Driver.LandsAsAsync("s2", plain, _ => throw new InvalidOperationException("never asked"), default);
 
         Assert.Equal("frame-cap", told.Slug);
-        Assert.Equal(new LandingSubject("s2", "q2", "Fix the gap"), same);
+        // The request's words ride the subject, a ticket's key searched in them (PROCESS1b-i).
+        Assert.Equal(new LandingSubject("s2", "q2", "Fix the gap") { Body = "b" }, same);
         Assert.Equal("fix-the-gap", same.Slug);
+    }
+
+    // ——— PROCESS1b-i (D164's amendment point 2): the branch named as the repository names its own
+
+    /// <summary>
+    /// <c>{ticket}</c> is the first match of the rule's key (else <see cref="LandingRules.DefaultKey"/>) in the title, then the
+    /// request's body, then its links, as written; none found, the session's id stands in. The slug leaves out the ticket the
+    /// pattern already says, and every web address (LANDNAME2: <c>feature/https-…-browse-a267d192</c>), and an empty one takes its
+    /// separator with it. A pattern without <c>{ticket}</c> names the branch as it always did.
+    /// </summary>
+    [Theory]
+    [InlineData("feature/{ticket}-{slug}", null, "TK-2202: fix the gap", "", null, "feature/TK-2202-fix-the-gap")]
+    [InlineData("feature/{ticket}-{slug}", null, "https://acme.atlassian.net/browse/ABC-123", "", null, "feature/ABC-123")]
+    [InlineData("feature/{ticket}-{slug}", null, "Saving fails, see https://acme.atlassian.net/browse/ABC-123 and www.acme.test/x", "", null, "feature/ABC-123-saving-fails-see-and")]
+    [InlineData("feature/{ticket}-{slug}", null, "Fix the gap", "The trace is in TK-77, and TK-78 follows it.", null, "feature/TK-77-fix-the-gap")]
+    [InlineData("feature/{ticket}-{slug}", null, "TK-1 first", "TK-2 second", null, "feature/TK-1-first")]
+    [InlineData("feature/{ticket}-{slug}", @"\d{4,}", "Fix the gap", "no number here", "https://dev.azure.test/org/_workitems/edit/4521", "feature/4521-fix-the-gap")]
+    [InlineData("feature/{ticket}-{slug}", @"[A-Z]+-\d+", "abc-1 is not DEF-22", "", null, "feature/DEF-22-abc-1-is-not")]
+    [InlineData("feature/{ticket}-{slug}", null, "Fix the gap", "", null, "feature/fd12f1bc-fix-the-gap")]
+    [InlineData("feature/{ticket}-{slug}", null, "修复 登录", "", null, "feature/fd12f1bc-work")]
+    [InlineData("feature/{ticket}", null, "TK-9 alone", "", null, "feature/TK-9")]
+    [InlineData("feature/{quest}-{slug}", null, "TK-2202: fix the gap", "", null, "feature/q1-tk-2202-fix-the-gap")]
+    [InlineData("feature/{quest}-{slug}", null, "https://acme.atlassian.net/browse/ABC-123", "", null, "feature/q1")]
+    [InlineData("feature/{slug}-{quest}", null, "https://acme.atlassian.net/browse/ABC-123", "", null, "feature/q1")]
+    public void A_branch_is_named_by_the_ticket_the_rules_key_finds_and_never_by_a_web_address(
+        string pattern, string? key, string title, string body, string? link, string branch)
+    {
+        var subject = new LandingSubject("fd12f1bc", "q1", title) { Body = body, Links = link is null ? null : [link] };
+
+        Assert.Equal(branch, LandingRules.Branch(subject, new LandingRule(LandingForm.Branch, pattern, Key: key), "portal-ui"));
+    }
+
+    /// <summary>A chain is named for its first quest (WSR5), so its key is searched in that quest's words, not the last step's.</summary>
+    [Fact]
+    public async Task A_chains_ticket_is_its_first_quests()
+    {
+        var first = new QuestView("q1", "ask #a1", "portal-ui", "The common report", "Reported in TK-2203.", "Done") { Links = ["https://tickets.test/TK-2203"] };
+        var step = new QuestView("q2", "ask #a1", "portal-ui", "Verify TK-9999 in the browser", "", "Open") { Parent = "q1" };
+        Task<QuestView?> Find(string id) => Task.FromResult<QuestView?>(id switch { "q1" => first, "q2" => step, _ => null });
+
+        var subject = await LandingRules.SubjectAsync("s2", "q2", Find, opening: null);
+
+        Assert.Equal("Reported in TK-2203.", subject.Body);
+        Assert.Equal(new[] { "https://tickets.test/TK-2203" }, subject.Links!);
+        Assert.Equal("feature/TK-2203-the-common-report",
+            LandingRules.Branch(subject, new LandingRule(LandingForm.Branch, "feature/{ticket}-{slug}"), "portal-ui"));
+        // A conversation has its opening words, and they are searched.
+        Assert.Equal("feature/TK-5-tidy-the-docs", LandingRules.Branch(
+            await LandingRules.SubjectAsync("c1", null, Find, "TK-5 tidy the docs"), new LandingRule(LandingForm.Branch, "feature/{ticket}-{slug}"), "portal-ui"));
+    }
+
+    /// <summary>An empty slug takes the separator it would leave doubled, leading or trailing with it; the ticket stands in for nothing.</summary>
+    [Theory]
+    [InlineData("feature/{ticket}-{slug}", "", "ABC-1", "feature/ABC-1")]
+    [InlineData("feature/{slug}-{quest}", "", "ABC-1", "feature/0fda18")]
+    [InlineData("team/{slug}/{quest}", "", null, "team/0fda18")]
+    [InlineData("{slug}_{quest}", "", null, "0fda18")]
+    [InlineData("feature/{ticket}-{slug}", "fix-the-gap", null, "feature/s1a2b3c4-fix-the-gap")]
+    [InlineData("feature/{quest}-{slug}", "fix-the-gap", "ABC-1", "feature/0fda18-fix-the-gap")]
+    public void A_pattern_is_expanded_with_its_ticket_and_an_empty_slug_takes_its_separator(string pattern, string slug, string? ticket, string branch) =>
+        Assert.Equal(branch, LandingRules.Expand(pattern, new LandingNames("0fda18", slug, "engine", "s1a2b3c4", ticket)));
+
+    /// <summary>The slug is the title's words with every web address left out: a title that was only one leaves nothing.</summary>
+    [Theory]
+    [InlineData("https://acme.atlassian.net/browse/ABC-123", "")]
+    [InlineData("Saving fails, see HTTP://acme.test/x and www.acme.test", "saving-fails-see-and")]
+    [InlineData("Fix: API gap (#12)", "fix-api-gap-12")]
+    [InlineData("修复 登录", "work")]
+    [InlineData(null, "work")]
+    public void A_slug_is_never_made_from_a_web_address(string? title, string slug) =>
+        Assert.Equal(slug, LandingRules.Slug(title));
+
+    /// <summary>
+    /// The key's shape (PROCESS1b-i): a regular expression both readers of a rule take the same way, at most 64 characters, no
+    /// <c>(?</c> group, no back-reference, a letter escaped only as one of the classes and controls both engines share, and no
+    /// empty class; only on a branch rule whose pattern says <c>{ticket}</c>. The CLI's <c>driverconfig.test.ts</c> holds these
+    /// cases, answer for answer (<c>KEY_SHAPES</c>).
+    /// </summary>
+    [Theory]
+    [InlineData("branch", "feature/{ticket}-{slug}", null, null)]
+    [InlineData("branch", "feature/{ticket}-{slug}", @"[A-Z]+-\d+", null)]
+    [InlineData("branch", "feature/{ticket}", @"\d{4,}", null)]
+    [InlineData("branch", "feature/{ticket}", @"TK\\1", null)]
+    [InlineData("branch", "feature/{ticket}-{slug}", @"TK\-\d+", null)]
+    [InlineData("branch", "feature/{ticket}-{slug}", @"[A-Z]{2,5}-\d+", null)]
+    [InlineData("branch", "feature/{ticket}-{slug}", @"TK\_\d+", "may escape only")]
+    [InlineData("branch", "feature/{ticket}-{slug}", @"\x", "may escape only")]
+    [InlineData("branch", "feature/{ticket}-{slug}", "[^]", "empty class")]
+    [InlineData("branch", "feature/{ticket}-{slug}", "[]", "empty class")]
+    [InlineData("branch", "feature/{quest}-{slug}", @"[A-Z]+-\d+", "only for `{ticket}`")]
+    [InlineData("merge", null, @"[A-Z]+-\d+", "only a branch rule reads a ticket's key")]
+    [InlineData("branch", "feature/{ticket}-{slug}", "  ", "needs a shape")]
+    [InlineData("branch", "feature/{ticket}-{slug}", "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDE", "at most 64 characters")]
+    [InlineData("branch", "feature/{ticket}-{slug}", @"(?<key>[A-Z]+-\d+)", "may not use `(?`")]
+    [InlineData("branch", "feature/{ticket}-{slug}", @"[A-Z]+(?=-)", "may not use `(?`")]
+    [InlineData("branch", "feature/{ticket}-{slug}", @"(?i)tk-\d+", "may not use `(?`")]
+    [InlineData("branch", "feature/{ticket}-{slug}", @"([A-Z]+)-\1", "may not refer back")]
+    [InlineData("branch", "feature/{ticket}-{slug}", @"(?<k>A)\k<k>", "may not use `(?`")]
+    [InlineData("branch", "feature/{ticket}-{slug}", @"A\k<k>", "may not refer back")]
+    [InlineData("branch", "feature/{ticket}-{slug}", "[A-Z+", "is not a regular expression")]
+    public void A_tickets_key_is_a_shape_both_readers_take_and_only_for_ticket(string form, string? pattern, string? key, string? problem)
+    {
+        var said = LandingRules.Problem(new LandingRule(form, pattern, Key: key));
+
+        if (problem is null) Assert.Null(said);
+        else Assert.Contains(problem, said);
+    }
+
+    /// <summary>The key rides the rule in <c>driver.json</c>, after its pattern, as the CLI writes it; an empty one is none.</summary>
+    [Fact]
+    public void A_tickets_key_is_kept_in_driver_json_after_the_pattern()
+    {
+        var keyed = DriverConfig.Empty.WithWorkspaceLanding("aurora", new LandingRule(LandingForm.Branch, "feature/{ticket}-{slug}", Key: @"[A-Z]+-\d+"));
+
+        Assert.Equal(@"[A-Z]+-\d+", DriverConfig.Parse(keyed.ToJson()).WorkspaceLandings["aurora"].Key);
+        Assert.Matches("\"pattern\": \"feature/\\{ticket}-\\{slug}\",\\s*\"key\": ", keyed.ToJson());
+        Assert.DoesNotContain("\"key\"",
+            DriverConfig.Empty.WithWorkspaceLanding("aurora", new LandingRule(LandingForm.Branch, "feature/{ticket}-{slug}")).ToJson(), StringComparison.Ordinal);
+        Assert.Throws<DriverException>(() => DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge, Key: @"[A-Z]+-\d+")));
+
+        var read = DriverConfig.Parse("""
+            {"landings":{"game":{"form":"branch","pattern":"feature/{ticket}","key":""}}}
+            """);
+        Assert.Equal(new LandingRule(LandingForm.Branch, "feature/{ticket}"), read.Landings["game"]);
+    }
+
+    /// <summary>
+    /// A key the driver refuses in the file is ignored, and the rest of its rule stands (PROCESS1b-i): a key written by a reader
+    /// that takes more never drops the rule, so the repository never lands by its workspace's rule or a merge unasked. A door that
+    /// sets one still refuses it. The CLI's <c>driverconfig.test.ts</c> reads the same file the same way.
+    /// </summary>
+    [Fact]
+    public void A_rule_whose_key_is_refused_is_read_without_it()
+    {
+        var read = DriverConfig.Parse("""
+            {"landings":{
+              "engine":{"form":"branch","pattern":"feature/{ticket}","key":"(?i)tk-\\d+","plugin":"example.github-pull-request","tidy":true,"autoAccept":true},
+              "parity":{"form":"branch","pattern":"feature/{ticket}-{slug}","key":"TK\\_\\d+"},
+              "unasked":{"form":"branch","pattern":"feature/{quest}","key":"[A-Z]+-\\d+"},
+              "line":{"form":"merge","key":"[A-Z]+-\\d+"},
+              "bad":{"form":"branch","pattern":"fixed","key":"[A-Z]+-\\d+"}}}
+            """);
+
+        Assert.Equal(new LandingRule(LandingForm.Branch, "feature/{ticket}", Tidy: true, Plugin: "example.github-pull-request", AutoAccept: true),
+            read.Landings["engine"]);
+        Assert.Equal(new LandingRule(LandingForm.Branch, "feature/{ticket}-{slug}"), read.Landings["parity"]);
+        Assert.Equal(new LandingRule(LandingForm.Branch, "feature/{quest}"), read.Landings["unasked"]);
+        Assert.Equal(LandingRule.Merge, read.Landings["line"]);
+        // A rule that could not land work without its key is still not read.
+        Assert.False(read.Landings.ContainsKey("bad"));
+        // The door that sets one still refuses it, in the CLI's words.
+        Assert.Contains(
+            @"may escape only a punctuation mark or one of `\d \D \w \W \s \S \b \B \n \r \t \f \v`, which the driver and the CLI read alike, and `\_` is neither.",
+            Assert.Throws<DriverException>(() => DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{ticket}", Key: @"TK\_\d+"))).Message);
     }
 }
