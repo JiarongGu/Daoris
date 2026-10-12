@@ -72,7 +72,10 @@ export const isIntake = (session: Session): boolean => Boolean(session.ask);
 /** Whether a session is a second opinion's reviewer (XAGENT1c, D155 point 11): the one kind of record that names an opinion. */
 export const isOpinion = (session: Session): boolean => Boolean(session.opinion);
 
-/** Whether a session is a helper (MIXAGENT2a, D163): the one kind of record that names a session it serves. */
+/**
+ * Whether a session is a helper (MIXAGENT2a, D163): the one kind of record that names a session it serves. Like a reviewer, it
+ * is a chat only by the way it was opened, one turn and no words: `sessionTitle` names it and the frame's `oneTurn` offers no box.
+ */
 export const isHelper = (session: Session): boolean => Boolean(session.serves);
 
 /**

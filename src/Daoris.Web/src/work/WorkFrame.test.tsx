@@ -3097,12 +3097,15 @@ describe('a session’s page header and its acts', () => {
     expect(onSelect).toHaveBeenCalledWith('e4r1i3r0');
   });
 
-  it('titles a helper as one and says whom it helps, by that session’s title', async () => {
+  /** And, as a reviewer's, a helper's record takes one turn and no words (D163's MIXAGENT2a-i note): no box is offered. */
+  it('titles a helper as one, says whom it helps by that session’s title, and offers it no box', async () => {
     SESSIONS = [DRIVEN, { ...CHAT, id: 'h3lp3r00', serves: 's1a2b3c4' }];
     show('h3lp3r00');
 
     const header = (await screen.findByRole('heading', { level: 1, name: 'Helper' })).closest('header')!;
     expect(await within(header).findByText(/^engine · helping Expose a streaming budget · /)).toBeInTheDocument();
+    expect(screen.queryByLabelText('Message')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
   });
 
   /** M2: a quest parked on its failed sessions is tried again where its session is, the loud act in its header. */

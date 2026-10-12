@@ -42,7 +42,7 @@ import type { FrameIntent } from '../commands';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';
 import type { Usage } from './conversation';
-import { isIntake, isOpinion, linkedSessions, ownTree, sessionOrigin, sessionTitle } from './identity';
+import { isHelper, isIntake, isOpinion, linkedSessions, ownTree, sessionOrigin, sessionTitle } from './identity';
 import { doorLabel } from '../tools';
 import type { QuestClose, Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
@@ -424,8 +424,9 @@ export function WorkFrame({
   // there sent a person's words into nothing, or into the middle of the JSON-RPC stream. The driver
   // refuses such a line too; the frame offers no box, and the page header carries the stop (D126 §3.3).
   const intake = attended ? isIntake(attended) : false;
-  // So does a second opinion's reviewer (XAGENT1g): one turn and no words, which its record's host refuses besides.
-  const oneTurn = intake || (attended ? isOpinion(attended) : false);
+  // So does a second opinion's reviewer (XAGENT1g), and a helper (MIXAGENT3a-i, D163): one turn and no words, which its
+  // record's host refuses besides.
+  const oneTurn = intake || (attended ? isOpinion(attended) || isHelper(attended) : false);
   // The go-aheads a park asked on its quest's ask (KNOWUSE1a2, D135 §2), read only for a driven park whose quest an ask
   // asked: shown in its head, where answering the last one open sends it on (GOAHEAD2b). The asks are asked for nowhere
   // else here.
