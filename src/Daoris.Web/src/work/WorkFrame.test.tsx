@@ -3076,6 +3076,35 @@ describe('a session’s page header and its acts', () => {
     expect(within(head).getByText('s1a2b3c4')).toBeInTheDocument();
   });
 
+  /**
+   * MIXAGENT3a-i (the mixed-agents design §4): a session that continues another says which agent's in its facts, by the roster's
+   * name for it, and why in the hand-over's words; its *Details* names that session and attends it on a press.
+   */
+  it('says whom a session continues in its header, and attends that session from Details', async () => {
+    const earlier = { ...CHAT, id: 'e4r1i3r0', adapter: 'codex', state: 'completed' };
+    SESSIONS = [earlier, { ...CHAT, from: 'e4r1i3r0', fromWhy: 'near', fromBy: 'daoris' }];
+    // The roster's codex, named as its product.
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
+      ? { ...ROSTER, harnesses: ROSTER.harnesses.map((row) => (row.harness === 'codex' ? { ...row, product: 'Codex' } : row)) }
+      : DRIVER_STATE));
+    const { onSelect } = show('c0ffee11');
+
+    const header = (await screen.findByRole('heading', { level: 1, name: 'Chat' })).closest('header')!;
+    expect(await within(header).findByText(/^engine · continues from Codex · its account was near its limit · /)).toBeInTheDocument();
+    const head = screen.getByRole('button', { name: /^Details/ }).closest('header')!;
+    fireEvent.click(within(head).getByRole('button', { name: /^Details/ }));
+    fireEvent.click(within(within(head).getByText('Continues').nextElementSibling as HTMLElement).getByRole('button', { name: 'Open session' }));
+    expect(onSelect).toHaveBeenCalledWith('e4r1i3r0');
+  });
+
+  it('titles a helper as one and says whom it helps, by that session’s title', async () => {
+    SESSIONS = [DRIVEN, { ...CHAT, id: 'h3lp3r00', serves: 's1a2b3c4' }];
+    show('h3lp3r00');
+
+    const header = (await screen.findByRole('heading', { level: 1, name: 'Helper' })).closest('header')!;
+    expect(await within(header).findByText(/^engine · helping Expose a streaming budget · /)).toBeInTheDocument();
+  });
+
   /** M2: a quest parked on its failed sessions is tried again where its session is, the loud act in its header. */
   it('tries a parked quest again from its session’s page header', async () => {
     SESSIONS = [{ ...DRIVEN, id: 'f41led00', state: 'failed' }];

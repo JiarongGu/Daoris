@@ -96,12 +96,22 @@ export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, branch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onName, discards, onDiscardTree, review, opinion, onOpenQuest,
+  continues, helps, onOpenSession,
 }: {
   /**
    * Open the quest it serves (HEAD2c): the door beside the request as written in *Details*. Absent where nothing can open
    * it, and then the request is shown with no door.
    */
   onOpenQuest?: (quest: Quest) => void;
+  /**
+   * The session its record says it continues (`from`, MIXAGENT3a-i), where the frame holds it, with its title. Absent, *Details*
+   * says the record's id, with no door.
+   */
+  continues?: HeadLink | null;
+  /** The session a helper helps (`serves`, MIXAGENT3a-i), where the frame holds it, with its title; absent, its id. */
+  helps?: HeadLink | null;
+  /** Attend one of those sessions (MIXAGENT3a-i): the door beside its title in *Details*. Absent, the title has no door. */
+  onOpenSession?: (session: Session) => void;
   /** The landing plan shown is the previous one while the entered name's is read (LANDNAME1b); the press waits. */
   planning?: boolean;
   /**
@@ -298,6 +308,9 @@ export function SessionHead({
             ? { label: t('work.intake.ask'), value: `#${session.ask}`, mono: true }
             : { label: t('work.head.repository'), value: <span title={session.tree ?? undefined}>{session.repository}</span> },
           requestRow(t, quest, session.kind === 'chat' ? opening : null, session.quest ?? session.ask, onOpenQuest),
+          // Whom it continues and whom it helps (MIXAGENT3a-i), the record's own links, each a door where the frame holds it.
+          linkRow(t, t('work.head.continues'), session.from, continues, onOpenSession),
+          linkRow(t, t('work.head.helping'), session.serves, helps, onOpenSession),
           { label: t('work.head.quest'), value: session.quest ? `#${session.quest}` : null, mono: true },
           { label: t('work.head.tool'), value: sessionTool({ adapter: session.adapter, harnessVersion: session.harnessVersion }) },
           {
@@ -362,6 +375,39 @@ function requestRow(
     };
   }
   return { label, value: !id && opening && opening.length > ONE_LINE ? opening : null };
+}
+
+/** A session another one's record names (MIXAGENT3a-i), as the frame holds it: its record, and its title (`sessionTitle`). */
+export type HeadLink = { session: Session; title: string };
+
+/**
+ * A link the record holds, a row of *Details* (MIXAGENT3a-i, the mixed-agents design §4): the other session's title with a door
+ * that attends it, where the frame holds that session; its id in mono with no door where it does not (deleted, or not listed).
+ * No row where the record names none.
+ */
+function linkRow(
+  t: TFunction, label: string, id: string | null | undefined, link: HeadLink | null | undefined,
+  onOpenSession: ((session: Session) => void) | undefined,
+): DetailRow {
+  if (!id) return { label, value: null };
+  if (!link || link.session.id !== id) return { label, value: id, mono: true };
+  return {
+    label,
+    value: (
+      <>
+        <span>{link.title}</span>
+        {onOpenSession && (
+          <button
+            type="button"
+            onClick={() => onOpenSession(link.session)}
+            className="ml-2 cursor-pointer border-0 bg-transparent p-0 font-sans text-small text-accent hover:underline"
+          >
+            {t('work.head.openSession')}
+          </button>
+        )}
+      </>
+    ),
+  };
 }
 
 /**

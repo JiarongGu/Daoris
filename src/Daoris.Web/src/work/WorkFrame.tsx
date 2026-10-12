@@ -20,7 +20,8 @@ import { OpinionGate } from './OpinionGate';
 import { reviewHolds, reviewState } from './review';
 import { ReviewGate } from './ReviewGate';
 import { useReviewActs } from './reviewActs';
-import type { HeadOpinion, HeadReview } from './SessionHead';
+import type { Session } from '../api';
+import type { HeadLink, HeadOpinion, HeadReview } from './SessionHead';
 import { sayDiscard } from '../settings/Sweep';
 import { doorOf, toolOf } from '../tools';
 import { agentOf, machineScope, workspaceScope } from '../settings/accounts';
@@ -41,7 +42,7 @@ import type { FrameIntent } from '../commands';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';
 import type { Usage } from './conversation';
-import { isIntake, isOpinion, ownTree, sessionOrigin, sessionTitle } from './identity';
+import { isIntake, isOpinion, linkedSessions, ownTree, sessionOrigin, sessionTitle } from './identity';
 import { doorLabel } from '../tools';
 import type { QuestClose, Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
@@ -1302,6 +1303,17 @@ export function WorkFrame({
   }, [pausing, pauseQuiet, actions.work]);
   useEffect(() => { if (!pausing) pausedQuietly.current = null; }, [pausing]);
   const attendedTitle = attended ? sessionTitle(attended, quest, openings[attended.id]) : '';
+  // Whom it continues and whom a helper helps (MIXAGENT3a-i): the record's own links, joined to the sessions the frame holds, for
+  // the head's facts and its *Details*. One the frame does not hold is said by its id, and its agent is not guessed.
+  const linked = attended
+    ? linkedSessions(attended, new Map((sessions.data ?? []).map((row): [string, Session] => [row.id, row])))
+    : null;
+  const headLink = (other: Session | null | undefined): HeadLink | null => (other ? {
+    session: other,
+    title: sessionTitle(other, other.quest ? (quests.data ?? []).find((row) => row.id === other.quest) : null, openings[other.id]),
+  } : null);
+  const continues = headLink(linked?.continues);
+  const helps = headLink(linked?.helps);
   const headPrimary = primaryAct(headActs, grouping);
   // A right-click on the session's page offers its header's acts, in the order the header draws them (CTX1, D138 §4).
   const pageMenu = attended && attendedFacts
@@ -1324,6 +1336,11 @@ export function WorkFrame({
         ownSignIn: roster.some((row) => row.harness === attended.adapter),
         branch,
         nameOf,
+        // The agent it continues by the roster's name for it, as the hand-over's ask names agents (MIXAGENT3a-i).
+        continuesAgent: continues
+          ? roster.find((row) => row.harness === continues.session.adapter)?.product || continues.session.adapter
+          : null,
+        helping: helps?.title,
       })}
       acts={headActs}
       primary={headPrimary}
@@ -1606,6 +1623,8 @@ export function WorkFrame({
             onGoAhead={here ? onGoAhead : undefined}
             chain={quest ? buildChain(quest.id, quests.data ?? [], sessions.data ?? []) : []}
             relations={attended ? relationsOf(attended, quest, quests.data ?? [], sessions.data ?? []) : undefined}
+            continues={continues}
+            helps={helps}
             onSession={(session) => attend(session.id)}
             onQuest={onOpenQuest ? (row) => onOpenQuest(row.id) : undefined}
             // Its review, wherever the review stands (SESS2 H4): the head's move beside unlanded work.
