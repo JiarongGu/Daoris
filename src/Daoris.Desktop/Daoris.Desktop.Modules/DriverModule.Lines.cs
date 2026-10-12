@@ -78,6 +78,9 @@ public sealed partial class DriverModule
                     pair.landing.Rule.Tidy,
                     pair.landing.Rule.Plugin,
                     pair.landing.Rule.AutoAccept,
+                    // The ticket's key and the squash (DOORS1b), for the page to show and keep: none is left out.
+                    pair.landing.Rule.Key,
+                    pair.landing.Rule.Squash,
                     pair.landing.Source,
                 })
                 .ToArray(),
@@ -115,6 +118,14 @@ public sealed partial class DriverModule
                     pair.opinion?.Source,
                 })
                 .ToArray(),
+            // What a helper each one's agent asks for does, and how its work is committed, each with where it was set (DOORS1b,
+            // D163 point 3, D164's amendment point 3): the driver's resolution, never null, `default` where nothing is set.
+            Helpers = lines.Select(line => (line, helpers: HelperRules.Resolve(config, line.Repository, line.Workspace)))
+                .Select(pair => new { pair.line.Repository, pair.line.Workspace, Rule = HelperWire(pair.helpers.Rule), pair.helpers.Source })
+                .ToArray(),
+            Commits = lines.Select(line => (line, commits: CommitRules.Resolve(config, line.Repository, line.Workspace)))
+                .Select(pair => new { pair.line.Repository, pair.line.Workspace, Rule = CommitWire(pair.commits.Rule), pair.commits.Source })
+                .ToArray(),
         };
     }
 
@@ -134,6 +145,17 @@ public sealed partial class DriverModule
         var rule = Optional(request, "form") is { } form
             ? new LandingRule(form, Optional(request, "pattern"), Flag(request, "tidy"), Optional(request, "plugin"), Flag(request, "autoAccept"))
             : null;
+        // The ticket's key and the squash (DOORS1b, D164's DOORS1a note) are set where the press names them, an empty key taking
+        // it away; a press naming neither keeps the ones the rule set here holds, where the new rule can hold them, as Ask
+        // Daoris's card keeps them. A save that rebuilt the rule without them dropped what the terminal set.
+        if (rule is not null)
+        {
+            var config = DriverConfig.Load(_loop.ConfigPath);
+            var standing = (workspace is not null ? config.WorkspaceLandings : config.Landings)
+                .TryGetValue((workspace ?? repository)!, out var own) ? own : null;
+            rule = LandingKept(rule, standing, request.Payload);
+        }
+
         // The rule's plugin must be able to land work here, said as `daoris driver landing` says it (D100);
         // the shape is the file's own question, asked first by the edit below.
         if (rule is { Plugin: { } plugin } && LandingRules.Problem(rule) is null
@@ -146,6 +168,39 @@ public sealed partial class DriverModule
             ? config.WithWorkspaceLanding(workspace, rule)
             : config.WithLanding(repository!, rule));
         return State();
+    }
+
+    /// <summary>
+    /// The rule a landing press leaves (DOORS1b): its <c>key</c> where the press names one (a string; empty or null is none), else
+    /// the standing rule's where the new one is a branch whose pattern says <c>{ticket}</c>; its <c>squash</c> where the press says
+    /// <c>true</c> or <c>false</c>, else the standing rule's on a branch. A merge keeps neither, and one the press names is the
+    /// rule's shape to refuse (<see cref="LandingRules.Problem(LandingRule)"/>). Ask Daoris's <c>landing</c> card keeps them alike.
+    /// </summary>
+    internal static LandingRule LandingKept(LandingRule rule, LandingRule? standing, JsonElement? payload)
+    {
+        var (keyNamed, key) = (false, (string?)null);
+        bool? squash = null;
+        if (payload is { ValueKind: JsonValueKind.Object } root)
+        {
+            if (root.TryGetProperty("key", out var written) && written.ValueKind is JsonValueKind.String or JsonValueKind.Null)
+            {
+                keyNamed = true;
+                key = written.ValueKind == JsonValueKind.String && written.GetString() is { Length: > 0 } shape ? shape : null;
+            }
+
+            if (root.TryGetProperty("squash", out var said) && said.ValueKind is JsonValueKind.True or JsonValueKind.False)
+            {
+                squash = said.GetBoolean();
+            }
+        }
+
+        var branch = rule.Form == LandingForm.Branch;
+        var ticketed = branch && (rule.Pattern ?? "").Contains("{ticket}", StringComparison.Ordinal);
+        return rule with
+        {
+            Key = keyNamed ? key : ticketed ? standing?.Key : null,
+            Squash = squash ?? (branch && standing?.Squash == true),
+        };
     }
 
     // The clean-up (WSR3, D88): every session branch here with what it holds — then, on the
@@ -496,4 +551,43 @@ public sealed partial class DriverModule
         rule.Recheck,
         SameAgent = OpinionRules.SameAgent(rule, working, adapters),
     };
+
+    // DOORS1b (D163 point 3, D164's amendment points 1 and 3): what a helper an agent asks for does, and how work is committed,
+    // the screens' half of `daoris driver helpers` and `daoris driver commits`, sent by `bridge/lines.ts`. Ask Daoris's `setting`
+    // kind's `helpers` and `commits` doors are their third (DOORS1a).
+
+    /// <summary>
+    /// One change to a helpers rule, as the page sends it: the twin's edit in the shared table's own shape (<c>repository</c> or
+    /// <c>workspace</c>; <c>set</c> with <c>mode</c> and/or <c>agents</c>, or <c>clear</c>), judged by
+    /// <see cref="HelperRules.Apply"/> before anything is written. It reads nothing else, so it waits for nothing.
+    /// </summary>
+    [DriverRoute("SET_HELPERS")]
+    private object? SetHelpers(IpcRequest request)
+    {
+        var edit = HelperRules.EditOf(request.Payload ?? default);
+        // The twin's refusals come first, in its words, before anything is written.
+        HelperRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
+        Change(config => HelperRules.Apply(config, edit));
+        return State();
+    }
+
+    /// <summary>
+    /// One change to a commit rule, as the page sends it: the twin's edit (<c>repository</c> or <c>workspace</c>; <c>set</c> with
+    /// <c>mode</c> and/or <c>convention</c>, the empty convention taking it away, or <c>clear</c>), judged by
+    /// <see cref="CommitRules.Apply"/> before anything is written. It reads nothing else, so it waits for nothing.
+    /// </summary>
+    [DriverRoute("SET_COMMITS")]
+    private object? SetCommits(IpcRequest request)
+    {
+        var edit = CommitRules.EditOf(request.Payload ?? default);
+        CommitRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
+        Change(config => CommitRules.Apply(config, edit));
+        return State();
+    }
+
+    /// <summary>A helpers rule as the bridge carries it (DOORS1b): its mode, and the agents in the order they are tried.</summary>
+    internal static object HelperWire(HelperRule rule) => new { rule.Mode, rule.Agents };
+
+    /// <summary>A commit rule as the bridge carries it (DOORS1b): its mode, and the person's convention, left out where none.</summary>
+    internal static object CommitWire(CommitRule rule) => new { rule.Mode, rule.Convention };
 }
