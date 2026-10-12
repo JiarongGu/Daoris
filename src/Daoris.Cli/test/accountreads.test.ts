@@ -9,7 +9,7 @@ import {
   TOOLCHAINS, commandHarness, managedHome, profileHome, removeProfile, signInNew, signInTo,
 } from '../src/toolchain.ts';
 import type { Toolchain } from '../src/toolchain.ts';
-import { driverRows } from './_csharp.ts';
+import { driverFile, driverRows, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**
@@ -29,8 +29,7 @@ const TABLE = JSON.parse(readFileSync(join(here, 'fixtures', 'account-reads.json
   forget: [why: string, file: Cell, agent: string, account: string, after: string][];
 };
 
-const DRIVER = join(here, '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver');
-const DRIVER_TESTS = join(here, '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'AccountReadsTests.cs');
+const DRIVER_TESTS = driverTestFile('AccountReadsTests.cs');
 
 function holding(root: string, file: Cell): void {
   if (file !== null) writeFileSync(join(root, READS_FILE), file, 'utf8');
@@ -98,7 +97,7 @@ test('the driver\'s rows of what does not read are the shared table\'s, cell for
 
 /** The file's name, its keys and its words are the driver's spelling (`AccountReads.cs`), so the twins meet in one file. */
 test('the file, its keys and its words are spelled as the driver spells them', () => {
-  const source = readFileSync(join(DRIVER, 'AccountReads.cs'), 'utf8');
+  const source = readFileSync(driverFile('AccountReads.cs'), 'utf8');
 
   assert.match(source, new RegExp(`FileName = "${READS_FILE.replace('.', '\\.')}"`));
   assert.match(source, /Own = "own"/);

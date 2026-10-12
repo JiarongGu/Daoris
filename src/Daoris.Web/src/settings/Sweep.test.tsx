@@ -1,10 +1,9 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
 import i18n from '../i18n';
+import { driverSource } from '../test/driverSource';
 import type { Answered } from '../work/InlineConfirm';
 import { SweepList, type LandedBranch, type SweepBranch, type SweepKind } from './Sweep';
 
@@ -101,12 +100,12 @@ describe('a session branch a completed pull request carried', () => {
 
 /**
  * Every kind the clean-up's list can send (SWEEPCARRIED1). The modules' `SweepRow` sends the driver's `SweepItem.Kind` as it
- * is, one of the `SweepKind` constants in `Daoris.Desktop.Driver/Landing.cs`; this side parses that class, as `trace.test.ts`
+ * is, one of the `SweepKind` constants in the driver's `Landing.cs`; this side parses that class, as `trace.test.ts`
  * parses the same file's codes, so a kind the driver adds fails here until the page words it. Each is drawn and must say a
  * sentence of its own: never another kind's, and never the words for a kind this window does not know.
  */
 describe('every kind the driver sends a session branch as', () => {
-  const source = readFileSync(join(process.cwd(), '..', '..', 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'Landing.cs'), 'utf8');
+  const source = driverSource('Landing.cs');
   const block = /public static class SweepKind\s*\{([\s\S]*?)\n\}/.exec(source)?.[1] ?? '';
   const declared = [...block.matchAll(/public const string \w+ = "([a-z-]+)";/g)].map((match) => match[1]! as SweepKind);
   const name = (kind: string) => `daoris/s-${kind}`;

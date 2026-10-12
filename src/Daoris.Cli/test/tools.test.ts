@@ -1,14 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import {
   GIT_SETTINGS, TOOLS, TOOLS_FILE, TOOLS_FOLDER, TOOL_PACKAGE, TOOL_RECORD, addLocation, gitKeyProblem,
   isWholePath, locationProblem, readTools, removeLocation, resolveTool, useFile, useManaged, useSystem,
 } from '../src/tools.ts';
 import { commandTool } from '../src/toolinstall.ts';
-import { driverRows as csharpRows } from './_csharp.ts';
+import { driverRows as csharpRows, driverTestFile } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**
@@ -510,8 +509,7 @@ test('a location written keeps every key the writer has no field for', () => {
 
 // ——— The twin, held: the driver's tables are these tables, row for row and in this order.
 
-const DRIVER_TABLES = join(
-  dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'ToolsTests.cs');
+const DRIVER_TABLES = driverTestFile('ToolsTests.cs');
 
 /** One of the driver's theories, its `Whole` placeholder read as `WHOLE` here. */
 const driverRows = (source: string, method: string) => csharpRows(source, method, { Whole: WHOLE }, 'ToolsTests');

@@ -1,11 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { commandHarness, profileHome, readHarnessSettings, withDefault, writeHarnessSettings } from '../src/toolchain.ts';
 import { resolveRotation, rotationProblem, withRotation, withoutAccount } from '../src/rotation.ts';
-import { driverRows as csharpRows } from './_csharp.ts';
+import { driverRows as csharpRows, driverTestFile } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**
@@ -257,8 +256,7 @@ test('`profile remove` takes the account out of every order, as it un-defaults i
 
 // ——— The twin, held: the driver's tables are these tables, row for row and in this order.
 
-const DRIVER_TABLE = join(
-  dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'RotationTwinTests.cs');
+const DRIVER_TABLE = driverTestFile('RotationTwinTests.cs');
 
 test('the driver’s tables are these tables, row for row and in this order', () => {
   const source = readFileSync(DRIVER_TABLE, 'utf8').replace(/\r\n/g, '\n');

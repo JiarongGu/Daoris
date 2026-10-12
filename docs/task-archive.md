@@ -13912,3 +13912,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SWITCH1a — the `switch` and `curve` settings** (driver/cli). `switch` (`smart` default, `curve`, `off`) and `curve` per window in `rotationUse` and `workspaceRotationUse`, both twins from one table fixture, `early` and `near` read on and dropped on write, a refused curve saying what is wrong. Design §2, §6.
 
 **Outcome** 2026-10-12: both twins read, write and refuse `switch` and `curve` from `src/Daoris.Cli/test/fixtures/rotation-use.json`; `early` and `near` are read on as a change applies them and never written; the walk's `Early`/`Near` are derived until SWITCH1b; `profile use` takes `--switch`, `--curve`, `--no-curve`. Detail: D165's SWITCH1a note.
+
+## STRUCT1 — the structure gate, and paths found by name (2026-10-12, D166)
+
+> - [ ] **STRUCT1 — the structure gate, and paths found by name** (driver/tools/cli/web tests). `StructureTests` (design §5) with every current file allowlisted; the map of each driver file to its module (§2); every test and tool that reads a driver file finds it by name under the driver's tree and walks folders recursively; `merge-branch.mjs`'s named-file rules match by name wherever the file lives, held by its test. No source moves.
+
+**Outcome** 2026-10-12: `StructureTests` holds design §5 over the driver through `StructureCheck`, reading `Driver.Tests/fixtures/structure.json`, which maps the 265 top-level files to the 14 modules, 13 noted for a split. Every reader of a driver file finds it by name (the .NET tests' `SourceFiles`, the CLI's `driverFile`/`driverTestFile`, the page's `driverSource`, orient-index, and MOD9e's rule as `**/<name>`), held by `driver-names.test.ts` and `merge-branch.test.ts`. Detail: D166's STRUCT1 note; LOOPOUT1 and STRUCT2a hold what it found.

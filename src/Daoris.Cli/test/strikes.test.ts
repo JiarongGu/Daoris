@@ -1,11 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { ACCOUNTS_OWN, failuresOf } from '../src/strikes.ts';
 import { sessionRecords } from '../src/service.ts';
-import { driverRows as csharpRows } from './_csharp.ts';
+import { driverRows as csharpRows, driverFile, driverTestFile } from './_csharp.ts';
 
 /**
  * A quest's strikes, counted from this machine's session records (RETRY1b; D58 as D104, D125 and ROSTER1b amend it): what
@@ -80,16 +78,14 @@ test('a quest’s id in any case is one only as the driver finds it: straße is 
 
 // ——— The twin, held: the driver's table is this table, row for row and in this order, and its codes are these codes.
 
-const DRIVER = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop');
-
 test('the driver’s table is this table, row for row and in this order', () => {
-  const twin = readFileSync(join(DRIVER, 'Daoris.Desktop.Driver.Tests', 'StrikeTests.cs'), 'utf8').replace(/\r\n/g, '\n');
+  const twin = readFileSync(driverTestFile('StrikeTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
   assert.deepEqual(csharpRows(twin, 'A_record_strikes_as_the_cli_counts_it', {}, 'StrikeTests'), ROWS);
 });
 
 test('the account’s own codes are the driver’s, code for code and in its order', () => {
-  const source = readFileSync(join(DRIVER, 'Daoris.Desktop.Driver', 'NoteCodes.cs'), 'utf8');
+  const source = readFileSync(driverFile('NoteCodes.cs'), 'utf8');
   const names = /AccountsOwn \{ get; \} = \[([^\]]+)\];/.exec(source)?.[1]?.split(',').map((name) => name.trim());
   assert.ok(names && names.length > 0, 'NoteCodes.cs declares no AccountsOwn');
   const codes = names.map((name) => new RegExp(`NoteCode ${name} = new\\("([^"]+)"`).exec(source)?.[1]);

@@ -1,7 +1,6 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { en, zh } from '../locales';
+import { driverSource } from '../test/driverSource';
 import { traceStory } from './trace';
 import { QUEST_CHAIN, SESSION_CHAIN } from './traceFixtures';
 
@@ -11,11 +10,9 @@ import { QUEST_CHAIN, SESSION_CHAIN } from './traceFixtures';
  * `Trace.Chain.cs` and holds both catalogues to them both ways. The driver's `DriverModuleTraceTests` holds the route's side.
  */
 
-const root = join(process.cwd(), '..', '..');
-const driver = (file: string) => readFileSync(join(root, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', file), 'utf8');
-const source = driver('Trace.Chain.cs');
+const source = driverSource('Trace.Chain.cs');
 // LAND2b's codes, which the chain carries as their own declarations name them: a try's, who accepted, a rule's source.
-const landing = driver('AutoLanding.cs') + driver('Landing.cs');
+const landing = driverSource('AutoLanding.cs') + driverSource('Landing.cs');
 
 /** A class's codes as the driver declares them: each `const string`, by its name and value. */
 function declared(holder: string, text = holder.startsWith('Trace') ? source : landing): Map<string, string> {

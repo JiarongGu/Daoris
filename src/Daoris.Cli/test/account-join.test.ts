@@ -1,11 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { readHarnessSettings, writeHarnessSettings } from '../src/toolchain.ts';
 import { joinProblem, joinRefusal, placesOf, withJoined } from '../src/rotation.ts';
-import { driverRows as csharpRows } from './_csharp.ts';
+import { driverRows as csharpRows, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**
@@ -114,8 +113,7 @@ test('a refused join is said as the driver says it (the twin\'s table)', () => {
 
 // ——— The twin, held: the driver's tables are these tables, row for row and in this order.
 
-const DRIVER_TABLE = join(
-  dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'AccountJoinTwinTests.cs');
+const DRIVER_TABLE = driverTestFile('AccountJoinTwinTests.cs');
 
 test('the driver’s tables are these tables, row for row and in this order', () => {
   const source = readFileSync(DRIVER_TABLE, 'utf8').replace(/\r\n/g, '\n');

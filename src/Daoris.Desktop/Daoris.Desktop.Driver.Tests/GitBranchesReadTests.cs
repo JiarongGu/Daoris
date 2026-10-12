@@ -359,14 +359,9 @@ public sealed class GitBranchesReadTests
     [Fact]
     public void The_list_starts_git_only_through_the_start_tools_resolves()
     {
-        var folder = new DirectoryInfo(AppContext.BaseDirectory);
-        while (folder is not null && !Directory.Exists(Path.Combine(folder.FullName, "Daoris.Desktop.Driver")))
-        {
-            folder = folder.Parent;
-        }
-
-        var sources = Directory.GetFiles(Path.Combine(folder!.FullName, "Daoris.Desktop.Driver"), "GitBranches*.cs");
-        Assert.True(sources.Length >= 2, $"expected the list's sources, found {sources.Length}");
+        // Found at any depth of the driver's folder, so a move into a module's folder keeps them (STRUCT1, D166).
+        var sources = SourceFiles.All(SourceFiles.DriverProject, "GitBranches*.cs").ToList();
+        Assert.True(sources.Count >= 2, $"expected the list's sources, found {sources.Count}");
         var text = string.Concat(sources.Select(File.ReadAllText));
         Assert.Contains("WorkingTree.GitAsync(root, arguments, run)", text);
         Assert.DoesNotContain("ProcessStartInfo", text);

@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import type { Fetcher } from '../src/channels.ts';
 import { DaorisError, RefusalError } from '../src/errors.ts';
 import {
@@ -16,7 +15,7 @@ import {
 } from '../src/toolinstall.ts';
 import { TOOLS_FILE, TOOLS_FOLDER, TOOL_PACKAGE, TOOL_RECORD, isAddress, readTools } from '../src/tools.ts';
 import { buildArchive } from './_archives.ts';
-import { driverRows as csharpRows } from './_csharp.ts';
+import { driverRows as csharpRows, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**
@@ -28,8 +27,6 @@ import { makeFixture } from './_fixture.ts';
  * Every archive is built in the test from a row's words (`_archives.ts`), and nothing here reaches a network:
  * a download is served by a stand-in that answers as a host would.
  */
-
-const here = dirname(fileURLToPath(import.meta.url));
 
 // ——— An archive's refusals (§3.6). The twin is `ToolInstallTests.An_archive_unpacks_as_the_cli_unpacks_it`.
 
@@ -599,7 +596,7 @@ test('a download whose bytes are not the list’s is exit 1, and writes nothing'
 
 // ——— The twin, held: the driver's tables are these tables, row for row and in this order.
 
-const DRIVER_TABLES = join(here, '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'ToolInstallTests.cs');
+const DRIVER_TABLES = driverTestFile('ToolInstallTests.cs');
 
 test('the driver’s tables are these tables, row for row and in this order', () => {
   const source = readFileSync(DRIVER_TABLES, 'utf8').replace(/\r\n/g, '\n');

@@ -20,7 +20,7 @@ import {
   applyWorkflowEdit, keptVersions, resolveWorkflow, workflowChoiceOf, type WorkflowChoiceEdit, type WorkflowTaskChoice,
 } from '../src/workflowchoice.ts';
 import type { RecordsReader } from '../src/strikes.ts';
-import { driverRows as csharpRows } from './_csharp.ts';
+import { driverRows as csharpRows, driverTestFile } from './_csharp.ts';
 import { makeFixture, captureError } from './_fixture.ts';
 
 /**
@@ -441,8 +441,7 @@ const AUTO_ACCEPT_ROWS: [name: string, file: string, map: string, key: string, e
   ['a workspace\'s rule carries it', '{"workspaceLandings":{"aurora":{"form":"branch","pattern":"review/{session}","autoAccept":true}}}', 'workspaceLandings', 'aurora', 'on'],
 ];
 
-const LANDING_TESTS = () => readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
-  'Daoris.Desktop.Driver.Tests', 'LandingAutoAcceptTests.cs'), 'utf8').replace(/\r\n/g, '\n');
+const LANDING_TESTS = () => readFileSync(driverTestFile('LandingAutoAcceptTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
 test('only a branch rule accepts automatically (the twin\'s shapes)', () => {
   for (const [form, pattern, plugin, autoAccept, problem] of AUTO_ACCEPT_SHAPES) {
@@ -797,8 +796,7 @@ test('the cool-off reads as the driver reads it (the twin\'s table)', () => {
 });
 
 test('the driver’s cool-off table is this table, row for row and in this order', () => {
-  const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
-    'Daoris.Desktop.Driver.Tests', 'CoolOffTests.cs'), 'utf8').replace(/\r\n/g, '\n');
+  const source = readFileSync(driverTestFile('CoolOffTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
   assert.deepEqual(csharpRows(source, 'Cooloff_reads_as_the_cli_reads_it', {}, 'CoolOffTests'), COOLOFF_ROWS);
 });
@@ -855,8 +853,7 @@ test('a release reads as the driver reads it (the twin\'s table)', () => {
 });
 
 test('the driver’s release table is this table, row for row and in this order', () => {
-  const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
-    'Daoris.Desktop.Driver.Tests', 'ReleasedTests.cs'), 'utf8').replace(/\r\n/g, '\n');
+  const source = readFileSync(driverTestFile('ReleasedTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
   assert.deepEqual(csharpRows(source, 'Released_reads_as_the_cli_reads_it', {}, 'ReleasedTests'), RELEASED_ROWS);
 });
@@ -930,8 +927,7 @@ test('a standing answer reads as the driver reads it (the twin\'s table)', () =>
 });
 
 test('the driver’s standing table is this table, row for row and in this order', () => {
-  const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
-    'Daoris.Desktop.Driver.Tests', 'StandingTests.cs'), 'utf8').replace(/\r\n/g, '\n');
+  const source = readFileSync(driverTestFile('StandingTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
   assert.deepEqual(csharpRows(source, 'Standing_reads_as_the_cli_reads_it', {}, 'StandingTests'), STANDING_ROWS);
 });
@@ -998,8 +994,7 @@ test('the session languages are the twin\'s closed table, in its order', () => {
 });
 
 test('the driver’s language table is this table, row for row and in this order', () => {
-  const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
-    'Daoris.Desktop.Driver.Tests', 'SessionLanguageTests.cs'), 'utf8').replace(/\r\n/g, '\n');
+  const source = readFileSync(driverTestFile('SessionLanguageTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
   assert.deepEqual(csharpRows(source, 'The_table_names_each_language_for_the_agent', {}, 'SessionLanguageTests'), LANGUAGE_TABLE_ROWS);
 });
@@ -1042,8 +1037,7 @@ test('a session language resolves as the driver resolves it (the twin\'s table)'
 });
 
 test('the driver’s language reading is this table, row for row and in this order', () => {
-  const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
-    'Daoris.Desktop.Driver.Tests', 'SessionLanguageTests.cs'), 'utf8').replace(/\r\n/g, '\n');
+  const source = readFileSync(driverTestFile('SessionLanguageTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
   assert.deepEqual(csharpRows(source, 'Languages_read_as_the_cli_reads_them', {}, 'SessionLanguageTests'), LANGUAGE_ROWS);
 });
@@ -1177,8 +1171,7 @@ test('a pause reads as the driver reads it (the twin\'s table)', () => {
 });
 
 test('the driver’s pause table is this table, row for row and in this order', () => {
-  const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
-    'Daoris.Desktop.Driver.Tests', 'PausedWorkTests.cs'), 'utf8').replace(/\r\n/g, '\n');
+  const source = readFileSync(driverTestFile('PausedWorkTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
   assert.deepEqual(csharpRows(source, 'Pauses_read_as_the_cli_reads_them', {}, 'PausedWorkTests'), PAUSE_ROWS);
 });

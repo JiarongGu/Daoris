@@ -61,8 +61,17 @@ const HTTP_HOST = 'src/Daoris.Service/Daoris.Service.Http/Program.cs';
 const CLI_TABLE = 'src/Daoris.Cli/src/cli.ts';
 const DESKTOP = 'src/Daoris.Desktop/';
 const DRIVER_HOST = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs';
-const DRIVER_COMMAND = 'src/Daoris.Desktop/Daoris.Desktop.Driver/DriverCommand.cs';
-const DRIVER_CODE = ['src/Daoris.Desktop/Daoris.Desktop.Driver.Host/', 'src/Daoris.Desktop/Daoris.Desktop.Driver/'];
+const DRIVER = 'src/Daoris.Desktop/Daoris.Desktop.Driver/';
+const DRIVER_CODE = ['src/Daoris.Desktop/Daoris.Desktop.Driver.Host/', DRIVER];
+
+/**
+ * The one file of this name under the driver's folder, at any depth, or null (STRUCT1, D166): the driver's sources move into
+ * module folders one module per branch, so the index finds `DriverCommand.cs` by its name wherever the driver keeps it.
+ */
+function driverFileIn(ctx, name) {
+  const found = ctx.files.filter((path) => path.startsWith(DRIVER) && path.slice(path.lastIndexOf('/') + 1) === name);
+  return found.length === 1 ? found[0] : null;
+}
 const DEVKIT = 'src/Daoris.Devkit/Daoris.Devkit.Cli/Program.cs';
 const DESKTOP_TOOL = 'tools/desktop.mjs';
 const PACKAGES = ['package.json', 'src/Daoris.Web/package.json'];
@@ -871,8 +880,9 @@ function cliVerbs(ctx) {
  */
 function driverSubVerbs(ctx, verbs) {
   const subs = new Map(verbs.map((verb) => [verb, []]));
-  if (!ctx.has(DRIVER_COMMAND)) return subs;
-  const usage = (/Usage\s*=\s*"""([\s\S]*?)"""/.exec(ctx.read(DRIVER_COMMAND))?.[1] ?? '').split('\n');
+  const command = driverFileIn(ctx, 'DriverCommand.cs');
+  if (!command) return subs;
+  const usage = (/Usage\s*=\s*"""([\s\S]*?)"""/.exec(ctx.read(command))?.[1] ?? '').split('\n');
   const formIndent = Math.min(...usage.filter((line) => subs.has(line.trim().split(/\s+/)[0])).map(indentOf));
   let current = null;
   const add = (word) => {
@@ -925,9 +935,10 @@ function driverVerbs(ctx) {
     const library = handler?.endsWith('Console') ? findClass(ctx, handler.replace(/Console$/, 'Command')) : null;
     for (const file of [where?.file, library?.file]) if (file && !entry.files.includes(file)) entry.files.push(file);
   });
-  if (ctx.has(DRIVER_COMMAND)) {
-    const at = ctx.lines(DRIVER_COMMAND).findIndex((line) => /args\[0\] == "drive"/.test(line));
-    verbs.push({ verb: 'drive', routed: lines.findIndex((line) => /DriverCommand\.Read\(/.test(line)) + 1, handlers: [`\`${DRIVER_COMMAND.slice(DESKTOP.length)}:${at + 1}\` DriverCommand.Read`], files: [] });
+  const command = driverFileIn(ctx, 'DriverCommand.cs');
+  if (command) {
+    const at = ctx.lines(command).findIndex((line) => /args\[0\] == "drive"/.test(line));
+    verbs.push({ verb: 'drive', routed: lines.findIndex((line) => /DriverCommand\.Read\(/.test(line)) + 1, handlers: [`\`${command.slice(DESKTOP.length)}:${at + 1}\` DriverCommand.Read`], files: [] });
   }
   const subs = driverSubVerbs(ctx, verbs.map((verb) => verb.verb.split(' ')[0]));
   for (const verb of verbs) {
@@ -991,7 +1002,7 @@ function verbsPage(ctx) {
   const driver = driverVerbs(ctx);
   if (driver.length) {
     out.push('', '## `daoris-driver` (the driver\'s headless host)', '',
-      `Routed in \`${DRIVER_HOST}\`, its usage \`DriverCommand.Usage\` in \`${DRIVER_COMMAND}\`; handlers below are under \`${DESKTOP}\`. A sub-verb names where its word first appears: the handler, the library's command it hands to, or \`Program.cs\`.`, '',
+      `Routed in \`${DRIVER_HOST}\`, its usage \`DriverCommand.Usage\` in \`${driverFileIn(ctx, 'DriverCommand.cs') ?? 'DriverCommand.cs'}\`; handlers below are under \`${DESKTOP}\`. A sub-verb names where its word first appears: the handler, the library's command it hands to, or \`Program.cs\`.`, '',
       '| Verb | Routed at | Handled in | Sub-verbs |', '|---|---|---|---|');
     for (const verb of driver) out.push(`| \`${verb.verb}\` | \`Program.cs:${verb.routed}\` | ${verb.handlers.join('; ')} | ${verb.subs.join(' · ') || '—'} |`);
   }

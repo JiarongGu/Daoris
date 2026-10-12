@@ -433,6 +433,28 @@ test('a helper that forwards its route is found, and so is a helper of a helper,
   fx.cleanup();
 });
 
+test("the driver's command is found by its name in whichever module folder holds it (STRUCT1)", () => {
+  const fx = makeFixture('orient-index-driver-command');
+  const files = ['src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverCommand.cs'];
+  fx.write(files[0]!, ['var command = DriverCommand.Read(args);', 'if (args is ["trees", ..])', '{', '    return TreesConsole.Run(args);', '}', ''].join('\n'));
+  fx.write(files[1]!, [
+    'namespace Daoris.Driver;',
+    'public static class DriverCommand',
+    '{',
+    '    public const string Usage = """',
+    '        drive [--once]',
+    '        trees list',
+    '        """;',
+    '    public static int Read(string[] args) => args[0] == "drive" ? 0 : 1;',
+    '}',
+    '',
+  ].join('\n'));
+  const verbs = tool.planIndex(fx.root, files).get('docs/index/verbs.md')!;
+  assert.ok(verbs.includes('| `drive` | `Program.cs:1` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:8` DriverCommand.Read |'), verbs);
+  assert.ok(verbs.includes('its usage `DriverCommand.Usage` in `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverCommand.cs`'), verbs);
+  fx.cleanup();
+});
+
 test("the decisions digest gives each decision's title with its entry's lines, then each dated note with its lines", () => {
   const fx = fixtureRepository('orient-index-decisions');
   const digest = tool.planIndex(fx.root, FIXTURE_FILES).get('docs/index/decisions.md')!;

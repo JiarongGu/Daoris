@@ -246,7 +246,11 @@ export function layOffers(examples, install, renameOptions = {}) {
  */
 export const RESOURCES = Object.freeze(['app', 'resources.json']);
 
-/** The list's one source in the workspace: the driver's own, which every build carries beside itself. */
+/**
+ * The list's one source in the workspace: the driver's own, which every build carries beside itself. A resource, not a source
+ * the driver's module folders take (STRUCT1, D166): the driver's project file copies it from the project's top, so it is
+ * named there, and `desktop-publish.test.ts` holds the two together.
+ */
 export const RESOURCES_SOURCE = Object.freeze(['src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'resources.json']);
 
 /**
@@ -430,8 +434,8 @@ export async function layCli(tarball, install, renameOptions = {}) {
  * Where `--stage` puts a build beside an install (UPDATE1, D139 §1), as path segments: `update/`, which the stage and the
  * launcher's swap own, and `update/staged/` inside it, renamed into place whole. A twin of `StagedBuild.Folder`,
  * `StagedBuild.Staged`, `StagedBuild.Manifest`, `StagedBuild.Journal` and `StagedBuild.Schema`
- * (`src/Daoris.Desktop/Daoris.Desktop.Driver/StagedBuild.cs`, which the launcher compiles); `desktop-publish.test.ts`
- * reads that file for every spelling here.
+ * (the driver's `StagedBuild.cs`, which the launcher compiles); `desktop-publish.test.ts` finds that file by its name and
+ * reads it for every spelling here.
  */
 export const STAGE = Object.freeze(['update']);
 export const STAGED = Object.freeze([...STAGE, 'staged']);

@@ -25,7 +25,7 @@ public sealed class PullRequestOccasionTests
     {
         Assert.DoesNotContain(HookPoints.State, HookPoints.Loop);
         // The loop's set asks only what its points say; a plugin that speaks only the query is never kept running beside it.
-        Assert.DoesNotContain("AskStatesAsync", Source("Daoris.Desktop.Driver", "Hooks.cs"));
+        Assert.DoesNotContain("AskStatesAsync", File.ReadAllText(SourceFiles.Driver("Hooks.cs")));
     }
 
     /// <summary>Every ask is made from one of the occasions, and only the occasion's helper asks the plugins.</summary>
@@ -87,11 +87,12 @@ public sealed class PullRequestOccasionTests
             .ToList();
 
         Assert.Equal(["DriverModule.Lines.cs", "HelpSyncProposals.cs", "TreesConsole.cs"], doors);
-        var look = Body(Source("Daoris.Desktop.Driver", "SessionTrees.Sync.cs"), "SyncPlanAsync");
+        var sync = File.ReadAllText(SourceFiles.Driver("SessionTrees.Sync.cs"));
+        var look = Body(sync, "SyncPlanAsync");
         var fetched = look.IndexOf("FetchedAsync(", StringComparison.Ordinal);
         var asked = look.IndexOf("AskStatesAsync(", StringComparison.Ordinal);
         Assert.True(fetched >= 0 && asked > fetched, "the look asks after its fetch, which is where a merge commit first arrives");
-        Assert.DoesNotContain("AskStatesAsync(", Body(Source("Daoris.Desktop.Driver", "SessionTrees.Sync.cs"), "SyncAsync"));
+        Assert.DoesNotContain("AskStatesAsync(", Body(sync, "SyncAsync"));
     }
 
     /// <summary>PLUGHOOK1c (design §2.1 occasion 4): <i>Ask again</i> is a person's press: `trees state` today, the review's press with PLUGHOOK1d.</summary>
@@ -115,10 +116,10 @@ public sealed class PullRequestOccasionTests
     public void No_look_of_the_loop_opens_an_occasion()
     {
         var looks = new[] { "CleanPlanAsync", "SyncPlanAsync", "AskAgainAsync" };
-        var loop = Directory.EnumerateFiles(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver"), "Driver*.cs")
-            .Append(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver", "AutoLander.cs"))
-            .Append(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "DriverLoop.cs"))
-            .Where(File.Exists)
+        // Each found by name at any depth of its project, so a move into a module's folder keeps it (STRUCT1, D166).
+        var loop = SourceFiles.All(SourceFiles.DriverProject, "Driver*.cs")
+            .Append(SourceFiles.Driver("AutoLander.cs"))
+            .Append(SourceFiles.Find("Daoris.Desktop.Modules", "DriverLoop.cs"))
             .ToList();
 
         Assert.True(loop.Count >= 3, $"expected the loop's files, found {loop.Count}");
@@ -174,8 +175,6 @@ public sealed class PullRequestOccasionTests
             }
         }
     }
-
-    private static string Source(string project, string file) => File.ReadAllText(Path.Combine(SourceRoot(), project, file));
 
     private static string SourceRoot()
     {

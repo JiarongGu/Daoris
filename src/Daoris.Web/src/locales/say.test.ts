@@ -1,6 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { driverSource } from '../test/driverSource';
 import { HAND_OVER, NEVER, NEW_SESSION_REFUSED, START_FROM } from '../work/say';
 import { en, zh } from '.';
 
@@ -12,18 +11,15 @@ import { en, zh } from '.';
  * itself is coded already (CONVNOTE2g/2g2); what this holds is the page's refusals beside it.
  */
 
-const root = join(process.cwd(), '..', '..');
-const driverFile = (name: string) => readFileSync(join(root, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', name), 'utf8');
-
 /** The `public const string` codes of one static class, one per line as the driver writes them; an alias is resolved through its target. */
 function codesOf(file: string, className: string): string[] {
-  const text = driverFile(file);
+  const text = driverSource(file);
   const block = new RegExp(`static class ${className}\\b\\s*\\{([\\s\\S]*?)\\n\\}`).exec(text)?.[1] ?? '';
   return [...block.matchAll(/public const string \w+ = (?:"(?<code>[^"]+)"|(?<alias>\w+)\.(?<name>\w+));/g)].map((match) => {
     const { code, alias, name } = match.groups as { code?: string; alias?: string; name?: string };
     if (code) return code;
     // An alias (`WordsNever.Teammate = ContinueWhy.Teammate`) names another class's constant: read that one.
-    const target = new RegExp(`public const string ${name} = "([^"]+)";`).exec(driverFile('Continuation.cs'));
+    const target = new RegExp(`public const string ${name} = "([^"]+)";`).exec(driverSource('Continuation.cs'));
     expect(target, `\`${alias}.${name}\` is not a literal in Continuation.cs`).toBeTruthy();
     return (target as RegExpExecArray)[1];
   });

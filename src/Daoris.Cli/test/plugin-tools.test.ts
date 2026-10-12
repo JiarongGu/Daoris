@@ -1,11 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { DAORIS_OWN_TOOLS, MANIFEST, commandPlugin, pluginsRoot, readManifest, readPlugins } from '../src/plugins.ts';
 import { TOOLS } from '../src/tools.ts';
-import { driverRows } from './_csharp.ts';
+import { driverRows, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**
@@ -18,9 +17,7 @@ import { makeFixture } from './_fixture.ts';
  * reads and lists; it starts nothing, so finding a tool and running its checks are the driver's, at a trial.
  */
 
-const DRIVER_TESTS = join(
-  dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'PluginToolsTests.cs',
-);
+const DRIVER_TESTS = driverTestFile('PluginToolsTests.cs');
 
 type Row = [string, string | null, number, string | null, string | null, string | null, string | null, string | null, number, string | null];
 

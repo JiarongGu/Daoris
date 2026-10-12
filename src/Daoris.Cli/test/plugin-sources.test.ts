@@ -2,14 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import {
   MANIFEST, OFFERS_DIR, SOURCE_FILE, applyUpdate, commandPlugin, dataFolder, offersFolder, planUpdate, pluginsRoot,
   readNeeds, readOffers, readPluginSource,
 } from '../src/plugins.ts';
 import type { PluginSource } from '../src/plugins.ts';
-import { driverRows } from './_csharp.ts';
+import { driverRows, driverTestFile } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**
@@ -301,8 +300,7 @@ test('update refuses a source that is gone, unsound, another plugin, a package, 
 
 // ——— The twin, held: the driver's tables are these tables, row for row and in this order.
 
-const DRIVER_TABLES = join(
-  dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'PluginSourceTests.cs');
+const DRIVER_TABLES = driverTestFile('PluginSourceTests.cs');
 
 test('the driver\'s record and update tables are these tables, row for row and in this order', () => {
   const source = readFileSync(DRIVER_TABLES, 'utf8').replace(/\r\n/g, '\n');

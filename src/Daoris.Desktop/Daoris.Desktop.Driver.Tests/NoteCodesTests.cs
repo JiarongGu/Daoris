@@ -144,7 +144,7 @@ public sealed class NoteCodesTests
     [Fact]
     public void Every_code_is_declared_in_the_form_the_page_s_test_parses()
     {
-        var source = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver", "NoteCodes.cs"));
+        var source = File.ReadAllText(SourceFiles.Driver("NoteCodes.cs"));
         var parsed = Regex.Matches(source, @"new\(""(?<code>[a-z][a-z.-]*)"", \[(?<values>[^\]]*)\](?:, Key: ""(?<key>[^""]+)"")?\)")
             .Select(match => match.Groups["code"].Value)
             .ToList();

@@ -1,14 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import {
   ACCOUNTS_FILE, AccountNameError, accountNames, forgetName, nameOf, newAccountId, renameAccount, resolveAccount, shownAs,
   signInTarget,
 } from '../src/accountnames.ts';
 import { readHarnessSettings } from '../src/toolchain.ts';
-import { driverRows as csharpRows } from './_csharp.ts';
+import { driverRows as csharpRows, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**
@@ -238,8 +237,7 @@ test('each refusal says what was wrong and what is there, as the driver says it'
 
 // ——— The twin, held: the driver's tables are these tables, row for row and in this order.
 
-const DRIVER_TABLE = join(
-  dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'AccountNamesTwinTests.cs');
+const DRIVER_TABLE = driverTestFile('AccountNamesTwinTests.cs');
 
 test('the driver’s tables are these tables, row for row and in this order', () => {
   const source = readFileSync(DRIVER_TABLE, 'utf8').replace(/\r\n/g, '\n');

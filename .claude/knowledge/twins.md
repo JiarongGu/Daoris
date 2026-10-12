@@ -38,6 +38,9 @@ map found this first (WSP3), and every twin since was built the same way for the
   the shape would delete what the other side wrote.
 - **A constant both sides need is duplicated deliberately**, with a comment naming the other copy,
   never imported across.
+- **A twin reads the other side's file by its name, never its folder** (STRUCT1, D166): the CLI's `driverFile` and
+  `driverTestFile` (`_csharp.ts`), the page's `driverSource`, the driver's `SourceFiles`; `driver-names.test.ts` refuses a
+  fixed folder, so a module's move edits no reader.
 - **A page test that reads a driver source names that file to the merge tool.** `tools/merge-branch.mjs`'s
   MOD9e row lists each driver file a vitest parses, so a change to it runs the web gate; `merge-branch.test.ts`'s
   SESSDEL1c case fails a merge whose page test reads one the row lacks (MSG1g3's say twin, 2026-10-11).

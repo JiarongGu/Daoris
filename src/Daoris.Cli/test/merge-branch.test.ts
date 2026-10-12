@@ -411,9 +411,16 @@ const ALL = repoPlan.map((gate) => gate.name);
 const LONG = ['driver-process', 'modules-process', 'deployment'];
 /** The kept names' table (SESSDEL1c): among the driver's tests, and the page's twin reads it too. */
 const KEPT_NAMES = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/kept-names.json';
-/** The driver's sources whose declarations the page's twin vitests parse (MOD9e): SESSDEL1c's scan found them. */
-const PAGE_PARSED = ['NoteCodes.cs', 'SessionEvents.cs', 'InstructionAccount.cs', 'Trace.Chain.cs', 'AutoLanding.cs', 'Landing.cs']
-  .map((file) => `src/Daoris.Desktop/Daoris.Desktop.Driver/${file}`);
+/**
+ * The driver's sources whose declarations the page's twin vitests parse (MOD9e): SESSDEL1c's scan found them. Each by its
+ * name, at whatever depth of the driver's folder it is tracked (STRUCT1, D166).
+ */
+const PAGE_PARSED_NAMES = ['NoteCodes.cs', 'SessionEvents.cs', 'InstructionAccount.cs', 'Trace.Chain.cs', 'AutoLanding.cs', 'Landing.cs'];
+const DRIVER_FOLDER = 'src/Daoris.Desktop/Daoris.Desktop.Driver/';
+const PAGE_PARSED = PAGE_PARSED_NAMES
+  .map((name) => trackedFiles().find((path) => path.startsWith(DRIVER_FOLDER) && posix.basename(path) === name) ?? `${DRIVER_FOLDER}${name}`);
+/** MOD9e's rule, by the names it holds wherever the driver keeps them. */
+const isPageParsedRule = (rule: Rule) => rule.paths?.some((path) => PAGE_PARSED_NAMES.some((name) => path === `${DRIVER_FOLDER}**/${name}`)) ?? false;
 
 test('the long gates are the real-process halves and the deployment rehearsal, read from what each runs', () => {
   assert.deepEqual(repoPlan.filter((gate) => tool.isLongGate(gate)).map((gate) => gate.name), LONG);
@@ -509,6 +516,29 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
   }
   // --full still names every gate.
   assert.deepEqual(runs(['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs'], true), ALL);
+});
+
+/**
+ * STRUCT1 (D166): the driver's files move into module folders one module per branch, so the rule naming the sources the page's
+ * twins parse names each by its file's name at any depth of the driver's folder. A move edits no rule, a file of the same
+ * name in another project is not one of them, and each name is one tracked source, so a rename fails here rather than
+ * leaving a glob that matches nothing.
+ */
+test("the driver's sources the page's twins parse reach the web gate by their names, wherever the driver keeps them (STRUCT1)", () => {
+  const rule = tool.REACH.find(isPageParsedRule);
+  assert.ok(rule, "MOD9e's rule names each source by its name under the driver's folder");
+  for (const name of PAGE_PARSED_NAMES) {
+    for (const path of [`${DRIVER_FOLDER}${name}`, `${DRIVER_FOLDER}Platform/${name}`, `${DRIVER_FOLDER}Trees/Domain/${name}`]) {
+      assert.ok(runs([path]).includes('web'), `${path} reaches the web gate`);
+    }
+  }
+  assert.equal(runs(['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Landing.cs']).includes('web'), false, "the driver's tests' file of that name");
+  assert.equal(runs(['src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Landing.cs.bak']).includes('web'), false, 'a name that only begins so');
+  const files = trackedFiles();
+  for (const glob of rule.paths!) {
+    assert.ok(glob.startsWith(`${DRIVER_FOLDER}**/`), `${glob} names its file at any depth of the driver's folder`);
+    assert.equal(files.filter(tool.laneMatcher([glob])).length, 1, `${glob} is one tracked source`);
+  }
 });
 
 test('what a merge writes rather than merges is the orientation index, by its folder, and its tool is this repository\'s', () => {
@@ -678,6 +708,7 @@ test("every repository file a .NET suite reads is one whose change reaches that 
   let outsideSrc = 0;
   let rooted = 0;
   let throughLocals = 0;
+  let byName = 0;
   const problems: string[] = [];
   for (const file of files.filter((path) => path.endsWith('.cs'))) {
     const suite = suites.find(([folder]) => file.startsWith(folder));
@@ -690,8 +721,10 @@ test("every repository file a .NET suite reads is one whose change reaches that 
     rooted += fromRoot.length;
     const fromLocals = localReads(text, files);
     throughLocals += fromLocals.length;
+    const named = namedReads(text, files);
+    byName += named.length;
     outsideSrc += [...outside, ...fromLocals].filter((read) => !read.startsWith('src/')).length;
-    for (const read of [...found, ...outside, ...fromRoot, ...fromLocals]) {
+    for (const read of [...found, ...outside, ...fromRoot, ...fromLocals, ...named]) {
       reads += 1;
       // MOD9d: a read no rule places reaches every gate, so the two checks below pass while holding nothing.
       if (!isReal(read, files, folders)) problems.push(`${file} reads ${read}, which is no file or folder this repository tracks`);
@@ -705,7 +738,51 @@ test("every repository file a .NET suite reads is one whose change reaches that 
   assert.ok(outsideSrc >= 3, `the scan found only ${outsideSrc} reads outside src/: its pattern no longer matches how the tests read the repository`);
   assert.ok(rooted >= 10, `the scan found only ${rooted} reads from a source root: its pattern no longer matches how the tests read their sources`);
   assert.ok(throughLocals >= 10, `the scan found only ${throughLocals} reads through a local: its pattern no longer matches how the tests read through one`);
+  assert.ok(byName >= 8, `the scan found only ${byName} reads by name: its pattern no longer matches how the tests find a source (STRUCT1)`);
 });
+
+test('the scan reads a source found by name wherever the tree keeps it, and a walk of a project for its sources (STRUCT1)', () => {
+  const files = [
+    'src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing.cs', 'src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs',
+    'src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpGoProposals.cs',
+  ];
+  const text = [
+    '        var source = File.ReadAllText(SourceFiles.Driver("Landing.cs"));',
+    '        var loop = SourceFiles.Find("Daoris.Desktop.Modules", "DriverLoop.cs");',
+    // A name no file has reads nothing here; the finder refuses it when the test runs.
+    '        SourceFiles.Driver("Gone.cs");',
+    '        var sources = SourceFiles.All(SourceFiles.DriverProject, "GitBranches*.cs");',
+    '        var folder = Path.GetDirectoryName(SourceFiles.Driver($"{kinds[0]}.cs"));',
+  ].join('\n');
+  assert.deepEqual(namedReads(text, files), [
+    'src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing.cs', 'src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs',
+    'src/Daoris.Desktop/Daoris.Desktop.Driver/probe.cs',
+  ]);
+});
+
+/**
+ * STRUCT1 (D166): the paths a .NET test reads through `SourceFiles`, which finds a source by its name at any depth of its
+ * project, so the read is the one tracked file of that name under the project (`SourceFiles.Driver("Landing.cs")`,
+ * `SourceFiles.Find("Daoris.Desktop.Modules", "DriverLoop.cs")`). A walk of a project for a pattern (`SourceFiles.All`), or a
+ * name the scan cannot read (`SourceFiles.Driver($"{name}.cs")`), reads the project's folder, for its C# sources when the
+ * pattern names them.
+ */
+function namedReads(text: string, files: readonly string[]): string[] {
+  const driver = 'Daoris.Desktop.Driver';
+  const under = (project: string) => `src/Daoris.Desktop/${project}/`;
+  const reads = new Set<string>();
+  const one = (project: string, name: string) => {
+    const found = files.filter((path) => path.startsWith(under(project)) && posix.basename(path) === name);
+    if (found.length === 1) reads.add(found[0]!);
+  };
+  for (const match of text.matchAll(/\bSourceFiles\.Driver\(\s*"([^"\\]+)"\s*\)/g)) one(driver, match[1]!);
+  for (const match of text.matchAll(/\bSourceFiles\.Find\(\s*"([^"\\]+)"\s*,\s*"([^"\\]+)"\s*\)/g)) one(match[1]!, match[2]!);
+  for (const match of text.matchAll(/\bSourceFiles\.All\(\s*(?:"([^"\\]+)"|SourceFiles\.DriverProject)\s*,\s*"([^"\\]+)"\s*\)/g)) {
+    reads.add(`${under(match[1] ?? driver)}${match[2]!.endsWith('.cs') ? 'probe.cs' : 'probe.txt'}`);
+  }
+  if (/\bSourceFiles\.Driver\(\s*\$/.test(text)) reads.add(`${under(driver)}probe.cs`);
+  return [...reads];
+}
 
 /** Every folder that holds a tracked file, at any depth. */
 function folderSet(files: readonly string[]): Set<string> {
@@ -1108,7 +1185,8 @@ test("every file outside the page a page's vitest reads is one whose change reac
   assert.ok(reads.size >= 8, `the scan found only ${reads.size} reads: its pattern no longer matches how the page's tests read the repository`);
 
   // MOD9e: what the scan asks of the lane table, with the row taken away: the six reach the driver's gates and no vitest.
-  const without = tool.REACH.filter((rule) => !rule.paths?.some((path) => PAGE_PARSED.includes(path)));
+  const without = tool.REACH.filter((rule) => !isPageParsedRule(rule));
+  assert.equal(without.length, tool.REACH.length - 1, "MOD9e's rule names each source by its name under the driver's folder");
   for (const path of PAGE_PARSED) {
     const reached = (reach: readonly Rule[]) => tool.selectGates(repoPlan, [path], { lanes: repoLanes, reach }).gates.filter((entry) => entry.run).map((entry) => entry.gate.name);
     assert.deepEqual(reached(without), ['universal', 'code-map', 'orient-index', 'cli', 'driver', 'modules', 'rehearse-family'], path);
@@ -1148,6 +1226,16 @@ test("the page's scan reads through node:fs from the page, the repository or the
   assert.deepEqual(pageReads(at, "import { render } from '@testing-library/react';\nexpect(map.source).toBe('docs/code-map.json');", files), []);
   assert.deepEqual(pageReads(at, "import table from '../../../Daoris.Cli/test/fixtures/shell-words.json';", files),
     ['src/Daoris.Cli/test/fixtures/shell-words.json']);
+  // STRUCT1: a twin that reads the driver by name reads each source it names, wherever the driver keeps it, and the helper
+  // it imports from the page is the page's own.
+  const moved = ['src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Trace.Chain.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver/Landing.cs'];
+  const byName = [
+    "import { driverSource } from '../test/driverSource';",
+    "const chain = driverSource('Trace.Chain.cs');",
+    "const codes = codesOf('Landing.cs', 'SweepKind');",
+    "expect(kind).toBe('closed');",
+  ].join('\n');
+  assert.deepEqual(pageReads(at, byName, moved), moved);
 
   // What the scan above then asks of the lane table: without SESSDEL1c's row, the kept names' table reaches no web gate.
   const without = tool.REACH.filter((rule) => !rule.paths?.includes(KEPT_NAMES));
@@ -1176,6 +1264,15 @@ function pageReads(file: string, text: string, files: readonly string[]): string
     const path = posix.normalize(posix.join(posix.dirname(file), match[1]!));
     const found = ['', '.ts', '.tsx', '.mjs', '.js', '.json'].map((extension) => `${path}${extension}`).find((candidate) => tracked.has(candidate));
     if (found && outside(found)) reads.add(found);
+  }
+  // STRUCT1 (D166): a twin that reads the driver by name (`driverSource('Trace.Chain.cs')`, or a name it hands on to it) reads
+  // each driver source it names, the one tracked file of that name at any depth of the driver's folder.
+  if (/\bdriverSource\b/.test(text)) {
+    const driver = 'src/Daoris.Desktop/Daoris.Desktop.Driver/';
+    for (const match of text.matchAll(/'([^'\\\r\n/]+)'/g)) {
+      const named = files.filter((path) => path.startsWith(driver) && posix.basename(path) === match[1]);
+      if (named.length === 1) reads.add(named[0]!);
+    }
   }
   if (!/\bfrom\s+'(?:node:)?fs(?:\/promises)?'/.test(text)) return [...reads];
   const resolve = (path: string) => [page, '.', posix.dirname(file)]

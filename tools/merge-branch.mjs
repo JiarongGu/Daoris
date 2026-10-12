@@ -506,18 +506,16 @@ export const REACH = Object.freeze([
     why: "the modules' own, and the driver's NoConsoleWindow and PullRequestOccasion scans read every C# source of the modules and the app (MOD9c)",
   },
   // MOD9e: the page's twin vitests parse these sources' declarations, so they are named by file: the web gate is a
-  // rehearsal's time, and the driver's other sources reach no vitest.
+  // rehearsal's time, and the driver's other sources reach no vitest. STRUCT1 (D166): each by its name at any depth of the
+  // driver's folder, since the driver's files move into module folders one module per branch.
   {
     paths: [
-      'src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver/SessionEvents.cs',
-      'src/Daoris.Desktop/Daoris.Desktop.Driver/InstructionAccount.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver/Trace.Chain.cs',
-      'src/Daoris.Desktop/Daoris.Desktop.Driver/AutoLanding.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver/Landing.cs',
+      'NoteCodes.cs', 'SessionEvents.cs', 'InstructionAccount.cs', 'Trace.Chain.cs', 'AutoLanding.cs', 'Landing.cs',
       // MSG1g3: the page's say twin holds its refusal tables to these codes.
-      'src/Daoris.Desktop/Daoris.Desktop.Driver/GoOnNew.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver/SessionSay.cs',
-      'src/Daoris.Desktop/Daoris.Desktop.Driver/Continuation.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.StartFrom.cs',
+      'GoOnNew.cs', 'SessionSay.cs', 'Continuation.cs', 'ChatRunner.StartFrom.cs',
       // MIXAGENT1b-i: the say twin holds the hand-over's refusal table to its codes.
-      'src/Daoris.Desktop/Daoris.Desktop.Driver/HandOver.cs',
-    ],
+      'HandOver.cs',
+    ].map((name) => `src/Daoris.Desktop/Daoris.Desktop.Driver/**/${name}`),
     gates: [...DRIVER_READERS, 'web'],
     why: "the driver's own, and the page's note, conversation, handed, trace and say vitests parse their declarations (MOD9e, MSG1g3)",
   },
