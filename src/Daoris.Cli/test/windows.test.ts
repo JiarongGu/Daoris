@@ -27,7 +27,7 @@ function said(windows: WindowSaid[]): Record<string, unknown>[] {
   const stamp = (at: Date) => `${at.toISOString().slice(0, 19)}Z`;
   return windows.map((each) => ({
     window: each.window, used: each.used, reset: stamp(each.reset), standing: each.standing, credits: each.credits,
-    seen: stamp(each.seen), session: each.session,
+    seen: stamp(each.seen), session: each.session, source: each.source,
   }));
 }
 
@@ -38,21 +38,22 @@ const READ_ROWS: [name: string, file: Cell, now: string, agent: string, account:
   ['missing is nothing said', null, '2026-10-02T12:00:00Z', 'claude-code', 'account-1', null],
   ['not JSON is nothing said', 'not json', '2026-10-02T12:00:00Z', 'claude-code', 'account-1', null],
   ['JSON that is not an object is nothing said', '[1, 2]', '2026-10-02T12:00:00Z', 'claude-code', 'account-1', null],
-  ['a reading read whole, in the file\'s order', '{"claude-code":{"account-1":{"session":{"reset":"2026-10-02T14:00:00Z","used":0.88,"standing":"clear","seen":"2026-10-02T11:40:00Z","session":"s1"},"weekly":{"reset":"2026-10-06T21:18:00Z","used":0.14,"seen":"2026-10-02T11:40:00Z","session":"s1"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'account-1', '[{"window":"session","used":0.88,"reset":"2026-10-02T14:00:00Z","standing":"clear","credits":false,"seen":"2026-10-02T11:40:00Z","session":"s1"},{"window":"weekly","used":0.14,"reset":"2026-10-06T21:18:00Z","standing":null,"credits":false,"seen":"2026-10-02T11:40:00Z","session":"s1"}]'],
-  ['a window whose reset has passed is gone', '{"claude-code":{"account-1":{"session":{"reset":"2026-10-02T12:00:00Z","used":0.88,"seen":"2026-10-02T09:00:00Z"},"weekly":{"reset":"2026-10-06T21:18:00Z","used":0.14,"seen":"2026-10-02T09:00:00Z"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'account-1', '[{"window":"weekly","used":0.14,"reset":"2026-10-06T21:18:00Z","standing":null,"credits":false,"seen":"2026-10-02T09:00:00Z","session":null}]'],
+  ['a reading from Daoris\'s own read says so; any other source says said', '{"claude-code":{"account-1":{"session":{"reset":"2026-10-02T14:00:00Z","used":0.5,"seen":"2026-10-02T11:00:00Z","source":"read"},"weekly":{"reset":"2026-10-06T21:18:00Z","used":0.2,"seen":"2026-10-02T11:00:00Z","source":"Read"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'account-1', '[{"window":"session","used":0.5,"reset":"2026-10-02T14:00:00Z","standing":null,"credits":false,"seen":"2026-10-02T11:00:00Z","session":null,"source":"read"},{"window":"weekly","used":0.2,"reset":"2026-10-06T21:18:00Z","standing":null,"credits":false,"seen":"2026-10-02T11:00:00Z","session":null,"source":"said"}]'],
+  ['a reading read whole, in the file\'s order','{"claude-code":{"account-1":{"session":{"reset":"2026-10-02T14:00:00Z","used":0.88,"standing":"clear","seen":"2026-10-02T11:40:00Z","session":"s1"},"weekly":{"reset":"2026-10-06T21:18:00Z","used":0.14,"seen":"2026-10-02T11:40:00Z","session":"s1"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'account-1', '[{"window":"session","used":0.88,"reset":"2026-10-02T14:00:00Z","standing":"clear","credits":false,"seen":"2026-10-02T11:40:00Z","session":"s1","source":"said"},{"window":"weekly","used":0.14,"reset":"2026-10-06T21:18:00Z","standing":null,"credits":false,"seen":"2026-10-02T11:40:00Z","session":"s1","source":"said"}]'],
+  ['a window whose reset has passed is gone', '{"claude-code":{"account-1":{"session":{"reset":"2026-10-02T12:00:00Z","used":0.88,"seen":"2026-10-02T09:00:00Z"},"weekly":{"reset":"2026-10-06T21:18:00Z","used":0.14,"seen":"2026-10-02T09:00:00Z"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'account-1', '[{"window":"weekly","used":0.14,"reset":"2026-10-06T21:18:00Z","standing":null,"credits":false,"seen":"2026-10-02T09:00:00Z","session":null,"source":"said"}]'],
   ['every window passed is nothing said', '{"claude-code":{"account-1":{"session":{"reset":"2026-10-02T11:00:00Z","used":0.88,"seen":"2026-10-02T09:00:00Z"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'account-1', null],
   ['a week a limit told says no use', '{"claude-code":{"account-1":{"weekly":{"reset":"2026-10-03T10:17:00Z","seen":"2026-10-01T08:15:00Z","session":"s7"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'account-1', null],
-  ['names compare without case, and are said as written', '{"claude-code":{"account-1":{"Session":{"reset":"2026-10-02T14:00:00Z","used":0.5,"seen":"2026-10-02T11:00:00Z"}}}}', '2026-10-02T12:00:00Z', 'CLAUDE-CODE', 'Account-1', '[{"window":"Session","used":0.5,"reset":"2026-10-02T14:00:00Z","standing":null,"credits":false,"seen":"2026-10-02T11:00:00Z","session":null}]'],
+  ['names compare without case, and are said as written', '{"claude-code":{"account-1":{"Session":{"reset":"2026-10-02T14:00:00Z","used":0.5,"seen":"2026-10-02T11:00:00Z"}}}}', '2026-10-02T12:00:00Z', 'CLAUDE-CODE', 'Account-1', '[{"window":"Session","used":0.5,"reset":"2026-10-02T14:00:00Z","standing":null,"credits":false,"seen":"2026-10-02T11:00:00Z","session":null,"source":"said"}]'],
   ['another account is not this one', '{"claude-code":{"account-1":{"session":{"reset":"2026-10-02T14:00:00Z","used":0.5,"seen":"2026-10-02T11:00:00Z"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'account-2', null],
-  ['a standing alone is a reading; credits are only JSON true', '{"claude-code":{"account-1":{"weekly":{"reset":"2026-10-06T21:18:00Z","standing":"warned","credits":"yes","seen":"2026-10-02T11:00:00Z"},"session":{"reset":"2026-10-02T14:00:00Z","used":0.2,"credits":true,"seen":"2026-10-02T11:00:00Z"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'account-1', '[{"window":"weekly","used":null,"reset":"2026-10-06T21:18:00Z","standing":"warned","credits":false,"seen":"2026-10-02T11:00:00Z","session":null},{"window":"session","used":0.2,"reset":"2026-10-02T14:00:00Z","standing":null,"credits":true,"seen":"2026-10-02T11:00:00Z","session":null}]'],
-  ['a near written before USAGEREAD3a was only ever the agent pace warning, and reads as warned', '{"claude-code":{"account-1":{"weekly":{"reset":"2026-10-06T21:18:00Z","used":0.6,"standing":"near","seen":"2026-10-02T11:00:00Z"},"session":{"reset":"2026-10-02T14:00:00Z","used":0.2,"standing":"Near","seen":"2026-10-02T11:00:00Z"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'account-1', '[{"window":"weekly","used":0.6,"reset":"2026-10-06T21:18:00Z","standing":"warned","credits":false,"seen":"2026-10-02T11:00:00Z","session":null},{"window":"session","used":0.2,"reset":"2026-10-02T14:00:00Z","standing":"Near","credits":false,"seen":"2026-10-02T11:00:00Z","session":null}]'],
+  ['a standing alone is a reading; credits are only JSON true', '{"claude-code":{"account-1":{"weekly":{"reset":"2026-10-06T21:18:00Z","standing":"warned","credits":"yes","seen":"2026-10-02T11:00:00Z"},"session":{"reset":"2026-10-02T14:00:00Z","used":0.2,"credits":true,"seen":"2026-10-02T11:00:00Z"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'account-1', '[{"window":"weekly","used":null,"reset":"2026-10-06T21:18:00Z","standing":"warned","credits":false,"seen":"2026-10-02T11:00:00Z","session":null,"source":"said"},{"window":"session","used":0.2,"reset":"2026-10-02T14:00:00Z","standing":null,"credits":true,"seen":"2026-10-02T11:00:00Z","session":null,"source":"said"}]'],
+  ['a near written before USAGEREAD3a was only ever the agent pace warning, and reads as warned', '{"claude-code":{"account-1":{"weekly":{"reset":"2026-10-06T21:18:00Z","used":0.6,"standing":"near","seen":"2026-10-02T11:00:00Z"},"session":{"reset":"2026-10-02T14:00:00Z","used":0.2,"standing":"Near","seen":"2026-10-02T11:00:00Z"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'account-1', '[{"window":"weekly","used":0.6,"reset":"2026-10-06T21:18:00Z","standing":"warned","credits":false,"seen":"2026-10-02T11:00:00Z","session":null,"source":"said"},{"window":"session","used":0.2,"reset":"2026-10-02T14:00:00Z","standing":"Near","credits":false,"seen":"2026-10-02T11:00:00Z","session":null,"source":"said"}]'],
   ['a use that is not a number, a standing that is not text and a session that is empty say nothing', '{"claude-code":{"account-1":{"session":{"reset":"2026-10-02T14:00:00Z","used":"lots","standing":7,"seen":"2026-10-02T11:00:00Z","session":""},"weekly":{"reset":"2026-10-06T21:18:00Z","used":-0.2,"seen":"2026-10-02T11:00:00Z"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'account-1', null],
   ['a reset or a seen that is not ISO 8601 is nothing said', '{"claude-code":{"account-1":{"session":{"reset":"Oct 3","used":0.5,"seen":"2026-10-02T11:00:00Z"},"weekly":{"reset":"2026-10-06T21:18:00Z","used":0.5,"seen":"today"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'account-1', null],
   ['a window that is not an object, and an account that is not one, say nothing', '{"claude-code":{"account-1":{"session":"0.5"},"account-2":[1]}}', '2026-10-02T12:00:00Z', 'claude-code', 'account-1', null],
-  ['a moment with an offset or a fraction is read in UTC, to the second', '{"claude-code":{"account-1":{"weekly":{"reset":"2026-10-07T03:03:00+05:45","used":0.25,"seen":"2026-10-02T11:00:00.5Z","session":"s2"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'account-1', '[{"window":"weekly","used":0.25,"reset":"2026-10-06T21:18:00Z","standing":null,"credits":false,"seen":"2026-10-02T11:00:00Z","session":"s2"}]'],
+  ['a moment with an offset or a fraction is read in UTC, to the second', '{"claude-code":{"account-1":{"weekly":{"reset":"2026-10-07T03:03:00+05:45","used":0.25,"seen":"2026-10-02T11:00:00.5Z","session":"s2"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'account-1', '[{"window":"weekly","used":0.25,"reset":"2026-10-06T21:18:00Z","standing":null,"credits":false,"seen":"2026-10-02T11:00:00Z","session":"s2","source":"said"}]'],
   ['a letter whose capital is two letters is not those two: straße is not STRASSE', '{"claude-code":{"straße":{"session":{"reset":"2026-10-02T14:00:00Z","used":0.5,"seen":"2026-10-02T11:00:00Z"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'STRASSE', null],
   ['a dotless i is not an I', '{"claude-code":{"ışık":{"session":{"reset":"2026-10-02T14:00:00Z","used":0.5,"seen":"2026-10-02T11:00:00Z"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'IŞIK', null],
-  ['the tool\'s own sign-in reads under its own key, beside the accounts and none of them', '{"codex":{"account-1":{"session":{"reset":"2026-10-02T14:00:00Z","used":0.5,"seen":"2026-10-02T11:00:00Z"}},"":{"weekly":{"reset":"2026-10-06T21:18:00Z","used":0.4,"seen":"2026-10-02T11:30:00Z"}}}}', '2026-10-02T12:00:00Z', 'codex', '', '[{"window":"weekly","used":0.4,"reset":"2026-10-06T21:18:00Z","standing":null,"credits":false,"seen":"2026-10-02T11:30:00Z","session":null}]'],
+  ['the tool\'s own sign-in reads under its own key, beside the accounts and none of them', '{"codex":{"account-1":{"session":{"reset":"2026-10-02T14:00:00Z","used":0.5,"seen":"2026-10-02T11:00:00Z"}},"":{"weekly":{"reset":"2026-10-06T21:18:00Z","used":0.4,"seen":"2026-10-02T11:30:00Z"}}}}', '2026-10-02T12:00:00Z', 'codex', '', '[{"window":"weekly","used":0.4,"reset":"2026-10-06T21:18:00Z","standing":null,"credits":false,"seen":"2026-10-02T11:30:00Z","session":null,"source":"said"}]'],
   ['an account is not the tool\'s own sign-in', '{"codex":{"":{"weekly":{"reset":"2026-10-06T21:18:00Z","used":0.4,"seen":"2026-10-02T11:30:00Z"}}}}', '2026-10-02T12:00:00Z', 'codex', 'account-1', null],
 ];
 
@@ -77,7 +78,7 @@ const NOW = moment('2026-10-02T12:00:00Z');
 function window(name: string, used: number | null, extra: Partial<WindowSaid> = {}): WindowSaid {
   return {
     window: name, used, reset: moment(name === 'session' ? '2026-10-02T14:00:00Z' : '2026-10-06T21:18:00Z'), standing: null,
-    credits: false, seen: moment('2026-10-02T11:40:00Z'), session: 's1', ...extra,
+    credits: false, seen: moment('2026-10-02T11:40:00Z'), session: 's1', source: 'said', ...extra,
   };
 }
 
@@ -94,6 +95,40 @@ test('a reading is said with its age, each window\'s use and reset in the machin
   assert.match(saidLine([window('weekly', null, { standing: 'refused' })], NOW, 'UTC'), /^said 20 min ago: its weekly limit reached, by its own word$/);
   assert.match(saidLine([window('session', 0.2, { credits: true })], NOW, 'UTC', 50), /^said 20 min ago: drawing on usage credits; 20% of its session limit used, resetting .*\(UTC\)$/);
   assert.equal(saidLine([window('session', null, { standing: 'clear' })], NOW, 'UTC'), 'said 20 min ago: clear, by its own word');
+});
+
+test('a line leads with where the reading came from: read for Daoris\'s own, said for a frame (USAGEREAD2b)', () => {
+  const read = (name: string, used: number | null, extra: Partial<WindowSaid> = {}) => window(name, used, { source: 'read', ...extra });
+  const late = { seen: moment('2026-10-02T11:58:00Z') };
+  const early = { seen: moment('2026-10-02T09:00:00Z') };
+
+  assert.equal(
+    saidLine([read('session', 0.88, late), read('weekly', 0.14, late)], NOW, 'UTC'),
+    'read 2 min ago: 88% of its session limit used, resetting Oct 2, 14:00 (UTC); 14% of its weekly limit used, resetting Oct 6, 21:18 (UTC)');
+  // The lead is the newest reading's source; a window from the other source says so, with its own age.
+  assert.equal(
+    saidLine([read('session', 0.88, late), window('weekly', 0.14, early)], NOW, 'UTC'),
+    'read 2 min ago: 88% of its session limit used, resetting Oct 2, 14:00 (UTC); 14% of its weekly limit used (said 3 h ago), resetting Oct 6, 21:18 (UTC)');
+  assert.equal(
+    saidLine([window('session', 0.88, late), read('weekly', 0.14, early)], NOW, 'UTC'),
+    'said 2 min ago: 88% of its session limit used, resetting Oct 2, 14:00 (UTC); 14% of its weekly limit used (read 3 h ago), resetting Oct 6, 21:18 (UTC)');
+  // A tie goes to the read, as the driver keeps it.
+  assert.match(saidLine([window('session', 0.5, late), read('weekly', 0.1, late)], NOW, 'UTC'), /^read 2 min ago: 50% of its session limit used \(said 2 min ago\), resetting/);
+});
+
+test('a source that is not `read` is said, and absent is said (USAGEREAD2b)', () => {
+  const fx = makeFixture('windows-source');
+  const file = (source: string) => `{"claude-code":{"account-1":{"session":{"reset":"2026-10-02T14:00:00Z","used":0.5,"seen":"2026-10-02T11:00:00Z"${source}}}}}`;
+  const sources = (source: string) => {
+    writeFileSync(join(fx.root, WINDOWS_FILE), file(source), 'utf8');
+    return saidOf(fx.root, 'claude-code', 'account-1', moment('2026-10-02T12:00:00Z'))?.map((each) => each.source);
+  };
+
+  assert.deepEqual(sources(',"source":"read"'), ['read']);
+  assert.deepEqual(sources(''), ['said']);
+  assert.deepEqual(sources(',"source":"Read"'), ['said']);
+  assert.deepEqual(sources(',"source":7'), ['said']);
+  fx.cleanup();
 });
 
 test('an age is said as the driver says it', () => {

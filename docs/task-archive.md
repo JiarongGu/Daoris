@@ -13954,3 +13954,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PROCESS1d-i — a driven session is told its process** (driver; after 1b-i). The instruction's landing section (`Adapters.cs` `Landing`/`Lands`, in every form the `Tail` carries) says the resolved commit rule (`CommitRules.Resolve`: as-you-go, ask or at-end, the convention quoted as a block), its source, and the branch the pull request comes from by name; in every mode no branch is created, switched or pushed; under auto-accept with `ask`, the yes and the commit come before the quest closes done. Only in a tree of the session's own; never an intake (no repository), nor a run resumed in its own conversation. A merge-form repository is told its commit rule too. Pure `ProcessWords` (Trees), a golden pair. Replaces SESSCOMMIT2. D164's amendment point 4.
 
 **Outcome** 2026-10-13: a driven session in a tree of its own is told its resolved commit rule (mode, source, convention quoted) and the pull request's branch in the instruction's landing section, in all three forms; `ProcessWords` (Trees/Domain) builds it, `SessionTarget.Commits` is set under the `Holds` guard, a merge-form repository is told its rule too, and the `own-tree` golden pair pins it. Its Process cases passed on the merge. Detail: D164's PROCESS1d-i note.
+
+## USAGEREAD2b — the terminal says where a reading came from (2026-10-13, D165)
+
+> - [ ] **USAGEREAD2b — the terminal says where a reading came from** (cli; after 2a). `daoris agent list` prints each reading's source and age (`read 2 min ago` or `said 3 h ago`), both twins' tables in step (`windows.ts`, `WindowsTwinTests`). Design §5.
+
+**Outcome** 2026-10-13: built as the row says: the CLI reads `source` as the driver does, and `saidLine` leads with the newest reading's source and age, a window from the other source naming its own in its clause; the twin table carries the source cell. Detail: D165's USAGEREAD2b note.
