@@ -54,7 +54,10 @@ import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } 
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
 import { sessionFacts } from './headFacts';
 import type { Answered } from './InlineConfirm';
+import type { AgentChoice } from './AgentChip';
 import { HandOverAsk, type HandOverRoster } from './HandOverAsk';
+import { handOverOffer } from './handOverOffer';
+import { HandOverOfferLine } from './HandOverOfferLine';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { type SessionDoors, useSessionActs } from './sessionActs';
 import { ListMore } from './ListPane';
@@ -289,6 +292,11 @@ export function WorkFrame({
   const [deleteAsking, setDeleteAsking] = useState<string | null>(null);
   // The session whose hand-over asks under the header (MIXAGENT1b-i, D163), the stop's way: of that session only.
   const [handOverAsking, setHandOverAsking] = useState<string | null>(null);
+  // The agent and account Daoris's offer named, and why, when *Choose…* opened that ask (MIXAGENT1b-ii): the ask opens with
+  // the choice made and its press carries the reason. Cleared by the head's own door, whose press is the person's.
+  const [handOverChosen, setHandOverChosen] = useState<{ why: 'near' | 'limit'; choice: AgentChoice } | null>(null);
+  // The conversations whose offer to hand over the person put down: for this run of the frame, never stored (MIXAGENT1b-ii).
+  const [offerDismissed, setOfferDismissed] = useState<ReadonlySet<string>>(() => new Set());
   // The session whose pause asks under the header (PAUSE1e, D132 §2.6), with the work it pauses: of that session only.
   const [pauseAsking, setPauseAsking] = useState<{ session: string; target: WorkTarget } | null>(null);
   // *Answer…* from a row (D126 §3.1): the session it was pressed for, and a count, so the box at its foot takes the focus
@@ -1142,6 +1150,7 @@ export function WorkFrame({
       setStopAsking(null);
       setDeleteAsking(null);
       setPauseAsking(null);
+      setHandOverChosen(null);
       setHandOverAsking(id);
     },
     // The conversation a hand-over opened, attended as a start's is (MIXAGENT1b-i).
@@ -1263,6 +1272,18 @@ export function WorkFrame({
     ? { session: attended, quest, grouping, root: rootOf(attended.repository), where: where[attended.id] }
     : null;
   const headActs = attendedFacts ? offeredActs(attendedFacts, 'header').filter(actions.can) : [];
+  // Daoris's offer to hand over (MIXAGENT1b-ii, D163 point 3): on a conversation this page offers the press on, when its own
+  // account is cut or near its limit by its own word and another agent has an account the walk would take. No driver read.
+  const offer = attended && headActs.includes('handOver') && !offerDismissed.has(attended.id)
+    ? handOverOffer({
+      session: attended,
+      workspace: (registry.data ?? []).find((row) => row.repository === attended.repository)?.workspace || 'default',
+      doors: roster,
+      answer: accounts.data,
+      now: new Date(),
+    })
+    : null;
+  const offerTo = offer ? roster.find((row) => row.harness === offer.agent) : null;
   const asked = attended ? stopAsk(attended, quest) : null;
   // A pause's ask says what it stops from the driver's plan of the work (D132 §2.6); one that stops nothing applies at once.
   const pausing = pauseAsking && attended?.id === pauseAsking.session ? pauseAsking : null;
@@ -1331,9 +1352,13 @@ export function WorkFrame({
           repository={attended.repository}
           working={SESSION_ACTIVE.has(attended.state)}
           roster={agentRoster}
+          initial={handOverChosen?.choice}
           busy={actions.handingOver}
-          onHandOver={(choice, told) => actions.handOverNow(attended, choice, told)}
-          onClose={() => setHandOverAsking((was) => (was === attended.id ? null : was))}
+          onHandOver={(choice, told) => actions.handOverNow(attended, choice, told, handOverChosen?.why)}
+          onClose={() => {
+            setHandOverAsking((was) => (was === attended.id ? null : was));
+            setHandOverChosen(null);
+          }}
         />
       ) : pausing && !pauseQuiet ? (
         <PauseAsk
@@ -1344,6 +1369,30 @@ export function WorkFrame({
           busy={actions.work.pausing}
           onPause={(answered) => actions.work.pause(pausing.target, answered)}
           onClose={() => setPauseAsking(null)}
+        />
+      ) : offer && attended ? (
+        <HandOverOfferLine
+          // Keyed by the session: a refusal or a kept answer said in one is never another's.
+          key={attended.id}
+          offer={offer}
+          agentName={offerTo?.product || offer.agent}
+          accountName={offer.account ? nameOf(offerTo ? toolOf(offerTo) : offer.agent, offer.account) : null}
+          busy={actions.handingOver}
+          onGoOn={(told) => actions.handOverNow(
+            attended,
+            { agent: offer.agent, account: offer.account ?? '', name: offerTo?.product || offer.agent },
+            told,
+            offer.why,
+          )}
+          onChoose={() => {
+            chosen();
+            setStopAsking(null);
+            setDeleteAsking(null);
+            setPauseAsking(null);
+            setHandOverChosen({ why: offer.why, choice: { adapter: offer.agent, profile: offer.account ?? '' } });
+            setHandOverAsking(attended.id);
+          }}
+          onDismiss={() => setOfferDismissed((was) => new Set(was).add(attended.id))}
         />
       ) : null}
     />
