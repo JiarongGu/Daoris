@@ -14,6 +14,11 @@ with the version and date at release.
   `daoris driver landing <repository> branch "feature/{ticket}-{slug}" --key "[A-Z]+-\d+"`), the session's id where none is
   found. A branch's words are never cut from a web address, so a title that was only a ticket's address no longer makes
   `feature/https-…`.
+- A landing rule may squash: with `daoris driver landing <repository> branch <pattern> --squash`, Accept makes the pull
+  request's branch one commit from the session's work, its message the quest's title and each of the session's commits'
+  subjects, made as your repository's own `user.name` and `user.email` (Accept says how to set them where git has none). A
+  chain's later step adds one more commit to the same branch, and the session's head, Discard and the clean-up read the
+  squashed session as landed. A session that committed on a branch of its own still lands as it stands.
 - Daoris reads each Claude account's real plan usage, the five-hour and weekly windows Claude Code's `/usage` shows, with no
   prompt and no usage spent, so a start chooses its account on what is really left, the person's own use included, rather
   than on what Daoris's last session there said hours before.
