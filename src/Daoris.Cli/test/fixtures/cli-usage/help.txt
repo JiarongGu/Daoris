@@ -139,7 +139,10 @@ daoris <command> [options]
                                                    --key <shape> where it says
                                                    {ticket}: the ticket key found
                                                    in the title or the request,
-                                                   [A-Z][A-Z0-9]+-\d+ if none)
+                                                   [A-Z][A-Z0-9]+-\d+ if none;
+                                                   --squash on a branch: one
+                                                   commit, made as git's own
+                                                   user.name and user.email)
                          across <repo> read on|off|--clear
                                                    whether agents outside it read
                                                    its checkout; on by default

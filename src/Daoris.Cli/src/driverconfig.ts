@@ -277,6 +277,13 @@ export interface LandingRule {
    * pattern says `{ticket}` takes one. The driver's `LandingRule.Key` is the twin, and the driver does the finding.
    */
   key?: string;
+  /**
+   * The pull request's branch as one commit (PROCESS1b-ii, D164's amendment point 2): Accept makes it from the session's tree,
+   * its message the quest's title and the session's commits' subjects, with git's own identity in the repository. Only a
+   * branch rule takes it; absent is the branch at the session's own commits. The driver's `LandingRule.Squash` is the twin,
+   * and the driver makes the commit.
+   */
+  squash?: boolean;
 }
 
 /** The shape of a ticket's key where a rule names none — the driver's `LandingRules.DefaultKey`. */
@@ -393,8 +400,12 @@ export function landingProblem(rule: LandingRule): string | null {
         + 'stand between the work and the line. `branch <pattern> --auto-accept` is the form that does.';
     }
     // A ticket's key names a branch (PROCESS1b-i), and a merge makes none.
-    return rule.key !== undefined
-      ? 'only a branch rule reads a ticket\'s key — a merge makes no branch to name. `branch <pattern> --key <shape>` is the form that does.'
+    if (rule.key !== undefined) {
+      return 'only a branch rule reads a ticket\'s key — a merge makes no branch to name. `branch <pattern> --key <shape>` is the form that does.';
+    }
+    // A squash makes the pull request's branch one commit (PROCESS1b-ii), and a merge makes no branch.
+    return rule.squash
+      ? 'only a branch rule squashes — a merge makes no branch to squash the work onto. `branch <pattern> --squash` is the form that does.'
       : null;
   }
   if (rule.form !== 'branch') {
@@ -992,9 +1003,9 @@ export function commandDriver(
     // How work lands (WSR1, D87) — for one repository, or with `--workspace` for every repository in
     // it that sets none of its own: `merge` into the line, or `branch <pattern>` for the person to push,
     // or for the plugin `--plugin` names to push and open the pull request from (WSR4, D100), and on a branch
-    // `--auto-accept` for a quest's done to land it with no press (LAND2a, D145), and where the pattern says
-    // `{ticket}`, `--key <shape>` for the shape of the repository's ticket keys (PROCESS1b-i). Unset, it is the merge it
-    // always was. Daoris itself never pushes.
+    // `--auto-accept` for a quest's done to land it with no press (LAND2a, D145), where the pattern says
+    // `{ticket}`, `--key <shape>` for the shape of the repository's ticket keys (PROCESS1b-i), and `--squash` for the pull
+    // request's branch as one commit (PROCESS1b-ii). Unset, it is the merge it always was. Daoris itself never pushes.
     case 'landing': {
       const workspace = flagValue(argv, '--workspace');
       const clear = argv.includes('--clear');
@@ -1006,7 +1017,8 @@ export function commandDriver(
           '`driver landing` needs <repository>|--workspace <name>, then merge|branch <pattern>|--clear — '
           + 'e.g. `daoris driver landing --workspace aurora branch "feature/{quest}-{slug}"`, and on a branch '
           + '`--plugin <id>` for an installed plugin that pushes it and opens the pull request, `--auto-accept` '
-          + 'for a quest\'s done to land it with no press, and `--key <shape>` for the shape `{ticket}` is found by.');
+          + 'for a quest\'s done to land it with no press, `--key <shape>` for the shape `{ticket}` is found by, and '
+          + '`--squash` for the pull request\'s branch as one commit.');
       }
 
       // The ticket's key (PROCESS1b-i): `--no-key` says the default shape out loud, as a rule replaces the one above whole.
@@ -1033,6 +1045,13 @@ export function commandDriver(
         throw new DaorisError('a rule accepts automatically or waits for your Accept — say `--auto-accept` or `--no-auto-accept`, not both.');
       }
 
+      // The pull request's branch as one commit (PROCESS1b-ii): on with `--squash`; `--no-squash` says off out loud, a
+      // repository's own rule replacing its workspace's whole, the squash with it.
+      const squash = argv.includes('--squash');
+      if (squash && argv.includes('--no-squash')) {
+        throw new DaorisError('a rule squashes the work to one commit or keeps the session\'s commits — say `--squash` or `--no-squash`, not both.');
+      }
+
       const rule: LandingRule | null = clear ? null : {
         form: form!,
         ...(pattern !== undefined ? { pattern } : {}),
@@ -1040,6 +1059,7 @@ export function commandDriver(
         ...(argv.includes('--tidy') ? { tidy: true } : {}),
         ...(plugin !== undefined ? { plugin } : {}),
         ...(autoAccept ? { autoAccept: true } : {}),
+        ...(squash ? { squash: true } : {}),
       };
       const problem = rule === null ? null : landingProblem(rule);
       if (problem !== null) throw new DaorisError(problem);
@@ -1081,6 +1101,15 @@ export function commandDriver(
         write(`  Accept automatically: ${autoAcceptSays(rule.plugin)}`);
       } else if (rule?.form === 'branch' && argv.includes('--no-auto-accept')) {
         write('  Done work there waits for your Accept — a repository\'s own rule replaces its workspace\'s whole, the switch with it.');
+      }
+
+      // The first commit Daoris itself makes (PROCESS1b-ii), said with the identity it is made under.
+      if (rule?.squash) {
+        write('  Squashed: Accept makes the pull request\'s branch one commit from the session\'s work — the quest\'s title, then');
+        write('  each of the session\'s commits\' subjects — made by git as the repository\'s own `user.name` and `user.email`;');
+        write('  where git has none there, Accept is refused and says how to set them. A tree on a branch of its own lands as it stands.');
+      } else if (rule?.form === 'branch' && argv.includes('--no-squash')) {
+        write('  The branch holds the session\'s own commits — a repository\'s own rule replaces its workspace\'s whole, the squash with it.');
       }
 
       if (rule !== null && workspace) {
@@ -1364,7 +1393,8 @@ export function commandDriver(
     const spelled = (rule: LandingRule) =>
       (rule.form === 'branch' ? `branch ${rule.pattern}` : rule.form)
       + (rule.key ? `, key ${rule.key}` : '')
-      + (rule.plugin ? `, plugin ${rule.plugin}` : '') + (rule.tidy ? ', tidy' : '') + (rule.autoAccept ? ', accept automatically' : '');
+      + (rule.plugin ? `, plugin ${rule.plugin}` : '') + (rule.tidy ? ', tidy' : '') + (rule.autoAccept ? ', accept automatically' : '')
+      + (rule.squash ? ', squash' : '');
     for (const [repository, rule] of Object.entries(choices.landings)) {
       write(`  landing    ${repository}  ${spelled(rule)}`);
     }
@@ -2023,7 +2053,7 @@ function ruleMap(value: unknown): Record<string, LandingRule> {
   const held: Record<string, LandingRule> = {};
   for (const [name, rule] of Object.entries(value as Record<string, unknown>)) {
     if (!rule || typeof rule !== 'object') continue;
-    const { form, pattern, key, tidy, plugin, autoAccept } = rule as Record<string, unknown>;
+    const { form, pattern, key, tidy, plugin, autoAccept, squash } = rule as Record<string, unknown>;
     const read: LandingRule = {
       form: typeof form === 'string' ? form : '',
       ...(typeof pattern === 'string' ? { pattern } : {}),
@@ -2034,6 +2064,8 @@ function ruleMap(value: unknown): Record<string, LandingRule> {
       ...(typeof plugin === 'string' && plugin.length > 0 ? { plugin } : {}),
       // Only JSON `true` (LAND2a): `"true"` or 1 is not the person's say-so for a push with no press.
       ...(autoAccept === true ? { autoAccept: true } : {}),
+      // Only JSON `true` squashes (PROCESS1b-ii), as the driver reads it.
+      ...(squash === true ? { squash: true } : {}),
     };
     // A key refused here is ignored and the rest of the rule stands (PROCESS1b-i), as the driver reads it: a key another reader
     // took never drops the rule, which would land the repository's work by its workspace's rule or a merge unasked.
@@ -2046,7 +2078,7 @@ function ruleMap(value: unknown): Record<string, LandingRule> {
 
 /**
  * A rule as it is kept: a merge carries no pattern, a ticket's key only after a branch's pattern, a plugin only on a
- * branch, and the tidy and the automatic acceptance only when on, in that order — the driver keeps it the same way.
+ * branch, and the tidy, the automatic acceptance and the squash only when on, in that order — the driver keeps it the same way.
  */
 function kept(rule: LandingRule): LandingRule {
   return {
@@ -2055,6 +2087,7 @@ function kept(rule: LandingRule): LandingRule {
     ...(rule.form !== 'merge' && rule.plugin ? { plugin: rule.plugin } : {}),
     ...(rule.tidy ? { tidy: true } : {}),
     ...(rule.form !== 'merge' && rule.autoAccept ? { autoAccept: true } : {}),
+    ...(rule.form !== 'merge' && rule.squash ? { squash: true } : {}),
   };
 }
 

@@ -38,8 +38,15 @@ public static class LandingForm
 /// <c>{ticket}</c> is found by, in the title, then the request, then its links (<see cref="LandingRules.Ticket"/>). Null is
 /// <see cref="LandingRules.DefaultKey"/>. Only a branch rule whose pattern says <c>{ticket}</c> takes one.
 /// </param>
+/// <param name="Squash">
+/// The pull request's branch as one commit (PROCESS1b-ii, D164's amendment point 2 and its PROCESS1b-ii note): Accept makes it
+/// from the session's tree, its parent where the session left the line, its message the quest's title and the session's commits'
+/// subjects (<see cref="SquashMessage"/>), with git's own identity in the repository. Only a branch rule takes it; off, the
+/// default, is the branch at the session's own commits, as it always was. A tree on a branch of its own is never squashed.
+/// </param>
 public sealed record LandingRule(
-    string Form, string? Pattern = null, bool Tidy = false, string? Plugin = null, bool AutoAccept = false, string? Key = null)
+    string Form, string? Pattern = null, bool Tidy = false, string? Plugin = null, bool AutoAccept = false, string? Key = null,
+    bool Squash = false)
 {
     public static readonly LandingRule Merge = new(LandingForm.Merge);
 }
@@ -421,6 +428,9 @@ public static class LandingRules
         // A ticket's key names a branch (PROCESS1b-i), and a merge makes none.
         LandingForm.Merge when rule.Key is not null =>
             "only a branch rule reads a ticket's key — a merge makes no branch to name. `branch <pattern> --key <shape>` is the form that does.",
+        // A squash makes the pull request's branch one commit (PROCESS1b-ii), and a merge makes no branch.
+        LandingForm.Merge when rule.Squash =>
+            "only a branch rule squashes — a merge makes no branch to squash the work onto. `branch <pattern> --squash` is the form that does.",
         LandingForm.Merge => null,
         // A plugin's id is the catalogue's own shape, asked of its one owner (REFAC1), so a rule never names a path.
         LandingForm.Branch => Problem(rule.Pattern ?? "") ?? (rule.Plugin is { } plugin && !PluginCatalog.IsId(plugin)

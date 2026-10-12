@@ -288,6 +288,7 @@ public sealed partial class SessionTrees
         }
 
         ContentHold? held = null;
+        LandedBranch? squashedOn = null;
         string? kept = null;
         if (!force)
         {
@@ -303,8 +304,10 @@ public sealed partial class SessionTrees
                     + "The branch stays; say it again with --force to discard it.");
             }
 
-            // SQUASHTIDY1: the same proof by content as a tree's removal, against the line of the workspace it grew in.
-            if (!string.IsNullOrWhiteSpace(unlanded))
+            // SQUASHTIDY1: the same proof by content as a tree's removal, against the line of the workspace it grew in; before it,
+            // a squashing landing's record, which vouches as ancestry would and keeps no ref (PROCESS1b-ii point 3).
+            if (!string.IsNullOrWhiteSpace(unlanded)
+                && (squashedOn = await SquashedHolderAsync(root, repository, judged, ct).ConfigureAwait(false)) is null)
             {
                 var grewIn = Grown.All().LastOrDefault(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
                                                                 && string.Equals(entry.Branch, branch, StringComparison.Ordinal))?.Workspace;
@@ -342,7 +345,8 @@ public sealed partial class SessionTrees
         }
 
         Forget(repository, branch);
-        return new(true, $"removed the session branch `{branch}` from `{repository}`" + (held is null ? "." : $": {held.Said}.")
+        return new(true, $"removed the session branch `{branch}` from `{repository}`"
+            + (held is not null ? $": {held.Said}." : squashedOn is not null ? $": {SquashedSaid(squashedOn)}." : ".")
             + (kept is null ? "" : $" {ContentHold.KeptAt(branch, kept)}"));
     }
 

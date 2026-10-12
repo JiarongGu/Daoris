@@ -220,7 +220,9 @@ public static class WorkflowProcesses
 
             // The rule's ticket key rides with it where the pattern, the step's or the rule's, says `{ticket}` (PROCESS1b-i).
             var key = branch && pattern?.Contains("{ticket}", StringComparison.Ordinal) == true ? rule.Key : null;
-            landing = new LandingRule(LandingForm.Branch, pattern, rule.Tidy, plugin, (string?)land.Field("accept") == "automatic", key);
+            // The rule's squash rides with it too (PROCESS1b-ii): it is how the repository wants its pull request's branch made.
+            landing = new LandingRule(LandingForm.Branch, pattern, rule.Tidy, plugin, (string?)land.Field("accept") == "automatic", key,
+                branch && rule.Squash);
         }
 
         // The look (D154 rows 5 and 6): its presence is `required`, in an environment the review rule declares.

@@ -91,6 +91,13 @@ public sealed record LandedBranch(
     /// <summary>Each session branch removed on its pull request's answer, oldest first (design §2.5).</summary>
     public IReadOnlyList<CarriedBranch> Carried { get; init; } = [];
 
+    /// <summary>
+    /// The session's tip the landing squashed into <see cref="Tip"/> (PROCESS1b-ii, D164's PROCESS1b-ii note point 3), moved on by a
+    /// chain's later squash; null where the branch holds the session's own commits, and for one recorded before. Daoris's own
+    /// word of what it squashed: while the entry stands, a session branch at this commit or an ancestor of it is landed.
+    /// </summary>
+    public string? Squashed { get; init; }
+
     /// <summary>Whether this landing names <paramref name="session"/>: the session that made it, or one whose done moved it on (LAND2c).</summary>
     public bool Names(string session) =>
         string.Equals(Session, session, StringComparison.OrdinalIgnoreCase)
@@ -124,6 +131,12 @@ public sealed record LandedAdvance(string From, string To, DateTimeOffset At, st
 
     /// <summary>The named workflow this advance went by (WORKFLOW1f, design §5.5); null under Current, and in a record from before.</summary>
     public LandingWorkflow? Workflow { get; init; }
+
+    /// <summary>
+    /// The session's tip this advance squashed into <see cref="To"/> (PROCESS1b-ii, point 4), which the entry's
+    /// <see cref="LandedBranch.Squashed"/> moves to; null for a fast-forward, and in a record from before.
+    /// </summary>
+    public string? Squashed { get; init; }
 }
 
 /// <summary>
@@ -241,11 +254,14 @@ public sealed class LandedBranches(string home)
             : each)]);
 
     /// <summary>
-    /// A later done moved the standing branch on as a fast-forward (LAND2c, D149 point 2): its tip is the advance's, and the
+    /// A later done moved the standing branch on as a fast-forward (LAND2c, D149 point 2), or by one more squashed commit
+    /// (PROCESS1b-ii): its tip is the advance's, the session tip squashed moves with it where the advance squashed one, and the
     /// advance is kept with the rest. The branch stays the landing's, so the clean-up and the hand-off judge it at its new tip.
     /// </summary>
     public void Advanced(string repository, string branch, LandedAdvance advance) => Edit(all =>
-        [.. all.Select(each => Standing(each, repository, branch) ? each with { Tip = advance.To, Advances = [.. each.Advances, advance] } : each)]);
+        [.. all.Select(each => Standing(each, repository, branch)
+            ? each with { Tip = advance.To, Squashed = advance.Squashed ?? each.Squashed, Advances = [.. each.Advances, advance] }
+            : each)]);
 
     /// <summary>
     /// Where bringing it up to date replayed it (WSR6): its new tip, and the line's commit it now grows from.
@@ -362,6 +378,8 @@ public sealed class LandedBranches(string home)
                 writer.WriteString("branch", entry.Branch);
                 if (entry.Line is not null) writer.WriteString("line", entry.Line);
                 writer.WriteString("tip", entry.Tip);
+                // Written only where the landing squashed (PROCESS1b-ii): absent is the session's own commits on the branch.
+                if (entry.Squashed is not null) writer.WriteString("squashed", entry.Squashed);
                 writer.WriteString("session", entry.Session);
                 if (entry.Quest is not null) writer.WriteString("quest", entry.Quest);
                 if (entry.Title is not null) writer.WriteString("title", entry.Title);
@@ -402,6 +420,7 @@ public sealed class LandedBranches(string home)
                         if (advance.Review is { } advanced) WriteReview(writer, advanced);
                         if (advance.Opinion is { } read) WriteOpinion(writer, read);
                         if (advance.Workflow is { } went) WriteWorkflow(writer, went);
+                        if (advance.Squashed is not null) writer.WriteString("squashed", advance.Squashed);
                         writer.WriteEndObject();
                     }
 
@@ -662,6 +681,7 @@ public sealed class LandedBranches(string home)
             PullRequestState = StateOf(element),
             PullRequestAskFailed = AskFailedOf(element),
             Carried = CarriedOf(element),
+            Squashed = Text(element, "squashed"),
         };
     }
 
@@ -685,6 +705,7 @@ public sealed class LandedBranches(string home)
             advances.Add(new LandedAdvance(from, to, at, session)
             {
                 AcceptedBy = Text(each, "acceptedBy"), Review = ReviewOf(each), Opinion = OpinionOf(each), Workflow = WorkflowOf(each),
+                Squashed = Text(each, "squashed"),
             });
         }
 

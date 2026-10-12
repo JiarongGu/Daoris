@@ -47,6 +47,13 @@ public sealed partial class SessionTrees
         // TREEFOLLOW1: a tree its agent moved onto a branch of its own is judged by what that branch holds beyond every other.
         var own = await OwnBranchOfAsync(tree, ct).ConfigureAwait(false);
         var work = new TreeWork(await UnlandedAsync(tree, judged ?? "HEAD", ct, own).ConfigureAwait(false), uncommitted) { Branch = own };
+        // PROCESS1b-ii (point 3): a squashing landing's record holds them, as the branch a landing made holds its commits by ancestry.
+        if (work.Commits is > 0 && judged is not null
+            && await SquashedHolderAsync(tree, Owner(tree).Repository, judged, ct).ConfigureAwait(false) is not null)
+        {
+            return work with { Commits = 0 };
+        }
+
         // SQUASHTIDY1b: a squash merge or a cherry-pick holds commits ancestry cannot see, and landing them again would make a
         // branch of work already there.
         return work.Commits is > 0 && judged is not null && await HeldWorkAsync(tree, judged, ct).ConfigureAwait(false) is { } found

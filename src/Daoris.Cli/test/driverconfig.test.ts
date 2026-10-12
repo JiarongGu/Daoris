@@ -641,6 +641,87 @@ test('a ticket\'s key is read as the driver reads it: an empty one is none, and 
   fx.cleanup();
 });
 
+/**
+ * PROCESS1b-ii (D164's amendment point 2): a branch rule may ask for `squash`, Accept making the pull request's branch one
+ * commit. 🔴 A TWIN with the driver's `LandingRules.Problem` and its reading of `driver.json`: `QuestNameTests.cs` holds these
+ * two tables, row for row.
+ */
+const SQUASH_SHAPES: [form: string, pattern: string | null, squash: boolean, problem: string | null][] = [
+  ['branch', 'feature/{ticket}-{slug}', true, null],
+  ['branch', 'feature/{quest}-{slug}', false, null],
+  ['merge', null, true, 'only a branch rule squashes'],
+  ['merge', null, false, null],
+];
+
+/** What the file says of `squash`, read: absent is off, only JSON `true` is on, and a merge carrying it is not read at all. */
+const SQUASH_ROWS: [name: string, file: string, map: string, key: string, expected: 'on' | 'off' | 'none'][] = [
+  ['absent is off', '{"landings":{"engine":{"form":"branch","pattern":"feature/{quest}"}}}', 'landings', 'engine', 'off'],
+  ['true on a branch rule is on', '{"landings":{"engine":{"form":"branch","pattern":"feature/{ticket}-{slug}","squash":true}}}', 'landings', 'engine', 'on'],
+  ['text is not true', '{"landings":{"engine":{"form":"branch","pattern":"feature/{quest}","squash":"true"}}}', 'landings', 'engine', 'off'],
+  ['a merge carrying it is not read', '{"landings":{"engine":{"form":"merge","squash":true}}}', 'landings', 'engine', 'none'],
+  ['a workspace\'s rule carries it', '{"workspaceLandings":{"aurora":{"form":"branch","pattern":"review/{session}","autoAccept":true,"squash":true}}}', 'workspaceLandings', 'aurora', 'on'],
+];
+
+test('only a branch rule squashes (the twin\'s shapes)', () => {
+  for (const [form, pattern, squash, problem] of SQUASH_SHAPES) {
+    const said = landingProblem({ form, ...(pattern ? { pattern } : {}), ...(squash ? { squash } : {}) });
+    if (problem === null) assert.equal(said, null, JSON.stringify([form, pattern, squash]));
+    else assert.ok(said?.includes(problem), `${JSON.stringify([form, pattern, squash])}: ${said}`);
+  }
+});
+
+test('a squash reads as the driver reads it (the twin\'s table)', () => {
+  const fx = makeFixture('driver-landing-squash-read');
+  for (const [name, file, map, key, expected] of SQUASH_ROWS) {
+    writeFileSync(at(fx), file, 'utf8');
+    const choices = readDriverChoices(at(fx));
+    const rule = (map === 'workspaceLandings' ? choices.workspaceLandings : choices.landings)[key];
+    assert.equal(rule === undefined ? 'none' : rule.squash ? 'on' : 'off', expected, name);
+  }
+  fx.cleanup();
+});
+
+test('the driver’s squash tables are these tables, row for row and in this order', () => {
+  const source = readFileSync(driverTestFile('QuestNameTests.cs'), 'utf8').replace(/\r\n/g, '\n');
+  assert.deepEqual(csharpRows(source, 'Only_a_branch_rule_squashes', {}, 'QuestNameTests'), SQUASH_SHAPES);
+  assert.deepEqual(csharpRows(source, 'Squash_reads_as_the_cli_reads_it', {}, 'QuestNameTests'), SQUASH_ROWS);
+});
+
+test('landing --squash says Accept makes one commit, is written after the automatic acceptance, listed, and survives other verbs (PROCESS1b-ii)', () => {
+  const fx = makeFixture('driver-landing-squash');
+
+  const said = run(['landing', '--workspace', 'aurora', 'branch', 'feature/{ticket}-{slug}', '--auto-accept', '--squash'], at(fx));
+  assert.match(said.out, /Squashed: Accept makes the pull request's branch one commit/);
+  assert.match(said.out, /`user\.name` and `user\.email`/);
+  assert.deepEqual(readDriverChoices(at(fx)).workspaceLandings, {
+    aurora: { form: 'branch', pattern: 'feature/{ticket}-{slug}', autoAccept: true, squash: true },
+  });
+  // The same key in the same place the driver writes it: after the automatic acceptance.
+  assert.match(readFileSync(at(fx), 'utf8'), /"autoAccept": true,\s*"squash": true/);
+  assert.match(run(['list'], at(fx)).out, /landing\s+workspace aurora\s+branch feature\/\{ticket\}-\{slug\}, accept automatically, squash/);
+
+  run(['cap', '2'], at(fx));
+  assert.equal(readDriverChoices(at(fx)).workspaceLandings.aurora?.squash, true, 'another verb keeps it');
+
+  // `--no-squash` says off out loud: a repository's own rule replaces its workspace's whole, the squash with it.
+  const plain = run(['landing', 'engine', 'branch', 'feature/{ticket}-{slug}', '--no-squash'], at(fx));
+  assert.match(plain.out, /the session's own commits/);
+  assert.deepEqual(readDriverChoices(at(fx)).landings, { engine: { form: 'branch', pattern: 'feature/{ticket}-{slug}' } });
+  assert.equal(JSON.parse(readFileSync(at(fx), 'utf8')).landings.engine.squash, undefined);
+  fx.cleanup();
+});
+
+test('landing refuses a merge that squashes, and both squash flags, and writes nothing', () => {
+  const fx = makeFixture('driver-landing-squash-refused');
+
+  assert.match(captureError(() => run(['landing', 'engine', 'merge', '--squash'], at(fx))).message,
+    /only a branch rule squashes/);
+  assert.match(captureError(() => run(['landing', 'engine', 'branch', 'review/{session}', '--squash', '--no-squash'], at(fx))).message,
+    /`--squash` or `--no-squash`/);
+  assert.deepEqual(readDriverChoices(at(fx)).landings, {});
+  fx.cleanup();
+});
+
 test('the landing rules survive edits by verbs that do not know them, and one that could not land is not read', () => {
   const fx = makeFixture('driver-landing-preserve');
   writeFileSync(at(fx), JSON.stringify({
