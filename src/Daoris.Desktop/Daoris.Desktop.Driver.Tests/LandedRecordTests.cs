@@ -234,6 +234,34 @@ public sealed class LandedRecordTests : IDisposable
     }
 
     /// <summary>
+    /// PROCESS1b-ii (D164's PROCESS1b-ii note point 3): a squashing landing keeps the session tip it squashed, which proves the
+    /// session landed; a chain's later squash moves it to the new tip and keeps it on its advance; a fast-forward keeps the one it
+    /// had; and a record from before squashes has none, which proves nothing.
+    /// </summary>
+    [Fact]
+    public void A_squashed_tip_round_trips_moves_with_an_advance_and_an_older_record_has_none()
+    {
+        var landings = new LandedBranches(_home);
+        landings.Record(Entry("feature/q1-fix", "s1") with { Squashed = "sess0001" });
+
+        Assert.Matches("\"tip\": \"tip00001\",[\\s\\S]*\"squashed\": \"sess0001\"", File.ReadAllText(Path.Combine(_home, LandedBranches.FileName)));
+        Assert.Equal("sess0001", new LandedBranches(_home).Of("engine", "feature/q1-fix")!.Squashed);
+
+        landings.Advanced("engine", "feature/q1-fix", new LandedAdvance("tip00001", "tip00002", At, "s2") { Squashed = "sess0002" });
+        var moved = new LandedBranches(_home).Of("engine", "feature/q1-fix")!;
+        Assert.Equal(("tip00002", "sess0002"), (moved.Tip, moved.Squashed));
+        Assert.Equal("sess0002", Assert.Single(moved.Advances).Squashed);
+
+        landings.Advanced("engine", "feature/q1-fix", new LandedAdvance("tip00002", "tip00003", At, "s3"));
+        Assert.Equal("sess0002", new LandedBranches(_home).Of("engine", "feature/q1-fix")!.Squashed);
+
+        landings.Record(Entry("feature/q2-fix", "s4"));
+        Assert.DoesNotContain("\"squashed\"", File.ReadAllText(Path.Combine(_home, LandedBranches.FileName))
+            .Split("feature/q2-fix")[1], StringComparison.Ordinal);
+        Assert.Null(new LandedBranches(_home).Of("engine", "feature/q2-fix")!.Squashed);
+    }
+
+    /// <summary>
     /// PLUGHOOK1a (D148 point 6, design §2.5): the entry keeps the latest answer about its pull request with who answered and
     /// when, the latest failed ask beside it, the session branches removed on its word, and a removal on it; each round trips,
     /// a trace takes them as a standing entry does, and a record from before keeps none of them.

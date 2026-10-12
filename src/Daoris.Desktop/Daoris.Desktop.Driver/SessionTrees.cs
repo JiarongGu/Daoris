@@ -488,6 +488,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         }
 
         TreeLanding landed;
+        // The session tip a squash made the branch's commit from (PROCESS1b-ii): the tidy's proof of what the landing holds.
+        string? squashedTip = null;
         if (landing.Rule.Form != LandingForm.Branch)
         {
             // A name entered where nothing is branched is refused, not ignored (LANDNAME1a): the person would think it was used.
@@ -507,8 +509,9 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
 
             var branched = await BranchAsync(full, workspace, repository,
                 BranchNamed(subject, landing.Rule, repository), handedOn: plugin is not null, ct,
-                entered: subject.EnteredName is not null).ConfigureAwait(false);
+                entered: subject.EnteredName is not null, squash: landing.Rule.Squash ? subject : null).ConfigureAwait(false);
             landed = branched.Landing;
+            squashedTip = landed.Landed ? branched.Squashed : null;
             // Recorded the moment it exists (WSR5): the branch is Daoris's to judge and to hand on only
             // because this line wrote it down, at the commit it was made at.
             var tip = branched.Commits.Count > 0 ? branched.Commits[^1].Sha : null;
@@ -519,6 +522,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                     new LandedAdvance(advancedFrom, tip, DateTimeOffset.UtcNow, subject.Session)
                     {
                         AcceptedBy = acceptedBy, Review = review?.Landing, Opinion = gate?.Opinion.Landing, Workflow = named?.Record,
+                        // The record moves to the session tip this advance squashed (PROCESS1b-ii point 4); a fast-forward keeps it.
+                        Squashed = branched.Squashed,
                     }));
             }
             else if (landed.Landed && tip is not null)
@@ -539,6 +544,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                     Opinion = gate?.Opinion.Landing,
                     // The named version that decided (WORKFLOW1f, the workflow design §5.5); none under Current.
                     Workflow = named?.Record,
+                    // The session tip its one commit was made from (PROCESS1b-ii point 3): what proves the session landed.
+                    Squashed = branched.Squashed,
                 }));
             }
 
@@ -612,7 +619,9 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             ? landed.Branch
             : (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         if (into is null) return landed with { Tidied = [] };
-        var held = await TidyHeldAsync(root, repository, workspace, $"refs/heads/{into}", pressedOut.Trim(), inUse, ct).ConfigureAwait(false);
+        // A squash holds no session commit, so what it squashed is what it holds (PROCESS1b-ii point 3).
+        var held = await TidyHeldAsync(root, repository, workspace, squashedTip ?? $"refs/heads/{into}", pressedOut.Trim(), inUse, ct)
+            .ConfigureAwait(false);
         return landed with { Message = landed.Message + TidiedSaid(held, into), Tidied = held };
     }
 
@@ -906,6 +915,13 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         var unlanded = log.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (unlanded.Length > 0)
         {
+            // PROCESS1b-ii (point 3): a squashing landing's record holds them, as the branch it made would by ancestry, so the row
+            // is landed where that branch is, with no ref to keep.
+            if (await SquashedHolderAsync(root, repository, tip, ct).ConfigureAwait(false) is { } squashedOn)
+            {
+                return (Item(SweepKind.Landed, unlanded.Length, squashedOn.Branch, string.Join('\n', unlanded.Take(3))), tip);
+            }
+
             // PLUGHOOK1a: a squash left these commits on no branch of the person's, and a completed pull request carried them.
             // A branch checked out outside the trees home is the person's to move, so it is never taken on the platform's word.
             if ((tree is null || Holds(tree)) && await CarrierOfAsync(root, tip, carriers, ct).ConfigureAwait(false) is { } carrier)
@@ -952,6 +968,9 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     {
         public IReadOnlyList<LandingCommit> Commits => Carried ?? [];
 
+        /// <summary>The session's tip squashed into the branch's new commit (PROCESS1b-ii), which the record keeps; null where nothing was squashed.</summary>
+        public string? Squashed { get; init; }
+
         public static implicit operator Branched(TreeLanding refused) => new(refused);
     }
 
@@ -964,8 +983,13 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     /// name already there is refused and never moved — it may be somebody's. Nothing pushes (D87).
     /// </remarks>
     /// <param name="handedOn">A plugin pushes it next (D100), so the sentence does not tell the person to.</param>
+    /// <param name="squash">
+    /// The session the rule squashes (PROCESS1b-ii), whose title and id the one commit's message says; null where the rule keeps
+    /// the session's own commits. A tree on a branch of its own is never squashed.
+    /// </param>
     private async Task<Branched> BranchAsync(
-        string full, string workspace, string repository, string name, bool handedOn, CancellationToken ct, bool entered = false)
+        string full, string workspace, string repository, string name, bool handedOn, CancellationToken ct, bool entered = false,
+        LandingSubject? squash = null)
     {
         if (!Holds(full))
         {
@@ -1045,6 +1069,12 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 + "would take. Change the pattern with `daoris driver landing`.");
         }
 
+        // PROCESS1b-ii (point 1): the squash is a commit Daoris makes, so git's own identity here makes it, asked before anything is.
+        if (squash is not null && await IdentityProblemAsync(root, repository, ct).ConfigureAwait(false) is { } nobody)
+        {
+            return new TreeLanding(false, nobody);
+        }
+
         var (exists, standing, _) = await WorkingTree.GitAsync(
             root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{name}^{{commit}}"], ct).ConfigureAwait(false);
         if (exists == 0 && entered && Recorded.Of(repository, name) is null)
@@ -1056,11 +1086,36 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
 
         if (exists == 0)
         {
-            // A chain's later done moves the chain's branch on (LAND2c, D149): only one Daoris made, as a fast-forward.
-            return await AdvanceAsync(root, repository, name, standing.Trim(), branch, line, commits, handedOn, ct).ConfigureAwait(false);
+            // A chain's later done moves the chain's branch on (LAND2c, D149): only one Daoris made, as a fast-forward, or under
+            // a squash by one more commit (PROCESS1b-ii point 4).
+            return await AdvanceAsync(root, repository, name, standing.Trim(), branch, line, commits, handedOn, ct, against, squash)
+                .ConfigureAwait(false);
         }
 
-        var (code, _, err) = await WorkingTree.GitAsync(root, ["branch", name, branch], ct).ConfigureAwait(false);
+        // PROCESS1b-ii (points 1 and 2): one commit of the session's tip's tree, its parent where the session left the line, and the
+        // branch made at it; the session's own branch is left as it is, and the record keeps the tip squashed.
+        var start = branch;
+        string? squashed = null;
+        IReadOnlyList<LandingCommit> carried = commits;
+        if (squash is not null)
+        {
+            var tip = commits[^1].Sha;
+            var (baseCode, mergeBase, baseErr) = await WorkingTree.GitAsync(root, ["merge-base", against, tip], ct).ConfigureAwait(false);
+            if (baseCode != 0 || mergeBase.Trim().Length == 0)
+            {
+                return new TreeLanding(false, $"git cannot say where `{branch}` left `{line ?? "HEAD"}`, so its work could not be squashed: "
+                    + $"{FirstLine(baseErr)} Nothing was landed.");
+            }
+
+            var (made, why) = await SquashAsync(root, tip, mergeBase.Trim(), SquashMessage.Of(squash.Title, commits, squash.Session), ct)
+                .ConfigureAwait(false);
+            if (made is null) return new TreeLanding(false, $"git would not make the squashed commit for `{name}`: {why} Nothing was landed.");
+            start = made;
+            squashed = tip;
+            carried = [new LandingCommit(made, SquashMessage.Subject(squash.Title, commits, squash.Session))];
+        }
+
+        var (code, _, err) = await WorkingTree.GitAsync(root, ["branch", name, start], ct).ConfigureAwait(false);
         if (code != 0)
         {
             return new TreeLanding(false, $"git would not make `{name}`: {FirstLine(err)}");
@@ -1069,10 +1124,12 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         var pushIt = handedOn ? "" : $" Push it and open the pull request from there: `git push -u origin {name}`.";
         return new Branched(
             new TreeLanding(true,
-                $"put the work on `{name}` — {commits.Count} commit(s) from `{line ?? "HEAD"}`.{pushIt} Nothing was merged "
+                $"put the work on `{name}` — {commits.Count} commit(s) from `{line ?? "HEAD"}`"
+                + (squashed is null ? "" : ", squashed into one commit") + $".{pushIt} Nothing was merged "
                 + $"and the checkout was not touched.{TreeStays}",
                 name),
-            root, line, commits, branch);
+            root, line, carried, branch)
+        { Squashed = squashed };
     }
 
     /// <summary>
@@ -1093,14 +1150,22 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     /// <param name="standsAt">The commit the branch stands at, read a moment ago.</param>
     /// <param name="branch">The session's own branch.</param>
     /// <param name="commits">What the branch would hold beyond the line once moved: what a plugin is told, as at a first landing.</param>
+    /// <param name="against">The line's form the commits were counted from, which a squash's branch is counted from again.</param>
+    /// <param name="squash">
+    /// The session the rule squashes (PROCESS1b-ii point 4): the advance is one more commit on the branch, its tree the session's
+    /// tip's, its parent the branch's tip, its message only what was added since the recorded tip; null is the fast-forward.
+    /// </param>
     private async Task<Branched> AdvanceAsync(
         string root, string repository, string name, string standsAt, string branch, string? line,
-        IReadOnlyList<LandingCommit> commits, bool handedOn, CancellationToken ct)
+        IReadOnlyList<LandingCommit> commits, bool handedOn, CancellationToken ct, string? against = null, LandingSubject? squash = null)
     {
         var recorded = Recorded.Of(repository, name);
         var (_, headOut, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}^{{commit}}"], ct)
             .ConfigureAwait(false);
         var head = headOut.Trim();
+        // What the session's work must grow from: the tip the record says was squashed where it says one (point 4), else the tip
+        // the branch was made or last moved at, its commits the session's own.
+        var grewFrom = squash is not null ? recorded?.Squashed ?? recorded?.Tip : recorded?.Tip;
 
         // Each fact read only where the one before it allowed an advance, in the order the refusals are said.
         string? checkedOut = null;
@@ -1119,12 +1184,12 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
 
             if (checkedOut is null && completed is null && head.Length > 0)
             {
-                var (ancestor, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", recorded.Tip, head], ct)
+                var (ancestor, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", grewFrom!, head], ct)
                     .ConfigureAwait(false);
                 descends = ancestor == 0;
                 if (descends)
                 {
-                    var (_, count, _) = await WorkingTree.GitAsync(root, ["rev-list", "--count", $"{recorded.Tip}..{head}"], ct)
+                    var (_, count, _) = await WorkingTree.GitAsync(root, ["rev-list", "--count", $"{grewFrom}..{head}"], ct)
                         .ConfigureAwait(false);
                     newer = int.TryParse(count.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var n) ? n : 0;
                 }
@@ -1135,6 +1200,12 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             is { } refused)
         {
             return refused;
+        }
+
+        if (squash is not null)
+        {
+            return await AdvanceSquashedAsync(root, name, standsAt, branch, line, head, grewFrom!, handedOn, against, squash, ct)
+                .ConfigureAwait(false);
         }
 
         // Compare-and-swap from the tip judged: git refuses where the branch moved since, and nothing is forced.
@@ -1238,6 +1309,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         // The branch the session's agent made where the tree is on one (TREEFOLLOW1): it goes with no tree, whatever force says.
         var madeBy = detached ? null : await OwnBranchOfAsync(full, ct).ConfigureAwait(false);
         ContentHold? held = null;
+        LandedBranch? squashedOn = null;
         string? judged = null;
         string? kept = null;
 
@@ -1300,8 +1372,10 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 }
 
                 // SQUASHTIDY1: a squash merge or a cherry-pick holds the work under commits of its own, which ancestry cannot see;
-                // the content can. Work held nowhere still refuses, and force stays its door.
+                // the content can. Before it, a squashing landing's record, which vouches as ancestry would (PROCESS1b-ii point 3).
+                // Work held nowhere still refuses, and force stays its door.
                 if (!string.IsNullOrWhiteSpace(unmerged)
+                    && (squashedOn = await SquashedHolderAsync(full, repository, judged, ct).ConfigureAwait(false)) is null
                     && (held = await HeldByContentAsync(full, judged, line, LandedHere(repository), ct).ConfigureAwait(false)) is null)
                 {
                     return new(false,
@@ -1381,7 +1455,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
 
         // How the work was found held, where ancestry could not say (SQUASHTIDY1), and where its commits stay (SQUASHTIDY1c): the
         // sentence the review's Discard shows as it is.
-        return new(true, $"removed the session tree at {path} (branch `{branch}`)" + (held is null ? "." : $": {held.Said}.")
+        return new(true, $"removed the session tree at {path} (branch `{branch}`)"
+            + (held is not null ? $": {held.Said}." : squashedOn is not null ? $": {SquashedSaid(squashedOn)}." : ".")
             + (left is null ? "" : $" {left}") + (kept is null ? "" : $" {ContentHold.KeptAt(named, kept)}"));
     }
 
