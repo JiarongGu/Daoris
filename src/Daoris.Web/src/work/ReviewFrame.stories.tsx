@@ -188,9 +188,9 @@ function Dirty({ committed = true }: { committed?: boolean }) {
           onViewed={(path, next) => setViewed((was) => ({ ...was, [path]: next }))}
           uncommitted={{
             files: [
-              { path: 'src/report/draft.ts', status: 'M', added: 3, removed: 1, patch: '@@ -1 +1,3 @@\n-sticky=false\n+sticky\n+pinned\n+totals\n' },
-              { path: 'src/report/notes.md', status: 'A', added: 12, removed: 0, patch: '@@ -0,0 +1 @@\n+# Notes\n' },
-              { path: 'assets/export.bin', status: 'A', added: null, removed: null, patch: '' },
+              { path: 'src/report/draft.ts', status: 'modified', added: 3, removed: 1, patch: '@@ -1 +1,3 @@\n-sticky=false\n+sticky\n+pinned\n+totals\n' },
+              { path: 'src/report/notes.md', status: 'added', added: 12, removed: 0, patch: '@@ -0,0 +1 @@\n+# Notes\n' },
+              { path: 'assets/export.bin', status: 'added', added: null, removed: null, patch: '' },
             ],
             truncated: false,
           }}

@@ -89,9 +89,6 @@ export function ReviewHead({ title, repository, branch, base, commits, refreshin
   );
 }
 
-/** An uncommitted file's status as git's letter, where the host names it so (an untracked file is `A`): the row's own words. */
-const STATUS_WORD: Record<string, string> = { A: 'added', M: 'modified', D: 'deleted', R: 'renamed', C: 'copied' };
-
 /**
  * What the review read: the count and how many the reader has viewed, the layout, every file in one scroll (a
  * multibuffer, IDE study §2) and the host's bound, said as it said it. The reader's marks arrive as props: which file
@@ -174,7 +171,7 @@ export function ReviewFiles({ files, open, viewed, layout, onLayout, onToggle, o
                   <DiffFileRow
                     key={key}
                     uncommitted
-                    file={{ ...file, status: STATUS_WORD[file.status] ?? file.status }}
+                    file={file}
                     open={open[key] ?? false}
                     viewed={viewed[key] ?? false}
                     layout={layout}

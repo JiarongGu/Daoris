@@ -160,7 +160,7 @@ describe('the review of a tree holding uncommitted work', () => {
   const UNCOMMITTED = {
     files: [
       { path: 'src/report/draft.ts', status: 'modified', added: 2, removed: 1, patch: '@@ -1 +1,2 @@\n-x\n+y\n+z' },
-      { path: 'assets/dump.bin', status: 'A', added: null, removed: null, patch: '' },
+      { path: 'assets/dump.bin', status: 'added', added: null, removed: null, patch: '' },
     ],
     truncated: false,
   };
@@ -197,7 +197,8 @@ describe('the review of a tree holding uncommitted work', () => {
   });
 
   it('says the session committed nothing yet, and never "Nothing landed", where only uncommitted work exists', async () => {
-    drive({ files: [], uncommitted: UNCOMMITTED });
+    // Nothing committed answers a tree review with no files and an empty base: not a refusal.
+    drive({ files: [], base: '', uncommitted: UNCOMMITTED });
     pane();
 
     expect(await screen.findByText('Not committed yet · 2 files')).toBeInTheDocument();
