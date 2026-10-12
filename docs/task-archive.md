@@ -13783,3 +13783,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **BRWHINT1b — a driven session's agent is told the browser it was handed** (driver). A chat's is told (BRWHINT1a); a driven session's is not, since its prompt composers (the quest's target prompt, `Adapters.cs` ~770-830, `Intake.cs` ~400) and their goldens say nothing of a handed browser. Say it there as the chat's line says it (`InAppBrowserServers.Told`), and only where a server that drives Daoris's browser was handed. D78's BRWHINT1a note; the goldens, and a driven session's prompt in a test.
 
 **Outcome** 2026-10-12: a quest's session and an intake read BRWHINT1a's line as a block of their own in their prompt, only where a browser-driving server was handed; a resumed run says nothing, the transcript preamble is unchanged, and the goldens did not move. Detail: D78's BRWHINT1b note.
+
+## SESSUX1h3c — read the room's look time on the install (2026-10-12, D161)
+
+> - [ ] **SESSUX1h3c — read the room's look time on the install** (parent; after a republish). SESSUX1h3b logs `help.room.look` (`ms`, `slow` over 500 ms, `read`) in the home's `logs/<date>.<source>.jsonl` on every room write. Read a day of it on the installed machine; if it is slow, propose keeping the last look for a short span (its groups then stale by that span). First reading, 2026-10-11: one look, 855 ms (`slow`), at the window's cold start. D161's SESSUX1h3 and SESSUX1h3b notes.
+
+**Outcome** 2026-10-12: a day read: four looks, one per conversation opened (855, 540, 530, 12 ms), against openings of 3.5 to 13 s. Under a tenth of a start, once per conversation: nothing is kept, the log line stays. Detail: D161's SESSUX1h3c note.

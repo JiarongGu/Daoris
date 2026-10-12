@@ -164,7 +164,6 @@ Contracts: session-management (D126 §9), session-messages (D137), answer-contin
 pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
 
 - [ ] **QUESTREBASE1 — pure rebase planner** (service; consider). Preserve operation identity, accepted-before-pending order and transaction. D69/D79; unchanged sync suite and loss tests.
-- [ ] **SESSUX1h3c — read the room's look time on the install** (parent; after a republish). SESSUX1h3b logs `help.room.look` (`ms`, `slow` over 500 ms, `read`) in the home's `logs/<date>.<source>.jsonl` on every room write. Read a day of it on the installed machine; if it is slow, propose keeping the last look for a short span (its groups then stale by that span). First reading, 2026-10-11: one look, 855 ms (`slow`), at the window's cold start. D161's SESSUX1h3 and SESSUX1h3b notes.
 - [ ] **MSG1d2 — queued chat survives restart** (driver/web; with MSG1c). Record ids/reach/withdrawals; take by id. Messages §3.1.
 - [ ] **MSG1h — Codex next-step words** (driver; after measured STEER3). Messages §8.
 - [ ] **MSG1i — native next-step words** (driver; after measured STEER3). Messages §8.
