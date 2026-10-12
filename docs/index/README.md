@@ -50,7 +50,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 238 | 4571 |
 | `src/Daoris.Web/src/work/WorkFrame.tsx` | 98 | 1825 |
 | `src/Daoris.Web/src/work/attention.test.ts` | 42 | 857 |
-| `src/Daoris.Web/src/work/conversation.test.ts` | 44 | 871 |
+| `src/Daoris.Web/src/work/conversation.test.ts` | 44 | 869 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 877 |
 | `src/Daoris.Web/src/work/noteLines.test.ts` | 61 | 915 |
 
@@ -143,11 +143,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/src/plugins.ts` | 69 | 1383 |
 | `src/Daoris.Cli/src/toolchain.ts` | 143 | 2789 |
 | `src/Daoris.Cli/src/workflowdoor.ts` | 46 | 836 |
-| `src/Daoris.Cli/test/desktop-publish.test.ts` | 56 | 1006 |
+| `src/Daoris.Cli/test/desktop-publish.test.ts` | 55 | 1007 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 43 | 826 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 46 | 821 |
-| `src/Daoris.Cli/test/driverconfig.test.ts` | 121 | 2245 |
-| `src/Daoris.Cli/test/merge-branch.test.ts` | 179 | 2784 |
+| `src/Daoris.Cli/test/driverconfig.test.ts` | 120 | 2238 |
+| `src/Daoris.Cli/test/merge-branch.test.ts` | 185 | 2881 |
 | `src/Daoris.Cli/test/rotation-use.test.ts` | 44 | 550 |
 | `src/Daoris.Cli/test/setup-kit.test.ts` | 52 | 955 |
 | `src/Daoris.Cli/test/toolchain.test.ts` | 100 | 1931 |
@@ -158,12 +158,12 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `tools/deployment-rehearsal.mjs` | 99 | 1736 |
-| `tools/desktop-publish.mjs` | 58 | 1047 |
+| `tools/desktop-publish.mjs` | 59 | 1051 |
 | `tools/desktop.mjs` | 51 | 1052 |
 | `tools/family-rehearsal.mjs` | 339 | 5982 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 131 | 2394 |
-| `tools/orient-index.mjs` | 65 | 1409 |
+| `tools/merge-branch.mjs` | 131 | 2392 |
+| `tools/orient-index.mjs` | 65 | 1420 |
 | `tools/rehearsal-kit.mjs` | 42 | 812 |
 | `tools/usage-report.mjs` | 57 | 1254 |
 
