@@ -22,35 +22,43 @@
 //
 // Absence from the order is do-not-rotate (§3.1): one list, not a list and a mark. TOOL4f's walk reads it.
 //
-// How a scope's list is used (TOOL6a; D130 §2, §3.1, §4.6, §14 as §16.6 amends them) sits beside it: `rotationUse` for
-// the machine and `workspaceRotationUse` for one workspace, per agent — *use accounts* (`use`: `goal`, make the most of
-// them, or `order`, one by one in order), *keep for conversations* (`keep`) and *switch before the limit* (`early`,
-// `near`):
+// How a scope's list is used (TOOL6a; D130 §2, §3.1, §4.6, §14 as §16.6 amends them; D165 point 2 and the switch
+// design §2 and §6, SWITCH1a) sits beside it: `rotationUse` for the machine and `workspaceRotationUse` for one workspace,
+// per agent — *use accounts* (`use`: `goal`, make the most of them, or `order`, one by one in order), *keep for
+// conversations* (`keep`), and when to switch (`switch`: `smart`, Daoris's curve, `curve`, the person's own, or `off`;
+// and `curve`, the person's points per window):
 //
-//   { "rotationUse": { "claude-code": { "keep": "account-3" } },
-//     "workspaceRotationUse": { "work": { "claude-code": { "use": "order", "early": false } } } }
+//   { "rotationUse": { "claude-code": { "switch": "curve", "curve": { "weekly": [[0, 30], [50, 70], [100, 100]] } } },
+//     "workspaceRotationUse": { "work": { "claude-code": { "use": "order", "switch": "off" } } } }
 //
-// The driver's twin is `Harnesses.Use.cs` (`RotationUse`, `UseEntry`, `ResolveScope`, `WithUse`, `ScopeProblem`), and
-// `rotation-use.test.ts` holds the tables `RotationUseTwinTests.cs` holds, cell for cell. The rules both keep:
+// The driver's twin is `Harnesses.Use.cs` (`RotationUse`, `UseCurve`, `UseEntry`, `ResolveScope`, `WithUse`,
+// `ScopeProblem`), and both hold the table in `test/fixtures/rotation-use.json`, row for row. The rules both keep:
 //
 //   5. Read: an entry is an object, kept whole but for `prefer` and `parallel`, which §16.6 retired and nothing released
 //      wrote: skipped, and gone at the next write. Each other field is a value this build knows — `use` one of
-//      `USE_MODES`, `early` true or false, `keep` a name (trimmed), `near` a whole percent from 50 to 99 — or one it does
-//      not, which reads as today's default and is SAID; a field this build has no name for is kept and said too, so a
+//      `USE_MODES`, `keep` a name (trimmed), `switch` one of `SWITCHES`, `curve` one `curveProblem` passes — or one it
+//      does not, which reads as today's default and is SAID; a field this build has no name for is kept and said too, so a
 //      newer build's setting outlives this one's save (twins: an editor keeps what it has no field for).
-//   6. Resolved as one scope (§2 rule 1): the workspace's, when it names a default or a list of its own for the agent,
+//   6. The old names read on (D165 §6): `early` true or false and `near` a whole percent from 50 to 99, which only an
+//      older build writes, are taken out and applied as a change would apply them (`UseChange`), over the entry's own
+//      switch and curve: `early: false` is `switch: off`, and `near: N` other than 90 the session window flat at N with
+//      `switch: curve` unless it is off. A value of theirs that does not read is said, and goes.
+//   7. Resolved as one scope (§2 rule 1): the workspace's, when it names a default or a list of its own for the agent,
 //      else the machine's. A scope's settings are read only with its list; with none it is its default alone. A kept
 //      account not in the list is none, and a default outside it leaves the list to win: it begins at its first.
-//   7. Written as chosen: a choice equal to today's default is still written, so a later default never overturns what a
+//   8. Written as chosen: a choice equal to today's default is still written, so a later default never overturns what a
 //      person chose; absence alone means today's default (`USE_DEFAULTS`, the one place they live). Known fields go out
-//      in one order, a value they know normalised, then whatever this build does not know as it was read. A list
-//      cleared takes its scope's settings with it; an account removed is kept nowhere.
-//   8. Refused at a door (§3.1, §4.6): a scope's default and its kept account are of its list, and a kept account leaves
-//      driven work another — the first problem said. Nothing counts accounts: no list is refused for its length.
+//      in one order, a value they know normalised (a curve's windows in `CURVE_WINDOWS`' order, a curve naming none not
+//      at all), then whatever this build does not know as it was read; `early` and `near` never. A list cleared takes its
+//      scope's settings with it; an account removed is kept nowhere.
+//   9. Refused at a door (§3.1, §4.6): a scope's default and its kept account are of its list, and a kept account leaves
+//      driven work another — the first problem said. Nothing counts accounts: no list is refused for its length. A curve
+//      that breaks its rules is refused in `curveProblem`'s sentence, the driver's word for word.
 //
-// The driver's walk reads them (TOOL6b, TOOL6c): `use` and `keep` choose a start's account; `early` and `near` pass an
-// account its agent said is near, where the agent's door carries that word or its own server is asked it (`windows.json`,
-// the toolchain's `windows`; CODEXUSE1).
+// The driver's walk reads them (TOOL6b, TOOL6c): `use` and `keep` choose a start's account; until SWITCH1b moves the walk
+// to the curve, it passes an account its agent said is near by `early` and `near`, derived from the switch and the curve
+// (`RotationUse`), where the agent's door carries that word or its own server is asked it (`windows.json`, the
+// toolchain's `windows`; CODEXUSE1).
 
 import { atName, byName, findName, foldName } from './casefold.ts';
 import { shellWord } from './shellword.ts';
@@ -125,7 +133,7 @@ export function withRotation(
     else delete next[agent];
     return next;
   };
-  // Rule 7 (TOOL6a): a list's settings come with it, so a list cleared takes them too.
+  // Rule 8 (TOOL6a): a list's settings come with it, so a list cleared takes them too.
   const cleared = (next: HarnessSettings) => (kept.length > 0 ? next : withUse(next, agent, null, workspace));
 
   if (!workspace?.trim()) return cleared({ ...settings, rotation: set(settings.rotation) });
@@ -204,7 +212,7 @@ export interface AccountPlace {
 
 /**
  * The workspace an account cannot join, or null where it can: a workspace that names no default and no list of its own for
- * the agent takes this machine's scope (rule 6), so its list is this machine's, and a list of its own would move its starts
+ * the agent takes this machine's scope (rule 7), so its list is this machine's, and a list of its own would move its starts
  * off every account the machine's holds. Null is this machine's list, which any account may join.
  */
 export function joinProblem(settings: HarnessSettings, agent: string, workspace: string | null): { workspace: string } | null {
@@ -255,7 +263,7 @@ export function placesOf(settings: HarnessSettings, agent: string, account: stri
   return places;
 }
 
-// ——— How a scope's list is used (TOOL6a; D130 §2, §14, §16.6): rules 5 to 8 above.
+// ——— How a scope's list is used (TOOL6a; D130 §2, §14, §16.6; D165 §6): rules 5 to 9 above.
 
 /**
  * *Use accounts*' choices (§16.6): `goal`, make the most of them (§16.3, the driver's walk), and `order`, one by one in
@@ -264,21 +272,68 @@ export function placesOf(settings: HarnessSettings, agent: string, account: stri
 export const USE_MODES = ['goal', 'order'] as const;
 export type UseMode = (typeof USE_MODES)[number];
 
+/**
+ * When to switch (D165 point 2): `smart`, Daoris's curve; `curve`, the person's own points; `off`, no switch while a
+ * session runs. The driver's `RotationUse.Switches`.
+ */
+export const SWITCHES = ['smart', 'curve', 'off'] as const;
+export type Switch = (typeof SWITCHES)[number];
+
+/** A curve's windows, as `windows.json` names them (the switch design §5): the five-hour window and the week. */
+export const CURVE_WINDOWS = ['session', 'weekly'] as const;
+export type CurveWindow = (typeof CURVE_WINDOWS)[number];
+
+/** A window's curve has one point to this many (the switch design §6). The driver's `UseCurve.MostPoints`. */
+export const CURVE_MOST_POINTS = 12;
+
+/** A point of a curve: how much of the window's time has passed, and the most of it an account should have used by then. */
+export type CurvePoint = [elapsed: number, used: number];
+
+/**
+ * The person's curve (D165 point 2): each window it names, its points joined by straight lines; a window left out takes
+ * the smart curve's. Kept whatever `switch` says, and read only under `curve`.
+ */
+export type Curve = Partial<Record<CurveWindow, CurvePoint[]>>;
+
+/**
+ * The smart curve's five-hour window, flat (D165 point 2; D130 §6's 90): what *near* meant where none was set, and the
+ * old name's value that reads as no curve. The driver's `RotationUse.SmartSession`.
+ */
+export const SMART_SESSION = 90;
+
 /** How one scope's list is used, each setting's value as a start reads it. */
 export interface RotationUse {
   use: UseMode;
   /** The account kept for conversations, or none. */
   keep: string | null;
-  /** *Switch before the limit*. */
+  /** When to switch. */
+  switch: Switch;
+  /** The person's curve, its windows in `CURVE_WINDOWS`' order; none is `{}`. */
+  curve: Curve;
+  /** Derived, as the walk reads it until SWITCH1b (D165 §6): *switch before the limit*, the switch not `off`. */
   early: boolean;
-  /** Where *switch before the limit* calls an account near, as a percent of a window, where its agent gives only a number. */
+  /**
+   * Derived, as the walk reads it until SWITCH1b: where an account is near, as a percent of a window, where its agent gives
+   * only a number — the session window's one point under `curve`, else the smart curve's 90.
+   */
   near: number;
 }
 
-/** Today's defaults (D130 §16.6), and the one place they live: what absence means for each setting. */
-export const USE_DEFAULTS: Readonly<RotationUse> = Object.freeze({ use: 'goal', keep: null, early: true, near: 90 });
+/** The settings as chosen, the walk's two read beside them (D165 §6). */
+function useOf(chosen: Pick<RotationUse, UseField>): RotationUse {
+  const session = chosen.curve.session;
+  return {
+    ...chosen,
+    early: chosen.switch !== 'off',
+    near: chosen.switch === 'curve' && session?.length === 1 ? session[0]![1] : SMART_SESSION,
+  };
+}
 
-/** *Near*'s range (§14): a whole percent from the one to the other. */
+/** Today's defaults (D130 §16.6, D165 point 2), and the one place they live: what absence means for each setting. */
+export const USE_DEFAULTS: Readonly<RotationUse> = Object.freeze(
+  useOf({ use: 'goal', keep: null, switch: 'smart', curve: Object.freeze({}) }));
+
+/** *Near*'s range (§14), which the old name `--near` still takes: a whole percent from the one to the other. */
 export const NEAR_LOWEST = 50;
 export const NEAR_HIGHEST = 99;
 
@@ -289,8 +344,12 @@ export type UseEntry = Record<string, unknown>;
 export type Uses = Record<string, UseEntry>;
 
 /** The settings this build knows, in the order they are written. */
-export const USE_FIELDS = ['use', 'keep', 'early', 'near'] as const;
+export const USE_FIELDS = ['use', 'keep', 'switch', 'curve'] as const;
 type UseField = (typeof USE_FIELDS)[number];
+
+/** The old names (D130 §16.6), which D165 §6 replaced: read on (rule 6), and never written. */
+export const OLD_FIELDS = ['early', 'near'] as const;
+type OldField = (typeof OLD_FIELDS)[number];
 
 /** The settings §16.6 retired, which nothing released wrote: skipped by the reader, so gone at the next write. */
 export const RETIRED_FIELDS: readonly string[] = ['prefer', 'parallel'];
@@ -299,6 +358,12 @@ export const RETIRED_FIELDS: readonly string[] = ['prefer', 'parallel'];
 const READ_FIELD: { [F in UseField]: (raw: unknown) => RotationUse[F] | undefined } = {
   use: (raw) => (typeof raw === 'string' && (USE_MODES as readonly string[]).includes(raw) ? raw as UseMode : undefined),
   keep: (raw) => (typeof raw === 'string' && raw.trim().length > 0 ? raw.trim() : undefined),
+  switch: (raw) => (typeof raw === 'string' && (SWITCHES as readonly string[]).includes(raw) ? raw as Switch : undefined),
+  curve: (raw) => readCurve(raw),
+};
+
+/** Each old name's reading (rule 6): its value, or `undefined` where it does not read. */
+const READ_OLD: { [F in OldField]: (raw: unknown) => UseChange[F] } = {
   early: (raw) => (typeof raw === 'boolean' ? raw : undefined),
   near: (raw) => (typeof raw === 'number' && Number.isInteger(raw) && raw >= NEAR_LOWEST && raw <= NEAR_HIGHEST ? raw : undefined),
 };
@@ -307,18 +372,86 @@ function isField(name: string): name is UseField {
   return (USE_FIELDS as readonly string[]).includes(name);
 }
 
-/** Rule 5: an entry's settings, today's default where it says nothing or what this build does not know, and those named. */
-export function readUse(entry: UseEntry | undefined): { use: RotationUse; unknown: string[] } {
-  const use: RotationUse = { ...USE_DEFAULTS };
-  const unknown: string[] = [];
-  for (const field of USE_FIELDS) {
-    if (!entry || !Object.hasOwn(entry, field)) continue;
-    const value = READ_FIELD[field](entry[field]);
-    if (value === undefined) unknown.push(field);
-    else (use as unknown as Record<string, unknown>)[field] = value;
+function isOld(name: string): name is OldField {
+  return (OLD_FIELDS as readonly string[]).includes(name);
+}
+
+/**
+ * Rule 9's curve: the first problem with a curve a door is handed, in the sentence both twins say (the shared table's
+ * `refusal` rows, the driver's `UseCurve.Problem`), or null. Window by window in the order written, then point by point:
+ * its shape, elapsed from 0 to 100, used from 0 to 100, elapsed rising, used never falling.
+ */
+export function curveProblem(curve: unknown): string | null {
+  if (!isObject(curve)) return 'A curve is an object of windows, `session` or `weekly`, each a list of points [elapsed, used].';
+  for (const [window, points] of Object.entries(curve)) {
+    if (!(CURVE_WINDOWS as readonly string[]).includes(window)) {
+      return `\`${window}\` is not a window — a curve's windows are \`session\` and \`weekly\`.`;
+    }
+    if (!Array.isArray(points)) return `\`${window}\` is not a list of points [elapsed, used].`;
+    if (points.length < 1 || points.length > CURVE_MOST_POINTS) {
+      return `\`${window}\` has ${points.length} points — a window's curve has one to twelve.`;
+    }
+    let before: CurvePoint | null = null;
+    for (const [index, point] of points.entries()) {
+      const at = index + 1;
+      if (!Array.isArray(point) || point.length !== 2 || !point.every((n) => typeof n === 'number' && Number.isInteger(n))) {
+        return `\`${window}\`'s point ${at} is not two whole numbers [elapsed, used].`;
+      }
+      const [elapsed, used] = point as CurvePoint;
+      if (elapsed < 0 || elapsed > 100) return `\`${window}\`'s point ${at} is at ${elapsed}% of the window's time — elapsed is from 0 to 100.`;
+      if (used < 0 || used > 100) return `\`${window}\`'s point ${at} has used ${used}% — used is from 0 to 100.`;
+      if (before !== null && elapsed <= before[0]) {
+        return `\`${window}\`'s point ${at} is at ${elapsed}% of the window's time, not after point ${at - 1}'s ${before[0]}% — `
+          + 'elapsed rises from point to point.';
+      }
+      if (before !== null && used < before[1]) {
+        return `\`${window}\`'s point ${at} has used ${used}%, less than point ${at - 1}'s ${before[1]}% — used never falls.`;
+      }
+      before = [elapsed, used];
+    }
   }
-  for (const name of Object.keys(entry ?? {})) if (!isField(name)) unknown.push(name);
-  return { use, unknown };
+  return null;
+}
+
+/** A curve as read: its windows in `CURVE_WINDOWS`' order, or `undefined` where it breaks a rule (`curveProblem`). */
+export function readCurve(raw: unknown): Curve | undefined {
+  if (curveProblem(raw) !== null) return undefined;
+  const windows = raw as Record<string, CurvePoint[]>;
+  const curve: Curve = {};
+  for (const window of CURVE_WINDOWS) {
+    if (Object.hasOwn(windows, window)) curve[window] = windows[window]!.map(([elapsed, used]) => [elapsed, used]);
+  }
+  return curve;
+}
+
+/** Rule 6: the old names taken out, and what reads of them applied as a change applies them. */
+function foldedUse(entry: UseEntry): UseEntry {
+  if (!OLD_FIELDS.some((name) => Object.hasOwn(entry, name))) return entry;
+  const { early, near, ...rest } = entry;
+  const change: UseChange = {};
+  const flag = READ_OLD.early(early);
+  const percent = READ_OLD.near(near);
+  if (flag !== undefined) change.early = flag;
+  if (percent !== undefined) change.near = percent;
+  return appliedUse(rest, change);
+}
+
+/** Rules 5 and 6: an entry's settings, today's default where it says nothing or what this build does not know, and those named. */
+export function readUse(entry: UseEntry | undefined): { use: RotationUse; unknown: string[] } {
+  const chosen: Pick<RotationUse, UseField> = { use: USE_DEFAULTS.use, keep: USE_DEFAULTS.keep, switch: USE_DEFAULTS.switch, curve: {} };
+  const unknown: string[] = [];
+  const folded = entry ? foldedUse(entry) : {};
+  for (const field of USE_FIELDS) {
+    if (!Object.hasOwn(folded, field)) continue;
+    const value = READ_FIELD[field](folded[field]);
+    if (value === undefined) unknown.push(field);
+    else (chosen as Record<string, unknown>)[field] = value;
+  }
+  for (const name of OLD_FIELDS) {
+    if (entry && Object.hasOwn(entry, name) && READ_OLD[name](entry[name]) === undefined) unknown.push(name);
+  }
+  for (const name of Object.keys(entry ?? {})) if (!isField(name) && !isOld(name)) unknown.push(name);
+  return { use: useOf(chosen), unknown };
 }
 
 /**
@@ -341,24 +474,29 @@ export function readUseCircles(value: unknown): Record<string, Uses> {
     .filter(([, uses]) => Object.keys(uses).length > 0));
 }
 
-/** Rule 7: an entry as written — the settings this build knows in their order, normalised, then the rest as read. */
+/**
+ * Rule 8: an entry as written — the old names read on, the settings this build knows in their order, normalised (a curve
+ * naming no window not at all), then the rest as read.
+ */
 export function writtenUse(entry: UseEntry): UseEntry {
+  const folded = foldedUse(entry);
   const out: UseEntry = {};
   for (const field of USE_FIELDS) {
-    if (!Object.hasOwn(entry, field)) continue;
-    const value = READ_FIELD[field](entry[field]);
-    out[field] = value === undefined ? entry[field] : value;
+    if (!Object.hasOwn(folded, field)) continue;
+    const value = READ_FIELD[field](folded[field]);
+    if (value === undefined) out[field] = folded[field];
+    else if (field !== 'curve' || Object.keys(value as Curve).length > 0) out[field] = value;
   }
-  for (const [name, value] of Object.entries(entry)) if (!isField(name) && !RETIRED_FIELDS.includes(name)) out[name] = value;
+  for (const [name, value] of Object.entries(folded)) if (!isField(name) && !RETIRED_FIELDS.includes(name)) out[name] = value;
   return out;
 }
 
-/** An agent → settings map as written: agents in order of name, an entry naming nothing left out. */
+/** An agent → settings map as written: agents in order of name, an entry written as naming nothing left out. */
 export function writtenUses(uses: Uses): Record<string, UseEntry> {
   return Object.fromEntries(Object.entries(uses)
+    .map(([agent, entry]) => [agent, writtenUse(entry)] as const)
     .filter(([, entry]) => Object.keys(entry).length > 0)
-    .sort(([a], [b]) => (a < b ? -1 : 1))
-    .map(([agent, entry]) => [agent, writtenUse(entry)]));
+    .sort(([a], [b]) => (a < b ? -1 : 1)));
 }
 
 /** The workspaces' settings as written: workspaces in order of name, one naming nobody left out. */
@@ -370,33 +508,65 @@ export function writtenUseCircles(circles: Record<string, Uses>): Record<string,
 }
 
 /**
- * A change to one scope's settings: a field absent is left as it was, `keep: null` keeps none. Each value is written as
- * given — whether it is a setting at all is the door's question, asked first.
+ * A change to one scope's settings: a field absent is left as it was, `keep: null` keeps none, `curve: null` takes the
+ * curve out, and `curve` sets each window it names, keeping the others. Each value is written as given — whether it is a
+ * setting at all is the door's question, asked first. `early` and `near` are the old names (D165 §6), which a door may
+ * still take: `early` false is `switch: off`, and true is `smart` where it was off; `near` N other than 90 is the session
+ * window flat at N, and `switch: curve` unless it is off, and 90 takes the session window back to the smart curve's. They
+ * are applied before `switch` and `curve`, so a new name beside an old one is the one written.
  */
 export interface UseChange {
   use?: UseMode;
   keep?: string | null;
+  switch?: Switch;
+  curve?: Curve | null;
   early?: boolean;
   near?: number;
 }
 
+/** One window of an entry's curve set, or taken out where `points` is none; a curve left naming none is taken out. */
+function setWindow(entry: UseEntry, window: string, points: CurvePoint[] | null | undefined): void {
+  const curve: Record<string, unknown> = isObject(entry.curve) ? { ...entry.curve } : {};
+  if (points) curve[window] = points.map(([elapsed, used]) => [elapsed, used]);
+  else delete curve[window];
+  if (Object.keys(curve).length > 0) entry.curve = curve;
+  else delete entry.curve;
+}
+
+/** A change applied to an entry whose old names are read on already: the old names first, then the new. */
+function appliedUse(entry: UseEntry, change: UseChange): UseEntry {
+  const next: UseEntry = { ...entry };
+  if (change.use !== undefined) next.use = change.use;
+  if (change.keep === null) delete next.keep;
+  else if (change.keep !== undefined && change.keep.trim().length > 0) next.keep = change.keep.trim();
+
+  const off = () => READ_FIELD.switch(next.switch) === 'off';
+  if (change.early === false) next.switch = 'off';
+  else if (change.early === true && off()) next.switch = 'smart';
+  if (change.near !== undefined && change.near !== SMART_SESSION) {
+    setWindow(next, 'session', [[0, change.near]]);
+    if (!off()) next.switch = 'curve';
+  } else if (change.near === SMART_SESSION) {
+    setWindow(next, 'session', null);
+  }
+
+  if (change.switch !== undefined) next.switch = change.switch;
+  if (change.curve === null) delete next.curve;
+  else if (change.curve !== undefined) {
+    for (const window of CURVE_WINDOWS) if (Object.hasOwn(change.curve, window)) setWindow(next, window, change.curve[window]);
+  }
+  return next;
+}
+
 /**
- * Rule 7: an agent's settings changed, the machine's or one workspace's; `null` clears them, and a scope or a workspace
- * left with none is dropped. What this build does not know is kept, unless the change sets that field.
+ * Rule 8: an agent's settings changed, the machine's or one workspace's; `null` clears them, and a scope or a workspace
+ * left with none is dropped. What this build does not know is kept, unless the change sets that field; the old names are
+ * read on first, so a change is made over what they meant.
  */
 export function withUse(
   settings: HarnessSettings, agent: string, change: UseChange | null, workspace?: string | null,
 ): HarnessSettings {
-  const edit = (entry: UseEntry | undefined): UseEntry => {
-    if (change === null) return {};
-    const next: UseEntry = { ...(entry ?? {}) };
-    if (change.use !== undefined) next.use = change.use;
-    if (change.keep === null) delete next.keep;
-    else if (change.keep !== undefined && change.keep.trim().length > 0) next.keep = change.keep.trim();
-    if (change.early !== undefined) next.early = change.early;
-    if (change.near !== undefined) next.near = change.near;
-    return next;
-  };
+  const edit = (entry: UseEntry | undefined): UseEntry => (change === null ? {} : appliedUse(foldedUse(entry ?? {}), change));
   const place = (uses: Uses): Uses => {
     const next = { ...uses };
     const entry = edit(uses[agent]);
@@ -414,7 +584,7 @@ export function withUse(
   return { ...settings, workspaceRotationUse };
 }
 
-/** The scope a start reads (rule 6): whose it is, its own default, its list, where it begins, and how it is used. */
+/** The scope a start reads (rule 7): whose it is, its own default, its list, where it begins, and how it is used. */
 export interface Scope {
   from: 'workspace' | 'machine';
   /** The scope's own default, trimmed, or none. */
@@ -427,7 +597,7 @@ export interface Scope {
   unknown: string[];
 }
 
-/** Rule 6: the workspace's scope when it names a default or a list of its own for the agent, else the machine's. */
+/** Rule 7: the workspace's scope when it names a default or a list of its own for the agent, else the machine's. */
 export function resolveScope(settings: HarnessSettings, agent: string, workspace?: string | null): Scope {
   const circle = workspace?.trim();
   if (circle) {
@@ -447,14 +617,14 @@ function scopeOf(from: Scope['from'], own: string | null, list: string[], entry:
   return { from, default: own, list, begins: own !== null && list.includes(own) ? own : list[0]!, use, unknown };
 }
 
-/** What binds a scope (rule 8): its default outside its list, its kept account outside it, or kept and alone in it. */
+/** What binds a scope (rule 9): its default outside its list, its kept account outside it, or kept and alone in it. */
 export interface ScopeProblem {
   kind: 'default' | 'keep' | 'alone';
   account: string;
 }
 
 /**
- * Rule 8: the first problem with a scope's default, list and kept account, or null. Names compare exactly, as a door
+ * Rule 9: the first problem with a scope's default, list and kept account, or null. Names compare exactly, as a door
  * compares a name with its directory; a scope with no list is its default alone, so only a kept account is refused there.
  */
 export function scopeProblem(scope: { default: string | null; list: string[]; keep: string | null }): ScopeProblem | null {

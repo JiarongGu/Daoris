@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris agent profile use` takes when to switch accounts, `--switch smart|curve|off`, and your own curve per window,
+  `--curve session=0:85` or `--curve weekly=0:30,50:70,100:100` (`--no-curve` takes it out), and prints both; a curve that
+  breaks its rules is refused saying which window, which point and why. `--early` and `--near` still work as the old names,
+  and settings saved with them are read as the switch and the curve they meant, and saved that way.
 - Daoris reads each Claude account's real plan usage, the five-hour and weekly windows Claude Code's `/usage` shows, with no
   prompt and no usage spent, so a start chooses its account on what is really left, the person's own use included, rather
   than on what Daoris's last session there said hours before.
