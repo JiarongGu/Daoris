@@ -353,6 +353,7 @@ public static class NoteCodes
         new(OpeningWhy.NearCredits, ["over"], "note.opening.why.near-credits"),
         new(OpeningWhy.NearUsed, ["over", "used", "window", "near"], "note.opening.why.near-used"),
         new(OpeningWhy.Near, ["over"], "note.opening.why.near"),
+        new(OpeningWhy.Room, ["over", "used", "against"], "note.opening.why.room"),
         new(OpeningWhy.Fewest, [], "note.opening.why.fewest"),
         new(OpeningWhy.Lapsing, ["at"], "note.opening.why.lapsing"),
         new(OpeningWhy.Behind, ["used", "gone"], "note.opening.why.behind"),
@@ -997,6 +998,9 @@ public static class OpeningWhy
 
     /// <summary>The account passed is near its limit, with nothing it said to name.</summary>
     public const string Near = "near";
+
+    /// <summary>Both it and the account weighed against are near; it has the more room (ACCTWALK3).</summary>
+    public const string Room = "room";
 
     /// <summary>It runs the fewest of Daoris's sessions.</summary>
     public const string Fewest = "fewest";

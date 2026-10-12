@@ -212,7 +212,21 @@ public sealed class AccountRotationWalkTests
     [InlineData("account-1 account-2 account-3", "account-1:S95 account-2:r2 account-3:r1", "account-3 account-2 account-1")]
     // Every account near: the steps after it order them, and a start still runs. A pass, never a wait.
     [InlineData("account-1 account-2", "account-1:S95 account-2:S96", "account-1 account-2")]
-    [InlineData("account-1 account-2", "account-1:S95,r1 account-2:S96", "account-2 account-1")]
+    [InlineData("account-1 account-2", "account-1:S95,r1 account-2:S95", "account-2 account-1")]
+    // ACCTWALK3: among near accounts the one with more room goes first, before fewest running and the rest; equal use, or
+    // no number said, leaves the later steps as they were; a word without a number ranks after any number below 100%;
+    // an account whose limit its word says was reached stays last.
+    [InlineData("account-1 account-2", "account-1:S95,r1 account-2:S96", "account-1 account-2")]
+    [InlineData("account-1 account-2", "account-1:S96 account-2:S95", "account-2 account-1")]
+    [InlineData("account-1 account-2 account-3", "account-1:S99 account-2:S95 account-3:S97", "account-2 account-3 account-1")]
+    [InlineData("account-1 account-2", "account-1:N account-2:C", "account-1 account-2")]
+    [InlineData("account-1 account-2", "account-1:N,r1 account-2:C", "account-2 account-1")]
+    [InlineData("account-1 account-2", "account-1:N account-2:S96", "account-2 account-1")]
+    [InlineData("account-1 account-2", "account-1:X account-2:N", "account-2 account-1")]
+    [InlineData("account-1 account-2", "account-1:X account-2:S99", "account-2 account-1")]
+    [InlineData("account-1 account-2 order", "account-1:S96 account-2:S95", "account-1 account-2")]
+    // The install: a conversation opened on the account at 99% of its weekly limit, passing one at 60% that was near by its word.
+    [InlineData("gmail account-1 account-3", "gmail:W99@+4d account-1:W60@+4d,N account-3:X", "account-1 gmail account-3")]
     // The switch off passes nothing; under `order` a near account goes last too, unless the switch is off.
     [InlineData("account-1 account-2 account-3 early=off", "account-1:S95", "account-1 account-2 account-3")]
     [InlineData("account-1 account-2 account-3 order", "account-1:S95", "account-2 account-3 account-1")]
@@ -401,6 +415,9 @@ public sealed class AccountRotationWalkTests
         { "account-1 account-2 account-3", "account-2:S95", "account-1=Cooling", "account-3", WalkStep.Cooling, null, WalkStep.Near, "account-2" },
         { "account-1 account-2 account-3 order", "account-1:S95", "", "account-2", WalkStep.Near, "account-1", null, null },
         { "account-1 account-2 account-3 early=off", "account-1:S95", "", "account-1", WalkStep.List, null, null, null },
+        // ACCTWALK3: both near, the one with more room ran, naming the account it was weighed against.
+        { "account-1 account-2", "account-1:S99 account-2:S92", "", "account-2", WalkStep.Room, "account-1", null, null },
+        { "gmail account-1 account-3", "gmail:W99@+4d account-1:W60@+4d,N account-3:X", "", "account-1", WalkStep.Room, "gmail", null, null },
     };
 
     [Theory]

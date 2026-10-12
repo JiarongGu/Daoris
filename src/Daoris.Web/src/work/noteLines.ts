@@ -350,6 +350,7 @@ export const OPENING_REASONS: Readonly<Record<string, { key: string; values: rea
   'near-credits': { key: 'note.opening.why.near-credits', values: ['over'] },
   'near-used': { key: 'note.opening.why.near-used', values: ['over', 'used', 'window', 'near'] },
   near: { key: 'note.opening.why.near', values: ['over'] },
+  room: { key: 'note.opening.why.room', values: ['over', 'used', 'against'] },
   fewest: { key: 'note.opening.why.fewest', values: [] },
   lapsing: { key: 'note.opening.why.lapsing', values: ['at'] },
   behind: { key: 'note.opening.why.behind', values: ['used', 'gone'] },
@@ -382,7 +383,7 @@ export const NOTE_VALUES: Readonly<
   until: 'moment', at: 'moment', seen: 'moment',
   exit: 'number', minutes: 'number', paths: 'number', turn: 'number',
   tokens: 'count', count: 'count',
-  used: 'percent', near: 'percent', gone: 'percent',
+  used: 'percent', near: 'percent', gone: 'percent', against: 'percent',
   adapter: 'text', now: 'text', then: 'text',
   // An account id is worded by the name the person gave it where the page knows it (NOTENAME1); `owner` is the agent.
   account: 'account', over: 'account', first: 'account',

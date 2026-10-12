@@ -41,6 +41,7 @@ public sealed class OpeningNoteTests : IDisposable
         { "account-2", WalkStep.Near, "account-1", "work", "account-1:X", OpeningWhy.NearReached, "over=account-1 window=weekly" },
         { "account-2", WalkStep.Near, "account-1", "work", "account-1:C", OpeningWhy.NearCredits, "over=account-1" },
         { "account-2", WalkStep.Near, "account-1", "work", "", OpeningWhy.Near, "over=account-1" },
+        { "account-2", WalkStep.Room, "account-1", "work", "account-1:S99 account-2:S60", OpeningWhy.Room, "over=account-1 used=60 against=99" },
         { "account-2", WalkStep.Pace, "account-1", "work", "account-1:W80@+4d account-2:W90@+4d", OpeningWhy.Ahead, "over=account-1 used=80 gone=43" },
         { "account-2", WalkStep.Pace, "account-1", "work", "account-1:W80@+4d account-2:W10@+4d", OpeningWhy.Behind, "used=10 gone=43" },
         { "account-2", WalkStep.Lapsing, null, "work", "account-2:w+20h", OpeningWhy.Lapsing, "at=2026-10-03T08:00:00Z" },
