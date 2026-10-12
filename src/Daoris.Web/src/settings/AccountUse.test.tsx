@@ -244,8 +244,21 @@ describe('how a scope\'s list is used', () => {
   it('says the switch waits for an agent that says nothing of its limits', () => {
     wrap(<ScopeEditor agent={SILENT} product="Codex" scope={SILENT.scopes[0]!} accounts={[]} acts={acts()} />);
 
-    expect(screen.getByText("Codex's sessions here do not say how near their limits are, so this waits for that word.")).toBeTruthy();
+    expect(screen.getByText("Codex's sessions here do not say how much of each window is used, so a start passes no account by its use.")).toBeTruthy();
     expect(screen.getByRole('checkbox', { name: 'Switch before the limit · This machine' })).toBeTruthy();
+  });
+
+  /**
+   * SWITCH1b-iii (D165 point 2, the switch design §3): the switch says what passes an account at a start, its limit reached,
+   * usage credits or its use over its curve, never the agent's own word that it is near, nor one fixed percentage.
+   */
+  it('says what passes an account: its limit reached, usage credits, or its use over its curve', async () => {
+    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={MACHINE_NEAR} accounts={CHOICES} acts={acts()} />);
+
+    expect(screen.getByRole('note', { name: /^A start passes an account whose limit is reached, that draws on usage credits, or whose use is over its curve, while another account is ready/ })).toBeTruthy();
+    expect(screen.getByText(/^Each start goes to [^.]+, and an account whose limit is reached, that draws on usage credits or whose use is over its curve is passed while another is ready\.$/)).toBeTruthy();
+    expect(document.body.textContent).toContain("— your curve's five-hour window, flat at this share: a start passes an account whose use of that window is over it.");
+    expect(document.body.textContent).not.toMatch(/near its limit is passed|at or over this share/);
   });
 });
 
@@ -292,6 +305,24 @@ describe('the next start', () => {
     expect(screen.getByText(/^No account here is ready, so the next start waits until .+\.$/)).toBeTruthy();
     expect(screen.getByText(/^work@example\.invalid is cooling until .+\.$/)).toBeTruthy();
     expect(screen.getByText(/carries none of these starts/)).toBeTruthy();
+  });
+
+  /**
+   * SWITCH1b-iii (the switch design §3): the walk's steps say what goes last, the least over first, and step 5 by the most
+   * room under the curve, or by the week's pace with the switch off; one by one says what goes last, with no switch named.
+   */
+  it('says the walk by the curve, and by the week\'s pace with the switch off', async () => {
+    const work = OFFERED_AGAIN.scopes[1]!;
+    const { unmount } = wrap(<ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={work} accounts={CHOICES} workspace="work" acts={acts()} />);
+    expect(screen.getByRole('note', { name: /^Each start walks this list: .+ whose use is over its curve goes last, the least over first; .+, then the one with the most room under its curve, / })).toBeTruthy();
+    unmount();
+
+    const paced = wrap(<ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={{ ...work, use: { ...work.use, early: false } }} accounts={CHOICES} workspace="work" acts={acts()} />);
+    expect(screen.getByRole('note', { name: /^Each start walks this list: .+ whose use is over Daoris's curve goes last, the least over first; .+, then the one furthest behind its week's pace, / })).toBeTruthy();
+    paced.unmount();
+
+    wrap(<ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={{ ...work, use: { ...work.use, use: 'order' } }} accounts={CHOICES} workspace="work" acts={acts()} />);
+    expect(screen.getByRole('note', { name: /^Each start runs on the first ready account in the list's order, begun at its default; an account whose limit is reached, that draws on usage credits or whose use is over its curve goes last\./ })).toBeTruthy();
   });
 
   /** An answer from a shell older than TOOL6e has no `next`: the row is not drawn. */

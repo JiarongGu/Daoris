@@ -87,8 +87,9 @@ export type NextStart = {
 export type ScopeUse = { use: 'goal' | 'order'; keep?: string | null; early: boolean; near: number };
 
 /**
- * Why an account of a list is near its limit (D130 §6 as TOOL6c reads it): a limit reached, usage credits, or its number at or
- * over the scope's near. The agent's pace warning is none of them (USAGEREAD3a, D165 point 2).
+ * Why an account of a list is passed at a start (D130 §6 as D165 point 2 amends it): a limit reached, usage credits, or its
+ * number over the scope's curve on the window named (`number`, SWITCH1b-ii). The agent's pace warning is none of them
+ * (USAGEREAD3a).
  */
 export type NearBy = 'refused' | 'credits' | 'number';
 
@@ -107,7 +108,7 @@ export type AccountScope = {
   unknown: string[];
   /** A file edited by hand that breaks the rule, read with the list winning (D130 §3.1); null where none. */
   problem?: { kind: 'default' | 'keep' | 'alone'; account: string } | null;
-  /** The accounts of its list near their limit by its own `near` (D130 §6): a limit reached, credits or a number. */
+  /** The accounts of its list a start passes (D130 §6, D165 point 2): a limit reached, credits, or a number over its curve. */
   near: { account: string; window: string; by: NearBy }[];
   /** Which account its next start would take, and why (TOOL6e); absent from a shell older than that. */
   next?: NextStart | null;
@@ -272,12 +273,32 @@ export function saidLine(said: AccountSaid | null | undefined): string {
 }
 
 /**
+ * Why an account passed is passed, as the key's last word (SWITCH1b-iii, D165 point 2): its limit reached, usage credits, or
+ * its use over its curve, by the scope's own `near` entry for it, with the window; the three named together where the scope
+ * names no entry for it.
+ */
+function passedBy(near: AccountScope['near'], account: string | null | undefined): { suffix: string; window?: string } {
+  const entry = account ? near.find((each) => each.account === account) : undefined;
+  if (!entry) return { suffix: '' };
+  const suffix = { refused: 'Reached', credits: 'Credits', number: 'Over' }[entry.by];
+  return { suffix, window: windowName(entry.window) };
+}
+
+/**
  * Why the next start takes its account, as a clause (TOOL6e): the walk's step, naming the account it weighed it against as a
- * person calls it. The list's order says the default, the list's first, or the account it comes before.
+ * person calls it. The list's order says the default, the list's first, or the account it comes before. An account passed
+ * says what passed it (SWITCH1b-iii); step 5 is the most room under the curve, and the week's pace only with the switch off
+ * (the switch design §3), where the page's `early` is false.
  */
 export function nextWhy(next: NextStart, scope: AccountScope, labelOf: (name: string) => string): string {
   const over = next.over ? labelOf(next.over) : '';
   switch (next.reason) {
+    case 'near': {
+      const by = passedBy(scope.near, next.over);
+      return i18n.t(`harness.next.why.near${by.suffix}`, { over, window: by.window });
+    }
+    case 'pace':
+      return i18n.t(scope.use.early ? 'harness.next.why.room' : 'harness.next.why.pace', { over });
     case 'list':
       if (next.account === scope.default) return i18n.t('harness.next.why.listDefault');
       if (next.account === scope.begins || !next.over) return i18n.t('harness.next.why.listFirst');
@@ -320,8 +341,12 @@ export function nextLine(
 /**
  * What holds the accounts the next start does not take, as one or two sentences (TOOL6e): each held account and why, then
  * the accounts the scope does not use together; an account merely ranked after is not said. Null where nothing holds any.
+ * An account passed says what passed it by the scope's `near` entry for it (SWITCH1b-iii).
  */
-export function heldLine(next: NextStart, labelOf: (name: string) => string, isKey: (name: string) => boolean = () => false): string | null {
+export function heldLine(
+  next: NextStart, labelOf: (name: string) => string, isKey: (name: string) => boolean = () => false,
+  near: AccountScope['near'] = [],
+): string | null {
   const name = (held: AccountHeld) => (held.account ? labelOf(held.account) : i18n.t('harness.use.emptyOwn'));
   const clauses = next.others.flatMap((held) => {
     if (held.hold === 'ready' || held.hold === 'outside') return [];
@@ -330,6 +355,10 @@ export function heldLine(next: NextStart, labelOf: (name: string) => string, isK
       return [i18n.t('harness.next.held.keyRefused', { account: name(held) })];
     }
     if (held.hold === 'cooling') return held.until ? [i18n.t('harness.next.held.cooling', { account: name(held), when: moment(held.until) })] : [];
+    if (held.hold === 'near') {
+      const by = passedBy(near, held.account);
+      return [i18n.t(`harness.next.held.near${by.suffix}`, { account: name(held), window: by.window })];
+    }
     return [i18n.t(`harness.next.held.${held.hold}`, { account: name(held) })];
   });
   const outside = next.others.filter((held) => held.hold === 'outside').map(name);

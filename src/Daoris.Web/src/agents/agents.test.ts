@@ -340,12 +340,18 @@ describe('the next start, above the accounts', () => {
     expect(nextStartSaid(head, labelOf)?.held).toBeNull();
     // The reason names the list's first already: said once, not again as its hold.
     const near = scopeOf({
-      list, begins: 'account-1',
+      list, begins: 'account-1', near: [{ account: 'account-1', window: 'weekly', by: 'number' }],
       next: { account: 'account-3', reason: 'near', over: 'account-1', others: [{ account: 'account-1', hold: 'near' }] },
     });
     expect(nextStartSaid(near, labelOf)).toEqual({
-      takes: 'The next start takes account-3: account-1 is near its limit, so it goes last.', held: null,
+      takes: 'The next start takes account-3: account-1 is over its curve on its weekly window, so it goes last.', held: null,
     });
+    // Passed while another reason names a third account: its hold says which of the three holds it (SWITCH1b-iii).
+    const held = scopeOf({
+      list, begins: 'account-1', near: [{ account: 'account-1', window: 'session', by: 'refused' }],
+      next: { account: 'account-3', reason: 'fewest', over: 'account-2', others: [{ account: 'account-1', hold: 'near' }] },
+    });
+    expect(nextStartSaid(held, labelOf)?.held).toBe('account-1 has reached its five-hour limit.');
   });
 
   it('says a wait and what frees it, and not again account by account, which the wait’s sentence already names', () => {
