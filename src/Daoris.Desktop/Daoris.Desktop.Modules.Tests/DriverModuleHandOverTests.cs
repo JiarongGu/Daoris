@@ -47,6 +47,23 @@ public sealed class DriverModuleHandOverTests : DriverModuleBridge
         Assert.Equal(HandOver.SameAgent, answer.GetProperty("why").GetString());
     }
 
+    /// <summary>
+    /// MIXAGENT1b-ii (D163's note on the offer): Daoris's own offer is asked as <c>daoris</c> only with <c>near</c> or
+    /// <c>limit</c>; a press, an absent word or any other reason stays the person's, whatever the payload claims.
+    /// </summary>
+    [Theory]
+    [InlineData("near", "daoris", "daoris")]
+    [InlineData("limit", "daoris", "daoris")]
+    [InlineData("press", "daoris", "person")]
+    [InlineData("agent", "daoris", "person")]
+    [InlineData("near", null, "person")]
+    [InlineData("near", "agent", "person")]
+    [InlineData("limit", "person", "person")]
+    public void Daoris_asks_only_with_near_or_limit(string why, string? askedBy, string expected)
+    {
+        Assert.Equal(expected, DriverModule.HandOverAskedBy(why, askedBy));
+    }
+
     private async Task<(DriverLoop Loop, DriverModule Module, DriverModuleStartFromTests.StandIn Service)> UpAsync()
     {
         var root = Path.Combine(Home, "engine");

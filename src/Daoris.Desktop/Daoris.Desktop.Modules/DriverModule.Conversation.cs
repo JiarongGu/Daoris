@@ -111,8 +111,11 @@ public sealed partial class DriverModule
     // *Go on with another agent…* (MIXAGENT1b-i, D163): a conversation of this machine handed to another agent, from its page.
     // The chat runner judges and keeps the ask: taken at once for a conversation that is not talking, kept for its turn's end
     // for one that is (the page's *Stop and hand over…* asks this first, then stops the turn). `{ sessionId, kept, why, message }`;
-    // a refusal is the answer by its code, never thrown. The reason is `press` unless named (`near` and `limit` are Daoris's own
-    // offer's, MIXAGENT1b-ii); the person asks.
+    // a refusal is the answer by its code, never thrown. The reason is `press` unless named; `near` and `limit` are Daoris's own
+    // offer's (MIXAGENT1b-ii), taken from the person's press on the offer, so only with them is `askedBy` `daoris` honoured.
+    public static string HandOverAskedBy(string why, string? askedBy) =>
+        askedBy == HandOverBy.Daoris && why is HandOverWhy.Near or HandOverWhy.Limit ? HandOverBy.Daoris : HandOverBy.Person;
+
     [DriverRoute("SESSION_HAND_OVER")]
     private async Task<object?> SessionHandOverAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -122,7 +125,7 @@ public sealed partial class DriverModule
         var chat = _loop.Chat ?? throw NotReady();
         var config = DriverConfig.Load(_loop.ConfigPath);
         var handed = await chat.HandOverAsync(
-                id, agent, Optional(request, "account"), why, HandOverBy.Person, config,
+                id, agent, Optional(request, "account"), why, HandOverAskedBy(why, Optional(request, "askedBy")), config,
                 onEnded: (session, state) => DriverLoop.Ended(_events, session, state), cancellationToken)
             .ConfigureAwait(false);
         _loop.Nudge();
