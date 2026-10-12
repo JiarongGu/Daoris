@@ -41,7 +41,7 @@ Beside it, `Accounts/Domain/SwitchDecision.cs` (SWITCH1c-i) says whether a runni
 (`off`, no number, room, held thirty minutes after a curve move, or no account with room), reads the others first, or moves
 to the ready account with the most room, at least ten points under its curve on every window. The hand-over box takes
 `curve`, and `HandOverNotes.Moved` and `MovedFrom` (`chat.moved`, `chat.moved-from`) say a move at both ends, naming the
-accounts; the chat runner's use of them is SWITCH1c-ii's.
+accounts.
 
 ## What the page can ask this machine
 
