@@ -55,6 +55,11 @@ with the version and date at release.
   convention quoted) and the branch its pull request will come from, named by the repository's landing rule. It is told to
   create, switch and push no branch, so it no longer stops between its repository's own rules and Daoris's. A repository that
   merges is told its commit rule too; a session in your checkout is told none of it.
+- A conversation in a tree of its own is told its repository's process with your first message: the commit rule standing for
+  it, your convention quoted, and how its work lands, the branch named by the repository's rule when you accept it. The
+  conversation shows what it was told under its own line, in both languages; one in your checkout or handed over from another
+  agent is told none of it. A session's *What it was handed* names the landing section's source as this machine's landing and
+  commit rules.
 - A quest's session can go on with another agent from the terminal (`daoris-driver sessions hand-over <id> --agent <adapter>
   [--account <name>]`): the driver stops it, then carries the quest on in the same tree on the agent you name, told it was
   handed over from the first agent's session, and it stays on that agent until the quest closes or leaves this machine.
