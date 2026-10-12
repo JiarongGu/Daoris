@@ -151,6 +151,7 @@ These retain their original dates, versions and measurement limits.
 | `2026-10-10-subagent-load-evidence.md` | Evidence: what dispatched subagents' context cost | D160; the trial in TASKS |
 | `2026-10-11-entry1-audit.md` | Evidence: what Ask Daoris can start, against what a person starts | D161 §3; ENTRY1 rows in TASKS |
 | `2026-10-12-entry-and-heads-design.md` | Contract: New conversation from a prompt; bounded heads | D162; NEW1 and HEAD2 rows in TASKS |
+| `2026-10-12-mixed-agents-design.md` | Contract: a task handed to another agent; helpers on other agents; the view of who worked | D163; MIXAGENT rows in TASKS |
 
 ## Records and generated indexes
 
