@@ -544,10 +544,10 @@ public sealed partial class HelpCoverageTests
             "the driver's helper session reads it since MIXAGENT2a-ii, and the `setting` card with a `helpers` key, the service's "
             + "writer and the driver's judging by the twin's table (`HelperRules.Apply`) are owed to MIXAGENT2b's page row, as "
             + "`opinion`'s were built with XAGENT1a; until then the rule is set by `daoris driver helpers` and the file alone.")),
-        // PROCESS1a: how work is committed, declared in `driver.json`; nothing reads it until sessions are told it (PROCESS1d).
+        // PROCESS1a: how work is committed, declared in `driver.json`; a driven session in a tree of its own is told it (PROCESS1d-i).
         ("commits", new Exempt(
-            "a rule nothing reads yet: sessions are told it by PROCESS1d and the Setup rows (and so a `setting` card) are PROCESS1c's; "
-            + "until then it is set by `daoris driver commits` and the file alone.")),
+            "a driven session in a tree of its own is told it since PROCESS1d-i, a conversation's briefing is PROCESS1d-ii's, and the "
+            + "Setup rows (and so a `setting` card) are PROCESS1c's; until then it is set by `daoris driver commits` and the file alone.")),
         // WORKFLOW1a: Current, drawn from the rules as they stand; a named workflow's Ask Daoris doors are the `workflow` kind's.
         ("workflow show", new Exempt(
             "it reads `driver.json` and the plugins beside it and changes nothing; it draws the landing, review and opinion rules "
