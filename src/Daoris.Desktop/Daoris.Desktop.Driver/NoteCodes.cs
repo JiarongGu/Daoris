@@ -611,6 +611,9 @@ public static class NoteCodes
     public static readonly NoteCode BrowserNoneUp = new("browser.none-up", []);
     // The line a chat's agent was told of the browser it was handed (BRWHINT1a): the lead by its code, the line Daoris's one-copy English.
     public static readonly NoteCode ChatToldBrowser = new("chat.told-browser", []);
+    // The repository's process a chat in a tree of its own was told at its start (PROCESS1d-ii): its commit rule's mode and where it
+    // was set are facts, the words after the lead Daoris's one-copy English.
+    public static readonly NoteCode ChatToldProcess = new("chat.told-process", ["mode", "source"]);
 
     // ——— A session's own background work (CONVNOTE2f, <see cref="BackgroundNotes"/>, BGWAIT1): the work's names are the agent's own
     // descriptions of it, said as code; a state is the harness's own word for how it ended, said as it came. Why a wait could not

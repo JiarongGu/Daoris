@@ -184,6 +184,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'browser.none-up': { values: [] },
   // The line a chat's agent was told of the browser it was handed (BRWHINT1a): the line follows as a program's words.
   'chat.told-browser': { values: [] },
+  // The repository's process a chat in a tree of its own was told (PROCESS1d-ii): its commit rule's mode and where it was set,
+  // the words following as a program's.
+  'chat.told-process': { values: ['mode', 'source'] },
   // A conversation handed to another agent (MIXAGENT1a-i): where the old one went, and where the new one came from and why.
   'chat.handed-over': { values: ['agent', 'session'] },
   'chat.taken-over': { values: ['agent', 'session', 'why'], why: 'handed' },
@@ -376,9 +379,12 @@ export const OPENING_REASONS: Readonly<Record<string, { key: string; values: rea
 export const NOTE_VALUES: Readonly<
   Record<
     string,
-    'id' | 'ids' | 'names' | 'moment' | 'number' | 'count' | 'percent' | 'text' | 'why' | 'cooling' | 'window' | 'account' | 'accounts' | 'bgstate'
+    | 'id' | 'ids' | 'names' | 'moment' | 'number' | 'count' | 'percent' | 'text' | 'why' | 'cooling' | 'window' | 'account' | 'accounts'
+    | 'bgstate' | 'setAt'
   >
 > = {
+  // A commit rule's mode, its own word set as code by the sentence, and where it was set (PROCESS1d-ii).
+  mode: 'text', source: 'setAt',
   awaits: 'id', answered: 'id', ask: 'id', quest: 'id', session: 'id', opinion: 'id',
   quests: 'ids',
   servers: 'names', works: 'names',
@@ -403,6 +409,16 @@ export const NOTE_VALUES: Readonly<
 
 /** A cool-off's four reasons (TOOL4d), each its `harness.cooling.why.*` entry. */
 const COOLING = new Set(['stated', 'assumed', 'default', 'notBelieved']);
+
+/**
+ * Where a rule was set (PROCESS1d-ii), worded as the handed account words a section's source: the default is none set. A source
+ * this page does not know shows the line as recorded.
+ */
+const SET_AT: Readonly<Record<string, string>> = {
+  repository: 'work.handed.source.repository',
+  workspace: 'work.handed.source.workspace',
+  default: 'work.handed.none.not-set',
+};
 
 /**
  * One line of a note as the page shows it:
@@ -466,6 +482,10 @@ function said(
     case 'cooling': {
       const why = text(value);
       return why && COOLING.has(why) ? t(`harness.cooling.why.${why}`) : null;
+    }
+    case 'setAt': {
+      const source = text(value);
+      return source && Object.hasOwn(SET_AT, source) ? t(SET_AT[source]) : null;
     }
     case 'why': {
       const why = text(value);

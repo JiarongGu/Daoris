@@ -113,6 +113,61 @@ public sealed class ChatNoteCodeTests
         Assert.Null(ChatRunner.ToldBrowser(new ChatMessage("hello", [])));
     }
 
+    private static ProcessBriefing Process(string mode = CommitRules.Ask, string source = OpinionSource.Repository) =>
+        ChatRunner.ProcessTold(
+            new ResolvedCommits(new CommitRule(mode, null), source), new LandingPlan(LandingForm.Merge, "main", LandingSource.Default));
+
+    /// <summary>
+    /// PROCESS1d-ii: a conversation in a tree of its own is told its repository's process in its first message, after the browser's
+    /// line and before where the person is, in a field of its own: its words are <see cref="ProcessWords.Conversation"/>'s, its
+    /// facts the mode and where the rule was set.
+    /// </summary>
+    [Fact]
+    public void The_process_rides_the_first_prompt_after_the_browser_and_before_where_the_person_is()
+    {
+        var process = Process();
+        Assert.Equal(ProcessWords.Conversation(
+            new ResolvedCommits(new CommitRule(CommitRules.Ask, null), OpinionSource.Repository),
+            new LandingPlan(LandingForm.Merge, "main", LandingSource.Default)), process.Words);
+        Assert.Equal((CommitRules.Ask, OpinionSource.Repository), (process.Mode, process.Source));
+
+        var line = InAppBrowserServers.Told(["browser"])!;
+        var message = new ChatMessage("open the board", []) { Briefing = line, Process = process, Preface = "Where the person is now: the Sessions view." };
+        Assert.Equal($"{line}\n\n{process.Words}\n\nWhere the person is now: the Sessions view.\n\nopen the board", message.Prompt);
+        Assert.Equal($"{process.Words}\n\nopen the board", new ChatMessage("open the board", []) { Process = process }.Prompt);
+    }
+
+    /// <summary>The process is kept as a note of its own, by its code with its facts, never under the browser's lead.</summary>
+    [Fact]
+    public void The_process_told_is_kept_as_a_note_of_its_own_with_its_facts()
+    {
+        var process = Process(CommitRules.AtEnd, OpinionSource.Workspace);
+        var told = ChatRunner.ToldProcess(new ChatMessage("hello", []) { Process = process })!;
+
+        Assert.Equal(SessionEventKind.Note, told.Kind);
+        Assert.Equal(["chat.told-process", null], told.Parts!.Select(part => part.Code).ToArray());
+        Assert.Equal(CommitRules.AtEnd, told.Parts![0].Value("mode"));
+        Assert.Equal(OpinionSource.Workspace, told.Parts![0].Value("source"));
+        Assert.Equal((process.Words, NoteBy.Program), (told.Parts![1].Words, told.Parts![1].By));
+        NoteAssert.Holds(told.Text, told.Parts);
+
+        Assert.Null(ChatRunner.ToldProcess(new ChatMessage("hello", [])));
+        Assert.Null(ChatRunner.ToldBrowser(new ChatMessage("hello", []) { Process = process }));
+    }
+
+    /// <summary>What the first message puts in the record, in its prompt's order: the browser, the process, where the person is, their words.</summary>
+    [Fact]
+    public void The_first_message_records_the_browser_the_process_where_and_the_words_in_order()
+    {
+        var message = new ChatMessage("open the board", [])
+        {
+            Briefing = InAppBrowserServers.Told(["browser"]), Process = Process(), Preface = "Where the person is now: the Sessions view.",
+        };
+
+        var codes = ChatRunner.Recorded(message).Select(each => each.Parts?[0].Code ?? each.Origin).ToArray();
+        Assert.Equal(["chat.told-browser", "chat.told-process", "chat.told-where", "person"], codes);
+    }
+
     [Fact]
     public async Task Nothing_withheld_says_nothing_and_the_string_door_reads_the_same_English()
     {

@@ -128,6 +128,7 @@
   "note.chat.option-set": "You set {{option}} to {{chosen}} for this conversation.",
   "note.chat.told-where": "The agent was told where you are:",
   "note.chat.told-browser": "The agent was told it has Daoris's browser:",
+  "note.chat.told-process": "The agent was told this repository's process, its commit rule `{{mode}}` ({{source}}):",
   "note.chat.handed-over": "This conversation went on with {{agent}}, in conversation {{session}}.",
   "note.chat.taken-over": "This conversation went on from {{agent}} conversation {{session}}, handed over because {{why}}.",
   "note.chat.briefing-unsaid": "What Daoris kept of the earlier conversation did not reach the agent: tell it where you were.",

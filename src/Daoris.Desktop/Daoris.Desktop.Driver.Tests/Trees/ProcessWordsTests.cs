@@ -206,6 +206,88 @@ public sealed class ProcessWordsTests
         Assert.DoesNotContain(TargetPrompt.Composed(TargetPromptGoldenTests.Bare).Account.Sections, handed => handed.Name == HandedSections.Landing);
     }
 
+    // ——— a conversation in a tree of its own (PROCESS1d-ii): told once, with its first message
+
+    /// <summary>
+    /// The default, whole: the landing's form and who takes the branch on, the branch never said by name (a conversation's is made
+    /// at Accept from its opening), then the process as a driven session is told it, with no quest to close.
+    /// </summary>
+    [Fact]
+    public void A_conversation_under_review_is_told_its_process_whole()
+    {
+        Assert.Equal(
+            "This work goes through review. Daoris names the branch from this repository's rule when the person accepts it, and "
+            + "this tree's branch is put on it for the person to push and open a pull request from; you do not name it, and you do "
+            + "not merge it, push it, or open a pull request yourself.\n"
+            + "\n"
+            + "This repository's process on this machine:\n"
+            + "\n"
+            + "- Commit on this tree's branch as you go, each piece once it passes its checks.\n"
+            + "- Do not create, switch or push branches.",
+            ProcessWords.Conversation(Rule(CommitRules.AsYouGo), Review));
+    }
+
+    /// <summary>The plan's branch is the session's placeholder until Accept names it from the opening, so no name is said.</summary>
+    [Fact]
+    public void A_conversation_is_never_told_a_branch_by_name()
+    {
+        foreach (var plan in new[] { Review, Review with { Plugin = "example.github-pull-request" }, Auto })
+        {
+            var said = ProcessWords.Conversation(Rule(CommitRules.AsYouGo), plan);
+            Assert.DoesNotContain(Branch, said);
+            Assert.Contains("Daoris names the branch from this repository's rule when the person accepts it", said);
+        }
+
+        Assert.Contains("this tree's branch is put on it, pushed, and a pull request opened from it; you do not name it",
+            ProcessWords.Conversation(Rule(CommitRules.AsYouGo), Review with { Plugin = "example.github-pull-request" }));
+    }
+
+    /// <summary>Each mode in its own words, Accept waited for in every one: a conversation has no quest whose done lands it.</summary>
+    [Theory]
+    [InlineData(CommitRules.AsYouGo, "Commit on this tree's branch as you go, each piece once it passes its checks.")]
+    [InlineData(CommitRules.Ask, "Ask the person before each commit, and commit only on their yes. Uncommitted work stays in this tree "
+        + "and the person sees it as it stands, but Accept will not land it until it is committed.")]
+    [InlineData(CommitRules.AtEnd, "Make one commit on this tree's branch when the work is done, and none before.")]
+    public void A_conversation_is_told_each_mode_in_its_own_words_and_no_quest(string mode, string words)
+    {
+        foreach (var plan in new[] { Review, Merge, Auto, null })
+        {
+            var said = ProcessWords.Conversation(Rule(mode), plan);
+            Assert.Contains($"\n- {words}\n", said);
+            Assert.EndsWith("\n- Do not create, switch or push branches.", said);
+            Assert.DoesNotContain("the quest", said);
+            Assert.DoesNotContain("accepted automatically", said);
+        }
+    }
+
+    /// <summary>The opener names where the rule was set as a driven session's does, and the convention closes it as a block.</summary>
+    [Fact]
+    public void A_conversation_is_told_where_the_rule_was_set_and_the_persons_convention()
+    {
+        const string convention = "Subject in the imperative, the ticket key first: `T-9 Add the note field`.";
+        var said = ProcessWords.Conversation(Rule(CommitRules.Ask, OpinionSource.Repository, convention), Review);
+
+        Assert.Contains("\n\nThis repository's process on this machine, set for its repository:\n\n", said);
+        Assert.EndsWith($"\n\nThe person's words on how a commit is written, to follow:\n\n> {convention}", said);
+        Assert.Contains("This repository's process on this machine, set for its workspace:\n",
+            ProcessWords.Conversation(Rule(CommitRules.AsYouGo, OpinionSource.Workspace), Merge));
+    }
+
+    /// <summary>A merge says the line it goes into, or the repository's line where none was read; no plan, the process alone.</summary>
+    [Fact]
+    public void A_conversation_under_a_merge_is_told_its_line_and_one_with_no_plan_its_process_alone()
+    {
+        var merge = ProcessWords.Conversation(Rule(CommitRules.AtEnd), Merge);
+        Assert.StartsWith("When the person accepts, this tree's branch is merged into `main`.\n\nThis repository's process on this machine:\n", merge);
+        Assert.DoesNotContain("pull request", merge);
+
+        var unread = ProcessWords.Conversation(Rule(CommitRules.AtEnd), Merge with { Target = "" });
+        Assert.StartsWith("When the person accepts, this tree's branch is merged into its repository's line.\n\n", unread);
+        Assert.DoesNotContain("``", unread);
+
+        Assert.StartsWith("This repository's process on this machine:\n", ProcessWords.Conversation(Rule(CommitRules.AsYouGo), null));
+    }
+
     private static SessionTarget Of(string which) => which == "resume"
         ? TargetPromptGoldenTests.Bare with
         {

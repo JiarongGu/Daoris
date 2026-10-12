@@ -128,6 +128,7 @@
   "note.chat.option-set": "你已将这次对话的 {{option}} 设为 {{chosen}}。",
   "note.chat.told-where": "已告知智能体你所在的位置：",
   "note.chat.told-browser": "已告知智能体它拥有 Daoris 的浏览器：",
+  "note.chat.told-process": "已告知智能体这个仓库的流程，提交规则 `{{mode}}`（{{source}}）：",
   "note.chat.handed-over": "这段对话已转交给 {{agent}} 继续，新对话为 {{session}}。",
   "note.chat.taken-over": "这段对话是从 {{agent}} 的对话 {{session}} 转交过来继续的，原因：{{why}}。",
   "note.chat.briefing-unsaid": "Daoris 保留的上一段对话的内容没有送达智能体：请告诉它你之前进行到哪里。",
