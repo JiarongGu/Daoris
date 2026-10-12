@@ -13936,3 +13936,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT2a — `Plugins` into its folder** (driver). The first module move (design §6's order), files as they are (the csproj's `plugin-kit/` includes follow, their logical names pinned), its tests into `Driver.Tests/Plugins/`, the map's `root` shrunk; and a structure rule that the driver's tests mirror its modules. The rest follow as STRUCT2b–n, one row filed as each is due.
 
 **Outcome** 2026-10-13: the Plugins module moved whole, 16 files and `plugin-kit/` into `Driver/Plugins/` and 16 tests into `Driver.Tests/Plugins/`, 36 renames at 100% in a commit of their own; the `mirror` rule with the map's `tests` table holds a moved module's tests, and a test folder must be a module's. Detail: D166's STRUCT2a note.
+
+## TREEFOLLOWREPO1 — Repositories pairs a session's own branch with it (2026-10-13, D164)
+
+> - [ ] **TREEFOLLOWREPO1 — Repositories pairs a session's own branch with it** (driver). `GitBranches` pairs a branch with its session only for `daoris/…` names (`GitBranches.cs:526-528`), so `feature/x` shows as a plain branch with a worktree: pair it through the ledger's `now`. D164's TREEFOLLOW1 note.
+
+**Outcome** 2026-10-13: `GitBranches.Sort` reads the ledger's `now` backwards and returns a branch a tree moved onto as the session's (Kind `session`), before the landed test, the newest entry winning, and still after the session's own `daoris/` branch is gone; the page shows its title with no change. Detail: D164's TREEFOLLOWREPO1 note.

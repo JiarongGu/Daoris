@@ -176,6 +176,85 @@ public sealed class GitBranchesReadTests
         Assert.Equal(new GitSessionBranch(), branch.Session);
     }
 
+    private const string MovedRef = "refs/heads/feature/x";
+
+    /// <summary>The list with the tree's branch (feature/x) added, and the session's own branch left out where asked.</summary>
+    private static StandInGit WithMovedBranch(bool daorisBranch = true)
+    {
+        var text = Everything();
+        if (!daorisBranch)
+        {
+            text = text.Replace(
+                Record("refs/heads/daoris/s-1a2b3c4d", Session, "2 0", worktree: "D:/data/trees/aurora/engine/s-1a2b3c4d", at: "2026-10-04T03:00:00Z"), "");
+        }
+
+        return new StandInGit()
+            .Answer(GitRefs.Arguments(trees: true, against: "refs/heads/main"),
+                text + Record(MovedRef, Topic, "1 0", worktree: "D:/data/trees/aurora/engine/s-1a2b3c4d", at: "2026-10-04T04:00:00Z"))
+            .Answer(["merge-base", "--is-ancestor", Landed, "refs/heads/feature/13-ahead"], "")
+            .Answer(["merge-base", "--is-ancestor", Landed, "refs/heads/feature/14-mine"], "", code: 1)
+            .Answer(["rev-list", "--left-right", "--count", "refs/heads/feature/13-ahead...refs/remotes/origin/feature/13-ahead"], "1\t0\n");
+    }
+
+    private static GrownBranch Grew(string? now) =>
+        new("engine", "aurora", "daoris/s-1a2b3c4d", "main", Main, "feature/12-even", DateTimeOffset.Parse("2026-10-03T00:00:00Z"), now);
+
+    /// <summary>TREEFOLLOWREPO1: the branch a session's agent moved its tree onto is that session's, as its own daoris/ branch is.</summary>
+    [Fact]
+    public async Task A_branch_the_tree_moved_onto_is_paired_with_its_session()
+    {
+        var read = await GitBranches.ReadAsync(Ask() with { Grown = [Grew("feature/x")] }, WithMovedBranch().Run);
+
+        var moved = read.Branches.Single(each => each.Name == "feature/x");
+        Assert.Equal(GitBranchKind.Session, moved.Kind);
+        Assert.Equal(new GitSessionBranch { Session = "newest", State = "working", Quest = "21", GrewFrom = "feature/12-even", From = Main }, moved.Session);
+        Assert.Equal(GitBranchKind.Session, read.Branches.Single(each => each.Name == "daoris/s-1a2b3c4d").Kind);
+    }
+
+    /// <summary>The session's daoris/ branch may be gone while the branch its tree moved onto stands: the folder name still finds the record.</summary>
+    [Fact]
+    public async Task A_moved_branch_pairs_though_the_sessions_own_branch_is_gone()
+    {
+        var read = await GitBranches.ReadAsync(Ask() with { Grown = [Grew("feature/x")] }, WithMovedBranch(daorisBranch: false).Run);
+
+        Assert.DoesNotContain(read.Branches, each => each.Name == "daoris/s-1a2b3c4d");
+        Assert.Equal("newest", read.Branches.Single(each => each.Name == "feature/x").Session?.Session);
+    }
+
+    /// <summary>The newest entry naming the same branch wins.</summary>
+    [Fact]
+    public async Task Two_entries_naming_one_branch_the_newest_wins()
+    {
+        var older = Grew("feature/x") with { Branch = "daoris/s-old", GrewFrom = "elsewhere" };
+        var read = await GitBranches.ReadAsync(Ask() with { Grown = [older, Grew("feature/x")] }, WithMovedBranch().Run);
+
+        Assert.Equal("feature/12-even", read.Branches.Single(each => each.Name == "feature/x").Session?.GrewFrom);
+    }
+
+    /// <summary>D164: while the tree is on it, the session pairing comes before the landed test.</summary>
+    [Fact]
+    public async Task A_moved_branch_with_a_landing_is_still_its_sessions()
+    {
+        var landed = new LandedBranch("engine", "aurora", "feature/x", "main", Topic, "s-x", null, null, DateTimeOffset.Parse("2026-10-03T00:00:00Z"));
+        var ask = Ask();
+        var read = await GitBranches.ReadAsync(ask with { Grown = [Grew("feature/x")], Landings = [.. ask.Landings, landed] }, WithMovedBranch().Run);
+
+        var moved = read.Branches.Single(each => each.Name == "feature/x");
+        Assert.Equal(GitBranchKind.Session, moved.Kind);
+        Assert.Null(moved.Landed);
+    }
+
+    [Fact]
+    public async Task A_cleared_now_or_one_naming_a_missing_branch_pairs_nothing()
+    {
+        var cleared = await GitBranches.ReadAsync(Ask() with { Grown = [Grew(null)] }, WithMovedBranch().Run);
+        Assert.Equal(GitBranchKind.Yours, cleared.Branches.Single(each => each.Name == "feature/x").Kind);
+
+        var missing = await GitBranches.ReadAsync(Ask() with { Grown = [Grew("feature/gone")] }, WithMovedBranch().Run);
+        Assert.Equal(GitBranchKind.Yours, missing.Branches.Single(each => each.Name == "feature/x").Kind);
+        Assert.DoesNotContain(missing.Branches, each => each.Name == "feature/gone");
+    }
+
     [Fact]
     public async Task A_landed_branch_says_whether_it_is_pushed_and_its_pull_request()
     {
