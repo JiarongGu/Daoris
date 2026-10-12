@@ -66,6 +66,8 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/refresh", Driver),
         ("POST", "/api/opinions", Driver),
         ("POST", "/api/opinions/{id}/hand", Driver),
+        ("POST", "/api/helpers", Driver),
+        ("POST", "/api/helpers/{helper}/hand", Driver),
 
         ("POST", "/api/quests/{id}/review", Person),
         ("POST", "/api/quests/{id}/set-up-step", Person),
@@ -108,12 +110,13 @@ public sealed class PersonDoorTableTests
         Assert.Equal(Routes, PersonDoors.Table.Select(door => (door.Method, door.Pattern, door.Class)));
         Assert.Equal(PersonDoors.Table.Count, PersonDoors.Table.Select(door => (door.Method, door.Pattern)).Distinct().Count());
 
-        // The design's counts (§3.2), with XAGENT1c's two reads and two driver's posts, the set-up door, which is the
+        // The design's counts (§3.2), with XAGENT1c's two reads and two driver's posts (and MIXAGENT2a-ii's two: a helper's record
+        // and its answer's return), the set-up door, which is the
         // driver's naming a session and the person's own with where to look, and the confirmation's two reads, its ask and
         // the person's two answers (PERSONDOOR1b), and an ask's kind and workflow, the person's (WORKFLOW1e).
         Assert.Equal(22, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
-        Assert.Equal(14, Routes.Count(route => route.Class == Driver));
+        Assert.Equal(16, Routes.Count(route => route.Class == Driver));
         Assert.Equal(22, Routes.Count(route => route.Class == Person));
         Assert.Equal(7, Routes.Count(route => route.Class == Shared));
     }
