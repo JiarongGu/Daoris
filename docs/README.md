@@ -153,6 +153,7 @@ These retain their original dates, versions and measurement limits.
 | `2026-10-12-entry-and-heads-design.md` | Contract: New conversation from a prompt; bounded heads | D162; NEW1 and HEAD2 rows in TASKS |
 | `2026-10-12-mixed-agents-design.md` | Contract: a task handed to another agent; helpers on other agents; the view of who worked | D163; MIXAGENT rows in TASKS |
 | `2026-10-12-account-switch-design.md` | Contract: each account's real use; the switching curve; a running session moved at its turn's end | D165; USAGEREAD and SWITCH rows in TASKS |
+| `2026-10-12-usage-read-evidence.md` | Evidence: an account's plan usage read with no prompt | D165 point 1 |
 
 ## Records and generated indexes
 

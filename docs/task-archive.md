@@ -13888,3 +13888,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **TOOL6d — continue on another account** (driver/modules/web; after TOOL6b). Offer last plan/words to selected account. D130 §8–§9; both-door tests/look.
 
 **Outcome** 2026-10-12: superseded, not built. The owner asked for switching by a setting instead of a press (D165): a running session moves on its own at its turn's end (SWITCH1c), and the person's press is MIXAGENT1b-i's *Go on with another agent…*, whose account chip names another account of the same agent. Detail: D165; `docs/2026-10-12-account-switch-design.md` §4.
+
+## USAGEREAD1 — measure the real read (2026-10-12, D165)
+
+> - [ ] **USAGEREAD1 — measure the real read** (evidence; parent). Claude Code's `get_usage` control request (`skip_behaviors`) asked of a headless process under an account's home, on the native CLI and the protocol door's pinned SDK, and Codex's `account/rateLimits/read` on the own sign-in: the answer's shape, the time, and no model request (no assistant message, cost 0, five-hour use unchanged over repeated reads). An evidence document; no account spends. D165 point 1; `docs/2026-10-12-account-switch-design.md` §1.1.
+
+**Outcome** 2026-10-12: measured on the native CLI 2.1.296: `get_usage` answers in 1.5 to 2.6 s with two `control_response` lines, cost 0 and level back-to-back reads; one account read 79% of its week where Daoris's 15-hour-old reading said 60%. The protocol door's bundled CLI and Codex were not run (declared; CODEXUSE3's read). Detail: `docs/2026-10-12-usage-read-evidence.md`.
