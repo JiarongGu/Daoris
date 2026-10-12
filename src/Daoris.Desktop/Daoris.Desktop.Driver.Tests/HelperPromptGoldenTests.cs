@@ -1,0 +1,70 @@
+using Daoris.Driver;
+
+namespace Daoris.Desktop.Driver.Tests;
+
+/// <summary>
+/// The helper's instruction rendered whole (MIXAGENT2a-ii, D163 point 2; the mixed agents design §3): a question the asker wrote,
+/// as it wrote it, and what a helper may do and never. A sentence added, moved or reworded shows here as the whole
+/// instruction's difference, byte for byte, in <c>golden/helper-prompt/</c>; this class runs no process, so it is in the fast
+/// half (MOD8).
+/// </summary>
+public sealed class HelperPromptGoldenTests
+{
+    internal static readonly HelperPacket Asked = new(
+        "s1a2b3c4", "reports", "2222222222222222222222222222222222222222",
+        "Why does the daily report drop its last day?\n\nI read src/report.ts and the window looks exclusive at the end,\nbut the test passes. What am I missing?", 15);
+
+    internal static string GoldenPath(string file)
+    {
+        var at = new DirectoryInfo(AppContext.BaseDirectory);
+        while (at is not null && !File.Exists(Path.Combine(at.FullName, "daoris.json"))) at = at.Parent;
+        var root = at?.FullName ?? throw new InvalidOperationException("no workspace root above the test binary");
+        return Path.Combine(root, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "golden", "helper-prompt", file);
+    }
+
+    [Fact]
+    public void The_helpers_instruction_is_its_golden_text()
+    {
+        Assert.Equal(File.ReadAllText(GoldenPath("asked.md")), HelperInstruction.Compose(Asked));
+    }
+
+    /// <summary>The question reaches the helper as the asker wrote it, quoted line by line and never changed or summarised.</summary>
+    [Fact]
+    public void The_question_is_quoted_as_the_asker_wrote_it()
+    {
+        var text = HelperInstruction.Compose(Asked);
+
+        Assert.Contains("> Why does the daily report drop its last day?\n>\n> I read src/report.ts and the window looks exclusive at the end,\n> but the test passes. What am I missing?\n", text);
+    }
+
+    /// <summary>
+    /// What holds it read-only in words: the copy it reads in, every act it never does, the repository's own instructions to
+    /// write set aside, no one to ask, and its one answer through `helper_answer`, never `helper_ask` or `opinion_give`.
+    /// </summary>
+    [Fact]
+    public void It_is_told_it_reads_a_copy_never_writes_and_answers_once_through_helper_answer()
+    {
+        var text = HelperInstruction.Compose(Asked);
+
+        Assert.Contains("a copy of the repository made for this question", text);
+        Assert.Contains("Nothing in the copy is taken back", text);
+        foreach (var never in new[]
+                 {
+                     "edit, write or delete a file", "commit, merge, rebase or push", "deploy or publish",
+                     "change a permission rule or propose one", "a process, a port or a server of the person's",
+                     "take, close, decline or publish a quest", "ask another agent for help",
+                 })
+        {
+            Assert.Contains(never, text);
+        }
+
+        Assert.Contains("here they do not apply", text);
+        Assert.Contains("Nobody will answer a question from you", text);
+        Assert.Contains("`helper_answer`", text);
+        Assert.DoesNotContain("`helper_ask`", text);
+        Assert.DoesNotContain("`opinion_give`", text);
+        Assert.Contains("at most 15 minutes", text);
+        // Its answer is the asking session's claim to check, never the person's words.
+        Assert.Contains("another agent's claim", text);
+    }
+}

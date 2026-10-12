@@ -178,6 +178,9 @@ public sealed record ComposedService(
     /// </summary>
     public OpinionDesk Opinions { get; init; } = null!;
 
+    /// <summary>A helper's record and its answer's return (MIXAGENT2a-ii, D163 point 2): a local host's two doors; a shared host's refuse.</summary>
+    public HelperDesk Helpers { get; init; } = null!;
+
     public ValueTask DisposeAsync() => Store?.DisposeAsync() ?? ValueTask.CompletedTask;
 }
 
@@ -367,6 +370,7 @@ public static class ServiceFactory
             Asks = new AskDesk(service, asks, exchange, files),
             History = new HistoryDesk(quests, sessions, asks, service, remotes, files, proposals),
             Opinions = new OpinionDesk(opinions, sessions, local: mode == ServiceMode.Local),
+            Helpers = new HelperDesk(sessions, local: mode == ServiceMode.Local),
         };
     }
 

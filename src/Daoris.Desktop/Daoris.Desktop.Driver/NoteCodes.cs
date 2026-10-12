@@ -376,6 +376,8 @@ public static class NoteCodes
         new(ResumedWhy.Findings, [], "note.resumed.why.findings"),
         new(ResumedWhy.AnswerAndFindings, [], "note.resumed.why.answer-and-findings"),
         new(ResumedWhy.WordsAndFindings, [], "note.resumed.why.words-and-findings"),
+        new(ResumedWhy.Helper, [], "note.resumed.why.helper"),
+        new(ResumedWhy.WordsAndHelper, [], "note.resumed.why.words-and-helper"),
     ]);
 
     /// <summary>Why the person's words never reached the session (CONVNOTE2d1; <see cref="UnreachedWhy"/>): the page's <c>note.words.why.*</c>.</summary>
@@ -461,6 +463,29 @@ public static class NoteCodes
         new(HandOverWhy.Limit, [], "note.handed.why.limit"),
         new(HandOverWhy.Agent, [], "note.handed.why.agent"),
     ]);
+
+    /// <summary>Why no helper answered a question (MIXAGENT2a-ii, <see cref="HelperWhy"/>): the page's <c>note.helper.why.*</c>.</summary>
+    public static readonly NoteReasons Helper = new(
+    [
+        new(HelperWhy.Off, [], "note.helper.why.off"),
+        new(HelperWhy.AskerGone, [], "note.helper.why.asker-gone"),
+        new(HelperWhy.AskerUnfit, [], "note.helper.why.asker-unfit"),
+        new(HelperWhy.TooMany, [], "note.helper.why.too-many"),
+        new(HelperWhy.Unreadable, [], "note.helper.why.unreadable"),
+        new(HelperWhy.NotStarted, [], "note.helper.why.not-started"),
+        new(HelperWhy.NoAnswer, [], "note.helper.why.no-answer"),
+        new(HelperWhy.Conversation, [], "note.helper.why.conversation"),
+        new(HelperWhy.CannotTake, [], "note.helper.why.cannot-take"),
+    ]);
+
+    // ——— A helper (MIXAGENT2a-ii, D163 point 2): on the asker, a helper asked, answered or refused, with the agent and why;
+    // on the helper, whose session it helps. Facts only: never an account's name or a path.
+    public static readonly NoteCode HelperAsked = new("helper.asked", ["agent", "session"]);
+    public static readonly NoteCode HelperAnswered = new("helper.answered", ["agent", "session"]);
+    public static readonly NoteCode HelperAnsweredLastWords = new("helper.answered-last-words", ["agent", "session"]);
+    public static readonly NoteCode HelperRefused = new("helper.refused", ["why"]) { Why = Helper };
+    public static readonly NoteCode HelperRefusedBy = new("helper.refused-by", ["agent", "why"]) { Why = Helper };
+    public static readonly NoteCode HelperHelping = new("helper.helping", ["session"]);
 
     // ——— A conversation handed to another agent (MIXAGENT1a-i, D163 §3): the old one's end says which agent and which
     // conversation it went to, the new one's first line where it came from and why. Facts only: never an account's name or a path.
@@ -920,6 +945,12 @@ public static class ResumedWhy
 
     /// <summary>The person's words and another agent's findings.</summary>
     public const string WordsAndFindings = "words-and-findings";
+
+    /// <summary>A helper's answer alone (MIXAGENT2a-ii).</summary>
+    public const string Helper = "helper";
+
+    /// <summary>The person's words and a helper's answer.</summary>
+    public const string WordsAndHelper = "words-and-helper";
 }
 
 /// <summary>

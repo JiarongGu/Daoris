@@ -124,6 +124,9 @@ public static class DriverCommand
           sessions hand-over <id> --agent <adapter> [--account <name>]
               a conversation goes on with another agent (D163): its own ends, and a new conversation in its tree
               starts, told what Daoris kept of it. Conversations only; a quest's session comes later.
+          sessions helper <id> "<question>" [--agent <name>]
+              ask another agent, read-only, to answer one question about a session's work (D163): the driver takes
+              it at its next look, and the answer comes back to that session as its next turn, marked as the helper's.
           help list [--search "…"] [--json] [--offset <n>] [--limit <n>]  ·  help resume <id> "…" [--file <path>]…
           help rename <id> "…" | --clear  ·  help pin <id>  ·  help unpin <id>  ·  help delete <id> [--yes]
               Ask Daoris's conversations, kept on this machine only: list or search them a page at a time, go on

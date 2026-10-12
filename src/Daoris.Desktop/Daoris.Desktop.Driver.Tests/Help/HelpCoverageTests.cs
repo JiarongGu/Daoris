@@ -208,6 +208,16 @@ public sealed partial class HelpCoverageTests
         + "`daoris-driver sessions hand-over` and the page's *Go on with another agent…* (its head's ⋯, which asks under the head).");
 
     /// <summary>
+    /// MIXAGENT2a-ii's <c>daoris-driver sessions helper</c> (D163 point 2), a verb of the headless host: exempt, since it is the
+    /// person's own ask of another agent, which spends that agent's allowance on a question about their work; whether an agent
+    /// may ask for one is the person's rule (<c>helpers</c>), set elsewhere. The page's press is MIXAGENT2b's row.
+    /// </summary>
+    private static readonly Exempt HelperAskDoor = new(
+        "asking another agent to read a session's work and answer a question spends that agent's allowance on the person's own "
+        + "question (D163), which stays the person's to ask (D133 §1), so Ask Daoris proposes none; it can name "
+        + "`daoris-driver sessions helper` and the screen's press once the page has it.");
+
+    /// <summary>
     /// TRACE1's <c>daoris-driver trace</c> (D143), a verb of the headless host: exempt, since it reads the records back to an ask
     /// and changes nothing, as <c>driver list</c> is (D110 §4). A screen's door to the same read is a row of its own.
     /// </summary>
@@ -531,9 +541,9 @@ public sealed partial class HelpCoverageTests
         // (MIXAGENT2a-ii). A `helpers` key for the `setting` kind (the service's writer, `HelpSettingProposals`, the screen's route
         // and Setup's rows) is owed with it, as `opinion` had its own in XAGENT1a.
         ("helpers", new Exempt(
-            "it declares a rule nothing reads yet: the driver's helper session reads it (MIXAGENT2a-ii), and the `setting` card with "
-            + "a `helpers` key, the service's writer and the driver's judging by the twin's table (`HelperRules.Apply`) are built "
-            + "with that reading, as `opinion`'s were with XAGENT1a; until then it changes no work and no session.")),
+            "the driver's helper session reads it since MIXAGENT2a-ii, and the `setting` card with a `helpers` key, the service's "
+            + "writer and the driver's judging by the twin's table (`HelperRules.Apply`) are owed to MIXAGENT2b's page row, as "
+            + "`opinion`'s were built with XAGENT1a; until then the rule is set by `daoris driver helpers` and the file alone.")),
         // WORKFLOW1a: Current, drawn from the rules as they stand; a named workflow's Ask Daoris doors are the `workflow` kind's.
         ("workflow show", new Exempt(
             "it reads `driver.json` and the plugins beside it and changes nothing; it draws the landing, review and opinion rules "
@@ -816,6 +826,7 @@ public sealed partial class HelpCoverageTests
             .Append(GoOnNewDoor)
             .Append(StartFromDoor)
             .Append(HandOverDoor)
+            .Append(HelperAskDoor)
             .Append(TraceDoor)
             .Append(WorkflowRunDoor)
             .Append(WorkflowKeepDoor)
@@ -1033,6 +1044,20 @@ public sealed partial class HelpCoverageTests
         Assert.Null(HelpProposalKinds.Find("start-from"));
         Assert.Contains("D133", StartFromDoor.Reason);
         Assert.Contains("D137", StartFromDoor.Reason);
+    }
+
+    /// <summary>
+    /// MIXAGENT2a-ii: the headless host's <c>sessions helper</c> is exempt from Ask Daoris while its usage spells it, as the
+    /// person's own ask of another agent: no kind of that name takes it, and the rule that lets an agent ask is a setting of its
+    /// own (the `helpers` row above).
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_sessions_helper_is_exempt_as_the_persons_own_ask()
+    {
+        Assert.Contains("sessions helper <id> \"<question>\" [--agent <name>]", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("helper"));
+        Assert.Contains("D163", HelperAskDoor.Reason);
+        Assert.Contains("D133", HelperAskDoor.Reason);
     }
 
     /// <summary>

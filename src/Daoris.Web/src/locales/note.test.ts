@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { BACKGROUND_STATES, HANDED_REASONS, NOTE_CODES, NOTE_VALUES, OPENING_REASONS, RESUMED_REASONS, UNREACHED_REASONS } from '../work/noteLines';
+import { BACKGROUND_STATES, HANDED_REASONS, HELPER_REASONS, NOTE_CODES, NOTE_VALUES, OPENING_REASONS, RESUMED_REASONS, UNREACHED_REASONS } from '../work/noteLines';
 import { REASONS } from '../work/say';
 import { en, zh } from '.';
 
@@ -60,6 +60,7 @@ describe('a session note’s codes, held to both catalogues', () => {
     expect(driver.length).toBeGreaterThan(60);
     expect(ledger.map((code) => code.code)).toEqual([
       'ledger.answered', 'ledger.parked', 'ledger.went-on', 'ledger.went-on-findings', 'ledger.went-on-both',
+      'ledger.went-on-helper', 'ledger.went-on-helper-both',
       // A quest's note (QUESTCLOSE1b1): the person's done, its lead coded and their words beneath it.
       'quest.person-done',
     ]);
@@ -76,7 +77,7 @@ describe('a session note’s codes, held to both catalogues', () => {
 
   it.each([['en', en], ['zh', zh]] as const)('keeps no `note.*` entry in %s that no writer declares', (_, catalogue) => {
     // A reason a `why` names is declared by its writer too (UX7d-1: the opening's, `note.opening.why.*`).
-    const keys = new Set([...codes.map((code) => code.key), ...['Continue', 'Cooling', 'Opening', 'Resumed', 'Unreached', 'Handed'].flatMap((family) => reasons(family).map((reason) => reason.key)), ...backgroundStates().map((state) => `note.background.state.${state}`)]);
+    const keys = new Set([...codes.map((code) => code.key), ...['Continue', 'Cooling', 'Opening', 'Resumed', 'Unreached', 'Handed', 'Helper'].flatMap((family) => reasons(family).map((reason) => reason.key)), ...backgroundStates().map((state) => `note.background.state.${state}`)]);
     const orphans = Object.keys(catalogue).filter((key) => key.startsWith('note.') && !keys.has(key));
     expect(orphans).toEqual([]);
   });
@@ -151,7 +152,7 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
   /** CONVNOTE2a: whose words a resumed conversation goes on with is a reason of its own family, held key for key. */
   it('words every way a resumed conversation’s first line says whose words', () => {
     const resumed = reasons('Resumed');
-    expect(resumed.length).toBe(5);
+    expect(resumed.length).toBe(7);
     const page = Object.values(RESUMED_REASONS).map(({ key, values }) => ({ key, values: [...values] }));
     const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
     expect(page.sort(byKey)).toEqual([...resumed].sort(byKey));
@@ -185,6 +186,20 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
     expect(page.sort(byKey)).toEqual([...handed].sort(byKey));
     for (const catalogue of [en, zh]) {
       for (const { key, values } of handed) {
+        expect(placeholders(catalogue[key] ?? ''), `\`${key}\``).toEqual([...values].sort());
+      }
+    }
+  });
+
+  /** MIXAGENT2a-ii: why no helper answered a question is a reason family of its own, held key for key. */
+  it('words every reason no helper answered a question', () => {
+    const helper = reasons('Helper');
+    expect(helper.length).toBe(9);
+    const page = Object.values(HELPER_REASONS).map(({ key, values }) => ({ key, values: [...values] }));
+    const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
+    expect(page.sort(byKey)).toEqual([...helper].sort(byKey));
+    for (const catalogue of [en, zh]) {
+      for (const { key, values } of helper) {
         expect(placeholders(catalogue[key] ?? ''), `\`${key}\``).toEqual([...values].sort());
       }
     }

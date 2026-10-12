@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- A working session can ask another agent for help, and you can too (`daoris-driver sessions helper <id> "<question>"
+  [--agent <name>]`): a read-only session on that agent reads a copy of the session's work at its last commit and answers the
+  one question, and its answer comes back to the asking session as its next turn, marked as the helper's and never as your
+  words. Your `helpers` rule says whether an agent's ask waits for your yes, starts at once or is off; at most two helpers work
+  for a session at once, and each takes a place under the session cap. The session's notes say, in both languages, which agent
+  was asked, that it answered (or why it did not), and what a helper is helping.
 - When a conversation's account runs low, Daoris offers to go on with another agent: a line under its head, where the account
   is near its limit by its own word or cut, with *Go on with {agent} ({account})* and *Choose…*. It is never taken without your
   press.

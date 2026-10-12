@@ -240,12 +240,14 @@ public sealed partial class Driver
         // Another agent's findings among the words (XAGENT1e, D155 point 7): said as that agent's, and answered with the one
         // tool they need, which the person's rules may not name.
         var findings = park.Findings.Count > 0;
+        // A helper's answer (MIXAGENT2a-ii) is another agent's claim too: said as its, never as the person's.
+        var helper = park.Helpers.Count > 0;
         var persons = park.Waiting.Any(word => word.Persons);
 
         // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words.
         var resume = new ResumeAsk(
             kept.Conversation, park.Waiting,
-            Continuations.OpeningNoted(adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons),
+            Continuations.OpeningNoted(adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons, helper),
             await ResumedAfterAsync(service, quest, sessionId, target.Language, ct).ConfigureAwait(false),
             files: word => ChatFiles.Kept(home, sessionId, word.Files));
         var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
@@ -295,6 +297,7 @@ public sealed partial class Driver
                 // with another agent's findings where those are all it goes on with (XAGENT1e), never "your words".
                 workingNote: park.Parked ? Continuations.WorkingNoted
                     : findings && !persons ? Continuations.GoingOnWithFindingsNoted
+                    : helper && !persons ? Continuations.GoingOnWithHelperNoted
                     : Continuations.GoingOnNoted,
                 goOn: GoOnWith(adapter, target, selection, rules.File, handed),
                 // BGWAIT1b: a resumed run waits on its own background work as a start does, by the same judgement; where its
@@ -581,7 +584,7 @@ public sealed partial class Driver
         // 🔴 Only the person's words go on in a new session (XAGENT1e, design §6.7): another agent's findings would reach it as the
         // person's, which DRIFT1 would make requirements. They stay on the record, marked as words that cannot go on there, and
         // go to the person instead.
-        if (record.Findings.Count > 0)
+        if (record.Findings.Count > 0 || record.Helpers.Count > 0)
         {
             _marks.Mark(record.Session, record.Waiting.Where(word => !word.Persons).Select(word => word.Id).OfType<string>(), why, DateTimeOffset.UtcNow);
             FindingsToPerson(record, why);

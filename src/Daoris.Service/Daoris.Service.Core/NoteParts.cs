@@ -31,6 +31,9 @@ public static class LedgerNoteCodes
     // Another agent's findings alone, or beside the person's words (XAGENT1e2), coded once the page words them (XAGENT1g).
     public static readonly LedgerNoteCode WentOnFindings = new("ledger.went-on-findings", ["at"]);
     public static readonly LedgerNoteCode WentOnBoth = new("ledger.went-on-both", ["at"]);
+    // A helper's answer alone, or beside the person's words (MIXAGENT2a-ii, D163 point 4): never findings, never "your words".
+    public static readonly LedgerNoteCode WentOnHelper = new("ledger.went-on-helper", ["at"]);
+    public static readonly LedgerNoteCode WentOnHelperBoth = new("ledger.went-on-helper-both", ["at"]);
     // A quest's note (QUESTCLOSE1b1): the person marked it done, their words, where they gave any, a part beneath it.
     public static readonly LedgerNoteCode PersonDone = new("quest.person-done", []);
 

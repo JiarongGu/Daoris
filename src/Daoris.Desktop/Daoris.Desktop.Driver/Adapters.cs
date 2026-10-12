@@ -59,10 +59,17 @@ public sealed record SessionTarget(
     public string? Opinion { get; init; }
 
     /// <summary>
-    /// Whether the session is one turn framed as one prompt, taking no person's line and never resumed: an intake (INT4h) and a
-    /// reviewer, which reads in one turn and starts a fresh conversation every pass (D155 point 6).
+    /// The ask this session answers as a helper (MIXAGENT2a-ii, D163 point 2): a read-only session on another agent that serves
+    /// the session which asked, and no quest, no ask and no opinion. Its spawn carries its own session and its instruction, as a
+    /// reviewer's does. Null for every other session.
     /// </summary>
-    public bool OneTurn => Ask is not null || Opinion is not null;
+    public string? Helper { get; init; }
+
+    /// <summary>
+    /// Whether the session is one turn framed as one prompt, taking no person's line and never resumed: an intake (INT4h), a
+    /// reviewer, which reads in one turn and starts a fresh conversation every pass (D155 point 6), and a helper.
+    /// </summary>
+    public bool OneTurn => Ask is not null || Opinion is not null || Helper is not null;
 
     /// <summary>
     /// The session's own record — handed to every session, whose connector names it when it publishes
@@ -1169,7 +1176,7 @@ internal static class Spawning
 
         // A reviewer (XAGENT1d) serves another session's work and no quest: its own record, so its connector says its opinion as
         // that session, and its instruction; the quest variables absent, as an intake's are.
-        if (target.Opinion is not null)
+        if (target.Opinion is not null || target.Helper is not null)
         {
             if (target.Session is { } reviewer) info.Environment[IntakeRoom.SessionVariable] = reviewer;
             info.Environment["DAORIS_TARGET"] = TargetPrompt.Compose(target);

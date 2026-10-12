@@ -159,6 +159,29 @@ public sealed class OpinionPacketTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// MIXAGENT2a-ii (D163 point 2): a helper is handed the reviewer's read-only shape with its own one tool, `helper_answer`: it
+    /// can never ask for a helper (depth one) nor give an opinion, and every edit stays denied.
+    /// </summary>
+    [Fact]
+    public void A_helpers_connector_offers_reading_and_helper_answer_and_never_helper_ask_or_opinion_give()
+    {
+        var handed = OpinionPermissions.Shape(PermissionRules.Compose(PermissionFile.Empty, null, "reports"), helper: true);
+
+        Assert.True(PermissionRules.AllowsConnector(handed, "helper_answer"));
+        Assert.True(PermissionRules.AllowsConnector(handed, "knowledge_search"));
+        foreach (var tool in new[] { "helper_ask", "opinion_give", "opinion_answer", "quest_respond", "quest_publish", "permission_propose" })
+        {
+            Assert.False(PermissionRules.AllowsConnector(handed, tool), tool);
+            Assert.Contains(Connector + tool, handed.Deny);
+        }
+
+        Assert.DoesNotContain(Connector + "helper_answer", handed.Deny);
+        Assert.Contains("Edit", handed.Deny);
+        Assert.Contains("Bash(git commit:*)", handed.Deny);
+        Assert.Contains("helping", OpinionPermissions.HelperHardDeny);
+    }
+
     [Fact]
     public void It_may_read_its_history_with_git_and_a_person_s_own_deny_and_read_still_stand()
     {

@@ -244,6 +244,21 @@ public sealed record PriorSession(
     /// agent's claims, which go on only in this session's own conversation and never to a new session as the person's words.
     /// </summary>
     public IReadOnlyList<string> Findings => [.. Waiting.Select(word => word.By).OfType<string>().Distinct(StringComparer.Ordinal)];
+
+    /// <summary>
+    /// The helper sessions whose answers wait among its words (MIXAGENT2a-ii), each once, in the order handed: another agent's
+    /// claims, which go on only in this session's own conversation, as findings do.
+    /// </summary>
+    public IReadOnlyList<string> Helpers => [.. Waiting.Select(word => word.Helper).OfType<string>().Distinct(StringComparer.Ordinal)];
+
+    /// <summary>The session this one answers, when it is a helper's record (MIXAGENT2a-i's <c>serves</c>); null for every other.</summary>
+    public string? Serves { get; init; }
+
+    /// <summary>The second opinion this one reads for, when it is a reviewer's record; null for every other.</summary>
+    public string? Opinion { get; init; }
+
+    /// <summary>The workspace the record belongs to, as it names it: where a rule is resolved for it.</summary>
+    public string? Workspace { get; init; }
 }
 
 /// <summary>
@@ -313,8 +328,14 @@ public sealed record SaidWordView(string? Id, string Text, DateTimeOffset At, IR
     /// </summary>
     public string? By { get; init; }
 
-    /// <summary>Whether these are the person's words: no second opinion's.</summary>
-    public bool Persons => By is null;
+    /// <summary>
+    /// The helper session whose answer this is (MIXAGENT2a-ii, D163 point 4): another agent's claim, never the person's words and
+    /// no second opinion's findings. Null for every other word.
+    /// </summary>
+    public string? Helper { get; init; }
+
+    /// <summary>Whether these are the person's words: no second opinion's and no helper's.</summary>
+    public bool Persons => By is null && Helper is null;
 }
 
 /// <summary>One step of a chain, as the service answered it.</summary>

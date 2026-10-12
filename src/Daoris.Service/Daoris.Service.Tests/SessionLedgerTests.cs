@@ -780,6 +780,30 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal("2026-09-19T10:30:00Z", went.GetProperty("values").GetProperty("at").GetString());
     }
 
+    /// <summary>
+    /// MIXAGENT2a-ii (D163 point 4): a helper's answer waiting among the words is the helper's, not findings and never "your
+    /// words": alone it has its own coded line, beside the person's words it says both.
+    /// </summary>
+    [Theory]
+    [InlineData(false, "Went on with a helper's answer at 2026-09-19 10:30 UTC.", "ledger.went-on-helper", "a helper's answer")]
+    [InlineData(true, "Went on with your words and a helper's answer at 2026-09-19 10:30 UTC.", "ledger.went-on-helper-both",
+        "the person's words and a helper's answer")]
+    public async Task An_ended_session_says_it_went_on_with_a_helpers_answer(bool persons, string line, string code, string with)
+    {
+        var ended = await Ended("completed", note: "landed.");
+        if (persons) await _ledger.SayAsync(ended.Id, "Also add the changelog line.", null, Now.AddMinutes(20));
+        await _sessions.KeepSaidAsync(
+            ended.Id, new SaidWord("w0helper", "A helper answered your question.", Now.AddMinutes(21), [], Reopens: true, Helper: "h1a2b3c4"));
+
+        var reopened = await _ledger.AdvanceAsync(ended.Id, "working", null, null, null, Now.AddMinutes(30));
+
+        Assert.Equal($"Session `{ended.Id}` is working again: it goes on from completed with {with}.", reopened.Message);
+        var record = (await _sessions.FindAsync(ended.Id))!;
+        Assert.Equal($"landed.\n\n{line}", record.Note);
+        using var parts = System.Text.Json.JsonDocument.Parse(record.NoteParts!);
+        Assert.Equal(code, parts.RootElement[1].GetProperty("code").GetString());
+    }
+
     /// <summary>MSG1a: a note the driver passes with the reopen follows the line that says it went on, so nothing is lost.</summary>
     [Fact]
     public async Task A_note_passed_with_the_reopen_follows_the_line_that_says_it_went_on()

@@ -15,7 +15,7 @@ type Translate = (key: string, options?: Record<string, unknown>) => string;
  * the step that chose a conversation's account (`note.opening.why.*`, UX7d-1), or whose words a resumed conversation goes on
  * with (`note.resumed.why.*`, CONVNOTE2a), or why the person's words never reached it (`note.words.why.*`, CONVNOTE2d1).
  */
-type Why = 'continue' | 'cooling' | 'opening' | 'resumed' | 'unreached' | 'handed';
+type Why = 'continue' | 'cooling' | 'opening' | 'resumed' | 'unreached' | 'handed' | 'helper';
 
 /** A code the page words: the values its sentence says, its key where it is not `note.<code>`, and the reasons a `why` names. */
 export type NoteCode = { values: readonly string[]; key?: string; why?: Why };
@@ -131,6 +131,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // Another agent's findings alone, or beside the person's words (XAGENT1e2), worded since XAGENT1g.
   'ledger.went-on-findings': { values: ['at'] },
   'ledger.went-on-both': { values: ['at'] },
+  // A helper's answer alone, or beside the person's words (MIXAGENT2a-ii).
+  'ledger.went-on-helper': { values: ['at'] },
+  'ledger.went-on-helper-both': { values: ['at'] },
   // A quest's note (QUESTCLOSE1b1): the person marked it done, their words a part beneath it.
   'quest.person-done': { values: [] },
   // A conversation's first line (UX7d-1): the account it opened on and the step that chose it, then what each account said.
@@ -179,6 +182,14 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'chat.handed-over': { values: ['agent', 'session'] },
   'chat.taken-over': { values: ['agent', 'session', 'why'], why: 'handed' },
   'chat.briefing-unsaid': { values: [] },
+  // A helper on another agent (MIXAGENT2a-ii): on the asker, asked, answered or refused, with the agent and why; on the helper,
+  // whose session it helps.
+  'helper.asked': { values: ['agent', 'session'] },
+  'helper.answered': { values: ['agent', 'session'] },
+  'helper.answered-last-words': { values: ['agent', 'session'] },
+  'helper.refused': { values: ['why'], why: 'helper' },
+  'helper.refused-by': { values: ['agent', 'why'], why: 'helper' },
+  'helper.helping': { values: ['session'] },
   // A session's own background work (CONVNOTE2f): the work's names as code, a state as the harness said it; a program's words
   // follow `unread`.
   'background.unread': { values: [] },
@@ -267,6 +278,8 @@ export const RESUMED_REASONS: Readonly<Record<string, { key: string; values: rea
   findings: { key: 'note.resumed.why.findings', values: [] },
   'answer-and-findings': { key: 'note.resumed.why.answer-and-findings', values: [] },
   'words-and-findings': { key: 'note.resumed.why.words-and-findings', values: [] },
+  helper: { key: 'note.resumed.why.helper', values: [] },
+  'words-and-helper': { key: 'note.resumed.why.words-and-helper', values: [] },
 };
 
 /**
@@ -287,6 +300,22 @@ export const HANDED_REASONS: Readonly<Record<string, { key: string; values: read
   near: { key: 'note.handed.why.near', values: [] },
   limit: { key: 'note.handed.why.limit', values: [] },
   agent: { key: 'note.handed.why.agent', values: [] },
+};
+
+/**
+ * Why no helper answered a question (MIXAGENT2a-ii; the driver's `NoteCodes.Helper`), each its entry; none carries a value of its
+ * own. `locales/note.test.ts` holds this map to the driver's declaration key for key.
+ */
+export const HELPER_REASONS: Readonly<Record<string, { key: string; values: readonly string[] }>> = {
+  off: { key: 'note.helper.why.off', values: [] },
+  'asker-gone': { key: 'note.helper.why.asker-gone', values: [] },
+  'asker-unfit': { key: 'note.helper.why.asker-unfit', values: [] },
+  'too-many': { key: 'note.helper.why.too-many', values: [] },
+  unreadable: { key: 'note.helper.why.unreadable', values: [] },
+  'not-started': { key: 'note.helper.why.not-started', values: [] },
+  'no-answer': { key: 'note.helper.why.no-answer', values: [] },
+  conversation: { key: 'note.helper.why.conversation', values: [] },
+  'cannot-take': { key: 'note.helper.why.cannot-take', values: [] },
 };
 
 /**
@@ -438,6 +467,7 @@ function said(
       if (code.why === 'resumed') return RESUMED_REASONS[why] ? t(RESUMED_REASONS[why].key) : null;
       if (code.why === 'unreached') return UNREACHED_REASONS[why] ? t(UNREACHED_REASONS[why].key) : null;
       if (code.why === 'handed') return HANDED_REASONS[why] ? t(HANDED_REASONS[why].key) : null;
+      if (code.why === 'helper') return HELPER_REASONS[why] ? t(HELPER_REASONS[why].key) : null;
       return reasonOf(t, why, {
         from: text(values.from), to: text(values.to), adapter: text(values.adapter), agent: text(values.agent),
       });

@@ -38,6 +38,74 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.False(word.TryGetProperty("by", out var by) && by.ValueKind != JsonValueKind.Null);
     }
 
+    /// <summary>
+    /// MIXAGENT2a-ii: the creation door the driver's helper session opens its record by. A chat that serves the asker and no
+    /// quest, in the asker's repository and workspace, in the clone the driver names; an asker that is itself a helper, a reviewer,
+    /// an intake, unknown, or whose tree is the helper's own is refused in a sentence.
+    /// </summary>
+    [Fact]
+    public async Task The_creation_door_opens_a_record_that_serves_its_asker_and_refuses_what_cannot_ask()
+    {
+        var sessions = host.Composed.Sessions;
+        // Its own repository: a session of another test that holds no tree yet holds every tree of its repository (D51).
+        var asker = await sessions.CreateAsync(null, "Opener", "stub", DateTimeOffset.UtcNow, workspace: "default", kind: Daoris.Knowledge.SessionKind.Chat, tree: "trees/default/Opener/s-aaaaaaaa");
+
+        var opened = await host.PostAsync("/api/helpers", new { asker = asker.Id, adapter = "codex-acp", tree = "trees/default/Opener/o-bbbbbbbb", account = "work", baseCommit = "ABCDEF1" });
+
+        Assert.Equal(200, opened.Status);
+        var session = opened.Json.GetProperty("session");
+        Assert.Equal(asker.Id, session.GetProperty("serves").GetString());
+        Assert.Equal("codex-acp", session.GetProperty("adapter").GetString());
+        Assert.Equal("Opener", session.GetProperty("repository").GetString());
+        Assert.Equal("chat", session.GetProperty("kind").GetString());
+        Assert.False(session.TryGetProperty("quest", out var quest) && quest.ValueKind == JsonValueKind.String);
+
+        var helperId = session.GetProperty("id").GetString()!;
+        var again = await host.PostAsync("/api/helpers", new { asker = helperId, adapter = "codex-acp", tree = "trees/default/Opener/o-cccccccc" });
+        Assert.Equal(400, again.Status);
+        Assert.Contains("a helper cannot ask for a helper", again.Error);
+
+        var unknown = await host.PostAsync("/api/helpers", new { asker = "nope0000", adapter = "codex-acp", tree = "trees/default/Keeper/o-dddddddd" });
+        Assert.Equal(404, unknown.Status);
+
+        var own = await host.PostAsync("/api/helpers", new { asker = asker.Id, adapter = "codex-acp", tree = "trees/default/Opener/s-aaaaaaaa" });
+        Assert.Equal(400, own.Status);
+
+        var reviewer = await sessions.CreateAsync(null, "Opener", "stub", DateTimeOffset.UtcNow, kind: Daoris.Knowledge.SessionKind.Chat, opinion: "op000001");
+        Assert.Equal(400, (await host.PostAsync("/api/helpers", new { asker = reviewer.Id, adapter = "codex-acp", tree = "trees/default/Opener/o-eeeeeeee" })).Status);
+    }
+
+    /// <summary>
+    /// MIXAGENT2a-ii: the answer's return. A word marked `helper` waits on an ended asker's record and reopens it; a running
+    /// asker takes it at its turn's end (409), and it goes once.
+    /// </summary>
+    [Fact]
+    public async Task The_hand_door_keeps_the_answer_on_an_ended_asker_once_and_never_into_a_running_one()
+    {
+        var sessions = host.Composed.Sessions;
+        var asker = await sessions.CreateAsync(null, "Keeper", "stub", DateTimeOffset.UtcNow, kind: Daoris.Knowledge.SessionKind.Driven, tree: "trees/default/Keeper/s-ffffffff");
+        var helper = await sessions.CreateAsync(null, "Keeper", "codex-acp", DateTimeOffset.UtcNow, kind: Daoris.Knowledge.SessionKind.Chat, serves: asker.Id);
+
+        var running = await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five." });
+        Assert.Equal(409, running.Status);
+        Assert.Contains("never into a step in flight", running.Error);
+
+        await sessions.SetStateAsync(asker.Id, Daoris.Knowledge.SessionState.Completed, "done.", null, null, DateTimeOffset.UtcNow);
+        var handed = await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five." });
+
+        Assert.Equal(200, handed.Status);
+        var word = handed.Json.GetProperty("said");
+        Assert.Equal(helper.Id, word.GetProperty("helper").GetString());
+        Assert.True(word.GetProperty("reopens").GetBoolean());
+        var kept = (await sessions.FindAsync(asker.Id))!;
+        Assert.Equal((helper.Id, false), (kept.Said[0].Helper, kept.Said[0].Persons));
+
+        var twice = await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five." });
+        Assert.Equal(409, twice.Status);
+
+        Assert.Equal(404, (await host.PostAsync($"/api/helpers/{asker.Id}/hand", new { text = "x" })).Status);
+    }
+
     /// <summary>🔴 A helper takes no words and is never resumed: the say door refuses it by its own word, `helper`.</summary>
     [Fact]
     public async Task The_say_door_refuses_a_helpers_record_as_a_helper()

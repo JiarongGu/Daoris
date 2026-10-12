@@ -354,6 +354,10 @@ public sealed partial class Driver(
         var (opinionSits, passes) = await OpinionsAsync(snapshot, events, ct, judgedOpinions).ConfigureAwait(false);
         snapshot = snapshot with { Opinions = opinionSits };
 
+        // The helpers asked for (MIXAGENT2a-ii, D163 point 2): read, judged and started beside the look, each taking a slot under
+        // the cap as a pass does, and each answer handed to the session that asked.
+        passes += await HelpersAsync(snapshot, passes, events, ct).ConfigureAwait(false);
+
         // Whether this loop carries Daoris's browser decides whether a local set-up step can be shown here (REVIEWENV1c).
         var plan = Planner.Plan(snapshot, passes > 0 ? config with { Cap = Math.Max(0, config.Cap - passes) } : config, Door(), window: browser is not null);
         var progressed = false;
@@ -1136,7 +1140,8 @@ public sealed partial class Driver(
 
             // Another agent's findings go on only in their own session (XAGENT1e, design §6.7): where they are all that waits,
             // nothing is carried on, and they go to the person. The person's words beside them are carried on as ever.
-            if (park.Findings.Count > 0 && !park.Waiting.Any(word => word.Persons)) return CannotGoOn(quest, park, fellBack);
+            // A helper's answer is the same (MIXAGENT2a-ii): another agent's claim, never carried to a new session as the person's.
+            if ((park.Findings.Count > 0 || park.Helpers.Count > 0) && !park.Waiting.Any(word => word.Persons)) return CannotGoOn(quest, park, fellBack);
 
             // A taken quest is carried on, an open one started, handed the words, in the tree the session worked in.
             start = start with { Resumes = park.Parked || park.Said is null ? park with { State = "completed" } : park };
@@ -1536,7 +1541,7 @@ public sealed partial class Driver(
     private (string? File, object? Meta, HandedSection Handed) HandRules(
         ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
         string tree, string? kept, IReadOnlyList<string>? job = null, AcrossReach? across = null, string? said = null,
-        bool opinion = false)
+        bool opinion = false, bool helper = false)
     {
         // A harness a Claude Code rule means nothing to is handed nothing, and no file is written.
         if (!adapter.TakesSettings) return (null, null, RulesHanded(takes: false, PermissionFile.Empty, RuleLists.Empty, workspace, repository));
@@ -1558,11 +1563,13 @@ public sealed partial class Driver(
             composed = composed with { Allow = [.. composed.Allow, .. job.Where(rule => !composed.Allow.Contains(rule))] };
         }
 
-        if (opinion) composed = OpinionPermissions.Shape(composed);
+        // A helper's session (MIXAGENT2a-ii) is the reviewer's shape with its own one tool.
+        if (opinion || helper) composed = OpinionPermissions.Shape(composed, helper);
 
         var file = SpawnSettings.Write(
             home, sessionId, composed,
-            opinion ? [.. PermissionRules.HardDeny(rules), OpinionPermissions.HardDeny] : PermissionRules.HardDeny(rules),
+            helper ? [.. PermissionRules.HardDeny(rules), OpinionPermissions.HelperHardDeny]
+            : opinion ? [.. PermissionRules.HardDeny(rules), OpinionPermissions.HardDeny] : PermissionRules.HardDeny(rules),
             PermissionRules.GuardsTree(rules) ? TreeGuard.For(home, tree, across?.Writes.Select(target => target.Path)) : null);
         var handed = RulesHanded(takes: true, rules, composed, workspace, repository);
         if (file is null) return (null, null, handed);
@@ -2010,7 +2017,7 @@ public sealed partial class Driver(
         // What the target was composed of, kept beside it on its event with the rules handed beside it (CONTEXT1, D143 point 1);
         // a resume composes nothing, so its record keeps none. Nor a reviewer's (XAGENT1d): its instruction is its own
         // composer's, which the account's sections do not name yet, and an intake's section would say it was one.
-        var account = composed is null || target.Opinion is not null ? null
+        var account = composed is null || target.Opinion is not null || target.Helper is not null ? null
             : rules.Handed is { } rulesHanded ? composed.Account.Beside(rulesHanded)
             : composed.Account;
         // A quest's session keeps the id its harness names, which an answer to a park resumes (ANSWER1a). Never an
