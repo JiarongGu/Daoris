@@ -76,6 +76,10 @@ public sealed class HandOverQuestTickTests : IDisposable
         var carried = service.Session("s2");
         Assert.Equal("stub", carried["adapter"]!.GetValue<string>());
         Assert.Equal("completed", carried["state"]!.GetValue<string>());
+        // Its record names the session it was handed over from, with the hand-over's why and asker (MIXAGENT1a-iii).
+        Assert.Equal(
+            ("s1", "press", "person"),
+            (carried["from"]?.GetValue<string>(), carried["fromWhy"]?.GetValue<string>(), carried["fromBy"]?.GetValue<string>()));
         Assert.Equal(Path.GetFullPath(tree), Path.GetFullPath(carried["tree"]!.GetValue<string>()), ignoreCase: true);
         Assert.Equal("Done", service.Status("q1"));
         var run = Runs(log).Single();

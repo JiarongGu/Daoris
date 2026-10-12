@@ -1177,6 +1177,10 @@ public sealed partial class Driver(
         // the range a fact rather than something reconstructed from the evidence string.
         var before = await WorkingTree.HeadAsync(workTree, ct).ConfigureAwait(false);
 
+        // The session this start continues, why and who asked (MIXAGENT1a-iii, D163 point 4): the one the quest was handed over
+        // from, or one a limit cut off when this runs on another account; named on the record as it opens.
+        var continues = ContinuesFrom(handedQuest, carryingOn ? start.Resumes : null, selection.Profile);
+
         // The ledger judges the open — the same door any other client would use. A refusal here is
         // an answer (someone else got there first), not an error.
         var (sessionId, message) = await service
@@ -1186,7 +1190,7 @@ public sealed partial class Driver(
             .OpenSessionAsync(
                 quest.Id, agent, selection.Version, selection.Profile, workTree, before, ct,
                 // Whether this is a set-up, for the machine log alone, so a set-up's cost can be read back (WSSETUP11).
-                setup: SetupQuests.IsSetup(quest.Title))
+                setup: SetupQuests.IsSetup(quest.Title), from: continues)
             .ConfigureAwait(false);
         if (sessionId is null)
         {
@@ -2555,6 +2559,23 @@ public sealed partial class Driver(
     /// </summary>
     internal static bool OnAnotherAccount(PriorSession prior, string? profile) =>
         !string.Equals(prior.Profile ?? "", profile ?? "", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The session a quest's start continues, for its record's <c>from</c> link (MIXAGENT1a-iii, D163 point 4): the session the
+    /// quest was handed over from, with the hand-over's why and asker (MIXAGENT1a-ii); else a session a limit cut off, carried on
+    /// onto another account (TOOL4f), Daoris's own move; else none. A carry-on on the same account, a resume and a fresh start
+    /// continue no other agent's or account's run, and say none.
+    /// </summary>
+    /// <param name="handed">The quest's hand-over as held, or null.</param>
+    /// <param name="carried">The record it carries on, where it carries one on, or null.</param>
+    /// <param name="profile">The account it opens on.</param>
+    internal static ContinuedFrom? ContinuesFrom(HandedQuest? handed, PriorSession? carried, string? profile) =>
+        carried is null ? null
+        : handed is not null && string.Equals(carried.Session, handed.From, StringComparison.Ordinal)
+            ? new ContinuedFrom(carried.Session, handed.Why, handed.AskedBy)
+        : carried.Limit && OnAnotherAccount(carried, profile)
+            ? new ContinuedFrom(carried.Session, HandOverWhy.Limit, HandOverBy.Daoris)
+        : null;
 
     /// <summary>How much of a parked session's words its card keeps, from the end, where a question list sits (FG5).</summary>
     internal const int LastWordsLimit = 4000;

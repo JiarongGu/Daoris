@@ -363,16 +363,23 @@ public sealed class WordsNotesTests
         }
     }
 
-    /// <summary>MIXAGENT1a-i: why a conversation was handed over is a family of its own, each reason declared once; the two lines carry facts only.</summary>
+    /// <summary>
+    /// MIXAGENT1a-i: why a conversation was handed over is a family of its own, each reason a box takes declared once; the two lines
+    /// carry facts only. `curve` (MIXAGENT1a-iii, D165) is a reason a record continues another by, and no box takes it yet, so no
+    /// line says it: SWITCH1c's automatic move declares it with the box that carries it.
+    /// </summary>
     [Fact]
     public void A_conversation_handed_over_says_where_it_went_and_why_by_code_with_facts_only()
     {
         var reasons = typeof(HandOverWhy).GetFields()
             .Where(field => field.IsLiteral && field.FieldType == typeof(string))
             .Select(field => (string)field.GetRawConstantValue()!)
-            .Order(StringComparer.Ordinal);
-        Assert.Equal(reasons, NoteCodes.Handed.All.Select(reason => reason.Code).Order(StringComparer.Ordinal));
-        Assert.Equal(["agent", "limit", "near", "press"], reasons);
+            .Order(StringComparer.Ordinal)
+            .ToList();
+        var boxed = reasons.Where(HandOverWhy.Known).ToList();
+        Assert.Equal(boxed, NoteCodes.Handed.All.Select(reason => reason.Code).Order(StringComparer.Ordinal));
+        Assert.Equal(["agent", "limit", "near", "press"], boxed);
+        Assert.Equal(["agent", "curve", "limit", "near", "press"], reasons);
 
         var went = HandOverNotes.HandedOver("codex-acp", "ab12cd34");
         Assert.Equal("The conversation went on with codex-acp, in conversation ab12cd34.", went.Note);

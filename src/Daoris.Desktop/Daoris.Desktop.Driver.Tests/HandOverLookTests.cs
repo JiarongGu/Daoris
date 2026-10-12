@@ -175,5 +175,43 @@ public sealed class HandOverLookTests : IDisposable
         Assert.Equal("codex-acp", new HandedQuests(_home).Read("q1")!.Agent);
     }
 
+    /// <summary>
+    /// 🔴 MIXAGENT1a-iii (D163 point 4): the session a quest's start continues, for its record. The carry-on of the session the quest
+    /// was handed over from names it with the hand-over's why and asker; a carry-on onto another account after a limit names the
+    /// cut-off session as Daoris's move; any other start names none.
+    /// </summary>
+    [Fact]
+    public void A_quest_s_start_continues_the_session_it_was_handed_from_or_a_limit_cut_off_on_another_account()
+    {
+        var handed = new HandedQuest("codex-acp", null, "s1", HandOverWhy.Near, HandOverBy.Person, T0);
+        PriorSession Prior(string session, bool limit = false, string? profile = "account-1") =>
+            new(session, null, "stopped") { Limit = limit, Profile = profile };
+
+        Assert.Equal(new ContinuedFrom("s1", "near", "person"), Daoris.Driver.Driver.ContinuesFrom(handed, Prior("s1"), "account-1"));
+        Assert.Equal(new ContinuedFrom("s1", "limit", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1", limit: true), "account-2"));
+        // The handed quest's own later carry-on, cut off by a limit too, is the limit's move from that later session.
+        Assert.Equal(new ContinuedFrom("s2", "limit", "daoris"), Daoris.Driver.Driver.ContinuesFrom(handed, Prior("s2", limit: true), "account-2"));
+
+        Assert.Null(Daoris.Driver.Driver.ContinuesFrom(handed, Prior("s2"), "account-1"));
+        Assert.Null(Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1", limit: true), "account-1"));
+        Assert.Null(Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1"), "account-2"));
+        Assert.Null(Daoris.Driver.Driver.ContinuesFrom(handed, null, "account-1"));
+    }
+
+    /// <summary>The open says the link, read back as the record answers it; an open that names none says none.</summary>
+    [Fact]
+    public async Task A_quest_s_open_names_the_session_it_continues_on_its_record()
+    {
+        using var service = _ledger.Client();
+
+        var (carried, _) = await service.OpenSessionAsync("q1", "codex-acp", from: new ContinuedFrom("s1", HandOverWhy.Limit, HandOverBy.Daoris));
+        var (plain, _) = await service.OpenSessionAsync("q1", "stub");
+
+        var link = (await service.RecordAsync(carried!))!;
+        Assert.Equal(("s1", "limit", "daoris"), (link.From, link.FromWhy, link.FromBy));
+        var none = (await service.RecordAsync(plain!))!;
+        Assert.Equal(((string?)null, (string?)null, (string?)null), (none.From, none.FromWhy, none.FromBy));
+    }
+
     private string State(string session) => _ledger.Session(session)["state"]!.GetValue<string>();
 }

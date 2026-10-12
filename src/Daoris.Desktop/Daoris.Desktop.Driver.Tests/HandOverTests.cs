@@ -193,6 +193,9 @@ public sealed class HandOverTests : IDisposable
         public bool Reached { get; set; } = true;
 
         public ChatStart Started { get; set; } = new("n3w00001", "opened");
+
+        /// <summary>The session the start was told the new conversation continues (MIXAGENT1a-iii), with why and who asked.</summary>
+        public ContinuedFrom? From { get; set; }
     }
 
     private Task<HandedOver> TakeAsync(Room room, Taken taken, HandOverRequest ask, string id = "c0nv0001")
@@ -205,9 +208,10 @@ public sealed class HandOverTests : IDisposable
                 taken.Calls.Add($"end {session}");
                 return Task.CompletedTask;
             },
-            start: (prior, request, _) =>
+            start: (prior, request, from, _) =>
             {
                 taken.Calls.Add($"start {Path.GetFileName(prior.Tree)} {prior.Repository} {request.Agent} {request.Account}");
+                taken.From = from;
                 return Task.FromResult(taken.Started);
             },
             say: (session, message) =>
@@ -236,6 +240,8 @@ public sealed class HandOverTests : IDisposable
         var handed = await TakeAsync(new Room([Chat("c0nv0001")]), taken, Ask());
 
         Assert.Equal(["end c0nv0001", "start tree engine codex-acp work", "say n3w00001"], taken.Calls);
+        // The new record names the one it continues, why and who asked (MIXAGENT1a-iii): the box's, never the person's by default.
+        Assert.Equal(new ContinuedFrom("c0nv0001", HandOverWhy.Limit, HandOverBy.Daoris), taken.From);
         Assert.Equal(("n3w00001", true, (string?)null), (handed.SessionId, handed.Kept, handed.Why));
         Assert.Equal("conversation `n3w00001` goes on from `c0nv0001` with codex-acp.", handed.Message);
         var message = taken.Said!;
@@ -555,6 +561,20 @@ public sealed class HandOverTests : IDisposable
         store.Write("../escape", new HandedQuest("codex-acp", null, "qu3st000", HandOverWhy.Press, HandOverBy.Person, T0));
         Assert.Empty(Directory.EnumerateFiles(_home, "escape*", SearchOption.AllDirectories));
         Assert.Null(store.PathOf("../escape"));
+    }
+
+    /// <summary>
+    /// MIXAGENT1a-iii (D165 point 3): `curve` is the reason a record continues another by the person's switching setting, said in
+    /// the briefing's and the record's English. The box does not take it yet: an automatic move writes its own (SWITCH1c), and a
+    /// press naming it would carry a reason the record's coded lines do not declare.
+    /// </summary>
+    [Fact]
+    public void Curve_is_a_reason_a_record_continues_another_and_not_yet_one_a_box_takes()
+    {
+        Assert.Equal("curve", HandOverWhy.Curve);
+        Assert.Equal("the account it ran on was near the limit the person's switching setting draws", HandOverWhy.Briefed(HandOverWhy.Curve));
+        Assert.Equal("its account was near the limit the person's switching setting draws", HandOverWhy.Noted(HandOverWhy.Curve));
+        Assert.False(HandOverWhy.Known(HandOverWhy.Curve));
     }
 
     /// <summary>The service's half of what the door reads: this machine's records, closed ones included, and a quest's state.</summary>

@@ -112,7 +112,7 @@ public sealed partial class ChatRunner
         {
             return await HandOverTake.RunAsync(
                 _service, _home, _events, _output, sessionId, ask, AccountsOf, EndForHandOverAsync,
-                (prior, request, token) => StartAsync(prior.Repository!, request.Agent, config, onEnded, request.Account, ct: token, tree: prior.Tree),
+                (prior, request, from, token) => StartAsync(prior.Repository!, request.Agent, config, onEnded, request.Account, ct: token, tree: prior.Tree, from: from),
                 SayHandedOver, ct).ConfigureAwait(false);
         }
         finally
