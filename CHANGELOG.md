@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris agent profile use` takes when to switch accounts, `--switch smart|curve|off`, and your own curve per window,
+  `--curve session=0:85` or `--curve weekly=0:30,50:70,100:100` (`--no-curve` takes it out), and prints both; a curve that
+  breaks its rules is refused saying which window, which point and why. `--early` and `--near` still work as the old names,
+  and settings saved with them are read as the switch and the curve they meant, and saved that way.
 - The offer to go on with another agent names another tool on an account with room, never the same tool through its other door
   or an account that is near its limit, refused or cooling; *Choose…* lists those tools first.
 - When every account is near its limit, a start takes the one with the most room first, so it no longer stays on one at 99%
