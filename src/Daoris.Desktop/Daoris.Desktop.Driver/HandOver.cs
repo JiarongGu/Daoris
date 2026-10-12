@@ -179,7 +179,8 @@ public sealed record HandOverAnswer(bool Kept, string? Why, string Message);
 /// anything is kept, and keeps the <see cref="HandOverBox"/> the shell's chat runner takes.
 /// </summary>
 /// <remarks>
-/// <b>Conversations only.</b> A quest's session goes with MIXAGENT1a-ii, and says so in plain words. Ask Daoris's own
+/// <b>Conversations only here.</b> A quest's session is <see cref="QuestHandOver"/>'s (MIXAGENT1a-ii); asked of this judge it is
+/// refused <see cref="NotConversation"/>, saying where its door is. Ask Daoris's own
 /// conversations and intakes never go on elsewhere (D137 §2.2), and the conversation cannot be handed to the agent and account it
 /// runs on, nor while another hand-over waits, nor from a tree that is gone.
 /// </remarks>
