@@ -52,9 +52,14 @@ public sealed record WindowWords(
 /// <param name="Credits">Whether the frame said the request drew on usage credits, on the window it names.</param>
 public sealed record WindowReading(string Window, double? Used, DateTimeOffset Reset, string? Standing = null, bool Credits = false);
 
-/// <summary>One window as <c>windows.json</c> keeps it: its reading, when it was seen, and on which session.</summary>
+/// <summary>
+/// One window as <c>windows.json</c> keeps it: its reading, when it was seen, and on which session. <paramref name="Source"/>
+/// is <c>read</c> for a window asked of its agent's own server (USAGEREAD2a) and <c>said</c> for a session's frame, the
+/// kept form where none is written.
+/// </summary>
 public sealed record WindowSaid(
-    string Window, double? Used, DateTimeOffset Reset, string? Standing, bool Credits, DateTimeOffset Seen, string? Session);
+    string Window, double? Used, DateTimeOffset Reset, string? Standing, bool Credits, DateTimeOffset Seen, string? Session,
+    string Source = AccountWindows.SourceSaid);
 
 /// <summary>
 /// What an account's agent last said about its windows, as of a moment (TOOL6c, D130 §5.2): each window whose reset has not
