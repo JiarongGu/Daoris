@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A landing rule names the pull request's branch as your repository names its own: its pattern may say `{ticket}`, the
+  ticket key found in the title, then the request, then its links (`TK-2202` by default, or the shape `--key` names, as in
+  `daoris driver landing <repository> branch "feature/{ticket}-{slug}" --key "[A-Z]+-\d+"`), the session's id where none is
+  found. A branch's words are never cut from a web address, so a title that was only a ticket's address no longer makes
+  `feature/https-…`.
 - The offer to go on with another agent names another tool on an account with room, never the same tool through its other door
   or an account that is near its limit, refused or cooling; *Choose…* lists those tools first.
 - When every account is near its limit, a start takes the one with the most room first, so it no longer stays on one at 99%

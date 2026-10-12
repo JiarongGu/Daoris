@@ -131,7 +131,11 @@ daoris <command> [options]
                                                    opens the pull request;
                                                    --auto-accept on a branch: a
                                                    quest's done lands it with no
-                                                   press, and the plugin pushes)
+                                                   press, and the plugin pushes;
+                                                   --key <shape> where it says
+                                                   {ticket}: the ticket key found
+                                                   in the title or the request,
+                                                   [A-Z][A-Z0-9]+-\d+ if none)
                          across <repo> read on|off|--clear
                                                    whether agents outside it read
                                                    its checkout; on by default
