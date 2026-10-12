@@ -78,6 +78,9 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     public const string Marker = "marker";
     public const string Mark = "mark";
     public const string Choice = "choice";
+
+    /// <summary>A conversation's ask to go on with another agent (MIXAGENT1a-i, <see cref="HandOverBox"/>).</summary>
+    public const string HandOver = "hand-over";
     public const string Spawn = "spawn";
 
     /// <summary>Ask Daoris's conversation's name, pin and start (ASKHIST1, <see cref="HelpConversations"/>).</summary>
@@ -115,6 +118,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Marker, Place.Sessions, ".pid", false, Beside),
         new(Mark, Place.Sessions, GoOnMarks.Suffix, false, Beside),
         new(Choice, Place.Sessions, NewSessionChoices.Suffix, false, Beside),
+        new(HandOver, Place.Sessions, HandOverBox.Suffix, false, Beside),
         new(Spawn, Place.Spawn, ".mcp.json", false, Beside),
         new(Spawn, Place.Spawn, ".settings.json", false, Beside),
         new(Help, Place.Sessions, HelpConversations.Suffix, false, Beside),

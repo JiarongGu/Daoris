@@ -9,6 +9,7 @@
     "Marker": "marker",
     "Mark": "mark",
     "Choice": "choice",
+    "HandOver": "hand-over",
     "Spawn": "spawn",
     "Help": "help",
     "Held": "held",

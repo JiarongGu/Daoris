@@ -46,6 +46,7 @@
   "work.delete.kept.marker": "its process marker",
   "work.delete.kept.mark": "its go-on mark",
   "work.delete.kept.choice": "its choice of a new session",
+  "work.delete.kept.hand-over": "its ask to go on with another agent",
   "work.delete.kept.spawn": "its spawn files",
   "work.delete.kept.help": "its name and pin in Ask Daoris’s history",
   "work.delete.kept.held": "your words held for it",
