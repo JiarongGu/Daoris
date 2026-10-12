@@ -1,7 +1,11 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { Quest, Session, SessionState } from '../api';
+import { InTheme } from '../plugins/storyIcons';
+import { chinese } from '../storyLanguage';
 import type { SessionGrouping } from './groups';
 import { SessionRow } from './SessionRow';
+
+const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 // Every state of a rail row, on the shipped component (D42 §5) — including the ones real data
 // rarely shows. A row is a molecule, so each of these is reached by passing props: no driver, no
@@ -312,6 +316,32 @@ export const RunningWithItsPauses: Story = {
     onAct: () => {},
   },
 };
+
+/**
+ * A conversation handed over (MIXAGENT3a-i, the mixed-agents design §4): its line names the session it continues, as the rail
+ * joined it; in English, 中文 and dark.
+ */
+export const ContinuesAnother: Story = {
+  args: {
+    session: { ...SESSION, kind: 'chat', quest: null, from: 'a1b2c3d4', fromWhy: 'near', fromBy: 'daoris', created: at(7), updated: at(1) },
+    quest: null, opening: 'Go on with the hydrator fix', continues: 'Why the hydrator drops frames', place: 'engine',
+  },
+};
+export const ContinuesAnotherChinese: Story = {
+  args: { ...ContinuesAnother.args, opening: '接着修水合的问题', continues: '为什么水合会丢帧' },
+  decorators: [chinese],
+};
+export const ContinuesAnotherDark: Story = { ...ContinuesAnother, decorators: [dark] };
+
+/** A helper (MIXAGENT3a-i): titled as one, its line names the session it helps; in English, 中文 and dark. */
+export const Helper: Story = {
+  args: {
+    session: { ...SESSION, id: 'h3lp3r00', kind: 'chat', quest: null, serves: 's1a2b3c4', created: at(3), updated: at(1) },
+    quest: null, helps: 'Expose a streaming budget on the chunk API', place: 'engine',
+  },
+};
+export const HelperChinese: Story = { ...Helper, decorators: [chinese] };
+export const HelperDark: Story = { ...Helper, decorators: [dark] };
 
 /** A person's stop that holds its quest (SESSUX1b): its line says so, and its ⋯ offers *Try again*. */
 export const StoppedHoldingItsQuest: Story = {

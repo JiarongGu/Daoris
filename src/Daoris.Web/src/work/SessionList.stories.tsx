@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { Quest, Session } from '../api';
+import { InTheme } from '../plugins/storyIcons';
+import { chinese } from '../storyLanguage';
 import { offeredActs } from './acts';
 import { endedToArchive, type SessionArrangement, type SessionGrouping } from './groups';
 import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from './layout';
@@ -58,13 +60,22 @@ const GROUPINGS: SessionGrouping[] = [
   { session: 'd0ne0001', group: 'ended', shown: 'declined', archived: false, teammate: false },
 ];
 
-const facts = (sessions: readonly Session[]): SessionRowFacts[] => sessions.map((row) => ({
-  session: row,
-  quest: row.quest ? QUESTS.get(row.quest) : null,
-  opening: row.id === 'c4a7c4a7' ? 'Why does the loader block on the first chunk?' : null,
-  // A chat between turns reads idle, as the driver says (UX5 U17).
-  taking: row.kind === 'chat' ? false : undefined,
-}));
+const facts = (sessions: readonly Session[]): SessionRowFacts[] => {
+  // The rail's join of a record's own links (MIXAGENT3a-i): the linked session's quest title, where the list holds it.
+  const titled = (id: string | null | undefined) => {
+    const linked = id ? sessions.find((row) => row.id === id) : undefined;
+    return linked?.quest ? QUESTS.get(linked.quest)?.title ?? null : null;
+  };
+  return sessions.map((row) => ({
+    session: row,
+    quest: row.quest ? QUESTS.get(row.quest) : null,
+    opening: row.id === 'c4a7c4a7' ? 'Why does the loader block on the first chunk?' : null,
+    // A chat between turns reads idle, as the driver says (UX5 U17).
+    taking: row.kind === 'chat' ? false : undefined,
+    continues: titled(row.from),
+    helps: titled(row.serves),
+  }));
+};
 
 /** Fifteen that ended, newest first: past the twelve a group shows before its press (§4.4). */
 const MANY_ENDED = Array.from({ length: 15 }, (_, index) =>
@@ -239,3 +250,21 @@ export const Strip: Story = { args: { layout: CLOSED } };
 
 /** A strip the window drew, opened: the list over the main area, beside its strip. */
 export const LaidOver: Story = { args: { layout: { mode: 'over', width: LIST_BOUNDS.sessions.initial, beside: LIST_STRIP, auto: true } } };
+
+/**
+ * MIXAGENT3a-i (the mixed-agents design §4): a conversation handed over says on its line the session it continues, and a
+ * helper, titled as one, the session it helps; in English, 中文 and dark.
+ */
+const LINKED: Session[] = [
+  ...SESSIONS,
+  session({ id: 'h4nd3d00', state: 'working', kind: 'chat', repository: 'game', from: 'w0rk1ng0', fromWhy: 'near', fromBy: 'daoris', created: at(4), updated: at(1) }),
+  session({ id: 'h3lp3r00', state: 'working', kind: 'chat', serves: 'p4rk3d00', created: at(3), updated: at(1) }),
+];
+const LINKED_GROUPINGS: SessionGrouping[] = [
+  ...GROUPINGS,
+  { session: 'h4nd3d00', group: 'working', shown: 'working', archived: false, teammate: false },
+  { session: 'h3lp3r00', group: 'working', shown: 'working', archived: false, teammate: false },
+];
+export const ContinuesAndHelps: Story = { args: { sessions: LINKED, groupings: LINKED_GROUPINGS, selected: 'h4nd3d00' } };
+export const ContinuesAndHelpsChinese: Story = { ...ContinuesAndHelps, decorators: [chinese] };
+export const ContinuesAndHelpsDark: Story = { ...ContinuesAndHelps, decorators: [(Story) => <InTheme theme="dark"><Story /></InTheme>] };

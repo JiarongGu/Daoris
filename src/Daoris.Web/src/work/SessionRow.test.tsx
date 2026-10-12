@@ -147,6 +147,37 @@ describe('a session row', () => {
     expect(screen.queryByText(/reads/)).toBeNull();
   });
 
+  /**
+   * MIXAGENT3a-i (the mixed-agents design §4): a session that continues another names it on its row, and a helper names whom it
+   * helps, where the rail joined them; nothing joined, nothing claimed, and no record's link, nothing said.
+   */
+  it('says which session it continues and whom a helper helps, when it is told', async () => {
+    const continued = session({ kind: 'chat', repository: 'engine', from: 'a1b2c3d4', fromWhy: 'near', fromBy: 'daoris' });
+    const { rerender } = render(<SessionRow session={continued} opening="Go on" continues="Why the hydrator drops frames" />);
+    expect(screen.getByText(/^chat · continues Why the hydrator drops frames · moved/)).toBeInTheDocument();
+
+    const helper = session({ kind: 'chat', repository: 'engine', serves: 's9f8e7d6' });
+    rerender(<SessionRow session={helper} helps="Expose a streaming budget" />);
+    expect(screen.getByText('Helper')).toBeInTheDocument();
+    expect(screen.getByText(/^chat · helps Expose a streaming budget · moved/)).toBeInTheDocument();
+
+    rerender(<SessionRow session={helper} />);
+    expect(screen.queryByText(/helps/)).toBeNull();
+    rerender(<SessionRow session={session({ kind: 'chat' })} opening="Go on" continues="Why" helps="Expose" />);
+    expect(screen.queryByText(/continues|helps/)).toBeNull();
+
+    await i18n.changeLanguage('zh');
+    try {
+      rerender(<SessionRow session={continued} opening="Go on" continues="为什么丢帧" />);
+      expect(screen.getByText(/接续「为什么丢帧」/)).toBeInTheDocument();
+      rerender(<SessionRow session={helper} helps="流式预算" />);
+      expect(screen.getByText('助手')).toBeInTheDocument();
+      expect(screen.getByText(/协助「流式预算」/)).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   it('names a session with no quest by its derived identity rather than by nothing', () => {
     render(<SessionRow session={session({ kind: 'chat', quest: null })} />);
     expect(screen.getByText('Chat')).toBeInTheDocument();

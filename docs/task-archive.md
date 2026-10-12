@@ -14002,3 +14002,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SWITCH1b-iii — what passes an account, said** (cli/web). The help and the page's words for switching (`toolchain.ts`'s *switch before the limit* sentence and its walk prose, `harness.use.early.why`, `harness.next.*`) say its limit reached, usage credits, or its use over its curve, in both languages; the terminal's said line marks a window over its curve with the curve's value, as the start's line does (CURVECLI1). Design §1.3, §5.
 
 **Outcome** 2026-10-13: the terminal and the page say what passes an account (its limit reached, usage credits, or its use over its curve) and the walk's steps by the curve; `profile use`'s said line marks a window over its curve with the curve's value now, through the CLI's twin of `UsageCurves` held by `usage-curves.json`. Closes CURVECLI1. Detail: D165's SWITCH1b-iii note.
+
+## MIXAGENT3a-i — the head and the row say who a session continues or helps (2026-10-13, D163)
+
+> - [ ] **MIXAGENT3a-i — the head and the row say who a session continues or helps** (web). The page's `Session` gains `serves`, `from`, `fromWhy`, `fromBy` (the route already answers them on loopback); the head's fact *continues {agent} · {why}* (the hand-over's reason words; nothing said for `curve` until SWITCH1c declares it) and *helping {title}*; Details rows *Continues* and *Helping* with a door to that session (its id in mono, no door, where it is not listed); the rail row's *continues …* or *helps …*; a helper titled *Helper*; no new pill; both languages, stories. The timeline's codes already say it. Design §4.
+
+**Outcome** 2026-10-13: the head's facts, its Details (with a door) and the rail row say which session a session continues and which a helper helps; a helper is titled *Helper* and offered no box; the glossary gains *helper* (助手). Detail: D163's MIXAGENT3a-i note; HELPERACTS1 and NAMEZH1 hold what it found.

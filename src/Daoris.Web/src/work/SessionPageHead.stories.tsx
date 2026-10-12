@@ -233,6 +233,46 @@ export const OneLineChinese: Story = {
   decorators: [at(596), chinese],
 };
 
+// ——— Whom it continues and whom a helper helps (MIXAGENT3a-i, the mixed-agents design §4): the facts line says the agent a
+// handed-over conversation continues and why, in the hand-over's words, and a helper whom it helps; in English, 中文 and dark.
+
+const HANDED: Session = { ...SESSION, quest: null, kind: 'chat', from: 'a1b2c3d4', fromWhy: 'near', fromBy: 'daoris' };
+const A_HELPER: Session = { ...SESSION, id: 'h3lp3r00', quest: null, kind: 'chat', serves: 's1a2b3c4' };
+
+/** A conversation handed over from Codex because its account was near its limit. */
+export const ContinuesAnother: Story = {
+  args: {
+    session: HANDED, title: 'Go on with the hydrator fix',
+    facts: ['engine', 'continues from Codex', 'its account was near its limit', 'started 2m ago'],
+    acts: ['stop', 'handOver', 'openFolder', 'terminal', 'detach', 'copy'],
+  },
+};
+export const ContinuesAnotherChinese: Story = {
+  args: { ...ContinuesAnother.args, facts: ['engine', '接续 Codex 的会话', '它的账户接近上限', '2 分钟前开始'] },
+  decorators: [chinese],
+};
+export const ContinuesAnotherDark: Story = {
+  args: { ...ContinuesAnother.args },
+  decorators: [(Story) => <InTheme theme="dark"><Story /></InTheme>],
+};
+
+/** A helper, titled as one, says the session it answers by its title. */
+export const Helping: Story = {
+  args: {
+    session: A_HELPER, title: 'Helper',
+    facts: ['engine', 'helping Expose a streaming budget on the chunk API', 'started 1m ago'],
+    acts: ['stop', 'openFolder', 'detach', 'copy'],
+  },
+};
+export const HelpingChinese: Story = {
+  args: { ...Helping.args, title: '助手', facts: ['engine', '正在协助「Expose a streaming budget on the chunk API」', '1 分钟前开始'] },
+  decorators: [chinese],
+};
+export const HelpingDark: Story = {
+  args: { ...Helping.args },
+  decorators: [(Story) => <InTheme theme="dark"><Story /></InTheme>],
+};
+
 // ——— *Go on with another agent…* (MIXAGENT1b-i, D163): the hand-over's ask under the head of a conversation, idle and working,
 // and a refusal said in it; each at 680 px of window, in English and 中文.
 

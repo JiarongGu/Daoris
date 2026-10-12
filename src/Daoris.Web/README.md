@@ -25,7 +25,11 @@ Unreadable bindings show a problem without a completed diagram. Both the head an
 show workflow holds before Accept, preserving the driver's explanation and available terminal doors.
 A second opinion's reviewer is a row of its own in Sessions' list, and says whose work it reads (XAGENT1g4c): the rail
 joins it to the working session through `GET /api/opinions`, asked only when the list holds a reviewer, and an unanswered
-read claims nothing.
+read claims nothing. A session that continues another, and a helper, say so (MIXAGENT3a-i): the head's facts name the agent
+continued and why, in the hand-over's words, or *helping* and the session's title; *Details* holds *Continues* and *Helping*
+with a door to that session, or its id where the list holds none; the row says *continues* or *helps* and the title, from
+the record's own `from` and `serves` joined in the rail; and a helper is titled *Helper* and, as a reviewer is, offered
+no box.
 With nothing attended, Sessions asks what to work on (NEW1b, D162): *New conversation* takes the words, a repository, a
 tree and an agent with its account, and opens the conversation on them. Ctrl+N and Workspace › *New conversation…* open it.
 The repository list's foot adds one or imports a folder (NEW1c) through Repositories' own drawers, opened over Sessions with the

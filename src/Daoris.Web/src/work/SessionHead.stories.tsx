@@ -462,3 +462,49 @@ export const ChineseQuest: Story = {
     quest: { ...QUEST, title: '让世界流式加载在每一帧内限制水合工作量，并把预算暴露在区块 API 上' },
   },
 };
+
+// ——— Whom it continues and whom a helper helps (MIXAGENT3a-i, the mixed-agents design §4): *Details* opened, the other
+// session's title with its door where the frame holds it, its id in mono where it does not; in English, 中文 and dark.
+
+/** Opens the folded *Details*, in either language, so the story shows its rows. */
+const openDetails: Story['play'] = async ({ canvasElement }) => {
+  [...canvasElement.querySelectorAll<HTMLButtonElement>('button')]
+    .find((button) => /^(Details|详情)/.test(button.textContent ?? ''))?.click();
+};
+
+const EARLIER: Session = { ...SESSION, id: 'a1b2c3d4', quest: null, kind: 'chat', adapter: 'codex', state: 'completed' };
+const HANDED: Session = {
+  ...SESSION, quest: null, kind: 'chat', tree: null, from: 'a1b2c3d4', fromWhy: 'near', fromBy: 'daoris', created: at(9), updated: at(1),
+};
+const A_HELPER: Session = { ...SESSION, id: 'h3lp3r00', quest: null, kind: 'chat', tree: null, serves: 's1a2b3c4', created: at(3), updated: at(1) };
+
+/** A conversation handed over: *Continues* names the session it came from, with its door. */
+export const ContinuesAnother: Story = {
+  args: {
+    session: HANDED, quest: null, opening: 'Go on with the hydrator fix',
+    continues: { session: EARLIER, title: 'Why the hydrator drops frames' }, onOpenSession: () => {},
+  },
+  play: openDetails,
+};
+export const ContinuesAnotherChineseDark: Story = {
+  ...ContinuesAnother,
+  args: { ...ContinuesAnother.args, continues: { session: EARLIER, title: '为什么水合会丢帧' } },
+  decorators: [chinese, dark],
+};
+
+/** The session it continues is not listed here (deleted): its id in mono, no door. */
+export const ContinuesOneNotHeld: Story = {
+  args: { session: HANDED, quest: null, onOpenSession: () => {} },
+  play: openDetails,
+};
+
+/** A helper: titled as one, *Helping* names the session it answers, with its door. */
+export const Helping: Story = {
+  args: {
+    session: A_HELPER, quest: null, headed: false,
+    helps: { session: SESSION, title: 'Expose a streaming budget on the chunk API' }, onOpenSession: () => {},
+  },
+  play: openDetails,
+};
+export const HelpingChinese: Story = { ...Helping, decorators: [chinese] };
+export const HelpingDark: Story = { ...Helping, decorators: [dark] };

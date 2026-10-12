@@ -13,7 +13,7 @@ import { HowItCameToBe, type TraceDoor } from './HowItCameToBe';
 import type { Answered } from './InlineConfirm';
 import type { DiscardOffer, LandOffer } from './groups';
 import type { Relations } from './relations';
-import { type HeadOpinion, type HeadReview, type LandingPlan, SessionHead } from './SessionHead';
+import { type HeadLink, type HeadOpinion, type HeadReview, type LandingPlan, SessionHead } from './SessionHead';
 import { SessionRelations } from './SessionRelations';
 import { SessionTimeline } from './SessionTimeline';
 
@@ -50,8 +50,14 @@ export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onName, discards, onDiscardTree, review,
-  opinion,
+  opinion, continues, helps,
 }: {
+  /**
+   * Passed straight through to the head: the session it continues and the one a helper helps, where the frame holds them
+   * (MIXAGENT3a-i). Its *Details* opens them with `onSession`.
+   */
+  continues?: HeadLink | null;
+  helps?: HeadLink | null;
   /** Passed straight through to the head: what its own tree offers to land, as the driver's reader said it (LAND4). */
   lands?: LandOffer | null;
   /** And the review's gate where it holds that work (REVIEWENV1g): the set-up step, its tab and the verdict's presses. */
@@ -168,6 +174,9 @@ export function AttendedSession({
         discardingBranch={discardingBranch}
         headed={headed}
         onOpenQuest={onQuest}
+        continues={continues}
+        helps={helps}
+        onOpenSession={onSession}
         goAheads={goAheads}
         onGoAhead={onGoAhead}
         ownSignIn={ownSignIn}

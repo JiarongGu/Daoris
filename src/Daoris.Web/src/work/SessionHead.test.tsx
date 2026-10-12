@@ -236,6 +236,97 @@ describe('the attended session\'s head', () => {
     }
   });
 
+  /**
+   * MIXAGENT3a-i (the mixed-agents design §4): *Details* names the session this one continues and the one a helper helps, by
+   * title with a door to it; where the frame holds no such session, its id in mono with no door.
+   */
+  describe('the sessions it continues and helps', () => {
+    const earlier = session({ id: 'a1b2c3d4', quest: null, kind: 'chat', adapter: 'codex' });
+    const asker = session({ id: 'b2c3d4e5' });
+
+    it('names the session it continues by its title, with a door to it', () => {
+      const onOpenSession = vi.fn();
+      render(
+        <SessionHead
+          session={session({ quest: null, kind: 'chat', from: 'a1b2c3d4', fromWhy: 'near', fromBy: 'daoris' })}
+          continues={{ session: earlier, title: 'Why the hydrator drops frames' }}
+          onOpenSession={onOpenSession}
+          headed
+        />,
+      );
+      details();
+      const row = screen.getByText('Continues').nextElementSibling as HTMLElement;
+      expect(within(row).getByText('Why the hydrator drops frames')).toBeInTheDocument();
+      fireEvent.click(within(row).getByRole('button', { name: 'Open session' }));
+      expect(onOpenSession).toHaveBeenCalledWith(earlier);
+      expect(screen.queryByText('Helping')).toBeNull();
+    });
+
+    it('names the session a helper helps by its title, with a door to it', () => {
+      const onOpenSession = vi.fn();
+      render(
+        <SessionHead
+          session={session({ quest: null, kind: 'chat', serves: 'b2c3d4e5' })}
+          helps={{ session: asker, title: 'Expose a streaming budget' }}
+          onOpenSession={onOpenSession}
+          headed
+        />,
+      );
+      details();
+      const row = screen.getByText('Helping').nextElementSibling as HTMLElement;
+      fireEvent.click(within(row).getByRole('button', { name: 'Open session' }));
+      expect(onOpenSession).toHaveBeenCalledWith(asker);
+    });
+
+    it('says the id with no door where the session is not held, or nothing can open it', () => {
+      const { rerender } = render(
+        <SessionHead session={session({ quest: null, kind: 'chat', from: 'a1b2c3d4', fromWhy: 'press', fromBy: 'person' })} headed onOpenSession={vi.fn()} />,
+      );
+      details();
+      const row = screen.getByText('Continues').nextElementSibling as HTMLElement;
+      expect(within(row).getByText('a1b2c3d4')).toBeInTheDocument();
+      expect(row).toHaveClass('font-mono');
+      expect(screen.queryByRole('button', { name: 'Open session' })).toBeNull();
+
+      rerender(
+        <SessionHead
+          session={session({ quest: null, kind: 'chat', serves: 'b2c3d4e5' })}
+          helps={{ session: asker, title: 'Expose a streaming budget' }}
+          headed
+        />,
+      );
+      expect(within(screen.getByText('Helping').nextElementSibling as HTMLElement).getByText('Expose a streaming budget')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Open session' })).toBeNull();
+    });
+
+    it('draws neither row for a session that names no link', () => {
+      render(<SessionHead session={session()} continues={{ session: earlier, title: 'x' }} headed onOpenSession={vi.fn()} />);
+      details();
+      expect(screen.queryByText('Continues')).toBeNull();
+      expect(screen.queryByText('Helping')).toBeNull();
+    });
+
+    it('says them in 中文', async () => {
+      await i18n.changeLanguage('zh');
+      try {
+        render(
+          <SessionHead
+            session={session({ quest: null, kind: 'chat', from: 'a1b2c3d4', fromWhy: 'near', fromBy: 'daoris', serves: 'b2c3d4e5' })}
+            continues={{ session: earlier, title: '为什么丢帧' }}
+            onOpenSession={vi.fn()}
+            headed
+          />,
+        );
+        details();
+        expect(screen.getByText('接续自')).toBeInTheDocument();
+        expect(screen.getByText('协助对象')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '打开会话' })).toBeInTheDocument();
+      } finally {
+        await i18n.changeLanguage('en');
+      }
+    });
+  });
+
   /** UX5 U17: the head says a live chat between turns is idle, as the rail does. */
   it('says a live chat between turns is idle', () => {
     const { rerender } = render(<SessionHead session={session({ kind: 'chat' })} taking={false} />);

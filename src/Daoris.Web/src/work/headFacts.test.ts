@@ -94,6 +94,52 @@ describe('a session’s facts line', () => {
     expect(sessionFacts(t, { session: session({ profile: 'account-1' }), shown: 'working', grouping: grouping({ strikes: 3 }) }))
       .toEqual(['engine', '2 分钟', '第 4 次尝试：之前 3 次失败']);
   });
+
+  /**
+   * MIXAGENT3a-i (the mixed-agents design §4): a session that continues another says which agent's, and why in the hand-over's
+   * own words; a helper says whom it helps. Both follow the repository, whatever the state, since they say what the session is.
+   */
+  describe('who it continues or helps', () => {
+    const CHAT = { kind: 'chat', quest: null } as const;
+    const continued = (over: Partial<Session> = {}) => session({ ...CHAT, from: 'a1b2c3d4', fromWhy: 'near', fromBy: 'daoris', ...over });
+
+    it('says the agent it continues and why it was handed over', () => {
+      expect(sessionFacts(t, { session: continued(), shown: 'working', continuesAgent: 'Codex' }))
+        .toEqual(['engine', 'continues from Codex', 'its account was near its limit', 'started 2m ago']);
+      expect(sessionFacts(t, {
+        session: continued({ fromWhy: 'press', fromBy: 'person', state: 'completed', created: '2026-10-05T09:40:00Z', updated: '2026-10-05T09:54:00Z' }),
+        shown: 'completed', continuesAgent: 'Codex',
+      })).toEqual(['engine', 'continues from Codex', 'you asked for it', 'ran 14m']);
+    });
+
+    /** `curve` (D165 point 3) has no words until SWITCH1c declares them: the line says what it knows and guesses nothing. */
+    it('says no why it has no words for, and another session where the one it continues is not held', () => {
+      expect(sessionFacts(t, { session: continued({ fromWhy: 'curve' }), shown: 'working', continuesAgent: 'Codex' }))
+        .toEqual(['engine', 'continues from Codex', 'started 2m ago']);
+      expect(sessionFacts(t, { session: continued({ fromWhy: 'limit' }), shown: 'working' }))
+        .toEqual(['engine', 'continues another session', 'its account reached its limit', 'started 2m ago']);
+    });
+
+    it('says whom a helper helps, by that session’s title, and another session where it is not held', () => {
+      const helper = session({ ...CHAT, serves: 's9f8e7d6' });
+      expect(sessionFacts(t, { session: helper, shown: 'working', helping: 'Expose a streaming budget' }))
+        .toEqual(['engine', 'helping Expose a streaming budget', 'started 2m ago']);
+      expect(sessionFacts(t, { session: helper, shown: 'working' })).toEqual(['engine', 'helping another session', 'started 2m ago']);
+    });
+
+    it('says nothing of a link the record does not hold', () => {
+      expect(sessionFacts(t, { session: session(CHAT), shown: 'working', continuesAgent: 'Codex', helping: 'Expose a streaming budget' }))
+        .toEqual(['engine', 'started 2m ago']);
+    });
+
+    it('is said in 中文', async () => {
+      await i18n.changeLanguage('zh');
+      expect(sessionFacts(t, { session: continued(), shown: 'working', continuesAgent: 'Codex' }).slice(0, 3))
+        .toEqual(['engine', '接续 Codex 的会话', '它的账户接近上限']);
+      expect(sessionFacts(t, { session: session({ ...CHAT, serves: 's9f8e7d6' }), shown: 'working', helping: '流式预算' })[1])
+        .toBe('正在协助「流式预算」');
+    });
+  });
 });
 
 describe('a quest’s facts line', () => {

@@ -76,6 +76,10 @@ with the version and date at release.
   was asked, that it answered (or why it did not), and what a helper is helping.
 - A conversation that asks another agent for help is given the answer as its next turn, marked as the helper's and never as your
   words: at once when the conversation is between turns, when its turn ends if it is talking, and as it goes on if it had ended.
+- Sessions says who a session continues and whom a helper helps, in both languages. A session handed over from another agent
+  says which agent and why under its title, *Details* names the session it came from with *Open session*, and its row in the
+  list says *continues* and that session's title. A helper is titled *Helper*, names the session it helps by its title in
+  the same three places, and offers no message box, since it takes none.
 
 - When a conversation's account runs low, Daoris offers to go on with another agent: a line under its head, where the account
   is near its limit by its own word or cut, with *Go on with {agent} ({account})* and *Choose…*. It is never taken without your

@@ -29,6 +29,10 @@ export type SessionRowFacts = {
   where?: SessionWhere | null;
   /** Whose work a second opinion's reviewer reads, by that session's title (XAGENT1g4c). */
   reads?: string | null;
+  /** The session it continues, by that session's title, where the rail joined them (MIXAGENT3a-i). */
+  continues?: string | null;
+  /** The session a helper helps, by that session's title, where the rail joined them (MIXAGENT3a-i). */
+  helps?: string | null;
 };
 
 /** A repository group's facts by repository (`RepositoryGroup`): what the driver and the registry answer of it. */

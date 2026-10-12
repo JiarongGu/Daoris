@@ -947,4 +947,35 @@ describe('a group a door brings into view', () => {
       expect(opinionsAsked).not.toHaveBeenCalled();
     });
   });
+
+  /**
+   * MIXAGENT3a-i (the mixed-agents design §4): a session that continues another names it on its row, and a helper names whom it
+   * helps, joined to the sessions the list holds; a link to one it does not hold claims nothing.
+   */
+  describe('a session says whom it continues, and a helper whom it helps (MIXAGENT3a-i)', () => {
+    const carried = { ...base, id: 'f6a7b8c9', quest: null, kind: 'chat', repository: 'engine', state: 'working', from: 's1a2b3c4', fromWhy: 'near', fromBy: 'daoris', created: at(20), updated: at(10) };
+    const helper = { ...base, id: 'a7b8c9d0', quest: null, kind: 'chat', repository: 'engine', state: 'working', serves: 's1a2b3c4', created: at(20), updated: at(10) };
+    const working = (id: string) => ({ session: id, group: 'working', shown: 'working', archived: false, teammate: false });
+
+    beforeEach(() => {
+      SESSIONS = [...LIVE, carried, helper];
+      GROUPS = [...LIVE_GROUPS, working('f6a7b8c9'), working('a7b8c9d0')];
+    });
+
+    it('names the session each one continues or helps by its title', async () => {
+      show(<SessionRail notify={() => {}} />);
+
+      expect(await screen.findByText(/ · chat · continues Expose a streaming budget on the chunk API · moved/)).toBeInTheDocument();
+      expect(screen.getByText(/ · chat · helps Expose a streaming budget on the chunk API · moved/)).toBeInTheDocument();
+      expect(screen.getByText('Helper')).toBeInTheDocument();
+    });
+
+    it('makes no claim where the session it names is not listed', async () => {
+      SESSIONS = [...LIVE, { ...carried, from: 'zzzzzzzz' }, { ...helper, serves: 'yyyyyyyy' }];
+      show(<SessionRail notify={() => {}} />);
+
+      expect(await screen.findByText('Helper')).toBeInTheDocument();
+      expect(screen.queryByText(/continues|helps/)).toBeNull();
+    });
+  });
 });

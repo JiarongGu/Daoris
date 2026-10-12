@@ -18,7 +18,7 @@ import { groupHeading, useBringGroup } from './ListPane';
 import { SessionRow } from './SessionRow';
 import { Refused } from './InlineConfirm';
 import { ArchiveEndedAsk, type RepositoryFacts, SessionList, type SessionRowFacts, SessionStrip } from './SessionList';
-import { isIntake, isOpinion, ownTree, sessionTitle } from './identity';
+import { isIntake, isOpinion, linkedSessions, ownTree, sessionTitle } from './identity';
 import { byName, marked, readable } from './railSearch';
 import { type SessionDoors, useSessionActs } from './sessionActs';
 
@@ -148,6 +148,15 @@ export function SessionRail({
     const working = byId.get(opinion.working);
     if (working) reads[opinion.session] = titleOf(working);
   }
+  // Whom each session continues and whom each helper helps (MIXAGENT3a-i): the records' own links, joined to the sessions the
+  // list holds, as the reviewers' are. A link to one it does not hold claims nothing.
+  const continues: Record<string, string> = {};
+  const helps: Record<string, string> = {};
+  for (const session of sessions.data ?? []) {
+    const linked = linkedSessions(session, byId);
+    if (linked.continues) continues[session.id] = titleOf(linked.continues);
+    if (linked.helps) helps[session.id] = titleOf(linked.helps);
+  }
 
   // What a search may find: everything the list holds, or only what is running where the rail is live.
   const pool = live ? (sessions.data ?? []).filter((session) => SESSION_ACTIVE.has(session.state)) : (sessions.data ?? []);
@@ -161,6 +170,8 @@ export function SessionRail({
     root: registered.get(session.repository)?.root,
     where: where[session.id],
     reads: reads[session.id],
+    continues: continues[session.id],
+    helps: helps[session.id],
   }));
   const placed = new Map((groupings ?? []).map((row) => [row.session, row]));
 
@@ -239,6 +250,8 @@ export function SessionRail({
       root={registered.get(session.repository)?.root}
       where={where[session.id]}
       reads={reads[session.id]}
+      continues={continues[session.id]}
+      helps={helps[session.id]}
       grouping={live ? null : placed.get(session.id)}
       // A search finds archived sessions too, marked, since it is how one is found without the tick (D126 §4.5).
       archived={!live && Boolean(placed.get(session.id)?.archived)}
