@@ -14,9 +14,28 @@ public sealed class KnowledgeConnectorStartTests : IDisposable
     private readonly string _root = Path.Combine(
         WorkspaceRoot.Folder, "_fixtures", "connector-start-" + Guid.NewGuid().ToString("N")[..8]);
 
+    /// <remarks>
+    /// The host holds its store (`knowledge.db`) until its process has gone, so a delete made the moment it is killed met
+    /// the file still open in the full run (FLAKE1, 2026-10-12). The test waits for the exit; a straggling handle still
+    /// gets a few tries here, and then the folder is left: the next run's fresh name never collides with it.
+    /// </remarks>
     public void Dispose()
     {
-        if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
+        for (var attempt = 0; attempt < 5 && Directory.Exists(_root); attempt++)
+        {
+            try
+            {
+                Directory.Delete(_root, recursive: true);
+            }
+            catch (IOException) when (attempt < 4)
+            {
+                Thread.Sleep(200);
+            }
+            catch (IOException)
+            {
+                // Held past the tries: left for a later clean.
+            }
+        }
     }
 
     private static string? DevelopmentHost() =>
@@ -65,6 +84,9 @@ public sealed class KnowledgeConnectorStartTests : IDisposable
         finally
         {
             if (!process.HasExited) process.Kill(entireProcessTree: true);
+            // A kill only asks: the store is let go when the process has gone, and the folder is removed after it.
+            using var gone = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            await process.WaitForExitAsync(gone.Token);
         }
     }
 
