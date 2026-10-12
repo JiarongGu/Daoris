@@ -37,6 +37,11 @@ window (none where no window is read). It is pure, the first file in an onion la
 (SWITCH1b-ii): an account over its curve goes last, the least over first, and among the rest the most room first; `off`
 passes by the smart curve and ranks by D130's week pace. The start's reasons say the window, its use and the curve's value
 (`over-curve`, `most-room`, `opening.said-over`), and the Accounts answer's `near` list reads the same judgement.
+Beside it, `Accounts/Domain/SwitchDecision.cs` (SWITCH1c-i) says whether a running session moves at its turn's end: it stays
+(`off`, no number, room, held thirty minutes after a curve move, or no account with room), reads the others first, or moves
+to the ready account with the most room, at least ten points under its curve on every window. The hand-over box takes
+`curve`, and `HandOverNotes.Moved` and `MovedFrom` (`chat.moved`, `chat.moved-from`) say a move at both ends, naming the
+accounts; the chat runner's use of them is SWITCH1c-ii's.
 
 ## What the page can ask this machine
 
