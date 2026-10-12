@@ -60,13 +60,13 @@ public sealed class CodexUsageRosterTests : IDisposable
         Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
         AccountOf: accountOf, Usage: usage);
 
-    private HarnessRoster Roster() =>
+    private HarnessRoster Roster(UsageQuestion? question = null) =>
         new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
             // The agent declares no question of its own and has no door of its own here: its door asks for it (AGT7), as
             // `codex-acp` does for `codex`.
             ["fake"] = new Adapter("fake", Toolchain()),
-            ["fake-door"] = new Adapter("fake-door", Toolchain(Question, accountOf: "fake")),
+            ["fake-door"] = new Adapter("fake-door", Toolchain(question ?? Question, accountOf: "fake")),
             // An agent whose door carries its windows asks nothing.
             ["quiet"] = new Adapter("quiet", Toolchain()),
         }), Settings)
@@ -175,6 +175,24 @@ public sealed class CodexUsageRosterTests : IDisposable
         // A restart reads the reading's age from `windows.json`, so a fresh one is not asked again.
         await StartAsync(Roster());
         Assert.Equal(["fake/account-2"], Asked().Skip(4));
+    }
+
+    [Fact]
+    public async Task A_Claude_kind_question_is_asked_again_after_its_minute_floor_not_Codex_s_five_minutes()
+    {
+        Accounts("account-1");
+        Wire(s => s.WithRotation("fake", ["account-1"]));
+        Answers("account-1", 0.10, 0.10);
+        var roster = Roster(new UsageQuestion("fake", ["fake-agent"], CodexUsage.Question.Recorded, UsageKind.Claude));
+
+        await StartAsync(roster);
+        _now += ClaudeUsage.Floor - TimeSpan.FromSeconds(1);
+        await StartAsync(roster);
+        Assert.Single(Asked());
+
+        _now += TimeSpan.FromSeconds(2);
+        await StartAsync(roster);
+        Assert.Equal(2, Asked().Length);
     }
 
     /// <summary>
@@ -357,10 +375,12 @@ public sealed class CodexUsageRosterTests : IDisposable
         var roster = new HarnessRoster(adapters, Path.Combine(Path.GetTempPath(), "daoris-codexuse-unused", "harnesses.json"));
 
         Assert.Equal(
-            ["codex-acp"],
+            ["claude-code", "codex-acp"],
             adapters.Names.Where(name => adapters.Resolve(name).Toolchain is { Usage: not null }).Order(StringComparer.Ordinal));
         Assert.Same(CodexUsage.Question, roster.UsageOf("codex-acp"));
-        Assert.Null(roster.UsageOf("claude-code"));
+        Assert.Same(ClaudeUsage.Question, roster.UsageOf("claude-code"));
+        // The protocol door reads its owner's (AGT7).
+        Assert.Same(ClaudeUsage.Question, roster.UsageOf("claude-code-acp"));
         Assert.True(roster.Speaks("codex-acp"));
         Assert.True(roster.Speaks("claude-code-acp"));
         Assert.False(roster.Speaks("dsh"));

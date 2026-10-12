@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- Daoris reads each Claude account's real plan usage, the five-hour and weekly windows Claude Code's `/usage` shows, with no
+  prompt and no usage spent, so a start chooses its account on what is really left, the person's own use included, rather
+  than on what Daoris's last session there said hours before.
 - The offer to go on with another agent names another tool on an account with room, never the same tool through its other door
   or an account that is near its limit, refused or cooling; *Choose…* lists those tools first.
 - When every account is near its limit, a start takes the one with the most room first, so it no longer stays on one at 99%

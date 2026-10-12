@@ -63,7 +63,7 @@ public sealed partial class HarnessRoster
     private async Task FreshenAsync(
         string adapter, string owner, IReadOnlyList<string> list, DriverConfig config, CancellationToken ct)
     {
-        if (UsageOf(adapter) is null) return;
+        if (UsageOf(adapter) is not { } question) return;
 
         var now = Clock();
         IReadOnlyList<string> present;
@@ -81,19 +81,22 @@ public sealed partial class HarnessRoster
         var asking = list
             .Where(account => present.Contains(account, StringComparer.OrdinalIgnoreCase))
             .Where(account => Before(owner, account, now).IsReady && !SaidOut(reads, account))
-            .Where(account => !Recent(owner, account, now))
+            .Where(account => !Recent(owner, account, now, question.Fresh))
             .Select(account => AskUsageAsync(adapter, owner, account, config, ct))
             .ToList();
         await Task.WhenAll(asking).ConfigureAwait(false);
     }
 
-    /// <summary>Whether an account was asked, or said, within <see cref="CodexUsage.Fresh"/>: kept from a restart too.</summary>
-    private bool Recent(string owner, string account, DateTimeOffset now)
+    /// <summary>
+    /// Whether an account was asked, or said, within <paramref name="fresh"/> (the question's: <see cref="CodexUsage.Fresh"/>,
+    /// or Claude's <see cref="ClaudeUsage.Floor"/>): kept from a restart too.
+    /// </summary>
+    private bool Recent(string owner, string account, DateTimeOffset now, TimeSpan fresh)
     {
-        if (_usageAsked.TryGetValue(AccountKey(owner, account), out var asked) && now - asked < CodexUsage.Fresh) return true;
+        if (_usageAsked.TryGetValue(AccountKey(owner, account), out var asked) && now - asked < fresh) return true;
         try
         {
-            return AccountWindows.SaidOf(Home, owner, account, now) is { } said && now - said.Seen < CodexUsage.Fresh;
+            return AccountWindows.SaidOf(Home, owner, account, now) is { } said && now - said.Seen < fresh;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -133,12 +136,29 @@ public sealed partial class HarnessRoster
                 var toolchain = AccountToolchain(adapter) ?? Toolchain(adapter)!;
                 // The own sign-in's server is started with no account's home: the agent answers for its own (D63).
                 var profileHome = account is null ? null : HarnessSettings.ProfileHome(Home, owner, account);
-                var info = CodexUsage.Prepare(command.Run, toolchain, profileHome, command.Managed);
-                readings = await CodexUsage.ReadAsync(info, CodexUsage.Patience, ct).ConfigureAwait(false);
+                if (question.Kind == UsageKind.Claude)
+                {
+                    // Run in an empty folder of the home's own, never the repository or OS temp: the CLI keys its project
+                    // state by its working directory, and a read is no project's.
+                    var folder = Path.Combine(profileHome ?? Home, "usage-read");
+                    Directory.CreateDirectory(folder);
+                    var asking = CodexUsage.Prepare(command.Run, toolchain, profileHome, command.Managed, folder);
+                    var at = Clock();
+                    readings = await CodexUsage.ReadAsync(
+                        asking, ClaudeUsage.Patience, ct,
+                        (incoming, outgoing, patience, token) => ClaudeUsage.AskWithinAsync(incoming, outgoing, patience, at, token))
+                        .ConfigureAwait(false);
+                }
+                else
+                {
+                    var info = CodexUsage.Prepare(command.Run, toolchain, profileHome, command.Managed);
+                    readings = await CodexUsage.ReadAsync(info, CodexUsage.Patience, ct).ConfigureAwait(false);
+                }
             }
 
             if (readings is not { Count: > 0 }) return null;
-            AccountWindows.Said(Home, owner, account ?? AccountWindows.Own, readings, Clock(), session: null);
+            AccountWindows.Said(
+                Home, owner, account ?? AccountWindows.Own, readings, Clock(), session: null, source: AccountWindows.SourceRead);
             return readings;
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)

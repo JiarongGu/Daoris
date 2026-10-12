@@ -1894,7 +1894,10 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         Windows: ClaudeWindows.Words,
         // What its ACP door says when it refuses a start for its sign-in (ROSTER1b): recorded on the install, 2026-10-04, on an
         // account nobody had signed in to. Its ACP door reads these as its owner's (AGT7).
-        SignIn: ClaudeSignIn.Words);
+        SignIn: ClaudeSignIn.Words,
+        // Its own whole-account windows, asked of the native CLI with no prompt (USAGEREAD2a, D165 point 1): the protocol
+        // door reads its owner's through `UsageOf` (AGT7).
+        Usage: ClaudeUsage.Question);
 
     /// <summary>
     /// What a pinned <c>claude</c> runs with so it stays the version pinned (AGT2). 🔴 Measured on a
