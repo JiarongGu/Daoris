@@ -100,6 +100,9 @@ public sealed class HandOverProcessTests : IDisposable
         await Poll.Until(() => Ended(ledger.State(old)), () => Seen(ledger, events, old));
         Assert.Equal(2, ledger.Count);
         Assert.Equal(_root, (await client.RecordAsync(next))!.Tree);
+        // The new record names the one it continues, why and who asked (MIXAGENT1a-iii).
+        var link = (await client.RecordAsync(next))!;
+        Assert.Equal((old, "press", "person"), (link.From, link.FromWhy, link.FromBy));
         // The briefing is said after the old conversation ended, so its note is waited for.
         await Poll.Until(() => events.After(next, 0).Events.Any(e => CodeOf(e) == "chat.taken-over"), () => Seen(ledger, events, next));
         var record = events.After(next, 0).Events;

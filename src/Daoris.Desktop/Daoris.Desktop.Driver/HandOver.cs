@@ -19,6 +19,13 @@ public static class HandOverWhy
     /// <summary>The agent asked for it.</summary>
     public const string Agent = "agent";
 
+    /// <summary>
+    /// Daoris moved it on its own by the person's switching setting (D165 point 3): its account was near the curve that setting
+    /// draws, and another account of the same agent had room. A reason a record continues another by (MIXAGENT1a-iii).
+    /// </summary>
+    /// <remarks>Not yet one a box takes (<see cref="Known"/>): the automatic move is SWITCH1c's, which declares its coded line.</remarks>
+    public const string Curve = "curve";
+
     /// <summary>The reason as the briefing's agent reads it, in Daoris's one English: after <c>handed over because</c>.</summary>
     public static string Briefed(string why) => why switch
     {
@@ -26,6 +33,7 @@ public static class HandOverWhy
         Near => "the account it ran on was near its limit",
         Limit => "the account it ran on reached its limit",
         Agent => "the agent asked for it",
+        Curve => "the account it ran on was near the limit the person's switching setting draws",
         _ => why,
     };
 
@@ -36,10 +44,11 @@ public static class HandOverWhy
         Near => "its account was near its limit",
         Limit => "its account reached its limit",
         Agent => "the agent asked for it",
+        Curve => "its account was near the limit the person's switching setting draws",
         _ => why,
     };
 
-    /// <summary>Whether a word is one of the reasons.</summary>
+    /// <summary>Whether a word is one of the reasons a hand-over's box takes; <see cref="Curve"/> is not one yet.</summary>
     public static bool Known(string? why) => why is Press or Near or Limit or Agent;
 }
 
@@ -58,6 +67,14 @@ public static class HandOverBy
     /// <summary>Whether a word is one of the askers.</summary>
     public static bool Known(string? by) => by is Person or Daoris or Agent;
 }
+
+/// <summary>
+/// The session a new one continues, why (<see cref="HandOverWhy"/>) and who asked (<see cref="HandOverBy"/>): its record's
+/// <c>from</c> link (MIXAGENT1a-iii, D163 point 4), named at the open by the driver, the half that knows. A conversation handed
+/// over, a quest's session carried on after a hand-over, and one carried on onto another account after a limit say it; a
+/// conversation's own going-on continues its own record and says none.
+/// </summary>
+public sealed record ContinuedFrom(string Session, string Why, string By);
 
 /// <summary>A conversation's hand-over as asked (MIXAGENT1a-i): the agent and account it goes to, why, by whom, and when.</summary>
 /// <param name="Agent">The adapter the new conversation runs on.</param>
@@ -388,12 +405,15 @@ public static class HandOverTake
 {
     /// <summary>Judge, end, start, brief and say where it went.</summary>
     /// <param name="end">Ends the old conversation by the runner's own end, and returns once its record has ended.</param>
-    /// <param name="start">Opens the new conversation in the old one's tree on the box's agent and account.</param>
+    /// <param name="start">
+    /// Opens the new conversation in the old one's tree on the box's agent and account, its record naming the one it continues,
+    /// why and who asked (MIXAGENT1a-iii).
+    /// </param>
     /// <param name="say">Hands the new conversation its first message; false where nothing took it.</param>
     public static async Task<HandedOver> RunAsync(
         ServiceClient service, string home, SessionEvents events, SessionOutput? output, string id, HandOverRequest ask,
         Func<string, IReadOnlyList<string>?> accountsOf, Func<string, Task> end,
-        Func<PriorSession, HandOverRequest, CancellationToken, Task<ChatStart>> start, Func<string, ChatMessage, Task<bool>> say,
+        Func<PriorSession, HandOverRequest, ContinuedFrom, CancellationToken, Task<ChatStart>> start, Func<string, ChatMessage, Task<bool>> say,
         CancellationToken ct = default)
     {
         var box = new HandOverBox(home);
@@ -409,7 +429,7 @@ public static class HandOverTake
 
             await end(id).ConfigureAwait(false);
 
-            var started = await start(prior, ask, ct).ConfigureAwait(false);
+            var started = await start(prior, ask, new ContinuedFrom(id, ask.Why, ask.AskedBy), ct).ConfigureAwait(false);
             if (started.SessionId is not { } to)
             {
                 return new HandedOver(

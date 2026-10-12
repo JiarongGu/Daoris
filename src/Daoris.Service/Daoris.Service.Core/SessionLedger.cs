@@ -385,10 +385,12 @@ public sealed partial class SessionLedger(
     /// <para><b>The circle comes from the repository</b>, because there is no quest to take it from —
     /// the registry row is the machine's own wiring (D48 §2), and it is the only honest source.</para>
     /// </remarks>
+    /// <param name="from">The conversation this one continues, handed over (MIXAGENT1a-iii), with <paramref name="fromWhy"/> and <paramref name="fromBy"/>; recorded as told.</param>
     public async Task<SessionOpenOutcome> OpenChatAsync(
         string repository, string adapter, DateTimeOffset now,
         string? harnessVersion = null, string? profile = null, string? tree = null,
-        string? baseCommit = null, CancellationToken ct = default)
+        string? baseCommit = null, CancellationToken ct = default,
+        string? from = null, string? fromWhy = null, string? fromBy = null)
     {
         var known = registry is null
             ? null
@@ -424,7 +426,7 @@ public sealed partial class SessionLedger(
             var session = await sessions
                 .CreateAsync(
                     null, known.Repository, adapter, now, known.InWorkspace, SessionKind.Chat,
-                    harnessVersion, profile, holding, baseCommit, inside)
+                    harnessVersion, profile, holding, baseCommit, inside, from: from, fromWhy: fromWhy, fromBy: fromBy)
                 .ConfigureAwait(false);
 
             return new SessionOpenOutcome(
@@ -780,10 +782,15 @@ public sealed partial class SessionLedger(
     /// Queue a session for an open quest. Refuses an unknown or non-open quest, and a repository that
     /// already has an active session.
     /// </summary>
+    /// <param name="from">
+    /// The session this one carries on from another agent's or another account's (MIXAGENT1a-iii), with <paramref name="fromWhy"/>
+    /// and <paramref name="fromBy"/>; recorded as told, since the driver is the half that knows.
+    /// </param>
     public async Task<SessionOpenOutcome> OpenAsync(
         string questId, string adapter, DateTimeOffset now,
         string? harnessVersion = null, string? profile = null, string? tree = null,
-        string? baseCommit = null, CancellationToken ct = default)
+        string? baseCommit = null, CancellationToken ct = default,
+        string? from = null, string? fromWhy = null, string? fromBy = null)
     {
         var quest = await quests.FindAsync(questId.TrimStart('#'), ct).ConfigureAwait(false);
         if (quest is null)
@@ -858,7 +865,7 @@ public sealed partial class SessionLedger(
             var session = await sessions
                 .CreateAsync(
                     quest.Id, quest.To, adapter, now, quest.Workspace, SessionKind.Driven,
-                    harnessVersion, profile, holding, baseCommit, inside)
+                    harnessVersion, profile, holding, baseCommit, inside, from: from, fromWhy: fromWhy, fromBy: fromBy)
                 .ConfigureAwait(false);
 
             return new SessionOpenOutcome(

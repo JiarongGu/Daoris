@@ -13966,3 +13966,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **USAGEREAD3b — the page says the pace warning in its own words** (web; after 3a). Account rows, the agents list and the use settings show `warned` as the agent's pace warning, not *near its limit*; the hand-over offer's words. Both languages.
 
 **Outcome** 2026-10-13: the Agents page's window cells and the accounts' said line say a `warned` window as *ahead of its pace, by its own word* in both languages, the bar's warning tint kept; `NearBy` loses `word`, and the near pill and the hand-over offer come only from a limit, credits or the number. Detail: D165's USAGEREAD3b note.
+
+## MIXAGENT1a-iii — the record's `from` link (2026-10-13, D163)
+
+> - [ ] **MIXAGENT1a-iii — the record's `from` link** (service/driver; after 1a-ii). A session that continues another says so on its own record, with who asked and why (the `opinion` column's pattern), for a conversation handed over and a quest's session carried on, so the head and the rail can say it (MIXAGENT3a). D163's MIXAGENT1a-ii note; design §4.
+
+**Outcome** 2026-10-13: a session that continues another names it on its own record (`from`, `fromWhy`, `fromBy`; the column `from_session`, as FROM is SQL's), loopback only and never on the wire; the driver sets it for a conversation handed over, a quest carried on after a hand-over, and one moved to another account after a limit; `curve` joins `HandOverWhy` for SWITCH1c. Its Process cases passed on the merge. Detail: D163's MIXAGENT1a-iii note; SESSFIELD1 writes the field chain down.

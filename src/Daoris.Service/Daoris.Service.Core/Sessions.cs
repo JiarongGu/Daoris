@@ -158,6 +158,22 @@ public sealed record Session(
     public string? Serves { get; init; }
 
     /// <summary>
+    /// The session this one continues (MIXAGENT1a-iii, D163 point 4): a conversation handed over, a quest's session carried on
+    /// after a hand-over or onto another account after a limit — null for every other session, and for a record from before.
+    /// </summary>
+    /// <remarks>
+    /// <b>This machine's own, as <see cref="Opinion"/> is</b> (D47 §4): no wire carries it, and a caller off this machine is
+    /// never answered it. Written by the driver at the open, which is the half that knows, and judged by none here.
+    /// </remarks>
+    public string? From { get; init; }
+
+    /// <summary>Why it continues <see cref="From"/>, by the driver's code (<c>press</c>, <c>near</c>, <c>limit</c>, <c>agent</c>, <c>curve</c>); null with it.</summary>
+    public string? FromWhy { get; init; }
+
+    /// <summary>Who asked for it to continue <see cref="From"/>, by the driver's code (<c>person</c>, <c>daoris</c>, <c>agent</c>); null with it.</summary>
+    public string? FromBy { get; init; }
+
+    /// <summary>
     /// Whether this session took its own quest, through its own connector (STANDDOWN2). A session
     /// ending with its quest still taken is then waiting on the person, not standing down for
     /// somebody else — which the quest's state alone cannot tell.
@@ -419,6 +435,12 @@ public sealed partial class SessionStore
         // MIXAGENT2a-i (D163 point 2): the session a helper's record answers. This machine's own, as `opinion` is.
         await SchemaColumns.EnsureAsync(_db, "sessions", "serves", "serves TEXT NULL", ct).ConfigureAwait(false);
 
+        // MIXAGENT1a-iii (D163 point 4): the session a record continues, why and who asked. This machine's own, as `opinion` is,
+        // and a record from before says none, which is the old reading. `from_session`, since FROM is SQL's own word (as `limited`).
+        await SchemaColumns.EnsureAsync(_db, "sessions", "from_session", "from_session TEXT NULL", ct).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(_db, "sessions", "from_why", "from_why TEXT NULL", ct).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(_db, "sessions", "from_by", "from_by TEXT NULL", ct).ConfigureAwait(false);
+
         await using (var cursor = _db.Command())
         {
             cursor.CommandText = """
@@ -567,8 +589,10 @@ public sealed partial class SessionStore
         string? workspace = null, SessionKind kind = SessionKind.Driven,
         string? harnessVersion = null, string? profile = null, string? tree = null,
         string? baseCommit = null, CancellationToken ct = default, string? ask = null, string? opinion = null,
-        string? serves = null) => _db.RunAsync<Session>(async () =>
+        string? serves = null, string? from = null, string? fromWhy = null, string? fromBy = null) => _db.RunAsync<Session>(async () =>
     {
+        // A why or an asker with no session continued is no link (MIXAGENT1a-iii): the three are kept together or not at all.
+        var continues = Blank(from);
         var session = new Session(
             Guid.NewGuid().ToString("N")[..8], quest, repository, adapter,
             SessionState.Queued, null, null, null, now, now, Workspaces.Normalize(workspace), kind,
@@ -579,14 +603,20 @@ public sealed partial class SessionStore
             Ask = Blank(ask),
             Opinion = Blank(opinion),
             Serves = Blank(serves),
+            From = continues,
+            FromWhy = continues is null ? null : Blank(fromWhy),
+            FromBy = continues is null ? null : Blank(fromBy),
         };
 
         await using var command = _db.Command();
         command.CommandText = $"""
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, base_commit, ask, opinion, serves, revision)
-            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree, $baseCommit, $ask, $opinion, $serves, {NextRevision})
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, base_commit, ask, opinion, serves, from_session, from_why, from_by, revision)
+            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree, $baseCommit, $ask, $opinion, $serves, $from, $fromWhy, $fromBy, {NextRevision})
             """;
         command.Parameters.AddWithValue("$serves", (object?)session.Serves ?? DBNull.Value);
+        command.Parameters.AddWithValue("$from", (object?)session.From ?? DBNull.Value);
+        command.Parameters.AddWithValue("$fromWhy", (object?)session.FromWhy ?? DBNull.Value);
+        command.Parameters.AddWithValue("$fromBy", (object?)session.FromBy ?? DBNull.Value);
         command.Parameters.AddWithValue("$ask", (object?)session.Ask ?? DBNull.Value);
         command.Parameters.AddWithValue("$opinion", (object?)session.Opinion ?? DBNull.Value);
         command.Parameters.AddWithValue("$workspace", session.Workspace);
@@ -993,6 +1023,9 @@ public sealed partial class SessionStore
         Ask = reader.IsDBNull(reader.GetOrdinal("ask")) ? null : reader.GetString(reader.GetOrdinal("ask")),
         Opinion = reader.IsDBNull(reader.GetOrdinal("opinion")) ? null : reader.GetString(reader.GetOrdinal("opinion")),
         Serves = reader.IsDBNull(reader.GetOrdinal("serves")) ? null : reader.GetString(reader.GetOrdinal("serves")),
+        From = reader.IsDBNull(reader.GetOrdinal("from_session")) ? null : reader.GetString(reader.GetOrdinal("from_session")),
+        FromWhy = reader.IsDBNull(reader.GetOrdinal("from_why")) ? null : reader.GetString(reader.GetOrdinal("from_why")),
+        FromBy = reader.IsDBNull(reader.GetOrdinal("from_by")) ? null : reader.GetString(reader.GetOrdinal("from_by")),
         Took = !reader.IsDBNull(reader.GetOrdinal("took")) && reader.GetInt64(reader.GetOrdinal("took")) != 0,
         Said = SaidOf(reader),
         Interrupted = !reader.IsDBNull(reader.GetOrdinal("interrupted")) && reader.GetInt64(reader.GetOrdinal("interrupted")) != 0,

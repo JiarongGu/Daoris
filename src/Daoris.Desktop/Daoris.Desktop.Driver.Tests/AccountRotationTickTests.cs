@@ -117,6 +117,10 @@ public sealed class AccountRotationTickTests : IDisposable
         Assert.Equal("account-2", carried["profile"]!.GetValue<string>());
         Assert.Equal(Path.GetFullPath(tree), Path.GetFullPath(carried["tree"]!.GetValue<string>()), ignoreCase: true);
         Assert.Equal("Done", service.Status("q1"));
+        // Its record names the cut-off session it continues, a limit's move and Daoris's (MIXAGENT1a-iii).
+        Assert.Equal(
+            ("s1", "limit", "daoris"),
+            (carried["from"]?.GetValue<string>(), carried["fromWhy"]?.GetValue<string>(), carried["fromBy"]?.GetValue<string>()));
 
         var runs = File.ReadAllLines(Log).Select(line => JsonNode.Parse(line)!).ToList();
         Assert.Equal(["account-1", "account-2"], runs.Select(run => run["account"]!.GetValue<string>()));
