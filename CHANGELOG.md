@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- When a conversation's account runs low, Daoris offers to go on with another agent: a line under its head, where the account
+  is near its limit by its own word or cut, with *Go on with {agent} ({account})* and *Choose…*. It is never taken without your
+  press.
+
 - A conversation can go on with another agent from its page: *Go on with another agent…* in its head's ⋯ (*Stop and hand
   over…* while it works) asks which agent and account, then it goes on in a new conversation there, which the page opens; the
   old conversation's last line presses through to it.

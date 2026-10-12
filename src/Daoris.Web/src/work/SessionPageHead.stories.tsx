@@ -5,6 +5,7 @@ import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../storyLanguage';
 import type { Session } from '../api';
 import { HandOverAsk, type HandOverRoster } from './HandOverAsk';
+import { HandOverOfferLine } from './HandOverOfferLine';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { ViewMain } from './ViewMain';
 import { PauseAsk } from './WorkAsks';
@@ -305,6 +306,51 @@ export const HandOverRefusedChinese: Story = {
       />
     ),
   },
+  decorators: [at(596), chinese],
+};
+
+// ——— Daoris's offer to hand over (MIXAGENT1b-ii, D163): the line under the head where nothing else is asked, near the limit and
+// cut, a longer agent and account name, and each in 中文; every one at 680 px of window.
+
+const OFFER_HEAD = {
+  session: A_CONVERSATION, title: 'Cap the hydration per frame', shown: 'completed' as const,
+  acts: ['handOver', 'openFolder', 'terminal', 'detach', 'archive', 'delete', 'copy'] as const,
+};
+const offerLine = (offer: Parameters<typeof HandOverOfferLine>[0]['offer'], agentName = 'Codex', accountName: string | null = 'team') => (
+  <HandOverOfferLine
+    offer={offer} agentName={agentName} accountName={accountName} onGoOn={() => {}} onChoose={() => {}} onDismiss={() => {}}
+  />
+);
+const NEAR: Parameters<typeof HandOverOfferLine>[0]['offer'] = { why: 'near', until: null, agent: 'codex', account: 'team' };
+const CUT: Parameters<typeof HandOverOfferLine>[0]['offer'] = { why: 'limit', until: '2026-10-12T21:30:00Z', agent: 'codex', account: 'team' };
+
+/** The account is near its limit by its own word: why, *Go on with Codex (team)*, *Choose…* and *Not now*. */
+export const HandOverOfferNear: Story = {
+  args: { ...OFFER_HEAD, acts: [...OFFER_HEAD.acts], asking: offerLine(NEAR) },
+  decorators: [at(596)],
+};
+
+/** The account is cut: it says until when it is offered again. */
+export const HandOverOfferCut: Story = {
+  args: { ...HandOverOfferNear.args, asking: offerLine(CUT) },
+  decorators: [at(596)],
+};
+
+/** Long names wrap inside the line and keep every press. */
+export const HandOverOfferLongNames: Story = {
+  args: { ...HandOverOfferNear.args, asking: offerLine(NEAR, 'Gemini CLI for the engine team', 'team-engineering@example.com') },
+  decorators: [at(596)],
+};
+
+/** Near, in 中文. */
+export const HandOverOfferNearChinese: Story = {
+  args: { ...HandOverOfferNear.args, title: '限制每帧的水合工作量' },
+  decorators: [at(596), chinese],
+};
+
+/** Cut, in 中文. */
+export const HandOverOfferCutChinese: Story = {
+  args: { ...HandOverOfferCut.args, title: '限制每帧的水合工作量' },
   decorators: [at(596), chinese],
 };
 

@@ -266,6 +266,21 @@ describe('the acts on a session', () => {
     expect(told.refused).not.toHaveBeenCalled();
   });
 
+  /** MIXAGENT1b-ii (D163): Daoris's own offer is asked with its reason and as Daoris's own; a press names neither. */
+  it('asks Daoris’s offer with its reason and asked-by daoris, which a press never sends', async () => {
+    invoke.mockImplementation(async () => ({ sessionId: 'c2', kept: true, message: 'goes on.' }));
+    const { result } = acts({ attend: vi.fn() });
+    const told = { done: vi.fn(), refused: vi.fn(), kept: vi.fn() };
+
+    act(() => result.current.handOverNow(
+      session({ kind: 'chat', quest: null, state: 'completed' }), { agent: 'codex', account: 'team', name: 'Codex' }, told, 'near'));
+
+    await waitFor(() => expect(told.done).toHaveBeenCalled());
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HAND_OVER', {
+      payload: { id: 's1a2b3c4', agent: 'codex', account: 'team', why: 'near', askedBy: 'daoris' },
+    });
+  });
+
   it('says a refusal in the ask, in the page’s own words by its code, and keeps the choice', async () => {
     invoke.mockImplementation(async () => ({ sessionId: null, kept: false, why: 'same-agent', message: 'x already runs on y.' }));
     const attend = vi.fn();

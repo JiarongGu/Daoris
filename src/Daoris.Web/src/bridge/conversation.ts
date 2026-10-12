@@ -548,15 +548,18 @@ const handedOf = (answer: unknown): HandedOver => {
 /**
  * *Go on with another agent…* (MIXAGENT1b-i, D163): `SESSION_HAND_OVER`, the chat runner's hand-over asked as the person, with
  * the reason `press`. A conversation that is not talking goes on at once in a new one of its own; one that is talking keeps the
- * ask for its turn's end. A refusal is the answer, by its code. The two hands of Daoris's own offer (`near`, `limit`) are
- * MIXAGENT1b-ii's, so this sends none.
+ * ask for its turn's end. A refusal is the answer, by its code. Daoris's own offer (MIXAGENT1b-ii) names its reason, `near` or
+ * `limit`, and is then asked as Daoris's (`askedBy`), the person's press on the offer; a press sends neither.
  */
 export const useHandOver = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: async (over: { session: string; agent: string; account?: string | null }): Promise<HandedOver> =>
+    mutationFn: async (over: {
+      session: string; agent: string; account?: string | null; why?: 'near' | 'limit';
+    }): Promise<HandedOver> =>
       handedOf(await call<unknown>('SESSION_HAND_OVER', {
-        id: over.session, agent: over.agent, ...(over.account ? { account: over.account } : {}), why: 'press',
+        id: over.session, agent: over.agent, ...(over.account ? { account: over.account } : {}),
+        ...(over.why ? { why: over.why, askedBy: 'daoris' } : { why: 'press' }),
       })),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: keys.allSessions });

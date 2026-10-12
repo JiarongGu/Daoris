@@ -2845,6 +2845,104 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
+   * MIXAGENT1b-ii (D163 point 3): when the conversation's own account is near its limit by its own word, a line under the head
+   * offers *Go on with codex (team)* and *Choose…*; the press asks `SESSION_HAND_OVER` with the reason `near` as Daoris's, *Choose…*
+   * opens the ask with that choice made, and *Not now* puts it down for the run. Nothing is taken without the press.
+   */
+  const RUNNING_LOW = {
+    ...ROSTER,
+    harnesses: [
+      { ...ROSTER.harnesses[0], profiles: [{ name: 'personal', home: 'x', login: 'in' }] },
+      { harness: 'codex', present: true, version: 'codex 1.0.0', problem: null, machineDefault: null, profiles: [{ name: 'team', home: 'x', login: 'in' }] },
+    ],
+  };
+  const scopeOf = (over: Record<string, unknown>) => ({
+    workspace: null, default: null, list: [], begins: null, unknown: [], problem: null, near: [],
+    use: { use: 'goal', keep: null, early: true, near: 90 }, ...over,
+  });
+  const LOW_ACCOUNTS = (cooling: unknown = null) => ({
+    agents: [
+      {
+        agent: 'claude-code', speaks: true, own: {}, accounts: [{ name: 'personal', ...(cooling ? { cooling } : {}) }],
+        scopes: [scopeOf({ near: [{ account: 'personal', window: 'session', by: 'word' }] })],
+      },
+      { agent: 'codex', speaks: true, own: {}, accounts: [{ name: 'team' }], scopes: [scopeOf({ next: { account: 'team', reason: 'onlyReady', others: [] } })] },
+    ],
+  });
+  const LOW_CHAT = { ...CHAT, adapter: 'claude-code', profile: 'personal', state: 'completed' };
+  const lowRespond = (handOver: unknown = { sessionId: 'n3wn3w00', kept: true, why: null, message: 'goes on.' }, accounts = LOW_ACCOUNTS()) =>
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return RUNNING_LOW;
+      if (type === 'ACCOUNTS') return accounts;
+      if (type === 'SESSION_HAND_OVER') return handOver;
+      return DRIVER_STATE;
+    });
+
+  it('offers a conversation whose account is near its limit to go on with another agent, taken only by its press', async () => {
+    SESSIONS = [LOW_CHAT];
+    lowRespond();
+    const { onSelect } = show('c0ffee11');
+
+    const line = await screen.findByRole('group', { name: 'hand-over offer' });
+    expect(line).toHaveTextContent('This conversation’s account is near its limit.');
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HAND_OVER', expect.anything());
+    await userEvent.setup().click(within(line).getByRole('button', { name: 'Go on with codex (team)' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HAND_OVER', {
+      payload: { id: 'c0ffee11', agent: 'codex', account: 'team', why: 'near', askedBy: 'daoris' },
+    });
+    await waitFor(() => expect(onSelect).toHaveBeenCalledWith('n3wn3w00'));
+  });
+
+  it('says a cut account’s offer with when it is offered again, and sends the reason limit', async () => {
+    SESSIONS = [LOW_CHAT];
+    const until = new Date(Date.now() + 3 * 3600_000).toISOString();
+    lowRespond(undefined, LOW_ACCOUNTS({ until, stated: true, window: 'session', seen: until, assumedZone: false, notBelieved: false }));
+    show('c0ffee11');
+
+    const line = await screen.findByRole('group', { name: 'hand-over offer' });
+    expect(line).toHaveTextContent(/This conversation’s account is cut until /);
+    await userEvent.setup().click(within(line).getByRole('button', { name: 'Go on with codex (team)' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HAND_OVER', expect.objectContaining({
+      payload: expect.objectContaining({ why: 'limit', askedBy: 'daoris' }),
+    }));
+  });
+
+  it('opens the hand-over’s ask with that choice made from *Choose…*, and puts the offer down for the run with *Not now*', async () => {
+    SESSIONS = [LOW_CHAT];
+    lowRespond();
+    show('c0ffee11');
+
+    const user = userEvent.setup();
+    const line = await screen.findByRole('group', { name: 'hand-over offer' });
+    await user.click(within(line).getByRole('button', { name: 'Choose…' }));
+    const ask = await screen.findByRole('group', { name: 'go on with another agent' });
+    expect(within(ask).getByRole('button', { name: /Agent and account: codex · / })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'hand-over offer' })).toBeNull();
+    await user.click(within(ask).getByRole('button', { name: 'Hand over' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HAND_OVER', {
+      payload: { id: 'c0ffee11', agent: 'codex', account: 'team', why: 'near', askedBy: 'daoris' },
+    });
+  });
+
+  it('puts the offer down for the run with Not now, and offers nothing while the account says nothing is wrong', async () => {
+    SESSIONS = [LOW_CHAT];
+    lowRespond();
+    const view = show('c0ffee11');
+
+    const user = userEvent.setup();
+    await user.click(within(await screen.findByRole('group', { name: 'hand-over offer' })).getByRole('button', { name: 'Not now' }));
+    expect(screen.queryByRole('group', { name: 'hand-over offer' })).toBeNull();
+    view.unmount();
+
+    lowRespond(undefined, { agents: [{ ...LOW_ACCOUNTS().agents[0], scopes: [scopeOf({})] }, LOW_ACCOUNTS().agents[1]] });
+    show('c0ffee11');
+    await screen.findByRole('group', { name: 'Session actions' });
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNTS', expect.anything()));
+    expect(screen.queryByRole('group', { name: 'hand-over offer' })).toBeNull();
+  });
+
+  /**
    * SESSUX1f (D126 §5.4): an ended conversation the reader says is deletable offers *Delete…* in its header's ⋯; it asks
    * once under the header, deletes nothing until its second press, and a driven session's ⋯ offers none.
    */

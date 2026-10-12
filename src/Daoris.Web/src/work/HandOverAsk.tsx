@@ -26,7 +26,7 @@ export type HandOverRoster = {
  * as it opens; with none, it says so and offers only *Close*. A kept ask with no new conversation yet is said in place of the
  * move (`kept`), with only *Close* left, since a second press would ask the same twice.
  */
-export function HandOverAsk({ from, repository, working = false, roster, busy = false, refused = null, onHandOver, onClose }: {
+export function HandOverAsk({ from, repository, working = false, roster, initial, busy = false, refused = null, onHandOver, onClose }: {
   /** The conversation's own agent, which is not offered. */
   from?: string | null;
   /** Its repository, whose scope orders the accounts. */
@@ -34,6 +34,8 @@ export function HandOverAsk({ from, repository, working = false, roster, busy = 
   /** It works: the move stops its turn. */
   working?: boolean;
   roster: HandOverRoster;
+  /** The choice it opens with, where Daoris's offer made one (MIXAGENT1b-ii); an agent it does not offer is left out. */
+  initial?: AgentChoice;
   /** A hand-over on its way: the presses wait for it. */
   busy?: boolean;
   /** A refusal it opens saying, as a story draws one; after that, the refusals are its own act's. */
@@ -45,7 +47,8 @@ export function HandOverAsk({ from, repository, working = false, roster, busy = 
 }) {
   const { t } = useTranslation();
   const others = roster.harnesses.filter((harness) => harness !== from);
-  const [choice, setChoice] = useState<AgentChoice>({ adapter: others[0] ?? '', profile: '' });
+  const [choice, setChoice] = useState<AgentChoice>(
+    initial && others.includes(initial.adapter) ? initial : { adapter: others[0] ?? '', profile: '' });
   const [kept, setKept] = useState<string | null>(null);
   const names = roster.names ?? {};
   const labels = roster.labels ?? {};

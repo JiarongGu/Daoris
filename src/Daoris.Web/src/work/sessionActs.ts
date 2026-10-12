@@ -190,12 +190,12 @@ export function useSessionActs({ notify, doors = {} }: { notify: Notify; doors?:
    * goes on at once: the ask closes and the new conversation is attended (`attend`; an unbriefed one is said as an answer, since
    * it opened all the same). One that is talking keeps the ask for its turn's end, and then, *Stop and hand over…*, the turn is
    * stopped here, so its end takes it; the ask says where it goes on. A refusal is said inside the ask by its code and keeps the
-   * choice (UX5 U68); a refused hand-over stops nothing.
+   * choice (UX5 U68); a refused hand-over stops nothing. Daoris's offer (MIXAGENT1b-ii) passes its reason: `near` or `limit`.
    */
   const handOverNow = (
-    session: Session, choice: { agent: string; account: string; name: string }, told: HandOverTold,
+    session: Session, choice: { agent: string; account: string; name: string }, told: HandOverTold, why?: 'near' | 'limit',
   ) => handOver.mutate(
-    { session: session.id, agent: choice.agent, account: choice.account || null },
+    { session: session.id, agent: choice.agent, account: choice.account || null, why },
     {
       onSuccess: (answer) => {
         const said = answer.why ? handOverSaid(t, answer.why, { quest: session.quest, message: answer.message }) : null;
