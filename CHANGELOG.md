@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A conversation can go on with another agent from its page: *Go on with another agent…* in its head's ⋯ (*Stop and hand
+  over…* while it works) asks which agent and account, then it goes on in a new conversation there, which the page opens; the
+  old conversation's last line presses through to it.
+
 - A conversation can go on with another agent from the terminal (`daoris-driver sessions hand-over <id> --agent <adapter>
   [--account <name>]`), as when its account's allowance runs low: it ends, and a new conversation starts in the same tree on
   the agent you name, told what Daoris kept of it (your request, its last plan and words, what is uncommitted); both say
