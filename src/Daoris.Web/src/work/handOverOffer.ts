@@ -47,12 +47,44 @@ export function handOverOffer({ session, workspace, doors, answer, now }: {
   }
   if (!why) return null;
 
-  for (const door of doors) {
-    if (!door.present || door.harness === session.adapter) continue;
+  // Candidates are other tools (MIXAGENT1b-iii), each once by its first present door; a tool's other door is the same tool.
+  for (const door of otherToolDoors(session, doors)) {
     const agent = agentOf(answer, toolOf(door));
-    const next = agent ? scopeOf(agent).next : null;
-    if (!next || next.reason === 'waits') continue;
-    return { why, until: why === 'limit' ? until : null, agent: door.harness, account: next.account ?? null };
+    const scope = agent ? scopeOf(agent) : null;
+    const next = scope?.next;
+    if (!agent || !scope || !next || next.reason === 'waits') continue;
+    const roomy = (account: string | null | undefined): boolean => {
+      if (!account) return !live(agent.own?.cooling, now);
+      const facts = (Array.isArray(agent.accounts) ? agent.accounts : []).find((each) => each.name === account);
+      return !scope.near.some((each) => each.account === account)
+        && !live(facts?.cooling, now)
+        && !facts?.said?.windows?.some((window) => window.standing === 'refused');
+    };
+    // The walk's account first, else the next ready one of the order it tried; none with room, the tool is not offered.
+    const taken = [next.account ?? null, ...(next.others ?? []).filter((each) => each.hold === 'ready').map((each) => each.account ?? null)]
+      .find(roomy);
+    if (taken === undefined) continue;
+    return { why, until: why === 'limit' ? until : null, agent: door.harness, account: taken };
   }
   return null;
+}
+
+const live = (cooling: { until: string } | null | undefined, now: Date): boolean =>
+  Boolean(cooling) && Date.parse(cooling!.until) > now.getTime();
+
+/**
+ * The present doors of tools other than the conversation's own, one door per tool, in the roster's order (MIXAGENT1b-iii): the
+ * candidates Daoris's offer draws from and the hand-over's ask lists first.
+ */
+export function otherToolDoors(session: Pick<Session, 'adapter'>, doors: readonly ToolDoor[]): ToolDoor[] {
+  const own = doors.find((each) => each.harness === session.adapter);
+  const ownTool = own ? toolOf(own) : session.adapter;
+  const seen = new Set<string>([ownTool]);
+  const found: ToolDoor[] = [];
+  for (const door of doors) {
+    if (!door.present || seen.has(toolOf(door))) continue;
+    seen.add(toolOf(door));
+    found.push(door);
+  }
+  return found;
 }
