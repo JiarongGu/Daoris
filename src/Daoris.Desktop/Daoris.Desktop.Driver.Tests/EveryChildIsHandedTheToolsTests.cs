@@ -49,7 +49,7 @@ public sealed class EveryChildIsHandedTheToolsTests
     [Fact]
     public void The_terminals_environment_block_is_built_through_the_tools()
     {
-        var source = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver", "PseudoConsole.cs"));
+        var source = File.ReadAllText(SourceFiles.Driver("PseudoConsole.cs"));
 
         Assert.Contains("EnvironmentBlock(launch.Environment)", source);
         var block = source[source.IndexOf("static string EnvironmentBlock(", StringComparison.Ordinal)..];

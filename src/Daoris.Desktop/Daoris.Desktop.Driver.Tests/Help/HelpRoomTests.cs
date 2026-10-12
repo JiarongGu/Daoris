@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Desktop.Driver.Tests;
 using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
@@ -250,11 +251,12 @@ public sealed class HelpRoomTests : IDisposable
     [Fact]
     public void Every_section_is_a_file_of_its_own()
     {
-        var folder = Path.Combine(HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver", "Help", "Room");
+        // The sections' folder is the one the first section's file is in, found by name wherever the module keeps it (STRUCT1, D166).
+        var folder = Path.GetDirectoryName(SourceFiles.Driver($"{HelpRoomSections.All[0].GetType().Name}.cs"))!;
 
         Assert.Equal(
             HelpRoomSections.All.Select(section => $"{section.GetType().Name}.cs").Order(StringComparer.Ordinal),
-            Directory.GetFiles(folder, "*.cs").Select(Path.GetFileName).Order(StringComparer.Ordinal));
+            Directory.GetFiles(folder, "*.cs", SearchOption.AllDirectories).Select(Path.GetFileName).Order(StringComparer.Ordinal));
         foreach (var section in HelpRoomSections.All)
         {
             Assert.Contains($"class {section.GetType().Name} : IHelpRoomSection", File.ReadAllText(Path.Combine(folder, $"{section.GetType().Name}.cs")));

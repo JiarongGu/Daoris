@@ -73,6 +73,8 @@ public sealed partial class ConfigSeamTests
         var scanned = 0;
         var bypasses = new List<string>();
         string? owner = null;
+        // The owner found by name, wherever the driver keeps it (STRUCT1, D166).
+        var owning = Path.GetFullPath(SourceFiles.Driver("DriverConfig.cs"));
 
         foreach (var project in Projects)
         {
@@ -89,7 +91,7 @@ public sealed partial class ConfigSeamTests
 
                 scanned++;
                 var source = File.ReadAllText(file);
-                if (Path.GetFileName(file) == "DriverConfig.cs" && Path.GetFileName(Path.GetDirectoryName(file)) == "Daoris.Desktop.Driver")
+                if (string.Equals(Path.GetFullPath(file), owning, StringComparison.OrdinalIgnoreCase))
                 {
                     owner = source;
                     continue;

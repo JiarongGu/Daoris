@@ -115,10 +115,10 @@ public sealed class PullRequestOccasionTests
     public void No_look_of_the_loop_opens_an_occasion()
     {
         var looks = new[] { "CleanPlanAsync", "SyncPlanAsync", "AskAgainAsync" };
-        var loop = Directory.EnumerateFiles(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver"), "Driver*.cs")
-            .Append(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver", "AutoLander.cs"))
-            .Append(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "DriverLoop.cs"))
-            .Where(File.Exists)
+        // Each found by name at any depth of its project, so a move into a module's folder keeps it (STRUCT1, D166).
+        var loop = SourceFiles.All(SourceFiles.DriverProject, "Driver*.cs")
+            .Append(SourceFiles.Driver("AutoLander.cs"))
+            .Append(SourceFiles.Find("Daoris.Desktop.Modules", "DriverLoop.cs"))
             .ToList();
 
         Assert.True(loop.Count >= 3, $"expected the loop's files, found {loop.Count}");
@@ -175,7 +175,7 @@ public sealed class PullRequestOccasionTests
         }
     }
 
-    private static string Source(string project, string file) => File.ReadAllText(Path.Combine(SourceRoot(), project, file));
+    private static string Source(string project, string file) => File.ReadAllText(SourceFiles.Find(project, file));
 
     private static string SourceRoot()
     {
