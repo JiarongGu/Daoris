@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-12 — the walk passed an account Claude Code had only warned was ahead of its pace (USAGEREAD3a)
+
+- **Symptom:** on the install, `account-1`'s week was *near* at 60% used with 22% of its week gone, and a conversation
+  opened on another account at 99% of its week (the account-switch design §1's fault table).
+- **Root cause:** TOOL6c (`aecfa68b`) read Claude Code's `allowed_warning` as Daoris's `near` (`ClaudeWindows.Words`' `Near`
+  list, `NearBy.Word`), first in `AccountReadings.NearWindow` after a limit reached. The CLI derives that word itself when a
+  window's use is at or over a threshold while the time gone in it is at or under that threshold's share: it says *ahead of
+  pace*, not *near the limit*, so a lightly used account early in its week went last.
+- **Fix:** the word is the standing `warned` and is never near alone; near is a limit reached, credits or a window's use at
+  or over *near*. A `near` already in `windows.json` reads as `warned` in both twins (`AccountWindows.SaidOf`, `windows.ts`).
+  D165's USAGEREAD3a note has the rest.
+- **Verify:** `AccountReadingsTests`' standing and near tables, `AccountRotationWalkTests`' install row
+  (`gmail:W99@+4d account-1:W60@+4d,N account-3:X` ran on `account-1` by step 2, over `gmail`), `WindowsTwinTests` with the
+  CLI's `windows.test.ts`, and the modules' `The_agent_s_pace_warning_is_passed_as_warned_and_is_never_near_alone`.
+- **Commit:** 198b6f51
+
 ## 2026-10-12 — a helper's answer was counted before the door had told it delivered (MIXAGENT2a-iii's test)
 
 - **Symptom:** `ChatTurnsTests.A_helpers_answer_waits_for_the_turn_to_end_unlisted_and_is_told_delivered_once_sent` (driver,
