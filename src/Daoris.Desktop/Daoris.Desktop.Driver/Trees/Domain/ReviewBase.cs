@@ -15,12 +15,9 @@ public sealed record LineBehind(string Line, int Commits, int Ahead);
 
 /// <summary>
 /// The choice of a review's base among the commits a tree's history holds (REVIEWBASE1): the newest commit the work shares with
-/// the line, here or on origin, and the commit its record says it began at. Pure; <c>SessionTrees.ReviewRangeAsync</c> asks git.
+/// the line, here or on origin, and the commit its record says it began at. Pure; <c>SessionTrees.ReviewRangeAsync</c> asks git,
+/// and says why the record's base alone was not enough.
 /// </summary>
-/// <remarks>
-/// The record's base alone measured a tree that took in newer line commits since (merged them, rebased onto them, or checked the
-/// line out) from its old grow point, so the line's own changes read as the session's work (seen 2026-10-13: 26 files, none its own).
-/// </remarks>
 public static class ReviewBase
 {
     /// <summary>The candidates in the order a tie is broken by: the line's here, the line's on origin, the record's; each once, the unread left out.</summary>
