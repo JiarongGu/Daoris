@@ -1,0 +1,209 @@
+namespace Daoris.Desktop.Driver.Tests;
+
+/// <summary>
+/// The structure gate (STRUCT1, D166; the code-structure design §5): every driver source sits in its module's folder, or on
+/// <c>fixtures/structure.json</c>'s list of the files not yet moved, which only shrinks; a <c>Domain</c> file does no I/O; no
+/// module reaches into another's <c>Infrastructure</c>, and a <c>Domain</c> names nothing of an <c>Application</c> or an
+/// <c>Infrastructure</c>; and nothing outside <c>Loop</c>, the composition root, names a type declared in it. The rules are
+/// held here on sources made in memory, one case each, and then run over the driver's own tree.
+/// </summary>
+public sealed class StructureTests
+{
+    private static readonly StructureMap Map = new(
+        new Dictionary<string, IReadOnlyList<string>>
+        {
+            ["Platform"] = ["Domain", "Infrastructure"],
+            ["Accounts"] = ["Domain", "Application", "Infrastructure"],
+            ["Trees"] = ["Domain", "Application", "Infrastructure"],
+            ["Plugins"] = ["Domain", "Application", "Infrastructure"],
+            ["Help"] = ["Domain", "Application", "Infrastructure"],
+            ["Loop"] = [],
+        },
+        new Dictionary<string, string> { ["Landing.cs"] = "Trees", ["DriverWatch.cs"] = "Loop" });
+
+    private static IReadOnlyList<string> Check(params (string Path, string Text)[] sources) =>
+        StructureCheck.Check(Map, sources).Select(breach => breach.ToString()).ToList();
+
+    private static readonly (string, string)[] Unmoved = [("Landing.cs", "class Landing { }"), ("DriverWatch.cs", "class DriverWatch { }")];
+
+    private static IReadOnlyList<string> CheckWithUnmoved(params (string Path, string Text)[] sources) => Check([.. Unmoved, .. sources]);
+
+    [Fact]
+    public void A_file_at_the_top_is_one_the_list_names_and_every_name_on_it_is_still_at_the_top()
+    {
+        Assert.Empty(CheckWithUnmoved());
+
+        Assert.Equal(
+            ["Fresh.cs:1 [top] a new file at the driver's top: put it in its module's folder (structure.json's modules), not here"],
+            CheckWithUnmoved(("Fresh.cs", "class Fresh { }")));
+
+        // A move takes its entry off the list, or the list says a file is where it is not.
+        Assert.Equal(
+            ["Landing.cs:0 [top] structure.json lists it at the driver's top, where it is not: a move takes its entry off the list"],
+            Check(("DriverWatch.cs", "class DriverWatch { }"), ("Trees/Landing.cs", "class Landing { }")));
+    }
+
+    [Fact]
+    public void The_list_maps_each_file_it_names_to_a_module_it_declares()
+    {
+        var map = Map with { Root = new Dictionary<string, string> { ["Landing.cs"] = "Gardens" } };
+
+        Assert.Equal(
+            ["structure.json:0 [map] Landing.cs is mapped to Gardens, which is no module of the map"],
+            StructureCheck.Check(map, [("Landing.cs", "class Landing { }")]).Select(breach => breach.ToString()));
+    }
+
+    [Fact]
+    public void A_file_in_a_folder_sits_in_a_module_s_folder_and_in_a_layer_that_module_holds()
+    {
+        Assert.Empty(CheckWithUnmoved(
+            ("Plugins/PluginInstall.cs", "class PluginInstall { }"),
+            ("Help/Room/HelpRoom.cs", "class HelpRoom { }"),
+            ("Platform/Domain/NoteCodes.cs", "class NoteCodes { }"),
+            ("Loop/Driver.cs", "class Driver { }")));
+
+        Assert.Equal(
+            [
+                "Gardens/Rose.cs:1 [module] the folder Gardens is no module's: a source goes in its module's folder (structure.json's modules)",
+                "Loop/Domain/Tick.cs:1 [module] Loop holds no Domain layer: its layers are none",
+                "Platform/Application/Clock.cs:1 [module] Platform holds no Application layer: its layers are Domain, Infrastructure",
+            ],
+            CheckWithUnmoved(
+                ("Gardens/Rose.cs", "class Rose { }"),
+                ("Loop/Domain/Tick.cs", "class Tick { }"),
+                ("Platform/Application/Clock.cs", "class Clock { }")));
+    }
+
+    [Fact]
+    public void A_Domain_file_does_no_IO_and_what_its_comments_and_words_say_is_none()
+    {
+        const string impure = """"
+            class Reading
+            {
+                // File.ReadAllText in a comment, and "Directory.Delete" in a sentence, are no use.
+                string Words() => "Process.Start(" + @"Environment.Exit" + """DateTime.Now""";
+                string Load(string path) => File.ReadAllText(path);
+                DateTimeOffset At() => DateTimeOffset.UtcNow;
+                string Where() => $"{Environment.MachineName} at {{Environment.UserName}}";
+                string Named(Folder folder) => folder.File.Name + Path.Combine("a", "b");
+            }
+            """";
+
+        Assert.Equal(
+            [
+                "Accounts/Domain/Reading.cs:5 [pure] File. reads or writes a file: a Domain is pure; it takes the world as values or through a port",
+                "Accounts/Domain/Reading.cs:6 [pure] DateTimeOffset.UtcNow reads the clock: a Domain is pure; it takes the world as values or through a port",
+                "Accounts/Domain/Reading.cs:7 [pure] Environment. reads the machine's environment: a Domain is pure; it takes the world as values or through a port",
+            ],
+            CheckWithUnmoved(("Accounts/Domain/Reading.cs", impure)));
+
+        // The same I/O is an Application's or an Infrastructure's to do.
+        Assert.Empty(CheckWithUnmoved(("Accounts/Infrastructure/Reading.cs", impure), ("Accounts/Application/Read.cs", impure.Replace("Reading", "Read"))));
+    }
+
+    [Fact]
+    public void A_module_reaches_another_through_its_Domain_and_Application_never_its_Infrastructure()
+    {
+        (string, string)[] declared =
+        [
+            ("Plugins/Infrastructure/PluginStarter.cs", "public sealed class PluginStarter { private sealed record Inner(); }"),
+            ("Plugins/Domain/PluginOffer.cs", "public sealed record PluginOffer(string Id);"),
+            ("Plugins/Application/PluginInstall.cs", "public static class PluginInstall { }"),
+            ("Platform/Infrastructure/AtomicFile.cs", "public static class AtomicFile { }"),
+            ("Accounts/Application/AccountWalk.cs", "public static class AccountWalk { }"),
+        ];
+
+        Assert.Empty(Check(
+        [
+            .. declared,
+            // Another module's Domain and Application; Platform's Infrastructure from an Infrastructure; Loop composes everything.
+            ("Trees/Application/Land.cs", "class Land { PluginOffer Offer; void Go() => PluginInstall.Run(); }"),
+            ("Trees/Infrastructure/LandFile.cs", "class LandFile { void Write() => AtomicFile.Write(); }"),
+            ("Loop/Driver.cs", "class Driver { PluginStarter Starter; AccountWalk Walk; }"),
+            // A name in a comment, a nested type and a member named like a type are none.
+            ("Trees/Application/Quiet.cs", "class Quiet { /* PluginStarter */ Inner Value; int Count => this.PluginStarter; }"),
+            // A file not yet moved is not checked.
+            ("Landing.cs", "class Landing { PluginStarter Starter; }"),
+            ("DriverWatch.cs", "class DriverWatch { PluginStarter Starter; }"),
+        ]));
+
+        Assert.Equal(
+            [
+                "Accounts/Domain/Standing.cs:1 [reach] names AccountWalk, declared in Accounts/Application/AccountWalk.cs: a Domain names nothing of an Application or an Infrastructure",
+                "Trees/Application/Land.cs:3 [reach] names PluginStarter, declared in Plugins/Infrastructure/PluginStarter.cs: a module reaches another through its Domain and Application, never its Infrastructure",
+                "Trees/Application/Write.cs:1 [reach] names AtomicFile, declared in Platform/Infrastructure/AtomicFile.cs: a module reaches another through its Domain and Application, never its Infrastructure",
+            ],
+            CheckWithUnmoved(
+            [
+                .. declared,
+                ("Accounts/Domain/Standing.cs", "record Standing(AccountWalk Walk);"),
+                ("Trees/Application/Land.cs", "class Land\n{\n    PluginStarter Starter;\n    PluginStarter Again;\n}"),
+                ("Trees/Application/Write.cs", "class Write { void Go() => AtomicFile.Write(); }"),
+            ]));
+    }
+
+    [Fact]
+    public void Nothing_outside_Loop_names_a_type_declared_in_it()
+    {
+        var moved = Map with { Root = new Dictionary<string, string> { ["Landing.cs"] = "Trees" } };
+        (string, string) watch = ("Loop/DriverWatch.cs", "public sealed class DriverWatch { }");
+        IReadOnlyList<string> Moved(params (string Path, string Text)[] sources) =>
+            StructureCheck.Check(moved, sources).Select(breach => breach.ToString()).ToList();
+
+        // Loop's own files, and a file not yet moved, may.
+        Assert.Empty(Moved(("Landing.cs", "class Landing { DriverWatch Watch; }"), watch, ("Loop/Driver.cs", "class Driver { DriverWatch Watch; }")));
+        Assert.Equal(
+            ["Plugins/PluginTrial.cs:2 [loop] names DriverWatch, declared in Loop/DriverWatch.cs: Loop is the composition root, and no module uses it"],
+            Moved(("Landing.cs", "class Landing { }"), watch, ("Plugins/PluginTrial.cs", "class PluginTrial\n{ DriverWatch Watch; }")));
+    }
+
+    [Fact]
+    public void The_code_of_a_source_keeps_every_offset_and_blanks_its_comments_strings_and_characters()
+    {
+        const string text = "var a = \"x\\\"y\"; // c\nvar b = 'q'; /* d\ne */ var c = $\"{A(\"z\")}{{w}}\";";
+
+        var code = StructureCheck.CodeOf(text);
+
+        Assert.Equal(text.Length, code.Length);
+        Assert.Equal(text.Split('\n').Length, code.Split('\n').Length);
+        Assert.DoesNotContain("x", code);
+        Assert.DoesNotContain("q", code);
+        Assert.DoesNotContain("d", code);
+        Assert.DoesNotContain("z", code);
+        Assert.DoesNotContain("w", code);
+        Assert.Contains("A(", code);
+        Assert.Contains("var c", code);
+    }
+
+    [Fact]
+    public void The_map_names_the_design_s_fourteen_modules_and_every_layer_it_lets_each_hold()
+    {
+        var map = StructureMap.Read(File.ReadAllText(MapFile()));
+
+        Assert.Equal(
+            ["Platform", "Accounts", "Agents", "Conversations", "Sessions", "Trees", "Quests", "Review", "Workflows", "Plugins", "Help", "Service", "Setup", "Loop"],
+            map.Modules.Keys);
+        Assert.Equal(["Domain", "Infrastructure"], map.Modules["Platform"]);
+        Assert.Empty(map.Modules["Loop"]);
+        Assert.All(map.Modules.Where(module => module.Key is not ("Platform" or "Loop")), module => Assert.Equal(["Domain", "Application", "Infrastructure"], module.Value));
+        Assert.All(map.Split.Keys, file => Assert.True(map.Root.ContainsKey(file), $"{file} is noted for a split but is on no list"));
+    }
+
+    [Fact]
+    public void The_driver_s_own_tree_keeps_its_structure()
+    {
+        var map = StructureMap.Read(File.ReadAllText(MapFile()));
+        var driver = SourceFiles.Project(SourceFiles.DriverProject);
+        var sources = SourceFiles.All(SourceFiles.DriverProject, "*.cs")
+            .Select(path => (Path.GetRelativePath(driver, path).Replace(Path.DirectorySeparatorChar, '/'), File.ReadAllText(path)))
+            .ToList();
+
+        var breaches = StructureCheck.Check(map, sources);
+
+        Assert.True(sources.Count >= 290, $"the gate read only {sources.Count} sources: its walk no longer reaches the driver's tree");
+        Assert.True(breaches.Count == 0, "each breaks the driver's structure (the code-structure design §5):\n" + string.Join('\n', breaches));
+    }
+
+    private static string MapFile() =>
+        Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "structure.json");
+}
