@@ -515,6 +515,13 @@ public sealed partial class HelpCoverageTests
         ("review", new Door("setting", "review")),
         // XAGENT1a: which other agent reads work before it lands, with the service's writer in the same change.
         ("opinion", new Door("setting", "opinion")),
+        // MIXAGENT2a-i: what a helper an agent asks for does, declared in `driver.json` and read by the driver's helper session
+        // (MIXAGENT2a-ii). A `helpers` key for the `setting` kind (the service's writer, `HelpSettingProposals`, the screen's route
+        // and Setup's rows) is owed with it, as `opinion` had its own in XAGENT1a.
+        ("helpers", new Exempt(
+            "it declares a rule nothing reads yet: the driver's helper session reads it (MIXAGENT2a-ii), and the `setting` card with "
+            + "a `helpers` key, the service's writer and the driver's judging by the twin's table (`HelperRules.Apply`) are built "
+            + "with that reading, as `opinion`'s were with XAGENT1a; until then it changes no work and no session.")),
         // WORKFLOW1a: Current, drawn from the rules as they stand; a named workflow's Ask Daoris doors are the `workflow` kind's.
         ("workflow show", new Exempt(
             "it reads `driver.json` and the plugins beside it and changes nothing; it draws the landing, review and opinion rules "
