@@ -453,6 +453,20 @@ public static class NoteCodes
     public static readonly NoteCode WorkingResumesAnswer = new("working.resumes-answer", []);
     public static readonly NoteCode WorkingGoesOn = new("working.goes-on", []);
 
+    /// <summary>Why a conversation was handed to another agent (MIXAGENT1a-i, <see cref="HandOverWhy"/>): the page's <c>note.handed.why.*</c>.</summary>
+    public static readonly NoteReasons Handed = new(
+    [
+        new(HandOverWhy.Press, [], "note.handed.why.press"),
+        new(HandOverWhy.Near, [], "note.handed.why.near"),
+        new(HandOverWhy.Limit, [], "note.handed.why.limit"),
+        new(HandOverWhy.Agent, [], "note.handed.why.agent"),
+    ]);
+
+    // ——— A conversation handed to another agent (MIXAGENT1a-i, D163 §3): the old one's end says which agent and which
+    // conversation it went to, the new one's first line where it came from and why. Facts only: never an account's name or a path.
+    public static readonly NoteCode ChatHandedOver = new("chat.handed-over", ["agent", "session"]);
+    public static readonly NoteCode ChatTakenOver = new("chat.taken-over", ["agent", "session", "why"]) { Why = Handed };
+
     // ——— Where the person's words went, after the record's earlier parts.
     public static readonly NoteCode WentCannot = new("went.cannot", ["why"], Key: "work.say.cannot") { Why = Continue };
     public static readonly NoteCode WentNewSession = new("went.new-session", ["why"]) { Why = Continue };

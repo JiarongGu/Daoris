@@ -41,6 +41,13 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     /// </summary>
     public string? Briefing { get; init; }
 
+    /// <summary>
+    /// The line a conversation handed over from another agent opens with (MIXAGENT1a-i, D163 §3): its first message is Daoris's
+    /// briefing, never the person's words, so the record keeps this note in place of the person's message and of the browser's
+    /// line. Null for every other message.
+    /// </summary>
+    internal Noted? TakenOver { get; init; }
+
     /// <summary>What the agent is handed: the briefing, the preface, then the person's words, each after a blank line.</summary>
     public string Prompt => string.Join(
         "\n\n", new[] { Briefing, Preface }.Where(part => !string.IsNullOrEmpty(part)).Append(Text));

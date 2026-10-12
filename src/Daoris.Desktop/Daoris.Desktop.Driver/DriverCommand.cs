@@ -121,6 +121,9 @@ public static class DriverCommand
           sessions start-from <id>
               words a session cannot go on with: start a conversation here with them, as `chat` does, without that
               session's context; they leave that session, naming the conversation.
+          sessions hand-over <id> --agent <adapter> [--account <name>]
+              a conversation goes on with another agent (D163): its own ends, and a new conversation in its tree
+              starts, told what Daoris kept of it. Conversations only; a quest's session comes later.
           help list [--search "…"] [--json] [--offset <n>] [--limit <n>]  ·  help resume <id> "…" [--file <path>]…
           help rename <id> "…" | --clear  ·  help pin <id>  ·  help unpin <id>  ·  help delete <id> [--yes]
               Ask Daoris's conversations, kept on this machine only: list or search them a page at a time, go on

@@ -146,6 +146,10 @@ using Daoris.Driver;
 //                 it, through the chat runner's act the screen's route calls. What never goes on, a session still running, no
 //                 words and a quest the driver carries on are refused, exit 1. *Start a conversation with these words* is the
 //                 other door.
+//   sessions hand-over <id> --agent <adapter> [--account <name>]
+//                 a conversation goes on with another agent (MIXAGENT1a-i, D163): the chat runner ends it and opens a new
+//                 conversation in its tree on that agent, in this terminal, as start-from does; a conversation that is
+//                 talking keeps the ask until its turn ends. A quest's session, Ask Daoris's and an intake are refused, exit 1.
 //
 //   trees [list | remove <path|session|branch> [--repository <name>] [--force] | clean [--workspace <name>] [--yes]
 //         | land <session> [--plan] [--branch <name>] | hand <session|branch> [...]

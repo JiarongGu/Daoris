@@ -151,10 +151,14 @@ public sealed partial class ChatRunner : IDisposable
     /// decision was made for, since the person is usually IN the root it would otherwise hold. Null leaves it to those two;
     /// false (NEW1a) is the checkout, whatever the repository's standing choice.
     /// </param>
+    /// <param name="tree">
+    /// A conversation handed over from another agent runs in the tree the old one ran in (MIXAGENT1a-i, D163 §3): its own folder,
+    /// neither grown nor removed here, and refused where it no longer exists. Null opens as before.
+    /// </param>
     public async Task<ChatStart> StartAsync(
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded = null, string? profile = null, bool? ownTree = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default, string? tree = null)
     {
         // Through the roster's LIVE set, not the one this runner was built with: the driver's tick
         // hands the roster the build's adapters plus whatever the plugins declare (D64), so a harness
@@ -194,7 +198,12 @@ public sealed partial class ChatRunner : IDisposable
         // standing choice (D51). Grown before the record, like every refusal above this line. Its
         // repository's trees are held from here until the record is open, as a driven start holds them
         // (LEFT2), so bringing the repository up to date does not rebase the tree under it.
-        var isolated = Isolates(ownTree, config, repository);
+        if (tree is not null && !Directory.Exists(tree))
+        {
+            return new(null, "the tree the conversation ran in is gone, so there is nothing for a new one to go on in.");
+        }
+
+        var isolated = tree is null && Isolates(ownTree, config, repository);
         using var starting = isolated ? TreeLock.TryStarting(_home, known.Workspace, known.Repository) : null;
         if (isolated && starting is null) return new(null, TreeLock.Replaying(known.Repository));
 
@@ -212,7 +221,7 @@ public sealed partial class ChatRunner : IDisposable
             }
         }
 
-        var workTree = opened?.Path ?? root!;
+        var workTree = tree ?? opened?.Path ?? root!;
 
         // Where the tree stands before the conversation begins (SURF6). A chat may open on a DIRTY
         // tree (D49 §3), so this is the commit — not the working state — and the review it feeds is
@@ -820,6 +829,24 @@ public sealed partial class ChatRunner : IDisposable
     /// The person's message as the record keeps it (CONV4c): their words and the names of what they
     /// attached — never the kept paths, nor the lines or links a door added to reach them.
     /// </summary>
+    /// <summary>
+    /// What a turn's message puts in the record as it is sent, in order: the browser and where the person is as their notes, then
+    /// the person's message. A conversation handed over from another agent opens with Daoris's briefing instead (MIXAGENT1a-i): its
+    /// one note says where it came from, since no person spoke.
+    /// </summary>
+    internal static IEnumerable<SessionEvent> Recorded(ChatMessage message)
+    {
+        if (message.TakenOver is { } taken)
+        {
+            yield return new SessionEvent { Kind = SessionEventKind.Note, Text = taken.Note, Parts = taken.Parts };
+            yield break;
+        }
+
+        if (ToldBrowser(message) is { } toldBrowser) yield return toldBrowser;
+        if (Told(message) is { } told) yield return told;
+        yield return Asked(message);
+    }
+
     private static SessionEvent Asked(ChatMessage message) => new()
     {
         Kind = SessionEventKind.User,
@@ -1378,9 +1405,7 @@ public sealed partial class ChatRunner : IDisposable
                     return;
                 }
 
-                if (ToldBrowser(message) is { } toldBrowser) _record(toldBrowser);
-                if (Told(message) is { } told) _record(told);
-                _record(Asked(message));
+                foreach (var recorded in Recorded(message)) _record(recorded);
                 // Each attached file a `resource_link` to where it is kept (CONV4c).
                 await session.PromptAsync(message.Prompt, CancellationToken.None, sent, message.Files).ConfigureAwait(false);
             }
@@ -1497,9 +1522,7 @@ public sealed partial class ChatRunner : IDisposable
                     }
                     else
                     {
-                        if (ToldBrowser(message) is { } toldBrowser) record(toldBrowser);
-                        if (Told(message) is { } told) record(told);
-                        record(Asked(message));
+                        foreach (var recorded in Recorded(message)) record(recorded);
                         // Each attached file named by its path, which the agent reads with its own tool
                         // (CONV4c, measured); the record keeps the person's words, not these lines.
                         line = adapter.FrameMessage(message.Prompt + ChatFiles.PathLines(message.Files));
