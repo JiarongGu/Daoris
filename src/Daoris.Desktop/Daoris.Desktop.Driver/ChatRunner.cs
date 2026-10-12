@@ -847,6 +847,14 @@ public sealed partial class ChatRunner : IDisposable
             yield break;
         }
 
+        if (message.Helped is { } helped)
+        {
+            // Daoris's words around another agent's claim (MIXAGENT2a-iii), under the id the record gave them so they pair with the
+            // event that showed them waiting; never the person's, so no preface and no browser line ride beside them.
+            yield return new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Id = helped.Id, Text = message.Text };
+            yield break;
+        }
+
         if (ToldBrowser(message) is { } toldBrowser) yield return toldBrowser;
         if (Told(message) is { } told) yield return told;
         yield return Asked(message);

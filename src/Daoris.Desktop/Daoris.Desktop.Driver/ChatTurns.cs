@@ -172,8 +172,9 @@ internal sealed class ChatTurns(
 
             // At its next step (D137 §2.1): only into a turn already on the wire, never one the person stopped, and never
             // ahead of a word still waiting, which would make the agent read them out of the order said.
-            if (steer is not null && _inFlight && _sent && !_stopped && !_stopPending && _holding is null && _waiting.Count == 0
-                && steer(message) is { } answered)
+            // A helper's answer is a turn of its own, never handed to the running one (MIXAGENT2a-iii).
+            if (steer is not null && message.Helped is null && _inFlight && _sent && !_stopped && !_stopPending && _holding is null
+                && _waiting.Count == 0 && steer(message) is { } answered)
             {
                 _steered.Add(answered);
                 return TurnReach.NextStep;
@@ -224,8 +225,9 @@ internal sealed class ChatTurns(
 
         if (now) await interrupt().ConfigureAwait(false);
         // The words a conversation goes on with are not handed back (MSG1c): the page never listed them, and they stay on
-        // the record, which takes them off only once they went.
-        withdrawn.RemoveAll(message => message.GoesOn is not null);
+        // the record, which takes them off only once they went. Nor is a helper's answer (MIXAGENT2a-iii): it is no word of the
+        // person's to put back in the composer, and it stays on the record for a later turn.
+        withdrawn.RemoveAll(message => message.OnRecord);
         return !cancelled && withdrawn.Count == 0 ? TurnStop.Nothing : new TurnStop(cancelled, withdrawn);
     }
 
@@ -319,7 +321,12 @@ internal sealed class ChatTurns(
 
             try
             {
-                await take(message, Sent).ConfigureAwait(false);
+                await take(message, () =>
+                {
+                    Sent();
+                    // A helper's answer comes off the record once its turn is on the wire (MIXAGENT2a-iii).
+                    message.Delivered?.Invoke();
+                }).ConfigureAwait(false);
             }
             catch (Exception)
             {
@@ -386,8 +393,8 @@ internal sealed class ChatTurns(
     // The words a conversation goes on with are left out (MSG1c): its record shows them waiting already, at its foot.
     private List<ChatMessage> Snapshot()
     {
-        List<ChatMessage> now = _holding is null || _holding.GoesOn is not null ? [] : [_holding];
-        now.AddRange(_waiting.Where(message => message.GoesOn is null));
+        List<ChatMessage> now = _holding is null || _holding.OnRecord ? [] : [_holding];
+        now.AddRange(_waiting.Where(message => !message.OnRecord));
         return now;
     }
 

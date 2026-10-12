@@ -306,6 +306,116 @@ public sealed class ChatGoesOnProcessTests : IDisposable
         Assert.True(runner.Finish(id));
     }
 
+    private const string HelpersWords = "Another agent says five.";
+
+    /// <summary>
+    /// A helper's answer as the driver leaves it (MIXAGENT2a-iii): kept on the asker's record marked as the helper's, and shown in
+    /// its conversation as Daoris's words (`target`), reaching it on `resume`, which is what the chat runner hears.
+    /// </summary>
+    private static void Helped(ChatLedger ledger, SessionEvents events, string session, string id)
+    {
+        ledger.For(session).Helped(id, HelpersWords);
+        events.Append(session, new SessionEvent
+        {
+            Kind = SessionEventKind.User, Origin = "target", Id = id, Text = HelpersWords, Reaches = "resume",
+        });
+    }
+
+    /// <summary>
+    /// 🔴 MIXAGENT2a-iii: a conversation open between turns, which asked a helper, is said the helper's answer as its next turn:
+    /// the agent hears it as a prompt, the record keeps it as Daoris's words around the claim (never the person's), and it comes
+    /// off the record by its id, so a later going-on never says it again.
+    /// </summary>
+    [Fact]
+    public async Task An_open_conversation_between_turns_is_said_a_helpers_answer_as_its_next_turn()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var config = Config("acp-stub", "node", Agent(), Heard);
+        var events = Events;
+        using var client = ledger.Client();
+        using var runner = Runner(client, events);
+
+        var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
+        await Poll.Until(() => ledger.State(id) == "working", () => Seen(ledger, events, id));
+        Assert.True(runner.Say(id, "first"));
+        await Poll.Until(() => events.After(id, 0).Events.Any(e => e.Kind == SessionEventKind.Turn), () => Seen(ledger, events, id));
+
+        Helped(ledger, events, id, "hw1");
+
+        await Poll.Until(() => HeardLines().Contains($"prompt: {HelpersWords}"), () => Seen(ledger, events, id));
+        await Poll.Until(() => ledger.Taken.Count == 1, () => Seen(ledger, events, id));
+        Assert.Equal([(id, "hw1")], ledger.Taken);
+        Assert.Empty(ledger.Said(id));
+        var said = events.After(id, 0).Events.Where(e => e.Kind == SessionEventKind.User && e.Reaches is null && e.Text == HelpersWords).ToList();
+        Assert.Equal(("target", "hw1"), (Assert.Single(said).Origin, said[0].Id));
+        Assert.DoesNotContain(events.After(id, 0).Events, e => e.Kind == SessionEventKind.User && e.Origin == "person" && e.Text == HelpersWords);
+        Assert.Equal(["starting", "working"], ledger.Moves(id));
+        Assert.True(runner.Finish(id));
+    }
+
+    /// <summary>
+    /// MIXAGENT2a-iii: a conversation that is talking takes the helper's answer at its turn's end, as a turn of its own: never
+    /// handed into the turn in flight, and recorded after that turn's end.
+    /// </summary>
+    [Fact]
+    public async Task A_talking_conversation_takes_a_helpers_answer_at_its_turns_end()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var config = Config("acp-stub", "node", Agent(), Heard, "slow");
+        var events = Events;
+        using var client = ledger.Client();
+        using var runner = Runner(client, events);
+
+        var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
+        await Poll.Until(() => ledger.State(id) == "working", () => Seen(ledger, events, id));
+        Assert.True(runner.Say(id, "first"));
+        await Poll.Until(() => HeardLines().Contains("prompt: first") && runner.Taking(id), () => Seen(ledger, events, id));
+
+        Helped(ledger, events, id, "hw1");
+        await Task.Delay(300);
+        Assert.DoesNotContain($"prompt: {HelpersWords}", HeardLines());
+
+        await Poll.Until(() => HeardLines().Contains($"prompt: {HelpersWords}"), () => Seen(ledger, events, id));
+        await Poll.Until(() => ledger.Taken.Count == 1, () => Seen(ledger, events, id));
+        var order = events.After(id, 0).Events
+            .Where(e => (e.Kind == SessionEventKind.User && e.Reaches is null) || e.Kind == SessionEventKind.Turn)
+            .Select(e => e.Kind == SessionEventKind.Turn ? "turn" : $"{e.Origin}: {e.Text}");
+        Assert.Equal(["person: first", "turn", $"target: {HelpersWords}"], order.Take(3));
+        Assert.Empty(ledger.Said(id));
+        Assert.True(runner.Finish(id));
+    }
+
+    /// <summary>
+    /// MIXAGENT2a-iii: an ended conversation that asked goes on with the helper's answer through its own going-on: its own
+    /// conversation resumed with the answer as the turn, its note naming a helper's answer and never "your words", and the answer
+    /// off the record once it went.
+    /// </summary>
+    [Fact]
+    public async Task An_ended_conversation_goes_on_with_a_helpers_answer_and_names_it_as_the_helpers()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var config = Config("acp-stub", "node", Agent(), Heard);
+        var events = Events;
+        using var client = ledger.Client();
+        using var runner = Runner(client, events);
+
+        var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
+        await Poll.Until(() => ledger.State(id) == "working", () => Seen(ledger, events, id));
+        Assert.True(runner.Finish(id));
+        await Poll.Until(() => ledger.State(id) == "completed", () => Seen(ledger, events, id));
+
+        Helped(ledger, events, id, "hw1");
+
+        await Poll.Until(() => ledger.Taken.Count == 1 && HeardLines().Contains($"prompt: {HelpersWords}"), () => Seen(ledger, events, id));
+        Assert.Contains("session/resume: conv-1", HeardLines());
+        Assert.Contains(Continuations.GoingOnWithHelper, ledger.Notes(id)[^1]);
+        Assert.Contains(events.After(id, 0).Events, e => e.Kind == SessionEventKind.Note && e.Text!.StartsWith("— a helper's answer is the next turn", StringComparison.Ordinal));
+        Assert.DoesNotContain(events.After(id, 0).Events, e => e.Kind == SessionEventKind.Note && e.Text!.Contains("your words"));
+        Assert.Empty(ledger.Said(id));
+        Assert.Equal(1, ledger.Count);
+        Assert.True(runner.Finish(id));
+    }
+
     /// <summary>
     /// A conversation whose agent named no conversation (a text door) says so as it ends (MSG1c): words written to it once
     /// it ended cannot go on in it, which its record says before anyone writes.
@@ -333,7 +443,8 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     /// each method, a resume's id, and each prompt's text blocks joined by <c> | </c>, and answers each prompt after a
     /// moment. <c>gone</c> refuses a resume as one it no longer has; <c>queues</c> says it takes prompts during a turn and
     /// hands a held turn off to the next prompt, as <c>claude-agent-acp</c> was measured doing (STEER1); <c>queues-hold</c>
-    /// holds both until a cancel answers them <c>cancelled</c>. A prompt <c>hold</c> runs until something hands it off.
+    /// holds both until a cancel answers them <c>cancelled</c>; <c>slow</c> takes a second and a half to answer a prompt, long
+    /// enough to say a word to a conversation that is talking. A prompt <c>hold</c> runs until something hands it off.
     /// </summary>
     private string Agent()
     {
@@ -380,7 +491,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
                   // The words folded in at the next step: the held turn handed off, the work going on as the words'.
                   answer(held.shift(), 'end_turn');
                 }
-                await new Promise((resolve) => setTimeout(resolve, 100));
+                await new Promise((resolve) => setTimeout(resolve, mode === 'slow' ? 1500 : 100));
                 say(conversation === 'conv-1' && text.startsWith('Also') ? 'carrying on: ' + text : 'heard ' + text);
                 answer(frame.id, 'end_turn');
               } else if (frame.method === 'session/cancel') {

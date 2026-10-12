@@ -128,6 +128,14 @@ public sealed partial class ChatRunner
         foreach (var each in records)
         {
             if (_closing || ct.IsCancellationRequested) break;
+
+            // A helper's answer left on a conversation this runner holds open is said as its next turn (MIXAGENT2a-iii).
+            if (each.Kind == "chat" && !each.Teammate && Holds(each.Id) && ServiceClient.ReadRecord(json, each.Id) is { } open)
+            {
+                await SayHelperWordsAsync(each.Id, open).ConfigureAwait(false);
+                continue;
+            }
+
             // Ask Daoris's conversations among them (ASKHIST1): each goes on in its own conversation as a repository's chat does.
             if (each.Kind != "chat" || each.Teammate || !Ended.Contains(each.State)) continue;
 
@@ -157,6 +165,25 @@ public sealed partial class ChatRunner
     private void Heard(string session, SessionEvent e)
     {
         if (_closing || e.Kind != SessionEventKind.User || e.Reaches != "resume") return;
+
+        // A helper's answer for a conversation open here (MIXAGENT2a-iii): Daoris's words, never the person's, which a person's say
+        // door never shows for a conversation that runs (its words reach it at its door). Said as its next turn.
+        if (Holds(session) && !string.Equals(e.Origin, "person", StringComparison.Ordinal))
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await SayHelperWordsAsync(session).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    // It waits on the record; the next word heard, or the next come-up, says it.
+                }
+            });
+            return;
+        }
+
         if (_talking.ContainsKey(session) || _turned.ContainsKey(session) || _goingOn.ContainsKey(session)) return;
         _ = Task.Run(async () =>
         {

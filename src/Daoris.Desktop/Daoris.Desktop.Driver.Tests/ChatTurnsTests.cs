@@ -169,6 +169,49 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
+    /// MIXAGENT2a-iii: a helper's answer said to a conversation that is talking waits for the turn's end, as a turn of its own:
+    /// never handed to the turn on the wire as the person's word is, never listed as queued (its record shows it waiting), and
+    /// told delivered once its turn is on the wire, which is when it comes off the record.
+    /// </summary>
+    [Fact]
+    public async Task A_helpers_answer_waits_for_the_turn_to_end_unlisted_and_is_told_delivered_once_sent()
+    {
+        var door = new Door();
+        var turns = door.Turns();
+        var delivered = 0;
+
+        turns.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+
+        var helper = new SaidWordView("h1w", "Another agent says five.", DateTimeOffset.UtcNow, [], true) { Helper = "h1" };
+        Assert.Equal(TurnReach.TurnEnd, turns.Take(new ChatMessage(helper.Text, []) { Helped = helper, Delivered = () => delivered++ }));
+
+        Assert.Empty(door.Steered);
+        Assert.Empty(turns.State.Queued);
+        Assert.Equal(0, delivered);
+
+        door.EndTurn(0);
+        await Poll.Until(() => door.Took.Count == 2, () => "the helper's answer never went");
+        Assert.Equal(["read the five files", "Another agent says five."], door.Took);
+        Assert.Equal(1, delivered);
+    }
+
+    /// <summary>
+    /// MIXAGENT2a-iii: a helper's answer is recorded as Daoris's words around another agent's claim, under its record id so it
+    /// pairs with the event that showed it waiting, and never as the person's: no preface and no browser line, origin `target`.
+    /// </summary>
+    [Fact]
+    public void A_helpers_answer_is_recorded_as_daoriss_words_and_never_the_persons()
+    {
+        var helper = new SaidWordView("h1w", "Another agent says five.", DateTimeOffset.UtcNow, [], true) { Helper = "h1" };
+
+        var recorded = Assert.Single(ChatRunner.Recorded(new ChatMessage(helper.Text, []) { Helped = helper, Preface = "where you are" }));
+
+        Assert.Equal((SessionEventKind.User, "target", "h1w", "Another agent says five."), (recorded.Kind, recorded.Origin, recorded.Id, recorded.Text));
+        Assert.Null(recorded.Reaches);
+    }
+
+    /// <summary>
     /// MSG1c3 (D137's MSG1c2 note, D142 point 1): a word handed to the turn at its next step, whose turn the person stopped
     /// while it was on its way and the agent then answered <c>cancelled</c>, may have been read with its answer dropped
     /// (STEER1 §3). The line the conversation keeps of it carries a code the page words in the reader's language, the word's
