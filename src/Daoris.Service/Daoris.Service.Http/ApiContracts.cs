@@ -362,6 +362,12 @@ public sealed record OpinionAnswerResponse(int Finding, string Said, string? Com
 // session the findings went to, with the word they wait in.
 public sealed record OpinionActionResponse(
     OpinionResponse Opinion, string Message, SessionResponse? Session = null, SaidWordResponse? Said = null);
+// MIXAGENT2a-ii (D163 point 2): the driver's helper session opens its record, and hands the helper's answer to the asker. Every
+// part nullable so one left out is refused by the desk naming which. `text` is Daoris's words around the helper's claim.
+public sealed record HelperOpenRequest(string? Asker, string? Adapter, string? Tree, string? Account = null, string? HarnessVersion = null, string? BaseCommit = null);
+public sealed record HelperHandRequest(string? Text);
+// A helper door's answer: the desk's sentence, the helper's record a pass opened or the asker the answer went to, and the word.
+public sealed record HelperActionResponse(string Message, SessionResponse? Session = null, SaidWordResponse? Said = null);
 // MSG1a (D137 §2.4): the words a session took, by their ids; `By` the session that took them where it is not this one
 // (a fallback's new session).
 public sealed record TakenRequest(IReadOnlyList<string?>? Said, string? By = null);
@@ -551,6 +557,9 @@ public sealed record ConfirmationActionResponse(ConfirmationResponse Confirmatio
 [JsonSerializable(typeof(OpinionResponse))]
 [JsonSerializable(typeof(IEnumerable<OpinionResponse>))]
 [JsonSerializable(typeof(OpinionActionResponse))]
+[JsonSerializable(typeof(HelperOpenRequest))]
+[JsonSerializable(typeof(HelperHandRequest))]
+[JsonSerializable(typeof(HelperActionResponse))]
 [JsonSerializable(typeof(HistoryPlanResponse))]
 [JsonSerializable(typeof(HistoryClearRequest))]
 [JsonSerializable(typeof(HistoryClearResponse))]

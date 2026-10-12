@@ -1242,7 +1242,40 @@ if (mode == ServiceMode.Local)
         MachineLocal(http)
             ? await OpinionReply(await s.Opinions.HandAsync(id, DateTimeOffset.UtcNow, ct), s, http, ct)
             : OffMachineOpinion());
+
+    // A helper's record, and its answer's return (MIXAGENT2a-ii, D163 point 2): the driver's helper session opens the record
+    // (a chat that serves the asker, in a clone of its own) and hands the helper's answer to the asker as a word marked `helper`.
+    app.MapPost("/api/helpers", async (ComposedService s, HttpContext http, HelperOpenRequest body, CancellationToken ct) =>
+        MachineLocal(http)
+            ? HelperReply(
+                await s.Helpers.OpenAsync(
+                    new HelperOpen(body.Asker ?? "", body.Adapter ?? "", body.Tree ?? "")
+                    {
+                        Account = body.Account, HarnessVersion = body.HarnessVersion, BaseCommit = body.BaseCommit,
+                    },
+                    DateTimeOffset.UtcNow, ct),
+                http)
+            : OffMachineOpinion());
+
+    app.MapPost("/api/helpers/{helper}/hand", async (ComposedService s, HttpContext http, string helper, HelperHandRequest body, CancellationToken ct) =>
+        MachineLocal(http)
+            ? HelperReply(await s.Helpers.HandAsync(helper, body.Text ?? "", DateTimeOffset.UtcNow, ct), http)
+            : OffMachineOpinion());
 }
+
+// A door to a helper answers as a second opinion's does: a shape is a bad request, nothing by that name is not found, and a
+// state it is in is the lock's own shape, 409.
+IResult HelperReply(HelperOutcome outcome, HttpContext http) =>
+    outcome.Refusal switch
+    {
+        HelperRefusal.None => Results.Ok(new HelperActionResponse(
+            outcome.Message,
+            outcome.Session is { } session ? ToSession(session, MachineLocal(http)) : null,
+            outcome.Word is { } word ? ToSaid(word) : null)),
+        HelperRefusal.NotFound or HelperRefusal.Shared => Results.NotFound(new ErrorResponse(outcome.Message)),
+        HelperRefusal.BadShape => Results.BadRequest(new ErrorResponse(outcome.Message)),
+        _ => Results.Conflict(new ErrorResponse(outcome.Message)),
+    };
 
 // A door to a second opinion answers (XAGENT1c): a shape is a bad request, nothing by that name is not found, and a bound or a
 // state the opinion is in is the lock's own shape, 409. Done, the opinion as it now stands with the desk's sentence.

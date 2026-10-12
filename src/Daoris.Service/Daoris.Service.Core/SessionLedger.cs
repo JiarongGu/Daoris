@@ -1009,8 +1009,10 @@ public sealed partial class SessionLedger(
 
         var with = WentOnWith(session) switch
         {
-            (Persons: false, Findings: true) => "another agent's findings",
-            (Persons: true, Findings: true) => "the person's words and another agent's findings",
+            (Persons: false, Findings: true, _) => "another agent's findings",
+            (Persons: true, Findings: true, _) => "the person's words and another agent's findings",
+            (Persons: false, Findings: false, Helper: true) => "a helper's answer",
+            (Persons: true, Findings: false, Helper: true) => "the person's words and a helper's answer",
             _ => "the person's words",
         };
         return new SessionAdvanceOutcome(
@@ -1023,8 +1025,14 @@ public sealed partial class SessionLedger(
     /// Whose words an ended record goes on with, read from each waiting word's <see cref="SaidWord.By"/> (XAGENT1e2, D155's
     /// XAGENT1e note): the person's, another agent's findings, or both. A record with none reads as the person's, as it did.
     /// </summary>
-    private static (bool Persons, bool Findings) WentOnWith(Session session) =>
-        (session.Said.Count == 0 || session.Said.Any(word => word.Persons), session.Said.Any(word => !word.Persons));
+    /// <remarks>
+    /// A helper's answer (MIXAGENT2a-ii, <see cref="SaidWord.Helper"/>) is its own third, never findings: alone, or beside the
+    /// person's words. Where findings and a helper's answer wait together the line says the findings, as it always did.
+    /// </remarks>
+    private static (bool Persons, bool Findings, bool Helper) WentOnWith(Session session) =>
+        (session.Said.Count == 0 || session.Said.Any(word => word.Persons),
+         session.Said.Any(word => word.By is not null),
+         session.Said.Any(word => word.Helper is not null));
 
     /// <summary>
     /// The note an ended record goes on with (MSG1a, D137 §2.3): what ended it, when it went on, and the note the move passed,
@@ -1042,8 +1050,10 @@ public sealed partial class SessionLedger(
         var at = $"{now.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC";
         var (line, code) = WentOnWith(session) switch
         {
-            (Persons: false, Findings: true) => ($"Went on with another agent's findings at {at}.", LedgerNoteCodes.WentOnFindings),
-            (Persons: true, Findings: true) => ($"Went on with your words and another agent's findings at {at}.", LedgerNoteCodes.WentOnBoth),
+            (Persons: false, Findings: true, _) => ($"Went on with another agent's findings at {at}.", LedgerNoteCodes.WentOnFindings),
+            (Persons: true, Findings: true, _) => ($"Went on with your words and another agent's findings at {at}.", LedgerNoteCodes.WentOnBoth),
+            (Persons: false, Findings: false, Helper: true) => ($"Went on with a helper's answer at {at}.", LedgerNoteCodes.WentOnHelper),
+            (Persons: true, Findings: false, Helper: true) => ($"Went on with your words and a helper's answer at {at}.", LedgerNoteCodes.WentOnHelperBoth),
             _ => ($"Went on with your words at {at}.", LedgerNoteCodes.WentOn),
         };
         var went = string.Join("\n\n", new[] { session.Note, line, note }.Where(part => !string.IsNullOrWhiteSpace(part)));

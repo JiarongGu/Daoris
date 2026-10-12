@@ -546,6 +546,28 @@ describe('noteLines', () => {
       expect(noteLines(t, { parts: [took('moved-on')] }, 'en')[0].kind).toBe('recorded');
     });
 
+    it('words a helper asked, answered and refused on the asker, and helping on the helper (MIXAGENT2a-ii)', () => {
+      const asked = coded('helper.asked', 'A helper was asked: …', { agent: 'codex-acp', session: 'ab12cd34' });
+      expect(noteLines(t, { parts: [asked] }, 'en')[0].text).toBe('A helper was asked: codex-acp reads in session ab12cd34 and answers the question.');
+      expect(noteLines(zh, { parts: [asked] }, 'zh')[0].text).toBe('已请助手回答：codex-acp 在会话 ab12cd34 中阅读并回答这个问题。');
+
+      const last = coded('helper.answered-last-words', 'Helper …', { agent: 'codex-acp', session: 'ab12cd34' });
+      expect(noteLines(t, { parts: [last] }, 'en')[0].text)
+        .toBe('Helper codex-acp (session ab12cd34) did not use its answer tool; its last words stand as the answer.');
+
+      const refused = (why: string) => coded('helper.refused-by', 'Helper …', { agent: 'codex-acp', why });
+      expect(noteLines(t, { parts: [refused('no-answer')] }, 'en')[0].text)
+        .toBe('Helper codex-acp did not answer this question: the helper ended without an answer.');
+      expect(noteLines(zh, { parts: [refused('too-many')] }, 'zh')[0].text).toBe('助手 codex-acp 没有回答这个问题：该会话已有两位助手在工作。');
+      expect(noteLines(t, { parts: [coded('helper.refused', 'No helper …', { why: 'off' })] }, 'en')[0].text)
+        .toBe('No helper answered this question: the rule for helpers is off for this repository.');
+      // A reason this build does not know leaves the line as recorded.
+      expect(noteLines(t, { parts: [refused('moved-on')] }, 'en')[0].kind).toBe('recorded');
+
+      const helping = coded('helper.helping', 'This session is helping …', { session: 'ab12cd34' });
+      expect(noteLines(zh, { parts: [helping] }, 'zh')[0].text).toBe('这个会话正在为会话 ab12cd34 充当助手：它只阅读、只回答一个问题，不改动任何内容。');
+    });
+
     it('words a take that failed and leaves the service’s message as written', () => {
       const parts = [coded('words.not-taken', '— your words could not be taken off its record:'), words('no record at D:/x', 'program')];
       expect(noteLines(zh, { parts }, 'zh')).toEqual([
