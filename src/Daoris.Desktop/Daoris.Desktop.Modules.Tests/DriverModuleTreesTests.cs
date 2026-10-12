@@ -211,6 +211,34 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         Assert.Equal(JsonValueKind.Null, branch.GetProperty("uncommitted").ValueKind);
     }
 
+    /// <summary>
+    /// REVIEWBASE1 (D164's note): a tree's review says how far the latest known line is past its HEAD, with the line's name, and how
+    /// many commits it holds beyond the line; the page says the first where it is above zero, and the second where it is zero.
+    /// </summary>
+    [Fact]
+    public void A_trees_review_says_how_far_the_line_is_past_it()
+    {
+        var answer = JsonSerializer.SerializeToElement(
+            DriverModule.ReviewAnswer("s1a2b3c4", Diff("abc1234567890"), "tree", null, treeGone: false, behind: new LineBehind("main", 3, 1)), Camel);
+
+        var behind = answer.GetProperty("behind");
+        Assert.Equal("main", behind.GetProperty("line").GetString());
+        Assert.Equal(3, behind.GetProperty("commits").GetInt32());
+        Assert.Equal(1, behind.GetProperty("ahead").GetInt32());
+    }
+
+    /// <summary>A line that could not be read, and a review read from a landed branch rather than the tree, say null: a shape added.</summary>
+    [Fact]
+    public void Behind_is_null_where_the_line_was_not_read_or_the_source_is_a_branch()
+    {
+        var unread = JsonSerializer.SerializeToElement(DriverModule.ReviewAnswer("s1", Diff("abc"), "tree", null, treeGone: false), Camel);
+        var branch = JsonSerializer.SerializeToElement(
+            DriverModule.ReviewAnswer("s1", Diff("abc"), "branch", null, treeGone: true, behind: new LineBehind("main", 2, 0)), Camel);
+
+        Assert.Equal(JsonValueKind.Null, unread.GetProperty("behind").ValueKind);
+        Assert.Equal(JsonValueKind.Null, branch.GetProperty("behind").ValueKind);
+    }
+
     /// <summary>The landing plan's count: 0 where clean or not asked, else the paths the tree holds uncommitted.</summary>
     [Fact]
     public void The_landing_plan_says_how_many_paths_are_uncommitted()

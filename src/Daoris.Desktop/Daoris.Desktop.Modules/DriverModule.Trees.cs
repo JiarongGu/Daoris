@@ -54,16 +54,17 @@ public sealed partial class DriverModule
 
         if (!gone && !string.IsNullOrWhiteSpace(baseCommit))
         {
-            // A tree brought up to date since (WSR6) no longer holds the commit its session began at: the review measures
-            // from where its branch now grows from, or it would show the line's own changes as the session's work.
-            var from = await trees.ReviewBaseAsync(tree!, baseCommit, cancellationToken);
-            var diff = await WorkingTree.DiffAsync(tree!, from, cancellationToken);
+            // The review measures from the newest commit the work shares with the line (REVIEWBASE1, D164's note): a tree that took
+            // in newer line commits (WSR6's replay, a merge, a rebase, the line checked out) would otherwise show the line's own
+            // changes as the session's work. It says how far the latest line it knows is past the tree, and fetches nothing.
+            var range = await trees.ReviewRangeAsync(tree!, baseCommit, cancellationToken);
+            var diff = await WorkingTree.DiffAsync(tree!, range.From, cancellationToken);
             if (diff is not null)
             {
                 var standing = landing is null
                     ? null
                     : await trees.LandedReviewAsync(await CheckoutOfAsync(service, landing.Repository, cancellationToken), landing, changes: false, cancellationToken);
-                return ReviewAnswer(id, diff, ReviewSource.Tree, standing, treeGone: false, uncommitted: dirty);
+                return ReviewAnswer(id, diff, ReviewSource.Tree, standing, treeGone: false, uncommitted: dirty, behind: range.Behind);
             }
         }
 
@@ -116,7 +117,8 @@ public sealed partial class DriverModule
     /// </summary>
     /// <remarks>Never a machine path: the checkout the branch was read in is the registry's, and the page has no use for it.</remarks>
     public static object ReviewAnswer(
-        string session, WorkingTree.TreeDiff? diff, string source, LandedReview? landed, bool treeGone, WorkingTree.TreeDiff? uncommitted = null) => new
+        string session, WorkingTree.TreeDiff? diff, string source, LandedReview? landed, bool treeGone, WorkingTree.TreeDiff? uncommitted = null,
+        LineBehind? behind = null) => new
     {
         Session = session,
         Base = diff?.Base ?? "",
@@ -139,6 +141,9 @@ public sealed partial class DriverModule
                 Truncated = uncommitted.Truncated is not null,
             }
             : null,
+        // How the session's own tree stands against the latest line known here (REVIEWBASE1): the line's name, the commits it has that
+        // the tree does not, and the tree's beyond it. Null where the source is not that tree or the line could not be read; a shape added.
+        Behind = source == ReviewSource.Tree && behind is not null ? new { behind.Line, behind.Commits, behind.Ahead } : null,
         Landed = landed is null ? null : new
         {
             landed.Entry.Branch,

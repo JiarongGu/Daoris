@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Daoris.Driver;
 
 /// <summary>What pulling a repository's line would do, or found (WSR6). Only a fast-forward moves anything.</summary>
@@ -612,23 +614,97 @@ public sealed partial class SessionTrees
         return new(pulls, rebases, deletes) { Apart = apart };
     }
 
+    /// <summary>The review's base for a session tree (WSR6, REVIEWBASE1): <see cref="ReviewRangeAsync"/>'s commit.</summary>
+    public async Task<string> ReviewBaseAsync(string tree, string recorded, CancellationToken ct = default) =>
+        (await ReviewRangeAsync(tree, recorded, ct).ConfigureAwait(false)).From;
+
     /// <summary>
-    /// The review's base for a session tree (WSR6): the commit the session record says it began at, unless bringing
-    /// the branch up to date replayed it since — then that commit is no longer in its history, and a diff from it
-    /// would show the line's own changes as the session's. The branch's record then says where it now grows from.
+    /// Where a session tree's review is measured from, and how its HEAD stands against its repository's line (REVIEWBASE1, D164's
+    /// note): the newest commit the work shares with the line, among the line's here, the line's on origin and the record's own.
     /// </summary>
-    public async Task<string> ReviewBaseAsync(string tree, string recorded, CancellationToken ct = default)
+    /// <remarks>
+    /// <para>The record's base is the commit the session began at, unless bringing the branch up to date replayed it since (WSR6):
+    /// then it is no longer in the tree's history, and the branch's record says where it now grows from. That alone measured a tree
+    /// that took in newer line commits (merged them, rebased onto them, or checked the line out) from its old grow point, so the
+    /// line's own changes read as the session's work (seen 2026-10-13: 26 files, none its own). Each line's candidate is
+    /// <c>merge-base HEAD &lt;ref&gt;</c>, so it is in the tree's history by construction; <see cref="ReviewBase.Newest"/> chooses.</para>
+    ///
+    /// <para><b>Read-only, and it fetches nothing</b>: the refs are as the last look's fetch left them. A tree that is not this
+    /// home's, or a line git cannot name, keeps the record's word and says no line, as before.</para>
+    /// </remarks>
+    public async Task<ReviewRange> ReviewRangeAsync(string tree, string recorded, CancellationToken ct = default)
     {
-        // The record's word becomes a git argument, so it must be a commit id and nothing else.
-        if (!Holds(tree) || !Directory.Exists(tree) || recorded.Length == 0 || !recorded.All(char.IsAsciiHexDigit)) return recorded;
-        var (inHistory, _, _) = await WorkingTree.GitAsync(tree, ["merge-base", "--is-ancestor", recorded, "HEAD"], ct).ConfigureAwait(false);
-        if (inHistory == 0) return recorded;
+        if (!Holds(tree) || !Directory.Exists(tree)) return new(recorded, null);
+        var full = Path.GetFullPath(tree);
+        var (workspace, repository) = OwnerOf(full);
+        var record = await RecordedBaseAsync(full, repository, recorded, ct).ConfigureAwait(false);
+
+        var (rootCode, commonDir, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct)
+            .ConfigureAwait(false);
+        var line = rootCode == 0
+            ? (await LineAsync(Path.GetDirectoryName(commonDir.Trim())!, repository, workspace, ct).ConfigureAwait(false)).Branch
+            : null;
+
+        // By the refs' full names, never the short one (AUTOTIDY1): git reads a tag of that name first.
+        string? here = null, onOrigin = null;
+        var known = new List<string>();
+        if (line is not null)
+        {
+            foreach (var (reference, isOrigin) in new[] { ($"refs/heads/{line}", false), ($"refs/remotes/origin/{line}", true) })
+            {
+                var (code, shared, _) = await WorkingTree.GitAsync(full, ["merge-base", "HEAD", reference], ct).ConfigureAwait(false);
+                if (code != 0 || shared.Trim().Length == 0) continue;
+                known.Add(reference);
+                if (isOrigin) onOrigin = shared.Trim();
+                else here = shared.Trim();
+            }
+        }
+
+        var candidates = ReviewBase.Candidates(here, onOrigin, record);
+        var from = candidates.Count switch
+        {
+            0 => recorded,
+            1 => candidates[0],
+            _ => ReviewBase.Newest(candidates, await IndependentAsync(full, candidates, ct).ConfigureAwait(false)) ?? record ?? recorded,
+        };
+        return new(from, line is null ? null : await BehindAsync(full, line, known, ct).ConfigureAwait(false));
+    }
+
+    /// <summary>
+    /// The record's base where the tree's history holds it; else where the branch's record says it now grows from (WSR6), where
+    /// that is; else null. Each word becomes a git argument, so it must be a commit id and nothing else.
+    /// </summary>
+    private async Task<string?> RecordedBaseAsync(string tree, string repository, string recorded, CancellationToken ct)
+    {
+        static bool Id(string word) => word.Length > 0 && word.All(char.IsAsciiHexDigit);
+        if (Id(recorded) && await IsAncestorAsync(tree, recorded, "HEAD", ct).ConfigureAwait(false)) return recorded;
 
         var (_, branchOut, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
-        var (_, repository) = OwnerOf(Path.GetFullPath(tree));
-        if (Grown.Of(repository, branchOut.Trim()) is not { } grown) return recorded;
-        var (fromInHistory, _, _) = await WorkingTree.GitAsync(tree, ["merge-base", "--is-ancestor", grown.From, "HEAD"], ct).ConfigureAwait(false);
-        return fromInHistory == 0 ? grown.From : recorded;
+        if (Grown.Of(repository, branchOut.Trim()) is not { } grown || !Id(grown.From)) return null;
+        return await IsAncestorAsync(tree, grown.From, "HEAD", ct).ConfigureAwait(false) ? grown.From : null;
+    }
+
+    /// <summary>Those of <paramref name="commits"/> no other of them reaches, as git names them (full ids); none where git cannot say.</summary>
+    private static async Task<IReadOnlyList<string>> IndependentAsync(string tree, IReadOnlyList<string> commits, CancellationToken ct)
+    {
+        var (code, named, _) = await WorkingTree.GitAsync(tree, ["merge-base", "--independent", .. commits], ct).ConfigureAwait(false);
+        return code != 0 ? [] : named.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    }
+
+    /// <summary>
+    /// How many commits the line here and on origin together hold that HEAD does not, and HEAD that they do not (REVIEWBASE1): the
+    /// newer of the two counts, and a line that moved both ways counts both. Null where neither ref is here or git cannot count.
+    /// </summary>
+    private static async Task<LineBehind?> BehindAsync(string tree, string line, IReadOnlyList<string> refs, CancellationToken ct)
+    {
+        if (refs.Count == 0) return null;
+        var (behindCode, behind, _) = await WorkingTree.GitAsync(tree, ["rev-list", "--count", .. refs, "--not", "HEAD"], ct).ConfigureAwait(false);
+        var (aheadCode, ahead, _) = await WorkingTree.GitAsync(tree, ["rev-list", "--count", "HEAD", "--not", .. refs], ct).ConfigureAwait(false);
+        return behindCode == 0 && aheadCode == 0
+            && int.TryParse(behind.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var commits)
+            && int.TryParse(ahead.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var beyond)
+            ? new(line, commits, beyond)
+            : null;
     }
 
     /// <summary>A branch as judged for the replay, with what the press acts on: its tip, its tree, where its own commits start.</summary>
