@@ -1273,7 +1273,7 @@ export function commandDriver(
 
     // How work is committed (PROCESS1a, D164's amendment point 1): for a repository, or with `--workspace` for each repository
     // there that sets none of its own. `--mode` and `--convention` set what they name over the rule set there; `--clear`.
-    // Declared only until sessions are told it (PROCESS1d).
+    // A driven session in a tree of its own is told it (PROCESS1d-i); a conversation's briefing is PROCESS1d-ii's.
     case 'commits':
       return commits();
 

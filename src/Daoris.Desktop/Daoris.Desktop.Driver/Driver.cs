@@ -1273,6 +1273,10 @@ public sealed partial class Driver(
                             .ConfigureAwait(false))
                         .ConfigureAwait(false)
                     : null,
+                // How it commits (PROCESS1d-i, D164's amendment point 4): the rule standing for its repository, told with the landing
+                // to a session in a tree of its own on every form, so its agent and the repository's own rules do not stop each other;
+                // the person's checkout is told nothing. Under a named workflow the rule applies as everywhere.
+                Commits = _trees.Holds(workTree) ? CommitRules.Resolve(config, quest.To, start.Workspace) : null,
                 // The person's answer, when the session before parked to ask them (STANDDOWN2).
                 PersonSaid = carryingOn ? start.Resumes!.Answer : null,
                 // The person's stop, which they released with Try again (SESSUX1b): told so, never that it was cut off.

@@ -110,13 +110,10 @@ internal static class InstructionAccounting
                 Chars = chars,
                 From = target.CodeMap,
             },
-            HandedSections.Landing => new HandedSection(
-                name, HandedSources.Landing,
-                $"how it lands: {size}, its branch put on `{target.LandsOn!.Target}`"
-                + (target.LandsOn.Plugin is null ? " for the person to push" : " and pushed by a plugin once the person accepts it"))
+            HandedSections.Landing => new HandedSection(name, HandedSources.Landing, Landing(target, size))
             {
                 Chars = chars,
-                From = target.LandsOn.Target,
+                From = target.LandsOn?.Target,
             },
             HandedSections.Reading => Reading(target, chars, size),
             HandedSections.Look => Own("where to look before asking"),
@@ -365,6 +362,25 @@ internal static class InstructionAccounting
                     },
                 ],
         };
+    }
+
+    /// <summary>
+    /// The landing section's sentence (PROCESS1d-i): where the work goes, where a plan was handed, and the commit rule it was told,
+    /// where one was; a merge's section and a rule's alone name no branch.
+    /// </summary>
+    private static string Landing(SessionTarget target, string size)
+    {
+        var said = target.LandsOn switch
+        {
+            { Form: LandingForm.Branch } plan => $"how it lands: {size}, its branch put on `{plan.Target}`"
+                + (plan.Plugin is null ? " for the person to push" : " and pushed by a plugin once the person accepts it"),
+            { } plan => $"how it lands: {size}, merged into `{plan.Target}` once the person accepts it",
+            null => $"how it is committed: {size}",
+        };
+        var (rule, source) = target.Commits ?? new ResolvedCommits(CommitRule.Default, CommitRules.DefaultSource);
+        return said + $", its commit rule `{rule.Mode}`"
+            + (rule.Convention is null ? "" : " with the person's convention")
+            + (source == CommitRules.DefaultSource ? ", the default" : $", set for its {source} on this machine");
     }
 
     private static HandedSection Reading(SessionTarget target, int chars, string size)

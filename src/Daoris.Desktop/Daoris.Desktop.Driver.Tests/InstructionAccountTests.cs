@@ -18,7 +18,7 @@ public sealed class InstructionAccountTests
         Assert.Single(section.Cuts ?? [], cut => cut.Code == code);
 
     /// <summary>The instructions every kind of start composes, from the goldens' targets and a resume and an intake.</summary>
-    public static TheoryData<string> Every() => new() { "bare", "full", "carry-on", "resume", "intake", "everything" };
+    public static TheoryData<string> Every() => new() { "bare", "full", "carry-on", "resume", "intake", "everything", "own-tree" };
 
     private static SessionTarget Of(string which) => which switch
     {

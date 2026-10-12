@@ -62,7 +62,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/AbandonTests.cs` | 44 | 791 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/AcpTests.cs` | 111 | 2071 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/HarnessTests.cs` | 48 | 1089 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 103 | 1668 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 104 | 1668 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/empty.md` | 42 | 309 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/full.md` | 46 | 360 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/sparse.md` | 42 | 308 |
@@ -79,10 +79,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/TraceTests.cs` | 41 | 691 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/AccountRotation.cs` | 66 | 1097 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Acp.cs` | 91 | 1854 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 114 | 2026 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 113 | 2006 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 86 | 1622 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.Continue.cs` | 44 | 743 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 164 | 2783 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 164 | 2787 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 64 | 1148 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 205 | 3775 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 40 | 708 |

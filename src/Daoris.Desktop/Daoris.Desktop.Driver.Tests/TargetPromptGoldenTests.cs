@@ -4,8 +4,9 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// A quest's instruction rendered whole (KNOWUSE1c, KNOWUSE1d), as the harness reads it: a repository's quest that
-/// carries nothing, a quest an ask asked with everything the look and the close speak to, and a carry-on after the
-/// person answered. A sentence added, moved or reworded shows here as the whole instruction's difference, byte for byte.
+/// carries nothing, a quest an ask asked with everything the look and the close speak to, a carry-on after the
+/// person answered, and a session told its process in a tree of its own (PROCESS1d-i). A sentence added, moved or
+/// reworded shows here as the whole instruction's difference, byte for byte.
 /// </summary>
 /// <remarks>
 /// The golden files under <c>golden/target-prompt/</c> are the instruction a session is handed. A change to what it says
@@ -105,6 +106,18 @@ public sealed class TargetPromptGoldenTests
         SetUpFrom = ReviewSource.Repository,
     };
 
+    /// <summary>
+    /// A session in a tree of its own (PROCESS1d-i, D164's amendment point 4): its landing rule names the pull request's branch by
+    /// the ticket, and its commit rule, set for its workspace, asks the person first and quotes their convention.
+    /// </summary>
+    internal static readonly SessionTarget OwnTree = Bare with
+    {
+        LandsOn = new LandingPlan(LandingForm.Branch, "feature/T-9-add-the-note-field", LandingSource.Repository),
+        Commits = new ResolvedCommits(
+            new CommitRule(CommitRules.Ask, "Subject in the imperative, the ticket key first: `T-9 Add the note field`."),
+            OpinionSource.Workspace),
+    };
+
     private static string RepositoryRoot()
     {
         var at = new DirectoryInfo(AppContext.BaseDirectory);
@@ -121,6 +134,7 @@ public sealed class TargetPromptGoldenTests
         "full" => Full,
         "carry-on" => CarryOn,
         "set-up" => SetUpStep,
+        "own-tree" => OwnTree,
         _ => throw new ArgumentOutOfRangeException(nameof(which), which, null),
     };
 
@@ -129,6 +143,7 @@ public sealed class TargetPromptGoldenTests
     [InlineData("full")]
     [InlineData("carry-on")]
     [InlineData("set-up")]
+    [InlineData("own-tree")]
     public void The_quests_instruction_is_its_golden_text(string which)
     {
         Assert.Equal(File.ReadAllText(GoldenPath($"{which}.md")), TargetPrompt.Compose(Of(which)));
@@ -146,6 +161,7 @@ public sealed class TargetPromptGoldenTests
     [InlineData("full")]
     [InlineData("carry-on")]
     [InlineData("set-up")]
+    [InlineData("own-tree")]
     public void The_account_beside_it_is_its_golden(string which)
     {
         var account = TargetPrompt.Composed(Of(which)).Account;
