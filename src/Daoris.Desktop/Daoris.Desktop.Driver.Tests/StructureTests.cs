@@ -157,6 +157,49 @@ public sealed class StructureTests
             Moved(("Landing.cs", "class Landing { }"), watch, ("Plugins/PluginTrial.cs", "class PluginTrial\n{ DriverWatch Watch; }")));
     }
 
+    private static IReadOnlyList<string> Mirror(IEnumerable<string> tests, params string[] listed) =>
+        StructureCheck.Check(
+                Map with { Tests = listed.ToDictionary(name => name, _ => "Plugins") },
+                Unmoved.Select(source => (source.Item1, source.Item2)),
+                tests)
+            .Select(breach => breach.ToString()).ToList();
+
+    [Fact]
+    public void A_test_the_map_lists_sits_under_its_module_s_folder_and_one_not_listed_is_not_constrained()
+    {
+        Assert.Empty(Mirror(["Plugins/PluginKitTests.cs", "Plugins/Hooks/HookTests.cs", "LooseTests.cs", "Trees/LandingTests.cs"], "PluginKitTests.cs", "HookTests.cs"));
+
+        Assert.Equal(
+            [
+                "HookTests.cs:0 [mirror] sits at the top of the tests, and the map lists it under Plugins: a test mirrors its module's folder",
+                "Trees/PluginKitTests.cs:0 [mirror] sits under Trees, and the map lists it under Plugins: a test mirrors its module's folder",
+            ],
+            Mirror(["HookTests.cs", "Trees/PluginKitTests.cs"], "HookTests.cs", "PluginKitTests.cs"));
+    }
+
+    [Fact]
+    public void A_name_the_tests_list_that_is_found_nowhere_is_a_stale_entry_or_a_module_the_map_does_not_declare()
+    {
+        Assert.Equal(
+            ["structure.json:0 [map] GoneTests.cs is listed under Plugins, and no such test is in the tests' tree: a delete takes its entry off the list"],
+            Mirror(["Plugins/HookTests.cs"], "GoneTests.cs"));
+
+        var map = Map with { Tests = new Dictionary<string, string> { ["HookTests.cs"] = "Gardens" } };
+        Assert.Contains(
+            "structure.json:0 [map] HookTests.cs is a test mapped to Gardens, which is no module of the map",
+            StructureCheck.Check(map, Unmoved, ["Gardens/HookTests.cs"]).Select(breach => breach.ToString()));
+    }
+
+    [Fact]
+    public void A_top_level_folder_of_the_tests_is_a_module_s_or_fixtures_golden_or_build_output()
+    {
+        Assert.Empty(Mirror(["Help/HelpTests.cs", "Plugins/A.cs", "fixtures/B.cs", "golden/C.cs", "bin/D.cs", "obj/E.cs", "TestResults/F.cs"]));
+
+        Assert.Equal(
+            ["Gardens/RoseTests.cs:0 [mirror] the folder Gardens is no module's: a test folder is a module's, or fixtures, golden or a build output"],
+            Mirror(["Gardens/RoseTests.cs"]));
+    }
+
     [Fact]
     public void The_code_of_a_source_keeps_every_offset_and_blanks_its_comments_strings_and_characters()
     {
@@ -187,6 +230,8 @@ public sealed class StructureTests
         Assert.Empty(map.Modules["Loop"]);
         Assert.All(map.Modules.Where(module => module.Key is not ("Platform" or "Loop")), module => Assert.Equal(["Domain", "Application", "Infrastructure"], module.Value));
         Assert.All(map.Split.Keys, file => Assert.True(map.Root.ContainsKey(file), $"{file} is noted for a split but is on no list"));
+        Assert.Equal(16, map.Tests.Count(test => test.Value == "Plugins"));
+        Assert.All(map.Tests.Values, module => Assert.True(map.Modules.ContainsKey(module), $"a test is listed under {module}, which is no module of the map"));
     }
 
     [Fact]
@@ -198,9 +243,14 @@ public sealed class StructureTests
             .Select(path => (Path.GetRelativePath(driver, path).Replace(Path.DirectorySeparatorChar, '/'), File.ReadAllText(path)))
             .ToList();
 
-        var breaches = StructureCheck.Check(map, sources);
+        var tests = SourceFiles.All(SourceFiles.DriverTestsProject, "*.cs")
+            .Select(path => Path.GetRelativePath(SourceFiles.Project(SourceFiles.DriverTestsProject), path).Replace(Path.DirectorySeparatorChar, '/'))
+            .ToList();
+
+        var breaches = StructureCheck.Check(map, sources, tests);
 
         Assert.True(sources.Count >= 290, $"the gate read only {sources.Count} sources: its walk no longer reaches the driver's tree");
+        Assert.True(tests.Count(path => path.StartsWith("Plugins/", StringComparison.Ordinal)) >= 16, "the gate reads no Plugins tests: its walk no longer reaches the tests' tree");
         Assert.True(breaches.Count == 0, "each breaks the driver's structure (the code-structure design §5):\n" + string.Join('\n', breaches));
     }
 

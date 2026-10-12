@@ -14,7 +14,13 @@ internal sealed record StructureMap(IReadOnlyDictionary<string, IReadOnlyList<st
     /// <summary>A file of <see cref="Root"/> that serves two domains, and why.</summary>
     public IReadOnlyDictionary<string, string> Split { get; init; } = new Dictionary<string, string>();
 
-    /// <summary>The map as <c>structure.json</c> writes it, its modules in its order.</summary>
+    /// <summary>
+    /// The tests of a module that has moved, by file name, with the module whose folder each is to sit under in the driver's
+    /// tests (STRUCT2a). A test not listed is not constrained.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Tests { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>The map as <c>structure.json</c> writes it, its modules in its order; <c>tests</c> is optional.</summary>
     public static StructureMap Read(string json)
     {
         using var document = JsonDocument.Parse(json);
@@ -25,7 +31,11 @@ internal sealed record StructureMap(IReadOnlyDictionary<string, IReadOnlyList<st
             modules.Add(module.Name, module.Value.EnumerateArray().Select(layer => layer.GetString()!).ToList());
         }
 
-        return new StructureMap(modules, Strings(root.GetProperty("root"))) { Split = Strings(root.GetProperty("split")) };
+        return new StructureMap(modules, Strings(root.GetProperty("root")))
+        {
+            Split = Strings(root.GetProperty("split")),
+            Tests = root.TryGetProperty("tests", out var tests) ? Strings(tests) : new Dictionary<string, string>(),
+        };
     }
 
     private static Dictionary<string, string> Strings(JsonElement table) =>
@@ -82,9 +92,14 @@ internal static partial class StructureCheck
     ];
 
     /// <summary>Every rule the sources break, in order of file, line and rule.</summary>
-    public static IReadOnlyList<StructureBreach> Check(StructureMap map, IEnumerable<(string Path, string Text)> sources)
+    public static IReadOnlyList<StructureBreach> Check(StructureMap map, IEnumerable<(string Path, string Text)> sources) =>
+        Check(map, sources, []);
+
+    /// <summary>Every rule the sources and the tests' paths (relative to the tests' folder, <c>/</c> between parts) break.</summary>
+    public static IReadOnlyList<StructureBreach> Check(StructureMap map, IEnumerable<(string Path, string Text)> sources, IEnumerable<string> tests)
     {
         var breaches = new List<StructureBreach>();
+        Mirror(map, tests.ToList(), breaches);
         var files = sources.Select(source => new Source(source.Path, source.Text, Place(map, source.Path))).ToList();
 
         foreach (var (file, module) in map.Root)
@@ -162,6 +177,42 @@ internal static partial class StructureCheck
             .ThenBy(breach => breach.Rule, StringComparer.Ordinal)
             .ThenBy(breach => breach.Why, StringComparer.Ordinal)
             .ToList();
+    }
+
+    /// <summary>Folders of the tests' project that are no module's: fixtures and the build's own output.</summary>
+    private static readonly string[] TestSupport = ["fixtures", "golden", "bin", "obj", "TestResults"];
+
+    /// <summary>The <c>mirror</c> rule: a listed test sits under its module's folder, and a test folder is a module's or support.</summary>
+    private static void Mirror(StructureMap map, List<string> tests, List<StructureBreach> breaches)
+    {
+        foreach (var path in tests)
+        {
+            var parts = path.Split('/');
+            if (parts.Length > 1 && !map.Modules.ContainsKey(parts[0]) && !TestSupport.Contains(parts[0]))
+            {
+                breaches.Add(new(path, 0, "mirror", $"the folder {parts[0]} is no module's: a test folder is a module's, or fixtures, golden or a build output"));
+            }
+        }
+
+        foreach (var (name, module) in map.Tests)
+        {
+            if (!map.Modules.ContainsKey(module))
+            {
+                breaches.Add(new("structure.json", 0, "map", $"{name} is a test mapped to {module}, which is no module of the map"));
+            }
+
+            var found = tests.Where(path => path.Split('/')[^1] == name).ToList();
+            if (found.Count == 0)
+            {
+                breaches.Add(new("structure.json", 0, "map", $"{name} is listed under {module}, and no such test is in the tests' tree: a delete takes its entry off the list"));
+            }
+
+            foreach (var path in found.Where(path => path.Split('/')[0] != module || !path.Contains('/')))
+            {
+                var where = path.Contains('/') ? $"under {path.Split('/')[0]}" : "at the top of the tests";
+                breaches.Add(new(path, 0, "mirror", $"sits {where}, and the map lists it under {module}: a test mirrors its module's folder"));
+            }
+        }
     }
 
     /// <summary>Why a file of one module and layer may not name a type of another, or null when it may.</summary>
