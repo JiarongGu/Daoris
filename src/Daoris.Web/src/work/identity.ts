@@ -59,6 +59,8 @@ export function sessionTitle(session: Session, quest?: Quest | null, opening?: s
   if (session.ask) return i18n.t('work.intake.title', { ask: session.ask });
   // A reviewer's record is a chat only by the way it was opened (XAGENT1c): it reads another session's work once.
   if (isOpinion(session)) return i18n.t('opinion.session.title');
+  // So is a helper's (MIXAGENT3a-i): it answers another session's one question, and its rail row says whose.
+  if (isHelper(session)) return i18n.t('work.identity.helper');
   if (isHelp(session) && !opening) return i18n.t('help.title');
   if (session.kind === 'chat' && opening) return opening;
   return i18n.t(session.kind === 'chat' ? 'work.identity.conversation' : 'work.identity.session');
@@ -69,6 +71,23 @@ export const isIntake = (session: Session): boolean => Boolean(session.ask);
 
 /** Whether a session is a second opinion's reviewer (XAGENT1c, D155 point 11): the one kind of record that names an opinion. */
 export const isOpinion = (session: Session): boolean => Boolean(session.opinion);
+
+/** Whether a session is a helper (MIXAGENT2a, D163): the one kind of record that names a session it serves. */
+export const isHelper = (session: Session): boolean => Boolean(session.serves);
+
+/**
+ * The sessions a record names as its own (MIXAGENT3a-i, the mixed-agents design §4): the one it continues (`from`) and the one
+ * a helper helps (`serves`), each where the list holds it. Null where the record names none, and where the list does not hold
+ * the one it names (deleted, or not this machine's): then the head says its id and the rail claims nothing.
+ */
+export function linkedSessions(
+  session: Session, byId: ReadonlyMap<string, Session>,
+): { continues: Session | null; helps: Session | null } {
+  return {
+    continues: session.from ? byId.get(session.from) ?? null : null,
+    helps: session.serves ? byId.get(session.serves) ?? null : null,
+  };
+}
 
 /** Whether a session is Ask Daoris's conversation (HELP1a, D89), by the repository it is recorded in. */
 export const isHelp = (session: Session): boolean => session.repository === HELP_REPOSITORY;

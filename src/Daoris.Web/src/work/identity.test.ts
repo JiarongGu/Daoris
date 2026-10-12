@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import { HELP_REPOSITORY, type Ask, type Quest, type Session } from '../api';
-import { askName, inTree, isHelp, ownTree, questName, sessionOrigin, sessionTitle, shortened, treeName } from './identity';
+import {
+  askName, inTree, isHelp, isHelper, linkedSessions, ownTree, questName, sessionOrigin, sessionTitle, shortened, treeName,
+} from './identity';
 
 const session = (over: Partial<Session> = {}): Session => ({
   id: 's1',
@@ -126,9 +128,42 @@ describe('a session title', () => {
     await i18n.changeLanguage('en');
   });
 
+  /** MIXAGENT3a-i (the mixed-agents design §4): a helper is a chat on no quest only by the way it was opened; it says what it is. */
+  it('names a helper as one, never as a conversation, and its record says it is one', async () => {
+    const helper = session({ kind: 'chat', repository: 'engine', serves: 's1a2b3c4' });
+    expect(isHelper(helper)).toBe(true);
+    expect(isHelper(session({ kind: 'chat' }))).toBe(false);
+    expect(sessionTitle(helper, null, 'You are helping another session.')).toBe('Helper');
+
+    await i18n.changeLanguage('zh');
+    expect(sessionTitle(helper)).toBe('助手');
+    await i18n.changeLanguage('en');
+  });
+
   it('prefers the quest over the kind — a chat that took one is still about that quest', () => {
     expect(sessionTitle(session({ kind: 'chat', quest: '7a82cc' }), quest()))
       .toBe('Expose a streaming budget on the chunk API');
+  });
+});
+
+/**
+ * MIXAGENT3a-i (the mixed-agents design §4): the sessions a record names as its own, the one it continues (`from`) and the one a
+ * helper helps (`serves`), each where the list holds it; a link the list does not hold is null, and nothing is claimed of it.
+ */
+describe('the sessions a record links to', () => {
+  const earlier = session({ id: 'a1b2c3d4', adapter: 'codex', kind: 'chat' });
+  const asker = session({ id: 's1a2b3c4', quest: '7a82cc' });
+  const byId = new Map([earlier, asker].map((row): [string, Session] => [row.id, row]));
+
+  it('finds the session it continues and the one it helps, by the record’s own ids', () => {
+    expect(linkedSessions(session({ from: 'a1b2c3d4', fromWhy: 'near', fromBy: 'daoris' }), byId))
+      .toEqual({ continues: earlier, helps: null });
+    expect(linkedSessions(session({ kind: 'chat', serves: 's1a2b3c4' }), byId)).toEqual({ continues: null, helps: asker });
+  });
+
+  it('holds nothing where the record names none, or the list does not hold the one it names', () => {
+    expect(linkedSessions(session(), byId)).toEqual({ continues: null, helps: null });
+    expect(linkedSessions(session({ from: 'zzzzzzzz', serves: 'yyyyyyyy' }), byId)).toEqual({ continues: null, helps: null });
   });
 });
 

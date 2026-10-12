@@ -357,6 +357,20 @@ export type Session = {
    */
   opinion?: string | null;
   /**
+   * The session a helper answers one question for (MIXAGENT2a-i, D163): a chat on no quest that reads and changes nothing. This
+   * machine's own, as the opinion is: a teammate's record and a browser have none.
+   */
+  serves?: string | null;
+  /**
+   * The session this one continues (MIXAGENT1a-iii, D163's note): a conversation handed over, or a quest's carry-on of a session
+   * handed over or cut off by a limit. Why (`press`, `near`, `limit`, `agent` or `curve`) and who asked (`person`, `daoris` or
+   * `agent`) come with it, the three kept together or not at all. This machine's own, as the opinion is: null on any other
+   * session, on a record from before the link, on a teammate's record and in a browser.
+   */
+  from?: string | null;
+  fromWhy?: string | null;
+  fromBy?: string | null;
+  /**
    * The person's answer to a driven session that parked to ask them (STANDDOWN2). The service keeps the record parked
    * with it until the driver's next look (ANSWER1b, D131), so a parked record that holds one goes on rather than waits
    * (ANSWER1c). The person's own words, answered to this machine only: null over a keyed remote and on a teammate's.

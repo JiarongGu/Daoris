@@ -445,9 +445,10 @@ describe('the real glossary and catalogues', () => {
   });
 
   /**
-   * A sentence's words are held only under `--all`, which reports; the eight it still finds are words a
-   * sentence rightly says of something else (the audit's §5 lists them): a browser's or Windows' profile,
-   * git's credential helper, a request's value no application accepts, a process that ended.
+   * A sentence's words are held only under `--all`, which reports; what it still finds are words a sentence
+   * rightly says of something else (the audit's §5 lists them): a browser's or Windows' profile, a request's
+   * value no application accepts, a process that ended. *helper* is no longer one of them: since MIXAGENT3a-i a
+   * helper is its own term (D163), so a note that says it and git's credential helper are no stray word for Ask Daoris.
    */
   it("say in sentences only what the audit found to be another thing's word", () => {
     const stray = check(glossary, en, zh, { all: true })
@@ -455,14 +456,10 @@ describe('the real glossary and catalogues', () => {
       .map(({ key, language }) => `${key}:${language}`).sort();
     expect(stray).toEqual([
       'errors.HARNESS_ACTION_IDLE:zh', 'errors.INVALID_PAYLOAD_VALUE:zh',
-      // MIXAGENT2a-ii: a session's note says its helper, the other agent a working session asked (D163), which is no word for Ask Daoris.
-      'note.helper.answered-last-words:en', 'note.helper.answered:en', 'note.helper.asked:en', 'note.helper.refused-by:en',
-      'note.helper.refused:en', 'note.helper.why.asker-gone:zh', 'note.helper.why.asker-unfit:en', 'note.helper.why.no-answer:en',
-      'note.helper.why.not-started:en', 'note.helper.why.unreadable:en', 'note.ledger.went-on-helper-both:en', 'note.ledger.went-on-helper:en',
-      'note.resumed.why.helper:en', 'note.resumed.why.words-and-helper:en',
+      // MIXAGENT2a-ii: an asker gone from this machine says 这台机器 where the name is 本机 (note.json's to correct).
+      'note.helper.why.asker-gone:zh',
       'settings.browser.which.hintDaoris:en', 'settings.browser.which.hintEdge:en',
       'settings.home.hint:en', 'settings.home.hintOverridden:en', 'settings.home.hintThisStart:en',
-      'settings.sync.notFetched.https:en',
     ]);
   });
 });
