@@ -44,7 +44,9 @@ public sealed partial class SessionTrees
         var (tipCode, tipOut, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct)
             .ConfigureAwait(false);
         var judged = tipCode == 0 ? tipOut.Trim() : null;
-        var work = new TreeWork(await UnlandedAsync(tree, judged ?? "HEAD", ct).ConfigureAwait(false), uncommitted);
+        // TREEFOLLOW1: a tree its agent moved onto a branch of its own is judged by what that branch holds beyond every other.
+        var own = await OwnBranchOfAsync(tree, ct).ConfigureAwait(false);
+        var work = new TreeWork(await UnlandedAsync(tree, judged ?? "HEAD", ct, own).ConfigureAwait(false), uncommitted) { Branch = own };
         // SQUASHTIDY1b: a squash merge or a cherry-pick holds commits ancestry cannot see, and landing them again would make a
         // branch of work already there.
         return work.Commits is > 0 && judged is not null && await HeldWorkAsync(tree, judged, ct).ConfigureAwait(false) is { } found
@@ -111,7 +113,14 @@ public sealed partial class SessionTrees
             var root = Path.GetDirectoryName(commonDir.Trim())!;
             var (workspace, repository) = OwnerOf(full);
             var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
-            if (await HeldByContentAsync(full, judged, line, LandedHere(repository), ct).ConfigureAwait(false) is not { } held) return null;
+            // TREEFOLLOW1: the branch its agent moved the tree onto holds its commits because it is where they are, not a copy.
+            var notHolders = LandedHere(repository);
+            if (await OwnBranchOfAsync(full, ct).ConfigureAwait(false) is { } ownBranch)
+            {
+                notHolders = new HashSet<string>(notHolders, StringComparer.Ordinal) { ownBranch };
+            }
+
+            if (await HeldByContentAsync(full, judged, line, notHolders, ct).ConfigureAwait(false) is not { } held) return null;
 
             var holds = await HoldsAsync(full, root, ct).ConfigureAwait(false);
             var stays = holds is null ? "Daoris cannot tell what it holds beyond its commits"

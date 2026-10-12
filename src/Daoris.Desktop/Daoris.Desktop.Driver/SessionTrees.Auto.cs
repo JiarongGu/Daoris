@@ -127,6 +127,13 @@ public sealed partial class SessionTrees
         if (topCode != 0) return Pass([], TidyKept.Unread, FirstLine(topErr), TidyCause.Toplevel);
         if (!SamePath(toplevel.Trim(), root)) return Pass([]);
 
+        // Where each tree is now (TREEFOLLOW1), written on the ledger before anything is judged, so what the look removes never
+        // takes with it where a tree's work is.
+        await LearnTreesAsync(space, repository, ct).ConfigureAwait(false);
+        // The ledger forgets an entry with no tree and no branch standing at each look, not only after a removal (TREEFOLLOW1): a
+        // branch deleted by hand left one behind. A list git cannot give forgets nothing; not cancelled, as the removal's is not.
+        await ForgetGoneAsync(root, repository, CancellationToken.None).ConfigureAwait(false);
+
         // The line here, read with no fetch: the local branch, else origin's copy as this checkout last saw it.
         var line = (await LineAsync(root, repository, space, ct).ConfigureAwait(false)).Branch;
         var against = line is null ? null : await ComparableAsync(root, line, ct).ConfigureAwait(false);
@@ -189,6 +196,9 @@ public sealed partial class SessionTrees
     {
         if (item.Tree is not { } tree)
         {
+            // TREEFOLLOW1: the folder here is a tree git lists, on the branch its agent made; it is not this branch's, so nothing of
+            // it is read as unreadable, and it stays untouched.
+            if (item.TreeOn is not null) return null;
             var folder = Path.Combine(TreesRoot, item.Workspace, item.Repository, item.Branch[SessionPrefix.Length..]);
             return Directory.Exists(folder) ? (TidyKept.Unread, $"its folder at {folder} is here, and git lists no tree for it", TidyCause.Folder) : null;
         }

@@ -264,7 +264,7 @@ public sealed class AutoLander(
 
         // D88's proof, read at that moment (design §2): work no branch of the person's holds. None is a done that made no
         // commits, or work a branch of theirs already holds.
-        var unlanded = await SessionTrees.UnlandedAsync(entry.Tree, "HEAD", ct).ConfigureAwait(false);
+        var unlanded = await SessionTrees.UnlandedInTreeAsync(entry.Tree, "HEAD", ct).ConfigureAwait(false);
         if (unlanded == 0)
         {
             var ahead = await trees.AheadOfLineAsync(entry.Tree, ct).ConfigureAwait(false);

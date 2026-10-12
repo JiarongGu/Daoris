@@ -222,10 +222,12 @@ public sealed class BranchTidying(string home)
                         lines.Add($"tidy  {pass.Repository}: removed `{item.Branch}`, which held nothing beyond `{item.Where}`"
                             + (result.MovedTo is { } to
                                 ? $"; its tree's folder was moved aside to {to}, and goes once it is left untouched for {SetAsideFor.TotalDays:0} days."
-                                : "."));
+                                // TREEFOLLOW1: the tree stays, on the branch its agent made; this one only said where it started.
+                                : item.TreeOn is { } on ? $"; the session's work is on `{on}`." : "."));
                         log?.Info("branch.tidied",
                             ("repository", pass.Repository), ("workspace", pass.Workspace), ("branch", item.Branch), ("tree", item.Tree is not null),
-                            ("folder", result.MovedTo is { } moved ? Path.GetRelativePath(home, moved).Replace('\\', '/') : null));
+                            ("folder", result.MovedTo is { } moved ? Path.GetRelativePath(home, moved).Replace('\\', '/') : null),
+                            ("on", item.TreeOn));
                         continue;
                     }
 

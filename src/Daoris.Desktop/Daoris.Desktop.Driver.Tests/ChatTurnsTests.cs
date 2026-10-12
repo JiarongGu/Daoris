@@ -193,6 +193,8 @@ public sealed class ChatTurnsTests
         door.EndTurn(0);
         await Poll.Until(() => door.Took.Count == 2, () => "the helper's answer never went");
         Assert.Equal(["read the five files", "Another agent says five."], door.Took);
+        // The door records the words before it calls `sent`, which tells them delivered: wait for that call, not only the take.
+        await Poll.Until(() => Volatile.Read(ref delivered) == 1, () => $"the helper's answer was told delivered {delivered} times");
         Assert.Equal(1, delivered);
     }
 

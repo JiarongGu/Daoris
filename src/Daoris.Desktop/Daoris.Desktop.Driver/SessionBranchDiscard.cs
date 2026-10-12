@@ -90,13 +90,22 @@ public sealed class SessionBranchDiscard(SessionTrees trees)
             : new(false, $"session `{named}`'s tree is not one this machine's trees home holds, so Daoris removes nothing for it.");
     }
 
-    /// <summary>Whether a tree a session running or waiting names is this branch's, by the layout: the ledger as it says now.</summary>
-    private async Task<bool> HeldAsync(ServiceClient service, string repository, string branch, CancellationToken ct) =>
-        (await service.ActiveSessionsAsync(ct).ConfigureAwait(false))
-            .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
-            .Any(tree => trees.BranchOfTree(tree) is { } of
-                         && string.Equals(of.Repository, repository, StringComparison.OrdinalIgnoreCase)
-                         && string.Equals(of.Branch, branch, StringComparison.Ordinal));
+    /// <summary>
+    /// Whether a tree a session running or waiting names is this branch's, by the layout or, where its agent moved it onto a
+    /// branch of its own, by that branch (TREEFOLLOW1): the ledger as it says now.
+    /// </summary>
+    private async Task<bool> HeldAsync(ServiceClient service, string repository, string branch, CancellationToken ct)
+    {
+        foreach (var tree in (await service.ActiveSessionsAsync(ct).ConfigureAwait(false))
+                 .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0))
+        {
+            if (trees.BranchOfTree(tree) is not { } of || !string.Equals(of.Repository, repository, StringComparison.OrdinalIgnoreCase)) continue;
+            if (string.Equals(of.Branch, branch, StringComparison.Ordinal)) return true;
+            if (Directory.Exists(tree) && string.Equals(await trees.BranchNowAsync(tree, ct).ConfigureAwait(false), branch, StringComparison.Ordinal)) return true;
+        }
+
+        return false;
+    }
 
     /// <summary>The repository's checkout the registry names, where it is on this disk; null where it is not.</summary>
     private static async Task<string?> CheckoutAsync(ServiceClient service, string repository, CancellationToken ct)

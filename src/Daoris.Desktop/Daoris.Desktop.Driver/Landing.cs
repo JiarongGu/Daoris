@@ -85,7 +85,15 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
 /// Whether the rule accepts automatically (LAND2b, D145): the quest's done lands the work, with no press, and the session's
 /// instruction says so.
 /// </param>
-public sealed record LandingPlan(string Form, string Target, string Source, string? Plugin = null, string? Problem = null, bool AutoAccept = false);
+public sealed record LandingPlan(string Form, string Target, string Source, string? Plugin = null, string? Problem = null, bool AutoAccept = false)
+{
+    /// <summary>
+    /// The target is the branch the session's own agent made in its tree (TREEFOLLOW1, D164 point 4), which lands as it stands:
+    /// no branch is made, the rule's pattern does not name it, and a name entered has nowhere to go. False for a tree still on its
+    /// session branch, where the branch form makes the one the pattern names.
+    /// </summary>
+    public bool Own { get; init; }
+}
 
 /// <summary>What came of a press. A refusal is an answer, as the merge door's are, and names what the person would do.</summary>
 /// <param name="Plugin">What the rule's plugin answered once the branch was made (D100) — null where no plugin was spoken to.</param>
@@ -310,6 +318,13 @@ public sealed record SweepItem(
     /// place, which words to it go on in (D137), so the look's own tidy leaves its tree for the press.
     /// </summary>
     public bool Worked { get; init; }
+
+    /// <summary>
+    /// The branch the session's tree moved onto (TREEFOLLOW1): its agent checked out a branch of its own there, as its repository's
+    /// rules ask, so no tree has this session branch out any more and the work is on that branch. Null where the tree is on this
+    /// one, or gone. The tree is that branch's: it is never taken with this one.
+    /// </summary>
+    public string? TreeOn { get; init; }
 }
 
 /// <summary>What the clean-up did with one branch, in the driver's words.</summary>

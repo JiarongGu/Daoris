@@ -5,6 +5,17 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-12 — a helper's answer was counted before the door had told it delivered (MIXAGENT2a-iii's test)
+
+- **Symptom:** `ChatTurnsTests.A_helpers_answer_waits_for_the_turn_to_end_unlisted_and_is_told_delivered_once_sent` (driver,
+  fast half) failed in the full suite twice on 2026-10-12, at TREEFOLLOW1's branch and at its merge, `delivered` 0 where 1
+  was expected, and passed alone eight times of eight.
+- **Root cause:** the test's scripted door adds the words to `Took` and only then calls `sent()`, which tells them
+  delivered. The test polled for the second take and asserted the count at once, so under the full suite's load it read the
+  count between the two. The runner was right; the test raced its own door.
+- **Fix:** the test waits for the delivered count as well as the take.
+- **Verify:** the driver gate's fast half at TREEFOLLOW1's merge, rerun with the fix.
+
 ## 2026-10-12 — a task handed to Ask Daoris ran into the words already in its box (NEW1d-b)
 
 - **Symptom:** found reading NEW1g's change: a draft handed to Ask Daoris is put above the words already in the box with

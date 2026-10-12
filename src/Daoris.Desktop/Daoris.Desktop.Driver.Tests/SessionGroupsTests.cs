@@ -492,6 +492,13 @@ public sealed class SessionGroupsTests
             {
                 Also = row => Assert.Equal(new LandOffer("daoris/s-1a2b3c4d", "s-1a2b3c4d", 2, 0), row.Lands),
             },
+        // TREEFOLLOW1: a tree its agent moved onto a branch of its own offers that branch, read from the tree, not the layout's name.
+        ["a session whose tree moved onto its own branch offers that branch"] =
+            new(Look([Record("s1", "completed", "q1", Tree)], [Taken], trees: [(Tree, new TreeWork(2, 0) { Branch = "feature/TK-1-engine" })]),
+                "s1", SessionGroup.Review, "completed")
+            {
+                Also = row => Assert.Equal(new LandOffer("feature/TK-1-engine", "s-1a2b3c4d", 2, 0), row.Lands),
+            },
         ["a failed session with commits its quest goes back into offers its landing, and rests ended"] =
             new(Look([Record("s1", "failed", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.AtCapacity)], [(Tree, new TreeWork(3, 1))]),
                 "s1", SessionGroup.Ended, "failed")

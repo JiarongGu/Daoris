@@ -560,6 +560,72 @@ public sealed class BranchTidyingProcessTests : IDisposable
         Assert.True(Directory.Exists(landed.Path));
     }
 
+    /// <summary>
+    /// TREEFOLLOW1 (D164 point 4): an agent that ran <c>git checkout -b feature/x</c> in its tree and committed there, as its
+    /// repository's rules ask, is followed. The look learns the branch (the ledger keeps it, so it outlives the tree), takes the
+    /// session branch no tree has out any more, says where the work is, and warns of nothing; the tree stays on its branch, whose
+    /// commits the head counts, the plan names and Accept lands.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_its_agent_moved_onto_a_branch_of_its_own_is_followed_and_its_empty_session_branch_goes()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var moved = await trees.OpenAsync(root, "engine", "default");
+        await GitAsync(moved.Path, "checkout", "--quiet", "-b", "feature/x");
+        await CommitAsync(moved.Path, "work.txt", "the session's work", "the work");
+        _ledger.Register("engine", root);
+        using var log = Log();
+        var tidying = new BranchTidying(_home) { Pace = TimeSpan.Zero };
+
+        var first = await tidying.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+        var second = await tidying.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+
+        Assert.Equal([$"tidy  engine: removed `{moved.Branch}`, which held nothing beyond `main`; the session's work is on `feature/x`."], first);
+        Assert.Empty(second);
+        Assert.Empty(Events("branch.kept"));
+        Assert.DoesNotContain(moved.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
+        Assert.Equal("feature/x", (await GitAsync(moved.Path, "branch", "--show-current")).Trim());
+        Assert.True(File.Exists(Path.Combine(moved.Path, "work.txt")));
+        // Learned, and kept while the tree or its branch stands, so it is known after the tree goes.
+        Assert.Equal("feature/x", trees.Grown.Of("engine", moved.Branch)!.Now);
+
+        var work = await trees.WorkAsync(moved.Path);
+        Assert.Equal(1, work!.Commits);
+        Assert.Equal("feature/x", work.Branch);
+        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: false))
+            .Save(Path.Combine(_home, "driver.json"));
+        var plan = await trees.PlanAsync(moved.Path, new LandingSubject("s1", null, "Fix the gap"));
+        Assert.Equal(("branch", "feature/x", true), (plan.Form, plan.Target, plan.Own));
+    }
+
+    /// <summary>
+    /// TREEFOLLOW1: a session branch that holds commits of its own stays when its tree moved on, silently: its commits are on
+    /// the tree's branch now, so it is landed by ancestry, which is the press's (D88), and the look warns of no unread tree.
+    /// And the ledger forgets an entry whose tree and both branches are gone at the look, not only after a removal.
+    /// </summary>
+    [Fact]
+    public async Task A_session_branch_with_work_of_its_own_stays_when_its_tree_moved_on_and_a_gone_entry_is_forgotten()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var moved = await TreeWithWorkAsync(trees, root);
+        await GitAsync(moved.Path, "checkout", "--quiet", "-b", "feature/x");
+        // An entry no branch and no tree stands behind: a branch deleted by hand, on the install.
+        trees.Grown.Record(new GrownBranch("engine", "default", "daoris/s-742b2f42", "main", "abc123", null, _now));
+        _ledger.Register("engine", root);
+        using var log = Log();
+        var tidying = new BranchTidying(_home) { Pace = TimeSpan.Zero };
+
+        var said = await tidying.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+
+        Assert.Empty(said);
+        Assert.Empty(Events("branch.kept"));
+        Assert.Contains(moved.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
+        Assert.Equal("feature/x", trees.Grown.Of("engine", moved.Branch)!.Now);
+        Assert.Null(trees.Grown.Of("engine", "daoris/s-742b2f42"));
+    }
+
     /// <summary>A link at <paramref name="link"/> to <paramref name="target"/>: a junction on Windows, which needs no privilege.</summary>
     private static async Task JunctionAsync(string link, string target)
     {

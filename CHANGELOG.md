@@ -9,6 +9,9 @@ with the version and date at release.
   or an account that is near its limit, refused or cooling; *Choose…* lists those tools first.
 - When every account is near its limit, a start takes the one with the most room first, so it no longer stays on one at 99%
   while another sits at 60%; the start's note says so in both languages.
+- A session whose agent committed its work on a branch of its own (as its repository's rules ask) is followed: its work, Review
+  and Accept read that branch, Accept lands it as it stands instead of making another, and the tidy no longer warns it cannot read
+  the tree of the emptied `daoris/…` branch the agent left behind.
 - Review shows the work a session's tree holds that it has not committed, apart from what it committed, under *Not committed
   yet*, and no longer says "Nothing landed" over it; where Accept would refuse until those files are committed, the review says
   so before the press, in both languages.

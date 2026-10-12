@@ -165,6 +165,13 @@ public sealed record TreeWork(int? Commits, int? Uncommitted)
     /// nothing offers to land them again. Null where they are held nowhere, or nothing was counted.
     /// </summary>
     public HeldWork? Held { get; init; }
+
+    /// <summary>
+    /// The branch the tree is on where its agent moved it onto one of its own (TREEFOLLOW1), as the repository's rules ask; null
+    /// where it is on the session branch the layout names (or detached). The commits counted are those that branch holds beyond
+    /// every other branch of the person's, so a landing of it is that branch as it stands.
+    /// </summary>
+    public string? Branch { get; init; }
 }
 
 /// <summary>
@@ -198,7 +205,8 @@ public sealed record LandOffer(string Branch, string Tree, int Commits, int? Unc
     public static LandOffer? Of(string tree, TreeWork work)
     {
         if (work.Commits is not > 0 || work.Held is not null || SessionGroups.Normal(tree).Split('/')[^1] is not { Length: > 0 } name) return null;
-        return new LandOffer(SessionTrees.SessionPrefix + name, name, work.Commits.Value, work.Uncommitted);
+        // The tree's own branch where it moved onto one (TREEFOLLOW1), else the layout's name for it.
+        return new LandOffer(work.Branch ?? SessionTrees.SessionPrefix + name, name, work.Commits.Value, work.Uncommitted);
     }
 }
 
@@ -246,7 +254,7 @@ public sealed record DiscardOffer(string Branch, string Tree, HeldWork Work)
     public static DiscardOffer? Of(string tree, TreeWork work)
     {
         if (work.Commits is not > 0 || work.Held is not { } held || SessionGroups.Normal(tree).Split('/')[^1] is not { Length: > 0 } name) return null;
-        return new DiscardOffer(SessionTrees.SessionPrefix + name, name, held);
+        return new DiscardOffer(work.Branch ?? SessionTrees.SessionPrefix + name, name, held);
     }
 }
 

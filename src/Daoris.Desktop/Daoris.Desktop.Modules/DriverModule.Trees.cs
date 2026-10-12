@@ -455,7 +455,8 @@ public sealed partial class DriverModule
             var uncommitted = UncommittedCount(await trees.UncommittedAsync(tree, cancellationToken));
             return new
             {
-                Session = id, plan.Form, plan.Target, plan.Source, plan.Plugin, plan.Problem, Uncommitted = uncommitted,
+                // Own (TREEFOLLOW1): the target is the branch the session's agent made, which lands as it stands.
+                Session = id, plan.Form, plan.Target, plan.Source, plan.Plugin, plan.Problem, plan.Own, Uncommitted = uncommitted,
                 Workflow = WorkflowWaits(gate.Workflow), Review = Waits(gate.Review), Opinion = Opinion(gate.Opinion),
             };
         }
