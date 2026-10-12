@@ -160,45 +160,84 @@ public sealed class AccountReadingsTests
             Read(frame));
     }
 
-    // ——— Near (§6 as the evidence corrects it): the agent's word that a limit was reached, drawing on usage credits, or a
-    // window's use at or over the scope's *near*. Claude Code's `allowed` came at 88% with two hours left (evidence §1.3), so
-    // its word alone would pass nothing a number says; the number, which comes on every frame, is the agent's word too. Its
-    // `allowed_warning` is its own pace warning, use ahead of the time gone in a window (USAGEREAD3a, account-switch design
-    // §1.3): kept as `warned`, and never near alone.
+    // ——— Near (§6 as the evidence corrects it; D165 point 2): the agent's word that a limit was reached, drawing on usage
+    // credits, or a window's use over the scope's curve now (SWITCH1b-ii, the switch design §2–§3). Claude Code's `allowed`
+    // came at 88% with two hours left (evidence §1.3), so its word alone would pass nothing a number says; the number, which
+    // comes on every frame, is the agent's word too. Its `allowed_warning` is its own pace warning, use ahead of the time gone
+    // in a window (USAGEREAD3a, account-switch design §1.3): kept as `warned`, and never near alone. A window resets three
+    // hours on unless `@<hours>` says otherwise: the session is then two fifths gone, under the smart curve's flat 90.
 
     private static AccountSaid Said(params WindowSaid[] windows) => new(windows);
 
     private static WindowSaid Window(string window, double? used, string? standing = null, bool credits = false, double resetHours = 3) =>
         new(window, used, Now + TimeSpan.FromHours(resetHours), standing, credits, Now.AddMinutes(-20), "s1");
 
-    public static TheoryData<string, int, bool> Nears => new()
+    /// <summary>
+    /// A scope's switch and curve: <c>smart</c>, <c>off</c>, or <c>curve</c> and each window the person set,
+    /// <c>session=85</c> flat, <c>weekly=0:10,100:60</c> as points.
+    /// </summary>
+    internal static RotationUse Use(string written)
     {
-        // { what was said, near, whether near }
-        { "session 0.88 clear", 90, false },
-        { "session 0.88 clear", 85, true },
-        { "session 0.90 clear", 90, true },
-        { "session 0.30 clear, weekly 0.95", 90, true },
+        var words = written.Split(' ');
+        return RotationUse.Default with { Switch = words[0], Curve = Curve(words.Skip(1)) };
+    }
+
+    /// <summary>The person's curve, a window each: <c>session=85</c> flat, <c>weekly=0:10,100:60</c> as points.</summary>
+    internal static UseCurve Curve(IEnumerable<string> windows)
+    {
+        var points = new Dictionary<string, IReadOnlyList<CurvePoint>>(StringComparer.Ordinal);
+        foreach (var window in windows)
+        {
+            var (name, curve) = (window[..window.IndexOf('=')], window[(window.IndexOf('=') + 1)..]);
+            points[name] = curve.Contains(':')
+                ? [.. curve.Split(',').Select(point => new CurvePoint(int.Parse(point.Split(':')[0]), int.Parse(point.Split(':')[1])))]
+                : [new CurvePoint(0, int.Parse(curve))];
+        }
+
+        return points.Count == 0 ? UseCurve.None : new UseCurve(points);
+    }
+
+    public static TheoryData<string, string, bool> Nears => new()
+    {
+        // { what was said, the scope's switch and curve, whether near }
+        { "session 0.88 clear", "smart", false },
+        { "session 0.88 clear", "curve session=85", true },
+        // On its curve is not over it; a point over is.
+        { "session 0.90 clear", "smart", false },
+        { "session 0.91 clear", "smart", true },
+        // Three sevenths of its week gone: the smart curve stands at 63% of it.
+        { "session 0.30 clear, weekly 0.70@96", "smart", true },
+        { "session 0.30 clear, weekly 0.60@96", "smart", false },
+        // Half its week gone: the person's straight line from 10% to 60% stands at 35%, the smart curve at 70%.
+        { "weekly 0.50@84", "curve weekly=0:10,100:60", true },
+        { "weekly 0.50@84", "smart", false },
+        // `off` reads the smart curve: a start still passes an account over it (the switch design §3).
+        { "session 0.95 clear", "off", true },
+        { "session 0.88 clear", "off", false },
         // By the agent's word that a limit was reached, whatever the number; by credits.
-        { "weekly 0.40 refused", 90, true },
-        { "session 0.10 clear credits", 90, true },
-        { "session 0.10 clear, weekly 0.20", 50, false },
+        { "weekly 0.40 refused", "smart", true },
+        { "session 0.10 clear credits", "smart", true },
+        { "session 0.10 clear, weekly 0.20", "curve session=50", false },
         // Its pace warning is not near alone (USAGEREAD3a): the number decides, as it does for a clear word.
-        { "session 0.10 warned", 90, false },
-        { "session - warned", 99, false },
-        { "weekly 0.60 warned", 90, false },
-        { "session 0.95 warned", 90, true },
+        { "session 0.10 warned", "smart", false },
+        { "session - warned", "smart", false },
+        { "weekly 0.60 warned", "smart", false },
+        { "session 0.95 warned", "smart", true },
+        // A window this build has no curve for is not measured (UsageCurves.Length): its number passes nothing.
+        { "60-minute 0.99 clear", "smart", false },
     };
 
     [Theory]
     [MemberData(nameof(Nears))]
-    public void Near_by_the_agent_s_word_by_credits_and_by_percent(string written, int near, bool expected)
+    public void Near_by_the_agent_s_word_by_credits_and_by_its_curve(string written, string use, bool expected)
     {
-        Assert.Equal(expected, AccountReadings.Near(Parse(written), near));
+        Assert.Equal(expected, AccountReadings.Near(Parse(written), Use(use), Now));
     }
 
     /// <summary>
     /// USAGEREAD3a: a near account is near by a limit reached, by credits or by its number, and never by a warning word, so
-    /// the page's <c>near[].by</c> and the start's reason name no word.
+    /// the page's <c>near[].by</c> and the start's reason name no word. By its number, the window named is the one with the
+    /// least room under its curve (SWITCH1b-ii).
     /// </summary>
     [Fact]
     public void Near_is_by_a_limit_reached_by_credits_or_by_the_number_and_never_by_a_warning()
@@ -206,28 +245,34 @@ public sealed class AccountReadingsTests
         Assert.Equal(["Refused", "Credits", "Number"], Enum.GetNames<NearBy>());
         Assert.Equal(
             (AccountWindows.Weekly, NearBy.Number),
-            AccountReadings.NearWindow(Parse("session 0.10 warned, weekly 0.95"), 90) is { } near ? (near.Window.Window, near.By) : default);
+            AccountReadings.NearWindow(Parse("session 0.10 warned, weekly 0.95@96"), RotationUse.Default, Now) is { } near ? (near.Window.Window, near.By) : default);
+        // Both over: the session by five points, the week by thirty-two.
+        Assert.Equal(
+            (AccountWindows.Weekly, NearBy.Number),
+            AccountReadings.NearWindow(Parse("session 0.95 clear, weekly 0.95@96"), RotationUse.Default, Now) is { } both ? (both.Window.Window, both.By) : default);
     }
 
     [Fact]
     public void Nothing_said_is_never_near_and_never_clear()
     {
-        Assert.False(AccountReadings.Near(null, 50));
-        Assert.Null(AccountReadings.Standing(null, 90));
+        Assert.False(AccountReadings.Near(null, RotationUse.Default, Now));
+        Assert.Null(AccountReadings.Standing(null, RotationUse.Default, Now));
         Assert.Null(AccountReadings.Behind(null, Now));
     }
 
     [Theory]
-    [InlineData("session 0.88 clear", 90, "clear")]
-    [InlineData("session 0.88 clear", 85, "near")]
-    [InlineData("session 0.10 clear credits", 90, "near")]
-    [InlineData("weekly 0.40 refused", 90, "refused")]
+    [InlineData("session 0.88 clear", "smart", "clear")]
+    [InlineData("session 0.88 clear", "curve session=85", "near")]
+    [InlineData("session 0.10 clear credits", "smart", "near")]
+    [InlineData("weekly 0.40 refused", "smart", "refused")]
     // Warned and not near is its own word in the log (USAGEREAD3a); warned and near by its number is near.
-    [InlineData("session 0.10 warned", 90, "warned")]
-    [InlineData("session 0.95 warned", 90, "near")]
-    public void Its_standing_for_the_log_is_refused_near_warned_or_clear(string written, int near, string standing)
+    [InlineData("session 0.10 warned", "smart", "warned")]
+    [InlineData("session 0.95 warned", "smart", "near")]
+    // Over its curve is the log's `near` (SWITCH1b-ii): the log's word for an account passed.
+    [InlineData("weekly 0.70@96", "smart", "near")]
+    public void Its_standing_for_the_log_is_refused_near_warned_or_clear(string written, string use, string standing)
     {
-        Assert.Equal(standing, AccountReadings.Standing(Parse(written), near));
+        Assert.Equal(standing, AccountReadings.Standing(Parse(written), Use(use), Now));
     }
 
     // ——— Pace (§16.3 step 5): how far the week's use is behind the share of the week already gone, from the weekly
@@ -256,13 +301,17 @@ public sealed class AccountReadingsTests
         Assert.Null(AccountReadings.Behind(Said(Window("weekly", null, standing: "warned")), Now));
     }
 
-    /// <summary><c>session 0.88 clear, weekly 0.95</c>; <c>-</c> for no use said; <c>credits</c> drawing on usage credits.</summary>
+    /// <summary>
+    /// <c>session 0.88 clear, weekly 0.95@96</c>; <c>-</c> for no use said; <c>@&lt;hours&gt;</c> to its reset, three where
+    /// none is written; <c>credits</c> drawing on usage credits.
+    /// </summary>
     internal static AccountSaid Parse(string written) =>
         Said([.. written.Split(", ").Select(part =>
         {
             var words = part.Split(' ');
-            var used = words[1] == "-" ? (double?)null : double.Parse(words[1], CultureInfo.InvariantCulture);
+            var (number, hours) = words[1].Split('@') is [var used, var at] ? (used, double.Parse(at, CultureInfo.InvariantCulture)) : (words[1], 3.0);
+            var share = number == "-" ? (double?)null : double.Parse(number, CultureInfo.InvariantCulture);
             var standing = words.Length > 2 && words[2] is "clear" or "warned" or "refused" ? words[2] : null;
-            return Window(words[0], used, standing, credits: words.Contains("credits"));
+            return Window(words[0], share, standing, credits: words.Contains("credits"), resetHours: hours);
         })]);
 }

@@ -352,10 +352,12 @@ public static class NoteCodes
         new(OpeningWhy.NearWord, ["over", "window"], "note.opening.why.near-word"),
         new(OpeningWhy.NearCredits, ["over"], "note.opening.why.near-credits"),
         new(OpeningWhy.NearUsed, ["over", "used", "window", "near"], "note.opening.why.near-used"),
+        new(OpeningWhy.OverCurve, ["over", "window", "used", "curve"], "note.opening.why.over-curve"),
         new(OpeningWhy.Near, ["over"], "note.opening.why.near"),
         new(OpeningWhy.Room, ["over", "used", "against"], "note.opening.why.room"),
         new(OpeningWhy.Fewest, [], "note.opening.why.fewest"),
         new(OpeningWhy.Lapsing, ["at"], "note.opening.why.lapsing"),
+        new(OpeningWhy.MostRoom, ["room", "window"], "note.opening.why.most-room"),
         new(OpeningWhy.Behind, ["used", "gone"], "note.opening.why.behind"),
         new(OpeningWhy.Ahead, ["over", "used", "gone"], "note.opening.why.ahead"),
         new(OpeningWhy.NotStarted, [], "note.opening.why.not-started"),
@@ -568,7 +570,10 @@ public static class NoteCodes
     public static readonly NoteCode OpeningSaidWarned = new("opening.said-warned", ["window"]);
     public static readonly NoteCode OpeningSaidCredits = new("opening.said-credits", []);
     public static readonly NoteCode OpeningSaidUsed = new("opening.said-used", ["used", "window"]);
+    // Over its curve on a window, and the curve's value there now (SWITCH1b-ii): `opening.said-over` since; a note written
+    // before keeps `opening.said-near-at`, the scope's one number, which nothing writes now.
     public static readonly NoteCode OpeningSaidNearAt = new("opening.said-near-at", ["near"]);
+    public static readonly NoteCode OpeningSaidOver = new("opening.said-over", ["window", "curve"]);
     public static readonly NoteCode OpeningSaidClear = new("opening.said-clear", []);
 
     // ——— A resumed conversation's first line (CONVNOTE2a, Continuations.Opening): the adapter it resumed on is a fact, and
@@ -999,13 +1004,22 @@ public static class OpeningWhy
     /// <summary>The account passed said it is drawing on usage credits.</summary>
     public const string NearCredits = "near-credits";
 
-    /// <summary>The account passed has used a window at or over what counts as near.</summary>
+    /// <summary>
+    /// The account passed has used a window at or over what counts as near: the scope's one number, which the curve replaced
+    /// (SWITCH1b-ii), so nothing writes it now; a note written before keeps it.
+    /// </summary>
     public const string NearUsed = "near-used";
+
+    /// <summary>The account passed has used a window over its curve: the window, its use and the curve's value now (SWITCH1b-ii).</summary>
+    public const string OverCurve = "over-curve";
 
     /// <summary>The account passed is near its limit, with nothing it said to name.</summary>
     public const string Near = "near";
 
-    /// <summary>Both it and the account weighed against are near; it has the more room (ACCTWALK3).</summary>
+    /// <summary>
+    /// Both it and the account weighed against are near; it has the more room (ACCTWALK3). Said by the other's own reason
+    /// since the curve (SWITCH1b-ii), so nothing writes it now; a note written before keeps it.
+    /// </summary>
     public const string Room = "room";
 
     /// <summary>It runs the fewest of Daoris's sessions.</summary>
@@ -1014,10 +1028,13 @@ public static class OpeningWhy
     /// <summary>Its week resets first.</summary>
     public const string Lapsing = "lapsing";
 
-    /// <summary>It is furthest behind its week's pace.</summary>
+    /// <summary>It has the most room under its curve, on its tightest window (SWITCH1b-ii, the switch design §3).</summary>
+    public const string MostRoom = "most-room";
+
+    /// <summary>It is furthest behind its week's pace: written under <c>switch: off</c> only since the curve (SWITCH1b-ii).</summary>
     public const string Behind = "behind";
 
-    /// <summary>The account it was weighed against is ahead of its week's pace.</summary>
+    /// <summary>The account it was weighed against is ahead of its week's pace: under <c>switch: off</c> only, as <see cref="Behind"/>.</summary>
     public const string Ahead = "ahead";
 
     /// <summary>Daoris has not started on it yet.</summary>

@@ -66,14 +66,16 @@ public static class UsageCurves
     public static IReadOnlyList<CurvePoint>? For(RotationUse use, string window) =>
         use.Switch == "curve" && use.Curve[window] is { Count: > 0 } own ? own : Smart(window);
 
+    /// <summary>
+    /// The scope's curve on a window now: the most of it, in percent, an account should have used by <paramref name="now"/>
+    /// in a window resetting at <paramref name="reset"/>; null for a window this build does not know.
+    /// </summary>
+    public static double? Value(RotationUse use, string window, DateTimeOffset reset, DateTimeOffset now) =>
+        For(use, window) is { } points && Elapsed(window, reset, now) is { } elapsed ? Value(points, elapsed) : null;
+
     /// <summary>The points of room a window's reading leaves under the curve now, or null where it is not measured (no used, or an unknown window).</summary>
-    public static double? Room(RotationUse use, WindowReading reading, DateTimeOffset now)
-    {
-        if (reading.Used is not { } used) return null;
-        if (For(use, reading.Window) is not { } points) return null;
-        if (Elapsed(reading.Window, reading.Reset, now) is not { } elapsed) return null;
-        return Value(points, elapsed) - used * 100;
-    }
+    public static double? Room(RotationUse use, WindowReading reading, DateTimeOffset now) =>
+        reading.Used is { } used && Value(use, reading.Window, reading.Reset, now) is { } curve ? curve - used * 100 : null;
 
     /// <summary>The least room over the windows with a reading, or null where none is measured.</summary>
     public static double? Tightest(RotationUse use, IEnumerable<WindowReading> readings, DateTimeOffset now)
@@ -90,4 +92,21 @@ public static class UsageCurves
     /// <summary>Whether the account is over its curve: its tightest room is below zero.</summary>
     public static bool Over(RotationUse use, IEnumerable<WindowReading> readings, DateTimeOffset now) =>
         Tightest(use, readings, now) is < 0;
+
+    /// <summary>
+    /// The window an account's agent said with the least room under its curve now, the curve's value there and that room, as
+    /// the walk ranks it and its reasons say it (SWITCH1b-ii, the switch design §3); null where no window it said is measured.
+    /// </summary>
+    public static (WindowSaid Window, double Curve, double Room)? TightestSaid(RotationUse use, AccountSaid? said, DateTimeOffset now)
+    {
+        (WindowSaid Window, double Curve, double Room)? least = null;
+        foreach (var window in said?.Windows ?? [])
+        {
+            if (window.Used is not { } used || Value(use, window.Window, window.Reset, now) is not { } curve) continue;
+            var room = curve - used * 100;
+            if (least is null || room < least.Value.Room) least = (window, curve, room);
+        }
+
+        return least;
+    }
 }
