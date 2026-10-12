@@ -142,6 +142,8 @@ Contract: `docs/2026-10-08-review-environment-design.md` (D154), section proofs.
 
 ## Landing, trace and Git
 
+- [ ] **REVIEWBASE1 — Review measures from the latest line, and says how far behind it the work is** (driver/modules/web). The owner, 2026-10-13: *"now i think there are more issues for 审阅? you can check the current task we need to make sure the changes is based of the latest "main" branch"*. Seen on the install: a conversation's work was merged by two pull requests and its agent checked out the latest line, so its tree held nothing of its own, yet Review listed 26 files (+719/−75), everything merged on the line since its recorded base (`SessionTrees.ReviewBaseAsync` keeps the record's base while it is in history). The base becomes the newest commit the work shares with the line (local or `origin/`); the answer says how many commits the latest line has that the work does not, and the review head says so in both languages. A Process class in real git. D164; REVIEW2/D113; WSR6.
+
 Contracts: D143/D145/D148/D149; plugin-hooks design;
 `docs/2026-10-04-built-in-git-design.md` (D147 amended by D150).
 
