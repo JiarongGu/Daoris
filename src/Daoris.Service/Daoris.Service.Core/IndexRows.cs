@@ -53,7 +53,7 @@ public static class IndexRows
             var where = Where();
             rows.Add(new IndexRow(
                 rowTitle, where.Length == 0 ? line : $"{line}\n\nIn {where}",
-                anchors.Next($"{Uncounted(heading ?? title ?? fallbackTitle)}: {anchored ?? rowTitle}")));
+                anchors.Next($"{Uncounted(heading ?? title ?? fallbackTitle)}: {Unnoted(anchored ?? rowTitle)}")));
         }
 
         foreach (var raw in (markdown ?? string.Empty).Replace("\r\n", "\n").Split('\n'))
@@ -250,6 +250,25 @@ public static class IndexRows
         if (digits.Length == 0 || !digits.All(char.IsAsciiDigit)) return heading;
         var rest = text[..open].TrimEnd();
         return rest.Length > 0 ? rest : heading;
+    }
+
+    /// <summary>
+    /// What a label is anchored by past a trailing note count (ORIENT2h8): <c>Title · 8 notes</c> as <c>Title</c>; a
+    /// space, a middle dot, a space, ASCII digits, a space and <c>note</c> or <c>notes</c>, at the end and nowhere else.
+    /// The label as it is where nothing else would be left. A decisions digest ends each label so, and one new note
+    /// gave the item a new id; the label a person reads keeps the count.
+    /// </summary>
+    internal static string Unnoted(string label)
+    {
+        var text = label.TrimEnd();
+        var tail = text.EndsWith(" notes", StringComparison.Ordinal) ? 6 : text.EndsWith(" note", StringComparison.Ordinal) ? 5 : 0;
+        if (tail == 0) return label;
+        var open = text[..^tail].LastIndexOf(" · ", StringComparison.Ordinal);
+        if (open < 0) return label;
+        var digits = text[(open + 3)..^tail];
+        if (digits.Length == 0 || !digits.All(char.IsAsciiDigit)) return label;
+        var rest = text[..open].TrimEnd();
+        return rest.Length > 0 ? rest : label;
     }
 
     /// <summary>A line's number or a range of them: ASCII digits, then optionally a dash and more.</summary>

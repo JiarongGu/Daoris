@@ -13803,3 +13803,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **TREEKEEP1 — a tree's untracked work is not lost at clean-up** (driver; decide). A ticket's Codex session (TK-2206) prepared its production requests in an untracked `devtools/.tmp/…` file; accepting the work removed its tree, and the file with it. Before a tree is removed, keep or say its untracked files (D51, D102's recovery refs keep only commits).
 
 **Outcome** 2026-10-12: the cause was an ignored folder the checkout also has (`devtools/.tmp/`), counted as shared by its existence alone. Now a file written in the tree after it opened, in a shared ignored folder outside a named build and dependency list, is the tree's own unless the checkout holds it byte for byte: unforced removals refuse and name it; build folders still go; the walk stops at 5,000 files; forced doors unchanged. Detail: D102's TREEKEEP1 note.
+
+## ORIENT2h8 — a label's count leaves the id (2026-10-12, D151)
+
+> - [ ] **ORIENT2h8 — a label's count leaves the id** (service). Five ids still move between ORIENT2h7's two commits: Decisions-table rows whose label ends in a note count (*· 8 notes*). Strip a label's trailing count beside `Unnumbered`, in both readers; the same two-commit measurement, five to none. D151's ORIENT2h7 note.
+
+**Outcome** 2026-10-12: an index entry's id, in both readers, ignores a label's trailing ` · N note(s)` (`IndexRows.Unnoted`, after `Unnumbered`). Over h7's two commits, 5,921 entries pair; the reader before moved 6 ids (the Decisions items), this one moves none. Detail: D151's ORIENT2h8 note.

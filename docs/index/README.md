@@ -127,7 +127,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 125 | 2166 |
 | `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 50 | 873 |
 | `src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs` | 44 | 839 |
-| `src/Daoris.Service/Daoris.Service.Tests/IndexEntriesTests.cs` | 48 | 936 |
+| `src/Daoris.Service/Daoris.Service.Tests/IndexEntriesTests.cs` | 51 | 983 |
 | `src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.cs` | 50 | 890 |
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 85 | 1745 |
 | `src/Daoris.Service/Daoris.Service.Tests/ReviewStepTests.cs` | 41 | 734 |

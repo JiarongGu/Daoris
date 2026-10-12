@@ -120,9 +120,10 @@ public static class IndexSections
                     // Named by its column (ORIENT2h): the header is no line of the row, and a question names what a row is.
                     var column = label.Column < columns.Count ? columns[label.Column] : string.Empty;
                     var named = column.Length > 0 ? $"{column}: {label.Text}" : label.Text;
+                    var anchoredAs = column.Length > 0 ? $"{column}: {IndexRows.Unnoted(label.Text)}" : IndexRows.Unnoted(label.Text);
                     var row = firstLine + at;
                     sections.Add(new IndexSection(
-                        $"{title} › {named}", lines[at].Trim(), new LineSpan(row, row), Label: label.Text, Anchored: $"{anchorTitle} › {named}"));
+                        $"{title} › {named}", lines[at].Trim(), new LineSpan(row, row), Label: label.Text, Anchored: $"{anchorTitle} › {anchoredAs}"));
                 }
                 at--;   // the line that ended the table is read by the loop's own step
                 continue;
@@ -140,7 +141,7 @@ public static class IndexSections
                 var label = ItemLabel(item.Text);
                 items.Add(new OpenItem(
                     item.Content, $"{parent?.Title ?? title} › {label}", label,
-                    $"{parent?.Anchored ?? anchorTitle} › {IndexRows.Unnumbered(label)}", [(line, raw)]));
+                    $"{parent?.Anchored ?? anchorTitle} › {IndexRows.Unnoted(IndexRows.Unnumbered(label))}", [(line, raw)]));
                 continue;
             }
 
