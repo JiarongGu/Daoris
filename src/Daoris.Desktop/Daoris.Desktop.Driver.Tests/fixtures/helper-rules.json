@@ -1,0 +1,43 @@
+{
+  "about": "The helpers rule in driver.json, `helpers` and `workspaceHelpers` (MIXAGENT2a-i, D163 point 5, the mixed agents design section 5): the table both twins hold, the CLI's helpers.ts (through driverconfig.ts) and the driver's HelperRules. `read`: a file's text, a repository and its workspace (null is none, read as the default one), and what resolves: the source (`repository`, `workspace`, or `default` for nothing set) and the rule as kept, as JSON text. `problems`: what an entry holds, as JSON text, and the first problem said, null for none. `listed`: a rule as JSON text and how the list and the room say it. `edits`: a file's text, an edit as JSON text, the two maps the file holds after it (as JSON text) or the refusal in words.",
+  "read": [
+    ["nothing set is the default", "{}", "web-app", "work", "default", "{\"mode\":\"ask\",\"agents\":[]}"],
+    ["a repository's rule is its own", "{\"helpers\":{\"web-app\":{\"mode\":\"on\",\"agents\":[\"codex-acp\"]}}}", "web-app", "work", "repository", "{\"mode\":\"on\",\"agents\":[\"codex-acp\"]}"],
+    ["a workspace's rule reaches a repository that sets none", "{\"workspaceHelpers\":{\"work\":{\"mode\":\"off\"}}}", "notes-site", "work", "workspace", "{\"mode\":\"off\",\"agents\":[]}"],
+    ["a repository's rule replaces its workspace's whole", "{\"helpers\":{\"web-app\":{\"mode\":\"ask\"}},\"workspaceHelpers\":{\"work\":{\"mode\":\"on\",\"agents\":[\"dsh\"]}}}", "web-app", "work", "repository", "{\"mode\":\"ask\",\"agents\":[]}"],
+    ["a repository in no workspace is in default", "{\"workspaceHelpers\":{\"default\":{\"mode\":\"on\"}}}", "web-app", null, "workspace", "{\"mode\":\"on\",\"agents\":[]}"],
+    ["names match in any case", "{\"helpers\":{\"Web-App\":{\"mode\":\"off\"}}}", "web-app", "work", "repository", "{\"mode\":\"off\",\"agents\":[]}"],
+    ["a rule with a problem is not read", "{\"helpers\":{\"web-app\":{\"mode\":\"sometimes\"}}}", "web-app", "work", "default", "{\"mode\":\"ask\",\"agents\":[]}"]
+  ],
+  "problems": [
+    ["an empty rule is ask, no agents", "{}", null],
+    ["on with its agents", "{\"mode\":\"on\",\"agents\":[\"codex-acp\",\"dsh\"]}", null],
+    ["off", "{\"mode\":\"off\"}", null],
+    ["false is no rule here", "false", "a helpers rule is an object with its `mode` and the `agents` it may ask."],
+    ["a list is no rule", "[]", "a helpers rule is an object with its `mode` and the `agents` it may ask."],
+    ["a mode not named", "{\"mode\":\"always\"}", "`mode` is `ask`, `on` or `off`: whether a helper an agent asks for waits for your yes, starts at once, or is not offered."],
+    ["a mode that is no word", "{\"mode\":true}", "`mode` is `ask`, `on` or `off`: whether a helper an agent asks for waits for your yes, starts at once, or is not offered."],
+    ["agents that are no list", "{\"agents\":\"codex-acp\"}", "each agent is an adapter's name, such as `codex-acp` or `dsh`."],
+    ["a blank agent", "{\"agents\":[\" \"]}", "each agent is an adapter's name, such as `codex-acp` or `dsh`."],
+    ["an agent twice", "{\"agents\":[\"codex-acp\",\"Codex-ACP\"]}", "`Codex-ACP` is named twice — each agent once, in the order they are tried."]
+  ],
+  "listed": [
+    ["ask names no agent", "{\"mode\":\"ask\"}", "ask"],
+    ["on says its agents in order", "{\"mode\":\"on\",\"agents\":[\"codex-acp\",\"dsh\"]}", "on: `codex-acp`, else `dsh`"]
+  ],
+  "edits": [
+    ["a repository's first rule", "{}", "{\"repository\":\"web-app\",\"set\":{\"mode\":\"on\",\"agents\":[\"codex-acp\"]}}", "{\"helpers\":{\"web-app\":{\"mode\":\"on\",\"agents\":[\"codex-acp\"]}}}", null],
+    ["a workspace's first rule, by its mode alone", "{}", "{\"workspace\":\"work\",\"set\":{\"mode\":\"off\"}}", "{\"workspaceHelpers\":{\"work\":{\"mode\":\"off\",\"agents\":[]}}}", null],
+    ["a set changes only what it names, under the spelling first written", "{\"helpers\":{\"web-app\":{\"mode\":\"on\",\"agents\":[\"codex-acp\"]}}}", "{\"repository\":\"Web-App\",\"set\":{\"agents\":[\"dsh\"]}}", "{\"helpers\":{\"web-app\":{\"mode\":\"on\",\"agents\":[\"dsh\"]}}}", null],
+    ["clear takes the rule away", "{\"helpers\":{\"web-app\":{\"mode\":\"on\",\"agents\":[\"codex-acp\"]}}}", "{\"repository\":\"web-app\",\"clear\":true}", "{}", null],
+    ["no scope", "{}", "{\"set\":{\"mode\":\"on\"}}", null, "a helpers rule is set for a repository or a workspace — name exactly one."],
+    ["both scopes", "{}", "{\"repository\":\"web-app\",\"workspace\":\"work\",\"set\":{\"mode\":\"on\"}}", null, "a helpers rule is set for a repository or a workspace — name exactly one."],
+    ["no change", "{}", "{\"repository\":\"web-app\"}", null, "one change at a time: set its mode or its agents, or clear."],
+    ["a set that names nothing", "{}", "{\"repository\":\"web-app\",\"set\":{}}", null, "one change at a time: set its mode or its agents, or clear."],
+    ["a set and a clear", "{}", "{\"repository\":\"web-app\",\"set\":{\"mode\":\"on\"},\"clear\":true}", null, "one change at a time: set its mode or its agents, or clear."],
+    ["a mode not named", "{}", "{\"repository\":\"web-app\",\"set\":{\"mode\":\"always\"}}", null, "`mode` is `ask`, `on` or `off`: whether a helper an agent asks for waits for your yes, starts at once, or is not offered."],
+    ["a mode that is no word", "{}", "{\"repository\":\"web-app\",\"set\":{\"mode\":1}}", null, "`mode` is `ask`, `on` or `off`: whether a helper an agent asks for waits for your yes, starts at once, or is not offered."],
+    ["agents that are no list", "{}", "{\"repository\":\"web-app\",\"set\":{\"agents\":\"dsh\"}}", null, "each agent is an adapter's name, such as `codex-acp` or `dsh`."],
+    ["an agent twice", "{}", "{\"repository\":\"web-app\",\"set\":{\"agents\":[\"dsh\",\"DSH\"]}}", null, "`DSH` is named twice — each agent once, in the order they are tried."]
+  ]
+}
