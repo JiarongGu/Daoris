@@ -159,7 +159,10 @@ export type WindowCell = {
   known: boolean;
   /** Its share used, 0 and up, where its agent gave one: the bar's fill. Null draws no bar. */
   used: number | null;
-  /** Its agent's own word that it is near or reached: the bar wears the warning hue. */
+  /**
+   * Its agent's own word that it is reached or ahead of its pace: the bar wears the warning hue. A pace warning is still a
+   * warning, and is never said as near (USAGEREAD3b, D165 point 2).
+   */
   warned: boolean;
   /** What a person acts on, in the ink: its share, its agent's own word, that it draws on credits; or *unknown*. */
   reading: string;
@@ -173,7 +176,8 @@ export type AccountUsage = { cells: WindowCell[]; notes: string[] };
 /** A window as its agent last said it, as its cell says it. */
 function windowCell(said: WindowSaid, now: Date): WindowCell {
   const used = typeof said.used === 'number' ? said.used : null;
-  const word = said.standing === 'refused' ? 'agents.window.reached' : said.standing === 'near' ? 'agents.window.near' : null;
+  // Claude Code's pace warning (`warned`) in its own words, *ahead of its pace*: near is the scope's, never this (USAGEREAD3b).
+  const word = said.standing === 'refused' ? 'agents.window.reached' : said.standing === 'warned' ? 'agents.window.warned' : null;
   const readings = [
     ...(used !== null ? [i18n.t('agents.window.used', { used: percent(used) })] : []),
     ...(word ? [i18n.t(word)] : []),

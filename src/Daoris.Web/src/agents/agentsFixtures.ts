@@ -123,9 +123,10 @@ export const CODEX_OWN_USE: AgentAccounts = { agent: 'codex', speaks: true, own:
 
 /**
  * Codex's accounts read as Claude Code's are (ACCTUX4, CODEXUSE1), so the two makers' rows show the same cells: *team* with
- * both windows read, a minute apart, its week nearly gone; *reserve* with its week alone read, its five hours unknown, and a
- * window of another length the app server named; *spare* never read, each window unknown; and your own sign-in, read at a press.
- * The next start passes *team*, the list's first, as near its limit, and takes *reserve*, its row marked first (ACCTUX4b).
+ * both windows read, a minute apart, its week nearly gone and ahead of its pace by its agent's own word (USAGEREAD3b); *reserve*
+ * with its week alone read, its five hours unknown, and a window of another length the app server named; *spare* never read,
+ * each window unknown; and your own sign-in, read at a press. The next start passes *team*, the list's first, as near its limit
+ * by its number, never by the warning, and takes *reserve*, its row marked first (ACCTUX4b).
  */
 const CODEX_READ_DOOR: ToolDoor = {
   ...CODEX,
@@ -149,7 +150,7 @@ export const CODEX_READ_USE: AgentAccounts = {
         seen: minutesFrom(-8),
         windows: [
           { window: 'session', used: 0.01, reset: minutesFrom(4 * 60 + 20), credits: false, seen: minutesFrom(-8) },
-          { window: 'weekly', used: 0.94, reset: minutesFrom(2 * 24 * 60), standing: 'near', credits: false, seen: minutesFrom(-9) },
+          { window: 'weekly', used: 0.94, reset: minutesFrom(2 * 24 * 60), standing: 'warned', credits: false, seen: minutesFrom(-9) },
         ],
       },
     },
@@ -166,7 +167,7 @@ export const CODEX_READ_USE: AgentAccounts = {
     { name: 'spare', running: 0 },
   ],
   scopes: [scopeOf({
-    list: ['team', 'reserve', 'spare'], begins: 'team', use: USE_DEFAULTS, near: [{ account: 'team', window: 'weekly', by: 'word' }],
+    list: ['team', 'reserve', 'spare'], begins: 'team', use: USE_DEFAULTS, near: [{ account: 'team', window: 'weekly', by: 'number' }],
     next: { account: 'reserve', reason: 'near', over: 'team', others: [{ account: 'team', hold: 'near' }, { account: 'spare', hold: 'ready' }] },
   })],
 };

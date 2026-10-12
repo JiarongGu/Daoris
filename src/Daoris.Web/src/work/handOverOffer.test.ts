@@ -4,8 +4,9 @@ import type { ToolDoor } from '../tools';
 import { handOverOffer } from './handOverOffer';
 
 // MIXAGENT1b-ii (D163 point 3, the mixed-agents design §5): when Daoris offers to hand a conversation over, as one pure
-// answer. Cut by the account's cool-off, or near its limit by the account's own word, and only where another present agent
-// has an account its next start would take; an account that says nothing is never offered as near.
+// answer. Cut by the account's cool-off, or near its limit by the scope's own `near` (a limit reached, usage credits or its
+// number, USAGEREAD3a), and only where another present agent has an account its next start would take; an account that says
+// nothing is never offered as near, and nor is one only ahead of its pace by its agent's warning (USAGEREAD3b, D165 point 2).
 
 const now = new Date('2026-10-04T10:00:00Z');
 const until = '2026-10-04T13:10:00Z';
@@ -25,7 +26,7 @@ const doors: ToolDoor[] = [
   { harness: 'codex', present: true },
   { harness: 'gemini', present: true },
 ];
-const nearPersonal = { account: 'personal', window: 'session', by: 'word' as const };
+const nearPersonal = { account: 'personal', window: 'session', by: 'number' as const };
 const claude = (over: Partial<AgentAccounts> = {}) => agent('claude-code', over);
 const codex = (over: Partial<AgentAccounts> = {}) => agent('codex', { scopes: [scope({ next: next('team') })], ...over });
 const answer = (...agents: AgentAccounts[]): AccountsAnswer => ({ agents });
@@ -33,10 +34,21 @@ const offer = (answered: AccountsAnswer, over: Partial<Parameters<typeof handOve
   handOverOffer({ session: { adapter: 'claude-code', profile: 'personal' }, workspace: 'default', doors, answer: answered, now, ...over });
 
 describe('handOverOffer', () => {
-  it('offers near by the account’s own word, naming the next other agent and the account its walk would take', () => {
+  it('offers near by the scope’s own near, naming the next other agent and the account its walk would take', () => {
     const near = claude({ scopes: [scope({ near: [nearPersonal] })] });
 
     expect(offer(answer(near, codex()))).toEqual({ why: 'near', until: null, agent: 'codex', account: 'team' });
+  });
+
+  it('never offers near for the agent’s pace warning alone, and passes no other agent’s account for it', () => {
+    const ahead = { seen: 'x', windows: [{ window: 'weekly', used: 0.6, standing: 'warned', credits: false, reset: until, seen: 'x' }] };
+    const warned = claude({ accounts: [{ name: 'personal', said: ahead }, { name: 'work' }] });
+
+    expect(offer(answer(warned, codex()))).toBeNull();
+    // Another agent's next account, ahead of its pace and not near, is still one with room.
+    const near = claude({ scopes: [scope({ near: [nearPersonal] })] });
+    expect(offer(answer(near, codex({ accounts: [{ name: 'team', said: ahead }] }))))
+      .toEqual({ why: 'near', until: null, agent: 'codex', account: 'team' });
   });
 
   it('offers limit while the account is cut, with when it is offered again, and the cut goes before near', () => {
@@ -94,7 +106,7 @@ describe('handOverOffer', () => {
       { harness: 'claude-code-acp', present: true, accountOf: 'claude-code' },
       { harness: 'codex', present: true },
     ];
-    const gmailNear = { account: 'Gmail', window: 'session', by: 'word' as const };
+    const gmailNear = { account: 'Gmail', window: 'session', by: 'number' as const };
     const claudeGmail = claude({
       accounts: [{ name: 'Gmail' }], scopes: [scope({ near: [gmailNear], next: next('Gmail', 'near') })],
     });
@@ -114,7 +126,7 @@ describe('handOverOffer', () => {
     it('passes over a next account that is near, refused or cooling, for the next ready one of that tool’s order', () => {
       const near = claude({ scopes: [scope({ near: [nearPersonal] })] });
       const held = (over: Partial<AccountScope>, accounts: AgentAccounts['accounts']) => codex({
-        accounts, scopes: [scope({ near: [{ account: 'a', window: 'session', by: 'word' as const }], ...over,
+        accounts, scopes: [scope({ near: [{ account: 'a', window: 'session', by: 'number' as const }], ...over,
           next: { account: 'a', reason: 'near', others: [{ account: 'b', hold: 'ready' }, { account: 'c', hold: 'ready' }] } })],
       });
       const refused = { seen: 'x', windows: [{ window: 'session', standing: 'refused', credits: false, reset: until, seen: 'x' }] };
