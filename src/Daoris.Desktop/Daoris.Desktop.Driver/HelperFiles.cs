@@ -42,7 +42,10 @@ public static class HelperWhy
     /// <summary>The helper ended with no answer and no last words.</summary>
     public const string NoAnswer = "no-answer";
 
-    /// <summary>The asking session is a conversation, which takes words only from the person.</summary>
+    /// <summary>
+    /// The asking session is a conversation. No longer written (MIXAGENT2a-iii: a conversation takes the answer as its next turn),
+    /// but a state file from before may hold it and the page's catalogues word it, so it stays defined and read.
+    /// </summary>
     public const string Conversation = "conversation";
 
     /// <summary>The asking session cannot take the answer: a teammate's, stood down, or gone.</summary>

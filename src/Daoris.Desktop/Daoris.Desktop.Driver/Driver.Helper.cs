@@ -16,8 +16,9 @@ namespace Daoris.Driver;
 /// settles it.</para>
 ///
 /// <para><b>Delivery is the opinion's door</b> (<see cref="DeliverHelperAsync"/>): a word on the asker's record, through the local
-/// host, marked as the helper's; an asker that is running or parked takes it at its turn's end, never into a step in flight,
-/// and one that never goes on (a conversation, a teammate's, stood down) is refused with its code.</para>
+/// host, marked as the helper's; a quest asker that is running or parked takes it at its turn's end, never into a step in flight,
+/// and one that never goes on (a teammate's, stood down) is refused with its code. A conversation takes it as its next turn
+/// (MIXAGENT2a-iii): the shell's chat runner says it, or goes the ended one on with it.</para>
 /// </remarks>
 public sealed partial class Driver
 {
@@ -259,8 +260,10 @@ public sealed partial class Driver
 
     /// <summary>
     /// Hand an answered ask's answer to the asker (design §3), once, through the local host's door, as the opinion's findings are:
-    /// a word marked as the helper's, Daoris's words around the claim. A running or parked asker takes it at its turn's end, never
-    /// into a step in flight, so it waits; one that never goes on is refused with its code.
+    /// a word marked as the helper's, Daoris's words around the claim. A running or parked quest asker takes it at its turn's end,
+    /// never into a step in flight, so it waits; one that never goes on is refused with its code. A conversation asker (MIXAGENT2a-iii)
+    /// takes it open between turns, and ended: a shown event is left for the shell's chat runner, which says the word as its next
+    /// turn, or goes the ended one on with it.
     /// </summary>
     private async Task<string?> DeliverHelperAsync(HelperAsk ask, HelperState state, HelperFiles files, CancellationToken ct)
     {
@@ -269,7 +272,6 @@ public sealed partial class Driver
         {
             null => HelperWhy.AskerGone,
             { Serves: not null } or { Opinion: not null } or { Ask.Length: > 0 } => HelperWhy.AskerUnfit,
-            { Kind: "chat" } => HelperWhy.Conversation,
             _ when string.Equals(record.State, "stood-down", StringComparison.OrdinalIgnoreCase) => HelperWhy.CannotTake,
             _ => null,
         };
@@ -277,21 +279,34 @@ public sealed partial class Driver
 
         // Never into a step in flight (D136): a running turn takes another agent's claim at its end, and a park after the person's
         // answer. Said nowhere: each look would say it again, and the next look after the record ended hands it.
-        if (record!.Running || record.Parked) return null;
+        // A conversation open between turns is `working` and takes it (its runner says it as the next turn); one still starting waits.
+        var conversation = record!.Kind == "chat";
+        var open = conversation && string.Equals(record.State, "working", StringComparison.OrdinalIgnoreCase);
+        if (!open && (record.Running || record.Parked)) return null;
 
         var text = state.LastWords
             ? state.Words ?? ""
             : files.ReadAnswer(ask.Id)?.Answer ?? "";
         var agent = state.Agent ?? "another agent";
-        var (handed, message, word) = await service.HandHelperAsync(
-                state.Helper!, HelperWords.Compose(agent, state.Helper!, ask.Question, text, state.LastWords), ct)
-            .ConfigureAwait(false);
+        var composed = HelperWords.Compose(agent, state.Helper!, ask.Question, text, state.LastWords);
+        var (handed, message, word) = await service.HandHelperAsync(state.Helper!, composed, ct).ConfigureAwait(false);
         if (!handed) return $"helper  ask `{ask.Id}` is answered, and waits to be handed to session {ask.Asker}: {message}";
 
         files.WriteState(state with { Handed = word ?? "handed" });
         var noted = HelperNotes.Answered(agent, state.Helper!, state.LastWords);
         output?.Append(ask.Asker, $"— {noted.Note}");
         _events.Keep(ask.Asker, new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts }, say: null);
+
+        // The shell's chat runner hears this event, as it hears the person's words to an ended conversation (D137 §3.1), after the
+        // note above so the turn it makes reads beneath it: the origin is Daoris's own (`target`), never the person's, and an
+        // open conversation says the word as its next turn.
+        if (conversation && word is not null)
+        {
+            _events.Keep(
+                ask.Asker, new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Id = word, Text = composed, Reaches = "resume" },
+                say: null);
+        }
+
         return $"helper  ask `{ask.Id}` answered by {agent}: its answer is session {ask.Asker}'s next turn, marked as the helper's, at the driver's next look.";
     }
 
