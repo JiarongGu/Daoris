@@ -866,6 +866,8 @@ public sealed record DriverConfig(
             if (rule.Tidy) writer.WriteBoolean("tidy", true);
             // Written only when on (LAND2a): absent is the person's press, as it always was. The CLI writes it here too.
             if (rule.AutoAccept) writer.WriteBoolean("autoAccept", true);
+            // Written only when on (PROCESS1b-ii): absent is the branch at the session's own commits. The CLI writes it here too.
+            if (rule.Squash) writer.WriteBoolean("squash", true);
             writer.WriteEndObject();
         }
 
@@ -893,7 +895,9 @@ public sealed record DriverConfig(
                     property.Value.TryGetProperty("tidy", out var tidy) && tidy.ValueKind == JsonValueKind.True,
                     String(property.Value, "plugin"),
                     property.Value.TryGetProperty("autoAccept", out var auto) && auto.ValueKind == JsonValueKind.True,
-                    String(property.Value, "key"));
+                    String(property.Value, "key"),
+                    // Only JSON `true` squashes (PROCESS1b-ii), as only it accepts automatically.
+                    property.Value.TryGetProperty("squash", out var squash) && squash.ValueKind == JsonValueKind.True);
                 // A key refused here is ignored and the rest of the rule stands (PROCESS1b-i): a key another reader took never
                 // drops the rule, which would land the repository's work by its workspace's rule or a merge unasked.
                 if (rule.Key is not null && LandingRules.Problem(rule) is not null) rule = rule with { Key = null };

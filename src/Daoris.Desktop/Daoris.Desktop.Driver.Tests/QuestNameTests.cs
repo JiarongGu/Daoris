@@ -229,4 +229,127 @@ public sealed class QuestNameTests
             @"may escape only a punctuation mark or one of `\d \D \w \W \s \S \b \B \n \r \t \f \v`, which the driver and the CLI read alike, and `\_` is neither.",
             Assert.Throws<DriverException>(() => DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{ticket}", Key: @"TK\_\d+"))).Message);
     }
+
+    /// <summary>
+    /// <c>squash</c> on a landing rule (PROCESS1b-ii, D164's amendment point 2): Accept makes the pull request's branch one commit.
+    /// Only a branch rule takes it, as only a branch rule accepts automatically. The driver's half of a TWIN with the CLI's
+    /// <c>driverconfig.ts</c>, whose <c>driverconfig.test.ts</c> parses these two theories to hold its own tables to them.
+    /// 🔴 Keep each row on one line, its cells literals: the CLI's test reads them.
+    /// </summary>
+    [Theory]
+    [InlineData("branch", "feature/{ticket}-{slug}", true, null)]
+    [InlineData("branch", "feature/{quest}-{slug}", false, null)]
+    [InlineData("merge", null, true, "only a branch rule squashes")]
+    [InlineData("merge", null, false, null)]
+    public void Only_a_branch_rule_squashes(string form, string? pattern, bool squash, string? problem)
+    {
+        var said = LandingRules.Problem(new LandingRule(form, pattern, Squash: squash));
+
+        if (problem is null) Assert.Null(said);
+        else Assert.Contains(problem, said);
+    }
+
+    /// <summary>What the file says of <c>squash</c>, read: absent is off, only JSON <c>true</c> is on, and a merge carrying it is not read.</summary>
+    [Theory]
+    [InlineData("absent is off", """{"landings":{"engine":{"form":"branch","pattern":"feature/{quest}"}}}""", "landings", "engine", "off")]
+    [InlineData("true on a branch rule is on", """{"landings":{"engine":{"form":"branch","pattern":"feature/{ticket}-{slug}","squash":true}}}""", "landings", "engine", "on")]
+    [InlineData("text is not true", """{"landings":{"engine":{"form":"branch","pattern":"feature/{quest}","squash":"true"}}}""", "landings", "engine", "off")]
+    [InlineData("a merge carrying it is not read", """{"landings":{"engine":{"form":"merge","squash":true}}}""", "landings", "engine", "none")]
+    [InlineData("a workspace's rule carries it", """{"workspaceLandings":{"aurora":{"form":"branch","pattern":"review/{session}","autoAccept":true,"squash":true}}}""", "workspaceLandings", "aurora", "on")]
+    public void Squash_reads_as_the_cli_reads_it(string name, string file, string map, string key, string expected)
+    {
+        var config = DriverConfig.Parse(file);
+        var rules = map == "workspaceLandings" ? config.WorkspaceLandings : config.Landings;
+        var read = rules.TryGetValue(key, out var rule) ? rule.Squash ? "on" : "off" : "none";
+
+        Assert.True(expected == read, $"{name}: {read}");
+    }
+
+    /// <summary>Written only when on, after the automatic acceptance, and kept through the file: the CLI writes it in the same place.</summary>
+    [Fact]
+    public void Squash_is_written_only_when_on_and_survives_the_file()
+    {
+        var on = DriverConfig.Empty.WithWorkspaceLanding(
+            "aurora", new LandingRule(LandingForm.Branch, "feature/{ticket}-{slug}", Tidy: true, AutoAccept: true, Squash: true));
+
+        Assert.True(DriverConfig.Parse(on.ToJson()).WorkspaceLandings["aurora"].Squash);
+        Assert.Matches("\"autoAccept\": true,\\s*\"squash\": true", on.ToJson());
+        Assert.DoesNotContain("squash",
+            DriverConfig.Empty.WithWorkspaceLanding("aurora", new LandingRule(LandingForm.Branch, "feature/{quest}")).ToJson(), StringComparison.Ordinal);
+        Assert.Throws<DriverException>(() => DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge, Squash: true)));
+    }
+
+    /// <summary>A named workflow's landing step on a branch carries the rule's squash; a merge step makes no branch to squash into.</summary>
+    [Fact]
+    public void A_named_workflows_branch_landing_carries_the_rules_squash()
+    {
+        var config = DriverConfig.Parse("""{"landings":{"web-app":{"form":"branch","pattern":"feature/{quest}","squash":true}}}""");
+        WorkflowProcess Of(string landing)
+        {
+            using var document = System.Text.Json.JsonDocument.Parse($$"""[{"id":"work","kind":"work"},{{landing}}]""");
+            var (steps, problem) = WorkflowNamed.ReadSteps(document.RootElement.Clone(), 2);
+            Assert.True(problem is null, problem);
+            return WorkflowProcesses.Of(config, "web-app", "work",
+                new WorkflowRunBinding("q1", "web-app", "work", "docs-to-pr", WorkflowLevels.Repository, DateTimeOffset.UnixEpoch) { Version = 2 }, steps!);
+        }
+
+        Assert.True(Of("""{"id":"land","kind":"landing","form":"branch","accept":"you"}""").Landing.Rule.Squash);
+        Assert.False(Of("""{"id":"land","kind":"landing","form":"merge","accept":"you"}""").Landing.Rule.Squash);
+    }
+
+    /// <summary>
+    /// The one commit's message where the rule squashes (PROCESS1b-ii, D164's PROCESS1b-ii note point 2): the quest's title as its
+    /// subject, the session's commits' subjects oldest first as its body, one line each, and the line naming the session last.
+    /// </summary>
+    [Fact]
+    public void A_squash_message_is_the_title_then_each_commits_subject_then_the_session()
+    {
+        var message = SquashMessage.Of("Fix the gap", [new("a1", "the first step"), new("b2", "the verify step")], "s1a2b3c4");
+
+        Assert.Equal("Fix the gap\n\n- the first step\n- the verify step\n\nSquashed by Daoris from session `s1a2b3c4`", message);
+    }
+
+    /// <summary>
+    /// The subject is one line of at most 72 characters: a conversation's opening is its title, and may run to paragraphs. A blank
+    /// title takes the oldest commit's subject, and with none the session's.
+    /// </summary>
+    [Fact]
+    public void A_squash_subject_is_one_line_of_at_most_72_characters()
+    {
+        var opening = "Please look at why the review says nothing\nwhen the work sits uncommitted on the session branch, and fix it properly.";
+
+        var subject = SquashMessage.Subject(opening, [], "s1");
+
+        Assert.True(subject.Length <= SquashMessage.SubjectLimit, subject);
+        Assert.EndsWith("…", subject);
+        Assert.DoesNotContain('\n', subject);
+        Assert.StartsWith("Please look at why the review says nothing when the work", subject);
+        Assert.Equal("the first step", SquashMessage.Subject("  ", [new("a1", "the first step")], "s1"));
+        Assert.Equal("Work from session s1", SquashMessage.Subject(null, [], "s1"));
+        Assert.Equal("修复 登录", SquashMessage.Subject("修复 登录", [], "s1"));
+    }
+
+    /// <summary>
+    /// The body is bounded at 50 lines and 4,000 characters: what is left out is counted on its last line, so the commit never
+    /// claims to carry every subject when it does not.
+    /// </summary>
+    [Fact]
+    public void A_squash_body_is_bounded_and_counts_what_it_left_out()
+    {
+        var many = Enumerable.Range(1, 60).Select(n => new LandingCommit($"c{n}", $"step {n}")).ToList();
+
+        var lines = SquashMessage.Body(many).Split('\n');
+
+        Assert.Equal(SquashMessage.BodyLines, lines.Length);
+        Assert.Equal("- step 1", lines[0]);
+        Assert.Equal("- step 49", lines[^2]);
+        Assert.Equal("… and 11 more commits", lines[^1]);
+
+        var long_ = Enumerable.Range(1, 40).Select(n => new LandingCommit($"c{n}", new string('x', 150))).ToList();
+        var bounded = SquashMessage.Body(long_);
+        Assert.True(bounded.Length <= SquashMessage.BodyLimit, $"{bounded.Length}");
+        Assert.EndsWith("more commits", bounded);
+        Assert.Equal("… and 1 more commit", SquashMessage.Body([new("a1", new string('x', 5000))]));
+        Assert.Equal("", SquashMessage.Body([]));
+    }
 }
