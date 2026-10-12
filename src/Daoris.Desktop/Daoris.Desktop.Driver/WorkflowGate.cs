@@ -218,7 +218,9 @@ public static class WorkflowProcesses
                     + $"names a pattern for it: `daoris driver landing {repository} branch <pattern>` declares one.";
             }
 
-            landing = new LandingRule(LandingForm.Branch, pattern, rule.Tidy, plugin, (string?)land.Field("accept") == "automatic");
+            // The rule's ticket key rides with it where the pattern, the step's or the rule's, says `{ticket}` (PROCESS1b-i).
+            var key = branch && pattern?.Contains("{ticket}", StringComparison.Ordinal) == true ? rule.Key : null;
+            landing = new LandingRule(LandingForm.Branch, pattern, rule.Tidy, plugin, (string?)land.Field("accept") == "automatic", key);
         }
 
         // The look (D154 rows 5 and 6): its presence is `required`, in an environment the review rule declares.

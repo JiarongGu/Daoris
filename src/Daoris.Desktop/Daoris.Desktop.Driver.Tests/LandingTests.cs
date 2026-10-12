@@ -36,6 +36,8 @@ public sealed class LandingTests : IDisposable
     [InlineData("feature/{quest}-{slug}", true)]
     [InlineData("review/{session}", true)]
     [InlineData("team/{repository}/{quest}", true)]
+    [InlineData("feature/{ticket}-{slug}", true)]
+    [InlineData("feature/{ticket}", true)]
     [InlineData("", false)]
     [InlineData("feature/fixed", false)]
     [InlineData("feature/{slug}", false)]
