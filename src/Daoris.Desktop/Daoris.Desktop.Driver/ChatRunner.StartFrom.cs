@@ -19,7 +19,9 @@ public sealed record StartedFrom(string? SessionId, bool Sent, string? Why, stri
 /// <remarks>
 /// <para><b>Refused before anything starts</b>, by a code: D137 §2.2's nevers by <see cref="WordsNever"/>, a session still
 /// running or parked (<see cref="Running"/>: its words reach it there), one with no words waiting (<see cref="NoWords"/>), and
-/// one whose quest is open or taken (<see cref="Carried"/>), which the driver carries on with the words by itself.</para>
+/// one whose quest is open or taken (<see cref="Carried"/>), which the driver carries on with the words by itself. Another agent's
+/// claims waiting beside the person's words (a helper's answer, MIXAGENT2a-iii) are not carried: only the person's words go, and a
+/// record holding none of them is refused as having no words.</para>
 ///
 /// <para><b>The words, their files and a preface.</b> The words go in the order said, joined by a blank line, with the files
 /// said beside them read back from where their session kept them (MSG1d3); more than one message carries, and they go alone.
@@ -97,10 +99,18 @@ public static class StartFrom
                 $"#{quest} is {serving.Status.ToLowerInvariant()}, so the driver carries these words on with it by itself.");
         }
 
+        // Another agent's claims (a helper's answer, MIXAGENT2a-iii; a second opinion's findings) are never the person's words: a new
+        // conversation is handed only the person's, and where none wait there is nothing to start one with. The claims stay on the
+        // record, for the conversation they were meant for.
+        var words = prior.Waiting.Where(word => word.Persons).ToList();
+        if (words.Count == 0)
+        {
+            return Refused(NoWords, $"only another agent's answer waits on {id}, which goes on in its own conversation and is never a new one's words.");
+        }
+
         var started = await start(record.Repository, ct).ConfigureAwait(false);
         if (started.SessionId is not { } to) return new StartedFrom(null, false, null, started.Message);
 
-        var words = prior.Waiting;
         var text = string.Join("\n\n", words.Select(word => word.Text));
         var preface = Preface(id);
         var files = Files(home, id, words);

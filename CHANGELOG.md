@@ -11,6 +11,9 @@ with the version and date at release.
   words. Your `helpers` rule says whether an agent's ask waits for your yes, starts at once or is off; at most two helpers work
   for a session at once, and each takes a place under the session cap. The session's notes say, in both languages, which agent
   was asked, that it answered (or why it did not), and what a helper is helping.
+- A conversation that asks another agent for help is given the answer as its next turn, marked as the helper's and never as your
+  words: at once when the conversation is between turns, when its turn ends if it is talking, and as it goes on if it had ended.
+
 - When a conversation's account runs low, Daoris offers to go on with another agent: a line under its head, where the account
   is near its limit by its own word or cut, with *Go on with {agent} ({account})* and *Choose…*. It is never taken without your
   press.

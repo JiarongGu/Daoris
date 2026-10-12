@@ -358,17 +358,13 @@ public sealed class HelperLookTests : IDisposable
         Assert.Single(host.HelperHands);
     }
 
-    /// <summary>
-    /// Refused the same states the opinion's delivery refuses: a conversation (which takes words only from the person), an asker
-    /// that stood down; each with its own code, a coded note on the asker, and nothing handed.
-    /// </summary>
+    /// <summary>An asker that stood down never goes on: refused with its code, and nothing handed.</summary>
     [Theory]
-    [InlineData("chat", HelperWhy.Conversation)]
     [InlineData("stood-down", HelperWhy.CannotTake)]
-    public async Task An_asker_that_never_goes_on_is_refused_with_its_code(string row, string code)
+    public async Task An_asker_that_never_goes_on_is_refused_with_its_code(string state, string code)
     {
         Ask("a1");
-        var host = row == "chat" ? Host(kind: "chat") : Host(state: "stood-down");
+        var host = Host(state: state);
         var pass = new Pass(Files) { Answer = "Line 42." };
 
         await Look(Driver(host, pass));
@@ -376,6 +372,49 @@ public sealed class HelperLookTests : IDisposable
 
         Assert.Equal(code, Files.ReadState("a1")!.Code);
         Assert.Empty(host.HelperHands);
+    }
+
+    /// <summary>
+    /// MIXAGENT2a-iii: a conversation asker is handed the answer, open between turns (`working`) or ended, and the driver leaves
+    /// the shell's chat runner a shown event it hears (the person's say door's, reaching on `resume`) whose origin is never the
+    /// person's: Daoris's words around the helper's claim. One still being started waits, as a quest's step in flight does.
+    /// </summary>
+    [Theory]
+    [InlineData("working")]
+    [InlineData("completed")]
+    public async Task A_conversation_asker_is_handed_the_answer_and_the_runner_is_left_an_event_to_hear(string state)
+    {
+        Ask("a1");
+        var host = Host(state: state, kind: "chat");
+        var pass = new Pass(Files) { Answer = "Line 42." };
+
+        await Look(Driver(host, pass));
+        await Until(() => Files.ReadState("a1") is { State: HelperStates.Answered, Handed: not null });
+
+        Assert.Single(host.HelperHands);
+        var shown = new SessionEvents(Path.Combine(_home, "sessions")).After("s1", 0).Events
+            .Single(e => e.Kind == SessionEventKind.User);
+        Assert.Equal(("target", "resume", host.Said("s1")[0]!["id"]!.GetValue<string>()), (shown.Origin, shown.Reaches, shown.Id));
+        Assert.Equal(host.HelperHands[0].Text, shown.Text);
+        Assert.Contains("Line 42.", shown.Text);
+    }
+
+    /// <summary>A conversation still being started is no open conversation: the answer waits, answered and not handed.</summary>
+    [Fact]
+    public async Task A_conversation_asker_still_starting_takes_the_answer_when_it_is_open()
+    {
+        Ask("a1");
+        var host = Host(state: "starting", kind: "chat");
+        var driver = Driver(host, new Pass(Files) { Answer = "Line 42." });
+
+        await Look(driver);
+        await Until(() => Files.ReadState("a1") is { State: HelperStates.Answered });
+        await Look(driver);
+        Assert.Empty(host.HelperHands);
+
+        host.Move("s1", "working");
+        await Look(driver);
+        Assert.Single(host.HelperHands);
     }
 
     /// <summary>A restart: a `started` ask whose helper ended, with an answer on file, is settled and delivered at the next look.</summary>

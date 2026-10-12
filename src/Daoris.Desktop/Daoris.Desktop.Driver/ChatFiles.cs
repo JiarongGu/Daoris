@@ -48,6 +48,23 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     /// </summary>
     internal Noted? TakenOver { get; init; }
 
+    /// <summary>
+    /// A helper's answer an open conversation says as its next turn (MIXAGENT2a-iii, D163): Daoris's words around another agent's
+    /// claim, kept on the record as that helper's while it waits. Never the person's: recorded as Daoris's (<c>target</c>) under
+    /// the word's id, never handed to a turn on the wire, never listed as queued, and taken off the record once on the wire
+    /// (<see cref="Delivered"/>). Null for every other message.
+    /// </summary>
+    internal SaidWordView? Helped { get; init; }
+
+    /// <summary>Told once this message's turn is on the wire: a helper's answer comes off the record then (MIXAGENT2a-iii).</summary>
+    internal Action? Delivered { get; init; }
+
+    /// <summary>
+    /// Whether the record already shows this message waiting, so the queue a page is told never lists it and a stop never hands
+    /// it back to the person's composer: the words a conversation goes on with, and a helper's answer.
+    /// </summary>
+    internal bool OnRecord => GoesOn is not null || Helped is not null;
+
     /// <summary>What the agent is handed: the briefing, the preface, then the person's words, each after a blank line.</summary>
     public string Prompt => string.Join(
         "\n\n", new[] { Briefing, Preface }.Where(part => !string.IsNullOrEmpty(part)).Append(Text));

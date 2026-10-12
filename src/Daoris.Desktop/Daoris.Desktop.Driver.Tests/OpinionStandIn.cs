@@ -219,7 +219,9 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                     if (asker is null) return Refuse(HttpStatusCode.Conflict, "there is no such session to hand the answer to");
                     if (state == "stood-down") return Refuse(HttpStatusCode.Conflict, "it stood down");
                     if (state == "awaiting-person") return Refuse(HttpStatusCode.Conflict, "it waits on the person's answer");
-                    if (Running.Contains(state!)) return Refuse(HttpStatusCode.Conflict, "a helper's answer reaches a running session at its turn's end");
+                    // An open conversation between turns (MIXAGENT2a-iii) takes it, as the desk lets it.
+                    var open = state == "working" && asker["kind"]?.GetValue<string>() == "chat";
+                    if (Running.Contains(state!) && !open) return Refuse(HttpStatusCode.Conflict, "a helper's answer reaches a running session at its turn's end");
                     if (asker["said"]!.AsArray().Any(each => each!["helper"]?.GetValue<string>() == id)) return Refuse(HttpStatusCode.Conflict, "it goes once");
 
                     var text = JsonNode.Parse(body!)!["text"]!.GetValue<string>();
