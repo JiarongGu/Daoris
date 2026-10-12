@@ -158,7 +158,7 @@
   "harness.said.sentences": "",
   "harness.said.nothing": "尚未报告",
   "harness.said.reached": "它自己说已达到{{window}}上限",
-  "harness.said.warned": "它自己说接近{{window}}上限",
+  "harness.said.warned": "它自己说{{window}}的用量超前于节奏",
   "harness.said.credits": "正在使用用量额度",
   "harness.said.window": "{{window}}上限已用 {{used}}，{{when}} 重置",
   "harness.said.clear": "它自己说用量正常",

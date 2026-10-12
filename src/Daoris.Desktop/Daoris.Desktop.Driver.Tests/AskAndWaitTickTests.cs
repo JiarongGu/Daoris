@@ -313,6 +313,8 @@ public sealed class AskAndWaitTickTests : IDisposable
                             ["created"] = DateTimeOffset.UtcNow.AddMinutes(_sessions.Count).ToString("O"),
                         };
                         if (KeepsAdapter) session["adapter"] = body["adapter"]?.GetValue<string>();
+                        // The session it continues, why and who asked (MIXAGENT1a-iii), as the service answers them on loopback.
+                        StandInLedger.Continues(session, body.AsObject());
                         _sessions.Add(session);
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "opened" }.ToJsonString());
                     }

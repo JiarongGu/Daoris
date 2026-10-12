@@ -158,7 +158,7 @@
   "harness.said.sentences": " ",
   "harness.said.nothing": "nothing said yet",
   "harness.said.reached": "its {{window}} limit reached, by its own word",
-  "harness.said.warned": "near its {{window}} limit, by its own word",
+  "harness.said.warned": "ahead of its pace on its {{window}} window, by its own word",
   "harness.said.credits": "drawing on usage credits",
   "harness.said.window": "{{used}} of its {{window}} limit used, resets {{when}}",
   "harness.said.clear": "clear, by its own word",

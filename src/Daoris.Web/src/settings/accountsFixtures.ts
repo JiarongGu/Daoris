@@ -1,9 +1,9 @@
-import { type AccountScope, type AgentAccounts, USE_DEFAULTS } from './accounts';
+import { type AccountFacts, type AccountScope, type AgentAccounts, USE_DEFAULTS } from './accounts';
 import type { AccountChoice } from './AccountUse';
 
 // How an agent's accounts are used, as the stories and the molecules' tests hand it (TOOL4g): one account, three, and six,
-// since nothing counts accounts; a cooling one, one whose agent said it is near, one that said nothing, and a workspace
-// on its own list. Names are neutral, as every fixture's are.
+// since nothing counts accounts; a cooling one, one near by its number, one its agent says is ahead of its pace, one that
+// said nothing, and a workspace on its own list. Names are neutral, as every fixture's are.
 
 const minutesFrom = (minutes: number) => new Date(Date.now() + minutes * 60_000).toISOString();
 
@@ -61,6 +61,21 @@ export const THREE: AgentAccounts = {
       },
     }),
   ],
+};
+
+/**
+ * account-2 as its agent said it with Claude Code's pace warning on its week (USAGEREAD3b, D165 point 2): 60% of its week
+ * used, ahead of its pace by the agent's own thresholds, and not near by that alone.
+ */
+export const AHEAD: AccountFacts = {
+  ...THREE.accounts[1]!,
+  said: {
+    seen: minutesFrom(-180),
+    windows: [
+      { window: 'weekly', used: 0.6, reset: minutesFrom(60 * 24 * 4), standing: 'warned', credits: false, seen: minutesFrom(-180) },
+      { window: 'session', used: 0.88, reset: minutesFrom(120), credits: false, seen: minutesFrom(-180) },
+    ],
+  },
 };
 
 /** The machine's list near by its own near of 85: account-2's five-hour window at 88%. */

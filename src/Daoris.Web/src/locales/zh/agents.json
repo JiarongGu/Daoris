@@ -23,7 +23,7 @@
   "agents.row.refused_other": "{{count}} 个密钥被拒绝",
   "agents.state.until": "至 {{when}}",
   "agents.window.used": "已用 {{used}}",
-  "agents.window.near": "它自己说接近上限",
+  "agents.window.warned": "它自己说用量超前于节奏",
   "agents.window.reached": "它自己说已达到上限",
   "agents.window.unknown": "未知",
   "agents.said.resets": "{{when}} 重置",

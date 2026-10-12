@@ -98,12 +98,12 @@ describe('what is said', () => {
       seen,
       windows: [
         { window: 'weekly', used: 0.14, reset: '2026-10-07T10:00:00Z', credits: false, seen },
-        { window: 'session', used: 0.88, reset: '2026-10-03T16:00:00Z', standing: 'near', credits: false, seen },
+        { window: 'session', used: 0.88, reset: '2026-10-03T16:00:00Z', standing: 'warned', credits: false, seen },
       ],
     };
 
     const line = saidLine(said);
-    expect(line).toMatch(/^said 3h ago: near its five-hour limit, by its own word; 88% of its five-hour limit used, resets .+; 14% of its weekly limit used, resets .+$/);
+    expect(line).toMatch(/^said 3h ago: ahead of its pace on its five-hour window, by its own word; 88% of its five-hour limit used, resets .+; 14% of its weekly limit used, resets .+$/);
     expect(saidLine({ seen, windows: [{ window: '90-minute', used: 0.4, reset: '2026-10-03T16:00:00Z', credits: false, seen }] }))
       .toContain('40% of its 90-minute limit used');
     expect(saidLine(null)).toBe('nothing said yet');
@@ -111,6 +111,25 @@ describe('what is said', () => {
       .toBe('said 3h ago: clear, by its own word');
     expect(saidLine({ seen, windows: [{ window: 'weekly', used: 0.5, reset: '2026-10-07T10:00:00Z', credits: true, seen }] }))
       .toContain('drawing on usage credits');
+  });
+
+  /**
+   * USAGEREAD3b (D165 point 2, design §1.3): Claude Code's pace warning is the standing `warned`, said in its own words as the
+   * start's note and the CLI's `saidLine` say it, and never as near its limit; a limit reached still goes before it.
+   */
+  it('says the agent’s pace warning as ahead of its pace, never as near, in either language', async () => {
+    const seen = new Date(Date.now() - 3 * 3_600_000).toISOString();
+    const warned = { seen, windows: [{ window: 'weekly', used: 0.6, reset: '2026-10-07T10:00:00Z', standing: 'warned', credits: false, seen }] };
+
+    expect(saidLine(warned)).toMatch(/^said 3h ago: ahead of its pace on its weekly window, by its own word; 60% of its weekly limit used/);
+    expect(saidLine(warned)).not.toContain('near');
+    const both = { seen, windows: [{ ...warned.windows[0]!, window: 'session', standing: 'refused' }, warned.windows[0]!] };
+    expect(saidLine(both)).toContain('its five-hour limit reached, by its own word');
+    expect(saidLine(both)).not.toContain('ahead of its pace');
+
+    await i18n.changeLanguage('zh');
+    expect(saidLine(warned)).toMatch(/^.+报告：它自己说每周的用量超前于节奏；每周上限已用 60%/);
+    expect(saidLine(warned)).not.toContain('接近');
   });
 
   /** D130 §16.4: with nothing said by any account of the list, the walk needs none of their word, and the screen says so. */

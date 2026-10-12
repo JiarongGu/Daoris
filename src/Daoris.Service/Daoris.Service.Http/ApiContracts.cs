@@ -311,7 +311,12 @@ public sealed record SessionResponse(
     string? Opinion = null,
     // MIXAGENT2a-i (D163 point 2): the session a helper's record answers. This machine's own, like the opinion: answered to it
     // only, and absent for every other session.
-    string? Serves = null);
+    string? Serves = null,
+    // MIXAGENT1a-iii (D163 point 4): the session this one continues, why and who asked, by the driver's codes. This machine's own,
+    // like the opinion: answered to it only, and absent for a session that continues none.
+    string? From = null,
+    string? FromWhy = null,
+    string? FromBy = null);
 // MSG1a: one word waiting on a record — its id, which the record's events say again where the session took it; the
 // words; when; its files' names, never where they are; and whether it was said after the record ended. XAGENT1c: `by`, the
 // second opinion whose findings these are, another agent's claims; absent, the person's words, as every word before it was.
@@ -407,12 +412,14 @@ public sealed record HistoryClearResponse(IReadOnlyList<HistoryClearedResponse> 
 public sealed record AnswerSessionRequest(string? Answer);
 // The tree comes IN from the driver, which is the half that knows: the service has no checkout to
 // look at, exactly as it has no binaries to probe (D46 §7). Unstated resolves to the registered root.
+// MIXAGENT1a-iii: `from`, `fromWhy` and `fromBy` name the session the new one continues, as the driver knows it: a conversation
+// handed over, a quest's session carried on after a hand-over or onto another account after a limit. Absent for any other open.
 public sealed record OpenSessionRequest(
     string Quest, string Adapter, string? HarnessVersion, string? Profile, string? Tree,
-    string? BaseCommit = null);
+    string? BaseCommit = null, string? From = null, string? FromWhy = null, string? FromBy = null);
 public sealed record OpenChatRequest(
     string Repository, string? Adapter, string? HarnessVersion, string? Profile, string? Tree,
-    string? BaseCommit = null);
+    string? BaseCommit = null, string? From = null, string? FromWhy = null, string? FromBy = null);
 // An intake (D65 §1b): the ask it answers and the room it runs in — the driver's, which is the half
 // that is about to run a process there. The circle comes from the ask, never from the caller.
 public sealed record OpenIntakeRequest(

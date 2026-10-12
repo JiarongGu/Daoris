@@ -23,7 +23,7 @@
   "agents.row.refused_other": "{{count}} keys refused",
   "agents.state.until": "until {{when}}",
   "agents.window.used": "{{used}} used",
-  "agents.window.near": "near its limit, by its own word",
+  "agents.window.warned": "ahead of its pace, by its own word",
   "agents.window.reached": "limit reached, by its own word",
   "agents.window.unknown": "unknown",
   "agents.said.resets": "resets {{when}}",

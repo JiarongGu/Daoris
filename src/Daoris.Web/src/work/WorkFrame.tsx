@@ -1273,7 +1273,8 @@ export function WorkFrame({
     : null;
   const headActs = attendedFacts ? offeredActs(attendedFacts, 'header').filter(actions.can) : [];
   // Daoris's offer to hand over (MIXAGENT1b-ii, D163 point 3): on a conversation this page offers the press on, when its own
-  // account is cut or near its limit by its own word and another agent has an account the walk would take. No driver read.
+  // account is cut or near its limit by its scope's near (never the agent's pace warning alone, USAGEREAD3b) and another agent
+  // has an account the walk would take. No driver read.
   const offer = attended && headActs.includes('handOver') && !offerDismissed.has(attended.id)
     ? handOverOffer({
       session: attended,

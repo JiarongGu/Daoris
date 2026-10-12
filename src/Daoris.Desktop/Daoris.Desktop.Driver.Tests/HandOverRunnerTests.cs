@@ -85,4 +85,25 @@ public sealed class HandOverRunnerTests : IDisposable
         Assert.Equal(HandOver.SameAgent, (await HandAsync(runner, "c0nv0001", "talk")).Why);
         Assert.Empty(new HandOverBox(_home).Pending());
     }
+
+    /// <summary>
+    /// 🔴 MIXAGENT1a-iii (D163 point 4): a conversation started to go on from another opens its record naming that one, why and who
+    /// asked, read back as the record answers it; one started plainly names none. Nothing is spawned: the stand-in adapter refuses
+    /// to prepare, after the record is open, so each record ends failed.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_started_from_another_opens_its_record_naming_it()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        using var runner = Runner(ledger);
+        using var client = ledger.Client();
+
+        await runner.StartAsync("engine", "other", DriverConfig.Empty, tree: _root, from: new ContinuedFrom("c0nv0001", HandOverWhy.Near, HandOverBy.Daoris));
+        await runner.StartAsync("engine", "other", DriverConfig.Empty, tree: _root);
+
+        var handed = (await client.RecordAsync("c1"))!;
+        Assert.Equal(("c0nv0001", "near", "daoris"), (handed.From, handed.FromWhy, handed.FromBy));
+        var plain = (await client.RecordAsync("c2"))!;
+        Assert.Equal(((string?)null, (string?)null, (string?)null), (plain.From, plain.FromWhy, plain.FromBy));
+    }
 }

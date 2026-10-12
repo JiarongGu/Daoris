@@ -160,10 +160,14 @@ public sealed partial class ChatRunner : IDisposable
     /// A conversation handed over from another agent runs in the tree the old one ran in (MIXAGENT1a-i, D163 §3): its own folder,
     /// neither grown nor removed here, and refused where it no longer exists. Null opens as before.
     /// </param>
+    /// <param name="from">
+    /// The conversation this one continues, handed over, with why and who asked (MIXAGENT1a-iii): named on the new record as it
+    /// opens. Null for every other conversation.
+    /// </param>
     public async Task<ChatStart> StartAsync(
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded = null, string? profile = null, bool? ownTree = null,
-        CancellationToken ct = default, string? tree = null)
+        CancellationToken ct = default, string? tree = null, ContinuedFrom? from = null)
     {
         // Through the roster's LIVE set, not the one this runner was built with: the driver's tick
         // hands the roster the build's adapters plus whatever the plugins declare (D64), so a harness
@@ -237,7 +241,7 @@ public sealed partial class ChatRunner : IDisposable
             // The tree the conversation runs in (D51) — its own where one was grown, the checkout
             // found above otherwise, stated by the side that is about to spawn into it.
             .OpenChatAsync(
-                repository, resolved.Name, selection.Version, selection.Profile, workTree, before, ct)
+                repository, resolved.Name, selection.Version, selection.Profile, workTree, before, ct, from)
             .ConfigureAwait(false);
         if (sessionId is null)
         {
