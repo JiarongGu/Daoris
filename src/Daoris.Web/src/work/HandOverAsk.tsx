@@ -26,7 +26,7 @@ export type HandOverRoster = {
  * as it opens; with none, it says so and offers only *Close*. A kept ask with no new conversation yet is said in place of the
  * move (`kept`), with only *Close* left, since a second press would ask the same twice.
  */
-export function HandOverAsk({ from, repository, working = false, roster, busy = false, onHandOver, onClose }: {
+export function HandOverAsk({ from, repository, working = false, roster, busy = false, refused = null, onHandOver, onClose }: {
   /** The conversation's own agent, which is not offered. */
   from?: string | null;
   /** Its repository, whose scope orders the accounts. */
@@ -36,6 +36,8 @@ export function HandOverAsk({ from, repository, working = false, roster, busy = 
   roster: HandOverRoster;
   /** A hand-over on its way: the presses wait for it. */
   busy?: boolean;
+  /** A refusal it opens saying, as a story draws one; after that, the refusals are its own act's. */
+  refused?: string | null;
   /** The second press: the agent, its account and the name the ask says it by, told how it ended. */
   onHandOver: (choice: { agent: string; account: string; name: string }, told: HandOverTold) => void;
   /** Put down, or the hand-over landed. */
@@ -63,6 +65,7 @@ export function HandOverAsk({ from, repository, working = false, roster, busy = 
       says={says}
       meanIt={kept || others.length === 0 ? undefined : t('work.act.handOverMeanIt')}
       busy={busy}
+      refused={refused}
       onConfirm={(answered) => onHandOver(
         { agent: choice.adapter, account: choice.profile, name: nameOf(choice.adapter) },
         { ...answered, kept: setKept },
