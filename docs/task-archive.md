@@ -13960,3 +13960,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **USAGEREAD2b — the terminal says where a reading came from** (cli; after 2a). `daoris agent list` prints each reading's source and age (`read 2 min ago` or `said 3 h ago`), both twins' tables in step (`windows.ts`, `WindowsTwinTests`). Design §5.
 
 **Outcome** 2026-10-13: built as the row says: the CLI reads `source` as the driver does, and `saidLine` leads with the newest reading's source and age, a window from the other source naming its own in its clause; the twin table carries the source cell. Detail: D165's USAGEREAD2b note.
+
+## USAGEREAD3b — the page says the pace warning in its own words (2026-10-13, D165)
+
+> - [ ] **USAGEREAD3b — the page says the pace warning in its own words** (web; after 3a). Account rows, the agents list and the use settings show `warned` as the agent's pace warning, not *near its limit*; the hand-over offer's words. Both languages.
+
+**Outcome** 2026-10-13: the Agents page's window cells and the accounts' said line say a `warned` window as *ahead of its pace, by its own word* in both languages, the bar's warning tint kept; `NearBy` loses `word`, and the near pill and the hand-over offer come only from a limit, credits or the number. Detail: D165's USAGEREAD3b note.

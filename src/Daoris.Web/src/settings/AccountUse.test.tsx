@@ -7,7 +7,7 @@ import i18n from '../i18n';
 import type { Answered } from '../work/InlineConfirm';
 import { USE_DEFAULTS } from './accounts';
 import {
-  CHOICES, MACHINE_NEAR, OFFERED_AGAIN, OWN_COOLING, scopeOf, SILENT, SIX, SIX_AGENT, SIX_CHOICES, THREE,
+  AHEAD, CHOICES, MACHINE_NEAR, OFFERED_AGAIN, OWN_COOLING, scopeOf, SILENT, SIX, SIX_AGENT, SIX_CHOICES, THREE,
 } from './accountsFixtures';
 import { AccountFactsLines, OwnSignInLine, type ScopeActs, ScopeEditor, TermsLine, WorkspaceScope } from './AccountUse';
 
@@ -54,6 +54,14 @@ describe('an account\'s facts', () => {
 
     expect(screen.getByText(/2 of Daoris's sessions running · said 3h ago: 88% of its five-hour limit used, resets .+; 14% of its weekly limit used/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: /now$/ })).toBeNull();
+  });
+
+  /** USAGEREAD3b (D165 point 2): the agent's pace warning in its own words, never as near its limit. */
+  it('says its agent’s pace warning as ahead of its pace, never as near', () => {
+    wrap(<AccountFactsLines facts={AHEAD} label="home@example.invalid" onTryNow={() => {}} />);
+
+    const line = screen.getByText(/said 3h ago: ahead of its pace on its weekly window, by its own word; 88% of its five-hour limit used/);
+    expect(line.textContent).not.toContain('near');
   });
 
   /** Absent is never zero (D57): a count Daoris could not read is said not at all. */
@@ -156,6 +164,16 @@ describe('a scope\'s list', () => {
     expect(rows[0]!.textContent).toContain('cooling');
     expect(rows[1]!.textContent).toContain('near its limit');
     expect(rows[2]!.textContent).toContain('kept for conversations');
+  });
+
+  /** USAGEREAD3b: near is the scope's own (a limit, credits or the number), so a pace warning alone wears no near pill. */
+  it('marks no account near for its agent’s pace warning alone', () => {
+    const agent = { ...THREE, accounts: THREE.accounts.map((account) => (account.name === 'account-3' ? { ...AHEAD, name: 'account-3' } : account)) };
+    wrap(<ScopeEditor agent={agent} product="Claude Code" scope={MACHINE_NEAR} accounts={CHOICES} acts={acts()} />);
+
+    const rows = within(screen.getByRole('list')).getAllByRole('listitem');
+    expect(rows[1]!.textContent).toContain('near its limit');
+    expect(rows[2]!.textContent).not.toContain('near');
   });
 
   /** A scope with no list has no settings: it says where its starts run, and the first Use gives it a list. */

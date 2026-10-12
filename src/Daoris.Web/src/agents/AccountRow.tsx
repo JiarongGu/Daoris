@@ -7,7 +7,8 @@ import { type AccountState, type AccountUsage, readLine, stateWhen, stateWord, t
  * A window's share of its own allowance, drawn (ACCTUX4): thin and square-ended on a track that shows the whole allowance, as
  * wide as the share and never wider, with no minimum, so 1% stays 1% and is not a blob (the second opinion's mock-ups); a
  * share past the allowance fills the track, and the words beside it say the share as it was said. The warning hue only where
- * its agent said the window is near or reached. For the eye alone: a reader hears the share in words.
+ * its agent said the window is reached or ahead of its pace, a warning still though never near (USAGEREAD3b). For the eye
+ * alone: a reader hears the share in words.
  */
 function Allowance({ used, warned }: { used: number; warned: boolean }) {
   return (

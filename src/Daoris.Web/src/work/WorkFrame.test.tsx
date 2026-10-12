@@ -2845,7 +2845,7 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
-   * MIXAGENT1b-ii (D163 point 3): when the conversation's own account is near its limit by its own word, a line under the head
+   * MIXAGENT1b-ii (D163 point 3): when the conversation's own account is near its limit by its scope's near, a line under the head
    * offers *Go on with codex (team)* and *Choose…*; the press asks `SESSION_HAND_OVER` with the reason `near` as Daoris's, *Choose…*
    * opens the ask with that choice made, and *Not now* puts it down for the run. Nothing is taken without the press.
    */
@@ -2864,7 +2864,7 @@ describe('a session’s page header and its acts', () => {
     agents: [
       {
         agent: 'claude-code', speaks: true, own: {}, accounts: [{ name: 'personal', ...(cooling ? { cooling } : {}) }],
-        scopes: [scopeOf({ near: [{ account: 'personal', window: 'session', by: 'word' }] })],
+        scopes: [scopeOf({ near: [{ account: 'personal', window: 'session', by: 'number' }] })],
       },
       { agent: 'codex', speaks: true, own: {}, accounts: [{ name: 'team' }], scopes: [scopeOf({ next: { account: 'team', reason: 'onlyReady', others: [] } })] },
     ],

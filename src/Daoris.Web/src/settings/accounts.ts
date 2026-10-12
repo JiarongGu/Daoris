@@ -26,7 +26,10 @@ export type WindowSaid = {
   /** How much of it is used, from 0 to 1; null where the agent gave no number. */
   used?: number | null;
   reset: string;
-  /** `clear`, `near` or `refused`, by the agent's own word, on the window its frame named; else null. */
+  /**
+   * `clear`, `warned` or `refused`, by the agent's own word, on the window its frame named; else null. `warned` is Claude Code's
+   * pace warning, said as *ahead of its pace* and never as near (USAGEREAD3b, D165 point 2).
+   */
   standing?: string | null;
   /** Whether it said the request drew on usage credits. */
   credits: boolean;
@@ -83,8 +86,11 @@ export type NextStart = {
 /** How one scope's list is used (D130 §16.6). */
 export type ScopeUse = { use: 'goal' | 'order'; keep?: string | null; early: boolean; near: number };
 
-/** Why an account of a list is near its limit (D130 §6 as TOOL6c reads it). */
-export type NearBy = 'refused' | 'word' | 'credits' | 'number';
+/**
+ * Why an account of a list is near its limit (D130 §6 as TOOL6c reads it): a limit reached, usage credits, or its number at or
+ * over the scope's near. The agent's pace warning is none of them (USAGEREAD3a, D165 point 2).
+ */
+export type NearBy = 'refused' | 'credits' | 'number';
 
 /** A scope (D130 §2 rule 1): the machine's, or one workspace that names a default or a list of its own. */
 export type AccountScope = {
@@ -101,7 +107,7 @@ export type AccountScope = {
   unknown: string[];
   /** A file edited by hand that breaks the rule, read with the list winning (D130 §3.1); null where none. */
   problem?: { kind: 'default' | 'keep' | 'alone'; account: string } | null;
-  /** The accounts of its list near their limit by its own `near` (D130 §6): by the agent's word, credits or a number. */
+  /** The accounts of its list near their limit by its own `near` (D130 §6): a limit reached, credits or a number. */
   near: { account: string; window: string; by: NearBy }[];
   /** Which account its next start would take, and why (TOOL6e); absent from a shell older than that. */
   next?: NextStart | null;
@@ -245,13 +251,14 @@ export function orderedWindows(windows: readonly WindowSaid[]): WindowSaid[] {
 /**
  * What an account's agent last said, as its row says it (TOOL6c, D130 §5.2): how long ago, its own word where it gave one,
  * credits, and each window's use and reset. The CLI's `saidLine` says the same in the terminal's words. Nothing said is
- * said so, and is neither spent nor fresh (D57).
+ * said so, and is neither spent nor fresh (D57). Its pace warning is *ahead of its pace*, as the start's note says it, and
+ * never near its limit (USAGEREAD3b).
  */
 export function saidLine(said: AccountSaid | null | undefined): string {
   if (!said || said.windows.length === 0) return i18n.t('harness.said.nothing');
   const parts: string[] = [];
   const reached = said.windows.find((each) => each.standing === 'refused');
-  const warned = said.windows.find((each) => each.standing === 'near');
+  const warned = said.windows.find((each) => each.standing === 'warned');
   if (reached) parts.push(i18n.t('harness.said.reached', { window: windowName(reached.window) }));
   else if (warned) parts.push(i18n.t('harness.said.warned', { window: windowName(warned.window) }));
   if (said.windows.some((each) => each.credits)) parts.push(i18n.t('harness.said.credits'));

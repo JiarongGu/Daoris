@@ -19,8 +19,8 @@ with the version and date at release.
   than on what Daoris's last session there said hours before.
 - Claude Code's own pace warning, which says an account's use is ahead of the time gone in its window, no longer makes a start
   pass that account as near its limit: an account is passed when its limit is reached, when it draws on usage credits, or when
-  a window's use is at or over *near*. A conversation's first line and `daoris agent list` say the warning in its own words,
-  *ahead of its pace*.
+  a window's use is at or over *near*. A conversation's first line, an account's row on the Agents page and `daoris agent list`
+  say the warning in its own words, *ahead of its pace*, in both languages.
 - The offer to go on with another agent names another tool on an account with room, never the same tool through its other door
   or an account that is near its limit, refused or cooling; *Choose…* lists those tools first.
 - When every account is near its limit, a start takes the one with the most room first, so it no longer stays on one at 99%

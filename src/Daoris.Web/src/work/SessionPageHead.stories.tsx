@@ -324,7 +324,10 @@ const offerLine = (offer: Parameters<typeof HandOverOfferLine>[0]['offer'], agen
 const NEAR: Parameters<typeof HandOverOfferLine>[0]['offer'] = { why: 'near', until: null, agent: 'codex', account: 'team' };
 const CUT: Parameters<typeof HandOverOfferLine>[0]['offer'] = { why: 'limit', until: '2026-10-12T21:30:00Z', agent: 'codex', account: 'team' };
 
-/** The account is near its limit by its own word: why, *Go on with Codex (team)*, *Choose…* and *Not now*. */
+/**
+ * The account is near its limit by its scope's near (a limit, credits or its number; never the agent's pace warning alone,
+ * USAGEREAD3b): why, *Go on with Codex (team)*, *Choose…* and *Not now*.
+ */
 export const HandOverOfferNear: Story = {
   args: { ...OFFER_HEAD, acts: [...OFFER_HEAD.acts], asking: offerLine(NEAR) },
   decorators: [at(596)],

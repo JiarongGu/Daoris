@@ -4,7 +4,7 @@ import { chinese } from '../storyLanguage';
 import type { AgentActs } from './AgentPage';
 import { AgentMainNotice, AgentPage } from './AgentPage';
 import {
-  CLAUDE_TOOL, CLAUDE_USE, CODEX_OWN_TOOL, CODEX_OWN_USE, CODEX_READ_TOOL, CODEX_READ_USE, CODEX_TOOL, CODEX_USE, DSH_TOOL,
+  AHEAD_USE, CLAUDE_TOOL, CLAUDE_USE, CODEX_OWN_TOOL, CODEX_OWN_USE, CODEX_READ_TOOL, CODEX_READ_USE, CODEX_TOOL, CODEX_USE, DSH_TOOL,
   INSTALL_TOOL, INSTALL_USE, INSTALL_WORKSPACES, READ, READINGS_TOOL, READINGS_USE, RULES, USAGE, WORKSPACES,
 } from './agentsFixtures';
 
@@ -13,7 +13,9 @@ import {
 // row per state with its one act; the add flow's last step; *Read again* on its way; a proposal waiting, which opens *What
 // it may do*; an agent with one account and no settings Daoris knows; Codex's own sign-in with its windows read (CODEXUSE3);
 // Codex's accounts read, in the same window cells as Claude Code's (ACCTUX4), at each width and in 中文; one not installed; an API key; what each row knows (ACCTUX1), in both themes; the same read without a pointer (ACCTUX2), each
-// row's explanation opened, at 680 px and the main area's 400 px floor in both themes; a key added asking its name and lists,
+// row's explanation opened, at 680 px and the main area's 400 px floor in both themes; Claude Code's pace warning on the
+// account the next start takes, said as *ahead of its pace* and never near (USAGEREAD3b), in both themes and in 中文; a key
+// added asking its name and lists,
 // and a key refused in its field (ACCTUX3), at the same widths; and the main area with no page. Each at
 // the main area's two widths: the frame's 52rem, and the 680 px window's main area, where rows stack. Above the accounts,
 // this machine's next start (ACCTUX4b): a wait in `ThreeAccounts`, the list's first taken in `Readings`, and the list's
@@ -162,6 +164,18 @@ export const ReadingsNarrowDark: Story = {
 
 /** The same in 中文. */
 export const ReadingsChinese: Story = { args: Readings.args, decorators: [chinese] };
+
+/**
+ * Claude Code's pace warning (USAGEREAD3b, D165 point 2): the account the next start takes says its week is ahead of its pace
+ * at 60%, in the agent's own words and the warning's hue, never *near its limit*, and the next start still takes it.
+ */
+export const AheadOfPace: Story = { args: { tool: READINGS_TOOL, use: AHEAD_USE, workspaces: ['work'], usage: [] } };
+
+/** The same in dark. */
+export const AheadOfPaceDark: Story = { args: AheadOfPace.args, decorators: [dark] };
+
+/** The same in 中文. */
+export const AheadOfPaceChinese: Story = { args: AheadOfPace.args, decorators: [chinese] };
 
 const narrow: Decorator = (Story) => <div className="w-[37rem] max-w-full"><Story /></div>;
 /** The main area's floor, 400 px beside an open list and side bar (UXFIX2c). */
