@@ -197,14 +197,15 @@ public sealed partial class HelpCoverageTests
         + "proposes none; it can name `daoris-driver sessions start-from` and the screen's press.");
 
     /// <summary>
-    /// MIXAGENT1a-i's <c>daoris-driver sessions hand-over</c> (D163, D50), a verb of the headless host: exempt, since it ends the
-    /// person's conversation to go on with another agent's, an exchange of their agent and their allowance that stays theirs. The
-    /// page's press is MIXAGENT1b's row.
+    /// MIXAGENT1a-i's <c>daoris-driver sessions hand-over</c> (D163, D50), a verb of the headless host, and MIXAGENT1b-i's page press
+    /// (<c>useHandOver</c>, *Go on with another agent…*): exempt, since it ends the person's conversation to go on with another
+    /// agent's, an exchange of their agent and their allowance that stays theirs. Daoris's own offer when an account is near or cut
+    /// is MIXAGENT1b-ii's row.
     /// </summary>
     private static readonly Exempt HandOverDoor = new(
         "handing a conversation to another agent ends it and goes on with an agent and an account the person did not choose it on "
         + "(D163), a choice that stays the person's (D133 §1), so Ask Daoris proposes none; it can name "
-        + "`daoris-driver sessions hand-over` and the screen's press once the page has it.");
+        + "`daoris-driver sessions hand-over` and the page's *Go on with another agent…* (its head's ⋯, which asks under the head).");
 
     /// <summary>
     /// MIXAGENT2a-ii's <c>daoris-driver sessions helper</c> (D163 point 2), a verb of the headless host: exempt, since it is the
@@ -505,6 +506,7 @@ public sealed partial class HelpCoverageTests
         ("work", "useDeleteSession", null, SessionDeleteDoor),
         ("work", "useGoOnNew", null, GoOnNewDoor),
         ("work", "useStartFrom", null, StartFromDoor),
+        ("work", "useHandOver", null, HandOverDoor),
         ("work", "useDiscardSessionTree", null, new Exempt(
             "it discards a session's tree and its work for good, a discard, which stays the person's own press (D89), as the "
             + "clean-up and a failed attempt's branch do.")),

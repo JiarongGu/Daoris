@@ -1,11 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import type { Session } from '../api';
 import {
-  retryNotice, stopNotice, useArchiveSessions, useDeleteSession, useOpenSessionFolder, useOpenWindow, useResolveSession,
-  useRetryQuest, useStopSession,
+  retryNotice, stopNotice, useArchiveSessions, useCancelTurn, useDeleteSession, useHandOver, useOpenSessionFolder, useOpenWindow,
+  useResolveSession, useRetryQuest, useStopSession,
 } from '../shell';
 import { list, sentence } from '../format';
-import { failure, type Notify } from '../ui';
+import { failure, type Notify, SESSION_ACTIVE } from '../ui';
+import { handOverSaid } from './say';
 import { type ActFacts, folderOf, type SessionActId, workTargetOf } from './acts';
 import { forgetDraft } from './drafts';
 import type { Answered } from './InlineConfirm';
@@ -30,10 +31,17 @@ export type SessionDoors = {
   delete?: (id: string) => void;
   /** Attend it, then open its pause's ask under its page header (*Pause quest…*, *Pause ask…*, PAUSE1e, D132 §2.6). */
   pause?: (id: string, target: WorkTarget) => void;
+  /** Attend it, then open its hand-over's ask under its page header (*Go on with another agent…*, MIXAGENT1b-i, D163). */
+  handOver?: (id: string) => void;
+  /** Attend the conversation a hand-over opened (not an act: the ask's answer, MIXAGENT1b-i). */
+  attend?: (id: string) => void;
 };
 
+/** What a hand-over's ask tells back: how it ended, and that it was kept for the conversation's turn to end (MIXAGENT1b-i). */
+export type HandOverTold = Answered & { kept: (sentence: string) => void };
+
 /** The acts the frame carries out: a door that has no frame to hand them (the monitor) offers none of them. */
-const FRAME_ACTS = new Set<SessionActId>(['answer', 'stop', 'review', 'terminal', 'delete', 'pauseQuest', 'pauseAsk']);
+const FRAME_ACTS = new Set<SessionActId>(['answer', 'stop', 'handOver', 'review', 'terminal', 'delete', 'pauseQuest', 'pauseAsk']);
 
 /** Which of the frame's doors an act goes through. */
 const DOOR_OF: Partial<Record<SessionActId, keyof SessionDoors>> = { pauseQuest: 'pause', pauseAsk: 'pause' };
@@ -66,6 +74,9 @@ const keptSaid = (t: Translate, name: string) =>
  * - **The stop's second press** (§3.3): a session waiting on you through `RESOLVE_SESSION`'s `stopped`, as its card's stop
  *   was, since that route lets a parked process go before the record ends; every other through `STOP_SESSION`, whose
  *   three answers are said as `stopNotice` says them.
+ * - **The hand-over's second press** (MIXAGENT1b-i, D163) through `SESSION_HAND_OVER` with the reason `press`, then, for a
+ *   conversation that works, `CANCEL_TURN`, so the turn's end takes the kept ask; *Go on with another agent…* itself is the
+ *   frame's, which asks once under the header.
  * - **The delete's second press** (SESSUX1f, §5.4) through `SESSION_DELETE`; *Delete…* itself is the frame's, which asks
  *   once under the header.
  * - **Pause quest…** and **Pause ask…** are the frame's (PAUSE1e, D132 §2.6), which asks once under the header where the
@@ -81,6 +92,8 @@ export function useSessionActs({ notify, doors = {} }: { notify: Notify; doors?:
   const stop = useStopSession();
   const resolve = useResolveSession();
   const remove = useDeleteSession();
+  const handOver = useHandOver();
+  const cancelTurn = useCancelTurn();
   const work = useWorkActs({ notify });
 
   /** Whether this door can carry an act out: the frame's acts only where the frame handed its door. */
@@ -99,6 +112,7 @@ export function useSessionActs({ notify, doors = {} }: { notify: Notify; doors?:
     switch (act) {
       case 'answer':
       case 'stop':
+      case 'handOver':
       case 'review':
       case 'delete':
         doors[act]?.(session.id);
@@ -172,6 +186,42 @@ export function useSessionActs({ notify, doors = {} }: { notify: Notify; doors?:
   };
 
   /**
+   * *Go on with another agent…*'s second press (MIXAGENT1b-i, D163), told back to its ask. A conversation that is not talking
+   * goes on at once: the ask closes and the new conversation is attended (`attend`; an unbriefed one is said as an answer, since
+   * it opened all the same). One that is talking keeps the ask for its turn's end, and then, *Stop and hand over…*, the turn is
+   * stopped here, so its end takes it; the ask says where it goes on. A refusal is said inside the ask by its code and keeps the
+   * choice (UX5 U68); a refused hand-over stops nothing. Daoris's offer (MIXAGENT1b-ii) passes its reason: `near` or `limit`.
+   */
+  const handOverNow = (
+    session: Session, choice: { agent: string; account: string; name: string }, told: HandOverTold, why?: 'near' | 'limit',
+  ) => handOver.mutate(
+    { session: session.id, agent: choice.agent, account: choice.account || null, why },
+    {
+      onSuccess: (answer) => {
+        const said = answer.why ? handOverSaid(t, answer.why, { quest: session.quest, message: answer.message }) : null;
+        if (answer.sessionId) {
+          if (answer.why === 'unbriefed' && said) notify(said);
+          told.done();
+          doors.attend?.(answer.sessionId);
+          return;
+        }
+        if (!answer.kept) {
+          told.refused(said ?? answer.message);
+          return;
+        }
+        // Kept for the turn's end: while it works, stop the turn, so that its end takes the ask.
+        const keptSaid = t('work.handOver.kept', { agent: choice.name });
+        if (!SESSION_ACTIVE.has(session.state)) {
+          told.kept(keptSaid);
+          return;
+        }
+        cancelTurn.mutate(session.id, { onSuccess: () => told.kept(keptSaid), onError: refusedIn(told) });
+      },
+      onError: refusedIn(told),
+    },
+  );
+
+  /**
    * *Delete…*'s second press (SESSUX1f, D126 §5.4), told back to its ask: `done` once the host deleted it, when the record
    * and what this machine kept of it go, and so does the draft this viewer kept for it (§5.1). A refusal is said in the
    * catalogue's words inside the ask (UXFIX2), and the ask stays, since nothing went.
@@ -209,10 +259,13 @@ export function useSessionActs({ notify, doors = {} }: { notify: Notify; doors?:
     can,
     run,
     stopNow,
+    handOverNow,
     deleteNow,
     archiveListed,
     /** A stop on its way. */
     stopping: stop.isPending || resolve.isPending,
+    /** A hand-over on its way (with the turn's stop it asks after): its ask's presses wait for it. */
+    handingOver: handOver.isPending || cancelTurn.isPending,
     /** A delete on its way: its ask's presses wait for it. */
     deleting: remove.isPending,
     /** The work's one owner, whose pause the frame's ask presses (PAUSE1e). */

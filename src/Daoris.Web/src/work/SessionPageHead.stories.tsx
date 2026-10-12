@@ -4,6 +4,8 @@ import i18n from '../i18n';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../storyLanguage';
 import type { Session } from '../api';
+import { HandOverAsk, type HandOverRoster } from './HandOverAsk';
+import { HandOverOfferLine } from './HandOverOfferLine';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { ViewMain } from './ViewMain';
 import { PauseAsk } from './WorkAsks';
@@ -228,6 +230,127 @@ export const OneLineChinese: Story = {
     title: '修复同步外观中的流式水合预算，让很长的请求也不会把页头撑成第二行，并保持按钮不动',
     facts: ['engine', '12 分钟', '第 4 次尝试：之前 3 次失败'],
   },
+  decorators: [at(596), chinese],
+};
+
+// ——— *Go on with another agent…* (MIXAGENT1b-i, D163): the hand-over's ask under the head of a conversation, idle and working,
+// and a refusal said in it; each at 680 px of window, in English and 中文.
+
+const ROSTER: HandOverRoster = {
+  harnesses: ['claude-code', 'codex', 'gemini'],
+  names: { 'claude-code': 'Claude Code', codex: 'Codex', gemini: 'Gemini' },
+  accounts: {
+    'claude-code': [{ name: 'personal', login: 'in' }],
+    codex: [{ name: 'team', login: 'in', account: 'team@example.com' }, { name: 'spare', login: 'in' }],
+    gemini: [],
+  },
+};
+
+const A_CONVERSATION: Session = { ...SESSION, quest: null, kind: 'chat', state: 'completed', repository: 'engine' };
+
+/** An idle conversation: the ask says what carries over, with the agent chip on the first other agent, *Hand over* and *Never mind*. */
+export const HandOverAskingIdle: Story = {
+  args: {
+    session: A_CONVERSATION, title: 'Cap the hydration per frame', shown: 'completed',
+    acts: ['handOver', 'openFolder', 'terminal', 'detach', 'archive', 'delete', 'copy'],
+    asking: <HandOverAsk from="claude-code" repository="engine" roster={ROSTER} onHandOver={() => {}} onClose={() => {}} />,
+  },
+  decorators: [at(596)],
+};
+
+/** While it works: *Stop…* stays the head's danger button, *Stop and hand over…* is in the ⋯, and the ask says its turn is stopped. */
+export const HandOverAskingWhileItWorks: Story = {
+  args: {
+    session: { ...A_CONVERSATION, state: 'working' }, title: 'Cap the hydration per frame', shown: 'working',
+    acts: ['stop', 'handOver', 'openFolder', 'terminal', 'detach', 'copy'],
+    asking: <HandOverAsk from="claude-code" repository="engine" working roster={ROSTER} onHandOver={() => {}} onClose={() => {}} />,
+  },
+  decorators: [at(596)],
+};
+
+/** A refusal said in the ask, whole, with the choice kept (UX5 U68). */
+export const HandOverRefused: Story = {
+  args: {
+    ...HandOverAskingIdle.args,
+    asking: (
+      <HandOverAsk
+        from="claude-code" repository="engine" roster={ROSTER} onHandOver={() => {}} onClose={() => {}}
+        refused={i18n.t('work.handOver.refused.treeGone')}
+      />
+    ),
+  },
+  decorators: [at(596)],
+};
+
+/** The idle ask in 中文, at 680 px. */
+export const HandOverAskingChinese: Story = {
+  args: { ...HandOverAskingIdle.args, title: '限制每帧的水合工作量' },
+  decorators: [at(596), chinese],
+};
+
+/** The working ask in 中文, at 680 px. */
+export const HandOverAskingWhileItWorksChinese: Story = {
+  args: { ...HandOverAskingWhileItWorks.args, title: '限制每帧的水合工作量' },
+  decorators: [at(596), chinese],
+};
+
+/** The refusal in 中文, at 680 px. */
+export const HandOverRefusedChinese: Story = {
+  args: {
+    ...HandOverRefused.args,
+    title: '限制每帧的水合工作量',
+    asking: (
+      <HandOverAsk
+        from="claude-code" repository="engine" roster={ROSTER} onHandOver={() => {}} onClose={() => {}}
+        refused={i18n.t('work.handOver.refused.treeGone', { lng: 'zh' })}
+      />
+    ),
+  },
+  decorators: [at(596), chinese],
+};
+
+// ——— Daoris's offer to hand over (MIXAGENT1b-ii, D163): the line under the head where nothing else is asked, near the limit and
+// cut, a longer agent and account name, and each in 中文; every one at 680 px of window.
+
+const OFFER_HEAD = {
+  session: A_CONVERSATION, title: 'Cap the hydration per frame', shown: 'completed' as const,
+  acts: ['handOver', 'openFolder', 'terminal', 'detach', 'archive', 'delete', 'copy'] as const,
+};
+const offerLine = (offer: Parameters<typeof HandOverOfferLine>[0]['offer'], agentName = 'Codex', accountName: string | null = 'team') => (
+  <HandOverOfferLine
+    offer={offer} agentName={agentName} accountName={accountName} onGoOn={() => {}} onChoose={() => {}} onDismiss={() => {}}
+  />
+);
+const NEAR: Parameters<typeof HandOverOfferLine>[0]['offer'] = { why: 'near', until: null, agent: 'codex', account: 'team' };
+const CUT: Parameters<typeof HandOverOfferLine>[0]['offer'] = { why: 'limit', until: '2026-10-12T21:30:00Z', agent: 'codex', account: 'team' };
+
+/** The account is near its limit by its own word: why, *Go on with Codex (team)*, *Choose…* and *Not now*. */
+export const HandOverOfferNear: Story = {
+  args: { ...OFFER_HEAD, acts: [...OFFER_HEAD.acts], asking: offerLine(NEAR) },
+  decorators: [at(596)],
+};
+
+/** The account is cut: it says until when it is offered again. */
+export const HandOverOfferCut: Story = {
+  args: { ...HandOverOfferNear.args, asking: offerLine(CUT) },
+  decorators: [at(596)],
+};
+
+/** Long names wrap inside the line and keep every press. */
+export const HandOverOfferLongNames: Story = {
+  args: { ...HandOverOfferNear.args, asking: offerLine(NEAR, 'Gemini CLI for the engine team', 'team-engineering@example.com') },
+  decorators: [at(596)],
+};
+
+/** Near, in 中文. */
+export const HandOverOfferNearChinese: Story = {
+  args: { ...HandOverOfferNear.args, title: '限制每帧的水合工作量' },
+  decorators: [at(596), chinese],
+};
+
+/** Cut, in 中文. */
+export const HandOverOfferCutChinese: Story = {
+  args: { ...HandOverOfferCut.args, title: '限制每帧的水合工作量' },
   decorators: [at(596), chinese],
 };
 

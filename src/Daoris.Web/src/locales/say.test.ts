@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { NEVER, NEW_SESSION_REFUSED, START_FROM } from '../work/say';
+import { HAND_OVER, NEVER, NEW_SESSION_REFUSED, START_FROM } from '../work/say';
 import { en, zh } from '.';
 
 /**
@@ -35,12 +35,15 @@ const PAGE_OWN: Record<string, string[]> = {
   never: ['opinion'],
   startFrom: [],
   newSession: [],
+  handOver: [],
 };
 
 const tables = [
   { name: 'NEVER', table: NEVER, file: 'SessionSay.cs', className: 'WordsNever', own: PAGE_OWN.never },
   { name: 'START_FROM', table: START_FROM, file: 'ChatRunner.StartFrom.cs', className: 'StartFrom', own: PAGE_OWN.startFrom },
   { name: 'NEW_SESSION_REFUSED', table: NEW_SESSION_REFUSED, file: 'GoOnNew.cs', className: 'GoOnNew', own: PAGE_OWN.newSession },
+  // MIXAGENT1b-i: the hand-over's own codes; what never goes on is `NEVER`'s, said through `neverSentence`.
+  { name: 'HAND_OVER', table: HAND_OVER, file: 'HandOver.cs', className: 'HandOver', own: PAGE_OWN.handOver },
 ];
 
 describe('the refusal codes the driver declares, held to the page’s tables', () => {
@@ -49,6 +52,9 @@ describe('the refusal codes the driver declares, held to the page’s tables', (
     expect(codesOf('GoOnNew.cs', 'GoOnNew').sort()).toEqual(['closed', 'conversation', 'no-words', 'not-cooling', 'running']);
     expect(codesOf('SessionSay.cs', 'WordsNever').sort()).toEqual(['help', 'intake', 'not-found', 'stood-down', 'superseded', 'teammate']);
     expect(codesOf('ChatRunner.StartFrom.cs', 'StartFrom').sort()).toEqual(['carried', 'no-words', 'running']);
+    expect(codesOf('HandOver.cs', 'HandOver').sort()).toEqual([
+      'not-conversation', 'not-its-account', 'running', 'same-agent', 'tree-gone', 'unbriefed', 'unknown-agent', 'waiting',
+    ]);
   });
 
   it.each(tables)('holds $name to exactly the driver’s $className codes, bar the page’s own', ({ table, file, className, own }) => {

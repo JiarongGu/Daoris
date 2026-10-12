@@ -108,6 +108,30 @@ public sealed partial class DriverModule
         return new { started.SessionId, started.Sent, started.Why, started.Message };
     }
 
+    // *Go on with another agent…* (MIXAGENT1b-i, D163): a conversation of this machine handed to another agent, from its page.
+    // The chat runner judges and keeps the ask: taken at once for a conversation that is not talking, kept for its turn's end
+    // for one that is (the page's *Stop and hand over…* asks this first, then stops the turn). `{ sessionId, kept, why, message }`;
+    // a refusal is the answer by its code, never thrown. The reason is `press` unless named; `near` and `limit` are Daoris's own
+    // offer's (MIXAGENT1b-ii), taken from the person's press on the offer, so only with them is `askedBy` `daoris` honoured.
+    public static string HandOverAskedBy(string why, string? askedBy) =>
+        askedBy == HandOverBy.Daoris && why is HandOverWhy.Near or HandOverWhy.Limit ? HandOverBy.Daoris : HandOverBy.Person;
+
+    [DriverRoute("SESSION_HAND_OVER")]
+    private async Task<object?> SessionHandOverAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var agent = PayloadHelper.GetRequiredValue<string>(request.Payload, "agent");
+        var why = Optional(request, "why") ?? HandOverWhy.Press;
+        var chat = _loop.Chat ?? throw NotReady();
+        var config = DriverConfig.Load(_loop.ConfigPath);
+        var handed = await chat.HandOverAsync(
+                id, agent, Optional(request, "account"), why, HandOverAskedBy(why, Optional(request, "askedBy")), config,
+                onEnded: (session, state) => DriverLoop.Ended(_events, session, state), cancellationToken)
+            .ConfigureAwait(false);
+        _loop.Nudge();
+        return new { handed.SessionId, handed.Kept, handed.Why, handed.Message };
+    }
+
     // A go-ahead a parked session asked, answered on the session's own page (KNOWUSE1a2, D135 §2), by the rule the ask's
     // door keeps (GOAHEAD2b): through that door with `goesOn`, so the service answers the park only where none of the
     // go-aheads the session asked is still open, and the resumed conversation is handed every answer. The person's words

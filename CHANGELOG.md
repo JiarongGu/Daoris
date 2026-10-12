@@ -11,6 +11,14 @@ with the version and date at release.
   words. Your `helpers` rule says whether an agent's ask waits for your yes, starts at once or is off; at most two helpers work
   for a session at once, and each takes a place under the session cap. The session's notes say, in both languages, which agent
   was asked, that it answered (or why it did not), and what a helper is helping.
+- When a conversation's account runs low, Daoris offers to go on with another agent: a line under its head, where the account
+  is near its limit by its own word or cut, with *Go on with {agent} ({account})* and *Choose…*. It is never taken without your
+  press.
+
+- A conversation can go on with another agent from its page: *Go on with another agent…* in its head's ⋯ (*Stop and hand
+  over…* while it works) asks which agent and account, then it goes on in a new conversation there, which the page opens; the
+  old conversation's last line presses through to it.
+
 - A conversation can go on with another agent from the terminal (`daoris-driver sessions hand-over <id> --agent <adapter>
   [--account <name>]`), as when its account's allowance runs low: it ends, and a new conversation starts in the same tree on
   the agent you name, told what Daoris kept of it (your request, its last plan and words, what is uncommitted); both say

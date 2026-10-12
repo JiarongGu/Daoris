@@ -120,6 +120,33 @@ export function startFromRefusal(t: Translate, code: string, { quest }: { quest?
 }
 
 /**
+ * The sentence for each code *Go on with another agent…* answers by that is not a never (MIXAGENT1b-i, D163), by its key.
+ * `unbriefed` is an answer rather than a refusal: the conversation opened, its briefing did not reach it.
+ */
+export const HAND_OVER: Record<string, string> = {
+  'not-conversation': 'work.handOver.refused.notConversation',
+  'unknown-agent': 'work.handOver.refused.unknownAgent',
+  'not-its-account': 'work.handOver.refused.notItsAccount',
+  'same-agent': 'work.handOver.refused.sameAgent',
+  'running': 'work.handOver.refused.running',
+  'waiting': 'work.handOver.refused.waiting',
+  'tree-gone': 'work.handOver.refused.treeGone',
+  'unbriefed': 'work.handOver.unbriefed',
+};
+
+/**
+ * Why a hand-over was refused, or what it came to where it went on with a word to say, in the page's own words: its own codes,
+ * then what never goes on, as the box says it. A code a newer driver answers is said in the driver's own sentence.
+ */
+export function handOverSaid(
+  t: Translate, code: string, { quest, message }: { quest?: string | null; message?: string },
+): string {
+  const key = HAND_OVER[code];
+  if (key) return t(key);
+  return code in NEVER || !message ? neverSentence(t, code, { quest }) : message;
+}
+
+/**
  * When the account a session's words wait for cools until (MSG1g2, D137 §2.2): MSG1g asks a resume for the account its record
  * ran on, so where that account cools the words wait for its reset. Read from the facts `ACCOUNTS` answers: by the agent that
  * owns the door's accounts (AGT7), the tool's own sign-in where the record names no account, and only while it has not

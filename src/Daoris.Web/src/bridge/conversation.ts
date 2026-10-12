@@ -529,6 +529,46 @@ export const useStartFrom = () => {
 };
 
 /**
+ * What *Go on with another agent…* did (MIXAGENT1b-i, D163): the conversation it opened, where it opened at once; whether the
+ * ask stands (taken now, or kept for the conversation's turn to end); why nothing was done by a code; and the driver's sentence.
+ */
+export type HandedOver = { sessionId: string | null; kept: boolean; why: string | null; message: string };
+
+/** The press's answer read defensively, as `startedOf` reads a start's: an answer that is not one kept nothing. */
+const handedOf = (answer: unknown): HandedOver => {
+  const handed = answer as { sessionId?: unknown; kept?: unknown; why?: unknown; message?: unknown } | null | undefined;
+  return {
+    sessionId: typeof handed?.sessionId === 'string' && handed.sessionId ? handed.sessionId : null,
+    kept: handed?.kept === true,
+    why: typeof handed?.why === 'string' && handed.why ? handed.why : null,
+    message: typeof handed?.message === 'string' ? handed.message : '',
+  };
+};
+
+/**
+ * *Go on with another agent…* (MIXAGENT1b-i, D163): `SESSION_HAND_OVER`, the chat runner's hand-over asked as the person, with
+ * the reason `press`. A conversation that is not talking goes on at once in a new one of its own; one that is talking keeps the
+ * ask for its turn's end. A refusal is the answer, by its code. Daoris's own offer (MIXAGENT1b-ii) names its reason, `near` or
+ * `limit`, and is then asked as Daoris's (`askedBy`), the person's press on the offer; a press sends neither.
+ */
+export const useHandOver = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (over: {
+      session: string; agent: string; account?: string | null; why?: 'near' | 'limit';
+    }): Promise<HandedOver> =>
+      handedOf(await call<unknown>('SESSION_HAND_OVER', {
+        id: over.session, agent: over.agent, ...(over.account ? { account: over.account } : {}),
+        ...(over.why ? { why: over.why, askedBy: 'daoris' } : { why: 'press' }),
+      })),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.allSessions });
+      void client.invalidateQueries({ queryKey: keys.driver });
+    },
+  });
+};
+
+/**
  * Finish a conversation: the harness gets end-of-input, says what it was going to say, and exits.
  * `useStopSession` is the other verb and means something else — the person cut it off.
  */

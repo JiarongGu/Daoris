@@ -514,6 +514,8 @@ export const REACH = Object.freeze([
       // MSG1g3: the page's say twin holds its refusal tables to these codes.
       'src/Daoris.Desktop/Daoris.Desktop.Driver/GoOnNew.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver/SessionSay.cs',
       'src/Daoris.Desktop/Daoris.Desktop.Driver/Continuation.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.StartFrom.cs',
+      // MIXAGENT1b-i: the say twin holds the hand-over's refusal table to its codes.
+      'src/Daoris.Desktop/Daoris.Desktop.Driver/HandOver.cs',
     ],
     gates: [...DRIVER_READERS, 'web'],
     why: "the driver's own, and the page's note, conversation, handed, trace and say vitests parse their declarations (MOD9e, MSG1g3)",
