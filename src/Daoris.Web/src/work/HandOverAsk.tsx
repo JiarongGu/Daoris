@@ -26,9 +26,11 @@ export type HandOverRoster = {
  * as it opens; with none, it says so and offers only *Close*. A kept ask with no new conversation yet is said in place of the
  * move (`kept`), with only *Close* left, since a second press would ask the same twice.
  */
-export function HandOverAsk({ from, repository, working = false, roster, initial, busy = false, refused = null, onHandOver, onClose }: {
+export function HandOverAsk({ from, first, repository, working = false, roster, initial, busy = false, refused = null, onHandOver, onClose }: {
   /** The conversation's own agent, which is not offered. */
   from?: string | null;
+  /** The harnesses of other tools, listed first (the offer's candidates); the rest follow in the roster's order. */
+  first?: readonly string[];
   /** Its repository, whose scope orders the accounts. */
   repository?: string | null;
   /** It works: the move stops its turn. */
@@ -46,7 +48,9 @@ export function HandOverAsk({ from, repository, working = false, roster, initial
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const others = roster.harnesses.filter((harness) => harness !== from);
+  // The offer's candidates (other tools) lead, and the rest stay a choice: only Daoris's own offer is narrowed (MIXAGENT1b-iii).
+  const others = roster.harnesses.filter((harness) => harness !== from)
+    .sort((a, b) => Number(!first?.includes(a)) - Number(!first?.includes(b)));
   const [choice, setChoice] = useState<AgentChoice>(
     initial && others.includes(initial.adapter) ? initial : { adapter: others[0] ?? '', profile: '' });
   const [kept, setKept] = useState<string | null>(null);

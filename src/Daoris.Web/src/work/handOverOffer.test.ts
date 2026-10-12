@@ -86,6 +86,51 @@ describe('handOverOffer', () => {
     expect(offer(answer(near, codex()), { doors: [doors[0], { harness: 'codex', present: false }] })).toBeNull();
   });
 
+  describe('names another tool on an account with room (MIXAGENT1b-iii)', () => {
+    // The install's reading: a conversation on the protocol door, its account near at 99%, the same tool's other door next on
+    // that very account, and another tool with a ready account.
+    const acpDoors: ToolDoor[] = [
+      { harness: 'claude-code', present: true },
+      { harness: 'claude-code-acp', present: true, accountOf: 'claude-code' },
+      { harness: 'codex', present: true },
+    ];
+    const gmailNear = { account: 'Gmail', window: 'session', by: 'word' as const };
+    const claudeGmail = claude({
+      accounts: [{ name: 'Gmail' }], scopes: [scope({ near: [gmailNear], next: next('Gmail', 'near') })],
+    });
+    const onAcp = { session: { adapter: 'claude-code-acp', profile: 'Gmail' }, doors: acpDoors };
+
+    it('never offers the session’s own tool through its other door', () => {
+      expect(offer(answer(claudeGmail, codex()), onAcp)).toEqual({ why: 'near', until: null, agent: 'codex', account: 'team' });
+      expect(offer(answer(claudeGmail), onAcp)).toBeNull();
+      expect(offer(answer(claudeGmail, codex({ scopes: [scope()] })), onAcp)).toBeNull();
+    });
+
+    it('offers a tool with several doors once, by its first present door', () => {
+      const two: ToolDoor[] = [...acpDoors, { harness: 'codex-acp', present: true, accountOf: 'codex' }];
+      expect(offer(answer(claudeGmail, codex()), { ...onAcp, doors: two })?.agent).toBe('codex');
+    });
+
+    it('passes over a next account that is near, refused or cooling, for the next ready one of that tool’s order', () => {
+      const near = claude({ scopes: [scope({ near: [nearPersonal] })] });
+      const held = (over: Partial<AccountScope>, accounts: AgentAccounts['accounts']) => codex({
+        accounts, scopes: [scope({ near: [{ account: 'a', window: 'session', by: 'word' as const }], ...over,
+          next: { account: 'a', reason: 'near', others: [{ account: 'b', hold: 'ready' }, { account: 'c', hold: 'ready' }] } })],
+      });
+      const refused = { seen: 'x', windows: [{ window: 'session', standing: 'refused', credits: false, reset: until, seen: 'x' }] };
+
+      expect(offer(answer(near, held({}, [{ name: 'a' }, { name: 'b' }])))).toEqual({ why: 'near', until: null, agent: 'codex', account: 'b' });
+      expect(offer(answer(near, held({ near: [] }, [{ name: 'a', said: refused }, { name: 'b' }])))?.account).toBe('b');
+      expect(offer(answer(near, held({ near: [] }, [{ name: 'a', cooling }, { name: 'b', cooling }, { name: 'c' }])))?.account).toBe('c');
+      expect(offer(answer(near, held({ near: [] }, [{ name: 'a', cooling }, { name: 'b', cooling }, { name: 'c', cooling }])))).toBeNull();
+    });
+
+    it('does not offer a tool whose own sign-in is cooling', () => {
+      const near = claude({ scopes: [scope({ near: [nearPersonal] })] });
+      expect(offer(answer(near, codex({ own: { cooling }, scopes: [scope({ next: next(null, 'own') })] })))).toBeNull();
+    });
+  });
+
   it('offers nothing from an answer an older shell gave', () => {
     expect(offer(undefined as unknown as AccountsAnswer)).toBeNull();
     expect(offer({} as AccountsAnswer)).toBeNull();
