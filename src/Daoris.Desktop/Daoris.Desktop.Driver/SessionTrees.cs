@@ -381,6 +381,14 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         {
             // Who pushes it, said before the press, and what would refuse the press where something would (D100).
             var plugin = landing.Rule.Plugin;
+            // TREEFOLLOW1: a tree its agent moved onto a branch of its own lands as that branch stands, the one the pull request is from.
+            if (Directory.Exists(full) && Holds(full) && await OwnBranchOfAsync(full, ct).ConfigureAwait(false) is { } own)
+            {
+                return new(LandingForm.Branch, own, landing.Source, plugin, subject.EnteredName is not null ? EnteredOwn(own) : plugin is null ? null : _plugins.Problem(plugin),
+                    landing.Rule.AutoAccept)
+                { Own = true };
+            }
+
             var name = BranchNamed(subject, landing.Rule.Pattern!, repository);
             // A name the press would refuse is said before it (LANDNAME1a), where the plan keeps the sentence a press is refused with.
             var problem = subject.EnteredName is not null && !BranchName.IsValid(name) ? EnteredInvalid(name)
@@ -612,9 +620,10 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     /// How many commits on <paramref name="revision"/> no branch of the person's holds (D88) — a local
     /// branch outside <c>daoris/</c>, or a remote-tracking one. Zero is landed; null is git unable to say.
     /// </summary>
-    public static async Task<int?> UnlandedAsync(string cwd, string revision, CancellationToken ct = default)
+    /// <param name="except">A local branch not counted as holding them (TREEFOLLOW1): the tree's own branch, which holds its own commits.</param>
+    public static async Task<int?> UnlandedAsync(string cwd, string revision, CancellationToken ct = default, string? except = null)
     {
-        var (code, log, _) = await UnlandedLogAsync(cwd, revision, ct).ConfigureAwait(false);
+        var (code, log, _) = await UnlandedLogAsync(cwd, revision, ct, except).ConfigureAwait(false);
         return code != 0 ? null : log.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length;
     }
 
@@ -641,9 +650,13 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     /// <summary>A tree's workspace and repository, read from the layout this home chose (<c>trees/&lt;workspace&gt;/&lt;repository&gt;/&lt;name&gt;</c>).</summary>
     public (string Workspace, string Repository) Owner(string tree) => OwnerOf(Path.GetFullPath(tree));
 
-    private static Task<(int Code, string Stdout, string Stderr)> UnlandedLogAsync(string cwd, string revision, CancellationToken ct) =>
+    private static Task<(int Code, string Stdout, string Stderr)> UnlandedLogAsync(
+        string cwd, string revision, CancellationToken ct, string? except = null) =>
         WorkingTree.GitAsync(cwd,
-            ["log", "--oneline", revision, "--not", "--exclude=daoris/*", "--branches", "--exclude=*/daoris/*", "--remotes"], ct);
+            except is null
+                ? ["log", "--oneline", revision, "--not", "--exclude=daoris/*", "--branches", "--exclude=*/daoris/*", "--remotes"]
+                : ["log", "--oneline", revision, "--not", "--exclude=daoris/*", $"--exclude={except}", "--branches", "--exclude=*/daoris/*", "--remotes"],
+            ct);
 
     /// <summary>
     /// Every session branch in these repositories, with what it holds (D88) — the list a person reads
@@ -668,7 +681,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 .Where(branch => only is null || only.Contains($"{repository}:{branch}"))
                 .ToList();
             // A list git could not give is never read as "no tree here" (AUTOTIDY1): every branch is kept, saying why.
-            if (await ReadWorktreesAsync(root, ct).ConfigureAwait(false) is not { } worktrees)
+            if (await ListWorktreesAsync(root, ct).ConfigureAwait(false) is not { } listed)
             {
                 items.AddRange(named.Select(branch => new SweepItem(
                     repository, RemoteTarget.Workspace(workspace), branch, null, SweepKind.Unlanded, 0, null, $"git could not tell: {ListUnread}")
@@ -678,13 +691,15 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 continue;
             }
 
+            var worktrees = ByBranch(listed);
             var line = (await LineAsync(root, repository, RemoteTarget.Workspace(workspace), ct).ConfigureAwait(false)).Branch;
             // The completed pull requests the record keeps, confirmed here (PLUGHOOK1a): nothing is asked at a list or a press.
             var carriers = await CarriersAsync(root, repository, line, ct).ConfigureAwait(false);
             foreach (var branch in named)
             {
                 items.Add((await JudgeAsync(
-                    root, repository, RemoteTarget.Workspace(workspace), branch, worktrees.GetValueOrDefault(branch), line, busy, carriers, ct)
+                    root, repository, RemoteTarget.Workspace(workspace), branch, worktrees.GetValueOrDefault(branch), line, busy, carriers, ct,
+                    MovedOnTo(listed, RemoteTarget.Workspace(workspace), repository, branch))
                     .ConfigureAwait(false)).Item);
             }
         }
@@ -736,18 +751,20 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             }
 
             var root = known.First(r => string.Equals(r.Repository, item.Repository, StringComparison.OrdinalIgnoreCase)).Root!;
-            if (await ReadWorktreesAsync(root, ct).ConfigureAwait(false) is not { } worktrees)
+            if (await ListWorktreesAsync(root, ct).ConfigureAwait(false) is not { } listed)
             {
                 results.Add(new(item with { Unread = true, Detail = ListUnread }, false, $"{ListUnread}, so it is kept") { Kept = TidyKept.Unread, Cause = TidyCause.List });
                 continue;
             }
 
+            var worktrees = ByBranch(listed);
             var line = (await LineAsync(root, item.Repository, item.Workspace, ct).ConfigureAwait(false)).Branch;
             var carriers = item.Kind == SweepKind.Carried ? await CarriersAsync(root, item.Repository, line, ct).ConfigureAwait(false) : [];
             // The commit it was judged at (SQUASHTIDY1c): the one its delete must still find, and the one a pull request's answer
             // removed, for the record of it (PLUGHOOK1a, design §2.5).
             var (now, judged) = await JudgeAsync(
-                    root, item.Repository, item.Workspace, item.Branch, worktrees.GetValueOrDefault(item.Branch), line, busy, carriers, ct)
+                    root, item.Repository, item.Workspace, item.Branch, worktrees.GetValueOrDefault(item.Branch), line, busy, carriers, ct,
+                    MovedOnTo(listed, item.Workspace, item.Repository, item.Branch))
                 .ConfigureAwait(false);
             if (!goes(now) || judged is null)
             {
@@ -829,6 +846,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             }
 
             var removed = movedTo is not null ? $"removed; its tree's folder was moved aside to {movedTo}"
+                : now.TreeOn is { } on ? $"removed; its tree stays, on `{on}`, where the session's work is"
                 : (now.Tree is null ? "removed" : "removed, with its tree") + (left is null ? "" : $". {left}");
             results.Add(new(now, true, kept is null ? removed : $"{Sentence(removed)} {ContentHold.KeptAt(now.Branch, kept)}")
             {
@@ -858,12 +876,12 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     /// <param name="carriers">The completed pull requests the record keeps that carried work here (PLUGHOOK1a); a branch they carried goes.</param>
     private async Task<(SweepItem Item, string? Tip)> JudgeAsync(
         string root, string repository, string workspace, string branch, string? tree, string? line,
-        HashSet<string> busy, IReadOnlyList<PullRequestCarrier> carriers, CancellationToken ct)
+        HashSet<string> busy, IReadOnlyList<PullRequestCarrier> carriers, CancellationToken ct, string? treeOn = null)
     {
         // The ignored paths its tree shares with the checkout, on every row once read (AUTOTIDY1): the look's own tidy keeps such a tree.
         var shared = 0;
         SweepItem Item(string kind, int commits = 0, string? where = null, string? detail = null) =>
-            new(repository, workspace, branch, tree, kind, commits, where, detail) { IgnoredShared = shared };
+            new(repository, workspace, branch, tree, kind, commits, where, detail) { IgnoredShared = shared, TreeOn = treeOn };
 
         if (tree is not null && busy.Contains(Normal(tree))) return (Item(SweepKind.InUse), null);
 
@@ -1001,17 +1019,31 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             { Refusal = AutoLandingCode.Nothing };
         }
 
+        var commits = ahead.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(entry => entry.Split('\t', 2))
+            .Select(parts => new LandingCommit(parts[0], parts.Length > 1 ? parts[1] : ""))
+            .ToList();
+
+        // TREEFOLLOW1 (D164 point 4): the tree its agent moved onto a branch of its own lands as that branch stands: it is already the
+        // pull request's branch, named as the repository names its own, so none is made and the rule's pattern is not asked.
+        if (!branch.StartsWith(SessionPrefix, StringComparison.Ordinal))
+        {
+            if (entered) return new TreeLanding(false, EnteredOwn(branch));
+            var pushOwn = handedOn ? "" : $" Push it and open the pull request from there: `git push -u origin {branch}`.";
+            return new Branched(
+                new TreeLanding(true,
+                    $"lands `{branch}`, the session's own branch, as it stands — {commits.Count} commit(s) from `{line ?? "HEAD"}`, and no "
+                    + $"other branch was made.{pushOwn} Nothing was merged and the checkout was not touched.{TreeStays}",
+                    branch),
+                root, line, commits, BranchOfTree(full)?.Branch);
+        }
+
         if (!BranchName.IsValid(name))
         {
             return new TreeLanding(false, entered ? EnteredInvalid(name)
                 : $"the landing rule names `{name}` for this session, which is not a branch name git "
                 + "would take. Change the pattern with `daoris driver landing`.");
         }
-
-        var commits = ahead.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(entry => entry.Split('\t', 2))
-            .Select(parts => new LandingCommit(parts[0], parts.Length > 1 ? parts[1] : ""))
-            .ToList();
 
         var (exists, standing, _) = await WorkingTree.GitAsync(
             root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{name}^{{commit}}"], ct).ConfigureAwait(false);
@@ -1153,6 +1185,11 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     private static string EnteredInvalid(string name) =>
         $"the branch name you entered, `{name}`, is not a branch name git would take. Enter another, or leave it blank for the rule's.";
 
+    /// <summary>A name entered where the tree's own branch lands as it stands (TREEFOLLOW1): refused, not ignored, as a merge's is.</summary>
+    private static string EnteredOwn(string own) =>
+        $"this session's tree is on its own branch, `{own}`, which lands as it stands and is not renamed, so there is no branch name "
+        + "to enter. Leave it blank.";
+
     private const string EnteredMerge = "the rule for this repository merges the work into its line and makes no branch, so there is no "
         + "branch name to enter. Leave it blank, or change the rule with `daoris driver landing`.";
 
@@ -1198,6 +1235,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         var detached = branch is "" or "HEAD";
         // The name a recovery ref is kept under: the branch, or for a detached tree the one its layout names.
         var named = detached ? BranchOfTree(full)?.Branch ?? "HEAD" : branch;
+        // The branch the session's agent made where the tree is on one (TREEFOLLOW1): it goes with no tree, whatever force says.
+        var madeBy = detached ? null : await OwnBranchOfAsync(full, ct).ConfigureAwait(false);
         ContentHold? held = null;
         string? judged = null;
         string? kept = null;
@@ -1230,53 +1269,58 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                     + "of yours, or say it again with --force, meaning it.");
             }
 
-            // The commit judged, read once (SQUASHTIDY1c): every question below is asked of it, and the branch goes only while
-            // it is still that commit.
-            var (tipCode, tipOut, tipErr) = await WorkingTree.GitAsync(full, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct)
-                .ConfigureAwait(false);
-            if (tipCode != 0)
+            // TREEFOLLOW1: a tree on a branch its agent made loses no commit when it goes, since that branch stays and holds them: only
+            // what no commit holds is asked of it (above), and the branch is never taken with it.
+            if (madeBy is null)
             {
-                return new(false,
-                    $"Daoris cannot tell whether the work on `{branch}` is landed: {FirstLine(tipErr)} "
-                    + "The tree stays; say it again with --force to discard it.");
-            }
-
-            judged = tipOut.Trim();
-            var (workspace, repository) = OwnerOf(full);
-            var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
-            var canonical = line ?? "HEAD";
-            // Landed (D88): a branch of the person's holds every commit — the line, a branch the branch form
-            // made, one they pushed. Asked of the tree's own HEAD, so a detached tree is judged by what it
-            // holds. 🔴 A comparison git could not make keeps the tree: an empty answer is not "landed".
-            var (logCode, unmerged, logErr) = await UnlandedLogAsync(full, judged, ct).ConfigureAwait(false);
-            if (logCode != 0)
-            {
-                return new(false,
-                    $"Daoris cannot tell whether the work on `{branch}` is landed: {FirstLine(logErr)} "
-                    + "The tree stays; say it again with --force to discard it.");
-            }
-
-            // SQUASHTIDY1: a squash merge or a cherry-pick holds the work under commits of its own, which ancestry cannot see;
-            // the content can. Work held nowhere still refuses, and force stays its door.
-            if (!string.IsNullOrWhiteSpace(unmerged)
-                && (held = await HeldByContentAsync(full, judged, line, LandedHere(repository), ct).ConfigureAwait(false)) is null)
-            {
-                return new(false,
-                    $"the tree at {path} holds commits `{canonical}` has not taken, and no other branch of yours holds "
-                    + $"them:\n{unmerged.Trim()}\nLand them from the review, or say it again with --force to discard them.");
-            }
-
-            // SQUASHTIDY1c: the proof compared files, so the commits themselves are kept on a ref of their own before anything goes.
-            if (held is not null)
-            {
-                var (reference, why) = await KeepDiscardedAsync(root, named, judged, ct).ConfigureAwait(false);
-                if (reference is null)
+                // The commit judged, read once (SQUASHTIDY1c): every question below is asked of it, and the branch goes only while
+                // it is still that commit.
+                var (tipCode, tipOut, tipErr) = await WorkingTree.GitAsync(full, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct)
+                    .ConfigureAwait(false);
+                if (tipCode != 0)
                 {
-                    return new(false, $"Daoris could not keep the commits on `{branch}` on a ref of their own ({why}), so nothing "
-                        + "was removed. Say it again with --force to discard them.");
+                    return new(false,
+                        $"Daoris cannot tell whether the work on `{branch}` is landed: {FirstLine(tipErr)} "
+                        + "The tree stays; say it again with --force to discard it.");
                 }
 
-                kept = reference;
+                judged = tipOut.Trim();
+                var (workspace, repository) = OwnerOf(full);
+                var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+                var canonical = line ?? "HEAD";
+                // Landed (D88): a branch of the person's holds every commit — the line, a branch the branch form
+                // made, one they pushed. Asked of the tree's own HEAD, so a detached tree is judged by what it
+                // holds. 🔴 A comparison git could not make keeps the tree: an empty answer is not "landed".
+                var (logCode, unmerged, logErr) = await UnlandedLogAsync(full, judged, ct).ConfigureAwait(false);
+                if (logCode != 0)
+                {
+                    return new(false,
+                        $"Daoris cannot tell whether the work on `{branch}` is landed: {FirstLine(logErr)} "
+                        + "The tree stays; say it again with --force to discard it.");
+                }
+
+                // SQUASHTIDY1: a squash merge or a cherry-pick holds the work under commits of its own, which ancestry cannot see;
+                // the content can. Work held nowhere still refuses, and force stays its door.
+                if (!string.IsNullOrWhiteSpace(unmerged)
+                    && (held = await HeldByContentAsync(full, judged, line, LandedHere(repository), ct).ConfigureAwait(false)) is null)
+                {
+                    return new(false,
+                        $"the tree at {path} holds commits `{canonical}` has not taken, and no other branch of yours holds "
+                        + $"them:\n{unmerged.Trim()}\nLand them from the review, or say it again with --force to discard them.");
+                }
+
+                // SQUASHTIDY1c: the proof compared files, so the commits themselves are kept on a ref of their own before anything goes.
+                if (held is not null)
+                {
+                    var (reference, why) = await KeepDiscardedAsync(root, named, judged, ct).ConfigureAwait(false);
+                    if (reference is null)
+                    {
+                        return new(false, $"Daoris could not keep the commits on `{branch}` on a ref of their own ({why}), so nothing "
+                            + "was removed. Say it again with --force to discard them.");
+                    }
+
+                    kept = reference;
+                }
             }
         }
 
@@ -1305,6 +1349,13 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         // (SQUASHTIDY1c), or where the person forced it. Never git's own -d, which asks only whether the checkout's HEAD holds
         // it and kept every branch the branch form had landed. A branch left behind would resurrect "never reused" as a pile.
         string? stays = null;
+        if (madeBy is not null)
+        {
+            // TREEFOLLOW1: never a branch the session's agent made, which is the pull request's and the only copy of its commits.
+            return new(true, $"removed the session tree at {path}, and kept its branch `{madeBy}`, which the session made and which holds its "
+                + "commits; delete it with git where you no longer want it." + (left is null ? "" : $" {left}"));
+        }
+
         if (!detached)
         {
             if (judged is null)

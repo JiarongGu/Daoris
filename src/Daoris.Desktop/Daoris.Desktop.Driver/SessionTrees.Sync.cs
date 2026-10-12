@@ -1129,10 +1129,22 @@ public sealed partial class SessionTrees
             root, ["for-each-ref", "--format=%(refname:short)", "refs/heads/daoris/"], ct).ConfigureAwait(false);
         if (code != 0) return;
         var standing = refs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.Ordinal);
-        var gone = Grown.All()
-            .Where(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase) && !standing.Contains(entry.Branch))
-            .Select(entry => entry.Branch)
-            .ToList();
+        var gone = new List<string>();
+        foreach (var entry in Grown.All()
+                     .Where(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase) && !standing.Contains(entry.Branch)))
+        {
+            // TREEFOLLOW1: a tree its agent moved onto a branch of its own outlives the session branch, and the entry is what says
+            // where its work is: it goes once the tree and that branch are gone too.
+            if (entry.Now is { } now)
+            {
+                if (Directory.Exists(Path.Combine(TreesRoot, entry.Workspace, entry.Repository, Path.GetFileName(entry.Branch)))) continue;
+                var (stands, _, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{now}"], ct).ConfigureAwait(false);
+                if (stands == 0) continue;
+            }
+
+            gone.Add(entry.Branch);
+        }
+
         if (gone.Count == 0) return;
         try
         {

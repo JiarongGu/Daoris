@@ -44,7 +44,9 @@ public sealed partial class SessionTrees
         var (tipCode, tipOut, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct)
             .ConfigureAwait(false);
         var judged = tipCode == 0 ? tipOut.Trim() : null;
-        var work = new TreeWork(await UnlandedAsync(tree, judged ?? "HEAD", ct).ConfigureAwait(false), uncommitted);
+        // TREEFOLLOW1: a tree its agent moved onto a branch of its own is judged by what that branch holds beyond every other.
+        var own = await OwnBranchOfAsync(tree, ct).ConfigureAwait(false);
+        var work = new TreeWork(await UnlandedAsync(tree, judged ?? "HEAD", ct, own).ConfigureAwait(false), uncommitted) { Branch = own };
         // SQUASHTIDY1b: a squash merge or a cherry-pick holds commits ancestry cannot see, and landing them again would make a
         // branch of work already there.
         return work.Commits is > 0 && judged is not null && await HeldWorkAsync(tree, judged, ct).ConfigureAwait(false) is { } found

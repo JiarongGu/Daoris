@@ -274,6 +274,51 @@ public sealed class LandingTidyTests : IDisposable
         Assert.Contains("`main` holds", landed.Message);
     }
 
+    /// <summary>
+    /// TREEFOLLOW1 (D164 point 4): a tree its agent moved onto a branch of its own (<c>feature/…</c>, as its repository's rules ask)
+    /// is landed as that branch stands, the one the pull request is from: Accept makes no second branch, says it lands the
+    /// session's own, and the rule's tidy takes the tree but never the branch, which holds the only copy of the commits.
+    /// </summary>
+    [Fact]
+    public async Task Accept_lands_the_branch_the_agent_made_as_it_is_and_makes_no_other()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true));
+        var trees = new SessionTrees(_home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await GitAsync(tree.Path, "checkout", "--quiet", "-b", "feature/TK-9-gap");
+        await CommitAsync(tree.Path, "work.txt", "the work", "the work");
+
+        var landed = await trees.LandAsync(tree.Path, new LandingSubject("s1", "0fda18", "Fix the gap"), inUse: NoneRunning);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal("feature/TK-9-gap", landed.Branch);
+        Assert.Contains("`feature/TK-9-gap`, the session's own branch", landed.Message);
+        Assert.False(await BranchAsync(root, "feature/0fda18-fix-the-gap"), "no second branch is made");
+        Assert.True(await BranchAsync(root, "feature/TK-9-gap"), "the session's own branch stands: it holds the only copy");
+        Assert.False(Directory.Exists(tree.Path), "the rule's tidy took the tree");
+        Assert.Equal("1", (await GitAsync(root, "rev-list", "--count", "main..feature/TK-9-gap")).Trim());
+    }
+
+    /// <summary>TREEFOLLOW1: the merge form merges the tree's own branch as it would the session branch.</summary>
+    [Fact]
+    public async Task A_merge_rule_merges_the_branch_the_agent_made()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Merge, Tidy: false));
+        var trees = new SessionTrees(_home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await GitAsync(tree.Path, "checkout", "--quiet", "-b", "feature/TK-9-gap");
+        await CommitAsync(tree.Path, "work.txt", "the work", "the work");
+
+        var landed = await trees.LandAsync(tree.Path, new LandingSubject("s1", "0fda18", "Fix the gap"), inUse: NoneRunning);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Contains("merged `feature/TK-9-gap` into `main`", landed.Message);
+        Assert.Equal("0", (await GitAsync(root, "rev-list", "--count", "main..feature/TK-9-gap")).Trim());
+        Assert.True(File.Exists(Path.Combine(root, "work.txt")));
+    }
+
     private void Rule(LandingRule rule) =>
         DriverConfig.Empty.WithLanding("engine", rule).Save(Path.Combine(_home, "driver.json"));
 

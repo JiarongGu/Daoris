@@ -85,7 +85,15 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
 /// Whether the rule accepts automatically (LAND2b, D145): the quest's done lands the work, with no press, and the session's
 /// instruction says so.
 /// </param>
-public sealed record LandingPlan(string Form, string Target, string Source, string? Plugin = null, string? Problem = null, bool AutoAccept = false);
+public sealed record LandingPlan(string Form, string Target, string Source, string? Plugin = null, string? Problem = null, bool AutoAccept = false)
+{
+    /// <summary>
+    /// The target is the branch the session's own agent made in its tree (TREEFOLLOW1, D164 point 4), which lands as it stands:
+    /// no branch is made, the rule's pattern does not name it, and a name entered has nowhere to go. False for a tree still on its
+    /// session branch, where the branch form makes the one the pattern names.
+    /// </summary>
+    public bool Own { get; init; }
+}
 
 /// <summary>What came of a press. A refusal is an answer, as the merge door's are, and names what the person would do.</summary>
 /// <param name="Plugin">What the rule's plugin answered once the branch was made (D100) — null where no plugin was spoken to.</param>

@@ -1068,7 +1068,10 @@ public sealed partial class Driver(
                 // that branch on (LAND2c, D82 as D145 amends it).
                 opened = await _trees.OpenAsync(
                         root, quest.To, start.Workspace ?? "default", ct,
-                        from: start.BuildsOn?.Tree is { Length: > 0 } parentTree ? $"daoris/{Path.GetFileName(parentTree)}" : null,
+                        // TREEFOLLOW1: the step before's branch as its tree has it now, where its agent moved it onto one of its own.
+                        from: start.BuildsOn?.Tree is { Length: > 0 } parentTree
+                            ? await _trees.BranchNowAsync(parentTree, ct).ConfigureAwait(false) ?? $"daoris/{Path.GetFileName(parentTree)}"
+                            : null,
                         landed: start.BuildsOn is { } stepBefore
                                 && _trees.Recorded.Landing(stepBefore.Session) is { GoneAt: null } chain
                                 && string.Equals(chain.Repository, quest.To, StringComparison.OrdinalIgnoreCase)
