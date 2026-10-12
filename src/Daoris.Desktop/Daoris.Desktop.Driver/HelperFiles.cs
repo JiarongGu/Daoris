@@ -90,6 +90,9 @@ public sealed record HelperState(string Id, string State, string? Code, string? 
 
     /// <summary>The agent that was started, for the notes.</summary>
     public string? Agent { get; init; }
+
+    /// <summary>The helper's last words, kept here for the delivery where it never used its tool (<see cref="LastWords"/>); no answer file holds them.</summary>
+    public string? Words { get; init; }
 }
 
 /// <summary>A helper's answer as <c>&lt;askId&gt;.answer.json</c> keeps it, written by <c>helper_answer</c> once.</summary>
@@ -103,6 +106,9 @@ public sealed record HelperAnswer(string Id, string Helper, string Answer, DateT
 public sealed class HelperFiles(string home)
 {
     public const string Folder = "helpers";
+
+    // Indented, and a plus sign and a quote's neighbours left as written: the files are read by people and by the service's box.
+    private static readonly JsonWriterOptions Options = new() { Indented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
     public string PathOf(string id, string kind) => Path.Combine(home, Folder, $"{id}.{kind}.json");
 
@@ -145,6 +151,7 @@ public sealed class HelperFiles(string home)
                 LastWords = element.TryGetProperty("lastWords", out var last) && last.ValueKind == JsonValueKind.True,
                 Handed = Text(element, "handed"),
                 Agent = Text(element, "agent"),
+                Words = Text(element, "words"),
             };
         }
     }
@@ -153,7 +160,7 @@ public sealed class HelperFiles(string home)
     public void WriteState(HelperState state)
     {
         using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        using (var writer = new Utf8JsonWriter(stream, Options))
         {
             writer.WriteStartObject();
             writer.WriteString("id", state.Id);
@@ -166,6 +173,7 @@ public sealed class HelperFiles(string home)
             if (state.LastWords) writer.WriteBoolean("lastWords", true);
             if (state.Handed is not null) writer.WriteString("handed", state.Handed);
             if (state.Agent is not null) writer.WriteString("agent", state.Agent);
+            if (state.Words is not null) writer.WriteString("words", state.Words);
             writer.WriteEndObject();
         }
 
@@ -194,7 +202,7 @@ public sealed class HelperFiles(string home)
     {
         var id = Guid.NewGuid().ToString("N")[..8];
         using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        using (var writer = new Utf8JsonWriter(stream, Options))
         {
             writer.WriteStartObject();
             writer.WriteString("id", id);

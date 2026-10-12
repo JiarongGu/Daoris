@@ -73,11 +73,27 @@ public static class OpinionPermissions
     /// The rules a reviewer is handed: <paramref name="composed"/> with the <c>commit</c> default's allows and the acting tools
     /// taken out of its allows, its offered tools and its reading added, and its writes and the acting tools denied, each rule once.
     /// </summary>
-    public static RuleLists Shape(RuleLists composed)
+    /// <summary>
+    /// What a helper's session (MIXAGENT2a-ii) is told to the classifier beside the rules: the reviewer's words for a helper, which
+    /// reads one question's answer and changes nothing.
+    /// </summary>
+    public const string HelperHardDeny =
+        "Changing anything while helping another session: editing, writing, moving or deleting a file in any form; committing, "
+        + "merging, rebasing, resetting, or making or moving a branch or a tag; pushing; deploying or publishing; changing or "
+        + "proposing a permission rule; starting, stopping or touching a process, a port or a server of the person's; taking, "
+        + "closing, declining or publishing a quest; and asking another agent for help. A helper reads and answers, and changes nothing.";
+
+    /// <param name="helper">
+    /// A helper's session (MIXAGENT2a-ii) rather than a reviewer's: the same read-only shape with its one tool <c>helper_answer</c>
+    /// in place of <c>opinion_give</c>, which it is denied, as is <c>helper_ask</c> (a helper asks for no helper).
+    /// </param>
+    public static RuleLists Shape(RuleLists composed, bool helper = false)
     {
+        string[] offered = helper ? [.. Offered.Where(tool => tool != "opinion_give"), "helper_answer"] : Offered;
+        string[] acting = helper ? [.. Acting.Where(tool => tool != "helper_answer"), "opinion_give"] : Acting;
         var withheld = new HashSet<string>(
             PermissionRules.Defaults.Where(shipped => shipped.Id == "commit").SelectMany(shipped => shipped.Rules)
-                .Concat(Acting.Select(tool => Connector + tool)),
+                .Concat(acting.Select(tool => Connector + tool)),
             StringComparer.Ordinal);
         // `cd` is its reading's prefix too, so the commit default's one stays given.
         withheld.Remove("Bash(cd:*)");
@@ -85,9 +101,9 @@ public static class OpinionPermissions
         IReadOnlyList<string> allow = [.. composed.Allow.Where(rule => !withheld.Contains(rule))];
         var shaped = new RuleLists(allow, composed.Ask, composed.Deny);
         return shaped.Joined(new RuleLists(
-            [.. Offered.Select(tool => Connector + tool), .. Reading],
+            [.. offered.Select(tool => Connector + tool), .. Reading],
             [],
-            [.. Writing, .. Acting.Select(tool => Connector + tool)]));
+            [.. Writing, .. acting.Select(tool => Connector + tool)]));
     }
 }
 
