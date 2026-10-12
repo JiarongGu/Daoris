@@ -92,4 +92,43 @@ public static class ProcessWords
         CommitRules.AtEnd => "Make that commit before you close the quest done: uncommitted work does not land.",
         _ => "Commit all of your work before you close the quest done: uncommitted work does not land.",
     };
+
+    /// <summary>
+    /// What a conversation in a tree of its own is told of its process with its first message (PROCESS1d-ii, D164's amendment point
+    /// 4), trimmed: how its work lands, then the process in the driven words. Its branch is made at Accept from its opening, so it
+    /// is never said by name, and with no quest there is nothing to close done: the person's Accept lands it under every rule.
+    /// </summary>
+    /// <param name="plan">The landing as Review's press would read it now; null where it could not be read, and the process alone is said.</param>
+    public static string Conversation(ResolvedCommits commits, LandingPlan? plan)
+    {
+        var (rule, source) = commits;
+        var text = new StringBuilder();
+        if (ConversationLead(plan) is { } lead) text.Append(lead).Append("\n\n");
+        text.Append("This repository's process on this machine")
+            .Append(source == CommitRules.DefaultSource ? "" : $", set for its {source}")
+            .Append(":\n\n")
+            .Append("- ").Append(Mode(rule.Mode, auto: false)).Append('\n')
+            .Append("- Do not create, switch or push branches.");
+        if (rule.Convention is { } convention)
+        {
+            text.Append("\n\nThe person's words on how a commit is written, to follow:\n\n> ").Append(convention);
+        }
+
+        return text.ToString();
+    }
+
+    /// <summary>
+    /// A conversation's landing: under the branch form, Daoris names the branch at Accept and who takes it on from there; under a
+    /// merge, the line it goes into.
+    /// </summary>
+    private static string? ConversationLead(LandingPlan? plan) => plan switch
+    {
+        { Form: LandingForm.Branch } => "This work goes through review. Daoris names the branch from this repository's rule when the "
+            + "person accepts it, and this tree's branch is put on it"
+            + (plan.Plugin is null ? " for the person to push and open a pull request from" : ", pushed, and a pull request opened from it")
+            + "; you do not name it, and you do not merge it, push it, or open a pull request yourself.",
+        { Form: LandingForm.Merge, Target.Length: > 0 } => $"When the person accepts, this tree's branch is merged into `{plan.Target}`.",
+        { Form: LandingForm.Merge } => "When the person accepts, this tree's branch is merged into its repository's line.",
+        _ => null,
+    };
 }

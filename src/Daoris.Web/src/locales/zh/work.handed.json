@@ -47,7 +47,7 @@
   "work.handed.source.written": "你写给那个会话的话",
   "work.handed.source.record": "先前会话的记录及其工作树",
   "work.handed.source.tree": "会话的工作树",
-  "work.handed.source.landing": "本机的落地规则",
+  "work.handed.source.landing": "本机的落地和提交规则",
   "work.handed.source.checkouts": "你声明的检出",
   "work.handed.source.driver": "驱动自己的话",
   "work.handed.source.permissions": "本机的权限规则",

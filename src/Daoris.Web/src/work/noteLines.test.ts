@@ -335,6 +335,21 @@ describe('noteLines', () => {
       ]);
     });
 
+    it('words the process a conversation was told by its commit rule and where it was set, under its own lead', () => {
+      // PROCESS1d-ii: never the browser's lead; the words after it are Daoris's English to the agent, shown as written.
+      const told = (source: string) => coded('chat.told-process', "told the agent this repository's process, …:", { mode: 'ask', source });
+      const process = words("This repository's process on this machine, set for its repository: …", 'program');
+      expect(noteLines(t, { parts: [told('repository'), process] }, 'en')).toEqual([
+        { kind: 'said', text: "The agent was told this repository's process, its commit rule `ask` (set on this machine for its repository):" },
+        { kind: 'words', text: process.words, by: 'program' },
+      ]);
+      expect(noteLines(t, { parts: [told('workspace')] }, 'en')[0].text).toContain('`ask` (set on this machine for its workspace):');
+      expect(noteLines(zh, { parts: [told('default')] }, 'zh')[0].text).toBe('已告知智能体这个仓库的流程，提交规则 `ask`（本机没有设定）：');
+      // A source this page does not know, or a part missing its mode, shows as recorded rather than guessed.
+      expect(noteLines(t, { parts: [told('elsewhere')] }, 'en')[0].kind).toBe('recorded');
+      expect(noteLines(t, { parts: [coded('chat.told-process', '…', { source: 'default' })] }, 'en')[0].kind).toBe('recorded');
+    });
+
     it('words a withheld server by name and why, an exception’s words as written', () => {
       const lead = coded('browser.withheld', '— `browser` drives Daoris’s own browser, and was not handed:', { servers: ['browser'] });
       expect(noteLines(t, { parts: [lead, coded('browser.no-host', '…')] }, 'en').map((line) => line.text)).toEqual([
