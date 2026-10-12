@@ -12,6 +12,9 @@ internal static class SourceFiles
     /// <summary>The driver library's project folder's name.</summary>
     public const string DriverProject = "Daoris.Desktop.Driver";
 
+    /// <summary>The driver's tests' project folder's name, whose folders mirror the modules that have moved (STRUCT2a).</summary>
+    public const string DriverTestsProject = "Daoris.Desktop.Driver.Tests";
+
     private static readonly string Desktop = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop");
 
     /// <summary>A desktop project's folder, by the project's name: <c>src/Daoris.Desktop/&lt;project&gt;</c>.</summary>
