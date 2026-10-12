@@ -41,7 +41,6 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 - [ ] **MIXAGENT2a — helpers on other agents** (service/driver). `helper_ask` and its box under the `helpers` rule: read-only helper sessions on the reviewer's machinery, two at once at most, depth one, the answer as the asker's next turn marked as the helper's, `serves` on the record. Design §3, §5.
 - [ ] **MIXAGENT2b — *Ask another agent…*** (modules/web; after 2a). The person's press on a session's page; the helper's rows. Design §3.
 - [ ] **MIXAGENT3a — the view of who worked** (web; with 1b and 2b). The head's *continues …* and *helping …* lines, the coded notes in the timeline, helpers under the session they serve in the rail (XAGENT1g4d), cost per row, both languages. Design §4.
-- [ ] **TREEKEEP1 — a tree's untracked work is not lost at clean-up** (driver; decide). A ticket's Codex session (TK-2206) prepared its production requests in an untracked `devtools/.tmp/…` file; accepting the work removed its tree, and the file with it. Before a tree is removed, keep or say its untracked files (D51, D102's recovery refs keep only commits).
 
 ## Accounts and browser
 

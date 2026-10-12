@@ -220,7 +220,9 @@ public sealed partial class SessionTrees
     /// 🔴 <b>An ignored path the registered checkout holds too goes with the tree</b>: it is what the repository leaves in any
     /// checkout it is built in (installed dependencies, a build's output), and the checkout keeps its own. One only the session's
     /// tree holds (a local database, an export) was made there alone, and nothing says it can be made again, so it keeps the
-    /// tree, named. Null is git unable to say, which keeps the tree too.
+    /// tree, named. Null is git unable to say, which keeps the tree too. 🔴 <b>Except a session's own scratch in such a folder</b>
+    /// (TREEKEEP1): under a build folder (<see cref="BuildFolders"/>) the path goes as ever; under any other, each file the tree
+    /// wrote after it opened that the checkout does not hold as written (absent, or different bytes) is the tree's own, as an ignored path only it holds is.
     /// </remarks>
     private static async Task<TreeHolds?> HoldsAsync(string tree, string root, CancellationToken ct)
     {
@@ -230,6 +232,10 @@ public sealed partial class SessionTrees
         var uncommitted = new List<string>();
         var ignored = new List<string>();
         var shared = new List<string>();
+        var written = new List<string>();
+        var tooLarge = new List<string>();
+        // When the tree opened: its folder was made by the worktree add and nothing since recreates it (TREEKEEP1).
+        var opened = Directory.GetCreationTimeUtc(tree);
         var entries = porcelain.Split('\0');
         for (var at = 0; at < entries.Length; at++)
         {
@@ -239,7 +245,23 @@ public sealed partial class SessionTrees
             if (entry.StartsWith("!! ", StringComparison.Ordinal))
             {
                 var there = Path.Combine(root, path.TrimEnd('/'));
-                (File.Exists(there) || Directory.Exists(there) ? shared : ignored).Add(path);
+                if (!File.Exists(there) && !Directory.Exists(there))
+                {
+                    ignored.Add(path);
+                }
+                else if (path.EndsWith('/') && !UnderBuildFolder(path))
+                {
+                    // Not a build's folder: what the session wrote in it is its own (TREEKEEP1), unless the checkout holds it as written.
+                    var mine = WrittenSince(tree, root, path, opened, out var large);
+                    if (large) tooLarge.Add(path);
+                    else if (mine.Count > 0) written.AddRange(mine);
+                    else shared.Add(path);
+                }
+                else
+                {
+                    shared.Add(path);
+                }
+
                 continue;
             }
 
@@ -248,17 +270,56 @@ public sealed partial class SessionTrees
             if (entry[0] is 'R' or 'C' || entry[1] is 'R' or 'C') at++;
         }
 
-        return new(uncommitted, ignored, shared);
+        return new(uncommitted, ignored, shared, written, tooLarge);
     }
 
     /// <summary>
     /// What a tree holds that no commit does (SQUASHTIDY1c): uncommitted paths, and ignored paths only it holds; and the ignored
     /// paths the checkout holds too, which a press lets go with the tree and the look's own tidy does not (AUTOTIDY1).
     /// </summary>
-    private sealed record TreeHolds(IReadOnlyList<string> Uncommitted, IReadOnlyList<string> Ignored, IReadOnlyList<string> Shared)
+    /// <remarks>
+    /// <paramref name="Written"/> and <paramref name="TooLarge"/> are a shared ignored folder's own part (TREEKEEP1): files the
+    /// session wrote there after the tree opened that the checkout does not hold as written, and folders too large to look through. They
+    /// are no longer in <paramref name="Shared"/>: they keep the tree like <paramref name="Ignored"/> does, which is
+    /// <see cref="OwnSaid"/>.
+    /// </remarks>
+    internal sealed record TreeHolds(
+        IReadOnlyList<string> Uncommitted, IReadOnlyList<string> Ignored, IReadOnlyList<string> Shared,
+        IReadOnlyList<string> Written, IReadOnlyList<string> TooLarge)
     {
         /// <summary>The ignored paths, the first three named, in a clause.</summary>
         public string IgnoredSaid => $"{Ignored.Count} ignored path(s) your checkout does not have: "
             + string.Join(", ", Ignored.Take(3)) + (Ignored.Count > 3 ? $" and {Ignored.Count - 3} more" : "");
+
+        /// <summary>The session's own files in a shared ignored folder, the first three named, in a clause (TREEKEEP1).</summary>
+        public string? WrittenSaid
+        {
+            get
+            {
+                var said = new List<string>();
+                if (Written.Count > 0)
+                {
+                    said.Add($"{Written.Count} file(s) written in the tree after it opened, which your checkout does not hold as written: "
+                        + string.Join(", ", Written.Take(3)) + (Written.Count > 3 ? $" and {Written.Count - 3} more" : ""));
+                }
+
+                if (TooLarge.Count > 0)
+                {
+                    said.Add($"{TooLarge.Count} ignored folder(s) too large to look through, which count as the tree's own: "
+                        + string.Join(", ", TooLarge.Take(3)) + (TooLarge.Count > 3 ? $" and {TooLarge.Count - 3} more" : ""));
+                }
+
+                return said.Count == 0 ? null : string.Join(" and ", said);
+            }
+        }
+
+        /// <summary>Everything no checkout holds that the tree does and nothing re-makes, in a clause; null where it holds none.</summary>
+        public string? OwnSaid => (Ignored.Count > 0, WrittenSaid) switch
+        {
+            (false, null) => null,
+            (true, null) => IgnoredSaid,
+            (false, { } written) => written,
+            (true, { } written) => $"{IgnoredSaid}, and {written}",
+        };
     }
 }

@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's own scratch files in an ignored folder (such as `devtools/.tmp`) are no longer removed with its tree unasked:
+  accepting the work keeps the tree and says which files; build and dependency folders still go with it.
 - A Codex session is handed Daoris's knowledge tools again: they failed to start under Codex, which passes an MCP server
   only the variables its entry names, and the entry now names the Daoris home.
 - A new conversation's agent is told it has Daoris's browser, and by which tool name, with its first message, so it uses

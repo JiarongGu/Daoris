@@ -13797,3 +13797,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **MIXAGENT3 — the view of who worked** (web; with 1 and 2). A session's page shows its hand-overs (from which agent to which, and why: the person's press, a low allowance, the agent's choice) and its helpers (agent, account, state, cost, result) in its head and timeline; the list shows a helper under the session it serves (XAGENT1g4d). Both languages; stories and the window.
 
 **Outcome** 2026-10-12: designed. A hand-over is a carry-on with its agent named; a helper is a read-only session on another agent answering one question, its answer the asker's next turn; the person or the agent may start either, under the person's `handOver` and `helpers` rules (`ask` by default); records link `from` and `serves`. Built by MIXAGENT1a–c, 2a–b and 3a. Detail: D163 and `docs/2026-10-12-mixed-agents-design.md`.
+
+## TREEKEEP1 — a tree's untracked work is not lost at clean-up (2026-10-12, D102)
+
+> - [ ] **TREEKEEP1 — a tree's untracked work is not lost at clean-up** (driver; decide). A ticket's Codex session (TK-2206) prepared its production requests in an untracked `devtools/.tmp/…` file; accepting the work removed its tree, and the file with it. Before a tree is removed, keep or say its untracked files (D51, D102's recovery refs keep only commits).
+
+**Outcome** 2026-10-12: the cause was an ignored folder the checkout also has (`devtools/.tmp/`), counted as shared by its existence alone. Now a file written in the tree after it opened, in a shared ignored folder outside a named build and dependency list, is the tree's own unless the checkout holds it byte for byte: unforced removals refuse and name it; build folders still go; the walk stops at 5,000 files; forced doors unchanged. Detail: D102's TREEKEEP1 note.
