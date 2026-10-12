@@ -7,6 +7,7 @@ import type { AccountNamer } from '../tools';
 import { SESSION_ACTIVE } from '../ui';
 import type { SessionGrouping } from './groups';
 import { isIntake } from './identity';
+import { HANDED_REASONS } from './noteLines';
 import { placedFact } from './SessionRow';
 
 // The facts line under a head's title (UX7c, D152 §7, the UX7 design §5.2 and §5.3): the two or three facts a record's
@@ -27,19 +28,44 @@ export type SessionFactsOf = {
   branch?: SweepBranch | null;
   /** What a person calls an account (ACCTNAME1), from the roster; absent, the record's id is said. */
   nameOf?: AccountNamer;
+  /**
+   * The agent of the session it continues (`from`, MIXAGENT3a-i), by the roster's name for it, where the frame holds that
+   * session. Absent, the line says it continues another session.
+   */
+  continuesAgent?: string | null;
+  /** The title of the session a helper helps (`serves`, MIXAGENT3a-i), where the frame holds it; absent, another session. */
+  helping?: string | null;
 };
+
+/**
+ * What the record's own links say (MIXAGENT3a-i, the mixed-agents design §4): the agent it continues, then why, in the hand-over's
+ * words (`HANDED_REASONS`, the timeline's), and whom a helper helps. A why the page has no words for says nothing: `curve` is
+ * SWITCH1c's to word, never a guess.
+ */
+function linkFacts(t: TFunction, session: Session, { continuesAgent, helping }: SessionFactsOf): string[] {
+  const facts: string[] = [];
+  if (session.from) {
+    facts.push(continuesAgent ? t('work.facts.continues', { agent: continuesAgent }) : t('work.facts.continuesAnother'));
+    const why = session.fromWhy && Object.hasOwn(HANDED_REASONS, session.fromWhy) ? HANDED_REASONS[session.fromWhy] : null;
+    if (why) facts.push(t(why.key));
+  }
+  if (session.serves) facts.push(helping ? t('work.facts.helping', { title: helping }) : t('work.facts.helpingAnother'));
+  return facts;
+}
 
 /**
  * A session's facts line by its shown state (the UX7 design §5.2's table, as HEAD2c amends it): its repository first, then
  * its age and the one fact its state makes matter. A live session's age, and how many failed before it where its quest's
  * earlier sessions failed; what holds it, from the row's own line where the reader placed it (which names a cooling
  * account); an ended one's landing and how long it ran. An intake says its ask. The account is *Details*' (ACCTNAME1 names
- * it there). Nothing it has nothing to say: an absent fact is left out, never a dash.
+ * it there). Nothing it has nothing to say: an absent fact is left out, never a dash. Whom it continues or helps follows the
+ * repository in every state (MIXAGENT3a-i), since it says what the session is.
  */
-export function sessionFacts(t: TFunction, { session, shown, grouping, branch }: SessionFactsOf): string[] {
+export function sessionFacts(t: TFunction, of: SessionFactsOf): string[] {
+  const { session, shown, grouping, branch } = of;
   if (isIntake(session)) return [t('work.scope.ask', { id: session.ask }), t('work.intake.kind')];
 
-  const facts: (string | null)[] = [session.repository];
+  const facts: (string | null)[] = [session.repository, ...linkFacts(t, session, of)];
   // What the row's line says for its group (D126 §2.2): parked after its failures, what it awaits, what holds the words,
   // its stop's hold, its work to review. Said here in the row's own words.
   const placed = placedFact(grouping, shown);
