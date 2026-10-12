@@ -142,6 +142,26 @@ public sealed partial class HandedQuests(string home)
 /// </remarks>
 public static class QuestHandOver
 {
+    /// <summary>
+    /// The roster as a driven start reads it: the accounts it holds for an agent and the wire its door rides, or null for an agent
+    /// this set does not have. The look's and the terminal's both, so the ask and the take judge by one answer.
+    /// </summary>
+    public static Func<string, HandOverAgent?> Roster(AdapterSet adapters, string home) => agent =>
+    {
+        try
+        {
+            var resolved = adapters.Resolve(agent);
+            IReadOnlyList<string> accounts = resolved.Toolchain is { } toolchain
+                ? [.. HarnessSettings.Profiles(home, toolchain.Owner(resolved.Name))]
+                : [];
+            return new HandOverAgent(accounts, resolved.Wire);
+        }
+        catch (DriverException)
+        {
+            return null;
+        }
+    };
+
     /// <summary>Whether a record is a quest's own session: driven, with a quest, never an intake's or a teammate's.</summary>
     public static bool IsQuestSession(SessionRecord record) =>
         record is { Kind: not "chat", Quest: not null, Ask: null, Teammate: false };

@@ -14,21 +14,7 @@ public sealed partial class Driver
     /// The agents a quest may go on with, as the roster reads them for a start: the accounts it holds for an agent and the wire its
     /// door rides. Null for an agent this build, with its plugins, does not have.
     /// </summary>
-    internal HandOverAgent? Drives(string agent)
-    {
-        try
-        {
-            var resolved = _adapters.Resolve(agent);
-            IReadOnlyList<string> accounts = resolved.Toolchain is { } toolchain
-                ? [.. HarnessSettings.Profiles(_harnesses.Home, toolchain.Owner(resolved.Name))]
-                : [];
-            return new HandOverAgent(accounts, resolved.Wire);
-        }
-        catch (DriverException)
-        {
-            return null;
-        }
-    }
+    internal HandOverAgent? Drives(string agent) => QuestHandOver.Roster(_adapters, _harnesses.Home)(agent);
 
     /// <summary>
     /// The quests handed to another agent, at a look: each box a terminal kept for a quest's session is taken, a quest that left this

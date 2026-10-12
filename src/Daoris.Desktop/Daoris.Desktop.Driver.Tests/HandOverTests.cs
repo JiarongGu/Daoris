@@ -366,6 +366,51 @@ public sealed class HandOverTests : IDisposable
         Assert.StartsWith("sessions: nothing here can hand a conversation over", output.ToString());
     }
 
+    /// <summary>
+    /// 🔴 MIXAGENT1a-ii (D50): on a quest's session the verb opens no conversation in the terminal: it judges, keeps the box and says
+    /// the driver's next look takes it. The host's conversation door is never asked.
+    /// </summary>
+    [Fact]
+    public async Task The_terminal_keeps_a_quest_s_session_s_box_for_the_look_and_never_opens_a_conversation()
+    {
+        var room = QuestRoom();
+        var asked = false;
+        var world = new SessionsWorld(room.Client(), _home, DriverConfig.Empty, SessionWire.Pipe, null)
+        {
+            HandOver = (_, _, _, _) =>
+            {
+                asked = true;
+                return Task.FromResult(0);
+            },
+            Drives = Drives,
+            LoopRuns = () => true,
+        };
+        var ask = SessionsCommand.Read(["hand-over", "qu3st000", "--agent", "codex-acp", "--account", "work"], out _)!;
+        var output = new StringWriter();
+
+        Assert.Equal(0, await SessionsCommand.RunAsync(ask, world, output));
+
+        Assert.False(asked);
+        Assert.Equal("sessions: it is stopped at the driver's next look, then goes on in the same tree with codex-acp.\n", output.ToString().ReplaceLineEndings("\n"));
+        var box = new HandOverBox(_home).Read("qu3st000")!;
+        Assert.Equal(("codex-acp", "work", HandOverWhy.Press, HandOverBy.Person), (box.Agent, box.Account, box.Why, box.AskedBy));
+    }
+
+    [Fact]
+    public async Task The_terminal_says_where_no_loop_holds_the_home_and_refuses_with_the_judge_s_sentence()
+    {
+        var room = QuestRoom();
+        var world = new SessionsWorld(room.Client(), _home, DriverConfig.Empty, SessionWire.Pipe, null) { Drives = Drives, LoopRuns = () => false };
+        var output = new StringWriter();
+
+        Assert.Equal(0, await SessionsCommand.RunAsync(SessionsCommand.Read(["hand-over", "qu3st000", "--agent", "codex-acp"], out _)!, world, output));
+        Assert.EndsWith("no driver is running on this home now: its look takes it when one does.\n", output.ToString().ReplaceLineEndings("\n"));
+
+        var refused = new StringWriter();
+        Assert.Equal(1, await SessionsCommand.RunAsync(SessionsCommand.Read(["hand-over", "qu3st000", "--agent", "gemini"], out _)!, world, refused));
+        Assert.Equal("sessions: no agent here is called gemini.\n", refused.ToString().ReplaceLineEndings("\n"));
+    }
+
     /// <summary>One line says what came of it: kept, taken at once, or refused with its sentence.</summary>
     [Theory]
     [InlineData(true, "c0nv0002", null, 0, "sessions: conversation `c0nv0002` goes on from it with codex-acp.")]
