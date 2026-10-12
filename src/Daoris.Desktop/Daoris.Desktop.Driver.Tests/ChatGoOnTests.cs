@@ -289,6 +289,72 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
+    /// MIXAGENT2a-iii: an ended conversation goes on with a helper's answer through its own going-on, and says so as the driven
+    /// quest's does (D163): the ledger's note and the opening name a helper's answer where it is all that waits, "your words" only
+    /// where the person's wait too, and never "your words" for a claim of another agent.
+    /// </summary>
+    [Fact]
+    public void A_going_on_with_a_helpers_answer_says_whose_words_it_goes_on_with()
+    {
+        var persons = new SaidWordView("w1", "Also log the port.", DateTimeOffset.UtcNow, [], true);
+        var helper = new SaidWordView("w2", "Another agent says five.", DateTimeOffset.UtcNow, [], true) { Helper = "h1" };
+
+        Assert.Equal(Continuations.GoingOn, ChatRunner.GoingOnNote([persons]).Note);
+        Assert.Equal(Continuations.GoingOn, ChatRunner.GoingOnNote([persons, helper]).Note);
+        Assert.Equal(Continuations.GoingOnWithHelper, ChatRunner.GoingOnNote([helper]).Note);
+
+        Assert.StartsWith("— your words are the next turn", ChatRunner.OpeningNote([persons], "talk", "2", "2").Note);
+        Assert.StartsWith("— your words and a helper's answer are the next turn", ChatRunner.OpeningNote([persons, helper], "talk", "2", "2").Note);
+        var only = ChatRunner.OpeningNote([helper], "talk", "2", "2");
+        Assert.StartsWith("— a helper's answer is the next turn", only.Note);
+        Assert.Equal(["resumed.opening"], NoteAssert.Codes(only.Parts));
+        Assert.Equal(ResumedWhy.Helper, only.Parts[0].Value("why"));
+    }
+
+    /// <summary>
+    /// MIXAGENT2a-iii: the ledger is told it goes on with a helper's answer, never "your words", where that is all that waits;
+    /// the conversation is its own and the person's words are none of it.
+    /// </summary>
+    [Fact]
+    public async Task An_ended_chat_with_only_a_helpers_answer_goes_on_and_the_ledger_is_told_so()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "talk", _root).Helped("w1", "Another agent says five.");
+        new HarnessConversations(_home).Keep("c1", "talk", "conv-c1");
+        var events = Events;
+        using var runner = Runner(ledger, events);
+        var ended = new List<(string Session, string State)>();
+        runner.TakenUpEnded += (session, state) => { lock (ended) ended.Add((session, state)); };
+
+        events.Append("c1", Shown("w1", "Another agent says five.") with { Origin = "target" });
+
+        await Poll.Until(() => { lock (ended) return ended.Count > 0; }, () => $"moves [{string.Join(",", ledger.Moves("c1"))}]");
+        Assert.Equal(["working", "failed"], ledger.Moves("c1"));
+        Assert.Contains(Continuations.GoingOnWithHelper, ledger.Notes("c1")[0]);
+        Assert.DoesNotContain("your words", ledger.Notes("c1")[0]);
+    }
+
+    /// <summary>
+    /// MIXAGENT2a-iii: a helper's answer for a conversation that is open in no runner here (the shell came up with it left on a
+    /// record that works) is not an ended chat's words: nothing goes on, and it waits where it is.
+    /// </summary>
+    [Fact]
+    public async Task A_helpers_answer_left_on_a_record_no_runner_holds_starts_nothing()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "working", "talk", _root).Helped("w1", "Another agent says five.");
+        var events = Events;
+        using var runner = Runner(ledger, events);
+
+        var taken = await runner.TakeUpAsync();
+
+        Assert.Empty(taken);
+        Assert.Empty(ledger.Moves("c1"));
+        Assert.Equal(["w1"], ledger.Said("c1"));
+        Assert.Empty(events.After("c1", 0).Events);
+    }
+
+    /// <summary>
     /// MSG1c2: words kept on an ended chat while no runner heard them (the shell was not running) are taken up when one
     /// comes up, judged as words shown now are: here a chat whose conversation was not kept says why. What the runner never
     /// takes up stays as it was: a driven record (the planner's), a live chat, a chat with no words, and a chat whose every
@@ -489,7 +555,12 @@ internal sealed class ChatLedger : HttpMessageHandler
     public sealed class Words(ChatLedger ledger, string id)
     {
         /// <param name="files">The names of the files said with the words, as the record keeps them.</param>
-        public Words Say(string word, string text, params string[] files)
+        public Words Say(string word, string text, params string[] files) => Said(word, text, null, files);
+
+        /// <summary>A helper's answer (MIXAGENT2a-iii), as the hand door keeps it: marked with the helper's session, never the person's.</summary>
+        public Words Helped(string word, string text, string helper = "h1") => Said(word, text, helper, []);
+
+        private Words Said(string word, string text, string? helper, string[] files)
         {
             lock (ledger._gate)
             {
@@ -497,6 +568,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                 {
                     ["id"] = word, ["text"] = text, ["at"] = "2026-10-03T09:00:00Z",
                     ["files"] = new JsonArray([.. files.Select(name => (JsonNode)JsonValue.Create(name))]), ["reopens"] = true,
+                    ["helper"] = helper,
                 });
             }
 
@@ -522,6 +594,14 @@ internal sealed class ChatLedger : HttpMessageHandler
     public IReadOnlyList<string> Moves(string id)
     {
         lock (_gate) return [.. _moves.GetValueOrDefault(id) ?? []];
+    }
+
+    private readonly Dictionary<string, List<string>> _notes = new(StringComparer.Ordinal);
+
+    /// <summary>The note each move of a record carried, in order: what the ledger was told as it moved.</summary>
+    public IReadOnlyList<string> Notes(string id)
+    {
+        lock (_gate) return [.. _notes.GetValueOrDefault(id) ?? []];
     }
 
     private JsonObject Find(string id) => _sessions.Single(s => s["id"]!.GetValue<string>() == id);
@@ -612,7 +692,13 @@ internal sealed class ChatLedger : HttpMessageHandler
                     }
 
                     session["state"] = to;
-                    if (JsonNode.Parse(body!)!["note"]?.GetValue<string>() is { } note) session["note"] = note;
+                    if (JsonNode.Parse(body!)!["note"]?.GetValue<string>() is { } note)
+                    {
+                        session["note"] = note;
+                        if (!_notes.TryGetValue(id, out var written)) _notes[id] = written = [];
+                        written.Add(note);
+                    }
+
                     if (!_moves.TryGetValue(id, out var moves)) _moves[id] = moves = [];
                     moves.Add(to);
                     return (HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "moved" }.ToJsonString());

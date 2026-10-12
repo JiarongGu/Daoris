@@ -108,6 +108,31 @@ public sealed class StartFromTests : IDisposable
     }
 
     /// <summary>
+    /// MIXAGENT2a-iii: a helper's answer is another agent's claim, never the person's words, so a new conversation is never
+    /// handed it as theirs: where only a helper's answer waits nothing starts, and where the person's words wait beside it only
+    /// theirs go, the claim staying on the record for the conversation it was meant for.
+    /// </summary>
+    [Fact]
+    public async Task A_helpers_answer_is_never_carried_into_a_new_conversation_as_the_persons_words()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "talk", _root).Helped("h1w", "Another agent says five.");
+        ledger.Chat("c2", "completed", "talk", _root).Say("w1", "Also log the port.").Helped("h2w", "Another agent says five.");
+        var asked = new Asked();
+
+        var only = await RunAsync(ledger, "c1", asked);
+        Assert.Equal((null, false, StartFrom.NoWords), (only.SessionId, only.Sent, only.Why));
+        Assert.Empty(asked.Started);
+
+        var mixed = await RunAsync(ledger, "c2", asked);
+        Assert.True(mixed.Sent);
+        Assert.Equal("Also log the port.", Assert.Single(asked.Said).Text);
+        Assert.Equal([("c2", "w1", (string?)"c9")], ledger.TakenBy);
+        Assert.Equal(["h1w"], ledger.Said("c1"));
+        Assert.Equal(["h2w"], ledger.Said("c2"));
+    }
+
+    /// <summary>
     /// What is refused is refused before anything starts, by its code, nothing taken and nothing said: what never goes on
     /// (a teammate's record, Ask Daoris's own, an intake, a stand-down), a session still running or parked (its words reach
     /// it there), one with no words waiting, a session whose quest the driver carries on by itself, and no record.

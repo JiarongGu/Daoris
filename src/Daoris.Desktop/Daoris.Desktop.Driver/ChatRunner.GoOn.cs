@@ -299,7 +299,7 @@ public sealed partial class ChatRunner
         // is spawned: it holds the tree again, and refuses where another session holds it (D51).
         try
         {
-            await _service.AdvanceAsync(sessionId, "working", Continuations.GoingOnNoted, ct: ct).ConfigureAwait(false);
+            await _service.AdvanceAsync(sessionId, "working", GoingOnNote(record.Waiting), ct: ct).ConfigureAwait(false);
         }
         catch (DriverException refused)
         {
@@ -316,14 +316,40 @@ public sealed partial class ChatRunner
         // rules already read its own files folder (CONV4c).
         var ask = new ResumeAsk(
             kept.Conversation, words,
-            Continuations.OpeningNoted(adapter.Name, selection.Version, record.HarnessVersion, answer: false),
+            OpeningNote(words, adapter.Name, selection.Version, record.HarnessVersion),
             files: word => ChatFiles.Kept(_home, sessionId, word.Files));
 
         return await RunAsync(
-            sessionId, $"conversation `{sessionId}` goes on with your words in its own conversation.", adapter, selection, config,
+            sessionId,
+            words.Any(word => word.Persons)
+                ? $"conversation `{sessionId}` goes on with your words in its own conversation."
+                : $"conversation `{sessionId}` goes on with another agent's answer in its own conversation.",
+            adapter, selection, config,
             RepositoryPlace(config, registry, known, record.Repository!, record.Tree!), onEnded, ct,
             new GoingOn(record, ask)).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// What the ledger's note gains as an ended chat goes on (MSG1b), by what waits: another agent's claims alone are never "your
+    /// words" (XAGENT1e, MIXAGENT2a-iii), as the driven path's note is (<c>Driver.Continue</c>).
+    /// </summary>
+    internal static Noted GoingOnNote(IReadOnlyList<SaidWordView> waiting)
+    {
+        var persons = waiting.Any(word => word.Persons);
+        if (persons) return Continuations.GoingOnNoted;
+        return waiting.Any(word => word.By is not null) ? Continuations.GoingOnWithFindingsNoted
+            : waiting.Any(word => word.Helper is not null) ? Continuations.GoingOnWithHelperNoted
+            : Continuations.GoingOnNoted;
+    }
+
+    /// <summary>
+    /// The resumed conversation's first line (D131 §1), by what it goes on with: the same arguments the driven path passes
+    /// (<c>Driver.Continue</c>), so a helper's answer is said as that agent's claim and never as "your words" (MIXAGENT2a-iii).
+    /// </summary>
+    internal static Noted OpeningNote(IReadOnlyList<SaidWordView> words, string adapter, string? now, string? then) =>
+        Continuations.OpeningNoted(
+            adapter, now, then, answer: false, findings: words.Any(word => word.By is not null),
+            persons: words.Any(word => word.Persons), helper: words.Any(word => word.Helper is not null));
 
     /// <summary>The record read again, or null where the service did not answer: the first read's words then stand.</summary>
     private async Task<PriorSession?> ReadAgainAsync(string sessionId, CancellationToken ct)
