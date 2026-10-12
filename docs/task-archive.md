@@ -13870,3 +13870,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PROCESS1a — the commit rule** (driver/cli). `commits`/`workspaceCommits` in `driver.json`: `mode` `as-you-go` (default) | `ask` | `at-end`, an optional bounded `convention`; resolved as review is (a repository's whole rule replaces its workspace's), a shared JSON table both twins hold, `daoris driver commits`. D164's amendment point 1.
 
 **Outcome** 2026-10-12: built as the row says: `CommitRules` and its CLI twin `commits.ts` on the shared table `commit-rules.json`; a convention is one paragraph of at most 400 characters; `daoris driver commits … [--mode …] [--convention "…"|--no-convention] | --clear`. Nothing reads it yet: the Setup rows are PROCESS1c's, what sessions are told PROCESS1d's. Detail: D164's PROCESS1a note.
+
+## MIXAGENT1b-iii — the offer names another tool and a ready account (2026-10-12, D163)
+
+> - [ ] **MIXAGENT1b-iii — the offer names another tool and a ready account** (web). Seen 2026-10-12 on the install: a Claude conversation (protocol door) whose account was near its limit was offered *go on with Claude Code (Gmail)*: the same tool through its other door, on the very account that was near. The offer's candidates are other tools (by the accounts' owner, never another door of the session's own tool), and never the session's own account or one that is itself near, refused or cooling. `handOverOffer`'s conditions as a pure function, a case from that reading. D163's MIXAGENT1b-ii note.
+
+**Outcome** 2026-10-12: built as the row says: `handOverOffer` draws from `otherToolDoors` and passes over a near, refused or cooling account; the *Choose…* ask lists those tools first and still offers the rest. Detail: D163's MIXAGENT1b-iii note.

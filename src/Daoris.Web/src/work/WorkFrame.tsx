@@ -56,7 +56,7 @@ import { sessionFacts } from './headFacts';
 import type { Answered } from './InlineConfirm';
 import type { AgentChoice } from './AgentChip';
 import { HandOverAsk, type HandOverRoster } from './HandOverAsk';
-import { handOverOffer } from './handOverOffer';
+import { handOverOffer, otherToolDoors } from './handOverOffer';
 import { HandOverOfferLine } from './HandOverOfferLine';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { type SessionDoors, useSessionActs } from './sessionActs';
@@ -1349,6 +1349,7 @@ export function WorkFrame({
         <HandOverAsk
           key={attended.id}
           from={attended.adapter}
+          first={otherToolDoors(attended, roster).map((door) => door.harness)}
           repository={attended.repository}
           working={SESSION_ACTIVE.has(attended.state)}
           roster={agentRoster}

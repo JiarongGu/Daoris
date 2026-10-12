@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- The offer to go on with another agent names another tool on an account with room, never the same tool through its other door
+  or an account that is near its limit, refused or cooling; *Choose…* lists those tools first.
 - Review shows the work a session's tree holds that it has not committed, apart from what it committed, under *Not committed
   yet*, and no longer says "Nothing landed" over it; where Accept would refuse until those files are committed, the review says
   so before the press, in both languages.
