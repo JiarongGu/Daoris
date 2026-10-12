@@ -1,0 +1,48 @@
+{
+  "about": "The commit rule in driver.json, `commits` and `workspaceCommits` (PROCESS1a, D164's amendment point 1): the table both twins hold, the CLI's commits.ts (through driverconfig.ts) and the driver's CommitRules. `read`: a file's text, a repository and its workspace (null is none, read as the default one), and what resolves: the source (`repository`, `workspace`, or `default` for nothing set) and the rule as kept, as JSON text. `problems`: what an entry holds, as JSON text, and the first problem said, null for none. `listed`: a rule as JSON text and how the list says it. `edits`: a file's text, an edit as JSON text, the two maps the file holds after it (as JSON text) or the refusal in words.",
+  "read": [
+    ["nothing set is as you go", "{}", "web-app", "work", "default", "{\"mode\":\"as-you-go\"}"],
+    ["a repository's rule is its own", "{\"commits\":{\"web-app\":{\"mode\":\"ask\",\"convention\":\"Imperative subject.\"}}}", "web-app", "work", "repository", "{\"mode\":\"ask\",\"convention\":\"Imperative subject.\"}"],
+    ["a workspace's rule reaches a repository that sets none", "{\"workspaceCommits\":{\"work\":{\"mode\":\"at-end\"}}}", "notes-site", "work", "workspace", "{\"mode\":\"at-end\"}"],
+    ["a repository's rule replaces its workspace's whole", "{\"commits\":{\"web-app\":{\"mode\":\"ask\"}},\"workspaceCommits\":{\"work\":{\"mode\":\"at-end\",\"convention\":\"One commit.\"}}}", "web-app", "work", "repository", "{\"mode\":\"ask\"}"],
+    ["a repository in no workspace is in default", "{\"workspaceCommits\":{\"default\":{\"mode\":\"ask\"}}}", "web-app", null, "workspace", "{\"mode\":\"ask\"}"],
+    ["names match in any case", "{\"commits\":{\"Web-App\":{\"mode\":\"at-end\"}}}", "web-app", "work", "repository", "{\"mode\":\"at-end\"}"],
+    ["a rule with a problem is not read", "{\"commits\":{\"web-app\":{\"mode\":\"sometimes\"}}}", "web-app", "work", "default", "{\"mode\":\"as-you-go\"}"],
+    ["a convention is trimmed", "{\"commits\":{\"web-app\":{\"convention\":\"  Imperative subject.  \"}}}", "web-app", "work", "repository", "{\"mode\":\"as-you-go\",\"convention\":\"Imperative subject.\"}"]
+  ],
+  "problems": [
+    ["an empty rule is as you go", "{}", null],
+    ["ask with a convention", "{\"mode\":\"ask\",\"convention\":\"Imperative subject.\"}", null],
+    ["at the end", "{\"mode\":\"at-end\"}", null],
+    ["a blank convention is none", "{\"convention\":\"  \"}", null],
+    ["a convention of 400 characters", "{\"convention\":\"CONV400\"}", null],
+    ["false is no rule here", "false", "a commit rule is an object with its `mode` and an optional `convention`."],
+    ["a list is no rule", "[]", "a commit rule is an object with its `mode` and an optional `convention`."],
+    ["a mode not named", "{\"mode\":\"always\"}", "`mode` is `as-you-go`, `ask` or `at-end`: whether commits are made as the work goes, wait for your yes first, or are made once at the end."],
+    ["a mode that is no word", "{\"mode\":true}", "`mode` is `as-you-go`, `ask` or `at-end`: whether commits are made as the work goes, wait for your yes first, or are made once at the end."],
+    ["a convention that is no word", "{\"convention\":3}", "`convention` is your words on how a commit is written: one paragraph with no line break, at most 400 characters."],
+    ["a convention past 400 characters", "{\"convention\":\"CONV401\"}", "`convention` is your words on how a commit is written: one paragraph with no line break, at most 400 characters."],
+    ["a convention with a line break", "{\"convention\":\"One.\\nTwo.\"}", "`convention` is your words on how a commit is written: one paragraph with no line break, at most 400 characters."]
+  ],
+  "listed": [
+    ["as you go names no convention", "{\"mode\":\"as-you-go\"}", "as-you-go"],
+    ["a convention follows the mode", "{\"mode\":\"ask\",\"convention\":\"Imperative subject.\"}", "ask: Imperative subject."]
+  ],
+  "edits": [
+    ["a repository's first rule", "{}", "{\"repository\":\"web-app\",\"set\":{\"mode\":\"ask\",\"convention\":\"Imperative subject.\"}}", "{\"commits\":{\"web-app\":{\"mode\":\"ask\",\"convention\":\"Imperative subject.\"}}}", null],
+    ["a workspace's first rule, by its mode alone", "{}", "{\"workspace\":\"work\",\"set\":{\"mode\":\"at-end\"}}", "{\"workspaceCommits\":{\"work\":{\"mode\":\"at-end\"}}}", null],
+    ["a set changes only what it names, under the spelling first written", "{\"commits\":{\"web-app\":{\"mode\":\"ask\",\"convention\":\"One.\"}}}", "{\"repository\":\"Web-App\",\"set\":{\"convention\":\" Two. \"}}", "{\"commits\":{\"web-app\":{\"mode\":\"ask\",\"convention\":\"Two.\"}}}", null],
+    ["an empty convention takes the convention away", "{\"commits\":{\"web-app\":{\"mode\":\"ask\",\"convention\":\"One.\"}}}", "{\"repository\":\"web-app\",\"set\":{\"convention\":\"\"}}", "{\"commits\":{\"web-app\":{\"mode\":\"ask\"}}}", null],
+    ["clear takes the rule away", "{\"commits\":{\"web-app\":{\"mode\":\"ask\"}}}", "{\"repository\":\"web-app\",\"clear\":true}", "{}", null],
+    ["no scope", "{}", "{\"set\":{\"mode\":\"ask\"}}", null, "a commit rule is set for a repository or a workspace — name exactly one."],
+    ["both scopes", "{}", "{\"repository\":\"web-app\",\"workspace\":\"work\",\"set\":{\"mode\":\"ask\"}}", null, "a commit rule is set for a repository or a workspace — name exactly one."],
+    ["no change", "{}", "{\"repository\":\"web-app\"}", null, "one change at a time: set its mode or its convention, or clear."],
+    ["a set that names nothing", "{}", "{\"repository\":\"web-app\",\"set\":{}}", null, "one change at a time: set its mode or its convention, or clear."],
+    ["a set and a clear", "{}", "{\"repository\":\"web-app\",\"set\":{\"mode\":\"ask\"},\"clear\":true}", null, "one change at a time: set its mode or its convention, or clear."],
+    ["a mode not named", "{}", "{\"repository\":\"web-app\",\"set\":{\"mode\":\"always\"}}", null, "`mode` is `as-you-go`, `ask` or `at-end`: whether commits are made as the work goes, wait for your yes first, or are made once at the end."],
+    ["a mode that is no word", "{}", "{\"repository\":\"web-app\",\"set\":{\"mode\":1}}", null, "`mode` is `as-you-go`, `ask` or `at-end`: whether commits are made as the work goes, wait for your yes first, or are made once at the end."],
+    ["a convention that is no word", "{}", "{\"repository\":\"web-app\",\"set\":{\"convention\":null}}", null, "`convention` is your words on how a commit is written: one paragraph with no line break, at most 400 characters."],
+    ["a convention with a line break", "{}", "{\"repository\":\"web-app\",\"set\":{\"convention\":\"One.\\nTwo.\"}}", null, "`convention` is your words on how a commit is written: one paragraph with no line break, at most 400 characters."],
+    ["a convention past 400 characters", "{}", "{\"repository\":\"web-app\",\"set\":{\"convention\":\"CONV401\"}}", null, "`convention` is your words on how a commit is written: one paragraph with no line break, at most 400 characters."]
+  ]
+}

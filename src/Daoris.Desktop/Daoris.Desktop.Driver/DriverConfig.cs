@@ -289,6 +289,19 @@ public sealed record DriverConfig(
         new Dictionary<string, HelperRule>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// How work is committed in each repository (PROCESS1a, D164's amendment point 1): a mode (<c>as-you-go</c>, <c>ask</c>,
+    /// <c>at-end</c>) and an optional convention. A repository's rule replaces its workspace's whole (<see cref="CommitRules.Resolve"/>);
+    /// absent is <c>as-you-go</c>. Edited only through <see cref="CommitRules.Apply"/>; the CLI's <c>driverconfig.ts</c> reads it
+    /// the same way, by one shared table (<c>CommitRulesTests</c>).
+    /// </summary>
+    public IReadOnlyDictionary<string, CommitRule> Commits { get; init; } =
+        new Dictionary<string, CommitRule>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A workspace's commit rule, for every repository in it that sets none of its own.</summary>
+    public IReadOnlyDictionary<string, CommitRule> WorkspaceCommits { get; init; } =
+        new Dictionary<string, CommitRule>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Which workflow each repository's work follows (WORKFLOW1e, D157 point 10, the workflow design §2.5, §4.1), by repository: a
     /// default and a workflow for each of its workspace's kinds. A repository that names any replaces its workspace's whole
     /// (<see cref="WorkflowSelection.Resolve"/>); absent is its workspace's, then Current, which is today's behaviour. Edited only
@@ -640,6 +653,8 @@ public sealed record DriverConfig(
             // Written only when set (MIXAGENT2a-i), as the CLI writes them: absent is the default, `ask`.
             HelperRules.WriteMap(writer, "helpers", Helpers);
             HelperRules.WriteMap(writer, "workspaceHelpers", WorkspaceHelpers);
+            CommitRules.WriteMap(writer, "commits", Commits);
+            CommitRules.WriteMap(writer, "workspaceCommits", WorkspaceCommits);
             // Written only when set (WORKFLOW1e), as the CLI writes them: absent is Current, today's behaviour.
             WorkflowSelection.WriteMap(writer, "workflows", Workflows, workspace: false);
             WorkflowSelection.WriteMap(writer, "workspaceWorkflows", WorkspaceWorkflows, workspace: true);
@@ -1005,6 +1020,8 @@ public sealed record DriverConfig(
             WorkspaceOpinions = OpinionRules.Map(root, "workspaceOpinions", allowNone: false),
             Helpers = HelperRules.Map(root, "helpers"),
             WorkspaceHelpers = HelperRules.Map(root, "workspaceHelpers"),
+            Commits = CommitRules.Map(root, "commits"),
+            WorkspaceCommits = CommitRules.Map(root, "workspaceCommits"),
             // An entry with a problem, or naming nothing, is not read (WORKFLOW1e).
             Workflows = WorkflowSelection.Map(root, "workflows", workspace: false),
             WorkspaceWorkflows = WorkflowSelection.Map(root, "workspaceWorkflows", workspace: true),
