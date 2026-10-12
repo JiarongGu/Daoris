@@ -457,6 +457,7 @@ describe('the real glossary and catalogues', () => {
       'note.helper.answered-last-words:en', 'note.helper.answered:en', 'note.helper.asked:en', 'note.helper.refused-by:en',
       'note.helper.refused:en', 'note.helper.why.asker-gone:zh', 'note.helper.why.asker-unfit:en', 'note.helper.why.no-answer:en',
       'note.helper.why.not-started:en', 'note.helper.why.unreadable:en', 'note.ledger.went-on-helper-both:en', 'note.ledger.went-on-helper:en',
+      'note.resumed.why.helper:en', 'note.resumed.why.words-and-helper:en',
       'settings.browser.which.hintDaoris:en', 'settings.browser.which.hintEdge:en',
       'settings.home.hint:en', 'settings.home.hintOverridden:en', 'settings.home.hintThisStart:en',
       'settings.sync.notFetched.https:en',

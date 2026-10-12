@@ -68,7 +68,7 @@ public sealed class NoteCodesTests
     public void Every_reason_a_why_may_name_has_an_entry_that_says_its_own_values(string language)
     {
         var catalogue = Catalogue(language);
-        foreach (var reasons in new[] { NoteCodes.Continue, NoteCodes.Cooling, NoteCodes.Opening, NoteCodes.Resumed, NoteCodes.Unreached, NoteCodes.Handed })
+        foreach (var reasons in new[] { NoteCodes.Continue, NoteCodes.Cooling, NoteCodes.Opening, NoteCodes.Resumed, NoteCodes.Unreached, NoteCodes.Handed, NoteCodes.Helper })
         {
             foreach (var reason in reasons.All)
             {

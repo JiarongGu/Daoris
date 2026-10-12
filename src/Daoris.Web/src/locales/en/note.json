@@ -106,6 +106,8 @@
   "note.resumed.why.findings": "another agent's findings are",
   "note.resumed.why.answer-and-findings": "your answer and another agent's findings are",
   "note.resumed.why.words-and-findings": "your words and another agent's findings are",
+  "note.resumed.why.helper": "a helper's answer is",
+  "note.resumed.why.words-and-helper": "your words and a helper's answer are",
   "note.refused.lead": "Permission refused:",
   "note.refused.governs": "— the rules it runs under govern, and the driver may not widen them.",
   "note.words.refused": "The session would not take what you added:",

@@ -278,6 +278,8 @@ export const RESUMED_REASONS: Readonly<Record<string, { key: string; values: rea
   findings: { key: 'note.resumed.why.findings', values: [] },
   'answer-and-findings': { key: 'note.resumed.why.answer-and-findings', values: [] },
   'words-and-findings': { key: 'note.resumed.why.words-and-findings', values: [] },
+  helper: { key: 'note.resumed.why.helper', values: [] },
+  'words-and-helper': { key: 'note.resumed.why.words-and-helper', values: [] },
 };
 
 /**

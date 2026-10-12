@@ -152,7 +152,7 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
   /** CONVNOTE2a: whose words a resumed conversation goes on with is a reason of its own family, held key for key. */
   it('words every way a resumed conversation’s first line says whose words', () => {
     const resumed = reasons('Resumed');
-    expect(resumed.length).toBe(5);
+    expect(resumed.length).toBe(7);
     const page = Object.values(RESUMED_REASONS).map(({ key, values }) => ({ key, values: [...values] }));
     const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
     expect(page.sort(byKey)).toEqual([...resumed].sort(byKey));

@@ -106,6 +106,8 @@
   "note.resumed.why.findings": "另一个智能体的发现是",
   "note.resumed.why.answer-and-findings": "你的回答和另一个智能体的发现是",
   "note.resumed.why.words-and-findings": "你的话和另一个智能体的发现是",
+  "note.resumed.why.helper": "助手的回答是",
+  "note.resumed.why.words-and-helper": "你的话和助手的回答是",
   "note.refused.lead": "权限被拒绝：",
   "note.refused.governs": "—— 它所遵循的规则说了算，驱动不得放宽。",
   "note.words.refused": "会话没有接受你补充的内容：",

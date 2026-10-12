@@ -236,18 +236,34 @@ public static class Continuations
         OpeningNoted(adapter, now, then, answer, findings, persons).Note;
 
     /// <summary>
+    /// What an ended record's note gains as it goes on with a helper's answer alone (MIXAGENT2a-ii): never "your words", which
+    /// they are not.
+    /// </summary>
+    public const string GoingOnWithHelper = "It goes on with a helper's answer in its own conversation, in the tree it worked in, to check against the code.";
+
+    /// <summary><see cref="GoingOnWithHelper"/> as its note's line, uncoded as the findings' twin is until the page words one.</summary>
+    public static Noted GoingOnWithHelperNoted => Noted.Said(GoingOnWithHelper, NoteBy.Before);
+
+    /// <summary>
     /// <see cref="Opening"/> with its lines by code (CONVNOTE2a, D152's CONVNOTE2a note): the adapter and who spoke as the
     /// lead's facts, and a version that moved as a part riding inside it, both versions facts. The English is byte for byte
     /// what <see cref="Opening"/> always was.
     /// </summary>
-    public static Noted OpeningNoted(string adapter, string? now, string? then, bool answer = true, bool findings = false, bool persons = true)
+    /// <param name="helper">
+    /// Whether a helper's answer is among them (MIXAGENT2a-ii): said as that agent's claim. Where findings are too, the findings'
+    /// reason stands, as the ledger's line says them.
+    /// </param>
+    public static Noted OpeningNoted(
+        string adapter, string? now, string? then, bool answer = true, bool findings = false, bool persons = true, bool helper = false)
     {
-        var (said, why) = (findings, persons) switch
+        var (said, why) = (findings, persons, helper) switch
         {
-            (true, false) => ("another agent's findings are", ResumedWhy.Findings),
-            (true, true) => answer
+            (true, false, _) => ("another agent's findings are", ResumedWhy.Findings),
+            (true, true, _) => answer
                 ? ("your answer and another agent's findings are", ResumedWhy.AnswerAndFindings)
                 : ("your words and another agent's findings are", ResumedWhy.WordsAndFindings),
+            (false, false, true) => ("a helper's answer is", ResumedWhy.Helper),
+            (false, true, true) when !answer => ("your words and a helper's answer are", ResumedWhy.WordsAndHelper),
             _ => answer ? ("your answer is", ResumedWhy.Answer) : ("your words are", ResumedWhy.Words),
         };
         var lead = $"— {said} the next turn of its own conversation, resumed on `{adapter}`";

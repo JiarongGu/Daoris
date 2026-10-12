@@ -376,6 +376,8 @@ public static class NoteCodes
         new(ResumedWhy.Findings, [], "note.resumed.why.findings"),
         new(ResumedWhy.AnswerAndFindings, [], "note.resumed.why.answer-and-findings"),
         new(ResumedWhy.WordsAndFindings, [], "note.resumed.why.words-and-findings"),
+        new(ResumedWhy.Helper, [], "note.resumed.why.helper"),
+        new(ResumedWhy.WordsAndHelper, [], "note.resumed.why.words-and-helper"),
     ]);
 
     /// <summary>Why the person's words never reached the session (CONVNOTE2d1; <see cref="UnreachedWhy"/>): the page's <c>note.words.why.*</c>.</summary>
@@ -943,6 +945,12 @@ public static class ResumedWhy
 
     /// <summary>The person's words and another agent's findings.</summary>
     public const string WordsAndFindings = "words-and-findings";
+
+    /// <summary>A helper's answer alone (MIXAGENT2a-ii).</summary>
+    public const string Helper = "helper";
+
+    /// <summary>The person's words and a helper's answer.</summary>
+    public const string WordsAndHelper = "words-and-helper";
 }
 
 /// <summary>

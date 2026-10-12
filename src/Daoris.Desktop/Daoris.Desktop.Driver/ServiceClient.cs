@@ -1464,6 +1464,10 @@ public sealed partial class ServiceClient : IDisposable
             // The person's words waiting on it (MSG1a): what goes on with it, parked or ended (MSG1b, D137 §2.2).
             Said = ReadSaid(session),
             Ask = Text(session, "ask"),
+            // What a helper may be asked of, and where its rule resolves (MIXAGENT2a-ii): served on loopback with the record.
+            Serves = Text(session, "serves"),
+            Opinion = Text(session, "opinion"),
+            Workspace = Text(session, "workspace"),
             // A chat goes on through the chat runner, never the planner (MSG1c).
             Kind = Text(session, "kind") ?? "driven",
             // Its note's lines by code (LANG1a), which a note added to it carries on; null for a record from before parts.
@@ -1491,7 +1495,12 @@ public sealed partial class ServiceClient : IDisposable
     internal static SaidWordView? ReadWord(JsonElement word) =>
         word.ValueKind == JsonValueKind.Object
         && Text(word, "id") is { Length: > 0 } id && Text(word, "text") is { } words && Moment(word, "at") is { } at
-            ? new SaidWordView(id, words, at, Strings(word, "files"), Flag(word, "reopens")) { By = Text(word, "by") is { Length: > 0 } by ? by : null }
+            ? new SaidWordView(id, words, at, Strings(word, "files"), Flag(word, "reopens"))
+            {
+                By = Text(word, "by") is { Length: > 0 } by ? by : null,
+                // A helper's answer is its own mark, never `by` (MIXAGENT2a-i): the person's words are neither.
+                Helper = Text(word, "helper") is { Length: > 0 } helper ? helper : null,
+            }
             : null;
 
     /// <summary>
