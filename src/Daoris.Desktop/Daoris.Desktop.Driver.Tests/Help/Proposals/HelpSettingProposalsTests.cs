@@ -305,6 +305,154 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
+    /// DOORS1a (D163 point 3, MIXAGENT2a-i): a helpers rule for a registered repository or a workspace, in the terminal's words,
+    /// judged by the twin's table and planned with the rule it leaves and what an agent's ask then does, in `driver helpers`'
+    /// own sentences.
+    /// </summary>
+    [Theory]
+    [InlineData("engine", null, "--mode on --agents codex-acp", "daoris driver helpers engine --mode on --agents codex-acp",
+        "Set the helpers rule for `engine`: on: `codex-acp`. A helper an agent asks for starts at once, within the limits")]
+    [InlineData(null, "work", "--agents \"codex-acp, dsh\"", "daoris driver helpers --workspace work --agents \"codex-acp, dsh\"",
+        "Set the helpers rule for each repository of workspace `work` that sets none of its own: ask: `codex-acp`, else `dsh`. "
+        + "Each helper an agent asks for waits for your yes.")]
+    [InlineData("game", null, "--mode off", "daoris driver helpers game --mode off",
+        "A helper is not offered to a session here: only your own press asks one.")]
+    [InlineData("engine", null, "--clear", "daoris driver helpers engine --clear",
+        "Clear `engine`'s helpers rule: it takes its workspace's again, else each helper waits for your yes.")]
+    [InlineData(null, "work", "--clear", "daoris driver helpers --workspace work --clear",
+        "Clear workspace `work`'s helpers rule: each repository there keeps its own, else each helper waits for your yes.")]
+    public void A_helpers_rule_is_planned_with_what_an_agents_ask_then_does(
+        string? target, string? workspace, string value, string terminal, string says)
+    {
+        var plan = HelpProposals.Plan(Setting("helpers", target, workspace, value), DriverConfig.Empty, Facts);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal(terminal, plan.Terminal);
+        Assert.Contains(says, plan.Describe);
+        Assert.NotNull(plan.Apply);
+    }
+
+    /// <summary>DOORS1a: the card's edit is the terminal's: a set changes only what it names over the rule set there, and a clear takes it back.</summary>
+    [Fact]
+    public void A_helpers_rule_applied_is_the_edit_the_terminal_makes()
+    {
+        var config = HelpProposals.Plan(Setting("helpers", null, "work", "--mode on --agents \"codex-acp, dsh\""), DriverConfig.Empty, Facts)
+            .Apply!(DriverConfig.Empty);
+        Assert.Equal("""{"mode":"on","agents":["codex-acp","dsh"]}""", HelperRules.ToJson(config.WorkspaceHelpers["work"]));
+
+        config = HelpProposals.Plan(Setting("helpers", null, "work", "--mode off"), config, Facts).Apply!(config);
+        Assert.Equal("""{"mode":"off","agents":["codex-acp","dsh"]}""", HelperRules.ToJson(config.WorkspaceHelpers["work"]));
+
+        config = HelpProposals.Plan(Setting("helpers", null, "work", "--clear"), config, Facts).Apply!(config);
+        Assert.False(config.WorkspaceHelpers.ContainsKey("work"));
+    }
+
+    /// <summary>DOORS1a: the twin's refusals, the registry's names, and a form `daoris driver helpers` does not take, each refused in its words.</summary>
+    [Theory]
+    [InlineData("engine", "work", "--clear", "a helpers rule is set for a repository or a workspace — name exactly one.")]
+    [InlineData(null, null, "--mode on", "a helpers rule is set for a repository or a workspace — name exactly one.")]
+    [InlineData("elsewhere", null, "--clear", "is not registered on this machine")]
+    [InlineData(null, "elsewhere", "--clear", "no workspace `elsewhere`")]
+    [InlineData("engine", null, "--mode sometimes", "`mode` is `ask`, `on` or `off`")]
+    [InlineData("engine", null, "--agents dsh,dsh", "`dsh` is named twice")]
+    [InlineData("engine", null, "--agents ,", "each agent is an adapter's name")]
+    [InlineData("engine", null, "--mode on --clear", "one change at a time")]
+    [InlineData("engine", null, "", "`helpers` is `--mode ask|on|off` and/or `--agents <adapter,adapter>`, or `--clear`")]
+    [InlineData("engine", null, "--mode", "`--mode` needs its value")]
+    [InlineData("engine", null, "--mode on --colour blue", "`--colour` is not a word `helpers` takes")]
+    [InlineData("engine", null, "codex-acp", "`codex-acp` is not a word `helpers` takes")]
+    [InlineData("engine", null, "--agents \"dsh", "close every quote they open")]
+    public void A_helpers_rule_is_refused_in_the_twins_words(string? target, string? workspace, string value, string says)
+    {
+        var plan = HelpProposals.Plan(Setting("helpers", target, workspace, value), DriverConfig.Empty, Facts);
+
+        Assert.Contains(says, plan.Refusal);
+        Assert.Null(plan.Apply);
+    }
+
+    /// <summary>
+    /// DOORS1a (D164's amendment points 1 and 5, PROCESS1a): a commit rule for a registered repository or a workspace, in the
+    /// terminal's words, a quoted convention kept whole, judged by the twin's table and planned with how work is then committed,
+    /// in `driver commits`' own sentences, and the convention quoted as it will be kept.
+    /// </summary>
+    [Theory]
+    [InlineData("engine", null, "--mode ask --convention \"Imperative subject line.\"",
+        "daoris driver commits engine --mode ask --convention \"Imperative subject line.\"",
+        "Set the commit rule for `engine`: `ask`. Each commit waits for your yes before it is made. "
+        + "Commit messages follow this convention: \"Imperative subject line.\"")]
+    [InlineData(null, "work", "--mode at-end", "daoris driver commits --workspace work --mode at-end",
+        "Set the commit rule for each repository of workspace `work` that sets none of its own: `at-end`. One commit is made when the work is done.")]
+    [InlineData("game", null, "--convention \"feat: …, fix: …\"", "daoris driver commits game --convention \"feat: …, fix: …\"",
+        "`as-you-go`. Each piece that passes its checks is committed as the work goes. Commit messages follow this convention: \"feat: …, fix: …\"")]
+    [InlineData("engine", null, "--clear", "daoris driver commits engine --clear",
+        "Clear `engine`'s commit rule: it takes its workspace's again, else work is committed as it goes.")]
+    [InlineData(null, "work", "--clear", "daoris driver commits --workspace work --clear",
+        "Clear workspace `work`'s commit rule: each repository there keeps its own, else work is committed as it goes.")]
+    public void A_commit_rule_is_planned_with_how_work_is_then_committed(
+        string? target, string? workspace, string value, string terminal, string says)
+    {
+        var plan = HelpProposals.Plan(Setting("commits", target, workspace, value), DriverConfig.Empty, Facts);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal(terminal, plan.Terminal);
+        Assert.Contains(says, plan.Describe);
+        Assert.NotNull(plan.Apply);
+    }
+
+    /// <summary>DOORS1a: the card's edit is the terminal's, `--no-convention` the empty convention that takes the standing one away.</summary>
+    [Fact]
+    public void A_commit_rule_applied_is_the_edit_the_terminal_makes()
+    {
+        var config = HelpProposals.Plan(Setting("commits", "engine", null, "--mode ask --convention \"  Imperative subject line.  \""),
+            DriverConfig.Empty, Facts).Apply!(DriverConfig.Empty);
+        Assert.Equal("""{"mode":"ask","convention":"Imperative subject line."}""", CommitRules.ToJson(config.Commits["engine"]));
+
+        config = HelpProposals.Plan(Setting("commits", "engine", null, "--mode at-end"), config, Facts).Apply!(config);
+        Assert.Equal("""{"mode":"at-end","convention":"Imperative subject line."}""", CommitRules.ToJson(config.Commits["engine"]));
+
+        var plan = HelpProposals.Plan(Setting("commits", "engine", null, "--no-convention"), config, Facts);
+        Assert.DoesNotContain("convention:", plan.Describe);
+        config = plan.Apply!(config);
+        Assert.Equal("""{"mode":"at-end"}""", CommitRules.ToJson(config.Commits["engine"]));
+
+        config = HelpProposals.Plan(Setting("commits", "engine", null, "--clear"), config, Facts).Apply!(config);
+        Assert.False(config.Commits.ContainsKey("engine"));
+    }
+
+    /// <summary>DOORS1a: the twin's refusals, the registry's names, and a form `daoris driver commits` does not take, each refused in its words.</summary>
+    [Theory]
+    [InlineData("engine", "work", "--clear", "a commit rule is set for a repository or a workspace — name exactly one.")]
+    [InlineData(null, null, "--mode ask", "a commit rule is set for a repository or a workspace — name exactly one.")]
+    [InlineData("elsewhere", null, "--clear", "is not registered on this machine")]
+    [InlineData(null, "elsewhere", "--clear", "no workspace `elsewhere`")]
+    [InlineData("engine", null, "--mode later", "`mode` is `as-you-go`, `ask` or `at-end`")]
+    [InlineData("engine", null, "--convention \"one line\nand another\"", "one paragraph with no line break, at most 400 characters")]
+    [InlineData("engine", null, "--convention \"Imperative.\" --no-convention", "say `--convention \"<your words>\"` or `--no-convention`, not both")]
+    [InlineData("engine", null, "--no-convention --clear", "one change at a time")]
+    [InlineData("engine", null, "", "`commits` is `--mode as-you-go|ask|at-end` and/or `--convention \"<your words>\"`")]
+    [InlineData("engine", null, "--convention", "`--convention` needs its value")]
+    [InlineData("engine", null, "--mode ask --colour blue", "`--colour` is not a word `commits` takes")]
+    [InlineData("engine", null, "--convention \"Imperative", "close every quote they open")]
+    public void A_commit_rule_is_refused_in_the_twins_words(string? target, string? workspace, string value, string says)
+    {
+        var plan = HelpProposals.Plan(Setting("commits", target, workspace, value), DriverConfig.Empty, Facts);
+
+        Assert.Contains(says, plan.Refusal);
+        Assert.Null(plan.Apply);
+    }
+
+    /// <summary>DOORS1a: a convention past the twin's bound is refused in its words.</summary>
+    [Fact]
+    public void A_commit_convention_past_its_bound_is_refused()
+    {
+        var plan = HelpProposals.Plan(Setting("commits", "engine", null, $"--convention \"{new string('a', CommitRules.ConventionLimit + 1)}\""),
+            DriverConfig.Empty, Facts);
+
+        Assert.Contains("at most 400 characters", plan.Refusal);
+        Assert.Null(plan.Apply);
+    }
+
+    /// <summary>
     /// LANG1c2: the service's setting writer shape-checks a language against a deliberate copy of the table's codes
     /// (<c>HelpProposalBox.Languages</c>), read here as text since the two share no code, so a language added to the table is
     /// one the box takes, and the box takes none the table does not hold.
@@ -419,7 +567,8 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
             ("drive", "engine", null, null), ("undrive", "engine", null, null), ("hold", "engine", null, null),
             ("resume", "engine", null, null), ("trees", "engine", null, "off"), ("line", "engine", null, "main"),
             ("landing", "engine", null, "merge"), ("across", "engine", null, "read on"), ("standing", "engine", null, "dev only"),
-            ("language", null, "work", "zh"), ("review", "engine", null, "none"), ("opinion", "engine", null, "none"), ("intake", null, null, "off"),
+            ("language", null, "work", "zh"), ("review", "engine", null, "none"), ("opinion", "engine", null, "none"),
+            ("helpers", "engine", null, "--mode on"), ("commits", null, "work", "--mode ask"), ("intake", null, null, "off"),
             ("helper", null, null, "claude-code"), ("strikes", null, null, "0"), ("retry", "q1a2b3c4", null, null),
             ("timeout", null, null, "30"), ("notify", null, null, "on"), ("cap", null, null, "1"), ("adapter", null, null, "claude-code"),
             ("cooloff", null, null, "90"),
@@ -536,6 +685,89 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         if (install == "quiet") facts = WithPlugin("example.quiet", points: "\"session/ended\"");
 
         var plan = HelpProposals.Plan(Setting("landing", "engine", null, value), DriverConfig.Empty, facts);
+
+        Assert.Contains(says, plan.Refusal);
+        Assert.Null(plan.Apply);
+    }
+
+    /// <summary>
+    /// DOORS1a (D164's amendment point 2, PROCESS1b-i and -ii): a branch rule naming its ticket's key and asking for a squash, as
+    /// `daoris driver landing` spells them, a quoted key kept whole; the card says what finds the ticket and what Accept makes.
+    /// </summary>
+    [Fact]
+    public void A_landing_may_name_its_tickets_key_and_squash()
+    {
+        const string value = "branch feature/{ticket}-{slug} --key \"TK-\\d+\" --squash";
+        var plan = HelpProposals.Plan(Setting("landing", "engine", null, value), DriverConfig.Empty, Facts);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal($"daoris driver landing engine {value}", plan.Terminal);
+        Assert.Contains("on a branch `feature/{ticket}-{slug}`", plan.Describe);
+        Assert.Contains("`{ticket}` is the first match of `TK-\\d+` in the title, then the request, then its links, as written; "
+            + "where none is found, the session's id stands in.", plan.Describe);
+        Assert.Contains("Squashed: Accept makes the pull request's branch one commit from the session's work", plan.Describe);
+        Assert.Equal(new LandingRule("branch", "feature/{ticket}-{slug}", Key: "TK-\\d+", Squash: true),
+            plan.Apply!(DriverConfig.Empty).Landings["engine"]);
+
+        // No key named reads the default shape, said so; a pattern with no `{ticket}` says nothing of one.
+        Assert.Contains($"`{{ticket}}` is the first match of `{LandingRules.DefaultKey}` in the title, then the request, then its links, as "
+            + "written (the default shape)", HelpProposals.Plan(Setting("landing", "engine", null, "branch feature/{ticket}"), DriverConfig.Empty, Facts).Describe);
+        Assert.DoesNotContain("{ticket}` is", HelpProposals.Plan(Setting("landing", "engine", null, "branch feature/{quest}"), DriverConfig.Empty, Facts).Describe);
+    }
+
+    /// <summary>
+    /// DOORS1a: a card naming neither the key nor the squash keeps what is set there, where the new rule can hold it; `--no-key` and
+    /// `--no-squash` take them away. A rule built without them dropped what the terminal set (PROCESS1b-i's and -ii's notes).
+    /// </summary>
+    [Fact]
+    public void A_landing_keeps_the_key_and_the_squash_it_is_not_told_to_change()
+    {
+        var config = DriverConfig.Empty
+            .WithLanding("engine", new LandingRule("branch", "feature/{ticket}-{slug}", Key: "TK-\\d+", Squash: true))
+            .WithWorkspaceLanding("work", new LandingRule("branch", "work/{ticket}", Key: "WK-\\d+", Squash: true));
+
+        LandingRule Applied(string? target, string? workspace, string value)
+        {
+            var plan = HelpProposals.Plan(Setting("landing", target, workspace, value), config, Facts);
+            Assert.Null(plan.Refusal);
+            var after = plan.Apply!(config);
+            return workspace is null ? after.Landings[target!] : after.WorkspaceLandings[workspace];
+        }
+
+        Assert.Equal(new LandingRule("branch", "feature/{ticket}", Tidy: true, Key: "TK-\\d+", Squash: true),
+            Applied("engine", null, "branch feature/{ticket} --tidy"));
+        Assert.Equal(new LandingRule("branch", "work/{ticket}-{slug}", Key: "WK-\\d+", Squash: true),
+            Applied(null, "work", "branch work/{ticket}-{slug}"));
+        Assert.Equal(new LandingRule("branch", "feature/{ticket}", Squash: true), Applied("engine", null, "branch feature/{ticket} --no-key"));
+        Assert.Equal(new LandingRule("branch", "feature/{ticket}", Key: "TK-\\d+"), Applied("engine", null, "branch feature/{ticket} --no-squash"));
+        // A pattern that says no `{ticket}` reads no key, and a merge holds neither.
+        Assert.Equal(new LandingRule("branch", "feature/{quest}", Squash: true), Applied("engine", null, "branch feature/{quest}"));
+        Assert.Equal(LandingRule.Merge, Applied("engine", null, "merge"));
+        // A repository with no rule of its own keeps nothing of its workspace's.
+        Assert.Equal(new LandingRule("branch", "game/{ticket}"), Applied("game", null, "branch game/{ticket}"));
+
+        // The card says what it keeps, as the rule it leaves.
+        var kept = HelpProposals.Plan(Setting("landing", "engine", null, "branch feature/{ticket}"), config, Facts).Describe;
+        Assert.Contains("`{ticket}` is the first match of `TK-\\d+`", kept);
+        Assert.Contains("Squashed:", kept);
+        Assert.Contains("The branch holds the session's own commits",
+            HelpProposals.Plan(Setting("landing", "engine", null, "branch feature/{ticket} --no-squash"), config, Facts).Describe);
+    }
+
+    /// <summary>DOORS1a: what `daoris driver landing` refuses about a key or a squash, refused here in the same words.</summary>
+    [Theory]
+    [InlineData("merge --key TK-\\d+", "only a branch rule reads a ticket's key")]
+    [InlineData("merge --squash", "only a branch rule squashes")]
+    [InlineData("branch feature/{quest} --key TK-\\d+", "a ticket's key is read only for `{ticket}`")]
+    [InlineData("branch feature/{ticket} --key (?<n>TK)", "a ticket's key may not use `(?`")]
+    [InlineData("branch feature/{ticket} --key", "`--key` needs the shape of a ticket's key — `--key <shape>`")]
+    [InlineData("branch feature/{ticket} --key --squash", "`--key` needs the shape of a ticket's key")]
+    [InlineData("branch feature/{ticket} --key TK-\\d+ --no-key", "say `--key <shape>` or `--no-key`, not both")]
+    [InlineData("branch feature/{ticket} --squash --no-squash", "say `--squash` or `--no-squash`, not both")]
+    [InlineData("branch \"feature/{ticket}", "close every quote they open")]
+    public void A_landing_key_or_squash_the_terminal_would_refuse_is_refused_in_its_words(string value, string says)
+    {
+        var plan = HelpProposals.Plan(Setting("landing", "engine", null, value), DriverConfig.Empty, Facts);
 
         Assert.Contains(says, plan.Refusal);
         Assert.Null(plan.Apply);

@@ -54,10 +54,31 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "(no screen yet)", "`daoris-driver register [--repository <name>]`"),
         ("set the line its work grows from and lands on", Setup + "Line and landing; a workspace's, " + Ws + "Setup → Defaults → Line",
             "`daoris driver line <repository> <branch>|--clear` (`--workspace <name>` for a whole workspace)"),
+        // DOORS1a (D164's amendment point 2): the ticket's key and the squash (PROCESS1b-i, -ii), which Ask Daoris's `landing`
+        // door takes too, keeping the ones set there that a card does not name.
         ("set how accepted work lands", Setup + "Line and landing; a workspace's, " + Ws + "Setup → Defaults → How work lands",
             "`daoris driver landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`, "
-            + "and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request, and "
-            + "`--auto-accept`: a quest's done lands it with no press)"),
+            + "and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request, "
+            + "`--auto-accept`: a quest's done lands it with no press, `--key <shape>|--no-key`: the shape a `{ticket}` in the "
+            + "pattern is found by in the title or the request, the session's id where none is, and `--squash|--no-squash`: "
+            + "Accept makes the pull request's branch one commit of the session's work)"),
+        // DOORS1a (D164's amendment points 1, 3 and 5): how work is committed; Ask Daoris proposes it as the `setting` kind's
+        // `commits` door, its convention seeded from the repository's own instructions where the person asks. Setup's row is DOORS1b's.
+        ("set how a repository's work is committed, or a workspace's: as it goes (each piece that passes its checks; the "
+            + "default), each commit waiting for your yes, or one commit when the work is done, and your words on how a commit "
+            + "message is written (Ask Daoris proposes it, and may quote the convention from the repository's own instructions "
+            + "for you to apply)",
+            Setup + "Line and landing → Commits; a workspace's, " + Ws + "Setup → Defaults → Commits",
+            "`daoris driver commits <repository> --mode as-you-go|ask|at-end [--convention \"…\"|--no-convention]` "
+            + "(`--workspace <name>` for a whole workspace), `daoris driver commits <repository> --clear`"),
+        // DOORS1a (D163 point 3): what a helper an agent asks for does; Ask Daoris proposes it as the `setting` kind's `helpers`
+        // door. Setup's row is DOORS1b's. Before the review and the opinion, whose rows the workflow's follows.
+        ("set what a helper a repository's agent asks for does, or a workspace's: wait for your yes (the default), start at once "
+            + "within the limits, or not be offered, and the other agents it may ask, in the order they are tried (Ask Daoris "
+            + "proposes it)",
+            Setup + "Sessions → Helpers; a workspace's, " + Ws + "Setup → Defaults → Helpers",
+            "`daoris driver helpers <repository> --mode ask|on|off [--agents <adapter,adapter>]` (`--workspace <name>` for a "
+            + "whole workspace), `daoris driver helpers <repository> --clear`"),
         // REVIEWENV1a (D154 point 2): where work is shown to the person before it is offered to land; Ask Daoris proposes it
         // as the `setting` kind's `review` door. The landing's gate reads it since REVIEWENV1c, and the room says what lets work
         // that waits go, and that the intake composes no set-up step yet (REVIEWENV1c2, REVIEWENV1f), as every door does.
