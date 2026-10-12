@@ -249,6 +249,38 @@ public sealed class HelpRoomDoorsTests
     }
 
     /// <summary>
+    /// DOORS1a (D163 point 3; D164's amendment points 1-3): the room names the helpers rule and the commit rule, each with its
+    /// Setup row and the terminal's twin as <c>daoris driver helpers|commits</c> spells it, said to be Ask Daoris's to propose;
+    /// and the landing's row names the ticket's key and the squash beside its other switches.
+    /// </summary>
+    [Fact]
+    public void The_room_names_the_helpers_and_commit_rules_and_the_landings_key_and_squash()
+    {
+        var helpers = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris driver helpers", StringComparison.Ordinal));
+        var commits = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris driver commits", StringComparison.Ordinal));
+        var landing = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris driver landing", StringComparison.Ordinal));
+
+        Assert.Contains("`daoris driver helpers <repository> --mode ask|on|off [--agents <adapter,adapter>]`", helpers.Terminal);
+        Assert.Contains("`daoris driver helpers <repository> --clear`", helpers.Terminal);
+        Assert.Contains("Repositories → the repository's page → Setup → Sessions → Helpers", helpers.Screen);
+        Assert.Contains("Repositories → the workspace's page → Setup → Defaults → Helpers", helpers.Screen);
+        Assert.Contains("`daoris driver commits <repository> --mode as-you-go|ask|at-end [--convention \"…\"|--no-convention]`", commits.Terminal);
+        Assert.Contains("`daoris driver commits <repository> --clear`", commits.Terminal);
+        Assert.Contains("Repositories → the repository's page → Setup → Line and landing → Commits", commits.Screen);
+        Assert.Contains("Repositories → the workspace's page → Setup → Defaults → Commits", commits.Screen);
+        foreach (var door in new[] { helpers, commits })
+        {
+            Assert.Contains("`--workspace <name>` for a whole workspace", door.Terminal);
+            Assert.Contains("Ask Daoris proposes it", door.To);
+        }
+
+        Assert.Contains("from the repository's own instructions", commits.To);
+        Assert.Contains("`{ticket}`", landing.To + landing.Terminal);
+        Assert.Contains("`--key <shape>|--no-key`", landing.Terminal);
+        Assert.Contains("`--squash|--no-squash`", landing.Terminal);
+    }
+
+    /// <summary>
     /// SESSUX1h2b (D126 §7.3): the room names Sessions' archive, archive what ended and unarchive, and a conversation's delete,
     /// each with its press and the terminal's twin as <c>daoris-driver sessions</c> spells it, beside a quest's or an ask's delete.
     /// </summary>

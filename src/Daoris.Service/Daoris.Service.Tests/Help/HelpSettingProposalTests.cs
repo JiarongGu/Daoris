@@ -110,6 +110,18 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("opinion", "web-app", null, "--not-required --no-verify --recheck")]
     [InlineData("opinion", "notes-site", null, "none")]
     [InlineData("opinion", "web-app", null, "--clear")]
+    // DOORS1a (D163 point 3; D164's amendment points 1 and 5): a helpers rule and a commit rule for a repository or a workspace,
+    // as `daoris driver helpers` and `daoris driver commits` take their words, a quoted list or convention kept whole; the rule and
+    // the registry are the driver's to judge.
+    [InlineData("helpers", "web-app", null, "--mode on --agents codex-acp,dsh")]
+    [InlineData("helpers", null, "work", "--agents \"codex-acp, dsh\"")]
+    [InlineData("helpers", "web-app", null, "--clear")]
+    [InlineData("commits", "web-app", null, "--mode ask --convention \"Imperative subject line, at most 72 characters.\"")]
+    [InlineData("commits", null, "work", "--mode at-end --no-convention")]
+    [InlineData("commits", "web-app", null, "--clear")]
+    // DOORS1a (PROCESS1b-i, -ii): a branch rule's ticket key and squash, as `daoris driver landing` takes them.
+    [InlineData("landing", "web-app", null, "branch feature/{ticket}-{slug} --key \"TK-\\d+\" --squash")]
+    [InlineData("landing", null, "work", "branch feature/{ticket} --no-key --no-squash")]
     public void Across_a_cap_and_an_adapter_are_written_as_the_terminal_spells_them(string door, string? target, string? workspace, string value)
     {
         var (id, _) = Box().ProposeSetting(new SettingChange(door, target, workspace, value), "the person asked", session: "h1", Now);
@@ -292,6 +304,35 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.DoesNotContain("nothing reads it", tool, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// DOORS1a (D164's amendment point 5, D110): the tool tells the helper what a helpers rule and a commit rule take, that it may
+    /// seed either, and a landing's branch name, from the repository's own instructions for the person to apply, and that a
+    /// landing's key and squash are kept unless the proposal names them, so it never learns them from a refusal.
+    /// </summary>
+    [Fact]
+    public void The_tool_says_what_the_helpers_and_commit_rules_take_and_that_a_repositorys_text_only_seeds_them()
+    {
+        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeSetting))!;
+        string Described(string name) => method.GetParameters().Single(parameter => parameter.Name == name)
+            .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
+            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
+        var tool = method.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
+            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
+
+        Assert.Contains("`--mode ask|on|off` and/or `--agents <adapter,adapter>`, or `--clear` (helpers)", Described("value"));
+        Assert.Contains("`--mode as-you-go|ask|at-end` and/or `--convention \"<words>\"` or `--no-convention`, or `--clear` (commits)", Described("value"));
+        Assert.Contains("`--key <shape>` or `--no-key`", Described("value"));
+        Assert.Contains("`--squash` or `--no-squash`", Described("value"));
+        Assert.Contains("a helpers rule or a commit rule", Described("target"));
+        Assert.Contains("a helpers rule or a commit rule", Described("workspace"));
+
+        Assert.Contains("`helpers` sets what a helper an agent asks for does", tool);
+        Assert.Contains("`commits` sets how a repository's or a workspace's work is committed", tool);
+        Assert.Contains("from the repository's own instructions", tool);
+        Assert.Contains("never the process until the person applies it", tool);
+        Assert.Contains("keeps the key and the squash already set", tool);
+    }
+
     /// <summary>The shape is checked here, and nothing more: what the route would say is the driver's.</summary>
     [Theory]
     [InlineData("push", "engine", null, null, "is not a door")]
@@ -341,6 +382,18 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("opinion", "web-app", null, null, "opinion is `--reviewers <adapter,adapter> [--on landing,steps]")]
     [InlineData("opinion", "web-app", null, "  ", "opinion is `--reviewers <adapter,adapter> [--on landing,steps]")]
     [InlineData("opinion", "web-app", null, "--reviewers dsh --colour blue", "`none` or `--clear`")]
+    // DOORS1a: exactly one of a repository or a workspace, some words, and only the flags `daoris driver helpers` and
+    // `daoris driver commits` take; a merge carrying a key or a squash is no shape the box takes, and its sentence names both.
+    [InlineData("helpers", null, null, "--mode on", "helpers rule is set for a repository or a workspace — name exactly one")]
+    [InlineData("helpers", "web-app", "work", "--clear", "helpers rule is set for a repository or a workspace — name exactly one")]
+    [InlineData("helpers", "web-app", null, null, "`helpers` is `--mode ask|on|off` and/or `--agents <adapter,adapter>`, or `--clear`")]
+    [InlineData("helpers", "web-app", null, "--mode on --reviewers dsh", "`helpers` is `--mode ask|on|off`")]
+    [InlineData("commits", null, null, "--mode ask", "commit rule is set for a repository or a workspace — name exactly one")]
+    [InlineData("commits", "web-app", "work", "--clear", "commit rule is set for a repository or a workspace — name exactly one")]
+    [InlineData("commits", "web-app", null, "  ", "`commits` is `--mode as-you-go|ask|at-end` and/or `--convention \"<words>\"` or `--no-convention`, or `--clear`")]
+    [InlineData("commits", "web-app", null, "--mode ask --squash", "`commits` is `--mode as-you-go|ask|at-end`")]
+    [InlineData("landing", "engine", null, "merge --squash", "`--key <shape>` for the shape `{ticket}` is found by")]
+    [InlineData("landing", "engine", null, "merge --key TK-\\d+", "`--squash` for the pull request's branch as one commit")]
     [InlineData("retry", null, null, null, "names the quest its failed sessions parked or the person's stop holds")]
     [InlineData("retry", "q1 q2", null, null, "names the quest its failed sessions parked or the person's stop holds")]
     [InlineData("retry", "q1a2b3c4", "work", null, "names the quest its failed sessions parked or the person's stop holds")]

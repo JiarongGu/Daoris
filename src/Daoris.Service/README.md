@@ -373,7 +373,9 @@ written. With no home at all, every proposal is refused.
 
 **Ask Daoris proposes the same way, and never applies** (HELP1c, D89). Its conversation's connector
 offers `setting_propose` (one of the `daoris driver` doors: every verb but `list`, since HELP9 and HELP10
-`across`, `cap`, `adapter` and `retry` among them) and `ask_propose` (something to start, as
+`across`, `cap`, `adapter` and `retry` among them, and since DOORS1a `helpers` and `commits`, shape-checked by the flags
+their verbs take, and a landing's `--key` and `--squash`; the tool says a repository's own instructions only seed a
+proposal the person applies) and `ask_propose` (something to start, as
 an ask at a workspace; since ENTRY1c with the review choice the person said and their words, as the
 composer sends them, and never a kind or a workflow, which are the person's), and since HELP6 `agent_propose` (an agent's update, or a pin to one exact
 version; since HELP10 also the account it runs as by default; since TOOL4l-a also an account's `use`, the walk's `order` and a cool-off's `ready`), `delete_propose` (a quest or an ask made by mistake), `agent_settings_propose` (an account's
