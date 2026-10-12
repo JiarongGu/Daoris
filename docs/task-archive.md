@@ -13882,3 +13882,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ACCTWALK3 — among accounts all near, the one with more room first** (driver). Seen 2026-10-12 on the install: a conversation opened on an account at 99% of its weekly limit, passing one at 60% that was only ahead of its week's pace. The walk followed D130 (near goes last): both were near, the 60% one by its agent's own warning word read the evening before, so near tied and pace chose. Among accounts that are all near, rank by how much of the near window is used, lower first, before fewest running, the lapsing week and pace (`AccountRotation.Rank`, AccountRotation.cs:485-489; `AccountRotation.Next` follows). A D130 amendment; a walk table case from that reading (AccountRotationWalkTests' Choices).
 
 **Outcome** 2026-10-12: built as the row says: `WalkStep.Room` in `Rank` under `goal`, ranking by the account's most used window (no number after any below 100%, reached or 100% last); the start's note gains the reason `room` with its page twin. Detail: D130's ACCTWALK3 note.
+
+## TOOL6d — continue on another account (2026-10-12, D165)
+
+> - [ ] **TOOL6d — continue on another account** (driver/modules/web; after TOOL6b). Offer last plan/words to selected account. D130 §8–§9; both-door tests/look.
+
+**Outcome** 2026-10-12: superseded, not built. The owner asked for switching by a setting instead of a press (D165): a running session moves on its own at its turn's end (SWITCH1c), and the person's press is MIXAGENT1b-i's *Go on with another agent…*, whose account chip names another account of the same agent. Detail: D165; `docs/2026-10-12-account-switch-design.md` §4.
