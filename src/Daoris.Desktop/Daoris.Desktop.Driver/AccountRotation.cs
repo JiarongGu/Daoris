@@ -147,7 +147,7 @@ public enum NextReason
     /// <summary>Its known weekly reset falls within the next day (step 4).</summary>
     Lapsing,
 
-    /// <summary>It is further behind its week's pace (step 5).</summary>
+    /// <summary>It has more room under its curve on its tightest window, or under <c>switch: off</c> is further behind its week's pace (step 5).</summary>
     Pace,
 
     /// <summary>Daoris started on it less recently (step 6).</summary>
@@ -241,10 +241,10 @@ public sealed record StepSaid(string Text, string? Why, IReadOnlyList<(string Na
 ///
 /// <para><b>The goal</b> (<c>use: goal</c>, the default): every listed account is used toward the most work, the fewest
 /// stalls and no allowance left at a reset, with what Daoris knows of its own (§16.4) and what each account's agent last said
-/// about its windows (TOOL6c, §5.2): near and pace. <b>Nothing counts accounts</b>: every rule reads the list it is handed,
-/// and while every account is ready none runs more than ⌈K ÷ N⌉ of a cap of K (§7). Under <c>use: order</c> the first ready
-/// account of the list carries every start, as D125 built it, and rotation moves work off a ready account only where its
-/// agent said it is near and <i>switch before the limit</i> is on (§16.6).</para>
+/// about its windows (TOOL6c, §5.2), read against the scope's usage curve (D165 point 2): near and room. <b>Nothing counts
+/// accounts</b>: every rule reads the list it is handed, and while every account is ready none runs more than ⌈K ÷ N⌉ of a
+/// cap of K (§7). Under <c>use: order</c> the first ready account of the list carries every start, as D125 built it, and
+/// rotation moves work off a ready account only where it is near, under every switch (SWITCH1b-ii).</para>
 /// </remarks>
 public static class AccountRotation
 {

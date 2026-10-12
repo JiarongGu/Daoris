@@ -19,12 +19,18 @@ with the version and date at release.
   than on what Daoris's last session there said hours before.
 - Claude Code's own pace warning, which says an account's use is ahead of the time gone in its window, no longer makes a start
   pass that account as near its limit: an account is passed when its limit is reached, when it draws on usage credits, or when
-  a window's use is at or over *near*. A conversation's first line, an account's row on the Agents page and `daoris agent list`
+  a window's use is over its curve (below). A conversation's first line, an account's row on the Agents page and `daoris agent list`
   say the warning in its own words, *ahead of its pace*, in both languages.
 - The offer to go on with another agent names another tool on an account with room, never the same tool through its other door
   or an account that is near its limit, refused or cooling; *Choose…* lists those tools first.
 - When every account is near its limit, a start takes the one with the most room first, so it no longer stays on one at 99%
   while another sits at 60%; the start's note says so in both languages.
+- A start chooses its account by a usage curve: an account whose use is over its curve on any window goes last, the least over
+  first, and of the rest the one with the most room under its curve goes first. The curve is Daoris's own (the five-hour
+  window up to 90%, the week its pace plus 20 points, never above 95%) or yours under `--switch curve`; with `--switch off` a
+  start still passes an account over Daoris's curve, and ranks the rest by its week's pace as before. A conversation's first
+  line says the window, its use and the curve's value, in both languages, and an account's settings mark the same accounts
+  *near its limit*.
 - A session whose agent committed its work on a branch of its own (as its repository's rules ask) is followed: its work, Review
   and Accept read that branch, Accept lands it as it stands instead of making another, and the tidy no longer warns it cannot read
   the tree of the emptied `daoris/…` branch the agent left behind.
