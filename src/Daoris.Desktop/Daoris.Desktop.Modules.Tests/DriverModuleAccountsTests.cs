@@ -196,7 +196,8 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     {
         Accounts("claude-code", "account-1", "account-2", "account-3");
         Wiring("""{ "rotation": { "claude-code": ["account-1", "account-2", "account-3"] } }""");
-        // At 60% of a week a fifth gone, warned; at 40%, warned as the file held it before (`near`); at 99%, warned and near.
+        // Two sevenths of each week gone, its smart curve at 49% (SWITCH1b-ii): at 30%, warned; at 40%, warned as the file held
+        // it before (`near`); at 99%, warned and near, over its curve.
         static string Stamp(DateTimeOffset at) => at.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture);
         System.Text.Json.Nodes.JsonObject Week(double used, string standing) => new()
         {
@@ -209,7 +210,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         {
             ["claude-code"] = new System.Text.Json.Nodes.JsonObject
             {
-                ["account-1"] = Week(0.60, "warned"), ["account-2"] = Week(0.40, "near"), ["account-3"] = Week(0.99, "warned"),
+                ["account-1"] = Week(0.30, "warned"), ["account-2"] = Week(0.40, "near"), ["account-3"] = Week(0.99, "warned"),
             },
         }.ToJsonString());
 
@@ -220,6 +221,42 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Equal(["warned", "warned", "warned"], new[] { "account-1", "account-2", "account-3" }.Select(Standing));
         var near = Assert.Single(Scope(claude, null).GetProperty("near").EnumerateArray().ToList());
         Assert.Equal(("account-3", "weekly", "number"), (near.GetProperty("account").GetString(), near.GetProperty("window").GetString(), near.GetProperty("by").GetString()));
+    }
+
+    /// <summary>
+    /// SWITCH1b-ii (D165 point 2, the switch design §3): a scope's near list is the walk's, its accounts over its curve now, so
+    /// the page's near pill names the accounts a start passes: the smart curve on a week, a person's on a session, and under
+    /// <c>off</c> the smart one, which a start still passes an account by.
+    /// </summary>
+    [Fact]
+    public async Task A_scope_s_near_list_is_its_accounts_over_its_curve_as_the_walk_passes_them()
+    {
+        Accounts("claude-code", "account-1", "account-2", "account-3");
+        Wiring("""
+            {
+              "rotation": { "claude-code": ["account-1", "account-2", "account-3"] },
+              "workspaceRotation": {
+                "own": { "claude-code": ["account-2", "account-3"] },
+                "off": { "claude-code": ["account-1", "account-3"] }
+              },
+              "workspaceRotationUse": {
+                "own": { "claude-code": { "switch": "curve", "curve": { "session": [[0, 80]] } } },
+                "off": { "claude-code": { "switch": "off" } }
+              }
+            }
+            """);
+        // Four days to its reset, three sevenths of the week gone: the smart curve stands at 63% of it.
+        AccountWindows.Said(Home, "claude-code", "account-1", [new WindowReading("weekly", 0.70, Now.AddDays(4))], Now, "s1");
+        AccountWindows.Said(Home, "claude-code", "account-2", [new WindowReading("session", 0.85, Now.AddHours(2))], Now, "s2");
+        AccountWindows.Said(Home, "claude-code", "account-3", [new WindowReading("weekly", 0.50, Now.AddDays(4))], Now, "s3");
+
+        var claude = Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code");
+
+        static string[] Near(JsonElement scope) =>
+            [.. scope.GetProperty("near").EnumerateArray().Select(each => $"{each.GetProperty("account").GetString()} {each.GetProperty("window").GetString()} {each.GetProperty("by").GetString()}")];
+        Assert.Equal(["account-1 weekly number"], Near(Scope(claude, null)));
+        Assert.Equal(["account-2 session number"], Near(Scope(claude, "own")));
+        Assert.Equal(["account-1 weekly number"], Near(Scope(claude, "off")));
     }
 
     /// <summary>

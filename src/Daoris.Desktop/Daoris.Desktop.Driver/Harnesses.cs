@@ -2835,7 +2835,8 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
         var passed = states.FirstOrDefault(state => string.Equals(state.Account, begins, StringComparison.OrdinalIgnoreCase));
         // Each step by code beside its English (UX7d-1): the choice's clause joins them, and a rotation's is the first alone.
         var steps = RotationWords.Steps(choice, owner, runs, scope, scope.From == ChoiceFrom.Workspace ? circle : null, passed, facts, kind, now, Zone);
-        string? Standing(string account) => AccountReadings.Standing(facts.GetValueOrDefault(account)?.Said, scope.Use.Near);
+        // Over its curve is the log's `near`, the word for an account passed (SWITCH1b-ii).
+        string? Standing(string account) => AccountReadings.Standing(facts.GetValueOrDefault(account)?.Said, scope.Use, now);
         var walked = scope.List.Where(account => order.Contains(account, StringComparer.OrdinalIgnoreCase)).ToList();
         return selection with
         {

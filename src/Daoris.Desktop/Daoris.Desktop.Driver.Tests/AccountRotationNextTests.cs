@@ -116,6 +116,9 @@ public sealed class AccountRotationNextTests
         { "account-1 account-2 account-3", "account-1:s-1h account-2:s-3h account-3:s-2h", "", "account-2", NextReason.LeastRecent, "account-1", "account-3=ready account-1=ready" },
         { "account-1 account-2 account-3", "account-1:s-1h account-2:s-3h", "", "account-3", NextReason.NotStarted, "account-1", "account-2=ready account-1=ready" },
         { "account-1 account-2 account-3", "account-1:S95", "", "account-2", NextReason.Near, "account-1", "account-3=ready account-1=near" },
+        // Over its curve (SWITCH1b-ii): its week's, and under `off` the smart one, which a start still passes it by.
+        { "account-1 account-2 account-3", "account-1:S30,W70@+4d", "", "account-2", NextReason.Near, "account-1", "account-3=ready account-1=near" },
+        { "account-1 account-2 account-3 switch=off", "account-1:S95", "", "account-2", NextReason.Near, "account-1", "account-3=ready account-1=near" },
         // The account where the list begins held: a hold, and the step among the rest is the reason.
         { "account-1 account-2 account-3", "account-2:r1", "account-1=Cooling", "account-3", NextReason.Fewest, "account-2", "account-1=cooling account-2=ready" },
         { "account-1 account-2 account-3", "", "account-1=Cooling account-2=Refused", "account-3", NextReason.OnlyReady, null, "account-1=cooling account-2=refused" },

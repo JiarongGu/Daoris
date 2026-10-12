@@ -36,15 +36,21 @@ public sealed class OpeningNoteTests : IDisposable
     {
         // { ran on, step, over, workspace, facts, why, values }
         { "account-2", WalkStep.Fewest, null, "work", "", OpeningWhy.Fewest, "" },
-        { "account-2", WalkStep.Near, "account-1", "work", "account-1:S95", OpeningWhy.NearUsed, "over=account-1 used=95 window=session near=90" },
+        // Over its curve (SWITCH1b-ii): the window it is tightest on, what it used there, and the curve's value there now.
+        { "account-2", WalkStep.Near, "account-1", "work", "account-1:S95", OpeningWhy.OverCurve, "over=account-1 window=session used=95 curve=90" },
+        { "account-2", WalkStep.Near, "account-1", "work", "account-1:S30,W70@+4d", OpeningWhy.OverCurve, "over=account-1 window=weekly used=70 curve=63" },
         // Its pace warning alone is no reason to pass it (USAGEREAD3a): a step that names it says only that it is near.
         { "account-2", WalkStep.Near, "account-1", "work", "account-1:N", OpeningWhy.Near, "over=account-1" },
         { "account-2", WalkStep.Near, "account-1", "work", "account-1:X", OpeningWhy.NearReached, "over=account-1 window=weekly" },
         { "account-2", WalkStep.Near, "account-1", "work", "account-1:C", OpeningWhy.NearCredits, "over=account-1" },
         { "account-2", WalkStep.Near, "account-1", "work", "", OpeningWhy.Near, "over=account-1" },
-        { "account-2", WalkStep.Room, "account-1", "work", "account-1:S99 account-2:S60", OpeningWhy.Room, "over=account-1 used=60 against=99" },
-        { "account-2", WalkStep.Pace, "account-1", "work", "account-1:W80@+4d account-2:W90@+4d", OpeningWhy.Ahead, "over=account-1 used=80 gone=43" },
-        { "account-2", WalkStep.Pace, "account-1", "work", "account-1:W80@+4d account-2:W10@+4d", OpeningWhy.Behind, "used=10 gone=43" },
+        // Both near, it the least over: the other's own reason for going last, as where one said no number (ACCTWALK3).
+        { "account-2", WalkStep.Room, "account-1", "work", "account-1:S99 account-2:S95", OpeningWhy.OverCurve, "over=account-1 window=session used=99 curve=90" },
+        { "account-2", WalkStep.Room, "account-1", "work", "account-1:X account-2:S99", OpeningWhy.NearReached, "over=account-1 window=weekly" },
+        // Most room under its curve (step 5): its own room on its tightest window; where it has none to say, the other's over.
+        { "account-2", WalkStep.Pace, "account-1", "work", "account-1:W40@+4d account-2:W10@+4d", OpeningWhy.MostRoom, "room=53 window=weekly" },
+        { "account-2", WalkStep.Pace, "account-1", "work", "account-1:W40@+4d account-2:S70,W10@+4d", OpeningWhy.MostRoom, "room=20 window=session" },
+        { "account-2", WalkStep.Pace, "account-1", "work", "account-1:W95@+4d account-2:W90@+4d", OpeningWhy.OverCurve, "over=account-1 window=weekly used=95 curve=63" },
         { "account-2", WalkStep.Lapsing, null, "work", "account-2:w+20h", OpeningWhy.Lapsing, "at=2026-10-03T08:00:00Z" },
         { "account-2", WalkStep.LeastRecent, null, "work", "account-2:s-1d", OpeningWhy.LeastRecent, "" },
         { "account-2", WalkStep.LeastRecent, null, "work", "", OpeningWhy.NotStarted, "" },
@@ -68,6 +74,39 @@ public sealed class OpeningNoteTests : IDisposable
         Assert.Equal((why, values), (said.Why, Values(said)));
         Assert.Equal(RotationWords.Clause(choice, "claude-code", ran, Scope(), workspace, null, known, StartKind.Driven, Now, TimeZoneInfo.Utc), said.Text);
         Assert.Contains(NoteCodes.Opening.All, reason => reason.Code == said.Why);
+    }
+
+    /// <summary>
+    /// SWITCH1b-ii: the curve's two reasons in English, and, under <c>switch: off</c>, step 5's pace as D130 said it
+    /// (<c>behind</c>, <c>ahead</c>), still written there. <c>near-used</c> and <c>room</c> stay declared for the records
+    /// already on machines, and nothing writes them now.
+    /// </summary>
+    [Fact]
+    public void The_curve_s_reasons_say_the_window_and_off_says_its_pace_as_D130_did()
+    {
+        StepSaid One(WalkStep step, string facts, RotationScope scope) =>
+            Assert.Single(RotationWords.Steps(new WalkChoice(step) { Over = "account-1" }, "claude-code", "account-2", scope, "work", null,
+                AccountRotationWalkTests.Facts(facts), StartKind.Driven, Now, TimeZoneInfo.Utc));
+
+        Assert.Equal(
+            "`account-1` has used 70% of its weekly limit, over its curve's 63%",
+            One(WalkStep.Near, "account-1:S30,W70@+4d", Scope()).Text);
+        Assert.Equal(
+            "it has the most room under its curve, 53 points on its weekly window",
+            One(WalkStep.Pace, "account-1:W40@+4d account-2:W10@+4d", Scope()).Text);
+
+        var off = Scope() with { Use = RotationUse.Default with { Switch = "off" } };
+        var behind = One(WalkStep.Pace, "account-1:W40@+4d account-2:W10@+4d", off);
+        Assert.Equal(
+            ("it is furthest behind its week's pace, 10% of its weekly limit used with 43% of its week gone", OpeningWhy.Behind, "used=10 gone=43"),
+            (behind.Text, behind.Why, Values(behind)));
+        var ahead = One(WalkStep.Pace, "account-1:W50@+4d account-2:W60@+4d", off);
+        Assert.Equal((OpeningWhy.Ahead, "over=account-1 used=50 gone=43"), (ahead.Why, Values(ahead)));
+        // `off` passes an account over the smart curve, and says it so.
+        Assert.Equal(OpeningWhy.OverCurve, One(WalkStep.Near, "account-1:S95", off).Why);
+
+        Assert.Contains(NoteCodes.Opening.All, reason => reason.Code == OpeningWhy.NearUsed);
+        Assert.Contains(NoteCodes.Opening.All, reason => reason.Code == OpeningWhy.Room);
     }
 
     [Fact]
@@ -122,7 +161,7 @@ public sealed class OpeningNoteTests : IDisposable
         Assert.Equal(RotationWords.Said(["account-1", "account-2", "account-3", "account-4"], facts, RotationUse.Default, Now), said.Note);
         Assert.Equal(
             [
-                "opening.said-at", "opening.said-used", "opening.said-used", "opening.said-near-at",
+                "opening.said-at", "opening.said-used", "opening.said-used", "opening.said-over",
                 "opening.said-nothing",
                 "opening.said-at", "opening.said-warned", "opening.said-credits",
                 "opening.said-at", "opening.said-clear",
@@ -132,7 +171,8 @@ public sealed class OpeningNoteTests : IDisposable
         Assert.Equal(("account-1", "2026-10-02T11:50:00Z"), (said.Parts[0].Value("account"), said.Parts[0].Value("seen")));
         Assert.Equal((95, "session"), (said.Parts[1].Value("used"), said.Parts[1].Value("window")));
         Assert.Equal((30, "weekly"), (said.Parts[2].Value("used"), said.Parts[2].Value("window")));
-        Assert.Equal(90, said.Parts[3].Value("near"));
+        // Over its session's curve, the smart one's flat 90 (SWITCH1b-ii).
+        Assert.Equal(("session", 90), (said.Parts[3].Value("window"), said.Parts[3].Value("curve")));
         Assert.Equal("account-2", said.Parts[4].Value("account"));
         Assert.Equal("session", said.Parts[6].Value("window"));
         Assert.Null(RotationWords.AccountsSaid(["account-1", "account-2"], AccountRotationWalkTests.Facts("account-1:r2"), RotationUse.Default, Now));
@@ -152,15 +192,22 @@ public sealed class OpeningNoteTests : IDisposable
 
         Assert.Equal(
             "What each account said: `account-1` 10 min ago, ahead of its pace on its session window, by its own word, 95% of its "
-            + "session limit used, near at 90%; `account-2` 10 min ago, ahead of its pace on its session window, by its own word.",
+            + "session limit used, over its session curve's 90%; `account-2` 10 min ago, ahead of its pace on its session window, by its own word.",
             said.Note);
         Assert.Equal(
-            ["opening.said-at", "opening.said-warned", "opening.said-used", "opening.said-near-at", "opening.said-at", "opening.said-warned"],
+            ["opening.said-at", "opening.said-warned", "opening.said-used", "opening.said-over", "opening.said-at", "opening.said-warned"],
             NoteAssert.Codes(said.Parts));
         NoteAssert.Holds(said);
         Assert.Equal("opening.said-near", NoteCodes.OpeningSaidNear.Code);
         Assert.Equal(["window"], NoteCodes.OpeningSaidNear.Values);
         Assert.Contains(NoteCodes.Opening.All, reason => reason.Code == OpeningWhy.NearWord);
+        // `near at 90%` is no longer written (SWITCH1b-ii): over its curve says the window and the curve's value now.
+        Assert.Equal("opening.said-near-at", NoteCodes.OpeningSaidNearAt.Code);
+        Assert.Equal(["near"], NoteCodes.OpeningSaidNearAt.Values);
+        Assert.Equal(["window", "curve"], NoteCodes.OpeningSaidOver.Values);
+        Assert.Equal(
+            new object?[] { "session", 90 },
+            new[] { "window", "curve" }.Select(name => said.Parts!.Single(part => part.Code == "opening.said-over").Value(name)));
     }
 
     private static HarnessSelection Chosen(string to, WalkChoice choice, AccountState? passed, Dictionary<string, AccountFacts> facts, bool rotated)
@@ -227,12 +274,12 @@ public sealed class OpeningNoteTests : IDisposable
 
         var opened = Assert.Single(events.After("c1", 0).Events);
         Assert.Equal(
-            "carried on from session `s0` on `account-2`; `account-1` has used 95% of its session limit, at or over the 90% that counts as "
-            + "near; its turn 2 was refused. What each account said: `account-1` 10 min ago, 95% of its session limit used, near at 90%; "
+            "carried on from session `s0` on `account-2`; `account-1` has used 95% of its session limit, over its curve's 90%; its turn "
+            + "2 was refused. What each account said: `account-1` 10 min ago, 95% of its session limit used, over its session curve's 90%; "
             + "`account-2` nothing yet; `account-3` nothing yet.",
             opened.Text);
         Assert.Equal(
-            ["opening.carried-on", "opening.turn-refused", "opening.said-at", "opening.said-used", "opening.said-near-at", "opening.said-nothing", "opening.said-nothing"],
+            ["opening.carried-on", "opening.turn-refused", "opening.said-at", "opening.said-used", "opening.said-over", "opening.said-nothing", "opening.said-nothing"],
             NoteAssert.Codes(opened.Parts));
         NoteAssert.Holds(opened.Text, opened.Parts);
     }

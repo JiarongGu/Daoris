@@ -48,11 +48,13 @@ public sealed class AccountReadingTickTests : IDisposable
     private void Wire(string use) =>
         new HarnessSettings().WithRotation("stub", Accounts).WithUse("stub", new UseChange(Use: use, Near: 85)).Save(Settings);
 
+    // The old `near: 85` reads on as the session's curve flat at 85 (D165's SWITCH1a note), which the walk measures against
+    // (SWITCH1b-ii).
     private const string Said =
-        "What each account said: `account-1` just now, 88% of its session limit and 14% of its weekly limit used, near at 85%; "
+        "What each account said: `account-1` just now, 88% of its session limit and 14% of its weekly limit used, over its session curve's 85%; "
         + "`account-2` nothing yet.";
 
-    private const string Passed = "`account-1` has used 88% of its session limit, at or over the 85% that counts as near";
+    private const string Passed = "`account-1` has used 88% of its session limit, over its curve's 85%";
 
     [Fact]
     public async Task A_frame_replayed_on_the_protocol_door_is_kept_and_the_next_start_passes_the_account_it_says_is_near()
@@ -87,7 +89,7 @@ public sealed class AccountReadingTickTests : IDisposable
         Assert.Equal(new WindowSaid("weekly", 0.14, kept.Of("weekly")!.Reset, null, false, Now, id), kept.Of("weekly"));
         Assert.Null(AccountWindows.SaidOf(_home, "stub", "account-2", Now));
 
-        // Under `order`, the next start passes stub account 1, near at 85%, and its record says what each account said.
+        // Under `order`, the next start passes stub account 1, over its curve's 85%, and its record says what each account said.
         _ledger.Move("q1", "Done");
         _ledger.Publish("q2", "engine");
         await Look(driver);
