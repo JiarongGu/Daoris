@@ -121,6 +121,8 @@ builder.Services.AddSingleton(intake);
 builder.Services.AddSingleton(RuleProposalBox.FromEnvironment());
 // And Ask Daoris's (HELP1c, D89), under the same home: a file each, for the person to apply.
 builder.Services.AddSingleton(HelpProposalBox.FromEnvironment());
+// And a working session's ask for a helper, and a helper's answer (MIXAGENT2a-i), under the same home: a file each.
+builder.Services.AddSingleton(HelperBox.FromEnvironment());
 
 // The ambient scope (D48 §4): this process is spawned BY a repository's session, so its working
 // directory is that repository — which is the one thing that makes "my own circle" answerable without

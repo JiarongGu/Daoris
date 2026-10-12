@@ -107,6 +107,8 @@ public sealed class OpinionDesk(OpinionStore opinions, SessionStore sessions, bo
                 : working.Opinion is { } reads
                     ? $"Session `{working.Id}` reads another session's work for second opinion `{reads}`: nothing lands from its tree, "
                       + "so nothing of it is read"
+                : working.Serves is { } serves
+                    ? $"Session `{working.Id}` is a helper for session `{serves}`: nothing lands from its tree, so nothing of it is read"
                 : working.Ask is { } askId ? $"Session `{working.Id}` is the intake for ask `#{askId}`, which does no work in a repository"
                 : string.Equals(Trees.Normalize(working.Tree), tree, StringComparison.Ordinal)
                     ? $"`{tree}` is session `{working.Id}`'s own tree: a reviewer reads a clone of its own at the candidate, never the "

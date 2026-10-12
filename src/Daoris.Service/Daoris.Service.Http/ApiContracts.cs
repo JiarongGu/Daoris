@@ -308,12 +308,15 @@ public sealed record SessionResponse(
     JsonElement? NoteParts = null,
     // XAGENT1c (D155 point 11): the second opinion a reviewer's record reads another session's work for. This machine's own,
     // like the opinion: answered to it only, and absent for every other session.
-    string? Opinion = null);
+    string? Opinion = null,
+    // MIXAGENT2a-i (D163 point 2): the session a helper's record answers. This machine's own, like the opinion: answered to it
+    // only, and absent for every other session.
+    string? Serves = null);
 // MSG1a: one word waiting on a record — its id, which the record's events say again where the session took it; the
 // words; when; its files' names, never where they are; and whether it was said after the record ended. XAGENT1c: `by`, the
 // second opinion whose findings these are, another agent's claims; absent, the person's words, as every word before it was.
 public sealed record SaidWordResponse(
-    string Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens, string? By = null);
+    string Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens, string? By = null, string? Helper = null);
 // MSG1a (D137 §5.3): what the person says to a parked or ended session. `Files` are the names of what they gave with it;
 // a path is cut to its name before it is kept.
 public sealed record SayRequest(string? Text, IReadOnlyList<string>? Files = null);

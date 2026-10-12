@@ -100,6 +100,11 @@ public enum SessionSayRefusal
     /// is never resumed. The person asks again, with their words, instead.
     /// </summary>
     Opinion,
+
+    /// <summary>
+    /// It is a helper's record (MIXAGENT2a-i, D163 point 2): a helper takes one turn, answers a question and is never resumed.
+    /// </summary>
+    Helper,
 }
 
 /// <param name="Refusal"><see cref="SessionSayRefusal.None"/> when the words were kept.</param>
@@ -429,6 +434,9 @@ public sealed partial class SessionLedger(
         }, ct).ConfigureAwait(false);
     }
 
+    /// <summary>The record of one session, as the store holds it: what a connector's tool judges the session it speaks for by.</summary>
+    public Task<Session?> FindAsync(string sessionId, CancellationToken ct = default) => sessions.FindAsync(sessionId, ct);
+
     /// <summary>
     /// The session's own connector took its quest (STANDDOWN2): recorded on the session, so its end
     /// can tell "it holds the quest and stopped" from "somebody else had it". Only the session's own
@@ -567,6 +575,16 @@ public sealed partial class SessionLedger(
                     $"Session `{id}` read another session's work for second opinion `{opinion}`: a pass takes one turn and no words, "
                     + "and is never resumed. Ask again, with your words, for a fresh one.",
                     Session: null) { Opinion = opinion };
+            }
+
+            // MIXAGENT2a-i: the helper's twin of the reviewer's refusal above: its answer comes back through its file.
+            if (session.Serves is { } serves)
+            {
+                return new SessionSayOutcome(
+                    SessionSayRefusal.Helper,
+                    $"Session `{id}` is a helper for session `{serves}`: it takes one turn and no words, and is never resumed. "
+                    + "Ask another agent again, with your words, for a fresh one.",
+                    Session: null);
             }
 
             if (session.State == SessionState.StoodDown)
@@ -968,6 +986,8 @@ public sealed partial class SessionLedger(
             { Ask: { } ask } => $"Session `{id}` is an intake — it is answered through its ask `#{ask}`, so it does not move.",
             // XAGENT1c: a pass is one turn, read afresh each time (design §4), so a reviewer's record never goes on.
             { Opinion: { } opinion } => $"Session `{id}` read the work for second opinion `{opinion}` — a pass is never resumed, so it does not move.",
+            // MIXAGENT2a-i: a helper takes one turn and is never resumed either.
+            { Serves: { } serves } => $"Session `{id}` is a helper for session `{serves}` — a helper is never resumed, so it does not move.",
             { Said.Count: 0 } =>
                 $"Session `{id}` is {Spell(session.State)} — a finished session goes on only with the person's words, and none wait for it.",
             _ => null,
