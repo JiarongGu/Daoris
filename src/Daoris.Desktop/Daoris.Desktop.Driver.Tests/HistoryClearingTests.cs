@@ -100,6 +100,9 @@ public sealed class HistoryClearingTests : IDisposable
         File.WriteAllText(HeldWordsFile.PathOf(_home), """{ "held": [ { "session": "s1", "text": "words", "files": [], "door": "screen" } ] }""");
         new AbandonRecord(_home).Write(new AbandonEntry("quest", "q1", At, "screen", "not needed"));
         new AbandonRecord(_home).Write(new AbandonEntry("quest", "q2", At, "screen", "kept"));
+        // MIXAGENT1a-ii: a quest held on another agent goes back to the machine's with its work cleared; another's stays.
+        new HandedQuests(_home).Write("q1", new HandedQuest("codex-acp", null, "s1", HandOverWhy.Press, HandOverBy.Person, At));
+        new HandedQuests(_home).Write("q2", new HandedQuest("codex-acp", null, "o1", HandOverWhy.Press, HandOverBy.Person, At));
         (DriverConfig.Empty
             .WithForgiven("q1", 3).WithForgiven("q2", 1)
             .WithReleased("q1", "s2")
@@ -135,6 +138,7 @@ public sealed class HistoryClearingTests : IDisposable
         Assert.Null(new LandedBranches(_home).Landing("s1"));
         Assert.NotNull(new LandedBranches(_home).Landing("o1"));
         Assert.Equal(["q2"], new AbandonRecord(_home).Entries().Select(entry => entry.Id));
+        Assert.Equal(["q2"], new HandedQuests(_home).All().Keys);
         var config = DriverConfig.Load(ConfigPath);
         Assert.Equal(["q2"], config.Forgiven.Keys);
         Assert.Empty(config.Released);
