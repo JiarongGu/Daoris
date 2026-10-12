@@ -365,8 +365,8 @@ public sealed class WordsNotesTests
 
     /// <summary>
     /// MIXAGENT1a-i: why a conversation was handed over is a family of its own, each reason a box takes declared once; the two lines
-    /// carry facts only. `curve` (MIXAGENT1a-iii, D165) is a reason a record continues another by, and no box takes it yet, so no
-    /// line says it: SWITCH1c's automatic move declares it with the box that carries it.
+    /// carry facts only. `curve` (MIXAGENT1a-iii, D165) is a reason a record continues another by, and since SWITCH1c-i one the box
+    /// takes, declared with its line: every reason is one a box takes, so a reason added without its line fails here.
     /// </summary>
     [Fact]
     public void A_conversation_handed_over_says_where_it_went_and_why_by_code_with_facts_only()
@@ -376,10 +376,10 @@ public sealed class WordsNotesTests
             .Select(field => (string)field.GetRawConstantValue()!)
             .Order(StringComparer.Ordinal)
             .ToList();
-        var boxed = reasons.Where(HandOverWhy.Known).ToList();
-        Assert.Equal(boxed, NoteCodes.Handed.All.Select(reason => reason.Code).Order(StringComparer.Ordinal));
-        Assert.Equal(["agent", "limit", "near", "press"], boxed);
+        Assert.All(reasons, why => Assert.True(HandOverWhy.Known(why), $"`{why}` is no reason a box takes"));
+        Assert.Equal(reasons, NoteCodes.Handed.All.Select(reason => reason.Code).Order(StringComparer.Ordinal));
         Assert.Equal(["agent", "curve", "limit", "near", "press"], reasons);
+        Assert.False(HandOverWhy.Known("moved-on"));
 
         var went = HandOverNotes.HandedOver("codex-acp", "ab12cd34");
         Assert.Equal("The conversation went on with codex-acp, in conversation ab12cd34.", went.Note);
@@ -391,6 +391,39 @@ public sealed class WordsNotesTests
         Assert.Equal("The conversation went on from claude-code conversation ab12cd34, handed over because its account reached its limit.", took.Note);
         Assert.Equal(("claude-code", "ab12cd34", "limit"), (took.Parts[0].Value("agent"), took.Parts[0].Value("session"), took.Parts[0].Value("why")));
         NoteAssert.Holds(took);
+
+        var moved = HandOverNotes.TakenOver("claude-code", "ab12cd34", HandOverWhy.Curve);
+        Assert.Equal("The conversation went on from claude-code conversation ab12cd34, handed over because its account was over its usage curve.", moved.Note);
+        NoteAssert.Holds(moved);
+    }
+
+    /// <summary>
+    /// SWITCH1c-i (the switch design §4): a conversation moved by the usage curve says so on both sides, naming the accounts, as a
+    /// start's `opening.*` lines do, since a conversation's record is this machine's: the window over its curve, the use there as a
+    /// whole percent and the curve's value there now, in whole points, as the walk's `over-curve` says them.
+    /// </summary>
+    [Fact]
+    public void A_conversation_moved_by_the_curve_says_where_from_where_to_and_how_far_over()
+    {
+        var move = new SwitchChoice.MoveTo("account-3", "weekly", 0.615, 44.6);
+
+        var went = HandOverNotes.Moved("account-1", move);
+        Assert.Equal(
+            "Moved to `account-3` at the end of its turn: `account-1` had used 62% of its weekly limit, over its curve's 45%; `account-3` has room.",
+            went.Note);
+        Assert.Equal(["chat.moved"], NoteAssert.Codes(went.Parts));
+        Assert.Equal(
+            ("account-3", "account-1", "weekly", 62, 45),
+            (went.Parts[0].Value("to"), went.Parts[0].Value("from"), went.Parts[0].Value("window"), went.Parts[0].Value("used"), went.Parts[0].Value("curve")));
+        NoteAssert.Holds(went);
+
+        var came = HandOverNotes.MovedFrom("account-1", move);
+        Assert.Equal("Continues from `account-1`, which had used 62% of its weekly limit, over its curve's 45%.", came.Note);
+        Assert.Equal(["chat.moved-from"], NoteAssert.Codes(came.Parts));
+        Assert.Equal(
+            ("account-1", "weekly", 62, 45),
+            (came.Parts[0].Value("from"), came.Parts[0].Value("window"), came.Parts[0].Value("used"), came.Parts[0].Value("curve")));
+        NoteAssert.Holds(came);
     }
 
     /// <summary>MIXAGENT1a-ii: a quest's session handed over ends with a line of its own, the agent it went to, and no account or path.</summary>
