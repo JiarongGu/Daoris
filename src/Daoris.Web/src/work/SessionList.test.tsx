@@ -88,6 +88,21 @@ describe("Sessions' list by state", () => {
     expect(screen.queryByText('drives here')).toBeNull();
   });
 
+  /** MIXAGENT3a-i: what the rail joined of a record's links rides each row's facts to its line. */
+  it('says on a row whom it continues, and on a helper whom it helps, as the rail joined them', () => {
+    const carried = session({ id: 'c4rr13d0', state: 'working', kind: 'chat', from: 'w0rk1ng0', fromWhy: 'press', fromBy: 'person' });
+    const helper = session({ id: 'h3lp3r00', state: 'working', kind: 'chat', serves: 'w0rk1ng0' });
+    list({
+      rows: [{ session: carried, continues: 'Tidy the tools' }, { session: helper, helps: 'Tidy the tools' }],
+      groupings: [placed({ session: 'c4rr13d0', group: 'working' }), placed({ session: 'h3lp3r00', group: 'working' })],
+    });
+
+    const [first, second] = groupRows('Working (2)');
+    expect(within(first!).getByText(/^engine · chat · continues Tidy the tools · /)).toBeInTheDocument();
+    expect(within(second!).getByText('Helper')).toBeInTheDocument();
+    expect(within(second!).getByText(/^engine · chat · helps Tidy the tools · /)).toBeInTheDocument();
+  });
+
   it('leaves out a group with nothing in it', () => {
     list({ rows: facts([SESSIONS[0]!]), groupings: [GROUPINGS[3]!] });
     expect(headings()).toEqual(['Working (1)']);

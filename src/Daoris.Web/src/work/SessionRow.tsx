@@ -6,7 +6,7 @@ import { cn } from '../lib/cn';
 import { contextOffer } from '../menus/press';
 import { actMenu, type SessionActId } from './acts';
 import { type SessionGrouping, shownOf } from './groups';
-import { isIntake, isOpinion, ownTree, sessionOrigin, sessionTitle } from './identity';
+import { isHelper, isIntake, isOpinion, ownTree, sessionOrigin, sessionTitle } from './identity';
 import { ListRowDoor } from './ListPane';
 import { movedAt } from './rail';
 
@@ -68,8 +68,8 @@ export type SessionWhere = {
 };
 
 export function SessionRow({
-  session, quest, opening, root, where, reads, taking, lastTurn, grouping, place, archived = false, selected = false, onSelect,
-  acts = [], onAct,
+  session, quest, opening, root, where, reads, continues, helps, taking, lastTurn, grouping, place, archived = false,
+  selected = false, onSelect, acts = [], onAct,
 }: {
   session: Session;
   /**
@@ -98,6 +98,13 @@ export function SessionRow({
    * rail joined the two through the opinions the service lists. Absent where it did not, and then nothing is claimed.
    */
   reads?: string | null;
+  /**
+   * The title of the session its record says it continues (`from`, MIXAGENT3a-i, the mixed-agents design §4), where the rail
+   * joined the two. Absent where it did not, and then nothing is claimed.
+   */
+  continues?: string | null;
+  /** The title of the session a helper helps (`serves`, MIXAGENT3a-i), where the rail joined the two; absent, nothing claimed. */
+  helps?: string | null;
   /**
    * Where the list's reader placed it (SESSUX1c, D126 §2.2): its derived word (*parked*, *awaiting reply*) and the
    * facts its line says for its group. Absent where no reader answered (a browser), and then the record speaks alone.
@@ -148,6 +155,9 @@ export function SessionRow({
     t(isIntake(session) ? 'work.intake.kind' : isOpinion(session) ? 'opinion.session.kind'
       : session.kind === 'chat' ? 'work.kind.chat' : 'work.kind.driven'),
     isOpinion(session) && reads ? t('opinion.session.reads', { title: reads }) : null,
+    // Whom it continues, and whom a helper helps (MIXAGENT3a-i): the record's own links, where the rail joined them.
+    session.from && continues ? t('work.rail.continues', { title: continues }) : null,
+    isHelper(session) && helps ? t('work.rail.helps', { title: helps }) : null,
     landed ? t(landed.state === 'gone' ? 'work.rail.landedGone' : 'work.rail.landedOn', { branch: landed.branch }) : null,
     tree ? t('work.rail.inTree', { tree }) : null,
     origin ? t('work.rail.on', { origin }) : null,
