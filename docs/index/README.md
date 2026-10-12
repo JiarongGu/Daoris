@@ -44,11 +44,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 48 | 900 |
 | `src/Daoris.Web/src/ui.test.tsx` | 48 | 975 |
 | `src/Daoris.Web/src/ui.tsx` | 79 | 1683 |
-| `src/Daoris.Web/src/work/ConversationView.test.tsx` | 48 | 912 |
+| `src/Daoris.Web/src/work/ConversationView.test.tsx` | 49 | 929 |
 | `src/Daoris.Web/src/work/SessionHead.test.tsx` | 50 | 949 |
 | `src/Daoris.Web/src/work/SessionRail.test.tsx` | 48 | 950 |
-| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 227 | 4378 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 94 | 1734 |
+| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 232 | 4460 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 96 | 1775 |
 | `src/Daoris.Web/src/work/attention.test.ts` | 42 | 857 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 44 | 871 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 877 |
@@ -62,7 +62,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/AbandonTests.cs` | 43 | 786 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/AcpTests.cs` | 111 | 2071 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/HarnessTests.cs` | 48 | 1089 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 101 | 1630 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 101 | 1632 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/empty.md` | 42 | 309 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/full.md` | 46 | 360 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/sparse.md` | 42 | 308 |
@@ -162,7 +162,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 51 | 1052 |
 | `tools/family-rehearsal.mjs` | 339 | 5982 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 131 | 2392 |
+| `tools/merge-branch.mjs` | 131 | 2394 |
 | `tools/orient-index.mjs` | 65 | 1409 |
 | `tools/rehearsal-kit.mjs` | 42 | 812 |
 | `tools/usage-report.mjs` | 57 | 1254 |
@@ -199,4 +199,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-second-agent-design.md` | 57 | 769 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
-| `src/Daoris.Desktop/README.md` | 53 | 310 |
+| `src/Daoris.Desktop/README.md` | 54 | 310 |
