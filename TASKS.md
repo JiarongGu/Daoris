@@ -50,12 +50,14 @@ Original row proofs remain in the frozen backlog; measurements precede declarati
 - [ ] **ACCTPLAN1 — plan, spend and reset credits** (driver/modules/web; design first). Nothing reads them yet (D125:898-899); show them in a fold, and never redeem a credit without `InlineConfirm`. Second-opinion review lines 132-133.
 - [ ] **CODEXUSE2 — installed Codex reading** (parent/owner). Pins are verified; account sign-in remains unavailable. Use CODEXUSE3's own-sign-in reading meanwhile. D57/D63/D125.
 - [ ] **CODEXKEY1 — Codex API-key account** (measure first; owner supplies throwaway key). Determine spawn variable for both tools before declaring support. D67/D125; real variable-start proof.
-- [ ] **USAGEREAD2 — Daoris reads each account's real use** (driver). Per agent's table entry (Claude Code's `get_usage`, `docs/2026-10-12-usage-read-evidence.md`), a read under the account's home into `windows.json` with its `source` (`read` or `said`) and when, at design §1.2's moments and bounds; `daoris agent list` prints source and age. A Process case on a stub CLI. D165 point 1.
-- [ ] **USAGEREAD3 — the pace warning is not near** (driver). Claude Code's `allowed_warning` recorded as `warned`, shown in the agent's words and never near alone (`AccountReadings.NearWindow`'s `NearBy.Word`); the table's goldens. Design §1.3.
+- [ ] **USAGEREAD2a — Daoris reads each Claude account's real use** (driver). `ClaudeUsage` beside `CodexUsage` (Claude Code's `get_usage`, `docs/2026-10-12-usage-read-evidence.md`) declared as the native door's `Usage:`, so the start's walk (`FreshenAsync`) and the Accounts press read it; `windows.json` entries gain `source` (`read` or `said`), the newer by `seen` winning and a read winning a tie; a once-a-minute floor and a ten-second bound; a five-hour window not yet opened read as 0 until its length has passed. A Process case on a stub CLI. D165 point 1; design §1.1-§1.2.
+- [ ] **USAGEREAD2b — the terminal says where a reading came from** (cli; after 2a). `daoris agent list` prints each reading's source and age (`read 2 min ago` or `said 3 h ago`), both twins' tables in step (`windows.ts`, `WindowsTwinTests`). Design §5.
+- [ ] **USAGEREAD3a — the pace warning is not near** (driver/modules/cli/web note lines). Claude Code's `allowed_warning` recorded as `warned`, never near alone (`NearBy.Word` gone); an old stored `near` read as `warned`; the log writes `warned`; the start's note says *ahead of its pace, by its own word* with its page twin. Design §1.3.
+- [ ] **USAGEREAD3b — the page says the pace warning in its own words** (web; after 3a). Account rows, the agents list and the use settings show `warned` as the agent's pace warning, not *near its limit*; the hand-over offer's words. Both languages.
 - [ ] **SWITCH1a — the `switch` and `curve` settings** (driver/cli). `switch` (`smart` default, `curve`, `off`) and `curve` per window in `rotationUse` and `workspaceRotationUse`, both twins from one table fixture, `early` and `near` read on and dropped on write, a refused curve saying what is wrong. Design §2, §6.
 - [ ] **SWITCH1b — the walk by the curve** (driver; after 1a, USAGEREAD3). D130 §16.3's step 2 becomes over its curve last and step 5 most room under its curve first; `off` reads the smart curve for step 2. Design §3.
-- [ ] **SWITCH1c — a running session moves at its turn's end** (driver/modules; after 1b, USAGEREAD2). A quest's carry-on and a conversation's hand-over (agent unchanged, asked by `daoris`, why `curve`) to an account with room, the ten-point margin and the thirty-minute hold, coded notes in both languages. Absorbs TOOL6d. Design §4.
-- [ ] **SWITCH1d — the switch in view** (web/modules; after 1a, USAGEREAD2). Accounts' windows against the curve with source, age and *Read now*; *Smart*, *My own curve* and *Off* with the curve's chart and point editor; Ask Daoris's `use` keys. Both languages, stories, installed proof. Design §5.
+- [ ] **SWITCH1c — a running session moves at its turn's end** (driver/modules; after 1b, USAGEREAD2). A quest's carry-on and a conversation's hand-over (agent unchanged, asked by `daoris`, why `curve`) to an account with room, the ten-point margin and the thirty-minute hold, coded notes in both languages; the read of the scope's other accounts at a turn's end where a switch is near (design §1.2). Absorbs TOOL6d. Design §4.
+- [ ] **SWITCH1d — the switch in view** (web/modules; after 1a, USAGEREAD2a). Accounts' windows against the curve with source, age and *Read now*, read as the screen opens where older than a minute; the curve's refusal code and its en/zh sentence; *Smart*, *My own curve* and *Off* with the curve's chart and point editor; Ask Daoris's `use` keys. Both languages, stories, installed proof. Design §5.
 - [ ] **SWITCH1e — the offer is the fallback** (web; after 1c). The low-allowance hand-over offer only where `switch` is `off` or no account of the agent has room. Design §4.
 - [ ] **SWITCHCTX1 — a move keeps the agent's own context** (owner: spends two short turns). Measure whether a Claude Code conversation resumes on another account's home with its transcript carried; if it does, an amendment to D125 §3.5 point 5 may let a move keep it. Design §4.
 - [ ] **TOOL4h — account rehearsal/report** (tools; after TOOL4j). Stub window limits labelled Daoris-only; parallel account run. Rotation §8/D130 §5.4.
@@ -257,6 +259,18 @@ UNBLOCK6–8; TOOLS6/8 precede 9, TOOLS10 precedes managed-Git sessions, 11 last
 - [ ] **TOOLS9 — managed-tool rehearsals**. Loopback lists, stubs and tamper refusals. D121 §6/§7.
 - [ ] **TOOLS10 — managed-Git probe** (owner permits one start per agent). D121 §7.
 - [ ] **TOOLS11 — real installs** (owner). Managed SSH Git, plugin Node, terminal PowerShell, gh/az landing. D121 §7.
+
+## Code structure
+
+Contract: `docs/2026-10-12-code-structure-design.md` (D166). Moves are behaviour-preserving, one module per branch, while
+no branch in flight touches that module; new driver files go into their module folder once STRUCT1 lands.
+
+- [ ] **STRUCT1 — the structure gate, and paths found by name** (driver/tools/cli/web tests). `StructureTests` (design §5) with every current file allowlisted; the map of each driver file to its module (§2); every test and tool that reads a driver file finds it by name under the driver's tree and walks folders recursively; `merge-branch.mjs`'s named-file rules match by name wherever the file lives, held by its test. No source moves.
+- [ ] **STRUCT2a — `Plugins` into its folder** (driver; after STRUCT1). The first module move (design §6's order), files as they are, tests mirrored, the allowlist shrunk; the rest of the modules follow as STRUCT2b–n, one row filed as each is due.
+- [ ] **STRUCT3 — layer each module** (driver; after its STRUCT2 row). `Domain`, `Application` and `Infrastructure` with ports, the gate's purity and reach rules on for that module; a row per module, filed as it is due. Design §3, §6.
+- [ ] **STRUCT4 — namespaces per module** (driver; after its STRUCT3 row). `Daoris.Driver.<Module>`, embedded resources' names pinned first. Design §4.
+- [ ] **STRUCT5 — the other projects' folders** (modules/service/web/cli; after STRUCT2's first rows). `Modules` (the bridge per domain, browser, window, update), the service's core, the page's top folder and the CLI's `src/`, each with its gate; a row each when due. Design §7.
+- [ ] **STRUCT6 — assemblies, measured** (after STRUCT3). Build time, merge collisions and what a split would buy; a decision then. Design §4.
 
 ## Development and agent layout
 

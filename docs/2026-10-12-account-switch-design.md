@@ -138,7 +138,8 @@ margins keep moves rare.
   curve for each window with each account's point on it, and *My own curve* edits the points. Both languages.
 - **A session's head and timeline**: the move, why, and where it went (§4).
 - **The terminal**: `daoris agent profile use <agent> --switch smart|curve|off [--curve weekly=0:30,50:70,100:100]
-  [--curve five-hour=0:90] [--workspace W]`, and `daoris agent list` prints each reading's source and age.
+  [--curve session=0:90] [--no-curve] [--workspace W]`, and `daoris agent list` prints each reading's source and age. A
+  curve's windows are named as `windows.json` names them: `session` (the five-hour window) and `weekly`.
 - **Ask Daoris**: its `use` door takes `switch` and `curve`.
 
 ## 6. The settings
@@ -152,9 +153,12 @@ margins keep moves rare.
 }
 ```
 
-- Absent `switch` is `smart`. A window the person's curve leaves out takes the smart curve's.
-- **Read on, never lost**: `early: false` reads as `switch: off`; `near: N` reads as the five-hour window flat at N. A
-  writer writes `switch` and `curve`, and drops `early` and `near`.
+- Absent `switch` is `smart`. A window the person's curve leaves out takes the smart curve's. A curve is kept whatever
+  `switch` says and applies only under `curve`; `--no-curve` removes it. Its points are whole numbers, one to twelve of
+  them; before the first point the curve is the first point's use, after the last the last's.
+- **Read on, never lost**: `early: false` reads as `switch: off`; `near: N` other than 90 reads as `switch: curve` with
+  the `session` window flat at N (under `off` the curve is kept). A writer writes `switch` and `curve`, and drops `early`
+  and `near`. Until SWITCH1b moves the walk to the curve, the walk keeps reading `early` and `near`, derived from them.
 - Both twins write the same bytes, from one table (`fixtures/`), as D130 §14 says.
 
 ## 7. What this amends, and what it rejects
