@@ -764,6 +764,53 @@ public sealed class IndexEntriesTests : IDisposable
     }
 
     /// <summary>
+    /// ORIENT2h8's proof: a decisions digest's label ends in a count of its notes (<c>· 8 notes</c>), and a new note
+    /// gave the item a new id. Two indexes that differ only in that count give every entry its id, in both readers.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void An_entry_keeps_its_id_when_only_its_label_s_note_count_changes(bool deployment)
+    {
+        Declare("""{"index":"docs/index/README.md"}""");
+        Write("docs/index/README.md", Readme);
+        void Counted(string count) =>
+            Write("docs/index/notes.md",
+                "# Notes digest\n\n## Decisions (2)\n\n"
+                + $"- D4:1-9 (2026-08-04) Three layers · {count}\n"
+                + "- D5:1-9 (2026-08-04) Another\n\n"
+                + $"| Note | Where |\n|---|---|\n| first · {count} | a.md:3 |\n");
+        List<KnowledgeEntry> Read() =>
+            Index(new RepositoryScanner(index: deployment ? "docs/index" : null).Scan(_root))
+                .Where(e => e.RelativePath == "docs/index/notes.md").ToList();
+
+        Counted("1 note");
+        var before = Read();
+        Counted("2 notes");
+        var after = Read();
+
+        Assert.True(before.Count >= 3);
+        Assert.Equal(before.Select(e => e.Id).Order().ToList(), after.Select(e => e.Id).Order().ToList());
+        Assert.Contains(after, e => e.Title.Contains("2 notes", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("D115 (2026-08-04) Title · 8 notes", "D115 (2026-08-04) Title")]
+    [InlineData("Title · 1 note", "Title")]
+    [InlineData("Title · 10 notes ", "Title")]
+    [InlineData("Title", "Title")]
+    [InlineData("Title · many notes", "Title · many notes")]
+    [InlineData("Title · 8 notes more", "Title · 8 notes more")]
+    [InlineData("Title - 8 notes", "Title - 8 notes")]
+    [InlineData("Title · 8 notebooks", "Title · 8 notebooks")]
+    [InlineData("· 8 notes", "· 8 notes")]
+    [InlineData("Title · ٨ notes", "Title · ٨ notes")]
+    public void A_label_s_trailing_note_count_is_taken_out_of_its_anchor(string label, string anchored)
+    {
+        Assert.Equal(anchored, IndexRows.Unnoted(label));
+    }
+
+    /// <summary>
     /// ORIENT2h7: only a heading's trailing count is taken out of its anchor: a space, a parenthesis, digits and the
     /// parenthesis, at the end. Anything else in a heading is its name.
     /// </summary>
