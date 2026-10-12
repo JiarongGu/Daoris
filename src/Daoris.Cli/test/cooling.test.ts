@@ -1,15 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { COOLING_FILE, coolingLine, coolingOf, coolingWhen, coolingWhy, endCooling, readCooling } from '../src/cooling.ts';
 import type { CoolingEntry } from '../src/cooling.ts';
 import {
   TOOLCHAINS, accountLines, addKeyAccount, commandHarness, profileHome, removeProfile, signInNew, signInTo,
 } from '../src/toolchain.ts';
 import type { HarnessReport, HarnessSettings } from '../src/toolchain.ts';
-import { driverRows as csharpRows } from './_csharp.ts';
+import { driverRows as csharpRows, driverTestFile } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**
@@ -344,11 +343,9 @@ test('`agent list` says when starts run on the person\'s own sign-in, and how to
 
 // ——— The twin, held: the driver's tables are these tables, row for row and in this order.
 
-const DRIVER_TESTS = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests');
-
 test('the driver’s tables are these tables, row for row and in this order', () => {
-  const twin = readFileSync(join(DRIVER_TESTS, 'CoolingTwinTests.cs'), 'utf8').replace(/\r\n/g, '\n');
-  const words = readFileSync(join(DRIVER_TESTS, 'AccountCoolingTests.cs'), 'utf8').replace(/\r\n/g, '\n');
+  const twin = readFileSync(driverTestFile('CoolingTwinTests.cs'), 'utf8').replace(/\r\n/g, '\n');
+  const words = readFileSync(driverTestFile('AccountCoolingTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
   assert.deepEqual(csharpRows(twin, 'An_entry_reads_as_the_cli_reads_it', {}, 'CoolingTwinTests'), READ_ROWS);
   assert.deepEqual(csharpRows(twin, 'An_entry_ends_as_the_cli_ends_it', {}, 'CoolingTwinTests'), END_ROWS);

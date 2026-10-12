@@ -2,17 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { markSignedIn, probeLockPath, probeLockStale, signedInPath, takeProbeLock } from '../src/probelock.ts';
 import { probe, profileHome, readHarnessSettings, TOOLCHAINS } from '../src/toolchain.ts';
 import type { Toolchain } from '../src/toolchain.ts';
-import { driverRows } from './_csharp.ts';
+import { driverRows, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 
 // TOOL6g: one status question per configuration home at a time, across the desktop and the terminal. The rows are the
 // driver's `ProbeLockTests`, read from its source, so a rule changed on one side alone fails here.
 
-const DRIVER_TESTS = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'ProbeLockTests.cs');
+const DRIVER_TESTS = driverTestFile('ProbeLockTests.cs');
 const source = readFileSync(DRIVER_TESTS, 'utf8');
 
 const PATH_ROWS: [string, string | null, string][] = [

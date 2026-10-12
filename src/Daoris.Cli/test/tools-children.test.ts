@@ -2,14 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { delimiter, dirname, join, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import {
   PATH_VARIABLE, TOOLS, TOOLS_FILE, TOOLS_FOLDER, TOOL_PACKAGE, TOOL_RECORD, childEnvironment, childPath,
   commandOnTheSystem, commandThroughTools, handTools, installBin, readTools, resolveCommand,
 } from '../src/tools.ts';
 import { probe, readHarnessSettings } from '../src/toolchain.ts';
 import type { Toolchain } from '../src/toolchain.ts';
-import { driverRows as csharpRows } from './_csharp.ts';
+import { driverRows as csharpRows, driverTestFile } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**
@@ -340,8 +339,7 @@ test('a harness probe is started on the tools’ PATH, as a session of the deskt
 
 // ——— The twin, held: the driver's tables are these tables, row for row and in this order.
 
-const DRIVER_TABLES = join(
-  dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'ToolsChildrenTests.cs');
+const DRIVER_TABLES = driverTestFile('ToolsChildrenTests.cs');
 
 test('the driver’s tables are these tables, row for row and in this order', () => {
   const source = readFileSync(DRIVER_TABLES, 'utf8').replace(/\r\n/g, '\n');

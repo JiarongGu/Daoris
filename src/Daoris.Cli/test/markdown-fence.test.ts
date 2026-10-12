@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { firstHeading, markdownFence } from '../src/document.ts';
+import { driverTestFile } from './_csharp.ts';
 
 // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents
 const tools = await import('../../../tools/doc-duplicates.mjs') as { fenced: (text: string[]) => boolean[] };
@@ -21,7 +22,6 @@ const tools = await import('../../../tools/doc-duplicates.mjs') as { fenced: (te
  */
 
 const here = dirname(fileURLToPath(import.meta.url));
-const root = join(here, '..', '..', '..');
 
 type Case = { why: string; lines: string[]; fenced: number[] };
 const CASES = (JSON.parse(readFileSync(join(here, 'fixtures', 'fence-cases.json'), 'utf8')) as { cases: Case[] }).cases;
@@ -42,7 +42,7 @@ test('the tools read each case\'s fence as the table does', () => {
 });
 
 test('the driver\'s twin reads the same table', () => {
-  const twin = readFileSync(join(root, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'SelfDescriptionTests.cs'), 'utf8');
+  const twin = readFileSync(driverTestFile('SelfDescriptionTests.cs'), 'utf8');
   assert.ok(/"fixtures",\s*"fence-cases\.json"/.test(twin), 'SelfDescriptionTests reads fixtures/fence-cases.json');
 });
 

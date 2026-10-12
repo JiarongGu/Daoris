@@ -1,10 +1,56 @@
 import assert from 'node:assert/strict';
+import { readdirSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /**
  * The driver's `[InlineData(…)]` rows, read as data (TOOLS2, TOOLS3): how a CLI test holds a twin's table to
  * its own, cell for cell and in order, so a row changed on one side alone fails `npm run verify`. The C#
  * side keeps each row on one line, its cells literals.
+ *
+ * And the file each row is read from, found by its name wherever it lies under its desktop project (STRUCT1, D166): the
+ * driver's sources and tests move into module folders one module per branch, so a reader names the file and never its
+ * folder. `driver-names.test.ts` holds every reader to it.
  */
+
+/** The desktop's projects' folder, `src/Daoris.Desktop/`. */
+export const DESKTOP = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop');
+
+/** The one path of the name among those found under a project, or why the name names none: absent, or found twice. */
+export function oneNamed(project: string, name: string, found: readonly string[]): string {
+  if (found.length === 1) return found[0]!;
+  if (found.length === 0) throw new Error(`no ${name} under ${project}: a source read by name must be there, at any depth`);
+  throw new Error(`${name} is under ${project} ${found.length} times, so its name does not say which: ${found.join(', ')}`);
+}
+
+const listed = new Map<string, string[]>();
+
+/** Every file under a desktop project's folder, at any depth, the build's output (`bin/`, `obj/`) aside: walked once a run. */
+export function projectFiles(project: string): string[] {
+  const known = listed.get(project);
+  if (known) return known;
+  const files: string[] = [];
+  const walk = (folder: string, top: boolean): void => {
+    for (const entry of readdirSync(folder, { withFileTypes: true })) {
+      if (!entry.isDirectory()) files.push(join(folder, entry.name));
+      else if (!top || (entry.name !== 'bin' && entry.name !== 'obj')) walk(join(folder, entry.name), false);
+    }
+  };
+  walk(join(DESKTOP, project), true);
+  files.sort();
+  listed.set(project, files);
+  return files;
+}
+
+/** The one file of this name under a desktop project's folder, at any depth. */
+export const desktopFile = (project: string, name: string): string =>
+  oneNamed(project, name, projectFiles(project).filter((path) => basename(path) === name));
+
+/** The one driver source of this name, at any depth of `Daoris.Desktop.Driver/`. */
+export const driverFile = (name: string): string => desktopFile('Daoris.Desktop.Driver', name);
+
+/** The one file of the driver's tests of this name, at any depth of `Daoris.Desktop.Driver.Tests/`. */
+export const driverTestFile = (name: string): string => desktopFile('Daoris.Desktop.Driver.Tests', name);
 
 export type Cell = string | number | boolean | null;
 

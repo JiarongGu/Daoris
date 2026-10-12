@@ -1,13 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { TOOLCHAINS, accountLines } from '../src/toolchain.ts';
 import type { HarnessReport, HarnessSettings } from '../src/toolchain.ts';
 import { OWN_WINDOWS, WINDOWS_FILE, age, saidLine, saidOf } from '../src/windows.ts';
 import type { WindowSaid } from '../src/windows.ts';
-import { driverRows as csharpRows } from './_csharp.ts';
+import { driverRows as csharpRows, driverFile, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**
@@ -163,16 +162,14 @@ test('`agent list` says what the tool\'s own sign-in last said beneath its agent
 
 // ——— The twin, held: the driver's table is this table, row for row and in this order.
 
-const DRIVER_TESTS = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests');
-
 test('the driver’s table is this table, row for row and in this order', () => {
-  const twin = readFileSync(join(DRIVER_TESTS, 'WindowsTwinTests.cs'), 'utf8').replace(/\r\n/g, '\n');
+  const twin = readFileSync(driverTestFile('WindowsTwinTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
   assert.deepEqual(csharpRows(twin, 'An_account_s_windows_read_as_the_cli_reads_them', {}, 'WindowsTwinTests'), READ_ROWS);
 });
 
 test('the tool’s own sign-in’s key is the driver’s, and no account’s (CODEXUSE3)', () => {
-  const source = readFileSync(join(DRIVER_TESTS, '..', 'Daoris.Desktop.Driver', 'AccountWindows.cs'), 'utf8');
+  const source = readFileSync(driverFile('AccountWindows.cs'), 'utf8');
 
   assert.equal(OWN_WINDOWS, '');
   assert.match(source, /public const string Own = "";/);

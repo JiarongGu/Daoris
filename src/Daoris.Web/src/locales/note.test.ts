@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { BACKGROUND_STATES, HANDED_REASONS, HELPER_REASONS, NOTE_CODES, NOTE_VALUES, OPENING_REASONS, RESUMED_REASONS, UNREACHED_REASONS } from '../work/noteLines';
+import { driverSource } from '../test/driverSource';
 import { REASONS } from '../work/say';
 import { en, zh } from '.';
 
@@ -27,8 +28,8 @@ const names = (values: string) =>
 const source = (path: string) => readFileSync(join(root, ...path.split('/')), 'utf8');
 
 /** A writer's codes, read from its source as it declares them. */
-function declared(writer: string, path: string): Declared[] {
-  return [...source(path).matchAll(DECLARATION)].map((match) => {
+function declared(writer: string, text: string): Declared[] {
+  return [...text.matchAll(DECLARATION)].map((match) => {
     const { code, values, key, why } = match.groups as { code: string; values: string; key?: string; why?: string };
     return { code, values: names(values), key: key ?? `note.${code}`, writer, ...(why ? { why: why.toLowerCase() } : {}) };
   });
@@ -36,19 +37,19 @@ function declared(writer: string, path: string): Declared[] {
 
 /** The reasons the driver declares for one family (`NoteCodes.Continue`, `NoteCodes.Cooling`): each key and its values. */
 function reasons(family: string): { key: string; values: string[] }[] {
-  const text = source('src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs');
+  const text = driverSource('NoteCodes.cs');
   const block = new RegExp(`NoteReasons ${family} = new\\(\\s*\\[([\\s\\S]*?)\\]\\);`).exec(text)?.[1] ?? '';
   return [...block.matchAll(/new\(\w+\.\w+, \[([^\]]*)\], "([^"]+)"\)/g)].map((match) => ({ key: match[2], values: names(match[1]) }));
 }
 
 /** The states the driver's `BackgroundState` declares as known (CONVNOTE2i). */
 function backgroundStates(): string[] {
-  const block = /static class BackgroundState\s*\{([\s\S]*?)\n\}/.exec(source('src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs'))?.[1] ?? '';
+  const block = /static class BackgroundState\s*\{([\s\S]*?)\n\}/.exec(driverSource('NoteCodes.cs'))?.[1] ?? '';
   return [...block.matchAll(/public const string \w+ = "([^"]+)";/g)].map((match) => match[1]);
 }
 
-const driver = declared('driver', 'src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs');
-const ledger = declared('service', 'src/Daoris.Service/Daoris.Service.Core/NoteParts.cs');
+const driver = declared('driver', driverSource('NoteCodes.cs'));
+const ledger = declared('service', source('src/Daoris.Service/Daoris.Service.Core/NoteParts.cs'));
 const codes = [...driver, ...ledger];
 
 const placeholders = (text: string): string[] =>

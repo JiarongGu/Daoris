@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { delimiter, dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
+import { driverFile } from './_csharp.ts';
 // Untyped workspace tooling, suppressed at the one site — see desktop-tool.test.ts for why.
 import {
   BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, CONNECTOR_EXE, CONNECTOR_HOME, GATE_COMMAND, HOME, HOST_EXE, HOST_HOME,
@@ -58,7 +59,7 @@ test('five names make an install, the marker and the update’s folder among the
  * this reads the C# for its spellings and its required files.
  */
 test('the staged build is laid out where StagedBuild looks, with the files it requires', () => {
-  const source = readFileSync(join(here, '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'StagedBuild.cs'), 'utf8');
+  const source = readFileSync(driverFile('StagedBuild.cs'), 'utf8');
   assert.ok(source.includes(`Folder = "${STAGED[0]}"`), 'the update’s folder');
   assert.ok(source.includes(`Staged = "${STAGED[1]}"`), 'the staged build inside it');
   assert.ok(source.includes(`Manifest = "${BUILD_MANIFEST}"`), 'its manifest');
@@ -605,7 +606,7 @@ test('the offers folder is where the CLI and the driver look for it', () => {
   assert.deepEqual([...PLUGIN_OFFERS], ['app', 'plugin-offers']);
   assert.deepEqual([...PLUGIN_OFFERS], [...OFFERS_DIR]);
   assert.equal(PLUGIN_OFFERS[0], SHELL_HOME[0], 'beside the application, in app/');
-  const driver = readFileSync(join(here, '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'PluginOffers.cs'), 'utf8');
+  const driver = readFileSync(driverFile('PluginOffers.cs'), 'utf8');
   assert.ok(driver.includes(`Layout = [${PLUGIN_OFFERS.map((part: string) => `"${part}"`).join(', ')}]`), 'PluginOffers.Layout');
 });
 
@@ -695,7 +696,7 @@ test('the list built in is where the CLI and the driver look for it', () => {
   assert.deepEqual([...RESOURCES], ['app', 'resources.json']);
   assert.deepEqual([...RESOURCES], [...BUILT_IN_LAYOUT]);
   assert.equal(RESOURCES[0], SHELL_HOME[0], 'beside the application, in app/');
-  const driver = readFileSync(join(here, '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'ToolResources.cs'), 'utf8');
+  const driver = readFileSync(driverFile('ToolResources.cs'), 'utf8');
   assert.ok(driver.includes(`Layout = [${RESOURCES.map((part: string) => `"${part}"`).join(', ')}]`), 'ToolResources.Layout');
 
   assert.deepEqual([...RESOURCES_SOURCE], ['src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'resources.json']);
@@ -835,7 +836,7 @@ test('the doctrine tool lands where the CLI reads the canon it ships, as npm lay
  */
 test('the launchers are where the tools’ environment puts them first on every child’s PATH', () => {
   assert.deepEqual([...CLI_BIN], [...INSTALL_BIN]);
-  const driver = readFileSync(join(here, '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'Tools.Children.cs'), 'utf8');
+  const driver = readFileSync(driverFile('Tools.Children.cs'), 'utf8');
   assert.ok(driver.includes(`InstallBinLayout = [${CLI_BIN.map((part: string) => `"${part}"`).join(', ')}]`), 'Tools.InstallBinLayout');
 
   const install = folder();

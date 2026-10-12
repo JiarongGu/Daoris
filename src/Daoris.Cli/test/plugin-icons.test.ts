@@ -2,9 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { MANIFEST, commandPlugin, pluginsRoot, readIcon, readManifest, readPlugins } from '../src/plugins.ts';
-import { driverRows } from './_csharp.ts';
+import { driverRows, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**
@@ -16,9 +15,7 @@ import { makeFixture } from './_fixture.ts';
  * 🔴 An icon's problem never refuses the plugin: it is how a plugin is recognised, never what it does.
  */
 
-const DRIVER_TESTS = join(
-  dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'PluginIconTests.cs',
-);
+const DRIVER_TESTS = driverTestFile('PluginIconTests.cs');
 
 /**
  * [case, the manifest's `icon` as JSON or null for none, the file a row writes from the plugin's folder or null, its

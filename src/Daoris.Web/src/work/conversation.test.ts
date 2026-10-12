@@ -21,10 +21,9 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { en, zh } from '../locales';
 import { useChatTurns, useSay, useSessionEvents, useSessionReach } from '../shell';
+import { driverSource } from '../test/driverSource';
 import { CONVERSATION_CODES, mergeEvents, runCount, segments, type SessionEvent, settle, toTurns } from './conversation';
 
 const said = (seq: number, text = `m${seq}`): SessionEvent => ({ seq, at: '2026-09-25T00:00:00Z', kind: 'message', text });
@@ -470,8 +469,7 @@ describe('toTurns', () => {
  * catalogues from its side.
  */
 describe('a conversation note’s codes, held to the driver', () => {
-  const source = readFileSync(
-    join(process.cwd(), '..', '..', 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'SessionEvents.cs'), 'utf8');
+  const source = driverSource('SessionEvents.cs');
   const block = /public static class SessionEventCodes\s*\{([\s\S]*?)\n\}/.exec(source)?.[1] ?? '';
   const declared = [...block.matchAll(/public const string \w+ = "([a-z-]+)";/g)].map((match) => match[1]);
 

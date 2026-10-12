@@ -1,7 +1,6 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { en, zh } from '../locales';
+import { driverSource } from '../test/driverSource';
 import { HANDED_CUTS } from './handed';
 
 /**
@@ -11,8 +10,7 @@ import { HANDED_CUTS } from './handed';
  * driver's. The driver's `HandedCodesTests` reads the catalogues from its side.
  */
 
-const root = join(process.cwd(), '..', '..');
-const source = readFileSync(join(root, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'InstructionAccount.cs'), 'utf8');
+const source = driverSource('InstructionAccount.cs');
 
 /** A class's codes as the driver declares them: each `const string`, by its name and value. */
 function declared(holder: string): Map<string, string> {

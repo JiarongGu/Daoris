@@ -10,7 +10,7 @@ import {
   type MergedResources, type ResourceList,
 } from '../src/resources.ts';
 import { TOOLS, TOOLS_FILE, TOOLS_FOLDER } from '../src/tools.ts';
-import { driverRows as csharpRows } from './_csharp.ts';
+import { driverRows as csharpRows, driverFile, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**
@@ -458,7 +458,7 @@ test('a copy is hashed as its bytes, and read as its text', () => {
 
 // ——— The list built in (§3.1, §3.2), and the evidence it was read from.
 
-const BUILT_IN_SOURCE = join(here, '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver', RESOURCES_FILE);
+const BUILT_IN_SOURCE = driverFile(RESOURCES_FILE);
 const EVIDENCE = join(here, '..', '..', '..', 'docs', '2026-10-01-tools-resources-evidence.md');
 
 test('the list built in reads whole, and names one version of every declared tool for win-x64', () => {
@@ -497,7 +497,7 @@ test('every file the list built in names is recorded in its evidence, with its h
 
 // ——— The twin, held: the driver's tables are these tables, row for row and in this order.
 
-const DRIVER_TABLES = join(here, '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'ToolResourcesTests.cs');
+const DRIVER_TABLES = driverTestFile('ToolResourcesTests.cs');
 
 test('the driver’s tables are these tables, row for row and in this order', () => {
   const source = readFileSync(DRIVER_TABLES, 'utf8').replace(/\r\n/g, '\n');

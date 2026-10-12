@@ -1,12 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { readManifest } from '../src/config.ts';
 import { isDeclared, registration } from '../src/connect.ts';
 import { readLanes } from '../src/lanes.ts';
-import { driverRows as csharpRows } from './_csharp.ts';
+import { driverRows as csharpRows, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**
@@ -90,8 +88,7 @@ test('a manifest registers as connect would send it, row for row as the driver c
 
 // ——— The twin, held: the driver's table is this table, row for row and in this order.
 
-const DRIVER_TABLE = join(
-  dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'LineRegistrationTests.cs');
+const DRIVER_TABLE = driverTestFile('LineRegistrationTests.cs');
 
 test('the driver’s table is this table, row for row and in this order', () => {
   const source = readFileSync(DRIVER_TABLE, 'utf8').replace(/\r\n/g, '\n');

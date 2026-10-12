@@ -7,6 +7,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { readText } from '../src/fsx.ts';
+import { driverFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 import {
   CLOSED_NOTE, SWEPT_NOTE, bridgeCall, cliProblems, concludedByTheClose, firstUnder, gitBashBeside, hookLines, insideWorkspace,
@@ -181,7 +182,7 @@ test('Git Bash is the bash beside git, up to three folders up, and none without 
   assert.equal(gitBashBeside(null, has), null);
   assert.equal(gitBashBeside(join('C:', 'Windows', 'System32', 'git.exe'), () => false), null);
 
-  const terminals = readText(join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'Terminals.cs'));
+  const terminals = readText(driverFile('Terminals.cs'));
   assert.match(terminals, /level < 3/, 'the terminal’s rule walks three folders up, as this does');
   assert.match(terminals, /Path\.Combine\(folder, "bin", "bash\.exe"\)/, 'and looks for bin\\bash.exe, as this does');
 });
@@ -217,8 +218,7 @@ test('a host under the workspace is named as the workspace’s, whatever the sep
  * This is the comparison, and it reads both sides rather than restating either.
  */
 test('the host’s home in an install is a path the locator actually looks in', () => {
-  const locator = readText(join(
-    repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'ServiceHostLocator.cs'));
+  const locator = readText(driverFile('ServiceHostLocator.cs'));
   assert.ok(
     locator.includes(`Path.Combine("${HOST_HOME[0]}", "${HOST_HOME[1]}")`),
     `the publish puts the host in ${HOST_HOME.join('/')} and ServiceHostLocator does not look there`);
@@ -230,8 +230,7 @@ test('the host’s home in an install is a path the locator actually looks in', 
  * nothing hands out and every session goes on being handed the home's older copy.
  */
 test('the connector’s home in an install is a path KnowledgeConnector looks in, ahead of the home’s bin/', () => {
-  const connector = readText(join(
-    repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'KnowledgeConnector.cs'));
+  const connector = readText(driverFile('KnowledgeConnector.cs'));
   assert.ok(connector.includes(`Folder = "${CONNECTOR_HOME[1]}"`),
     `the publish puts the connector in ${CONNECTOR_HOME.join('/')} and KnowledgeConnector names another folder`);
   const own = connector.indexOf(`Path.Combine("${CONNECTOR_HOME[0]}", Folder)`);
@@ -484,9 +483,8 @@ function csStringConst(source: string, name: string): string | null {
  * than turning the gate's check into one that no record can pass, or every record can.
  */
 test('the gate’s two notes are the driver’s own, word for word', () => {
-  const driver = join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver');
-  assert.equal(csStringConst(readText(join(driver, 'ChatRunner.cs')), 'ClosedNote'), CLOSED_NOTE);
-  assert.equal(csStringConst(readText(join(driver, 'Orphans.cs')), 'Note'), SWEPT_NOTE);
+  assert.equal(csStringConst(readText(driverFile('ChatRunner.cs')), 'ClosedNote'), CLOSED_NOTE);
+  assert.equal(csStringConst(readText(driverFile('Orphans.cs')), 'Note'), SWEPT_NOTE);
   assert.notEqual(CLOSED_NOTE, SWEPT_NOTE);
 });
 

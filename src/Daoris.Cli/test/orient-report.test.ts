@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { driverFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 
 // ORIENT1d: `tools/orient-report.mjs` reads a session's transcript and says what it spent before its first edit, so
@@ -70,7 +71,6 @@ const tool = await import('../../../tools/orient-report.mjs') as {
 
 const here = dirname(fileURLToPath(import.meta.url));
 const toolPath = join(here, '..', '..', '..', 'tools', 'orient-report.mjs');
-const driver = join(here, '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver');
 
 /** A transcript as the harness writes it: one JSON object a line, each tool call answered by its result. */
 function transcript(calls: [string, Record<string, unknown>, string | { type: string; text: string }[]][], cwd = 'D:/work/repo') {
@@ -487,7 +487,7 @@ test('it runs on a home, narrowed by repository and date, prints JSON when asked
 });
 
 test('the record\'s spellings it reads are the driver\'s: the tool event, its fields, each cut, the shell kinds and a tree\'s minted name', () => {
-  const events = readFileSync(join(driver, 'SessionEvents.cs'), 'utf8');
+  const events = readFileSync(driverFile('SessionEvents.cs'), 'utf8');
   assert.match(events, /public const string Tool = "tool";/);
   for (const field of ['Id', 'Title', 'ToolKind', 'Status', 'Input', 'Output']) {
     assert.match(events, new RegExp(`public string\\? ${field} \\{ get; init; \\}`), field);
@@ -496,9 +496,9 @@ test('the record\'s spellings it reads are the driver\'s: the tool event, its fi
   assert.match(events, /public IReadOnlyList<ToolContent>\? Content \{ get; init; \}/);
   assert.match(events, /JsonNamingPolicy\.CamelCase/);
   assert.match(events, /\$"\{text\[\.\.limit\]\}… \(\{text\.Length\} chars\)"/);
-  assert.match(readFileSync(join(driver, 'Acp.cs'), 'utf8'), /\$"\{raw\[\.\.400\]\}… \(\{raw\.Length\} chars\)"/);
+  assert.match(readFileSync(driverFile('Acp.cs'), 'utf8'), /\$"\{raw\[\.\.400\]\}… \(\{raw\.Length\} chars\)"/);
   // Only the Bash family is the native door's `execute`: a PowerShell call is `other`, which is why its command decides.
-  assert.match(readFileSync(join(driver, 'StructuredOutput.cs'), 'utf8'), /"Bash" or "BashOutput" or "KillShell" => "execute",/);
-  assert.match(readFileSync(join(driver, 'SessionTrees.cs'), 'utf8'), /\$"s-\{Guid\.NewGuid\(\)\.ToString\("N"\)\[\.\.8\]\}"/);
-  assert.match(readFileSync(join(driver, 'ServiceClient.cs'), 'utf8'), /public const string Driven = "driven";/);
+  assert.match(readFileSync(driverFile('StructuredOutput.cs'), 'utf8'), /"Bash" or "BashOutput" or "KillShell" => "execute",/);
+  assert.match(readFileSync(driverFile('SessionTrees.cs'), 'utf8'), /\$"s-\{Guid\.NewGuid\(\)\.ToString\("N"\)\[\.\.8\]\}"/);
+  assert.match(readFileSync(driverFile('ServiceClient.cs'), 'utf8'), /public const string Driven = "driven";/);
 });
