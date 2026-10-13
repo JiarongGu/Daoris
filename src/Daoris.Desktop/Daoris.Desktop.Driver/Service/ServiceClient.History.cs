@@ -16,8 +16,8 @@ public sealed partial class ServiceClient
     /// <exception cref="DriverException">A host older than the door, or one that refused the scope, in its words.</exception>
     public async Task<IReadOnlyList<HistoryUnitView>> HistoryAsync(string query, CancellationToken ct = default)
     {
-        using var response = await _http.GetAsync($"{_base}/api/history?{query}", ct).ConfigureAwait(false);
-        var root = Answered(response.IsSuccessStatusCode, (int)response.StatusCode, await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false));
+        var answer = await _doors.SendAsync(ServiceVerb.Get, $"/api/history?{query}", null, ct).ConfigureAwait(false);
+        var root = Answered(answer.Ok, answer.Status, answer.Payload);
         return [.. Units(root, "units").Select(ReadHistoryUnit)];
     }
 
