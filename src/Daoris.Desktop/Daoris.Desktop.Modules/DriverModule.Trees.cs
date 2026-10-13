@@ -64,7 +64,10 @@ public sealed partial class DriverModule
                 var standing = landing is null
                     ? null
                     : await trees.LandedReviewAsync(await CheckoutOfAsync(service, landing.Repository, cancellationToken), landing, changes: false, cancellationToken);
-                return ReviewAnswer(id, diff, ReviewSource.Tree, standing, treeGone: false, uncommitted: dirty, behind: range.Behind);
+                // HEAD's own name, never the layout's (`SessionTrees.BranchNowAsync` falls back to it where detached, REVIEWBASE4). Git
+                // just read the range from this HEAD, so a refusal to name it is a fault, thrown as `BranchAsync` throws it.
+                var branch = await WorkingTree.BranchAsync(tree!, cancellationToken);
+                return ReviewAnswer(id, diff, ReviewSource.Tree, standing, treeGone: false, uncommitted: dirty, behind: range.Behind, treeBranch: branch);
             }
         }
 
@@ -79,7 +82,9 @@ public sealed partial class DriverModule
         // rather than a refusal that says there is nothing to see.
         if (dirty is { Files.Count: > 0 })
         {
-            return ReviewAnswer(id, new WorkingTree.TreeDiff([], null, ""), ReviewSource.Tree, null, treeGone: false, uncommitted: dirty);
+            return ReviewAnswer(
+                id, new WorkingTree.TreeDiff([], null, ""), ReviewSource.Tree, null, treeGone: false, uncommitted: dirty,
+                treeBranch: await WorkingTree.BranchAsync(tree!, cancellationToken));
         }
 
         throw Unreviewable(id, tree, baseCommit);
@@ -118,7 +123,7 @@ public sealed partial class DriverModule
     /// <remarks>Never a machine path: the checkout the branch was read in is the registry's, and the page has no use for it.</remarks>
     public static object ReviewAnswer(
         string session, WorkingTree.TreeDiff? diff, string source, LandedReview? landed, bool treeGone, WorkingTree.TreeDiff? uncommitted = null,
-        LineBehind? behind = null) => new
+        LineBehind? behind = null, string? treeBranch = null) => new
     {
         Session = session,
         Base = diff?.Base ?? "",
@@ -144,6 +149,10 @@ public sealed partial class DriverModule
         // How the session's own tree stands against the latest line known here (REVIEWBASE1): the line's name, the commits it has that
         // the tree does not, and the tree's beyond it. Null where the source is not that tree or the line could not be read; a shape added.
         Behind = source == ReviewSource.Tree && behind is not null ? new { behind.Line, behind.Commits, behind.Ahead } : null,
+        // The branch the read tree's HEAD stands on (REVIEWBASE4, D164's note), which the page's head names over the record's guess: the
+        // agent may have switched it (TREEFOLLOW1) or deleted its `daoris/` branch and detached. Null where detached, and where the
+        // source is a landed branch, whose tree was not read; a shape added.
+        TreeBranch = source == ReviewSource.Tree ? treeBranch : null,
         Landed = landed is null ? null : new
         {
             landed.Entry.Branch,

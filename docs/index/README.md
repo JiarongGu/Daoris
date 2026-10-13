@@ -52,7 +52,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/attention.test.ts` | 42 | 857 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 44 | 869 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 877 |
-| `src/Daoris.Web/src/work/noteLines.test.ts` | 66 | 989 |
+| `src/Daoris.Web/src/work/noteLines.test.ts` | 69 | 1027 |
 
 ### Driver library (`driver`)
 
@@ -89,7 +89,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 54 | 944 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/LandedBranches.cs` | 40 | 719 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Landing.cs` | 44 | 794 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs` | 65 | 1080 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs` | 66 | 1088 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 68 | 1181 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 95 | 1729 |
@@ -111,7 +111,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs` | 51 | 921 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 65 | 1189 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Help.cs` | 55 | 949 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Trees.cs` | 43 | 776 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Trees.cs` | 44 | 785 |
 
 ### Service (`service`)
 
@@ -201,4 +201,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-second-agent-design.md` | 57 | 769 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
-| `src/Daoris.Desktop/README.md` | 55 | 317 |
+| `src/Daoris.Desktop/README.md` | 55 | 322 |

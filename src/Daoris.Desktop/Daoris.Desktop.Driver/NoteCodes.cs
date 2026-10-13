@@ -31,9 +31,10 @@ public static class NoteBy
 /// <remarks>
 /// <b>Values are facts, never sentences, and never a path or an account's name</b>: the note travels (D125 §3.6). A value is
 /// text, a whole number, or a list of texts; one read back that is none of them is kept as it was read, so a newer writer's
-/// part passes through this one unchanged. The one exception is a conversation's own lines, its first (<c>opening.*</c>, UX7d-1)
-/// and a wait for its account (<c>waits.*</c>, CONVNOTE2g): they are kept only in the conversation's record, which never leaves
-/// the machine (D76 §2), so their values name accounts by id.
+/// part passes through this one unchanged. The one exception is a conversation's own lines, its first (<c>opening.*</c>, UX7d-1),
+/// a wait for its account (<c>waits.*</c>, CONVNOTE2g) and a move by the usage curve (<c>chat.moved</c>, <c>chat.moved-from</c>,
+/// SWITCH1c-i): they are kept only in the conversation's record, which never leaves the machine (D76 §2), so their values name
+/// accounts by id.
 /// </remarks>
 [JsonConverter(typeof(NotePartJson))]
 public sealed record NotePart
@@ -471,6 +472,7 @@ public static class NoteCodes
         new(HandOverWhy.Near, [], "note.handed.why.near"),
         new(HandOverWhy.Limit, [], "note.handed.why.limit"),
         new(HandOverWhy.Agent, [], "note.handed.why.agent"),
+        new(HandOverWhy.Curve, [], "note.handed.why.curve"),
     ]);
 
     /// <summary>Why no helper answered a question (MIXAGENT2a-ii, <see cref="HelperWhy"/>): the page's <c>note.helper.why.*</c>.</summary>
@@ -501,6 +503,12 @@ public static class NoteCodes
     public static readonly NoteCode ChatHandedOver = new("chat.handed-over", ["agent", "session"]);
     public static readonly NoteCode ChatTakenOver = new("chat.taken-over", ["agent", "session", "why"]) { Why = Handed };
     public static readonly NoteCode ChatBriefingUnsaid = new("chat.briefing-unsaid", []);
+
+    // ——— A conversation moved to another account of its agent by the usage curve (SWITCH1c-i, D165 point 3; the switch design
+    // §4): the old one's last line says where it went and how far over its curve its account was, the new one's first where it
+    // came from. They name the accounts, as `opening.*` does: a conversation's record stays on this machine.
+    public static readonly NoteCode ChatMoved = new("chat.moved", ["to", "from", "window", "used", "curve"]);
+    public static readonly NoteCode ChatMovedFrom = new("chat.moved-from", ["from", "window", "used", "curve"]);
 
     // ——— Where the person's words went, after the record's earlier parts.
     public static readonly NoteCode WentCannot = new("went.cannot", ["why"], Key: "work.say.cannot") { Why = Continue };

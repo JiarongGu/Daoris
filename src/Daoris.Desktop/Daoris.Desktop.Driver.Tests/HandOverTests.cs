@@ -565,16 +565,16 @@ public sealed class HandOverTests : IDisposable
 
     /// <summary>
     /// MIXAGENT1a-iii (D165 point 3): `curve` is the reason a record continues another by the person's switching setting, said in
-    /// the briefing's and the record's English. The box does not take it yet: an automatic move writes its own (SWITCH1c), and a
-    /// press naming it would carry a reason the record's coded lines do not declare.
+    /// the briefing's and the record's English. SWITCH1c-i: the box takes it, since `chat.taken-over` now declares it, so the
+    /// automatic move (SWITCH1c-ii) asks the box as a press does.
     /// </summary>
     [Fact]
-    public void Curve_is_a_reason_a_record_continues_another_and_not_yet_one_a_box_takes()
+    public void Curve_is_a_reason_a_record_continues_another_and_one_the_box_takes()
     {
         Assert.Equal("curve", HandOverWhy.Curve);
-        Assert.Equal("the account it ran on was near the limit the person's switching setting draws", HandOverWhy.Briefed(HandOverWhy.Curve));
-        Assert.Equal("its account was near the limit the person's switching setting draws", HandOverWhy.Noted(HandOverWhy.Curve));
-        Assert.False(HandOverWhy.Known(HandOverWhy.Curve));
+        Assert.Equal("the account it ran on was over the usage curve the person's switching setting draws", HandOverWhy.Briefed(HandOverWhy.Curve));
+        Assert.Equal("its account was over its usage curve", HandOverWhy.Noted(HandOverWhy.Curve));
+        Assert.True(HandOverWhy.Known(HandOverWhy.Curve));
     }
 
     /// <summary>The service's half of what the door reads: this machine's records, closed ones included, and a quest's state.</summary>

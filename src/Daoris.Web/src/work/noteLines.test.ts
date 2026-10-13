@@ -618,6 +618,44 @@ describe('noteLines', () => {
         .toBe('这段对话是从 claude-code 的对话 ab12cd34 转交过来继续的，原因：你要求转交。');
       // A reason this build does not know leaves the line as recorded.
       expect(noteLines(t, { parts: [took('moved-on')] }, 'en')[0].kind).toBe('recorded');
+      // SWITCH1c-i: Daoris moved it by the usage curve.
+      expect(noteLines(t, { parts: [took('curve')] }, 'en')[0].text)
+        .toBe('This conversation went on from claude-code conversation ab12cd34, handed over because its account was over its usage curve.');
+      expect(noteLines(zh, { parts: [took('curve')] }, 'zh')[0].text)
+        .toBe('这段对话是从 claude-code 的对话 ab12cd34 转交过来继续的，原因：它的账户超出了用量曲线。');
+    });
+
+    /**
+     * SWITCH1c-i (the switch design §4): a conversation moved to another account by the usage curve says so at both ends, each
+     * account by the name the person gave it (NOTENAME1), the window over its curve, its use and the curve's value there now.
+     */
+    it('words a conversation moved by the usage curve at both ends, each account by its name (SWITCH1c-i)', () => {
+      const values = { window: 'weekly', used: 62, curve: 45 };
+      const went = coded('chat.moved', 'Moved to `account-3` …', { to: 'account-3', from: 'account-1', ...values });
+      const came = coded('chat.moved-from', 'Continues from `account-1` …', { from: 'account-1', ...values });
+
+      expect(noteLines(t, { parts: [went, came] }, 'en').map((line) => line.text)).toEqual([
+        "Moved to `account-3` at the end of its turn: `account-1` had used 62% of its weekly limit, over its curve's 45%; `account-3` has room.",
+        "Continues from `account-1`, which had used 62% of its weekly limit, over its curve's 45%.",
+      ]);
+      expect(noteLines(zh, { parts: [went, came] }, 'zh').map((line) => line.text)).toEqual([
+        '在这一轮结束时转到账户 `account-3`：`account-1` 的每周上限已用 62%，超出其曲线此刻的 45%；`account-3` 还有余量。',
+        '接续自账户 `account-1`：它的每周上限已用 62%，超出其曲线此刻的 45%。',
+      ]);
+
+      const names = new Map([['account-1', 'Work'], ['account-3', 'Spare']]);
+      expect(noteLines(t, { parts: [went, came] }, 'en', names).map((line) => line.text)).toEqual([
+        "Moved to `Spare` at the end of its turn: `Work` had used 62% of its weekly limit, over its curve's 45%; `Spare` has room.",
+        "Continues from `Work`, which had used 62% of its weekly limit, over its curve's 45%.",
+      ]);
+      // Elsewhere `to` and `from` are no account: a review's repository keeps its own word.
+      const review = coded('review.no-rule', '…', { named: 'codex', to: 'account-3' });
+      expect(noteLines(t, { parts: [review] }, 'en', names)[0].text).toContain('for `account-3`');
+      // A value its entry says that is absent, or a use that is no whole percent: the line is shown as recorded.
+      expect(noteLines(t, { parts: [coded('chat.moved-from', 'Continues from …', { from: 'account-1', window: 'weekly', used: 62 })] }, 'en')[0].kind)
+        .toBe('recorded');
+      expect(noteLines(t, { parts: [coded('chat.moved', 'Moved …', { to: 'account-3', from: 'account-1', ...values, used: 61.5 })] }, 'en')[0].kind)
+        .toBe('recorded');
     });
 
     it('words a helper asked, answered and refused on the asker, and helping on the helper (MIXAGENT2a-ii)', () => {

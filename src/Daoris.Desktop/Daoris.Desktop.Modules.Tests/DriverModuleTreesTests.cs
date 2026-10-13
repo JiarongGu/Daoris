@@ -239,6 +239,24 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         Assert.Equal(JsonValueKind.Null, branch.GetProperty("behind").ValueKind);
     }
 
+    /// <summary>
+    /// REVIEWBASE4 (D164's note): a tree's review names the branch its HEAD stands on, which the page's head says over the record's
+    /// guess (TREEFOLLOW1); null where HEAD is detached, and on a review read from a landed branch, whose tree is not read.
+    /// </summary>
+    [Fact]
+    public void A_trees_review_names_the_branch_its_tree_stands_on_and_none_where_detached()
+    {
+        var named = JsonSerializer.SerializeToElement(
+            DriverModule.ReviewAnswer("s1", Diff("abc"), "tree", null, treeGone: false, treeBranch: "feature/TK-9-gap"), Camel);
+        var detached = JsonSerializer.SerializeToElement(DriverModule.ReviewAnswer("s1", Diff("abc"), "tree", null, treeGone: false), Camel);
+        var branch = JsonSerializer.SerializeToElement(
+            DriverModule.ReviewAnswer("s1", Diff("abc"), "branch", null, treeGone: true, treeBranch: "daoris/s1"), Camel);
+
+        Assert.Equal("feature/TK-9-gap", named.GetProperty("treeBranch").GetString());
+        Assert.Equal(JsonValueKind.Null, detached.GetProperty("treeBranch").ValueKind);
+        Assert.Equal(JsonValueKind.Null, branch.GetProperty("treeBranch").ValueKind);
+    }
+
     /// <summary>The landing plan's count: 0 where clean or not asked, else the paths the tree holds uncommitted.</summary>
     [Fact]
     public void The_landing_plan_says_how_many_paths_are_uncommitted()

@@ -4,10 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../storyLanguage';
-import { EmptyState } from '../ui';
+import { Button, EmptyState } from '../ui';
 import type { DiffFile, LineBehind, ReviewKnown } from './diff';
 import type { DiffLayout } from './PatchView';
-import { ReviewFailed, ReviewFiles, ReviewHead, ReviewReading } from './ReviewFrame';
+import { NothingToLand, ReviewFailed, ReviewFiles, ReviewHead, ReviewReading } from './ReviewFrame';
 
 // The review while git reads (REVIEW4), as the side bar holds it at a usual width: loading at once, slow with how long,
 // each kind of refusal with its next move, loaded, and reading again behind the last answer — in light and dark, and
@@ -41,14 +41,22 @@ function Pane({ children }: { children: ReactNode }) {
   return <section className="flex h-[34rem] w-[360px] max-w-full flex-col border border-line bg-page">{children}</section>;
 }
 
-/** The loaded review with the reader's marks held as the pane holds them; the first file open on its patch. */
-function Loaded({ refreshing = null, behind = null }: { refreshing?: number | null; behind?: LineBehind | null }) {
+/**
+ * The loaded review with the reader's marks held as the pane holds them; the first file open on its patch. The branch is the
+ * record's guess unless the answer named the tree's own (REVIEWBASE4).
+ */
+function Loaded({ refreshing = null, behind = null, branch = KNOWN.branch, detached = false }: {
+  refreshing?: number | null;
+  behind?: LineBehind | null;
+  branch?: string | null;
+  detached?: boolean;
+}) {
   const [open, setOpen] = useState<Record<string, boolean>>({ [FILES[0]!.path]: true });
   const [viewed, setViewed] = useState<Record<string, boolean>>({});
   const [layout, setLayout] = useState<DiffLayout>('unified');
   return (
     <Pane>
-      <ReviewHead {...KNOWN} refreshing={refreshing} behind={behind} />
+      <ReviewHead {...KNOWN} branch={branch} detached={detached} refreshing={refreshing} behind={behind} />
       <div aria-busy={refreshing !== null || undefined} className={cn('flex min-h-0 flex-1 flex-col', refreshing !== null && 'opacity-60')}>
         <ReviewFiles
           files={FILES}
@@ -232,19 +240,61 @@ export const BehindTheLineDark: Story = { ...BehindTheLine, decorators: [dark] }
 /** Behind the line, in 中文. */
 export const BehindTheLineChinese: Story = { ...BehindTheLine, decorators: [chinese] };
 
-/** A tree whose HEAD the line holds whole, as the review's pane says it: its work merged, then the line checked out. */
+/**
+ * A tree whose HEAD the line holds whole, as the review's pane says it: its work merged, then the line checked out detached and
+ * its `daoris/` branch deleted (REVIEWBASE4). The head names no branch, the foot says there is nothing to land where *Accept* would
+ * be, and *Discard tree* leads.
+ */
 function NothingBeyond() {
   const { t } = useTranslation();
   return (
     <Pane>
-      <ReviewHead {...KNOWN} base="9c41e07d2b5a8f13" commits={null} />
-      <EmptyState icon="check" headline={t('work.review.even.headline')} body={t('work.review.even.body', { line: 'main' })} />
+      <ReviewHead
+        {...KNOWN}
+        branch={null}
+        detached
+        base="9c41e07d2b5a8f13"
+        commits={null}
+        behind={{ line: 'main', commits: 0, ahead: 0 }}
+      />
+      <div className="min-h-0 flex-1">
+        <EmptyState icon="check" headline={t('work.review.even.headline')} body={t('work.review.even.body', { line: 'main' })} />
+      </div>
+      <footer className="grid shrink-0 gap-2 border-t border-line px-3 py-2">
+        <NothingToLand line="main" />
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="primary">{t('work.review.discard')}</Button>
+        </div>
+      </footer>
     </Pane>
   );
 }
 
-/** Nothing beyond the line (REVIEWBASE1), where "Nothing landed" would be false. */
+/** Nothing beyond the line (REVIEWBASE1), where "Nothing landed" would be false, and nothing to land (REVIEWBASE4). */
 export const NothingBeyondTheLine: Story = { render: () => <NothingBeyond /> };
+
+/** Nothing beyond the line, in dark. */
+export const NothingBeyondTheLineDark: Story = { ...NothingBeyondTheLine, decorators: [dark] };
 
 /** Nothing beyond the line, in 中文. */
 export const NothingBeyondTheLineChinese: Story = { ...NothingBeyondTheLine, decorators: [chinese] };
+
+/** A tree its agent switched to a branch of its own (TREEFOLLOW1): the head names that branch, not the record's `daoris/` guess. */
+export const OnItsOwnBranch: Story = { render: () => <Loaded branch="feature/TK-9-report-header" /> };
+
+/** On its own branch, in dark. */
+export const OnItsOwnBranchDark: Story = { ...OnItsOwnBranch, decorators: [dark] };
+
+/**
+ * A detached tree holding commits beyond the line (REVIEWBASE4): *detached HEAD* in the branch's place, and the range apart, since
+ * HEAD is past the commit the review is measured from.
+ */
+export const DetachedWithWork: Story = {
+  render: () => <Loaded branch={null} detached behind={{ line: 'main', commits: 0, ahead: 4 }} />,
+};
+
+/** Detached with work, in dark. */
+export const DetachedWithWorkDark: Story = { ...DetachedWithWork, decorators: [dark] };
+
+/** Detached with work, in 中文. */
+export const DetachedWithWorkChinese: Story = { ...DetachedWithWork, decorators: [chinese] };

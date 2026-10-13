@@ -13,7 +13,10 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class UsageCurves
 {
-    /// <summary>The most points of room a switch target may be below the account it replaces by (the switch design §2), for SWITCH1c.</summary>
+    /// <summary>
+    /// The least room, in points under its curve on every window it said, an account must have for a running session to move
+    /// to it (the switch design §2; <see cref="SwitchDecision"/>, SWITCH1c-i).
+    /// </summary>
     public const int SwitchMargin = 10;
 
     private const int WeeklyLead = 20, WeeklyCap = 95;

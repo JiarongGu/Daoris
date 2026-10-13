@@ -17,8 +17,11 @@ type Translate = (key: string, options?: Record<string, unknown>) => string;
  */
 type Why = 'continue' | 'cooling' | 'opening' | 'resumed' | 'unreached' | 'handed' | 'helper';
 
-/** A code the page words: the values its sentence says, its key where it is not `note.<code>`, and the reasons a `why` names. */
-export type NoteCode = { values: readonly string[]; key?: string; why?: Why };
+/**
+ * A code the page words: the values its sentence says, its key where it is not `note.<code>`, the reasons a `why` names, and
+ * the values that are accounts on this code though their name is said another way elsewhere (`to`, `from`: SWITCH1c-i).
+ */
+export type NoteCode = { values: readonly string[]; key?: string; why?: Why; accounts?: readonly string[] };
 
 /**
  * Every code a writer declares, as the page words it: the page's half of the twin (D142 point 4; the language design §5;
@@ -193,6 +196,10 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'chat.handed-over': { values: ['agent', 'session'] },
   'chat.taken-over': { values: ['agent', 'session', 'why'], why: 'handed' },
   'chat.briefing-unsaid': { values: [] },
+  // A conversation moved to another account of its agent by the usage curve (SWITCH1c-i): where it went and where it came from,
+  // each account by the name the person gave it, and how far over its curve the account it left was.
+  'chat.moved': { values: ['to', 'from', 'window', 'used', 'curve'], accounts: ['to', 'from'] },
+  'chat.moved-from': { values: ['from', 'window', 'used', 'curve'], accounts: ['from'] },
   // A helper on another agent (MIXAGENT2a-ii): on the asker, asked, answered or refused, with the agent and why; on the helper,
   // whose session it helps.
   'helper.asked': { values: ['agent', 'session'] },
@@ -311,6 +318,8 @@ export const HANDED_REASONS: Readonly<Record<string, { key: string; values: read
   near: { key: 'note.handed.why.near', values: [] },
   limit: { key: 'note.handed.why.limit', values: [] },
   agent: { key: 'note.handed.why.agent', values: [] },
+  // Daoris moved it by the usage curve (SWITCH1c-i, D165 point 3).
+  curve: { key: 'note.handed.why.curve', values: [] },
 };
 
 /**
@@ -409,7 +418,8 @@ export const NOTE_VALUES: Readonly<
   accounts: 'accounts', logins: 'names',
   profile: 'text', version: 'text', door: 'text',
   // A review set-up's environment and repository, its commit's short id, and whose findings a second opinion's answers are (CONVNOTE2h).
-  named: 'text', to: 'text', commit: 'text', who: 'text',
+  // `to` and `from` are a code's accounts where it says so (`NoteCode.accounts`: a move by the curve, SWITCH1c-i).
+  named: 'text', to: 'text', from: 'text', commit: 'text', who: 'text',
   owner: 'text', branch: 'text', basedOn: 'text', plugin: 'text', agent: 'text', workspace: 'text',
   why: 'why',
   cooling: 'cooling',
@@ -452,7 +462,7 @@ function said(
   t: Translate, name: string, values: Record<string, unknown>, code: NoteCode, language: string, names?: AccountNames,
 ): string | null {
   const value = values[name];
-  switch (NOTE_VALUES[name] ?? 'text') {
+  switch (code.accounts?.includes(name) ? 'account' : NOTE_VALUES[name] ?? 'text') {
     case 'account': {
       const id = text(value);
       return id === null ? null : names?.get(id) ?? id;

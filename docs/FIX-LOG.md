@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-13 — Review offered Accept for a tree holding nothing beyond the line, and named a branch the agent had deleted (REVIEWBASE4)
+
+- **Symptom:** on the republished install, a conversation whose work two pull requests had merged, its tree detached at the latest
+  line, read *Nothing beyond the line*, yet the foot said *Accept* would put the work on `feature/<id>` and offered *Accept* and
+  *Send back…*, and the head named `daoris/s-<id>`, which the agent had deleted.
+- **Root cause:** two facts the page never read from git. The foot's acts were gated on the tree alone (`plannable`: a tree here,
+  not landed, not held by content), so the `behind` REVIEWBASE1 added reached the empty state's words but not the presses. The
+  head's branch came from `reviewKnown`, which builds `daoris/` and the record's tree folder (REVIEW4's frame before git answers),
+  and nothing replaced it once git did; the host's `SessionTrees.BranchNowAsync` would not have served, since it falls back to the
+  layout's name where HEAD is detached.
+- **Fix:** where `behind.ahead` is 0 and nothing is listed or uncommitted, `DiffPane` asks no landing plan, offers neither *Accept*
+  nor *Send back…*, says there is nothing to land (`NothingToLand`), and *Discard tree* leads. `SESSION_DIFF` gains `treeBranch`
+  (`WorkingTree.BranchAsync`, null where detached), and `reviewBranch` names it in the head over the record's guess, or *detached
+  HEAD*. D164's REVIEWBASE4 note.
+- **Verify:** `DriverModuleTreesTests`' `treeBranch` case (modules, fast half); the page's `DiffPane.review` (nothing beyond the
+  line; Accept as before where ahead is above 0, something is uncommitted or the line was not read; the head's branch, detached,
+  and an answer without the field) and `ReviewFrame` tests, in both languages.
+
 ## 2026-10-13 — Review showed the line's own changes as a session's work once its tree took in the line (REVIEWBASE1)
 
 - **Symptom:** on the install, a conversation whose work two pull requests had merged, its tree then switched to the latest line
