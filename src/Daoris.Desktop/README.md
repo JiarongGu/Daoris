@@ -41,7 +41,12 @@ Beside it, `Accounts/Domain/SwitchDecision.cs` (SWITCH1c-i) says whether a runni
 (`off`, no number, room, held thirty minutes after a curve move, or no account with room), reads the others first, or moves
 to the ready account with the most room, at least ten points under its curve on every window. The hand-over box takes
 `curve`, and `HandOverNotes.Moved` and `MovedFrom` (`chat.moved`, `chat.moved-from`) say a move at both ends, naming the
-accounts.
+accounts. The chat runner asks it (SWITCH1c-ii, `Conversations/ChatRunner.Curve.cs`): at a conversation's turn's end, judged
+once with nothing running, opening or queued and no hand-over waiting, from its record's account, agent and workspace (the
+hold counted from its `created` where it continues another by the curve); the others are read where it says so, through the
+roster's `ReadUsageAsync` (the walk's floor, cooling, signed-out, key and busy skips), and asked again; a move asks the
+hand-over box with its agent unchanged, by `daoris`, and its take holds the conversation's turns (`ChatTurns.Hold`), so a
+word said as it begins runs its own turn first, the box then waiting for that turn's end.
 
 ## What the page can ask this machine
 

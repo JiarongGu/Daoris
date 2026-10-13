@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A conversation whose account has used more than its usage curve allows moves on its own as its turn ends, to another of the
+  same agent's accounts that has room, under Daoris's curve or your own (`--switch smart` or `curve`); `--switch off` keeps it
+  where it is. It goes on in a new conversation in the same tree, told what Daoris kept of the old one, and both conversations
+  say which accounts it moved between and how far over its curve the one it left was, in both languages. It does not move again
+  within thirty minutes, and where no account has room it stays, with the offer to go on with another agent as before.
 - Review measures a session's work from the newest commit it shares with its line, so work merged on the line since the
   session began is no longer shown as the session's, and a tree that holds nothing beyond the line says so; where the line
   has commits the work does not, the review's head says it is not based on the latest line, in both languages. Where a tree
