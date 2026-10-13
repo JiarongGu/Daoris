@@ -52,7 +52,9 @@ public sealed partial class McpToolsTests
             (root.GetProperty("asker").GetString(), root.GetProperty("question").GetString(), root.GetProperty("agent").GetString(),
                 root.GetProperty("askedBy").GetString()));
         Assert.True(DateTimeOffset.TryParse(root.GetProperty("at").GetString(), out _));
-        Assert.DoesNotContain(".tmp", string.Join(' ', Directory.GetFiles(Path.Combine(HelpersHome, "helpers"))));
+        var left = string.Join(' ', Directory.GetFiles(Path.Combine(HelpersHome, "helpers")));
+        Assert.DoesNotContain(".tmp", left);
+        Assert.DoesNotContain(".writing", left);
         Assert.Empty(Directory.GetFiles(Path.Combine(HelpersHome, "helpers"), "*.state.json"));
     }
 

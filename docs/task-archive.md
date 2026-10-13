@@ -14164,3 +14164,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **FLAT1a — the layer folders flattened, the gate narrowed** (driver, modules). Six modules' 101 `Application/` and `Infrastructure/` files to their module's top, the launcher's csproj paths with them; the gate keeps `top`, `module` (no layer folders), `loop`, `pure` and `mirror`, dropping `layered`, `layer` and `reach`. D166's note of 2026-10-14.
 
 **Outcome** 2026-10-14: the 101 files moved by renames alone, no name colliding; the map gives the ten modules with a `Domain/` `["Domain"]` and the rest `[]`, and `module` now refuses a layer folder; `layer`, `reach` and the extension-member reading went, `loop` needing only the declaration index. The extension blocks, forwards and ports stay for FLAT1b. On Sonnet, scouted: 59 tool calls. Detail: D166's FLAT1a note.
+
+## DEDUP9a — the service core's atomic writes (2026-10-14, D166)
+
+> - [ ] **DEDUP9a — the service core's atomic writes** (service). A Core `AtomicFile` (a unique name beside, the move retried, cleaned up, async bytes) for `QuestFiles.KeepAsync` (a fixed `.tmp`: two keeps collide), `HelperBox`, `HelpProposalBox` and `RuleProposals`, keeping LF and the trailing newline. Survey §9.
+
+**Outcome** 2026-10-14: `Daoris.Service.Core/AtomicFile.cs` writes beside its target under a name of its own and moves it in, retried and cleaned up, as the driver's does without referencing it; the four writes use it, their bytes unchanged. The three that moved without overwrite now replace a target, which none relied on (fresh ids, and the helper's answer refuses before it writes). Service tests 1956, four new. On Sonnet, scouted: 30 tool calls.

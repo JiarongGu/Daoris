@@ -97,9 +97,7 @@ public sealed partial class HelpProposalBox(string? home)
             writer.WriteEndObject();
         }
 
-        var beside = path + ".tmp";
-        File.WriteAllText(beside, Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n", new UTF8Encoding(false));
-        File.Move(beside, path);
+        AtomicFile.WriteText(path, Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n");
 
         return (id,
             $"Proposed `#{id}`. The person sees it as a card saying what it changes and the command that does the "

@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- The same file attached to a quest twice at once no longer collides in the service on one shared temporary name: the
+  service writes its attachments, helper answers, proposals and rule proposals through one atomic write, each beside its
+  target under a name of its own and moved into place.
 - A conversation whose account has used more than its usage curve allows moves on its own as its turn ends, to another of the
   same agent's accounts that has room, under Daoris's curve or your own (`--switch smart` or `curve`); `--switch off` keeps it
   where it is. It goes on in a new conversation in the same tree, told what Daoris kept of the old one, and both conversations
