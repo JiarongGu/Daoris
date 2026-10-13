@@ -410,11 +410,17 @@ public static class HandOverTake
     /// why and who asked (MIXAGENT1a-iii).
     /// </param>
     /// <param name="say">Hands the new conversation its first message; false where nothing took it.</param>
+    /// <param name="moved">
+    /// What the usage curve's decision said, where Daoris moves the conversation to another account by it (SWITCH1c-ii): the
+    /// two lines are then the moved pair (<see cref="HandOverNotes.Moved"/>, <see cref="HandOverNotes.MovedFrom"/>), naming the
+    /// accounts. Null for every other take, and for a curve's box taken where the decision is not held (a shell come up since),
+    /// whose lines are the hand-over's, its reason <c>curve</c>.
+    /// </param>
     public static async Task<HandedOver> RunAsync(
         ServiceClient service, string home, SessionEvents events, SessionOutput? output, string id, HandOverRequest ask,
         Func<string, IReadOnlyList<string>?> accountsOf, Func<string, Task> end,
         Func<PriorSession, HandOverRequest, ContinuedFrom, CancellationToken, Task<ChatStart>> start, Func<string, ChatMessage, Task<bool>> say,
-        CancellationToken ct = default)
+        CancellationToken ct = default, SwitchChoice.MoveTo? moved = null)
     {
         var box = new HandOverBox(home);
         try
@@ -437,10 +443,17 @@ public static class HandOverTake
                     $"{id} ended, but the conversation with {ask.Agent} did not start: {started.Message} Its tree is as it was.");
             }
 
-            var taken = await say(to, new ChatMessage("", []) { Briefing = briefing, TakenOver = HandOverNotes.TakenOver(from, id, ask.Why) }).ConfigureAwait(false);
+            // A move by the usage curve names the account it left and the one it went to (SWITCH1c-ii): the record that says so stays
+            // on this machine. Only where the decision is the box's own move, on the account the record ran on.
+            var left = moved is not null && ask.Why == HandOverWhy.Curve
+                       && string.Equals(moved.Account, ask.Account, StringComparison.OrdinalIgnoreCase) && prior.Profile is { Length: > 0 } account
+                ? account
+                : null;
+            var opening = left is null ? HandOverNotes.TakenOver(from, id, ask.Why) : HandOverNotes.MovedFrom(left, moved!);
+            var taken = await say(to, new ChatMessage("", []) { Briefing = briefing, TakenOver = opening }).ConfigureAwait(false);
 
             // Where it went, where the person wrote it: the old conversation's last line, after its own end.
-            var went = HandOverNotes.HandedOver(ask.Agent, to);
+            var went = left is null ? HandOverNotes.HandedOver(ask.Agent, to) : HandOverNotes.Moved(left, moved!);
             output?.Append(id, went.Note);
             events.Keep(id, new SessionEvent { Kind = SessionEventKind.Note, Text = went.Note, Parts = went.Parts }, say: null);
 
