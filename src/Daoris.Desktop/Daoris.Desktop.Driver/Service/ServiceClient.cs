@@ -13,7 +13,9 @@ namespace Daoris.Driver;
 /// <remarks>
 /// It writes each request and reads each answer, and the HTTP is behind
 /// <see cref="IServiceDoors"/>, whose real one, <see cref="ServiceHttp"/>, the constructors that take a URL compose. Every
-/// module names this client; none names the HTTP.
+/// module names this client; none names the HTTP. A family of doors on a resource of its own that another module asks is a
+/// class over the client, reached through it (<see cref="Opinions"/>, <see cref="Helpers"/>; PART8): it reaches the HTTP, the
+/// JSON reading and <see cref="Opened"/> through the internal surface below, never through a part of this type.
 /// </remarks>
 public sealed partial class ServiceClient : IDisposable
 {
@@ -25,7 +27,22 @@ public sealed partial class ServiceClient : IDisposable
     {
         _doors = doors;
         _base = doors.BaseUrl;
+        Opinions = new OpinionDoors(this);
+        Helpers = new HelperDoors(this);
     }
+
+    /// <summary>The local host's opinion doors (XAGENT1c–XAGENT1e), over this client.</summary>
+    public OpinionDoors Opinions { get; }
+
+    /// <summary>The local host's helper doors (MIXAGENT2a-ii), over this client.</summary>
+    public HelperDoors Helpers { get; }
+
+    /// <summary>A door class's request whose every answer comes back, a refusal's included (<see cref="IServiceDoors.SendAsync"/>).</summary>
+    internal Task<ServiceReply> SendAsync(ServiceVerb verb, string path, string? json, CancellationToken ct) =>
+        _doors.SendAsync(verb, path, json, ct);
+
+    /// <summary>A record a door class opened, told to <see cref="Opened"/>'s watchers as this client's own doors tell them (LOG1b).</summary>
+    internal void RecordOpened(SessionOpened opened) => Raise(Opened, opened);
 
     /// <summary>A client over HTTP to the host at <paramref name="baseUrl"/>, with its key; a test may hand its own HTTP client.</summary>
     public ServiceClient(string baseUrl, string? key, HttpClient? http = null)
@@ -1584,7 +1601,7 @@ public sealed partial class ServiceClient : IDisposable
     /// when the text is JSON. Every write this client makes goes through here (REV3 CLEAN1: five
     /// callers each wrote it out, and two of them threw on an answer that was not JSON).
     /// </summary>
-    private async Task<(bool Ok, int Status, string Payload, JsonElement? Root)> PostJsonAsync(
+    internal async Task<(bool Ok, int Status, string Payload, JsonElement? Root)> PostJsonAsync(
         string path, string body, CancellationToken ct)
     {
         var answer = await _doors.SendAsync(ServiceVerb.Post, path, body, ct).ConfigureAwait(false);
@@ -1640,7 +1657,7 @@ public sealed partial class ServiceClient : IDisposable
     }
 
     // An element that is not an object has no fields — asked as one, TryGetProperty would throw.
-    private static string? Text(JsonElement element, string name) =>
+    internal static string? Text(JsonElement element, string name) =>
         element.ValueKind == JsonValueKind.Object
         && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString()

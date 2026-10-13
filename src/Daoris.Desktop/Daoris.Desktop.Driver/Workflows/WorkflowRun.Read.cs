@@ -234,7 +234,7 @@ public static class WorkflowRunReader
 
         public Task<AskView?> AskAsync(string id, CancellationToken cancel) => sources.Service.FindAskAsync(id, cancel);
 
-        public Task<OpinionView?> OpinionAsync(string id, CancellationToken cancel) => sources.Service.ReadOpinionAsync(id, cancel);
+        public Task<OpinionView?> OpinionAsync(string id, CancellationToken cancel) => sources.Service.Opinions.ReadAsync(id, cancel);
 
         public IReadOnlyList<LandedBranch> Landings { get; } = records.Landings();
 

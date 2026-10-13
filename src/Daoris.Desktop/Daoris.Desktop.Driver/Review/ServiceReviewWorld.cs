@@ -17,5 +17,5 @@ public sealed class ServiceReviewWorld(ServiceClient service) : IOpinionWorld
 
     public Task<AskView?> AskAsync(string id, CancellationToken ct) => service.FindAskAsync(id, ct);
 
-    public Task<OpinionView?> OpinionAsync(string id, CancellationToken ct) => service.ReadOpinionAsync(id, ct);
+    public Task<OpinionView?> OpinionAsync(string id, CancellationToken ct) => service.Opinions.ReadAsync(id, ct);
 }

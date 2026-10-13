@@ -67,7 +67,7 @@ public sealed partial class Driver
     /// what was asked, which its recheck reads again from the working tree's new tip.</param>
     public async Task<OpinionDelivery> DeliverAsync(string opinion, OpinionPassAsk asked, CancellationToken ct = default)
     {
-        var view = await service.ReadOpinionAsync(opinion, ct).ConfigureAwait(false);
+        var view = await service.Opinions.ReadAsync(opinion, ct).ConfigureAwait(false);
         if (view is null)
         {
             return new OpinionDelivery(opinion, OpinionDeliveryStates.Unknown, $"unknown  there is no second opinion `{opinion}` on this machine.");
@@ -167,7 +167,7 @@ public sealed partial class Driver
             return Waiting(view, named, record);
         }
 
-        var (handed, message, _) = await service.HandOpinionAsync(view.Id, ct).ConfigureAwait(false);
+        var (handed, message, _) = await service.Opinions.HandAsync(view.Id, ct).ConfigureAwait(false);
         if (!handed)
         {
             // The record moved between the read and the hand, or the host said why not: tried again at the next look.
@@ -207,7 +207,7 @@ public sealed partial class Driver
             }
         }
 
-        var recheck = kept.Recheck is { } id ? await service.ReadOpinionAsync(id, ct).ConfigureAwait(false) : null;
+        var recheck = kept.Recheck is { } id ? await service.Opinions.ReadAsync(id, ct).ConfigureAwait(false) : null;
         var disputes = OpinionDisputes.Of(reading, recheck);
         var then = kept.Recheck is not null
             ? $" Recheck {kept.Recheck} reads the commits since."
@@ -278,7 +278,7 @@ public sealed partial class Driver
         {
             try
             {
-                if (await service.ReadOpinionAsync(id, ct).ConfigureAwait(false) is { First: true, Findings: not null } view)
+                if (await service.Opinions.ReadAsync(id, ct).ConfigureAwait(false) is { First: true, Findings: not null } view)
                 {
                     await ReadAnswersAsync(view, session, tree, ct).ConfigureAwait(false);
                 }

@@ -86,7 +86,7 @@ public sealed partial class Driver
         OpinionAsked asked;
         try
         {
-            asked = await service.AskOpinionAsync(
+            asked = await service.Opinions.AskAsync(
                     new OpinionAskBody(
                         ask.Occasion, ask.Working, candidate, reviewer, label, OpinionPass.Families(choice.Working), posture,
                         ask.Rule.Bound, copy.Path)

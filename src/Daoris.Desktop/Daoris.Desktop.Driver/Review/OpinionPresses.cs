@@ -130,7 +130,7 @@ public sealed class OpinionPresses(string home, ServiceClient service)
     /// <summary><i>Stop</i> (§8.5): the reviewer's session ended as the person's stop; the opinion it was reading then fails, and says so.</summary>
     public async Task<OpinionPressed> StopAsync(string opinion, SessionProcesses processes, CancellationToken ct = default)
     {
-        var view = await service.ReadOpinionAsync(opinion, ct).ConfigureAwait(false);
+        var view = await service.Opinions.ReadAsync(opinion, ct).ConfigureAwait(false);
         if (view is null) return new(false, $"there is no second opinion `{opinion}` on this machine.");
         if (view.State != OpinionViews.Reading) return new(false, $"second opinion `{view.Id}` is not being read: it is {view.State}.");
         var stopped = await SessionMoves.StopAsync(processes, service, view.Session, ct).ConfigureAwait(false);
