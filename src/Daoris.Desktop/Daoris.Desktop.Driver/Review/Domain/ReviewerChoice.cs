@@ -196,7 +196,7 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
     /// </summary>
     /// <remarks>
     /// The walk is this type's rule; the account walk it asks is the world's, handed in, and <see cref="ChooseAsync"/> hands it
-    /// over the machine's agents (FLAT1b-ii folded the extension block back).
+    /// over the machine's agents.
     /// </remarks>
     /// <param name="adapters">The machine's agents, the build's and its plugins'.</param>
     /// <param name="working">The adapters of the sessions whose work is read: their families are the work's.</param>

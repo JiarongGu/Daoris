@@ -7,8 +7,8 @@ namespace Daoris.Driver;
 /// hand. A part of the service's client, whose other parts are Service's.
 /// </summary>
 /// <remarks>
-/// <b>Why in Review's Application</b> (STRUCT3c, D166's note): a part of a partial class is the client's wherever it sits, and every
-/// module names the client, so no part of it may sit in an Infrastructure, where the structure gate would refuse each of them.
+/// <b>Why at Review's top</b> (STRUCT3c, D166's note): a part of a partial class is the client's wherever it sits, and every
+/// module names the client, so no part of it may sit in a Domain, where the structure gate would refuse each of them.
 /// </remarks>
 public sealed partial class ServiceClient
 {

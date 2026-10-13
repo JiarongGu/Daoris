@@ -57,13 +57,15 @@ rules in `Domain/`, pure; its use cases (`WorkflowStore`, `WorkflowRunBindings`,
 `WorkflowRunStart` and the two commands), written against the ports declared at its top (`IWorkflowStore`, `IWorkflowRunStore`,
 `IWorkflowRunRecords`, `IWorkflowStartWorld`), and the files and reads behind those ports sit at the module's top.
 
-`Review/` keeps the onion for its model and rules alone (STRUCT3c, flattened by FLAT1a): the review's and the second opinion's
-records, rules, gates and words in `Domain/`, pure (`ReviewGate`, `ReviewRules`, `OpinionGate`, `OpinionRules`, the packet, the
-instruction, the reviewer's walk); the presses, the command, the showing (`ReviewDesk`, its port `IReviewTabs`), the gate's
-read (`ReviewGate.ReadAsync`, its port `IReviewWorld`), the set-up's post, the three stores' use cases (`OpinionDues`,
-`OpinionGates`, `OpinionDeliveries`) and the home's opinion files, git, a reviewer's copy, a checkout's and a build's folders
-and the service behind `IReviewWorld` sit at the module's top. An I/O member a caller asked of a Domain type
-(`ReviewRules.Holds`, `OpinionTree.OpenAsync`, …) is still a C# 14 extension member, which FLAT1b folds back.
+`Review/` keeps the onion for its model and rules alone (STRUCT3c, flattened by FLAT1a, folded by FLAT1b-ii): the review's and the
+second opinion's records, rules, gates and words in `Domain/` (`ReviewGate`, `ReviewRules`, `ReviewSetUps`, `ReviewerChoice`,
+`OpinionGate`, `OpinionRules`, the packet's records, the instruction); a type that must call out to the world (`ReviewGate.ReadAsync`
+through its port `IReviewWorld`, `ReviewRules.Holds` through `ReviewProcedureFiles`, `ReviewSetUps.PostAsync`,
+`ReviewerChoice.ChooseAsync`) is declared whole in its own type, with no extension block. A type that holds I/O itself
+(`ReviewServed`, `OpinionAnswers`, `OpinionPackets`, `OpinionTree`) is a file at the module's top, the records it reads staying in
+`Domain/`. The presses, the command, the showing (`ReviewDesk`, its port `IReviewTabs`), the three stores' use cases
+(`OpinionDues`, `OpinionGates`, `OpinionDeliveries`), the home's opinion files, git (`ReviewGit`) and the service behind
+`IReviewWorld` (`ServiceReviewWorld`) sit at the top too.
 
 `Service/` keeps the onion for its model and rules alone (STRUCT3d, flattened by FLAT1a). `ServiceClient` writes each request
 and reads each answer, and its HTTP is behind the port `IServiceDoors`, whose real one, `ServiceHttp.cs`, the client's URL
@@ -82,11 +84,11 @@ the staged build's files and the swap) sit at the module's top. The launcher com
 `StagedBuildFiles.cs` and `InstallSwap.cs`, each on the base library alone. Quests and Accounts reach `SelfDescription.Read` and
 `ClaudeReleases.InstallAsync` through extension members.
 
-`Quests/` keeps the onion for its model and rules alone (STRUCT3f, flattened by FLAT1a): the plan and its records (`Planner`,
-`QuestView`, the considerations), the evidence's records, the attention events, the ask's words and the intake's room, prompt and
-observation in `Domain/`, pure; the commands, the evidence check, the intake's kinds, the park reader, `AskWords.ReadAsync`, the
-git read of a done's evidence, the room written to the disk and the git defaults (`QuestGit`) sit at the module's top.
-`IntakeRoom.Prepare` keeps its name as an extension member.
+`Quests/` keeps the onion for its model and rules alone (STRUCT3f, flattened by FLAT1a, folded by FLAT1b-ii): the plan and its
+records (`Planner`, `QuestView`, the considerations), the evidence's records, the attention events, the ask's words (`AskWords`,
+which reads the service in `ReadAsync`) and the intake's records, prompt and observation in `Domain/`; the commands, the evidence
+check, the intake's kinds, the park reader, the git read of a done's evidence (which names `WorkingTree`'s git read directly) and
+`IntakeRoom`, which makes the room's folder and writes its files, sit at the module's top.
 
 The comments in these six modules that still say Application or Infrastructure, and the extension blocks, forwards and ports
 the layering needed, are FLAT1b's to fold back.

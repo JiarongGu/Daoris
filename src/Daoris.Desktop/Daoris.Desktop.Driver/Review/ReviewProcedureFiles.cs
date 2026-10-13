@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A procedure looked for in a checkout (REVIEWENV1a, design §1.1): Review's Infrastructure (STRUCT3c, D166's note), reached
-/// through <see cref="ReviewRuleReads"/>' <c>ReviewRules.Holds</c>.
+/// A procedure looked for in a checkout (REVIEWENV1a, design §1.1): reached
+/// through <see cref="ReviewRules.Holds"/>.
 /// </summary>
 internal static class ReviewProcedureFiles
 {

@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// An opinion's delivery file (XAGENT1e), <c>&lt;home&gt;/opinions/&lt;id&gt;/delivered.json</c> (<see cref="OpinionDeliveries"/>): read
 /// without trusting its shape, written whole, atomically, as BOM-less UTF-8 with LF.
 /// </summary>
-/// <remarks>Review's Infrastructure (STRUCT3c, D166's note): the use case decides what is kept; this reads and writes it.</remarks>
+/// <remarks>The use case decides what is kept; this reads and writes it.</remarks>
 internal static class OpinionDeliveryFiles
 {
     /// <summary>What <paramref name="path"/> keeps; <see cref="OpinionDelivered.None"/> where it is missing or does not read.</summary>

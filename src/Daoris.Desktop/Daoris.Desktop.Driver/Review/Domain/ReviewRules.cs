@@ -71,7 +71,7 @@ public sealed record ReviewEdit
 /// sit (<see cref="ReviewSetUps"/>) read it since REVIEWENV1c, and the intake's composing is REVIEWENV1f's.</para>
 ///
 /// <para>Whether a checkout holds a procedure, <see cref="Holds"/> and <see cref="Lacking"/>, looks in the checkout through
-/// <see cref="ReviewProcedureFiles"/>, which does the looking (FLAT1b-ii folded the extension block back).</para>
+/// <see cref="ReviewProcedureFiles"/>, which does the looking.</para>
 /// </remarks>
 public static class ReviewRules
 {

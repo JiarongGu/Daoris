@@ -7,8 +7,8 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para>A file that does not read is nothing done: the next look reads the host and the record again, never the words lost.</para>
-/// <para>What is kept once and what the latest replaces is this use case's; the file and its format are Review's Infrastructure's
-/// (<see cref="OpinionDeliveryFiles"/>; STRUCT3c, D166's note).</para>
+/// <para>What is kept once and what the latest replaces is this use case's; the file and its format are
+/// <see cref="OpinionDeliveryFiles"/>'.</para>
 /// </remarks>
 public sealed class OpinionDeliveries(string home)
 {
