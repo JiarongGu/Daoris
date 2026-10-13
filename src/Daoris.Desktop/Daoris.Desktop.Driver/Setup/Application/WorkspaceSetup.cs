@@ -1,211 +1,5 @@
 namespace Daoris.Driver;
 
-/// <summary>Where one repository of a workspace plan stands, read from the facts every time (WSSETUP6, D124 §4.1).</summary>
-public enum SetupState
-{
-    /// <summary>Registered from its line: adopted, and declaring what it owns.</summary>
-    SetUp,
-
-    /// <summary>Its set-up closed done, and its work is not on the line yet: the person's review, then <i>Bring up to date</i>.</summary>
-    Waiting,
-
-    /// <summary>Its set-up quest is open or taken: a session sets it up, or will.</summary>
-    Open,
-
-    /// <summary>Its set-up quest is open or taken and its failed sessions parked it (DRV6).</summary>
-    Parked,
-
-    /// <summary>Nothing asked yet: the plan publishes it in its turn.</summary>
-    ToGo,
-
-    /// <summary>The press refused it when its turn came, and the plan said why.</summary>
-    Skipped,
-
-    /// <summary>Its set-up closed declined: never asked again by the plan.</summary>
-    Declined,
-
-    /// <summary>The set-up the plan published is gone, deleted by the person (D95): never asked again by the plan.</summary>
-    Deleted,
-}
-
-/// <summary>One repository's standing in a plan: its state, the set-up quest that says so, and the sentence a person reads.</summary>
-public sealed record SetupStanding(string Repository, SetupState State, string? Quest, string Said);
-
-/// <summary>Who paused a plan (D124 §4.1): the person, the pilot's close, or a doctrine tool this machine cannot run.</summary>
-public static class SetupPausedBy
-{
-    public const string Person = "person";
-
-    public const string Pilot = "pilot";
-
-    public const string Tool = "tool";
-}
-
-/// <summary>A plan's pause: who paused it, the sentence that says why, and when.</summary>
-public sealed record SetupPause(string By, string Said, DateTimeOffset At);
-
-/// <summary>A repository the press refused when its turn came (D124 §4.1): the refusal's code, its sentences, and when.</summary>
-public sealed record SetupSkip(string Code, string Said, DateTimeOffset At);
-
-/// <summary>
-/// A workspace's set-up plan, <c>&lt;home&gt;/setup/&lt;workspace&gt;.json</c> (WSSETUP6, D124 §4.1): the person's choices and
-/// the quests it published. <b>Nothing in it is a count</b> (D58): progress is read from the quests and the registry every time.
-/// </summary>
-/// <param name="Order">The repositories, in §4.2's order, less the ones the person unticked.</param>
-/// <param name="AtOnce">How many of its set-ups may be open at once, as the person chose it; a tick holds it to the cap's <c>cap − 1</c>.</param>
-/// <param name="Pilot">How many go first: once they have all closed, the plan pauses itself until the person resumes it.</param>
-public sealed record WorkspaceSetupPlan(string Workspace, IReadOnlyList<string> Order, int AtOnce, int Pilot)
-{
-    /// <summary>When the press wrote it.</summary>
-    public DateTimeOffset Created { get; init; }
-
-    /// <summary>Why it publishes nothing for now, or null while it works.</summary>
-    public SetupPause? Paused { get; init; }
-
-    /// <summary>Whether the person resumed it after the pilot's pause, so the pilot never pauses it again.</summary>
-    public bool PilotResumed { get; init; }
-
-    /// <summary>When the person stopped it, or null: a stopped plan publishes nothing, and a new press may replace it.</summary>
-    public DateTimeOffset? Stopped { get; init; }
-
-    /// <summary>Each repository's set-up quest, by the repository's name, as the plan published it.</summary>
-    public IReadOnlyDictionary<string, string> Published { get; init; } =
-        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>Each repository the press refused at its turn, with why, by the repository's name.</summary>
-    public IReadOnlyDictionary<string, SetupSkip> Skipped { get; init; } =
-        new Dictionary<string, SetupSkip>(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>Whether the plan still works: made, and not stopped.</summary>
-    public bool Live => Stopped is null;
-}
-
-/// <summary>What other work touched a repository, from the facts this machine keeps (D124 §4.2).</summary>
-/// <param name="Asked">Quests addressed to it by anyone but itself: another repository, an ask, the person. A set-up is not one.</param>
-/// <param name="Read">Tool calls of other repositories' sessions that touched a file in its checkout, each call once (D76).</param>
-/// <param name="Sessions">Sessions this machine ran in it.</param>
-public sealed record SetupTouches(int Asked, int Read, int Sessions)
-{
-    public static SetupTouches None { get; } = new(0, 0, 0);
-}
-
-/// <summary>A session record this machine keeps, and the repository it ran in.</summary>
-public sealed record SessionRun(string Session, string Repository);
-
-/// <summary>A file one tool call touched, as the conversation record names it (D76): the call's id and the path.</summary>
-public sealed record ToolTouch(string Call, string Path);
-
-/// <summary>
-/// A workspace plan's line in the machine log (WSSETUP6, D94): its event and its fields, names, words and counts only,
-/// never a sentence or a path. The catalogue is here, so every writer writes the same lines.
-/// </summary>
-public sealed record SetupLine(string Event, IReadOnlyList<(string Key, object? Value)> Data)
-{
-    /// <summary>The press wrote a plan.</summary>
-    public static SetupLine Planned(string workspace, int repositories, int atOnce, int pilot) =>
-        new("setup.planned", [("workspace", workspace), ("repositories", repositories), ("atOnce", atOnce), ("pilot", pilot)]);
-
-    /// <summary>A tick published a repository's set-up.</summary>
-    public static SetupLine Published(string workspace, string repository, string quest) =>
-        new("setup.published", [("workspace", workspace), ("repository", repository), ("quest", quest)]);
-
-    /// <summary>A tick skipped a repository the press refused, by the refusal's code.</summary>
-    public static SetupLine Skipped(string workspace, string repository, string refusal) =>
-        new("setup.skipped", [("workspace", workspace), ("repository", repository), ("refusal", refusal)]);
-
-    /// <summary>The plan paused, by <see cref="SetupPausedBy"/>'s word.</summary>
-    public static SetupLine Paused(string workspace, string by) => new("setup.paused", [("workspace", workspace), ("by", by)]);
-
-    /// <summary>The person resumed it.</summary>
-    public static SetupLine Resumed(string workspace) => new("setup.resumed", [("workspace", workspace)]);
-
-    /// <summary>The person stopped it.</summary>
-    public static SetupLine Stopped(string workspace) => new("setup.stopped", [("workspace", workspace)]);
-}
-
-/// <summary>What a workspace plan reads beyond the single press's facts (WSSETUP6), and where its lines go.</summary>
-/// <remarks>An interface so the plan is held without a service, git or a spawn; <see cref="WorkspaceSetupWorld"/> is the real one.</remarks>
-public interface IWorkspaceSetupWorld : ISetupWorld
-{
-    /// <summary>Every registry row, with the declaration it holds: <i>set up</i> is read from here.</summary>
-    Task<IReadOnlyList<RegistrationRow>> RegistrationsAsync(CancellationToken ct);
-
-    /// <summary>How many sessions failed on each quest, by quest id, as the snapshot derives them (DRV6).</summary>
-    Task<IReadOnlyDictionary<string, int>> StrikesAsync(CancellationToken ct);
-
-    /// <summary>Every session record this machine keeps, with the repository it ran in: what §4.2 counts.</summary>
-    Task<IReadOnlyList<SessionRun>> RunsAsync(CancellationToken ct);
-
-    /// <summary>The files a session's tool calls touched, from its conversation record (D76); none where it has none.</summary>
-    IReadOnlyList<ToolTouch> Touched(string session);
-
-    /// <summary>A plan's line, for the machine log.</summary>
-    void Said(SetupLine line);
-}
-
-/// <summary>The person's choices for a workspace press (D124 §4.5): each null or empty is the default.</summary>
-public sealed record WorkspaceSetupOptions(
-    int? AtOnce = null, int? Pilot = null, IReadOnlyList<string>? First = null, IReadOnlyList<string>? Skip = null);
-
-/// <summary>One repository of a press's list: what touched it, where it stands, and the press's refusals now, where it is still to go.</summary>
-public sealed record WorkspaceSetupRow(string Repository, SetupTouches Touches, SetupStanding Standing)
-{
-    public IReadOnlyList<SetupRefusal> Refusals { get; init; } = [];
-}
-
-/// <summary>What a workspace press would write, or why it would not: plan, never apply.</summary>
-public sealed record WorkspaceSetupPreview(string Workspace)
-{
-    /// <summary>The repositories with a checkout here, in the order the plan would work them.</summary>
-    public IReadOnlyList<WorkspaceSetupRow> Rows { get; init; } = [];
-
-    /// <summary>The repositories the person unticked (<c>--skip</c>).</summary>
-    public IReadOnlyList<string> Unticked { get; init; } = [];
-
-    /// <summary>The workspace's rows with no checkout here: their own machine's driver sets them up.</summary>
-    public IReadOnlyList<string> NoCheckout { get; init; } = [];
-
-    public int AtOnce { get; init; } = WorkspaceSetup.DefaultAtOnce;
-
-    public int Pilot { get; init; } = WorkspaceSetup.DefaultPilot;
-
-    /// <summary>The driver's cap when this was read, which bounds <see cref="AtOnce"/>.</summary>
-    public int Cap { get; init; }
-
-    /// <summary>The agent this machine's driven sessions start on, which would carry each set-up.</summary>
-    public string? Adapter { get; init; }
-
-    /// <summary>Why the press as a whole would not write a plan; none is a press that writes.</summary>
-    public IReadOnlyList<SetupRefusal> Refusals { get; init; } = [];
-
-    public bool Pressable => Refusals.Count == 0 && Rows.Count > 0;
-}
-
-/// <summary>What a workspace press came to: the plan written, and the rules it added to the workspace's scope.</summary>
-public sealed record WorkspaceSetupOutcome(bool Written, string Message, WorkspaceSetupPlan? Plan, IReadOnlyList<string> Added);
-
-/// <summary>What a pause, a resume or a stop came to.</summary>
-public sealed record WorkspaceSetupSteer(bool Ok, string Message, WorkspaceSetupPlan? Plan);
-
-/// <summary>Why a workspace press as a whole would not write a plan (D124 §4.1, §4.5), beside the tools' own refusals.</summary>
-public static class WorkspaceSetupRefusals
-{
-    /// <summary>No repository of the workspace has a checkout here.</summary>
-    public const string NoRepository = "no-repository";
-
-    /// <summary>A plan for the workspace already works: never two, so never two set-ups for one repository.</summary>
-    public const string PlanWorking = "plan-working";
-
-    /// <summary>More at once than the cap's <c>cap − 1</c>, or fewer than one.</summary>
-    public const string AtOnce = "at-once";
-
-    /// <summary>A repository named to go first or to be left out that is not one of the workspace's here, or named both ways.</summary>
-    public const string Named = "named";
-
-    /// <summary>The word a skip carries when the service refused the ask, beside the press's own codes (<see cref="SetupRefusals"/>).</summary>
-    public const string ServiceRefused = "service-refused";
-}
-
 /// <summary>
 /// The workspace plan (WSSETUP6, D124 §4.1–§4.3): <i>Set up every repository in this workspace</i> writes a plan of single
 /// set-ups, and the driver's tick works it, one at a time by default, the repositories other work touches first, pausing
@@ -229,22 +23,19 @@ public static class WorkspaceSetupRefusals
 /// <para><b>The pilot</b>: the first <c>pilot</c> set-ups it publishes go alone. Nothing more is asked until all of them
 /// have closed, and then the plan pauses itself and says so once, until the person resumes it with what they cost in
 /// front of them (§7). A parked one has not closed: the person's attention is what it waits on.</para>
+///
+/// <para><b>The use cases, against their port</b> (STRUCT3e): the world comes through <see cref="IWorkspaceSetupWorld"/>,
+/// the plan's file is <see cref="WorkspaceSetupFile"/>'s, and the rules are <see cref="WorkspaceSetupRules"/>'s, kept here
+/// under the names their callers use.</para>
 /// </remarks>
 public static class WorkspaceSetup
 {
-    public const int DefaultAtOnce = 1;
+    public const int DefaultAtOnce = WorkspaceSetupRules.DefaultAtOnce;
 
-    public const int DefaultPilot = 2;
+    public const int DefaultPilot = WorkspaceSetupRules.DefaultPilot;
 
-    /// <summary>The states in the order the head line says them (§4.4).</summary>
-    private static readonly SetupState[] Spoken =
-    [
-        SetupState.SetUp, SetupState.Waiting, SetupState.Open, SetupState.Parked, SetupState.ToGo, SetupState.Skipped,
-        SetupState.Declined, SetupState.Deleted,
-    ];
-
-    /// <summary>The most set-ups open at once at a cap: never the last slot, so other work keeps one; one at a cap of one.</summary>
-    public static int MostAtOnce(int cap) => Math.Max(1, cap - 1);
+    /// <summary>The most set-ups open at once at a cap (<see cref="WorkspaceSetupRules.MostAtOnce"/>).</summary>
+    public static int MostAtOnce(int cap) => WorkspaceSetupRules.MostAtOnce(cap);
 
     /// <summary>
     /// What a press on <paramref name="workspace"/> would write today: the repositories with a checkout here in §4.2's order,
@@ -495,70 +286,11 @@ public static class WorkspaceSetup
         }
     }
 
-    /// <summary>
-    /// Where each repository of <paramref name="plan"/> stands, in its order, read from the facts (D124 §4.1): set up from the
-    /// registry; open, parked, waiting for review, declined or deleted from its set-up quests and their strikes; skipped from
-    /// the plan's own record; else to go. A set-up open or taken, the plan's or the single press's, is read first, so no
-    /// repository is ever asked twice.
-    /// </summary>
+    /// <summary>Where each repository of <paramref name="plan"/> stands, read from the facts (<see cref="WorkspaceSetupRules.Stand"/>).</summary>
     public static IReadOnlyList<SetupStanding> Stand(
         WorkspaceSetupPlan plan, IReadOnlyList<RegistrationRow> rows, IReadOnlyList<QuestView> quests,
-        IReadOnlyDictionary<string, int> strikes, DriverConfig config)
-    {
-        var standings = new List<SetupStanding>();
-        foreach (var repository in plan.Order)
-        {
-            standings.Add(One(repository));
-        }
-
-        return standings;
-
-        SetupStanding One(string repository)
-        {
-            if (rows.FirstOrDefault(row => Same(row.Repository, repository)) is { Registered: true } row)
-            {
-                return new(repository, SetupState.SetUp, null, $"set up: {row.Summary?.Trim() ?? "adopted, and declaring what it owns"}");
-            }
-
-            var setups = quests.Where(quest => Same(quest.To, repository) && SetupQuests.IsSetup(quest.Title)).ToList();
-            if (setups.LastOrDefault(quest => quest.Status is "Open" or "Taken") is { } active)
-            {
-                var failed = (strikes.TryGetValue(active.Id, out var count) ? count : 0) - config.ForgivenAt(active.Id);
-                // Parked as the planner parks a quest (DRV6): its failed sessions, less where the person last restarted it.
-                return config.Strikes > 0 && failed >= config.Strikes
-                    ? new(repository, SetupState.Parked, active.Id,
-                        $"its set-up #{active.Id} is parked: {failed} session(s) failed on it. `daoris driver retry {active.Id}` "
-                        + "starts it again once you know why.")
-                    : new(repository, SetupState.Open, active.Id, $"its set-up #{active.Id} is {active.Status.ToLowerInvariant()}.");
-            }
-
-            var mine = plan.Published.TryGetValue(repository, out var published)
-                ? setups.FirstOrDefault(quest => Same(quest.Id, published))
-                : null;
-            switch ((mine ?? setups.LastOrDefault())?.Status)
-            {
-                case "Done":
-                    var done = mine ?? setups.Last();
-                    return new(repository, SetupState.Waiting, done.Id,
-                        $"its set-up #{done.Id} is done and waits for your review; once it is merged, *Bring up to date* registers it.");
-                case "Declined":
-                    var declined = mine ?? setups.Last();
-                    return new(repository, SetupState.Declined, declined.Id,
-                        $"its set-up #{declined.Id} was declined{(declined.Note is { Length: > 0 } note ? $": {note.Trim()}" : ".")} "
-                        + $"The plan does not ask it again; `daoris-driver setup {repository}` asks it alone.");
-            }
-
-            if (published is not null)
-            {
-                return new(repository, SetupState.Deleted, published,
-                    $"its set-up #{published} was deleted. The plan does not ask it again; `daoris-driver setup {repository}` asks it alone.");
-            }
-
-            return plan.Skipped.TryGetValue(repository, out var skipped)
-                ? new(repository, SetupState.Skipped, null, skipped.Said)
-                : new(repository, SetupState.ToGo, null, "to go.");
-        }
-    }
+        IReadOnlyDictionary<string, int> strikes, DriverConfig config) =>
+        WorkspaceSetupRules.Stand(plan, rows, quests, strikes, config);
 
     /// <summary>Where each repository of <paramref name="plan"/> stands now, read from the world.</summary>
     public static async Task<IReadOnlyList<SetupStanding>> StandAsync(
@@ -627,40 +359,13 @@ public static class WorkspaceSetup
             next);
     }
 
-    /// <summary>The head line (D124 §4.4): how many stand in each state, in the design's words, then whether it is paused or stopped.</summary>
-    public static string Summary(WorkspaceSetupPlan plan, IReadOnlyList<SetupStanding> standings)
-    {
-        var counted = Spoken
-            .Select(state => (State: state, Count: standings.Count(standing => standing.State == state)))
-            .Where(each => each.Count > 0)
-            .Select(each => $"{each.Count} {Word(each.State)}")
-            .ToList();
-        var tail = !plan.Live ? " — stopped"
-            : plan.Paused?.By switch
-            {
-                SetupPausedBy.Pilot => " — paused after the pilot",
-                SetupPausedBy.Person => " — paused by you",
-                SetupPausedBy.Tool => " — paused: the doctrine tool cannot run here",
-                null => "",
-                _ => " — paused",
-            };
-        return $"Setting up — {(counted.Count == 0 ? "nothing to set up" : string.Join(" · ", counted))}{tail}";
-    }
+    /// <summary>The head line (<see cref="WorkspaceSetupRules.Summary"/>).</summary>
+    public static string Summary(WorkspaceSetupPlan plan, IReadOnlyList<SetupStanding> standings) => WorkspaceSetupRules.Summary(plan, standings);
 
-    /// <summary>A state in the words a person reads (§4.4).</summary>
-    public static string Word(SetupState state) => state switch
-    {
-        SetupState.SetUp => "set up",
-        SetupState.Waiting => "waiting for your review",
-        SetupState.Open => "setting up",
-        SetupState.Parked => "parked",
-        SetupState.ToGo => "to go",
-        SetupState.Skipped => "skipped",
-        SetupState.Declined => "declined",
-        _ => "deleted",
-    };
+    /// <summary>A state in the words a person reads (<see cref="WorkspaceSetupRules.Word"/>).</summary>
+    public static string Word(SetupState state) => WorkspaceSetupRules.Word(state);
 
-    private static bool PilotHolds(WorkspaceSetupPlan plan, int asked) => plan.Pilot > 0 && !plan.PilotResumed && asked >= plan.Pilot;
+    private static bool PilotHolds(WorkspaceSetupPlan plan, int asked) => WorkspaceSetupRules.PilotHolds(plan, asked);
 
     /// <summary>The plan paused by a tick, once: only a live plan not already paused, where <paramref name="when"/> still holds.</summary>
     private static bool PauseItself(string home, string workspace, SetupPause pause, Func<WorkspaceSetupPlan, bool> when)
