@@ -15,7 +15,7 @@
        first use: it is found the same way in a scratch run, a test and an install, whatever the
        publish layout. -->
   <ItemGroup>
-    <EmbeddedResource Include="hooks\tree-guard.mjs" LogicalName="Daoris.Driver.tree-guard.mjs" />
+    <EmbeddedResource Include="Trees\hooks\tree-guard.mjs" LogicalName="Daoris.Driver.tree-guard.mjs" />
   </ItemGroup>
 
   <!-- The list built in (TOOLS3, D121 §3.1): where each tool's versions download from. A file beside the
