@@ -116,11 +116,13 @@ public sealed class CurveMoveProcessTests : IDisposable
 
         // Said where it happened, as SWITCH1c-i's pair: the old one's last line, the new one's first.
         await Poll.Until(() => events.After(next.Session, 0).Events.Any(e => Coded(e)?.Code == "chat.moved-from"), () => Seen(ledger, events, next.Session));
-        var came = events.After(next.Session, 0).Events.Select(Coded).First(part => part is not null)!;
+        var opened = events.After(next.Session, 0).Events.Select(Coded).OfType<NotePart>().ToList();
+        Assert.DoesNotContain(opened, part => part.Code is "chat.taken-over" or "chat.handed-over");
+        var came = opened.First(part => part.Code == "chat.moved-from");
         Assert.Equal(
             ("chat.moved-from", "account-1", "weekly", 75, 70),
             (came.Code, came.Value("from"), came.Value("window"), came.Value("used"), came.Value("curve")));
-        var went = events.After(old, 0).Events.Select(Coded).Last(part => part is not null)!;
+        var went = events.After(old, 0).Events.Select(Coded).OfType<NotePart>().Last();
         Assert.Equal(("chat.moved", "account-2", "account-1"), (went.Code, went.Value("to"), went.Value("from")));
         await Poll.Until(
             () => StubFile.Text(Heard).Contains($"You continue the acp-stub conversation `{old}`"), () => Seen(ledger, events, next.Session));
