@@ -82,7 +82,63 @@ public sealed class WorkflowPortsTests
         Assert.False(runs.Bound("q9"));
     }
 
+    /// <summary>The choice of `docs-to-pr` for `web-app`, and its branch rule, which a named landing step chooses within.</summary>
+    private static readonly DriverConfig Declared = DriverConfig.Parse("""
+        {"workflows":{"web-app":{"default":"docs-to-pr"}},
+         "landings":{"web-app":{"form":"branch","pattern":"feature/{quest}","tidy":true}}}
+        """);
+
+    [Fact]
+    public void A_runs_process_is_read_through_the_ports_its_bound_version_and_a_binding_that_does_not_read_holds_it()
+    {
+        var store = new MemoryStore();
+        var runs = new MemoryRuns();
+
+        var none = WorkflowProcesses.Read(store, runs, Declared, "web-app", "work", "q1");
+        Assert.Equal(("q1", (WorkflowRunBinding?)null, "feature/{quest}"), (none.Run, none.Binding, none.Landing.Rule.Pattern));
+
+        WorkflowStore.Add(store, runs, Added("automatic"));
+        Assert.True(runs.Bind(WorkflowRunBindings.Plan(Declared, store, "q1", "web-app", "work", null, null, [], At)));
+        WorkflowStore.Add(store, runs, Added("you"));
+
+        var named = WorkflowProcesses.Read(store, runs, Declared, "web-app", "work", "q1");
+        Assert.True(named.Named);
+        Assert.Equal((1, "docs/{quest}", true, true), (named.Binding!.Version, named.Landing.Rule.Pattern, named.Landing.Rule.AutoAccept, named.Landing.Rule.Tidy));
+
+        runs.Damage("q2");
+        var damaged = WorkflowProcesses.Read(store, runs, Declared, "web-app", "work", "q2");
+        Assert.Equal(("its stored run binding could not be read.", (WorkflowRunBinding?)null), (damaged.Unread, damaged.Binding));
+
+        var (name, steps) = WorkflowProcesses.Otherwise(store, Declared, "web-app", "work");
+        Assert.Equal(("`docs-to-pr` v2", 2), (name, steps!.Count));
+    }
+
+    [Fact]
+    public async Task A_chain_the_service_cannot_name_holds_through_the_ports_only_where_a_named_run_is_bound()
+    {
+        var store = new MemoryStore();
+        var runs = new MemoryRuns();
+        var world = new Unanswering();
+
+        Assert.Null((await WorkflowProcesses.ReadAsync(store, runs, Declared, world, "q9", "web-app", "work")).Unread);
+
+        WorkflowStore.Add(store, runs, Added("automatic"));
+        runs.Bind(WorkflowRunBindings.Plan(Declared, store, "q1", "web-app", "work", null, null, [], At));
+        Assert.True((await WorkflowProcesses.ReadAsync(store, runs, Declared, world, "q1", "web-app", "work")).Named, "the quest's own id names its run");
+        Assert.StartsWith(
+            "its chain could not be read, so whether a named workflow governs it is not known:",
+            (await WorkflowProcesses.ReadAsync(store, runs, Declared, world, "q9", "web-app", "work")).Unread);
+        Assert.Null((await WorkflowProcesses.ReadAsync(store, runs, Declared, world, "q9", "notes-site", "work")).Unread);
+    }
+
     // ——— stand-ins
+
+    private sealed class Unanswering : IReviewWorld
+    {
+        public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) => throw new HttpRequestException("the service did not answer");
+
+        public Task<AskView?> AskAsync(string id, CancellationToken ct) => throw new HttpRequestException("the service did not answer");
+    }
 
     /// <summary>The named workflows in memory, each file as written; a name in <see cref="Unreadable"/> is a file that is not JSON.</summary>
     private sealed class MemoryStore : IWorkflowStore
