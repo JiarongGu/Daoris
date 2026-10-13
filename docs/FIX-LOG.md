@@ -1673,7 +1673,9 @@ failed in the full run and passed alone, with three branches building. It signs 
 lock now guards; a second sighting reads that lock first. **And the full set on a03d386** (2026-10-13), with no branch
 building beside it: `HelpChatTests.Only_Ask_Daoris_loads_its_tools_up_front_and_only_where_the_harness_says_how` again,
 failed in the driver's Process half (37 minutes) and passed alone in the merge tool's rerun: its second sighting, and the
-first with no load beside the run, so load is not the whole of it.
+first with no load beside the run, so load is not the whole of it. **And the stale gates on a8172ec** (2026-10-14), with no
+branch building beside them: the modules' `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one`
+failed in the Process half and passed alone: its third sighting (after ANSWER1c's and REVIEW3's merges), and again with no load.
 
 ## TEST1 (open): a Node process on Windows aborts with 0xC0000409 (since 2026-09-21)
 
