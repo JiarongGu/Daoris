@@ -14200,3 +14200,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SCOPE1a — Trees by scope** (driver). Renames alone: `SessionTrees/` (the partial and its 16 parts), `Landing/`, `Branches/`, `GitReads/`; WorkingTree, TreeLock, PullRequestStates, PullRequestWords, LandedBranches, SessionGroups, Orphans, TreeGuard and TreesCommand stay at the top with `hooks/`. README :41's path. D166's scope note.
 
 **Outcome** 2026-10-14: 34 renames: `SessionTrees/` (the partial and its 17 parts), `Landing/`, `Branches/` and `GitReads/`; the nine helpers several scopes name stay at the top with `hooks/` and `Domain/`. A scope calling another scope's main type is allowed; only shared helpers stay up. On Sonnet, scouted: 31 tool calls. Detail: D166's SCOPE1a note.
+
+## SCOPE1c — Conversations and Plugins by scope (2026-10-14, D166)
+
+> - [ ] **SCOPE1c — Conversations and Plugins by scope** (driver; after FLAT1b-i). Conversations into `Chat/`, `GoOn/`, `HandOver/`, `Helpers/`; Plugins into `Hooks/`, `Kit/`, `Package/`, `Catalogue/`, `Page/`, `plugin-kit/` where it is. Counted again after FLAT1b-i. D166's scope note.
+
+**Outcome** 2026-10-14: Conversations' 24 files went into `Chat/`, `GoOn/`, `HandOver/` and `Helpers/`, with `ConversationTrees` (the go-on and the hand-over both call it), `DrivenInbox` and `TranscriptFile` at its top. Plugins, counted at 21 files after FLAT1b-i, stays flat by the twenty-file rule, the README naming the groups to cut along if it grows. On Sonnet, scouted: 38 tool calls. Detail: D166's SCOPE1c note.
