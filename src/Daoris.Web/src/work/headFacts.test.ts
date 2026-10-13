@@ -110,11 +110,14 @@ describe('a session’s facts line', () => {
         session: continued({ fromWhy: 'press', fromBy: 'person', state: 'completed', created: '2026-10-05T09:40:00Z', updated: '2026-10-05T09:54:00Z' }),
         shown: 'completed', continuesAgent: 'Codex',
       })).toEqual(['engine', 'continues from Codex', 'you asked for it', 'ran 14m']);
+      // SWITCH1c-i (D165 point 3): Daoris moved it to another account by the usage curve, its agent unchanged.
+      expect(sessionFacts(t, { session: continued({ fromWhy: 'curve' }), shown: 'working', continuesAgent: 'Claude Code' }))
+        .toEqual(['engine', 'continues from Claude Code', 'its account was over its usage curve', 'started 2m ago']);
     });
 
-    /** `curve` (D165 point 3) has no words until SWITCH1c declares them: the line says what it knows and guesses nothing. */
+    /** A why this build has no words for: the line says what it knows and guesses nothing. */
     it('says no why it has no words for, and another session where the one it continues is not held', () => {
-      expect(sessionFacts(t, { session: continued({ fromWhy: 'curve' }), shown: 'working', continuesAgent: 'Codex' }))
+      expect(sessionFacts(t, { session: continued({ fromWhy: 'moved-on' }), shown: 'working', continuesAgent: 'Codex' }))
         .toEqual(['engine', 'continues from Codex', 'started 2m ago']);
       expect(sessionFacts(t, { session: continued({ fromWhy: 'limit' }), shown: 'working' }))
         .toEqual(['engine', 'continues another session', 'its account reached its limit', 'started 2m ago']);
