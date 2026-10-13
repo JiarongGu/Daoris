@@ -91,6 +91,11 @@ considerations), the evidence's records, the attention events, the ask's words a
 `Application/`; and the git read of a done's evidence, the room written to the disk and the git defaults (`QuestGit`) in
 `Infrastructure/`. `IntakeRoom.Prepare` keeps its name as an extension member there.
 
+`Sessions/` is being layered in three steps (STRUCT3g, D166's STRUCT3g-i note); its `Domain/` is placed: the session events' records
+and rules (`SessionEvents.cs`, with `SessionEventText`'s bounds, id rule and cuts), the trace's records and chain (`Trace.Chain.cs`,
+which reads its stores through `TraceHere`'s values), the pause, abandon, delete, archive and history plans and words, and the
+observation rules. Its stores and use cases are still loose files in `Sessions/` until STRUCT3g-ii and STRUCT3g-iii.
+
 ## What the page can ask this machine
 
 | Module | What it carries |

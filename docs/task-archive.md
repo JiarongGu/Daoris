@@ -14131,3 +14131,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT3f — layer the Quests module** (driver). As STRUCT3; `QuestView`, `QuestStepView` and `AskView` have parts in Service's Domain (`ReviewViews`, `AskWorkflowViews`), and Setup's Domain names `Consideration` and `StartVerdict`, so each lands in Quests' Domain. D166's STRUCT3d and STRUCT3e notes.
 
 **Outcome** 2026-10-14: Quests is layered (Domain 10 files, Application 9, Infrastructure 3), held by the gate, no caller or test changed. `Planner.cs` went whole to Domain; `AskWords.ReadAsync` became an Application extension member and `IntakeRoom.Prepare` an Infrastructure one; the git defaults moved into `QuestGit`, and `EvidenceReader` went whole to Infrastructure for its disk walk. On Sonnet, scouted: 58 tool calls. Detail: D166's STRUCT3f note.
+
+## STRUCT3g-i — Sessions' Domain out first (2026-10-14, D166)
+
+> - [ ] **STRUCT3g-i — Sessions' Domain out first** (driver). Its records, rules and words into `Sessions/Domain/` (the views other layered Domains name: `SessionEnded`, `TracedSession`, the go-ahead views, `SessionEvent`), stateful classes left loose. `SessionEvents.cs` and `Trace.Chain.cs` keep what the CLI's and the page's tests read by those names. D166's STRUCT3d note's inventory.
+
+**Outcome** 2026-10-14: ten whole files and ten records cut from stateful files went into `Sessions/Domain/`; the stateful `SessionEvents` class moved to `SessionEventLog.cs` beside a Domain `SessionEvents.cs` that keeps what the tests read, the trace's chain reads its stores through `TraceHere`'s values, and forwards and extension members kept every caller. At the merge, Quests' evidence words moved to its Domain (`EvidenceWords`), which the trace names. On Sonnet, scouted: 149 tool calls. Detail: D166's STRUCT3g-i note.

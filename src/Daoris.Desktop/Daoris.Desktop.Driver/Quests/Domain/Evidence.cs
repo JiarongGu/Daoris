@@ -39,6 +39,42 @@ public sealed record EvidenceRead(int Requirement, string? Path, string? Gate, s
     public string Named => Path ?? Gate ?? "";
 }
 
+/// <summary>An evidence read in words (EVID1b): the record's lines, the terminal's and the trace's, said alike.</summary>
+public static class EvidenceWords
+{
+    /// <summary>One item as the record says it: its requirement, what it names, its code and what the code means here.</summary>
+    internal static string Line(EvidenceRead item) =>
+        item.Gate is { } gate
+            ? $"- requirement {item.Requirement} gate `{gate}`: {Said(item)}"
+            : $"- requirement {item.Requirement} `{item.Path}`: {Said(item)}";
+
+    /// <summary>
+    /// What one read came to, in words beside its code: <c>found</c> and whether this work changed it, the spelling a <c>case</c>
+    /// read found, where an <c>uncommitted</c> path is, and a gate's <c>no-queue</c>. The record and the trace say it alike.
+    /// </summary>
+    internal static string Said(EvidenceRead item)
+    {
+        if (item.Gate is not null)
+        {
+            return item.Result == EvidenceCodes.NoQueue ? "no-queue, read from the landing queue, which does not run it here" : item.Result;
+        }
+
+        var said = item.Result switch
+        {
+            EvidenceCodes.Case => $"case, the commit spells it `{item.Spelled}`",
+            EvidenceCodes.Uncommitted => "uncommitted, in the tree and not in the commit",
+            var result => result,
+        };
+        var changed = item.Changed switch
+        {
+            true => ", changed by this work",
+            false when item.Result == EvidenceCodes.Found => ", unchanged by this work",
+            _ => "",
+        };
+        return said + changed;
+    }
+}
+
 /// <summary>
 /// What Daoris read of a done's evidence (EVID1a, EVID1b; D144 §3, §5): the commit read and how it was chosen, the session
 /// whose end was read, and each item's code. The body the evidence door takes, and what a quest answers it last kept.

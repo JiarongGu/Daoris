@@ -179,7 +179,7 @@ public static class QuestCheckCommand
         if (quest.Evidence is { Found: true } found)
         {
             output.WriteLine($"Quest `#{quest.Id}`'s evidence was found at `{Short(found.Commit)}` ({found.How}):");
-            foreach (var item in found.Items) output.WriteLine(EvidenceCheck.Line(item));
+            foreach (var item in found.Items) output.WriteLine(EvidenceWords.Line(item));
             return 0;
         }
 

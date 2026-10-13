@@ -220,7 +220,7 @@ internal static class TraceWords
         var named = item.Kind == "gate" ? $"gate `{item.Named}`" : $"`{item.Named}`";
         return item.Result is not { } result
             ? $"{named} not read yet"
-            : $"{named} {EvidenceCheck.Said(new EvidenceRead(0, item.Kind == "path" ? item.Named : null, item.Kind == "gate" ? item.Named : null, result) { Changed = item.Changed, Spelled = item.Spelled })}";
+            : $"{named} {EvidenceWords.Said(new EvidenceRead(0, item.Kind == "path" ? item.Named : null, item.Kind == "gate" ? item.Named : null, result) { Changed = item.Changed, Spelled = item.Spelled })}";
     }
 
     /// <summary>The records that name a quest, oldest first, by id and state: each one's own trace is a word away.</summary>

@@ -752,6 +752,21 @@ public sealed record TraceUnrecordedLink(string Session)
 public sealed record TraceRead(TraceChain? Chain, string? Problem, IReadOnlyList<TraceUnread> Unread);
 
 /// <summary>
+/// What this machine's events file for one session held (STRUCT3g-i): its events, or, where none were read, why
+/// (<see cref="TraceEventGaps"/>) and the problem the read met. The chain takes it as a value, so it opens no file.
+/// </summary>
+internal sealed record TraceEventsRead(IReadOnlyList<SessionEvent>? All, string? Missing = null, string? Problem = null);
+
+/// <summary>What the rules file written for one session held: its text, or null when none stands, or the problem the read met.</summary>
+internal sealed record TraceRulesRead(string? Text, string? Problem = null);
+
+/// <summary>
+/// This machine's side of a trace, as values the chain reads without touching a file (STRUCT3g-i): the driver's settings,
+/// and a read of each session's events and of the rules file it was handed.
+/// </summary>
+internal sealed record TraceHere(DriverConfig Config, Func<string, TraceEventsRead> ReadEvents, Func<string, TraceRulesRead> ReadRules);
+
+/// <summary>
 /// The chain, read from the stores' facts (TRACE1b): each link from the store that keeps it, a link nothing keeps with why, and
 /// what stood at each start by the moments kept. Both doors word what this returns.
 /// </summary>
@@ -798,7 +813,7 @@ internal static partial class TraceChains
 
     /// <summary>The chain, whole: each ask, its quests and their sessions, in the order the terminal prints them.</summary>
     internal static TraceChain Of(
-        TraceFound found, TraceFacts facts, IReadOnlyDictionary<string, TraceAskRead> asks, TraceSources sources, IReadOnlyList<TraceUnread> unread)
+        TraceFound found, TraceFacts facts, IReadOnlyDictionary<string, TraceAskRead> asks, TraceHere here, IReadOnlyList<TraceUnread> unread)
     {
         var links = new List<TraceLink>();
         var reached = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -818,7 +833,7 @@ internal static partial class TraceChains
 
             foreach (var session in found.Sessions.Where(session => Same(session.Quest, questId)))
             {
-                links.Add(new TraceLink(TraceLink.SessionKind) { Session = Session(session, facts, askId is null ? null : asks[askId], sources) });
+                links.Add(new TraceLink(TraceLink.SessionKind) { Session = Session(session, facts, askId is null ? null : asks[askId], here) });
             }
 
             foreach (var landed in found.Unrecorded.Where(id => facts.Landings.Any(each => Same(each.Session, id) && Same(each.Quest, questId))))
@@ -834,7 +849,7 @@ internal static partial class TraceChains
                 links.Add(new TraceLink(TraceLink.AskKind) { Ask = Ask(asks[askId], new TraceNamedBy(TraceNamers.Intake, session.Id), facts) });
             }
 
-            links.Add(new TraceLink(TraceLink.SessionKind) { Session = Session(session, facts, null, sources) });
+            links.Add(new TraceLink(TraceLink.SessionKind) { Session = Session(session, facts, null, here) });
         }
 
         foreach (var landed in found.Unrecorded.Where(id => !facts.Landings.Any(each => Same(each.Session, id) && each.Quest is not null)))
@@ -959,9 +974,9 @@ internal static partial class TraceChains
                 .Select(session => new TraceRecordRef(session.Id, session.State))];
 
     /// <summary>One session: its record's facts, then this machine's (its events, its rules, its landing), then what stood when it started.</summary>
-    private static TraceSessionLink Session(TracedSession session, TraceFacts facts, TraceAskRead? ask, TraceSources sources)
+    private static TraceSessionLink Session(TracedSession session, TraceFacts facts, TraceAskRead? ask, TraceHere here)
     {
-        var events = session.Teammate ? null : Events(session, sources.Home);
+        var events = session.Teammate ? null : Events(session, here);
         return new TraceSessionLink(session.Id)
         {
             Kind = session.Kind,
@@ -981,9 +996,9 @@ internal static partial class TraceChains
             Answer = session.Answer,
             Evidence = Evidence(session),
             Events = events,
-            Rules = session.Teammate ? null : Rules(session, sources.Home),
+            Rules = session.Teammate ? null : Rules(session, here),
             Landing = session.Teammate ? null : Landing(session, facts, events),
-            Stood = Stood(session, ask, sources.Config),
+            Stood = Stood(session, ask, here.Config),
         };
     }
 
@@ -1023,21 +1038,12 @@ internal static partial class TraceChains
     /// This machine's record of it (D76): the driver's notes before its instruction, which name the account a start chose and
     /// why; each instruction it was handed, by its event and size; and each acceptance of its work a landing's press kept.
     /// </summary>
-    private static TraceEvents Events(TracedSession session, string home)
+    private static TraceEvents Events(TracedSession session, TraceHere here)
     {
-        if (!SessionEvents.IsId(session.Id)) return new TraceEvents { Missing = TraceEventGaps.NotAnId };
+        if (!SessionEventText.IsId(session.Id)) return new TraceEvents { Missing = TraceEventGaps.NotAnId };
 
-        var events = new SessionEvents(Path.Combine(home, "sessions"));
-        IReadOnlyList<SessionEvent> all;
-        try
-        {
-            if (!File.Exists(events.PathOf(session.Id))) return new TraceEvents { Missing = TraceEventGaps.NoneHere };
-            all = events.After(session.Id, 0).Events;
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
-        {
-            return new TraceEvents { Missing = TraceEventGaps.Unread, Problem = error.Message };
-        }
+        var read = here.ReadEvents(session.Id);
+        if (read.All is not { } all) return new TraceEvents { Missing = read.Missing, Problem = read.Problem };
 
         return new TraceEvents
         {
@@ -1061,10 +1067,10 @@ internal static partial class TraceChains
     private static TraceInstruction Instruction(SessionEvent instruction)
     {
         var said = instruction.Text ?? "";
-        if (CutSaid().Match(said) is { Success: true } cut && cut.Groups["kept"].Length == SessionEvents.TextLimit
+        if (CutSaid().Match(said) is { Success: true } cut && cut.Groups["kept"].Length == SessionEventText.TextLimit
             && int.TryParse(cut.Groups["chars"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var whole))
         {
-            return new TraceInstruction(instruction.Seq, whole) { Kept = SessionEvents.TextLimit, Account = instruction.Account };
+            return new TraceInstruction(instruction.Seq, whole) { Kept = SessionEventText.TextLimit, Account = instruction.Account };
         }
 
         return new TraceInstruction(instruction.Seq, said.Length) { Account = instruction.Account };
@@ -1074,17 +1080,18 @@ internal static partial class TraceChains
     /// The rules it was handed (PERM1, D72), from the file the driver wrote under the home for it, while that file stands: it is
     /// the session's own and goes when its run ends.
     /// </summary>
-    private static TraceRules Rules(TracedSession session, string home)
+    private static TraceRules Rules(TracedSession session, TraceHere here)
     {
-        var path = Path.Combine(home, SpawnServers.Folder, $"{session.Id}.settings.json");
-        if (!File.Exists(path))
+        var read = here.ReadRules(session.Id);
+        if (read.Problem is { } problem) return new TraceRules { Missing = TraceRuleGaps.Unread, Problem = problem };
+        if (read.Text is not { } text)
         {
             return new TraceRules { Missing = Running.Contains(session.State) ? TraceRuleGaps.NoneWhileRunning : TraceRuleGaps.GoneWithRun };
         }
 
         try
         {
-            using var document = System.Text.Json.JsonDocument.Parse(File.ReadAllText(path));
+            using var document = System.Text.Json.JsonDocument.Parse(text);
             var root = document.RootElement;
             var permissions = root.TryGetProperty("permissions", out var lists) ? lists : default;
             int Listed(System.Text.Json.JsonElement element, string list) =>
@@ -1106,7 +1113,7 @@ internal static partial class TraceChains
                           && hooks.TryGetProperty("PreToolUse", out _),
             };
         }
-        catch (Exception error) when (error is System.Text.Json.JsonException or IOException or UnauthorizedAccessException or InvalidOperationException)
+        catch (Exception error) when (error is System.Text.Json.JsonException or InvalidOperationException)
         {
             return new TraceRules { Missing = TraceRuleGaps.Unread, Problem = error.Message };
         }
@@ -1258,7 +1265,7 @@ internal static partial class TraceChains
     private static bool SamePath(string a, string b) =>
         string.Equals(a.Replace('\\', '/').TrimEnd('/'), b.Replace('\\', '/').TrimEnd('/'), StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>A field the record cut (<see cref="SessionEvents.Cut"/>): what it kept, then how long the original was.</summary>
+    /// <summary>A field the record cut (<see cref="SessionEventText.Cut"/>): what it kept, then how long the original was.</summary>
     [GeneratedRegex(@"^(?<kept>.*)… \((?<chars>\d+) chars\)$", RegexOptions.Singleline)]
     private static partial Regex CutSaid();
 }
