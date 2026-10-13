@@ -17,6 +17,7 @@
   },
   "layered": [
     "Plugins",
+    "Setup",
     "Workflows"
   ],
   "root": {
