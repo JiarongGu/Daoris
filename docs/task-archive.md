@@ -14059,3 +14059,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT2e — `Conversations` and `Sessions` into their folders** (driver). As STRUCT2c; `Conversations/` already holds `ChatRunner.Curve.cs`. D166.
 
 **Outcome** 2026-10-14: Conversations (27 files, 27 tests) and Sessions (29 files, 24 tests) moved by renames alone, a commit each; `SessionSay.cs` left the map's `split`; at the merge the map's lists were merged with STRUCT2c's (root 128, tests 121). Detail: D166's STRUCT2e note.
+
+## STRUCT2d — `Quests` and `Accounts` into their folders (2026-10-14, D166)
+
+> - [ ] **STRUCT2d — `Quests` and `Accounts` into their folders** (driver). As STRUCT2c; `Accounts/Domain/` already holds `UsageCurves` and `SwitchDecision`, and their tests join `Driver.Tests/Accounts/`. D166.
+
+**Outcome** 2026-10-14: Quests (14 files, 20 tests) and Accounts (22 files, 45 tests) moved by renames alone, a commit each; `EvidenceReader.cs` left the map's `split`; at the merge `CurveMoveTests` and `CurveMoveProcessTests`, which STRUCT2e had moved to Conversations (their subject is the chat runner's curve move), stayed there, and the map's lists were merged (root 92, tests 184). Detail: D166's STRUCT2d note.
