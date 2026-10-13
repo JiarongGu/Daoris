@@ -289,7 +289,9 @@ folder.
 - [ ] **DEDUP6 — path and id rules decided once** (driver, modules). A `SafeNames` in `Platform/`: one repository-relative path rule (ten copies disagree on `\`, `:`, `.` segments and control characters, a security question, so the rule is written in D166 first), one session-id folder rule, the id patterns. Survey §6.
 - [ ] **DEDUP7 — text clipped, one-lined and quoted once** (driver, modules). `TextBounds` in `Platform/` for about 44 copies, each call keeping its own limit. Survey §7.
 - [ ] **DEDUP8 — the driver's HTTP verbs and downloads** (driver). `DriverHttp`'s three verbs as one send; one download wrapper and hash for `ToolInstall` and `ClaudeReleaseDownloads`. Survey §8.
-- [ ] **DEDUP9 — the service core's own copies** (service). Its six `Moment` readers, five `Clip`s, about sixty writers without the invariant culture, and four writes past an atomic file (`QuestFiles.cs:115`'s fixed `.tmp` name is a race). Survey "Across projects".
+- [ ] **DEDUP9a — the service core's atomic writes** (service). A Core `AtomicFile` (a unique name beside, the move retried, cleaned up, async bytes) for `QuestFiles.KeepAsync` (a fixed `.tmp`: two keeps collide), `HelperBox`, `HelpProposalBox` and `RuleProposals`, keeping LF and the trailing newline. Survey §9.
+- [ ] **DEDUP9b — the service core's moments** (service; after 9a). A Core `Moments` for six private readers, about 35 parses (in the machine's culture or turned local) and 48 writers without the invariant culture; a test under another culture. Survey "Across projects".
+- [ ] **DEDUP9c — the service core's clipped text** (service; after 9b). One `Clip(text, limit)` for five copies and 46 calls; the word-boundary cuts (`TitleOf`, `Truncate`) stay theirs. Survey §7.
 
 ## Development and agent layout
 
