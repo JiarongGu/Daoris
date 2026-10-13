@@ -14224,3 +14224,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **FLAT1b-iii-b — Sessions: the layering's ceremony folded back** (driver, modules; after iii-a). `HarnessEnding` and `HistoryBytes` out to files of their own with their reads; the forwards to `CommitNames`, `PauseKept`, `AbandonKeys` and `SessionEventText` retire, about 51 callers naming it. D166's STRUCT3g-i note.
 
 **Outcome** 2026-10-14: `HarnessEnding` and `HistoryBytes` are top files holding their own reads; the trace's, pausing's, abandoning's and the session events' forwards retired, about fifty callers across eight modules naming `CommitNames`, `PauseKept`, `AbandonKeys` and `SessionEventText`, and the files the CLI's and the page's tests read keep their texts. The fold-back is complete in all six modules and Sessions. On Sonnet: 113 tool calls. Detail: D166's FLAT1b-iii-b note.
+
+## DEDUP4a — one child-process runner (2026-10-14, D166)
+
+> - [ ] **DEDUP4a — one child-process runner** (driver, modules). A public `ChildProcess` in `Platform/` (a run to its end with patience, its error carried, the tree killed on time-out or cancellation, guarded) for the probe, the setup's version, the tool questions and the plugin tool runs; it fixes the unguarded kills at `Harnesses.cs:1480` and `SetupWorld.cs:107`. Survey §4.
+
+**Outcome** 2026-10-14: `Platform/ChildProcess.cs` runs a child to its end within a patience, carries a start's error, and kills the tree on time-out or cancellation behind a guarded `KillTree`; the four runs use it with their own words. The race at the two kills is gone (setup now says the tool did not answer, not that it would not start), and a cancelled run no longer leaves its child running. Six Process cases and one fast; the probe's, race's and Modules' Process classes passed 54 of 54 on the merge. On Sonnet, scouted: 31 tool calls. Detail: D166's DEDUP4a note.

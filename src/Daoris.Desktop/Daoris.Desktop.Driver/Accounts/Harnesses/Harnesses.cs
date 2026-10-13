@@ -1461,49 +1461,26 @@ public static class HarnessProbe
         // A pinned binary is asked the way a session runs it (AGT2), so asking is not when it moves.
         Apply(info, toolchain, profileHome, binary: managed ? resolved[0] : null, account: account);
 
-        try
+        var run = await ChildProcess.RunAsync(info, Patience, ct, closeInput: false).ConfigureAwait(false);
+        if (!run.Started)
         {
-            using var process = Process.Start(info);
-            if (process is null) return (false, "", $"`{resolved[0]}` did not start");
-
-            using var patience = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            patience.CancelAfter(Patience);
-
-            var stdout = process.StandardOutput.ReadToEndAsync(patience.Token);
-            var stderr = process.StandardError.ReadToEndAsync(patience.Token);
-            try
+            return run.Error switch
             {
-                await process.WaitForExitAsync(patience.Token).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
-            {
-                process.Kill(entireProcessTree: true);
-
-                // The two reads are still outstanding, and abandoning them leaves faulted tasks
-                // nobody observes — a process that hung is exactly when they fault. Awaited to
-                // completion and discarded: the answer is already "it did not answer".
-                await Task.WhenAll(stdout, stderr).ContinueWith(
-                    _ => { }, TaskScheduler.Default).ConfigureAwait(false);
-
-                return (false, "", $"`{resolved[0]}` did not answer within {Patience.TotalSeconds:0}s");
-            }
-
-            // Both streams: a harness that reports its version on stderr is not an absent harness.
-            return (true, $"{await stdout.ConfigureAwait(false)}\n{await stderr.ConfigureAwait(false)}", null);
+                null => (false, "", $"`{resolved[0]}` did not start"),
+                // 🔴 The sentence, and only the sentence. The runtime's own message for this case — "An
+                // error occurred trying to start process '…' with working directory '<cwd>'. The system
+                // cannot find the file specified." — restates the fact and adds a machine path, and the
+                // deployed application's roster showed both. Any OTHER failure keeps the runtime's words:
+                // a binary that exists and will not start is news the sentence alone does not carry.
+                System.ComponentModel.Win32Exception { NativeErrorCode: FileNotFound } => (false, "", $"`{resolved[0]}` is not on this machine's PATH"),
+                var error => (false, "", $"`{resolved[0]}` is not on this machine's PATH — {error.Message}"),
+            };
         }
-        catch (System.ComponentModel.Win32Exception error) when (error.NativeErrorCode == FileNotFound)
-        {
-            // 🔴 The sentence, and only the sentence. The runtime's own message for this case — "An
-            // error occurred trying to start process '…' with working directory '<cwd>'. The system
-            // cannot find the file specified." — restates the fact and adds a machine path, and the
-            // deployed application's roster showed both. Any OTHER failure keeps the runtime's words:
-            // a binary that exists and will not start is news the sentence alone does not carry.
-            return (false, "", $"`{resolved[0]}` is not on this machine's PATH");
-        }
-        catch (Exception error) when (error is System.ComponentModel.Win32Exception or IOException)
-        {
-            return (false, "", $"`{resolved[0]}` is not on this machine's PATH — {error.Message}");
-        }
+
+        if (run.TimedOut) return (false, "", $"`{resolved[0]}` did not answer within {Patience.TotalSeconds:0}s");
+
+        // Both streams: a harness that reports its version on stderr is not an absent harness.
+        return (true, $"{run.Stdout}\n{run.Stderr}", null);
     }
 
     /// <summary>
