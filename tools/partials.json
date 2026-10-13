@@ -124,7 +124,6 @@
     "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs"
   ],
   "ServiceClient": [
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.History.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.Review.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs"
   ],
