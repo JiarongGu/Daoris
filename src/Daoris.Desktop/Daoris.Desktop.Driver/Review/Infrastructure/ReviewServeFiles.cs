@@ -6,7 +6,8 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// Review's Infrastructure (STRUCT3c, D166's note). <c>ReviewServed.FolderIn</c> is a static member of a C# 14 extension block on
-/// the Domain's <see cref="ReviewServed"/>, whose shape of a folder's name, base and look are pure; <see cref="ReviewDesk"/> asks it.
+/// the Domain's <see cref="ReviewServed"/>, whose shape of a folder's name, base and look are pure; declared here, only Review's
+/// own layers and the loop may name it.
 /// </remarks>
 internal static class ReviewServeFiles
 {

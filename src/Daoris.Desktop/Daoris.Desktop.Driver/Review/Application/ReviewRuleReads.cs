@@ -7,8 +7,8 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <b>Named where its callers always named it</b> (STRUCT3c, D166's note): <c>ReviewRules.Holds</c> and <c>Lacking</c> are static
 /// members of a C# 14 extension block on the Domain's <see cref="ReviewRules"/>, whose reading, refusals and sentences are pure;
-/// looking in a checkout is Review's Infrastructure's (<see cref="ReviewProcedureFiles"/>). Help's proposals and the page's lines
-/// ask them here.
+/// looking in a checkout is Review's Infrastructure's (<see cref="ReviewProcedureFiles"/>). Declared here, another module may name
+/// them.
 /// </remarks>
 public static class ReviewRuleReads
 {

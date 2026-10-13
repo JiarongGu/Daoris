@@ -9,8 +9,8 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>Named where its callers always named it</b> (STRUCT3c, D166's note): <c>OpinionPackets.ReadAsync</c>,
 /// <c>WriteDiffAsync</c> and <c>RulesIn</c> are static members of a C# 14 extension block on the Domain's
-/// <see cref="OpinionPackets"/>, whose folder rule and git parses are pure; git and the tree's files are this layer's. Only the
-/// loop and the tests ask them.</para>
+/// <see cref="OpinionPackets"/>, whose folder rule and git parses are pure; git and the tree's files are this layer's. Declared
+/// here, outside Review only the loop, which composes every layer, may name them.</para>
 /// </remarks>
 internal static class OpinionPacketReads
 {

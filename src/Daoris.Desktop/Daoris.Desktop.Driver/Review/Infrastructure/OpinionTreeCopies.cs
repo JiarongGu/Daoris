@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>Named where its callers always named it</b> (STRUCT3c, D166's note): <c>OpinionTree.OpenAsync</c> and
 /// <c>RemoveAsync</c> are static members of a C# 14 extension block on the Domain's <see cref="OpinionTree"/>, which keeps where a
-/// copy goes; git and the folder are this layer's. Only the loop and the tests ask them.</para>
+/// copy goes; git and the folder are this layer's. Declared here, outside Review only the loop, which composes every layer, may name them.</para>
 /// </remarks>
 internal static class OpinionTreeCopies
 {

@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// <para><b>Named where its callers always named it</b> (STRUCT3c, D166's note): <c>OpinionAnswers.ReadAsync</c> and
 /// <c>CheckFixAsync</c> are static members of a C# 14 extension block on the Domain's <see cref="OpinionAnswers"/>, whose lines
 /// are pure; reading the tree is this layer's. The git it runs is the one it is handed (<see cref="WorkingTree.GitRead"/>), so a
-/// test stands in. Only the loop and the tests ask it.</para>
+/// test stands in. Declared here, outside Review only the loop, which composes every layer, may name them.</para>
 /// </remarks>
 internal static class OpinionAnswerGit
 {

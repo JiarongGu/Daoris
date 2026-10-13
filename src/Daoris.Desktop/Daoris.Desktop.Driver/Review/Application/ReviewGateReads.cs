@@ -29,8 +29,8 @@ public static class ReviewWorlds
 /// <remarks>
 /// <para><b>Named where its callers always named it</b> (STRUCT3c, D166's note): <c>ReviewGate.ReadAsync</c>, <c>HeadAsync</c>
 /// and <c>HoldsAsync</c> are static members of a C# 14 extension block on the Domain's <see cref="ReviewGate"/>, whose table and
-/// judgement are pure; the read is this layer's use case, and git is Review's Infrastructure's (<see cref="ReviewGit"/>). Trees'
-/// landing gate and Workflows' read of a run ask them here.</para>
+/// judgement are pure; the read is this layer's use case, and git is Review's Infrastructure's (<see cref="ReviewGit"/>). Declared
+/// here, another module may name them.</para>
 /// </remarks>
 public static class ReviewGateReads
 {
