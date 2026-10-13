@@ -556,11 +556,19 @@ public sealed partial class ChatRunner : IDisposable
         ProtocolChat? chat = null;
         NativeChat? native = null;
         var mapper = resolved.StructuredOutput();
+        // The turn's end it was last judged at by its account's usage curve (SWITCH1c-ii): told under its turns' own lock, in order.
+        DateTimeOffset? judged = null;
         void Changed(ChatQueue queue)
         {
             QueueChanged?.Invoke(sessionId, queue);
             // A conversation asked to go on with another agent while it talked is handed over as its turn ends (MIXAGENT1a-i).
             HandOverDue(sessionId, queue, config, onEnded);
+            // One over its account's usage curve goes on with another account of its agent as its turn ends (SWITCH1c-ii), judged once.
+            if (TurnJustEnded(queue, judged))
+            {
+                judged = queue.LastTurnEnded;
+                CurveDue(sessionId, config, onEnded);
+            }
         }
         // A conversation going on hands its words to the native door only once its process is tracked, so a word the person
         // says meanwhile goes after them; the protocol door waits for its session to open anyway (MSG1c).
