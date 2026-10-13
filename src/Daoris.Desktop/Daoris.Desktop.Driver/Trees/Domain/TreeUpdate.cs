@@ -132,4 +132,10 @@ public static class TreeUpdateWords
 
     /// <summary>A detached tree that moved between the press's look and its replay.</summary>
     public const string MovedSince = "the tree moved while the press looked at it, so it was left as it was: press again";
+
+    /// <summary>
+    /// Said after a replay in a repository with no <c>origin</c>: nothing to fetch is no failed fetch, since local operation needs no
+    /// remote, so the line this checkout has is the latest there is.
+    /// </summary>
+    public const string NoOrigin = " There is no `origin` here to fetch from, so the line is this checkout's own.";
 }

@@ -75,6 +75,18 @@ public sealed class TreeUpdateWordsTests
         Assert.All(Enum.GetValues<TreeRefusal>(), why => Assert.False(string.IsNullOrWhiteSpace(TreeUpdateWords.Refused(why, Known))));
     }
 
+    /// <summary>
+    /// A repository with no <c>origin</c> has nothing to fetch, which is no failed fetch: local operation needs no remote, so the
+    /// press goes on with the line this checkout has, and its answer says so.
+    /// </summary>
+    [Fact]
+    public void A_repository_with_no_origin_is_said_to_be_brought_up_to_its_own_line()
+    {
+        Assert.Equal(
+            "replayed the tree onto `main`: 1 commit(s) of its own. There is no `origin` here to fetch from, so the line is this checkout's own.",
+            TreeUpdateWords.Replayed("main", 1, 1) + TreeUpdateWords.NoOrigin);
+    }
+
     /// <summary>A detached tree's replay (point 4): what it took, and what a conflict or a failed proof left, naming the files.</summary>
     [Fact]
     public void A_detached_tree_s_replay_is_said_with_what_it_kept_or_why_not()
