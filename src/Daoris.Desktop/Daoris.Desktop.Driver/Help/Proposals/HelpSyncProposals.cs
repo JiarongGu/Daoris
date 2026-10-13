@@ -277,30 +277,6 @@ public sealed record HelpSyncBesides(IReadOnlyList<HelpSyncUnfetched> NotFetched
 /// <param name="Reach">How origin is reached: `ssh`, `https`, `http`, `git` or `file`.</param>
 public sealed record HelpSyncUnfetched(string Repository, string Fetch, DateTimeOffset? LastFetch, string? Reach);
 
-public sealed partial record HelpProposal
-{
-    /// <summary>The rows a sync proposal's look listed (HELP10), kept in its file; null before the person looked.</summary>
-    public IReadOnlyList<HelpSyncRow>? Listed { get; init; }
-
-    /// <summary>What a sync proposal's look kept beside its rows (LEFT3 b); nothing before the person looked.</summary>
-    public HelpSyncBesides Besides { get; init; } = HelpSyncBesides.None;
-}
-
-public sealed partial record HelpPlan
-{
-    /// <summary>What a sync card shows (HELP10); null for every other kind.</summary>
-    public HelpSyncPlan? Sync { get; init; }
-}
-
-public sealed partial record HelpApplied
-{
-    /// <summary>
-    /// The proposal still waits for the person (LEFT3 c): a sync card's look that listed rows, which settles nothing, so
-    /// the card stays for its press and the page logs no settlement. False for every Apply that settles.
-    /// </summary>
-    public bool Stands { get; init; }
-}
-
 public partial interface IHelpDoors
 {
     /// <summary>

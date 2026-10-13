@@ -80,12 +80,6 @@ internal sealed class HelpRepositoryProposals : IHelpProposalKind
 /// </summary>
 public sealed record HelpRepositoryMove(string Repository, string? From, string Workspace);
 
-public sealed partial record HelpPlan
-{
-    /// <summary>For a move the route takes (ENTRY1d1): what moves, and where to; null for every other kind.</summary>
-    public HelpRepositoryMove? Move { get; init; }
-}
-
 public partial interface IHelpDoors
 {
     /// <summary>

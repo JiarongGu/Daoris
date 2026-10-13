@@ -11,8 +11,23 @@ namespace Daoris.Driver;
 /// applied through the local host's <c>DELETE /api/quests/{id}</c> and <c>DELETE /api/asks/{id}</c>, and a session's
 /// through Sessions' own delete.
 /// </remarks>
-internal sealed class HelpDeleteProposals : IHelpProposalKind
+public sealed class HelpDeleteProposals : IHelpProposalKind
 {
+    /// <summary>
+    /// The records a delete is judged against (HELP6): every quest and ask, closed ones included, each
+    /// with the service's own reading of whether it may go — the answer the drawer's Delete is shown by.
+    /// </summary>
+    /// <remarks>PART4: here, with the kind that reads it, rather than in a second part of <see cref="HelpProposals"/>; the class is public for the Modules' bridge.</remarks>
+    public static async Task<(IReadOnlyList<HelpQuestFacts> Quests, IReadOnlyList<HelpAskFacts> Asks)> RecordsAsync(
+        ServiceClient service, CancellationToken ct)
+    {
+        var quests = await service.EveryQuestAsync(ct).ConfigureAwait(false);
+        var asks = await service.EveryAskAsync(ct).ConfigureAwait(false);
+        return (
+            [.. quests.Select(quest => new HelpQuestFacts(quest.Id, quest.Title, quest.To, quest.Status, quest.Deletable))],
+            [.. asks.Select(ask => new HelpAskFacts(ask.Id, ask.Sentence, ask.Workspace, ask.State, ask.Quests, ask.Deletable))]);
+    }
+
     public string Kind => "delete";
 
     public string Tool => "delete_propose";
@@ -79,7 +94,7 @@ internal sealed class HelpDeleteProposals : IHelpProposalKind
         return Refused($"`{proposal.Door}` is not a record Daoris deletes — a `quest`, an `ask` or a `session`.", "");
     }
 
-    public async Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct)
+    async Task<HelpApplied> IHelpProposalKind.ApplyAsync(HelpApplying applying, CancellationToken ct)
     {
         var proposal = applying.Proposal;
         var target = proposal.Target!.Trim().TrimStart('#');
@@ -170,44 +185,6 @@ public sealed record HelpQuestFacts(string Id, string Title, string To, string S
 
 /// <summary>An ask as the service answered it, with the quests it became and whether it may be deleted (D95).</summary>
 public sealed record HelpAskFacts(string Id, string Sentence, string Workspace, string State, IReadOnlyList<string> Quests, bool Deletable);
-
-public sealed partial record HelpMachineFacts
-{
-    /// <summary>The quests, closed ones included, each with the service's own reading of whether it may be deleted.</summary>
-    public IReadOnlyList<HelpQuestFacts> Quests { get; init; } = [];
-
-    /// <summary>The asks, closed ones included, each with the service's own reading of whether it may be deleted.</summary>
-    public IReadOnlyList<HelpAskFacts> Asks { get; init; } = [];
-
-    /// <summary>
-    /// The sessions the ledger would delete whose tree or landing this machine still holds (SESSUX1h2b, D126 §5.4): the
-    /// machine's half, as <see cref="SessionDeletion.Kept"/> reads it. Read only for a session's delete.
-    /// </summary>
-    public IReadOnlySet<string> Kept { get; init; } = new HashSet<string>(StringComparer.Ordinal);
-
-    /// <summary>
-    /// The ledger's judgement of deleting each session a delete names (SESSUX1h2b, D126 §5.4), by id: the record's half, its
-    /// refusal in its own sentence, as <see cref="ServiceClient.JudgeSessionDeleteAsync"/> answers it. Read only for one.
-    /// </summary>
-    public IReadOnlyDictionary<string, SessionDeleteAnswer> SessionDeletes { get; init; } = new Dictionary<string, SessionDeleteAnswer>(StringComparer.Ordinal);
-}
-
-public static partial class HelpProposals
-{
-    /// <summary>
-    /// The records a delete is judged against (HELP6): every quest and ask, closed ones included, each
-    /// with the service's own reading of whether it may go — the answer the drawer's Delete is shown by.
-    /// </summary>
-    public static async Task<(IReadOnlyList<HelpQuestFacts> Quests, IReadOnlyList<HelpAskFacts> Asks)> RecordsAsync(
-        ServiceClient service, CancellationToken ct)
-    {
-        var quests = await service.EveryQuestAsync(ct).ConfigureAwait(false);
-        var asks = await service.EveryAskAsync(ct).ConfigureAwait(false);
-        return (
-            [.. quests.Select(quest => new HelpQuestFacts(quest.Id, quest.Title, quest.To, quest.Status, quest.Deletable))],
-            [.. asks.Select(ask => new HelpAskFacts(ask.Id, ask.Sentence, ask.Workspace, ask.State, ask.Quests, ask.Deletable))]);
-    }
-}
 
 public partial interface IHelpDoors
 {

@@ -133,7 +133,7 @@ public sealed class HelpDeleteProposalsTests : HelpProposalsFixture
     {
         using var client = new ServiceClient("http://stand-in", null, new HttpClient(new Records()));
 
-        var (quests, asks) = await HelpProposals.RecordsAsync(client, CancellationToken.None);
+        var (quests, asks) = await HelpDeleteProposals.RecordsAsync(client, CancellationToken.None);
 
         Assert.Equal(
             [new HelpQuestFacts("q1", "Cap it", "engine", "Open", true), new HelpQuestFacts("q2", "Old", "engine", "Done", false)],

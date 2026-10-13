@@ -14236,3 +14236,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PART2 — the driver's small merges** (driver). `AcpSession`, `WorkflowNamed`, `PluginKit` (a `PluginTrials` class), `Tools` with `Tools.Children`, `ToolInstall` (`ToolArchives`). Survey "Merge".
 
 **Outcome** 2026-10-14: `Tools` and `AcpSession` are one file each (the resume used the session's private state, so it merged rather than split), `ToolArchives` and `PluginTrials` are classes of their own, and `WorkflowNamed` keeps `partial` in its one file for its patterns, its version records in a file of their own; `ToolInstall.Actions.cs` was never a part and is `ToolActions.cs`. At the merge the gate's list lost the five (29 left). On Sonnet: 80 tool calls. Detail: D166's PART2 note.
+
+## PART4 — Help's records (2026-10-14, D166)
+
+> - [ ] **PART4 — Help's records** (driver). `HelpProposal`, `HelpMachineFacts`, `HelpPlan`, `HelpApplied`, `HelpMachine` and `HelpProposals` each one declaration holding its kinds' members. Survey "Records".
+
+**Outcome** 2026-10-14: the four proposal records sit whole in `Help/HelpProposals.cs` and `HelpMachine` in `Help/HelpRoom.cs`, each kind's or section's members under its comment, the goldens unchanged; `HelpProposals.RecordsAsync` moved into `HelpDeleteProposals`, now public for the bridge. The gate's list lost six (23 left). On Sonnet: 84 tool calls. Detail: D166's PART4 note.

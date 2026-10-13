@@ -279,7 +279,6 @@ folder.
 **No partial type split by hand** (the owner: *"also I think we better not use partial class if we don't have auto-generated code"*; D166's note). Evidence: `docs/2026-10-14-partial-types-survey.md`. A class per domain or kind keeps one new door in one new file.
 
 - [ ] **PART3 — the client's views and the harness types** (driver). `QuestView`, `QuestStepView` and `AskView` each one declaration; `HarnessSettings` and `HarnessRoster` each a file of its own. Survey "Records".
-- [ ] **PART4 — Help's records** (driver). `HelpProposal`, `HelpMachineFacts`, `HelpPlan`, `HelpApplied`, `HelpMachine` and `HelpProposals` each one declaration holding its kinds' members. Survey "Records".
 - [ ] **PART5 — Help's doors** (driver; after PART4). `IHelpDoors` inheriting a per-kind interface each kind file declares, its stand-in likewise; callers and `ScreenDoors` unchanged. Survey "Records".
 - [ ] **PART6 — the service core's short parts and test classes** (service). The six short parts merged, and four test classes merged or split. Survey "Merge".
 - [ ] **PART7 — `HelpProposalBox` as a writer per kind** (service). A proposal-file helper and a writer class per kind, `ProposeX` kept on the box; the workflow pattern with its writer. Survey "A family".

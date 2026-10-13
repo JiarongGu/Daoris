@@ -48,9 +48,3 @@ internal sealed class HelpRoomLanding : IHelpRoomSection
         return text.ToString();
     }
 }
-
-public sealed partial record HelpMachine
-{
-    /// <summary>The plugins a branch rule may name here, by id (HELP8, D100).</summary>
-    public IReadOnlyList<string> LandingPlugins { get; init; } = [];
-}
