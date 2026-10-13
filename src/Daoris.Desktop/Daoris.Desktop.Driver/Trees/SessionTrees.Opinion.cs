@@ -107,7 +107,7 @@ public sealed partial class SessionTrees
             var served = chain.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase))
                          ?? new QuestView(id, "", repository, "", "", "Done");
             var kept = new OpinionGates(home).Read(OpinionChain(chain, id), repository);
-            var tip = await ReviewGate.HeadAsync(tree, ct).ConfigureAwait(false);
+            var tip = await ReviewGit.HeadAsync(tree, ct).ConfigureAwait(false);
             facts = facts with
             {
                 Quest = served,
@@ -121,7 +121,7 @@ public sealed partial class SessionTrees
             return await OpinionGate.JudgeAsync(facts, new OpinionReads(
                 each => world.OpinionAsync(each, ct),
                 deliveries.Read,
-                commit => tip is null ? Task.FromResult<bool?>(null) : ReviewGate.HoldsAsync(tree, tip, commit, ct),
+                commit => tip is null ? Task.FromResult<bool?>(null) : ReviewGit.HoldsAsync(tree, tip, commit, ct),
                 from => SinceAsync(tree, from, ct))).ConfigureAwait(false);
         }
         catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or InvalidOperationException

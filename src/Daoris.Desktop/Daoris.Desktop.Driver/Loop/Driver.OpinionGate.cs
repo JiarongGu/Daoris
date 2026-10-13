@@ -261,7 +261,7 @@ public sealed partial class Driver
             return $"opinion  no second opinion on {named}: no rule here names a reviewer for `{due.Repository}`.";
         }
 
-        var tip = await ReviewGate.HeadAsync(due.Tree, ct).ConfigureAwait(false);
+        var tip = await ReviewGit.HeadAsync(due.Tree, ct).ConfigureAwait(false);
         var root = await SessionTrees.CheckoutOfTreeAsync(due.Tree, ct).ConfigureAwait(false);
         if (tip is null || root is null) return $"held  second opinion on {named}: git could not read its tree, and the next look tries again.";
 

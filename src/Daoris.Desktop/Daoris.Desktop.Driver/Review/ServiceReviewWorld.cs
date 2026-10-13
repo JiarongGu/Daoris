@@ -5,9 +5,8 @@ namespace Daoris.Driver;
 /// host's opinions (XAGENT1f), which the whole landing gate reads beside them.
 /// </summary>
 /// <remarks>
-/// Review's Infrastructure (STRUCT3c, D166's note): the service's reads behind the review's port (<see cref="IReviewWorld"/>) and
-/// the landing gate's (<see cref="IOpinionWorld"/>). The loop and the hosts compose it; another module asks
-/// <see cref="ReviewWorlds.Of"/>.
+/// The service's reads behind the review's port (<see cref="IReviewWorld"/>) and the landing gate's (<see cref="IOpinionWorld"/>).
+/// The loop and the hosts compose it, and another module names it as <c>new ServiceReviewWorld(service)</c>.
 /// </remarks>
 public sealed class ServiceReviewWorld(ServiceClient service) : IOpinionWorld
 {
@@ -19,4 +18,14 @@ public sealed class ServiceReviewWorld(ServiceClient service) : IOpinionWorld
     public Task<AskView?> AskAsync(string id, CancellationToken ct) => service.FindAskAsync(id, ct);
 
     public Task<OpinionView?> OpinionAsync(string id, CancellationToken ct) => service.ReadOpinionAsync(id, ct);
+}
+
+/// <summary>
+/// FLAT1b-ii: kept only until Workflows/WorkflowKeepCommand.cs (FLAT1b-i's) names <c>new ServiceReviewWorld(service)</c>; then
+/// this type retires.
+/// </summary>
+public static class ReviewWorlds
+{
+    /// <summary>The review's and the opinion's world over <paramref name="service"/>.</summary>
+    public static IOpinionWorld Of(ServiceClient service) => new ServiceReviewWorld(service);
 }
