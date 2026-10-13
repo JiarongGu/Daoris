@@ -65,7 +65,7 @@ internal static class InstructionAccounting
     private static HandedSection Handed(string name, int chars, SessionTarget target)
     {
         var size = $"{N(chars)} characters";
-        HandedSection Own(string said) => new(name, HandedSources.Driver, $"{said}: {size}, the driver's own words") { Chars = chars };
+        HandedSection Own(string said) => new(name, HandedSources.DriverWords,$"{said}: {size}, the driver's own words") { Chars = chars };
 
         return name switch
         {
