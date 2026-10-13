@@ -1,12 +1,4 @@
-using System.Text;
-using System.Text.Json;
-
 namespace Daoris.Driver;
-
-/// <summary>The harness's own conversation a session ran, as its wire named it, and the adapter that opened it (ANSWER1a).</summary>
-/// <param name="Adapter">The Daoris adapter whose door opened it: a conversation is only that door's to resume.</param>
-/// <param name="Conversation">The id the harness gave it: ACP's <c>sessionId</c>, or the native door's <c>session_id</c>.</param>
-public sealed record HarnessConversation(string Adapter, string Conversation);
 
 /// <summary>
 /// The harness's own conversation id per session (ANSWER1a, D131 §1): <c>&lt;home&gt;/sessions/&lt;session&gt;.harness.json</c>,
@@ -22,6 +14,9 @@ public sealed record HarnessConversation(string Adapter, string Conversation);
 ///
 /// <para><b>A file that does not read is no conversation</b>: the answer falls back to a carry-on, saying Daoris kept no
 /// id (<see cref="ContinueWhy.Unkept"/>), and never throws.</para>
+///
+/// <para>What is kept is this use case's; the file and its format are Conversations' Infrastructure's (<see cref="GoOnFiles"/>;
+/// STRUCT3h, D166's note).</para>
 /// </remarks>
 public sealed class HarnessConversations(string home)
 {
@@ -40,20 +35,7 @@ public sealed class HarnessConversations(string home)
 
         try
         {
-            var path = PathOf(session);
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            using var buffer = new MemoryStream();
-            using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Indented = true }))
-            {
-                writer.WriteStartObject();
-                writer.WriteString("adapter", adapter);
-                writer.WriteString("conversation", conversation);
-                writer.WriteEndObject();
-            }
-
-            // LF on every platform, as every file under the home is written: the writer's own line end is the platform's.
-            var text = Encoding.UTF8.GetString(buffer.ToArray()).Replace("\r\n", "\n") + "\n";
-            AtomicFile.WriteText(path, text);
+            GoOnFiles.WriteConversation(PathOf(session), adapter, conversation);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -69,27 +51,6 @@ public sealed class HarnessConversations(string home)
     public Action<string> Keeping(string session, string adapter) => conversation => Keep(session, adapter, conversation);
 
     /// <summary>What was kept for this session, or null for nothing, a file that does not read, or an id that is not one.</summary>
-    public HarnessConversation? Read(string session)
-    {
-        if (!SessionEvents.IsId(session)) return null;
-
-        try
-        {
-            var path = PathOf(session);
-            if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
-            var root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Object) return null;
-            return Text(root, "adapter") is { Length: > 0 } adapter && Text(root, "conversation") is { Length: > 0 } conversation
-                ? new HarnessConversation(adapter, conversation)
-                : null;
-        }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
-        {
-            return null;
-        }
-    }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString()?.Trim() : null;
+    public HarnessConversation? Read(string session) =>
+        SessionEvents.IsId(session) ? GoOnFiles.ReadConversation(PathOf(session)) : null;
 }

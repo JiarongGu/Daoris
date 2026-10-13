@@ -162,8 +162,13 @@ public static class Continuations
     /// <see cref="ResumeChoice.Elsewhere"/>); null where it can, or nobody asked. Said at the account's step, so an ended record
     /// and a changed adapter are still said first.
     /// </param>
+    /// <param name="treeStands">
+    /// Whether the tree the record ran in is still there, asked only at the tree's step: the disk's answer, handed in, so the
+    /// judgement stays pure (STRUCT3h, D166's note). The Application's <c>Continuations.Judge</c>, without it, asks the disk.
+    /// </param>
     public static ContinueReason? Judge(
-        PriorSession park, string adapter, bool doorResumes, string? profile, HarnessConversation? kept, ContinueReason? account = null)
+        Func<string, bool> treeStands, PriorSession park, string adapter, bool doorResumes, string? profile, HarnessConversation? kept,
+        ContinueReason? account = null)
     {
         // What never goes on (D137 §2.2), before anything else: the service refuses words to each, so only a record read
         // some other way reaches here, and none is ever this machine's to resume.
@@ -185,7 +190,7 @@ public static class Continuations
             return ContinueWhy.Of(ContinueWhy.Account);
         }
 
-        if (park.Tree is not { Length: > 0 } tree || !Directory.Exists(tree)) return ContinueWhy.Of(ContinueWhy.Tree);
+        if (park.Tree is not { Length: > 0 } tree || !treeStands(tree)) return ContinueWhy.Of(ContinueWhy.Tree);
 
         if (kept is null || !string.Equals(kept.Adapter, adapter, StringComparison.OrdinalIgnoreCase))
         {

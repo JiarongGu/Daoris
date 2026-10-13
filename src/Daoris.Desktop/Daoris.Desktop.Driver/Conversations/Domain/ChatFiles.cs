@@ -137,14 +137,12 @@ public static class ChatFiles
             : throw new DriverException($"`{sessionId}` is not a session id, so it names no folder.");
 
     /// <summary>
-    /// Keep a message's files, or refuse all of them in a sentence and keep none. Idempotent per
-    /// content; written beside and renamed, so a half-written file is never what an agent reads.
+    /// What a message's files are kept as, or a refusal of all of them in a sentence: each content once, under
+    /// <c>&lt;first 12 of its hash&gt;-&lt;its safe name&gt;</c>, in the order given. The keep's rules; the folder is
+    /// written by the Application's <c>ChatFiles.Keep</c> (STRUCT3h, D166's note).
     /// </summary>
-    public static IReadOnlyList<KeptFile> Keep(string home, string sessionId, IReadOnlyList<ChatUpload> uploads)
+    public static IReadOnlyList<(string Name, string Leaf, byte[] Content)> Keeping(IReadOnlyList<ChatUpload> uploads)
     {
-        if (uploads.Count == 0) return [];
-        var folder = Folder(home, sessionId);
-
         var distinct = uploads
             .Select(upload => (Upload: upload, Hash: Convert.ToHexString(SHA256.HashData(upload.Content)).ToLowerInvariant()))
             // The same content twice is one file — its hash is its identity, and the first name given wins.
@@ -164,49 +162,17 @@ public static class ChatFiles
                 + $"{total / (1024.0 * 1024.0):0.#} MB.");
         }
 
-        Directory.CreateDirectory(folder);
-        var kept = new List<KeptFile>();
-        foreach (var (upload, hash) in distinct)
-        {
-            var name = SafeName(upload.Name);
-            var path = Path.Combine(folder, $"{hash[..HashInName]}-{name}");
-            if (!File.Exists(path))
-            {
-                AtomicFile.WriteBytes(path, upload.Content);
-            }
-
-            kept.Add(new KeptFile(name, path));
-        }
-
-        return kept;
+        return [.. distinct.Select(entry => SafeName(entry.Upload.Name) is var name
+            ? (name, $"{entry.Hash[..HashInName]}-{name}", entry.Upload.Content)
+            : default)];
     }
 
     /// <summary>
-    /// A file kept for a session under the name a record gives it (MSG1d3), where <see cref="Keep"/> laid it:
-    /// <c>&lt;first 12 of its hash&gt;-&lt;name&gt;</c>. Of two kept under one name, the newer, which is the one said last. Null
-    /// where none is kept by that name, or the id names no session.
+    /// Whether a file's leaf in a session's folder is one kept under <paramref name="name"/> (MSG1d3), as <see cref="Keeping"/>
+    /// names it: <c>&lt;first 12 of its hash&gt;-&lt;name&gt;</c>.
     /// </summary>
-    public static KeptFile? Find(string home, string sessionId, string name)
-    {
-        if (!SessionEvents.IsId(sessionId) || name.Length == 0) return null;
-        var folder = Folder(home, sessionId);
-        if (!Directory.Exists(folder)) return null;
-
-        var path = Directory.EnumerateFiles(folder)
-            .Where(each => Path.GetFileName(each) is var leaf
-                           && leaf.Length == name.Length + HashInName + 1 && leaf[HashInName] == '-'
-                           && leaf.EndsWith(name, StringComparison.Ordinal))
-            .OrderByDescending(File.GetLastWriteTimeUtc)
-            .FirstOrDefault();
-        return path is null ? null : new KeptFile(name, path);
-    }
-
-    /// <summary>
-    /// The files kept for a session under the names a record gives them (MSG1d3), in order: what a resumed run is handed of
-    /// the words it goes on with. A name nothing keeps any more is left out, never named as a path that is not there.
-    /// </summary>
-    public static IReadOnlyList<KeptFile> Kept(string home, string sessionId, IReadOnlyList<string> names) =>
-        [.. names.Select(name => Find(home, sessionId, name)).OfType<KeptFile>()];
+    public static bool IsKeptAs(string leaf, string name) =>
+        leaf.Length == name.Length + HashInName + 1 && leaf[HashInName] == '-' && leaf.EndsWith(name, StringComparison.Ordinal);
 
     /// <summary>
     /// A name made safe to keep: any directory in it dropped, a character no file system takes made an
