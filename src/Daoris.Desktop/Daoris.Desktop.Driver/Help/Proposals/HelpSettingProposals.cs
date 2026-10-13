@@ -922,23 +922,3 @@ public partial interface IHelpDoors
     void Change(Func<DriverConfig, DriverConfig> edit);
 }
 
-public sealed partial record HelpMachineFacts
-{
-    /// <summary>
-    /// The quests the loop's last tick parked by their failed sessions (HELP10), which a retry must name: the verdict
-    /// the quest drawer shows its Retry by. Empty before any tick, and while another loop holds the home (D104).
-    /// </summary>
-    public IReadOnlyList<ParkedQuest> Parked { get; init; } = [];
-
-    /// <summary>
-    /// The quests the loop's last look held by the person's stop (SESSUX1b), each with the session they stopped: a retry of
-    /// one releases that stop. Empty before any look, and while another loop holds the home (D104).
-    /// </summary>
-    public IReadOnlyList<HeldQuest> Held { get; init; } = [];
-
-    /// <summary>
-    /// Each registered repository with its workspace and its checkout here, or none (REVIEWENV1a): what a <c>review</c>'s
-    /// procedure is looked for in, the one repository it names or each of the workspace's. Empty where it was not asked.
-    /// </summary>
-    public IReadOnlyList<(string Repository, string? Workspace, string? Root)> Registered { get; init; } = [];
-}

@@ -49,43 +49,16 @@ public static partial class ToolQuestions
         // Asked as a child is started (TOOLS5): on the PATH a session would be given.
         Tools.Hand(info);
 
-        try
+        // Nothing is typed to it: a program that waits for input reads its end at once.
+        var run = await ChildProcess.RunAsync(info, Patience, ct, closeInput: true).ConfigureAwait(false);
+        if (!run.Started)
         {
-            using var process = Process.Start(info);
-            if (process is null) return new Answer(false, null, "", $"{file} did not start");
-            // Nothing is typed to it: a program that waits for input reads its end at once.
-            process.StandardInput.Close();
-
-            using var patience = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            patience.CancelAfter(Patience);
-            var stdout = process.StandardOutput.ReadToEndAsync(patience.Token);
-            var stderr = process.StandardError.ReadToEndAsync(patience.Token);
-            try
-            {
-                await process.WaitForExitAsync(patience.Token).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
-            {
-                try
-                {
-                    process.Kill(entireProcessTree: true);
-                }
-                catch (InvalidOperationException)
-                {
-                    // It ended as it was stopped.
-                }
-
-                // The reads are awaited and dropped, so nothing faults unobserved: the answer is already "none in time".
-                await Task.WhenAll(stdout, stderr).ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
-                return new Answer(true, null, "", $"{file} did not answer within {Patience.TotalSeconds:0} seconds");
-            }
-
-            return new Answer(true, process.ExitCode, $"{await stdout.ConfigureAwait(false)}\n{await stderr.ConfigureAwait(false)}", null);
+            return new Answer(false, null, "", run.Error is null ? $"{file} did not start" : $"{file} did not start — {run.Error.Message}");
         }
-        catch (Exception error) when (error is System.ComponentModel.Win32Exception or IOException or InvalidOperationException)
-        {
-            return new Answer(false, null, "", $"{file} did not start — {error.Message}");
-        }
+
+        return run.TimedOut
+            ? new Answer(true, null, "", $"{file} did not answer within {Patience.TotalSeconds:0} seconds")
+            : new Answer(true, run.ExitCode, $"{run.Stdout}\n{run.Stderr}", null);
     }
 
     /// <summary>

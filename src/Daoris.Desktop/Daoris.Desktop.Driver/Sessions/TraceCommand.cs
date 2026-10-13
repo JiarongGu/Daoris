@@ -12,7 +12,7 @@ public static class TraceEntry
 }
 
 /// <summary>What <c>daoris-driver trace</c> was asked: an id, and the kind it names where the person said which.</summary>
-/// <param name="Id">A commit (at least <see cref="Trace.CommitDigits"/> hexadecimal digits), a session's id or a quest's, as typed.</param>
+/// <param name="Id">A commit (at least <see cref="CommitNames.Digits"/> hexadecimal digits), a session's id or a quest's, as typed.</param>
 /// <param name="Kind">One of <see cref="TraceEntry"/>, or null: whatever the id names here, refused where it names several.</param>
 public sealed record TraceAsk(string Id, string? Kind = null);
 
@@ -48,9 +48,9 @@ public static class TraceCommand
         switch (args)
         {
             case [var kind, var id] when TraceEntry.All.Contains(kind) && id.Trim().Length > 0:
-                if (kind == TraceEntry.Commit && !Trace.IsCommit(id.Trim().TrimStart('#')))
+                if (kind == TraceEntry.Commit && !CommitNames.IsCommit(id.Trim().TrimStart('#')))
                 {
-                    problem = $"a commit is named by at least {Trace.CommitDigits} of its hexadecimal digits, not `{id}`.";
+                    problem = $"a commit is named by at least {CommitNames.Digits} of its hexadecimal digits, not `{id}`.";
                     return null;
                 }
 

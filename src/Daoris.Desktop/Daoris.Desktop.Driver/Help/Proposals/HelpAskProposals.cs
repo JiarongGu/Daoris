@@ -92,21 +92,6 @@ internal sealed class HelpAskProposals : IHelpProposalKind
     };
 }
 
-public sealed partial record HelpProposal
-{
-    /// <summary>
-    /// ENTRY1c: the review choice the person said for an ask's work, as the composer sends it: <c>on</c>, an environment's name
-    /// or <c>off</c>; null where none was said, and each repository's rule decides.
-    /// </summary>
-    public string? Review { get; init; }
-
-    /// <summary>ENTRY1c: the person's words with an ask's review choice, sent only with one.</summary>
-    public string? ReviewWords { get; init; }
-
-    /// <summary>HEAD2e: an ask's short title, at most 40 characters, as the service's box wrote it; null where none was given.</summary>
-    public string? ShortTitle { get; init; }
-}
-
 public partial interface IHelpDoors
 {
     /// <summary>

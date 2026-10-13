@@ -92,8 +92,8 @@ public sealed class ApiKeyStore
         command.Parameters.AddWithValue("$prefix", record.Prefix);
         command.Parameters.AddWithValue("$hash", HashOf(key));
         command.Parameters.AddWithValue("$name", name);
-        command.Parameters.AddWithValue("$created", record.Created.ToString("O"));
-        command.Parameters.AddWithValue("$expires", record.Expires.ToString("O"));
+        command.Parameters.AddWithValue("$created", Moments.Write(record.Created));
+        command.Parameters.AddWithValue("$expires", Moments.Write(record.Expires));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
 
         return new(key, record);
@@ -128,8 +128,8 @@ public sealed class ApiKeyStore
 
         var record = new ApiKeyRecord(
             reader.GetString(0), reader.GetString(2),
-            DateTimeOffset.Parse(reader.GetString(3)), DateTimeOffset.Parse(reader.GetString(4)),
-            reader.IsDBNull(5) ? null : DateTimeOffset.Parse(reader.GetString(5)));
+            Moments.ReadRequired(reader.GetString(3)), Moments.ReadRequired(reader.GetString(4)),
+            reader.IsDBNull(5) ? null : Moments.ReadRequired(reader.GetString(5)));
 
         if (record.Revoked is not null) return new(KeyVerdict.Revoked, record);
         if (record.Expires <= now) return new(KeyVerdict.Expired, record);
@@ -142,7 +142,7 @@ public sealed class ApiKeyStore
         await using var command = _db.Command();
         command.CommandText =
             "UPDATE api_keys SET revoked = COALESCE(revoked, $now) WHERE prefix = $prefix";
-        command.Parameters.AddWithValue("$now", now.ToString("O"));
+        command.Parameters.AddWithValue("$now", Moments.Write(now));
         command.Parameters.AddWithValue("$prefix", prefix);
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
     }, ct);
@@ -160,8 +160,8 @@ public sealed class ApiKeyStore
         {
             records.Add(new ApiKeyRecord(
                 reader.GetString(0), reader.GetString(1),
-                DateTimeOffset.Parse(reader.GetString(2)), DateTimeOffset.Parse(reader.GetString(3)),
-                reader.IsDBNull(4) ? null : DateTimeOffset.Parse(reader.GetString(4))));
+                Moments.ReadRequired(reader.GetString(2)), Moments.ReadRequired(reader.GetString(3)),
+                reader.IsDBNull(4) ? null : Moments.ReadRequired(reader.GetString(4))));
         }
 
         return records;

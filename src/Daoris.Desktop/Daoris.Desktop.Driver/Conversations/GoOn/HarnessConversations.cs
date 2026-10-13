@@ -30,7 +30,7 @@ public sealed class HarnessConversations(string home)
     /// </summary>
     public void Keep(string session, string adapter, string conversation)
     {
-        if (!SessionEvents.IsId(session) || string.IsNullOrWhiteSpace(conversation) || string.IsNullOrWhiteSpace(adapter)) return;
+        if (!SessionEventText.IsId(session) || string.IsNullOrWhiteSpace(conversation) || string.IsNullOrWhiteSpace(adapter)) return;
 
         try
         {
@@ -51,5 +51,5 @@ public sealed class HarnessConversations(string home)
 
     /// <summary>What was kept for this session, or null for nothing, a file that does not read, or an id that is not one.</summary>
     public HarnessConversation? Read(string session) =>
-        SessionEvents.IsId(session) ? GoOnFiles.ReadConversation(PathOf(session)) : null;
+        SessionEventText.IsId(session) ? GoOnFiles.ReadConversation(PathOf(session)) : null;
 }

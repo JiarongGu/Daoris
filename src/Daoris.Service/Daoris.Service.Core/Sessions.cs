@@ -630,8 +630,8 @@ public sealed partial class SessionStore
         command.Parameters.AddWithValue("$repository", session.Repository);
         command.Parameters.AddWithValue("$adapter", session.Adapter);
         command.Parameters.AddWithValue("$state", session.State.ToString());
-        command.Parameters.AddWithValue("$created", session.Created.ToString("O"));
-        command.Parameters.AddWithValue("$updated", session.Updated.ToString("O"));
+        command.Parameters.AddWithValue("$created", Moments.Write(session.Created));
+        command.Parameters.AddWithValue("$updated", Moments.Write(session.Updated));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
 
         return session;
@@ -689,7 +689,7 @@ public sealed partial class SessionStore
         command.Parameters.AddWithValue("$note", (object?)moved.Note ?? DBNull.Value);
         command.Parameters.AddWithValue("$evidence", (object?)moved.Evidence ?? DBNull.Value);
         command.Parameters.AddWithValue("$transcript", (object?)moved.Transcript ?? DBNull.Value);
-        command.Parameters.AddWithValue("$updated", moved.Updated.ToString("O"));
+        command.Parameters.AddWithValue("$updated", Moments.Write(moved.Updated));
         command.Parameters.AddWithValue("$id", id);
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
 
@@ -734,8 +734,8 @@ public sealed partial class SessionStore
         command.Parameters.AddWithValue("$state", record.State.ToString());
         command.Parameters.AddWithValue("$note", (object?)record.Note ?? DBNull.Value);
         command.Parameters.AddWithValue("$evidence", (object?)record.Evidence ?? DBNull.Value);
-        command.Parameters.AddWithValue("$created", record.Created.ToString("O"));
-        command.Parameters.AddWithValue("$updated", record.Updated.ToString("O"));
+        command.Parameters.AddWithValue("$created", Moments.Write(record.Created));
+        command.Parameters.AddWithValue("$updated", Moments.Write(record.Updated));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }, ct);
 
@@ -1003,8 +1003,8 @@ public sealed partial class SessionStore
         reader.IsDBNull(reader.GetOrdinal("note")) ? null : reader.GetString(reader.GetOrdinal("note")),
         reader.IsDBNull(reader.GetOrdinal("evidence")) ? null : reader.GetString(reader.GetOrdinal("evidence")),
         reader.IsDBNull(reader.GetOrdinal("transcript")) ? null : reader.GetString(reader.GetOrdinal("transcript")),
-        DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("created"))),
-        DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("updated"))),
+        Moments.ReadRequired(reader.GetString(reader.GetOrdinal("created"))),
+        Moments.ReadRequired(reader.GetString(reader.GetOrdinal("updated"))),
         Workspaces.Normalize(reader.GetString(reader.GetOrdinal("workspace"))),
         Enum.TryParse<SessionKind>(reader.GetString(reader.GetOrdinal("kind")), out var kind)
             ? kind
@@ -1103,7 +1103,7 @@ public sealed partial class SessionStore
             {
                 command.Parameters.AddWithValue("$note", note);
                 command.Parameters.AddWithValue("$noteParts", (object?)noteParts ?? DBNull.Value);
-                command.Parameters.AddWithValue("$updated", word.At.ToString("O"));
+                command.Parameters.AddWithValue("$updated", Moments.Write(word.At));
             }
 
             if (await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) == 0) return null;
@@ -1147,7 +1147,7 @@ public sealed partial class SessionStore
         var answer = reader.GetOrdinal("answer");
         return reader.IsDBNull(answer)
             ? []
-            : [new SaidWord(AnswerWordId, reader.GetString(answer), DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("updated"))), [])];
+            : [new SaidWord(AnswerWordId, reader.GetString(answer), Moments.ReadRequired(reader.GetString(reader.GetOrdinal("updated"))), [])];
     }
 
     /// <summary>
@@ -1167,9 +1167,7 @@ public sealed partial class SessionStore
                 if (element.ValueKind != JsonValueKind.Object
                     || JsonFields.Text(element, "id") is not { Length: > 0 } wordId
                     || JsonFields.Text(element, "text") is not { } text
-                    || !DateTimeOffset.TryParse(
-                        JsonFields.Text(element, "at"), System.Globalization.CultureInfo.InvariantCulture,
-                        System.Globalization.DateTimeStyles.None, out var at))
+                    || Moments.Read(element, "at") is not { } at)
                 {
                     continue;
                 }
@@ -1209,7 +1207,7 @@ public sealed partial class SessionStore
         writer.WriteStartObject();
         writer.WriteString("id", word.Id);
         writer.WriteString("text", word.Text);
-        writer.WriteString("at", word.At.ToString("O"));
+        writer.WriteString("at", Moments.Write(word.At));
         writer.WriteStartArray("files");
         foreach (var file in word.Files) writer.WriteStringValue(file);
         writer.WriteEndArray();

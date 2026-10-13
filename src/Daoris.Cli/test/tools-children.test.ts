@@ -13,7 +13,7 @@ import { captureError, makeFixture } from './_fixture.ts';
 
 /**
  * One answer for Daoris and every child (TOOLS5, D121; the tools design §2.4, §2.7) — the CLI's half of a TWIN
- * with the driver's `Tools.Children.cs`. 🔴 `ToolsChildrenTests.cs` holds the same tables, row for row and in the
+ * with the driver's `Tools.cs`. 🔴 `ToolsChildrenTests.cs` holds the same tables, row for row and in the
  * same order, and *the driver's tables are these tables*, below, holds them cell for cell.
  *
  * A child's PATH is each tool that is managed or a named file, in the declared order, its folders first, then the

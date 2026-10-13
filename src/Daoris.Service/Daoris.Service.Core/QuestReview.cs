@@ -330,7 +330,7 @@ public static class Reviews
         if (setUp.Run is not null) writer.WriteString("run", setUp.Run);
         if (setUp.Session is not null) writer.WriteString("session", setUp.Session);
         if (setUp.Local) writer.WriteBoolean("local", true);
-        if (standing && setUp.At is { } at) writer.WriteString("at", at.ToString("O"));
+        if (standing && setUp.At is { } at) writer.WriteString("at", Moments.Write(at));
         if (standing && setUp.Machine is not null) writer.WriteString("machine", setUp.Machine);
         if (standing && setUp.Sequence is { } sequence) writer.WriteNumber("sequence", sequence);
         writer.WriteEndObject();
@@ -365,7 +365,7 @@ public static class Reviews
             Run = Text(element, "run"),
             Session = Text(element, "session"),
             Local = local,
-            At = Moment(element, "at"),
+            At = Moments.Read(element, "at"),
             Machine = Text(element, "machine"),
             Sequence = Number(element, "sequence"),
         };
@@ -390,7 +390,7 @@ public static class Reviews
 
         if (verdict.Commit is not null) writer.WriteString("commit", verdict.Commit);
         if (verdict.Words is not null) writer.WriteString("words", verdict.Words);
-        if (standing && verdict.At is { } at) writer.WriteString("at", at.ToString("O"));
+        if (standing && verdict.At is { } at) writer.WriteString("at", Moments.Write(at));
         if (standing && verdict.Machine is not null) writer.WriteString("machine", verdict.Machine);
         writer.WriteEndObject();
     }
@@ -421,17 +421,11 @@ public static class Reviews
             SetUp = setUp,
             Commit = Text(element, "commit")?.ToLowerInvariant(),
             Words = Text(element, "words"),
-            At = Moment(element, "at"),
+            At = Moments.Read(element, "at"),
             Machine = Text(element, "machine"),
         };
         return JudgeVerdict(verdict) is null ? verdict : null;
     }
-
-    private static DateTimeOffset? Moment(JsonElement element, string name) =>
-        Text(element, name) is { } when
-        && DateTimeOffset.TryParse(when, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.RoundtripKind, out var at)
-            ? at
-            : null;
 
     private static string Clip(string text) => text.Length <= 120 ? text : text[..120] + "…";
 }

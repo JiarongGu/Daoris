@@ -28,7 +28,7 @@ public sealed class ToolRefusal(string check, string message) : DriverException(
 /// <see cref="GZipStream"/> reads a gzip cut before its trailer as if whole. So the records are walked here, as the CLI
 /// walks them, and the bytes are inflated by <see cref="DeflateStream"/> and <see cref="GZipStream"/>.</para>
 /// </remarks>
-public static partial class ToolInstall
+public static class ToolArchives
 {
     private const uint EndRecord = 0x06054b50;
     private const uint Zip64Locator = 0x07064b50;

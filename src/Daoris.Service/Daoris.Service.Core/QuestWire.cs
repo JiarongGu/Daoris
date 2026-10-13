@@ -137,7 +137,7 @@ public static class QuestWire
         writer.WriteNumber("sequence", operation.Sequence);
         writer.WriteString("quest", operation.Quest);
         writer.WriteString("kind", operation.Kind.ToString().ToLowerInvariant());
-        writer.WriteString("at", operation.At.ToString("O"));
+        writer.WriteString("at", Moments.Write(operation.At));
         if (operation.Note is not null) writer.WriteString("note", operation.Note);
         // Only beside a note written with them (QUESTCLOSE1b1): an operation without crosses exactly as it did, and an older
         // build reads the note alone, as it always did.
@@ -267,7 +267,7 @@ public static class QuestWire
             || Text(item, "machine") is not { Length: > 0 } machine
             || Number(item, "sequence") is not { } sequence
             || Text(item, "quest") is not { Length: > 0 } quest
-            || Text(item, "at") is not { } atText || !DateTimeOffset.TryParse(atText, out var at)
+            || Moments.Read(item, "at") is not { } at
             || !Enum.TryParse<QuestOperationKind>(Text(item, "kind") ?? "", ignoreCase: true, out var kind)
             || !Enum.IsDefined(kind))
         {

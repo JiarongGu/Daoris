@@ -21,25 +21,25 @@ public sealed class HandOverBox(string home)
     /// <exception cref="IOException">The ask could not be written: the asker is told, rather than told it was kept.</exception>
     public void Write(string session, HandOverRequest request)
     {
-        if (!SessionEvents.IsId(session)) return;
+        if (!SessionEventText.IsId(session)) return;
         HandOverFiles.WriteBox(PathOf(session), request);
     }
 
     /// <summary>The ask kept for this session, or null for none, a file that does not read, or an id that is not one.</summary>
-    public HandOverRequest? Read(string session) => SessionEvents.IsId(session) ? HandOverFiles.ReadBox(PathOf(session)) : null;
+    public HandOverRequest? Read(string session) => SessionEventText.IsId(session) ? HandOverFiles.ReadBox(PathOf(session)) : null;
 
     /// <summary>The sessions with a box, in the order of their ids: what a shell coming up takes.</summary>
     public IReadOnlyList<string> Pending() =>
         [.. HandOverFiles.Leaves(Path.Combine(home, "sessions"), "*" + Suffix)
             .Select(leaf => leaf[..^Suffix.Length])
-            .Where(SessionEvents.IsId)
+            .Where(SessionEventText.IsId)
             .Order(StringComparer.Ordinal)];
 
     /// <summary>Take a session's box away: it was taken, or could not be. Nothing to take is no failure.</summary>
     public void Clear(string session)
     {
         // A box left behind is judged again when it is taken, and refused if it no longer holds.
-        if (SessionEvents.IsId(session)) HandOverFiles.Delete(PathOf(session));
+        if (SessionEventText.IsId(session)) HandOverFiles.Delete(PathOf(session));
     }
 }
 

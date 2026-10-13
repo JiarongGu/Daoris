@@ -642,7 +642,7 @@ public static class RotatedOpening
     internal static long? ContextOf(SessionUsage? usage, SessionEvents events, string session)
     {
         if (usage?.Of(session) is { } kept) return kept.Used;
-        if (!SessionEvents.IsId(session)) return null;
+        if (!SessionEventText.IsId(session)) return null;
         try
         {
             return events.After(session, 0).Events.Where(e => e.Kind == SessionEventKind.Usage).Max(e => e.Used);

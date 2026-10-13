@@ -68,7 +68,7 @@ public sealed class OpinionStore
         command.Parameters.AddWithValue("$occasion", opinion.Occasion);
         command.Parameters.AddWithValue("$pass", opinion.Pass);
         command.Parameters.AddWithValue("$rechecks", (object?)opinion.Rechecks ?? DBNull.Value);
-        command.Parameters.AddWithValue("$asked", opinion.Asked.ToString("O", CultureInfo.InvariantCulture));
+        command.Parameters.AddWithValue("$asked", Moments.Write(opinion.Asked));
         command.Parameters.AddWithValue("$asking", Opinions.AskedJson(opinion));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }, ct);
@@ -136,7 +136,7 @@ public sealed class OpinionStore
         command.Parameters.AddWithValue("$id", id);
         command.Parameters.AddWithValue("$to", handed.Session);
         command.Parameters.AddWithValue("$word", handed.Word);
-        command.Parameters.AddWithValue("$at", handed.At.ToString("O", CultureInfo.InvariantCulture));
+        command.Parameters.AddWithValue("$at", Moments.Write(handed.At));
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
     }, ct);
 
@@ -154,9 +154,9 @@ public sealed class OpinionStore
     {
         string? Column(string name) => reader.IsDBNull(reader.GetOrdinal(name)) ? null : reader.GetString(reader.GetOrdinal(name));
 
-        if (!DateTimeOffset.TryParse(Column("asked"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var asked)) return null;
+        if (Moments.Read(Column("asked")) is not { } asked) return null;
         var handed = Column("handed_to") is { } to && Column("handed_word") is { } word
-            && DateTimeOffset.TryParse(Column("handed_at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at)
+            && Moments.Read(Column("handed_at")) is { } at
                 ? new OpinionHanded(to, word, at)
                 : null;
         return Opinions.Read(

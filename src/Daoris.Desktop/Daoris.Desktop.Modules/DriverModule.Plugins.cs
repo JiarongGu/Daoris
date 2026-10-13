@@ -354,7 +354,7 @@ public sealed partial class DriverModule
         if (Optional(request, "id") is { } id)
         {
             var took = System.Diagnostics.Stopwatch.StartNew();
-            trial = await PluginKit.TryInstalledAsync(_loop.Home, id, options, cancellationToken);
+            trial = await PluginTrials.TryInstalledAsync(_loop.Home, id, options, cancellationToken);
             // An installed plugin's trial is part of its history, from the screen's door (PLUGUI1e, D119 §4.2), as the
             // terminal's is from its own. A folder's is shown and never kept: its id may name an installed plugin it is not.
             new PluginLog(_loop.Log).Tried(trial, took.ElapsedMilliseconds, PluginEvents.Screen);
@@ -362,7 +362,7 @@ public sealed partial class DriverModule
         else
         {
             trial = Optional(request, "folder") is { } folder
-                ? await PluginKit.TryFolderAsync(_loop.Home, folder, options, cancellationToken)
+                ? await PluginTrials.TryFolderAsync(_loop.Home, folder, options, cancellationToken)
                 : throw new DriverException("a try needs an installed plugin's id or a folder.");
         }
 

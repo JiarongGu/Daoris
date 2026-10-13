@@ -105,7 +105,7 @@ public sealed partial class ChatRunner
         if (_closing) return new(null, "the application is closing, so no conversation starts now.");
 
         var kept = new HelpConversations(_home);
-        var title = (SessionEvents.IsId(earlier) ? kept.Read(earlier).Name : null)
+        var title = (SessionEventText.IsId(earlier) ? kept.Read(earlier).Name : null)
                     ?? _events.Openings([earlier]).GetValueOrDefault(earlier);
         if (HelpTranscript.Of(_events, earlier, title) is not { } transcript)
         {

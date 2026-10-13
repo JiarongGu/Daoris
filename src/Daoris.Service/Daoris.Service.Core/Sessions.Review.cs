@@ -95,7 +95,7 @@ public sealed partial class SessionStore
             ReviewServing? serving = null;
             if (root.TryGetProperty("serving", out var served) && served.ValueKind == JsonValueKind.Object
                 && JsonFields.Text(served, "folder") is { } folder && JsonFields.Text(served, "address") is { } address
-                && Moment(served, "at") is { } servedAt)
+                && Moments.Read(served, "at") is { } servedAt)
             {
                 serving = new ReviewServing(folder, address, servedAt);
             }
@@ -105,7 +105,7 @@ public sealed partial class SessionStore
             {
                 if (JsonFields.Number(each, "number") is not { } number || number is < 1 or > int.MaxValue
                     || JsonFields.Text(each, "look") is not { } look || JsonFields.Text(each, "shows") is not { } shows
-                    || JsonFields.Text(each, "again") is not { } again || Moment(each, "at") is not { } at)
+                    || JsonFields.Text(each, "again") is not { } again || Moments.Read(each, "at") is not { } at)
                 {
                     continue;
                 }
@@ -135,7 +135,7 @@ public sealed partial class SessionStore
             writer.WriteStartObject("serving");
             writer.WriteString("folder", serving.Folder);
             writer.WriteString("address", serving.Address);
-            writer.WriteString("at", serving.At.ToString("O", CultureInfo.InvariantCulture));
+            writer.WriteString("at", Moments.Write(serving.At));
             writer.WriteEndObject();
         }
 
@@ -149,7 +149,7 @@ public sealed partial class SessionStore
             writer.WriteString("again", said.Again);
             if (said.Run is not null) writer.WriteString("run", said.Run);
             if (said.Served is not null) writer.WriteString("served", said.Served);
-            writer.WriteString("at", said.At.ToString("O", CultureInfo.InvariantCulture));
+            writer.WriteString("at", Moments.Write(said.At));
             if (said.Posted) writer.WriteBoolean("posted", true);
             writer.WriteEndObject();
         }
@@ -158,8 +158,4 @@ public sealed partial class SessionStore
         writer.WriteEndObject();
     });
 
-    private static DateTimeOffset? Moment(JsonElement element, string name) =>
-        DateTimeOffset.TryParse(JsonFields.Text(element, name), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at)
-            ? at
-            : null;
 }

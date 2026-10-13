@@ -28,7 +28,7 @@ namespace Daoris.Driver;
 /// carries, a trial's scratch and its process are <see cref="PluginKitFiles"/>' and
 /// <see cref="PluginTrialProcess"/>'s.</para>
 /// </remarks>
-public static partial class PluginKit
+public static class PluginKit
 {
     /// <summary>The wire script a new plugin speaks from.</summary>
     public const string Script = "plugin.mjs";
@@ -158,7 +158,7 @@ public static partial class PluginKit
     /// <summary>The kit's word on a point, or null for a name this build does not have.</summary>
     public static KitPoint? Find(string name) => Points.FirstOrDefault(point => point.Name == name);
 
-    private static string Names => string.Join(", ", Points.Select(point => point.Name));
+    internal static string Names => string.Join(", ", Points.Select(point => point.Name));
 
     private static JsonObject Sample(object frame) => JsonSerializer.SerializeToNode(frame)!.AsObject();
 

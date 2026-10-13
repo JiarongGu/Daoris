@@ -4,7 +4,8 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-public static partial class PluginKit
+/// <summary>The kit's trial (PluginKit's <c>try</c>): a plugin's hooks run against frames in a scratch folder under the home.</summary>
+public static class PluginTrials
 {
     /// <summary>
     /// Where a trial keeps what it keeps, under the home: never the system's temporary folder, which is
@@ -105,9 +106,9 @@ public static partial class PluginKit
             throw new DriverException("a frame needs its point: --point names where it is sent.");
         }
 
-        if (options.Point is { } asked && Find(asked) is null)
+        if (options.Point is { } asked && PluginKit.Find(asked) is null)
         {
-            throw new DriverException($"`{asked}` is not a point — one of: {Names}.");
+            throw new DriverException($"`{asked}` is not a point — one of: {PluginKit.Names}.");
         }
 
         var steps = new List<TrialStep>();
@@ -129,13 +130,13 @@ public static partial class PluginKit
             throw new DriverException($"`{point}` is not a point `{id}` declares ({string.Join(", ", hooks.Points)}).");
         }
 
-        if (hooks.Points.FirstOrDefault(declared => Find(declared) is null) is { } unknown)
+        if (hooks.Points.FirstOrDefault(declared => PluginKit.Find(declared) is null) is { } unknown)
         {
-            steps.Add(new("manifest", false, $"declares `{unknown}`, which is not a point this build has ({Names})."));
+            steps.Add(new("manifest", false, $"declares `{unknown}`, which is not a point this build has ({PluginKit.Names})."));
             return Trial();
         }
 
-        var tried = (options.Point is { } one ? [one] : hooks.Points.Distinct(StringComparer.Ordinal)).Select(name => Find(name)!).ToList();
+        var tried = (options.Point is { } one ? [one] : hooks.Points.Distinct(StringComparer.Ordinal)).Select(name => PluginKit.Find(name)!).ToList();
         var patience = options.Patience ?? tried.Max(kit => kit.Patience);
         var root = Path.Combine(scratch, "root");
         PluginFolders.Make(root);

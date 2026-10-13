@@ -7,14 +7,6 @@ namespace Daoris.Driver;
 /// </summary>
 public static class WorkAbandoning
 {
-    public static string QuestKey(string quest) => AbandonKeys.QuestKey(quest);
-
-    public static string SessionKey(string session) => AbandonKeys.SessionKey(session);
-
-    public static string TreeKey(string repository, string branch) => AbandonKeys.TreeKey(repository, branch);
-
-    public static string AskKey(string ask) => AbandonKeys.AskKey(ask);
-
     /// <summary>The sentence both doors say when the second press carries no reason (<c>WORK_REASON</c>).</summary>
     public const string NeedsReason = "abandoning needs your reason: each declined quest keeps it.";
 
@@ -35,9 +27,9 @@ public static class WorkAbandoning
     /// taken quest, the proof of each tree, what each kept tree holds for its review, and the archive marks.
     /// </summary>
     /// <param name="claims">This machine's claim on each taken quest (D68 §4): <c>held</c>, <c>unconfirmed</c>, <c>lost</c> or <c>none</c>.</param>
-    /// <param name="judged">Each tree's proof, by <see cref="TreeKey"/>.</param>
-    /// <param name="held">What each kept tree holds for its review (D88's proof, the reader's), by <see cref="TreeKey"/>; null is no tree to read.</param>
-    /// <param name="grounds">Each tree's base and registered checkout, by <see cref="TreeKey"/>, which the second press judges it again from.</param>
+    /// <param name="judged">Each tree's proof, by <see cref="AbandonKeys.TreeKey"/>.</param>
+    /// <param name="held">What each kept tree holds for its review (D88's proof, the reader's), by <see cref="AbandonKeys.TreeKey"/>; null is no tree to read.</param>
+    /// <param name="grounds">Each tree's base and registered checkout, by <see cref="AbandonKeys.TreeKey"/>, which the second press judges it again from.</param>
     public static AbandonPlan Plan(
         WorkPlan work, IReadOnlyDictionary<string, string> claims, IReadOnlyDictionary<string, TreeOnlyHere> judged,
         IReadOnlyDictionary<string, TreeWork?> held, IReadOnlySet<string> archived,
@@ -76,7 +68,7 @@ public static class WorkAbandoning
         var trees = world.TreesHere;
         foreach (var tree in work.Pieces.Trees)
         {
-            var key = TreeKey(tree.Repository, tree.Branch);
+            var key = AbandonKeys.TreeKey(tree.Repository, tree.Branch);
             var ground = (Base: FirstBase(tree, work.Pieces.Sessions), Root: RootOf(registry, tree, world.Home));
             grounds[key] = ground;
             var proof = await trees.OnlyHereAsync(tree.Path, tree.Branch, ground.Base, ground.Root, ct).ConfigureAwait(false);
@@ -147,7 +139,7 @@ public static class WorkAbandoning
             }
             catch (Exception error) when (error is DriverException or HttpRequestException)
             {
-                why = WorkPausing.Unanswered;
+                why = PauseKept.Unanswered;
             }
 
             if (why is null)
@@ -198,17 +190,17 @@ public static class WorkAbandoning
         }
 
         var closed = false;
-        if (plan.Closes is { } ask && goes.Contains(AskKey(ask)))
+        if (plan.Closes is { } ask && goes.Contains(AbandonKeys.AskKey(ask)))
         {
             try
             {
                 var answer = await world.Service.CloseAskAsync(ask, said, ct).ConfigureAwait(false);
                 if (answer.Ok) closed = true;
-                else failed.Add(new AbandonKeep(AskKey(ask), AbandonWhy.Refused) { Detail = answer.Message, Changed = false });
+                else failed.Add(new AbandonKeep(AbandonKeys.AskKey(ask), AbandonWhy.Refused) { Detail = answer.Message, Changed = false });
             }
             catch (Exception error) when (error is DriverException or HttpRequestException)
             {
-                failed.Add(new AbandonKeep(AskKey(ask), AbandonWhy.Refused) { Detail = error.Message, Changed = false });
+                failed.Add(new AbandonKeep(AbandonKeys.AskKey(ask), AbandonWhy.Refused) { Detail = error.Message, Changed = false });
             }
         }
 
@@ -507,7 +499,7 @@ public static class WorkAbandoning
         WorkTree tree, IReadOnlyDictionary<string, TreeOnlyHere> judged, IReadOnlySet<string> landed,
         IReadOnlyDictionary<string, (string? Base, string? Root)>? grounds)
     {
-        var key = TreeKey(tree.Repository, tree.Branch);
+        var key = AbandonKeys.TreeKey(tree.Repository, tree.Branch);
         var proof = judged.GetValueOrDefault(key) ?? new TreeOnlyHere(OnlyHereKind.Unknown);
         var ground = grounds?.GetValueOrDefault(key) ?? default;
         var named = new AbandonTree(tree, AbandonAct.Keep, proof) { BaseCommit = ground.Base, Root = ground.Root };
@@ -533,7 +525,7 @@ public static class WorkAbandoning
 
         // To review where its tree stays and holds work nobody accepted, as Sessions' reader reads it (D126 §5.2).
         var review = session.Branch is { } branch
-            && trees.TryGetValue(TreeKey(record.Repository, branch), out var tree)
+            && trees.TryGetValue(AbandonKeys.TreeKey(record.Repository, branch), out var tree)
             && tree.Act == AbandonAct.Keep
             && held.GetValueOrDefault(tree.Key) is { Holds: true };
         if (record.Live)
@@ -718,9 +710,9 @@ public static class WorkAbandoning
     {
         AbandonWhy.Unreached when keep.Piece.StartsWith("session:", StringComparison.Ordinal) => keep.Detail switch
         {
-            WorkPausing.Elsewhere => $"  could not stop {Piece(keep.Piece)}: the Daoris process that runs it took no request in time "
+            PauseKept.Elsewhere => $"  could not stop {Piece(keep.Piece)}: the Daoris process that runs it took no request in time "
                                      + "(a terminal's chat stops with its own Ctrl+C).",
-            WorkPausing.Unanswered => $"  could not stop {Piece(keep.Piece)}: the service did not move its record.",
+            PauseKept.Unanswered => $"  could not stop {Piece(keep.Piece)}: the service did not move its record.",
             _ => $"  could not stop {Piece(keep.Piece)}: it is queued, and nothing on this machine runs it yet.",
         },
         AbandonWhy.Unreached => $"  kept {Piece(keep.Piece)}: its session {keep.Detail} could not be stopped, so it was not declined.",

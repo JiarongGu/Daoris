@@ -1,0 +1,215 @@
+{
+  "AskDesk": [
+    "src/Daoris.Service/Daoris.Service.Core/Asks.GoAheads.cs",
+    "src/Daoris.Service/Daoris.Service.Core/Asks.Review.cs",
+    "src/Daoris.Service/Daoris.Service.Core/Asks.Workflow.cs",
+    "src/Daoris.Service/Daoris.Service.Core/Asks.cs"
+  ],
+  "AskView": [
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Intake.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/Domain/AskWorkflowViews.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/Domain/ReviewViews.cs"
+  ],
+  "ChatRunner": [
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.Curve.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.GoOn.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.HandOver.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.Help.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.HelperWords.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.StartFrom.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.StartWith.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs"
+  ],
+  "Driver": [
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.Continue.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.HandOver.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.Helper.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.Intake.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.Opinion.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.OpinionDelivery.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.OpinionGate.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.Workflow.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs"
+  ],
+  "DriverModule": [
+    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Accounts.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Across.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Console.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Conversation.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Driver.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Git.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Help.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.History.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Lines.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Plugins.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Registry.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Rules.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Sessions.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Tools.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Trace.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Trees.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Work.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Workflow.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs"
+  ],
+  "GoAheadTests": [
+    "src/Daoris.Service/Daoris.Service.Tests/GoAheadTests.GoesOn.cs",
+    "src/Daoris.Service/Daoris.Service.Tests/GoAheadTests.cs"
+  ],
+  "HarnessRoster": [
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/Harnesses.Usage.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/Harnesses.cs"
+  ],
+  "HarnessSettings": [
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/Harnesses.Accounts.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/Harnesses.Use.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/Harnesses.cs"
+  ],
+  "HelpProposalBox": [
+    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Accept.cs",
+    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Account.cs",
+    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Agent.cs",
+    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Ask.cs",
+    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Browser.cs",
+    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Clear.cs",
+    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Delete.cs",
+    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Go.cs",
+    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Hand.cs",
+    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Pause.cs",
+    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Plugin.cs",
+    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Repository.cs",
+    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Session.cs",
+    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Setting.cs",
+    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Sync.cs",
+    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Workflow.cs",
+    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.cs"
+  ],
+  "HelpStandInDoors": [
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpProposalsFixture.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpAcceptProposalsTests.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpAccountProposalsTests.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpAgentProposalsTests.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpAskProposalsTests.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpBrowserProposalsTests.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpClearProposalsTests.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpDeleteProposalsTests.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpHandProposalsTests.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpPauseProposalsTests.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpPluginProposalsTests.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpRepositoryProposalsTests.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSessionProposalsTests.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSyncProposalsTests.cs"
+  ],
+  "HistoryClearing": [
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/HistoryClearing.Home.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/HistoryClearing.cs"
+  ],
+  "IHelpDoors": [
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpProposals.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpAcceptProposals.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpAccountProposals.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpAgentProposals.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpAskProposals.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpBrowserProposals.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpClearProposals.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpDeleteProposals.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpHandProposals.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpPauseProposals.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpPluginProposals.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpRepositoryProposals.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSessionProposals.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSyncProposals.cs"
+  ],
+  "KnowledgeTools": [
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.GoAhead.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Accept.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Account.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Agent.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Ask.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Browser.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Clear.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Delete.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Go.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Hand.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Pause.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Plugin.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Repository.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Session.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Setting.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Sync.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Workflow.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Helper.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Instructions.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Opinion.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Review.cs",
+    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs"
+  ],
+  "McpToolDescriptionTests": [
+    "src/Daoris.Service/Daoris.Service.Tests/McpToolDescriptionTests.Helpers.cs",
+    "src/Daoris.Service/Daoris.Service.Tests/McpToolDescriptionTests.cs"
+  ],
+  "McpToolsTests": [
+    "src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.Guards.cs",
+    "src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.Helpers.cs",
+    "src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.Opinions.cs",
+    "src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.cs"
+  ],
+  "QuestExchange": [
+    "src/Daoris.Service/Daoris.Service.Core/QuestExchange.Review.cs",
+    "src/Daoris.Service/Daoris.Service.Core/QuestExchange.Workflow.cs",
+    "src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs"
+  ],
+  "QuestStepView": [
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/Domain/ReviewViews.cs"
+  ],
+  "QuestView": [
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/Domain/ReviewViews.cs"
+  ],
+  "ReviewStepTests": [
+    "src/Daoris.Service/Daoris.Service.Tests/ReviewStepTests.Guards.cs",
+    "src/Daoris.Service/Daoris.Service.Tests/ReviewStepTests.cs"
+  ],
+  "ServiceClient": [
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Helpers/HelperClient.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Review/ServiceClient.Opinions.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.History.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.Review.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.Showing.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.Workflow.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs"
+  ],
+  "SessionLedger": [
+    "src/Daoris.Service/Daoris.Service.Core/SessionLedger.GoAheads.cs",
+    "src/Daoris.Service/Daoris.Service.Core/SessionLedger.Review.cs",
+    "src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs"
+  ],
+  "SessionStore": [
+    "src/Daoris.Service/Daoris.Service.Core/Sessions.Review.cs",
+    "src/Daoris.Service/Daoris.Service.Core/Sessions.cs"
+  ],
+  "SessionTrees": [
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Auto.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Content.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Follow.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Hand.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Landed.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Leftovers.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.OnlyHere.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Opinion.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.PullRequests.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Review.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Scratch.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Squash.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Sync.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Tidy.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Update.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Work.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Worktrees.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.cs"
+  ]
+}

@@ -140,7 +140,7 @@ public sealed partial class SessionRequests(string home)
     /// <summary>Where a session's request is kept; refused for anything that is not a session id of this machine's.</summary>
     public string PathOf(string session)
     {
-        if (!SessionEvents.IsId(session) || session.Contains(':'))
+        if (!SessionEventText.IsId(session) || session.Contains(':'))
         {
             throw new DriverException($"`{session}` is not a session id of this machine's, so no request can name it.");
         }

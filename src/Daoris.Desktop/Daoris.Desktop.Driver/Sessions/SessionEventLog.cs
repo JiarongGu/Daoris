@@ -24,21 +24,6 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed class SessionEvents(string directory)
 {
-    /// <summary>The most a text field keeps: a long answer, not a log file.</summary>
-    public const int TextLimit = SessionEventText.TextLimit;
-
-    /// <summary>The most a raw field keeps — input, output, an unknown frame: enough to recognise.</summary>
-    public const int RawLimit = SessionEventText.RawLimit;
-
-    /// <summary>A page, unless the caller asks for fewer.</summary>
-    public const int PageLimit = SessionEventText.PageLimit;
-
-    /// <summary>The largest page anyone may ask for.</summary>
-    public const int MaxPage = SessionEventText.MaxPage;
-
-    /// <summary>How the record spells an event (<see cref="SessionEventText.Json"/>).</summary>
-    internal static JsonSerializerOptions Json => SessionEventText.Json;
-
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
     private readonly object _gate = new();
@@ -58,7 +43,7 @@ public sealed class SessionEvents(string directory)
         lock (_gate)
         {
             if (!_latest.TryGetValue(sessionId, out var latest)) latest = Last(path);
-            stamped = Bound(e) with
+            stamped = SessionEventText.Bound(e) with
             {
                 Seq = latest + 1,
                 At = e.At == default ? DateTimeOffset.UtcNow : e.At,
@@ -72,7 +57,7 @@ public sealed class SessionEvents(string directory)
             using (var stream = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
             using (var writer = new StreamWriter(stream, Utf8))
             {
-                writer.Write(JsonSerializer.Serialize(stamped, Json) + "\n");
+                writer.Write(JsonSerializer.Serialize(stamped, SessionEventText.Json) + "\n");
             }
 
             _latest[sessionId] = stamped.Seq;
@@ -112,12 +97,12 @@ public sealed class SessionEvents(string directory)
     /// The newest <paramref name="limit"/> events, or those before <paramref name="before"/> — how a
     /// page opens a session, and how it loads earlier ones.
     /// </summary>
-    public EventPage Page(string sessionId, long? before = null, int limit = PageLimit)
+    public EventPage Page(string sessionId, long? before = null, int limit = SessionEventText.PageLimit)
     {
         var all = Read(PathOf(sessionId));
         var latest = all.Count == 0 ? 0 : all[^1].Seq;
         var older = before is { } b ? all.Where(e => e.Seq < b).ToList() : all;
-        var take = Math.Clamp(limit, 1, MaxPage);
+        var take = Math.Clamp(limit, 1, SessionEventText.MaxPage);
         var page = older.Skip(Math.Max(0, older.Count - take)).ToList();
         var opening = all.FirstOrDefault(e => e.Kind == SessionEventKind.User);
         var failed = all.FirstOrDefault(e => e.Kind == SessionEventKind.Tool && e.Status == "failed" && e.Id is not null);
@@ -165,7 +150,7 @@ public sealed class SessionEvents(string directory)
         var openings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var id in sessionIds.Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            if (!IsId(id)) continue;
+            if (!SessionEventText.IsId(id)) continue;
             var path = Path.Combine(directory, $"{id}.events.jsonl");
             // Only as far as its first prompt, which is usually the file's first line, and only where the person said it. Words
             // shown waiting are no prompt, and a driven session the person wrote to later was still opened by its target (MSG1d).
@@ -186,7 +171,7 @@ public sealed class SessionEvents(string directory)
     /// </summary>
     public string? FirstAsked(string sessionId)
     {
-        if (!IsId(sessionId)) return null;
+        if (!SessionEventText.IsId(sessionId)) return null;
         var asked = Lines(Path.Combine(directory, $"{sessionId}.events.jsonl")).FirstOrDefault(e => e.Kind == SessionEventKind.User && e.Reaches is null);
         return asked?.Origin == "person" ? asked.Text : null;
     }
@@ -198,7 +183,7 @@ public sealed class SessionEvents(string directory)
     /// </summary>
     public string? DoorOf(string sessionId, IReadOnlyCollection<string> words)
     {
-        if (!IsId(sessionId) || words.Count == 0) return null;
+        if (!SessionEventText.IsId(sessionId) || words.Count == 0) return null;
         var wanted = new HashSet<string>(words, StringComparer.Ordinal);
         try
         {
@@ -226,12 +211,12 @@ public sealed class SessionEvents(string directory)
     ///
     /// <para><b>Bounded, and it says so</b> (<see cref="SessionSearch.Cut"/>): a few hits per session, and a page
     /// of sessions (<c>offset</c>, <c>limit</c>) with the total and where the next starts (RAILPAGE1a). Every record is read, newest first, and the query is two characters or one Han
-    /// character (<see cref="Searchable"/>, RAILSRCH1). Machine-local, like the record.</para>
+    /// character (<see cref="SessionEventText.Searchable"/>, RAILSRCH1). Machine-local, like the record.</para>
     /// </remarks>
     public SessionSearch Search(string query, int offset = 0, int limit = SearchSessions)
     {
         var wanted = query.Trim();
-        if (!Searchable(wanted) || !Directory.Exists(directory)) return new([], false);
+        if (!SessionEventText.Searchable(wanted) || !Directory.Exists(directory)) return new([], false);
 
         offset = Math.Max(offset, 0);
         limit = limit is < 1 or > SearchPageLimit ? SearchPageLimit : limit;
@@ -265,7 +250,7 @@ public sealed class SessionEvents(string directory)
                     break;
                 }
 
-                hits.Add(new SessionHit(session, seq, kind, Snippet(text, at, wanted.Length)));
+                hits.Add(new SessionHit(session, seq, kind, SessionEventText.Snippet(text, at, wanted.Length)));
                 found++;
             }
 
@@ -288,7 +273,7 @@ public sealed class SessionEvents(string directory)
     {
         var wanted = query.Trim();
         var path = PathOf(sessionId);
-        if (!Searchable(wanted) || !File.Exists(path)) return new([], false);
+        if (!SessionEventText.Searchable(wanted) || !File.Exists(path)) return new([], false);
 
         var hits = new List<SessionHit>();
         var cut = false;
@@ -300,7 +285,7 @@ public sealed class SessionEvents(string directory)
                 break;
             }
 
-            hits.Add(new SessionHit(sessionId, seq, kind, Snippet(text, at, wanted.Length)));
+            hits.Add(new SessionHit(sessionId, seq, kind, SessionEventText.Snippet(text, at, wanted.Length)));
         }
 
         return new SessionSearch(hits, cut, hits.Count > 0 ? 1 : 0);
@@ -315,21 +300,15 @@ public sealed class SessionEvents(string directory)
     {
         var wanted = query.Trim();
         var path = PathOf(sessionId);
-        if (!Searchable(wanted) || !File.Exists(path)) return null;
+        if (!SessionEventText.Searchable(wanted) || !File.Exists(path)) return null;
 
         foreach (var (seq, kind, text, at) in Holding(path, wanted))
         {
-            return (new SessionHit(sessionId, seq, kind, Snippet(text, at, wanted.Length)), text, at);
+            return (new SessionHit(sessionId, seq, kind, SessionEventText.Snippet(text, at, wanted.Length)), text, at);
         }
 
         return null;
     }
-
-    /// <summary>
-    /// Whether these words are enough to search with (ASKHIST1d): two characters, or one Han character, which is a word on its
-    /// own (区, 圈). One letter of any other script would find nearly everything, so it finds nothing.
-    /// </summary>
-    public static bool Searchable(string? words) => SessionEventText.Searchable(words);
 
     /// <summary>What was said, and each call by its title, that holds the words, in the order they came, with where they start.</summary>
     private static IEnumerable<(long Seq, string Kind, string Text, int At)> Holding(string path, string wanted) =>
@@ -349,7 +328,7 @@ public sealed class SessionEvents(string directory)
     /// </remarks>
     public string? LastSaid(string sessionId)
     {
-        if (!IsId(sessionId)) return null;
+        if (!SessionEventText.IsId(sessionId)) return null;
         try
         {
             string? said = null;
@@ -373,7 +352,7 @@ public sealed class SessionEvents(string directory)
     /// </summary>
     public (IReadOnlyList<(string Kind, string Text)> Said, DateTimeOffset? Last) Spoken(string sessionId)
     {
-        if (!IsId(sessionId)) return ([], null);
+        if (!SessionEventText.IsId(sessionId)) return ([], null);
         try
         {
             var path = PathOf(sessionId);
@@ -396,7 +375,7 @@ public sealed class SessionEvents(string directory)
     /// </summary>
     public DateTimeOffset? LastAt(string sessionId)
     {
-        if (!IsId(sessionId)) return null;
+        if (!SessionEventText.IsId(sessionId)) return null;
         try
         {
             var path = PathOf(sessionId);
@@ -434,7 +413,7 @@ public sealed class SessionEvents(string directory)
     /// </summary>
     public IReadOnlyList<PlanEntry> LastPlan(string sessionId)
     {
-        if (!IsId(sessionId)) return [];
+        if (!SessionEventText.IsId(sessionId)) return [];
         try
         {
             IReadOnlyList<PlanEntry> plan = [];
@@ -511,15 +490,13 @@ public sealed class SessionEvents(string directory)
         if (message is { } last) yield return (last.Seq, SessionEventKind.Message, last.Text.ToString());
     }
 
-    private static string Snippet(string text, int at, int length) => SessionEventText.Snippet(text, at, length);
-
     /// <summary>
     /// Remove a session's kept conversation (SESSUX1f, D126 §5.4), once its record is deleted, and forget where its numbering
     /// stood. True when there was a file to remove; an id that names no session removes nothing.
     /// </summary>
     public bool Forget(string sessionId)
     {
-        if (!IsId(sessionId)) return false;
+        if (!SessionEventText.IsId(sessionId)) return false;
         lock (_gate)
         {
             _latest.Remove(sessionId);
@@ -533,19 +510,13 @@ public sealed class SessionEvents(string directory)
     /// <summary>Where a session's events are kept — refused for anything that is not an id.</summary>
     public string PathOf(string sessionId)
     {
-        if (!IsId(sessionId))
+        if (!SessionEventText.IsId(sessionId))
         {
             throw new DriverException($"`{sessionId}` is not a session id, so it names no record.");
         }
 
         return Path.Combine(directory, $"{sessionId}.events.jsonl");
     }
-
-    /// <summary>
-    /// Whether this is a session id — the one check for everything named by one under the home (the
-    /// record here, a conversation's kept files), so an id that arrives from a page never names a path.
-    /// </summary>
-    public static bool IsId(string? sessionId) => SessionEventText.IsId(sessionId);
 
     private static long Last(string path)
     {
@@ -580,7 +551,7 @@ public sealed class SessionEvents(string directory)
         if (string.IsNullOrWhiteSpace(line)) return null;
         try
         {
-            return JsonSerializer.Deserialize<SessionEvent>(line.TrimEnd('\r'), Json) is { Kind.Length: > 0 } e ? e : null;
+            return JsonSerializer.Deserialize<SessionEvent>(line.TrimEnd('\r'), SessionEventText.Json) is { Kind.Length: > 0 } e ? e : null;
         }
         catch (JsonException)
         {
@@ -588,9 +559,4 @@ public sealed class SessionEvents(string directory)
             return null;
         }
     }
-
-    private static SessionEvent Bound(SessionEvent e) => SessionEventText.Bound(e);
-
-    /// <summary>A field cut to a limit, saying how long it was (<see cref="SessionEventText.Cut"/>).</summary>
-    internal static string? Cut(string? text, int limit) => SessionEventText.Cut(text, limit);
 }

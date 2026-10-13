@@ -44,8 +44,8 @@ public static class SessionWire
         var records = new List<FedSessionRecord>();
         foreach (var item in Items(root, "records"))
         {
-            if (item.ValueKind != JsonValueKind.Object || Time(item, "created") is not { } created
-                || Time(item, "updated") is not { } updated)
+            if (item.ValueKind != JsonValueKind.Object || Moments.Read(item, "created") is not { } created
+                || Moments.Read(item, "updated") is not { } updated)
             {
                 return null;
             }
@@ -90,7 +90,7 @@ public static class SessionWire
                 || Text(item, "id") is not { Length: > 0 } id || Text(item, "origin") is not { Length: > 0 } origin
                 || Text(item, "repository") is not { Length: > 0 } repository
                 || !Session.TryParse(Text(item, "state") ?? "", out var state)
-                || Time(item, "created") is not { } created || Time(item, "updated") is not { } updated)
+                || Moments.Read(item, "created") is not { } created || Moments.Read(item, "updated") is not { } updated)
             {
                 return null;
             }
@@ -135,8 +135,8 @@ public static class SessionWire
         }
 
         if (evidence is not null) writer.WriteString("evidence", evidence);
-        writer.WriteString("created", created.ToString("O"));
-        writer.WriteString("updated", updated.ToString("O"));
+        writer.WriteString("created", Moments.Write(created));
+        writer.WriteString("updated", Moments.Write(updated));
         if (kind is not null) writer.WriteString("kind", kind);
         if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
         // TOOL4c: said only where true, so a record from before the field and one it never applied to read
@@ -153,6 +153,4 @@ public static class SessionWire
         element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value)
         && value.ValueKind == JsonValueKind.True;
 
-    private static DateTimeOffset? Time(JsonElement element, string name) =>
-        Text(element, name) is { } text && DateTimeOffset.TryParse(text, out var at) ? at : null;
 }

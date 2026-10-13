@@ -28,18 +28,18 @@ public sealed class NewSessionChoices(string home)
     /// <exception cref="IOException">The choice could not be written: the person is told, rather than told it was kept.</exception>
     public void Choose(string session, IEnumerable<string> said, DateTimeOffset at)
     {
-        if (!SessionEvents.IsId(session)) return;
+        if (!SessionEventText.IsId(session)) return;
         GoOnFiles.WriteChoice(PathOf(session), [.. said.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.Ordinal)], at);
     }
 
     /// <summary>The choice kept for this session, or null for none, a file that does not read, or an id that is not one.</summary>
-    public NewSessionChoice? Read(string session) => SessionEvents.IsId(session) ? GoOnFiles.ReadChoice(PathOf(session)) : null;
+    public NewSessionChoice? Read(string session) => SessionEventText.IsId(session) ? GoOnFiles.ReadChoice(PathOf(session)) : null;
 
     /// <summary>Take a session's choice away: its words went on, or were taken. Nothing to take is no failure.</summary>
     public void Clear(string session)
     {
         // A choice left behind covers only words it names, and those are taken.
-        if (SessionEvents.IsId(session)) GoOnFiles.Delete(PathOf(session));
+        if (SessionEventText.IsId(session)) GoOnFiles.Delete(PathOf(session));
     }
 
     /// <summary>

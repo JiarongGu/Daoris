@@ -10,7 +10,7 @@ public sealed record AbandonedTree(
     string Repository, string Branch, string? Tip, int? Commits, int? Uncommitted, IReadOnlyList<string> Sessions, bool Alone = false);
 
 /// <summary>A piece an abandon kept, and why (design §3.2), in words from fixed lists: <see cref="AbandonWhy"/>.</summary>
-/// <param name="Piece">The piece's key (<see cref="WorkAbandoning.QuestKey"/>, <see cref="WorkAbandoning.SessionKey"/>, <see cref="WorkAbandoning.TreeKey"/>).</param>
+/// <param name="Piece">The piece's key (<see cref="AbandonKeys.QuestKey"/>, <see cref="AbandonKeys.SessionKey"/>, <see cref="AbandonKeys.TreeKey"/>).</param>
 public sealed record AbandonKeep(string Piece, string Why)
 {
     /// <summary>For a quest taken on another machine, or a teammate's session, the machine where it is known.</summary>

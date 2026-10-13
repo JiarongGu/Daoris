@@ -544,7 +544,7 @@ public static class Opinions
             writer.WriteEndArray();
         }
 
-        writer.WriteString("at", given.At.ToString("O", CultureInfo.InvariantCulture));
+        writer.WriteString("at", Moments.Write(given.At));
         writer.WriteEndObject();
     });
 
@@ -560,7 +560,7 @@ public static class Opinions
             if (answer.Commit is not null) writer.WriteString("commit", answer.Commit);
             if (answer.Evidence is not null) writer.WriteString("evidence", answer.Evidence);
             if (answer.Why is not null) writer.WriteString("why", answer.Why);
-            writer.WriteString("at", answer.At.ToString("O", CultureInfo.InvariantCulture));
+            writer.WriteString("at", Moments.Write(answer.At));
             writer.WriteEndObject();
         }
 
@@ -573,7 +573,7 @@ public static class Opinions
     /// </summary>
     private static OpinionGiven? GivenOf(string json)
     {
-        if (ParseObject(json) is not { } root || Text(root, "read") is not { } read || Moment(root, "at") is not { } at) return null;
+        if (ParseObject(json) is not { } root || Text(root, "read") is not { } read || Moments.Read(root, "at") is not { } at) return null;
 
         var findings = new List<OpinionFinding>();
         foreach (var each in Items(root, "findings"))
@@ -607,8 +607,8 @@ public static class Opinions
             if (document.RootElement.ValueKind != JsonValueKind.Array) return [];
             return document.RootElement.EnumerateArray()
                 .Where(each => each.ValueKind == JsonValueKind.Object && Number(each, "finding") is > 0 and <= MostFindings
-                               && Text(each, "said") is { } said && Answers.Contains(said) && Moment(each, "at") is not null)
-                .Select(each => new OpinionAnswer((int)Number(each, "finding")!.Value, Text(each, "said")!, Moment(each, "at")!.Value)
+                               && Text(each, "said") is { } said && Answers.Contains(said) && Moments.Read(each, "at") is not null)
+                .Select(each => new OpinionAnswer((int)Number(each, "finding")!.Value, Text(each, "said")!, Moments.Read(each, "at")!.Value)
                 {
                     Commit = Text(each, "commit"), Evidence = Text(each, "evidence"), Why = Text(each, "why"),
                 })
@@ -623,11 +623,6 @@ public static class Opinions
     private static IReadOnlyList<string> Strings(JsonElement element, string name) =>
         Items(element, name).Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!).ToList();
 
-    private static DateTimeOffset? Moment(JsonElement element, string name) =>
-        Text(element, name) is { } when
-        && DateTimeOffset.TryParse(when, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at)
-            ? at
-            : null;
 
     /// <summary>Why <paramref name="words"/> is not said within <paramref name="limit"/>, or null when it is.</summary>
     private static string? Said(string words, string field, int limit) =>

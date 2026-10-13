@@ -57,10 +57,10 @@ public sealed class SessionEventsTests : IDisposable
         events.Append("han1", Asked("工作区是什么?"));
 
         Assert.Single(events.Within("han1", "区").Hits);
-        Assert.True(SessionEvents.Searchable(" 道 "));
-        Assert.False(SessionEvents.Searchable("g"));
-        Assert.False(SessionEvents.Searchable(" "));
-        Assert.True(SessionEvents.Searchable("go"));
+        Assert.True(SessionEventText.Searchable(" 道 "));
+        Assert.False(SessionEventText.Searchable("g"));
+        Assert.False(SessionEventText.Searchable(" "));
+        Assert.True(SessionEventText.Searchable("go"));
     }
 
     /// <summary>
@@ -611,7 +611,7 @@ public sealed class SessionEventsTests : IDisposable
     public void A_huge_field_is_cut_and_says_it_was()
     {
         var events = new SessionEvents(_directory);
-        var huge = new string('x', SessionEvents.TextLimit + 500);
+        var huge = new string('x', SessionEventText.TextLimit + 500);
 
         var kept = events.Append("a1b2c3", new SessionEvent
         {
@@ -623,6 +623,6 @@ public sealed class SessionEventsTests : IDisposable
 
         Assert.True(kept.Content![0].Text!.Length < huge.Length);
         Assert.EndsWith($"({huge.Length} chars)", kept.Content[0].Text);
-        Assert.True(kept.Output!.Length <= SessionEvents.RawLimit + 40);
+        Assert.True(kept.Output!.Length <= SessionEventText.RawLimit + 40);
     }
 }
