@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (140)
+## Files over 40 KB (139)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -91,7 +91,6 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Landing.cs` | 44 | 794 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs` | 66 | 1088 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 69 | 1188 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 95 | 1731 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionEvents.cs` | 42 | 907 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 60 | 1081 |
@@ -201,4 +200,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-second-agent-design.md` | 57 | 769 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
-| `src/Daoris.Desktop/README.md` | 57 | 331 |
+| `src/Daoris.Desktop/README.md` | 58 | 343 |

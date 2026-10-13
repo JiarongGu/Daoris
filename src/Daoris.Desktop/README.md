@@ -184,8 +184,17 @@ executable, else beside the home), each with its README's requirement lines, and
 {offer} copies one in. None runs at the press.
 **No plugin code ever runs inside the shell, the host or the page.**
 
-**The module is layered** (STRUCT3a, D166's note): each of its files sits in `Plugins/Domain`, `Plugins/Application` or
-`Plugins/Infrastructure`, which `structure.json`'s `layered` list holds; a file loose in `Plugins/` is a `layer` breach.
+**The module is layered** (STRUCT3a, D166's note), the first of the driver's: each of its files sits in `Plugins/Domain`,
+`Plugins/Application` or `Plugins/Infrastructure`, which `structure.json`'s `layered` list holds (a file loose in `Plugins/` is a
+`layer` breach). `Domain` is the records and the rules, and does no I/O: a manifest parsed and the catalogue judged
+(`PluginCatalog`), the hook wire's words (`HookPoints`, `HookFrames`), the log's events, the health's rules, the activity's
+summary, the tools' table, and the icon's, the offer's, the source record's and the package's rules. `Infrastructure` is the
+I/O: the home's plugin folders (`PluginFolders`), the hook process (`HookProcess`), the tool checks' runs, the kit's files and
+templates, a trial's process and the package file. `Application` is what other modules and the hosts call: the catalogue's
+reads, install and update, offers, the page and the activity, the kit and its trial, the hook set the loop asks, the
+landing's start (`HookChannels`), the log writer and the terminal's commands, with the ports `IHookChannel` and `CheckRunner`.
+`PluginCatalog.Load`, `PluginIcon.Read` and `PluginSource.Read` are static members of C# 14 extension blocks declared in the
+Application, so every caller names them as before, and the gate reads each as the Application's.
 
 **The kit a plugin is made with** (PLUG8, D101, the plugin design's §9) is the driver library's
 `PluginKit`: `daoris-driver plugins new <id> --point <p>… [--in <folder>]` writes a plugin's folder
