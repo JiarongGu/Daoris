@@ -73,8 +73,3 @@ public sealed record HelpAgent(string Name)
 
 /// <summary>An account Daoris keeps for an agent, by its name — never its key (AGT3).</summary>
 public sealed record HelpAccount(string Name, string Login);
-
-public sealed partial record HelpMachine
-{
-    public IReadOnlyList<HelpAgent> Agents { get; init; } = [];
-}

@@ -243,60 +243,6 @@ public sealed record HelpLanded(string Repository, string Branch, string Session
     public PullRequestAskFailed? AskFailed { get; init; }
 }
 
-public sealed partial record HelpMachine
-{
-    /// <summary>The harness quests run on.</summary>
-    public string? Adapter { get; init; }
-
-    /// <summary>The harness asks are answered on, or null for none (INT4b).</summary>
-    public string? Intake { get; init; }
-
-    /// <summary>The harness Ask Daoris runs on (D89).</summary>
-    public string? Helper { get; init; }
-
-    public int Cap { get; init; }
-
-    /// <summary>
-    /// The sessions waiting on the person (ENTRY1f2), as the Sessions list's <i>Waiting on you</i> holds them less Ask Daoris's
-    /// own, by id, so a go names one the room was shown; the room's count is theirs.
-    /// </summary>
-    public IReadOnlyList<HelpWaitingSession> Waiting { get; init; } = [];
-
-    /// <summary>This machine's sessions by the Sessions list's groups, and the ended ones by id (SESSUX1h3); null where none was read.</summary>
-    public HelpSessions? Sessions { get; init; }
-
-    /// <summary>How many asks wait for the person's answer.</summary>
-    public int Asks { get; init; }
-
-    /// <summary>Every plugin installed here, sound or not, in the catalogue's order (PLUG9).</summary>
-    public IReadOnlyList<HelpPlugin> Plugins { get; init; } = [];
-
-    /// <summary>The branches this machine's landings made and recorded, in the order they landed (WSR5b).</summary>
-    public IReadOnlyList<HelpLanded> Landed { get; init; } = [];
-
-    /// <summary>The quests the loop's last tick parked by their failed sessions, as the room was written (HELP10).</summary>
-    public IReadOnlyList<ParkedQuest> Parked { get; init; } = [];
-
-    /// <summary>The quests the loop's last look held by the person's stop, as the room was written (SESSUX1b).</summary>
-    public IReadOnlyList<HeldQuest> Held { get; init; } = [];
-
-    /// <summary>
-    /// The asks and quests paused on this machine, as <c>driver.json</c> keeps them (PAUSE1f-b, D132 §7.4): asks first, each
-    /// by its id, so a resume names one the room was shown.
-    /// </summary>
-    public IReadOnlyList<PausedBy> Paused { get; init; } = [];
-
-    /// <summary>Daoris's browser as its files hold it (HELP10), or null where the desktop read none.</summary>
-    public HelpBrowser? Browser { get; init; }
-
-    /// <summary>
-    /// What each workspace keeps of finished work, what a clear would take now and what stays by the word that keeps it
-    /// (HIST1f-b, design §2.4): counts and bytes, never a path or a title, so a clear names a workspace that keeps something.
-    /// Null where none was read.
-    /// </summary>
-    public IReadOnlyList<HistoryReading>? History { get; init; }
-}
-
 /// <summary>A session waiting on the person, as the room lists it (ENTRY1f2): by id and where it runs, so a go names one it was shown.</summary>
 /// <param name="Repository">Where it runs, as its record says: a repository's name, or <c>ask #id</c> for an intake.</param>
 public sealed record HelpWaitingSession(string Id, string Repository)

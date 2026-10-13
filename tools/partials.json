@@ -70,16 +70,6 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/Harnesses.Use.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/Harnesses.cs"
   ],
-  "HelpMachine": [
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpRoom.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Room/HelpRoomAgents.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Room/HelpRoomAsks.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Room/HelpRoomLanding.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Room/HelpRoomMachineNow.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Room/HelpRoomMayDo.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Room/HelpRoomOwnPlugins.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Room/HelpRoomWorkspaces.cs"
-  ],
   "HelpProposalBox": [
     "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Accept.cs",
     "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Account.cs",

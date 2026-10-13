@@ -41,9 +41,3 @@ internal sealed class HelpRoomAsks : IHelpRoomSection
 
 /// <summary>An ask not closed, as the room lists it (HELP6): by id, so a delete of one made by mistake can name it.</summary>
 public sealed record HelpAsk(string Id, string Sentence, string Workspace, string State, IReadOnlyList<string> Quests);
-
-public sealed partial record HelpMachine
-{
-    /// <summary>The asks not closed, newest first (HELP6).</summary>
-    public IReadOnlyList<HelpAsk> OpenAsks { get; init; } = [];
-}
