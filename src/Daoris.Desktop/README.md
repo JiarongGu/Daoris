@@ -52,6 +52,12 @@ roster's `ReadUsageAsync` (the walk's floor, cooling, signed-out, key and busy s
 hand-over box with its agent unchanged, by `daoris`, and its take holds the conversation's turns (`ChatTurns.Hold`), so a
 word said as it begins runs its own turn first, the box then waiting for that turn's end.
 
+`Agents/` and `Accounts/` group their files into scope folders by sub-area (SCOPE1b, D166's note): `Agents/` into `Acp/`,
+`ToolInstall/`, `Adapters/`, `Consoles/`, `Streams/`, `Permissions/` and `RepositoryKnowledge/`, with `Tools`, `Tools.Children`
+and `OutputTail` at the top because several scopes use them; `Accounts/` into `Harnesses/`, `Rotation/`, `Usage/` and
+`SignIns/`, beside `Domain/`, with the files two scopes read (`AccountCooling`, `AccountNames`, `AccountReadings`,
+`AccountWindows`, `Usage`) and the instruction and settings files at the top. A scope holds its files whole; no namespace follows a folder.
+
 `Workflows/` keeps the onion for its model and rules alone (STRUCT3b, flattened by FLAT1a, D166's notes): its records and
 rules in `Domain/`, pure; its use cases (`WorkflowStore`, `WorkflowRunBindings`, `WorkflowProcesses`, `WorkflowRunReader`,
 `WorkflowRunStart` and the two commands), written against the ports declared at its top (`IWorkflowStore`, `IWorkflowRunStore`,

@@ -14188,3 +14188,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **FLAT1b-iii-a — Service and Setup: the layering's ceremony folded back** (driver, modules). As FLAT1b-i, the launcher compiling `Setup/StagedBuild.cs` whole; `ServiceMachine` inlined; every port stays (each has a test stand-in). D166's STRUCT3d and 3e notes.
 
 **Outcome** 2026-10-14: `RemoteTarget`, `KnowledgeConnector`, `InstallUpdate` and `StagedBuild` hold their own I/O again at their modules' tops; the layout's, releases' and description's reads are named on the I/O classes beside the large pure types; seven layering files and the `ServiceMachine` shim retired, and the setup forwards with them; the launcher compiles `Setup/StagedBuild.cs` and `InstallSwap.cs` alone. Every port stays. On Sonnet, scouted: 121 tool calls. Detail: D166's FLAT1b-iii-a note.
+
+## SCOPE1b — Agents and Accounts by scope (2026-10-14, D166)
+
+> - [ ] **SCOPE1b — Agents and Accounts by scope** (driver). Agents into `Acp/`, `Tools/`, `Adapters/`, `Consoles/`, `Streams/`, `Permissions/`, `RepositoryKnowledge/`; Accounts into `Harnesses/`, `Rotation/`, `Usage/`, `SignIns/`, AgentSettings and the instruction accounting at its top. A file two scopes use stays at the top. D166's scope note.
+
+**Outcome** 2026-10-14: 44 renames by who uses each file: Agents into `Acp/`, `ToolInstall/` (beside a top `Tools.cs` the scopes share), `Adapters/`, `Consoles/`, `Streams/`, `Permissions/` and `RepositoryKnowledge/`, with `Tools`, `Tools.Children` and `OutputTail` at the top; Accounts into `Harnesses/`, `Rotation/`, `Usage/` and `SignIns/`, with eight files the rotation and the usage both read at the top. On Sonnet, scouted: 46 tool calls. Detail: D166's SCOPE1b note.
