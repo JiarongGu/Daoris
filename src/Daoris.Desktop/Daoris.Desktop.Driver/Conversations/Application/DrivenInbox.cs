@@ -1,23 +1,5 @@
 namespace Daoris.Driver;
 
-/// <summary>When what a person tells a driven session reaches it (STEER1, D136).</summary>
-public enum DrivenReach
-{
-    /// <summary>Held, and the next prompt of the same session when its turn ends (SESS3, D90).</summary>
-    TurnEnd,
-
-    /// <summary>
-    /// Sent at once, as a prompt the agent takes during its turn: Claude Code folds it in at its next step
-    /// (docs/2026-10-03-steer-evidence.md §1).
-    /// </summary>
-    NextStep,
-}
-
-/// <summary>What a run does next with what the person said: prompt a word still held, or wait for one already sent.</summary>
-/// <param name="Held">A word held for the turn's end, to prompt now; null when <paramref name="Answer"/> is set.</param>
-/// <param name="Answer">The answer to a word sent during the turn, in the order sent; null when <paramref name="Held"/> is set.</param>
-public sealed record DrivenNext(ChatMessage? Held, Task<string>? Answer);
-
 /// <summary>
 /// What a person tells a driven session while it works (SESS3), handed over where the protocol door allows: at once,
 /// where the agent takes a prompt during its turn (STEER1, D136); else as the next prompt of the same session when the

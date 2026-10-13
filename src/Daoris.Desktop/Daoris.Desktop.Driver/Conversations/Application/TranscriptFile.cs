@@ -33,7 +33,11 @@ internal sealed class TranscriptFile : TextWriter
     private TranscriptFile(StreamWriter file) => _file = file;
 
     /// <summary>Open a transcript: from its start, or going on from what a run before it left.</summary>
-    public static TranscriptFile Open(string path, bool append) => new(new StreamWriter(path, append));
+    /// <remarks>
+    /// The Application's entry, under the name every door's capture calls, the loop's, the runner's and Agents' pipe door alike;
+    /// the file is opened by Conversations' Infrastructure (<see cref="TranscriptStreams"/>; STRUCT3h, D166's note).
+    /// </remarks>
+    public static TranscriptFile Open(string path, bool append) => new(TranscriptStreams.Open(path, append));
 
     public override Encoding Encoding => _file.Encoding;
 
