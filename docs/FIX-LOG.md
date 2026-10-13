@@ -1676,6 +1676,12 @@ failed in the driver's Process half (37 minutes) and passed alone in the merge t
 first with no load beside the run, so load is not the whole of it. **And the stale gates on a8172ec** (2026-10-14), with no
 branch building beside them: the modules' `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one`
 failed in the Process half and passed alone: its third sighting (after ANSWER1c's and REVIEW3's merges), and again with no load.
+**And the stale gates on ee3f9ca** (2026-10-14), with no branch building beside them:
+`CurveMoveProcessTests.A_conversation_over_its_curve_moves_at_its_turn_s_end_once_and_is_held_after` failed (the hand-over
+box still held the move) and passed alone. *A kind found and fixed:* `HandOverTake.RunAsync` clears the box in its `finally`,
+after the new conversation is briefed and the old one's last line kept, while the test asserted it empty as soon as the
+second record stood. It now polls for the box's clearing, and so does `HandOverProcessTests`' press-made hand-over, which
+asserted after the old one's last line; both classes passed 3 runs of 3 alone, the curve's test 5 of 5 before that.
 
 ## TEST1 (open): a Node process on Windows aborts with 0xC0000409 (since 2026-09-21)
 

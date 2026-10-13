@@ -112,7 +112,8 @@ public sealed class CurveMoveProcessTests : IDisposable
         var next = (await client.RecordAsync("c2"))!;
         Assert.Equal(("acp-stub", "account-2", _root), (next.Adapter, next.Profile, next.Tree));
         Assert.Equal((old, "curve", "daoris"), (next.From, next.FromWhy, next.FromBy));
-        Assert.Null(new HandOverBox(_home).Read(old));
+        // The take clears the box last, after the new one is briefed: its record can stand before then.
+        await Poll.Until(() => new HandOverBox(_home).Read(old) is null, () => $"the box still holds {old}'s move; {Seen(ledger, events, old)}");
 
         // Said where it happened, as SWITCH1c-i's pair: the old one's last line, the new one's first.
         await Poll.Until(() => events.After(next.Session, 0).Events.Any(e => Coded(e)?.Code == "chat.moved-from"), () => Seen(ledger, events, next.Session));

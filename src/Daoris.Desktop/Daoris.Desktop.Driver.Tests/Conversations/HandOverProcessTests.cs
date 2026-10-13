@@ -116,7 +116,8 @@ public sealed class HandOverProcessTests : IDisposable
         Assert.Contains("Make the port configurable.", StubFile.Text(Path.Combine(_home, "sessions", $"{next}.log")));
         Assert.Equal("chat.handed-over", events.After(old, 0).Events.Select(CodeOf).Last(code => code is not null));
         Assert.Equal(next, NewSessionOf(ledger, old));
-        Assert.Null(new HandOverBox(_home).Read(old));
+        // The take clears the box last, after the old one's last line: poll, as CurveMoveProcessTests does.
+        await Poll.Until(() => new HandOverBox(_home).Read(old) is null, () => $"the box still holds {old}'s hand-over; {Seen(ledger, events, old)}");
     }
 
     /// <summary>
