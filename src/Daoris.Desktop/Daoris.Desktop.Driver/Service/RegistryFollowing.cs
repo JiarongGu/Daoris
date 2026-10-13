@@ -4,9 +4,6 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>What following last came to for one repository, as its row says it (WSSETUP5, D124 §3.4).</summary>
-public sealed record FollowedEntry(string Repository, DateTimeOffset At, string Outcome, string Said, string? Line, string? Commit);
-
 /// <summary>
 /// The two machine-local records registration following keeps under the home (WSSETUP5, D124 §3): which repositories'
 /// lines Daoris moved, and what following each last came to.
@@ -24,6 +21,9 @@ public sealed record FollowedEntry(string Repository, DateTimeOffset At, string 
 /// none, and a write that fails is dropped: the move has happened, and the next start follows every line anyway. Each
 /// file has one kind of writer, so two processes can only race on the same file kind; the loser's entry is followed
 /// again at the next start.</para>
+///
+/// <para>Service's Application (STRUCT3d, D166's note): the records' shapes and what is due are read here, and the files
+/// are read and written through <see cref="ServiceMachine"/>.</para>
 /// </remarks>
 public static class RegistryFollowing
 {
@@ -48,8 +48,7 @@ public static class RegistryFollowing
                     ["moved"] = new JsonObject(moved.OrderBy(pair => pair.Key, StringComparer.Ordinal)
                         .Select(pair => KeyValuePair.Create(pair.Key, (JsonNode?)Stamp(pair.Value)))),
                 };
-                Directory.CreateDirectory(home);
-                AtomicFile.WriteText(Path.Combine(home, MovedFile), file.ToJsonString(Indented) + "\n");
+                ServiceMachine.WriteIn(home, MovedFile, file.ToJsonString(Indented) + "\n");
             }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -93,8 +92,7 @@ public static class RegistryFollowing
                     };
                 }
 
-                Directory.CreateDirectory(home);
-                AtomicFile.WriteText(Path.Combine(home, FollowedFile), new JsonObject { ["repositories"] = repositories }.ToJsonString(Indented) + "\n");
+                ServiceMachine.WriteIn(home, FollowedFile, new JsonObject { ["repositories"] = repositories }.ToJsonString(Indented) + "\n");
             }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -136,7 +134,7 @@ public static class RegistryFollowing
     {
         try
         {
-            return File.Exists(path) ? JsonNode.Parse(File.ReadAllText(path)) : null;
+            return ServiceMachine.TextIfThere(path) is { } text ? JsonNode.Parse(text) : null;
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
         {

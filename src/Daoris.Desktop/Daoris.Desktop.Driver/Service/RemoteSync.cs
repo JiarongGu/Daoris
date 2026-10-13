@@ -1,26 +1,5 @@
 namespace Daoris.Driver;
 
-/// <param name="Problem">
-/// Null on a clean pass. Records sync eventually (D47 §2), so a problem here is reported and retried
-/// next tick rather than failing the tick — but it is REPORTED, because a feed dying quietly (an
-/// expired key, an unjoined repository) looks exactly like a family with nothing to say. What a clean
-/// pass moved is deliberately not carried: a healthy sync moves something almost every tick, so
-/// per-tick counts would be noise on every surface that renders events — they return with a surface
-/// that reads them.
-/// </param>
-/// <param name="Notes">
-/// What the remote understood and deliberately did not take (D48 §6) — a feed from a stale checkout,
-/// or from a line that is not the repository's canonical one. Reported, never treated as a failure:
-/// those are the rules working, and a loop that logged them as problems would teach the person to
-/// ignore its problems.
-/// </param>
-public sealed record SyncReport(string? Problem, IReadOnlyList<string> Notes)
-{
-    public SyncReport(string? problem) : this(problem, []) { }
-
-    public static readonly SyncReport Clean = new((string?)null, []);
-}
-
 /// <summary>
 /// This machine's syncs — one per workspace that has a remote (D48 §5). What the driver holds and
 /// ticks; a circle with no entry in the map syncs nowhere, silently (D21).
