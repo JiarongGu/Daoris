@@ -45,7 +45,7 @@ public sealed record PluginServer(
 /// <summary>A plugin's manifest, as read — with everything a refused plugin would have contributed already removed.</summary>
 /// <param name="Icon">
 /// Its icon (PLUGUI2, D140 §3.1): a path inside its folder to an SVG or a PNG, as the manifest writes it, once the
-/// manifest's rules hold. Null with none, and with one those rules refuse. <see cref="PluginIcon.Read"/> judges the file.
+/// manifest's rules hold. Null with none, and with one those rules refuse. <c>PluginIcon.Read</c> judges the file.
 /// </param>
 /// <param name="IconProblem">Why its declared icon is not drawn, by the manifest's rules; never a reason to refuse the plugin.</param>
 public sealed record PluginManifest(

@@ -17,7 +17,7 @@ public sealed record PluginIconRead(string? Type, string? DataUri, string? Probl
 /// <summary>
 /// A plugin's icon (PLUGUI2, D140; the catalogue design §3): the manifest's <c>icon</c>, a path inside the plugin's folder to
 /// an SVG or a PNG. The catalogue reads the path (<see cref="Declared"/>), and whoever draws or lists the icon judges its
-/// file (<see cref="Read"/>).
+/// file (<c>PluginIcon.Read</c>).
 /// </summary>
 /// <remarks>
 /// <para><b>The CLI's <c>plugins.ts</c> is the twin</b> (<c>readIcon</c>): the same rules in the same order, the same
@@ -28,6 +28,10 @@ public sealed record PluginIconRead(string? Type, string? DataUri, string? Probl
 /// <para><b>The page is handed the bytes, never the path</b>, as a data URI, and draws an SVG as an image: none of its
 /// scripts run, nothing outside it loads, none of its styles reach the page. So an SVG is checked only for being one and
 /// for not expanding (an entity declaration), and a PNG for its pixels, which a small file can inflate into many.</para>
+///
+/// <para><b>The rules are this class's, the file is not</b> (STRUCT3a): <c>PluginIcon.Read</c> reads the file through the
+/// module's Infrastructure and is declared in the Application's <see cref="PluginIconReads"/>; what the bytes are is judged
+/// here (<see cref="Judge"/>).</para>
 /// </remarks>
 public static class PluginIcon
 {
@@ -67,34 +71,17 @@ public static class PluginIcon
             : (icon, null);
     }
 
+    /// <summary>The icon's sentence for a refusal: the icon named as written, then why.</summary>
+    internal static PluginIconRead Refused(string icon, string why) => new(null, null, $"`icon` `{icon}` {why}");
+
     /// <summary>
-    /// The icon a manifest declares, judged as a file in <paramref name="folder"/>, by the file's rules in order: there and a
-    /// file; at most <see cref="MaxBytes"/>; a PNG that starts with its signature and header chunk, at most
-    /// <see cref="MaxPixels"/> on a side; an SVG that is UTF-8 text holding an <c>&lt;svg</c> element and declaring no
-    /// entity. A manifest's own problem is said first.
+    /// The bytes of a declared icon's file, judged by the file's rules after its size: a PNG that starts with its signature
+    /// and header chunk, at most <see cref="MaxPixels"/> on a side; an SVG that is UTF-8 text holding an <c>&lt;svg</c>
+    /// element and declaring no entity.
     /// </summary>
-    public static PluginIconRead Read(string folder, PluginManifest manifest)
+    internal static PluginIconRead Judge(string icon, byte[] bytes)
     {
-        if (manifest.IconProblem is { } declared) return new(null, null, declared);
-        if (manifest.Icon is not { } icon) return PluginIconRead.None;
-
-        var path = Path.Combine([folder, .. icon.Split('/')]);
-        PluginIconRead Refused(string why) => new(null, null, $"`icon` `{icon}` {why}");
-
-        var file = new FileInfo(path);
-        if (!file.Exists) return Refused("is not a file in the plugin's folder.");
-        if (file.Length > MaxBytes) return Refused("is larger than 32 KiB, the most an icon may be.");
-
-        byte[] bytes;
-        try
-        {
-            bytes = File.ReadAllBytes(path);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // Daoris's words, never the system's: its message names the file's whole path, which the page must not learn.
-            return Refused("could not be read.");
-        }
+        PluginIconRead Refused(string why) => PluginIcon.Refused(icon, why);
 
         // Read once, so the bytes judged are the bytes handed.
         if (bytes.Length > MaxBytes) return Refused("is larger than 32 KiB, the most an icon may be.");

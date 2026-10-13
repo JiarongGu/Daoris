@@ -51,6 +51,25 @@ internal static class PluginFolders
         AtomicFile.WriteText(path, text);
     }
 
+    /// <summary>
+    /// An icon's file: whether it is there as a file, its length, and its bytes where it is at most <paramref name="most"/>
+    /// and could be read; null bytes for one larger or unreadable.
+    /// </summary>
+    public static (bool Exists, long Length, byte[]? Bytes) ReadIcon(string path, int most)
+    {
+        var file = new FileInfo(path);
+        if (!file.Exists) return (false, 0, null);
+        if (file.Length > most) return (true, file.Length, null);
+        try
+        {
+            return (true, file.Length, File.ReadAllBytes(path));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return (true, file.Length, null);
+        }
+    }
+
     /// <summary>A folder's own name, from its whole path on this machine.</summary>
     public static string NameOf(string folder) => Path.GetFileName(Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder)));
 
