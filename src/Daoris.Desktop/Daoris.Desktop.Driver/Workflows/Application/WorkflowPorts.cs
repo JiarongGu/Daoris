@@ -49,6 +49,29 @@ public interface IWorkflowRunStore
 }
 
 /// <summary>
+/// What a run's read reads on this machine beside the service (WORKFLOW1c, the workflow design §5.1): the landing record and the
+/// due list under the home, the acceptances each session's conversation record keeps, and whether a tree still stands. A port
+/// (STRUCT3b): <see cref="WorkflowRunReader"/> is written against it, and Workflows' Infrastructure is the reads behind it.
+/// </summary>
+public interface IWorkflowRunRecords
+{
+    /// <summary>The landing record's entries (<see cref="LandedBranch"/>), read once per read of several runs.</summary>
+    IReadOnlyList<LandedBranch> Landings();
+
+    /// <summary>The automatic landings due and closed (<see cref="AutoLanding"/>), read once per read of several runs.</summary>
+    IReadOnlyList<AutoLanding> AutoLandings();
+
+    /// <summary>
+    /// When each session's work was accepted into its line (D100): the newest acceptance its conversation's record keeps, by its id.
+    /// A teammate's record is on its machine, and a record that does not read keeps none.
+    /// </summary>
+    IReadOnlyDictionary<string, DateTimeOffset> Acceptances(IReadOnlyList<TracedSession> sessions);
+
+    /// <summary>Whether a session's tree still stands on this machine.</summary>
+    bool Stands(string tree);
+}
+
+/// <summary>
 /// The ports over a home's files, for a caller that holds only the home (STRUCT3b; D166's STRUCT3b note): the one place Workflows'
 /// Application names its own Infrastructure. Every module, the loop and the hosts reach Workflows through its Application by a
 /// home, as they did before it was layered; a caller that holds the ports passes them to the use case itself.
@@ -60,4 +83,7 @@ internal static class WorkflowPorts
 
     /// <summary>The runs' bindings under <paramref name="home"/>.</summary>
     public static IWorkflowRunStore Runs(string home) => new WorkflowRunFiles(home);
+
+    /// <summary>What a run's read reads under <paramref name="home"/> beside the service, and the trees on this machine.</summary>
+    public static IWorkflowRunRecords Records(string home) => new WorkflowRunRecords(home);
 }

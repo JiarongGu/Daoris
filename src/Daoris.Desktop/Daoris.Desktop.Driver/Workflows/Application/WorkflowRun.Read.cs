@@ -23,7 +23,10 @@ public sealed record WorkflowRunRead(IReadOnlyList<WorkflowRun> Runs, string? Pr
     public bool Unanswered { get; init; }
 }
 
-/// <summary>The runs' reads (WORKFLOW1c): nothing here writes anywhere. Every request to the service is a <c>GET</c>.</summary>
+/// <summary>
+/// The runs' reads (WORKFLOW1c): nothing here writes anywhere. Every request to the service is a <c>GET</c>. A run's records beside
+/// the service are read through <see cref="IWorkflowRunRecords"/>, its port (STRUCT3b, D166).
+/// </summary>
 public static class WorkflowRunReader
 {
     /// <summary>
@@ -31,7 +34,12 @@ public static class WorkflowRunReader
     /// its quest, or through its ask where it is an intake; and an ask's, every chain it asked, one run per repository each reaches.
     /// A session that serves no quest and no ask has none, and says so.
     /// </summary>
-    public static async Task<WorkflowRunRead> ReadAsync(WorkflowRunAsk asked, WorkflowRunSources sources, CancellationToken ct = default)
+    public static Task<WorkflowRunRead> ReadAsync(WorkflowRunAsk asked, WorkflowRunSources sources, CancellationToken ct = default) =>
+        ReadAsync(asked, sources, WorkflowPorts.Records(sources.Home), ct);
+
+    /// <summary>The runs of what <paramref name="asked"/> names, a run's records beside the service read through <paramref name="records"/>.</summary>
+    public static async Task<WorkflowRunRead> ReadAsync(
+        WorkflowRunAsk asked, WorkflowRunSources sources, IWorkflowRunRecords records, CancellationToken ct = default)
     {
         IReadOnlyList<QuestView> quests;
         IReadOnlyList<TracedSession> sessions;
@@ -51,7 +59,7 @@ public static class WorkflowRunReader
         var (chains, problem) = ChainsOf(asked, quests, sessions);
         if (problem is not null) return new WorkflowRunRead([], problem);
 
-        var reads = new Reads(sources, quests, ct);
+        var reads = new Reads(sources, quests, records, ct);
         var runs = new List<WorkflowRun>();
         foreach (var chain in chains)
         {
@@ -137,7 +145,7 @@ public static class WorkflowRunReader
         var standing = mine
             .Where(session => session.Quest is { } quest && work.Contains(quest) && !session.Teammate && session.Tree is { Length: > 0 })
             .OrderBy(session => session.Created ?? DateTimeOffset.MinValue)
-            .LastOrDefault(session => Directory.Exists(session.Tree));
+            .LastOrDefault(session => reads.Records.Stands(session.Tree!));
         var review = await ReviewAsync(chain, repository, ask, askUnread, standing?.Tree, reads, process).ConfigureAwait(false);
         var trees = new SessionTrees(sources.Home);
         var workflow = process.Named && standing is not null
@@ -165,7 +173,7 @@ public static class WorkflowRunReader
             Process = process,
             WorkflowGate = workflow,
             Landings = [.. reads.Landings.Where(entry => sessionIds.Any(entry.Names))],
-            Accepted = Acceptances(mine, sources.Home),
+            Accepted = reads.Records.Acceptances(mine),
             AutoLandings = [.. reads.AutoLandings.Where(entry => sessionIds.Contains(entry.Session))],
         };
         return WorkflowRuns.Derive(facts, workspace, askId);
@@ -196,33 +204,6 @@ public static class WorkflowRunReader
             : ReviewGate.HoldsAsync(tree, tip, commit, reads.Ct)).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// When each session's work was accepted into its line (D100): the newest acceptance its conversation's record keeps, read
-    /// from the writer's own words (<see cref="LandingRules.IsAcceptance"/>). A teammate's record is on its machine.
-    /// </summary>
-    private static IReadOnlyDictionary<string, DateTimeOffset> Acceptances(IReadOnlyList<TracedSession> sessions, string home)
-    {
-        var accepted = new Dictionary<string, DateTimeOffset>(StringComparer.OrdinalIgnoreCase);
-        var events = new SessionEvents(Path.Combine(home, "sessions"));
-        foreach (var session in sessions.Where(session => !session.Teammate && SessionEvents.IsId(session.Id)))
-        {
-            try
-            {
-                if (!File.Exists(events.PathOf(session.Id))) continue;
-                var notes = events.After(session.Id, 0).Events
-                    .Where(note => note.Kind == SessionEventKind.Note && note.Text is { } text && LandingRules.IsAcceptance(text))
-                    .ToList();
-                if (notes.Count > 0) accepted[session.Id] = notes[^1].At;
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
-            {
-                // A record that does not read keeps no acceptance: the landing then reads as not yet made, never as made.
-            }
-        }
-
-        return accepted;
-    }
-
     /// <summary>A read the service did not answer: unreachable, refused, unparsable, or a client's own time-out, never the person's cancel.</summary>
     private static bool Unanswered(Exception error, CancellationToken ct) =>
         error is DriverException or HttpRequestException or JsonException or InvalidOperationException
@@ -234,11 +215,15 @@ public static class WorkflowRunReader
     /// What one read of several runs reads once: each ask, the landing record and the due list; and the world the opinion's gate
     /// reads, over the quests already read.
     /// </summary>
-    private sealed class Reads(WorkflowRunSources sources, IReadOnlyList<QuestView> quests, CancellationToken ct) : IOpinionWorld
+    private sealed class Reads(WorkflowRunSources sources, IReadOnlyList<QuestView> quests, IWorkflowRunRecords records, CancellationToken ct)
+        : IOpinionWorld
     {
         private readonly Dictionary<string, (AskView?, string?)> _asks = new(StringComparer.OrdinalIgnoreCase);
 
         public WorkflowRunSources Sources => sources;
+
+        /// <summary>What the read reads beside the service: the acceptances, and whether a tree stands.</summary>
+        public IWorkflowRunRecords Records => records;
 
         public CancellationToken Ct => ct;
 
@@ -251,9 +236,9 @@ public static class WorkflowRunReader
 
         public Task<OpinionView?> OpinionAsync(string id, CancellationToken cancel) => sources.Service.ReadOpinionAsync(id, cancel);
 
-        public IReadOnlyList<LandedBranch> Landings { get; } = new LandedBranches(sources.Home).Entries();
+        public IReadOnlyList<LandedBranch> Landings { get; } = records.Landings();
 
-        public IReadOnlyList<AutoLanding> AutoLandings { get; } = new AutoLandings(sources.Home).All();
+        public IReadOnlyList<AutoLanding> AutoLandings { get; } = records.AutoLandings();
 
         public async Task<(AskView? Ask, string? Unread)> AskAsync(string id)
         {

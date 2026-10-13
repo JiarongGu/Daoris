@@ -7,8 +7,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// STRUCT3b (D166; the code-structure design §3): Workflows' use cases are written against the ports its Application declares,
 /// so a stand-in over memory drives each with no file: a version added and trimmed by the versions the runs name, a run bound to
-/// the newest version saved, and the person's keep written on its run. The files behind the ports are held where they always
-/// were, over a scratch home: <c>WorkflowNamedTests</c>, <c>WorkflowRunBindingTests</c> and <c>WorkflowGateTests</c>.
+/// the newest version saved, the person's keep written on its run, a run's process read and held, and a run's records read beside
+/// the service. The files behind the ports are held where they always were, over a scratch home: <c>WorkflowNamedTests</c>,
+/// <c>WorkflowRunBindingTests</c>, <c>WorkflowGateTests</c>, <c>WorkflowRunTests</c> and <c>WorkflowRunCommandTests</c>.
 /// </summary>
 public sealed class WorkflowPortsTests
 {
@@ -131,7 +132,89 @@ public sealed class WorkflowPortsTests
         Assert.Null((await WorkflowProcesses.ReadAsync(store, runs, Declared, world, "q9", "notes-site", "work")).Unread);
     }
 
+    /// <summary>
+    /// A run's records beside the service come through their port: the landing records and the due list read once per read, the
+    /// acceptances once per run, and whether the work's tree stands asked of it. Here none is on disk: the home names no folder.
+    /// </summary>
+    [Fact]
+    public async Task A_runs_records_are_read_through_their_port_once_per_read()
+    {
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new StandInService()));
+        var sources = new WorkflowRunSources(service, Path.Combine(AppContext.BaseDirectory, "no-home-" + Guid.NewGuid().ToString("N")[..8]),
+            DriverConfig.Empty, [], _ => "aurora");
+        var records = new MemoryRecords();
+        records.Accepted["s1"] = At;
+
+        var read = await WorkflowRunReader.ReadAsync(new WorkflowRunAsk(Quest: "q1"), sources, records);
+
+        var landing = read.Runs.Single().Steps.Single(step => step.Step.Kind == WorkflowKinds.Landing);
+        Assert.Equal((WorkflowRunStates.Done, WorkflowRunDetails.Merge, (DateTimeOffset?)At), (landing.State, landing.Detail, landing.At));
+        Assert.Equal((1, 1, 1), (records.LandingsRead, records.AutoLandingsRead, records.AcceptancesRead));
+        Assert.Equal(["no-such-tree"], records.Asked);
+        Assert.False(Directory.Exists(sources.Home));
+    }
+
     // ——— stand-ins
+
+    /// <summary>What a run's read reads beside the service, in memory, counting each read.</summary>
+    private sealed class MemoryRecords : IWorkflowRunRecords
+    {
+        public Dictionary<string, DateTimeOffset> Accepted { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public List<string> Asked { get; } = [];
+
+        public int LandingsRead { get; private set; }
+
+        public int AutoLandingsRead { get; private set; }
+
+        public int AcceptancesRead { get; private set; }
+
+        public IReadOnlyList<LandedBranch> Landings()
+        {
+            LandingsRead++;
+            return [];
+        }
+
+        public IReadOnlyList<AutoLanding> AutoLandings()
+        {
+            AutoLandingsRead++;
+            return [];
+        }
+
+        public IReadOnlyDictionary<string, DateTimeOffset> Acceptances(IReadOnlyList<TracedSession> sessions)
+        {
+            AcceptancesRead++;
+            return Accepted;
+        }
+
+        public bool Stands(string tree)
+        {
+            Asked.Add(tree);
+            return false;
+        }
+    }
+
+    /// <summary>A stand-in service: quest <c>q1</c> done in <c>engine</c> by session <c>s1</c>, whose tree is gone. Every other door answers an empty list.</summary>
+    private sealed class StandInService : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            var body = request.RequestUri!.PathAndQuery switch
+            {
+                "/api/quests?includeClosed=true" =>
+                    """[{"id":"q1","from":"daoris","to":"engine","title":"Quest q1","body":"","status":"Done","updated":"2026-10-09T09:30:00Z"}]""",
+                "/api/sessions?includeClosed=true" => """
+                    [{"id":"s1","repository":"engine","state":"completed","quest":"q1","adapter":"claude-code","tree":"no-such-tree",
+                      "created":"2026-10-09T09:00:00Z","updated":"2026-10-09T09:20:00Z","evidence":"commits landed:\nabc1234 the change"}]
+                    """,
+                _ => "[]",
+            };
+            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json"),
+            });
+        }
+    }
 
     private sealed class Unanswering : IReviewWorld
     {
