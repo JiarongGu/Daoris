@@ -1,3 +1,5 @@
+using static Daoris.Driver.HistoryHome;
+
 namespace Daoris.Driver;
 
 /// <summary>What a clear works with: the service, the home, the driver's file and this machine's processes.</summary>
@@ -37,7 +39,7 @@ public sealed record HistoryWorld(ServiceClient Service, string Home, string Con
 /// the machine log, the usage, the accounts, or a folder Daoris did not write (§1.3). <b>Nothing clears by itself</b>
 /// (§7): only a press calls this.</para>
 /// </remarks>
-public static partial class HistoryClearing
+public static class HistoryClearing
 {
     /// <summary>The scope's word: <c>workspace</c>, <c>quest</c>, <c>ask</c> or <c>failed</c>.</summary>
     public static string Word(HistoryScope scope) => scope.ToString().ToLowerInvariant();
@@ -312,7 +314,7 @@ public static partial class HistoryClearing
         _ => null,
     };
 
-    private static bool Is(string? value, string expected) => string.Equals(value, expected, StringComparison.OrdinalIgnoreCase);
+    internal static bool Is(string? value, string expected) => string.Equals(value, expected, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// This machine's half of a unit the service would clear (§1.2), in the order a person meets them: a process still running
@@ -356,7 +358,7 @@ public static partial class HistoryClearing
     }
 
     /// <summary>The records a judgement reads beside the service's word: every session record, quest and ask, closed ones included.</summary>
-    private sealed record Facts(IReadOnlyList<SessionRecord> Records, IReadOnlyList<QuestView> Quests, IReadOnlyList<AskView> Asks)
+    internal sealed record Facts(IReadOnlyList<SessionRecord> Records, IReadOnlyList<QuestView> Quests, IReadOnlyList<AskView> Asks)
     {
         public static async Task<Facts> ReadAsync(ServiceClient service, CancellationToken ct) => new(
             await service.SessionRecordsAsync(ct).ConfigureAwait(false),
@@ -387,7 +389,7 @@ public static partial class HistoryClearing
     }
 
     /// <summary>This machine's facts a judgement reads: its processes, its automatic landings, its trees and its landings.</summary>
-    private sealed class Machine(HistoryWorld world)
+    internal sealed class Machine(HistoryWorld world)
     {
         private readonly SessionTrees _trees = new(world.Home);
         private readonly IReadOnlyList<LandedBranch> _standing = new LandedBranches(world.Home).All();
