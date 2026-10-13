@@ -44,7 +44,7 @@ public sealed record SetupBriefInput(
 /// <c>SetupBriefTests</c> reads the playbook's steps and holds that the whole set-up's body names each, so a step
 /// added there fails until it is said here.</para>
 ///
-/// <para><b>Every verb it asks for is one the press allows</b> (<see cref="SetupPress.Verbs"/>), exactly, since a
+/// <para><b>Every verb it asks for is one the press allows</b> (<see cref="SetupPressRules.Verbs"/>), exactly, since a
 /// session on the protocol door cannot ask for another (D52).</para>
 /// </remarks>
 public static class SetupBrief
