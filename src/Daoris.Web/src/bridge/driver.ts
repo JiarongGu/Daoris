@@ -3,6 +3,8 @@ import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tansta
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from '../queries';
 import type { AccountWaitTick, Consideration, TrustHold } from '../signals';
+import type { CommitRule } from '../settings/Commits';
+import type { HelperRule } from '../settings/Helpers';
 import type { LandingRule } from '../settings/Landings';
 import type { LanguageOption } from '../settings/Languages';
 import type { OpinionRule } from '../settings/Opinions';
@@ -128,6 +130,20 @@ export type DriverState = {
   opinions?: { repository: string; rule: OpinionRule }[];
   /** And by workspace, for each repository there that sets none of its own. */
   workspaceOpinions?: { workspace: string; rule: OpinionRule }[];
+  /**
+   * The commit rules as set (DOORS1b, D164's amendment point 1): how each repository's work is committed — absent on a shell
+   * older than it, which offers no commit row.
+   */
+  commits?: { repository: string; rule: CommitRule }[];
+  /** And by workspace, for each repository there that sets none of its own. */
+  workspaceCommits?: { workspace: string; rule: CommitRule }[];
+  /**
+   * The helpers rules as set (DOORS1b, D163 point 3): what a helper each repository's agent asks for does — absent on a shell
+   * older than it, which offers no helpers row.
+   */
+  helpers?: { repository: string; rule: HelperRule }[];
+  /** And by workspace, for each repository there that sets none of its own. */
+  workspaceHelpers?: { workspace: string; rule: HelperRule }[];
 };
 
 export const useDriver = () => {

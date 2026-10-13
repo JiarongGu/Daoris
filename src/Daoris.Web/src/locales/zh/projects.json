@@ -212,6 +212,7 @@
   "projects.setup.summary.landsBranch": "落地到 `{{pattern}}`",
   "projects.setup.summary.pushedBy": "由 {{plugin}} 推送",
   "projects.setup.summary.automatic": "自动采纳",
+  "projects.setup.summary.squashed": "压成一个提交",
   "projects.setup.summary.noLanguage": "没有会话语言",
   "projects.setup.summary.standing": "长期答复 {{count}} 行",
   "projects.setup.summary.standing_other": "长期答复 {{count}} 行",

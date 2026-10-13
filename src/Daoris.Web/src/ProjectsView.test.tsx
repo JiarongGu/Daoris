@@ -348,9 +348,55 @@ describe("a repository's Setup on its page (UX6f)", () => {
     await userEvent.click(within(work).getByRole('radio', { name: 'Branch' }));
     // The line's field is still open beside it, since this bridge answers the line as its workspace's still.
     await userEvent.click(within(work).getAllByRole('button', { name: 'Save' }).at(-1)!);
+    // A branch says its squash whole (DOORS1b), so a press never leaves one standing that the field shows off.
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_LANDING', {
-      payload: { repository: 'engine', form: 'branch', pattern: 'feature/{quest}-{slug}' },
+      payload: { repository: 'engine', form: 'branch', pattern: 'feature/{quest}-{slug}', squash: false },
     });
+  });
+
+  /**
+   * DOORS1b (D164's amendment point 3, D163 point 3): how its work is committed, on *Line and landing*, and what a helper its
+   * agent asks for does, on *Sessions*, each as the driver resolves it with where it was set, each set over the file its
+   * terminal twin edits, on DAORIS.DRIVER, and said as it changed.
+   */
+  it('sets how its work is committed and what a helper its agent asks for does, each on DAORIS.DRIVER, and says what changed', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'LINES') {
+        return {
+          ...LINES,
+          commits: [{ repository: 'engine', workspace: 'aurora', rule: { mode: 'as-you-go' }, source: 'default' }],
+          helpers: [{ repository: 'engine', workspace: 'aurora', rule: { mode: 'ask', agents: ['dsh'] }, source: 'workspace' }],
+        };
+      }
+      if (type === 'ACROSS') return ACROSS;
+      if (type === 'RULES') return RULES;
+      if (type === 'PLUGINS') return PLUGINS;
+      return { ...DRIVER_STATE, drivable: ['engine'], workspaceLines: [{ workspace: 'aurora', branch: 'main' }] };
+    });
+    const notify = vi.fn();
+    show(<ProjectsView notify={notify} />);
+    await chooseRepository('engine');
+    await openSetup('Line and landing');
+    const work = within(repositoryMain()).getByRole('region', { name: 'Line and landing' });
+    const commits = within(work).getByText('Commits', { selector: 'span' }).closest('.\\@container') as HTMLElement;
+
+    expect(commits).toHaveTextContent("Each piece that passes its checks is committed as the work goes. Daoris's default: nothing is set.");
+    await userEvent.click(within(commits).getByRole('button', { name: 'Set for this repository' }));
+    await userEvent.click(within(commits).getByRole('radio', { name: 'Ask first' }));
+    await userEvent.click(within(commits).getByRole('button', { name: 'Save' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_COMMITS', { payload: { repository: 'engine', set: { mode: 'ask', convention: '' } } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Each commit in engine now waits for your yes.'));
+
+    await openSetup('Sessions');
+    const sessions = within(repositoryMain()).getByRole('region', { name: 'Sessions' });
+    const helpers = within(sessions).getByText('Helpers', { selector: 'span' }).closest('.\\@container') as HTMLElement;
+    expect(helpers).toHaveTextContent('Only dsh may help. From the workspace aurora.');
+    await vi.waitFor(() => expect(within(helpers).getByRole('button', { name: 'Set for this repository' })).toBeEnabled());
+    await userEvent.click(within(helpers).getByRole('button', { name: 'Set for this repository' }));
+    await userEvent.click(within(helpers).getByRole('radio', { name: 'Not offered' }));
+    await userEvent.click(within(helpers).getByRole('button', { name: 'Save' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELPERS', { payload: { repository: 'engine', set: { mode: 'off', agents: ['dsh'] } } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Helpers are not offered to sessions in engine now.'));
   });
 
   it("sets whether agents outside it read it, what its sessions also write into, and removes one of its rules", async () => {

@@ -17,6 +17,20 @@ repository.
   answers kept and the box waits for that turn's end. D165's SWITCH1c-ii note.
 - **Verify:** `ChatTurnsTests`' hold cases (idle held, a word refused until released; a running turn or a waiting word not held),
   fast half; the hand-over's Process cases (`HandOverProcessTests`, `CurveMoveProcessTests`) at the merge.
+## 2026-10-13 — a landing saved from Setup dropped the ticket key and the squash the terminal had set (DOORS1b)
+
+- **Symptom:** a landing rule set from the terminal with `--key` or `--squash` lost both when the person saved the same rule on
+  a repository's or a workspace's Setup, say to change its plugin or its tidy: the next Accept named the branch by the default
+  key and made no squashed commit, with nothing said.
+- **Root cause:** `SET_LANDING` rebuilt the rule positionally from the page's five fields (`new LandingRule(form, pattern, tidy,
+  plugin, autoAccept)`), and the page neither read nor sent `key` and `squash`, which PROCESS1b-i and -ii had added to the rule
+  after the route was written. The route replaces the rule whole, so absent was written as none.
+- **Fix:** the lines' and the state's landing rows carry `key` and `squash`; `SET_LANDING` sets them where the press names them
+  and otherwise keeps the ones of the rule set at the same place where the new rule can hold them (`LandingKept`: a branch, a
+  key only for `{ticket}`), as Ask Daoris's card does; the page's field shows both and sends the squash on every branch save and
+  the key wherever the pattern says `{ticket}`. D164's DOORS1b note.
+- **Verify:** `DriverModuleLinesTests`' three DOORS1b cases (kept, set and refused, answered), modules fast half; the page's
+  `Landings` and `RepositorySetup` tests (the fields, the payloads, the row's sentences).
 
 ## 2026-10-13 — Review offered Accept for a tree holding nothing beyond the line, and named a branch the agent had deleted (REVIEWBASE4)
 

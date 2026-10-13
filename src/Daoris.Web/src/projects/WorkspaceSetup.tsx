@@ -1,7 +1,9 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { RuleListName } from '../settings/AgentRules';
-import { type Accepting, AcceptingNote, LandingField, type LandingRule } from '../settings/Landings';
+import { COMMIT_DEFAULT, type CommitEdit, CommitField, type CommitRule, commitRowSays, commitSummary } from '../settings/Commits';
+import { HELPER_DEFAULT, type HelperEdit, HelperField, type HelperRule, helperRowSays, helperSummary } from '../settings/Helpers';
+import { type Accepting, AcceptingNote, LandingField, landingProcessSays, type LandingRule } from '../settings/Landings';
 import { LanguageChoice, type LanguageOption } from '../settings/Languages';
 import { LineField } from '../settings/Lines';
 import { type OpinionEdit, OpinionField, type OpinionRule, opinionRowSays, opinionSummary } from '../settings/Opinions';
@@ -31,6 +33,10 @@ export type WorkspaceDefaults = {
   review?: { set?: ReviewRule; onChange: (edit: ReviewEdit) => void } | null;
   /** Which other agent reads its repositories' work before it lands (XAGENT1a): `daoris driver opinion --workspace`. */
   opinion?: { set?: OpinionRule; onChange: (edit: OpinionEdit) => void } | null;
+  /** How its repositories' work is committed (DOORS1b, D164's amendment point 1): `daoris driver commits --workspace`. */
+  commits?: { set?: CommitRule; onChange: (edit: CommitEdit) => void } | null;
+  /** What a helper its repositories' agents ask for does (DOORS1b, D163 point 3): `daoris driver helpers --workspace`. */
+  helpers?: { set?: HelperRule; onChange: (edit: HelperEdit) => void } | null;
 };
 
 /** Where it syncs (D48 §5), and Claude Code's rules for it (PERM1): its remote and its reach. */
@@ -88,16 +94,18 @@ const plain = (text: string) => text.replace(/`/g, '');
 export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open, wiring: startWiring = false, onOpenPlugin }: WorkspaceSetupProps) {
   const { t } = useTranslation();
   const daoris = (value: string) => t('projects.setup.marked.daoris', { value });
-  const { line, landing, language, read, review, opinion } = defaults;
+  const { line, landing, language, read, review, opinion, commits, helpers } = defaults;
 
   const defaultsParts = [
     ...(line ? [line.set ? t('projects.setup.summary.line', { branch: line.set }) : daoris(t('projects.workspace.summary.noLine'))] : []),
     ...(landing ? [landing.set ? landingSays(t, landing.set) : daoris(t('projects.setup.summary.landsMerge'))] : []),
+    ...(commits ? [commits.set ? commitSummary(t, commits.set) : daoris(commitSummary(t, COMMIT_DEFAULT))] : []),
     ...(language
       ? [language.set
           ? language.table.find((row) => row.code === language.set)?.name ?? language.set
           : daoris(t('projects.setup.summary.noLanguage'))]
       : []),
+    ...(helpers ? [helpers.set ? helperSummary(t, helpers.set) : daoris(helperSummary(t, HELPER_DEFAULT))] : []),
     ...(read
       ? [read.set === undefined
           ? daoris(t('projects.setup.summary.read'))
@@ -118,7 +126,8 @@ export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open
   ];
 
   const opensItself: Record<WorkspaceSection, boolean> = {
-    defaults: Boolean(line?.set || landing?.set || language?.set || read?.set !== undefined || review?.set || opinion?.set),
+    defaults: Boolean(line?.set || landing?.set || language?.set || read?.set !== undefined || review?.set || opinion?.set
+      || commits?.set || helpers?.set),
     remote: Boolean(wired) || ruleCount > 0 || startWiring,
   };
 
@@ -154,6 +163,22 @@ export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open
             />
           )}
           {landing && <LandingDefault workspace={workspace} landing={landing} busy={busy} onOpenPlugin={onOpenPlugin} />}
+          {commits && (
+            <Inheritable
+              setHere={t('projects.workspace.setHere')}
+              label={t('settings.commits.label')}
+              twin={t('settings.commits.twin.workspace', { workspace: shellWord(workspace, '<workspace>') })}
+              why={plain(t('settings.commits.body'))}
+              says={commitRowSays(t, commits.set ?? COMMIT_DEFAULT, commits.set ? { source: 'workspace', workspace } : { source: 'default' })}
+              own={commits.set !== undefined}
+              busy={busy}
+              wide
+              onClear={() => commits.onChange({ clear: true })}
+              editor={() => (
+                <CommitField name={workspace} set={commits.set} inherited={COMMIT_DEFAULT} busy={busy} onChange={commits.onChange} />
+              )}
+            />
+          )}
           {language && (
             <Inheritable
               setHere={t('projects.workspace.setHere')}
@@ -175,6 +200,22 @@ export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open
                   table={language.table}
                   onChoose={(code) => language.onSet(code)}
                 />
+              )}
+            />
+          )}
+          {helpers && (
+            <Inheritable
+              setHere={t('projects.workspace.setHere')}
+              label={t('settings.helpers.label')}
+              twin={t('settings.helpers.twin.workspace', { workspace: shellWord(workspace, '<workspace>') })}
+              why={plain(t('settings.helpers.body'))}
+              says={helperRowSays(t, helpers.set ?? HELPER_DEFAULT, helpers.set ? { source: 'workspace', workspace } : { source: 'default' })}
+              own={helpers.set !== undefined}
+              busy={busy}
+              wide
+              onClear={() => helpers.onChange({ clear: true })}
+              editor={() => (
+                <HelperField name={workspace} set={helpers.set} inherited={HELPER_DEFAULT} busy={busy} onChange={helpers.onChange} />
               )}
             />
           )}
@@ -302,6 +343,7 @@ function LandingDefault({ workspace, landing, busy, onOpenPlugin }: {
         set.form === 'branch' ? set.plugin : undefined,
         set.form === 'branch' && !!set.autoAccept,
         onOpenPlugin,
+        landingProcessSays(t, set),
       )
     :t('settings.landing.from.default');
   return (

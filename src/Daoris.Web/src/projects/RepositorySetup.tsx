@@ -2,7 +2,11 @@ import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { RepositoryAcross } from '../settings/Across';
 import type { RuleListName } from '../settings/AgentRules';
-import { type Accepting, AcceptingNote, LandingField, type LandingRule, type RepositoryLanding } from '../settings/Landings';
+import { COMMIT_DEFAULT, type CommitEdit, CommitField, commitRowSays, commitSummary, type RepositoryCommits } from '../settings/Commits';
+import { HELPER_DEFAULT, type HelperEdit, HelperField, helperRowSays, helperSummary, type RepositoryHelpers } from '../settings/Helpers';
+import {
+  type Accepting, AcceptingNote, LandingField, landingProcessSays, type LandingRule, type RepositoryLanding,
+} from '../settings/Landings';
 import { LanguageChoice, type LanguageOption, type RepositoryLanguage } from '../settings/Languages';
 import { LineField, type RepositoryLine } from '../settings/Lines';
 import { type OpinionEdit, OpinionField, opinionRowSays, opinionSummary, type RepositoryOpinion } from '../settings/Opinions';
@@ -51,12 +55,24 @@ export type WorkSetup = {
    */
   opinion?: RepositoryOpinion | null;
   onOpinion?: (edit: OpinionEdit) => void;
+  /**
+   * How its work is committed (DOORS1b, D164's amendment points 1 and 3), as the driver resolves it: its own, its workspace's,
+   * or Daoris's default; absent on a shell older than it, and no row is offered.
+   */
+  commits?: RepositoryCommits | null;
+  onCommits?: (edit: CommitEdit) => void;
 };
 
-/** The language its sessions write to the person in (LANG1c) and its standing answer (KNOWUSE1b). */
+/** The language its sessions write to the person in (LANG1c), what a helper its agent asks for does, and its standing answer (KNOWUSE1b). */
 export type SessionsSetup = {
   /** As the driver resolved it, its workspace's by the table's name, and the table; absent on a shell older than it. */
   language?: { resolved: RepositoryLanguage | null; inherited?: string; table: LanguageOption[]; onSet: (language: string | null) => void };
+  /**
+   * What a helper its agent asks for does (DOORS1b, D163 point 3), as the driver resolves it: its own, its workspace's, or
+   * Daoris's default; absent on a shell older than it, and no row is offered.
+   */
+  helpers?: RepositoryHelpers | null;
+  onHelpers?: (edit: HelperEdit) => void;
   /** Its standing answer, the person's words and when they set them; null for none. */
   standing?: { says: string; at?: string | null } | null;
   /** Keep a standing answer, or with null clear it; absent on a shell older than it, and nothing is offered. */
@@ -100,9 +116,9 @@ const JOIN = ' · ';
 /**
  * **A repository's Setup** (UX6f, D150 §4.2): every setting the repository holds on this machine, in four sections, each
  * folding to a line that names its values. *Driving* (drive, hold, a tree per session), *Line and landing* (its line, how
- * its work lands; the design's *Work*, which the catalogue keeps for no name since the view it named was retired),
- * *Sessions* (the language they write in, the standing answer) and *Reach* (read by agents outside it, what its sessions
- * also write into, Claude Code's rules here).
+ * its work lands, how it is committed, DOORS1b; the design's *Work*, which the catalogue keeps for no name since the view
+ * it named was retired), *Sessions* (the language they write in, what a helper their agent asks for does, the standing
+ * answer) and *Reach* (read by agents outside it, what its sessions also write into, Claude Code's rules here).
  *
  * @remarks
  * **What Daoris decides folds; what the person decides shows** (§1 rule 4). A folded section's line names each value, one
@@ -141,6 +157,10 @@ export function RepositorySetup({ repository, driving, work, sessions, reach, bu
   // Which other agent reads its work before it lands (XAGENT1a): its own, its workspace's, or none set, which is Daoris's.
   const opinion = work?.onOpinion ? work.opinion : undefined;
   const opinionOwn = opinion?.source === 'repository';
+  // How its work is committed (DOORS1b): its own, its workspace's, or Daoris's default, which the driver answers as a rule.
+  const commits = work?.onCommits ? work.commits : undefined;
+  const commitRule = commits?.rule ?? COMMIT_DEFAULT;
+  const commitsOwn = commits?.source === 'repository';
   const workParts = work && [
     ...(line
       ? [marked(
@@ -148,13 +168,17 @@ export function RepositorySetup({ repository, driving, work, sessions, reach, bu
           line.source === 'repository' ? 'repository' : line.source === 'workspace' ? 'workspace' : 'daoris')]
       : []),
     ...(landing ? [marked(landingSays(t, landing), landing.source === 'default' ? 'daoris' : landing.source)] : []),
+    ...(commits ? [marked(commitSummary(t, commitRule), commits.source === 'repository' || commits.source === 'workspace' ? commits.source : 'daoris')] : []),
     ...(review ? [marked(reviewSummary(t, review.rule), review.rule && review.source ? review.source : 'daoris')] : []),
     ...(opinion ? [marked(opinionSummary(t, opinion.rule), opinion.rule && opinion.source ? opinion.source : 'daoris')] : []),
   ];
 
-  // Sessions: the language they write in, then the standing answer.
+  // Sessions: the language they write in, what a helper their agent asks for does (DOORS1b), then the standing answer.
   const language = sessions?.language;
   const languageOwn = language?.resolved?.source === 'repository';
+  const helpers = sessions?.onHelpers ? sessions.helpers : undefined;
+  const helperRule = helpers?.rule ?? HELPER_DEFAULT;
+  const helpersOwn = helpers?.source === 'repository';
   const standing = sessions?.standing ?? null;
   const sessionsParts = sessions && [
     ...(language
@@ -162,6 +186,7 @@ export function RepositorySetup({ repository, driving, work, sessions, reach, bu
           ? marked(language.resolved.name ?? language.resolved.language, language.resolved.source)
           : marked(t('projects.setup.summary.noLanguage'), 'daoris')]
       : []),
+    ...(helpers ? [marked(helperSummary(t, helperRule), helpers.source === 'repository' || helpers.source === 'workspace' ? helpers.source : 'daoris')] : []),
     ...(sessions.onStanding
       ? [standing ? t('projects.setup.summary.standing', { count: standing.says.split('\n').length }) : t('projects.setup.summary.noStanding')]
       : []),
@@ -190,8 +215,8 @@ export function RepositorySetup({ repository, driving, work, sessions, reach, bu
   // What opens on its own: a section holding a value set for this repository.
   const opensItself: Record<SetupSectionId, boolean> = {
     driving: false,
-    work: lineOwn || landingOwn || reviewOwn || opinionOwn,
-    sessions: languageOwn || standing !== null,
+    work: lineOwn || landingOwn || commitsOwn || reviewOwn || opinionOwn,
+    sessions: languageOwn || helpersOwn || standing !== null,
     reach: readOwn || writesTo.length > 0 || ruleCount > 0,
   };
 
@@ -266,6 +291,28 @@ export function RepositorySetup({ repository, driving, work, sessions, reach, bu
               busy={busy}
               onLanding={work.onLanding}
               onOpenPlugin={onOpenPlugin}
+            />
+          )}
+          {commits && work.onCommits && (
+            <Inheritable
+              setHere={t('projects.setup.setHere')}
+              label={t('settings.commits.label')}
+              twin={t('settings.commits.twin.repository', { repository })}
+              why={t('settings.commits.body')}
+              says={commitRowSays(t, commitRule, { source: commits.source, workspace: commits.workspace })}
+              own={commitsOwn}
+              busy={busy}
+              wide
+              onClear={() => work.onCommits?.({ clear: true })}
+              editor={() => (
+                <CommitField
+                  name={repository}
+                  set={commitsOwn ? commitRule : undefined}
+                  inherited={commitRule}
+                  busy={busy}
+                  onChange={(edit) => work.onCommits?.(edit)}
+                />
+              )}
             />
           )}
           {review && work.onReview && (
@@ -343,6 +390,28 @@ export function RepositorySetup({ repository, driving, work, sessions, reach, bu
                   inherited={language.inherited}
                   table={language.table}
                   onChoose={(code) => language.onSet(code ?? null)}
+                />
+              )}
+            />
+          )}
+          {helpers && sessions.onHelpers && (
+            <Inheritable
+              setHere={t('projects.setup.setHere')}
+              label={t('settings.helpers.label')}
+              twin={t('settings.helpers.twin.repository', { repository })}
+              why={t('settings.helpers.body')}
+              says={helperRowSays(t, helperRule, { source: helpers.source, workspace: helpers.workspace })}
+              own={helpersOwn}
+              busy={busy}
+              wide
+              onClear={() => sessions.onHelpers?.({ clear: true })}
+              editor={() => (
+                <HelperField
+                  name={repository}
+                  set={helpersOwn ? helperRule : undefined}
+                  inherited={helperRule}
+                  busy={busy}
+                  onChange={(edit) => sessions.onHelpers?.(edit)}
                 />
               )}
             />
@@ -447,7 +516,8 @@ function LandingSetting({ repository, landing, above, landers, busy, onLanding, 
         pattern: landing.pattern, workspace: landing.workspace,
       });
   const branch = landing.form === 'branch';
-  const says = landingRowSays(t, said, branch ? landing.plugin : undefined, branch && !!landing.autoAccept, onOpenPlugin);
+  const says = landingRowSays(
+    t, said, branch ? landing.plugin : undefined, branch && !!landing.autoAccept, onOpenPlugin, landingProcessSays(t, landing));
   return (
     <Inheritable
       setHere={t('projects.setup.setHere')}

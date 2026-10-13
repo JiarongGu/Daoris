@@ -33,6 +33,12 @@ with the version and date at release.
   squash, each as a card you apply with its terminal command beside it. It may quote your repository's own instructions (its
   branch names, how it writes a commit), which become the process only once you apply the card. A landing card that names
   neither the key nor the squash keeps the ones already set there.
+- A repository's Setup shows and sets how its sessions commit (*Line and landing → Commits*: as the work goes, each commit
+  after your yes, or once at the end, with your convention for commit messages) and what a helper its agent asks for does
+  (*Sessions → Helpers*: wait for your yes, start at once, or not offered, and the agents in the order they are tried); a
+  workspace's *Defaults* sets both for its repositories. Each says what it inherits and where it was set. *How work lands*
+  says and sets a branch rule's ticket key and squash, and saving it there no longer drops a key or a squash set from the
+  terminal or Ask Daoris.
 - Daoris reads each Claude account's real plan usage, the five-hour and weekly windows Claude Code's `/usage` shows, with no
   prompt and no usage spent, so a start chooses its account on what is really left, the person's own use included, rather
   than on what Daoris's last session there said hours before.

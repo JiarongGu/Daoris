@@ -63,7 +63,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "pattern is found by in the title or the request, the session's id where none is, and `--squash|--no-squash`: "
             + "Accept makes the pull request's branch one commit of the session's work)"),
         // DOORS1a (D164's amendment points 1, 3 and 5): how work is committed; Ask Daoris proposes it as the `setting` kind's
-        // `commits` door, its convention seeded from the repository's own instructions where the person asks. Setup's row is DOORS1b's.
+        // `commits` door, its convention seeded from the repository's own instructions where the person asks. Setup's row since DOORS1b.
         ("set how a repository's work is committed, or a workspace's: as it goes (each piece that passes its checks; the "
             + "default), each commit waiting for your yes, or one commit when the work is done, and your words on how a commit "
             + "message is written (Ask Daoris proposes it, and may quote the convention from the repository's own instructions "
@@ -72,7 +72,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris driver commits <repository> --mode as-you-go|ask|at-end [--convention \"…\"|--no-convention]` "
             + "(`--workspace <name>` for a whole workspace), `daoris driver commits <repository> --clear`"),
         // DOORS1a (D163 point 3): what a helper an agent asks for does; Ask Daoris proposes it as the `setting` kind's `helpers`
-        // door. Setup's row is DOORS1b's. Before the review and the opinion, whose rows the workflow's follows.
+        // door. Setup's row since DOORS1b. Before the review and the opinion, whose rows the workflow's follows.
         ("set what a helper a repository's agent asks for does, or a workspace's: wait for your yes (the default), start at once "
             + "within the limits, or not be offered, and the other agents it may ask, in the order they are tried (Ask Daoris "
             + "proposes it)",

@@ -278,11 +278,19 @@ public sealed partial class DriverModule
                 .Select(p => new { Repository = p.Key, Branch = p.Value }).ToArray(),
             WorkspaceLines = config.WorkspaceLines.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Workspace = p.Key, Branch = p.Value }).ToArray(),
-            // The landing rules as set (WSR1), as rows for the same reason.
+            // The landing rules as set (WSR1), as rows for the same reason, with the ticket's key and the squash (DOORS1b).
             Landings = config.Landings.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Repository = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy, p.Value.Plugin, p.Value.AutoAccept }).ToArray(),
+                .Select(p => new
+                {
+                    Repository = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy, p.Value.Plugin, p.Value.AutoAccept, p.Value.Key,
+                    p.Value.Squash,
+                }).ToArray(),
             WorkspaceLandings = config.WorkspaceLandings.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Workspace = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy, p.Value.Plugin, p.Value.AutoAccept }).ToArray(),
+                .Select(p => new
+                {
+                    Workspace = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy, p.Value.Plugin, p.Value.AutoAccept, p.Value.Key,
+                    p.Value.Squash,
+                }).ToArray(),
             // Reading and writing across as set (D107), as rows for the same reason.
             ReadAcross = config.ReadAcross.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Repository = p.Key, Read = p.Value }).ToArray(),
@@ -311,6 +319,15 @@ public sealed partial class DriverModule
                 .Select(p => new { Repository = p.Key, Rule = OpinionWire(p.Value, config.Adapter, _loop.Harnesses.Adapters) }).ToArray(),
             WorkspaceOpinions = config.WorkspaceOpinions.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Workspace = p.Key, Rule = OpinionWire(p.Value, config.Adapter, _loop.Harnesses.Adapters) }).ToArray(),
+            // The helpers and commit rules as set (DOORS1b), as rows for the same reason: a workspace's Defaults reads its own here.
+            Helpers = config.Helpers.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Repository = p.Key, Rule = HelperWire(p.Value) }).ToArray(),
+            WorkspaceHelpers = config.WorkspaceHelpers.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Workspace = p.Key, Rule = HelperWire(p.Value) }).ToArray(),
+            Commits = config.Commits.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Repository = p.Key, Rule = CommitWire(p.Value) }).ToArray(),
+            WorkspaceCommits = config.WorkspaceCommits.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Workspace = p.Key, Rule = CommitWire(p.Value) }).ToArray(),
             Running = _loop.Processes.Running,
             // Who is driving Daoris's browser (BRW8): the running sessions handed a server that drives it.
             DrivingBrowser = _loop.Processes.DrivingBrowser,

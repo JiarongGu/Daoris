@@ -145,6 +145,47 @@ export const SETUP_OWN: RepositorySetupProps = {
   },
 };
 
+/**
+ * The engine's Setup with its process as a shell since DOORS1b answers it (D164's amendment point 3): how its work is committed
+ * at Daoris's default, on *Line and landing*, and what a helper its agent asks for does from its workspace, on *Sessions*.
+ */
+export const SETUP_PROCESS: RepositorySetupProps = {
+  ...SETUP_DEFAULTS,
+  work: {
+    ...SETUP_DEFAULTS.work,
+    commits: { repository: 'engine', workspace: 'default', rule: { mode: 'as-you-go' }, source: 'default' },
+    onCommits: nothing,
+  },
+  sessions: {
+    ...SETUP_DEFAULTS.sessions,
+    helpers: { repository: 'engine', workspace: 'default', rule: { mode: 'on', agents: ['codex-acp', 'dsh'] }, source: 'workspace' },
+    onHelpers: nothing,
+  },
+};
+
+/**
+ * The engine's process set for it (DOORS1b): branches named by a ticket its key finds and squashed to one commit, each commit
+ * waiting for the person's yes under their convention, and no helper offered. Line and landing and Sessions open.
+ */
+export const SETUP_PROCESS_OWN: RepositorySetupProps = {
+  ...SETUP_PROCESS,
+  work: {
+    ...SETUP_PROCESS.work,
+    landing: {
+      repository: 'engine', workspace: 'default', form: 'branch', pattern: 'feature/{ticket}-{slug}', key: '[A-Z]+-\\d+',
+      squash: true, plugin: 'github-pull-request', source: 'repository',
+    },
+    commits: {
+      repository: 'engine', workspace: 'default', source: 'repository',
+      rule: { mode: 'ask', convention: 'Imperative subject line under 72 characters, the ticket key first; say why in the body.' },
+    },
+  },
+  sessions: {
+    ...SETUP_PROCESS.sessions,
+    helpers: { repository: 'engine', workspace: 'default', rule: { mode: 'off', agents: [] }, source: 'repository' },
+  },
+};
+
 /** A whole commit id from a short one, as git answers them: forty hex digits. */
 const id = (short: string) => short.padEnd(40, '0');
 const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString();

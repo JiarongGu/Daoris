@@ -1,6 +1,8 @@
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../queries';
+import type { CommitChange, RepositoryCommits } from '../settings/Commits';
+import type { HelperChange, RepositoryHelpers } from '../settings/Helpers';
 import type { LineChange, RepositoryLine } from '../settings/Lines';
 import type { LandingChange, RepositoryLanding } from '../settings/Landings';
 import type { LanguageChange, RepositoryLanguage } from '../settings/Languages';
@@ -31,6 +33,10 @@ export const useLines = () => {
       reviews?: RepositoryReview[];
       // Which other agent reads each one's work before it lands, as the driver resolves it (XAGENT1a); absent on an older shell.
       opinions?: RepositoryOpinion[];
+      // How each one's work is committed and what a helper its agent asks for does, as the driver resolves them (DOORS1b): each
+      // never null, `default` where nothing is set; absent on an older shell, which offers neither row.
+      commits?: RepositoryCommits[];
+      helpers?: RepositoryHelpers[];
     }>('LINES'),
     enabled: isAvailable,
   });
@@ -319,6 +325,38 @@ export const useSetOpinion = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (change: OpinionChange) => call<DriverState>('SET_OPINION', change),
+    onSuccess: (state) => {
+      client.setQueryData(keys.driver, state);
+      void client.invalidateQueries({ queryKey: keys.lines });
+    },
+  });
+};
+
+/**
+ * Change how a repository's work is committed, or a workspace's (DOORS1b, D164's amendment points 1 and 3): the twins' edit, over
+ * the file `daoris driver commits` edits (D50). What each repository resolves to moves with it, so the lines are asked again. A
+ * refusal is the driver's sentence, verbatim. Driven sessions and conversations are told the rule at their start (PROCESS1d).
+ */
+export const useSetCommits = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (change: CommitChange) => call<DriverState>('SET_COMMITS', change),
+    onSuccess: (state) => {
+      client.setQueryData(keys.driver, state);
+      void client.invalidateQueries({ queryKey: keys.lines });
+    },
+  });
+};
+
+/**
+ * Change what a helper a repository's agent asks for does, or a workspace's (DOORS1b, D163 point 3): the twins' edit, over the
+ * file `daoris driver helpers` edits (D50). What each repository resolves to moves with it, so the lines are asked again. A
+ * refusal is the driver's sentence, verbatim.
+ */
+export const useSetHelpers = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (change: HelperChange) => call<DriverState>('SET_HELPERS', change),
     onSuccess: (state) => {
       client.setQueryData(keys.driver, state);
       void client.invalidateQueries({ queryKey: keys.lines });

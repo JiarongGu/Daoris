@@ -128,6 +128,93 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.False(DriverConfig.Load(DriverConfigPath).Landings.ContainsKey("engine"));
     }
 
+    /// <summary>
+    /// DOORS1b (D164's amendment point 2, its DOORS1a note): a press that names neither the ticket's key nor the squash keeps the
+    /// ones the rule set at the same place holds (a repository's own, never its workspace's), where the new rule can hold them: a
+    /// branch, and a key only for a pattern saying `{ticket}`. A save there used to rebuild the rule without them, dropping what
+    /// the terminal or Ask Daoris set.
+    /// </summary>
+    [Fact]
+    public async Task A_press_naming_neither_the_key_nor_the_squash_keeps_the_ones_set_there()
+    {
+        DriverConfig.Empty
+            .WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{ticket}-{slug}", Key: "[A-Z]+-\\d+", Squash: true))
+            .WithWorkspaceLanding("aurora", new LandingRule(LandingForm.Branch, "work/{ticket}", Key: "TK-\\d+", Squash: true))
+            .Save(DriverConfigPath);
+
+        var state = await AnswerAsync(Module(), "SET_LANDING", new { repository = "engine", form = "branch", pattern = "feature/{ticket}-{slug}", tidy = true });
+        var kept = DriverConfig.Load(DriverConfigPath).Landings["engine"];
+        Assert.Equal(("[A-Z]+-\\d+", true, true), (kept.Key, kept.Squash, kept.Tidy));
+        var row = state.GetProperty("landings")[0];
+        Assert.Equal("[A-Z]+-\\d+", row.GetProperty("key").GetString());
+        Assert.True(row.GetProperty("squash").GetBoolean());
+
+        // A pattern without `{ticket}` cannot hold a key, and a merge holds neither: each is left where it cannot stand.
+        await AnswerAsync(Module(), "SET_LANDING", new { repository = "engine", form = "branch", pattern = "feature/{quest}" });
+        Assert.Equal((null, true), (DriverConfig.Load(DriverConfigPath).Landings["engine"].Key, DriverConfig.Load(DriverConfigPath).Landings["engine"].Squash));
+        await AnswerAsync(Module(), "SET_LANDING", new { repository = "engine", form = "merge" });
+        Assert.Equal(LandingRule.Merge, DriverConfig.Load(DriverConfigPath).Landings["engine"]);
+
+        // A repository with no rule of its own takes nothing from its workspace's: it sets its own whole.
+        await AnswerAsync(Module(), "SET_LANDING", new { repository = "game", form = "branch", pattern = "work/{ticket}" });
+        Assert.Equal((null, false), (DriverConfig.Load(DriverConfigPath).Landings["game"].Key, DriverConfig.Load(DriverConfigPath).Landings["game"].Squash));
+
+        var shared = await AnswerAsync(Module(), "SET_LANDING", new { workspace = "aurora", form = "branch", pattern = "work/{ticket}-{slug}" });
+        Assert.Equal("TK-\\d+", shared.GetProperty("workspaceLandings")[0].GetProperty("key").GetString());
+        Assert.True(shared.GetProperty("workspaceLandings")[0].GetProperty("squash").GetBoolean());
+    }
+
+    /// <summary>
+    /// DOORS1b: the press sets the key and the squash as the terminal's `--key <shape>|--no-key` and `--squash|--no-squash` do, an
+    /// empty key taking it away, each refused in the driver's words, nothing written.
+    /// </summary>
+    [Fact]
+    public async Task A_press_sets_the_key_and_the_squash_and_each_is_refused_as_the_terminal_refuses_it()
+    {
+        await AnswerAsync(Module(), "SET_LANDING",
+            new { repository = "engine", form = "branch", pattern = "feature/{ticket}-{slug}", key = "TK-\\d+", squash = true });
+        var set = DriverConfig.Load(DriverConfigPath).Landings["engine"];
+        Assert.Equal(("TK-\\d+", true), (set.Key, set.Squash));
+
+        await AnswerAsync(Module(), "SET_LANDING",
+            new { repository = "engine", form = "branch", pattern = "feature/{ticket}-{slug}", key = "", squash = false });
+        var taken = DriverConfig.Load(DriverConfigPath).Landings["engine"];
+        Assert.Equal((null, false), (taken.Key, taken.Squash));
+
+        var mergeKey = await RefusalAsync(Module(), "SET_LANDING", new { repository = "tools", form = "merge", key = "TK-\\d+" });
+        var mergeSquash = await RefusalAsync(Module(), "SET_LANDING", new { repository = "tools", form = "merge", squash = true });
+        var noTicket = await RefusalAsync(Module(), "SET_LANDING", new { repository = "tools", form = "branch", pattern = "feature/{quest}", key = "TK-\\d+" });
+        var unshared = await RefusalAsync(Module(), "SET_LANDING", new { repository = "tools", form = "branch", pattern = "feature/{ticket}", key = "TK\\_\\d+" });
+
+        Assert.Contains("only a branch rule reads a ticket's key", mergeKey);
+        Assert.Contains("only a branch rule squashes", mergeSquash);
+        Assert.Contains("a ticket's key is read only for `{ticket}`", noTicket);
+        Assert.Contains("which the driver and the CLI read alike", unshared);
+        Assert.False(DriverConfig.Load(DriverConfigPath).Landings.ContainsKey("tools"));
+    }
+
+    /// <summary>DOORS1b: each repository's landing as the lines answer it carries its key and its squash, for the page to show and keep.</summary>
+    [Fact]
+    public async Task The_lines_answer_each_landings_key_and_squash()
+    {
+        DriverConfig.Empty
+            .WithWorkspaceLanding("aurora", new LandingRule(LandingForm.Branch, "work/{ticket}", Key: "TK-\\d+", Squash: true))
+            .WithLanding("game", LandingRule.Merge)
+            .Save(DriverConfigPath);
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService())));
+
+        var landings = (await AnswerAsync(module, "LINES")).GetProperty("landings").EnumerateArray().ToList();
+
+        var engine = landings.Single(row => row.GetProperty("repository").GetString() == "engine");
+        Assert.Equal("TK-\\d+", engine.GetProperty("key").GetString());
+        Assert.True(engine.GetProperty("squash").GetBoolean());
+        var game = landings.Single(row => row.GetProperty("repository").GetString() == "game");
+        Assert.False(game.GetProperty("squash").GetBoolean());
+        Assert.False(game.TryGetProperty("key", out var none) && none.ValueKind != JsonValueKind.Null);
+    }
+
     /// <summary>The clean-up reads the registry's checkouts and the sessions in use, so before the driver is up it is the cold-start sentence.</summary>
     [Fact]
     public async Task The_clean_up_before_the_driver_is_up_is_a_sentence()

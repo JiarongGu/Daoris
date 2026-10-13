@@ -133,7 +133,7 @@ describe("a workspace's Setup", () => {
     const rule = screen.getByRole('radiogroup', { name: 'How work in aurora lands' });
     await user.click(within(rule).getByRole('radio', { name: 'Branch' }));
     await user.click(within(rule.closest('form')!).getByRole('button', { name: 'Save' }));
-    expect(acts.landing).toHaveBeenLastCalledWith({ form: 'branch', pattern: 'feature/{quest}-{slug}' });
+    expect(acts.landing).toHaveBeenLastCalledWith({ form: 'branch', pattern: 'feature/{quest}-{slug}', squash: false });
   });
 
   it('switches its reading off, as the terminal does', async () => {
@@ -319,5 +319,67 @@ describe("a workspace's second opinion before landing", () => {
     expect(screen.queryByText(/Declared only: nothing reads it yet/)).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Clear' }));
     expect(onChange).toHaveBeenLastCalledWith({ clear: true });
+  });
+});
+
+/**
+ * DOORS1b (D164's amendment points 1 and 3, D163 point 3): a workspace's *Commits* and *Helpers* among its Defaults, for every
+ * repository there that sets none of its own, as Ask Daoris's room names them. Nothing set says Daoris's default; one set
+ * carries Clear.
+ */
+describe("a workspace's commits and helpers", () => {
+  const withProcess = (commits: WorkspaceSetupProps['defaults']['commits'], helpers: WorkspaceSetupProps['defaults']['helpers']) => at({
+    defaults: { line: { onSet: vi.fn() }, commits, helpers },
+  });
+
+  it("names none set as Daoris's default, says what stands, and sets each with its terminal twin", async () => {
+    const commits = vi.fn();
+    const helpers = vi.fn();
+    withProcess({ onChange: commits }, { onChange: helpers });
+
+    expect(section('Defaults')).toHaveAccessibleDescription(
+      "each checkout's own line (Daoris's default) · commits as it goes (Daoris's default) · helpers wait for your yes (Daoris's default)");
+    await userEvent.click(section('Defaults'));
+    expect(screen.getByText(code('daoris driver commits --workspace aurora --mode as-you-go|ask|at-end --convention "…"|--clear')))
+      .toBeInTheDocument();
+    expect(screen.getByText(code('daoris driver helpers --workspace aurora --mode ask|on|off --agents <adapter,adapter>|--clear')))
+      .toBeInTheDocument();
+
+    const commitRow = screen.getByText('Commits', { selector: 'span' }).closest('.\\@container') as HTMLElement;
+    expect(commitRow).toHaveTextContent("Each piece that passes its checks is committed as the work goes. Daoris's default: nothing is set.");
+    await userEvent.click(within(commitRow).getByRole('button', { name: 'Set for this workspace' }));
+    await userEvent.click(within(commitRow).getByRole('radio', { name: 'At the end' }));
+    await userEvent.type(within(commitRow).getByRole('textbox', { name: 'Your commit convention for aurora' }), 'Say why.');
+    await userEvent.click(within(commitRow).getByRole('button', { name: 'Save' }));
+    expect(commits).toHaveBeenLastCalledWith({ set: { mode: 'at-end', convention: 'Say why.' } });
+
+    const helperRow = screen.getByText('Helpers', { selector: 'span' }).closest('.\\@container') as HTMLElement;
+    expect(helperRow).toHaveTextContent('Each helper an agent asks for waits for your yes.');
+    await userEvent.click(within(helperRow).getByRole('button', { name: 'Set for this workspace' }));
+    await userEvent.type(within(helperRow).getByRole('textbox', { name: "The agents aurora's sessions may ask, in the order they are tried" }), 'codex-acp');
+    await userEvent.click(within(helperRow).getByRole('button', { name: 'Save' }));
+    expect(helpers).toHaveBeenLastCalledWith({ set: { mode: 'ask', agents: ['codex-acp'] } });
+  });
+
+  it('opens on the rules it sets, says them as set for the workspace, and clears each', async () => {
+    const commits = vi.fn();
+    const helpers = vi.fn();
+    withProcess(
+      { set: { mode: 'ask', convention: 'Imperative subject.' }, onChange: commits },
+      { set: { mode: 'off', agents: [] }, onChange: helpers },
+    );
+
+    expect(section('Defaults')).toHaveAttribute('aria-expanded', 'true');
+    const commitRow = screen.getByText('Commits', { selector: 'span' }).closest('.\\@container') as HTMLElement;
+    expect(commitRow).toHaveTextContent(
+      'Each commit waits for your yes before it is made. Each session is told how a commit message is written: “Imperative subject.” '
+      + 'From the workspace aurora.');
+    await userEvent.click(within(commitRow).getByRole('button', { name: 'Clear' }));
+    expect(commits).toHaveBeenLastCalledWith({ clear: true });
+
+    const helperRow = screen.getByText('Helpers', { selector: 'span' }).closest('.\\@container') as HTMLElement;
+    expect(helperRow).toHaveTextContent('A helper is not offered to a session here: only your own press asks one. From the workspace aurora.');
+    await userEvent.click(within(helperRow).getByRole('button', { name: 'Clear' }));
+    expect(helpers).toHaveBeenLastCalledWith({ clear: true });
   });
 });

@@ -659,6 +659,10 @@ public sealed partial class HelpCoverageTests
         ("projects", "useSetReview", null, new Door("setting", "review")),
         // XAGENT1a: *Second opinion before landing*, on a repository's Setup and a workspace's Defaults.
         ("projects", "useSetOpinion", null, new Door("setting", "opinion")),
+        // DOORS1b: *Commits* on Line and landing and *Helpers* on Sessions, on a repository's Setup and a workspace's Defaults,
+        // the twins of Ask Daoris's `commits` and `helpers` doors (DOORS1a).
+        ("projects", "useSetCommits", null, new Door("setting", "commits")),
+        ("projects", "useSetHelpers", null, new Door("setting", "helpers")),
         ("projects", "useSetStanding", null, new Door("setting", "standing")),
         ("projects", "useSetReadAcross", null, new Door("setting", "across")),
         ("projects", "useSetWriteAcross", null, new Door("setting", "across")),
