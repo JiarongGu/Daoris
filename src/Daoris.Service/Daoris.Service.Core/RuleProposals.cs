@@ -125,9 +125,7 @@ public sealed class RuleProposalBox(string? home)
         var directory = Path.Combine(Home, Folder);
         Directory.CreateDirectory(directory);
         var path = Path.Combine(directory, $"{id}.json");
-        var beside = path + ".tmp";
-        File.WriteAllText(beside, Json(id, change, why.Trim(), session, ask, folder, at), new UTF8Encoding(false));
-        File.Move(beside, path);
+        AtomicFile.WriteText(path, Json(id, change, why.Trim(), session, ask, folder, at));
 
         return (id,
             $"Proposed `#{id}`: {Describe(change)}. If it narrows what agents may do, the driver applies it at "

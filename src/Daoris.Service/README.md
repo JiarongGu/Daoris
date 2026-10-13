@@ -712,6 +712,10 @@ by diverging. The service indexes the second kind.
   its zero dependencies and never learns about this.
 - **The canon is an input, not a copy.** `canon/` at the workspace root is the same tree the CLI
   materializes; the service reads it rather than holding its own.
+- **One atomic file write** (`AtomicFile`, DEDUP9a). The core writes a file something else may read beside it under a
+  name of its own, then renames it over the target, retrying a busy target and removing the beside file; an existing
+  file is replaced. Quest attachments, helper asks and answers, and rule and help proposals all write through it. The
+  driver keeps a helper of its own (D166): the two projects do not reference each other.
 - **Two clients, one UI** — see `Daoris.Web` and `Daoris.Desktop`.
 
 ## The design is written

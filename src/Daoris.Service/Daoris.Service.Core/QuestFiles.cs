@@ -110,9 +110,7 @@ public sealed class QuestFiles(string home, string folder = QuestFiles.Folder)
         if (File.Exists(path)) return attachment;
 
         Directory.CreateDirectory(DirectoryOf(questId));
-        var beside = path + ".tmp";
-        await File.WriteAllBytesAsync(beside, upload.Content, ct).ConfigureAwait(false);
-        File.Move(beside, path, overwrite: true);
+        await AtomicFile.WriteBytesAsync(path, upload.Content, ct).ConfigureAwait(false);
         return attachment;
     }
 
