@@ -1,0 +1,22 @@
+namespace Daoris.Driver;
+
+/// <summary>
+/// The gate's world over this machine's service: the quests read once per instance, as a door reads them once, and the local
+/// host's opinions (XAGENT1f), which the whole landing gate reads beside them.
+/// </summary>
+/// <remarks>
+/// Review's Infrastructure (STRUCT3c, D166's note): the service's reads behind the review's port (<see cref="IReviewWorld"/>) and
+/// the landing gate's (<see cref="IOpinionWorld"/>). The loop and the hosts compose it; another module asks
+/// <see cref="ReviewWorlds.Of"/>.
+/// </remarks>
+public sealed class ServiceReviewWorld(ServiceClient service) : IOpinionWorld
+{
+    private IReadOnlyList<QuestView>? _quests;
+
+    public async Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) =>
+        _quests ??= await service.EveryQuestAsync(ct).ConfigureAwait(false);
+
+    public Task<AskView?> AskAsync(string id, CancellationToken ct) => service.FindAskAsync(id, ct);
+
+    public Task<OpinionView?> OpinionAsync(string id, CancellationToken ct) => service.ReadOpinionAsync(id, ct);
+}
