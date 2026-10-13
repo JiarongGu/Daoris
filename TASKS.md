@@ -270,7 +270,6 @@ into priority since that will make the code better to develop"*; D166's note). C
 (D166). Moves are behaviour-preserving, each module in a commit of renames alone, while no branch in flight touches it; a branch
 may move several modules now that nothing else is in flight; new driver files go into their module folder.
 
-- [ ] **STRUCT2c — `Review`, `Service` and `Setup` into their folders** (driver; modules for the launcher's project). Each module's files as the map gives them, in a commit of renames alone, its tests into `Driver.Tests/<Module>/` and the map's `tests` table, `root` shrunk; the launcher compiles `StagedBuild.cs` by path, so Setup's move edits `Daoris.Desktop.Launcher.csproj`. D166.
 - [ ] **STRUCT2d — `Quests` and `Accounts` into their folders** (driver). As STRUCT2c; `Accounts/Domain/` already holds `UsageCurves` and `SwitchDecision`, and their tests join `Driver.Tests/Accounts/`. D166.
 - [ ] **STRUCT2e — `Conversations` and `Sessions` into their folders** (driver). As STRUCT2c; `Conversations/` already holds `ChatRunner.Curve.cs`. D166.
 - [ ] **STRUCT2f — `Agents` and `Trees` into their folders** (driver; after 2c–2e). As STRUCT2c; `Trees/` already holds `SessionTrees.Update.cs` and `Trees/Domain/`; `hooks/tree-guard.mjs` moves with Trees, its embedded resource's logical name pinned. D166.

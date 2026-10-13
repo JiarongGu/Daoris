@@ -14047,3 +14047,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT2b — `Workflows` into its folder** (driver). The next module move in design §6's order (`Help` is already its folder): the files the map gives `Workflows`, moved as they are in a commit of renames alone, its tests into `Driver.Tests/Workflows/` and the map's `tests` table, `root` shrunk. Only while no branch in flight touches a Workflows file. The rest follow as STRUCT2c–n, one row filed as each is due.
 
 **Outcome** 2026-10-13: the Workflows module moved whole, 14 files into `Driver/Workflows/` and 9 tests into `Driver.Tests/Workflows/`, 23 renames at 100% in a commit of their own; the map's `root` went 249 to 235 and `tests` 16 to 25. `WorkflowBindingLookTests` stays unlisted (Loop's). Detail: D166's STRUCT2b note.
+
+## STRUCT2c — `Review`, `Service` and `Setup` into their folders (2026-10-13, D166)
+
+> - [ ] **STRUCT2c — `Review`, `Service` and `Setup` into their folders** (driver; modules for the launcher's project). Each module's files as the map gives them, in a commit of renames alone, its tests into `Driver.Tests/<Module>/` and the map's `tests` table, `root` shrunk; the launcher compiles `StagedBuild.cs` by path, so Setup's move edits `Daoris.Desktop.Launcher.csproj`. D166.
+
+**Outcome** 2026-10-13: Review (20 files, 19 tests and stand-ins), Service (16, 12) and Setup (15, 14) moved by renames alone, a commit each; the map's `root` went 235 to 184 and `tests` 25 to 70; the launcher compiles `Setup/StagedBuild.cs`. Detail: D166's STRUCT2c note.
