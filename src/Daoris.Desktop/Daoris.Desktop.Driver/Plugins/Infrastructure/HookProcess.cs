@@ -1,0 +1,197 @@
+using System.Diagnostics;
+
+namespace Daoris.Driver;
+
+/// <summary>
+/// A hook process: the plugin's own program, started in its install folder with the home, its data
+/// folder and its id in the environment, and its stdout the wire. Registrations are effects (D64 §4,
+/// rule 3): everything the plugin contributes exists exactly as long as this process does.
+/// </summary>
+/// <remarks>
+/// The Infrastructure behind the module's port (STRUCT3a): the real <see cref="IHookChannel"/>, a <see cref="HookPeer"/>
+/// over a started process's stdio. Another module starts one through the Application's <see cref="HookChannels"/>.
+/// </remarks>
+public sealed class HookProcess : IHookChannel
+{
+    private readonly Process _process;
+    private readonly HookPeer _peer;
+    private readonly Task _stderr;
+
+    private HookProcess(Process process, HookPeer peer, Task stderr)
+    {
+        _process = process;
+        _peer = peer;
+        _stderr = stderr;
+    }
+
+    public IReadOnlyList<string> Points => _peer.Points;
+
+    public bool Alive => _peer.Alive && !_process.HasExited;
+
+    public int? ExitCode
+    {
+        get
+        {
+            try
+            {
+                return _process.HasExited ? _process.ExitCode : null;
+            }
+            catch (InvalidOperationException)
+            {
+                // Disposed, or never started: there is no code to say.
+                return null;
+            }
+        }
+    }
+
+    /// <summary>How long a plugin has to leave once it is told `shutdown`, before it is ended.</summary>
+    public static readonly TimeSpan Grace = TimeSpan.FromSeconds(2);
+
+    /// <summary>UTF-8 with no byte-order mark: a mark ahead of the first frame is not JSON.</summary>
+    private static readonly System.Text.Encoding Utf8 = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+
+    /// <summary>
+    /// What a plugin's program is started with: in its install folder, stdio redirected, and its id, its
+    /// folders and the home in the environment. Stated once, so the plugin kit's try (PLUG8) starts a
+    /// plugin exactly as the driver does.
+    /// </summary>
+    /// <remarks>
+    /// <para>🔴 <b>Its first word is resolved, never handed to the system bare</b> (TOOLS5, D121 §2.4): a name a tool
+    /// answers for (<c>node</c>, <c>npm</c>, <c>git</c>, <c>gh</c>, <c>az</c>…) is the file Tools resolves, and any
+    /// other is found on the child's <c>PATH</c> as an agent's is — both through the shim rule the agents' doors use,
+    /// since a bare name started with no shell finds only an <c>.exe</c>. Its environment is the tools', so a landing
+    /// plugin's own <c>git push</c> is the git the driver's fetch ran.</para>
+    /// </remarks>
+    /// <exception cref="DriverException">No hooks, or the tool its first word names cannot run as the person chose.</exception>
+    public static ProcessStartInfo StartInfo(PluginEntry plugin, string home)
+    {
+        var hooks = plugin.Manifest.Hooks
+            ?? throw new DriverException($"plugin `{plugin.Manifest.Id}` declares no hooks.");
+
+        var tools = Tools.Read(home);
+        var first = hooks.Command[0];
+        if (Tools.ResolveCommand(tools, home, first) is { } tool)
+        {
+            if (tool.Refused)
+            {
+                throw new DriverException($"plugin `{plugin.Manifest.Id}`'s hook process was not started — `{first}`: {tool.Problem}");
+            }
+
+            first = tool.File ?? first;
+        }
+
+        var info = new ProcessStartInfo
+        {
+            FileName = first,
+            WorkingDirectory = plugin.Folder,
+            UseShellExecute = false,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            // The wire is UTF-8 both ways: left to the default, the streams take the console's code page,
+            // and on a Chinese-locale machine a plugin's em dash read back as `鈥?` (PLUG8, seen on the window).
+            StandardInputEncoding = Utf8,
+            StandardOutputEncoding = Utf8,
+            StandardErrorEncoding = Utf8,
+            CreateNoWindow = true,
+        };
+        foreach (var argument in hooks.Command.Skip(1)) info.ArgumentList.Add(argument);
+        // Where it is and what it keeps, told rather than guessed (Yaorin's lesson; D64 §3).
+        info.Environment["DAORIS_PLUGIN_ID"] = plugin.Manifest.Id;
+        info.Environment["DAORIS_PLUGIN_FOLDER"] = plugin.Folder;
+        info.Environment["DAORIS_PLUGIN_DATA"] = plugin.Data;
+        info.Environment[DaorisHome.Variable] = home;
+        Tools.Hand(info, tools, home);
+        // What Windows can start, by the agents' resolver and on the child's own PATH: a `.cmd` (an `az`, an `npm`)
+        // is held to the shim rule about its arguments rather than started bare and not found (USE1f).
+        info.FileName = HarnessActions.WindowsShim(
+            info.FileName, info.ArgumentList, info.Environment.TryGetValue(Tools.PathVariable, out var path) ? path : null);
+        return info;
+    }
+
+    /// <summary>Start the plugin's program and complete the handshake, or throw with the reason.</summary>
+    public static async Task<HookProcess> StartAsync(
+        PluginEntry plugin, string home, Action<string> onLine, CancellationToken ct, TimeSpan? patience = null)
+    {
+        var info = StartInfo(plugin, home);
+        var hooks = plugin.Manifest.Hooks!;
+        Directory.CreateDirectory(plugin.Data);
+
+        Process process;
+        try
+        {
+            process = Process.Start(info)
+                ?? throw new DriverException($"plugin `{plugin.Manifest.Id}`'s hook process did not start.");
+        }
+        catch (System.ComponentModel.Win32Exception error)
+        {
+            throw new DriverException(
+                $"plugin `{plugin.Manifest.Id}`'s hook process could not start — `{hooks.Command[0]}`: {error.Message}");
+        }
+
+        var stderr = RelayAsync(process.StandardError, onLine);
+        var peer = new HookPeer(process.StandardOutput, process.StandardInput, plugin.Manifest.Id, onLine, patience);
+        var started = new HookProcess(process, peer, stderr);
+        try
+        {
+            await peer.InitializeAsync(home, plugin.Data, hooks.Points, ct).ConfigureAwait(false);
+        }
+        catch
+        {
+            await started.DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
+
+        return started;
+    }
+
+    public Task<HookDecision> ConsiderAsync(object payload, CancellationToken ct) => _peer.ConsiderAsync(payload, ct);
+
+    public Task EndedAsync(object payload, CancellationToken ct) => _peer.EndedAsync(payload, ct);
+
+    public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) => _peer.LandAsync(payload, ct);
+
+    public Task<PullRequestState> StateAsync(object payload, CancellationToken ct) => _peer.StateAsync(payload, ct);
+
+    /// <summary>Shutdown said, a moment given, and then the process is ended — a plugin that will not leave is left no choice.</summary>
+    public async ValueTask DisposeAsync()
+    {
+        await _peer.DisposeAsync().ConfigureAwait(false);
+        try
+        {
+            if (!_process.HasExited)
+            {
+                using var grace = new CancellationTokenSource(Grace);
+                try
+                {
+                    await _process.WaitForExitAsync(grace.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    _process.Kill(entireProcessTree: true);
+                }
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            // Already gone.
+        }
+
+        _ = _stderr.ContinueWith(static t => t.Exception, TaskScheduler.Default);
+        _process.Dispose();
+    }
+
+    private static async Task RelayAsync(StreamReader stderr, Action<string> onLine)
+    {
+        try
+        {
+            while (await stderr.ReadLineAsync().ConfigureAwait(false) is { } line)
+            {
+                if (line.Length > 0) onLine(line);
+            }
+        }
+        catch (Exception error) when (error is IOException or ObjectDisposedException)
+        {
+        }
+    }
+}

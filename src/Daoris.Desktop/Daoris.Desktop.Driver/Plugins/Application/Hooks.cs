@@ -5,113 +5,10 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>A plugin's answer at a decision point (D64 §4): allow, or hold with the sentence a person reads.</summary>
-public sealed record HookDecision(bool Allowed, string? Reason = null)
-{
-    public static readonly HookDecision Allow = new(true);
-
-    public static HookDecision Hold(string reason) => new(false, reason);
-}
-
-/// <summary>
-/// The points a plugin may listen on, named here once. A handshake naming one this build lacks is said once and never
-/// asked there (PLUGHOOK1a, D148 point 8): a plugin that grew a point keeps the points this build has.
-/// </summary>
-public static class HookPoints
-{
-    /// <summary>A decision: one consideration the planner marked <i>Start</i>. The first hold in catalogue order ends the waterfall.</summary>
-    public const string QuestConsider = "quest/consider";
-
-    /// <summary>An observation: what a tick concluded. Contained — nothing a plugin says here changes anything.</summary>
-    public const string SessionEnded = "session/ended";
-
-    /// <summary>
-    /// An act, after Daoris's own (WSR4, D100): a branch rule's landing has made its branch, and the plugin
-    /// the rule names pushes it and opens the pull request for its platform. Spoken by the landing, never
-    /// by the loop, and it can undo nothing: a failure here leaves the branch.
-    /// </summary>
-    public const string Land = "work/land";
-
-    /// <summary>
-    /// A query (PLUGHOOK1a, D148): a landed branch's pull request, asked of the plugin that pushed it, which only its platform
-    /// knows. Asked only at an occasion that may remove something, and acted on only where git confirms the answer. An
-    /// unanswered query is not known, never a default.
-    /// </summary>
-    public const string State = "work/state";
-
-    public static readonly IReadOnlyList<string> All = [QuestConsider, SessionEnded, Land, State];
-
-    /// <summary>The points the driver loop asks at — a plugin that speaks on none of them is not kept running beside it.</summary>
-    public static readonly IReadOnlyList<string> Loop = [QuestConsider, SessionEnded];
-}
-
-/// <summary>
-/// What each point is sent, built in one place (PLUG8): the loop and the landing send these, and the
-/// plugin kit's sample frames are built by the same functions, so a sample cannot say what the driver
-/// does not. Every name is spelled here rather than left to a serializer's policy.
-/// </summary>
-public static class HookFrames
-{
-    /// <summary><see cref="HookPoints.QuestConsider"/>: one planned start.</summary>
-    public static object Consider(Consideration start) => new
-    {
-        quest = new { id = start.Quest.Id, title = start.Quest.Title, from = start.Quest.From, to = start.Quest.To },
-        repository = start.Quest.To,
-        workspace = start.Workspace,
-        root = start.Root,
-    };
-
-    /// <summary><see cref="HookPoints.SessionEnded"/>: what a tick concluded.</summary>
-    public static object Ended(SessionEnded ended) => new
-    {
-        session = ended.Session,
-        quest = ended.Quest,
-        repository = ended.Repository,
-        state = ended.State,
-        adapter = ended.Adapter,
-        account = ended.Account,
-        byPerson = ended.ByPerson,
-        note = ended.Note,
-    };
-
-    /// <summary>
-    /// <see cref="HookPoints.Land"/>: the branch a landing just made (D100), or moved on (LAND2c): the pull request already open
-    /// from it, which a plugin grows rather than opening a second, and who accepted the work.
-    /// </summary>
-    public static object Land(LandingFrame frame) => new
-    {
-        repository = frame.Repository,
-        workspace = frame.Workspace,
-        root = frame.Root,
-        branch = frame.Branch,
-        @base = frame.Base,
-        title = frame.Title,
-        quest = frame.Quest is { } quest ? new { id = quest, title = frame.Title } : null,
-        session = frame.Session,
-        commits = frame.Commits.Select(commit => new { sha = commit.Sha, subject = commit.Subject }).ToArray(),
-        pullRequest = frame.PullRequest,
-        acceptedBy = frame.AcceptedBy,
-    };
-
-    /// <summary>
-    /// <see cref="HookPoints.State"/>: a landed branch, asked about (PLUGHOOK1a, design §2.2): where it is, the line, and the pull
-    /// request and the commit the record holds, so a plugin finds the pull request by its address, else by its source branch.
-    /// </summary>
-    public static object State(StateFrame frame) => new
-    {
-        repository = frame.Repository,
-        workspace = frame.Workspace,
-        root = frame.Root,
-        branch = frame.Branch,
-        line = frame.Line,
-        pullRequest = frame.PullRequest,
-        pushedTip = frame.PushedTip,
-    };
-}
-
 /// <summary>
 /// One plugin's side of the wire, as the host sees it — what a process gives once it speaks, and what a
-/// test can hand in without one.
+/// test can hand in without one. The module's port (STRUCT3a): the hook set and the landing ask through it, a test's
+/// fake and <see cref="HookPeer"/> speak it, and the Infrastructure's <see cref="HookProcess"/> is the real one.
 /// </summary>
 public interface IHookChannel : IAsyncDisposable
 {
@@ -480,193 +377,18 @@ public sealed class HookPeer(
 }
 
 /// <summary>
-/// A hook process: the plugin's own program, started in its install folder with the home, its data
-/// folder and its id in the environment, and its stdout the wire. Registrations are effects (D64 §4,
-/// rule 3): everything the plugin contributes exists exactly as long as this process does.
+/// A plugin's hook started and spoken to (D64 §4): the channel the hook set and the landing start through, so neither,
+/// nor another module, names the process behind it (STRUCT3a).
 /// </summary>
-public sealed class HookProcess : IHookChannel
+public static class HookChannels
 {
-    private readonly Process _process;
-    private readonly HookPeer _peer;
-    private readonly Task _stderr;
-
-    private HookProcess(Process process, HookPeer peer, Task stderr)
-    {
-        _process = process;
-        _peer = peer;
-        _stderr = stderr;
-    }
-
-    public IReadOnlyList<string> Points => _peer.Points;
-
-    public bool Alive => _peer.Alive && !_process.HasExited;
-
-    public int? ExitCode
-    {
-        get
-        {
-            try
-            {
-                return _process.HasExited ? _process.ExitCode : null;
-            }
-            catch (InvalidOperationException)
-            {
-                // Disposed, or never started: there is no code to say.
-                return null;
-            }
-        }
-    }
-
-    /// <summary>How long a plugin has to leave once it is told `shutdown`, before it is ended.</summary>
-    public static readonly TimeSpan Grace = TimeSpan.FromSeconds(2);
-
-    /// <summary>UTF-8 with no byte-order mark: a mark ahead of the first frame is not JSON.</summary>
-    private static readonly System.Text.Encoding Utf8 = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
-
     /// <summary>
-    /// What a plugin's program is started with: in its install folder, stdio redirected, and its id, its
-    /// folders and the home in the environment. Stated once, so the plugin kit's try (PLUG8) starts a
-    /// plugin exactly as the driver does.
+    /// The plugin's program started in the home as the driver starts it, its handshake made: the module's Infrastructure
+    /// (<see cref="HookProcess"/>) behind the port. Throws with the reason where it does not start or does not answer.
     /// </summary>
-    /// <remarks>
-    /// <para>🔴 <b>Its first word is resolved, never handed to the system bare</b> (TOOLS5, D121 §2.4): a name a tool
-    /// answers for (<c>node</c>, <c>npm</c>, <c>git</c>, <c>gh</c>, <c>az</c>…) is the file Tools resolves, and any
-    /// other is found on the child's <c>PATH</c> as an agent's is — both through the shim rule the agents' doors use,
-    /// since a bare name started with no shell finds only an <c>.exe</c>. Its environment is the tools', so a landing
-    /// plugin's own <c>git push</c> is the git the driver's fetch ran.</para>
-    /// </remarks>
-    /// <exception cref="DriverException">No hooks, or the tool its first word names cannot run as the person chose.</exception>
-    public static ProcessStartInfo StartInfo(PluginEntry plugin, string home)
-    {
-        var hooks = plugin.Manifest.Hooks
-            ?? throw new DriverException($"plugin `{plugin.Manifest.Id}` declares no hooks.");
-
-        var tools = Tools.Read(home);
-        var first = hooks.Command[0];
-        if (Tools.ResolveCommand(tools, home, first) is { } tool)
-        {
-            if (tool.Refused)
-            {
-                throw new DriverException($"plugin `{plugin.Manifest.Id}`'s hook process was not started — `{first}`: {tool.Problem}");
-            }
-
-            first = tool.File ?? first;
-        }
-
-        var info = new ProcessStartInfo
-        {
-            FileName = first,
-            WorkingDirectory = plugin.Folder,
-            UseShellExecute = false,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            // The wire is UTF-8 both ways: left to the default, the streams take the console's code page,
-            // and on a Chinese-locale machine a plugin's em dash read back as `鈥?` (PLUG8, seen on the window).
-            StandardInputEncoding = Utf8,
-            StandardOutputEncoding = Utf8,
-            StandardErrorEncoding = Utf8,
-            CreateNoWindow = true,
-        };
-        foreach (var argument in hooks.Command.Skip(1)) info.ArgumentList.Add(argument);
-        // Where it is and what it keeps, told rather than guessed (Yaorin's lesson; D64 §3).
-        info.Environment["DAORIS_PLUGIN_ID"] = plugin.Manifest.Id;
-        info.Environment["DAORIS_PLUGIN_FOLDER"] = plugin.Folder;
-        info.Environment["DAORIS_PLUGIN_DATA"] = plugin.Data;
-        info.Environment[DaorisHome.Variable] = home;
-        Tools.Hand(info, tools, home);
-        // What Windows can start, by the agents' resolver and on the child's own PATH: a `.cmd` (an `az`, an `npm`)
-        // is held to the shim rule about its arguments rather than started bare and not found (USE1f).
-        info.FileName = HarnessActions.WindowsShim(
-            info.FileName, info.ArgumentList, info.Environment.TryGetValue(Tools.PathVariable, out var path) ? path : null);
-        return info;
-    }
-
-    /// <summary>Start the plugin's program and complete the handshake, or throw with the reason.</summary>
-    public static async Task<HookProcess> StartAsync(
-        PluginEntry plugin, string home, Action<string> onLine, CancellationToken ct, TimeSpan? patience = null)
-    {
-        var info = StartInfo(plugin, home);
-        var hooks = plugin.Manifest.Hooks!;
-        Directory.CreateDirectory(plugin.Data);
-
-        Process process;
-        try
-        {
-            process = Process.Start(info)
-                ?? throw new DriverException($"plugin `{plugin.Manifest.Id}`'s hook process did not start.");
-        }
-        catch (System.ComponentModel.Win32Exception error)
-        {
-            throw new DriverException(
-                $"plugin `{plugin.Manifest.Id}`'s hook process could not start — `{hooks.Command[0]}`: {error.Message}");
-        }
-
-        var stderr = RelayAsync(process.StandardError, onLine);
-        var peer = new HookPeer(process.StandardOutput, process.StandardInput, plugin.Manifest.Id, onLine, patience);
-        var started = new HookProcess(process, peer, stderr);
-        try
-        {
-            await peer.InitializeAsync(home, plugin.Data, hooks.Points, ct).ConfigureAwait(false);
-        }
-        catch
-        {
-            await started.DisposeAsync().ConfigureAwait(false);
-            throw;
-        }
-
-        return started;
-    }
-
-    public Task<HookDecision> ConsiderAsync(object payload, CancellationToken ct) => _peer.ConsiderAsync(payload, ct);
-
-    public Task EndedAsync(object payload, CancellationToken ct) => _peer.EndedAsync(payload, ct);
-
-    public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) => _peer.LandAsync(payload, ct);
-
-    public Task<PullRequestState> StateAsync(object payload, CancellationToken ct) => _peer.StateAsync(payload, ct);
-
-    /// <summary>Shutdown said, a moment given, and then the process is ended — a plugin that will not leave is left no choice.</summary>
-    public async ValueTask DisposeAsync()
-    {
-        await _peer.DisposeAsync().ConfigureAwait(false);
-        try
-        {
-            if (!_process.HasExited)
-            {
-                using var grace = new CancellationTokenSource(Grace);
-                try
-                {
-                    await _process.WaitForExitAsync(grace.Token).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    _process.Kill(entireProcessTree: true);
-                }
-            }
-        }
-        catch (InvalidOperationException)
-        {
-            // Already gone.
-        }
-
-        _ = _stderr.ContinueWith(static t => t.Exception, TaskScheduler.Default);
-        _process.Dispose();
-    }
-
-    private static async Task RelayAsync(StreamReader stderr, Action<string> onLine)
-    {
-        try
-        {
-            while (await stderr.ReadLineAsync().ConfigureAwait(false) is { } line)
-            {
-                if (line.Length > 0) onLine(line);
-            }
-        }
-        catch (Exception error) when (error is IOException or ObjectDisposedException)
-        {
-        }
-    }
+    public static async Task<IHookChannel> StartAsync(
+        PluginEntry plugin, string home, Action<string> onLine, CancellationToken ct, TimeSpan? patience = null) =>
+        await HookProcess.StartAsync(plugin, home, onLine, ct, patience).ConfigureAwait(false);
 }
 
 /// <summary>
@@ -713,7 +435,7 @@ public sealed class HookSet(
     private readonly Dictionary<string, string> _unstarted = new(StringComparer.Ordinal);
 
     private readonly Func<PluginEntry, Action<string>, CancellationToken, Task<IHookChannel>> _start =
-        start ?? (async (plugin, onLine, ct) => await HookProcess.StartAsync(plugin, home, onLine, ct).ConfigureAwait(false));
+        start ?? ((plugin, onLine, ct) => HookChannels.StartAsync(plugin, home, onLine, ct));
 
     /// <summary>
     /// What the set does with each plugin, into the machine log and the loop's record (PLUGUI1d): also what the
@@ -846,17 +568,7 @@ public sealed class HookSet(
     }
 
     /// <summary>When a plugin's install folder was made: an update replaces the folder whole (D103).</summary>
-    private static DateTimeOffset? InstalledAt(string folder)
-    {
-        try
-        {
-            return Directory.Exists(folder) ? Directory.GetCreationTimeUtc(folder) : null;
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return null;
-        }
-    }
+    private static DateTimeOffset? InstalledAt(string folder) => PluginFolders.MadeAt(folder);
 
     /// <summary>
     /// Stop one plugin's hook process now, rather than at the next tick — what removing a plugin needs

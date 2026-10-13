@@ -70,6 +70,19 @@ internal static class PluginFolders
         }
     }
 
+    /// <summary>When a folder was made, or null where it is not there or cannot be asked: an install and an update each make one whole (D103).</summary>
+    public static DateTimeOffset? MadeAt(string folder)
+    {
+        try
+        {
+            return Directory.Exists(folder) ? new DateTimeOffset(Directory.GetCreationTimeUtc(folder), TimeSpan.Zero) : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>A folder's own name, from its whole path on this machine.</summary>
     public static string NameOf(string folder) => Path.GetFileName(Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder)));
 
