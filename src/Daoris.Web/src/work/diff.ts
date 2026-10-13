@@ -23,7 +23,10 @@ export type ReviewKnown = {
   /** The session's title, or null where something above the review already names it. */
   title: string | null;
   repository: string | null;
-  /** Its own branch, where it holds a tree of its own here: `daoris/` and the tree's folder, as the trees name it. */
+  /**
+   * Its own branch, where it holds a tree of its own here: `daoris/` and the tree's folder, as the trees name it. The record's guess,
+   * which {@link reviewBranch} replaces once the review answers with the branch the tree stands on (REVIEWBASE4).
+   */
   branch: string | null;
   /** The commit the record says its tree stood at when it began. */
   base: string | null;
@@ -49,6 +52,22 @@ export function reviewKnown(session: Session, { title, ownTree }: { title: strin
     commits: commits > 0 ? commits : null,
     machine: sessionOrigin(session),
   };
+}
+
+/**
+ * The branch the review's head names (REVIEWBASE4, D164's note): the record's guess until the review answers with the branch its
+ * tree's HEAD stands on, since the agent may have switched it (TREEFOLLOW1), or deleted its `daoris/` branch and detached. Said only
+ * where the record names a tree of its own, and only from the tree's own answer: a landed branch's review and a host older than
+ * REVIEWBASE4 name none, so the guess stands. A detached tree names no branch, and says so.
+ */
+export function reviewBranch(
+  known: Pick<ReviewKnown, 'branch'>,
+  answer: Pick<SessionDiff, 'source' | 'treeBranch'> | undefined,
+): { branch: string | null; detached: boolean } {
+  if (!known.branch || !answer || (answer.source ?? 'tree') !== 'tree' || answer.treeBranch === undefined) {
+    return { branch: known.branch, detached: false };
+  }
+  return answer.treeBranch === null ? { branch: null, detached: true } : { branch: answer.treeBranch, detached: false };
 }
 
 /** One file in a session's landed work, exactly as git described it. */
@@ -122,6 +141,11 @@ export type SessionDiff = {
    * line could not be read; a host older than REVIEWBASE1 names none.
    */
   behind?: LineBehind | null;
+  /**
+   * The branch the session's own tree stands on, as its HEAD names it (REVIEWBASE4, D164's note): null where HEAD is detached, and
+   * where the files were read from a branch. Absent from a host older than REVIEWBASE4, whose head says the record's guess.
+   */
+  treeBranch?: string | null;
 };
 
 /** The line's name, the commits it has that the tree does not, and the commits the tree has beyond it (REVIEWBASE1). */

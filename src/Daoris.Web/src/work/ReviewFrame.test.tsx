@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '../i18n';
-import { REVIEW_REFUSALS, ReviewFailed, ReviewHead, ReviewReading, SLOW_MS } from './ReviewFrame';
+import { NothingToLand, REVIEW_REFUSALS, ReviewFailed, ReviewHead, ReviewReading, SLOW_MS } from './ReviewFrame';
 
 // REVIEW4: the review says what it is doing while it loads. Its frame (what the page knows from the record), the
 // skeleton and its words with how long, and a refusal worded from its code with the person's next move. Props in,
@@ -83,6 +83,57 @@ describe('ReviewHead', () => {
 
     expect(container.textContent).toContain('main 有 3 个提交是这份工作没有的：它不是基于最新的 main。');
     expect(container.textContent).toContain('「更新」会说明它能否更新到最新。');
+  });
+
+  /**
+   * REVIEWBASE4 (D164's note): a tree whose HEAD is on no branch names none. Where it holds nothing beyond the line, HEAD is the
+   * commit the review is measured from, so one fact says both; where it holds more, the range stays its own fact.
+   */
+  it('names no branch for a detached tree, and says it is detached at the commit the line holds', () => {
+    render(<ReviewHead {...KNOWN} detached base="9c41e07d2b5a8f13" behind={{ line: 'main', commits: 0, ahead: 0 }} />);
+
+    expect(screen.getByText('detached HEAD at 9c41e07d')).toBeTruthy();
+    expect(screen.queryByText(/daoris\//)).toBeNull();
+    expect(screen.queryByText(/^since /)).toBeNull();
+  });
+
+  it('says a detached tree holding commits beyond the line is detached, apart from its range', () => {
+    render(<ReviewHead {...KNOWN} detached base="9c41e07d2b5a8f13" behind={{ line: 'main', commits: 0, ahead: 2 }} />);
+
+    expect(screen.getByText('detached HEAD')).toBeTruthy();
+    expect(screen.getByText('since 9c41e07d')).toBeTruthy();
+    expect(screen.queryByText(/daoris\//)).toBeNull();
+  });
+
+  it('says a detached tree in 中文', () => {
+    const { container } = render(
+      <I18nextProvider i18n={i18n.cloneInstance({ lng: 'zh' })}>
+        <ReviewHead {...KNOWN} detached base="9c41e07d2b5a8f13" behind={{ line: 'main', commits: 0, ahead: 0 }} />
+      </I18nextProvider>,
+    );
+
+    expect(container.textContent).toContain('分离的 HEAD，位于 9c41e07d');
+  });
+});
+
+/** REVIEWBASE4 (D164's note): where *Accept* would be, a tree with nothing beyond the line says there is nothing to land. */
+describe('NothingToLand', () => {
+  it('says there is nothing to land, and that what its tree holds is on the line already', () => {
+    const { container } = render(<NothingToLand line="main" />);
+
+    expect(container.textContent).toBe('There is nothing to land: everything its tree holds is on main already.');
+    // The line's name is code, as a branch is named.
+    expect(container.querySelectorAll('code')).toHaveLength(1);
+  });
+
+  it('says it in 中文', () => {
+    const { container } = render(
+      <I18nextProvider i18n={i18n.cloneInstance({ lng: 'zh' })}>
+        <NothingToLand line="main" />
+      </I18nextProvider>,
+    );
+
+    expect(container.textContent).toBe('没有可落地的内容：它的工作树里的一切都已在 main 上。');
   });
 });
 

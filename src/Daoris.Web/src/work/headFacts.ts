@@ -39,8 +39,8 @@ export type SessionFactsOf = {
 
 /**
  * What the record's own links say (MIXAGENT3a-i, the mixed-agents design §4): the agent it continues, then why, in the hand-over's
- * words (`HANDED_REASONS`, the timeline's), and whom a helper helps. A why the page has no words for says nothing: `curve` is
- * SWITCH1c's to word, never a guess.
+ * words (`HANDED_REASONS`, the timeline's, `curve` among them since SWITCH1c-i), and whom a helper helps. A why the page has no
+ * words for says nothing, never a guess.
  */
 function linkFacts(t: TFunction, session: Session, { continuesAgent, helping }: SessionFactsOf): string[] {
   const facts: string[] = [];

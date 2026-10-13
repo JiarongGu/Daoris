@@ -20,10 +20,10 @@ public static class HandOverWhy
     public const string Agent = "agent";
 
     /// <summary>
-    /// Daoris moved it on its own by the person's switching setting (D165 point 3): its account was near the curve that setting
+    /// Daoris moved it on its own by the person's switching setting (D165 point 3): its account was over the curve that setting
     /// draws, and another account of the same agent had room. A reason a record continues another by (MIXAGENT1a-iii).
     /// </summary>
-    /// <remarks>Not yet one a box takes (<see cref="Known"/>): the automatic move is SWITCH1c's, which declares its coded line.</remarks>
+    /// <remarks>A box takes it since SWITCH1c-i, which declares its coded line; the automatic move that asks for it is SWITCH1c-ii's.</remarks>
     public const string Curve = "curve";
 
     /// <summary>The reason as the briefing's agent reads it, in Daoris's one English: after <c>handed over because</c>.</summary>
@@ -33,23 +33,23 @@ public static class HandOverWhy
         Near => "the account it ran on was near its limit",
         Limit => "the account it ran on reached its limit",
         Agent => "the agent asked for it",
-        Curve => "the account it ran on was near the limit the person's switching setting draws",
+        Curve => "the account it ran on was over the usage curve the person's switching setting draws",
         _ => why,
     };
 
-    /// <summary>The reason as the record's English says it, after <c>handed over because</c>.</summary>
+    /// <summary>The reason as the record's English says it, after <c>handed over because</c>: the page's <c>note.handed.why.*</c> in English.</summary>
     public static string Noted(string why) => why switch
     {
         Press => "the person asked for it",
         Near => "its account was near its limit",
         Limit => "its account reached its limit",
         Agent => "the agent asked for it",
-        Curve => "its account was near the limit the person's switching setting draws",
+        Curve => "its account was over its usage curve",
         _ => why,
     };
 
-    /// <summary>Whether a word is one of the reasons a hand-over's box takes; <see cref="Curve"/> is not one yet.</summary>
-    public static bool Known(string? why) => why is Press or Near or Limit or Agent;
+    /// <summary>Whether a word is one of the reasons a hand-over's box takes: each has its <c>note.handed.why.*</c> line.</summary>
+    public static bool Known(string? why) => why is Press or Near or Limit or Agent or Curve;
 }
 
 /// <summary>Who asked for a hand-over (MIXAGENT1a-i, D163), by code.</summary>
@@ -500,6 +500,33 @@ public static class HandOverNotes
         Noted.Of(
             NoteCodes.ChatTakenOver, $"The conversation went on from {agent} conversation {session}, handed over because {HandOverWhy.Noted(why)}.",
             ("agent", agent), ("session", session), ("why", why));
+
+    /// <summary>
+    /// A conversation moved by the usage curve (SWITCH1c-i; the switch design §4), its last line: the account it went on on, and
+    /// how far over its curve the account it left was. It names accounts, as the start's <c>opening.*</c> lines do: a
+    /// conversation's record stays on this machine (<see cref="NotePart"/>). Its new conversation's first line is
+    /// <see cref="MovedFrom"/>; SWITCH1c-ii writes both.
+    /// </summary>
+    /// <param name="from">The account it ran on.</param>
+    /// <param name="move">What <see cref="SwitchDecision"/> said: the account it went to, and the window over its curve.</param>
+    public static Noted Moved(string from, SwitchChoice.MoveTo move)
+    {
+        var (used, curve) = (RotationWords.Whole(move.Used), RotationWords.Points(move.Curve));
+        return Noted.Of(
+            NoteCodes.ChatMoved,
+            $"Moved to `{move.Account}` at the end of its turn: `{from}` had used {used}% of its {move.Window} limit, over its curve's {curve}%; `{move.Account}` has room.",
+            ("to", move.Account), ("from", from), ("window", move.Window), ("used", used), ("curve", curve));
+    }
+
+    /// <summary>A conversation moved by the usage curve, its new conversation's first line: the account it continues from, and why (<see cref="Moved"/>).</summary>
+    public static Noted MovedFrom(string from, SwitchChoice.MoveTo move)
+    {
+        var (used, curve) = (RotationWords.Whole(move.Used), RotationWords.Points(move.Curve));
+        return Noted.Of(
+            NoteCodes.ChatMovedFrom,
+            $"Continues from `{from}`, which had used {used}% of its {move.Window} limit, over its curve's {curve}%.",
+            ("from", from), ("window", move.Window), ("used", used), ("curve", curve));
+    }
 }
 
 /// <summary>What a conversation's hand-over came to (MIXAGENT1a-i): the new conversation, or why none, as a start-from's answer.</summary>
