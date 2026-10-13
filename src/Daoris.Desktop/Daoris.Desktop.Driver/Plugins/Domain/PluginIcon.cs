@@ -29,9 +29,8 @@ public sealed record PluginIconRead(string? Type, string? DataUri, string? Probl
 /// scripts run, nothing outside it loads, none of its styles reach the page. So an SVG is checked only for being one and
 /// for not expanding (an entity declaration), and a PNG for its pixels, which a small file can inflate into many.</para>
 ///
-/// <para><b>The rules are this class's, the file is not</b> (STRUCT3a): <c>PluginIcon.Read</c> reads the file through the
-/// module's Infrastructure and is declared in the Application's <see cref="PluginIconReads"/>; what the bytes are is judged
-/// here (<see cref="Judge"/>).</para>
+/// <para><b>The rules are pure, the file goes through <see cref="PluginFolders"/></b> (STRUCT3a, FLAT1b-i): <c>Read</c> reads
+/// the file through that helper, which does the I/O; what the bytes are is judged here (<see cref="Judge"/>).</para>
 /// </remarks>
 public static class PluginIcon
 {
@@ -73,6 +72,23 @@ public static class PluginIcon
 
     /// <summary>The icon's sentence for a refusal: the icon named as written, then why.</summary>
     internal static PluginIconRead Refused(string icon, string why) => new(null, null, $"`icon` `{icon}` {why}");
+
+    /// <summary>
+    /// The icon a manifest declares, judged as a file in <paramref name="folder"/>, by the file's rules in order: there and a
+    /// file; at most <see cref="MaxBytes"/>; then what its bytes are (<see cref="Judge"/>). A manifest's own problem is said first.
+    /// </summary>
+    public static PluginIconRead Read(string folder, PluginManifest manifest)
+    {
+        if (manifest.IconProblem is { } declared) return new(null, null, declared);
+        if (manifest.Icon is not { } icon) return PluginIconRead.None;
+
+        var (exists, length, bytes) = PluginFolders.ReadIcon(Path.Combine([folder, .. icon.Split('/')]), MaxBytes);
+        if (!exists) return Refused(icon, "is not a file in the plugin's folder.");
+        if (length > MaxBytes) return Refused(icon, "is larger than 32 KiB, the most an icon may be.");
+
+        // Daoris's words, never the system's: its message names the file's whole path, which the page must not learn.
+        return bytes is null ? Refused(icon, "could not be read.") : Judge(icon, bytes);
+    }
 
     /// <summary>
     /// The bytes of a declared icon's file, judged by the file's rules after its size: a PNG that starts with its signature

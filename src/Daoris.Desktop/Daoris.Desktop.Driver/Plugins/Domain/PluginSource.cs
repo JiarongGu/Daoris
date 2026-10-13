@@ -25,14 +25,27 @@ public sealed record PluginPackageOrigin(string Package, string Version, string 
 /// the same problems in the same words. <c>PluginSourceTests</c> holds the table, and the CLI's
 /// <c>plugin-sources.test.ts</c> parses its rows and holds its own to them, cell for cell.</para>
 ///
-/// <para>The record and its rules are this type's (STRUCT3a); <c>PluginSource.Read</c>, <c>Write</c> and <c>FromFolder</c>
-/// touch the machine and are declared in the Application's <see cref="PluginSourceReads"/>.</para>
+/// <para>The record and its rules are pure (STRUCT3a, FLAT1b-i); <c>Read</c>, <c>Write</c> and <c>FromFolder</c> touch the
+/// machine through <see cref="PluginFolders"/>, which does the I/O, so this file names none itself.</para>
 /// </remarks>
 public sealed record PluginSource(string? Folder, string? Offer, PluginPackageOrigin? Package = null)
 {
     public const string FileName = ".daoris-source.json";
 
     public static PluginSource FromOffer(string id) => new(null, id);
+
+    /// <summary>A folder a plugin is added from, recorded as its whole path on this machine.</summary>
+    public static PluginSource FromFolder(string folder) => new(PluginFolders.WholePath(folder), null);
+
+    /// <summary>An installed plugin's record: none where there is no file, or the named reason one does not read.</summary>
+    public static (PluginSource? Source, string? Problem) Read(string installFolder) =>
+        PluginFolders.TextIfThere(Path.Combine(installFolder, FileName)) is { } text
+            ? Parse(text)
+            : (null, null);
+
+    /// <summary>Written into a staged copy before it is renamed into place, so the record and the install move together.</summary>
+    internal static void Write(string installFolder, PluginSource source) =>
+        PluginFolders.WriteFile(Path.Combine(installFolder, FileName), source.Json());
 
     public static PluginSource FromPackage(PluginPackageOrigin package) => new(null, null, package);
 
