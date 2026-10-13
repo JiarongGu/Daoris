@@ -85,6 +85,12 @@ update's file, the staged build's files and the swap). The launcher compiles `Do
 `Infrastructure/StagedBuildFiles.cs` and `Infrastructure/InstallSwap.cs`, each on the base library alone. Quests and Accounts
 reach `SelfDescription.Read` and `ClaudeReleases.InstallAsync` through the `Application`'s extension members.
 
+`Quests/` is layered whole (STRUCT3f, D166's STRUCT3f note): the plan and its records (`Planner`, `QuestView`, the
+considerations), the evidence's records, the attention events, the ask's words and the intake's room, prompt and observation in
+`Domain/`, pure; the commands, the evidence check, the intake's kinds, the park reader and `AskWords.ReadAsync` in
+`Application/`; and the git read of a done's evidence, the room written to the disk and the git defaults (`QuestGit`) in
+`Infrastructure/`. `IntakeRoom.Prepare` keeps its name as an extension member there.
+
 ## What the page can ask this machine
 
 | Module | What it carries |
