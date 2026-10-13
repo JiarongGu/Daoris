@@ -1673,6 +1673,59 @@ public sealed partial class ServiceClient : IDisposable
 
         return Encoding.UTF8.GetString(stream.ToArray());
     }
+
+    // What the review's showing reads of a session's record (REVIEWENV1d): the tree its set-up was built in. Merged from its
+    // own part (PART8).
+
+    /// <summary>
+    /// The tree a session of this machine's held (D51), closed records included, as the records answer it on loopback; null where
+    /// the service holds no such record or says no tree. What <i>Show it again</i> serves a set-up's folder from.
+    /// </summary>
+    public async Task<string?> SessionTreeAsync(string session, CancellationToken ct = default)
+    {
+        using var document = JsonDocument.Parse(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
+        if (document.RootElement.ValueKind != JsonValueKind.Array) return null;
+        return document.RootElement.EnumerateArray()
+            .Where(record => record.ValueKind == JsonValueKind.Object
+                             && string.Equals(Text(record, "id"), session, StringComparison.OrdinalIgnoreCase))
+            .Select(record => Text(record, "tree"))
+            .FirstOrDefault(tree => tree is { Length: > 0 });
+    }
+
+    // An ask's kind and workflow (WORKFLOW1e, WORKFLOW1i): the person's choices and its intake's proposals read, and the
+    // person's choice posted. Merged from its own part (PART8).
+
+    /// <summary>An ask's kind and workflow choices (<c>workflowChoices</c>), each with when it was made; one without a moment is half of one.</summary>
+    private static IReadOnlyList<AskWorkflowChoiceView> ReadWorkflowChoices(JsonElement ask) =>
+    [
+        .. Items(ask, "workflowChoices")
+            .Where(chosen => Moment(chosen, "at") is not null)
+            .Select(chosen => new AskWorkflowChoiceView(Text(chosen, "kind"), Text(chosen, "workflow"), Moment(chosen, "at")!.Value, Text(chosen, "words"))),
+    ];
+
+    /// <summary>An ask's intake's kind proposals (<c>workflowProposals</c>), each a kind with its reason and when; one without is half of one.</summary>
+    private static IReadOnlyList<AskWorkflowProposalView> ReadWorkflowProposals(JsonElement ask) =>
+    [
+        .. Items(ask, "workflowProposals")
+            .Where(proposed => Text(proposed, "kind") is { Length: > 0 } && Text(proposed, "reason") is { Length: > 0 }
+                               && Moment(proposed, "at") is not null)
+            .Select(proposed => new AskWorkflowProposalView(
+                Text(proposed, "kind")!, Text(proposed, "reason")!, Moment(proposed, "at")!.Value,
+                Text(proposed, "session"), Text(proposed, "quest"))),
+    ];
+
+    /// <summary>
+    /// The person's kind and workflow on an ask (WORKFLOW1e; the workflow design §4.3): the local host's
+    /// <c>POST /api/asks/{id}/workflow</c>, <c>{ kind?, workflow?, words? }</c>, a person's door (D156); neither clears the choice.
+    /// The latest stands. The service's sentence comes back verbatim, a refusal included, and a host older than the door says so.
+    /// </summary>
+    public Task<AskAnswer> ChooseAskWorkflowAsync(string ask, string? kind, string? workflow, string? words, CancellationToken ct = default) =>
+        PostAskAsync($"/api/asks/{Uri.EscapeDataString(ask.TrimStart('#'))}/workflow", writer =>
+        {
+            if (kind is not null) writer.WriteString("kind", kind);
+            if (workflow is not null) writer.WriteString("workflow", workflow);
+            if (!string.IsNullOrWhiteSpace(words)) writer.WriteString("words", words.Trim());
+        }, ct);
 }
 
 /// <summary>A session record the ledger opened for this client (LOG1b).</summary>

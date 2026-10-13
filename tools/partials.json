@@ -126,8 +126,6 @@
   "ServiceClient": [
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.History.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.Review.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.Showing.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.Workflow.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs"
   ],
   "SessionTrees": [
