@@ -11,7 +11,7 @@ import { captureError, makeFixture } from './_fixture.ts';
 
 /**
  * `daoris plugin` — the CLI's half of the plugin catalogue's TWIN CONTRACT (D64). The driver's
- * `Plugins.cs` reads the same folder by the same rules in another language; the four rules the module
+ * `PluginCatalog.cs` reads the same folder by the same rules in another language; the four rules the module
  * header states are asserted in both, and they move together.
  */
 

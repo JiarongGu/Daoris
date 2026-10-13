@@ -14113,3 +14113,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT3e — layer the Setup module** (driver). `Domain`, `Application` and `Infrastructure` with ports, held by the gate, behaviour unchanged, `Setup` on the map's `layered` list. D166; design §3, §6.
 
 **Outcome** 2026-10-14: Setup is layered (Domain 11 files, Application 8, Infrastructure 8), its two ports moved unchanged into `SetupPorts.cs`, no port added; a Domain type's I/O members sit in the Infrastructure that does the I/O, so the launcher compiles `StagedBuild`'s three files on the base library alone; Quests and Accounts reach it through Application forwards. Detail: D166's STRUCT3e note.
+
+## PLUGNAME1 — the CLI's comments name `PluginCatalog.cs` (2026-10-14, D166)
+
+> - [ ] **PLUGNAME1 — the CLI's comments name `PluginCatalog.cs`** (cli). `src/Daoris.Cli/src/plugins.ts` (lines 9, 44, 72) and `test/plugins.test.ts:14` still name `Plugins.cs`, renamed by STRUCT3a.
+
+**Outcome** 2026-10-14: the four comments name `PluginCatalog.cs`; no code or test read changed (typecheck clean, `plugins.test.ts` 34/34).
+
+## STRUCT3PLAT — Platform's I/O and the layers that name it (2026-10-14, D166)
+
+> - [ ] **STRUCT3PLAT — Platform's I/O and the layers that name it** (driver; decide before Platform is layered). Every module's Application names Platform's I/O helpers (`MachineLog`, `MachineLogReader`, `DriverConfig.Load`, `AtomicFile`), but only an Infrastructure may name Platform's Infrastructure: decide whether Platform gets ports in its Domain or the reach rule gets an Application exception, and write it in D166. D166's STRUCT3a note.
+
+**Outcome** 2026-10-14: decided, measured on the five layered modules: an Application may name three of Platform's helpers, `MachineLog`, `DriverConfig` and `DaorisHome`, by a map list the reach rule reads; ports per helper and a blanket exception were rejected. STRUCT3i builds it with Platform's layering. Detail: D166's STRUCT3PLAT note.
