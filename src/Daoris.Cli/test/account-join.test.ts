@@ -9,7 +9,7 @@ import { makeFixture } from './_fixture.ts';
 
 /**
  * An account put into a scope's list, and where an account runs (ACCT1, D125's ACCT1 note; D130 §3.1). The CLI's half of a
- * TWIN with the driver's `Harnesses.Accounts.cs`: 🔴 `AccountJoinTwinTests.cs` holds the same tables, row for row and in
+ * TWIN with the driver's `HarnessSettings.cs`:🔴 `AccountJoinTwinTests.cs` holds the same tables, row for row and in
  * the same order, and the last test here holds each to this one, cell for cell: the join, the places, and a refused join's
  * sentence (ACCTQUOTE1d).
  *

@@ -9,7 +9,7 @@ import { captureError, makeFixture } from './_fixture.ts';
 
 /**
  * The order in `harnesses.json` (TOOL4e, D125 §3.1): `rotation` and `workspaceRotation`, the accounts rotation may use
- * per agent, for the machine and for a workspace. The CLI's half of a TWIN with the driver's `Harnesses.cs`
+ * per agent, for the machine and for a workspace. The CLI's half of a TWIN with the driver's `HarnessSettings.cs`
  * (`HarnessSettings`): 🔴 `RotationTwinTests.cs` holds the same tables, row for row and in the same order, and the last
  * test here holds each to this one, cell for cell.
  *

@@ -14248,3 +14248,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SCOPE1d — Sessions and Review by scope** (driver; after FLAT1b-ii and iii-b). Sessions into `Work/`, `Requests/`, `History/`, `Trace/`, `Events/`; Review into `Opinion/` and `ReviewEnvironment/` only if still above about 22 files at its top. D166's scope note.
 
 **Outcome** 2026-10-14: 21 renames put Sessions into `Work/`, `Requests/`, `History/`, `Trace/` and `Events/`, its top down from 24 files to 4 (`RunningSessions`, `SessionProcesses`, `SessionsCommand`, and `HarnessEnding`, which the loop and the observation both use); Review, at 15 files, stays flat. The gate's list follows `HistoryClearing`'s new paths. On Sonnet: 25 tool calls. Detail: D166's SCOPE1d note.
+
+## PART3 — the client's views and the harness types (2026-10-14, D166)
+
+> - [ ] **PART3 — the client's views and the harness types** (driver). `QuestView`, `QuestStepView` and `AskView` each one declaration; `HarnessSettings` and `HarnessRoster` each a file of its own. Survey "Records".
+
+**Outcome** 2026-10-14: the three views hold the review's and the workflow's properties in their one declaration in Quests' Domain, the element records staying in Service's; the 3,776-line `Harnesses.cs` and its three parts became `HarnessSettings.cs`, `HarnessRoster.cs`, `Harnesses.cs`, `HarnessSelection.cs`, `HarnessActions.cs`, `RotationUse.cs` and `AccountJoin.cs`. The worker split the file with `csplit` and `mv` after a concatenation was refused, which the brief forbids; the build and every test prove the content whole (D160's batch note). At the merge the twin comments in the CLI and the knowledge followed the new names, and the gate's list was regenerated (18 left). On Sonnet: 85 tool calls. Detail: D166's PART3 note.

@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <summary>An ask as the local service answered it (D65 §1a) — enough to open an intake and observe it.</summary>
 /// <param name="State">`Open`, `Proposed`, `Published` or `Closed`, as the record spells it.</param>
 /// <param name="Tier">Which tier answered — `declarations`, `named` or `intake` — never a model (D24).</param>
-public sealed partial record AskView(string Id, string Workspace, string Sentence, string State, string Tier)
+public sealed record AskView(string Id, string Workspace, string Sentence, string State, string Tier)
 {
     public string? Asker { get; init; }
 
@@ -49,6 +49,20 @@ public sealed partial record AskView(string Id, string Workspace, string Sentenc
     /// answered none, a host from before them.
     /// </summary>
     public IReadOnlyList<GoAheadView>? GoAheads { get; init; }
+
+    // The review's and the workflow's parts of an ask; their element records are declared in Service/Domain.
+
+    /// <summary>The person's review choices on it, oldest first, the latest standing (REVIEWENV1b); empty where they made none.</summary>
+    public IReadOnlyList<AskReviewChoiceView> ReviewChoices { get; init; } = [];
+
+    /// <summary>Its intake's review proposals, oldest first (REVIEWENV1b); empty where it proposed none.</summary>
+    public IReadOnlyList<AskReviewProposalView> ReviewProposals { get; init; } = [];
+
+    /// <summary>Its intake's kind proposals, oldest first (WORKFLOW1i); empty where it proposed none. Nothing here applies one.</summary>
+    public IReadOnlyList<AskWorkflowProposalView> WorkflowProposals { get; init; } = [];
+
+    /// <summary>The person's kind and workflow choices on it, oldest first, the latest standing (WORKFLOW1e); empty where they made none.</summary>
+    public IReadOnlyList<AskWorkflowChoiceView> WorkflowChoices { get; init; } = [];
 }
 
 public static class Asks

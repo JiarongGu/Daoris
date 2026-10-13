@@ -13,12 +13,3 @@ public sealed record AskWorkflowChoiceView(string? Kind, string? Workflow, DateT
 /// only the person's press applies, the intake session that made it and the quest it was published with.
 /// </summary>
 public sealed record AskWorkflowProposalView(string Kind, string Reason, DateTimeOffset At, string? Session = null, string? Quest = null);
-
-public sealed partial record AskView
-{
-    /// <summary>Its intake's kind proposals, oldest first (WORKFLOW1i); empty where it proposed none. Nothing here applies one.</summary>
-    public IReadOnlyList<AskWorkflowProposalView> WorkflowProposals { get; init; } = [];
-
-    /// <summary>The person's kind and workflow choices on it, oldest first, the latest standing (WORKFLOW1e); empty where they made none.</summary>
-    public IReadOnlyList<AskWorkflowChoiceView> WorkflowChoices { get; init; } = [];
-}
