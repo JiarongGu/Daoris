@@ -21,7 +21,7 @@ namespace Daoris.Driver;
 /// session.</para>
 ///
 /// <para>The use case (STRUCT3a): the refusals and their order are here, the folders it copies, moves and forgets are
-/// the module's Infrastructure's (<see cref="PluginFolders"/>).</para>
+/// <see cref="PluginFolders"/>'.</para>
 /// </remarks>
 public static class PluginInstall
 {

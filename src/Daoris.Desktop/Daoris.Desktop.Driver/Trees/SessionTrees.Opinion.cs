@@ -47,7 +47,7 @@ public sealed partial class SessionTrees
     public async Task<WorkflowProcess> ProcessAsync(
         DriverConfig config, string repository, string? workspace, string? quest, IReviewWorld world, CancellationToken ct = default) =>
         quest is null
-            ? WorkflowProcesses.Current(config, repository, workspace)
+            ? WorkflowProcess.Current(config, repository, workspace)
             : await WorkflowProcesses.ReadAsync(home, config, world, quest, repository, workspace, ct).ConfigureAwait(false);
 
     /// <summary>

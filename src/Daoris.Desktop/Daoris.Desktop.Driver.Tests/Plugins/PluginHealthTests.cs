@@ -99,7 +99,7 @@ public sealed class PluginHealthTests : IDisposable
         }
 
         var lines = MachineLogReader.Read(Path.Combine(_home, MachineLog.Folder), new LogFilter()).Lines;
-        foreach (var (reading, said) in new[] { ("the record", health.Of(entry)), ("the log", PluginHealth.FromLog(entry, lines)) })
+        foreach (var (reading, said) in new[] { ("the record", health.Of(entry)), ("the log", PluginHealthRules.FromLog(entry, lines)) })
         {
             var where = $"{row}, from {reading}";
             Assert.True(state == said.State, $"{where}: {said.State}, not {state}");

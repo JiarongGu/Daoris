@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The home's plugin folders on this machine (STRUCT3a): what the catalogue reads, and how the placeholders a manifest
-/// writes become this machine's paths. The module's Application reads and writes the home only through here.
+/// writes become this machine's paths. The module reads and writes the home only through here.
 /// </summary>
 internal static class PluginFolders
 {

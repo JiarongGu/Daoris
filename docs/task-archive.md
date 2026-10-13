@@ -14170,3 +14170,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DEDUP9a — the service core's atomic writes** (service). A Core `AtomicFile` (a unique name beside, the move retried, cleaned up, async bytes) for `QuestFiles.KeepAsync` (a fixed `.tmp`: two keeps collide), `HelperBox`, `HelpProposalBox` and `RuleProposals`, keeping LF and the trailing newline. Survey §9.
 
 **Outcome** 2026-10-14: `Daoris.Service.Core/AtomicFile.cs` writes beside its target under a name of its own and moves it in, retried and cleaned up, as the driver's does without referencing it; the four writes use it, their bytes unchanged. The three that moved without overwrite now replace a target, which none relied on (fresh ids, and the helper's answer refuses before it writes). Service tests 1956, four new. On Sonnet, scouted: 30 tool calls.
+
+## FLAT1b-i — Plugins and Workflows: the layering's ceremony folded back (2026-10-14, D166)
+
+> - [ ] **FLAT1b-i — Plugins and Workflows: the layering's ceremony folded back** (driver; after FLAT1a). Extension blocks that split a type's I/O go back into the type (out of `Domain/` if it then does I/O); forwards for moved names retire; a port no test stands in for gives way to its implementation (`IHookChannel`, `WorkflowPorts`). D166's STRUCT3a and 3b notes.
+
+**Outcome** 2026-10-14: the catalogue's, icon's and source's extension blocks are plain members of their types again, which stay in `Domain/` (they call `PluginFolders`, no gate token); the Workflows forwards and Plugins' health and package aliases retired, callers naming the one place; no port gave way, each having a test stand-in. On Sonnet, scouted: 117 tool calls. Detail: D166's FLAT1b-i note.

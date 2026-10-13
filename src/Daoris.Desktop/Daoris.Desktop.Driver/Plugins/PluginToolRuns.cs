@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A plugin's tool checks as programs on this machine (PLUGTOOL1a, D150 point 7; STRUCT3a): how each is started and its
-/// answer read. The Application's <see cref="PluginToolChecks"/> asks through its <see cref="CheckRunner"/> port, whose
+/// answer read. <see cref="PluginToolChecks"/> asks through its <see cref="CheckRunner"/> port, whose
 /// real runner this is; a fast test hands a stand-in.
 /// </summary>
 internal static class PluginToolRuns

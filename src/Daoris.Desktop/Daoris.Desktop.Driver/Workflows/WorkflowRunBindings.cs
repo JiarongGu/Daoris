@@ -25,8 +25,8 @@ namespace Daoris.Driver;
 /// are held to the shared table's <c>kept</c> rows, since <c>daoris driver workflow edit</c> keeps them too. The file is the driver's
 /// alone to write. Machine-local, never on the wire (D47 §4).</para>
 ///
-/// <para><b>Layered</b> (STRUCT3b, D166): the runs' use cases, written against <see cref="IWorkflowRunStore"/> and
-/// <see cref="IWorkflowStore"/>; the file and its format are Workflows' Infrastructure. A caller that holds only the home reaches
+/// <para><b>Over ports</b> (STRUCT3b, D166): the runs' use cases, written against <see cref="IWorkflowRunStore"/> and
+/// <see cref="IWorkflowStore"/>; the file and its format are behind them. A caller that holds only the home reaches
 /// them by it, as every module did before.</para>
 /// </remarks>
 public static partial class WorkflowRunBindings
@@ -169,12 +169,9 @@ public static partial class WorkflowRunBindings
         var where = $"workflow  #{quest} → {binding.Repository}";
         var follows = binding.IsCurrent ? "Current" : binding.Version is { } version ? $"`{binding.Workflow}` v{version}" : $"`{binding.Workflow}`";
         return binding.Problem is { } problem
-            ? $"{where}: its run was bound to {follows}, {Why(binding)}, which cannot start it: {problem}"
-            : $"{where}: its run follows {follows}, {Why(binding)}.";
+            ? $"{where}: its run was bound to {follows}, {WorkflowRunBinding.Why(binding)}, which cannot start it: {problem}"
+            : $"{where}: its run follows {follows}, {WorkflowRunBinding.Why(binding)}.";
     }
-
-    /// <summary>Which level chose a run's workflow, in words (design §4.1): <see cref="WorkflowRunBinding.Why"/>.</summary>
-    public static string Why(WorkflowRunBinding binding) => WorkflowRunBinding.Why(binding);
 
     private static string? Text(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;

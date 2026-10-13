@@ -55,7 +55,9 @@ word said as it begins runs its own turn first, the box then waiting for that tu
 `Workflows/` keeps the onion for its model and rules alone (STRUCT3b, flattened by FLAT1a, D166's notes): its records and
 rules in `Domain/`, pure; its use cases (`WorkflowStore`, `WorkflowRunBindings`, `WorkflowProcesses`, `WorkflowRunReader`,
 `WorkflowRunStart` and the two commands), written against the ports declared at its top (`IWorkflowStore`, `IWorkflowRunStore`,
-`IWorkflowRunRecords`, `IWorkflowStartWorld`), and the files and reads behind those ports sit at the module's top.
+`IWorkflowRunRecords`, `IWorkflowStartWorld`), and the files and reads behind those ports sit at the module's top. Callers name
+the rules where they are declared (`WorkflowProcess.Of` and `Current`, `WorkflowNamed.PlanAdd`, `WorkflowRunBinding.Why`); the
+use cases keep no forward to them (FLAT1b-i).
 
 `Review/` keeps the onion for its model and rules alone (STRUCT3c, flattened by FLAT1a): the review's and the second opinion's
 records, rules, gates and words in `Domain/`, pure (`ReviewGate`, `ReviewRules`, `OpinionGate`, `OpinionRules`, the packet, the
@@ -241,8 +243,10 @@ module's top, beside `plugin-kit/`: the home's plugin folders (`PluginFolders`),
 checks' runs, the kit's files and templates, a trial's process and the package file, and what other modules and the hosts call:
 the catalogue's reads, install and update, offers, the page and the activity, the kit and its trial, the hook set the loop
 asks, the landing's start (`HookChannels`), the log writer and the terminal's commands, with the ports `IHookChannel` and
-`CheckRunner`. `PluginCatalog.Load`, `PluginIcon.Read` and `PluginSource.Read` are static members of C# 14 extension blocks,
-which FLAT1b folds back.
+`CheckRunner`. `PluginCatalog.Load`, `PluginIcon.Read` and `PluginSource.Read` are ordinary static members of their types (FLAT1b-i folded
+the extension blocks back): each calls `PluginFolders` for the I/O, so the type stays in `Domain/` and names no I/O token itself.
+Callers name a health state or a reading of the log through `PluginHealthRules`, and a package's type, root and extension
+through `PluginPackageRules`, where they are declared.
 
 **The kit a plugin is made with** (PLUG8, D101, the plugin design's §9) is the driver library's
 `PluginKit`: `daoris-driver plugins new <id> --point <p>… [--in <folder>]` writes a plugin's folder

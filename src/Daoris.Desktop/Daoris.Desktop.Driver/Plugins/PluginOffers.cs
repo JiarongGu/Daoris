@@ -14,7 +14,7 @@ namespace Daoris.Driver;
 /// <para>A twin of the CLI's <c>readOffers</c> and <c>readNeeds</c> in <c>plugins.ts</c>: the same folder, the
 /// same reading, the same requirement lines, and each side's tests hold the same table.</para>
 ///
-/// <para>The use case (STRUCT3a): the folders are read through the module's Infrastructure, each manifest by the
+/// <para>The use case (STRUCT3a): the folders are read through <see cref="PluginFolders"/>, each manifest by the
 /// catalogue's own rules, and a README's needs by <see cref="PluginOffer.NeedsIn"/>.</para>
 /// </remarks>
 public static class PluginOffers

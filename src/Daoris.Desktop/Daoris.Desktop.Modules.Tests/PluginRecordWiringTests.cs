@@ -23,7 +23,7 @@ public sealed class PluginRecordWiringTests : DriverModuleBridge
         var entry = new PluginEntry(
             new PluginManifest("acme.gate", 1, "Gate", "1.0.0", "", [], new PluginHooks(["node", "hooks.mjs"], ["quest/consider"]), []),
             "C:/somewhere/data/plugins/acme.gate", "C:/somewhere/data/plugins/.data/acme.gate", Enabled: true, Problem: null);
-        Assert.Equal(PluginHealth.Ready, loop.Health.Of(entry).State);
+        Assert.Equal(PluginHealthRules.Ready, loop.Health.Of(entry).State);
     }
 
     [Fact]

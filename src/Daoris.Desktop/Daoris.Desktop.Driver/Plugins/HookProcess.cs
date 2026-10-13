@@ -8,8 +8,8 @@ namespace Daoris.Driver;
 /// rule 3): everything the plugin contributes exists exactly as long as this process does.
 /// </summary>
 /// <remarks>
-/// The Infrastructure behind the module's port (STRUCT3a): the real <see cref="IHookChannel"/>, a <see cref="HookPeer"/>
-/// over a started process's stdio. Another module starts one through the Application's <see cref="HookChannels"/>.
+/// The real <see cref="IHookChannel"/> behind the module's port (STRUCT3a): a <see cref="HookPeer"/> over a started
+/// process's stdio. Another module starts one through <see cref="HookChannels"/>.
 /// </remarks>
 public sealed class HookProcess : IHookChannel
 {

@@ -24,19 +24,10 @@ namespace Daoris.Driver;
 /// fetched. 🔴 Nothing a plugin declares runs here; the loop starts it at its next look.</para>
 ///
 /// <para>The use case (STRUCT3a): what the package's words are is the Domain's <see cref="PluginPackageRules"/>, the file
-/// the Infrastructure's <see cref="PluginPackageFile"/>.</para>
+/// <see cref="PluginPackageFile"/>'s.</para>
 /// </remarks>
 public static class PluginPackage
 {
-    /// <summary>The package type a Daoris plugin is (D120 §4). NuGet compares type names without case.</summary>
-    public const string Type = PluginPackageRules.Type;
-
-    /// <summary>Where a package keeps its plugin folder.</summary>
-    public const string Root = PluginPackageRules.Root;
-
-    /// <summary>A package file's extension.</summary>
-    public const string Extension = PluginPackageRules.Extension;
-
     /// <summary>What a package file says it is, or why it is no plugin this build installs. Nothing is written.</summary>
     public static (PluginPackageRead? Package, string? Refusal) Read(string file)
     {
@@ -162,12 +153,12 @@ public static class PluginPackageCommand
 
             if (file is null)
             {
-                throw new DriverException($"`plugins install` needs a package file — e.g. `daoris-driver plugins install ./Acme.Gate.1.0.0{PluginPackage.Extension}`.\n{Usage}");
+                throw new DriverException($"`plugins install` needs a package file — e.g. `daoris-driver plugins install ./Acme.Gate.1.0.0{PluginPackageRules.Extension}`.\n{Usage}");
             }
 
-            if (!file.EndsWith(PluginPackage.Extension, StringComparison.OrdinalIgnoreCase) && !PluginFolders.HasFile(file))
+            if (!file.EndsWith(PluginPackageRules.Extension, StringComparison.OrdinalIgnoreCase) && !PluginFolders.HasFile(file))
             {
-                throw new DriverException($"`{file}` is not a package file — `plugins install` takes a `{PluginPackage.Extension}` file, "
+                throw new DriverException($"`{file}` is not a package file — `plugins install` takes a `{PluginPackageRules.Extension}` file, "
                     + "and `daoris plugin add <folder>` a plugin's folder.");
             }
 

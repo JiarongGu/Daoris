@@ -80,7 +80,7 @@ public static partial class PluginKit
     /// spoken to through <see cref="HookPeer"/>, and sent <see cref="HookFrames"/>' frames, so an answer the
     /// trial accepts is one the driver reads. The trial owns the process itself only to see what the driver
     /// does not need to: an exit code, a line on stdout that is not a frame, whether it left when told. The process is the
-    /// Infrastructure's (<see cref="PluginTrialProcess"/>, STRUCT3a); what each answer means is said here.</para>
+    /// <see cref="PluginTrialProcess"/>'s (STRUCT3a); what each answer means is said here.</para>
     ///
     /// <para><b>Stricter than the driver in one place</b>: a point the manifest declares and the process
     /// does not listen on fails. The driver tolerates it; a person reading the manifest would not.</para>

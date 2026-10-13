@@ -30,10 +30,6 @@ public static class WorkflowStore
     public static string PathOf(string home, string id) =>
         WorkflowNamed.IsId(id) ? Path.Combine(FolderOf(home), id + ".json") : throw new DriverException(WorkflowNamed.IdProblem(id)!);
 
-    /// <summary>A version added to a workflow's file, planned and not written: <see cref="WorkflowNamed.PlanAdd"/>, by the twin's name.</summary>
-    public static WorkflowAddPlan PlanAdd(JsonNode? file, WorkflowVersionAdded add, IReadOnlyCollection<int> kept) =>
-        WorkflowNamed.PlanAdd(file, add, kept);
-
     /// <summary>A workflow's file under the home, as found: null where there is none; its problem where it is not JSON.</summary>
     public static WorkflowFileFound? Load(string home, string id) => WorkflowPorts.Store(home).Load(id);
 
@@ -61,7 +57,4 @@ public static class WorkflowStore
         store.Write(add.Id, plan.Result!);
         return plan.Version!.Value;
     }
-
-    /// <summary>A workflow's file as written: <see cref="WorkflowNamed.Text"/>.</summary>
-    public static string Text(JsonNode file) => WorkflowNamed.Text(file);
 }

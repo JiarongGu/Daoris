@@ -585,7 +585,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         // sentence a tidy takes out: a merge keeps no landing record, and its conversation's note is its record.
         if (landed.Landed && named is not null)
         {
-            var decided = $" It landed as {named.Name} says, {WorkflowRunBindings.Why(named.Binding!)}.";
+            var decided = $" It landed as {named.Name} says, {WorkflowRunBinding.Why(named.Binding!)}.";
             landed = landed with
             {
                 Message = landed.Message.EndsWith(TreeStays, StringComparison.Ordinal)

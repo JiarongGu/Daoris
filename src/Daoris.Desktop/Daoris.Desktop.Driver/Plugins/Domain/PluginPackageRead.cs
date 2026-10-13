@@ -18,7 +18,7 @@ internal sealed class PluginPackageRefusal(string message) : Exception(message);
 /// <summary>
 /// A Daoris plugin package's words judged (PLUGDIST1a, D120; the distribution design §5.1 and §5.7 step 1): its one nuspec
 /// at the root, the nuspec's id, version, type and dependencies, and every entry under <see cref="Root"/>, each refused by
-/// name, before anything is written. Pure (STRUCT3a): the file is opened, hashed and read by the Infrastructure's
+/// name, before anything is written. Pure (STRUCT3a): the file is opened, hashed and read by
 /// <see cref="PluginPackageFile"/>, which hands its entries' names and its nuspec here.
 /// </summary>
 internal static class PluginPackageRules

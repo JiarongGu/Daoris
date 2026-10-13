@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The named workflows a home keeps (WORKFLOW1d, the workflow design §2.4–§2.6): one file per workflow,
 /// <c>&lt;home&gt;/workflows/&lt;id&gt;.json</c>, read as found and written whole. A port (STRUCT3b, D166; the code-structure
-/// design §3): <see cref="WorkflowStore"/>'s use cases are written against it, and Workflows' Infrastructure is the files behind it.
+/// design §3): <see cref="WorkflowStore"/>'s use cases are written against it, and <c>WorkflowFiles</c> is the files behind it.
 /// </summary>
 public interface IWorkflowStore
 {
@@ -22,7 +22,7 @@ public interface IWorkflowStore
 /// <summary>
 /// The runs' bindings a home keeps (WORKFLOW1e, the workflow design §4.5, §5.1): one file per run,
 /// <c>&lt;home&gt;/workflows/runs/&lt;run&gt;.json</c>, machine-local. A port (STRUCT3b): <see cref="WorkflowRunBindings"/>' and
-/// <see cref="WorkflowStore"/>'s use cases are written against it, and Workflows' Infrastructure is the files behind it.
+/// <see cref="WorkflowStore"/>'s use cases are written against it, and the files are behind it.
 /// </summary>
 public interface IWorkflowRunStore
 {
@@ -51,7 +51,7 @@ public interface IWorkflowRunStore
 /// <summary>
 /// What a run's read reads on this machine beside the service (WORKFLOW1c, the workflow design §5.1): the landing record and the
 /// due list under the home, the acceptances each session's conversation record keeps, and whether a tree still stands. A port
-/// (STRUCT3b): <see cref="WorkflowRunReader"/> is written against it, and Workflows' Infrastructure is the reads behind it.
+/// (STRUCT3b): <see cref="WorkflowRunReader"/> is written against it, and the reads are behind it.
 /// </summary>
 public interface IWorkflowRunRecords
 {
@@ -73,8 +73,8 @@ public interface IWorkflowRunRecords
 
 /// <summary>
 /// The ports over a home's files, for a caller that holds only the home (STRUCT3b; D166's STRUCT3b note): the one place Workflows'
-/// Application names its own Infrastructure. Every module, the loop and the hosts reach Workflows through its Application by a
-/// home, as they did before it was layered; a caller that holds the ports passes them to the use case itself.
+/// use cases name the files behind them. Every module, the loop and the hosts reach Workflows by a
+/// home, as they did before the ports; a caller that holds the ports passes them to the use case itself.
 /// </summary>
 internal static class WorkflowPorts
 {

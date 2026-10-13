@@ -23,7 +23,7 @@ public sealed class WorkflowRunTests
             new("permit", WorkflowKinds.GoAhead, [new("act", "publish"), new("on", "local")]),
             new("land", WorkflowKinds.Landing, [new("form", "merge"), new("accept", "you")]),
         ];
-        var process = WorkflowProcesses.Of(config, "engine", "aurora", binding, named);
+        var process = WorkflowProcess.Of(config, "engine", "aurora", binding, named);
         var graph = WorkflowRunGraph.Read(process, WorkflowCurrent.Derive(config, "engine", "aurora", []), []);
         var facts = new WorkflowRunFacts("engine", graph)
         {

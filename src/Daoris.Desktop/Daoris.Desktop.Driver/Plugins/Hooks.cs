@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// One plugin's side of the wire, as the host sees it — what a process gives once it speaks, and what a
 /// test can hand in without one. The module's port (STRUCT3a): the hook set and the landing ask through it, a test's
-/// fake and <see cref="HookPeer"/> speak it, and the Infrastructure's <see cref="HookProcess"/> is the real one.
+/// fake and <see cref="HookPeer"/> speak it, and <see cref="HookProcess"/> is the real one.
 /// </summary>
 public interface IHookChannel : IAsyncDisposable
 {
@@ -383,8 +383,8 @@ public sealed class HookPeer(
 public static class HookChannels
 {
     /// <summary>
-    /// The plugin's program started in the home as the driver starts it, its handshake made: the module's Infrastructure
-    /// (<see cref="HookProcess"/>) behind the port. Throws with the reason where it does not start or does not answer.
+    /// The plugin's program started in the home as the driver starts it, its handshake made:
+    /// <see cref="HookProcess"/>, behind the port. Throws with the reason where it does not start or does not answer.
     /// </summary>
     public static async Task<IHookChannel> StartAsync(
         PluginEntry plugin, string home, Action<string> onLine, CancellationToken ct, TimeSpan? patience = null) =>
