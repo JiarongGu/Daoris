@@ -11,6 +11,19 @@ TREEFOLLOW1's merge open), the parallel-development design (`docs/2026-09-30-par
 
 Two asks: **modules by domain** (§2), and **onion layers** inside them (§3), with a folder structure that says both (§4).
 
+**Amended 2026-10-14** (D166's note of that day). The owner, after six modules were layered in three:
+
+> *"you don't have to 100% follow onion structure since it will be over engineering"*; *"what we want is a clean 'domain'
+> separation (project/module) and we more focus on modularize the code to reduce duplication and easier to manage. 'Onion
+> structure' is a good way to do model/logic structuring but we don't need a full onion practice"*
+
+What stands: the modules (§2), each a folder (§4), and the gate (§5) for its rules 1, 2 and 4. What changes: inside a module,
+only a `Domain/` for its pure records, rules and words, held pure by rule 2; the rest of the module sits at its top. §3's
+`Application` and `Infrastructure` layers, §4's layer folders, §5's rules 3 and 5, STRUCT3a's extension-member and port
+pattern, and namespaces per module are not used: no port, forward or extension member is written for a layer's sake, and a
+port is made where a test must stand something in. The next work is less duplication across the modules
+(`docs/2026-10-14-duplication-survey.md`).
+
 ## 1. What is true
 
 - **The driver is one flat folder of one namespace.** `Daoris.Desktop.Driver` holds 299 C# files (about 101,700 lines),
