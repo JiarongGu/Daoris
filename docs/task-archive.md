@@ -14101,3 +14101,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT3c — layer the Review module** (driver). `Domain`, `Application` and `Infrastructure` with ports, held by the gate, behaviour unchanged, `Review` on the map's `layered` list. D166; design §3, §6.
 
 **Outcome** 2026-10-14: Review is layered (Domain 18 files, Application 11, Infrastructure 9), `IReviewWorld` with its factory `ReviewWorlds.Of`, the home stores' use cases keeping their names; every caller's I/O call on a pure type is an extension member, so one call site outside Review changed (`WorkflowKeepCommand`). The loop's opinion use cases and the client's opinion doors are left to rows. Detail: D166's STRUCT3c note.
+
+## STRUCT3d — layer the Service module (2026-10-14, D166)
+
+> - [ ] **STRUCT3d — layer the Service module** (driver). `Domain`, `Application` and `Infrastructure` with ports, held by the gate, behaviour unchanged, `Service` on the map's `layered` list. D166; design §3, §6.
+
+**Outcome** 2026-10-14: Service is layered (Domain 11 files, Application 12, Infrastructure 6). `ServiceClient` stays the Application's under its name, its HTTP behind the port `IServiceDoors` with `ServiceHttp` as the default the URL constructors compose, so no caller changed; `ServiceDoorsTests` drives a client over doors in memory. The map's rules for remotes, the knowledge connector and the layout became Domain values with their reads as Application extension members. The client's parts that other modules declare are left to STRUCT3DOORS. Detail: D166's STRUCT3d note.

@@ -1,4 +1,3 @@
-using System.Text;
 using System.Text.Json;
 
 namespace Daoris.Driver;
@@ -171,7 +170,8 @@ public sealed record LineReading(LayoutFacts? Facts, string? Problem);
 /// </summary>
 /// <remarks>
 /// <para><b>Pure, and handed what git answered</b> (<see cref="Read"/>), with the git half apart
-/// (<see cref="ReadAsync"/>): plan and apply, as everywhere, so every case is held without a process.</para>
+/// (<c>LayoutReader.ReadAsync</c>, <see cref="LayoutReads"/>, which <see cref="LayoutGit"/> answers in Service's
+/// Infrastructure; STRUCT3d): plan and apply, as everywhere, so every case is held without a process.</para>
 ///
 /// <para>🔴 <b>A twin</b> (<c>.claude/knowledge/twins.md</c>, *the layout* and *a link held as text*): the CLI's
 /// <c>layout.ts</c> and <c>links.ts</c> write and refuse what this reads, and the service's <c>RepositoryLayout</c>
@@ -196,50 +196,6 @@ public static class LayoutReader
 
     /// <summary>The characters a token cannot start with: an import, a heading, markup, a list, a quote. The CLI's.</summary>
     private const string NotAPath = "@#<>![-*|`";
-
-    /// <summary>How much of one text git is asked for: a manifest, a lock or an instruction file is far smaller.</summary>
-    private const int TextLimit = 512 * 1024;
-
-    /// <summary>
-    /// The facts of <paramref name="line"/> in the checkout at <paramref name="root"/>, read as git objects: the
-    /// line's commit, its tree, the texts <see cref="Wanted"/> names, and the checkout's <c>core.symlinks</c>. The
-    /// working files and the index are never asked, so what the person has in flight there is neither read nor touched.
-    /// </summary>
-    /// <returns>The facts, or why the line could not be read: no repository there, or a line that names no commit.</returns>
-    public static async Task<LineReading> ReadAsync(string root, string line, CancellationToken ct = default)
-    {
-        // 🔴 git walks UP (FIX-LOG): a folder that is not a repository's top would answer for the one above it.
-        if (!await WorkingTree.IsTopLevelAsync(root, ct).ConfigureAwait(false))
-        {
-            return new(null, "its checkout here is not a git repository");
-        }
-
-        if (!BranchName.IsValid(line)) return new(null, $"its line `{line}` is not a branch name git would take");
-
-        var (found, sha, _) = await WorkingTree.GitAsync(
-            root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{line}^{{commit}}"], ct).ConfigureAwait(false);
-        var commit = sha.Trim();
-        if (found != 0 || !WorkingTree.IsCommitId(commit)) return new(null, $"its line `{line}` names no commit here");
-
-        var (listed, output, problem) = await WorkingTree.GitAsync(root, ["ls-tree", "-r", "-z", commit], ct).ConfigureAwait(false);
-        if (listed != 0) return new(null, $"git could not list `{line}` at `{commit[..7]}`: {problem.Trim()}");
-
-        var tree = LineEntry.Parse(output);
-        var texts = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var path in Wanted(tree))
-        {
-            var entry = tree.First(item => item.Path == path);
-            if (!WorkingTree.IsCommitId(entry.Object)) continue;
-            if (await WorkingTree.GitBytesAsync(root, ["cat-file", "blob", entry.Object], TextLimit, ct).ConfigureAwait(false) is { } read)
-            {
-                texts[path] = Encoding.UTF8.GetString(read.Bytes, 0, read.Count);
-            }
-        }
-
-        // Unset answers 1: git's own default then, which is links. `--type=bool` reads `yes`, `on` and `1` as git does.
-        var (set, symlinks, _) = await WorkingTree.GitAsync(root, ["config", "--type=bool", "--get", "core.symlinks"], ct).ConfigureAwait(false);
-        return new(Read(line, commit, tree, texts, set == 0 ? symlinks.Trim() == "true" : null), null);
-    }
 
     /// <summary>The paths whose text the reader reads: the manifest, the lock, the two instruction files, and the skills root where it is not a folder.</summary>
     public static IReadOnlyList<string> Wanted(IReadOnlyList<LineEntry> tree) =>

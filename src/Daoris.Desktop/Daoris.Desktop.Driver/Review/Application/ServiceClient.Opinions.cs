@@ -44,12 +44,11 @@ public sealed partial class ServiceClient
     /// <exception cref="DriverException">The host refused for another reason.</exception>
     public async Task<OpinionView?> ReadOpinionAsync(string id, CancellationToken ct = default)
     {
-        var url = $"{_base}/api/opinions/{Uri.EscapeDataString(id)}";
-        using var response = await _http.GetAsync(url, ct).ConfigureAwait(false);
-        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        if (response.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
-        if (!response.IsSuccessStatusCode) throw new DriverException($"{url} answered {(int)response.StatusCode}: {DriverHttp.ErrorOf(payload)}");
-        return OpinionViews.Read(payload);
+        var path = $"/api/opinions/{Uri.EscapeDataString(id)}";
+        var answer = await _doors.SendAsync(ServiceVerb.Get, path, null, ct).ConfigureAwait(false);
+        if (answer.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
+        if (!answer.Ok) throw new DriverException($"{_base}{path} answered {answer.Status}: {DriverHttp.ErrorOf(answer.Payload)}");
+        return OpinionViews.Read(answer.Payload);
     }
 
     /// <summary>

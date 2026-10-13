@@ -35,24 +35,17 @@ public sealed record RemoteTarget(string Url, string Key)
     /// </summary>
     public const string DefaultWorkspace = "default";
 
-    /// <summary>
-    /// The map's conventional home, beside the driver's own config under the Daoris home (D63) — and
-    /// null where there is none: a machine with no home has no remotes, the documented default anyway.
-    /// </summary>
-    public static string? DefaultPath => DaorisHome.File("remotes.json");
-
-    /// <summary>The file every door reads and writes — the override, or the conventional home, as the driver's and the harnesses' are.</summary>
-    public static string? ResolvePath() => Environment.GetEnvironmentVariable(PathVariable) ?? DefaultPath;
+    /// <summary>The map's file name under the Daoris home (D63), beside the driver's own config.</summary>
+    public const string FileName = "remotes.json";
 
     /// <summary>A workspace name as it is stored and compared: trimmed, and the default when unstated.</summary>
     public static string Workspace(string? name) =>
         string.IsNullOrWhiteSpace(name) ? DefaultWorkspace : name.Trim();
 
-    /// <summary>This machine's remotes, by workspace. Absence is the default and it is silent (D21).</summary>
-    public static IReadOnlyDictionary<string, RemoteTarget> Load() => Load(Environment.GetEnvironmentVariable, ResolvePath());
-
     /// <summary>
-    /// The testable shape: the same judgement over injected surroundings.
+    /// The environment's answer, where it gives one: the first half of the judgement <c>Load</c> makes over its surroundings
+    /// (STRUCT3d: the rule here, the file's read in Service's Application). Null where the environment says nothing, and
+    /// the file decides.
     /// </summary>
     /// <remarks>
     /// Either environment variable present means the environment IS the answer — for the WHOLE
@@ -61,27 +54,33 @@ public sealed record RemoteTarget(string Url, string Key)
     /// a merge, which would let a real map leak into a process that thought it had named its only
     /// remote — the gate's hermetic guard rests on exactly that.
     /// </remarks>
-    public static IReadOnlyDictionary<string, RemoteTarget> Load(Func<string, string?> environment, string? path)
+    public static IReadOnlyDictionary<string, RemoteTarget>? FromEnvironment(Func<string, string?> environment)
     {
-        var map = new Dictionary<string, RemoteTarget>(StringComparer.OrdinalIgnoreCase);
         var url = environment(UrlVariable);
         var key = environment(KeyVariable);
+        if (string.IsNullOrWhiteSpace(url) && string.IsNullOrWhiteSpace(key)) return null;
 
-        if (!string.IsNullOrWhiteSpace(url) || !string.IsNullOrWhiteSpace(key))
+        var map = new Dictionary<string, RemoteTarget>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(url) && !string.IsNullOrWhiteSpace(key))
         {
-            if (!string.IsNullOrWhiteSpace(url) && !string.IsNullOrWhiteSpace(key))
-            {
-                map[Workspace(environment(WorkspaceVariable))] = new(url.TrimEnd('/'), key);
-            }
-
-            return map;
+            map[Workspace(environment(WorkspaceVariable))] = new(url.TrimEnd('/'), key);
         }
 
-        if (!File.Exists(path)) return map;
+        return map;
+    }
+
+    /// <summary>
+    /// The map as its file says it, by workspace; none for no file (<paramref name="text"/> null) or a text that is not
+    /// JSON, and an entry that is not whole is skipped.
+    /// </summary>
+    public static IReadOnlyDictionary<string, RemoteTarget> Parse(string? text)
+    {
+        var map = new Dictionary<string, RemoteTarget>(StringComparer.OrdinalIgnoreCase);
+        if (text is null) return map;
 
         try
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(text);
             if (document.RootElement.ValueKind != JsonValueKind.Object) return map;
 
             foreach (var entry in document.RootElement.EnumerateObject())
@@ -104,25 +103,9 @@ public sealed record RemoteTarget(string Url, string Key)
         return map;
     }
 
-    /// <summary>
-    /// The map as it sits on disk, whatever the environment currently says — what an EDITOR reads.
-    /// </summary>
-    /// <remarks>
-    /// An edit must land in the file even when the environment outranks it (a machine with the env
-    /// pair set could otherwise never wire a second workspace); which one is LIVE is a separate
-    /// question, and the surface answers it separately. Same judgement as the CLI's `remote` verb.
-    /// </remarks>
-    public static IReadOnlyDictionary<string, RemoteTarget> LoadFile(string path) =>
-        Load(_ => null, path);
-
-    /// <summary>
-    /// Write the map back — atomically, beside-then-rename, like every write in this family: a driver
-    /// tick may read this file at any moment, and a torn read must never be what it finds.
-    /// </summary>
-    public static void Save(string path, IReadOnlyDictionary<string, RemoteTarget> remotes)
+    /// <summary>The map's file as <c>Save</c> writes it: by workspace in order, indented, ending with a new line.</summary>
+    public static string Json(IReadOnlyDictionary<string, RemoteTarget> remotes)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
-
         using var stream = new MemoryStream();
         using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
         {
@@ -138,7 +121,7 @@ public sealed record RemoteTarget(string Url, string Key)
             writer.WriteEndObject();
         }
 
-        AtomicFile.WriteText(path, System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n");
+        return System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n";
     }
 
     /// <summary>

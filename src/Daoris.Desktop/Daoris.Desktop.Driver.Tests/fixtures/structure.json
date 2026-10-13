@@ -18,6 +18,7 @@
   "layered": [
     "Plugins",
     "Review",
+    "Service",
     "Workflows"
   ],
   "root": {
@@ -255,6 +256,7 @@
     "SelfDescriptionTests.cs": "Setup",
     "ServiceClientReviewTests.cs": "Service",
     "ServiceClientWorkflowProposalTests.cs": "Service",
+    "ServiceDoorsTests.cs": "Service",
     "ServiceHostLocatorTests.cs": "Service",
     "SessionArchiveTests.cs": "Sessions",
     "SessionBranchDiscardTests.cs": "Trees",

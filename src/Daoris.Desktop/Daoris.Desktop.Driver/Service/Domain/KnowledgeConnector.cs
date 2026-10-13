@@ -13,6 +13,10 @@ namespace Daoris.Driver;
 /// <para>Measured before it was built: without this a real driven session came up, streamed "I'll
 /// start by taking the quest", called `take`, found no such tool and ended its turn having touched
 /// nothing.</para>
+///
+/// <para>Service's Domain (STRUCT3d, D166's note): its names, the order of the places to look and the server's
+/// surroundings, pure. <c>Offer</c>, <c>Locate</c> and <c>Candidates</c>, which look at this machine, are
+/// <see cref="KnowledgeConnectorReads"/>'s, named here as before.</para>
 /// </remarks>
 public static class KnowledgeConnector
 {
@@ -37,6 +41,9 @@ public static class KnowledgeConnector
     /// </summary>
     public const string Folder = "daoris-knowledge";
 
+    /// <summary>What marks the workspace a development build runs below: its manifest.</summary>
+    public const string WorkspaceMarker = "daoris.json";
+
     /// <summary>
     /// Everything the host needs to find the same store this driver is reading.
     /// </summary>
@@ -56,32 +63,22 @@ public static class KnowledgeConnector
     ];
 
     /// <summary>
-    /// The server to offer, or <c>null</c> when this machine has no host to offer.
+    /// The server to offer for a connector found at <paramref name="located"/>: the store's surroundings passed through, then
+    /// what this session's connector carries beyond them, then the home.
     /// </summary>
-    /// <remarks>
-    /// Null is an answer, not a failure: the session drives exactly as it did before ACP4, which is
-    /// without a connector. Refusing to start would make a missing optional binary fatal to a loop
-    /// that has other work to do.
-    /// </remarks>
+    /// <param name="variable">A variable of the surroundings the session runs in: this process's, or a test's.</param>
     /// <param name="scope">
     /// What THIS session's connector carries beyond the store — an intake's ask and session (D65 §1b),
     /// which is how a publish from a room that is no repository is asked by the ask. Null for a
     /// quest's session, whose repository already says everything.
     /// </param>
-    public static AcpMcpServer? Offer(
-        string? explicitPath, string? home, string baseDirectory,
-        IReadOnlyDictionary<string, string?>? environment = null,
-        IReadOnlyDictionary<string, string>? scope = null)
+    public static AcpMcpServer Server(
+        string located, Func<string, string?> variable, string? home, IReadOnlyDictionary<string, string>? scope)
     {
-        var located = Locate(explicitPath, home, baseDirectory);
-        if (located is null) return null;
-
         var carried = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var name in Passed)
         {
-            var value = environment is not null
-                ? (environment.TryGetValue(name, out var held) ? held : null)
-                : Environment.GetEnvironmentVariable(name);
+            var value = variable(name);
             if (value is { Length: > 0 }) carried[name] = value;
         }
 
@@ -95,9 +92,7 @@ public static class KnowledgeConnector
         // The scope's value wins (set above), then the environment's (read here), then the home this driver resolved.
         if (!carried.ContainsKey(DaorisHome.Variable))
         {
-            var named = environment is not null
-                ? (environment.TryGetValue(DaorisHome.Variable, out var held) ? held : null)
-                : Environment.GetEnvironmentVariable(DaorisHome.Variable);
+            var named = variable(DaorisHome.Variable);
             var chosen = named is { Length: > 0 } ? named : home;
             if (chosen is { Length: > 0 }) carried[DaorisHome.Variable] = chosen;
         }
@@ -123,10 +118,6 @@ public static class KnowledgeConnector
         return carried;
     }
 
-    /// <summary>The first place this machine actually has the host, or null.</summary>
-    public static string? Locate(string? explicitPath, string? home, string baseDirectory) =>
-        Candidates(explicitPath, home, baseDirectory).FirstOrDefault(File.Exists);
-
     /// <summary>
     /// Where to look, in the order they deserve trust, which is the HTTP host's (<see cref="ServiceHostLocator"/>):
     /// what the person said, then the connector the install carries beside the running application
@@ -144,8 +135,9 @@ public static class KnowledgeConnector
     /// </remarks>
     /// <param name="home">The Daoris home (D63), whose `bin/` is the CLI's install landing place; null when the machine has none.</param>
     /// <param name="baseDirectory">The running application's folder: an install's `app/` (D93), or a build's output.</param>
-    public static IReadOnlyList<string> Candidates(
-        string? explicitPath, string? home, string baseDirectory)
+    /// <param name="workspace">The workspace a development build runs below, the folder holding <see cref="WorkspaceMarker"/>; null for none.</param>
+    public static IReadOnlyList<string> Ranked(
+        string? explicitPath, string? home, string baseDirectory, string? workspace)
     {
         var candidates = new List<string>();
         if (!string.IsNullOrWhiteSpace(explicitPath)) candidates.Add(explicitPath);
@@ -161,15 +153,9 @@ public static class KnowledgeConnector
 
         if (home is not null) candidates.Add(Path.Combine(home, "bin", ExecutableName));
 
-        var directory = new DirectoryInfo(baseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "daoris.json")))
+        if (workspace is not null)
         {
-            directory = directory.Parent;
-        }
-
-        if (directory is not null)
-        {
-            var project = Path.Combine(directory.FullName, "src", "Daoris.Service", "Daoris.Service.Mcp");
+            var project = Path.Combine(workspace, "src", "Daoris.Service", "Daoris.Service.Mcp");
             foreach (var flavour in new[] { "Debug", "Release" })
             {
                 candidates.Add(Path.Combine(project, "bin", flavour, "net10.0", ExecutableName));

@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
@@ -11,19 +10,27 @@ namespace Daoris.Driver;
 /// the contract, and a driver that could reach the store directly would drift from every client that
 /// cannot.
 /// </summary>
+/// <remarks>
+/// Service's Application (STRUCT3d, D166's note): it writes each request and reads each answer, and the HTTP is behind
+/// <see cref="IServiceDoors"/>, whose real one, <see cref="ServiceHttp"/>, the constructors that take a URL compose. Every
+/// module names this client; none names the HTTP.
+/// </remarks>
 public sealed partial class ServiceClient : IDisposable
 {
-    private readonly HttpClient _http;
+    private readonly IServiceDoors _doors;
     private readonly string _base;
 
-    public ServiceClient(string baseUrl, string? key, HttpClient? http = null)
+    /// <summary>A client over the doors it is handed: the HTTP's, or a test's.</summary>
+    public ServiceClient(IServiceDoors doors)
     {
-        _base = baseUrl.TrimEnd('/');
-        _http = http ?? DriverHttp.Client(key);
-        if (http is not null && !string.IsNullOrWhiteSpace(key))
-        {
-            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", key);
-        }
+        _doors = doors;
+        _base = doors.BaseUrl;
+    }
+
+    /// <summary>A client over HTTP to the host at <paramref name="baseUrl"/>, with its key; a test may hand its own HTTP client.</summary>
+    public ServiceClient(string baseUrl, string? key, HttpClient? http = null)
+        : this(new ServiceHttp(baseUrl, key, http))
+    {
     }
 
     public const string UrlVariable = "DAORIS_SERVICE_URL";
@@ -92,20 +99,9 @@ public sealed partial class ServiceClient : IDisposable
     public string BaseUrl => _base;
 
     /// <summary>URL and key from the environment — the same two names `connect` reads (design §5b).</summary>
-    public static ServiceClient FromEnvironment()
-    {
-        var url = Environment.GetEnvironmentVariable(UrlVariable);
-        if (string.IsNullOrWhiteSpace(url))
-        {
-            throw new DriverException(
-                $"no {UrlVariable} — the driver watches a service, and needs to know where one is. "
-                + "A local host is usually http://localhost:5177.");
-        }
+    public static ServiceClient FromEnvironment() => new(ServiceHttp.FromEnvironment());
 
-        return new ServiceClient(url, Environment.GetEnvironmentVariable(KeyVariable));
-    }
-
-    public void Dispose() => _http.Dispose();
+    public void Dispose() => _doors.Dispose();
 
     /// <summary>Everything one tick decides from, fetched together so the plan is coherent.</summary>
     public async Task<Snapshot> SnapshotAsync(CancellationToken ct = default)
@@ -293,8 +289,8 @@ public sealed partial class ServiceClient : IDisposable
     /// <exception cref="DriverException">The service refused, in its own words — no such quest.</exception>
     public async Task<string> DismissConflictsAsync(string quest, CancellationToken ct = default)
     {
-        using var answer = JsonDocument.Parse(await DriverHttp.PostAsync(
-            _http, $"{_base}/api/quests/{Uri.EscapeDataString(quest.TrimStart('#'))}/conflicts/dismiss", "{}", ct)
+        using var answer = JsonDocument.Parse(await _doors.PostAsync(
+            $"/api/quests/{Uri.EscapeDataString(quest.TrimStart('#'))}/conflicts/dismiss", "{}", ct)
             .ConfigureAwait(false));
         return Text(answer.RootElement, "message") ?? "";
     }
@@ -636,17 +632,16 @@ public sealed partial class ServiceClient : IDisposable
     /// <summary>One ask as it stands — how an intake's end is observed. Null when the service has none.</summary>
     public async Task<AskView?> FindAskAsync(string id, CancellationToken ct = default)
     {
-        using var response = await _http.GetAsync(
-            $"{_base}/api/asks/{Uri.EscapeDataString(id.TrimStart('#'))}", ct).ConfigureAwait(false);
-        if (response.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        var answer = await _doors.SendAsync(
+            ServiceVerb.Get, $"/api/asks/{Uri.EscapeDataString(id.TrimStart('#'))}", null, ct).ConfigureAwait(false);
+        if (answer.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
 
-        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
+        if (!answer.Ok)
         {
-            throw new DriverException($"the service would not say what became of ask `#{id}`: {payload}");
+            throw new DriverException($"the service would not say what became of ask `#{id}`: {answer.Payload}");
         }
 
-        using var document = JsonDocument.Parse(payload);
+        using var document = JsonDocument.Parse(answer.Payload);
         return ReadAsk(document.RootElement);
     }
 
@@ -969,7 +964,7 @@ public sealed partial class ServiceClient : IDisposable
     /// </summary>
     /// <exception cref="DriverException">A host older than the door, which answers no judgement.</exception>
     public Task<SessionDeleteAnswer> JudgeSessionDeleteAsync(string id, CancellationToken ct = default) =>
-        SessionDeleteAsync(HttpMethod.Get, $"/api/sessions/{Uri.EscapeDataString(id)}/deletable", ct);
+        SessionDeleteAsync(ServiceVerb.Get, $"/api/sessions/{Uri.EscapeDataString(id)}/deletable", ct);
 
     /// <summary>
     /// Delete a session's record (SESSUX1f): the ledger judges it again as it deletes, so a record that moved since is
@@ -977,13 +972,12 @@ public sealed partial class ServiceClient : IDisposable
     /// </summary>
     /// <exception cref="DriverException">A host older than the door, which answers no judgement.</exception>
     public Task<SessionDeleteAnswer> DeleteSessionAsync(string id, CancellationToken ct = default) =>
-        SessionDeleteAsync(HttpMethod.Delete, $"/api/sessions/{Uri.EscapeDataString(id)}", ct);
+        SessionDeleteAsync(ServiceVerb.Delete, $"/api/sessions/{Uri.EscapeDataString(id)}", ct);
 
-    private async Task<SessionDeleteAnswer> SessionDeleteAsync(HttpMethod method, string path, CancellationToken ct)
+    private async Task<SessionDeleteAnswer> SessionDeleteAsync(ServiceVerb verb, string path, CancellationToken ct)
     {
-        using var request = new HttpRequestMessage(method, $"{_base}{path}");
-        using var response = await _http.SendAsync(request, ct).ConfigureAwait(false);
-        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        var answer = await _doors.SendAsync(verb, path, null, ct).ConfigureAwait(false);
+        var payload = answer.Payload;
         JsonElement root;
         try
         {
@@ -997,11 +991,11 @@ public sealed partial class ServiceClient : IDisposable
 
         // A refusal carries its word; a yes is a success that carries none. Anything else is a host older than the door.
         var refusal = root.ValueKind == JsonValueKind.Object ? Text(root, "refusal") : null;
-        var taken = response.IsSuccessStatusCode && root.ValueKind == JsonValueKind.Object && refusal is null;
+        var taken = answer.Ok && root.ValueKind == JsonValueKind.Object && refusal is null;
         if (!taken && refusal is null)
         {
             throw new DriverException(
-                $"the service at {_base} has no session delete door ({(int)response.StatusCode}) — is it older than this driver?");
+                $"the service at {_base} has no session delete door ({answer.Status}) — is it older than this driver?");
         }
 
         return new SessionDeleteAnswer(taken, Text(root, taken ? "message" : "error") ?? "")
@@ -1016,20 +1010,20 @@ public sealed partial class ServiceClient : IDisposable
 
     private async Task<(bool Ok, string Message)> DeleteRecordAsync(string path, CancellationToken ct)
     {
-        using var response = await _http.DeleteAsync($"{_base}{path}", ct).ConfigureAwait(false);
-        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        var answer = await _doors.SendAsync(ServiceVerb.Delete, path, null, ct).ConfigureAwait(false);
+        var payload = answer.Payload;
         try
         {
             using var document = JsonDocument.Parse(payload);
             var root = document.RootElement;
-            return response.IsSuccessStatusCode
+            return answer.Ok
                 ? (true, Text(root, "message") ?? "")
                 : (false, Text(root, "error") ?? payload);
         }
         catch (JsonException)
         {
             // A host older than the delete door answers a bare 404 or 405 — said plainly, not parsed as nothing.
-            return (false, $"the service at {_base} has no delete door ({(int)response.StatusCode}) — is it older than this driver?");
+            return (false, $"the service at {_base} has no delete door ({answer.Status}) — is it older than this driver?");
         }
     }
 
@@ -1136,10 +1130,9 @@ public sealed partial class ServiceClient : IDisposable
         }
     }
 
-    // Through DriverHttp, so a refused read carries the service's own sentence — a bare
+    // A refused read throws with the service's own sentence (IServiceDoors.GetAsync): a bare
     // EnsureSuccessStatusCode threw it away, and the driver's log said less than the service said.
-    private Task<string> GetAsync(string path, CancellationToken ct) =>
-        DriverHttp.GetAsync(_http, $"{_base}{path}", ct);
+    private Task<string> GetAsync(string path, CancellationToken ct) => _doors.GetAsync(path, ct);
 
     internal static IReadOnlyList<QuestView> ReadQuests(string json)
     {
@@ -1594,9 +1587,8 @@ public sealed partial class ServiceClient : IDisposable
     private async Task<(bool Ok, int Status, string Payload, JsonElement? Root)> PostJsonAsync(
         string path, string body, CancellationToken ct)
     {
-        using var response = await _http.PostAsync(
-            $"{_base}{path}", new StringContent(body, Encoding.UTF8, "application/json"), ct).ConfigureAwait(false);
-        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        var answer = await _doors.SendAsync(ServiceVerb.Post, path, body, ct).ConfigureAwait(false);
+        var payload = answer.Payload;
 
         JsonElement? root = null;
         try
@@ -1609,7 +1601,7 @@ public sealed partial class ServiceClient : IDisposable
             // Not JSON: a host older than the door answers a bare 404. Each caller says so its way.
         }
 
-        return (response.IsSuccessStatusCode, (int)response.StatusCode, payload, root);
+        return (answer.Ok, answer.Status, payload, root);
     }
 
     /// <summary>
@@ -1688,44 +1680,3 @@ public sealed record SessionOpened(string Session, string Kind, string Adapter, 
 
 /// <summary>A session record the ledger moved for this client (LOG1b), in the state's public spelling.</summary>
 public sealed record SessionMoved(string Session, string State);
-
-/// <summary>
-/// What the service said of the person's words to a parked or ended session of this machine's (MSG1a's say door, MSG1d):
-/// whether it kept them for the session to go on with, and its sentence.
-/// </summary>
-/// <param name="Kept">The words are on the record, waiting for it to go on with them.</param>
-/// <param name="Message">The service's sentence: its yes, or its refusal, verbatim.</param>
-public sealed record SayAnswer(bool Kept, string Message)
-{
-    /// <summary>
-    /// The refusal's word, which a reader acts on instead of the sentence: <c>running</c>, <c>not-ours</c>, <c>intake</c>,
-    /// <c>stood-down</c>, <c>not-found</c> or <c>no-words</c>. Null when kept, and for a host with no door.
-    /// </summary>
-    public string? Refusal { get; init; }
-
-    /// <summary>The word as kept: its id, which the record's events say again where the session took it. Null when refused.</summary>
-    public SaidWordView? Word { get; init; }
-}
-
-/// <summary>
-/// What the ledger said of deleting a session's record (SESSUX1f, D126 §5.4): whether it did, or would; and if not its
-/// sentence, its word (<c>not-found</c>, <c>not-ours</c>, <c>live</c>, <c>served-quest</c>, <c>named</c>,
-/// <c>on-remote</c>), which a reader acts on instead of the sentence, and the facts the word names.
-/// </summary>
-/// <param name="Taken">It was deleted, or the judgement says it would be.</param>
-/// <param name="Message">The ledger's sentence: its yes, or its refusal, verbatim.</param>
-public sealed record SessionDeleteAnswer(bool Taken, string Message)
-{
-    public string? Refusal { get; init; }
-    public string? Quest { get; init; }
-    public string? Ask { get; init; }
-    public string? Origin { get; init; }
-    public string? Workspace { get; init; }
-}
-
-/// <summary>What the service said to an ask, a publish or a close (D65 §1a).</summary>
-/// <param name="Ok">Whether it did what was asked — false is a refusal, said in <paramref name="Message"/>.</param>
-/// <param name="Message">The service's whole sentence, verbatim.</param>
-/// <param name="AskId">The ask it answered about, when it answered with one.</param>
-/// <param name="QuestId">The quest this call published, when it published one.</param>
-public sealed record AskAnswer(bool Ok, string Message, string? AskId, string? QuestId);
