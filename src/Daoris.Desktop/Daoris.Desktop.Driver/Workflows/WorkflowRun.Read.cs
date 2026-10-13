@@ -198,10 +198,10 @@ public static class WorkflowRunReader
 
         var decision = ReviewGate.Decide(chain, repository, ask, rule, process.Look, process.Name);
         // Git is asked only where a review is asked.
-        var tip = decision.Reviews && tree is not null ? await ReviewGate.HeadAsync(tree, reads.Ct).ConfigureAwait(false) : null;
+        var tip = decision.Reviews && tree is not null ? await ReviewGit.HeadAsync(tree, reads.Ct).ConfigureAwait(false) : null;
         return await ReviewGate.JudgeAsync(decision, tip, commit => tree is null || tip is null
             ? Task.FromResult<bool?>(null)
-            : ReviewGate.HoldsAsync(tree, tip, commit, reads.Ct)).ConfigureAwait(false);
+            : ReviewGit.HoldsAsync(tree, tip, commit, reads.Ct)).ConfigureAwait(false);
     }
 
     /// <summary>A read the service did not answer: unreachable, refused, unparsable, or a client's own time-out, never the person's cancel.</summary>

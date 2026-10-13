@@ -180,12 +180,23 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
     ];
 
     /// <summary>
+    /// Choose the reviewer of work the <paramref name="working"/> agents wrote, from <paramref name="rule"/>'s reviewers, for a
+    /// repository in <paramref name="workspace"/>.
+    /// </summary>
+    /// <param name="roster">The machine's agents, the build's and its plugins', and the account walk.</param>
+    /// <param name="working">The adapters of the sessions whose work is read: their families are the work's.</param>
+    public static async Task<ReviewerChoice> ChooseAsync(
+        HarnessRoster roster, OpinionRule rule, IReadOnlyCollection<string> working, DriverConfig config, string? workspace,
+        CancellationToken ct = default) =>
+        await WalkAsync(roster.Adapters, rule, working, entry => TryAsync(roster, entry, config, workspace, ct)).ConfigureAwait(false);
+
+    /// <summary>
     /// The walk over the reviewer of work the <paramref name="working"/> agents wrote, from <paramref name="rule"/>'s reviewers, in
     /// its passes' order (§3.2, §3.3): each entry asked of <paramref name="tryEntry"/>, the account walk, until one may run.
     /// </summary>
     /// <remarks>
-    /// The walk is this layer's rule; the account walk it asks is the world's, handed in, and <c>ReviewerChoice.ChooseAsync</c>
-    /// hands it over the machine's agents (<see cref="ReviewerChoices"/>; STRUCT3c).
+    /// The walk is this type's rule; the account walk it asks is the world's, handed in, and <see cref="ChooseAsync"/> hands it
+    /// over the machine's agents.
     /// </remarks>
     /// <param name="adapters">The machine's agents, the build's and its plugins'.</param>
     /// <param name="working">The adapters of the sessions whose work is read: their families are the work's.</param>
@@ -296,4 +307,42 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
 
     private static CoolingEntry? FirstReset(IEnumerable<ReviewerTried> tried) =>
         tried.Select(each => each.Cooling).OfType<CoolingEntry>().MinBy(cooling => cooling.Until);
+
+    /// <summary>One reviewer asked of the account walk: its selection where it may run, else what held it.</summary>
+    private static async Task<(HarnessSelection? Selection, ReviewerTried? Held)> TryAsync(
+        HarnessRoster roster, Entry entry, DriverConfig config, string? workspace, CancellationToken ct)
+    {
+        var (name, label) = (entry.Family.Agent, entry.Label);
+        // Named, never guessed (D23): a name this machine has no agent of is said, and nothing is asked.
+        if (!entry.Known)
+        {
+            return (null, new ReviewerTried(
+                name, label, ReviewerHeld.NotInstalled,
+                $"`{name}` is no agent on this machine: neither this build nor an installed plugin declares it."));
+        }
+
+        HarnessSelection selection;
+        try
+        {
+            selection = await roster.SelectAsync(name, config, workspace, chosen: null, StartKind.Driven, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
+        {
+            return (null, new ReviewerTried(name, label, ReviewerHeld.Refused, error.Message));
+        }
+
+        if (selection.Allowed) return (selection, null);
+
+        // What held it, from the walk's facts and never its words: a cool-off waits for a time, so it is named first; a list
+        // with none cooling and an account not signed in waits for a sign-in, which its sentence names.
+        var held = selection switch
+        {
+            { Absent: AgentAbsence.NotInstalled } => ReviewerHeld.NotInstalled,
+            { Absent: AgentAbsence.PinNotInstalled } => ReviewerHeld.PinNotInstalled,
+            { Cooling: not null } => ReviewerHeld.Cooling,
+            { NotReady: AccountReadiness.SignedOut } or { SignedOut: not null } => ReviewerHeld.SignedOut,
+            _ => ReviewerHeld.Refused,
+        };
+        return (null, new ReviewerTried(name, label, held, selection.Refusal!) { Cooling = selection.Cooling });
+    }
 }

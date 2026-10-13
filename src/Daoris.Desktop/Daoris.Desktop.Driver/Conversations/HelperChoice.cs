@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// the account by the same walk.
 /// </summary>
 /// <remarks>
-/// STRUCT3h, D166's note: the walk is Review's Application's <c>ReviewerChoice.ChooseAsync</c>, which a Domain may not name, so
+/// STRUCT3h, D166's note: the walk is <c>ReviewerChoice.ChooseAsync</c>, which asks the machine's accounts and which a Domain may not name, so
 /// the choice left <c>Domain/HelperJudge.cs</c>.
 /// </remarks>
 public static class HelperChoice

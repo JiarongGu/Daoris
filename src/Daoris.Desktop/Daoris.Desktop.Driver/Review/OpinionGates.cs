@@ -9,8 +9,7 @@ namespace Daoris.Driver;
 /// writes the person's answer into.
 /// </summary>
 /// <remarks>
-/// What is kept is this use case's; the file and its format are Review's Infrastructure's (<see cref="OpinionGateFiles"/>;
-/// STRUCT3c, D166's note).
+/// What is kept is this use case's; the file and its format are <see cref="OpinionGateFiles"/>'.
 /// </remarks>
 public sealed class OpinionGates(string home)
 {

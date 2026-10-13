@@ -193,6 +193,16 @@ public static class ReviewVerdicts
     public const string Skipped = "skipped";
 }
 
+/// <summary>What the gate reads of the service: every quest, closed ones included, and an ask. A seam, so its tests stand in.</summary>
+public interface IReviewWorld
+{
+    /// <summary>Every quest the service holds, closed ones included, from which a chain is read.</summary>
+    Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct);
+
+    /// <summary>One ask, or null where the service holds none.</summary>
+    Task<AskView?> AskAsync(string id, CancellationToken ct);
+}
+
 /// <summary>
 /// The review's gate (REVIEWENV1c, D154 points 3 and 7; design §1.4, §3.1–§3.2): which level decides for a chain's work in a
 /// repository, and whether the work that would land may go. A table, a commit, an ancestry and a press: no model reads any of
@@ -424,4 +434,44 @@ public static class ReviewGate
     private static bool Same(string? left, string? right) => string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
 
     private static string Short(string commit) => commit.Length > 8 ? commit[..8] : commit;
+
+    /// <summary>
+    /// The gate for a session's tree (design §3.1): the chain its quest is a step of, read from the service, the rule standing for
+    /// the tree's repository, the tree's <c>HEAD</c> and git's ancestry. A conversation, which serves no quest, has nothing to wait
+    /// for. A service that does not answer holds the work only where a rule stands that could ask for a review, and says so.
+    /// </summary>
+    /// <param name="process">
+    /// The run's process (WORKFLOW1f, <see cref="WorkflowProcesses"/>), read once by the door for every part of the gate: under a
+    /// named workflow, rows 5 and 6 are its version's look. Null reads the rule live, as every gate did before.
+    /// </param>
+    public static async Task<ReviewGateState> ReadAsync(
+        IReviewWorld world, DriverConfig config, string tree, string repository, string workspace, string? quest, CancellationToken ct = default,
+        WorkflowProcess? process = null)
+    {
+        var rule = process is null ? ReviewRules.Resolve(config, repository, workspace) : process.Review;
+        var look = process?.Look;
+        if (quest is null) return new(ReviewStates.None, new ReviewDecision(ReviewLevels.Nothing, null) { Repository = repository });
+
+        ReviewDecision decision;
+        try
+        {
+            var chain = ChainOf(await world.QuestsAsync(ct).ConfigureAwait(false), quest);
+            var asked = chain.Select(each => AskWords.AskOf(each.From)).FirstOrDefault(id => id is not null);
+            var ask = asked is null ? null : await world.AskAsync(asked, ct).ConfigureAwait(false);
+            decision = Decide(chain, repository, ask, rule, look, process?.Name);
+        }
+        catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException or InvalidOperationException
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
+        {
+            // Unread where a review could be asked: by a rule standing, or by the named version's look.
+            var none = new ReviewDecision(ReviewLevels.Nothing, null) { Repository = repository };
+            return rule is { Rule.IsNone: false } || look is { Environment: not null } or { Cannot: not null }
+                ? new(ReviewStates.Unread, none) { Problem = error.Message.TrimEnd().TrimEnd('.') }
+                : new(ReviewStates.None, none);
+        }
+
+        // Git is asked only where a review is asked: a landing no review touches costs no process.
+        var tip = decision.Reviews ? await ReviewGit.HeadAsync(tree, ct).ConfigureAwait(false) : null;
+        return await JudgeAsync(decision, tip, commit => ReviewGit.HoldsAsync(tree, tip!, commit, ct)).ConfigureAwait(false);
+    }
 }

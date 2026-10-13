@@ -15,7 +15,7 @@ public static partial class EvidenceCheck
     /// its record, and a later read posts again.
     /// </summary>
     public static Task<EvidenceOutcome> RunAsync(ServiceClient service, QuestView quest, EvidenceAt at, CancellationToken ct = default) =>
-        RunAsync(service, quest, at, QuestGit.Read, ct);
+        RunAsync(service, quest, at, WorkingTree.ReadGitAsync, ct);
 
     /// <inheritdoc cref="RunAsync(ServiceClient, QuestView, EvidenceAt, CancellationToken)"/>
     /// <param name="git">How git is read: the review's seam (REVIEW3), which a test stands git in at.</param>
@@ -56,7 +56,7 @@ public static partial class EvidenceCheck
     /// <param name="at">Where and how: the tree's HEAD at a session's end or the sweep, with its base and its session.</param>
     public static Task<string?> AtEndAsync(
         ServiceClient service, QuestView? quest, EvidenceAt at, string? commits, CancellationToken ct = default) =>
-        AtEndAsync(service, quest, at, commits, QuestGit.Read, ct);
+        AtEndAsync(service, quest, at, commits, WorkingTree.ReadGitAsync, ct);
 
     /// <inheritdoc cref="AtEndAsync(ServiceClient, QuestView?, EvidenceAt, string?, CancellationToken)"/>
     internal static async Task<string?> AtEndAsync(

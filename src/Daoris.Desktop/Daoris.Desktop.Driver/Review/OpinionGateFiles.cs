@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// (<see cref="OpinionGates"/>), read without trusting their shape and written whole, atomically, as BOM-less UTF-8 with LF.
 /// </summary>
 /// <remarks>
-/// Review's Infrastructure (STRUCT3c, D166's note): the use cases decide what is kept; this reads and writes it. A file that does
+/// The use cases decide what is kept; this reads and writes it. A file that does
 /// not read is nothing kept; a write that fails throws, as it did.
 /// </remarks>
 internal static class OpinionGateFiles

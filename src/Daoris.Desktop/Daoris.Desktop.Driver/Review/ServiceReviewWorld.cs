@@ -5,9 +5,8 @@ namespace Daoris.Driver;
 /// host's opinions (XAGENT1f), which the whole landing gate reads beside them.
 /// </summary>
 /// <remarks>
-/// Review's Infrastructure (STRUCT3c, D166's note): the service's reads behind the review's port (<see cref="IReviewWorld"/>) and
-/// the landing gate's (<see cref="IOpinionWorld"/>). The loop and the hosts compose it; another module asks
-/// <see cref="ReviewWorlds.Of"/>.
+/// The service's reads behind the review's port (<see cref="IReviewWorld"/>) and the landing gate's (<see cref="IOpinionWorld"/>).
+/// The loop and the hosts compose it, and another module names it as <c>new ServiceReviewWorld(service)</c>.
 /// </remarks>
 public sealed class ServiceReviewWorld(ServiceClient service) : IOpinionWorld
 {

@@ -72,7 +72,27 @@ public sealed record AskWords(string Ask, IReadOnlyList<AskWordView>? Said, Date
     public static AskWords Of(AskView ask) =>
         (ask.Words is { } said ? new AskWords(ask.Id, said, ask.WordsKeptFrom) : Unread(ask.Id)) with { GoAheads = ask.GoAheads };
 
-    // The read from the service is AskWords.ReadAsync, the Application's (AskWordsReads): a Domain type declares no I/O.
+    /// <summary>
+    /// The person's words on the ask a quest was asked by, read from the ask for a session's start (DRIFT1b): null for a
+    /// quest no ask asked, and never a failure. A read that does not answer is <see cref="Unread"/>, and the start
+    /// goes on with its instruction saying so: the words are what a session is handed, never what holds it.
+    /// </summary>
+    /// <exception cref="OperationCanceledException">The driver is closing: a start it ends is not one to compose.</exception>
+    public static async Task<AskWords?> ReadAsync(ServiceClient service, string? sender, CancellationToken ct)
+    {
+        if (AskOf(sender) is not { } ask) return null;
+        try
+        {
+            return await service.FindAskAsync(ask, ct).ConfigureAwait(false) is { } held ? Of(held) : Unread(ask);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
+                                          or InvalidOperationException
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
+        {
+            // A client's own time-out is a cancellation the driver did not ask for: the service did not answer.
+            return Unread(ask);
+        }
+    }
 }
 
 /// <summary>

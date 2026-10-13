@@ -5,8 +5,8 @@ namespace Daoris.Driver;
 /// conclusion, read and closed by the look. Machine-local (D47 §4), as the opinions are.
 /// </summary>
 /// <remarks>
-/// What is kept, and for how long, is this use case's; the file and its format are Review's Infrastructure's
-/// (<see cref="OpinionGateFiles"/>; STRUCT3c, D166's note).
+/// What is kept, and for how long, is this use case's; the file and its format are
+/// <see cref="OpinionGateFiles"/>'.
 /// </remarks>
 public sealed class OpinionDues(string home)
 {

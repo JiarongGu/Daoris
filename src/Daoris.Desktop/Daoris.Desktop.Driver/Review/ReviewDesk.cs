@@ -47,8 +47,7 @@ public interface IReviewTabs
 /// <c>review_serve</c> and posted with the commit Daoris read; the address is the rule's, never the session's; the tab is taken
 /// only to a place under it. Nothing of the person's is stopped by any of it.</para>
 ///
-/// <para>A use case of Review's Application (STRUCT3c, D166's note): the browser is its port (<see cref="IReviewTabs"/>), and the
-/// folders it looks at are Review's Infrastructure's (<see cref="ReviewServeFiles"/>).</para>
+/// <para>The browser is its port (<see cref="IReviewTabs"/>), and the folders it looks at are <see cref="ReviewServed"/>'s.</para>
 /// </remarks>
 public sealed class ReviewDesk(IReviewTabs tabs)
 {
@@ -159,7 +158,7 @@ public sealed class ReviewDesk(IReviewTabs tabs)
             var why = quest is null ? "its quest is gone from this machine's service"
                 : quest.Status == "Declined" ? "it was declined"
                 : ReviewServed.Answered(quest, serve.SetUp) is { } verdict ? $"you said `{verdict}`"
-                : !ReviewServeFiles.Stands(serve.Folder) ? "the tree that held its build is gone"
+                : !ReviewServed.Stands(serve.Folder) ? "the tree that held its build is gone"
                 : null;
             if (why is null) continue;
 
@@ -221,7 +220,7 @@ public sealed class ReviewDesk(IReviewTabs tabs)
             return (false, $"set-up step `#{quest.Id}` was shown on another machine (`{newest.Machine}`), whose browser holds its tab.");
         }
 
-        if (tree is null || !ReviewServeFiles.Stands(tree))
+        if (tree is null || !ReviewServed.Stands(tree))
         {
             return (false, $"set-up step `#{quest.Id}`'s tree, which held its build, is gone, so there is no build to show again.");
         }
@@ -256,7 +255,7 @@ public sealed class ReviewDesk(IReviewTabs tabs)
 
         if (ReviewServed.FolderIn(tree, named, out var unfit) is not { } folder) return (null, $"`{named}` {unfit}");
 
-        var html = ReviewServeFiles.IndexHead(folder);
+        var html = ReviewServed.IndexHead(folder);
         var @base = ReviewServed.BaseOf(html, address);
         return (new ReviewServe(quest.Id, TabTitle(quest.Id), folder, address, @base, ReviewServed.LookUnder(address, @base, setUp.Look))
         {

@@ -14176,3 +14176,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **FLAT1b-i — Plugins and Workflows: the layering's ceremony folded back** (driver; after FLAT1a). Extension blocks that split a type's I/O go back into the type (out of `Domain/` if it then does I/O); forwards for moved names retire; a port no test stands in for gives way to its implementation (`IHookChannel`, `WorkflowPorts`). D166's STRUCT3a and 3b notes.
 
 **Outcome** 2026-10-14: the catalogue's, icon's and source's extension blocks are plain members of their types again, which stay in `Domain/` (they call `PluginFolders`, no gate token); the Workflows forwards and Plugins' health and package aliases retired, callers naming the one place; no port gave way, each having a test stand-in. On Sonnet, scouted: 117 tool calls. Detail: D166's FLAT1b-i note.
+
+## FLAT1b-ii — Review and Quests: the layering's ceremony folded back (2026-10-14, D166)
+
+> - [ ] **FLAT1b-ii — Review and Quests: the layering's ceremony folded back** (driver; after FLAT1a). As FLAT1b-i. D166's STRUCT3c and 3f notes.
+
+**Outcome** 2026-10-14: the ten extension blocks are their types' members again; `ReviewerChoice`, `ReviewGate`, `ReviewRules`, `ReviewSetUps` and `AskWords` stay in `Domain/`, and `ReviewServed`, `OpinionAnswers`, `OpinionPackets`, `IntakeRoom` and `OpinionTree` left it for top files of their own, their records staying. `QuestGit` retired; at the merge the Workflows callers named `ReviewGit` and `new ServiceReviewWorld(service)`, and the last forwards and `ReviewWorlds` went. `ReviewGit.TreeHeadAsync` stays, the helper a Domain type may call. On Sonnet, scouted: 112 tool calls. Detail: D166's FLAT1b-ii note.

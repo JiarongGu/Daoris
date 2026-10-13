@@ -82,7 +82,7 @@ public static class WorkflowKeepCommand
         }
 
         var (done, message) = await KeepAsync(
-            home, ask.Session, tree, quest, ReviewWorlds.Of(service), ask.Words, ReviewDoors.Terminal, DateTimeOffset.UtcNow, ct)
+            home, ask.Session, tree, quest, new ServiceReviewWorld(service), ask.Words, ReviewDoors.Terminal, DateTimeOffset.UtcNow, ct)
             .ConfigureAwait(false);
         output.WriteLine($"workflow: {message}");
         return done ? 0 : 1;
