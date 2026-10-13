@@ -585,7 +585,7 @@ public sealed partial class Driver
             keep.Add(new Disposer(() => SessionProcesses.EndIfRunning(process)));
 
             var capture = adapter.StructuredOutput() is { } mapper
-                ? KeepingAsync(mapper, CaptureStructuredAsync(
+                ? KeepingAsync(mapper, HarnessCapture.CaptureStructuredAsync(
                     process.StandardOutput, process.StandardError, transcript, sessionId, output, _events, mapper,
                     prompt: null, ct, opened: NativeWords.Opening(adapter.Name, words), append: true, said: said, own: own),
                     sessionId, adapter.Name, resume: null)

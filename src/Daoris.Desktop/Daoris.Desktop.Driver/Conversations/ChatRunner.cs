@@ -1082,7 +1082,7 @@ public sealed partial class ChatRunner : IDisposable
             var protocol = chat is not null ? CaptureProtocolAsync(sessionId, process, transcript, chat, said, keep, watched.Adapter) : null;
             Task capture = protocol
                 ?? (mapper is not null
-                    ? Driver.CaptureStructuredAsync(
+                    ? HarnessCapture.CaptureStructuredAsync(
                         process.StandardOutput, process.StandardError, transcript, sessionId, _output, _events, mapper,
                         prompt: null, CancellationToken.None,
                         // The turn's end, once the record holds it, lets the next message go (CONV4a).
@@ -1099,7 +1099,7 @@ public sealed partial class ChatRunner : IDisposable
                             // 🔴 Its harness opened the conversation its words went to, so they went (MSG1c): off the record by their ids.
                             if (goOn is not null && goOn.Named()) _ = WentOnAsync(sessionId, goOn, watched.Adapter);
                         })
-                    : Driver.CaptureAsync(process, transcript, sessionId, _output, CancellationToken.None));
+                    : HarnessCapture.CaptureAsync(process, transcript, sessionId, _output, CancellationToken.None));
 
             // A conversation going on is working already: the ledger moved it out of its ended state before the spawn.
             if (goOn is null) await _service.AdvanceAsync(sessionId, "working", transcript: transcript).ConfigureAwait(false);
@@ -1219,7 +1219,7 @@ public sealed partial class ChatRunner : IDisposable
 
         void Record(SessionEvent e) => _events.Keep(sessionId, e, Line);
 
-        var errors = Driver.PumpAsync(process.StandardError, file, sessionId, _output, CancellationToken.None);
+        var errors = HarnessCapture.PumpAsync(process.StandardError, file, sessionId, _output, CancellationToken.None);
         var session = new AcpSession(
             process.StandardOutput, process.StandardInput, Line, closeTimeout: null, chat.Posture, chat.Meta, Record,
             streams: _output is null ? null : new SessionStreams(_output, sessionId),
