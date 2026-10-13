@@ -17,6 +17,7 @@
   },
   "layered": [
     "Plugins",
+    "Quests",
     "Review",
     "Service",
     "Setup",
