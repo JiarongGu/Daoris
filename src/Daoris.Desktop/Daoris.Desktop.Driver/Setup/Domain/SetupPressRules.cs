@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The set-up press's rules (LAYOUT7; D124 §2.1, §2.4), pure: the doctrine tool's verbs a set-up's session runs and the rule
 /// that allows them, which set-up a line calls for, the refusals the tools a child finds earn, and how the work lands in
-/// words. <see cref="SetupPress"/> applies them against the world, and keeps their names for its callers (STRUCT3e).
+/// words. <see cref="SetupPress"/> applies them against the world; its callers name them here.
 /// </summary>
 public static partial class SetupPressRules
 {

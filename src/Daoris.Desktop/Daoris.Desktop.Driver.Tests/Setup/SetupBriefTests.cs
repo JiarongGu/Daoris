@@ -115,7 +115,7 @@ public sealed partial class SetupBriefTests
     {
         var (_, body) = SetupBrief.Compose(Input(SetupCase.Whole));
 
-        foreach (var verb in SetupPress.Verbs) Assert.Contains($"`{verb}`", body);
+        foreach (var verb in SetupPressRules.Verbs) Assert.Contains($"`{verb}`", body);
     }
 
     /// <summary>

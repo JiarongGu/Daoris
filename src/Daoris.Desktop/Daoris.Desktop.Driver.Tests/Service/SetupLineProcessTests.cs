@@ -47,7 +47,7 @@ public sealed class SetupLineProcessTests : IDisposable
         await File.WriteAllTextAsync(Path.Combine(root, "AGENTS.md"), "# Edited\n\none\ntwo\nthree\nfour\n");
         await File.WriteAllTextAsync(Path.Combine(root, "daoris.json"), "{}");
 
-        var reading = await LayoutReader.ReadAsync(root, "main");
+        var reading = await LayoutGit.ReadAsync(root, "main");
 
         Assert.Null(reading.Problem);
         var facts = reading.Facts!;
@@ -68,13 +68,13 @@ public sealed class SetupLineProcessTests : IDisposable
         Directory.CreateDirectory(root);
         await GitAsync(root, "init", "--quiet", "-b", "main");
 
-        var noCommit = await LayoutReader.ReadAsync(root, "main");
+        var noCommit = await LayoutGit.ReadAsync(root, "main");
         Assert.Null(noCommit.Facts);
         Assert.Contains("names no commit here", noCommit.Problem);
 
         var inside = Path.Combine(root, "sub");
         Directory.CreateDirectory(inside);
-        var notTop = await LayoutReader.ReadAsync(inside, "main");
+        var notTop = await LayoutGit.ReadAsync(inside, "main");
         Assert.Null(notTop.Facts);
         Assert.Contains("not a git repository", notTop.Problem);
     }

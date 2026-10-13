@@ -7,9 +7,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// Claude Code's release bucket over HTTP (AGT2b), and the verified install it writes to the disk (STRUCT3e): the
 /// newest-release pointer, the manifest and its signature, the binary streamed and hashed, and this machine's build. What
-/// it checks against is <see cref="ClaudeReleases"/>'s and <see cref="OpenPgp"/>'s; other modules call it as
-/// <c>ClaudeReleases.InstallAsync</c>, <c>LatestAsync</c> and <c>Current</c>, through the Application
-/// (<see cref="ClaudeReleaseInstalls"/>). The twin of the CLI's <c>channels.ts</c>.
+/// it checks against is <see cref="ClaudeReleases"/>'s and <see cref="OpenPgp"/>'s; other modules call it by name
+/// (<c>InstallAsync</c>, <c>LatestAsync</c> and <c>Current</c>). The twin of the CLI's <c>channels.ts</c>.
 /// </summary>
 /// <remarks>
 /// 🔴 <b>The binary is installed and run as published</b> (the vendor's terms): the bytes that verified

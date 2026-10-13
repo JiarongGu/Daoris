@@ -145,7 +145,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         Assert.Empty(world.Published);
 
         var rules = PermissionRules.Load(_home);
-        Assert.Equal(SetupPress.Rules, rules.Workspaces["work"].Allow);
+        Assert.Equal(SetupPressRules.Rules, rules.Workspaces["work"].Allow);
         Assert.Empty(rules.Repositories);
         var planned = Assert.Single(world.Logged);
         Assert.Equal("setup.planned", planned.Event);
@@ -600,11 +600,11 @@ public sealed class WorkspaceSetupTests : IDisposable
         var plan = new WorkspaceSetupPlan("work", ["atlas"], 1, 2);
         QuestView taken = new("q1", "ask #a1", "atlas", SetupQuests.Title(SetupQuests.SetUp, Day), "", "Taken");
 
-        var standing = Assert.Single(WorkspaceSetup.Stand(plan, [WorkspaceSetupStandIn.Row("atlas")], [taken], new Dictionary<string, int>(), Driven(2)));
+        var standing = Assert.Single(WorkspaceSetupRules.Stand(plan, [WorkspaceSetupStandIn.Row("atlas")], [taken], new Dictionary<string, int>(), Driven(2)));
 
         Assert.Equal(SetupState.Open, standing.State);
         Assert.Equal("q1", standing.Quest);
-        Assert.Equal("setting up", WorkspaceSetup.Word(SetupState.Open));
+        Assert.Equal("setting up", WorkspaceSetupRules.Word(SetupState.Open));
     }
 
     /// <summary>The head line, in the design's own words (D124 §4.4).</summary>
@@ -621,11 +621,11 @@ public sealed class WorkspaceSetupTests : IDisposable
 
         Assert.Equal(
             "Setting up — 2 set up · 1 waiting for your review · 1 setting up · 22 to go · 1 declined — paused after the pilot",
-            WorkspaceSetup.Summary(plan, standings));
+            WorkspaceSetupRules.Summary(plan, standings));
         Assert.Equal("Setting up — 1 to go — paused by you",
-            WorkspaceSetup.Summary(plan with { Paused = new(SetupPausedBy.Person, "", Now) }, [new("a", SetupState.ToGo, null, "")]));
+            WorkspaceSetupRules.Summary(plan with { Paused = new(SetupPausedBy.Person, "", Now) }, [new("a", SetupState.ToGo, null, "")]));
         Assert.Equal("Setting up — 1 set up — stopped",
-            WorkspaceSetup.Summary(plan with { Paused = null, Stopped = Now }, [new("a", SetupState.SetUp, null, "")]));
+            WorkspaceSetupRules.Summary(plan with { Paused = null, Stopped = Now }, [new("a", SetupState.SetUp, null, "")]));
     }
 
     // ---------------------------------------------------------------- the file (§4.1)

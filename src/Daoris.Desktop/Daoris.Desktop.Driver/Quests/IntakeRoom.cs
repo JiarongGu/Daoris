@@ -77,7 +77,7 @@ public static class IntakeRoom
         var described = new Dictionary<string, RepositoryDescription>(StringComparer.OrdinalIgnoreCase);
         foreach (var repository in declarations.Where(d => !(d.Adopted && d.Registered) && d.Root is { Length: > 0 }))
         {
-            if (SelfDescription.Read(repository.Root!) is { } description) described[repository.Repository] = description;
+            if (SelfDescriptionFiles.Read(repository.Root!) is { } description) described[repository.Repository] = description;
         }
 
         Write(Path.Combine(room, "AGENTS.md"), Render(workspace, declarations, described, kinds));

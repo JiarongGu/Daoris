@@ -271,7 +271,6 @@ into priority since that will make the code better to develop"*; D166's note). N
 `docs/2026-10-12-code-structure-design.md` as amended. Moves are behaviour-preserving; new driver files go into their module's
 folder.
 
-- [ ] **FLAT1b-iii-a — Service and Setup: the layering's ceremony folded back** (driver, modules). As FLAT1b-i, the launcher compiling `Setup/StagedBuild.cs` whole; `ServiceMachine` inlined; every port stays (each has a test stand-in). D166's STRUCT3d and 3e notes.
 - [ ] **FLAT1b-iii-b — Sessions: the layering's ceremony folded back** (driver, modules; after iii-a). `HarnessEnding` and `HistoryBytes` out to files of their own with their reads; the forwards to `CommitNames`, `PauseKept`, `AbandonKeys` and `SessionEventText` retire, about 51 callers naming it. D166's STRUCT3g-i note.
 - [ ] **SCOPE1a — Trees by scope** (driver). Renames alone: `SessionTrees/` (the partial and its 16 parts), `Landing/`, `Branches/`, `GitReads/`; WorkingTree, TreeLock, PullRequestStates, PullRequestWords, LandedBranches, SessionGroups, Orphans, TreeGuard and TreesCommand stay at the top with `hooks/`. README :41's path. D166's scope note.
 - [ ] **SCOPE1b — Agents and Accounts by scope** (driver). Agents into `Acp/`, `Tools/`, `Adapters/`, `Consoles/`, `Streams/`, `Permissions/`, `RepositoryKnowledge/`; Accounts into `Harnesses/`, `Rotation/`, `Usage/`, `SignIns/`, AgentSettings and the instruction accounting at its top. A file two scopes use stays at the top. D166's scope note.

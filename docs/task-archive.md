@@ -14182,3 +14182,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **FLAT1b-ii — Review and Quests: the layering's ceremony folded back** (driver; after FLAT1a). As FLAT1b-i. D166's STRUCT3c and 3f notes.
 
 **Outcome** 2026-10-14: the ten extension blocks are their types' members again; `ReviewerChoice`, `ReviewGate`, `ReviewRules`, `ReviewSetUps` and `AskWords` stay in `Domain/`, and `ReviewServed`, `OpinionAnswers`, `OpinionPackets`, `IntakeRoom` and `OpinionTree` left it for top files of their own, their records staying. `QuestGit` retired; at the merge the Workflows callers named `ReviewGit` and `new ServiceReviewWorld(service)`, and the last forwards and `ReviewWorlds` went. `ReviewGit.TreeHeadAsync` stays, the helper a Domain type may call. On Sonnet, scouted: 112 tool calls. Detail: D166's FLAT1b-ii note.
+
+## FLAT1b-iii-a — Service and Setup: the layering's ceremony folded back (2026-10-14, D166)
+
+> - [ ] **FLAT1b-iii-a — Service and Setup: the layering's ceremony folded back** (driver, modules). As FLAT1b-i, the launcher compiling `Setup/StagedBuild.cs` whole; `ServiceMachine` inlined; every port stays (each has a test stand-in). D166's STRUCT3d and 3e notes.
+
+**Outcome** 2026-10-14: `RemoteTarget`, `KnowledgeConnector`, `InstallUpdate` and `StagedBuild` hold their own I/O again at their modules' tops; the layout's, releases' and description's reads are named on the I/O classes beside the large pure types; seven layering files and the `ServiceMachine` shim retired, and the setup forwards with them; the launcher compiles `Setup/StagedBuild.cs` and `InstallSwap.cs` alone. Every port stays. On Sonnet, scouted: 121 tool calls. Detail: D166's FLAT1b-iii-a note.

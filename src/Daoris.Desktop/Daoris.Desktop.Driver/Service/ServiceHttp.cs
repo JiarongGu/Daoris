@@ -4,7 +4,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The service's doors over HTTP (STRUCT3d): <see cref="IServiceDoors"/> as the driver speaks it to a host, the key its bearer,
+/// The service's doors over HTTP:<see cref="IServiceDoors"/> as the driver speaks it to a host, the key its bearer,
 /// through <see cref="DriverHttp"/>'s client and reads. The HTTP <see cref="ServiceClient"/> held before its doors had a port,
 /// moved as it was.
 /// </summary>

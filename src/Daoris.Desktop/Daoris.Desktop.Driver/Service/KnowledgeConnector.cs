@@ -14,9 +14,8 @@ namespace Daoris.Driver;
 /// start by taking the quest", called `take`, found no such tool and ended its turn having touched
 /// nothing.</para>
 ///
-/// <para>Service's Domain (STRUCT3d, D166's note): its names, the order of the places to look and the server's
-/// surroundings, pure. <c>Offer</c>, <c>Locate</c> and <c>Candidates</c>, which look at this machine, are
-/// <see cref="KnowledgeConnectorReads"/>'s, named here as before.</para>
+/// <para>Its names, the order of the places to look and the server's surroundings, and <c>Offer</c>,
+/// <c>Locate</c> and <c>Candidates</c>, which look at this machine, are one type (FLAT1b-iii-a).</para>
 /// </remarks>
 public static class KnowledgeConnector
 {
@@ -163,5 +162,52 @@ public static class KnowledgeConnector
         }
 
         return candidates;
+    }
+
+    /// <summary>
+    /// The server to offer, or <c>null</c> when this machine has no host to offer.
+    /// </summary>
+    /// <remarks>
+    /// Null is an answer, not a failure: the session drives exactly as it did before ACP4, which is
+    /// without a connector. Refusing to start would make a missing optional binary fatal to a loop
+    /// that has other work to do.
+    /// </remarks>
+    /// <param name="environment">The surroundings to pass through; null reads this process's.</param>
+    /// <param name="scope">What this session's connector carries beyond the store (<see cref="Server"/>).</param>
+    public static AcpMcpServer? Offer(
+        string? explicitPath, string? home, string baseDirectory,
+        IReadOnlyDictionary<string, string?>? environment = null,
+        IReadOnlyDictionary<string, string>? scope = null)
+    {
+        var located = Locate(explicitPath, home, baseDirectory);
+        if (located is null) return null;
+
+        Func<string, string?> variable = environment is not null
+            ? name => environment.TryGetValue(name, out var held) ? held : null
+            : Environment.GetEnvironmentVariable;
+        return Server(located, variable, home, scope);
+    }
+
+    /// <summary>The first place this machine actually has the host, or null.</summary>
+    public static string? Locate(string? explicitPath, string? home, string baseDirectory) =>
+        Candidates(explicitPath, home, baseDirectory).FirstOrDefault(File.Exists);
+
+    /// <summary>
+    /// Where to look, in the order they deserve trust (<see cref="Ranked"/>), a development build's
+    /// workspace found by walking up from the running application to the folder that holds its manifest.
+    /// </summary>
+    public static IReadOnlyList<string> Candidates(string? explicitPath, string? home, string baseDirectory) =>
+        Ranked(explicitPath, home, baseDirectory, FolderWith(baseDirectory, WorkspaceMarker));
+
+    /// <summary>The nearest folder at or above <paramref name="from"/> holding a file named <paramref name="marker"/>, whole; null for none.</summary>
+    private static string? FolderWith(string from, string marker)
+    {
+        var directory = new DirectoryInfo(from);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, marker)))
+        {
+            directory = directory.Parent;
+        }
+
+        return directory?.FullName;
     }
 }

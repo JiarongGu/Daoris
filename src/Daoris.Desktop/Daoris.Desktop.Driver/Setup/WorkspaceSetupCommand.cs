@@ -75,7 +75,7 @@ public static class WorkspaceSetupCommand
         if (plan)
         {
             output.WriteLine($"a press adds to workspace `{preview.Workspace}`'s rules, once, so each set-up's session may run the doctrine tool:");
-            foreach (var rule in SetupPress.Rules) output.WriteLine($"  {rule}");
+            foreach (var rule in SetupPressRules.Rules) output.WriteLine($"  {rule}");
             output.WriteLine("--plan: nothing was written, published or added.");
             return 0;
         }
@@ -128,11 +128,11 @@ public static class WorkspaceSetupCommand
             var number = 0;
             foreach (var each in standings)
             {
-                output.WriteLine($"{++number,3}  {each.Repository.PadRight(width)}  {WorkspaceSetup.Word(each.State)}"
+                output.WriteLine($"{++number,3}  {each.Repository.PadRight(width)}  {WorkspaceSetupRules.Word(each.State)}"
                     + (each.State == SetupState.ToGo ? "" : $" — {each.Said}"));
             }
 
-            output.WriteLine(WorkspaceSetup.Summary(standing, standings));
+            output.WriteLine(WorkspaceSetupRules.Summary(standing, standings));
         }
     }
 
@@ -148,7 +148,7 @@ public static class WorkspaceSetupCommand
         foreach (var row in preview.Rows)
         {
             output.WriteLine($"{++number,3}  {row.Repository.PadRight(width)} {row.Touches.Asked,5}  {row.Touches.Read,4}  {row.Touches.Sessions,8}  "
-                + WorkspaceSetup.Word(row.Standing.State));
+                + WorkspaceSetupRules.Word(row.Standing.State));
             foreach (var refusal in row.Refusals) output.WriteLine($"       refused: {refusal.Sentence}");
         }
 
@@ -162,7 +162,7 @@ public static class WorkspaceSetupCommand
             output.WriteLine($"  no checkout here: {string.Join(", ", preview.NoCheckout)}, which each one's own machine's driver sets up");
         }
 
-        output.WriteLine($"  at once   {preview.AtOnce} (at most {WorkspaceSetup.MostAtOnce(preview.Cap)} while the cap is {preview.Cap}, so other work keeps a slot)");
+        output.WriteLine($"  at once   {preview.AtOnce} (at most {WorkspaceSetupRules.MostAtOnce(preview.Cap)} while the cap is {preview.Cap}, so other work keeps a slot)");
         output.WriteLine(preview.Pilot > 0
             ? $"  pilot     {preview.Pilot}: once the first {preview.Pilot} have closed, the plan pauses until you resume it"
             : "  pilot     none: the plan never pauses on its own");

@@ -3292,7 +3292,7 @@ public static class HarnessActions
         started?.Invoke(new HarnessRun(download));
         write($"installing {toolchain.Product ?? harness} {version} from {toolchain.Maker ?? "its maker"}'s own release "
             + "channel, into a directory Daoris owns.");
-        await ClaudeReleases.InstallAsync(
+        await ClaudeReleaseDownloads.InstallAsync(
             HarnessSettings.ManagedHome(home, harness, version), version, write, download.Token, transport)
             .ConfigureAwait(false);
         return 0;
@@ -3397,7 +3397,7 @@ public static class HarnessActions
             started?.Invoke(new HarnessRun(asking));
             try
             {
-                newest = await ClaudeReleases.LatestAsync(asking.Token, transport).ConfigureAwait(false);
+                newest = await ClaudeReleaseDownloads.LatestAsync(asking.Token, transport).ConfigureAwait(false);
             }
             catch (DriverException error)
             {
