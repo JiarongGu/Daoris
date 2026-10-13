@@ -25,14 +25,12 @@ public sealed record PluginWord(
     string? Point = null, string? Where = null, string? Kind = null);
 
 /// <summary>
-/// The loop's own record of each plugin's health (PLUGUI1d, D119 §2), fed by everything in its process that speaks
-/// to a plugin: the hook set, the landing and the hand-off, through <see cref="PluginLog"/>. A terminal, which is
-/// another process, reads the same state from the machine log's last word (<see cref="FromLog(PluginEntry, IEnumerable{LogLine})"/>).
+/// The rules of a plugin's health (PLUGUI1d, D119 §2), the same for the loop's own record (<see cref="PluginHealth"/>) and
+/// for a terminal's reading of the machine log's last word (<see cref="FromLog"/>): what one word does to a record
+/// (<see cref="Apply"/>), and the state from the catalogue's entry and the record (<see cref="Decide"/>).
 /// </summary>
 /// <remarks>
-/// <para><b>One table of cases holds both readings</b> (<c>PluginHealthTests</c>): the record and the log are both
-/// played through <see cref="Apply"/>, and the state is decided from the catalogue's entry and the record by
-/// <see cref="Decide"/>.</para>
+/// <para><b>One table of cases holds both readings</b> (<c>PluginHealthTests</c>).</para>
 ///
 /// <para><b>The five states.</b> <c>off</c>: the person switched it off. <c>refused</c>: on, and the driver refused
 /// it. <c>failing</c>: on and sound, and its last word to Daoris was a failure; its next good answer clears it, and
@@ -44,8 +42,10 @@ public sealed record PluginWord(
 /// <para><b>The record is its process's own.</b> A new process starts with none, so the log's reading starts its
 /// record afresh where the process that ran the loop for the plugin starts or stops (<c>app.started</c>,
 /// <c>app.stopped</c>), and where another process's loop starts it.</para>
+///
+/// <para>Pure (STRUCT3a): the time of each word comes in with it, from the loop's clock or the log's line.</para>
 /// </remarks>
-public sealed class PluginHealth(Func<DateTimeOffset>? clock = null)
+public static class PluginHealthRules
 {
     public const string Running = "running";
 
@@ -63,9 +63,6 @@ public sealed class PluginHealth(Func<DateTimeOffset>? clock = null)
     private static readonly IReadOnlySet<string> Played =
         new HashSet<string>([PluginEvents.Started, PluginEvents.Stopped, PluginEvents.Called, PluginEvents.Failed], StringComparer.Ordinal);
 
-    private readonly Func<DateTimeOffset> _clock = clock ?? (() => DateTimeOffset.UtcNow);
-    private readonly Dictionary<string, Record> _records = new(StringComparer.OrdinalIgnoreCase);
-
     /// <summary>What is known about one plugin.</summary>
     /// <param name="LoopSource">Which process's loop it was last started by, read from the log; null in a process's own record.</param>
     internal sealed record Record(
@@ -75,30 +72,8 @@ public sealed class PluginHealth(Func<DateTimeOffset>? clock = null)
         public static readonly Record Empty = new(false, null, [], null);
     }
 
-    /// <summary>One thing that happened to a plugin, now.</summary>
-    public void Observe(PluginWord word)
-    {
-        if (!Played.Contains(word.Event)) return;
-        var at = _clock();
-        lock (_records)
-        {
-            _records[word.Plugin] = Apply(_records.GetValueOrDefault(word.Plugin) ?? Record.Empty, word, at);
-        }
-    }
-
-    /// <summary>The plugin's health now, from the catalogue's word about it and this record.</summary>
-    public PluginHealthState Of(PluginEntry entry)
-    {
-        Record record;
-        lock (_records) record = _records.GetValueOrDefault(entry.Manifest.Id) ?? Record.Empty;
-        return Decide(entry, record) with { Word = record.Word };
-    }
-
-    /// <summary>The points the loop's process for the plugin listens on, while one is up: the handshake's answer.</summary>
-    public IReadOnlyList<string> Listening(string plugin)
-    {
-        lock (_records) return _records.GetValueOrDefault(plugin) is { Up: true } record ? record.Listening : [];
-    }
+    /// <summary>Whether a record is played from an event: the plugin's own work.</summary>
+    internal static bool Plays(string @event) => Played.Contains(@event);
 
     /// <summary>
     /// The plugin's health as the machine log's last word about it says (D119 §2): its lines played through the
@@ -146,10 +121,6 @@ public sealed class PluginHealth(Func<DateTimeOffset>? clock = null)
 
         return Decide(entry, record) with { Word = record.Word, Source = record.Source };
     }
-
-    /// <summary>The plugin's health from the machine log under <paramref name="home"/>: every day the log keeps.</summary>
-    public static PluginHealthState FromLog(PluginEntry entry, string home) =>
-        FromLog(entry, MachineLogReader.Read(Path.Combine(home, MachineLog.Folder), new LogFilter()).Lines);
 
     /// <summary>The rules: what one word does to a record. The same for the loop's own record and the log's.</summary>
     internal static Record Apply(Record record, PluginWord word, DateTimeOffset at)

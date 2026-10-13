@@ -15,9 +15,14 @@
     "Setup": ["Domain", "Application", "Infrastructure"],
     "Loop": []
   },
+  "layered": [
+    "Plugins",
+    "Workflows"
+  ],
   "root": {
     "AtomicFile.cs": "Platform",
     "CanonicalLine.cs": "Platform",
+    "CommandPresence.cs": "Platform",
     "DaorisHome.cs": "Platform",
     "Driver.Continue.cs": "Loop",
     "Driver.HandOver.cs": "Loop",

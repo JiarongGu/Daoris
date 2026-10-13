@@ -6,27 +6,6 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One point as the plugin kit tells an author about it (PLUG8): what kind of question it is, when it
-/// is asked, the frame it is sent, what it must answer, how long the driver waits, and the handler a new
-/// plugin starts from.
-/// </summary>
-/// <param name="Kind">`decision`, `observation` or `act` — what the answer does (D64 §4, D100).</param>
-/// <param name="OnFailure">What the driver does with a late, wrong or missing answer, finishing "so …".</param>
-/// <param name="Frame">
-/// The frame the driver sends for the kit's sample input, built by <see cref="HookFrames"/> — the
-/// function the driver itself sends it with. A shared instance: clone it before changing it.
-/// </param>
-/// <param name="Handler">The wire script's entry for this point, as the scaffold writes it.</param>
-public sealed record KitPoint(
-    string Name, string Kind, string When, string Answer, string OnFailure, TimeSpan Patience, JsonObject Frame, string Handler);
-
-/// <summary>One file a new plugin's folder gets.</summary>
-public sealed record ScaffoldFile(string Name, string Content);
-
-/// <summary>What `plugins new` would write, and where — printable and assertable before anything is on disk.</summary>
-public sealed record ScaffoldPlan(string Id, string Folder, IReadOnlyList<string> Points, IReadOnlyList<ScaffoldFile> Files);
-
-/// <summary>
 /// The kit a session makes a plugin with (PLUG8, D101): a new plugin's folder, and a trial that starts a
 /// plugin as the driver would and checks every answer by the driver's own reader.
 /// </summary>
@@ -44,6 +23,10 @@ public sealed record ScaffoldPlan(string Id, string Folder, IReadOnlyList<string
 /// <para><b>One implementation behind both doors.</b> `daoris-driver plugins new|try` and Settings →
 /// Plugins both call this class. The CLI names no scaffold of its own: it spawns nothing outside
 /// <c>toolchain.ts</c>, and the samples come from this library.</para>
+///
+/// <para><b>The use case</b> (STRUCT3a): what the kit says and plans is here; the folder it writes, the templates the build
+/// carries, a trial's scratch and its process are the Infrastructure's (<see cref="PluginKitFiles"/>,
+/// <see cref="PluginTrialProcess"/>).</para>
 /// </remarks>
 public static partial class PluginKit
 {
@@ -209,8 +192,8 @@ public static partial class PluginKit
         }
 
         var chosen = Points.Where(point => named.Contains(point.Name, StringComparer.Ordinal)).ToList();
-        var folder = Path.Combine(Path.GetFullPath(parent), id);
-        Writable(folder);
+        var folder = PluginKitFiles.FolderIn(parent, id);
+        PluginKitFiles.Writable(folder);
 
         var name = NameOf(id);
         // LF whatever this source file's own line endings were when it was compiled: raw literals carry them.
@@ -225,36 +208,7 @@ public static partial class PluginKit
 
     /// <summary>Write a plan's files, each whole or not at all. The folder is judged again first: a plan is what the disk said when it was made.</summary>
     /// <returns>The names written, in the plan's order.</returns>
-    public static IReadOnlyList<string> Write(ScaffoldPlan plan)
-    {
-        Writable(plan.Folder);
-        Directory.CreateDirectory(plan.Folder);
-        foreach (var file in plan.Files) AtomicFile.WriteText(Path.Combine(plan.Folder, file.Name), file.Content);
-        return plan.Files.Select(file => file.Name).ToList();
-    }
-
-    /// <summary>A new plugin goes into a folder that is not there yet, or is empty, inside one that is.</summary>
-    private static void Writable(string folder)
-    {
-        var parent = Path.GetDirectoryName(folder)!;
-        if (!Directory.Exists(parent))
-        {
-            throw new DriverException(
-                $"`{parent}` does not exist — name a folder that does; the plugin's own folder is made inside it, named by its id.");
-        }
-
-        if (File.Exists(folder))
-        {
-            throw new DriverException($"`{folder}` already holds a file of that name — choose another id, or another folder to make it in.");
-        }
-
-        if (Directory.Exists(folder) && Directory.EnumerateFileSystemEntries(folder).Count() is > 0 and var held)
-        {
-            throw new DriverException(
-                $"`{folder}` already holds {held} item(s) — the kit writes a new plugin into a new or empty folder, "
-                + "never over one. Choose another id, or another folder to make it in.");
-        }
-    }
+    public static IReadOnlyList<string> Write(ScaffoldPlan plan) => PluginKitFiles.Write(plan);
 
     /// <summary>A readable name from an id: its last part, words for dashes, the first letter raised — `acme.quiet-hours` is "Quiet hours".</summary>
     private static string NameOf(string id)
@@ -288,13 +242,13 @@ public static partial class PluginKit
     private static string WireScript(string id, string name, IReadOnlyList<KitPoint> points)
     {
         var lands = RunsATool(points);
-        return Template("plugin.mjs")
+        return PluginKitFiles.Template("plugin.mjs")
             .Replace("{{name}}", name, StringComparison.Ordinal)
             .Replace("{{id}}", id, StringComparison.Ordinal)
             .Replace("{{imports}}", lands
                 ? "import { spawnSync } from 'node:child_process';\nimport { existsSync } from 'node:fs';\nimport { delimiter, join } from 'node:path';\n"
                 : "", StringComparison.Ordinal)
-            .Replace("{{helpers}}", lands ? Template("run.mjs") : "", StringComparison.Ordinal)
+            .Replace("{{helpers}}", lands ? PluginKitFiles.Template("run.mjs") : "", StringComparison.Ordinal)
             .Replace("{{handlers}}", string.Join("\n\n", points.Select(point => point.Handler.Replace("\r\n", "\n"))), StringComparison.Ordinal);
     }
 
@@ -312,7 +266,7 @@ public static partial class PluginKit
             };
         }
 
-        return Template("plugin.test.mjs")
+        return PluginKitFiles.Template("plugin.test.mjs")
             .Replace("{{protocol}}", HookPeer.ProtocolVersion.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal)
             .Replace("{{grace}}", ((long)HookProcess.Grace.TotalMilliseconds).ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal)
             .Replace("{{points}}", table.ToJsonString(Pretty), StringComparison.Ordinal);
@@ -331,7 +285,7 @@ public static partial class PluginKit
         }
 
         var lands = points.Any(point => point.Name == HookPoints.Land);
-        return Template("README.md")
+        return PluginKitFiles.Template("README.md")
             .Replace("{{name}}", name, StringComparison.Ordinal)
             .Replace("{{id}}", id, StringComparison.Ordinal)
             .Replace("{{points}}", sections.ToString(), StringComparison.Ordinal)
@@ -352,12 +306,4 @@ public static partial class PluginKit
         ? $"{span.TotalMinutes:0} minute{(span.TotalMinutes == 1 ? "" : "s")}"
         : $"{span.TotalSeconds:0.#} second{(span.TotalSeconds == 1 ? "" : "s")}";
 
-    /// <summary>A template the build carries, with its line endings made LF whatever the checkout did to it.</summary>
-    private static string Template(string name)
-    {
-        using var stream = typeof(PluginKit).Assembly.GetManifestResourceStream($"Daoris.Driver.plugin-kit.{name}.template")
-            ?? throw new InvalidOperationException($"the plugin kit's `{name}` template is missing from the build");
-        using var reader = new StreamReader(stream);
-        return reader.ReadToEnd().Replace("\r\n", "\n");
-    }
 }

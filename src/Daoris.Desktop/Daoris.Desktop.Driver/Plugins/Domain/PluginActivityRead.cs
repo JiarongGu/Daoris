@@ -40,35 +40,23 @@ public sealed record PluginActivityRead(
     IReadOnlyList<PluginPush> Pushes, IReadOnlyList<ActivityEvent> Recent, int More, int Skipped);
 
 /// <summary>
-/// What a plugin did (PLUGUI1d, D119 §3.2 and §4.1): the machine log's <c>plugin.*</c> lines for one plugin over a
-/// period, summarised, with the sessions started on its agents (<c>session.started</c>'s <c>adapter</c>) and the
-/// branches it pushed (the landing record, D102). One reader for both doors: the page's <c>PLUGIN_ACTIVITY</c> and
-/// <c>daoris-driver plugins activity</c>.
+/// What a plugin did, summarised from what was read (PLUGUI1d, D119 §3.2 and §4.1): the machine log's <c>plugin.*</c> lines
+/// for one plugin, the sessions started on its agents (<c>session.started</c>'s <c>adapter</c>) and the branches it pushed.
+/// Pure (STRUCT3a): the lines and the pushes come in as values, read by the Application's <see cref="PluginActivity"/>.
 /// </summary>
-/// <remarks>
-/// <para><b>Never the plugin's words.</b> The log holds none (D94 §5), and the landing record's pull request is an
-/// address the plugin answered, shown as the link it is. What the plugin said this run is the console's ring, which
-/// the page reads apart (<c>TAIL_SESSION</c>).</para>
-///
-/// <para>A line that cannot be read is skipped and counted, as <see cref="MachineLogReader"/> does; a day's file
-/// older than the period is not opened.</para>
-/// </remarks>
-public static class PluginActivity
+public static class PluginActivitySummary
 {
     /// <summary>How many recent events are answered.</summary>
     public const int RecentLines = 50;
 
-    /// <summary>The period a page opens on, and the terminal's without <c>--since</c>: the last 7 days.</summary>
-    public static readonly TimeSpan DefaultPeriod = TimeSpan.FromDays(7);
-
-    /// <exception cref="DriverException">This machine holds no such plugin (<see cref="PluginPage.Unknown"/>).</exception>
-    public static PluginActivityRead Read(string home, string id, DateTimeOffset since)
+    /// <param name="logged">Whether this machine has a machine log at all.</param>
+    /// <param name="lines">The period's lines, oldest first.</param>
+    /// <param name="skipped">How many lines of the period's files could not be read.</param>
+    /// <param name="pushes">The branches it pushed in the period, newest first.</param>
+    public static PluginActivityRead Of(
+        string plugin, PluginManifest manifest, DateTimeOffset since, bool logged, IEnumerable<LogLine> lines, int skipped,
+        IReadOnlyList<PluginPush> pushes)
     {
-        var (entry, manifest, _) = PluginPage.Installed(home, id);
-        var plugin = entry.Manifest.Id;
-        var folder = Path.Combine(home, MachineLog.Folder);
-        var read = MachineLogReader.Read(folder, new LogFilter(Since: since));
-
         var points = new List<string>(manifest.Hooks?.Points ?? []);
         var answers = new Dictionary<string, Dictionary<string, int>>(StringComparer.Ordinal);
         var failures = new Dictionary<string, Dictionary<string, int>>(StringComparer.Ordinal);
@@ -85,7 +73,7 @@ public static class PluginActivity
             if (!points.Contains(point, StringComparer.Ordinal)) points.Add(point);
         }
 
-        foreach (var line in read.Lines)
+        foreach (var line in lines)
         {
             if (line.Event == "session.started")
             {
@@ -155,15 +143,9 @@ public static class PluginActivity
             }
         }
 
-        var pushes = new LandedBranches(home).PushedBy(plugin)
-            .Where(entry => entry.LandedAt >= since)
-            .Reverse()
-            .Select(entry => new PluginPush(entry.Repository, entry.Branch, entry.PullRequest, entry.LandedAt))
-            .ToList();
-
         events.Reverse();
         return new PluginActivityRead(
-            plugin, since, Directory.Exists(folder),
+            plugin, since, logged,
             [.. points.Select(point => new PointActivity(
                 point,
                 answers.GetValueOrDefault(point) ?? [],
@@ -177,7 +159,7 @@ public static class PluginActivity
             pushes,
             [.. events.Take(RecentLines)],
             Math.Max(0, events.Count - RecentLines),
-            read.Skipped);
+            skipped);
     }
 
     /// <summary>The middle answer time, or the two middles' mean; null with none.</summary>

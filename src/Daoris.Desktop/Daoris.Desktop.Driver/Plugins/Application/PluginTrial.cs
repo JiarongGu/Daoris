@@ -4,32 +4,6 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>What a trial is asked to do beyond its defaults.</summary>
-/// <param name="Point">One point to try; absent, every point the manifest declares.</param>
-/// <param name="Frame">The frame to send at <paramref name="Point"/> instead of the sample — the person's, root and all.</param>
-/// <param name="Patience">How long each call waits; absent, as long as the driver waits at the points tried.</param>
-public sealed record TrialOptions(string? Point = null, JsonObject? Frame = null, TimeSpan? Patience = null);
-
-/// <summary>
-/// One thing a trial checked: a declared tool or one of its checks (PLUGTOOL1a), the handshake, a point, the shutdown, stdout —
-/// or the manifest, when that is as far as it got.
-/// </summary>
-public sealed record TrialStep(string Name, bool Ok, string Sentence);
-
-/// <summary>What `plugins try` found, step by step, and what the plugin said on stderr meanwhile.</summary>
-public sealed record PluginTrial(
-    string Plugin, string Folder, IReadOnlyList<string> Command, IReadOnlyList<TrialStep> Steps, IReadOnlyList<string> Said)
-{
-    public bool Passed => Steps.Count > 0 && Steps.All(step => step.Ok);
-
-    /// <summary>The family contract: 0 when every answer is one the driver reads, 1 when the plugin failed a check.</summary>
-    public int ExitCode => Passed ? 0 : 1;
-
-    public string Summary => Passed
-        ? $"`{Plugin}` answered as the driver reads it."
-        : $"`{Plugin}` failed {Steps.Count(step => !step.Ok)} of {Steps.Count} check{(Steps.Count == 1 ? "" : "s")}.";
-}
-
 public static partial class PluginKit
 {
     /// <summary>
@@ -41,10 +15,6 @@ public static partial class PluginKit
 
     /// <summary>The home's folder of trials' scratch, <c>&lt;home&gt;/plugins/.trials</c>.</summary>
     public static string TrialsOf(string home) => Path.Combine(home, PluginCatalog.Folder, TrialsFolder);
-
-    /// <summary>One trial's scratch folder, made fresh under <paramref name="parent"/>; removed when the trial ends.</summary>
-    private static string ScratchIn(string parent) =>
-        Directory.CreateDirectory(Path.Combine(parent, "try-" + Guid.NewGuid().ToString("N")[..8])).FullName;
 
     /// <summary>
     /// Try a plugin in a folder anywhere — a plugins repository's, before anything is installed. What it
@@ -59,13 +29,13 @@ public static partial class PluginKit
     /// <param name="scratchParent">Where the scratch folder goes instead of the home's — a test's, under a repository, to prove the sample root still names none.</param>
     internal static async Task<PluginTrial> TryFolderAsync(string home, string folder, TrialOptions? options, CancellationToken ct, string? scratchParent)
     {
-        var full = Path.GetFullPath(folder);
-        if (!File.Exists(Path.Combine(full, PluginCatalog.ManifestName)))
+        var full = PluginFolders.WholePath(folder);
+        if (!PluginFolders.HasFile(Path.Combine(full, PluginCatalog.ManifestName)))
         {
             throw new DriverException($"no `{PluginCatalog.ManifestName}` in {full} — a plugin is a folder with a manifest at its root.");
         }
 
-        var scratch = ScratchIn(scratchParent ?? TrialsOf(home));
+        var scratch = PluginKitFiles.ScratchIn(scratchParent ?? TrialsOf(home));
         try
         {
             var data = Path.Combine(scratch, "data");
@@ -73,13 +43,13 @@ public static partial class PluginKit
             // The plugin is told a scratch home of its own: one nobody installed is part of no machine yet. Its tools are
             // the machine's, so they are found by the home's own tools (PLUGTOOL1a).
             var told = Path.Combine(scratch, "home");
-            Directory.CreateDirectory(told);
+            PluginFolders.Make(told);
             return await TryAsync(new PluginEntry(manifest, full, data, Enabled: true, problem), told, home, scratch, options ?? new(), ct)
                 .ConfigureAwait(false);
         }
         finally
         {
-            Remove(scratch);
+            PluginKitFiles.Remove(scratch);
         }
     }
 
@@ -94,14 +64,14 @@ public static partial class PluginKit
             .FirstOrDefault(plugin => string.Equals(plugin.Manifest.Id, id, StringComparison.OrdinalIgnoreCase))
             ?? throw new DriverException($"no plugin `{id}` on this machine — `daoris plugin list` shows what there is.");
 
-        var scratch = ScratchIn(TrialsOf(home));
+        var scratch = PluginKitFiles.ScratchIn(TrialsOf(home));
         try
         {
             return await TryAsync(entry, home, home, scratch, options ?? new(), ct).ConfigureAwait(false);
         }
         finally
         {
-            Remove(scratch);
+            PluginKitFiles.Remove(scratch);
         }
     }
 
@@ -109,7 +79,8 @@ public static partial class PluginKit
     /// <para><b>As the driver would.</b> The process is started from <see cref="HookProcess.StartInfo"/>,
     /// spoken to through <see cref="HookPeer"/>, and sent <see cref="HookFrames"/>' frames, so an answer the
     /// trial accepts is one the driver reads. The trial owns the process itself only to see what the driver
-    /// does not need to: an exit code, a line on stdout that is not a frame, whether it left when told.</para>
+    /// does not need to: an exit code, a line on stdout that is not a frame, whether it left when told. The process is the
+    /// Infrastructure's (<see cref="PluginTrialProcess"/>, STRUCT3a); what each answer means is said here.</para>
     ///
     /// <para><b>Stricter than the driver in one place</b>: a point the manifest declares and the process
     /// does not listen on fails. The driver tolerates it; a person reading the manifest would not.</para>
@@ -167,34 +138,23 @@ public static partial class PluginKit
         var tried = (options.Point is { } one ? [one] : hooks.Points.Distinct(StringComparer.Ordinal)).Select(name => Find(name)!).ToList();
         var patience = options.Patience ?? tried.Max(kit => kit.Patience);
         var root = Path.Combine(scratch, "root");
-        Directory.CreateDirectory(root);
-        Directory.CreateDirectory(entry.Data);
+        PluginFolders.Make(root);
+        PluginFolders.Make(entry.Data);
 
         // The tools it declares, each said in its own sentence (PLUGTOOL1a); a problem there never stops the trial.
-        steps.AddRange(await ToolStepsAsync(entry.Manifest, toolsHome, root, path: null, PluginToolChecks.RunAsync, ct).ConfigureAwait(false));
+        steps.AddRange(await ToolStepsAsync(entry.Manifest, toolsHome, root, path: null, PluginToolRuns.RunAsync, ct).ConfigureAwait(false));
 
-        ProcessStartInfo info;
+        PluginTrialProcess process;
         try
         {
-            info = HookProcess.StartInfo(entry, home);
+            // The sample frames name no repository, so git is pointed at one that is not there; a person's frame is theirs.
+            process = PluginTrialProcess.Start(entry, home, noRepositoryAt: options.Frame is null ? root : null);
         }
         catch (DriverException error)
         {
             // A first word whose tool cannot run as the person chose (TOOLS5): the driver would refuse it the same way.
             steps.Add(new("start", false, $"{error.Message} So the driver would not start it either."));
             return Trial();
-        }
-
-        if (options.Frame is null)
-        {
-            info.Environment["GIT_DIR"] = Path.Combine(root, ".git");
-            info.Environment["GIT_TERMINAL_PROMPT"] = "0";
-        }
-
-        Process process;
-        try
-        {
-            process = Process.Start(info) ?? throw new Win32Exception("the process did not start");
         }
         catch (Win32Exception error)
         {
@@ -204,9 +164,9 @@ public static partial class PluginKit
 
         using (process)
         {
-            var stderr = RelayAsync(process.StandardError, line => { lock (said) said.Add(line); });
+            var stderr = RelayAsync(process.Error, line => { lock (said) said.Add(line); });
             var noise = new List<string>();
-            var peer = new HookPeer(process.StandardOutput, process.StandardInput, id, line => { lock (noise) noise.Add(line); }, patience);
+            var peer = new HookPeer(process.Output, process.Input, id, line => { lock (noise) noise.Add(line); }, patience);
 
             // Each call, judged: its sentence when it answered, and when it did not, which of the three
             // ways it did not — the process gone, the process silent, or the process wrong.
@@ -220,7 +180,7 @@ public static partial class PluginKit
                 }
                 catch (DriverException error)
                 {
-                    if (await ExitedAsync(process, TimeSpan.FromMilliseconds(500)).ConfigureAwait(false))
+                    if (await process.ExitedAsync(TimeSpan.FromMilliseconds(500)).ConfigureAwait(false))
                     {
                         await Task.WhenAny(stderr, Task.Delay(500, CancellationToken.None)).ConfigureAwait(false);
                         var last = Snapshot(said).LastOrDefault();
@@ -264,20 +224,20 @@ public static partial class PluginKit
             await peer.DisposeAsync().ConfigureAwait(false);
             if (alive && !process.HasExited)
             {
-                if (await ExitedAsync(process, HookProcess.Grace).ConfigureAwait(false))
+                if (await process.ExitedAsync(HookProcess.Grace).ConfigureAwait(false))
                 {
                     steps.Add(new("shutdown", true, $"left when told (exit {process.ExitCode})."));
                 }
                 else
                 {
-                    Kill(process);
+                    process.Kill();
                     steps.Add(new("shutdown", false,
                         $"did not leave within {HookProcess.Grace.TotalSeconds:0}s of `shutdown`, so it was ended here, as the driver ends a plugin that stays."));
                 }
             }
             else if (!process.HasExited)
             {
-                Kill(process);
+                process.Kill();
             }
 
             var heard = Snapshot(noise);
@@ -370,34 +330,7 @@ public static partial class PluginKit
         lock (lines) return [.. lines];
     }
 
-    private static async Task<bool> ExitedAsync(Process process, TimeSpan within)
-    {
-        using var wait = new CancellationTokenSource(within);
-        try
-        {
-            await process.WaitForExitAsync(wait.Token).ConfigureAwait(false);
-            return true;
-        }
-        catch (OperationCanceledException)
-        {
-            return process.HasExited;
-        }
-    }
-
-    private static void Kill(Process process)
-    {
-        try
-        {
-            process.Kill(entireProcessTree: true);
-            process.WaitForExit(2000);
-        }
-        catch (Exception error) when (error is InvalidOperationException or Win32Exception)
-        {
-            // Already gone, which is the state being asked for.
-        }
-    }
-
-    private static async Task RelayAsync(StreamReader stderr, Action<string> onLine)
+    private static async Task RelayAsync(TextReader stderr, Action<string> onLine)
     {
         try
         {
@@ -408,23 +341,6 @@ public static partial class PluginKit
         }
         catch (Exception error) when (error is IOException or ObjectDisposedException)
         {
-        }
-    }
-
-    /// <summary>A scratch folder goes when the trial ends; a process a moment slow to let go of it is waited for, briefly.</summary>
-    private static void Remove(string folder)
-    {
-        for (var attempt = 0; Directory.Exists(folder); attempt++)
-        {
-            try
-            {
-                Directory.Delete(folder, recursive: true);
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-            {
-                if (attempt >= 10) return;
-                Thread.Sleep(200);
-            }
         }
     }
 }

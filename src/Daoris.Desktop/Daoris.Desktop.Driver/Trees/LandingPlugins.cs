@@ -66,7 +66,7 @@ public sealed class LandingPlugins(
 
     private readonly Func<PluginEntry, Action<string>, CancellationToken, Task<IHookChannel>> _start =
         start ?? (async (plugin, onLine, ct) =>
-            await HookProcess.StartAsync(plugin, home, onLine, ct, patience ?? DefaultPatience).ConfigureAwait(false));
+            await HookChannels.StartAsync(plugin, home, onLine, ct, patience ?? DefaultPatience).ConfigureAwait(false));
 
     /// <summary>The moment an occasion reckons by: whether an entry was asked in the last minute, and when an answer was asked.</summary>
     public DateTimeOffset Now => _clock();
@@ -246,7 +246,7 @@ public sealed class LandingPlugins(
         _injected ? _start(plugin, onLine, ct) : StartProcessAsync(plugin, onLine, ct);
 
     private async Task<IHookChannel> StartProcessAsync(PluginEntry plugin, Action<string> onLine, CancellationToken ct) =>
-        await HookProcess.StartAsync(plugin, home, onLine, ct, _statePatience).ConfigureAwait(false);
+        await HookChannels.StartAsync(plugin, home, onLine, ct, _statePatience).ConfigureAwait(false);
 
     private PluginLanding Failed(string plugin, string why)
     {

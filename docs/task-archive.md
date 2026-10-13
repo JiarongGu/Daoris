@@ -14077,3 +14077,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT3b — layer the Workflows module** (driver). `Domain`, `Application` and `Infrastructure` with ports, the gate's purity and reach rules holding it, behaviour unchanged. D166; design §3, §6.
 
 **Outcome** 2026-10-14: Workflows is layered: its pure rules in Domain, its use cases in Application under their old names against four ports (`IWorkflowStore`, `IWorkflowRunStore`, `IWorkflowRunRecords`, `IWorkflowStartWorld`), the file I/O in Infrastructure; the loop's binding of a run at its first start moved to `WorkflowRunStart`, the loop file only composing it. 256 Process cases on the landing and loop paths passed on the merge. STRUCT3PORTS and STRUCTAPP1 hold what it left. Detail: D166's STRUCT3b note.
+
+## STRUCT3a — layer the Plugins module (2026-10-14, D166)
+
+> - [ ] **STRUCT3a — layer the Plugins module** (driver). `Domain`, `Application` and `Infrastructure` with ports, the gate's purity and reach rules holding it, behaviour unchanged; the pattern for the next modules written down. D166; design §3, §6.
+
+**Outcome** 2026-10-14: Plugins is layered (Domain 15 files, Application 18, Infrastructure 6), the hook process behind `IHookChannel`; types whose rules are pure but whose callers also ask them for I/O went to Domain with their I/O as Application extension members, so about 98 outside callers did not change; `CommandPresence` left for Platform; the gate gained the map's `layered` list and its `layer` rule (Workflows added at the merge). Detail: D166's STRUCT3a note, design §3 and §5; STRUCT3PLAT, STRUCTAPP1 and PLUGNAME1 hold what it left.

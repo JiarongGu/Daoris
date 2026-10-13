@@ -1,27 +1,15 @@
-using System.ComponentModel;
 using System.Diagnostics;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>What one readiness check answered: whether it passed, and its sentence.</summary>
-public sealed record ReadyAnswer(ReadyCheck Check, bool Ready, string Sentence);
-
-/// <summary>What a declared tool's check found (PLUGTOOL1a).</summary>
-/// <param name="Ok">Found, and its version in its range or not one the range needs; each check is its own answer.</param>
-/// <param name="File">The file found, or null where none was.</param>
-/// <param name="Way">How it is run: Daoris's way for a known tool, the system's for one found on the PATH.</param>
-/// <param name="Version">The version it said, its first dotted number; null where it was not asked or said none.</param>
-/// <param name="Sentence">The tool's own sentence: where it was found, its version against its range, or its problem.</param>
-/// <param name="Ready">Each check's answer, in the manifest's order; none where the tool was not found.</param>
-public sealed record PluginToolFound(
-    PluginTool Tool, bool Ok, string? File, ToolWay? Way, string? Version, string Sentence, IReadOnlyList<ReadyAnswer> Ready);
-
 /// <summary>One program started and its answer read whole; no exit code from one that started means it did not answer in time.</summary>
 internal sealed record CheckRun(bool Started, int? ExitCode, string Stdout, string Stderr);
 
-/// <summary>What starts a program for a check and reads its answer, bounded: a stand-in in the fast tests, a real start otherwise.</summary>
+/// <summary>
+/// What starts a program for a check and reads its answer, bounded: a stand-in in the fast tests, a real start otherwise
+/// (the Infrastructure's <see cref="PluginToolRuns.RunAsync"/>). The module's port for its tool checks (STRUCT3a).
+/// </summary>
 internal delegate Task<CheckRun> CheckRunner(ProcessStartInfo info, TimeSpan patience, CancellationToken ct);
 
 /// <summary>
@@ -41,13 +29,10 @@ internal delegate Task<CheckRun> CheckRunner(ProcessStartInfo info, TimeSpan pat
 /// </remarks>
 public static partial class PluginToolChecks
 {
-    /// <summary>UTF-8 with no byte-order mark: a mark is not part of what a program is told.</summary>
-    private static readonly Encoding Utf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
-
     /// <summary>Find and check one declared tool, with the home's tools, starting each program for real.</summary>
     /// <param name="root">Where each check runs: a scratch folder, which git is told holds no repository.</param>
     public static Task<PluginToolFound> CheckAsync(string home, PluginTool tool, string root, CancellationToken ct = default) =>
-        CheckAsync(home, tool, root, path: null, RunAsync, ct);
+        CheckAsync(home, tool, root, path: null, PluginToolRuns.RunAsync, ct);
 
     /// <param name="path">The <c>PATH</c> the system's tools are found on; null for this process's own.</param>
     /// <param name="run">What starts each program.</param>
@@ -57,7 +42,7 @@ public static partial class PluginToolChecks
         if (tool.Problem is { } problem) return new(tool, false, null, null, null, problem, []);
 
         var read = Tools.Read(home);
-        var inherited = path ?? Environment.GetEnvironmentVariable(Tools.PathVariable);
+        var inherited = path ?? PluginToolRuns.InheritedPath();
         var childPath = Tools.ChildPath(read, home, inherited) ?? inherited;
         var declared = tool.Kind == PluginToolKind.Other ? null : Tools.Find(tool.Id!);
         var name = declared?.Name ?? tool.Name ?? tool.Id!;
@@ -173,83 +158,11 @@ public static partial class PluginToolChecks
             + (check.Fix is { } fix ? $" Run `{fix}` to put it right." : ""));
     }
 
-    /// <summary>A start, handed the tools' environment, in <paramref name="root"/>, and its answer.</summary>
+    /// <summary>A start, handed the tools' environment, in <paramref name="root"/>, and its answer through the port.</summary>
     /// <exception cref="DriverException">An argument a Windows command shim would read again.</exception>
     private static async Task<CheckRun> StartAsync(
-        string file, IEnumerable<string> arguments, string root, ToolsRead read, string home, CheckRunner run, CancellationToken ct)
-    {
-        var info = new ProcessStartInfo
-        {
-            FileName = file,
-            WorkingDirectory = root,
-            UseShellExecute = false,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            StandardInputEncoding = Utf8,
-            StandardOutputEncoding = Utf8,
-            StandardErrorEncoding = Utf8,
-            CreateNoWindow = true,
-        };
-        foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        // git walks up: a scratch folder under a checkout answers for the checkout, so git is told no repository is here,
-        // as a trial's sample frames are (D101).
-        info.Environment["GIT_DIR"] = Path.Combine(root, ".git");
-        info.Environment["GIT_TERMINAL_PROMPT"] = "0";
-        Tools.Hand(info, read, home);
-        info.FileName = HarnessActions.WindowsShim(
-            info.FileName, info.ArgumentList, info.Environment.TryGetValue(Tools.PathVariable, out var childPath) ? childPath : null);
-        return await run(info, PluginTools.CheckPatience, ct).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Start a program, type it nothing, and read both streams whole, waiting <paramref name="patience"/> at most; a program
-    /// still running then is ended, and answered no exit code.
-    /// </summary>
-    internal static async Task<CheckRun> RunAsync(ProcessStartInfo info, TimeSpan patience, CancellationToken ct)
-    {
-        Process? process;
-        try
-        {
-            process = Process.Start(info);
-        }
-        catch (Exception error) when (error is Win32Exception or IOException or InvalidOperationException)
-        {
-            // Said in Daoris's words by the caller: the system's message names the working directory.
-            return new(false, null, "", "");
-        }
-
-        if (process is null) return new(false, null, "", "");
-        using (process)
-        {
-            // Nothing is typed to it: a program that waits for input reads its end at once.
-            process.StandardInput.Close();
-            using var bound = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            bound.CancelAfter(patience);
-            var stdout = process.StandardOutput.ReadToEndAsync(bound.Token);
-            var stderr = process.StandardError.ReadToEndAsync(bound.Token);
-            try
-            {
-                await process.WaitForExitAsync(bound.Token).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
-            {
-                try
-                {
-                    process.Kill(entireProcessTree: true);
-                }
-                catch (InvalidOperationException)
-                {
-                    // It ended as it was stopped.
-                }
-
-                await Task.WhenAll(stdout, stderr).ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
-                return new(true, null, "", "");
-            }
-
-            return new(true, process.ExitCode, await stdout.ConfigureAwait(false), await stderr.ConfigureAwait(false));
-        }
-    }
+        string file, IEnumerable<string> arguments, string root, ToolsRead read, string home, CheckRunner run, CancellationToken ct) =>
+        await run(PluginToolRuns.StartInfo(file, arguments, root, read, home), PluginTools.CheckPatience, ct).ConfigureAwait(false);
 
     /// <summary>
     /// The version a program said: its first dotted number, the way each tool says it (<c>git version 2.51.0.windows.1</c>,
