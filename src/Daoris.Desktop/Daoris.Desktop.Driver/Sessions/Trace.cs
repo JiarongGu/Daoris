@@ -21,18 +21,12 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class Trace
 {
-    /// <summary>The fewest hexadecimal digits a commit is named by: git's own floor for an abbreviation.</summary>
-    public const int CommitDigits = CommitNames.Digits;
-
-    /// <summary>Whether a word could name a commit: at least <see cref="CommitDigits"/> hexadecimal digits and no more than a whole id.</summary>
-    public static bool IsCommit(string word) => CommitNames.IsCommit(word);
-
     /// <summary>Whether two names of commits name the same one: either is the start of the other, the shorter long enough to name one.</summary>
     internal static bool SameCommit(string? a, string? b)
     {
         if (a is null || b is null) return false;
         var (shorter, longer) = a.Length <= b.Length ? (a, b) : (b, a);
-        return shorter.Length >= CommitDigits && longer.StartsWith(shorter, StringComparison.OrdinalIgnoreCase);
+        return shorter.Length >= CommitNames.Digits && longer.StartsWith(shorter, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -116,10 +110,10 @@ public static class Trace
             ? facts.Quests.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase))
             : null;
         var commit = id.ToLowerInvariant();
-        var evidence = Asks(TraceEntry.Commit) && IsCommit(commit)
+        var evidence = Asks(TraceEntry.Commit) && CommitNames.IsCommit(commit)
             ? facts.Sessions.SelectMany(each => each.Commits.Where(made => SameCommit(made.Sha, commit)).Select(made => (Session: each, made.Line))).ToList()
             : [];
-        var landings = Asks(TraceEntry.Commit) && IsCommit(commit)
+        var landings = Asks(TraceEntry.Commit) && CommitNames.IsCommit(commit)
             ? facts.Landings.Where(each => SameCommit(each.Tip, commit) || SameCommit(each.PushedTip, commit)).ToList()
             : [];
 
