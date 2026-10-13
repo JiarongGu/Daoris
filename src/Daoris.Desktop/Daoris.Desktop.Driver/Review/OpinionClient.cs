@@ -78,32 +78,3 @@ public sealed record OpinionAsked(string? Opinion, string? Session, string Messa
 {
     public bool Opened => Opinion is not null && Session is not null;
 }
-
-/// <summary>The local host's opinion doors, as the driver asks them (XAGENT1d).</summary>
-public sealed partial class ServiceClient
-{
-    /// <summary>
-    /// Ask the local host for a pass (XAGENT1c, D155 point 11): it keeps the opinion and opens its reviewer's record in one
-    /// transaction, a chat on no quest naming the opinion, in its own copy, as its account. A refusal is an answer, not an
-    /// exception, and so is a host older than the door.
-    /// </summary>
-    public async Task<OpinionAsked> AskOpinionAsync(OpinionAskBody body, CancellationToken ct = default)
-    {
-        const string Door = "/api/opinions";
-        var (ok, status, payload, root) = await PostJsonAsync(Door, body.Json(), ct).ConfigureAwait(false);
-        if (root is not { } answer) return new(null, null, $"the service at {_base} has no `{Door}` door ({status}) — is it older than this driver?");
-        if (!ok) return new(null, null, Text(answer, "error") ?? payload);
-
-        var opinion = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("opinion", out var kept) ? Text(kept, "id") : null;
-        var session = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("session", out var record) ? record : default;
-        var id = Text(session, "id");
-        if (opinion is null || id is null) return new(null, null, $"the service at {_base} answered `{Door}` with no opinion and no record.");
-
-        // The door the record opened by, for the session log (LOG1b): a reviewer's record is a chat that serves no quest.
-        Raise(Opened, new SessionOpened(id, OpinionPass.OpenedKind, Text(session, "adapter") ?? body.Adapter, Text(session, "repository") ?? body.Candidate.Repository)
-        {
-            Workspace = Text(session, "workspace"),
-        });
-        return new(opinion, id, Text(answer, "message") ?? "");
-    }
-}
