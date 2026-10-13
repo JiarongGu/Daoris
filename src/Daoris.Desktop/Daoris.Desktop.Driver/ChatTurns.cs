@@ -104,6 +104,8 @@ internal sealed class ChatTurns(
     // The person stopped the turn in flight: what they say next waits for it to end, never joins a turn winding up (MSG1c).
     private bool _stopped;
     private bool _finishing;
+    // Held for a hand-over's take (SWITCH1c-ii): no word starts a turn the take's end would cut.
+    private bool _held;
     private bool _gone;
     private ChatQueue _published = ChatQueue.Idle;
     private TaskCompletionSource _drained = Completed();
@@ -156,19 +158,46 @@ internal sealed class ChatTurns(
     /// <summary>The driver's English for <see cref="Lost"/>: what its console says and a page that does not know the code shows.</summary>
     public const string LostLine = "— it may have read what you added; its answer was not kept.";
 
-    /// <summary>Queue a turn. False once the conversation is finishing or gone: nothing more will be heard.</summary>
+    /// <summary>Queue a turn. False once the conversation is finishing, held or gone: nothing more will be heard.</summary>
     public bool Say(ChatMessage message) => Take(message) is not null;
 
     /// <summary>
+    /// Hold the turns for a hand-over's take (SWITCH1c-ii; the switch design §4, never mid-turn): true where no turn runs and no
+    /// word waits, and from then on a word takes nothing (<see cref="Take"/> is null) until <see cref="Release"/>. False where a
+    /// turn runs or a word waits, whose turn ends first; or where the conversation is finishing or gone.
+    /// </summary>
+    /// <remarks>
+    /// Asked and set under the turns' own lock, so a word said as a move begins either started its turn first, and the move waits
+    /// for that turn's end, or finds the turns held. Checked first and held after, a word between the two started a turn the take's
+    /// end then cut.
+    /// </remarks>
+    public bool Hold()
+    {
+        lock (_gate)
+        {
+            if (_pumping || _holding is not null || _waiting.Count > 0 || _finishing || _gone || _held) return false;
+            _held = true;
+            return true;
+        }
+    }
+
+    /// <summary>Take words again after <see cref="Hold"/>: the take did not end the conversation, or it has ended and nothing listens.</summary>
+    public void Release()
+    {
+        lock (_gate) _held = false;
+    }
+
+    /// <summary>
     /// Take a word: handed to the turn on the wire where the door takes words at its next step and nothing waits before it
-    /// (MSG1c), else queued as a turn of its own. Null once the conversation is finishing or gone: nothing more is heard.
+    /// (MSG1c), else queued as a turn of its own. Null once the conversation is finishing, held for a hand-over's take, or gone:
+    /// nothing more is heard.
     /// </summary>
     public TurnReach? Take(ChatMessage message)
     {
         bool start;
         lock (_gate)
         {
-            if (_finishing || _gone) return null;
+            if (_finishing || _gone || _held) return null;
 
             // At its next step (D137 §2.1): only into a turn already on the wire, never one the person stopped, and never
             // ahead of a word still waiting, which would make the agent read them out of the order said.
