@@ -253,7 +253,7 @@ public sealed partial class Driver
         if (record is { Running: true }) return null;
 
         var lastWords = record is { State: "completed" }
-            ? ParkedWords(_events, helper, Path.Combine(home, "sessions", $"{helper}.log"))
+            ? SessionLastWords.ParkedWords(_events, helper, Path.Combine(home, "sessions", $"{helper}.log"))
             : null;
         return await SettleHelperAsync(ask, files, record?.State, lastWords, ct).ConfigureAwait(false);
     }
@@ -440,7 +440,7 @@ public sealed partial class Driver
                     await service.AdvanceAsync(
                         sessionId, conclusion.State, note: conclusion.Note, ct: ct, limit: limited, parts: conclusion.Parts).ConfigureAwait(false);
                     // Its last words stand as the answer only where its turn completed and it used no tool (design §3).
-                    var lastWords = conclusion.State == "completed" ? ParkedWords(_events, sessionId, transcript) : null;
+                    var lastWords = conclusion.State == "completed" ? SessionLastWords.ParkedWords(_events, sessionId, transcript) : null;
                     return Ended(conclusion.State, conclusion.Note, lastWords);
                 }).ConfigureAwait(false);
         }

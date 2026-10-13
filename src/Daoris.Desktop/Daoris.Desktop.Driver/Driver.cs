@@ -1132,7 +1132,7 @@ public sealed partial class Driver(
                 ? null
                 : new RotatedOpening.Carried(
                     prior.Session,
-                    prior.Limit ? TurnsEnded(_events, prior.Session) + 1 : null,
+                    prior.Limit ? _events.TurnsEnded(prior.Session) + 1 : null,
                     prior.Limit ? RotatedOpening.ContextOf(usage, _events, prior.Session) : null));
 
         // The stop made of it before a close cut its conclusion off, told as its run lets go (FLAKE3).
@@ -1151,7 +1151,7 @@ public sealed partial class Driver(
             // What the cut-off session left in Daoris's own record (TOOL4f, D125 §3.5): its last plan and its last words,
             // which every carry-on is handed, since a cut-off for any reason loses the same thread. And whether it ran on
             // another account that is now cooling, which only a limit makes so.
-            var (lastPlan, lastWords) = prior is null ? ([], null) : CarriedFrom(_events, home, prior.Session);
+            var (lastPlan, lastWords) = prior is null ? ([], null) : SessionLastWords.CarriedFrom(_events, home, prior.Session);
             var elsewhere = prior is not null && OnAnotherAccount(prior, selection.Profile);
             // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is;
             // their standing answer for its repository (KNOWUSE1b), and the work's session language (LANG1c), from this
@@ -1285,7 +1285,7 @@ public sealed partial class Driver(
                                 // Whose take it was, and what it last said (STANDDOWN2): a session
                                 // holding the quest it took and stopping is waiting on the person.
                                 took: status == "Taken" && await service.TookAsync(sessionId, ct).ConfigureAwait(false),
-                                lastWords: ParkedWords(_events, sessionId, transcript))
+                                lastWords: SessionLastWords.ParkedWords(_events, sessionId, transcript))
                             : SessionConclusion.Of("failed", Observation.TimedOut(config.TimeoutMinutes));
 
                     conclusion = AccountRefused(conclusion, adapter, selection, ended);
@@ -1610,7 +1610,7 @@ public sealed partial class Driver(
         if (limited is not { } read) return (conclusion, false);
 
         var (entry, seen) = read;
-        service.AccountSaid(AccountLine.Limited(sessionId, adapter.Name, selection.Profile, seen, TurnsEnded(_events, sessionId) + 1, used?.Used));
+        service.AccountSaid(AccountLine.Limited(sessionId, adapter.Name, selection.Profile, seen, _events.TurnsEnded(sessionId) + 1, used?.Used));
         return (conclusion.Unsaid(turnFailed).Then(" ", CoolingWords.NoteOf(entry, _harnesses.Zone)), true);
     }
 
@@ -1629,19 +1629,6 @@ public sealed partial class Driver(
             // Nothing kept is nothing said: the walk reads the account as unknown, as it did before the door spoke.
         }
     };
-
-    /// <summary>The turns a session's record says ended — what a refused turn is counted after (D125 §3.6). Unreadable is none.</summary>
-    internal static long TurnsEnded(SessionEvents events, string sessionId)
-    {
-        try
-        {
-            return events.After(sessionId, 0).Events.LongCount(e => e.Kind == SessionEventKind.Turn);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
-        {
-            return 0;
-        }
-    }
 
     /// <summary>
     /// 🔴 A credential its provider refused is read from what the harness itself said of its ending (AGT3b, AGT3c), and the
@@ -1913,7 +1900,7 @@ public sealed partial class Driver(
             held.OnSaid((message, _) =>
             {
                 output?.Append(sessionId, $"— the person added, which reaches the session when its turn ends: {message.Text}");
-                _events.Keep(sessionId, Words(message) with { Reaches = "turn-end" }, say: null);
+                _events.Keep(sessionId, ChatMessage.Words(message) with { Reaches = "turn-end" }, say: null);
             });
             held.Attach(interrupt: null);
         }
@@ -2095,19 +2082,6 @@ public sealed partial class Driver(
     }
 
     /// <summary>
-    /// What the person told a driven session, as its record keeps it (SESS3, STEER1): theirs, under the id that pairs the
-    /// words shown while they wait with the same words where the session took them, and the names of what they attached.
-    /// </summary>
-    internal static SessionEvent Words(ChatMessage message) => new()
-    {
-        Kind = SessionEventKind.User,
-        Origin = "person",
-        Id = message.Id,
-        Text = message.Text,
-        Files = message.Files.Count > 0 ? [.. message.Files.Select(kept => kept.Name)] : null,
-    };
-
-    /// <summary>
     /// What a session with no connector is told on its transcript: what it can and cannot do, and the two commands that
     /// lay one down, the install's first, as <see cref="KnowledgeConnector.Candidates"/> ranks them (CONNECTOR1b).
     /// </summary>
@@ -2237,7 +2211,7 @@ public sealed partial class Driver(
                 Line(reach == DrivenReach.NextStep
                     ? $"— the person added, which reaches the session at its next step: {message.Text}"
                     : $"— the person added, which reaches the session when its turn ends: {message.Text}");
-                Event(Words(message) with { Reaches = reach == DrivenReach.NextStep ? "next-step" : "turn-end" });
+                Event(ChatMessage.Words(message) with { Reaches = reach == DrivenReach.NextStep ? "next-step" : "turn-end" });
             });
             var outcome = await session
                 .RunAsync(
@@ -2247,7 +2221,7 @@ public sealed partial class Driver(
                     asked: message =>
                     {
                         Line($"— the session took what the person added: {message.Text}");
-                        Event(Words(message));
+                        Event(ChatMessage.Words(message));
                     },
                     resume: resume?.Conversation,
                     // Each of the person's words its own block (MSG1b, D137 §2.2), and taken once the prompt is on the wire.
@@ -2315,36 +2289,7 @@ public sealed partial class Driver(
             Environment.GetEnvironmentVariable(KnowledgeConnector.PathVariable),
             DaorisHome.Resolve(),
             AppContext.BaseDirectory,
-            scope: ConnectorScope(home, sessionId, scope));
-
-    /// <summary>
-    /// What a connector carries beyond the store (PERM2): the session, so a rule proposal says who made
-    /// it, and this driver's home, so it lands beside the rules it would change — which is the folder
-    /// `driver.json` sits in and need not be the account's home. An intake's ask rides too (D65 §1b).
-    /// </summary>
-    internal static IReadOnlyDictionary<string, string> ConnectorScope(
-        string home, string sessionId, IReadOnlyDictionary<string, string>? scope)
-    {
-        var carried = new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            [KnowledgeConnector.RulesHomeVariable] = home,
-            [IntakeRoom.SessionVariable] = sessionId,
-        };
-        foreach (var (name, value) in scope ?? new Dictionary<string, string>()) carried[name] = value;
-        return carried;
-    }
-
-    /// <summary>
-    /// What a carry-on is handed of the session it carries on (TOOL4f, D125 §3.5), from Daoris's own record of it (D76):
-    /// its plan as the record last kept it, and its last words, bounded as a parked session's are. Never a path: a
-    /// machine path lands in whatever a session commits.
-    /// </summary>
-    internal static (IReadOnlyList<PlanEntry> Plan, string? Words) CarriedFrom(SessionEvents events, string home, string session)
-    {
-        // An id that is not one names no record, and never a path under the home.
-        if (!SessionEvents.IsId(session)) return ([], null);
-        return (events.LastPlan(session), ParkedWords(events, session, Path.Combine(home, "sessions", $"{session}.log")));
-    }
+            scope: KnowledgeConnector.SessionScope(home, sessionId, scope));
 
     /// <summary>
     /// A quest's target with the person's words on the ask it was asked by (DRIFT1b, D133 §2), read from the ask for this
@@ -2392,64 +2337,4 @@ public sealed partial class Driver(
         : carried.Limit && OnAnotherAccount(carried, profile)
             ? new ContinuedFrom(carried.Session, HandOverWhy.Limit, HandOverBy.Daoris)
         : null;
-
-    /// <summary>How much of a parked session's words its card keeps, from the end, where a question list sits (FG5).</summary>
-    internal const int LastWordsLimit = 4000;
-
-    /// <summary>
-    /// What a parked session said to the person (PARK1): its record's last message whole, and the
-    /// transcript's last plain lines only where the record holds none. The record keeps the message as
-    /// written; the transcript's reading stops at an indented line, which a question's own list has.
-    /// </summary>
-    internal static string? ParkedWords(SessionEvents events, string sessionId, string transcript)
-    {
-        if (events.LastSaid(sessionId) is not { } said) return LastWords(transcript);
-        return said.Length <= LastWordsLimit ? said : "…" + said[^LastWordsLimit..].TrimStart();
-    }
-
-    /// <summary>
-    /// The agent's own last words in a finished transcript (STANDDOWN2): its final block of plain lines,
-    /// after its last tool and before the driver's closing line — what a session that parks to ask the
-    /// person said to them. Kept to its END, where a question list sits, and null when there is none.
-    /// </summary>
-    /// <remarks>
-    /// Four thousand characters, not seven hundred (FG5): a parked session's message is the person's
-    /// whole brief, and the apply session's was 2,500 long — cut to its end, the card kept the command
-    /// and lost the question.
-    /// </remarks>
-    internal static string? LastWords(string transcript, int limit = LastWordsLimit)
-    {
-        IReadOnlyList<string> lines;
-        try
-        {
-            lines = [.. File.ReadLines(transcript).TakeLast(200)];
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return null;
-        }
-
-        static bool Plain(string line) =>
-            line.Length == 0 || !(line.StartsWith('→') || line.StartsWith(' ') || line.StartsWith('—')
-                                  || line.StartsWith('[') || line.StartsWith('·'));
-
-        var block = new List<string>();
-        for (var at = lines.Count - 1; at >= 0; at--)
-        {
-            var line = lines[at];
-            if (Plain(line))
-            {
-                block.Add(line);
-            }
-            else if (block.Any(said => said.Trim().Length > 0))
-            {
-                break;
-            }
-        }
-
-        block.Reverse();
-        var words = string.Join("\n", block).Trim();
-        if (words.Length == 0) return null;
-        return words.Length <= limit ? words : "…" + words[^limit..].TrimStart();
-    }
 }

@@ -387,7 +387,7 @@ public sealed partial class Driver
                 ? Observation.Resumed(
                     code, park.State, quest.Status, status, quest.Awaits, after?.Awaits, turnFailed,
                     took: !closed && status == "Taken" && await service.TookAsync(sessionId, ct).ConfigureAwait(false),
-                    lastWords: closed ? null : ParkedWords(_events, sessionId, transcript))
+                    lastWords: closed ? null : SessionLastWords.ParkedWords(_events, sessionId, transcript))
                 : SessionConclusion.Of("failed", Observation.TimedOut(config.TimeoutMinutes));
 
         conclusion = AccountRefused(conclusion, adapter, selection, ended);
@@ -634,6 +634,6 @@ internal static class NativeWords
             Parts = [NoteCodes.ResumedNative.Part(
                 $"— what you said while it worked is the next turn of its own conversation, resumed on `{adapter}`.", ("adapter", adapter))],
         },
-        .. words.Select(Driver.Words),
+        .. words.Select(ChatMessage.Words),
     ];
 }

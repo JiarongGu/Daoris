@@ -105,6 +105,24 @@ public static class KnowledgeConnector
         return new AcpMcpServer(ServerName, located, [], carried);
     }
 
+    /// <summary>
+    /// What a connector carries beyond the store (PERM2): the session, so a rule proposal says who made
+    /// it, and this driver's home, so it lands beside the rules it would change — which is the folder
+    /// `driver.json` sits in and need not be the account's home. An intake's ask rides too (D65 §1b).
+    /// A driven session's and a conversation's alike, so it is the connector's, not the loop's (LOOPOUT1).
+    /// </summary>
+    internal static IReadOnlyDictionary<string, string> SessionScope(
+        string home, string sessionId, IReadOnlyDictionary<string, string>? scope)
+    {
+        var carried = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [RulesHomeVariable] = home,
+            [IntakeRoom.SessionVariable] = sessionId,
+        };
+        foreach (var (name, value) in scope ?? new Dictionary<string, string>()) carried[name] = value;
+        return carried;
+    }
+
     /// <summary>The first place this machine actually has the host, or null.</summary>
     public static string? Locate(string? explicitPath, string? home, string baseDirectory) =>
         Candidates(explicitPath, home, baseDirectory).FirstOrDefault(File.Exists);

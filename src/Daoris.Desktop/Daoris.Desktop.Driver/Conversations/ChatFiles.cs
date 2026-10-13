@@ -79,6 +79,20 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     /// <summary>A preface as a message carries it: trimmed, bounded, and null when there is none.</summary>
     public static string? Bound(string? preface) =>
         preface?.Trim() is { Length: > 0 } said ? said.Length > PrefaceLimit ? said[..PrefaceLimit] : said : null;
+
+    /// <summary>
+    /// What the person told a driven session, as its record keeps it (SESS3, STEER1): theirs, under the id that pairs the
+    /// words shown while they wait with the same words where the session took them, and the names of what they attached.
+    /// The message's own, so a conversation records it as the loop does without naming the loop (LOOPOUT1).
+    /// </summary>
+    internal static SessionEvent Words(ChatMessage message) => new()
+    {
+        Kind = SessionEventKind.User,
+        Origin = "person",
+        Id = message.Id,
+        Text = message.Text,
+        Files = message.Files.Count > 0 ? [.. message.Files.Select(kept => kept.Name)] : null,
+    };
 }
 
 /// <summary>

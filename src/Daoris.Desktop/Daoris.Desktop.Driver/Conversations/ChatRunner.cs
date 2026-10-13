@@ -989,7 +989,7 @@ public sealed partial class ChatRunner : IDisposable
         if (limited is not { } read) return null;
 
         _service.AccountSaid(AccountLine.Limited(
-            sessionId, adapter.Name, profile, read.Seen, Driver.TurnsEnded(_events, sessionId) + 1, used: null));
+            sessionId, adapter.Name, profile, read.Seen, _events.TurnsEnded(sessionId) + 1, used: null));
         return CoolingWords.ConversationOf(read.Entry, _harnesses.Zone);
     }
 
@@ -1175,7 +1175,7 @@ public sealed partial class ChatRunner : IDisposable
         var offered = new List<AcpMcpServer>();
         if (KnowledgeConnector.Offer(
                 Environment.GetEnvironmentVariable(KnowledgeConnector.PathVariable), DaorisHome.Resolve(),
-                AppContext.BaseDirectory, scope: Driver.ConnectorScope(_home, sessionId, null)) is { } connector)
+                AppContext.BaseDirectory, scope: KnowledgeConnector.SessionScope(_home, sessionId, null)) is { } connector)
         {
             offered.Add(connector);
         }
@@ -1234,7 +1234,7 @@ public sealed partial class ChatRunner : IDisposable
         session.OnTaken(words =>
         {
             Line($"— the conversation took what the person added: {words.Text}");
-            Record(Driver.Words(words));
+            Record(ChatMessage.Words(words));
         });
 
         Exception? failed = null;
@@ -1420,7 +1420,7 @@ public sealed partial class ChatRunner : IDisposable
             var words = message with { Id = $"said-{Guid.NewGuid():N}"[..13] };
             if (Told(words) is { } told) _record(told);
             _line($"— the person added, which reaches the conversation at its next step: {words.Text}");
-            _record(Driver.Words(words) with { Reaches = "next-step" });
+            _record(ChatMessage.Words(words) with { Reaches = "next-step" });
             lock (_gate) _onTheirWay.Add(words.Id!);
             return AnsweredAsync(words, session.SayAsync(words, CancellationToken.None));
         }
