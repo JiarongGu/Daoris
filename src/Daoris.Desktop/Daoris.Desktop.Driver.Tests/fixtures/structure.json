@@ -17,6 +17,7 @@
   },
   "layered": [
     "Plugins",
+    "Review",
     "Workflows"
   ],
   "root": {

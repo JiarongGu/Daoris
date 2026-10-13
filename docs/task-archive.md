@@ -14095,3 +14095,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT2g — `Platform` and `Loop` into their folders** (driver; after 2f and LOOPOUT1). As STRUCT2c; the map's `root` ends empty but for `resources.json`'s neighbours that must stay. D166.
 
 **Outcome** 2026-10-14: Platform (11 files, with `CommandPresence.cs` moved in at the merge) and Loop (11 files) moved by renames alone; the map's `root` and `split` are empty, so every driver file is in its module's folder and STRUCT2 is done; the CLI's name test reads `NoteCodes.cs` under `Platform/`. Detail: D166's STRUCT2g note.
+
+## STRUCT3c — layer the Review module (2026-10-14, D166)
+
+> - [ ] **STRUCT3c — layer the Review module** (driver). `Domain`, `Application` and `Infrastructure` with ports, held by the gate, behaviour unchanged, `Review` on the map's `layered` list. D166; design §3, §6.
+
+**Outcome** 2026-10-14: Review is layered (Domain 18 files, Application 11, Infrastructure 9), `IReviewWorld` with its factory `ReviewWorlds.Of`, the home stores' use cases keeping their names; every caller's I/O call on a pure type is an extension member, so one call site outside Review changed (`WorkflowKeepCommand`). The loop's opinion use cases and the client's opinion doors are left to rows. Detail: D166's STRUCT3c note.

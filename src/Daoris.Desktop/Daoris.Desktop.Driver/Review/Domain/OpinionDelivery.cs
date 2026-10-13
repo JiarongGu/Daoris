@@ -1,7 +1,3 @@
-using System.Globalization;
-using System.Text;
-using System.Text.Json;
-
 namespace Daoris.Driver;
 
 /// <summary>
@@ -164,235 +160,16 @@ public sealed record OpinionDelivered(string? Person, DateTimeOffset? PersonAt, 
 }
 
 /// <summary>
-/// What the driver keeps of each opinion it delivers (XAGENT1e): <c>&lt;home&gt;/opinions/&lt;id&gt;/delivered.json</c>, beside the
-/// pass's diff (§4): whether its findings went to the person and why, the working session's answers as read when its turn
-/// ended, and the recheck asked or why none was. This machine's own, as the opinion is (D47 §4).
-/// </summary>
-/// <remarks>A file that does not read is nothing done: the next look reads the host and the record again, never the words lost.</remarks>
-public sealed class OpinionDeliveries(string home)
-{
-    public const string FileName = "delivered.json";
-
-    /// <summary>Where an opinion's delivery is kept; null for an id that is no plain name.</summary>
-    public string? PathOf(string opinion)
-    {
-        try
-        {
-            return Path.Combine(OpinionPackets.Folder(home, opinion), FileName);
-        }
-        catch (DriverException)
-        {
-            return null;
-        }
-    }
-
-    /// <summary>What was kept for <paramref name="opinion"/>; <see cref="OpinionDelivered.None"/> where nothing reads.</summary>
-    public OpinionDelivered Read(string opinion)
-    {
-        if (PathOf(opinion) is not { } path || !File.Exists(path)) return OpinionDelivered.None;
-        try
-        {
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
-            var root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Object) return OpinionDelivered.None;
-            return new OpinionDelivered(Text(root, "person"), Moment(root, "personAt"), Reading(root))
-            {
-                Recheck = Text(root, "recheck"),
-                RecheckWhy = Text(root, "recheckWhy"),
-            };
-        }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
-        {
-            return OpinionDelivered.None;
-        }
-    }
-
-    /// <summary>Its findings went to the person, and why: kept once, the first reason standing.</summary>
-    public OpinionDelivered ToPerson(string opinion, string why, DateTimeOffset at) =>
-        Keep(opinion, kept => kept.Person is not null ? kept : kept with { Person = why, PersonAt = at });
-
-    /// <summary>The answers as read when the working session's turn ended: the latest reading stands.</summary>
-    public OpinionDelivered Answered(string opinion, OpinionReading reading) => Keep(opinion, kept => kept with { Answered = reading });
-
-    /// <summary>The recheck asked, by its opinion's id, or why none was: kept once.</summary>
-    public OpinionDelivered Rechecked(string opinion, string? recheck, string? why) =>
-        Keep(opinion, kept => kept.Recheck is not null || kept.RecheckWhy is not null ? kept : kept with { Recheck = recheck, RecheckWhy = why });
-
-    private OpinionDelivered Keep(string opinion, Func<OpinionDelivered, OpinionDelivered> change)
-    {
-        var next = change(Read(opinion));
-        if (PathOf(opinion) is not { } path) return next;
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            // LF on every platform, as every file under the home is written.
-            AtomicFile.WriteText(path, Json(next).Replace("\r\n", "\n") + "\n");
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // Lost: the next look reads the host and the record again, and keeps it then.
-        }
-
-        return next;
-    }
-
-    private static string Json(OpinionDelivered delivered)
-    {
-        using var buffer = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Indented = true }))
-        {
-            writer.WriteStartObject();
-            if (delivered.Person is { } person)
-            {
-                writer.WriteString("person", person);
-                if (delivered.PersonAt is { } at) writer.WriteString("personAt", OpinionViews.Moment(at));
-            }
-
-            if (delivered.Answered is { } reading)
-            {
-                writer.WriteStartObject("answered");
-                writer.WriteString("session", reading.Session);
-                if (reading.Tip is not null) writer.WriteString("tip", reading.Tip);
-                writer.WriteString("at", OpinionViews.Moment(reading.At));
-                writer.WriteStartArray("findings");
-                foreach (var finding in reading.Findings)
-                {
-                    writer.WriteStartObject();
-                    writer.WriteNumber("finding", finding.Finding);
-                    writer.WriteString("weight", finding.Weight);
-                    writer.WriteString("counts", finding.Counts);
-                    if (finding.Said is not null) writer.WriteString("said", finding.Said);
-                    if (finding.Commit is not null) writer.WriteString("commit", finding.Commit);
-                    if (finding.Fix is not null) writer.WriteString("fix", finding.Fix);
-                    if (finding.Why is not null) writer.WriteString("why", finding.Why);
-                    writer.WriteEndObject();
-                }
-
-                writer.WriteEndArray();
-                writer.WriteEndObject();
-            }
-
-            if (delivered.Recheck is not null) writer.WriteString("recheck", delivered.Recheck);
-            if (delivered.RecheckWhy is not null) writer.WriteString("recheckWhy", delivered.RecheckWhy);
-            writer.WriteEndObject();
-        }
-
-        return Encoding.UTF8.GetString(buffer.ToArray());
-    }
-
-    private static OpinionReading? Reading(JsonElement root)
-    {
-        if (!root.TryGetProperty("answered", out var answered) || answered.ValueKind != JsonValueKind.Object
-            || Text(answered, "session") is not { } session || Moment(answered, "at") is not { } at)
-        {
-            return null;
-        }
-
-        var findings = new List<OpinionAnswerRead>();
-        if (answered.TryGetProperty("findings", out var rows) && rows.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var row in rows.EnumerateArray())
-            {
-                if (row.ValueKind != JsonValueKind.Object || !row.TryGetProperty("finding", out var number) || number.ValueKind != JsonValueKind.Number
-                    || !number.TryGetInt32(out var finding) || Text(row, "weight") is not { } weight || Text(row, "counts") is not { } counts)
-                {
-                    continue;
-                }
-
-                findings.Add(new OpinionAnswerRead(finding, weight, counts)
-                {
-                    Said = Text(row, "said"), Commit = Text(row, "commit"), Fix = Text(row, "fix"), Why = Text(row, "why"),
-                });
-            }
-        }
-
-        return new OpinionReading(session, Text(answered, "tip"), at, findings);
-    }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
-
-    private static DateTimeOffset? Moment(JsonElement element, string name) =>
-        Text(element, name) is { } when
-        && DateTimeOffset.TryParse(when, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at)
-            ? at
-            : null;
-}
-
-/// <summary>
 /// The working session's answers, read when its turn ends (XAGENT1e, D155 point 7; design §6.4): each finding's latest answer,
 /// a fix's commit checked against the tree's history, and a finding with none read as <c>unresolved</c>, not answered. What a
 /// fix fixes is the session's claim; that its commit is one the turn made is a fact git answers.
 /// </summary>
+/// <remarks>
+/// The lines are here; the reading of the tree, <c>ReadAsync</c> and <c>CheckFixAsync</c>, is Review's Infrastructure's, named
+/// through this type as before (<see cref="OpinionAnswerGit"/>; STRUCT3c).
+/// </remarks>
 public static class OpinionAnswers
 {
-    /// <summary>
-    /// The answers to <paramref name="opinion"/>'s findings as they stand, read in <paramref name="tree"/>: a fix counts where
-    /// git reads its commit after the candidate's tip and at or before the tree's tip. A tree that is gone checks no fix.
-    /// </summary>
-    internal static async Task<OpinionReading> ReadAsync(
-        OpinionView opinion, string session, string? tree, WorkingTree.GitRead git, DateTimeOffset at, CancellationToken ct)
-    {
-        var readable = tree is { Length: > 0 } && Directory.Exists(tree);
-        var head = readable ? await CommitAsync(tree!, "HEAD", git, ct).ConfigureAwait(false) : null;
-        var tip = readable && head is not null ? await CommitAsync(tree!, opinion.Tip, git, ct).ConfigureAwait(false) : null;
-
-        var rows = new List<OpinionAnswerRead>();
-        foreach (var finding in opinion.Findings ?? [])
-        {
-            var answer = opinion.AnswerTo(finding.Number);
-            if (answer is null)
-            {
-                rows.Add(new OpinionAnswerRead(finding.Number, finding.Weight, OpinionViews.Unresolved) { Why = OpinionAnswerWhy.NotAnswered });
-                continue;
-            }
-
-            if (answer.Said != OpinionViews.Fixed)
-            {
-                var counts = answer.Said == OpinionViews.Rejected ? OpinionViews.Rejected : OpinionViews.Unresolved;
-                rows.Add(new OpinionAnswerRead(finding.Number, finding.Weight, counts) { Said = answer.Said });
-                continue;
-            }
-
-            var (fix, why) = head is null || tip is null
-                ? (null, OpinionAnswerWhy.FixUnread)
-                : await CheckFixAsync(tree!, tip, head, answer.Commit, git, ct).ConfigureAwait(false);
-            rows.Add(new OpinionAnswerRead(finding.Number, finding.Weight, fix is null ? OpinionViews.Unresolved : OpinionViews.Fixed)
-            {
-                Said = answer.Said, Commit = answer.Commit, Fix = fix, Why = why,
-            });
-        }
-
-        return new OpinionReading(session, head, at, rows);
-    }
-
-    /// <summary>
-    /// Whether <paramref name="commit"/> is one the turn made (design §6.4): a commit the tree holds, after
-    /// <paramref name="tip"/>, at or before <paramref name="head"/>. Its full id where it is; else why not, by code.
-    /// </summary>
-    internal static async Task<(string? Fix, string? Why)> CheckFixAsync(
-        string tree, string tip, string head, string? commit, WorkingTree.GitRead git, CancellationToken ct)
-    {
-        // A name git would read as an option names no commit, and neither does anything that is no commit's id.
-        if (commit is not { Length: > 0 } named || !WorkingTree.IsCommitId(named)) return (null, OpinionAnswerWhy.FixUnknown);
-        var full = await CommitAsync(tree, named, git, ct).ConfigureAwait(false);
-        if (full is null) return (null, OpinionAnswerWhy.FixUnknown);
-        if (string.Equals(full, tip, StringComparison.OrdinalIgnoreCase)) return (null, OpinionAnswerWhy.FixNotAfter);
-
-        // `--is-ancestor` answers 0 for yes and 1 for no; anything else is git failing to answer.
-        var after = await RunAsync(tree, ["merge-base", "--is-ancestor", tip, full], git, ct).ConfigureAwait(false);
-        if (after.Code == 1) return (null, OpinionAnswerWhy.FixNotAfter);
-        if (after.Code != 0) return (null, OpinionAnswerWhy.FixUnread);
-
-        var on = await RunAsync(tree, ["merge-base", "--is-ancestor", full, head], git, ct).ConfigureAwait(false);
-        return on.Code switch
-        {
-            0 => (full, null),
-            1 => (null, OpinionAnswerWhy.FixOffBranch),
-            _ => (null, OpinionAnswerWhy.FixUnread),
-        };
-    }
-
     /// <summary>
     /// The driver's line in the working session's conversation once its answers are read: whose findings they were, and how
     /// each counts. The person's view of the answers beside the claims is the page's (XAGENT1g); this is the record's.
@@ -458,27 +235,6 @@ public static class OpinionAnswers
                     ("opinion", opinion), ("exit", exitCode));
 
     private static string Plural(int count, string noun) => count == 1 ? $"1 {noun}" : $"{count} {noun}s";
-
-    /// <summary>A commit's full id as <paramref name="tree"/>'s git names it, or null.</summary>
-    private static async Task<string?> CommitAsync(string tree, string name, WorkingTree.GitRead git, CancellationToken ct)
-    {
-        if (name.StartsWith('-')) return null;
-        var (code, output) = await RunAsync(tree, ["rev-parse", "--verify", "--quiet", $"{name}^{{commit}}"], git, ct).ConfigureAwait(false);
-        var id = output.Trim().ToLowerInvariant();
-        return code == 0 && EvidenceCodes.IsObjectId(id) ? id : null;
-    }
-
-    private static async Task<(int Code, string Output)> RunAsync(
-        string tree, IReadOnlyList<string> arguments, WorkingTree.GitRead git, CancellationToken ct)
-    {
-        var output = new StringBuilder();
-        var code = await git(tree, arguments, piece =>
-        {
-            output.Append(piece.Span);
-            return true;
-        }, ct).ConfigureAwait(false);
-        return (code, output.ToString());
-    }
 }
 
 /// <summary>

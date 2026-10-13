@@ -59,6 +59,14 @@ and the two commands), written against the ports declared there (`IWorkflowStore
 files and reads behind those ports in `Infrastructure/`. Every other module, the loop and the hosts reach it by its
 `Application` with a home, as before; `WorkflowPorts` is the one place its `Application` names its `Infrastructure`.
 
+`Review/` is layered whole (STRUCT3c, D166's STRUCT3c note): the review's and the second opinion's records, rules, gates and words
+in `Domain/`, pure (`ReviewGate`, `ReviewRules`, `OpinionGate`, `OpinionRules`, the packet, the instruction, the reviewer's walk);
+the presses, the command, the showing (`ReviewDesk`, its port `IReviewTabs`), the gate's read (`ReviewGate.ReadAsync`, its port
+`IReviewWorld`), the set-up's post and the three stores' use cases (`OpinionDues`, `OpinionGates`, `OpinionDeliveries`) in
+`Application/`; and the home's opinion files, git, a reviewer's copy, a checkout's and a build's folders and the service behind
+`IReviewWorld` in `Infrastructure/`. An I/O member a caller asked of a Domain type (`ReviewRules.Holds`, `OpinionTree.OpenAsync`,
+…) is a C# 14 extension member, so every caller names it as before.
+
 ## What the page can ask this machine
 
 | Module | What it carries |

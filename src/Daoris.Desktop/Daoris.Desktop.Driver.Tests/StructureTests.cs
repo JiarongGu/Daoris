@@ -293,6 +293,7 @@ public sealed class StructureTests
         Assert.All(map.Split.Keys, file => Assert.True(map.Root.ContainsKey(file), $"{file} is noted for a split but is on no list"));
         Assert.Equal(16, map.Tests.Count(test => test.Value == "Plugins"));
         Assert.Contains("Plugins", map.Layered);
+        Assert.Contains("Review", map.Layered);
         Assert.All(map.Layered, module => Assert.Equal(["Domain", "Application", "Infrastructure"], map.Modules[module]));
         Assert.All(map.Tests.Values, module => Assert.True(map.Modules.ContainsKey(module), $"a test is listed under {module}, which is no module of the map"));
     }

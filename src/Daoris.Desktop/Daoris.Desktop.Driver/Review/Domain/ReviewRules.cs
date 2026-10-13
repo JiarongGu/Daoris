@@ -69,6 +69,9 @@ public sealed record ReviewEdit
 ///
 /// <para>Nothing here composes a step, gates a landing or serves anything: the gate (<see cref="ReviewGate"/>) and the planner's
 /// sit (<see cref="ReviewSetUps"/>) read it since REVIEWENV1c, and the intake's composing is REVIEWENV1f's.</para>
+///
+/// <para>Whether a checkout holds a procedure, <c>Holds</c> and <c>Lacking</c>, looks in the checkout, so it is declared in the
+/// Application and named through this type as before (<see cref="ReviewRuleReads"/>; STRUCT3c).</para>
 /// </remarks>
 public static class ReviewRules
 {
@@ -211,7 +214,7 @@ public static class ReviewRules
     /// A path a procedure may be (design §1.1, as KNOWUSE1c names a router): from the repository's root, with forward slashes,
     /// no space around it, and no <c>..</c>, <c>.</c>, empty part, root, drive or control character.
     /// </summary>
-    private static bool IsProcedurePath(string path)
+    internal static bool IsProcedurePath(string path)
     {
         if (path != path.Trim() || path.StartsWith('/') || path.Contains('\\') || path.Contains(':')) return false;
         if (path.Any(c => c < 0x20 || c == '\u007f')) return false;
@@ -434,39 +437,6 @@ public static class ReviewRules
         else changed[key] = next;
         return repository is not null ? config with { Reviews = changed } : config with { WorkspaceReviews = changed };
     }
-
-    /// <summary>
-    /// Whether a checkout holds a procedure (design §1.1): a regular file at that path, reached through folders, with no link
-    /// on the way — the CLI's <c>holdsProcedure</c>. Read where the registry says the checkout is, never for meaning.
-    /// </summary>
-    public static bool Holds(string root, string procedure)
-    {
-        if (!IsProcedurePath(procedure)) return false;
-        var parts = procedure.Split('/');
-        var at = root;
-        for (var index = 0; index < parts.Length; index++)
-        {
-            at = Path.Combine(at, parts[index]);
-            FileSystemInfo found = index < parts.Length - 1 ? new DirectoryInfo(at) : new FileInfo(at);
-            if (!found.Exists || found.Attributes.HasFlag(FileAttributes.ReparsePoint)) return false;
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// The repositories of <paramref name="checkouts"/> that a put of <paramref name="procedure"/> reaches and whose checkout
-    /// here does not hold it: the one named, or each of the workspace's, matched in any case.
-    /// </summary>
-    public static IReadOnlyList<string> Lacking(
-        IEnumerable<(string Repository, string? Workspace, string? Root)> checkouts, ReviewEdit edit, string procedure) =>
-        [.. checkouts
-            .Where(each => each.Root is { Length: > 0 })
-            .Where(each => edit.Repository is { } repository
-                ? string.Equals(each.Repository, repository.Trim(), StringComparison.OrdinalIgnoreCase)
-                : string.Equals(RemoteTarget.Workspace(each.Workspace), RemoteTarget.Workspace(edit.Workspace), StringComparison.OrdinalIgnoreCase))
-            .Where(each => !Holds(each.Root!, procedure))
-            .Select(each => each.Repository)];
 
     /// <summary>The refusal a repository's put says when its checkout here does not hold the procedure, nothing written.</summary>
     public static string NotHeld(string repository, string procedure) =>
