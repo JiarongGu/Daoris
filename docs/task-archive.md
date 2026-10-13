@@ -14113,3 +14113,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT3e — layer the Setup module** (driver). `Domain`, `Application` and `Infrastructure` with ports, held by the gate, behaviour unchanged, `Setup` on the map's `layered` list. D166; design §3, §6.
 
 **Outcome** 2026-10-14: Setup is layered (Domain 11 files, Application 8, Infrastructure 8), its two ports moved unchanged into `SetupPorts.cs`, no port added; a Domain type's I/O members sit in the Infrastructure that does the I/O, so the launcher compiles `StagedBuild`'s three files on the base library alone; Quests and Accounts reach it through Application forwards. Detail: D166's STRUCT3e note.
+
+## PLUGNAME1 — the CLI's comments name `PluginCatalog.cs` (2026-10-14, D166)
+
+> - [ ] **PLUGNAME1 — the CLI's comments name `PluginCatalog.cs`** (cli). `src/Daoris.Cli/src/plugins.ts` (lines 9, 44, 72) and `test/plugins.test.ts:14` still name `Plugins.cs`, renamed by STRUCT3a.
+
+**Outcome** 2026-10-14: the four comments name `PluginCatalog.cs`; no code or test read changed (typecheck clean, `plugins.test.ts` 34/34).
