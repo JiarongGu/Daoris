@@ -21,8 +21,8 @@
          application runs before it closes. Three files of the Setup module (STRUCT3e): the records and names, their reads
          and writes on the disk, and the swap. Each uses the base library alone; `StagedBuildTests` holds them. -->
     <Compile Include="..\Daoris.Desktop.Driver\Setup\Domain\StagedBuild.cs" Link="StagedBuild.cs" />
-    <Compile Include="..\Daoris.Desktop.Driver\Setup\Infrastructure\StagedBuildFiles.cs" Link="StagedBuildFiles.cs" />
-    <Compile Include="..\Daoris.Desktop.Driver\Setup\Infrastructure\InstallSwap.cs" Link="InstallSwap.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Setup\StagedBuildFiles.cs" Link="StagedBuildFiles.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Setup\InstallSwap.cs" Link="InstallSwap.cs" />
   </ItemGroup>
 
 </Project>
