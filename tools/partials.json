@@ -47,10 +47,6 @@
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Workflow.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs"
   ],
-  "GoAheadTests": [
-    "src/Daoris.Service/Daoris.Service.Tests/GoAheadTests.GoesOn.cs",
-    "src/Daoris.Service/Daoris.Service.Tests/GoAheadTests.cs"
-  ],
   "HarnessRoster": [
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/Harnesses.Usage.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/Harnesses.cs"
@@ -200,16 +196,6 @@
     "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Review.cs",
     "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs"
   ],
-  "McpToolDescriptionTests": [
-    "src/Daoris.Service/Daoris.Service.Tests/McpToolDescriptionTests.Helpers.cs",
-    "src/Daoris.Service/Daoris.Service.Tests/McpToolDescriptionTests.cs"
-  ],
-  "McpToolsTests": [
-    "src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.Guards.cs",
-    "src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.Helpers.cs",
-    "src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.Opinions.cs",
-    "src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.cs"
-  ],
   "QuestStepView": [
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/Domain/ReviewViews.cs"
@@ -217,10 +203,6 @@
   "QuestView": [
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/Domain/ReviewViews.cs"
-  ],
-  "ReviewStepTests": [
-    "src/Daoris.Service/Daoris.Service.Tests/ReviewStepTests.Guards.cs",
-    "src/Daoris.Service/Daoris.Service.Tests/ReviewStepTests.cs"
   ],
   "ServiceClient": [
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Helpers/HelperClient.cs",

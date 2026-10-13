@@ -9,7 +9,7 @@ namespace Daoris.Service.Tests;
 /// file the driver takes, for the working session its connector names; `helper_answer` writes the answer of the helper the
 /// driver started for an ask. Each is an agent's, and a helper cannot ask for a helper (depth one).
 /// </summary>
-public sealed partial class McpToolsTests
+public sealed class McpHelperToolTests : McpToolsFixture
 {
     private string HelpersHome => Path.Combine(_root, "rules-home");
 
