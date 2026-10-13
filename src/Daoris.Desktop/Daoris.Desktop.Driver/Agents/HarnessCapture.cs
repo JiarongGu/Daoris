@@ -5,8 +5,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What a harness says on the pipe door, captured into its transcript, the console and the record: one pump, one tee, one set
-/// of rules about which destination is the durable one, shared by a driven session and a conversation. Moved out of the loop
-/// (LOOPOUT1) so a conversation captures its harness as a driven session does without naming the loop.
+/// of rules about which destination is the durable one, shared by a driven session and a conversation. The door's, not the
+/// loop's (LOOPOUT1): no module names the loop.
 /// </summary>
 internal static class HarnessCapture
 {

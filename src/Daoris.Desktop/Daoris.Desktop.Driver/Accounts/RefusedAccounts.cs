@@ -2,8 +2,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What an account its agent or provider refused says, and the one reading of a refused sign-in (AGT3b, ROSTER1b): the
-/// lines a start's conclusion, a conversation's refused turn and a later held start carry. Moved out of the loop (LOOPOUT1)
-/// so a conversation reads a refused sign-in as a driven start does without naming the loop.
+/// lines a start's conclusion, a conversation's refused turn and a later held start carry. Accounts', not the loop's
+/// (LOOPOUT1): a conversation reads a refused sign-in as a driven start does, and no module names the loop.
 /// </summary>
 internal static class RefusedAccounts
 {
