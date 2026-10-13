@@ -11,7 +11,7 @@ public sealed class QuestCheckWorld(ServiceClient service)
     public ServiceClient Service => service;
 
     /// <summary>How git is read: the review's seam (REVIEW3).</summary>
-    internal WorkingTree.GitRead Git { get; init; } = WorkingTree.ReadGitAsync;
+    internal WorkingTree.GitRead Git { get; init; } = QuestGit.Read;
 }
 
 /// <summary>
@@ -59,7 +59,7 @@ public static class QuestCheckCommand
                 }
 
                 commit = args[++i];
-                if (!WorkingTree.IsCommitId(commit))
+                if (!QuestGit.IsCommitId(commit))
                 {
                     problem = $"`{commit}` is not a commit id: name one by its hex id, 7 to 64 characters.";
                     return null;
@@ -145,7 +145,7 @@ public static class QuestCheckCommand
             return 1;
         }
 
-        var tree = record?.Tree is { Length: > 0 } held && await WorkingTree.IsTopLevelAsync(held, world.Git, ct).ConfigureAwait(false)
+        var tree = record?.Tree is { Length: > 0 } held && await QuestGit.IsTopLevelAsync(held, world.Git, ct).ConfigureAwait(false)
             ? held
             : root;
 

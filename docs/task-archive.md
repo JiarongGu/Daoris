@@ -14125,3 +14125,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT3PLAT — Platform's I/O and the layers that name it** (driver; decide before Platform is layered). Every module's Application names Platform's I/O helpers (`MachineLog`, `MachineLogReader`, `DriverConfig.Load`, `AtomicFile`), but only an Infrastructure may name Platform's Infrastructure: decide whether Platform gets ports in its Domain or the reach rule gets an Application exception, and write it in D166. D166's STRUCT3a note.
 
 **Outcome** 2026-10-14: decided, measured on the five layered modules: an Application may name three of Platform's helpers, `MachineLog`, `DriverConfig` and `DaorisHome`, by a map list the reach rule reads; ports per helper and a blanket exception were rejected. STRUCT3i builds it with Platform's layering. Detail: D166's STRUCT3PLAT note.
+
+## STRUCT3f — layer the Quests module (2026-10-14, D166)
+
+> - [ ] **STRUCT3f — layer the Quests module** (driver). As STRUCT3; `QuestView`, `QuestStepView` and `AskView` have parts in Service's Domain (`ReviewViews`, `AskWorkflowViews`), and Setup's Domain names `Consideration` and `StartVerdict`, so each lands in Quests' Domain. D166's STRUCT3d and STRUCT3e notes.
+
+**Outcome** 2026-10-14: Quests is layered (Domain 10 files, Application 9, Infrastructure 3), held by the gate, no caller or test changed. `Planner.cs` went whole to Domain; `AskWords.ReadAsync` became an Application extension member and `IntakeRoom.Prepare` an Infrastructure one; the git defaults moved into `QuestGit`, and `EvidenceReader` went whole to Infrastructure for its disk walk. On Sonnet, scouted: 58 tool calls. Detail: D166's STRUCT3f note.
