@@ -8,13 +8,17 @@ import { Button, Icon, Inline, SettingRow } from '../ui';
 // values, and a value that is the thing's own or stands from above. A repository's Setup and a workspace's share them, so
 // the two read and fold alike. Molecules: every state is reached by props, and every press goes out.
 
-/** How a rule lands, in a folded line's words: into its line, or on a branch, who pushes it, and with no press. */
+/**
+ * How a rule lands, in a folded line's words: into its line, or on a branch, who pushes it, with no press, and squashed to one
+ * commit (DOORS1b).
+ */
 export function landingSays(t: TFunction, landing: LandingRule): string {
   if (landing.form !== 'branch') return t('projects.setup.summary.landsMerge');
   return [
     t('projects.setup.summary.landsBranch', { pattern: landing.pattern }),
     ...(landing.plugin ? [t('projects.setup.summary.pushedBy', { plugin: landing.plugin })] : []),
     ...(landing.autoAccept ? [t('projects.setup.summary.automatic')] : []),
+    ...(landing.squash ? [t('projects.setup.summary.squashed')] : []),
   ].join(t('projects.setup.summary.clauseJoin'));
 }
 
@@ -23,13 +27,14 @@ const PLUGIN_MARK = '\u0001';
 /**
  * A landing rule's sentence for the row: its clauses joined, and, given `onOpenPlugin`, the plugin it names a door to that
  * plugin's page (PLUGUI1c2c, plugins-screen design §5). The name is cut out of `settings.landing.byPlugin` where it sits,
- * so the catalogue keeps one key; absent the opener, or a catalogue that does not hold it as code, it stays words.
+ * so the catalogue keeps one key; absent the opener, or a catalogue that does not hold it as code, it stays words. `after`
+ * is what the rule says last: what finds its ticket and what its squash makes (DOORS1b, `landingProcessSays`).
  */
 export function landingRowSays(
-  t: TFunction, said: string, plugin: string | undefined, auto: boolean, onOpenPlugin?: (plugin: string) => void,
+  t: TFunction, said: string, plugin: string | undefined, auto: boolean, onOpenPlugin?: (plugin: string) => void, after: string[] = [],
 ): ReactNode {
   const join = t('projects.setup.sentenceJoin');
-  const autoSays = auto ? [t('settings.landing.byAuto')] : [];
+  const autoSays = [...(auto ? [t('settings.landing.byAuto')] : []), ...after];
   if (!plugin) return [said, ...autoSays].join(join);
   const byPlugin = t('settings.landing.byPlugin', { plugin: PLUGIN_MARK });
   const parts = byPlugin.split(`\`${PLUGIN_MARK}\``);

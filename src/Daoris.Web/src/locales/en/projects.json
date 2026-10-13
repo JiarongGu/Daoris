@@ -212,6 +212,7 @@
   "projects.setup.summary.landsBranch": "lands on `{{pattern}}`",
   "projects.setup.summary.pushedBy": "pushed by {{plugin}}",
   "projects.setup.summary.automatic": "accepted automatically",
+  "projects.setup.summary.squashed": "squashed to one commit",
   "projects.setup.summary.noLanguage": "no session language",
   "projects.setup.summary.standing": "a standing answer of {{count}} line",
   "projects.setup.summary.standing_other": "a standing answer of {{count}} lines",

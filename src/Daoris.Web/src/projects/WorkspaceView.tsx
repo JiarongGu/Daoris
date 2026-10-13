@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { useTidiedBranches } from '../bridge/log';
 import { sentence } from '../format';
 import { useSyncStanding } from '../queries';
+import { commitToast } from '../settings/Commits';
+import { helperToast } from '../settings/Helpers';
 import type { LandingRule } from '../settings/Landings';
 import { opinionToast } from '../settings/Opinions';
 import { reviewToast } from '../settings/Reviews';
@@ -11,7 +13,8 @@ import { sayDiscard, sweepKey, SweepList } from '../settings/Sweep';
 import { SyncSection } from '../settings/Sync';
 import {
   stoppedWaiting, useAccounts, useAcross, useDriver, useHarnesses, useHistoryPlan, usePlugins, useRemotes, useRuleAction, useRules,
-  useDiscardSessionBranch, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useStarts,
+  useDiscardSessionBranch, useSetCommits, useSetHelpers, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross,
+  useSetReview, useStarts,
   useSweep, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
 } from '../shell';
 import { byTool } from '../tools';
@@ -34,9 +37,10 @@ const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 /** The rows of a driver answer that are this workspace's. */
 const mine = <R extends { workspace: string }>(rows: readonly R[], workspace: string) => rows.filter((row) => same(row.workspace, workspace));
 
-/** A workspace's landing rule as the driver answers it, without the name it is answered under. */
-const ruleOf = ({ form, pattern, tidy, plugin, autoAccept }: LandingRule): LandingRule => ({
+/** A workspace's landing rule as the driver answers it, without the name it is answered under, its key and squash kept (DOORS1b). */
+const ruleOf = ({ form, pattern, tidy, plugin, autoAccept, key, squash }: LandingRule): LandingRule => ({
   form, ...(pattern ? { pattern } : {}), ...(tidy ? { tidy } : {}), ...(plugin ? { plugin } : {}), ...(autoAccept ? { autoAccept } : {}),
+  ...(key ? { key } : {}), ...(squash ? { squash } : {}),
 });
 
 /**
@@ -359,6 +363,8 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
   const setLanguage = useSetLanguage();
   const setReview = useSetReview();
   const setOpinion = useSetOpinion();
+  const setCommits = useSetCommits();
+  const setHelpers = useSetHelpers();
   const setRead = useSetReadAcross();
   const act = useRuleAction();
   useErrorNotify(remotes.error ?? across.error ?? rules.error, notify);
@@ -382,7 +388,7 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
     open,
     wiring,
     busy: setLine.isPending || setLanding.isPending || setLanguage.isPending || setReview.isPending || setOpinion.isPending
-      || setRead.isPending || act.isPending || wire.isPending || unwire.isPending,
+      || setCommits.isPending || setHelpers.isPending || setRead.isPending || act.isPending || wire.isPending || unwire.isPending,
     defaults: {
       line: state && {
         set: ofWorkspace(state.workspaceLines)?.branch,
@@ -451,6 +457,26 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
             set: ofWorkspace(state.workspaceOpinions)?.rule,
             onChange: (edit) => setOpinion.mutate({ workspace, ...edit }, {
               onSuccess: () => notify(opinionToast(t, workspace, edit)),
+              onError,
+            }),
+          }
+        : null,
+      // How its repositories' work is committed, and what a helper their agents ask for does (DOORS1b); a shell older than
+      // it answers neither, and neither is offered.
+      commits: state && Array.isArray(state.workspaceCommits)
+        ? {
+            set: ofWorkspace(state.workspaceCommits)?.rule,
+            onChange: (edit) => setCommits.mutate({ workspace, ...edit }, {
+              onSuccess: () => notify(commitToast(t, workspace, edit)),
+              onError,
+            }),
+          }
+        : null,
+      helpers: state && Array.isArray(state.workspaceHelpers)
+        ? {
+            set: ofWorkspace(state.workspaceHelpers)?.rule,
+            onChange: (edit) => setHelpers.mutate({ workspace, ...edit }, {
+              onSuccess: () => notify(helperToast(t, workspace, edit)),
               onError,
             }),
           }

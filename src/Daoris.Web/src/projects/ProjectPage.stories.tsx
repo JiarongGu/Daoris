@@ -6,7 +6,7 @@ import { chinese } from '../storyLanguage';
 import { FULL, NOTHING_SET, PLUGIN_UNREADY } from '../workflow/fixtures';
 import {
   CJK, COUNTS, ELSEWHERE, ENGINE, GAME, GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES, LINE, MIRRORED, NEWBIE, SETUP_DEFAULTS, SETUP_OWN,
-  UNDECLARED,
+  SETUP_PROCESS, SETUP_PROCESS_OWN, UNDECLARED,
 } from './fixtures';
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
 import { BranchesTab, type GitRead, HistoryTab, type HistoryRead } from './RepositoryGit';
@@ -18,6 +18,8 @@ import type { ProjectTab } from './tabs';
 // here and on a direct door, one not adopted with none, a browser's, a 中文 name) and since UX6f (D150 §4.2) its Setup tab,
 // each section folded to what Daoris decides and open: Driving, Line and landing, Sessions, Reach, the person's own values, narrow and
 // in 中文; since WORKFLOW1b its Workflow tab, with everything at once, nothing set, a limit, in 中文, narrow and in a browser;
+// since DOORS1b its process on Setup (Commits and Helpers, the landing's ticket key and squash), from above, its own, narrow
+// and in 中文;
 // since UX6h1 (§4.4) its Branches and History tabs, each reading, with no checkout here, refused, with nothing yet and read,
 // History's lanes for a merged branch and for several, dark, in 中文 and narrow; since UX6h2a Branches by kind, its line's
 // and its landed branches' other standings with origin, its session records unread, dark and narrow; and the main area with
@@ -443,6 +445,27 @@ export const SetupOwnNarrow: Story = { ...SetupNarrow, args: { start: 'setup', s
 
 /** Setup in 中文: 驱动 · 工作 · 会话 · 边界, each default marked in Chinese. */
 export const SetupChinese: Story = { args: { start: 'setup', setup: SETUP_OWN }, decorators: [chinese] };
+
+/**
+ * **Its process** (DOORS1b, D164's amendment point 3): *Commits* on Line and landing at Daoris's default, and *Helpers* on
+ * Sessions from its workspace, each with *Set for this repository*; Line and landing open.
+ */
+export const SetupProcess: Story = { args: { start: 'setup', setup: opened('work', SETUP_PROCESS) } };
+
+/** Its process with Sessions open: its workspace's helpers rule, two agents in the order they are tried. */
+export const SetupProcessSessions: Story = { args: { start: 'setup', setup: opened('sessions', SETUP_PROCESS) } };
+
+/**
+ * Its process set for it: a branch named by the ticket its key finds, squashed to one commit, the key's field and the squash
+ * switch under the pattern; each commit waiting for the person's yes under their convention, quoted; no helper offered.
+ */
+export const SetupProcessOwn: Story = { args: { start: 'setup', setup: { ...SETUP_PROCESS_OWN, onOpenPlugin: () => {} } } };
+
+/** Its process set for it, narrow: the landing's fields and the commit row's convention wrap under their rows. */
+export const SetupProcessOwnNarrow: Story = { ...SetupNarrow, args: { start: 'setup', setup: SETUP_PROCESS_OWN } };
+
+/** Its process in 中文: 提交方式 and 助手, the convention as written. */
+export const SetupProcessChinese: Story = { args: { start: 'setup', setup: SETUP_PROCESS_OWN }, decorators: [chinese] };
 
 /** Nothing chosen: how to choose, and the list's ＋ on a shell. */
 export const NothingChosen: Story = {
