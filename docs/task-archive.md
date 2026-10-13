@@ -14119,3 +14119,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PLUGNAME1 — the CLI's comments name `PluginCatalog.cs`** (cli). `src/Daoris.Cli/src/plugins.ts` (lines 9, 44, 72) and `test/plugins.test.ts:14` still name `Plugins.cs`, renamed by STRUCT3a.
 
 **Outcome** 2026-10-14: the four comments name `PluginCatalog.cs`; no code or test read changed (typecheck clean, `plugins.test.ts` 34/34).
+
+## STRUCT3PLAT — Platform's I/O and the layers that name it (2026-10-14, D166)
+
+> - [ ] **STRUCT3PLAT — Platform's I/O and the layers that name it** (driver; decide before Platform is layered). Every module's Application names Platform's I/O helpers (`MachineLog`, `MachineLogReader`, `DriverConfig.Load`, `AtomicFile`), but only an Infrastructure may name Platform's Infrastructure: decide whether Platform gets ports in its Domain or the reach rule gets an Application exception, and write it in D166. D166's STRUCT3a note.
+
+**Outcome** 2026-10-14: decided, measured on the five layered modules: an Application may name three of Platform's helpers, `MachineLog`, `DriverConfig` and `DaorisHome`, by a map list the reach rule reads; ports per helper and a blanket exception were rejected. STRUCT3i builds it with Platform's layering. Detail: D166's STRUCT3PLAT note.
