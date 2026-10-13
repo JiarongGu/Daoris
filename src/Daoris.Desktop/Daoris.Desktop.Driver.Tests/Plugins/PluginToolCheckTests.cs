@@ -286,7 +286,7 @@ public sealed class PluginToolCheckTests : IDisposable
             """);
         var manifest = Assert.Single(PluginCatalog.Load(Home).Plugins).Manifest;
 
-        var steps = await PluginKit.ToolStepsAsync(manifest, Home, Root, Bin, runner.RunAsync, CancellationToken.None);
+        var steps = await PluginTrials.ToolStepsAsync(manifest, Home, Root, Bin, runner.RunAsync, CancellationToken.None);
 
         Assert.Equal(["tool git", "git check 1", "tool 2", "tool gh"], steps.Select(step => step.Name));
         Assert.Equal([true, false, false, false], steps.Select(step => step.Ok));
@@ -302,8 +302,8 @@ public sealed class PluginToolCheckTests : IDisposable
         var none = PluginManifest.Empty("acme.none");
         var wrong = none with { ToolsProblem = "`tools` must be an array of the tools the plugin runs, each an object with an `id`." };
 
-        Assert.Empty(await PluginKit.ToolStepsAsync(none, Home, Root, Bin, runner.RunAsync, CancellationToken.None));
-        var step = Assert.Single(await PluginKit.ToolStepsAsync(wrong, Home, Root, Bin, runner.RunAsync, CancellationToken.None));
+        Assert.Empty(await PluginTrials.ToolStepsAsync(none, Home, Root, Bin, runner.RunAsync, CancellationToken.None));
+        var step = Assert.Single(await PluginTrials.ToolStepsAsync(wrong, Home, Root, Bin, runner.RunAsync, CancellationToken.None));
         Assert.Equal("tools", step.Name);
         Assert.False(step.Ok);
         Assert.Empty(runner.Calls);

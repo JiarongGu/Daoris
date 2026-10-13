@@ -14230,3 +14230,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DEDUP4a — one child-process runner** (driver, modules). A public `ChildProcess` in `Platform/` (a run to its end with patience, its error carried, the tree killed on time-out or cancellation, guarded) for the probe, the setup's version, the tool questions and the plugin tool runs; it fixes the unguarded kills at `Harnesses.cs:1480` and `SetupWorld.cs:107`. Survey §4.
 
 **Outcome** 2026-10-14: `Platform/ChildProcess.cs` runs a child to its end within a patience, carries a start's error, and kills the tree on time-out or cancellation behind a guarded `KillTree`; the four runs use it with their own words. The race at the two kills is gone (setup now says the tool did not answer, not that it would not start), and a cancelled run no longer leaves its child running. Six Process cases and one fast; the probe's, race's and Modules' Process classes passed 54 of 54 on the merge. On Sonnet, scouted: 31 tool calls. Detail: D166's DEDUP4a note.
+
+## PART2 — the driver's small merges (2026-10-14, D166)
+
+> - [ ] **PART2 — the driver's small merges** (driver). `AcpSession`, `WorkflowNamed`, `PluginKit` (a `PluginTrials` class), `Tools` with `Tools.Children`, `ToolInstall` (`ToolArchives`). Survey "Merge".
+
+**Outcome** 2026-10-14: `Tools` and `AcpSession` are one file each (the resume used the session's private state, so it merged rather than split), `ToolArchives` and `PluginTrials` are classes of their own, and `WorkflowNamed` keeps `partial` in its one file for its patterns, its version records in a file of their own; `ToolInstall.Actions.cs` was never a part and is `ToolActions.cs`. At the merge the gate's list lost the five (29 left). On Sonnet: 80 tool calls. Detail: D166's PART2 note.

@@ -72,13 +72,13 @@ public sealed class ToolInstallTests : IDisposable
 
         if (check is null)
         {
-            var file = ToolInstall.Unpack(archive, kind, into, exe);
+            var file = ToolArchives.Unpack(archive, kind, into, exe);
             Assert.Equal(Path.Combine([into, .. exe.Split('/')]), file);
             Assert.Equal("gh", File.ReadAllText(file));
         }
         else
         {
-            var refused = Assert.Throws<ToolRefusal>(() => ToolInstall.Unpack(archive, kind, into, exe));
+            var refused = Assert.Throws<ToolRefusal>(() => ToolArchives.Unpack(archive, kind, into, exe));
             Assert.True(check == refused.Check, $"{name}: {refused.Check} — {refused.Message}");
         }
 
@@ -99,7 +99,7 @@ public sealed class ToolInstallTests : IDisposable
         File.WriteAllBytes(archive, Archive.Build("zip", "gh_2.62.0/; gh_2.62.0/bin/gh.exe=gh; gh_2.62.0/LICENSE=MIT", ""));
 
         var into = Path.Combine(_root, "package");
-        var file = ToolInstall.Unpack(archive, "zip", into, "gh_2.62.0/bin/gh.exe");
+        var file = ToolArchives.Unpack(archive, "zip", into, "gh_2.62.0/bin/gh.exe");
         Assert.Equal(Path.Combine(into, "gh_2.62.0", "bin", "gh.exe"), file);
         Assert.Equal("MIT", File.ReadAllText(Path.Combine(into, "gh_2.62.0", "LICENSE")));
         if (!OperatingSystem.IsWindows()) Assert.True((File.GetUnixFileMode(file) & UnixFileMode.UserExecute) != 0);
@@ -111,9 +111,9 @@ public sealed class ToolInstallTests : IDisposable
         var archive = Path.Combine(_root, "download");
         File.WriteAllBytes(archive, Archive.Build("zip", "bin/gh.exe=gh!badcrc", ""));
 
-        var crc = Assert.Throws<ToolRefusal>(() => ToolInstall.Unpack(archive, "zip", Path.Combine(_root, "package"), "bin/gh.exe"));
+        var crc = Assert.Throws<ToolRefusal>(() => ToolArchives.Unpack(archive, "zip", Path.Combine(_root, "package"), "bin/gh.exe"));
         Assert.Matches(@"^the archive's `bin/gh\.exe` fails its own check — 2 bytes with CRC-32 [0-9a-f]{8}, where it states 2 with [0-9a-f]{8}\z", crc.Message);
-        var kind = Assert.Throws<ToolRefusal>(() => ToolInstall.Unpack(archive, "rar", Path.Combine(_root, "package"), "bin/gh.exe"));
+        var kind = Assert.Throws<ToolRefusal>(() => ToolArchives.Unpack(archive, "rar", Path.Combine(_root, "package"), "bin/gh.exe"));
         Assert.Contains("`rar` is not an archive this build unpacks — zip or tar.gz", kind.Message);
     }
 
@@ -639,7 +639,7 @@ public sealed class ToolInstallTests : IDisposable
                 var data = Encoding.UTF8.GetBytes(item.Text ?? "");
                 ushort method = folder || item.Flags.Contains("stored") ? (ushort)0 : item.Flags.Contains("method12") ? (ushort)12 : (ushort)8;
                 var body = method == 8 ? Deflate(data) : data;
-                var crc = ToolInstall.Crc32(data);
+                var crc = ToolArchives.Crc32(data);
                 if (item.Flags.Contains("badcrc")) crc ^= 0xffffffff;
                 var flags = (ushort)((item.Flags.Contains("encrypted") ? 1 : 0) | 0x800);
                 var mode = item.Flags.Contains("symlink") ? 0xA1FF : folder ? 0x41ED : 0x81A4;

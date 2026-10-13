@@ -1,8 +1,4 @@
 {
-  "AcpSession": [
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp/Acp.Resume.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp/Acp.cs"
-  ],
   "AskDesk": [
     "src/Daoris.Service/Daoris.Service.Core/Asks.GoAheads.cs",
     "src/Daoris.Service/Daoris.Service.Core/Asks.Review.cs",
@@ -220,10 +216,6 @@
     "src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.Opinions.cs",
     "src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.cs"
   ],
-  "PluginKit": [
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/PluginKit.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/PluginTrial.cs"
-  ],
   "QuestExchange": [
     "src/Daoris.Service/Daoris.Service.Core/QuestExchange.Review.cs",
     "src/Daoris.Service/Daoris.Service.Core/QuestExchange.Workflow.cs",
@@ -278,17 +270,5 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Work.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Worktrees.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.cs"
-  ],
-  "ToolInstall": [
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/ToolInstall/ToolInstall.Archives.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/ToolInstall/ToolInstall.cs"
-  ],
-  "Tools": [
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Tools.Children.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Tools.cs"
-  ],
-  "WorkflowNamed": [
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowNamed.Versions.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowNamed.cs"
   ]
 }
