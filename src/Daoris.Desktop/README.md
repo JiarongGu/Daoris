@@ -52,7 +52,7 @@ roster's `ReadUsageAsync` (the walk's floor, cooling, signed-out, key and busy s
 hand-over box with its agent unchanged, by `daoris`, and its take holds the conversation's turns (`ChatTurns.Hold`), so a
 word said as it begins runs its own turn first, the box then waiting for that turn's end.
 
-`Workflows/` is the first module layered whole (STRUCT3b, D166's STRUCT3b note): its records and rules in `Domain/`, pure; its
+`Workflows/` is layered whole (STRUCT3b, D166's STRUCT3b note): its records and rules in `Domain/`, pure; its
 use cases in `Application/` (`WorkflowStore`, `WorkflowRunBindings`, `WorkflowProcesses`, `WorkflowRunReader` and the two
 commands), written against the ports declared there (`IWorkflowStore`, `IWorkflowRunStore`, `IWorkflowRunRecords`); and the
 files and reads behind those ports in `Infrastructure/`. Every other module, the loop and the hosts reach it by its

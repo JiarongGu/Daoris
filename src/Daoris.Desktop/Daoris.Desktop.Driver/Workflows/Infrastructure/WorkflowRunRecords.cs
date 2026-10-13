@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// What a run's read reads under a home beside the service (WORKFLOW1c, the workflow design §5.1): the landing record, the due list,
 /// each session's conversation record for its acceptance, and whether a tree stands on this machine. The reads behind
-/// <see cref="IWorkflowRunRecords"/> (STRUCT3b, D166), moved here from <c>WorkflowRun.Read.cs</c> unchanged.
+/// <see cref="IWorkflowRunRecords"/> (STRUCT3b, D166).
 /// </summary>
 public sealed class WorkflowRunRecords(string home) : IWorkflowRunRecords
 {

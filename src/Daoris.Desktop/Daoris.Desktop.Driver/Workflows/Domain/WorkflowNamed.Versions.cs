@@ -19,7 +19,7 @@ public sealed record WorkflowFileFound(string Id, JsonNode? File, NamedWorkflowR
 /// How a version is added to a named workflow's file (WORKFLOW1d, D157 point 5, the workflow design §2.4–§2.6), planned and not
 /// written: the store's use case (<see cref="WorkflowStore"/>'s <c>Add</c>) writes the plan through its port. A version is whole and
 /// never edited: saving adds the next number, keeping the file's other fields and every version as written, then the newest 20
-/// and every version a kept run names (STRUCT3b moved it here from <c>WorkflowStore.cs</c>, unchanged).
+/// and every version a kept run names. Pure, so Workflows' Domain holds it (STRUCT3b).
 /// </summary>
 /// <remarks>
 /// A TWIN with the CLI's <c>planAddVersion</c> (<c>namedworkflows.ts</c>): the plan is held to the driver suite's

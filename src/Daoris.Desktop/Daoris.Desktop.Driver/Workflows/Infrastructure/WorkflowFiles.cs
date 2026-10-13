@@ -6,8 +6,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// The named workflows' files under a home (WORKFLOW1d, D157 point 5, the workflow design §2.4–§2.6): one file per workflow,
 /// <c>&lt;home&gt;/workflows/&lt;id&gt;.json</c>, the home's (D63), written atomically, BOM-less and LF, and machine-local. The I/O
-/// behind <see cref="IWorkflowStore"/> (STRUCT3b, D166), moved here from <c>WorkflowStore.cs</c> unchanged; the layout is
-/// <see cref="WorkflowStore.FolderOf"/>'s and <see cref="WorkflowStore.PathOf"/>'s.
+/// behind <see cref="IWorkflowStore"/> (STRUCT3b, D166); the layout is <see cref="WorkflowStore.FolderOf"/>'s and
+/// <see cref="WorkflowStore.PathOf"/>'s.
 /// </summary>
 public sealed class WorkflowFiles(string home) : IWorkflowStore
 {

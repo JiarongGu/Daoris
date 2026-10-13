@@ -7,9 +7,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// The runs' binding files under a home (WORKFLOW1e, D157 point 11; the workflow design §4.5, §5.1): one file per run,
 /// <c>&lt;home&gt;/workflows/runs/&lt;run&gt;.json</c>, written once, atomically, BOM-less and LF; the driver's alone to write, and
-/// machine-local, never on the wire (D47 §4). The I/O behind <see cref="IWorkflowRunStore"/> and the file's format (STRUCT3b, D166),
-/// moved here from <c>WorkflowRunBinding.cs</c> unchanged; the layout is <see cref="WorkflowRunBindings.FolderOf"/>'s and
-/// <see cref="WorkflowRunBindings.PathOf"/>'s.
+/// machine-local, never on the wire (D47 §4). The I/O behind <see cref="IWorkflowRunStore"/> and the file's format (STRUCT3b, D166);
+/// the layout is <see cref="WorkflowRunBindings.FolderOf"/>'s and <see cref="WorkflowRunBindings.PathOf"/>'s.
 /// </summary>
 public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
 {
