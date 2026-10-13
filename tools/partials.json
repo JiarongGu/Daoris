@@ -162,8 +162,8 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSyncProposalsTests.cs"
   ],
   "HistoryClearing": [
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/HistoryClearing.Home.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/HistoryClearing.cs"
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/History/HistoryClearing.Home.cs",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/History/HistoryClearing.cs"
   ],
   "IHelpDoors": [
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpProposals.cs",

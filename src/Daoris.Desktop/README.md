@@ -104,7 +104,10 @@ The extension blocks, forwards and ports the layering needed are folded back in 
 `Sessions/` keeps the onion for its model and rules alone (STRUCT3g-i, D166's STRUCT3g-i note); its `Domain/` holds the session events' records
 and rules (`SessionEvents.cs`, with `SessionEventText`'s bounds, id rule and cuts), the trace's records and chain (`Trace.Chain.cs`,
 which reads its stores through `TraceHere`'s values), the pause, abandon, delete, archive and history plans and words, and the
-observation rules. Its stores and use cases sit at the module's top.
+observation rules. Its stores and use cases sit in scope folders (SCOPE1d): `Work/` (pause, abandon and their records), `Requests/`
+(the session requests, their watch and the moves), `History/` (clearing, its bytes and home files, archive and deletion), `Trace/`
+(the trace, its command and reads) and `Events/` (the event log, the session log and last words); `RunningSessions`,
+`SessionProcesses`, `SessionsCommand` and `HarnessEnding` (the loop's too) stay at the top. Review, with fifteen files at its top, stays flat.
 
 `Conversations/` keeps the onion for its model and rules alone (STRUCT3h, D166's STRUCT3h note): `Domain/` holds a
 conversation's pure records, rules and words (the message, the resume's judgement and its reasons, the hand-over's codes,
