@@ -184,6 +184,9 @@ executable, else beside the home), each with its README's requirement lines, and
 {offer} copies one in. None runs at the press.
 **No plugin code ever runs inside the shell, the host or the page.**
 
+**The module is layered** (STRUCT3a, D166's note): each of its files sits in `Plugins/Domain`, `Plugins/Application` or
+`Plugins/Infrastructure`, which `structure.json`'s `layered` list holds; a file loose in `Plugins/` is a `layer` breach.
+
 **The kit a plugin is made with** (PLUG8, D101, the plugin design's §9) is the driver library's
 `PluginKit`: `daoris-driver plugins new <id> --point <p>… [--in <folder>]` writes a plugin's folder
 (a manifest, a wire script, a wire test `node --test` runs with no Daoris, a README) from templates

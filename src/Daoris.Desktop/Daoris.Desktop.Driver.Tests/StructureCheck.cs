@@ -20,7 +20,13 @@ internal sealed record StructureMap(IReadOnlyDictionary<string, IReadOnlyList<st
     /// </summary>
     public IReadOnlyDictionary<string, string> Tests { get; init; } = new Dictionary<string, string>();
 
-    /// <summary>The map as <c>structure.json</c> writes it, its modules in its order; <c>tests</c> is optional.</summary>
+    /// <summary>
+    /// The modules whose layers have landed (STRUCT3): each of their files sits in one of its layer folders, so a file
+    /// loose in the module's folder is a breach rather than a file not yet layered.
+    /// </summary>
+    public IReadOnlyList<string> Layered { get; init; } = [];
+
+    /// <summary>The map as <c>structure.json</c> writes it, its modules in its order; <c>tests</c> and <c>layered</c> are optional.</summary>
     public static StructureMap Read(string json)
     {
         using var document = JsonDocument.Parse(json);
@@ -35,6 +41,7 @@ internal sealed record StructureMap(IReadOnlyDictionary<string, IReadOnlyList<st
         {
             Split = Strings(root.GetProperty("split")),
             Tests = root.TryGetProperty("tests", out var tests) ? Strings(tests) : new Dictionary<string, string>(),
+            Layered = root.TryGetProperty("layered", out var layered) ? [.. layered.EnumerateArray().Select(module => module.GetString()!)] : [],
         };
     }
 
@@ -55,6 +62,7 @@ internal sealed record StructureBreach(string File, int Line, string Rule, strin
 /// <item><c>top</c>: a file at the driver's top is one the map's <c>root</c> list names, and every name on it is still at the
 /// top, so the list only shrinks and a new file lands in its module's folder.</item>
 /// <item><c>module</c>: a file in a folder is in a module's folder, and in a layer folder only of a layer that module holds.</item>
+/// <item><c>layer</c>: a file of a module the map lists as <c>layered</c> sits in one of its layer folders (STRUCT3a).</item>
 /// <item><c>pure</c>: a <c>Domain</c> file does no I/O, by <see cref="Impure"/>'s tokens.</item>
 /// <item><c>reach</c>: no file names a type declared in another module's <c>Infrastructure</c> (an <c>Infrastructure</c> may
 /// name <c>Platform</c>'s, and <c>Loop</c> composes them all), and a <c>Domain</c> file names none declared in an
@@ -62,7 +70,9 @@ internal sealed record StructureBreach(string File, int Line, string Rule, strin
 /// <item><c>loop</c>: nothing outside <c>Loop</c> names a type declared in it.</item>
 /// </list>
 /// A file still at the top is placed by no folder, so only the first rule reads it; the others read the files in module
-/// folders, and the types declared there, by name, in code only: a comment or a string names nothing.
+/// folders, and the types declared there, by name, in code only: a comment or a string names nothing. A static member a
+/// C# 14 <c>extension(T)</c> block declares is named as <c>T.Member</c>, so it is read by that name and belongs to the layer
+/// of the file that declares it (STRUCT3a): a Domain type's I/O call kept where its callers make it is still its layer's.
 /// </summary>
 internal static partial class StructureCheck
 {
@@ -115,6 +125,11 @@ internal static partial class StructureCheck
             }
         }
 
+        foreach (var module in map.Layered.Where(module => !map.Modules.ContainsKey(module)))
+        {
+            breaches.Add(new("structure.json", 0, "map", $"{module} is listed as layered, and is no module of the map"));
+        }
+
         foreach (var source in files)
         {
             var parts = source.Path.Split('/');
@@ -134,10 +149,15 @@ internal static partial class StructureCheck
                 var layers = held.Count == 0 ? "none" : string.Join(", ", held);
                 breaches.Add(new(source.Path, 1, "module", $"{parts[0]} holds no {parts[1]} layer: its layers are {layers}"));
             }
+            else if (map.Layered.Contains(parts[0]) && !(parts.Length > 2 && held.Contains(parts[1])))
+            {
+                breaches.Add(new(source.Path, 1, "layer", $"{parts[0]} is layered: each of its files sits in its {string.Join(", ", held.SkipLast(1))} or {held[^1]}"));
+            }
         }
 
         var placed = files.Where(source => source.Place is not null).ToList();
         var declared = Declarations(placed);
+        foreach (var (name, where) in ExtensionMembers(placed)) declared[name] = where;
         foreach (var source in placed)
         {
             var (module, layer) = source.Place!.Value;
@@ -154,21 +174,24 @@ internal static partial class StructureCheck
             }
 
             var named = new HashSet<string>(StringComparer.Ordinal);
-            foreach (Match use in Identifier().Matches(source.Code))
+            void Named(string name, int at)
             {
-                if (!declared.TryGetValue(use.Value, out var where) || where.Any(place => place.Path == source.Path) || !named.Add(use.Value)) continue;
-                var line = source.LineOf(use.Index);
+                if (!declared.TryGetValue(name, out var where) || where.Any(place => place.Path == source.Path) || !named.Add(name)) return;
+                var line = source.LineOf(at);
                 foreach (var place in where)
                 {
                     var (theirs, theirLayer) = place.Place!.Value;
                     var why = Reach(module, layer, theirs, theirLayer);
                     if (why is not null)
                     {
-                        breaches.Add(new(source.Path, line, why.Value.Rule, $"names {use.Value}, declared in {place.Path}: {why.Value.Why}"));
+                        breaches.Add(new(source.Path, line, why.Value.Rule, $"names {name}, declared in {place.Path}: {why.Value.Why}"));
                         break;
                     }
                 }
             }
+
+            foreach (Match use in Identifier().Matches(source.Code)) Named(use.Value, use.Index);
+            foreach (Match use in MemberUse().Matches(source.Code)) Named($"{use.Groups["type"].Value}.{use.Groups["member"].Value}", use.Index);
         }
 
         return breaches
@@ -255,6 +278,37 @@ internal static partial class StructureCheck
                 if (name is "class" or "struct" || depth[declaration.Index] != top) continue;
                 if (!declared.TryGetValue(name, out var where)) declared[name] = where = [];
                 if (!where.Contains(source)) where.Add(source);
+            }
+        }
+
+        return declared;
+    }
+
+    /// <summary>
+    /// The static members each placed source's <c>extension(T)</c> blocks declare, by <c>T.Member</c> (STRUCT3a): a call names
+    /// one through its receiver, so by the type's name alone it would be the receiver's layer's, not its own. An instance
+    /// extension member is called on a value, which no name says, and is not read.
+    /// </summary>
+    private static Dictionary<string, List<Source>> ExtensionMembers(IEnumerable<Source> sources)
+    {
+        var declared = new Dictionary<string, List<Source>>(StringComparer.Ordinal);
+        foreach (var source in sources)
+        {
+            var code = source.Code;
+            var depth = Depths(code);
+            foreach (Match block in Extension().Matches(code))
+            {
+                var open = block.Index + block.Length - 1;
+                var close = open + 1;
+                while (close < code.Length && !(code[close] == '}' && depth[close] == depth[open])) close++;
+                foreach (Match member in StaticMember().Matches(code, open + 1))
+                {
+                    if (member.Index >= close) break;
+                    if (depth[member.Index] != depth[open] + 1) continue;
+                    var name = $"{block.Groups["receiver"].Value}.{member.Groups["name"].Value}";
+                    if (!declared.TryGetValue(name, out var where)) declared[name] = where = [];
+                    if (!where.Contains(source)) where.Add(source);
+                }
             }
         }
 
@@ -404,6 +458,18 @@ internal static partial class StructureCheck
 
     [GeneratedRegex(@"\b(?:class|struct|interface|enum|record)\s+(?<name>[A-Za-z_]\w*)|\bdelegate\s+[\w.<>\[\]?, ]+?\s+(?<name>[A-Za-z_]\w*)\s*[<(]")]
     private static partial Regex Declaration();
+
+    /// <summary>A use of a member through a type's name, <c>T.Member</c>, which a static extension member is named by.</summary>
+    [GeneratedRegex(@"(?<![\w.@])(?<type>[A-Za-z_]\w*)\s*\.\s*(?<member>[A-Za-z_]\w*)")]
+    private static partial Regex MemberUse();
+
+    /// <summary>A C# 14 extension block's head, up to its opening brace: <c>extension(T)</c> or <c>extension(T value)</c>.</summary>
+    [GeneratedRegex(@"\bextension\s*(?:<[^<>]*>\s*)?\(\s*(?<receiver>[A-Za-z_]\w*)\s*(?:<[^()]*>\s*)?(?:[A-Za-z_]\w*\s*)?\)\s*(?:where\b[^{]*)?\{")]
+    private static partial Regex Extension();
+
+    /// <summary>A static member's declaration, up to its name and what follows it: a method's <c>(</c>, a property's <c>=&gt;</c> or <c>{</c>.</summary>
+    [GeneratedRegex(@"\bstatic\b[^;{}()=]*?\b(?<name>[A-Za-z_]\w*)\s*(?:<[^<>(){};]*>\s*)?(?:\(|=>|\{)")]
+    private static partial Regex StaticMember();
 
     /// <summary>A namespace with a body, whose types sit one brace deep; a file-scoped one's sit at the top.</summary>
     [GeneratedRegex(@"^\s*namespace\s+[\w.]+\s*\{", RegexOptions.Multiline)]

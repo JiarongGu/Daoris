@@ -143,6 +143,67 @@ public sealed class StructureTests
     }
 
     [Fact]
+    public void A_layered_module_keeps_every_file_in_one_of_its_layers()
+    {
+        var layered = Map with { Layered = ["Plugins"] };
+        IReadOnlyList<string> Layered(params (string Path, string Text)[] sources) =>
+            StructureCheck.Check(layered, [.. Unmoved, .. sources]).Select(breach => breach.ToString()).ToList();
+
+        // At any depth of its layers; a module not yet layered may keep a file loose in its folder.
+        Assert.Empty(Layered(
+            ("Plugins/Domain/PluginOffer.cs", "public sealed record PluginOffer(string Id);"),
+            ("Plugins/Application/Hooks/HookSet.cs", "public sealed class HookSet { }"),
+            ("Help/HelpRoom.cs", "class HelpRoom { }")));
+
+        Assert.Equal(
+            [
+                "Plugins/Kit/PluginKit.cs:1 [layer] Plugins is layered: each of its files sits in its Domain, Application or Infrastructure",
+                "Plugins/PluginInstall.cs:1 [layer] Plugins is layered: each of its files sits in its Domain, Application or Infrastructure",
+            ],
+            Layered(("Plugins/PluginInstall.cs", "class PluginInstall { }"), ("Plugins/Kit/PluginKit.cs", "class PluginKit { }")));
+
+        Assert.Equal(
+            ["structure.json:0 [map] Gardens is listed as layered, and is no module of the map"],
+            StructureCheck.Check(Map with { Layered = ["Gardens"] }, Unmoved).Select(breach => breach.ToString()));
+    }
+
+    [Fact]
+    public void A_static_extension_member_is_named_through_its_receiver_and_belongs_to_the_layer_that_declares_it()
+    {
+        (string, string)[] declared =
+        [
+            ("Plugins/Domain/PluginCatalog.cs", "public sealed class PluginCatalog { public static bool IsId(string id) => id.Length > 0; }"),
+            ("Plugins/Application/PluginCatalogReads.cs",
+                "public static class PluginCatalogReads\n{\n    extension(PluginCatalog)\n    {\n"
+                + "        public static PluginCatalog Load(string home, IEnumerable<string>? reserved = null) => Read(home);\n"
+                + "        public static IReadOnlyList<string> Reserved => [];\n    }\n\n"
+                + "    private static PluginCatalog Read(string home) => PluginCatalog.Load(home);\n}"),
+            ("Plugins/Infrastructure/PluginFolders.cs", "public static class PluginFolders { extension(PluginCatalog) { public static string Root(string home) => home; } }"),
+        ];
+
+        // Another module's Application calls an Application's extension, and a Domain's own member is no extension.
+        Assert.Empty(CheckWithUnmoved(
+        [
+            .. declared,
+            ("Trees/Application/Land.cs", "class Land { object Go() => PluginCatalog.Load(\"h\"); bool Id() => PluginCatalog.IsId(\"x\") && PluginCatalog.Reserved.Count > 0; }"),
+            // A member of the same name on another type, and one in a comment, are none.
+            ("Trees/Domain/Words.cs", "class Words { object Go() => Other.Load(\"h\"); /* PluginCatalog.Load */ }"),
+        ]));
+
+        Assert.Equal(
+            [
+                "Plugins/Domain/Words.cs:1 [reach] names PluginCatalog.Reserved, declared in Plugins/Application/PluginCatalogReads.cs: a Domain names nothing of an Application or an Infrastructure",
+                "Trees/Application/Land.cs:2 [reach] names PluginCatalog.Root, declared in Plugins/Infrastructure/PluginFolders.cs: a module reaches another through its Domain and Application, never its Infrastructure",
+            ],
+            CheckWithUnmoved(
+            [
+                .. declared,
+                ("Plugins/Domain/Words.cs", "class Words { int Count() => PluginCatalog.Reserved.Count; }"),
+                ("Trees/Application/Land.cs", "class Land\n{ string Go() => PluginCatalog . Root(\"h\"); }"),
+            ]));
+    }
+
+    [Fact]
     public void Nothing_outside_Loop_names_a_type_declared_in_it()
     {
         var moved = Map with { Root = new Dictionary<string, string> { ["Landing.cs"] = "Trees" } };
@@ -231,6 +292,8 @@ public sealed class StructureTests
         Assert.All(map.Modules.Where(module => module.Key is not ("Platform" or "Loop")), module => Assert.Equal(["Domain", "Application", "Infrastructure"], module.Value));
         Assert.All(map.Split.Keys, file => Assert.True(map.Root.ContainsKey(file), $"{file} is noted for a split but is on no list"));
         Assert.Equal(16, map.Tests.Count(test => test.Value == "Plugins"));
+        Assert.Contains("Plugins", map.Layered);
+        Assert.All(map.Layered, module => Assert.Equal(["Domain", "Application", "Infrastructure"], map.Modules[module]));
         Assert.All(map.Tests.Values, module => Assert.True(map.Modules.ContainsKey(module), $"a test is listed under {module}, which is no module of the map"));
     }
 

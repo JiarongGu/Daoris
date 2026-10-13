@@ -15,6 +15,9 @@
     "Setup": ["Domain", "Application", "Infrastructure"],
     "Loop": []
   },
+  "layered": [
+    "Plugins"
+  ],
   "root": {
     "AbandonRecord.cs": "Sessions",
     "AccountCooling.cs": "Accounts",
