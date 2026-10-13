@@ -4,31 +4,6 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The measure of a path <see cref="HistoryBytes"/> takes (HIST1c): <c>HistoryBytes.Of</c> is a static member of a C# 14
-/// extension block on the Domain's record, named where its callers always named it (STRUCT3g-i, D166's note).
-/// </summary>
-public static class HistoryBytesReads
-{
-    extension(HistoryBytes)
-    {
-        /// <summary>A file's size, or a folder's whole size; nothing for what is not there or will not be read.</summary>
-        public static long Of(string path)
-        {
-            try
-            {
-                if (File.Exists(path)) return new FileInfo(path).Length;
-                if (!Directory.Exists(path)) return 0;
-                return new DirectoryInfo(path).EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-            {
-                return 0;
-            }
-        }
-    }
-}
-
-/// <summary>
 /// What <see cref="SessionHomeFiles.Remove"/> took (HIST1j): each session's names that went, in the inventory's order, and the
 /// bytes that went with them, by kind; and each path the disk would not let go of, which stays, left over (the history-clearing
 /// design §2.3).
