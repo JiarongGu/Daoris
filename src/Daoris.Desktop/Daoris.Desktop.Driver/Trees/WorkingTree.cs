@@ -947,39 +947,18 @@ public static class WorkingTree
             foreach (var (name, value) in environment) info.Environment[name] = value;
         }
 
-        using var bound = timeout is not null ? CancellationTokenSource.CreateLinkedTokenSource(ct) : null;
-        if (timeout is { } limit) bound!.CancelAfter(limit);
-        var waitOn = bound?.Token ?? ct;
-        // Not `using` inside the try: a process disposed before the catch runs could not be stopped there.
-        Process? process = null;
+        // DEDUP4b: the run, the wait and the guarded tree kill are ChildProcess's. On the caller's own cancellation it now
+        // ends git's tree and throws; git was once left to finish on its own.
         try
         {
-            process = Process.Start(info) ?? throw new DriverException("git did not start");
-            var stdout = process.StandardOutput.ReadToEndAsync(waitOn);
-            var stderr = process.StandardError.ReadToEndAsync(waitOn);
-            await process.WaitForExitAsync(waitOn).ConfigureAwait(false);
-            return (process.ExitCode, await stdout.ConfigureAwait(false), await stderr.ConfigureAwait(false));
-        }
-        catch (OperationCanceledException) when (bound is not null && !ct.IsCancellationRequested)
-        {
-            try
-            {
-                process?.Kill(entireProcessTree: true);
-            }
-            catch (Exception kill) when (kill is InvalidOperationException or System.ComponentModel.Win32Exception)
-            {
-                // Gone already: nothing is left to stop.
-            }
-
-            return (-1, "", $"git did not answer within {timeout!.Value.TotalSeconds:0} seconds, and was stopped.");
+            var run = await ChildProcess.RunAsync(info, timeout ?? Timeout.InfiniteTimeSpan, ct, closeInput: false).ConfigureAwait(false);
+            if (!run.Started) return (-1, "", run.Error?.Message ?? "git did not start");
+            if (run.TimedOut) return (-1, "", $"git did not answer within {timeout!.Value.TotalSeconds:0} seconds, and was stopped.");
+            return (run.ExitCode!.Value, run.Stdout, run.Stderr);
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {
             return (-1, "", error.Message);
-        }
-        finally
-        {
-            process?.Dispose();
         }
     }
 
@@ -1018,14 +997,7 @@ public static class WorkingTree
             var bounded = count == buffer.Length && await stream.ReadAsync(new byte[1], ct).ConfigureAwait(false) > 0;
             if (bounded)
             {
-                try
-                {
-                    process.Kill(entireProcessTree: true);
-                }
-                catch (Exception kill) when (kill is InvalidOperationException or System.ComponentModel.Win32Exception)
-                {
-                    // Gone already.
-                }
+                ChildProcess.KillTree(process);
             }
 
             await process.WaitForExitAsync(ct).ConfigureAwait(false);
@@ -1081,14 +1053,7 @@ public static class WorkingTree
 
             if (stopped)
             {
-                try
-                {
-                    process.Kill(entireProcessTree: true);
-                }
-                catch (Exception kill) when (kill is InvalidOperationException or System.ComponentModel.Win32Exception)
-                {
-                    // Gone already.
-                }
+                ChildProcess.KillTree(process);
             }
 
             await process.WaitForExitAsync(ct).ConfigureAwait(false);
