@@ -14194,3 +14194,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SCOPE1b — Agents and Accounts by scope** (driver). Agents into `Acp/`, `Tools/`, `Adapters/`, `Consoles/`, `Streams/`, `Permissions/`, `RepositoryKnowledge/`; Accounts into `Harnesses/`, `Rotation/`, `Usage/`, `SignIns/`, AgentSettings and the instruction accounting at its top. A file two scopes use stays at the top. D166's scope note.
 
 **Outcome** 2026-10-14: 44 renames by who uses each file: Agents into `Acp/`, `ToolInstall/` (beside a top `Tools.cs` the scopes share), `Adapters/`, `Consoles/`, `Streams/`, `Permissions/` and `RepositoryKnowledge/`, with `Tools`, `Tools.Children` and `OutputTail` at the top; Accounts into `Harnesses/`, `Rotation/`, `Usage/` and `SignIns/`, with eight files the rotation and the usage both read at the top. On Sonnet, scouted: 46 tool calls. Detail: D166's SCOPE1b note.
+
+## SCOPE1a — Trees by scope (2026-10-14, D166)
+
+> - [ ] **SCOPE1a — Trees by scope** (driver). Renames alone: `SessionTrees/` (the partial and its 16 parts), `Landing/`, `Branches/`, `GitReads/`; WorkingTree, TreeLock, PullRequestStates, PullRequestWords, LandedBranches, SessionGroups, Orphans, TreeGuard and TreesCommand stay at the top with `hooks/`. README :41's path. D166's scope note.
+
+**Outcome** 2026-10-14: 34 renames: `SessionTrees/` (the partial and its 17 parts), `Landing/`, `Branches/` and `GitReads/`; the nine helpers several scopes name stay at the top with `hooks/` and `Domain/`. A scope calling another scope's main type is allowed; only shared helpers stay up. On Sonnet, scouted: 31 tool calls. Detail: D166's SCOPE1a note.

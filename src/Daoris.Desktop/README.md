@@ -38,9 +38,10 @@ window (none where no window is read). It is pure, the first file in an onion la
 passes by the smart curve and ranks by D130's week pace. The start's reasons say the window, its use and the curve's value
 (`over-curve`, `most-room`, `opening.said-over`), and the Accounts answer's `near` list reads the same judgement.
 
-One session's tree is brought up to date by `Trees/SessionTrees.Update.cs` (REVIEWBASE2-i, D164's REVIEWBASE2 notes): the line
+One session's tree is brought up to date by `Trees/SessionTrees/SessionTrees.Update.cs` (REVIEWBASE2-i, D164's REVIEWBASE2 notes): the line
 fetched once as the person, then WSR6's replay of that tree alone, a detached one rebased in place and proved. Its answer, the
 refusals' order and their words are pure in `Trees/Domain/TreeUpdate.cs`.
+`Trees/` groups its files into scope folders (`SessionTrees/`, `Landing/`, `Branches/`, `GitReads/`, SCOPE1a, D166's note); a file two scopes share, such as `WorkingTree.cs`, stays at the top.
 Beside it, `Accounts/Domain/SwitchDecision.cs` (SWITCH1c-i) says whether a running session moves at its turn's end: it stays
 (`off`, no number, room, held thirty minutes after a curve move, or no account with room), reads the others first, or moves
 to the ready account with the most room, at least ten points under its curve on every window. The hand-over box takes
