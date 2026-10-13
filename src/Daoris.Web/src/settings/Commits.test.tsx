@@ -49,9 +49,9 @@ describe('what a commit rule says', () => {
   });
 
   it('toasts what a change did', () => {
-    expect(commitToast(t, 'web-app', { set: { mode: 'as-you-go', convention: '' } })).toBe('Work in web-app is now committed as it goes.');
+    expect(commitToast(t, 'web-app', { set: { mode: 'as-you-go', convention: '' } })).toBe('In web-app, work is now committed as it goes.');
     expect(commitToast(t, 'web-app', { set: { mode: 'ask' } })).toBe('Each commit in web-app now waits for your yes.');
-    expect(commitToast(t, 'web-app', { set: { mode: 'at-end' } })).toBe('Work in web-app is now committed once, when it is done.');
+    expect(commitToast(t, 'web-app', { set: { mode: 'at-end' } })).toBe('In web-app, work is now committed once, when it is done.');
     expect(commitToast(t, 'web-app', { clear: true })).toBe('web-app takes its commit rule from what stands above it again.');
   });
 

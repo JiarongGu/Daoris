@@ -21,8 +21,8 @@
   "settings.commits.conventionPlaceholder": "e.g. imperative subject, ticket first",
   "settings.commits.conventionCount": "{{used}} of {{limit}} characters, one paragraph",
   "settings.commits.save": "Save",
-  "settings.commits.saved.asYouGo": "Work in {{name}} is now committed as it goes.",
+  "settings.commits.saved.asYouGo": "In {{name}}, work is now committed as it goes.",
   "settings.commits.saved.ask": "Each commit in {{name}} now waits for your yes.",
-  "settings.commits.saved.atEnd": "Work in {{name}} is now committed once, when it is done.",
+  "settings.commits.saved.atEnd": "In {{name}}, work is now committed once, when it is done.",
   "settings.commits.cleared": "{{name}} takes its commit rule from what stands above it again."
 }
