@@ -92,7 +92,7 @@ internal sealed class HelpAskProposals : IHelpProposalKind
     };
 }
 
-public partial interface IHelpDoors
+public interface IHelpAskDoors
 {
     /// <summary>
     /// An ask, through the local host's ask door, with the review choice and words the composer sends (ENTRY1c): null for none.

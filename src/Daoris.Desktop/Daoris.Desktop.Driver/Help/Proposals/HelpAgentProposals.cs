@@ -540,7 +540,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
     private static partial System.Text.RegularExpressions.Regex ExactRelease();
 }
 
-public partial interface IHelpDoors
+public interface IHelpAgentDoors
 {
     /// <summary>
     /// <c>HARNESS_ACTION</c>'s own start of an update or a pin: answered once the process has started,

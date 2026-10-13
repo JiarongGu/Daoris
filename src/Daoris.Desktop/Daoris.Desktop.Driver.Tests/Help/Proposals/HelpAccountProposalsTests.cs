@@ -64,13 +64,3 @@ public sealed class HelpAccountProposalsTests : HelpProposalsFixture
         Assert.Equal(("work", "opus", "high"), (account.Account, account.Model, account.Effort));
     }
 }
-
-public sealed partial class HelpStandInDoors
-{
-    public AgentSettingsRead SetAgentSettings(string harness, string account, AgentSettingEdit? model, AgentSettingEdit? effort)
-    {
-        string Said(AgentSettingEdit? edit) => edit is null ? "-" : edit.Value ?? "clear";
-        Calls.Add($"SET_AGENT_SETTINGS {harness} {account} {Said(model)} {Said(effort)}");
-        return new AgentSettingsRead(model?.Value, effort?.Value, [], null);
-    }
-}

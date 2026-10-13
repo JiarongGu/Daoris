@@ -431,15 +431,3 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
         return (applied, doors);
     }
 }
-
-public sealed partial class HelpStandInDoors
-{
-    /// <summary>What the screen's clear answers; by default every unit sent was listed and none went.</summary>
-    public HistoryOutcome? HistoryCleared { get; set; }
-
-    public Task<HistoryOutcome> ClearHistoryAsync(HistoryScope scope, string id, IReadOnlyList<HistoryUnitName> units, CancellationToken ct)
-    {
-        Calls.Add($"HISTORY_CLEAR {HistoryClearing.Word(scope)} {id} {string.Join(",", units.Select(unit => $"{unit.Kind}:{unit.Id}"))}");
-        return Task.FromResult(HistoryCleared ?? new HistoryOutcome(scope, id) { Listed = units.Count });
-    }
-}

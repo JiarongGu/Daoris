@@ -98,7 +98,7 @@ internal sealed class HelpAccountProposals : IHelpProposalKind
     private const string Unset = "unset";
 }
 
-public partial interface IHelpDoors
+public interface IHelpAccountDoors
 {
     /// <summary><c>SET_AGENT_SETTINGS</c>'s own write to an account's settings file.</summary>
     AgentSettingsRead SetAgentSettings(string harness, string account, AgentSettingEdit? model, AgentSettingEdit? effort);

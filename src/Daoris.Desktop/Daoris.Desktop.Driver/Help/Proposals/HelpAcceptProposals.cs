@@ -137,7 +137,7 @@ public sealed record HelpAcceptPlan(string Quest, string Title, IReadOnlyList<He
 /// </summary>
 public sealed record HelpDeparture(int Requirement, string Required, string Check, string Reason, string Words);
 
-public partial interface IHelpDoors
+public interface IHelpAcceptDoors
 {
     /// <summary>The local host's <c>POST /api/quests/{id}/accept</c>, the quest page's yes and the terminal's.</summary>
     Task<(bool Ok, string Message)> AcceptDepartureAsync(string id, CancellationToken ct);

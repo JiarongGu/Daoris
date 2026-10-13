@@ -233,7 +233,7 @@ internal sealed class HelpPauseProposals : IHelpProposalKind
     private static string Quests(IEnumerable<string> quests) => string.Join(", ", quests.Select(quest => $"`#{quest}`"));
 }
 
-public partial interface IHelpDoors
+public interface IHelpPauseDoors
 {
     /// <summary>
     /// The pause the pages' *Pause…* and a session's *Pause ask…* and *Pause quest…* press (<c>WORK_PAUSE</c>, PAUSE1b, D132

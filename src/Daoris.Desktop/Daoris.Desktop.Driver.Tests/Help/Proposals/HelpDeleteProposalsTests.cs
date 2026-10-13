@@ -165,26 +165,3 @@ public sealed class HelpDeleteProposalsTests : HelpProposalsFixture
         }
     }
 }
-
-public sealed partial class HelpStandInDoors
-{
-    public (bool Ok, string Message) Deleted { get; set; } = (true, "Deleted it.");
-
-    public Task<(bool Ok, string Message)> DeleteQuestAsync(string id, CancellationToken ct)
-    {
-        Calls.Add($"DELETE /api/quests/{id}");
-        return Task.FromResult(Deleted);
-    }
-
-    public Task<(bool Ok, string Message)> DeleteAskAsync(string id, CancellationToken ct)
-    {
-        Calls.Add($"DELETE /api/asks/{id}");
-        return Task.FromResult(Deleted);
-    }
-
-    public Task<(bool Ok, string Message)> DeleteSessionAsync(string id, CancellationToken ct)
-    {
-        Calls.Add($"SESSION_DELETE {id}");
-        return Task.FromResult(Deleted);
-    }
-}
