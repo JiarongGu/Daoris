@@ -8,7 +8,7 @@ internal sealed record CheckRun(bool Started, int? ExitCode, string Stdout, stri
 
 /// <summary>
 /// What starts a program for a check and reads its answer, bounded: a stand-in in the fast tests, a real start otherwise
-/// (the Infrastructure's <see cref="PluginToolRuns.RunAsync"/>). The module's port for its tool checks (STRUCT3a).
+/// (<see cref="PluginToolRuns.RunAsync"/>). The module's port for its tool checks (STRUCT3a).
 /// </summary>
 internal delegate Task<CheckRun> CheckRunner(ProcessStartInfo info, TimeSpan patience, CancellationToken ct);
 

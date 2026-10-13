@@ -16,8 +16,8 @@ namespace Daoris.Driver;
 /// <para><b>Its health is the loop's record where the caller runs the loop</b>, and the machine log's last word
 /// where it does not (D119 §2): the shell hands its <see cref="PluginHealth"/>, a terminal hands none.</para>
 ///
-/// <para>The use case (STRUCT3a): the page's records are the Domain's, the folders it counts and walks the
-/// Infrastructure's (<see cref="PluginFolders"/>).</para>
+/// <para>The use case (STRUCT3a): the page's records are the Domain's, the folders it counts and walks
+/// are <see cref="PluginFolders"/>'.</para>
 /// </remarks>
 public static class PluginPage
 {

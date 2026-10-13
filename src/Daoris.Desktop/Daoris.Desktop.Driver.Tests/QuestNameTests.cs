@@ -289,7 +289,7 @@ public sealed class QuestNameTests
             using var document = System.Text.Json.JsonDocument.Parse($$"""[{"id":"work","kind":"work"},{{landing}}]""");
             var (steps, problem) = WorkflowNamed.ReadSteps(document.RootElement.Clone(), 2);
             Assert.True(problem is null, problem);
-            return WorkflowProcesses.Of(config, "web-app", "work",
+            return WorkflowProcess.Of(config, "web-app", "work",
                 new WorkflowRunBinding("q1", "web-app", "work", "docs-to-pr", WorkflowLevels.Repository, DateTimeOffset.UnixEpoch) { Version = 2 }, steps!);
         }
 

@@ -25,8 +25,8 @@ namespace Daoris.Driver;
 /// <c>toolchain.ts</c>, and the samples come from this library.</para>
 ///
 /// <para><b>The use case</b> (STRUCT3a): what the kit says and plans is here; the folder it writes, the templates the build
-/// carries, a trial's scratch and its process are the Infrastructure's (<see cref="PluginKitFiles"/>,
-/// <see cref="PluginTrialProcess"/>).</para>
+/// carries, a trial's scratch and its process are <see cref="PluginKitFiles"/>' and
+/// <see cref="PluginTrialProcess"/>'s.</para>
 /// </remarks>
 public static partial class PluginKit
 {

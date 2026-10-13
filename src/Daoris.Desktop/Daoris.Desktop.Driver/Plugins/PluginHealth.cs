@@ -7,22 +7,11 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// The record and the clock it stamps each word with are this class's; the rules it plays them by, and the five states,
-/// are the Domain's <see cref="PluginHealthRules"/> (STRUCT3a), which a terminal's reading plays the log's lines through.
+/// are the Domain's <see cref="PluginHealthRules"/> (STRUCT3a), which a terminal's reading plays the log's lines through,
+/// and which callers name for a state and for a reading of lines (FLAT1b-i).
 /// </remarks>
 public sealed class PluginHealth(Func<DateTimeOffset>? clock = null)
 {
-    public const string Running = PluginHealthRules.Running;
-
-    public const string Ready = PluginHealthRules.Ready;
-
-    public const string Failing = PluginHealthRules.Failing;
-
-    public const string Refused = PluginHealthRules.Refused;
-
-    public const string Off = PluginHealthRules.Off;
-
-    public static readonly IReadOnlyList<string> States = PluginHealthRules.States;
-
     private readonly Func<DateTimeOffset> _clock = clock ?? (() => DateTimeOffset.UtcNow);
     private readonly Dictionary<string, PluginHealthRules.Record> _records = new(StringComparer.OrdinalIgnoreCase);
 
@@ -51,10 +40,7 @@ public sealed class PluginHealth(Func<DateTimeOffset>? clock = null)
         lock (_records) return _records.GetValueOrDefault(plugin) is { Up: true } record ? record.Listening : [];
     }
 
-    /// <summary>The plugin's health as the machine log's lines say, oldest first (<see cref="PluginHealthRules.FromLog"/>).</summary>
-    public static PluginHealthState FromLog(PluginEntry entry, IEnumerable<LogLine> lines) => PluginHealthRules.FromLog(entry, lines);
-
-    /// <summary>The plugin's health from the machine log under <paramref name="home"/>: every day the log keeps.</summary>
+    /// <summary>The plugin's health from the machine log under <paramref name="home"/>: every day the log keeps (<see cref="PluginHealthRules.FromLog"/>).</summary>
     public static PluginHealthState FromLog(PluginEntry entry, string home) =>
-        FromLog(entry, MachineLogReader.Read(Path.Combine(home, MachineLog.Folder), new LogFilter()).Lines);
+        PluginHealthRules.FromLog(entry, MachineLogReader.Read(Path.Combine(home, MachineLog.Folder), new LogFilter()).Lines);
 }

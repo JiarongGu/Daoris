@@ -42,7 +42,7 @@ public sealed record PluginActivityRead(
 /// <summary>
 /// What a plugin did, summarised from what was read (PLUGUI1d, D119 §3.2 and §4.1): the machine log's <c>plugin.*</c> lines
 /// for one plugin, the sessions started on its agents (<c>session.started</c>'s <c>adapter</c>) and the branches it pushed.
-/// Pure (STRUCT3a): the lines and the pushes come in as values, read by the Application's <see cref="PluginActivity"/>.
+/// Pure (STRUCT3a): the lines and the pushes come in as values, read by <see cref="PluginActivity"/>.
 /// </summary>
 public static class PluginActivitySummary
 {

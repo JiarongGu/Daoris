@@ -126,8 +126,8 @@ public sealed class WorkflowGateTests : IDisposable
     public void Each_steps_process_is_read_from_the_version_over_what_is_declared(string name, string config, string? steps, string expected)
     {
         var process = steps is null
-            ? WorkflowProcesses.Current(Config(config), "web-app", "work")
-            : WorkflowProcesses.Of(Config(config), "web-app", "work", Binding(), Steps(steps));
+            ? WorkflowProcess.Current(Config(config), "web-app", "work")
+            : WorkflowProcess.Of(Config(config), "web-app", "work", Binding(), Steps(steps));
 
         Assert.True(expected == Summary(process), $"{name}\n  expected {expected}\n  actual   {Summary(process)}");
         Assert.Equal(steps is not null, process.Named);
@@ -136,7 +136,7 @@ public sealed class WorkflowGateTests : IDisposable
     [Fact]
     public void A_step_that_cannot_start_says_why_and_names_the_Setup_row_that_declares_what_it_needs()
     {
-        var process = WorkflowProcesses.Of(Config("{}"), "web-app", "work", Binding(), Steps(
+        var process = WorkflowProcess.Of(Config("{}"), "web-app", "work", Binding(), Steps(
             """[{"id":"work","kind":"work"},{"id":"opinion","kind":"opinion"},{"id":"look","kind":"look","environment":"local"},{"id":"land","kind":"landing","form":"branch","accept":"you"}]"""));
 
         Assert.Equal(
@@ -156,7 +156,7 @@ public sealed class WorkflowGateTests : IDisposable
             + "names a pattern for it: `daoris driver landing web-app branch <pattern>` declares one. Nothing was landed.",
             WorkflowGate.LandingSays(process));
 
-        var beyond = WorkflowProcesses.Of(Config(Declared), "web-app", "work", Binding(), Steps(
+        var beyond = WorkflowProcess.Of(Config(Declared), "web-app", "work", Binding(), Steps(
             """[{"id":"work","kind":"work"},{"id":"opinion","kind":"opinion","reviewers":["dsh","claude-code"]},{"id":"look","kind":"look","environment":"staging"},{"id":"land","kind":"landing","form":"merge","accept":"you"}]"""));
         Assert.Equal(
             "its second opinion `opinion` names `claude-code`, which `web-app` does not declare among its reviewers (`codex-acp` and `dsh`): "
@@ -219,7 +219,7 @@ public sealed class WorkflowGateTests : IDisposable
     [Fact]
     public async Task An_opinion_that_cannot_start_sits_and_the_persons_own_answers_are_its_floor()
     {
-        var process = WorkflowProcesses.Of(Config(Declared), "web-app", "work", Binding(), Steps(
+        var process = WorkflowProcess.Of(Config(Declared), "web-app", "work", Binding(), Steps(
             """[{"id":"work","kind":"work"},{"id":"opinion","kind":"opinion","reviewers":["claude-code"]},{"id":"land","kind":"landing","form":"merge","accept":"you"}]"""));
         var facts = new OpinionGateFacts("web-app", process.Opinion) { Session = "s1", Quest = Work(), Tip = "abc", Cannot = process.OpinionCannot };
 
@@ -235,7 +235,7 @@ public sealed class WorkflowGateTests : IDisposable
         Assert.True(anyway.LetsGo);
 
         // A version with no opinion step asks none, though the rule declared reads at landing.
-        var none = WorkflowProcesses.Of(Config(Declared), "web-app", "work", Binding(), Steps(
+        var none = WorkflowProcess.Of(Config(Declared), "web-app", "work", Binding(), Steps(
             """[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"merge","accept":"you"}]"""));
         var asksNone = await OpinionGate.JudgeAsync(
             new OpinionGateFacts("web-app", none.Opinion) { Session = "s1", Quest = Work(), Tip = "abc", Cannot = none.OpinionCannot }, NoOpinions());
@@ -259,7 +259,7 @@ public sealed class WorkflowGateTests : IDisposable
     public void The_runs_own_part_holds_first_and_the_landing_steps_last()
     {
         var steps = Steps("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"branch","accept":"you"}]""");
-        var named = WorkflowProcesses.Of(Config("{}"), "web-app", "work", Binding(), steps);
+        var named = WorkflowProcess.Of(Config("{}"), "web-app", "work", Binding(), steps);
         var broken = named with { Problem = "no workflow `docs-to-pr` is saved here any more." };
 
         var run = Gate(WorkflowGate.Judge(broken), opinionHolds: true, reviewHolds: true);
@@ -278,7 +278,7 @@ public sealed class WorkflowGateTests : IDisposable
         Assert.True(landing.WorkflowHolds);
         Assert.False(landing.LetsGo);
 
-        var current = Gate(WorkflowGate.Judge(WorkflowProcesses.Current(Config("{}"), "web-app", "work")));
+        var current = Gate(WorkflowGate.Judge(WorkflowProcess.Current(Config("{}"), "web-app", "work")));
         Assert.Null(current.Refusal);
         Assert.Empty(LandingGateWords.Plan(current));
         Assert.Equal(["trees: It follows `docs-to-pr` v2, `web-app`'s default.", $"trees: {WorkflowGate.LandingSays(named)}"], LandingGateWords.Plan(landing));
@@ -346,7 +346,7 @@ public sealed class WorkflowGateTests : IDisposable
     }
 
     private static WorkflowProcess Kind(WorkflowKept? kept = null) =>
-        WorkflowProcesses.Of(Config(Declared), "web-app", "work",
+        WorkflowProcess.Of(Config(Declared), "web-app", "work",
             Binding(WorkflowLevels.WorkspaceKind, ["docs/**", "**/*.md"]) with { Kept = kept },
             Steps("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"branch","accept":"automatic"}]"""));
 
@@ -388,7 +388,7 @@ public sealed class WorkflowGateTests : IDisposable
     [Fact]
     public void Current_is_todays_and_a_named_workflow_follows_saying_what_chose_it()
     {
-        var current = WorkflowGate.Judge(WorkflowProcesses.Current(Config(Declared), "web-app", "work"));
+        var current = WorkflowGate.Judge(WorkflowProcess.Current(Config(Declared), "web-app", "work"));
         Assert.Equal((WorkflowGateStates.None, true), (current.State, current.LetsGo));
         Assert.Null(current.Process.Record);
 
@@ -396,7 +396,7 @@ public sealed class WorkflowGateTests : IDisposable
         Assert.Equal(WorkflowGateStates.Follows, named.State);
         Assert.Equal(new LandingWorkflow("docs-to-pr", 2, WorkflowLevels.WorkspaceKind) { Kind = "docs" }, named.Process.Record);
 
-        var unread = WorkflowGate.Judge(WorkflowProcesses.Current(Config(Declared), "web-app", "work") with { Unread = "its chain could not be read." });
+        var unread = WorkflowGate.Judge(WorkflowProcess.Current(Config(Declared), "web-app", "work") with { Unread = "its chain could not be read." });
         Assert.Equal((WorkflowGateStates.Unread, false), (unread.State, unread.LetsGo));
         Assert.Equal("Whether this work's workflow holds it could not be read: its chain could not be read. Nothing lands until it can be.", unread.Says);
     }
@@ -420,7 +420,7 @@ public sealed class WorkflowGateTests : IDisposable
     public void A_runs_process_is_its_bound_version_and_Current_or_no_binding_reads_the_rules_live()
     {
         var config = Config(Declared);
-        Assert.Equal(Summary(WorkflowProcesses.Current(config, "web-app", "work")), Summary(WorkflowProcesses.Read(_home, config, "web-app", "work", "q1")));
+        Assert.Equal(Summary(WorkflowProcess.Current(config, "web-app", "work")), Summary(WorkflowProcesses.Read(_home, config, "web-app", "work", "q1")));
         Assert.Null(WorkflowProcesses.Read(_home, config, "web-app", "work", "q1").Binding);
 
         Bind(WorkflowRunBindings.Plan(config, _home, "q1", "web-app", "work", null, null, [], At));

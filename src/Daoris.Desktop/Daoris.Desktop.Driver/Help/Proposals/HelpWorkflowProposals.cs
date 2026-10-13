@@ -23,7 +23,7 @@ namespace Daoris.Driver;
 /// Its data rides on <see cref="HelpPlan.Workflow"/>, its words the page's (WORKFLOW1h-d).</para>
 ///
 /// <para><b>Needs first make a draft</b> (§8.1): a declaration a step needs that is not declared in a repository it reaches (the
-/// gate's own <see cref="WorkflowProcesses.Of"/>), a landing plugin that cannot land here, and a kind this build does not run. A
+/// gate's own <see cref="WorkflowProcess.Of"/>), a landing plugin that cannot land here, and a kind this build does not run. A
 /// draft is shown with no Apply, and an Apply pressed anyway is refused before anything is saved, leaving it standing.</para>
 ///
 /// <para><b>Left for WORKFLOW1h2</b>: changes against a base, a kind, and an import; the box refuses them by name. A new workflow's
@@ -244,7 +244,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
 
     /// <summary>
     /// What each step needs first (§8.1, §8.2) in each repository it reaches: the declarations the gate reads it over
-    /// (<see cref="WorkflowProcesses.Of"/>, its sentences naming their doors), a landing plugin that cannot land here, then each
+    /// (<see cref="WorkflowProcess.Of"/>, its sentences naming their doors), a landing plugin that cannot land here, then each
     /// step of a kind this build does not run (§3.9), never guessed past.
     /// </summary>
     private static List<string> Needs(
@@ -260,7 +260,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
             {
                 Version = version,
             };
-            var process = WorkflowProcesses.Of(config, repository, workspace, binding, steps);
+            var process = WorkflowProcess.Of(config, repository, workspace, binding, steps);
             if (process.OpinionCannot is { } opinion) needs.Add(opinion);
             if (process.Look?.Cannot is { } look) needs.Add(look);
             if (process.LandingCannot is { } landing) needs.Add(landing);

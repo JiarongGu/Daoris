@@ -16,20 +16,13 @@ namespace Daoris.Driver;
 /// <para><b>Never swapped</b> (§4.5): a named workflow that cannot be read here holds its run, saying why, and nothing else is read
 /// in its place.</para>
 ///
-/// <para><b>Layered</b> (STRUCT3b, D166): the reads, written against <see cref="IWorkflowStore"/> and <see cref="IWorkflowRunStore"/>;
-/// the rules they apply are <see cref="WorkflowProcess"/>'s, in Workflows' Domain, and <see cref="Current"/> and <see cref="Of"/>
-/// are theirs by the names every gate calls. A caller that holds only the home reads by it, as every module did before.</para>
+/// <para><b>Reads over ports</b> (STRUCT3b, D166; FLAT1b-i): the reads, written against <see cref="IWorkflowStore"/> and
+/// <see cref="IWorkflowRunStore"/>; the rules they apply are <see cref="WorkflowProcess"/>'s, in Workflows' Domain, which every
+/// gate calls by its own name (<see cref="WorkflowProcess.Current"/>, <see cref="WorkflowProcess.Of"/>). A caller that holds
+/// only the home reads by it, as every module did before.</para>
 /// </remarks>
 public static class WorkflowProcesses
 {
-    /// <summary>The rules as they stand, read live as every gate reads them today: <see cref="WorkflowProcess.Current"/>.</summary>
-    public static WorkflowProcess Current(DriverConfig config, string repository, string? workspace) =>
-        WorkflowProcess.Current(config, repository, workspace);
-
-    /// <summary>A named version's process over what the repository declares: <see cref="WorkflowProcess.Of"/>.</summary>
-    public static WorkflowProcess Of(DriverConfig config, string repository, string? workspace, WorkflowRunBinding binding, IReadOnlyList<NamedStep> steps) =>
-        WorkflowProcess.Of(config, repository, workspace, binding, steps);
-
     /// <summary>
     /// The process of a run (design §2.6, §4.5): its binding read from the home, and a named workflow's version from the store by the
     /// number the run kept, which must still be the version it bound (a version is never edited). Current, or no binding, is the

@@ -165,7 +165,7 @@ public sealed class WorkflowNamedTests
         var row = Table("store")[index];
         var add = row.GetProperty("add");
 
-        var plan = WorkflowStore.PlanAdd(
+        var plan = WorkflowNamed.PlanAdd(
             Node(row.GetProperty("file")),
             new WorkflowVersionAdded(add.GetProperty("id").GetString()!, Text(add, "name"), add.GetProperty("door").GetString()!,
                 add.GetProperty("at").GetString()!, Node(add.GetProperty("steps"))),

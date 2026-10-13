@@ -216,11 +216,11 @@ public static class PluginsCommand
         var points = page.Hook?.Points ?? [];
         return health.State switch
         {
-            PluginHealth.Running => $"running since {Stamp(health.Since!.Value)}, listening on {string.Join(", ", health.Listening)}",
-            PluginHealth.Failing when health.Failure is { } failure =>
+            PluginHealthRules.Running => $"running since {Stamp(health.Since!.Value)}, listening on {string.Join(", ", health.Listening)}",
+            PluginHealthRules.Failing when health.Failure is { } failure =>
                 $"failing since {Stamp(failure.At)}: {failure.Kind} at {failure.Where}. {Cost(failure.Where, points)}",
-            PluginHealth.Refused => $"refused: {page.Problem}",
-            PluginHealth.Off => $"off: the driver asks it nothing, and hands sessions nothing it declares. `daoris plugin enable {page.Id}` turns it on.",
+            PluginHealthRules.Refused => $"refused: {page.Problem}",
+            PluginHealthRules.Off => $"off: the driver asks it nothing, and hands sessions nothing it declares. `daoris plugin enable {page.Id}` turns it on.",
             _ => points.Any(point => HookPoints.Loop.Contains(point, StringComparer.Ordinal))
                 ? "ready: on and sound, and no process of it is up now; the driver loop starts it"
                 : points.Contains(HookPoints.Land, StringComparer.Ordinal)

@@ -14,9 +14,9 @@ namespace Daoris.Driver;
 /// <para>The toolchain rows are what the roster needs to show it beside the built-in harnesses: the
 /// binary is the command's first word, so "is it installed" is asked of the thing that will run.</para>
 ///
-/// <para><b>The Application's</b> (STRUCT3a): it starts nothing and reads nothing, it says how the agents' door
+/// <para><b>It starts nothing and reads nothing</b> (STRUCT3a): it says how the agents' door
 /// (<see cref="ISessionAdapter"/>) runs what a plugin declares. The adapter set (Agents) builds one per declared harness,
-/// and reaches Plugins through this layer.</para>
+/// and reaches Plugins through it.</para>
 /// </remarks>
 public sealed class DeclaredAcpAdapter(PluginHarness harness, string plugin) : ISessionAdapter
 {
