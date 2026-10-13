@@ -277,6 +277,19 @@ folder.
 - [ ] **STRUCT3OPLOOP — Review's opinion logic out of the loop** (driver; optional). `Loop/Driver.Opinion.cs`, `Driver.OpinionDelivery.cs` and `Driver.OpinionGate.cs` hold the pass, the delivery and the gate's look: what needs none of the loop's state moves into `Review/`, with no new ports. D166's STRUCT2g note.
 - [ ] **STRUCT5 — the other projects' folders** (modules/service/web/cli). Folders by domain, no layers (D166's note of 2026-10-14): `Modules` (the bridge per domain, browser, window, update), the service's core, the page's top folder and the CLI's `src/`, each with its gate; a row each when due. Design §7.
 
+**No partial type split by hand** (the owner: *"also I think we better not use partial class if we don't have auto-generated code"*; D166's note). Evidence: `docs/2026-10-14-partial-types-survey.md`. A class per domain or kind keeps one new door in one new file.
+
+- [ ] **PART1 — the gate** (tools). `tools/partials.mjs` over `src/**/*.cs` refuses a type declared `partial` in more than one hand-written file; the 34 offenders on `tools/partials.json`, a list that may only shrink; a universal gate in `daoris.gates.json`. Each PART row cuts its entries.
+- [ ] **PART2 — the driver's small merges** (driver). `AcpSession`, `WorkflowNamed`, `PluginKit` (a `PluginTrials` class), `Tools` with `Tools.Children`, `ToolInstall` (`ToolArchives`). Survey "Merge".
+- [ ] **PART3 — the client's views and the harness types** (driver). `QuestView`, `QuestStepView` and `AskView` each one declaration; `HarnessSettings` and `HarnessRoster` each a file of its own. Survey "Records".
+- [ ] **PART4 — Help's records** (driver). `HelpProposal`, `HelpMachineFacts`, `HelpPlan`, `HelpApplied`, `HelpMachine` and `HelpProposals` each one declaration holding its kinds' members. Survey "Records".
+- [ ] **PART5 — Help's doors** (driver; after PART4). `IHelpDoors` inheriting a per-kind interface each kind file declares, its stand-in likewise; callers and `ScreenDoors` unchanged. Survey "Records".
+- [ ] **PART6 — the service core's short parts and test classes** (service). The six short parts merged, and four test classes merged or split. Survey "Merge".
+- [ ] **PART7 — `HelpProposalBox` as a writer per kind** (service). A proposal-file helper and a writer class per kind, `ProposeX` kept on the box; the workflow pattern with its writer. Survey "A family".
+- [ ] **PART8 — `ServiceClient`'s parts as door classes** (driver). The opinion, helper, history, review, showing and workflow doors as classes over the client, callers re-spelled. Survey "A family".
+- [ ] **PART9 — the home's history reading as a class** (driver; after FLAT1b-iii-b). `HistoryClearing.Home.cs` as a class of its own. Survey "Merge".
+- [ ] **PART10 — the large five, each scouted alone** (service, modules, driver). `KnowledgeTools`, `DriverModule`, `ChatRunner`, `SessionTrees` (by concern, several rows) and the loop's `Driver` (last), each into named classes. Survey "Large".
+
 **Duplication** (the owner: *"we more focus on modularize the code to reduce duplication and easier to manage"*). Evidence: `docs/2026-10-14-duplication-survey.md`, by section. After FLAT1; DEDUP1 to 3 touch the same files, so one at a time.
 
 - [ ] **DEDUP1 — one JSON field reader** (driver, modules). A public `Json` reader in `Platform/` on `C/JsonFields.cs`'s model (the object guard always, the empty-string rule chosen per caller) for about 44 private `Text`/`Number`/`Strings`/`Items` copies, about 25 of which throw on a non-object. Survey §1.
