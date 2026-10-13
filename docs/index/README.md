@@ -93,10 +93,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/SessionsCommand.cs` | 63 | 1239 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/WorkAbandoning.cs` | 43 | 765 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/LandedBranches.cs` | 40 | 719 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing.cs` | 44 | 794 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing/Landing.cs` | 44 | 794 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionGroups.cs` | 60 | 1081 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees.Sync.cs` | 74 | 1234 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees.cs` | 92 | 1568 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Sync.cs` | 74 | 1234 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.cs` | 92 | 1568 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/WorkingTree.cs` | 54 | 1114 |
 
 ### Desktop modules (`modules`)
@@ -197,4 +197,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-second-agent-design.md` | 57 | 769 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
-| `src/Daoris.Desktop/README.md` | 64 | 395 |
+| `src/Daoris.Desktop/README.md` | 64 | 396 |
