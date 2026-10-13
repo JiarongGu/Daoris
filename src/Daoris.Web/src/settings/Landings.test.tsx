@@ -60,11 +60,11 @@ describe("the landing rule's control", () => {
     expect(pattern).toHaveValue('');
     expect(pattern).toHaveAttribute('placeholder', 'feature/{quest}-{slug}');
     await user.click(forgeSave());
-    expect(onSet).toHaveBeenLastCalledWith({ workspace: 'forge', form: 'branch', pattern: 'feature/{quest}-{slug}' });
+    expect(onSet).toHaveBeenLastCalledWith({ workspace: 'forge', form: 'branch', pattern: 'feature/{quest}-{slug}', squash: false });
 
     await user.type(pattern, 'review/{{session}');
     await user.click(forgeSave());
-    expect(onSet).toHaveBeenLastCalledWith({ workspace: 'forge', form: 'branch', pattern: 'review/{session}' });
+    expect(onSet).toHaveBeenLastCalledWith({ workspace: 'forge', form: 'branch', pattern: 'review/{session}', squash: false });
   });
 
   /** D88: the tidy rides the rule — the tree and its branch go once a press lands the work. */
@@ -106,11 +106,12 @@ describe("the landing rule's control", () => {
     await choose('Who pushes the branch for forge', 'Plugin github-pull-request');
     await user.click(forgeSave());
 
-    expect(onSet).toHaveBeenLastCalledWith({ workspace: 'forge', form: 'branch', pattern: 'feature/{quest}-{slug}', plugin: 'github-pull-request' });
+    expect(onSet).toHaveBeenLastCalledWith(
+      { workspace: 'forge', form: 'branch', pattern: 'feature/{quest}-{slug}', plugin: 'github-pull-request', squash: false });
 
     await choose('Who pushes the branch for forge', 'You push it');
     await user.click(forgeSave());
-    expect(onSet).toHaveBeenLastCalledWith({ workspace: 'forge', form: 'branch', pattern: 'feature/{quest}-{slug}' });
+    expect(onSet).toHaveBeenLastCalledWith({ workspace: 'forge', form: 'branch', pattern: 'feature/{quest}-{slug}', squash: false });
   });
 
   it('offers no plugin where none here lands work', async () => {
@@ -150,7 +151,7 @@ describe("the landing rule's control", () => {
 
     expect(within(forge).getByText(/no plugin opens a pull request, so each done's branch waits here for you to push it/)).toBeInTheDocument();
     await user.click(forgeSave());
-    expect(onSet).toHaveBeenLastCalledWith({ workspace: 'forge', form: 'branch', pattern: 'feature/{quest}-{slug}', autoAccept: true });
+    expect(onSet).toHaveBeenLastCalledWith({ workspace: 'forge', form: 'branch', pattern: 'feature/{quest}-{slug}', autoAccept: true, squash: false });
   });
 
   it('says the chosen plugin pushes and opens pull requests without asking each time', async () => {
@@ -166,7 +167,7 @@ describe("the landing rule's control", () => {
     expect(within(forge).getByText('github-pull-request', { selector: 'code' })).toBeInTheDocument();
     await user.click(forgeSave());
     expect(onSet).toHaveBeenLastCalledWith(
-      { workspace: 'forge', form: 'branch', pattern: 'feature/{quest}-{slug}', plugin: 'github-pull-request', autoAccept: true });
+      { workspace: 'forge', form: 'branch', pattern: 'feature/{quest}-{slug}', plugin: 'github-pull-request', autoAccept: true, squash: false });
   });
 
   it('a merge drops the switch', async () => {
@@ -178,6 +179,67 @@ describe("the landing rule's control", () => {
     await user.click(within(screen.getByRole('radiogroup', { name: 'How work in aurora lands' })).getByRole('radio', { name: 'Merge' }));
     expect(within(aurora).queryByRole('checkbox', { name: 'Accept automatically' })).toBeNull();
     await user.click(within(aurora).getByRole('button', { name: 'Save' }));
+    expect(onSet).toHaveBeenLastCalledWith({ workspace: 'aurora', form: 'merge' });
+  });
+});
+
+/**
+ * DOORS1b (D164's amendment point 2, its PROCESS1b-i and PROCESS1b-ii notes): a branch's pattern may say `{ticket}`, found by the
+ * rule's key, and Accept may squash the pull request's branch to one commit. The key's field is offered only where the pattern
+ * says `{ticket}`, the default shape its placeholder; the squash only on a branch. Each is sent as the field shows it, so a save
+ * keeps what the terminal or Ask Daoris set; the driver refuses what will not do, in the terminal's words.
+ */
+describe("the landing rule's ticket key and squash", () => {
+  const drawTicketed = (set: LandingRule, onSet = vi.fn()) => {
+    render(
+      <Tooltip.Provider>
+        <Row name="aurora" set={set} landers={[]} onSet={onSet} />
+      </Tooltip.Provider>,
+    );
+    return onSet;
+  };
+
+  it('offers the key only where the pattern says {ticket}, the default shape as its placeholder', async () => {
+    const onSet = drawTicketed({ form: 'branch', pattern: 'feature/{quest}-{slug}' });
+    const user = userEvent.setup();
+
+    expect(screen.queryByRole('textbox', { name: "The ticket's key for aurora" })).toBeNull();
+    const pattern = screen.getByRole('textbox', { name: 'The branch pattern for aurora' });
+    await user.clear(pattern);
+    await user.type(pattern, 'feature/{{ticket}-{{slug}');
+    const key = screen.getByRole('textbox', { name: "The ticket's key for aurora" });
+    expect(key).toHaveValue('');
+    expect(key).toHaveAttribute('placeholder', '[A-Z][A-Z0-9]+-\\d+');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    // An empty key is the default shape: it takes away any key set here.
+    expect(onSet).toHaveBeenLastCalledWith({ workspace: 'aurora', form: 'branch', pattern: 'feature/{ticket}-{slug}', key: '', squash: false });
+
+    await user.type(key, 'TK-\\d+');
+    await user.click(screen.getByRole('checkbox', { name: 'Squash into one commit' }));
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSet).toHaveBeenLastCalledWith({ workspace: 'aurora', form: 'branch', pattern: 'feature/{ticket}-{slug}', key: 'TK-\\d+', squash: true });
+  });
+
+  it('starts from the key and the squash set here, and holds Save until one changes', async () => {
+    const onSet = drawTicketed({ form: 'branch', pattern: 'work/{ticket}', key: 'TK-\\d+', squash: true });
+    const user = userEvent.setup();
+
+    expect(screen.getByRole('textbox', { name: "The ticket's key for aurora" })).toHaveValue('TK-\\d+');
+    expect(screen.getByRole('checkbox', { name: 'Squash into one commit' })).toBeChecked();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await user.click(screen.getByRole('checkbox', { name: 'Squash into one commit' }));
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSet).toHaveBeenLastCalledWith({ workspace: 'aurora', form: 'branch', pattern: 'work/{ticket}', key: 'TK-\\d+', squash: false });
+  });
+
+  it('offers neither on a merge, and sends neither', async () => {
+    const onSet = drawTicketed({ form: 'branch', pattern: 'work/{ticket}', key: 'TK-\\d+', squash: true });
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('radio', { name: 'Merge' }));
+    expect(screen.queryByRole('textbox', { name: "The ticket's key for aurora" })).toBeNull();
+    expect(screen.queryByRole('checkbox', { name: 'Squash into one commit' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Save' }));
     expect(onSet).toHaveBeenLastCalledWith({ workspace: 'aurora', form: 'merge' });
   });
 });

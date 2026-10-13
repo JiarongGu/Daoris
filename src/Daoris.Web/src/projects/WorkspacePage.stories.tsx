@@ -24,8 +24,9 @@ import { WorkspaceSetup, type WorkspaceSetupProps } from './WorkspaceSetup';
 // A workspace's page (UX6g, D150 §4.3) in Repositories' main area, every tab and the states the design names: Details
 // with its repositories, what a start runs on and its accounts; Branches with each repository's branches (UX6h2b2), the
 // clean-up and bringing up to date; Setup
-// at Daoris's defaults, with the workspace's own values, with the wiring form open, and with the environment naming the
-// remote; a browser's page; and the header wired and local. Drawn as `WorkspaceView` draws them, from props.
+// at Daoris's defaults, with the workspace's own values, with its process (DOORS1b: commits, helpers, the landing's ticket key
+// and squash) at Daoris's defaults, set and in 中文, with the wiring form open, and with the environment naming the remote; a
+// browser's page; and the header wired and local. Drawn as `WorkspaceView` draws them, from props.
 
 const nothing = () => {};
 
@@ -84,6 +85,30 @@ const DEFAULTS_DAORIS: WorkspaceSetupProps = {
   remote: {
     wiring: { remote: null, fromEnvironment: false, onWire: nothing, onUnwire: nothing },
     rules: { lists: { allow: [], ask: [], deny: [] }, onAdd: nothing, onRemove: nothing },
+  },
+};
+
+/** Its process at Daoris's defaults (DOORS1b): commits as the work goes, and each helper waiting for the person's yes. */
+const DEFAULTS_PROCESS: WorkspaceSetupProps = {
+  ...DEFAULTS_DAORIS,
+  defaults: { ...DEFAULTS_DAORIS.defaults, commits: { onChange: nothing }, helpers: { onChange: nothing } },
+};
+
+/**
+ * Its process set for its repositories (DOORS1b): branches named by a ticket and squashed, one commit at the end under the
+ * person's convention, helpers started at once from two agents in order.
+ */
+const DEFAULTS_PROCESS_OWN: WorkspaceSetupProps = {
+  ...DEFAULTS_DAORIS,
+  defaults: {
+    ...DEFAULTS_DAORIS.defaults,
+    landing: {
+      set: { form: 'branch', pattern: 'feature/{ticket}-{slug}', key: 'TK-\\d+', squash: true, plugin: 'azure-devops-pull-request' },
+      landers: ['azure-devops-pull-request'],
+      onSet: nothing,
+    },
+    commits: { set: { mode: 'at-end', convention: 'One commit per ticket: its key, then an imperative summary.' }, onChange: nothing },
+    helpers: { set: { mode: 'on', agents: ['codex-acp', 'dsh'] }, onChange: nothing },
   },
 };
 
@@ -317,6 +342,15 @@ export const WorkflowAtTheFloor: Story = { args: { tab: 'workflow' }, decorators
 
 /** Setup at Daoris's defaults: both sections fold, each value marked as Daoris's. */
 export const SetupFolded: Story = { args: { tab: 'setup', wired: false } };
+
+/** Its process at Daoris's defaults (DOORS1b): *Commits* and *Helpers* among the Defaults, each offering *Set for this workspace*. */
+export const SetupProcess: Story = { args: { tab: 'setup', wired: false, setup: { ...DEFAULTS_PROCESS, open: 'defaults' } } };
+
+/** Its process set for its repositories: the landing's ticket key and squash, its commit rule and convention, its helpers. */
+export const SetupProcessOwn: Story = { args: { tab: 'setup', wired: false, setup: DEFAULTS_PROCESS_OWN } };
+
+/** Its process set, in 中文. */
+export const SetupProcessChinese: Story = { args: { tab: 'setup', wired: false, setup: DEFAULTS_PROCESS_OWN }, decorators: [chinese] };
 
 /** Setup with the workspace's own values: a line, a branch rule a plugin pushes and accepts, 中文 sessions, no reading, a remote and two rules. */
 export const SetupOwn: Story = { args: { tab: 'setup', setup: { ...DEFAULTS_OWN, onOpenPlugin: nothing } } };

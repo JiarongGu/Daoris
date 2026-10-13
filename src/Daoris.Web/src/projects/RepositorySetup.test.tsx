@@ -191,7 +191,7 @@ describe("Setup's Work", () => {
     await userEvent.click(within(landing).getByRole('button', { name: 'Set for this repository' }));
     await userEvent.click(within(landing).getByRole('radio', { name: 'Branch' }));
     await userEvent.click(within(landing).getByRole('button', { name: 'Save' }));
-    expect(onLanding).toHaveBeenLastCalledWith({ form: 'branch', pattern: 'feature/{quest}-{slug}' });
+    expect(onLanding).toHaveBeenLastCalledWith({ form: 'branch', pattern: 'feature/{quest}-{slug}', squash: false });
   });
 
   it('clears a rule of its own', async () => {
@@ -454,6 +454,133 @@ describe("a repository's second opinion before landing", () => {
   it('is absent on a shell older than it', () => {
     draw(SETUP_OWN);
     expect(screen.queryByText('Second opinion before landing')).toBeNull();
+  });
+});
+
+/**
+ * DOORS1b (D164's amendment points 1 and 3): *Commits* on *Line and landing*, as Ask Daoris's room names it, as the driver
+ * resolves it: Daoris's default where nothing is set, its workspace's with *Set for this repository*, its own with Clear.
+ */
+describe("a repository's commit rule", () => {
+  const withCommits = (commits: NonNullable<RepositorySetupProps['work']>['commits'], onCommits = vi.fn()) => ({
+    ...SETUP_DEFAULTS, work: { ...SETUP_DEFAULTS.work, commits, onCommits },
+  });
+
+  it("says Daoris's default in its folded line and its row, with its terminal twin, and sets one here", async () => {
+    const onCommits = vi.fn();
+    draw(withCommits({ repository: 'engine', workspace: 'default', rule: { mode: 'as-you-go' }, source: 'default' }, onCommits));
+
+    expect(head('Line and landing')).toHaveAccessibleDescription(
+      "line main (the workspace's default) · lands into its line (Daoris's default) · commits as it goes (Daoris's default)");
+    await userEvent.click(head('Line and landing'));
+    const commits = row(section('Line and landing'), 'Commits');
+    expect(commits).toHaveTextContent("Each piece that passes its checks is committed as the work goes. Daoris's default: nothing is set.");
+    expect(within(commits).getByText(code('daoris driver commits engine --mode as-you-go|ask|at-end --convention "…"|--clear')))
+      .toBeInTheDocument();
+    await userEvent.click(within(commits).getByRole('button', { name: 'Set for this repository' }));
+    await userEvent.click(within(commits).getByRole('radio', { name: 'At the end' }));
+    await userEvent.click(within(commits).getByRole('button', { name: 'Save' }));
+    expect(onCommits).toHaveBeenLastCalledWith({ set: { mode: 'at-end', convention: '' } });
+  });
+
+  it("says its workspace's rule with the convention quoted, and its own opens the section with Clear", async () => {
+    const onCommits = vi.fn();
+    draw(withCommits({ repository: 'engine', workspace: 'work', rule: { mode: 'ask', convention: 'Say why.' }, source: 'repository' }, onCommits));
+
+    expect(head('Line and landing')).toHaveAttribute('aria-expanded', 'true');
+    const commits = row(section('Line and landing'), 'Commits');
+    expect(commits).toHaveTextContent(
+      'Each commit waits for your yes before it is made. Each session is told how a commit message is written: “Say why.” Set for this repository.');
+    await userEvent.click(within(commits).getByRole('button', { name: 'Clear' }));
+    expect(onCommits).toHaveBeenLastCalledWith({ clear: true });
+  });
+
+  it('is absent on a shell older than it', () => {
+    draw(SETUP_OWN);
+    expect(screen.queryByText('Commits')).toBeNull();
+  });
+});
+
+/**
+ * DOORS1b (D163 point 3, D164's amendment point 3): *Helpers* on *Sessions*, as Ask Daoris's room names it, as the driver
+ * resolves it, beside the language its sessions write in.
+ */
+describe("a repository's helpers rule", () => {
+  const withHelpers = (helpers: NonNullable<RepositorySetupProps['sessions']>['helpers'], onHelpers = vi.fn()) => ({
+    ...SETUP_DEFAULTS, sessions: { ...SETUP_DEFAULTS.sessions, helpers, onHelpers },
+  });
+
+  it("says its workspace's rule in its folded line and its row, and sets one here", async () => {
+    const onHelpers = vi.fn();
+    draw(withHelpers({ repository: 'engine', workspace: 'work', rule: { mode: 'on', agents: ['codex-acp', 'dsh'] }, source: 'workspace' }, onHelpers));
+
+    expect(head('Sessions')).toHaveAccessibleDescription(
+      "no session language (Daoris's default) · helpers start at once (the workspace's default) · no standing answer");
+    await userEvent.click(head('Sessions'));
+    const helpers = row(section('Sessions'), 'Helpers');
+    expect(helpers).toHaveTextContent('A helper an agent asks for starts at once, within the limits: two at once for a session, one turn each.');
+    expect(helpers).toHaveTextContent('Only codex-acp, else dsh, may help, tried in that order unless the session names one of them.');
+    expect(helpers).toHaveTextContent('From the workspace work.');
+    expect(within(helpers).getByText(code('daoris driver helpers engine --mode ask|on|off --agents <adapter,adapter>|--clear')))
+      .toBeInTheDocument();
+    await userEvent.click(within(helpers).getByRole('button', { name: 'Set for this repository' }));
+    await userEvent.click(within(helpers).getByRole('radio', { name: 'Ask me' }));
+    await userEvent.click(within(helpers).getByRole('button', { name: 'Save' }));
+    expect(onHelpers).toHaveBeenLastCalledWith({ set: { mode: 'ask', agents: ['codex-acp', 'dsh'] } });
+  });
+
+  it('opens Sessions on a rule of its own, which carries Clear', async () => {
+    const onHelpers = vi.fn();
+    draw(withHelpers({ repository: 'engine', workspace: 'work', rule: { mode: 'off', agents: [] }, source: 'repository' }, onHelpers));
+
+    expect(head('Sessions')).toHaveAttribute('aria-expanded', 'true');
+    const helpers = row(section('Sessions'), 'Helpers');
+    expect(helpers).toHaveTextContent('A helper is not offered to a session here: only your own press asks one. Set for this repository.');
+    await userEvent.click(within(helpers).getByRole('button', { name: 'Clear' }));
+    expect(onHelpers).toHaveBeenLastCalledWith({ clear: true });
+  });
+
+  it('is absent on a shell older than it', () => {
+    draw(SETUP_OWN);
+    expect(screen.queryByText('Helpers')).toBeNull();
+  });
+});
+
+/**
+ * DOORS1b (D164's amendment point 2): the landing row says what finds its pattern's `{ticket}` and that Accept squashes, and its
+ * control sets the key where the pattern says `{ticket}` and the squash on a branch, keeping both where the press does not
+ * change them.
+ */
+describe("a repository's landing, its ticket's key and its squash", () => {
+  const withLanding = (landing: NonNullable<RepositorySetupProps['work']>['landing'], onLanding = vi.fn()) => ({
+    ...SETUP_DEFAULTS, work: { ...SETUP_DEFAULTS.work, landing, onLanding },
+  });
+
+  it('says the key that finds the ticket and the squash, and sends both back as they stand', async () => {
+    const onLanding = vi.fn();
+    draw(withLanding({
+      repository: 'engine', workspace: 'default', form: 'branch', pattern: 'feature/{ticket}-{slug}', key: 'TK-\\d+', squash: true,
+      source: 'repository',
+    }, onLanding));
+
+    // A rule of its own opens the section; folded, its line names the squash.
+    await userEvent.click(head('Line and landing'));
+    expect(head('Line and landing')).toHaveAccessibleDescription(
+      "line main (the workspace's default) · lands on feature/{ticket}-{slug}, squashed to one commit");
+    await userEvent.click(head('Line and landing'));
+    const landing = row(section('Line and landing'), 'How work lands');
+    expect(landing).toHaveTextContent(
+      '{ticket} is the first match of TK-\\d+ in the title, then the request, then its links, as written; where none is found, the '
+      + "session's id stands in.");
+    expect(landing).toHaveTextContent("Squashed: Accept makes the pull request's branch one commit from the session's work");
+    const key = within(landing).getByRole('textbox', { name: "The ticket's key for engine" });
+    expect(key).toHaveValue('TK-\\d+');
+    expect(within(landing).getByRole('checkbox', { name: 'Squash into one commit' })).toBeChecked();
+    await userEvent.click(within(landing).getByRole('checkbox', { name: 'Clean up once landed' }));
+    await userEvent.click(within(landing).getByRole('button', { name: 'Save' }));
+    expect(onLanding).toHaveBeenLastCalledWith({
+      form: 'branch', pattern: 'feature/{ticket}-{slug}', key: 'TK-\\d+', squash: true, tidy: true,
+    });
   });
 });
 

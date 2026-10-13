@@ -13,13 +13,15 @@ import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './projects/tabs
 import { WorkspaceView } from './projects/WorkspaceView';
 import { useRegistry, useRepositories } from './queries';
 import { useScope } from './scope';
+import { type CommitEdit, commitToast } from './settings/Commits';
+import { type HelperEdit, helperToast } from './settings/Helpers';
 import type { LandingRule } from './settings/Landings';
 import { type OpinionEdit, opinionToast } from './settings/Opinions';
 import { type ReviewEdit, reviewToast } from './settings/Reviews';
 import {
-  useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetDrivable, useSetHold, useSetLanding,
-  useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees, useSetWriteAcross,
-  useSweepPlan, useWorkflowCurrent,
+  useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetCommits, useSetDrivable, useSetHelpers,
+  useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees,
+  useSetWriteAcross, useSweepPlan, useWorkflowCurrent,
 } from './shell';
 import { doorOf } from './tools';
 import { failure, type Notify, useErrorNotify } from './ui';
@@ -133,6 +135,8 @@ export function useProjectsView({
   const setLanding = useSetLanding();
   const setReview = useSetReview();
   const setOpinion = useSetOpinion();
+  const setCommits = useSetCommits();
+  const setHelpers = useSetHelpers();
   const setRead = useSetReadAcross();
   const setWrite = useSetWriteAcross();
   const ruleAction = useRuleAction();
@@ -152,6 +156,11 @@ export function useProjectsView({
     .find((one) => one.repository === repository);
   // And which other agent reads its work before it lands (XAGENT1a), the driver's resolution.
   const opinionOf = (repository: string) => (Array.isArray(lines.data?.opinions) ? lines.data.opinions : [])
+    .find((one) => one.repository === repository);
+  // And how its work is committed and what a helper its agent asks for does (DOORS1b), the driver's resolution.
+  const commitsOf = (repository: string) => (Array.isArray(lines.data?.commits) ? lines.data.commits : [])
+    .find((one) => one.repository === repository);
+  const helpersOf = (repository: string) => (Array.isArray(lines.data?.helpers) ? lines.data.helpers : [])
     .find((one) => one.repository === repository);
   // And how its work lands (WSR1), the driver's choice.
   const landingOf = (repository: string) => (Array.isArray(lines.data?.landings) ? lines.data.landings : [])
@@ -337,12 +346,28 @@ export function useProjectsView({
             onError: onDriverError,
           })
         : undefined,
+      // How its work is committed (DOORS1b); a shell older than it answers no commits, and no row is offered.
+      commits: Array.isArray(lines.data?.commits) ? commitsOf(repository) ?? { repository, workspace } : undefined,
+      onCommits: Array.isArray(lines.data?.commits)
+        ? (edit: CommitEdit) => setCommits.mutate({ repository, ...edit }, {
+            onSuccess: () => notify(commitToast(t, repository, edit)),
+            onError: onDriverError,
+          })
+        : undefined,
     };
 
     // Its standing answer (KNOWUSE1b), matched without case as the driver matches it; a shell older than it answers no
     // `standing`, and nothing is offered rather than a field whose save would be refused.
     const sessions: RepositorySetupProps['sessions'] = driving && {
       language: languageOfPage(registration),
+      // What a helper its agent asks for does (DOORS1b); a shell older than it answers no helpers, and no row is offered.
+      helpers: Array.isArray(lines.data?.helpers) ? helpersOf(repository) ?? { repository, workspace } : undefined,
+      onHelpers: Array.isArray(lines.data?.helpers)
+        ? (edit: HelperEdit) => setHelpers.mutate({ repository, ...edit }, {
+            onSuccess: () => notify(helperToast(t, repository, edit)),
+            onError: onDriverError,
+          })
+        : undefined,
       standing: (driver.data.standing ?? []).find((row) => same(row.repository)) ?? null,
       onStanding: driver.data.standing === undefined
         ? undefined
@@ -399,7 +424,8 @@ export function useProjectsView({
       reach,
       onOpenPlugin,
       busy: setLine.isPending || setLanding.isPending || setReview.isPending || setOpinion.isPending || setLanguage.isPending
-        || setStanding.isPending || setRead.isPending || setWrite.isPending || ruleAction.isPending,
+        || setCommits.isPending || setHelpers.isPending || setStanding.isPending || setRead.isPending || setWrite.isPending
+        || ruleAction.isPending,
     };
   };
 
