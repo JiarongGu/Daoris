@@ -577,13 +577,4 @@ public partial interface IHelpDoors
 /// <summary>The <c>order</c> door's fields (TOOL4l-b): the list in walk order, or a workspace's list cleared.</summary>
 public sealed record AccountOrder(IReadOnlyList<string> Accounts, bool Clear);
 
-/// <summary>The machine's wiring a proposal is judged against (TOOL4g): <c>harnesses.json</c> as the screen reads it.</summary>
-public sealed partial record HelpMachineFacts
-{
-    /// <summary>The lists, defaults and settings, for a default's scope and a use's; null where nothing was read.</summary>
-    public HarnessSettings? Wiring { get; init; }
-
-    /// <summary>The accounts cooling now, for a <c>ready</c>'s judge (TOOL4l-b); none where nothing was read.</summary>
-    public IReadOnlyList<CoolingEntry> Cooling { get; init; } = [];
-}
 

@@ -316,21 +316,6 @@ public sealed record HelpClearPlan(HistoryScope Scope, string Id, IReadOnlyList<
     public bool Held { get; init; }
 }
 
-public sealed partial record HelpMachineFacts
-{
-    /// <summary>
-    /// What this machine keeps of each quest, ask and workspace a clear proposal names, as <c>HISTORY_PLAN</c> answers it
-    /// (<see cref="HistoryClearing.PlanAsync"/>, HIST1f-b): what a clear proposal is judged by. Read only for one.
-    /// </summary>
-    public IReadOnlyList<HistoryPlan> History { get; init; } = [];
-}
-
-public sealed partial record HelpPlan
-{
-    /// <summary>What a clear proposal's Apply sends (HIST1f-b); null where the card changes nothing, and for every other kind.</summary>
-    public HelpClearPlan? Clear { get; init; }
-}
-
 public partial interface IHelpDoors
 {
     /// <summary>

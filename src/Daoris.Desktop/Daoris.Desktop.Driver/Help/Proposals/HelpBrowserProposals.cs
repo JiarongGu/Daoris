@@ -157,12 +157,6 @@ public sealed record HelpBrowserFacts(string Browser, string Links, string Exten
     public Func<string, string?> Page { get; init; } = _ => null;
 }
 
-public sealed partial record HelpMachineFacts
-{
-    /// <summary>What Daoris's browser's files hold (HELP10), read by the desktop for a browser proposal; null where none was read.</summary>
-    public HelpBrowserFacts? Browser { get; init; }
-}
-
 public partial interface IHelpDoors
 {
     /// <summary>
