@@ -113,13 +113,13 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Service/Daoris.Service.Core/Asks.cs` | 70 | 1295 |
+| `src/Daoris.Service/Daoris.Service.Core/Asks.cs` | 69 | 1283 |
 | `src/Daoris.Service/Daoris.Service.Core/History.cs` | 40 | 824 |
 | `src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs` | 53 | 1055 |
 | `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 103 | 1929 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 149 | 2688 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 149 | 2685 |
 | `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 68 | 1292 |
-| `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 70 | 1237 |
+| `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 70 | 1235 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 100 | 1754 |
 | `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 48 | 587 |

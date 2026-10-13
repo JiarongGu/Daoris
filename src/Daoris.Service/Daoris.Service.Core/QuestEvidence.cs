@@ -318,7 +318,7 @@ public sealed record QuestEvidenceVerdict(string Commit, string How, IReadOnlyLi
         writer.WriteString("commit", Commit);
         writer.WriteString("how", How);
         if (Session is not null) writer.WriteString("session", Session);
-        if (standing && At is { } at) writer.WriteString("at", at.ToString("O"));
+        if (standing && At is { } at) writer.WriteString("at", Moments.Write(at));
         if (standing && Machine is not null) writer.WriteString("machine", Machine);
         writer.WriteStartArray("items");
         foreach (var item in Items)
@@ -384,9 +384,7 @@ public sealed record QuestEvidenceVerdict(string Commit, string How, IReadOnlyLi
             });
         }
 
-        DateTimeOffset? at = Text(verdict, "at") is { } when && DateTimeOffset.TryParse(when, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.RoundtripKind, out var parsed)
-            ? parsed
-            : null;
+        var at = Moments.Read(verdict, "at");
         var judged = new QuestEvidenceVerdict(commit, how, read)
         {
             Session = session, At = at, Machine = Text(verdict, "machine"),

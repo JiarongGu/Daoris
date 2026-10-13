@@ -86,7 +86,7 @@ public sealed partial class HelpProposalBox(string? home)
         {
             writer.WriteStartObject();
             writer.WriteString("id", id);
-            writer.WriteString("proposed", at.ToString("O"));
+            writer.WriteString("proposed", Moments.Write(at));
             writer.WriteStartObject("by");
             Nullable(writer, "session", session);
             writer.WriteEndObject();

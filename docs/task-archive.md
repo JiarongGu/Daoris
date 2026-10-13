@@ -14212,3 +14212,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PART1 — the gate** (tools). `tools/partials.mjs` over `src/**/*.cs` refuses a type declared `partial` in more than one hand-written file; the 34 offenders on `tools/partials.json`, a list that may only shrink; a universal gate in `daoris.gates.json`. Each PART row cuts its entries.
 
 **Outcome** 2026-10-14: `tools/partials.mjs` blanks comments and strings, then refuses a type partial in more than one file, a file beyond a listed type's, and a listed type no longer split; its list, generated, holds the 34. It runs inside `npm run verify` with the other universal checks rather than as a merge-tool gate, whose lists a test pins. Ten tests. On Sonnet: 25 tool calls. Detail: D166's PART1 note.
+
+## DEDUP9b — the service core's moments (2026-10-14, D166)
+
+> - [ ] **DEDUP9b — the service core's moments** (service; after 9a). A Core `Moments` for six private readers, about 35 parses (in the machine's culture or turned local) and 48 writers without the invariant culture; a test under another culture. Survey "Across projects".
+
+**Outcome** 2026-10-14: `Daoris.Service.Core/Moments.cs` writes and reads a moment in the invariant culture with its offset kept; the seven private readers, every bare parse (those for a store's own columns as `ReadRequired`, which still throws) and the 57 writers go through it, no parse or `"O"` writer left outside it. Bytes unchanged under the invariant culture; eleven tests under `ar-SA`, `th-TH` and `de-DE`. On Sonnet, scouted: 105 tool calls.
