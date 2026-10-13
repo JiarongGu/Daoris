@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
@@ -94,101 +93,23 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
     public LandingWorkflow? Record => Binding is { IsCurrent: false, Version: { } version } named && Problem is null && Unread is null
         ? new LandingWorkflow(named.Workflow, version, named.Level) { Kind = named.Kind }
         : null;
-}
 
-/// <summary>
-/// The process each gate reads for a chain's work in a repository (WORKFLOW1f, D157 points 4, 6 and 11; the workflow design §2.3,
-/// §2.6, §4.5–§4.6): the run's bound version where it names one, the rules live where it does not.
-/// </summary>
-/// <remarks>
-/// <para><b>One read per decision.</b> The landing gate reads it once (<see cref="SessionTrees.GateAsync"/>) and hands it to every
-/// part, the landing among them; the look's automatic landing and the second opinions owed read it once per entry, and hand it on.
-/// Never a second copy per door.</para>
-///
-/// <para><b>A step chooses among what is declared, never beyond it</b> (§2.3). A look names one of the environments the review rule
-/// declares, or takes its first; an opinion names reviewers from the rule's list, or takes it, with the rule's <c>verify</c> and
-/// <c>minutes</c>; a landing names its form and its press, and a pattern and a plugin where it wants its own, the rule's otherwise,
-/// with the rule's <c>tidy</c>. A step that needs what is not declared cannot start, and sits saying so (§3.7).</para>
-///
-/// <para><b>Never swapped</b> (§4.5): a named workflow that cannot be read here holds its run, saying why, and nothing else is read
-/// in its place.</para>
-/// </remarks>
-public static class WorkflowProcesses
-{
     /// <summary>The rules as they stand, read live as every gate reads them today: Current, and work with no binding here.</summary>
     public static WorkflowProcess Current(DriverConfig config, string repository, string? workspace) =>
         new(repository, LandingRules.Choose(config, repository, workspace), ReviewRules.Resolve(config, repository, workspace),
             OpinionRules.Resolve(config, repository, workspace));
 
     /// <summary>
-    /// The process of a run (design §2.6, §4.5): its binding read from the home, and a named workflow's version from the store by the
-    /// number the run kept, which must still be the version it bound (a version is never edited). Current, or no binding, is the
-    /// rules live; a named workflow that cannot be read here holds the run with why.
-    /// </summary>
-    /// <param name="run">The run: the chain's first quest in the repository (<see cref="WorkflowRunBindings.RunOf"/>); null for none.</param>
-    public static WorkflowProcess Read(string home, DriverConfig config, string repository, string? workspace, string? run)
-    {
-        var current = Current(config, repository, workspace) with { Run = run };
-        if (run is null) return current;
-        if (WorkflowRunBindings.Read(home, run) is not { } binding)
-        {
-            // Absence keeps legacy work on Current; a damaged record may name gates we cannot safely replace.
-            return WorkflowRunBindings.Bound(home, run)
-                ? current with { Unread = "its stored run binding could not be read." }
-                : current;
-        }
-        if (binding.IsCurrent) return current with { Binding = binding };
-
-        // Held before any step: no opinion is asked for a run whose workflow cannot be read.
-        var held = current with { Binding = binding, Opinion = null };
-        if (binding.Problem is { } problem) return held with { Problem = problem };
-        if (binding.Version is not { } number) return held with { Problem = $"its run names no version of `{binding.Workflow}`." };
-        var found = WorkflowNamed.IsId(binding.Workflow) ? WorkflowStore.Load(home, binding.Workflow) : null;
-        if (found is null) return held with { Problem = $"no workflow `{binding.Workflow}` is saved here any more." };
-        if (found.Read.Problem is { } unread) return held with { Problem = $"`{binding.Workflow}` cannot be read: {unread}" };
-        var version = found.Read.Versions.FirstOrDefault(each => each.Version == number);
-        if (version is null) return held with { Problem = $"`{binding.Workflow}` v{number} is no longer saved here." };
-        if (version.Steps is null) return held with { Problem = $"`{binding.Workflow}` v{number} cannot be read here: {version.Problem}" };
-        if (binding.Digest is { } digest && !string.Equals(digest, version.Digest, StringComparison.Ordinal))
-        {
-            return held with
-            {
-                Problem = $"`{binding.Workflow}` v{number} is not the version its run was bound to: its steps changed since, and a version "
-                    + "is never edited.",
-            };
-        }
-
-        return Of(config, repository, workspace, binding, version.Steps) with { Run = run };
-    }
-
-    /// <summary>
-    /// The process of a quest's work in <paramref name="repository"/> (design §4.5): its run named by the chain's first quest there,
-    /// read from the service's quests. Where they do not answer, the quest's own id is tried, since a chain's first quest names its
-    /// run; and where that names none, the work is held unread only if a named workflow is bound to any run here, since one might
-    /// govern it.
-    /// </summary>
-    public static async Task<WorkflowProcess> ReadAsync(
-        string home, DriverConfig config, IReviewWorld world, string quest, string repository, string? workspace, CancellationToken ct = default)
-    {
-        var id = quest.TrimStart('#');
-        try
-        {
-            var chain = ReviewGate.ChainOf(await world.QuestsAsync(ct).ConfigureAwait(false), id);
-            return Read(home, config, repository, workspace, WorkflowRunBindings.RunOf(chain, repository) ?? id);
-        }
-        catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or InvalidOperationException
-                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
-        {
-            var own = Read(home, config, repository, workspace, WorkflowRunBindings.IsRunId(id) ? id : null);
-            if (own.Binding is not null || !WorkflowRunBindings.AnyNamed(home, repository)) return own;
-            return own with { Unread = $"its chain could not be read, so whether a named workflow governs it is not known: {error.Message.TrimEnd().TrimEnd('.')}." };
-        }
-    }
-
-    /// <summary>
     /// A named version's process over what the repository declares (design §2.3, §3.2, §4.6). Pure: the state table
     /// (<c>WorkflowGateTests</c>) holds every row without a file.
     /// </summary>
+    /// <remarks>
+    /// <para><b>A step chooses among what is declared, never beyond it</b> (§2.3). A look names one of the environments the review
+    /// rule declares, or takes its first; an opinion names reviewers from the rule's list, or takes it, with the rule's
+    /// <c>verify</c> and <c>minutes</c>; a landing names its form and its press, and a pattern and a plugin where it wants its own,
+    /// the rule's otherwise, with the rule's <c>tidy</c>. A step that needs what is not declared cannot start, and sits saying so
+    /// (§3.7).</para>
+    /// </remarks>
     public static WorkflowProcess Of(DriverConfig config, string repository, string? workspace, WorkflowRunBinding binding, IReadOnlyList<NamedStep> steps)
     {
         var declared = Current(config, repository, workspace);
@@ -291,26 +212,6 @@ public static class WorkflowProcesses
             OpinionCannot = opinionCannot,
             LandingCannot = landingCannot,
         };
-    }
-
-    /// <summary>
-    /// The workflow a run would follow without its task's kind (design §4.4): §4.1 resolved again with the task's kind left out, as
-    /// the choices stand now. A named workflow's newest version that reads, or Current drawn; null where the named one does not read.
-    /// </summary>
-    /// <returns>Its name as said, and its steps, or null steps where they could not be read.</returns>
-    /// <param name="kind">A kind its workspace declares, to read what a task of that kind would follow (WORKFLOW1i-b's room); null for none.</param>
-    public static (string Name, IReadOnlyList<NamedStep>? Steps) Otherwise(
-        string home, DriverConfig config, string repository, string? workspace, string? kind = null)
-    {
-        var selected = WorkflowSelection.Resolve(config, repository, workspace, kind is null ? null : new WorkflowTaskChoice(kind, null));
-        if (selected.Workflow == WorkflowSelection.Current)
-        {
-            return ("Current", Involvement.StepsOf(WorkflowCurrent.Derive(config, repository, workspace, [])));
-        }
-
-        var found = WorkflowNamed.IsId(selected.Workflow) ? WorkflowStore.Load(home, selected.Workflow) : null;
-        var newest = found?.Read.Versions.LastOrDefault(each => each.Steps is not null);
-        return newest is null ? ($"`{selected.Workflow}`", null) : ($"`{selected.Workflow}` v{newest.Version}", newest.Steps);
     }
 
     /// <summary>Names in backticks, the last after <c>and</c>.</summary>
@@ -560,7 +461,7 @@ public static class WorkflowGate
     {
         var process = gate.Process;
         var binding = process.Binding;
-        var why = binding is null ? "" : $", {WorkflowRunBindings.Why(binding)}";
+        var why = binding is null ? "" : $", {WorkflowRunBinding.Why(binding)}";
         return gate.State switch
         {
             WorkflowGateStates.None => "It follows Current: the rules as they stand, read at each gate.",
@@ -571,7 +472,7 @@ public static class WorkflowGate
                 $"Its run was bound to {process.Name}{why}, which cannot start it here: {process.Problem} Nothing lands until it can be read "
                 + $"(`daoris driver workflow show {binding!.Workflow}` says what is wrong with it), and no other workflow is followed in its place.",
             WorkflowGateStates.KindPaths =>
-                $"Holds: this work changed {Plural(gate.Outside.Count, "path")} outside {Kind(binding!)}'s ({WorkflowProcesses.And(binding!.Paths)}): "
+                $"Holds: this work changed {Plural(gate.Outside.Count, "path")} outside {Kind(binding!)}'s ({WorkflowProcess.And(binding!.Paths)}): "
                 + $"{Listed(gate.Outside)}; and {process.Name}, chosen for it, asks less of you than {gate.Otherwise} would without the kind "
                 + $"({string.Join("; ", gate.Lowered)}). `daoris-driver workflow keep {gate.Session ?? "<session>"} \"…\"` keeps {process.Name} for "
                 + "this work with your words; nothing switches by itself.",

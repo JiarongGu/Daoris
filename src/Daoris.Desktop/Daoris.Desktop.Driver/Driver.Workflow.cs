@@ -4,47 +4,22 @@ namespace Daoris.Driver;
 public sealed partial class Driver
 {
     /// <summary>
-    /// Each run whose session opened in this look and that no binding names yet is bound to the workflow §4.1 chooses for it now
-    /// (<see cref="WorkflowRunBindings"/>): its chain's first quest in the repository names it, its ask's latest choice is the task's,
-    /// and a named workflow's newest version is kept. Said in the look where a named workflow chose it, or where it could not be
-    /// bound; a run under Current is bound silently, as nothing about its work changes. A failure binds nothing and costs the
-    /// session nothing: the gate reads a run with no binding as it reads every run today.
+    /// Each run whose session opened in this look and that no binding names yet is bound to the workflow §4.1 chooses for it now:
+    /// Workflows' use case (<see cref="WorkflowRunStart"/>), composed here over the loop's service, home, choices and plugins, and
+    /// the clock.
     /// </summary>
-    private async Task BindRunsAsync(IReadOnlyList<Consideration> opened, List<string> events, CancellationToken ct)
+    private Task BindRunsAsync(IReadOnlyList<Consideration> opened, List<string> events, CancellationToken ct) =>
+        WorkflowRunStart.BindAsync(
+            [.. opened.Select(start => new WorkflowStarted(start.Quest, start.Workspace))], new StartWorld(service), home, config,
+            WorkflowCurrent.PluginsOf(_catalog), () => DateTimeOffset.UtcNow, events, ct);
+
+    /// <summary>What binding a run reads and says through the loop's service: its quests, its asks, and the machine log's line.</summary>
+    private sealed class StartWorld(ServiceClient service) : IWorkflowStartWorld
     {
-        IReadOnlyList<QuestView>? every = null;
-        foreach (var start in opened)
-        {
-            var quest = start.Quest;
-            try
-            {
-                // A chain's first quest has no parent, and names its run without the chain being read.
-                var run = quest.Id;
-                if (quest.Parent is { Length: > 0 })
-                {
-                    every ??= await service.EveryQuestAsync(ct).ConfigureAwait(false);
-                    run = WorkflowRunBindings.RunOf(ReviewGate.ChainOf(every, quest.Id), quest.To) ?? quest.Id;
-                }
+        public Task<IReadOnlyList<QuestView>> EveryQuestAsync(CancellationToken ct) => service.EveryQuestAsync(ct);
 
-                if (!WorkflowRunBindings.IsRunId(run) || WorkflowRunBindings.Bound(home, run)) continue;
+        public Task<AskView?> FindAskAsync(string id, CancellationToken ct) => service.FindAskAsync(id, ct);
 
-                var askId = AskWords.AskOf(quest.From);
-                var ask = askId is null ? null : await service.FindAskAsync(askId, ct).ConfigureAwait(false);
-                var binding = WorkflowRunBindings.Plan(
-                    config, home, run, quest.To, start.Workspace, askId, WorkflowRunBindings.TaskOf(ask),
-                    WorkflowCurrent.PluginsOf(_catalog), DateTimeOffset.UtcNow);
-                if (WorkflowRunBindings.Bind(home, binding))
-                {
-                    // The machine log keeps which level chose and whether a named version or Current (WORKFLOW1f, design §5.5).
-                    service.LandingSaid(WorkflowLines.Chosen(binding));
-                    if (!binding.IsCurrent || binding.Problem is not null) events.Add(WorkflowRunBindings.Said(binding, quest.Id));
-                }
-            }
-            catch (Exception error) when (error is HttpRequestException or System.Text.Json.JsonException or DriverException or IOException
-                                              or UnauthorizedAccessException || (error is OperationCanceledException && !ct.IsCancellationRequested))
-            {
-                events.Add($"workflow  #{quest.Id} → {quest.To}: its run was not bound to a workflow at this start: {error.Message}");
-            }
-        }
+        public void Chosen(LandingLine line) => service.LandingSaid(line);
     }
 }

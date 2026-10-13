@@ -47,8 +47,7 @@
     "Driver.Intake.cs": "the loop's part for intake (Loop): the use case it holds moves to Quests' Application when that module is layered",
     "Driver.Opinion.cs": "the loop's part for second opinions (Loop): the use case it holds moves to Review's Application when that module is layered",
     "Driver.OpinionDelivery.cs": "the loop's part for second opinions (Loop): the use case it holds moves to Review's Application when that module is layered",
-    "Driver.OpinionGate.cs": "the loop's part for second opinions (Loop): the use case it holds moves to Review's Application when that module is layered",
-    "Driver.Workflow.cs": "the loop's part for workflow runs (Loop): the use case it holds moves to Workflows' Application when that module is layered"
+    "Driver.OpinionGate.cs": "the loop's part for second opinions (Loop): the use case it holds moves to Review's Application when that module is layered"
   },
   "tests": {
     "AbandonTests.cs": "Sessions",
@@ -317,6 +316,7 @@
     "WorkflowGateTests.cs": "Workflows",
     "WorkflowKeepCommandTests.cs": "Workflows",
     "WorkflowNamedTests.cs": "Workflows",
+    "WorkflowPortsTests.cs": "Workflows",
     "WorkflowRunBindingTests.cs": "Workflows",
     "WorkflowRunCommandTests.cs": "Workflows",
     "WorkflowRunSaidTwinTests.cs": "Workflows",
