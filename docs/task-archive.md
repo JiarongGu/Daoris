@@ -14071,3 +14071,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT2f — `Agents` and `Trees` into their folders** (driver; after 2c–2e). As STRUCT2c; `Trees/` already holds `SessionTrees.Update.cs` and `Trees/Domain/`; `hooks/tree-guard.mjs` moves with Trees, its embedded resource's logical name pinned. D166.
 
 **Outcome** 2026-10-14: Agents (29 files, 30 tests) and Trees (41 files, 63 tests) moved by renames alone, a commit each; `tree-guard.mjs` is at `Trees/hooks/` with its logical name unchanged; `Adapters.cs` and `LandingPlugins.cs` left the map's `split`; at the merge the map's lists were merged (root 22: Platform and Loop; tests 277). Detail: D166's STRUCT2f note.
+
+## STRUCT3b — layer the Workflows module (2026-10-14, D166)
+
+> - [ ] **STRUCT3b — layer the Workflows module** (driver). `Domain`, `Application` and `Infrastructure` with ports, the gate's purity and reach rules holding it, behaviour unchanged. D166; design §3, §6.
+
+**Outcome** 2026-10-14: Workflows is layered: its pure rules in Domain, its use cases in Application under their old names against four ports (`IWorkflowStore`, `IWorkflowRunStore`, `IWorkflowRunRecords`, `IWorkflowStartWorld`), the file I/O in Infrastructure; the loop's binding of a run at its first start moved to `WorkflowRunStart`, the loop file only composing it. 256 Process cases on the landing and loop paths passed on the merge. STRUCT3PORTS and STRUCTAPP1 hold what it left. Detail: D166's STRUCT3b note.

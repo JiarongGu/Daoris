@@ -328,6 +328,7 @@
     "WorkflowGateTests.cs": "Workflows",
     "WorkflowKeepCommandTests.cs": "Workflows",
     "WorkflowNamedTests.cs": "Workflows",
+    "WorkflowPortsTests.cs": "Workflows",
     "WorkflowRunBindingTests.cs": "Workflows",
     "WorkflowRunCommandTests.cs": "Workflows",
     "WorkflowRunSaidTwinTests.cs": "Workflows",
