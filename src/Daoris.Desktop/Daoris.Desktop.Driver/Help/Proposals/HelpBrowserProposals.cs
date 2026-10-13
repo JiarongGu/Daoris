@@ -163,12 +163,6 @@ public sealed partial record HelpMachineFacts
     public HelpBrowserFacts? Browser { get; init; }
 }
 
-public sealed partial record HelpProposal
-{
-    /// <summary>A favorite's title, for a browser proposal that keeps one (HELP10), or null for the page's host.</summary>
-    public string? Title { get; init; }
-}
-
 public partial interface IHelpDoors
 {
     /// <summary>

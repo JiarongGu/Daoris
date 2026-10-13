@@ -314,15 +314,6 @@ public sealed record HelpPluginView(
 /// <summary>A harness a plugin declares, or a server it hands every session: its name, and the command that runs it.</summary>
 public sealed record HelpPluginPart(string Name, IReadOnlyList<string> Command);
 
-public sealed partial record HelpProposal
-{
-    /// <summary>A plugin's folder to add from: from that checkout's root, or a whole path (PLUG9).</summary>
-    public string? Folder { get; init; }
-
-    /// <summary>One of the install's own plugins to add, by its id (PLUG9 d) — never a path on this machine.</summary>
-    public string? Offer { get; init; }
-}
-
 public sealed partial record HelpMachineFacts
 {
     /// <summary>The Daoris home, which a plugin is never added from (PLUG9); null where none was named.</summary>

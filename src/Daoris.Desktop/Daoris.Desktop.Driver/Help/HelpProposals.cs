@@ -11,8 +11,8 @@ namespace Daoris.Driver;
 /// <param name="Value">What it is set to, where its kind takes one: a setting's value, a pin's version, a hand-off's plugin, a move's workspace.</param>
 /// <param name="Session">The conversation that proposed it.</param>
 /// <param name="State">`proposed`, then `applied`, `dismissed` or `refused`.</param>
-/// <remarks>MOD6: a field only one kind carries is declared in that kind's file, beside the judge that reads it.</remarks>
-public sealed partial record HelpProposal(
+/// <remarks>MOD6: a field only one kind carries is read by that kind's judge in its file; PART4 keeps the fields in this one declaration, under a comment per kind.</remarks>
+public sealed record HelpProposal(
     string Id, string Kind, string Door, string? Target, string? Workspace, string? Value, string? Sentence,
     string Why, string? Session, string State)
 {
@@ -21,6 +21,102 @@ public sealed partial record HelpProposal(
     /// for a hand-off (WSR5b), the repository its branch is in, where a name alone is in several.
     /// </summary>
     public string? Repository { get; init; }
+
+    // The account kind's.
+
+    /// <summary>An account's name, for an account's settings (HELP6).</summary>
+    public string? Account { get; init; }
+
+    /// <summary>The model an account's settings would set — `unset` for the tool's own default — or null to leave it.</summary>
+    public string? Model { get; init; }
+
+    /// <summary>The effort an account's settings would set — `unset` for the tool's own default — or null to leave it.</summary>
+    public string? Effort { get; init; }
+
+    // The agent kind's: the <c>use</c> door's fields (TOOL4g), as <see cref="HelpAgentProposals.Read"/> reads them from a file.
+
+    /// <summary>How a scope's list is used, as the proposal names it; null where it names nothing of it.</summary>
+    public UseChange? AccountUse { get; init; }
+
+    /// <summary>The <c>order</c> door's list or clear, as the file names them; null for any other door (TOOL4l-b).</summary>
+    public AccountOrder? AccountOrder { get; init; }
+
+    /// <summary>The <c>ready</c> door's account: an id, or <c>own</c> for the tool's own sign-in; null for any other door (TOOL4l-b).</summary>
+    public string? ReadyAccount { get; init; }
+
+    // The ask kind's.
+
+    /// <summary>
+    /// ENTRY1c: the review choice the person said for an ask's work, as the composer sends it: <c>on</c>, an environment's name
+    /// or <c>off</c>; null where none was said, and each repository's rule decides.
+    /// </summary>
+    public string? Review { get; init; }
+
+    /// <summary>ENTRY1c: the person's words with an ask's review choice, sent only with one.</summary>
+    public string? ReviewWords { get; init; }
+
+    /// <summary>HEAD2e: an ask's short title, at most 40 characters, as the service's box wrote it; null where none was given.</summary>
+    public string? ShortTitle { get; init; }
+
+    // The browser kind's.
+
+    /// <summary>A favorite's title, for a browser proposal that keeps one (HELP10), or null for the page's host.</summary>
+    public string? Title { get; init; }
+
+    // The clear kind's.
+
+    /// <summary>
+    /// The units a clear proposal's card listed, held in its file from its first draw (HIST1f-b, design §5): what its Apply sends.
+    /// Null before the card listed anything.
+    /// </summary>
+    public IReadOnlyList<HistoryUnitName>? Units { get; init; }
+
+    // The go kind's.
+
+    /// <summary>A go's Settings domain, or null.</summary>
+    public string? Domain { get; init; }
+
+    /// <summary>A go's part of its domain or view — a card, a setup step, a drawer — or null.</summary>
+    public string? Part { get; init; }
+
+    /// <summary>A go's one quest or ask (ENTRY1f1) or session (ENTRY1f2), as the service's box wrote it, or null.</summary>
+    public string? Item { get; init; }
+
+    // The plugin kind's.
+
+    /// <summary>A plugin's folder to add from: from that checkout's root, or a whole path (PLUG9).</summary>
+    public string? Folder { get; init; }
+
+    /// <summary>One of the install's own plugins to add, by its id (PLUG9 d) — never a path on this machine.</summary>
+    public string? Offer { get; init; }
+
+    // The sync kind's.
+
+    /// <summary>The rows a sync proposal's look listed (HELP10), kept in its file; null before the person looked.</summary>
+    public IReadOnlyList<HelpSyncRow>? Listed { get; init; }
+
+    /// <summary>What a sync proposal's look kept beside its rows (LEFT3 b); nothing before the person looked.</summary>
+    public HelpSyncBesides Besides { get; init; } = HelpSyncBesides.None;
+
+    // The workflow kind's.
+
+    /// <summary>A workflow proposal's repository or workspace, one word (WORKFLOW1h-a's box), which its judge finds which of.</summary>
+    public string? Scope { get; init; }
+
+    /// <summary>A workflow proposal's workflow, by its id.</summary>
+    public string? Workflow { get; init; }
+
+    /// <summary>The version a workflow proposal's edit is made on; null for a new workflow.</summary>
+    public int? Base { get; init; }
+
+    /// <summary>Whether a workflow proposal also chooses the workflow for its scope (the <c>use</c> door).</summary>
+    public bool Choose { get; init; }
+
+    /// <summary>A workflow proposal's whole steps, the design's JSON list (§2.5), as the box wrote them; null where none are.</summary>
+    public JsonElement? Steps { get; init; }
+
+    /// <summary>A new workflow's name, the person's words (WORKFLOW1h-name); null where the box wrote none, and the id names it.</summary>
+    public string? Name { get; init; }
 }
 
 /// <summary>What the machine holds that a proposal is judged against: names only.</summary>

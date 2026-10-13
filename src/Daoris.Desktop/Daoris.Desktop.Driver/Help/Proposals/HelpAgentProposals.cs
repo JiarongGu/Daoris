@@ -587,15 +587,3 @@ public sealed partial record HelpMachineFacts
     public IReadOnlyList<CoolingEntry> Cooling { get; init; } = [];
 }
 
-/// <summary>The <c>use</c> door's fields (TOOL4g), as <see cref="HelpAgentProposals.Read"/> reads them from a file.</summary>
-public sealed partial record HelpProposal
-{
-    /// <summary>How a scope's list is used, as the proposal names it; null where it names nothing of it.</summary>
-    public UseChange? AccountUse { get; init; }
-
-    /// <summary>The <c>order</c> door's list or clear, as the file names them; null for any other door (TOOL4l-b).</summary>
-    public AccountOrder? AccountOrder { get; init; }
-
-    /// <summary>The <c>ready</c> door's account: an id, or <c>own</c> for the tool's own sign-in; null for any other door (TOOL4l-b).</summary>
-    public string? ReadyAccount { get; init; }
-}

@@ -113,18 +113,6 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSyncProposals.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpWorkflowProposals.cs"
   ],
-  "HelpProposal": [
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpAccountProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpAgentProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpAskProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpBrowserProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpClearProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpGoProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpPluginProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSyncProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpWorkflowProposals.cs"
-  ],
   "HelpProposalBox": [
     "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Accept.cs",
     "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Account.cs",

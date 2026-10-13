@@ -375,18 +375,6 @@ public static class HelpPlaces
     public const string AskItem = "ask:";
 }
 
-public sealed partial record HelpProposal
-{
-    /// <summary>A go's Settings domain, or null.</summary>
-    public string? Domain { get; init; }
-
-    /// <summary>A go's part of its domain or view — a card, a setup step, a drawer — or null.</summary>
-    public string? Part { get; init; }
-
-    /// <summary>A go's one quest or ask (ENTRY1f1) or session (ENTRY1f2), as the service's box wrote it, or null.</summary>
-    public string? Item { get; init; }
-}
-
 public sealed partial record HelpMachineFacts
 {
     /// <summary>

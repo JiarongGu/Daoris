@@ -325,15 +325,6 @@ public sealed partial record HelpMachineFacts
     public IReadOnlyList<HistoryPlan> History { get; init; } = [];
 }
 
-public sealed partial record HelpProposal
-{
-    /// <summary>
-    /// The units a clear proposal's card listed, held in its file from its first draw (HIST1f-b, design §5): what its Apply sends.
-    /// Null before the card listed anything.
-    /// </summary>
-    public IReadOnlyList<HistoryUnitName>? Units { get; init; }
-}
-
 public sealed partial record HelpPlan
 {
     /// <summary>What a clear proposal's Apply sends (HIST1f-b); null where the card changes nothing, and for every other kind.</summary>
