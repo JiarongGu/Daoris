@@ -16,6 +16,7 @@
     "Loop": []
   },
   "layered": [
+    "Conversations",
     "Plugins",
     "Review",
     "Service",

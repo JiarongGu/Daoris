@@ -45,7 +45,7 @@ Beside it, `Accounts/Domain/SwitchDecision.cs` (SWITCH1c-i) says whether a runni
 (`off`, no number, room, held thirty minutes after a curve move, or no account with room), reads the others first, or moves
 to the ready account with the most room, at least ten points under its curve on every window. The hand-over box takes
 `curve`, and `HandOverNotes.Moved` and `MovedFrom` (`chat.moved`, `chat.moved-from`) say a move at both ends, naming the
-accounts. The chat runner asks it (SWITCH1c-ii, `Conversations/ChatRunner.Curve.cs`): at a conversation's turn's end, judged
+accounts. The chat runner asks it (SWITCH1c-ii, `Conversations/Application/ChatRunner.Curve.cs`): at a conversation's turn's end, judged
 once with nothing running, opening or queued and no hand-over waiting, from its record's account, agent and workspace (the
 hold counted from its `created` where it continues another by the curve); the others are read where it says so, through the
 roster's `ReadUsageAsync` (the walk's floor, cooling, signed-out, key and busy skips), and asked again; a move asks the
@@ -84,6 +84,16 @@ compose; and the I/O in `Infrastructure/` (the two worlds, the plan's file, the 
 update's file, the staged build's files and the swap). The launcher compiles `Domain/StagedBuild.cs`,
 `Infrastructure/StagedBuildFiles.cs` and `Infrastructure/InstallSwap.cs`, each on the base library alone. Quests and Accounts
 reach `SelfDescription.Read` and `ClaudeReleases.InstallAsync` through the `Application`'s extension members.
+
+`Conversations/` is layered whole (STRUCT3h, D166's STRUCT3h note): a conversation's records and rules in `Domain/`, pure (the
+message and its files' rules, the resume's judgement and its reasons, the hand-over's codes, briefing and notes, the helpers'
+asks, rules, words and judge, the turns' and the inbox's records, the go-on marks and choices); its use cases in `Application/`
+(the chat runner whole, the hand-over's judge and take, *Go on in a new session*, the say door's nevers, the helper's choice and
+command, the turns, the driven inbox, and the stores every caller `new`s under its name: `GoOnMarks`, `NewSessionChoices`,
+`HarnessConversations`, `HandOverBox`, `HandedQuests`); and the files under the home, a tree's standing and its uncommitted
+paths, the helpers' files, the start requests and the transcript's stream in `Infrastructure/`. `ChatFiles.Keep`, `Find` and
+`Kept`, and `Continuations.Judge` without the tree's question, are the `Application`'s extension members, so their callers are
+unchanged.
 
 ## What the page can ask this machine
 
