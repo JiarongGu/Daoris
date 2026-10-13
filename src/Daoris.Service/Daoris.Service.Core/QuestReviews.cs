@@ -1,3 +1,5 @@
+using static Daoris.Knowledge.QuestExchange;
+
 namespace Daoris.Knowledge;
 
 /// <summary>
@@ -17,8 +19,9 @@ public sealed record QuestSetUpPost(
 /// The review on the record (REVIEWENV1b, D154; the review environment design §1.4–§1.5, §2.1, §2.5–§2.6, §3.5): the
 /// chain's choice judged at publish, a set-up step published after its chain's close, a set-up posted with the commit Daoris
 /// read, and the person's verdict. The gate that reads them, and the step's driving, are the driver's (REVIEWENV1c).
+/// The exchange hands in the stores it judges over and keeps the three public doors as one-line calls (PART6).
 /// </summary>
-public sealed partial class QuestExchange
+public sealed class QuestReviews(QuestStore quests, SessionStore? sessions, AskStore? asks)
 {
     /// <summary>
     /// A chain's review choice as a quest keeps it, or why not (REVIEWENV1b, design §1.5): <c>off</c>, <c>on</c> or an
@@ -35,7 +38,7 @@ public sealed partial class QuestExchange
     /// <c>off</c> on their verified words becomes a proposal on the ask, with the words as its reason, for the person's own
     /// press. A quoted <c>on</c> or environment raises the gate and stays the agent's to set.</para>
     /// </remarks>
-    private async Task<(QuestReview? Review, AskReviewProposal? Proposed, (QuestPublishRefusal Refusal, string Message)? Refused)> JudgeReviewAsync(
+    internal async Task<(QuestReview? Review, AskReviewProposal? Proposed, (QuestPublishRefusal Refusal, string Message)? Refused)> JudgeReviewAsync(
         string from, QuestAsk ask, DateTimeOffset now, CancellationToken ct)
     {
         if (ask.Review is not { } given) return (null, null, null);
@@ -96,7 +99,7 @@ public sealed partial class QuestExchange
     /// Why a set-up step may not close done yet, or null when it may, or is no set-up step (design §2.6): a set-up step's done
     /// always has a set-up, a session's said through its connector or one already posted on the quest.
     /// </summary>
-    private async Task<string?> NotShownAsync(Quest quest, CancellationToken ct)
+    internal async Task<string?> NotShownAsync(Quest quest, CancellationToken ct)
     {
         if (quest.SetUpIn is null || quest.SetUps.Count > 0) return null;
         if (sessions is not null && await sessions.SetUpsSaidForAsync(quest.Id, ct).ConfigureAwait(false) > 0) return null;
@@ -110,7 +113,7 @@ public sealed partial class QuestExchange
     /// person's review in its environment, and what follows it waits until they say it is reviewed. Nothing for a quest whose
     /// review waits on nobody.
     /// </summary>
-    private async Task<string> ReviewWaitsAsync(Quest quest, CancellationToken ct) =>
+    internal async Task<string> ReviewWaitsAsync(Quest quest, CancellationToken ct) =>
         QuestReviewing.Waits(quest)
             ? $" It waits for the person's review in `{quest.SetUpIn}`: "
               + $"{string.Join("; and ", await HoldsAsync(quest, "they say it is reviewed or skip the review", ct).ConfigureAwait(false))}."
@@ -500,6 +503,28 @@ public sealed partial class QuestExchange
         }
 
         return null;
+    }
+
+    /// <summary>What a held done holds, each said as waiting <paramref name="until"/>: its next step, a quest waiting on it, or its ask.</summary>
+    internal async Task<IReadOnlyList<string>> HoldsAsync(Quest closed, string until, CancellationToken ct)
+    {
+        var holds = new List<string>();
+        if (closed.Then.Count > 0)
+        {
+            var next = closed.Then[0];
+            holds.Add($"the next step, \"{next.Title.Replace("{parent}", $"#{closed.Id}", StringComparison.Ordinal)}\" to "
+                      + $"`{next.To}`, is published only once {until}");
+        }
+
+        var waiting = await quests.WaitingOnAsync(closed.Id, ct).ConfigureAwait(false);
+        if (waiting.Count > 0)
+        {
+            holds.Add($"{Listed(waiting)}, which {(waiting.Count == 1 ? "waits" : "wait")} on it, "
+                      + $"{(waiting.Count == 1 ? "resumes" : "resume")} only then");
+        }
+
+        if (holds.Count == 0) holds.Add($"nothing follows it, and what it was asked for stays open until {until}");
+        return holds;
     }
 
     private static bool SameRepository(string one, string other) => string.Equals(one, other, StringComparison.OrdinalIgnoreCase);
