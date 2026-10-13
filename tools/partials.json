@@ -231,10 +231,6 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.Workflow.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs"
   ],
-  "SessionStore": [
-    "src/Daoris.Service/Daoris.Service.Core/Sessions.Review.cs",
-    "src/Daoris.Service/Daoris.Service.Core/Sessions.cs"
-  ],
   "SessionTrees": [
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Auto.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Content.cs",
