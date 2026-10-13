@@ -6,7 +6,7 @@
 // same folder and the same `plugins.json`, and hand-copying a folder in keeps working because the
 // folder — not the surface — is the truth.
 //
-// It is the CLI's twin of the driver's `Plugins.cs`. Two copies exist because the two artefacts share
+// It is the CLI's twin of the driver's `PluginCatalog.cs`. Two copies exist because the two artefacts share
 // no code — the FOLDER AND THE MANIFEST are the contract — so these rules hold in both, and each
 // carries a test saying so:
 //
@@ -41,7 +41,7 @@
 //      first problem is said, by the same rules in the same order and words, and never refuses the plugin. This side
 //      reads and lists them; finding a tool and running its checks are the driver's, at a trial.
 //
-// And since XAGENT1b2 (D155 point 4), with `Plugins.cs`, `PluginCatalogTests` holding the row:
+// And since XAGENT1b2 (D155 point 4), with `PluginCatalog.cs`, `PluginCatalogTests` holding the row:
 //
 //   9. A declared harness may say its `product` and `maker`: text, trimmed, with blank or not text read as none and never
 //      a refusal. A maker is the plugin's word, by which `opinions.ts` judges its agent's family.
@@ -69,7 +69,7 @@ export const PLACEHOLDER = '${plugin}';
 /**
  * The host telling a plugin where it KEEPS things (D77): its data folder, which an update never
  * touches — a browser's signed-in profile, which otherwise lands under the user's profile (D63).
- * Twin: `Plugins.cs`.
+ * Twin: `PluginCatalog.cs`.
  */
 export const DATA_PLACEHOLDER = '${data}';
 

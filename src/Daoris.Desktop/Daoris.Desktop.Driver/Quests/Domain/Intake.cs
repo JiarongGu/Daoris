@@ -149,28 +149,7 @@ public static class IntakeRoom
     public static string PathOf(string home, string workspace) =>
         Path.Combine(home, Folder, SafeName(workspace));
 
-    /// <summary>Seed the room with the circle's declarations as they stand now, and answer where it is.</summary>
-    /// <param name="kinds">The kinds its workspace declares, per repository (WORKFLOW1i-b); null or empty where it declares none.</param>
-    public static string Prepare(
-        string home, string workspace, IReadOnlyList<DeclarationView> declarations, IReadOnlyList<IntakeRepositoryKinds>? kinds = null)
-    {
-        var room = PathOf(home, workspace);
-        Directory.CreateDirectory(Path.Combine(room, ".claude"));
-
-        // What each repository that declared nothing says about itself (D77), read from its own files
-        // at every open — a README changes as a declaration does — and never written into.
-        var described = new Dictionary<string, RepositoryDescription>(StringComparer.OrdinalIgnoreCase);
-        foreach (var repository in declarations.Where(d => !(d.Adopted && d.Registered) && d.Root is { Length: > 0 }))
-        {
-            if (SelfDescription.Read(repository.Root!) is { } description) described[repository.Repository] = description;
-        }
-
-        Write(Path.Combine(room, "AGENTS.md"), Render(workspace, declarations, described, kinds));
-        // Two harnesses read AGENTS.md; Claude Code reads CLAUDE.md — the canon's own shape (D59).
-        Write(Path.Combine(room, "CLAUDE.md"), "@AGENTS.md\n");
-        Write(Path.Combine(room, ".claude", "settings.json"), Settings());
-        return room;
-    }
+    // Seeding the room on the disk is IntakeRoom.Prepare, the Infrastructure's (IntakeRoomFiles): a Domain type declares no I/O.
 
     /// <summary>
     /// The room's AGENTS.md: who is in the circle, what each declares it owns and accepts, where it is —
@@ -310,7 +289,7 @@ public static class IntakeRoom
     }
 
     /// <summary>The allow-list, as the harness reads a project's settings.</summary>
-    private static string Settings()
+    internal static string Settings()
     {
         using var stream = new MemoryStream();
         using (var writer = new System.Text.Json.Utf8JsonWriter(stream, new System.Text.Json.JsonWriterOptions { Indented = true }))
@@ -349,12 +328,6 @@ public static class IntakeRoom
         var hash = Convert.ToHexString(
             System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(name)))[..8].ToLowerInvariant();
         return safe.Length == 0 ? $"workspace-{hash}" : $"{safe}-{hash}";
-    }
-
-    /// <summary>Beside, then renamed — a harness starting in the room never reads half a file.</summary>
-    private static void Write(string path, string content)
-    {
-        AtomicFile.WriteText(path, content);
     }
 }
 

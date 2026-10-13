@@ -87,7 +87,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 141 | 2340 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverConfig.cs` | 65 | 1152 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 66 | 1088 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Planner.cs` | 69 | 1188 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 69 | 1188 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/Application/ServiceClient.cs` | 92 | 1682 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/SessionEvents.cs` | 42 | 923 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/SessionsCommand.cs` | 63 | 1239 |
@@ -198,4 +198,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-second-agent-design.md` | 57 | 769 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
-| `src/Daoris.Desktop/README.md` | 63 | 386 |
+| `src/Daoris.Desktop/README.md` | 64 | 393 |

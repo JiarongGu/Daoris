@@ -214,7 +214,7 @@ can break the tool that reads it:
 
 A pack and a plugin each declare the API they need (`"apiVersion"`), read first. The harness seam is
 a protocol, not a registry; a plugin a folder, not a catalogue. `docs/2026-09-23-plugin-design.md`
-is the contract.
+is the contract, which the CLI and the driver's `PluginCatalog.cs` read alike.
 
 ## Beyond the CLI: the service, the platform, the driver
 

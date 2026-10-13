@@ -85,15 +85,22 @@ update's file, the staged build's files and the swap). The launcher compiles `Do
 `Infrastructure/StagedBuildFiles.cs` and `Infrastructure/InstallSwap.cs`, each on the base library alone. Quests and Accounts
 reach `SelfDescription.Read` and `ClaudeReleases.InstallAsync` through the `Application`'s extension members.
 
+`Quests/` is layered whole (STRUCT3f, D166's STRUCT3f note): the plan and its records (`Planner`, `QuestView`, the
+considerations), the evidence's records, the attention events, the ask's words and the intake's room, prompt and observation in
+`Domain/`, pure; the commands, the evidence check, the intake's kinds, the park reader and `AskWords.ReadAsync` in
+`Application/`; and the git read of a done's evidence, the room written to the disk and the git defaults (`QuestGit`) in
+`Infrastructure/`. `IntakeRoom.Prepare` keeps its name as an extension member there.
+
 `Conversations/` is layered whole (STRUCT3h, D166's STRUCT3h note): a conversation's records and rules in `Domain/`, pure (the
 message and its files' rules, the resume's judgement and its reasons, the hand-over's codes, briefing and notes, the helpers'
 asks, rules, words and judge, the turns' and the inbox's records, the go-on marks and choices); its use cases in `Application/`
 (the chat runner whole, the hand-over's judge and take, *Go on in a new session*, the say door's nevers, the helper's choice and
-command, the turns, the driven inbox, and the stores every caller `new`s under its name: `GoOnMarks`, `NewSessionChoices`,
+command, the turns, the driven inbox, and the stores every caller `new`s under its name: `NewSessionChoices`,
 `HarnessConversations`, `HandOverBox`, `HandedQuests`); and the files under the home, a tree's standing and its uncommitted
 paths, the helpers' files, the start requests and the transcript's stream in `Infrastructure/`. `ChatFiles.Keep`, `Find` and
-`Kept`, and `Continuations.Judge` without the tree's question, are the `Application`'s extension members, so their callers are
-unchanged.
+`Kept`, `Continuations.Judge` without the tree's question, and the go-on marks' `Mark`, `Read`, `Clear` and `For` (on
+`GoOnMarks`, a Domain type since Quests' plan asks its `Judged`) are the `Application`'s extension members, so their callers
+are unchanged.
 
 ## What the page can ask this machine
 
