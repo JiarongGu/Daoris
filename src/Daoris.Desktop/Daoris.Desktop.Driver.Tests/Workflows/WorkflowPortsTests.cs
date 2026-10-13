@@ -154,7 +154,50 @@ public sealed class WorkflowPortsTests
         Assert.False(Directory.Exists(sources.Home));
     }
 
+    /// <summary>
+    /// A run is bound at its first start through the ports: the chain's first quest names it, a named workflow's newest version is
+    /// kept and said, a later quest of the same run binds nothing, and a service that does not answer binds nothing and says why.
+    /// </summary>
+    [Fact]
+    public async Task A_run_is_bound_at_its_first_start_through_the_ports_and_said()
+    {
+        var store = new MemoryStore();
+        var runs = new MemoryRuns();
+        WorkflowStore.Add(store, runs, Added("automatic"));
+        var first = new QuestView("q1", "daoris", "web-app", "Docs", "", "Open");
+        var second = new QuestView("q2", "daoris", "web-app", "More docs", "", "Open") { Parent = "q1" };
+        var world = new StartWorld([first, second]);
+        var events = new List<string>();
+
+        await WorkflowRunStart.BindAsync([new WorkflowStarted(first, "work")], world, store, runs, Choice, [], () => At, events, CancellationToken.None);
+        await WorkflowRunStart.BindAsync([new WorkflowStarted(second, "work")], world, store, runs, Choice, [], () => At, events, CancellationToken.None);
+
+        Assert.Equal((1, At), (runs.Read("q1")!.Version, runs.Read("q1")!.At));
+        Assert.False(runs.Bound("q2"));
+        Assert.Equal(["workflow  #q1 → web-app: its run follows `docs-to-pr` v1, `web-app`'s default."], events);
+        Assert.Equal(["workflow.chosen"], world.Said.Select(line => line.Event));
+
+        var unanswered = new List<string>();
+        await WorkflowRunStart.BindAsync(
+            [new WorkflowStarted(new QuestView("q3", "daoris", "web-app", "Later", "", "Open") { Parent = "q1" }, "work")],
+            new StartWorld(null), store, runs, Choice, [], () => At, unanswered, CancellationToken.None);
+        Assert.Equal(["workflow  #q3 → web-app: its run was not bound to a workflow at this start: the service did not answer"], unanswered);
+    }
+
     // ——— stand-ins
+
+    /// <summary>The service a start reads, in memory: its quests, or none where it does not answer; and the machine log's lines said.</summary>
+    private sealed class StartWorld(IReadOnlyList<QuestView>? quests) : IWorkflowStartWorld
+    {
+        public List<LandingLine> Said { get; } = [];
+
+        public Task<IReadOnlyList<QuestView>> EveryQuestAsync(CancellationToken ct) =>
+            quests is null ? throw new HttpRequestException("the service did not answer") : Task.FromResult(quests);
+
+        public Task<AskView?> FindAskAsync(string id, CancellationToken ct) => Task.FromResult<AskView?>(null);
+
+        public void Chosen(LandingLine line) => Said.Add(line);
+    }
 
     /// <summary>What a run's read reads beside the service, in memory, counting each read.</summary>
     private sealed class MemoryRecords : IWorkflowRunRecords

@@ -119,7 +119,6 @@
     "Driver.Opinion.cs": "the loop's part for second opinions (Loop): the use case it holds moves to Review's Application when that module is layered",
     "Driver.OpinionDelivery.cs": "the loop's part for second opinions (Loop): the use case it holds moves to Review's Application when that module is layered",
     "Driver.OpinionGate.cs": "the loop's part for second opinions (Loop): the use case it holds moves to Review's Application when that module is layered",
-    "Driver.Workflow.cs": "the loop's part for workflow runs (Loop): the use case it holds moves to Workflows' Application when that module is layered",
     "LandingPlugins.cs": "the landing (Trees), and the plugin wire it speaks (Plugins)"
   },
   "tests": {
