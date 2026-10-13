@@ -21,11 +21,11 @@ explains captures and shutdown; [Installing it](#installing-it-2026-09-22) expla
 
 | Project | What it is |
 |---|---|
-| `Daoris.Desktop.Driver` | The library: the loop and the planner; the adapter seam, whose `Toolchain` declares a harness's binary, version question, configuration home and install, update and login flows (D49 §4), and whose `Wire` is the door a session is held over — the pipe, or ACP (`AcpSession`, with a permission request refused by construction); `ChatRunner` for conversations; `HarnessRoster` (is the harness here, and which account does this run as); and `RemoteSync`, which rides the tick once per workspace. Its files are cut into domain modules with onion layers (D166): each module's files sit in its own folder (`Accounts/`, `Conversations/`, `Plugins/`, `Quests/`, …), its tests in the same folder of `Driver.Tests/`, and a new file goes in its module's folder, which `Driver.Tests/fixtures/structure.json` and `StructureTests` hold |
+| `Daoris.Desktop.Driver` | The library: the loop and the planner; the adapter seam, whose `Toolchain` declares a harness's binary, version question, configuration home and install, update and login flows (D49 §4), and whose `Wire` is the door a session is held over — the pipe, or ACP (`AcpSession`, with a permission request refused by construction); `ChatRunner` for conversations; `HarnessRoster` (is the harness here, and which account does this run as); and `RemoteSync`, which rides the tick once per workspace. Its files are cut into domain modules, each with a `Domain/` for its pure model and rules where it has any (D166): each module's files sit in its own folder (`Accounts/`, `Conversations/`, `Plugins/`, `Quests/`, …), its tests in the same folder of `Driver.Tests/`, and a new file goes in its module's folder, which `Driver.Tests/fixtures/structure.json` and `StructureTests` hold |
 | `Daoris.Desktop.Driver.Host` | `daoris-driver`, the headless door onto the same library: the loop by its verb, `drive [--once \| --until-idle] [--share]` (DRV8a, D104: with no verb it prints its usage and exits 2, and a loop refuses a home another live driver holds, naming it, unless `--share`), chat, ask, trees and sync, the set-up press (`setup <repository> [--plan]`, LAYOUT7, D117 §6, D124 §2: the repository's layout read from its line as git objects, each refusal said with its door, and one ask to that repository, as yours, whose body is the adoption playbook in the canon's words; the press adds the doctrine tool's exact verbs to the repository's rules, taken back if the service refuses, and `--plan` prints what was read, the rule, the landing, the agent and the quest's text and publishes nothing), a whole workspace's plan (`setup --workspace <name> [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]` and `--pause \| --resume \| --stop`, WSSETUP6, D124 §4: a press writes `<home>/setup/<workspace>.json` and adds the doctrine tool's verbs once to the workspace's rules, then the loop publishes one set-up at a time by default, never the cap's last slot, in the order other work touches the repositories, skipping a refusal with its reason and pausing once a pilot of two has closed), deleting a quest or an ask made by mistake (`quest delete`, `ask --delete`, D95), clearing finished history from this machine (`history [--workspace <name>] [--json]`, `history clear --workspace <name> [--yes]`, `quest clear <id> [--failed] [--yes]` and `ask --clear <id> [--yes]`, HIST1d, D153, the history-clearing design §6.2: what the home keeps of each workspace's finished work, or the one named, what a clear would take and what it keeps and why, `--json` printing `HISTORY_PLAN`'s answer field for field from the driver library's one projection; then each clear listed first, every kept unit in its keep's own sentence, and pressed with `--yes` through `HistoryClearing` at the door `terminal`; exit 1 where a quest, an ask or a quest's failed sessions named is kept), accepting a done's departure from what you required, so what it held goes on (`quest accept`, DRIFT1d), marking a quest done as yours, its record saying so with your words (`quest done <id> [--note "…"]`, QUESTCLOSE1; a finish at a checkpoint that left its quest taken names it), answering a go-ahead a session asked on an ask, which every session on it is handed and which sends a parked session on once none of its go-aheads waits (`ask --go-ahead <id> <n> approve\|refuse ["…"]`, KNOWUSE1a, GOAHEAD2), and the machine log read back (`logs [--since <30m\|2h\|3d>] [--source <name>] [--event <name>] [--level <warn\|error>] [--json]`, LOG1c): every source's files under the home merged by time, one readable line each or as written with `--json`, a line that cannot be read skipped and counted on standard error, and an install's update (`update [--install <folder>]`, `--when-idle \| --now \| --cancel`, UPDATE1, D139): what is staged and how the last swap ended, or the word on it, as the window's banner says it |
 | `Daoris.Desktop.Modules` | The shell's head: the loop, the host supervisor, every IPC module the page talks to, and `Refusals`, where a refusal is declared once as a code the page translates. Plain `net10.0`, with its own tests and gate |
 | `Daoris.Desktop.App` | `Daoris.Desktop.exe`, the window, on Shenora 0.19's own Chromium (`ChromiumView`, D92): CEF's launcher, laid out beside the engine by the build, wearing Daoris's icon and name, which the kit copies from the app's assembly (SHEN1). **And `daoris-browser`, Daoris's own browser** (D85, CHR3, since CHR8 D99): the same executable started with `--daoris-browser` first, which `Main` hands to the kit's `ChromiumBrowserProcess.Run` before anything else (`BrowserProcess`). A process of its own because the engine's debug port reaches every page in its process; it shows Chromium's own window, made over its port, and answers `${browser}` on that port, a relay of the kit's that calls a new tab a `page`. It ends when its last window closes or the shell does. The shell starts it with `ChromiumBrowserProcess.Start` (`EngineBrowserHost`), so an install carries one Chromium |
-| `Daoris.Desktop.Launcher` | `Daoris.exe`, the one thing at an install's root (D93): it starts `app/Daoris.Desktop.exe` with its arguments and exits, its process carrying Daoris's taskbar id (D108). Framework-dependent, single-file, referencing nothing. It is also the one program that replaces the application (UPDATE1, D139): while nothing runs from `app/`, a build in `update/staged/` is checked and swapped in with a journal (`update/swap.json`), started, and rolled back when it does not confirm — asked for by the application as `--update --after <pid>`, or on a start finding a build staged. The check and the swap are the driver library's own Setup files (`Domain/StagedBuild.cs`, `Infrastructure/StagedBuildFiles.cs` and `Infrastructure/InstallSwap.cs`), compiled in |
+| `Daoris.Desktop.Launcher` | `Daoris.exe`, the one thing at an install's root (D93): it starts `app/Daoris.Desktop.exe` with its arguments and exits, its process carrying Daoris's taskbar id (D108). Framework-dependent, single-file, referencing nothing. It is also the one program that replaces the application (UPDATE1, D139): while nothing runs from `app/`, a build in `update/staged/` is checked and swapped in with a journal (`update/swap.json`), started, and rolled back when it does not confirm — asked for by the application as `--update --after <pid>`, or on a start finding a build staged. The check and the swap are the driver library's own Setup files (`Domain/StagedBuild.cs`, `StagedBuildFiles.cs` and `InstallSwap.cs`), compiled in |
 
 The adapters are the stub, `acp-stub` (the protocol door with no model in it), `claude-code`, and the
 protocol door's configurations `claude-code-acp`, `codex-acp` and `dsh`. A session's record is
@@ -52,44 +52,44 @@ roster's `ReadUsageAsync` (the walk's floor, cooling, signed-out, key and busy s
 hand-over box with its agent unchanged, by `daoris`, and its take holds the conversation's turns (`ChatTurns.Hold`), so a
 word said as it begins runs its own turn first, the box then waiting for that turn's end.
 
-`Workflows/` is layered whole (STRUCT3b, D166's STRUCT3b note): its records and rules in `Domain/`, pure; its
-use cases in `Application/` (`WorkflowStore`, `WorkflowRunBindings`, `WorkflowProcesses`, `WorkflowRunReader`, `WorkflowRunStart`
-and the two commands), written against the ports declared there (`IWorkflowStore`, `IWorkflowRunStore`, `IWorkflowRunRecords`,
-`IWorkflowStartWorld`); and the
-files and reads behind those ports in `Infrastructure/`. Every other module, the loop and the hosts reach it by its
-`Application` with a home, as before; `WorkflowPorts` is the one place its `Application` names its `Infrastructure`.
+`Workflows/` keeps the onion for its model and rules alone (STRUCT3b, flattened by FLAT1a, D166's notes): its records and
+rules in `Domain/`, pure; its use cases (`WorkflowStore`, `WorkflowRunBindings`, `WorkflowProcesses`, `WorkflowRunReader`,
+`WorkflowRunStart` and the two commands), written against the ports declared at its top (`IWorkflowStore`, `IWorkflowRunStore`,
+`IWorkflowRunRecords`, `IWorkflowStartWorld`), and the files and reads behind those ports sit at the module's top.
 
-`Review/` is layered whole (STRUCT3c, D166's STRUCT3c note): the review's and the second opinion's records, rules, gates and words
-in `Domain/`, pure (`ReviewGate`, `ReviewRules`, `OpinionGate`, `OpinionRules`, the packet, the instruction, the reviewer's walk);
-the presses, the command, the showing (`ReviewDesk`, its port `IReviewTabs`), the gate's read (`ReviewGate.ReadAsync`, its port
-`IReviewWorld`), the set-up's post and the three stores' use cases (`OpinionDues`, `OpinionGates`, `OpinionDeliveries`) in
-`Application/`; and the home's opinion files, git, a reviewer's copy, a checkout's and a build's folders and the service behind
-`IReviewWorld` in `Infrastructure/`. An I/O member a caller asked of a Domain type (`ReviewRules.Holds`, `OpinionTree.OpenAsync`,
-…) is a C# 14 extension member, so every caller names it as before.
+`Review/` keeps the onion for its model and rules alone (STRUCT3c, flattened by FLAT1a): the review's and the second opinion's
+records, rules, gates and words in `Domain/`, pure (`ReviewGate`, `ReviewRules`, `OpinionGate`, `OpinionRules`, the packet, the
+instruction, the reviewer's walk); the presses, the command, the showing (`ReviewDesk`, its port `IReviewTabs`), the gate's
+read (`ReviewGate.ReadAsync`, its port `IReviewWorld`), the set-up's post, the three stores' use cases (`OpinionDues`,
+`OpinionGates`, `OpinionDeliveries`) and the home's opinion files, git, a reviewer's copy, a checkout's and a build's folders
+and the service behind `IReviewWorld` sit at the module's top. An I/O member a caller asked of a Domain type
+(`ReviewRules.Holds`, `OpinionTree.OpenAsync`, …) is still a C# 14 extension member, which FLAT1b folds back.
 
-`Service/` is layered whole too (STRUCT3d, D166's STRUCT3d note). `ServiceClient` is its `Application`, under the name every
-module and host uses: it writes each request and reads each answer, and its HTTP is behind the port `IServiceDoors`, whose
-real one, `Infrastructure/ServiceHttp.cs`, the client's URL constructors and `FromEnvironment` compose, so a test may hand doors
-in memory. The answers, views and registry records, the remotes map's rules (`RemoteTarget`), the layout's rules
-(`LayoutReader`) and the knowledge connector's names and order are its `Domain`; what those read of this machine is named on
-them as before (`RemoteTarget.Load`, `LayoutReader.ReadAsync`, `KnowledgeConnector.Offer`) by extension blocks in
-`Application`, through `ServiceMachine` and `LayoutGit`. `RemoteSync`, `RegistrationWorld` and `ServiceHostLocator` are its
-`Infrastructure`, composed by the loop and the hosts alone.
+`Service/` keeps the onion for its model and rules alone (STRUCT3d, flattened by FLAT1a). `ServiceClient` writes each request
+and reads each answer, and its HTTP is behind the port `IServiceDoors`, whose real one, `ServiceHttp.cs`, the client's URL
+constructors and `FromEnvironment` compose, so a test may hand doors in memory. The answers, views and registry records, the
+remotes map's rules (`RemoteTarget`), the layout's rules (`LayoutReader`) and the knowledge connector's names and order are its
+`Domain`; what those read of this machine is named on them as before (`RemoteTarget.Load`, `LayoutReader.ReadAsync`,
+`KnowledgeConnector.Offer`) by extension blocks, through `ServiceMachine` and `LayoutGit`. `RemoteSync`, `RegistrationWorld` and
+`ServiceHostLocator` sit at the module's top, composed by the loop and the hosts alone.
 
-`Setup/` is layered whole (STRUCT3e, D166's STRUCT3e note): its records and rules in `Domain/`, pure (the presses' plans and
-the brief, the workspace plan's standing, a repository's description read through three questions, the release channel's names
-and refusals, the update's and the swap's records); its use cases in `Application/` (`SetupPress`, `WorkspaceSetup` and the
-three commands), written against the ports declared there (`ISetupWorld`, `IWorkspaceSetupWorld`), which the loop and the hosts
-compose; and the I/O in `Infrastructure/` (the two worlds, the plan's file, the description's files, the release bucket, the
-update's file, the staged build's files and the swap). The launcher compiles `Domain/StagedBuild.cs`,
-`Infrastructure/StagedBuildFiles.cs` and `Infrastructure/InstallSwap.cs`, each on the base library alone. Quests and Accounts
-reach `SelfDescription.Read` and `ClaudeReleases.InstallAsync` through the `Application`'s extension members.
+`Setup/` keeps the onion for its model and rules alone (STRUCT3e, flattened by FLAT1a): its records and rules in `Domain/`, pure
+(the presses' plans and the brief, the workspace plan's standing, a repository's description read through three questions, the
+release channel's names and refusals, the update's and the swap's records); its use cases (`SetupPress`, `WorkspaceSetup` and
+the three commands), written against the ports declared at its top (`ISetupWorld`, `IWorkspaceSetupWorld`), which the loop and
+the hosts compose, and the I/O (the two worlds, the plan's file, the description's files, the release bucket, the update's file,
+the staged build's files and the swap) sit at the module's top. The launcher compiles `Domain/StagedBuild.cs`,
+`StagedBuildFiles.cs` and `InstallSwap.cs`, each on the base library alone. Quests and Accounts reach `SelfDescription.Read` and
+`ClaudeReleases.InstallAsync` through extension members.
 
-`Quests/` is layered whole (STRUCT3f, D166's STRUCT3f note): the plan and its records (`Planner`, `QuestView`, the
-considerations), the evidence's records, the attention events, the ask's words and the intake's room, prompt and observation in
-`Domain/`, pure; the commands, the evidence check, the intake's kinds, the park reader and `AskWords.ReadAsync` in
-`Application/`; and the git read of a done's evidence, the room written to the disk and the git defaults (`QuestGit`) in
-`Infrastructure/`. `IntakeRoom.Prepare` keeps its name as an extension member there.
+`Quests/` keeps the onion for its model and rules alone (STRUCT3f, flattened by FLAT1a): the plan and its records (`Planner`,
+`QuestView`, the considerations), the evidence's records, the attention events, the ask's words and the intake's room, prompt and
+observation in `Domain/`, pure; the commands, the evidence check, the intake's kinds, the park reader, `AskWords.ReadAsync`, the
+git read of a done's evidence, the room written to the disk and the git defaults (`QuestGit`) sit at the module's top.
+`IntakeRoom.Prepare` keeps its name as an extension member.
+
+The comments in these six modules that still say Application or Infrastructure, and the extension blocks, forwards and ports
+the layering needed, are FLAT1b's to fold back.
 
 `Sessions/` keeps the onion for its model and rules alone (STRUCT3g-i, D166's STRUCT3g-i note); its `Domain/` holds the session events' records
 and rules (`SessionEvents.cs`, with `SessionEventText`'s bounds, id rule and cuts), the trace's records and chain (`Trace.Chain.cs`,
@@ -99,7 +99,7 @@ observation rules. Its stores and use cases sit at the module's top.
 `Conversations/` keeps the onion for its model and rules alone (STRUCT3h, D166's STRUCT3h note): `Domain/` holds a
 conversation's pure records, rules and words (the message, the resume's judgement and its reasons, the hand-over's codes,
 briefing and notes, the helpers' asks, rules, words and judge, the turns' and the inbox's records, the go-on records); the chat
-runner, the use cases, the stores and their files sit at the module's top. The module is not in the map's `layered` list.
+runner, the use cases, the stores and their files sit at the module's top.
 
 ## What the page can ask this machine
 
@@ -233,17 +233,16 @@ executable, else beside the home), each with its README's requirement lines, and
 {offer} copies one in. None runs at the press.
 **No plugin code ever runs inside the shell, the host or the page.**
 
-**The module is layered** (STRUCT3a, D166's note): each of its files sits in `Plugins/Domain`,
-`Plugins/Application` or `Plugins/Infrastructure`, which `structure.json`'s `layered` list holds (a file loose in `Plugins/` is a
-`layer` breach). `Domain` is the records and the rules, and does no I/O: a manifest parsed and the catalogue judged
+**The module keeps the onion for its model and rules alone** (STRUCT3a, D166's note; flattened by FLAT1a): `Plugins/Domain` is
+the records and the rules, and does no I/O: a manifest parsed and the catalogue judged
 (`PluginCatalog`), the hook wire's words (`HookPoints`, `HookFrames`), the log's events, the health's rules, the activity's
-summary, the tools' table, and the icon's, the offer's, the source record's and the package's rules. `Infrastructure` is the
-I/O: the home's plugin folders (`PluginFolders`), the hook process (`HookProcess`), the tool checks' runs, the kit's files and
-templates, a trial's process and the package file. `Application` is what other modules and the hosts call: the catalogue's
-reads, install and update, offers, the page and the activity, the kit and its trial, the hook set the loop asks, the
-landing's start (`HookChannels`), the log writer and the terminal's commands, with the ports `IHookChannel` and `CheckRunner`.
-`PluginCatalog.Load`, `PluginIcon.Read` and `PluginSource.Read` are static members of C# 14 extension blocks declared in the
-Application, so every caller names them as before, and the gate reads each as the Application's.
+summary, the tools' table, and the icon's, the offer's, the source record's and the package's rules. The rest sits at the
+module's top, beside `plugin-kit/`: the home's plugin folders (`PluginFolders`), the hook process (`HookProcess`), the tool
+checks' runs, the kit's files and templates, a trial's process and the package file, and what other modules and the hosts call:
+the catalogue's reads, install and update, offers, the page and the activity, the kit and its trial, the hook set the loop
+asks, the landing's start (`HookChannels`), the log writer and the terminal's commands, with the ports `IHookChannel` and
+`CheckRunner`. `PluginCatalog.Load`, `PluginIcon.Read` and `PluginSource.Read` are static members of C# 14 extension blocks,
+which FLAT1b folds back.
 
 **The kit a plugin is made with** (PLUG8, D101, the plugin design's §9) is the driver library's
 `PluginKit`: `daoris-driver plugins new <id> --point <p>… [--in <folder>]` writes a plugin's folder
