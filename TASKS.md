@@ -271,7 +271,6 @@ into priority since that will make the code better to develop"*; D166's note). N
 `docs/2026-10-12-code-structure-design.md` as amended. Moves are behaviour-preserving; new driver files go into their module's
 folder.
 
-- [ ] **SCOPE1d — Sessions and Review by scope** (driver; after FLAT1b-ii and iii-b). Sessions into `Work/`, `Requests/`, `History/`, `Trace/`, `Events/`; Review into `Opinion/` and `ReviewEnvironment/` only if still above about 22 files at its top. D166's scope note.
 - [ ] **PLATEXC1 — `DriverException` is Platform's** (driver). Platform's `DriverHttp` and `DriverLock` throw a type declared in `Agents/Adapters/Adapters.cs`, so the shared kernel depends on Agents: move it to Platform. Proof: the build and the driver's tests. D166's LOOPOUT1 note.
 - [ ] **STRUCT3OPLOOP — Review's opinion logic out of the loop** (driver; optional). `Loop/Driver.Opinion.cs`, `Driver.OpinionDelivery.cs` and `Driver.OpinionGate.cs` hold the pass, the delivery and the gate's look: what needs none of the loop's state moves into `Review/`, with no new ports. D166's STRUCT2g note.
 - [ ] **STRUCT5 — the other projects' folders** (modules/service/web/cli). Folders by domain, no layers (D166's note of 2026-10-14): `Modules` (the bridge per domain, browser, window, update), the service's core, the page's top folder and the CLI's `src/`, each with its gate; a row each when due. Design §7.

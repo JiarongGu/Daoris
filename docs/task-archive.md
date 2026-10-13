@@ -14242,3 +14242,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PART4 — Help's records** (driver). `HelpProposal`, `HelpMachineFacts`, `HelpPlan`, `HelpApplied`, `HelpMachine` and `HelpProposals` each one declaration holding its kinds' members. Survey "Records".
 
 **Outcome** 2026-10-14: the four proposal records sit whole in `Help/HelpProposals.cs` and `HelpMachine` in `Help/HelpRoom.cs`, each kind's or section's members under its comment, the goldens unchanged; `HelpProposals.RecordsAsync` moved into `HelpDeleteProposals`, now public for the bridge. The gate's list lost six (23 left). On Sonnet: 84 tool calls. Detail: D166's PART4 note.
+
+## SCOPE1d — Sessions and Review by scope (2026-10-14, D166)
+
+> - [ ] **SCOPE1d — Sessions and Review by scope** (driver; after FLAT1b-ii and iii-b). Sessions into `Work/`, `Requests/`, `History/`, `Trace/`, `Events/`; Review into `Opinion/` and `ReviewEnvironment/` only if still above about 22 files at its top. D166's scope note.
+
+**Outcome** 2026-10-14: 21 renames put Sessions into `Work/`, `Requests/`, `History/`, `Trace/` and `Events/`, its top down from 24 files to 4 (`RunningSessions`, `SessionProcesses`, `SessionsCommand`, and `HarnessEnding`, which the loop and the observation both use); Review, at 15 files, stays flat. The gate's list follows `HistoryClearing`'s new paths. On Sonnet: 25 tool calls. Detail: D166's SCOPE1d note.
