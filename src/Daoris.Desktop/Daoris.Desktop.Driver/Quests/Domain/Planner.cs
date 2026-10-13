@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>A quest as the service answered it — enough to decide on, and enough to compose a target from.</summary>
-public sealed partial record QuestView(string Id, string From, string To, string Title, string Body, string Status)
+public sealed record QuestView(string Id, string From, string To, string Title, string Body, string Status)
 {
     /// <summary>
     /// What a list calls it, as the service answered (SESSUX1j): its publisher's short title, or the name the service read
@@ -106,6 +106,23 @@ public sealed partial record QuestView(string Id, string From, string To, string
     /// from a host that answers none.
     /// </summary>
     public DateTimeOffset? Updated { get; init; }
+
+    // The review's part of a quest; their element records are declared in Service/Domain.
+
+    /// <summary>Its chain's review choice (REVIEWENV1b); null where it chose none, and from a host before the field.</summary>
+    public QuestReviewChoiceView? Review { get; init; }
+
+    /// <summary>
+    /// The environment it shows its chain's work in, which makes it a set-up step (REVIEWENV1b, D154 point 4); null for every
+    /// other quest, and from a host before the field.
+    /// </summary>
+    public string? SetUpIn { get; init; }
+
+    /// <summary>The set-ups said on it, oldest first (REVIEWENV1b); empty where none was, and from a host before them.</summary>
+    public IReadOnlyList<QuestSetUpView> SetUps { get; init; } = [];
+
+    /// <summary>The person's verdicts on its review, oldest first (REVIEWENV1b); empty where none was given, and from a host before them.</summary>
+    public IReadOnlyList<QuestReviewVerdictView> Verdicts { get; init; } = [];
 }
 
 /// <summary>One thing the person requires of a quest (DRIFT1c), as the service answers it: their words, and the check that proves them.</summary>
@@ -358,7 +375,11 @@ public sealed record SaidWordView(string? Id, string Text, DateTimeOffset At, IR
 }
 
 /// <summary>One step of a chain, as the service answered it.</summary>
-public sealed partial record QuestStepView(string To, string Title, string Body);
+public sealed record QuestStepView(string To, string Title, string Body)
+{
+    /// <summary>The environment the step shows its chain's work in, which makes it a set-up step (REVIEWENV1b); null otherwise.</summary>
+    public string? SetUpIn { get; init; }
+}
 
 /// <summary>A file a quest carries, as the local service answered it.</summary>
 /// <param name="Name">The file's own name.</param>

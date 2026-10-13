@@ -79,36 +79,3 @@ public sealed record AskReviewChoiceView(string Choice, DateTimeOffset At, strin
 /// press applies, the intake session that made it and the quest it was published with.
 /// </summary>
 public sealed record AskReviewProposalView(string Choice, string Reason, DateTimeOffset At, string? Session = null, string? Quest = null);
-
-public sealed partial record QuestView
-{
-    /// <summary>Its chain's review choice (REVIEWENV1b); null where it chose none, and from a host before the field.</summary>
-    public QuestReviewChoiceView? Review { get; init; }
-
-    /// <summary>
-    /// The environment it shows its chain's work in, which makes it a set-up step (REVIEWENV1b, D154 point 4); null for every
-    /// other quest, and from a host before the field.
-    /// </summary>
-    public string? SetUpIn { get; init; }
-
-    /// <summary>The set-ups said on it, oldest first (REVIEWENV1b); empty where none was, and from a host before them.</summary>
-    public IReadOnlyList<QuestSetUpView> SetUps { get; init; } = [];
-
-    /// <summary>The person's verdicts on its review, oldest first (REVIEWENV1b); empty where none was given, and from a host before them.</summary>
-    public IReadOnlyList<QuestReviewVerdictView> Verdicts { get; init; } = [];
-}
-
-public sealed partial record QuestStepView
-{
-    /// <summary>The environment the step shows its chain's work in, which makes it a set-up step (REVIEWENV1b); null otherwise.</summary>
-    public string? SetUpIn { get; init; }
-}
-
-public sealed partial record AskView
-{
-    /// <summary>The person's review choices on it, oldest first, the latest standing (REVIEWENV1b); empty where they made none.</summary>
-    public IReadOnlyList<AskReviewChoiceView> ReviewChoices { get; init; } = [];
-
-    /// <summary>Its intake's review proposals, oldest first (REVIEWENV1b); empty where it proposed none.</summary>
-    public IReadOnlyList<AskReviewProposalView> ReviewProposals { get; init; } = [];
-}
