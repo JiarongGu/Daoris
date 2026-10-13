@@ -3,8 +3,7 @@ namespace Daoris.Driver;
 /// <summary>Whether a command would start, without starting it.</summary>
 /// <remarks>
 /// The shared kernel's (Platform, STRUCT3a): it asks the machine's PATH and files for the agents' doors, the tools, the
-/// terminals, the trees, Setup and a plugin's tool checks alike. It left the Plugins module, where it had lived beside the
-/// catalogue, when Plugins was layered, and waits at the driver's top for Platform's move.
+/// terminals, the trees, Setup and a plugin's tool checks alike.
 /// </remarks>
 public static class CommandPresence
 {

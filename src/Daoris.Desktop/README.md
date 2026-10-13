@@ -184,7 +184,7 @@ executable, else beside the home), each with its README's requirement lines, and
 {offer} copies one in. None runs at the press.
 **No plugin code ever runs inside the shell, the host or the page.**
 
-**The module is layered** (STRUCT3a, D166's note), the first of the driver's: each of its files sits in `Plugins/Domain`,
+**The module is layered** (STRUCT3a, D166's note): each of its files sits in `Plugins/Domain`,
 `Plugins/Application` or `Plugins/Infrastructure`, which `structure.json`'s `layered` list holds (a file loose in `Plugins/` is a
 `layer` breach). `Domain` is the records and the rules, and does no I/O: a manifest parsed and the catalogue judged
 (`PluginCatalog`), the hook wire's words (`HookPoints`, `HookFrames`), the log's events, the health's rules, the activity's

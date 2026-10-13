@@ -166,8 +166,7 @@ public sealed class PluginCatalogTests : IDisposable
     /// <summary>
     /// REFAC1 (the second-opinion review of 2026-10-07): a plugin id's shape has one owner in the driver,
     /// <see cref="PluginCatalog.IsId"/>, which a landing rule's plugin, a plugin's tool id and the log's landing line ask too;
-    /// CASEFOLD1e had to mend the same pattern in two places. Only <c>PluginCatalog.cs</c> spells it (the Domain's, named
-    /// <c>Plugins.cs</c> before STRUCT3a layered the module). The CLI's
+    /// CASEFOLD1e had to mend the same pattern in two places. Only <c>PluginCatalog.cs</c> spells it. The CLI's
     /// <c>isPluginId</c> is the twin, which its own suite holds the same way.
     /// </summary>
     [Fact]

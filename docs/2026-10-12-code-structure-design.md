@@ -69,6 +69,8 @@ split, not shared. `Loop` is the composition root: it may use every module; no m
 - **A port is an interface the inner layers own** and an outer layer implements (`ISessionAdapter`, `IReviewWorld`,
   `IWorkTrees` today). A `Func` stand-in that tests use is a port in waiting.
 - **Across modules**, a module reaches another only through its `Domain` and `Application`, never its `Infrastructure`.
+- **A module's `Application` is its composition point**: it names its own `Infrastructure` as a port's default, so no other
+  module and no host needs to; how a mixed type is cut and kept callable is D166's STRUCT3a note.
 - **The hosts are the outer ring**: `Driver.Host` (the terminal door), `Modules` (the page's bridge), `App` (the
   window), and the service's HTTP and MCP hosts. They compose; nothing inward knows them, as today.
 
@@ -104,6 +106,8 @@ A fast driver test, `StructureTests`, over the driver's sources:
 3. **No file names a type declared in another module's `Infrastructure`**, and no `Domain` file names one declared in an
    `Application` or `Infrastructure` folder: a declaration index built from the sources, checked by name.
 4. **`Loop` is used by no module.**
+5. **A layered module keeps every file in a layer** (the map's `layered` list, from STRUCT3a), and a static member a C# 14
+   `extension(T)` block declares is read as `T.Member`, in the layer of the file that declares it.
 
 Each rule names the file, the line and the rule it breaks. The same gate, in vitest, holds the page's and the CLI's folders
 once their rows land (STRUCT5).
