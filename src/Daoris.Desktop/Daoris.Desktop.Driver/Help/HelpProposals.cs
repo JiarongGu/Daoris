@@ -391,8 +391,11 @@ public sealed record HelpApplied(bool Applied, string Told)
 /// The doors a proposal is applied through (HELP6): each the code the screen's own route uses, so an
 /// Apply is what the screen would have done, never a second path.
 /// </summary>
-/// <remarks>MOD6: each kind's file adds the doors its Apply goes through.</remarks>
-public partial interface IHelpDoors
+/// <remarks>MOD6: each kind's file declares the doors its Apply goes through as its own interface, gathered here (PART5).</remarks>
+public interface IHelpDoors :
+    IHelpAcceptDoors, IHelpAccountDoors, IHelpAgentDoors, IHelpAskDoors, IHelpBrowserDoors, IHelpClearDoors,
+    IHelpDeleteDoors, IHelpHandDoors, IHelpPauseDoors, IHelpPluginDoors, IHelpRepositoryDoors, IHelpSessionDoors,
+    IHelpSettingDoors, IHelpSyncDoors
 {
 }
 

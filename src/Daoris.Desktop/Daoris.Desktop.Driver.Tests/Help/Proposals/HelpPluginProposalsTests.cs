@@ -335,29 +335,3 @@ public sealed class HelpPluginProposalsTests : HelpProposalsFixture
         Assert.Null(plugin.Target);
     }
 }
-
-public sealed partial class HelpStandInDoors
-{
-    /// <summary>What the plugin door refuses in its own words, for a plugin that moved since the card was drawn.</summary>
-    public string? PluginRefusal { get; init; }
-
-    public void AddPlugin(string folder)
-    {
-        Calls.Add($"PLUGIN_ADD {folder}");
-        if (PluginRefusal is { } refused) throw new DriverException(refused);
-    }
-
-    public void SwitchPlugin(string id, bool on) => Calls.Add($"PLUGIN_ACTION {(on ? "enable" : "disable")} {id}");
-
-    public void AddOffer(string id)
-    {
-        Calls.Add($"PLUGIN_INSTALL {id}");
-        if (PluginRefusal is { } refused) throw new DriverException(refused);
-    }
-
-    public Task UpdatePluginAsync(string id, CancellationToken ct)
-    {
-        Calls.Add($"PLUGIN_UPDATE {id}");
-        return PluginRefusal is { } refused ? Task.FromException(new DriverException(refused)) : Task.CompletedTask;
-    }
-}

@@ -142,14 +142,3 @@ public sealed class HelpRepositoryProposalsTests : HelpProposalsFixture
         }
     }
 }
-
-public sealed partial class HelpStandInDoors
-{
-    public (bool Ok, string Message) Wired { get; set; } = (true, "`engine` is now in workspace `studio`.");
-
-    public Task<(bool Ok, string Message)> WireRepositoryAsync(string repository, string workspace, CancellationToken ct)
-    {
-        Calls.Add($"POST /api/registry/{repository}/workspace {workspace}");
-        return Task.FromResult(Wired);
-    }
-}

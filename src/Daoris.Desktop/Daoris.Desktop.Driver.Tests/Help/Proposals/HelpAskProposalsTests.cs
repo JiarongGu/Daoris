@@ -152,13 +152,3 @@ public sealed class HelpAskProposalsTests : HelpProposalsFixture
         Assert.Contains("--review off --review-words \"a readme change\"", ask.Told);
     }
 }
-
-public sealed partial class HelpStandInDoors
-{
-    public Task<AskAnswer> AskAsync(string workspace, string sentence, string? review, string? reviewWords, CancellationToken ct, string? shortTitle = null)
-    {
-        var chosen = review is null ? "" : $" [review {review}{(reviewWords is null ? "" : $": {reviewWords}")}]";
-        Calls.Add($"ask {workspace} {sentence}{chosen}{(shortTitle is null ? "" : $" [short {shortTitle}]")}");
-        return Task.FromResult(new AskAnswer(true, "Asked.", "a1", null));
-    }
-}

@@ -277,7 +277,6 @@ folder.
 
 **No partial type split by hand** (the owner: *"also I think we better not use partial class if we don't have auto-generated code"*; D166's note). Evidence: `docs/2026-10-14-partial-types-survey.md`. A class per domain or kind keeps one new door in one new file.
 
-- [ ] **PART5 — Help's doors** (driver; after PART4). `IHelpDoors` inheriting a per-kind interface each kind file declares, its stand-in likewise; callers and `ScreenDoors` unchanged. Survey "Records".
 - [ ] **PART7 — `HelpProposalBox` as a writer per kind** (service). A proposal-file helper and a writer class per kind, `ProposeX` kept on the box; the workflow pattern with its writer. Survey "A family".
 - [ ] **PART8 — `ServiceClient`'s parts as door classes** (driver). The opinion, helper, history, review, showing and workflow doors as classes over the client, callers re-spelled. Survey "A family".
 - [ ] **PART9 — the home's history reading as a class** (driver; after FLAT1b-iii-b). `HistoryClearing.Home.cs` as a class of its own. Survey "Merge".

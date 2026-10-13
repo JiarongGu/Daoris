@@ -157,7 +157,7 @@ public sealed record HelpBrowserFacts(string Browser, string Links, string Exten
     public Func<string, string?> Page { get; init; } = _ => null;
 }
 
-public partial interface IHelpDoors
+public interface IHelpBrowserDoors
 {
     /// <summary>
     /// The Browser screen's own edit of Daoris's browser's files (HELP10, <c>BrowserModule</c>): which browser, where the

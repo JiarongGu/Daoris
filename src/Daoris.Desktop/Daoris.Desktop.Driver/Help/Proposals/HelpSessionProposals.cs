@@ -162,7 +162,7 @@ internal sealed class HelpSessionProposals : IHelpProposalKind
     private static string Listed(IEnumerable<SessionRecord> records) => string.Join(", ", records.Select(record => $"`{record.Id}`"));
 }
 
-public partial interface IHelpDoors
+public interface IHelpSessionDoors
 {
     /// <summary>
     /// Sessions' own archive (SESSUX1a, D126 §5.2), the door its *Archive*, *Archive what ended…* and *Unarchive* press: each

@@ -316,7 +316,7 @@ public sealed record HelpClearPlan(HistoryScope Scope, string Id, IReadOnlyList<
     public bool Held { get; init; }
 }
 
-public partial interface IHelpDoors
+public interface IHelpClearDoors
 {
     /// <summary>
     /// The screen's second press of a clear (<c>HISTORY_CLEAR</c>, HIST1c, D153; design §5): <see cref="HistoryClearing.ClearAsync"/>

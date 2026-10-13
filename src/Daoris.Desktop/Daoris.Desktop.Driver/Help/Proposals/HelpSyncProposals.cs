@@ -277,7 +277,7 @@ public sealed record HelpSyncBesides(IReadOnlyList<HelpSyncUnfetched> NotFetched
 /// <param name="Reach">How origin is reached: `ssh`, `https`, `http`, `git` or `file`.</param>
 public sealed record HelpSyncUnfetched(string Repository, string Fetch, DateTimeOffset? LastFetch, string? Reach);
 
-public partial interface IHelpDoors
+public interface IHelpSyncDoors
 {
     /// <summary>
     /// <c>TREES_SYNC_PLAN</c>'s own list (WSR6, D109): each line fetched from <c>origin</c>, as the person, and what the

@@ -216,14 +216,3 @@ public sealed class HelpSessionProposalsTests : HelpProposalsFixture
         Assert.Equal("Applied: `#p6` — nothing changed: `s1ended0` is not archived, so applying changes nothing.", applied.Told);
     }
 }
-
-public sealed partial class HelpStandInDoors
-{
-    public (bool Ok, string Message) Archived { get; set; } = (true, "Archived it.");
-
-    public Task<(bool Ok, string Message)> ArchiveSessionsAsync(IReadOnlyList<string> ids, bool archived, CancellationToken ct)
-    {
-        Calls.Add($"SESSION_ARCHIVE {(archived ? "archive" : "unarchive")} {string.Join(",", ids)}");
-        return Task.FromResult(Archived);
-    }
-}
