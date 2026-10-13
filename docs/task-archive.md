@@ -14206,3 +14206,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SCOPE1c — Conversations and Plugins by scope** (driver; after FLAT1b-i). Conversations into `Chat/`, `GoOn/`, `HandOver/`, `Helpers/`; Plugins into `Hooks/`, `Kit/`, `Package/`, `Catalogue/`, `Page/`, `plugin-kit/` where it is. Counted again after FLAT1b-i. D166's scope note.
 
 **Outcome** 2026-10-14: Conversations' 24 files went into `Chat/`, `GoOn/`, `HandOver/` and `Helpers/`, with `ConversationTrees` (the go-on and the hand-over both call it), `DrivenInbox` and `TranscriptFile` at its top. Plugins, counted at 21 files after FLAT1b-i, stays flat by the twenty-file rule, the README naming the groups to cut along if it grows. On Sonnet, scouted: 38 tool calls. Detail: D166's SCOPE1c note.
+
+## PART1 — the gate (2026-10-14, D166)
+
+> - [ ] **PART1 — the gate** (tools). `tools/partials.mjs` over `src/**/*.cs` refuses a type declared `partial` in more than one hand-written file; the 34 offenders on `tools/partials.json`, a list that may only shrink; a universal gate in `daoris.gates.json`. Each PART row cuts its entries.
+
+**Outcome** 2026-10-14: `tools/partials.mjs` blanks comments and strings, then refuses a type partial in more than one file, a file beyond a listed type's, and a listed type no longer split; its list, generated, holds the 34. It runs inside `npm run verify` with the other universal checks rather than as a merge-tool gate, whose lists a test pins. Ten tests. On Sonnet: 25 tool calls. Detail: D166's PART1 note.

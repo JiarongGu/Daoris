@@ -279,7 +279,6 @@ folder.
 
 **No partial type split by hand** (the owner: *"also I think we better not use partial class if we don't have auto-generated code"*; D166's note). Evidence: `docs/2026-10-14-partial-types-survey.md`. A class per domain or kind keeps one new door in one new file.
 
-- [ ] **PART1 — the gate** (tools). `tools/partials.mjs` over `src/**/*.cs` refuses a type declared `partial` in more than one hand-written file; the 34 offenders on `tools/partials.json`, a list that may only shrink; a universal gate in `daoris.gates.json`. Each PART row cuts its entries.
 - [ ] **PART2 — the driver's small merges** (driver). `AcpSession`, `WorkflowNamed`, `PluginKit` (a `PluginTrials` class), `Tools` with `Tools.Children`, `ToolInstall` (`ToolArchives`). Survey "Merge".
 - [ ] **PART3 — the client's views and the harness types** (driver). `QuestView`, `QuestStepView` and `AskView` each one declaration; `HarnessSettings` and `HarnessRoster` each a file of its own. Survey "Records".
 - [ ] **PART4 — Help's records** (driver). `HelpProposal`, `HelpMachineFacts`, `HelpPlan`, `HelpApplied`, `HelpMachine` and `HelpProposals` each one declaration holding its kinds' members. Survey "Records".
