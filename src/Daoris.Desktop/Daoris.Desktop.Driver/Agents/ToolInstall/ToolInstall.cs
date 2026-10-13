@@ -51,7 +51,7 @@ public sealed record LocationLook(string Address, string Outcome, string Sentenc
 /// and a location fetched or failed — naming a tool and a version, or a location's place in the list, and never an
 /// address the person typed.</para>
 /// </remarks>
-public static partial class ToolInstall
+public static class ToolInstall
 {
     /// <summary>Where a download is staged, beside the folder it becomes. The CLI's <c>STAGING</c>.</summary>
     public const string Staging = ".part";
@@ -210,7 +210,7 @@ public static partial class ToolInstall
             var url = await FetchVerifiedAsync(http, declared, offered, archive, write, ct).ConfigureAwait(false);
             write($"  its size and SHA-256 match the list: {offered.Sha256}");
 
-            Unpack(archive, offered.Archive, Path.Combine(staging, Tools.Package), offered.Exe);
+            ToolArchives.Unpack(archive, offered.Archive, Path.Combine(staging, Tools.Package), offered.Exe);
             File.Delete(archive);
             WriteRecord(Path.Combine(staging, Tools.Record), tool, offered, platform, url);
 
