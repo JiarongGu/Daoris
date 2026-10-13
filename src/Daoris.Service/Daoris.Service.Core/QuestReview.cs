@@ -432,6 +432,4 @@ public static class Reviews
         && DateTimeOffset.TryParse(when, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.RoundtripKind, out var at)
             ? at
             : null;
-
-    private static string Clip(string text) => text.Length <= 120 ? text : text[..120] + "…";
 }

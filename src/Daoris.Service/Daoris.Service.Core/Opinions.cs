@@ -641,6 +641,4 @@ public static class Opinions
         : name.Length > NameLimit ? $"is longer than {NameLimit} characters"
         : name.Any(char.IsControl) ? "holds a control character"
         : null;
-
-    internal static string Clip(string text) => text.Length <= 120 ? text : text[..120] + "…";
 }

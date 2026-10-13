@@ -170,6 +170,4 @@ public sealed partial class SessionLedger
 
         return null;
     }
-
-    private static string Clip(string text) => text.Length <= 120 ? text : text[..120] + "…";
 }
