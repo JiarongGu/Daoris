@@ -265,8 +265,10 @@ UNBLOCK6–8; TOOLS6/8 precede 9, TOOLS10 precedes managed-Git sessions, 11 last
 
 ## Code structure
 
-Contract: `docs/2026-10-12-code-structure-design.md` (D166). Moves are behaviour-preserving, one module per branch, while
-no branch in flight touches that module; new driver files go into their module folder once STRUCT1 lands.
+**First, before new feature rows** (the owner, 2026-10-13: *"I think we do need to move the full refactor mentioned before
+into priority since that will make the code better to develop"*; D166's note). Contract: `docs/2026-10-12-code-structure-design.md`
+(D166). Moves are behaviour-preserving, each module in a commit of renames alone, while no branch in flight touches it; a branch
+may move several modules now that nothing else is in flight; new driver files go into their module folder.
 
 - [ ] **STRUCT2b — `Workflows` into its folder** (driver). The next module move in design §6's order (`Help` is already its folder): the files the map gives `Workflows`, moved as they are in a commit of renames alone, its tests into `Driver.Tests/Workflows/` and the map's `tests` table, `root` shrunk. Only while no branch in flight touches a Workflows file. The rest follow as STRUCT2c–n, one row filed as each is due.
 - [ ] **LOOPOUT1 — `Loop` keeps no type another module uses** (driver; before Loop's STRUCT2 row). Placed as mapped, the loop rule would refuse 18 uses of types `Loop`'s files declare (`DriverHttp` 5, `ResumeAsk` 4, `SessionEnded` 3, `Driver` 3, `TickReport`, `StartRun`, `DriverLock`): move each to the module it serves. D166's STRUCT1 note; proof: StructureTests green once `Loop`'s files move.
