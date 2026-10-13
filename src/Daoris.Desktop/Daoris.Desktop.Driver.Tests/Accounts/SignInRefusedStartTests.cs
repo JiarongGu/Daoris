@@ -348,7 +348,7 @@ public sealed class SignInRefusedStartTests : IDisposable
     }
 
     /// <summary>
-    /// The refused start's own conclusion owes it (ROSTER1b's one reader, <see cref="Daoris.Driver.Driver.SignInRefused"/>), and
+    /// The refused start's own conclusion owes it (ROSTER1b's one reader, <see cref="RefusedAccounts.SignInRefused"/>), and
     /// so does a conversation's refused turn (SIGNIN1b), which reads its refusal by the same reader: the next start asks each
     /// once, in the order it walks them.
     /// </summary>
@@ -363,7 +363,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         using var service = _ledger.Client();
         using var runner = Runner(service, roster);
 
-        Assert.NotNull(Daoris.Driver.Driver.SignInRefused(roster, adapter, "account-1", Refusal));
+        Assert.NotNull(RefusedAccounts.SignInRefused(roster, adapter, "account-1", Refusal));
         Assert.NotNull(runner.SignedOut(adapter, "account-2", Refusal));
         var held = await roster.SelectAsync("fake", FakeConfig, null, null);
         var again = await roster.SelectAsync("fake", FakeConfig, null, null);

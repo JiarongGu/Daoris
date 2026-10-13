@@ -995,7 +995,7 @@ public sealed partial class ChatRunner : IDisposable
 
     /// <summary>
     /// A conversation's call the door refused, read for the account's sign-in (SIGNIN1b, D125 ROSTER1b) by the reader a driven
-    /// start's conclusion uses (<see cref="Driver.SignInRefused"/>): where the adapter's table recognises it, the account the
+    /// start's conclusion uses (<see cref="RefusedAccounts.SignInRefused"/>): where the adapter's table recognises it, the account the
     /// conversation runs as reads signed out, kept as a reading is, so the next start walks past it, and the line for its record
     /// comes back. Null is a refusal as today. Read from the door's failure, never from the transcript (AGT3c).
     /// </summary>
@@ -1003,7 +1003,7 @@ public sealed partial class ChatRunner : IDisposable
     {
         try
         {
-            return Driver.SignInRefused(_harnesses, adapter, profile, failure);
+            return RefusedAccounts.SignInRefused(_harnesses, adapter, profile, failure);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {

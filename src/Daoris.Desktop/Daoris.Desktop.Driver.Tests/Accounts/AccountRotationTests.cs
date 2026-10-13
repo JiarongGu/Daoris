@@ -462,7 +462,7 @@ public sealed class AccountRotationTests : IDisposable
         Accounts("account-1");
         Wire(s => s.WithDefault("fake", "account-1"));
         var roster = Present();
-        var held = Daoris.Driver.Driver.RefusedHold("fake", "account-1", "Work");
+        var held = RefusedAccounts.RefusedHold("fake", "account-1", "Work");
         roster.Refuse("fake", "account-1", held.Note, held);
 
         var selection = await roster.SelectAsync("fake", Config, null, null);
@@ -471,8 +471,8 @@ public sealed class AccountRotationTests : IDisposable
         Assert.Contains("the `fake` account `Work`", selection.Refusal);
         var part = Assert.Single(selection.RefusalNote.Parts);
         Assert.Equal(("held.refused-account", "fake", "account-1"), (part.Code, part.Value("owner"), part.Value("account")));
-        Assert.Equal(["held.refused-own"], NoteAssert.Codes(Daoris.Driver.Driver.RefusedHold("fake", null, null).Parts));
-        Assert.Equal(["held.sign-in-refused-own"], NoteAssert.Codes(Daoris.Driver.Driver.SignedOutHold("fake").Parts));
+        Assert.Equal(["held.refused-own"], NoteAssert.Codes(RefusedAccounts.RefusedHold("fake", null, null).Parts));
+        Assert.Equal(["held.sign-in-refused-own"], NoteAssert.Codes(RefusedAccounts.SignedOutHold("fake").Parts));
 
         // A reason told without its code keeps its sentence only.
         roster.Refuse("fake", "account-1", "refused (401).");

@@ -383,7 +383,7 @@ public sealed class AccountNamesSaidTests : IDisposable
     [InlineData(Ampersand, "`daoris agent login fake --profile <account>`")]
     public void A_refused_sign_in_s_line_spells_its_id_for_any_shell(string account, string command)
     {
-        var said = Daoris.Driver.Driver.SignedOutNote("fake", account);
+        var said = RefusedAccounts.SignedOutNote("fake", account);
 
         Assert.Equal(
             $"The agent refused the `fake` account `{account}` for its sign-in, so it reads signed out and Daoris starts nothing more on "
