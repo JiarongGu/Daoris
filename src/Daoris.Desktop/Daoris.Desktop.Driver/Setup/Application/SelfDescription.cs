@@ -1,4 +1,3 @@
-using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -24,6 +23,11 @@ public sealed record RepositoryDescription(string? Summary, IReadOnlyList<string
 ///
 /// <para>No model reads it (D24). What a paragraph says is judged by the intake session, which is
 /// where a model is; this only decides which paragraph is worth handing it.</para>
+///
+/// <para><b>The rules, pure</b> (STRUCT3e): the folder's top comes in as three questions (<see cref="Of"/>), asked in the
+/// order a reading asks them. <see cref="SelfDescriptionFiles"/> answers them from a checkout, and
+/// <c>SelfDescription.Read(root)</c> is that reading, declared in the module's Application (<see cref="SelfDescriptionReads"/>)
+/// so the intake and the set-up press call it as they did.</para>
 /// </remarks>
 public static class SelfDescription
 {
@@ -31,7 +35,7 @@ public static class SelfDescription
     public const int MaxSummary = 280;
 
     /// <summary>How much of a file is read: a README's point is at its top, and a large one is not read whole.</summary>
-    private const int ReadLimit = 16 * 1024;
+    internal const int ReadLimit = 16 * 1024;
 
     private static readonly string[] Readmes = ["README.md", "readme.md", "Readme.md", "README.MD", "README"];
 
@@ -61,24 +65,25 @@ public static class SelfDescription
 
     private static readonly Regex Link = new(@"!?\[([^\]]*)\]\([^)]*\)", RegexOptions.CultureInvariant);
 
-    /// <summary>What <paramref name="root"/> says about itself, or null when it says nothing a reader could use.</summary>
-    public static RepositoryDescription? Read(string root)
+    /// <summary>What a folder's top says about itself, or null when it says nothing a reader could use.</summary>
+    /// <param name="exists">Whether a file of that name is at its top.</param>
+    /// <param name="any">Whether a file matching that pattern (<c>*.csproj</c>) is at its top.</param>
+    /// <param name="head">The top of the file of that name, LF only; empty where it cannot be read.</param>
+    public static RepositoryDescription? Of(Func<string, bool> exists, Func<string, bool> any, Func<string, string> head)
     {
-        if (!Directory.Exists(root)) return null;
-
-        var stack = Stack(root);
-        var (summary, source) = FromReadme(root) is { } readme
-            ? (readme, Readmes.First(name => File.Exists(Path.Combine(root, name))))
-            : PackageDescription(root) is { } package
+        var stack = Stack(exists, any, head);
+        var (summary, source) = FromReadme(exists, head) is { } readme
+            ? (readme, Readmes.First(exists))
+            : PackageDescription(exists, head) is { } package
                 ? (package, "package.json")
                 : ((string?)null, (string?)null);
 
         return summary is null && stack.Count == 0 ? null : new RepositoryDescription(summary, stack, source);
     }
 
-    private static string? FromReadme(string root)
+    private static string? FromReadme(Func<string, bool> exists, Func<string, string> head)
     {
-        var file = Readmes.Select(name => Path.Combine(root, name)).FirstOrDefault(File.Exists);
+        var file = Readmes.FirstOrDefault(exists);
         if (file is null) return null;
 
         string? title = null;
@@ -113,7 +118,7 @@ public static class SelfDescription
             return false;
         }
 
-        foreach (var raw in Head(file).Split('\n'))
+        foreach (var raw in head(file).Split('\n'))
         {
             var line = raw.Trim();
             if (fence.Holds(line)) continue;
@@ -182,9 +187,9 @@ public static class SelfDescription
         return text.Length == 0 || SaysNothing.IsMatch(text) ? null : text;
     }
 
-    private static string? PackageDescription(string root)
+    private static string? PackageDescription(Func<string, bool> exists, Func<string, string> head)
     {
-        using var package = Package(root);
+        using var package = Package(exists, head);
         return package?.RootElement.ValueKind == JsonValueKind.Object
                && package.RootElement.TryGetProperty("description", out var description)
                && description.ValueKind == JsonValueKind.String
@@ -197,31 +202,31 @@ public static class SelfDescription
     /// What it is built with, from the files at its top only — in a fixed order, so two readings of
     /// one folder agree. Deliberately short: a word the intake can match a ticket's change against.
     /// </summary>
-    private static IReadOnlyList<string> Stack(string root)
+    private static IReadOnlyList<string> Stack(Func<string, bool> exists, Func<string, bool> any, Func<string, string> head)
     {
         var stack = new List<string>();
-        var dependencies = Dependencies(root);
+        var dependencies = Dependencies(exists, head);
 
-        if (File.Exists(Path.Combine(root, "angular.json")) || dependencies.Contains("@angular/core")) stack.Add("Angular");
+        if (exists("angular.json") || dependencies.Contains("@angular/core")) stack.Add("Angular");
         else if (dependencies.Contains("next")) stack.Add("Next.js");
         else if (dependencies.Contains("react")) stack.Add("React");
         else if (dependencies.Contains("vue")) stack.Add("Vue");
-        else if (File.Exists(Path.Combine(root, "package.json"))) stack.Add("Node");
+        else if (exists("package.json")) stack.Add("Node");
 
-        if (Any(root, "*.sln") || Any(root, "*.slnx") || Any(root, "*.csproj")) stack.Add(".NET");
-        if (File.Exists(Path.Combine(root, "host.json"))) stack.Add("Azure Functions");
-        if (Any(root, "*.tf")) stack.Add("Terraform");
-        if (File.Exists(Path.Combine(root, "build.gradle")) || File.Exists(Path.Combine(root, "build.gradle.kts"))) stack.Add("Gradle");
-        if (File.Exists(Path.Combine(root, "pyproject.toml")) || File.Exists(Path.Combine(root, "requirements.txt"))) stack.Add("Python");
-        if (File.Exists(Path.Combine(root, "go.mod"))) stack.Add("Go");
-        if (File.Exists(Path.Combine(root, "Cargo.toml"))) stack.Add("Rust");
+        if (any("*.sln") || any("*.slnx") || any("*.csproj")) stack.Add(".NET");
+        if (exists("host.json")) stack.Add("Azure Functions");
+        if (any("*.tf")) stack.Add("Terraform");
+        if (exists("build.gradle") || exists("build.gradle.kts")) stack.Add("Gradle");
+        if (exists("pyproject.toml") || exists("requirements.txt")) stack.Add("Python");
+        if (exists("go.mod")) stack.Add("Go");
+        if (exists("Cargo.toml")) stack.Add("Rust");
         return stack;
     }
 
-    private static HashSet<string> Dependencies(string root)
+    private static HashSet<string> Dependencies(Func<string, bool> exists, Func<string, string> head)
     {
         var names = new HashSet<string>(StringComparer.Ordinal);
-        using var package = Package(root);
+        using var package = Package(exists, head);
         if (package?.RootElement.ValueKind != JsonValueKind.Object) return names;
 
         foreach (var block in new[] { "dependencies", "devDependencies" })
@@ -236,45 +241,16 @@ public static class SelfDescription
     }
 
     /// <summary>The package manifest, or null when there is none or it will not parse — its own tooling says why.</summary>
-    private static JsonDocument? Package(string root)
+    private static JsonDocument? Package(Func<string, bool> exists, Func<string, string> head)
     {
-        var file = Path.Combine(root, "package.json");
-        if (!File.Exists(file)) return null;
+        if (!exists("package.json")) return null;
         try
         {
-            return JsonDocument.Parse(Head(file));
+            return JsonDocument.Parse(head("package.json"));
         }
         catch (JsonException)
         {
             return null;
-        }
-    }
-
-    private static bool Any(string root, string pattern)
-    {
-        try
-        {
-            return Directory.EnumerateFiles(root, pattern, SearchOption.TopDirectoryOnly).Any();
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return false;
-        }
-    }
-
-    /// <summary>The top of a file, LF only — a README's point is at its top.</summary>
-    private static string Head(string file)
-    {
-        try
-        {
-            using var stream = File.OpenRead(file);
-            var buffer = new byte[Math.Min(ReadLimit, (int)Math.Min(stream.Length, ReadLimit))];
-            var read = stream.ReadAtLeast(buffer, buffer.Length, throwOnEndOfStream: false);
-            return Encoding.UTF8.GetString(buffer, 0, read).Replace("\r\n", "\n").TrimStart('﻿');
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return "";
         }
     }
 
