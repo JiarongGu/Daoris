@@ -10,7 +10,7 @@ namespace Daoris.Service.Tests;
 /// at another address held the step on one machine and not on the next, and the late set-up door judged the wrong part of
 /// the chain.
 /// </summary>
-public sealed partial class ReviewStepTests
+public sealed class ReviewStepGuardTests : ReviewStepFixture
 {
     // ——— (2) A verdict answers the set-up the person's view showed, never the newest by default.
 

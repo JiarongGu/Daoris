@@ -8,7 +8,7 @@ namespace Daoris.Service.Tests;
 /// its session, so it never publishes with the person's authority; and a chain's step or requirement left null is refused
 /// naming which, as a blank one is, rather than thrown.
 /// </summary>
-public sealed partial class McpToolsTests
+public sealed class McpToolGuardTests : McpToolsFixture
 {
     /// <summary>
     /// 🔴 A connector that speaks for no session, and an intake's connector the driver named no session for, set no review

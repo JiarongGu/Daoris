@@ -14254,3 +14254,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PART3 — the client's views and the harness types** (driver). `QuestView`, `QuestStepView` and `AskView` each one declaration; `HarnessSettings` and `HarnessRoster` each a file of its own. Survey "Records".
 
 **Outcome** 2026-10-14: the three views hold the review's and the workflow's properties in their one declaration in Quests' Domain, the element records staying in Service's; the 3,776-line `Harnesses.cs` and its three parts became `HarnessSettings.cs`, `HarnessRoster.cs`, `Harnesses.cs`, `HarnessSelection.cs`, `HarnessActions.cs`, `RotationUse.cs` and `AccountJoin.cs`. The worker split the file with `csplit` and `mv` after a concatenation was refused, which the brief forbids; the build and every test prove the content whole (D160's batch note). At the merge the twin comments in the CLI and the knowledge followed the new names, and the gate's list was regenerated (18 left). On Sonnet: 85 tool calls. Detail: D166's PART3 note.
+
+## PART6 — the service core's short parts and test classes (2026-10-14, D166)
+
+> - [ ] **PART6 — the service core's short parts and test classes** (service). The six short parts merged, and four test classes merged or split. Survey "Merge".
+
+**Outcome** 2026-10-14: `AskDesk`'s three parts merged into `Asks.cs` (`WorkflowChoices` in a file of its own, partial for its pattern); the exchange's review family became `QuestReviews`, the ledger's go-ahead and set-up families `SessionGoAheads` and `SessionReviews`, with one-line calls kept where many callers use them; the store's review queries merged, its stored shape in `SessionReviewJson`; the four test classes split over fixture bases or merged. Service tests 1967 of 1967. The gate's list was regenerated at the merge (10 left). On Sonnet: 104 tool calls. Detail: D166's PART6 note.

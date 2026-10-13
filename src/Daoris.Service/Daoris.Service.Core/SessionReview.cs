@@ -40,51 +40,17 @@ public sealed record SessionReview(ReviewServing? Serving, IReadOnlyList<ReviewS
     public static readonly SessionReview None = new(null, []);
 }
 
-/// <summary>A session's review on its record (REVIEWENV1b): blind, like every write here; the ledger and the exchange judge.</summary>
-public sealed partial class SessionStore
+/// <summary>
+/// A session's review as its record stores it (REVIEWENV1b): the store reads and writes it blind, like every write here, and the
+/// ledger and the exchange judge. Its stored shape is kept as it was; only where it is spelled moved (PART6).
+/// </summary>
+internal static class SessionReviewJson
 {
-    /// <summary>What this machine's record <paramref name="id"/> keeps of its review; <see cref="SessionReview.None"/> for none.</summary>
-    public Task<SessionReview> ReviewOfAsync(string id, CancellationToken ct = default) => _db.RunAsync<SessionReview>(async () =>
-    {
-        await using var command = _db.Command();
-        command.CommandText = "SELECT review FROM sessions WHERE id = $id AND origin IS NULL";
-        command.Parameters.AddWithValue("$id", id);
-        return await command.ExecuteScalarAsync(ct).ConfigureAwait(false) is string json ? ReviewOf(json) : SessionReview.None;
-    }, ct);
-
-    /// <summary>
-    /// How many set-ups this machine's sessions on <paramref name="quest"/> said, posted or not: what a set-up step's done is
-    /// judged by, before its driver has read any commit (design §2.6).
-    /// </summary>
-    public Task<int> SetUpsSaidForAsync(string quest, CancellationToken ct = default) => _db.RunAsync<int>(async () =>
-    {
-        await using var command = _db.Command();
-        command.CommandText = "SELECT review FROM sessions WHERE quest = $quest AND origin IS NULL AND review IS NOT NULL";
-        command.Parameters.AddWithValue("$quest", quest);
-        var said = 0;
-        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-        while (await reader.ReadAsync(ct).ConfigureAwait(false)) said += ReviewOf(reader.GetString(0)).Said.Count;
-        return said;
-    }, ct);
-
-    /// <summary>
-    /// Write this machine's record's review whole. A read, then the write it decides: the ledger and the exchange call it inside
-    /// <see cref="ExclusiveAsync{T}"/> (REV3). No revision, since nothing that travels changed. False when there is no such record.
-    /// </summary>
-    public Task<bool> KeepReviewAsync(string id, SessionReview review, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
-    {
-        await using var command = _db.Command();
-        command.CommandText = "UPDATE sessions SET review = $review WHERE id = $id AND origin IS NULL";
-        command.Parameters.AddWithValue("$id", id);
-        command.Parameters.AddWithValue("$review", ReviewJson(review));
-        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
-    }, ct);
-
     /// <summary>
     /// A review as stored. A part this build cannot read, or a set-up missing its words or its moment, is passed over: a later
     /// build's field, or a malformed one, is never a failed read of the record.
     /// </summary>
-    private static SessionReview ReviewOf(string json)
+    internal static SessionReview ReviewOf(string json)
     {
         try
         {
@@ -127,7 +93,7 @@ public sealed partial class SessionStore
     }
 
     // Hand-rolled for the reason every store's lists are: nothing here may stop working under AOT.
-    private static string ReviewJson(SessionReview review) => JsonFields.Written(writer =>
+    internal static string ReviewJson(SessionReview review) => JsonFields.Written(writer =>
     {
         writer.WriteStartObject();
         if (review.Serving is { } serving)

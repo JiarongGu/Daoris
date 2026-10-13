@@ -1,10 +1,4 @@
 {
-  "AskDesk": [
-    "src/Daoris.Service/Daoris.Service.Core/Asks.GoAheads.cs",
-    "src/Daoris.Service/Daoris.Service.Core/Asks.Review.cs",
-    "src/Daoris.Service/Daoris.Service.Core/Asks.Workflow.cs",
-    "src/Daoris.Service/Daoris.Service.Core/Asks.cs"
-  ],
   "ChatRunner": [
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.Curve.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.GoOn.cs",
@@ -47,10 +41,6 @@
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Work.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Workflow.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs"
-  ],
-  "GoAheadTests": [
-    "src/Daoris.Service/Daoris.Service.Tests/GoAheadTests.GoesOn.cs",
-    "src/Daoris.Service/Daoris.Service.Tests/GoAheadTests.cs"
   ],
   "HelpProposalBox": [
     "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Accept.cs",
@@ -133,25 +123,6 @@
     "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Review.cs",
     "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs"
   ],
-  "McpToolDescriptionTests": [
-    "src/Daoris.Service/Daoris.Service.Tests/McpToolDescriptionTests.Helpers.cs",
-    "src/Daoris.Service/Daoris.Service.Tests/McpToolDescriptionTests.cs"
-  ],
-  "McpToolsTests": [
-    "src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.Guards.cs",
-    "src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.Helpers.cs",
-    "src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.Opinions.cs",
-    "src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.cs"
-  ],
-  "QuestExchange": [
-    "src/Daoris.Service/Daoris.Service.Core/QuestExchange.Review.cs",
-    "src/Daoris.Service/Daoris.Service.Core/QuestExchange.Workflow.cs",
-    "src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs"
-  ],
-  "ReviewStepTests": [
-    "src/Daoris.Service/Daoris.Service.Tests/ReviewStepTests.Guards.cs",
-    "src/Daoris.Service/Daoris.Service.Tests/ReviewStepTests.cs"
-  ],
   "ServiceClient": [
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Helpers/HelperClient.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Review/ServiceClient.Opinions.cs",
@@ -160,15 +131,6 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.Showing.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.Workflow.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs"
-  ],
-  "SessionLedger": [
-    "src/Daoris.Service/Daoris.Service.Core/SessionLedger.GoAheads.cs",
-    "src/Daoris.Service/Daoris.Service.Core/SessionLedger.Review.cs",
-    "src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs"
-  ],
-  "SessionStore": [
-    "src/Daoris.Service/Daoris.Service.Core/Sessions.Review.cs",
-    "src/Daoris.Service/Daoris.Service.Core/Sessions.cs"
   ],
   "SessionTrees": [
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Auto.cs",

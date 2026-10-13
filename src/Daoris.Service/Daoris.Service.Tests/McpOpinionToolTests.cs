@@ -8,7 +8,7 @@ namespace Daoris.Service.Tests;
 /// `opinion_give` answers only the opinion's own reviewer, and `opinion_answer` only the working session its findings were
 /// handed to; every call is an agent's, and neither settles anything for the person. On a shared host both say its sentence.
 /// </summary>
-public sealed partial class McpToolsTests
+public sealed class McpOpinionToolTests : McpToolsFixture
 {
     private const string OpinionBase = "1111111111111111111111111111111111111111";
     private const string OpinionTip = "2222222222222222222222222222222222222222";

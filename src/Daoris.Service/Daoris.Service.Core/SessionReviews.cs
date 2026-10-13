@@ -24,9 +24,10 @@ public sealed record ReviewSayOutcome(ReviewSayRefusal Refusal, string Message);
 
 /// <summary>
 /// A set-up step's session asks Daoris to serve its build, and says what it showed (REVIEWENV1b, D154 point 5; design
-/// §2.6): kept on its own record, this machine's, until its driver posts each set-up with the commit it read.
+/// §2.6): kept on its own record, this machine's, until its driver posts each set-up with the commit it read. The ledger hands in the stores and keeps both doors as
+/// one-line calls (PART6).
 /// </summary>
-public sealed partial class SessionLedger
+public sealed class SessionReviews(QuestStore quests, SessionStore sessions)
 {
     /// <summary>
     /// Keep the folder a set-up step's session asks Daoris to serve to its tab, and the address it is served at: the folder a

@@ -8,7 +8,7 @@ namespace Daoris.Service.Tests;
 /// answers to the go-aheads a parked session asked are its answer: the one that answers the last still waiting keeps the
 /// park's blank answer (ANSWER1b), which the driver's next look goes on with, in the same session (D131).
 /// </summary>
-public sealed partial class GoAheadTests
+public sealed class GoAheadGoesOnTests : GoAheadFixture
 {
     /// <summary>A session on <paramref name="quest"/> that asks for each act on production, then parks waiting on them.</summary>
     private async Task<Session> ParkedAsking(Quest quest, string tree, params (string Kind, string Act)[] acts)

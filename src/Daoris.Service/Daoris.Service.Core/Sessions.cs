@@ -302,7 +302,7 @@ public sealed record SaidWord(
 /// and judgement lives in <see cref="SessionLedger"/> — one implementation for every door, for the same
 /// reason <see cref="QuestExchange"/> exists.</para>
 /// </remarks>
-public sealed partial class SessionStore
+public sealed class SessionStore
 {
     /// <summary>The connection's gate: every command here runs inside it (SQLITETX1).</summary>
     private readonly ConnectionGate _db;
@@ -1232,4 +1232,45 @@ public sealed partial class SessionStore
     /// <summary>Whitespace is nothing said, not a value: an empty version reads as a version of "".</summary>
     private static string? Blank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    // ——— A session's review on its record (REVIEWENV1b): blind, like every write here; the ledger and the exchange judge.
+
+    /// <summary>What this machine's record <paramref name="id"/> keeps of its review; <see cref="SessionReview.None"/> for none.</summary>
+    public Task<SessionReview> ReviewOfAsync(string id, CancellationToken ct = default) => _db.RunAsync<SessionReview>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "SELECT review FROM sessions WHERE id = $id AND origin IS NULL";
+        command.Parameters.AddWithValue("$id", id);
+        return await command.ExecuteScalarAsync(ct).ConfigureAwait(false) is string json
+            ? SessionReviewJson.ReviewOf(json)
+            : SessionReview.None;
+    }, ct);
+
+    /// <summary>
+    /// How many set-ups this machine's sessions on <paramref name="quest"/> said, posted or not: what a set-up step's done is
+    /// judged by, before its driver has read any commit (design §2.6).
+    /// </summary>
+    public Task<int> SetUpsSaidForAsync(string quest, CancellationToken ct = default) => _db.RunAsync<int>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "SELECT review FROM sessions WHERE quest = $quest AND origin IS NULL AND review IS NOT NULL";
+        command.Parameters.AddWithValue("$quest", quest);
+        var said = 0;
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false)) said += SessionReviewJson.ReviewOf(reader.GetString(0)).Said.Count;
+        return said;
+    }, ct);
+
+    /// <summary>
+    /// Write this machine's record's review whole. A read, then the write it decides: the ledger and the exchange call it inside
+    /// <see cref="ExclusiveAsync{T}"/> (REV3). No revision, since nothing that travels changed. False when there is no such record.
+    /// </summary>
+    public Task<bool> KeepReviewAsync(string id, SessionReview review, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "UPDATE sessions SET review = $review WHERE id = $id AND origin IS NULL";
+        command.Parameters.AddWithValue("$id", id);
+        command.Parameters.AddWithValue("$review", SessionReviewJson.ReviewJson(review));
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+    }, ct);
 }
