@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (137)
+## Files over 40 KB (136)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -89,10 +89,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 66 | 1088 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Planner.cs` | 69 | 1188 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/Application/ServiceClient.cs` | 92 | 1682 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/SessionEvents.cs` | 42 | 923 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Domain/Trace.Chain.cs` | 58 | 1271 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/SessionsCommand.cs` | 63 | 1239 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Trace.Chain.cs` | 57 | 1264 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/WorkAbandoning.cs` | 54 | 990 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/WorkAbandoning.cs` | 43 | 765 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/LandedBranches.cs` | 40 | 719 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing.cs` | 44 | 794 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionGroups.cs` | 60 | 1081 |
