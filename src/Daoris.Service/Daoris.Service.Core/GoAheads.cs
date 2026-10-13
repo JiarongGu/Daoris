@@ -370,14 +370,14 @@ public static class GoAheads
         var asked = new List<GoAheadRequest>();
         foreach (var request in JsonFields.Items(element, "asked"))
         {
-            if (JsonFields.Text(request, "session") is not { Length: > 0 } session || Moment(request, "at") is not { } at) continue;
+            if (JsonFields.Text(request, "session") is not { Length: > 0 } session || Moments.Read(request, "at") is not { } at) continue;
             asked.Add(new GoAheadRequest(session, JsonFields.Text(request, "quest"), at, JsonFields.Text(request, "why") ?? ""));
         }
 
         GoAheadAnswer? answer = null;
         if (element.TryGetProperty("answer", out var answered) && answered.ValueKind == JsonValueKind.Object
             && answered.TryGetProperty("approved", out var approved) && approved.ValueKind is JsonValueKind.True or JsonValueKind.False
-            && Moment(answered, "at") is { } when)
+            && Moments.Read(answered, "at") is { } when)
         {
             answer = new GoAheadAnswer(approved.GetBoolean(), JsonFields.Text(answered, "words"), when);
         }
@@ -390,10 +390,6 @@ public static class GoAheads
         };
     }
 
-    private static DateTimeOffset? Moment(JsonElement element, string name) =>
-        DateTimeOffset.TryParse(JsonFields.Text(element, name), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at)
-            ? at
-            : null;
 
     /// <summary>One go-ahead as stored: hand-written, as every store's lists are, so nothing stops working under AOT.</summary>
     internal static void Write(Utf8JsonWriter writer, GoAhead goAhead)
@@ -409,7 +405,7 @@ public static class GoAheads
             writer.WriteStartObject();
             writer.WriteString("session", request.Session);
             if (request.Quest is { } quest) writer.WriteString("quest", quest);
-            writer.WriteString("at", request.At.ToString("O", CultureInfo.InvariantCulture));
+            writer.WriteString("at", Moments.Write(request.At));
             writer.WriteString("why", request.Why);
             writer.WriteEndObject();
         }
@@ -421,7 +417,7 @@ public static class GoAheads
             writer.WriteStartObject("answer");
             writer.WriteBoolean("approved", answer.Approved);
             if (answer.Words is { } words) writer.WriteString("words", words);
-            writer.WriteString("at", answer.At.ToString("O", CultureInfo.InvariantCulture));
+            writer.WriteString("at", Moments.Write(answer.At));
             writer.WriteEndObject();
         }
 

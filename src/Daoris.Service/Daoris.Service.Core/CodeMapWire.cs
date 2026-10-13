@@ -58,7 +58,7 @@ public static class CodeMapWire
             writer.WriteStartObject("fed");
             writer.WriteString("commit", fed.Commit);
             writer.WriteString("shortCommit", fed.ShortCommit);
-            writer.WriteString("committedAt", fed.CommittedAt.ToString("O", CultureInfo.InvariantCulture));
+            writer.WriteString("committedAt", Moments.Write(fed.CommittedAt));
             writer.WriteString("branch", fed.Branch);
             if (fed.Origin is not null) writer.WriteString("origin", fed.Origin);
             writer.WriteEndObject();
@@ -78,8 +78,7 @@ public static class CodeMapWire
         if (!root.TryGetProperty("fed", out var fed) || fed.ValueKind != JsonValueKind.Object
             || Text(fed, "commit") is not { Length: > 0 } commit
             || Text(fed, "branch") is not { Length: > 0 } branch
-            || Text(fed, "committedAt") is not { } at
-            || !DateTimeOffset.TryParse(at, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var committedAt))
+            || Moments.Read(fed, "committedAt") is not { } committedAt)
         {
             return null;
         }

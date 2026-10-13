@@ -835,7 +835,7 @@ public sealed class QuestStore
         command.Parameters.AddWithValue("$quest", quest);
         command.Parameters.AddWithValue("$kind", KindText(kind));
         command.Parameters.AddWithValue("$machine", Machine);
-        command.Parameters.AddWithValue("$at", at.ToString("O"));
+        command.Parameters.AddWithValue("$at", Moments.Write(at));
         var flagged = whileOpen && kind == QuestOperationKind.Declined;
         var verdict = kind == QuestOperationKind.Evidenced ? evidence : null;
         var shown = kind == QuestOperationKind.SetUp ? setUp : null;
@@ -881,7 +881,7 @@ public sealed class QuestStore
         command.Parameters.AddWithValue("$kind", KindText(operation.Kind));
         command.Parameters.AddWithValue("$machine", operation.Machine);
         command.Parameters.AddWithValue("$sequence", operation.Sequence);
-        command.Parameters.AddWithValue("$at", operation.At.ToString("O"));
+        command.Parameters.AddWithValue("$at", Moments.Write(operation.At));
         command.Parameters.AddWithValue(
             "$payload", PayloadJson(
                 operation.Note, operation.Published, operation.Attempted, operation.Dismisses, operation.Answers,
@@ -951,7 +951,7 @@ public sealed class QuestStore
         command.Parameters.AddWithValue("$lanes", LinksJson(quest.Lanes));
         command.Parameters.AddWithValue("$requirements", RequirementsJson(quest.Requirements));
         command.Parameters.AddWithValue("$answers", AnswersJson(quest.Answers));
-        command.Parameters.AddWithValue("$accepted", (object?)quest.Accepted?.ToString("O") ?? DBNull.Value);
+        command.Parameters.AddWithValue("$accepted", (object?)Moments.Write(quest.Accepted) ?? DBNull.Value);
         command.Parameters.AddWithValue("$held", quest.Held ? 1 : 0);
         command.Parameters.AddWithValue("$conflicts", ConflictsJson(quest.Conflicts));
         command.Parameters.AddWithValue("$links", LinksJson(quest.Links));
@@ -968,8 +968,8 @@ public sealed class QuestStore
         command.Parameters.AddWithValue("$status", quest.Status.ToString());
         command.Parameters.AddWithValue("$note", (object?)quest.Note ?? DBNull.Value);
         command.Parameters.AddWithValue("$noteParts", (object?)quest.NoteParts ?? DBNull.Value);
-        command.Parameters.AddWithValue("$filed", quest.Filed.ToString("O"));
-        command.Parameters.AddWithValue("$updated", quest.Updated.ToString("O"));
+        command.Parameters.AddWithValue("$filed", Moments.Write(quest.Filed));
+        command.Parameters.AddWithValue("$updated", Moments.Write(quest.Updated));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
@@ -1459,7 +1459,7 @@ public sealed class QuestStore
         command.CommandText = (numbered ? "INSERT OR IGNORE INTO quest_forgotten (id, at) VALUES ($id, $at);" : "")
                               + "DELETE FROM quest_log WHERE quest = $id; DELETE FROM quests WHERE id = $id;";
         command.Parameters.AddWithValue("$id", id);
-        command.Parameters.AddWithValue("$at", at.ToString("O"));
+        command.Parameters.AddWithValue("$at", Moments.Write(at));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         return numbered;
     }, ct);
@@ -1947,8 +1947,8 @@ public sealed class QuestStore
                   synced = COALESCE($synced, synced), tried = $tried, behind = $behind, problem = $problem
                 """;
             command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
-            command.Parameters.AddWithValue("$synced", report.Problem is null ? at.ToString("O") : DBNull.Value);
-            command.Parameters.AddWithValue("$tried", at.ToString("O"));
+            command.Parameters.AddWithValue("$synced", report.Problem is null ? Moments.Write(at) : DBNull.Value);
+            command.Parameters.AddWithValue("$tried", Moments.Write(at));
             // A list of quest ids, kept the way links are: a plain array of strings.
             command.Parameters.AddWithValue("$behind", LinksJson(report.Behind));
             command.Parameters.AddWithValue("$problem", (object?)report.Problem ?? DBNull.Value);
@@ -1989,8 +1989,8 @@ public sealed class QuestStore
                         ahead,
                         ReadLinks(reader.GetString(2)),
                         conflicts,
-                        reader.IsDBNull(0) ? null : Time(reader.GetString(0)),
-                        Time(reader.GetString(1)),
+                        reader.IsDBNull(0) ? null : Moments.ReadRequired(reader.GetString(0)),
+                        Moments.ReadRequired(reader.GetString(1)),
                         reader.IsDBNull(3) ? null : reader.GetString(3));
                 }
             }
@@ -1998,9 +1998,6 @@ public sealed class QuestStore
             return new QuestStanding(ahead, [], conflicts, Synced: null, Tried: null, Problem: null);
         }, ct).ConfigureAwait(false);
     }
-
-    private static DateTimeOffset Time(string text) =>
-        DateTimeOffset.Parse(text, null, System.Globalization.DateTimeStyles.RoundtripKind);
 
     /// <summary>Record the numbers a push was given — the operations stop being pending.</summary>
     public Task AcceptedAsync(IReadOnlyList<QuestAcceptance> accepted, CancellationToken ct = default) =>
@@ -2259,8 +2256,8 @@ public sealed class QuestStore
         reader.GetString(reader.GetOrdinal("body")),
         Enum.Parse<QuestStatus>(reader.GetString(reader.GetOrdinal("status"))),
         reader.IsDBNull(reader.GetOrdinal("note")) ? null : reader.GetString(reader.GetOrdinal("note")),
-        DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("filed"))),
-        DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("updated"))),
+        Moments.ReadRequired(reader.GetString(reader.GetOrdinal("filed"))),
+        Moments.ReadRequired(reader.GetString(reader.GetOrdinal("updated"))),
         Workspaces.Normalize(reader.GetString(reader.GetOrdinal("workspace"))))
     {
         Links = ReadLinks(reader.GetString(reader.GetOrdinal("links"))),
@@ -2275,7 +2272,7 @@ public sealed class QuestStore
         Answers = ReadAnswers(reader.GetString(reader.GetOrdinal("answers"))),
         Accepted = reader.IsDBNull(reader.GetOrdinal("accepted"))
             ? null
-            : DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("accepted")), System.Globalization.CultureInfo.InvariantCulture),
+            : Moments.ReadRequired(reader.GetString(reader.GetOrdinal("accepted"))),
         Short = reader.IsDBNull(reader.GetOrdinal("short_title")) ? null : reader.GetString(reader.GetOrdinal("short_title")),
         NoteParts = reader.IsDBNull(reader.GetOrdinal("note_parts")) ? null : reader.GetString(reader.GetOrdinal("note_parts")),
         Evidence = reader.IsDBNull(reader.GetOrdinal("evidence")) ? null : ReadVerdict(reader.GetString(reader.GetOrdinal("evidence"))),
@@ -2312,7 +2309,7 @@ public sealed class QuestStore
     {
         var quest = reader.GetString(0);
         var kind = Enum.Parse<QuestOperationKind>(reader.GetString(1), ignoreCase: true);
-        var at = DateTimeOffset.Parse(reader.GetString(4));
+        var at = Moments.ReadRequired(reader.GetString(4));
 
         using var document = System.Text.Json.JsonDocument.Parse(reader.GetString(5));
         var payload = document.RootElement;
@@ -2543,7 +2540,7 @@ public sealed class QuestStore
             writer.WriteNumber("sequence", conflict.Sequence);
             writer.WriteString("attempted", conflict.Attempted.ToString());
             if (conflict.Note is not null) writer.WriteString("note", conflict.Note);
-            writer.WriteString("at", conflict.At.ToString("O"));
+            writer.WriteString("at", Moments.Write(conflict.At));
             writer.WriteEndObject();
         }
 
@@ -2558,7 +2555,7 @@ public sealed class QuestStore
                 item.GetProperty("machine").GetString() ?? "",
                 Enum.Parse<QuestStatus>(item.GetProperty("attempted").GetString()!, ignoreCase: true),
                 item.TryGetProperty("note", out var note) ? note.GetString() : null,
-                DateTimeOffset.Parse(item.GetProperty("at").GetString()!),
+                Moments.ReadRequired(item.GetProperty("at").GetString()!),
                 // Absent from a cache written before dismissals: zero, which the open refills.
                 item.TryGetProperty("sequence", out var sequence) ? sequence.GetInt64() : 0))
             .ToList();

@@ -256,7 +256,7 @@ public sealed class AskStore
                 .ConfigureAwait(false);
             await using var mark = _db.Command();
             mark.CommandText = "UPDATE asks SET words_kept_from = $now WHERE words_kept_from IS NULL";
-            mark.Parameters.AddWithValue("$now", DateTimeOffset.UtcNow.ToString("O"));
+            mark.Parameters.AddWithValue("$now", Moments.Write(DateTimeOffset.UtcNow));
             await mark.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
@@ -297,7 +297,7 @@ public sealed class AskStore
         {
             writer.WriteStartObject();
             writer.WriteString("choice", choice.Choice);
-            writer.WriteString("at", choice.At.ToString("O"));
+            writer.WriteString("at", Moments.Write(choice.At));
             if (choice.Words is { } words) writer.WriteString("words", words);
             writer.WriteEndObject();
         }), now, ct);
@@ -315,7 +315,7 @@ public sealed class AskStore
         writer.WriteStartObject();
         if (choice.Kind is { } kind) writer.WriteString("kind", kind);
         if (choice.Workflow is { } workflow) writer.WriteString("workflow", workflow);
-        writer.WriteString("at", choice.At.ToString("O"));
+        writer.WriteString("at", Moments.Write(choice.At));
         if (choice.Words is { } words) writer.WriteString("words", words);
         writer.WriteEndObject();
     }
@@ -327,7 +327,7 @@ public sealed class AskStore
             writer.WriteStartObject();
             writer.WriteString("choice", proposal.Choice);
             writer.WriteString("reason", proposal.Reason);
-            writer.WriteString("at", proposal.At.ToString("O"));
+            writer.WriteString("at", Moments.Write(proposal.At));
             if (proposal.Session is { } session) writer.WriteString("session", session);
             if (proposal.Quest is { } quest) writer.WriteString("quest", quest);
             writer.WriteEndObject();
@@ -340,7 +340,7 @@ public sealed class AskStore
             writer.WriteStartObject();
             writer.WriteString("kind", proposal.Kind);
             writer.WriteString("reason", proposal.Reason);
-            writer.WriteString("at", proposal.At.ToString("O"));
+            writer.WriteString("at", Moments.Write(proposal.At));
             if (proposal.Session is { } session) writer.WriteString("session", session);
             if (proposal.Quest is { } quest) writer.WriteString("quest", quest);
             writer.WriteEndObject();
@@ -353,7 +353,7 @@ public sealed class AskStore
         command.CommandText = $"UPDATE asks SET {column} = json_insert({column}, '$[#]', json($item)), updated = $updated WHERE id = $id";
         command.Parameters.AddWithValue("$id", id.TrimStart('#'));
         command.Parameters.AddWithValue("$item", item);
-        command.Parameters.AddWithValue("$updated", now.ToString("O"));
+        command.Parameters.AddWithValue("$updated", Moments.Write(now));
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
     }, ct);
 
@@ -386,7 +386,7 @@ public sealed class AskStore
         {
             w.WriteStartObject();
             w.WriteString("choice", choice.Choice);
-            w.WriteString("at", choice.At.ToString("O"));
+            w.WriteString("at", Moments.Write(choice.At));
             if (choice.Words is { } words) w.WriteString("words", words);
             w.WriteEndObject();
         }));
@@ -398,8 +398,8 @@ public sealed class AskStore
         command.Parameters.AddWithValue("$sentence", ask.Sentence);
         command.Parameters.AddWithValue("$state", ask.State.ToString());
         command.Parameters.AddWithValue("$tier", ask.Tier);
-        command.Parameters.AddWithValue("$asked", ask.Asked.ToString("O"));
-        command.Parameters.AddWithValue("$updated", ask.Updated.ToString("O"));
+        command.Parameters.AddWithValue("$asked", Moments.Write(ask.Asked));
+        command.Parameters.AddWithValue("$updated", Moments.Write(ask.Updated));
         command.Parameters.AddWithValue("$asker", (object?)ask.Asker ?? DBNull.Value);
         command.Parameters.AddWithValue("$note", (object?)ask.Note ?? DBNull.Value);
         command.Parameters.AddWithValue("$links", Json(ask.Links, (w, link) => w.WriteStringValue(link)));
@@ -444,7 +444,7 @@ public sealed class AskStore
         command.Parameters.AddWithValue("$id", id.TrimStart('#'));
         command.Parameters.AddWithValue("$quest", quest);
         command.Parameters.AddWithValue("$tier", (object?)tier ?? DBNull.Value);
-        command.Parameters.AddWithValue("$updated", now.ToString("O"));
+        command.Parameters.AddWithValue("$updated", Moments.Write(now));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }, ct);
 
@@ -458,7 +458,7 @@ public sealed class AskStore
         command.CommandText = "UPDATE asks SET state = 'Closed', note = $note, updated = $updated WHERE id = $id";
         command.Parameters.AddWithValue("$id", id.TrimStart('#'));
         command.Parameters.AddWithValue("$note", note);
-        command.Parameters.AddWithValue("$updated", now.ToString("O"));
+        command.Parameters.AddWithValue("$updated", Moments.Write(now));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }, ct);
 
@@ -478,7 +478,7 @@ public sealed class AskStore
         command.CommandText = "UPDATE asks SET intake = $intake, updated = $updated WHERE id = $id";
         command.Parameters.AddWithValue("$id", id.TrimStart('#'));
         command.Parameters.AddWithValue("$intake", session);
-        command.Parameters.AddWithValue("$updated", now.ToString("O"));
+        command.Parameters.AddWithValue("$updated", Moments.Write(now));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }, ct);
 
@@ -500,12 +500,12 @@ public sealed class AskStore
             writer.WriteStartObject();
             writer.WriteString("kind", AskWord.Spell(word.Kind));
             writer.WriteString("text", word.Text);
-            writer.WriteString("at", word.At.ToString("O"));
+            writer.WriteString("at", Moments.Write(word.At));
             if (word.Session is { } session) writer.WriteString("session", session);
             if (word.Quest is { } quest) writer.WriteString("quest", quest);
             writer.WriteEndObject();
         }));
-        command.Parameters.AddWithValue("$updated", now.ToString("O"));
+        command.Parameters.AddWithValue("$updated", Moments.Write(now));
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
     }, ct);
 
@@ -542,7 +542,7 @@ public sealed class AskStore
                 write.CommandText = "UPDATE asks SET go_aheads = $goAheads, updated = $updated WHERE id = $id";
                 write.Parameters.AddWithValue("$id", id.TrimStart('#'));
                 write.Parameters.AddWithValue("$goAheads", GoAheads.Written(next));
-                write.Parameters.AddWithValue("$updated", now.ToString("O"));
+                write.Parameters.AddWithValue("$updated", Moments.Write(now));
                 await write.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
             }
 
@@ -585,7 +585,7 @@ public sealed class AskStore
 
         return new Ask(
             Text("id"), Text("workspace"), Text("sentence"), Enum.Parse<AskState>(Text("state")), Text("tier"),
-            DateTimeOffset.Parse(Text("asked")), DateTimeOffset.Parse(Text("updated")), Maybe("asker"), Maybe("note"))
+            Moments.ReadRequired(Text("asked")), Moments.ReadRequired(Text("updated")), Maybe("asker"), Maybe("note"))
         {
             Links = Items(Text("links"), e => e.GetString() ?? ""),
             Attachments = Items(Text("attachments"), QuestAttachment.Stored),
@@ -596,7 +596,7 @@ public sealed class AskStore
             Intake = Maybe("intake"),
             Short = Maybe("short_title"),
             Later = LaterWords(Text("words")),
-            WordsKeptFrom = Maybe("words_kept_from") is { } from ? DateTimeOffset.Parse(from) : null,
+            WordsKeptFrom = Maybe("words_kept_from") is { } from ? Moments.ReadRequired(from) : null,
             GoAheads = GoAheads.Read(Text("go_aheads")),
             ReviewChoices = ReviewChoicesOf(Text("review_choices")),
             ReviewProposals = ReviewProposalsOf(Text("review_proposals")),
@@ -613,7 +613,7 @@ public sealed class AskStore
         foreach (var element in document.RootElement.EnumerateArray())
         {
             if (JsonFields.Text(element, "kind") is not { } kind || !WorkflowChoices.IsKind(kind)) continue;
-            if (JsonFields.Text(element, "reason") is not { } reason || Moment(element, "at") is not { } at) continue;
+            if (JsonFields.Text(element, "reason") is not { } reason || Moments.Read(element, "at") is not { } at) continue;
             proposals.Add(new AskWorkflowProposal(kind, reason, at, JsonFields.Text(element, "session"), JsonFields.Text(element, "quest")));
         }
 
@@ -630,7 +630,7 @@ public sealed class AskStore
         var choices = new List<AskWorkflowChoice>();
         foreach (var element in document.RootElement.EnumerateArray())
         {
-            if (element.ValueKind != JsonValueKind.Object || Moment(element, "at") is not { } at) continue;
+            if (element.ValueKind != JsonValueKind.Object || Moments.Read(element, "at") is not { } at) continue;
             var kind = JsonFields.Text(element, "kind");
             var workflow = JsonFields.Text(element, "workflow");
             if (WorkflowChoices.Judge(kind, workflow) is not null) continue;
@@ -651,7 +651,7 @@ public sealed class AskStore
         foreach (var element in document.RootElement.EnumerateArray())
         {
             if (JsonFields.Text(element, "choice") is not { } choice || Reviews.JudgeChoice(choice) is not null) continue;
-            if (Moment(element, "at") is not { } at) continue;
+            if (Moments.Read(element, "at") is not { } at) continue;
             choices.Add(new AskReviewChoice(choice, at, JsonFields.Text(element, "words")));
         }
 
@@ -666,19 +666,12 @@ public sealed class AskStore
         foreach (var element in document.RootElement.EnumerateArray())
         {
             if (JsonFields.Text(element, "choice") is not { } choice || Reviews.JudgeChoice(choice) is not null) continue;
-            if (JsonFields.Text(element, "reason") is not { } reason || Moment(element, "at") is not { } at) continue;
+            if (JsonFields.Text(element, "reason") is not { } reason || Moments.Read(element, "at") is not { } at) continue;
             proposals.Add(new AskReviewProposal(choice, reason, at, JsonFields.Text(element, "session"), JsonFields.Text(element, "quest")));
         }
 
         return proposals;
     }
-
-    private static DateTimeOffset? Moment(JsonElement element, string name) =>
-        DateTimeOffset.TryParse(
-            JsonFields.Text(element, name), System.Globalization.CultureInfo.InvariantCulture,
-            System.Globalization.DateTimeStyles.RoundtripKind, out var at)
-            ? at
-            : null;
 
     /// <summary>
     /// The words kept after the ask, oldest first. A word whose kind this build does not know — a newer
@@ -693,12 +686,7 @@ public sealed class AskStore
             // Only a session's words are kept here: the ask's own sentence is its record's.
             if (AskWord.Parse(JsonFields.Text(element, "kind")) is not { } kind || kind == AskWordKind.Asked) continue;
             if (JsonFields.Text(element, "text") is not { } text) continue;
-            if (!DateTimeOffset.TryParse(
-                    JsonFields.Text(element, "at"), System.Globalization.CultureInfo.InvariantCulture,
-                    System.Globalization.DateTimeStyles.None, out var at))
-            {
-                continue;
-            }
+            if (Moments.Read(element, "at") is not { } at) continue;
 
             words.Add(new AskWord(kind, text, at, JsonFields.Text(element, "session"), JsonFields.Text(element, "quest")));
         }
