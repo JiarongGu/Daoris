@@ -231,11 +231,6 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.Workflow.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs"
   ],
-  "SessionLedger": [
-    "src/Daoris.Service/Daoris.Service.Core/SessionLedger.GoAheads.cs",
-    "src/Daoris.Service/Daoris.Service.Core/SessionLedger.Review.cs",
-    "src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs"
-  ],
   "SessionStore": [
     "src/Daoris.Service/Daoris.Service.Core/Sessions.Review.cs",
     "src/Daoris.Service/Daoris.Service.Core/Sessions.cs"
