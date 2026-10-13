@@ -61,6 +61,7 @@
     "CodeMapFile.cs": "Agents",
     "CodexAccounts.cs": "Accounts",
     "CodexUsage.cs": "Accounts",
+    "CommandPresence.cs": "Platform",
     "CommitRules.cs": "Trees",
     "ConsoleRelay.cs": "Agents",
     "Continuation.cs": "Conversations",
