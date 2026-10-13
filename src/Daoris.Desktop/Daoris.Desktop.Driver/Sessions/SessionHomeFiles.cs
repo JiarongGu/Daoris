@@ -4,31 +4,6 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The measure of a path <see cref="HistoryBytes"/> takes (HIST1c): <c>HistoryBytes.Of</c> is a static member of a C# 14
-/// extension block on the Domain's record, named where its callers always named it (STRUCT3g-i, D166's note).
-/// </summary>
-public static class HistoryBytesReads
-{
-    extension(HistoryBytes)
-    {
-        /// <summary>A file's size, or a folder's whole size; nothing for what is not there or will not be read.</summary>
-        public static long Of(string path)
-        {
-            try
-            {
-                if (File.Exists(path)) return new FileInfo(path).Length;
-                if (!Directory.Exists(path)) return 0;
-                return new DirectoryInfo(path).EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-            {
-                return 0;
-            }
-        }
-    }
-}
-
-/// <summary>
 /// What <see cref="SessionHomeFiles.Remove"/> took (HIST1j): each session's names that went, in the inventory's order, and the
 /// bytes that went with them, by kind; and each path the disk would not let go of, which stays, left over (the history-clearing
 /// design §2.3).
@@ -152,7 +127,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
 
     /// <summary>What the home keeps of one session, by kind; nothing for an id that is not a session's.</summary>
     public HistoryBytes Size(string id) =>
-        SessionEvents.IsId(id)
+        SessionEventText.IsId(id)
             ? Inventory.Aggregate(HistoryBytes.None, (sum, file) => sum + file.Counts(HistoryBytes.Of(PathOf(file, id))))
             : HistoryBytes.None;
 
@@ -176,7 +151,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
             bytes.TryAdd(id, HistoryBytes.None);
         }
 
-        var sessions = removed.Keys.Where(SessionEvents.IsId).ToList();
+        var sessions = removed.Keys.Where(SessionEventText.IsId).ToList();
         foreach (var id in sessions)
         {
             foreach (var file in Inventory)

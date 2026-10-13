@@ -107,7 +107,7 @@ public static partial class HistoryClearing
         var before = world.Clock() - world.Untouched;
         var found = new List<LeftOverFile>();
 
-        bool Gone(string id) => SessionEvents.IsId(id) && !records.Contains(id) && !machine.Alive(id);
+        bool Gone(string id) => SessionEventText.IsId(id) && !records.Contains(id) && !machine.Alive(id);
         void Add(string path, bool folder)
         {
             if (Touched(path, folder) < before) found.Add(new LeftOverFile(path, folder, HistoryBytes.Of(path)));

@@ -398,7 +398,7 @@ public static partial class HistoryClearing
         public SessionTrees Trees => _trees;
 
         /// <summary>A process for it alive on this machine: this shell's, or one another driver sharing the home marked.</summary>
-        public bool Alive(string session) => SessionEvents.IsId(session) && world.Processes.AliveOnThisMachine(session);
+        public bool Alive(string session) => SessionEventText.IsId(session) && world.Processes.AliveOnThisMachine(session);
 
         /// <summary>An automatic landing of it still trying (LAND2b).</summary>
         public bool Landing(string session) =>

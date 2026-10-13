@@ -19,9 +19,9 @@ public sealed partial class DriverModule
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id").Trim();
         if (!TraceEntry.All.Contains(kind)) throw new DriverException($"a trace starts from a commit, a session or a quest, not `{kind}`.");
         if (id.Length == 0) throw new DriverException($"a trace names the {kind} it starts from.");
-        if (kind == TraceEntry.Commit && !Trace.IsCommit(id.TrimStart('#')))
+        if (kind == TraceEntry.Commit && !CommitNames.IsCommit(id.TrimStart('#')))
         {
-            throw new DriverException($"a commit is named by at least {Trace.CommitDigits} of its hexadecimal digits, not `{id}`.");
+            throw new DriverException($"a commit is named by at least {CommitNames.Digits} of its hexadecimal digits, not `{id}`.");
         }
 
         var service = _loop.Service ?? throw NotReady();

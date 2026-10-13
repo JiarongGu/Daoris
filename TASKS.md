@@ -271,7 +271,6 @@ into priority since that will make the code better to develop"*; D166's note). N
 `docs/2026-10-12-code-structure-design.md` as amended. Moves are behaviour-preserving; new driver files go into their module's
 folder.
 
-- [ ] **FLAT1b-iii-b — Sessions: the layering's ceremony folded back** (driver, modules; after iii-a). `HarnessEnding` and `HistoryBytes` out to files of their own with their reads; the forwards to `CommitNames`, `PauseKept`, `AbandonKeys` and `SessionEventText` retire, about 51 callers naming it. D166's STRUCT3g-i note.
 - [ ] **SCOPE1d — Sessions and Review by scope** (driver; after FLAT1b-ii and iii-b). Sessions into `Work/`, `Requests/`, `History/`, `Trace/`, `Events/`; Review into `Opinion/` and `ReviewEnvironment/` only if still above about 22 files at its top. D166's scope note.
 - [ ] **PLATEXC1 — `DriverException` is Platform's** (driver). Platform's `DriverHttp` and `DriverLock` throw a type declared in `Agents/Adapters/Adapters.cs`, so the shared kernel depends on Agents: move it to Platform. Proof: the build and the driver's tests. D166's LOOPOUT1 note.
 - [ ] **STRUCT3OPLOOP — Review's opinion logic out of the loop** (driver; optional). `Loop/Driver.Opinion.cs`, `Driver.OpinionDelivery.cs` and `Driver.OpinionGate.cs` hold the pass, the delivery and the gate's look: what needs none of the loop's state moves into `Review/`, with no new ports. D166's STRUCT2g note.

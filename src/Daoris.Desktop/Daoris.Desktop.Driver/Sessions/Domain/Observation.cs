@@ -249,31 +249,6 @@ public static class Observation
 }
 
 /// <summary>
-/// What a harness itself said about how its run ended, apart from its agent's words (AGT3c): the process's exit, its door's
-/// failure, and the lines it wrote that its agent could not. What a refused credential is read from (AGT3b), as a limit and a
-/// refused sign-in are read from the door's failure (D125 point 1, ROSTER1b).
-/// </summary>
-/// <param name="Exit">The process's exit code; null where the timeout killed it.</param>
-/// <param name="Failure">
-/// The door's failure in the harness's words: the protocol door's refused call (ACPEND1), or the native door's failed
-/// <c>result</c>. Null where the door said the turn ended.
-/// </param>
-/// <param name="Lines">
-/// The harness's own last lines: on the native door its stderr and what it printed outside its protocol. A door that carries
-/// only text gives nothing but its transcript, so its transcript's last lines are these, the agent's words among them: there,
-/// only the exit, which the harness sets, tells a failure (<see cref="Transcript"/>). None on the protocol door, whose failure
-/// is its door's.
-/// </param>
-public sealed record HarnessEnding(int? Exit, string? Failure, IReadOnlyList<string> Lines)
-{
-    /// <summary>How many of the harness's last lines are kept: where a tool says why it gave up.</summary>
-    public const int LinesKept = 40;
-
-    /// <summary>Whether the harness itself said the run failed: its door's failure, or an exit that was not 0.</summary>
-    public bool Failed => Failure is { Length: > 0 } || Exit is { } exit && exit != 0;
-}
-
-/// <summary>
 /// What a native run's harness wrote that its agent could not (AGT3c), kept as its output passes: its stderr and the lines it
 /// printed outside its protocol, the last <see cref="HarnessEnding.LinesKept"/> of them, and the words its failed turn gave.
 /// One per session, begun again by each run, so the conclusion reads the run that ended last.

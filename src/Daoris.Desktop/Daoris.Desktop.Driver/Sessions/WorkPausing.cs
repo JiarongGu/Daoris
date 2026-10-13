@@ -60,15 +60,6 @@ public sealed record WorkWorld(ServiceClient Service, string Home, string Config
 /// </remarks>
 public static class WorkPausing
 {
-    /// <summary><see cref="WorkKept.Why"/>: the Daoris process that runs it took no request in time.</summary>
-    public const string Elsewhere = PauseKept.Elsewhere;
-
-    /// <summary><see cref="WorkKept.Why"/>: queued, and nothing on this machine runs it yet to stop.</summary>
-    public const string NotRunning = PauseKept.NotRunning;
-
-    /// <summary><see cref="WorkKept.Why"/>: the service did not answer, or refused, the move of its record.</summary>
-    public const string Unanswered = PauseKept.Unanswered;
-
     /// <summary>The verdicts that hold a quest after a resume (design §2.4): each says what holds it, where a wait only says when.</summary>
     private static readonly HashSet<StartVerdict> Holding =
     [
@@ -185,7 +176,7 @@ public static class WorkPausing
                     catch (Exception error) when (error is DriverException or HttpRequestException)
                     {
                         // The pause is written and holds; the session the service would not move is named, to be asked again.
-                        why = Unanswered;
+                        why = PauseKept.Unanswered;
                     }
 
                     if (why is null) stopped.Add(new WorkStop(record.Id, record.Quest));
@@ -271,9 +262,9 @@ public static class WorkPausing
             PauseAct.Parked => $"  left {kept.Session}{On(kept.Quest)} waiting on you: your answer is kept, and what it starts waits for Resume.",
             PauseAct.Intake => $"  its intake {kept.Session} keeps reading; what it publishes waits too.",
             PauseAct.Teammate => $"  {kept.Session}{On(kept.Quest)} runs on {kept.Machine}; nothing this machine sends reaches it.",
-            Elsewhere => $"  could not stop {kept.Session}{On(kept.Quest)}: the Daoris process that runs it took no request in time "
+            PauseKept.Elsewhere => $"  could not stop {kept.Session}{On(kept.Quest)}: the Daoris process that runs it took no request in time "
                          + $"(a terminal's chat stops with its own Ctrl+C); `daoris-driver sessions stop {kept.Session}` asks again.",
-            Unanswered => $"  could not stop {kept.Session}{On(kept.Quest)}: the service did not move its record; "
+            PauseKept.Unanswered => $"  could not stop {kept.Session}{On(kept.Quest)}: the service did not move its record; "
                           + $"`daoris-driver sessions stop {kept.Session}` asks again.",
             _ => $"  could not stop {kept.Session}{On(kept.Quest)}: it is queued, and nothing on this machine runs it yet.",
         }));
@@ -362,7 +353,7 @@ public static class WorkPausing
         {
             var answer = await SessionMoves.StopAsync(world.Processes, world.Service, record.Id, ct, note).ConfigureAwait(false);
             if (answer.Stopped) return null;
-            if (!answer.Elsewhere) return NotRunning;
+            if (!answer.Elsewhere) return PauseKept.NotRunning;
         }
 
         var requests = new SessionRequests(world.Home);
@@ -377,7 +368,7 @@ public static class WorkPausing
         }
 
         // Withdrawn, no loop acts on it after the person was told; taken and not yet moved, the loop that runs it is stopping it.
-        return requests.Withdraw(record.Id) ? Elsewhere : null;
+        return requests.Withdraw(record.Id) ? PauseKept.Elsewhere : null;
     }
 
     /// <summary>What still holds each quest of the work once resumed: the planner's verdict over a fresh look, or null where it could not be read.</summary>

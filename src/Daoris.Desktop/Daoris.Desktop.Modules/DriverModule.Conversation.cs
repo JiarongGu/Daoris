@@ -21,7 +21,7 @@ public sealed partial class DriverModule
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
         var page = Number(request, "after") is { } after
             ? _loop.Events.After(id, after)
-            : _loop.Events.Page(id, Number(request, "before"), (int)(Number(request, "limit") ?? SessionEvents.PageLimit));
+            : _loop.Events.Page(id, Number(request, "before"), (int)(Number(request, "limit") ?? SessionEventText.PageLimit));
         return new { Session = id, Events = page.Events.ToArray(), page.Earlier, page.Latest, page.Opening, page.FirstFailure };
     }
 

@@ -14218,3 +14218,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DEDUP9b — the service core's moments** (service; after 9a). A Core `Moments` for six private readers, about 35 parses (in the machine's culture or turned local) and 48 writers without the invariant culture; a test under another culture. Survey "Across projects".
 
 **Outcome** 2026-10-14: `Daoris.Service.Core/Moments.cs` writes and reads a moment in the invariant culture with its offset kept; the seven private readers, every bare parse (those for a store's own columns as `ReadRequired`, which still throws) and the 57 writers go through it, no parse or `"O"` writer left outside it. Bytes unchanged under the invariant culture; eleven tests under `ar-SA`, `th-TH` and `de-DE`. On Sonnet, scouted: 105 tool calls.
+
+## FLAT1b-iii-b — Sessions: the layering's ceremony folded back (2026-10-14, D166)
+
+> - [ ] **FLAT1b-iii-b — Sessions: the layering's ceremony folded back** (driver, modules; after iii-a). `HarnessEnding` and `HistoryBytes` out to files of their own with their reads; the forwards to `CommitNames`, `PauseKept`, `AbandonKeys` and `SessionEventText` retire, about 51 callers naming it. D166's STRUCT3g-i note.
+
+**Outcome** 2026-10-14: `HarnessEnding` and `HistoryBytes` are top files holding their own reads; the trace's, pausing's, abandoning's and the session events' forwards retired, about fifty callers across eight modules naming `CommitNames`, `PauseKept`, `AbandonKeys` and `SessionEventText`, and the files the CLI's and the page's tests read keep their texts. The fold-back is complete in all six modules and Sessions. On Sonnet: 113 tool calls. Detail: D166's FLAT1b-iii-b note.

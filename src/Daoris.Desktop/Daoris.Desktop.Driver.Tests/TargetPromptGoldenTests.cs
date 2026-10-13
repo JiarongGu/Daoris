@@ -173,5 +173,5 @@ public sealed class TargetPromptGoldenTests
     /// <summary>The account as the record's JSON spells it, indented and LF, so a golden reads the same on every machine.</summary>
     internal static string Written(InstructionAccount account) =>
         System.Text.Json.JsonSerializer.Serialize(
-            account, new System.Text.Json.JsonSerializerOptions(SessionEvents.Json) { WriteIndented = true, NewLine = "\n" }) + "\n";
+            account, new System.Text.Json.JsonSerializerOptions(SessionEventText.Json) { WriteIndented = true, NewLine = "\n" }) + "\n";
 }
