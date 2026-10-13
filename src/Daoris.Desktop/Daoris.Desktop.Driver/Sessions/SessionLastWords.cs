@@ -15,7 +15,7 @@ internal static class SessionLastWords
     internal static (IReadOnlyList<PlanEntry> Plan, string? Words) CarriedFrom(SessionEvents events, string home, string session)
     {
         // An id that is not one names no record, and never a path under the home.
-        if (!SessionEvents.IsId(session)) return ([], null);
+        if (!SessionEventText.IsId(session)) return ([], null);
         return (events.LastPlan(session), ParkedWords(events, session, Path.Combine(home, "sessions", $"{session}.log")));
     }
 

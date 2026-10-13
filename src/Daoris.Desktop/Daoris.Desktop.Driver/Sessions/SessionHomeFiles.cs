@@ -127,7 +127,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
 
     /// <summary>What the home keeps of one session, by kind; nothing for an id that is not a session's.</summary>
     public HistoryBytes Size(string id) =>
-        SessionEvents.IsId(id)
+        SessionEventText.IsId(id)
             ? Inventory.Aggregate(HistoryBytes.None, (sum, file) => sum + file.Counts(HistoryBytes.Of(PathOf(file, id))))
             : HistoryBytes.None;
 
@@ -151,7 +151,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
             bytes.TryAdd(id, HistoryBytes.None);
         }
 
-        var sessions = removed.Keys.Where(SessionEvents.IsId).ToList();
+        var sessions = removed.Keys.Where(SessionEventText.IsId).ToList();
         foreach (var id in sessions)
         {
             foreach (var file in Inventory)

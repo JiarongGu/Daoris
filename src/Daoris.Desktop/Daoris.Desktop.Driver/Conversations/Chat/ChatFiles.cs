@@ -33,7 +33,7 @@ public static class ChatFiles
 
     /// <summary>The folder a session's attached files are kept in, and the one its agent may read.</summary>
     public static string Folder(string home, string sessionId) =>
-        SessionEvents.IsId(sessionId)
+        SessionEventText.IsId(sessionId)
             ? Path.Combine(home, "sessions", sessionId, "files")
             : throw new DriverException($"`{sessionId}` is not a session id, so it names no folder.");
 
@@ -89,7 +89,7 @@ public static class ChatFiles
     /// </summary>
     public static KeptFile? Find(string home, string sessionId, string name)
     {
-        if (!SessionEvents.IsId(sessionId) || name.Length == 0) return null;
+        if (!SessionEventText.IsId(sessionId) || name.Length == 0) return null;
         var folder = Folder(home, sessionId);
         if (!Directory.Exists(folder)) return null;
 

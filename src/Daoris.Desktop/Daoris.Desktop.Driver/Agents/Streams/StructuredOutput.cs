@@ -154,7 +154,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
             "system" => StreamMapped.Nothing,
             var kind => new([], [new SessionEvent
             {
-                Kind = SessionEventKind.Raw, Title = kind ?? "frame", Raw = SessionEvents.Cut(line, SessionEvents.RawLimit),
+                Kind = SessionEventKind.Raw, Title = kind ?? "frame", Raw = SessionEventText.Cut(line, SessionEventText.RawLimit),
             }]),
         };
     }
@@ -234,7 +234,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
                     events.Add(new SessionEvent
                     {
                         Kind = SessionEventKind.Raw, Title = other,
-                        Raw = SessionEvents.Cut(block.GetRawText(), SessionEvents.RawLimit),
+                        Raw = SessionEventText.Cut(block.GetRawText(), SessionEventText.RawLimit),
                     });
                     break;
             }
@@ -418,7 +418,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
             Status = "in_progress",
             Locations = path is null ? null : [path],
             Content = Diffs(name, input, path),
-            Input = input.ValueKind == JsonValueKind.Object ? SessionEvents.Cut(input.GetRawText(), SessionEvents.RawLimit) : null,
+            Input = input.ValueKind == JsonValueKind.Object ? SessionEventText.Cut(input.GetRawText(), SessionEventText.RawLimit) : null,
         };
     }
 

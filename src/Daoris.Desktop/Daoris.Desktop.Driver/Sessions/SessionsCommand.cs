@@ -418,7 +418,7 @@ public static class SessionsCommand
 
         var quests = look.Quests.GroupBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase).ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
         var openings = new SessionEvents(Path.Combine(world.Home, "sessions"))
-            .Openings(rows.Select(row => row.Session).Where(SessionEvents.IsId));
+            .Openings(rows.Select(row => row.Session).Where(SessionEventText.IsId));
         var now = DateTimeOffset.UtcNow;
         foreach (var group in rows.GroupBy(row => row.Group))
         {
@@ -905,7 +905,7 @@ public static class SessionsCommand
         while (word is not null)
         {
             // The driver's note on these words, where it wrote one (MSG1b, MSG1d): where they went, or why they cannot go on.
-            var note = events.Page(record.Id, limit: SessionEvents.MaxPage).Events
+            var note = events.Page(record.Id, limit: SessionEventText.MaxPage).Events
                 .LastOrDefault(each => each.Kind == SessionEventKind.Note && each.Words?.Contains(word, StringComparer.Ordinal) == true);
             if (note is { To: { } to })
             {
