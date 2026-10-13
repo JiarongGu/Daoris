@@ -271,23 +271,6 @@ public sealed record HarnessEnding(int? Exit, string? Failure, IReadOnlyList<str
 
     /// <summary>Whether the harness itself said the run failed: its door's failure, or an exit that was not 0.</summary>
     public bool Failed => Failure is { Length: > 0 } || Exit is { } exit && exit != 0;
-
-    /// <summary>
-    /// A door that carries only text (AGT3c): its transcript's last lines, both its streams, beside the process's exit. Its
-    /// agent's words are among them and cannot be told apart, so only an exit that was not 0 lets them be read. Unreadable
-    /// is none.
-    /// </summary>
-    public static HarnessEnding Transcript(int? exit, string transcript)
-    {
-        try
-        {
-            return new(exit, null, [.. File.ReadLines(transcript).TakeLast(LinesKept)]);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return new(exit, null, []);
-        }
-    }
 }
 
 /// <summary>
