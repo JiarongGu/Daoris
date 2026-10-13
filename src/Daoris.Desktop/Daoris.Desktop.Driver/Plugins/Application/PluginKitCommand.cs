@@ -64,7 +64,7 @@ public static class PluginKitCommand
                 "`plugins new` needs a plugin id — e.g. `daoris-driver plugins new acme.quiet-hours --point quest/consider`.");
         }
 
-        var plan = PluginKit.Plan(positional, points, options.GetValueOrDefault("--in") ?? Directory.GetCurrentDirectory());
+        var plan = PluginKit.Plan(positional, points, options.GetValueOrDefault("--in") ?? PluginKitFiles.Here());
         var written = PluginKit.Write(plan);
 
         output.WriteLine($"plugins: made `{plan.Id}` in {plan.Folder}");
@@ -96,7 +96,7 @@ public static class PluginKitCommand
 
         // A folder first: after `plugins new acme.x`, `plugins try acme.x` means the folder just made.
         PluginTrial result;
-        if (Directory.Exists(positional))
+        if (PluginFolders.There(positional))
         {
             // A trial keeps its scratch under the home (D63): with none named, it refuses, as every writer does.
             result = await PluginKit.TryFolderAsync(
@@ -134,10 +134,11 @@ public static class PluginKitCommand
     /// <summary>The frame a person wrote, read whole: an object, or a refusal naming the file.</summary>
     private static JsonObject Frame(string file)
     {
-        if (!File.Exists(file)) throw new DriverException($"no file `{file}` — --frame names a JSON file holding the frame.");
+        var text = PluginFolders.TextIfThere(file)
+            ?? throw new DriverException($"no file `{file}` — --frame names a JSON file holding the frame.");
         try
         {
-            return JsonNode.Parse(File.ReadAllText(file)) as JsonObject
+            return JsonNode.Parse(text) as JsonObject
                 ?? throw new DriverException($"`{file}` is not a JSON object — a frame is the object a point is sent.");
         }
         catch (JsonException)

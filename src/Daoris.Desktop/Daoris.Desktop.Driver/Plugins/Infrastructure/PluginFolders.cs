@@ -28,6 +28,9 @@ internal static class PluginFolders
         return found;
     }
 
+    /// <summary>Whether a folder is there.</summary>
+    public static bool There(string folder) => Directory.Exists(folder);
+
     /// <summary>A file's text, or why it could not be read, in the system's words.</summary>
     public static (string? Text, string? Error) ReadText(string path)
     {
