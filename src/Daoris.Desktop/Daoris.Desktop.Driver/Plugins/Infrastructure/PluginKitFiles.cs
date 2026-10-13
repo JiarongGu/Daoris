@@ -55,15 +55,6 @@ internal static class PluginKitFiles
     /// <summary>The folder this process stands in: where `plugins new` writes when no folder is named.</summary>
     public static string Here() => Directory.GetCurrentDirectory();
 
-    /// <summary>A folder's whole path on this machine.</summary>
-    public static string WholePath(string folder) => Path.GetFullPath(folder);
-
-    /// <summary>Whether a file is there.</summary>
-    public static bool HasFile(string path) => File.Exists(path);
-
-    /// <summary>A folder made, with every folder above it.</summary>
-    public static void Make(string folder) => Directory.CreateDirectory(folder);
-
     /// <summary>One trial's scratch folder, made fresh under <paramref name="parent"/>; removed when the trial ends.</summary>
     public static string ScratchIn(string parent) =>
         Directory.CreateDirectory(Path.Combine(parent, "try-" + Guid.NewGuid().ToString("N")[..8])).FullName;

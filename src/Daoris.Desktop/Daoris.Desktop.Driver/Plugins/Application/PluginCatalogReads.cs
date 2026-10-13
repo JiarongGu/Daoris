@@ -34,7 +34,7 @@ public static class PluginCatalogReads
         public static PluginCatalog Load(string home, IEnumerable<string>? reservedHarnesses = null)
         {
             var root = Path.Combine(home, PluginCatalog.Folder);
-            if (PluginFolders.Installed(root) is not { } folders) return new([]);
+            if (PluginFolders.WithManifests(root) is not { } folders) return new([]);
 
             var disabled = new HashSet<string>(PluginState.Load(home).Disabled, StringComparer.OrdinalIgnoreCase);
             var reserved = ReservedWith(reservedHarnesses);

@@ -9,9 +9,9 @@ internal static class PluginFolders
     /// <summary>
     /// Each folder under <paramref name="root"/> holding a manifest, by name in ordinal order: its name, its path and its
     /// manifest's path. A dot-folder (`.data/`, a stage, a trial's scratch) is the catalogue's own, never a plugin. Null where
-    /// <paramref name="root"/> is not there.
+    /// <paramref name="root"/> is not there. The home's `plugins/` and the install's offers are read alike.
     /// </summary>
-    public static IReadOnlyList<(string Name, string Path, string Manifest)>? Installed(string root)
+    public static IReadOnlyList<(string Name, string Path, string Manifest)>? WithManifests(string root)
     {
         if (!Directory.Exists(root)) return null;
 
@@ -30,6 +30,12 @@ internal static class PluginFolders
 
     /// <summary>Whether a folder is there.</summary>
     public static bool There(string folder) => Directory.Exists(folder);
+
+    /// <summary>Whether a file is there.</summary>
+    public static bool HasFile(string path) => File.Exists(path);
+
+    /// <summary>A path made whole on this machine: against the folder this process stands in, where it is not already.</summary>
+    public static string WholePath(string path) => Path.GetFullPath(path);
 
     /// <summary>A file's text, or why it could not be read, in the system's words.</summary>
     public static (string? Text, string? Error) ReadText(string path)
@@ -52,6 +58,37 @@ internal static class PluginFolders
     {
         Directory.CreateDirectory(folder);
         AtomicFile.WriteText(path, text);
+    }
+
+    /// <summary>A file written in place, as UTF-8 with no byte-order mark: one inside a staged copy, which moves whole.</summary>
+    public static void WriteFile(string path, string text) => File.WriteAllText(path, text, new System.Text.UTF8Encoding(false));
+
+    /// <summary>A folder made, with every folder above it.</summary>
+    public static void Make(string folder) => Directory.CreateDirectory(folder);
+
+    /// <summary>File by file; a link is neither followed nor copied, as the CLI's copy does (D3).</summary>
+    public static void CopyTree(string from, string to)
+    {
+        Directory.CreateDirectory(to);
+        foreach (var entry in new DirectoryInfo(from).EnumerateFileSystemInfos())
+        {
+            if (entry.LinkTarget is not null) continue;
+            var target = Path.Combine(to, entry.Name);
+            if (entry is DirectoryInfo directory) CopyTree(directory.FullName, target);
+            else if (entry is FileInfo file) file.CopyTo(target);
+        }
+    }
+
+    /// <summary>A staged folder renamed into its place, as every folder Daoris owns is (<see cref="AtomicFile.MoveFolder"/>).</summary>
+    public static void MoveInto(string staging, string target) => AtomicFile.MoveFolder(staging, target);
+
+    /// <summary>A folder moved whole; it throws where something holds it open.</summary>
+    public static void Move(string from, string to) => Directory.Move(from, to);
+
+    /// <summary>A folder deleted where it can be: a dot-folder left behind is never read as a plugin, so one that cannot be is nobody's.</summary>
+    public static void Forget(string folder)
+    {
+        try { if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
     /// <summary>
@@ -84,6 +121,95 @@ internal static class PluginFolders
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// A folder's files and bytes, counted up to <paramref name="bound"/> entries or for <paramref name="time"/>,
+    /// whichever comes first, with <see cref="PageData.More"/> set past either. A link is counted and never followed.
+    /// </summary>
+    public static PageData Count(string folder, int bound, TimeSpan time)
+    {
+        if (!Directory.Exists(folder)) return new(folder, false, 0, 0, false, null);
+
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var files = 0;
+        var bytes = 0L;
+        var entries = 0;
+        DateTimeOffset? changed = null;
+        var waiting = new Stack<DirectoryInfo>([new DirectoryInfo(folder)]);
+        while (waiting.Count > 0)
+        {
+            IEnumerable<FileSystemInfo> inside;
+            try
+            {
+                inside = waiting.Pop().EnumerateFileSystemInfos();
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                continue;
+            }
+
+            foreach (var item in inside)
+            {
+                if (entries >= bound || clock.Elapsed > time) return new(folder, true, files, bytes, true, changed);
+                entries++;
+                var written = new DateTimeOffset(item.LastWriteTimeUtc, TimeSpan.Zero);
+                if (changed is null || written > changed) changed = written;
+                if (item is FileInfo file)
+                {
+                    files++;
+                    bytes += file.Length;
+                }
+                else if (item is DirectoryInfo directory && !directory.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                {
+                    waiting.Push(directory);
+                }
+            }
+        }
+
+        return new(folder, true, files, bytes, false, changed);
+    }
+
+    /// <summary>
+    /// The test files a folder carries, relative, as <c>node --test</c> finds them by default (<see cref="PageData.IsTest"/>),
+    /// never under <c>node_modules</c> or a dot-folder, nor through a link; at most <paramref name="bound"/> entries are looked at.
+    /// </summary>
+    public static IReadOnlyList<string> Tests(string folder, int bound)
+    {
+        if (!Directory.Exists(folder)) return [];
+        var found = new List<string>();
+        var entries = 0;
+        var waiting = new Stack<(DirectoryInfo Directory, string Relative, bool UnderTest)>([(new DirectoryInfo(folder), "", false)]);
+        while (waiting.Count > 0 && entries < bound)
+        {
+            var (directory, relative, underTest) = waiting.Pop();
+            IEnumerable<FileSystemInfo> inside;
+            try
+            {
+                inside = directory.EnumerateFileSystemInfos();
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                continue;
+            }
+
+            foreach (var item in inside)
+            {
+                if (++entries > bound) break;
+                var path = relative.Length == 0 ? item.Name : $"{relative}/{item.Name}";
+                if (item is DirectoryInfo inner)
+                {
+                    if (inner.Name is "node_modules" || inner.Name.StartsWith('.') || inner.Attributes.HasFlag(FileAttributes.ReparsePoint)) continue;
+                    waiting.Push((inner, path, underTest || inner.Name == "test"));
+                }
+                else if (PageData.IsTest(item.Name, underTest))
+                {
+                    found.Add(path);
+                }
+            }
+        }
+
+        return [.. found.Order(StringComparer.Ordinal)];
     }
 
     /// <summary>A folder's own name, from its whole path on this machine.</summary>

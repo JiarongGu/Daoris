@@ -1,54 +1,4 @@
-using System.Diagnostics;
-
 namespace Daoris.Driver;
-
-/// <summary>
-/// One declared point: its kind and how long the driver waits there (the kit's words), and whether the process that
-/// runs now listens on it, or null where no process runs to say.
-/// </summary>
-public sealed record PagePoint(string Name, string? Kind, long? WaitMs, bool? Listening);
-
-/// <summary>A plugin's hook as written: its command, `${plugin}` left as written, and the points it declares.</summary>
-public sealed record PageHook(IReadOnlyList<string> Command, IReadOnlyList<string> Points);
-
-/// <summary>An agent a plugin declares, as written: its way in is the protocol door, and its posture null where its wire names none (ACP3).</summary>
-public sealed record PageAgent(
-    string Name, IReadOnlyList<string> Command, string WayIn, string? Posture, string? ProfileVariable, string? Package,
-    IReadOnlyList<string>? Install);
-
-/// <summary>
-/// A server a plugin hands every session, as written: its command, and its environment variables by NAME only
-/// (D119 §4.1), since a value may be a key. Whether it drives Daoris's browser, which is withheld where no shell
-/// answers (D78).
-/// </summary>
-public sealed record PageServer(string Name, IReadOnlyList<string> Command, IReadOnlyList<string> Environment, bool DrivesBrowser);
-
-/// <summary>A landing rule that names the plugin: a repository's or a workspace's, and its pattern.</summary>
-public sealed record PageRule(string Scope, string Name, string? Pattern);
-
-/// <summary>A landing plugin's rules, and why it cannot land work here now, or null when it can (<see cref="LandingRules.PluginProblem"/>).</summary>
-public sealed record PageLanding(IReadOnlyList<PageRule> Rules, string? Problem);
-
-/// <summary>
-/// Where it came from (D103): <c>folder</c>, <c>offer</c>, <c>none</c> or <c>unread</c>; whether an update
-/// <c>waits</c> or it is <c>current</c> (null where it cannot be told), what would change, and an update's refusal.
-/// </summary>
-public sealed record PageSource(
-    string Kind, string? Folder, string? Offer, string? Problem, string? Update, IReadOnlyList<PluginChange> Changes, string? Refusal);
-
-/// <summary>What a plugin keeps: its data folder, whether it exists, its files and bytes counted up to a bound, and its newest change.</summary>
-/// <param name="More">Whether the count stopped at its bound: the files and bytes are then at least this many.</param>
-public sealed record PageData(string Folder, bool Exists, int Files, long Bytes, bool More, DateTimeOffset? Changed);
-
-/// <summary>What <see cref="PluginPage.Read"/> answers for one installed plugin.</summary>
-/// <param name="Taken">Whether the driver takes what it declares: false for a refused plugin, whose manifest is shown as written.</param>
-/// <param name="HealthFrom"><c>loop</c> where the loop's own record answered, <c>log</c> where the machine log's last word did.</param>
-/// <param name="Tests">The test files its install folder carries, relative, as <c>node --test</c> would find them.</param>
-public sealed record PluginPageRead(
-    string Id, string Name, string Version, string Description, bool Enabled, string? Problem, bool Taken, string Folder,
-    DateTimeOffset? InstalledAt, PluginHealthState Health, string HealthFrom, PageHook? Hook, IReadOnlyList<PagePoint> Points,
-    IReadOnlyList<PageAgent> Agents, IReadOnlyList<PageServer> Servers, PageLanding? Landing, PageSource Source, PageData Data,
-    IReadOnlyList<string> Tests);
 
 /// <summary>
 /// A plugin's page (PLUGUI1d, D119 §3.2 and §4.1): what it declares, as written; each point's kind, wait and whether the
@@ -61,10 +11,13 @@ public sealed record PluginPageRead(
 /// answered by name. Nothing here answers the raw manifest.</para>
 ///
 /// <para><b>A refused plugin is read as written</b> and marked not taken; one whose manifest does not read answers
-/// its sentence and nothing it declares. The catalogue takes nothing of either (<see cref="PluginCatalog.Load"/>).</para>
+/// its sentence and nothing it declares. The catalogue takes nothing of either (<c>PluginCatalog.Load</c>).</para>
 ///
 /// <para><b>Its health is the loop's record where the caller runs the loop</b>, and the machine log's last word
 /// where it does not (D119 §2): the shell hands its <see cref="PluginHealth"/>, a terminal hands none.</para>
+///
+/// <para>The use case (STRUCT3a): the page's records are the Domain's, the folders it counts and walks the
+/// Infrastructure's (<see cref="PluginFolders"/>).</para>
 /// </remarks>
 public static class PluginPage
 {
@@ -95,7 +48,7 @@ public static class PluginPage
 
         return new PluginPageRead(
             plugin, manifest.Name, manifest.Version, manifest.Description, entry.Enabled, entry.Problem, entry.Problem is null,
-            entry.Folder, InstalledAt(entry.Folder), said, health is not null ? "loop" : "log",
+            entry.Folder, PluginFolders.MadeAt(entry.Folder), said, health is not null ? "loop" : "log",
             manifest.Hooks is { } hooks ? new PageHook(hooks.Command, hooks.Points) : null,
             points,
             [.. manifest.Harnesses.Select(harness => new PageAgent(
@@ -108,7 +61,7 @@ public static class PluginPage
             manifest.Hooks?.Points.Contains(HookPoints.Land, StringComparer.Ordinal) == true ? Landing(home, plugin, catalog) : null,
             Source(home, entry, offers),
             Count(entry.Data, CountBound, CountTime),
-            Tests(entry.Folder));
+            PluginFolders.Tests(entry.Folder, CountBound));
     }
 
     /// <summary>
@@ -127,63 +80,9 @@ public static class PluginPage
 
     /// <summary>
     /// A folder's files and bytes, counted up to <paramref name="bound"/> entries or for <paramref name="time"/>,
-    /// whichever comes first, with <see cref="PageData.More"/> set past either. A link is counted and never followed.
+    /// whichever comes first, with <see cref="PageData.More"/> set past either (<see cref="PluginFolders.Count"/>).
     /// </summary>
-    internal static PageData Count(string folder, int bound, TimeSpan time)
-    {
-        if (!Directory.Exists(folder)) return new(folder, false, 0, 0, false, null);
-
-        var clock = Stopwatch.StartNew();
-        var files = 0;
-        var bytes = 0L;
-        var entries = 0;
-        DateTimeOffset? changed = null;
-        var waiting = new Stack<DirectoryInfo>([new DirectoryInfo(folder)]);
-        while (waiting.Count > 0)
-        {
-            IEnumerable<FileSystemInfo> inside;
-            try
-            {
-                inside = waiting.Pop().EnumerateFileSystemInfos();
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (var item in inside)
-            {
-                if (entries >= bound || clock.Elapsed > time) return new(folder, true, files, bytes, true, changed);
-                entries++;
-                var written = new DateTimeOffset(item.LastWriteTimeUtc, TimeSpan.Zero);
-                if (changed is null || written > changed) changed = written;
-                if (item is FileInfo file)
-                {
-                    files++;
-                    bytes += file.Length;
-                }
-                else if (item is DirectoryInfo directory && !directory.Attributes.HasFlag(FileAttributes.ReparsePoint))
-                {
-                    waiting.Push(directory);
-                }
-            }
-        }
-
-        return new(folder, true, files, bytes, false, changed);
-    }
-
-    /// <summary>When its install folder was made: an install and an update each make it whole (D103).</summary>
-    private static DateTimeOffset? InstalledAt(string folder)
-    {
-        try
-        {
-            return Directory.Exists(folder) ? new DateTimeOffset(Directory.GetCreationTimeUtc(folder), TimeSpan.Zero) : null;
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return null;
-        }
-    }
+    internal static PageData Count(string folder, int bound, TimeSpan time) => PluginFolders.Count(folder, bound, time);
 
     private static bool DrivesBrowser(string text) => text.Contains(InAppBrowserServers.Placeholder, StringComparison.Ordinal);
 
@@ -214,59 +113,5 @@ public static class PluginPage
             plan is null ? null : plan.Changes.Count > 0 ? "waits" : "current",
             plan?.Changes ?? [],
             refusal);
-    }
-
-    /// <summary>
-    /// The test files an install folder carries, as <c>node --test</c> finds them by default: <c>*.test.*</c>,
-    /// <c>*-test.*</c>, <c>*_test.*</c>, <c>test-*.*</c>, <c>test.*</c>, and any script under a <c>test</c> folder,
-    /// in JavaScript, never under <c>node_modules</c>. Bounded as a data folder's count is.
-    /// </summary>
-    private static IReadOnlyList<string> Tests(string folder)
-    {
-        if (!Directory.Exists(folder)) return [];
-        var found = new List<string>();
-        var entries = 0;
-        var waiting = new Stack<(DirectoryInfo Directory, string Relative, bool UnderTest)>([(new DirectoryInfo(folder), "", false)]);
-        while (waiting.Count > 0 && entries < CountBound)
-        {
-            var (directory, relative, underTest) = waiting.Pop();
-            IEnumerable<FileSystemInfo> inside;
-            try
-            {
-                inside = directory.EnumerateFileSystemInfos();
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-            {
-                continue;
-            }
-
-            foreach (var item in inside)
-            {
-                if (++entries > CountBound) break;
-                var path = relative.Length == 0 ? item.Name : $"{relative}/{item.Name}";
-                if (item is DirectoryInfo inner)
-                {
-                    if (inner.Name is "node_modules" || inner.Name.StartsWith('.') || inner.Attributes.HasFlag(FileAttributes.ReparsePoint)) continue;
-                    waiting.Push((inner, path, underTest || inner.Name == "test"));
-                }
-                else if (IsTest(item.Name, underTest))
-                {
-                    found.Add(path);
-                }
-            }
-        }
-
-        return [.. found.Order(StringComparer.Ordinal)];
-    }
-
-    private static bool IsTest(string name, bool underTest)
-    {
-        var extension = Path.GetExtension(name);
-        if (extension is not (".js" or ".mjs" or ".cjs")) return false;
-        if (underTest) return true;
-        var stem = Path.GetFileNameWithoutExtension(name);
-        return stem == "test" || stem.StartsWith("test-", StringComparison.Ordinal)
-            || stem.EndsWith(".test", StringComparison.Ordinal) || stem.EndsWith("-test", StringComparison.Ordinal)
-            || stem.EndsWith("_test", StringComparison.Ordinal);
     }
 }

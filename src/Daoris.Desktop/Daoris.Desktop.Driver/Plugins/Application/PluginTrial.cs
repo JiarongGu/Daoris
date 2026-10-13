@@ -29,8 +29,8 @@ public static partial class PluginKit
     /// <param name="scratchParent">Where the scratch folder goes instead of the home's — a test's, under a repository, to prove the sample root still names none.</param>
     internal static async Task<PluginTrial> TryFolderAsync(string home, string folder, TrialOptions? options, CancellationToken ct, string? scratchParent)
     {
-        var full = PluginKitFiles.WholePath(folder);
-        if (!PluginKitFiles.HasFile(Path.Combine(full, PluginCatalog.ManifestName)))
+        var full = PluginFolders.WholePath(folder);
+        if (!PluginFolders.HasFile(Path.Combine(full, PluginCatalog.ManifestName)))
         {
             throw new DriverException($"no `{PluginCatalog.ManifestName}` in {full} — a plugin is a folder with a manifest at its root.");
         }
@@ -43,7 +43,7 @@ public static partial class PluginKit
             // The plugin is told a scratch home of its own: one nobody installed is part of no machine yet. Its tools are
             // the machine's, so they are found by the home's own tools (PLUGTOOL1a).
             var told = Path.Combine(scratch, "home");
-            PluginKitFiles.Make(told);
+            PluginFolders.Make(told);
             return await TryAsync(new PluginEntry(manifest, full, data, Enabled: true, problem), told, home, scratch, options ?? new(), ct)
                 .ConfigureAwait(false);
         }
@@ -138,8 +138,8 @@ public static partial class PluginKit
         var tried = (options.Point is { } one ? [one] : hooks.Points.Distinct(StringComparer.Ordinal)).Select(name => Find(name)!).ToList();
         var patience = options.Patience ?? tried.Max(kit => kit.Patience);
         var root = Path.Combine(scratch, "root");
-        PluginKitFiles.Make(root);
-        PluginKitFiles.Make(entry.Data);
+        PluginFolders.Make(root);
+        PluginFolders.Make(entry.Data);
 
         // The tools it declares, each said in its own sentence (PLUGTOOL1a); a problem there never stops the trial.
         steps.AddRange(await ToolStepsAsync(entry.Manifest, toolsHome, root, path: null, PluginToolRuns.RunAsync, ct).ConfigureAwait(false));
