@@ -59,6 +59,15 @@ and the two commands), written against the ports declared there (`IWorkflowStore
 files and reads behind those ports in `Infrastructure/`. Every other module, the loop and the hosts reach it by its
 `Application` with a home, as before; `WorkflowPorts` is the one place its `Application` names its `Infrastructure`.
 
+`Service/` is layered whole too (STRUCT3d, D166's STRUCT3d note). `ServiceClient` is its `Application`, under the name every
+module and host uses: it writes each request and reads each answer, and its HTTP is behind the port `IServiceDoors`, whose
+real one, `Infrastructure/ServiceHttp.cs`, the client's URL constructors and `FromEnvironment` compose, so a test may hand doors
+in memory. The answers, views and registry records, the remotes map's rules (`RemoteTarget`), the layout's rules
+(`LayoutReader`) and the knowledge connector's names and order are its `Domain`; what those read of this machine is named on
+them as before (`RemoteTarget.Load`, `LayoutReader.ReadAsync`, `KnowledgeConnector.Offer`) by extension blocks in
+`Application`, through `ServiceMachine` and `LayoutGit`. `RemoteSync`, `RegistrationWorld` and `ServiceHostLocator` are its
+`Infrastructure`, composed by the loop and the hosts alone.
+
 ## What the page can ask this machine
 
 | Module | What it carries |
