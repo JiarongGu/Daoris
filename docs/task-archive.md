@@ -14065,3 +14065,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT2d — `Quests` and `Accounts` into their folders** (driver). As STRUCT2c; `Accounts/Domain/` already holds `UsageCurves` and `SwitchDecision`, and their tests join `Driver.Tests/Accounts/`. D166.
 
 **Outcome** 2026-10-14: Quests (14 files, 20 tests) and Accounts (22 files, 45 tests) moved by renames alone, a commit each; `EvidenceReader.cs` left the map's `split`; at the merge `CurveMoveTests` and `CurveMoveProcessTests`, which STRUCT2e had moved to Conversations (their subject is the chat runner's curve move), stayed there, and the map's lists were merged (root 92, tests 184). Detail: D166's STRUCT2d note.
+
+## STRUCT2f — `Agents` and `Trees` into their folders (2026-10-14, D166)
+
+> - [ ] **STRUCT2f — `Agents` and `Trees` into their folders** (driver; after 2c–2e). As STRUCT2c; `Trees/` already holds `SessionTrees.Update.cs` and `Trees/Domain/`; `hooks/tree-guard.mjs` moves with Trees, its embedded resource's logical name pinned. D166.
+
+**Outcome** 2026-10-14: Agents (29 files, 30 tests) and Trees (41 files, 63 tests) moved by renames alone, a commit each; `tree-guard.mjs` is at `Trees/hooks/` with its logical name unchanged; `Adapters.cs` and `LandingPlugins.cs` left the map's `split`; at the merge the map's lists were merged (root 22: Platform and Loop; tests 277). Detail: D166's STRUCT2f note.

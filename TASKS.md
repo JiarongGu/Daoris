@@ -270,7 +270,6 @@ into priority since that will make the code better to develop"*; D166's note). C
 (D166). Moves are behaviour-preserving, each module in a commit of renames alone, while no branch in flight touches it; a branch
 may move several modules now that nothing else is in flight; new driver files go into their module folder.
 
-- [ ] **STRUCT2f — `Agents` and `Trees` into their folders** (driver; after 2c–2e). As STRUCT2c; `Trees/` already holds `SessionTrees.Update.cs` and `Trees/Domain/`; `hooks/tree-guard.mjs` moves with Trees, its embedded resource's logical name pinned. D166.
 - [ ] **STRUCT2g — `Platform` and `Loop` into their folders** (driver; after 2f and LOOPOUT1). As STRUCT2c; the map's `root` ends empty but for `resources.json`'s neighbours that must stay. D166.
 - [ ] **LOOPOUT1 — `Loop` keeps no type another module uses** (driver; before Loop's STRUCT2 row). Placed as mapped, the loop rule would refuse 18 uses of types `Loop`'s files declare (`DriverHttp` 5, `ResumeAsk` 4, `SessionEnded` 3, `Driver` 3, `TickReport`, `StartRun`, `DriverLock`): move each to the module it serves. D166's STRUCT1 note; proof: StructureTests green once `Loop`'s files move.
 - [ ] **STRUCT3 — layer each module** (driver; after its STRUCT2 row). `Domain`, `Application` and `Infrastructure` with ports, the gate's purity and reach rules on for that module; a row per module, filed as it is due. Design §3, §6.
