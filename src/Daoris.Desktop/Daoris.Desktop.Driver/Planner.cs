@@ -217,6 +217,13 @@ public sealed record PriorSession(
     public DateTimeOffset? Updated { get; init; }
 
     /// <summary>
+    /// When its record was made, as the service answered it (<c>created</c>): for a conversation that continues another by the
+    /// usage curve (<see cref="FromWhy"/> <c>curve</c>), when it moved, which holds the next move for thirty minutes (SWITCH1c-ii,
+    /// the switch design §2). Null where unsaid.
+    /// </summary>
+    public DateTimeOffset? Created { get; init; }
+
+    /// <summary>
     /// Whether the person's words wait for it to go on with (MSG1b, D137 §2.2): its <c>said</c> holds any, parked or ended;
     /// from a host before <c>said</c>, an answered park is the one case that waits.
     /// </summary>

@@ -1495,6 +1495,8 @@ public sealed partial class ServiceClient : IDisposable
             NoteParts = NotePart.Read(session),
             // When it last moved, which a take here is compared with (CARRY2b).
             Updated = Moment(session, "updated"),
+            // When it was made, which a curve move's hold is counted from (SWITCH1c-ii).
+            Created = Moment(session, "created"),
         };
 
     /// <summary>
