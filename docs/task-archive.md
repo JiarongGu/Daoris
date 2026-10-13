@@ -14107,3 +14107,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT3d — layer the Service module** (driver). `Domain`, `Application` and `Infrastructure` with ports, held by the gate, behaviour unchanged, `Service` on the map's `layered` list. D166; design §3, §6.
 
 **Outcome** 2026-10-14: Service is layered (Domain 11 files, Application 12, Infrastructure 6). `ServiceClient` stays the Application's under its name, its HTTP behind the port `IServiceDoors` with `ServiceHttp` as the default the URL constructors compose, so no caller changed; `ServiceDoorsTests` drives a client over doors in memory. The map's rules for remotes, the knowledge connector and the layout became Domain values with their reads as Application extension members. The client's parts that other modules declare are left to STRUCT3DOORS. Detail: D166's STRUCT3d note.
+
+## STRUCT3e — layer the Setup module (2026-10-14, D166)
+
+> - [ ] **STRUCT3e — layer the Setup module** (driver). `Domain`, `Application` and `Infrastructure` with ports, held by the gate, behaviour unchanged, `Setup` on the map's `layered` list. D166; design §3, §6.
+
+**Outcome** 2026-10-14: Setup is layered (Domain 11 files, Application 8, Infrastructure 8), its two ports moved unchanged into `SetupPorts.cs`, no port added; a Domain type's I/O members sit in the Infrastructure that does the I/O, so the launcher compiles `StagedBuild`'s three files on the base library alone; Quests and Accounts reach it through Application forwards. Detail: D166's STRUCT3e note.

@@ -55,7 +55,7 @@ public static class UpdateCommand
 
             if (word == "--install" && at + 1 < args.Length && !args[at + 1].StartsWith("--", StringComparison.Ordinal) && install is null)
             {
-                install = Path.GetFullPath(args[++at]);
+                install = InstallUpdate.InstallAt(args[++at]);
                 continue;
             }
 

@@ -136,8 +136,8 @@ public static class WorkspaceSetupFile
         return new WorkspaceSetupPlan(
             workspace,
             [.. order.Select(Text).OfType<string>().Where(name => name.Length > 0)],
-            Count(file["atOnce"]) ?? WorkspaceSetup.DefaultAtOnce,
-            Count(file["pilot"]) ?? WorkspaceSetup.DefaultPilot)
+            Count(file["atOnce"]) ?? WorkspaceSetupRules.DefaultAtOnce,
+            Count(file["pilot"]) ?? WorkspaceSetupRules.DefaultPilot)
         {
             Created = When(file["created"]) ?? default,
             Paused = file["paused"] is JsonObject paused && Text(paused["by"]) is { Length: > 0 } by

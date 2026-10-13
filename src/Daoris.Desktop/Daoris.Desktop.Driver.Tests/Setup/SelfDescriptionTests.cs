@@ -230,4 +230,31 @@ public sealed class SelfDescriptionTests : IDisposable
 
         Assert.Equal(before, Directory.GetFileSystemEntries(_root, "*", SearchOption.AllDirectories).Order().ToList());
     }
+
+    /// <summary>
+    /// The rules are the Domain's, pure (STRUCT3e): a folder's top comes in as three questions, which a folder on the disk
+    /// answers and so does a folder held in memory, asked in the order a reading asks them.
+    /// </summary>
+    [Fact]
+    public void A_folder_held_in_memory_is_described_as_one_on_the_disk_is()
+    {
+        var top = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["readme.md"] = "# Ledger\n\nKeeps the books.\n",
+            ["package.json"] = """{ "dependencies": { "react": "19" } }""",
+        };
+        var asked = new List<string>();
+
+        var description = SelfDescription.Of(
+            name => { asked.Add(name); return top.ContainsKey(name); },
+            pattern => pattern == "*.csproj",
+            name => top[name]);
+
+        Assert.NotNull(description);
+        Assert.Equal("Ledger — Keeps the books.", description.Summary);
+        Assert.Equal(["React", ".NET"], description.Stack);
+        Assert.Equal("readme.md", description.Source);
+        Assert.Equal("package.json", asked[0]);
+        Assert.Contains("readme.md", asked);
+    }
 }

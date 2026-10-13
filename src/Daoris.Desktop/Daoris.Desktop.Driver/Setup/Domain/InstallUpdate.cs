@@ -1,7 +1,3 @@
-using System.Globalization;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-
 namespace Daoris.Driver;
 
 /// <summary>
@@ -10,12 +6,15 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Two doors, one file</b> (D50): the application's banner and <c>daoris-driver update</c> write
-/// <c>$DAORIS_HOME/update.json</c> through <see cref="Write"/>, and the application reads it at each of its looks. Absent or
+/// <c>$DAORIS_HOME/update.json</c> through <c>InstallUpdate.Write</c>, and the application reads it at each of its looks. Absent or
 /// unreadable is the default, a staged build installed when idle, so a torn file never stops an update nor starts one now.</para>
 ///
 /// <para><b>The drain holds starts, never looks</b> (D139 §2, rejected: skipping looks). A look still reports endings, tells
 /// plugins and syncs; <see cref="Drained"/> is the config it plans with, and <see cref="HeldFor"/> says the hold in its own
 /// words where the person's hold would otherwise be named.</para>
+///
+/// <para><b>Its rules are pure</b> (STRUCT3e): the request's file is read, written and cleared, and an install found beside a
+/// home, by <see cref="InstallUpdateFile"/>, declared as this type's own static members, so every caller keeps its call.</para>
 /// </remarks>
 public static class InstallUpdate
 {
@@ -32,60 +31,11 @@ public static class InstallUpdate
 
     public static string PathOf(string home) => Path.Combine(home, FileName);
 
-    /// <summary>The request, or null when there is none or it does not read: the default then holds. The launcher's reader.</summary>
-    public static UpdateRequest? Read(string home) => UpdateRequests.Read(home);
-
-    /// <summary>Write the request, atomically, LF; refused for a mode this build does not know.</summary>
-    /// <exception cref="ArgumentException">A mode that is not one of <see cref="UpdateMode.All"/>.</exception>
-    public static void Write(string home, UpdateRequest request)
-    {
-        if (!UpdateMode.All.Contains(request.Mode, StringComparer.Ordinal))
-        {
-            throw new ArgumentException($"`{request.Mode}` is not an update mode: one of {string.Join(", ", UpdateMode.All)}.");
-        }
-
-        var root = new JsonObject
-        {
-            ["mode"] = request.Mode,
-            ["build"] = request.Build,
-            ["at"] = (request.At ?? DateTimeOffset.UtcNow).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture),
-        };
-        Directory.CreateDirectory(home);
-        AtomicFile.WriteText(PathOf(home), root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n");
-    }
-
-    /// <summary>The request said and done with: removed as the application closes for the update, so it never outlives its build.</summary>
-    public static void Clear(string home)
-    {
-        try
-        {
-            File.Delete(PathOf(home));
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // A request naming an installed build holds for no later one (ModeFor), so a leftover changes nothing.
-        }
-    }
-
     /// <summary>
     /// The mode that holds for the build staged now: the request's, where it was said of this build or of whatever is
     /// staged; <see cref="UpdateMode.WhenIdle"/> otherwise, so a newer stage drains again after a *Not now* (D139 §3).
     /// </summary>
     public static string ModeFor(UpdateRequest? request, string? staged) => UpdateRequests.ModeFor(request, staged);
-
-    /// <summary>
-    /// The install a home belongs to (D63): the folder above it when that is a marked install and the home is its
-    /// <c>data</c> — or null, for a home named for itself (a gate's, a terminal's), which a terminal points at with <c>--install</c>.
-    /// </summary>
-    public static string? InstallOf(string home)
-    {
-        var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(home));
-        return string.Equals(Path.GetFileName(full), "data", StringComparison.OrdinalIgnoreCase)
-               && Path.GetDirectoryName(full) is { } parent
-               && File.Exists(Path.Combine(parent, StagedBuild.Marker))
-            ? parent
-            : null;
-    }
 
     /// <summary>
     /// The config a draining look plans with (D139 §2): every drivable repository held, so no quest starts, resumes or
