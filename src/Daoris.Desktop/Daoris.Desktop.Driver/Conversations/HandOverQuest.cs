@@ -1,25 +1,6 @@
-using System.Globalization;
-using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
-
-/// <summary>What the roster says of an agent a quest's session may go on with: its accounts and the wire its door rides (MIXAGENT1a-ii).</summary>
-/// <param name="Accounts">The accounts the roster holds for the agent; none is the tool's own sign-in.</param>
-/// <param name="Wire">The door it drives by: the protocol door hands the quest's connector itself, the pipe door only in an adopted repository (D70).</param>
-public sealed record HandOverAgent(IReadOnlyList<string> Accounts, SessionWire Wire);
-
-/// <summary>
-/// A quest handed to another agent (MIXAGENT1a-ii, D163 point 1), as this machine holds it: the agent and account its next start
-/// runs on, the session it went on from, why, by whom, and when.
-/// </summary>
-/// <param name="Agent">The adapter every start of the quest runs on from now, until the quest leaves this machine.</param>
-/// <param name="Account">The account its next start asks for first, or null for the roster's walk.</param>
-/// <param name="From">The session that was stopped to hand the quest over: the one stop the planner reads as released.</param>
-/// <param name="Why">One of <see cref="HandOverWhy"/>.</param>
-/// <param name="AskedBy">One of <see cref="HandOverBy"/>.</param>
-public sealed record HandedQuest(string Agent, string? Account, string From, string Why, string AskedBy, DateTimeOffset At);
 
 /// <summary>
 /// The quests held on another agent (MIXAGENT1a-ii, D163): <c>&lt;home&gt;/handed/&lt;quest&gt;.json</c>, written atomically. It is the quest's
@@ -27,7 +8,11 @@ public sealed record HandedQuest(string Agent, string? Account, string From, str
 /// abandoned), never for one start; and it is the release of the stop that handed it over: the planner reads a stop whose session it
 /// names as released, so no strike counts and driver.json's <c>released</c> is never written.
 /// </summary>
-/// <remarks><b>This machine's, never the record's.</b> A file that does not read is no override: the quest runs on the machine's agent.</remarks>
+/// <remarks>
+/// <para><b>This machine's, never the record's.</b> A file that does not read is no override: the quest runs on the machine's agent.</para>
+///
+/// <para>What is kept is this store's; the files and their format are <see cref="HandOverFiles"/>' (STRUCT3h, D166's note).</para>
+/// </remarks>
 public sealed partial class HandedQuests(string home)
 {
     /// <summary>Where a quest's file is kept, or null for an id that is no quest's name (never a path out of the folder).</summary>
@@ -38,70 +23,22 @@ public sealed partial class HandedQuests(string home)
     public void Write(string quest, HandedQuest handed)
     {
         if (PathOf(quest) is not { } path) return;
-
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        using var buffer = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Indented = true }))
-        {
-            writer.WriteStartObject();
-            writer.WriteString("agent", handed.Agent);
-            if (handed.Account is { } account) writer.WriteString("account", account); else writer.WriteNull("account");
-            writer.WriteString("from", handed.From);
-            writer.WriteString("why", handed.Why);
-            writer.WriteString("askedBy", handed.AskedBy);
-            writer.WriteString("at", handed.At.ToString("O", CultureInfo.InvariantCulture));
-            writer.WriteEndObject();
-        }
-
-        // LF on every platform, as every file under the home is written.
-        AtomicFile.WriteText(path, Encoding.UTF8.GetString(buffer.ToArray()).Replace("\r\n", "\n") + "\n");
+        HandOverFiles.WriteHanded(path, handed);
     }
 
     /// <summary>The quest as handed, or null for none, a file that does not read, or an id that is no quest's name.</summary>
-    public HandedQuest? Read(string quest)
-    {
-        if (PathOf(quest) is not { } path) return null;
-
-        try
-        {
-            if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
-            var root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Object
-                || Text(root, "agent") is not { Length: > 0 } agent
-                || Text(root, "from") is not { Length: > 0 } from
-                || Text(root, "why") is not { } why || !HandOverWhy.Known(why)
-                || Text(root, "askedBy") is not { } by || !HandOverBy.Known(by)
-                || !DateTimeOffset.TryParse(Text(root, "at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at))
-            {
-                return null;
-            }
-
-            return new HandedQuest(agent, Text(root, "account") is { Length: > 0 } account ? account : null, from, why, by, at);
-        }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
-        {
-            return null;
-        }
-    }
+    public HandedQuest? Read(string quest) => PathOf(quest) is { } path ? HandOverFiles.ReadHanded(path) : null;
 
     /// <summary>Every quest held on another agent, by quest id: what a look reads into its snapshot.</summary>
     public IReadOnlyDictionary<string, HandedQuest> All()
     {
         var all = new Dictionary<string, HandedQuest>(StringComparer.OrdinalIgnoreCase);
-        var folder = Path.Combine(home, "handed");
-        if (!Directory.Exists(folder)) return all;
-        try
+
+        // What did not list is read at the next look.
+        foreach (var file in HandOverFiles.Leaves(Path.Combine(home, "handed"), "*.json").Order(StringComparer.Ordinal))
         {
-            foreach (var file in Directory.EnumerateFiles(folder, "*.json").Order(StringComparer.Ordinal))
-            {
-                var quest = Path.GetFileNameWithoutExtension(file);
-                if (Read(quest) is { } handed) all[quest] = handed;
-            }
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // What did not list is read at the next look.
+            var quest = Path.GetFileNameWithoutExtension(file);
+            if (Read(quest) is { } handed) all[quest] = handed;
         }
 
         return all;
@@ -110,24 +47,14 @@ public sealed partial class HandedQuests(string home)
     /// <summary>Let the quest go back to the machine's agent: it left this machine, or was cleared. Nothing to clear is no failure.</summary>
     public void Clear(string quest)
     {
-        if (PathOf(quest) is not { } path) return;
-        try
-        {
-            File.Delete(path);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // A file left behind is dropped at the next look, which reads the quest's state again.
-        }
+        // A file left behind is dropped at the next look, which reads the quest's state again.
+        if (PathOf(quest) is { } path) HandOverFiles.Delete(path);
     }
 
     private static bool Named(string quest) => NamePattern().IsMatch(quest ?? "");
 
     [GeneratedRegex("^[A-Za-z0-9_-]{1,64}$")]
     private static partial Regex NamePattern();
-
-    private static string? Text(JsonElement root, string name) =>
-        root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 }
 
 /// <summary>

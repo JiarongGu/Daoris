@@ -3,7 +3,7 @@
     "Platform": ["Domain", "Infrastructure"],
     "Accounts": ["Domain", "Application", "Infrastructure"],
     "Agents": ["Domain", "Application", "Infrastructure"],
-    "Conversations": ["Domain", "Application", "Infrastructure"],
+    "Conversations": ["Domain"],
     "Sessions": ["Domain", "Application", "Infrastructure"],
     "Trees": ["Domain", "Application", "Infrastructure"],
     "Quests": ["Domain", "Application", "Infrastructure"],

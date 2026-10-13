@@ -14137,3 +14137,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT3g-i — Sessions' Domain out first** (driver). Its records, rules and words into `Sessions/Domain/` (the views other layered Domains name: `SessionEnded`, `TracedSession`, the go-ahead views, `SessionEvent`), stateful classes left loose. `SessionEvents.cs` and `Trace.Chain.cs` keep what the CLI's and the page's tests read by those names. D166's STRUCT3d note's inventory.
 
 **Outcome** 2026-10-14: ten whole files and ten records cut from stateful files went into `Sessions/Domain/`; the stateful `SessionEvents` class moved to `SessionEventLog.cs` beside a Domain `SessionEvents.cs` that keeps what the tests read, the trace's chain reads its stores through `TraceHere`'s values, and forwards and extension members kept every caller. At the merge, Quests' evidence words moved to its Domain (`EvidenceWords`), which the trace names. On Sonnet, scouted: 149 tool calls. Detail: D166's STRUCT3g-i note.
+
+## STRUCT3h — layer the Conversations module (2026-10-14, D166)
+
+> - [ ] **STRUCT3h — layer the Conversations module** (driver). As STRUCT3; `HelperClient.cs` is a part of Service's `ServiceClient`, so it sits in Conversations' Application until STRUCT3DOORS, never its Domain or Infrastructure. D166's STRUCT3c and STRUCT3d notes.
+
+**Outcome** 2026-10-14: built in three layers, then, under the owner's direction of the same day not to follow the onion whole, narrowed on the branch to its model and rules: `Conversations/Domain/` holds 17 files of pure records, rules and words, and the chat runner, the use cases, the stores and their files sit at the module's top; `Conversations` is not on the `layered` list. No caller changed; the module's Process tests passed 16 of 16 on the merge. On Opus, scouted: 217 tool calls. Detail: D166's STRUCT3h note.

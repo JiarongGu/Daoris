@@ -91,10 +91,15 @@ considerations), the evidence's records, the attention events, the ask's words a
 `Application/`; and the git read of a done's evidence, the room written to the disk and the git defaults (`QuestGit`) in
 `Infrastructure/`. `IntakeRoom.Prepare` keeps its name as an extension member there.
 
-`Sessions/` is being layered in three steps (STRUCT3g, D166's STRUCT3g-i note); its `Domain/` is placed: the session events' records
+`Sessions/` keeps the onion for its model and rules alone (STRUCT3g-i, D166's STRUCT3g-i note); its `Domain/` holds the session events' records
 and rules (`SessionEvents.cs`, with `SessionEventText`'s bounds, id rule and cuts), the trace's records and chain (`Trace.Chain.cs`,
 which reads its stores through `TraceHere`'s values), the pause, abandon, delete, archive and history plans and words, and the
-observation rules. Its stores and use cases are still loose files in `Sessions/` until STRUCT3g-ii and STRUCT3g-iii.
+observation rules. Its stores and use cases sit at the module's top.
+
+`Conversations/` keeps the onion for its model and rules alone (STRUCT3h, D166's STRUCT3h note): `Domain/` holds a
+conversation's pure records, rules and words (the message, the resume's judgement and its reasons, the hand-over's codes,
+briefing and notes, the helpers' asks, rules, words and judge, the turns' and the inbox's records, the go-on records); the chat
+runner, the use cases, the stores and their files sit at the module's top. The module is not in the map's `layered` list.
 
 ## What the page can ask this machine
 

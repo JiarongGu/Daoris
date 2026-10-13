@@ -1,13 +1,4 @@
-using System.Globalization;
-using System.Text;
-using System.Text.Json;
-
 namespace Daoris.Driver;
-
-/// <summary>Words a record could not go on with, by their ids, why by a code, and when it was judged (MSG1b).</summary>
-/// <param name="Said">The ids of the words judged, as the record's <c>said</c> names them.</param>
-/// <param name="Why">The reason's code (<see cref="ContinueWhy"/>): what the page says its own sentence for.</param>
-public sealed record GoOnMark(IReadOnlyList<string> Said, string Why, DateTimeOffset At);
 
 /// <summary>
 /// The marks a record's words could not go on with (MSG1b, closing MSG1a's open point):
@@ -22,6 +13,8 @@ public sealed record GoOnMark(IReadOnlyList<string> Said, string Why, DateTimeOf
 ///
 /// <para><b>This machine's, never the record's</b>, like the conversation id beside it. A file that does not read is no
 /// mark: one more try, never the words lost.</para>
+///
+/// <para>What is kept is this store's; the file and its format are <see cref="GoOnFiles"/>' (STRUCT3h, D166's note).</para>
 /// </remarks>
 public sealed class GoOnMarks(string home)
 {
@@ -41,22 +34,7 @@ public sealed class GoOnMarks(string home)
 
         try
         {
-            var path = PathOf(session);
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            using var buffer = new MemoryStream();
-            using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Indented = true }))
-            {
-                writer.WriteStartObject();
-                writer.WriteStartArray("said");
-                foreach (var id in ids) writer.WriteStringValue(id);
-                writer.WriteEndArray();
-                writer.WriteString("why", why.Code);
-                writer.WriteString("at", at.ToString("O", CultureInfo.InvariantCulture));
-                writer.WriteEndObject();
-            }
-
-            // LF on every platform, as every file under the home is written.
-            AtomicFile.WriteText(path, Encoding.UTF8.GetString(buffer.ToArray()).Replace("\r\n", "\n") + "\n");
+            GoOnFiles.WriteMark(PathOf(session), ids, why.Code, at);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -65,48 +43,13 @@ public sealed class GoOnMarks(string home)
     }
 
     /// <summary>The mark kept for this session, or null for none, a file that does not read, or an id that is not one.</summary>
-    public GoOnMark? Read(string session)
-    {
-        if (!SessionEvents.IsId(session)) return null;
-
-        try
-        {
-            var path = PathOf(session);
-            if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
-            var root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Object
-                || !root.TryGetProperty("said", out var said) || said.ValueKind != JsonValueKind.Array
-                || !root.TryGetProperty("why", out var why) || why.ValueKind != JsonValueKind.String || why.GetString() is not { Length: > 0 } code)
-            {
-                return null;
-            }
-
-            var at = root.TryGetProperty("at", out var when) && when.ValueKind == JsonValueKind.String
-                     && DateTimeOffset.TryParse(when.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsed)
-                ? parsed
-                : DateTimeOffset.MinValue;
-            return new GoOnMark(
-                [.. said.EnumerateArray().Where(id => id.ValueKind == JsonValueKind.String).Select(id => id.GetString()!)], code, at);
-        }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
-        {
-            return null;
-        }
-    }
+    public GoOnMark? Read(string session) => SessionEvents.IsId(session) ? GoOnFiles.ReadMark(PathOf(session)) : null;
 
     /// <summary>Take a session's mark away: its words went on, or were taken. Nothing to take is no failure.</summary>
     public void Clear(string session)
     {
-        if (!SessionEvents.IsId(session)) return;
-        try
-        {
-            File.Delete(PathOf(session));
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // A mark left behind judges only the words it names; a word said since is tried again all the same.
-        }
+        // A mark left behind judges only the words it names; a word said since is tried again all the same.
+        if (SessionEvents.IsId(session)) GoOnFiles.Delete(PathOf(session));
     }
 
     /// <summary>The marks a look plans by: one per record the person's words wait on that has one, by session.</summary>

@@ -1,11 +1,4 @@
-using System.Globalization;
-using System.Text;
-using System.Text.Json;
-
 namespace Daoris.Driver;
-
-/// <summary>The person's choice to go on in a new session (MSG1g): the ids of the words waiting when they chose, and when.</summary>
-public sealed record NewSessionChoice(IReadOnlyList<string> Said, DateTimeOffset At);
 
 /// <summary>
 /// The choices the person made to go on in a new session rather than wait for a cooling account (MSG1g, D137 §2.2):
@@ -19,6 +12,8 @@ public sealed record NewSessionChoice(IReadOnlyList<string> Said, DateTimeOffset
 ///
 /// <para><b>This machine's, never the record's.</b> A file that does not read is no choice: the words wait for the account,
 /// which loses nothing.</para>
+///
+/// <para>What is kept is this store's; the file and its format are <see cref="GoOnFiles"/>' (STRUCT3h, D166's note).</para>
 /// </remarks>
 public sealed class NewSessionChoices(string home)
 {
@@ -34,63 +29,17 @@ public sealed class NewSessionChoices(string home)
     public void Choose(string session, IEnumerable<string> said, DateTimeOffset at)
     {
         if (!SessionEvents.IsId(session)) return;
-
-        var path = PathOf(session);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        using var buffer = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Indented = true }))
-        {
-            writer.WriteStartObject();
-            writer.WriteStartArray("said");
-            foreach (var id in said.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.Ordinal)) writer.WriteStringValue(id);
-            writer.WriteEndArray();
-            writer.WriteString("at", at.ToString("O", CultureInfo.InvariantCulture));
-            writer.WriteEndObject();
-        }
-
-        // LF on every platform, as every file under the home is written.
-        AtomicFile.WriteText(path, Encoding.UTF8.GetString(buffer.ToArray()).Replace("\r\n", "\n") + "\n");
+        GoOnFiles.WriteChoice(PathOf(session), [.. said.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.Ordinal)], at);
     }
 
     /// <summary>The choice kept for this session, or null for none, a file that does not read, or an id that is not one.</summary>
-    public NewSessionChoice? Read(string session)
-    {
-        if (!SessionEvents.IsId(session)) return null;
-
-        try
-        {
-            var path = PathOf(session);
-            if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
-            var root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Object
-                || !root.TryGetProperty("said", out var said) || said.ValueKind != JsonValueKind.Array
-                || !root.TryGetProperty("at", out var when) || when.ValueKind != JsonValueKind.String
-                || !DateTimeOffset.TryParse(when.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at))
-            {
-                return null;
-            }
-
-            return new NewSessionChoice([.. said.EnumerateArray().Where(id => id.ValueKind == JsonValueKind.String).Select(id => id.GetString()!)], at);
-        }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
-        {
-            return null;
-        }
-    }
+    public NewSessionChoice? Read(string session) => SessionEvents.IsId(session) ? GoOnFiles.ReadChoice(PathOf(session)) : null;
 
     /// <summary>Take a session's choice away: its words went on, or were taken. Nothing to take is no failure.</summary>
     public void Clear(string session)
     {
-        if (!SessionEvents.IsId(session)) return;
-        try
-        {
-            File.Delete(PathOf(session));
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // A choice left behind covers only words it names, and those are taken.
-        }
+        // A choice left behind covers only words it names, and those are taken.
+        if (SessionEvents.IsId(session)) GoOnFiles.Delete(PathOf(session));
     }
 
     /// <summary>
@@ -102,12 +51,6 @@ public sealed class NewSessionChoices(string home)
         && record.Waiting is { Count: > 0 } waiting
         && (choice.Said.Count == 0 || waiting.Any(word => word.Id is { } id && choice.Said.Contains(id, StringComparer.Ordinal)));
 }
-
-/// <summary>What *Go on in a new session* came to (MSG1g): kept for the next look, or refused by a code, and its sentence.</summary>
-/// <param name="Sent">The choice is kept: the driver's next look carries the words on in a new session.</param>
-/// <param name="Why">Why not, by a code of <see cref="WordsNever"/> or <see cref="GoOnNew"/>; null where it was kept.</param>
-/// <param name="Message">The sentence, in the terminal's words; the screen words <see cref="Why"/> itself.</param>
-public sealed record GoOnNewAnswer(bool Sent, string? Why, string Message);
 
 /// <summary>
 /// *Go on in a new session* (MSG1g, D137 §2.2's account paragraph): words a resume holds while the account their session ran on
