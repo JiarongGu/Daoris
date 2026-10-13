@@ -99,8 +99,7 @@ which reads the service in `ReadAsync`) and the intake's records, prompt and obs
 check, the intake's kinds, the park reader, the git read of a done's evidence (which names `WorkingTree`'s git read directly) and
 `IntakeRoom`, which makes the room's folder and writes its files, sit at the module's top.
 
-The comments in these six modules that still say Application or Infrastructure, and the extension blocks, forwards and ports
-the layering needed, are FLAT1b's to fold back.
+The extension blocks, forwards and ports the layering needed are folded back in all six modules and in Sessions (FLAT1b).
 
 `Sessions/` keeps the onion for its model and rules alone (STRUCT3g-i, D166's STRUCT3g-i note); its `Domain/` holds the session events' records
 and rules (`SessionEvents.cs`, with `SessionEventText`'s bounds, id rule and cuts), the trace's records and chain (`Trace.Chain.cs`,
