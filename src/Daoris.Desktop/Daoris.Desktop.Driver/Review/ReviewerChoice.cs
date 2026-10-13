@@ -159,7 +159,7 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
     public CoolingEntry? Cooling { get; init; }
 
     /// <summary>A listed reviewer: its family, how it stands to the work's, and whether this machine has an agent of its name.</summary>
-    private sealed record Entry(AgentFamily Family, string Label, bool Known)
+    internal sealed record Entry(AgentFamily Family, string Label, bool Known)
     {
         /// <summary>
         /// Whether it may be another maker's agent: one that declares another maker, or a name nothing on this machine declares,
@@ -180,16 +180,20 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
     ];
 
     /// <summary>
-    /// Choose the reviewer of work the <paramref name="working"/> agents wrote, from <paramref name="rule"/>'s reviewers, for a
-    /// repository in <paramref name="workspace"/>.
+    /// The walk over the reviewer of work the <paramref name="working"/> agents wrote, from <paramref name="rule"/>'s reviewers, in
+    /// its passes' order (§3.2, §3.3): each entry asked of <paramref name="tryEntry"/>, the account walk, until one may run.
     /// </summary>
-    /// <param name="roster">The machine's agents, the build's and its plugins', and the account walk.</param>
+    /// <remarks>
+    /// The walk is this layer's rule; the account walk it asks is the world's, handed in, and <c>ReviewerChoice.ChooseAsync</c>
+    /// hands it over the machine's agents (<see cref="ReviewerChoices"/>; STRUCT3c).
+    /// </remarks>
+    /// <param name="adapters">The machine's agents, the build's and its plugins'.</param>
     /// <param name="working">The adapters of the sessions whose work is read: their families are the work's.</param>
-    public static async Task<ReviewerChoice> ChooseAsync(
-        HarnessRoster roster, OpinionRule rule, IReadOnlyCollection<string> working, DriverConfig config, string? workspace,
-        CancellationToken ct = default)
+    /// <param name="tryEntry">One reviewer asked of the account walk: its selection where it may run, else what held it.</param>
+    internal static async Task<ReviewerChoice> WalkAsync(
+        AdapterSet adapters, OpinionRule rule, IReadOnlyCollection<string> working,
+        Func<Entry, Task<(HarnessSelection? Selection, ReviewerTried? Held)>> tryEntry)
     {
-        var adapters = roster.Adapters;
         var families = new List<AgentFamily>();
         foreach (var name in working.Where(name => !string.IsNullOrWhiteSpace(name)))
         {
@@ -207,7 +211,7 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
         {
             foreach (var entry in entries.Where(pass))
             {
-                var (selection, held) = await TryAsync(roster, entry, config, workspace, ct).ConfigureAwait(false);
+                var (selection, held) = await tryEntry(entry).ConfigureAwait(false);
                 if (selection is not null) return Chose(entry, selection, entries, tried, families);
                 tried.Add(held!);
             }
@@ -226,44 +230,6 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
         working.Any(reviewer.Same) ? ReviewerLabels.SameAgent
         : reviewer.Maker is null ? ReviewerLabels.MakerNotDeclared
         : ReviewerLabels.AnotherMaker;
-
-    /// <summary>One reviewer asked of the account walk: its selection where it may run, else what held it.</summary>
-    private static async Task<(HarnessSelection? Selection, ReviewerTried? Held)> TryAsync(
-        HarnessRoster roster, Entry entry, DriverConfig config, string? workspace, CancellationToken ct)
-    {
-        var (name, label) = (entry.Family.Agent, entry.Label);
-        // Named, never guessed (D23): a name this machine has no agent of is said, and nothing is asked.
-        if (!entry.Known)
-        {
-            return (null, new ReviewerTried(
-                name, label, ReviewerHeld.NotInstalled,
-                $"`{name}` is no agent on this machine: neither this build nor an installed plugin declares it."));
-        }
-
-        HarnessSelection selection;
-        try
-        {
-            selection = await roster.SelectAsync(name, config, workspace, chosen: null, StartKind.Driven, ct).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
-        {
-            return (null, new ReviewerTried(name, label, ReviewerHeld.Refused, error.Message));
-        }
-
-        if (selection.Allowed) return (selection, null);
-
-        // What held it, from the walk's facts and never its words: a cool-off waits for a time, so it is named first; a list
-        // with none cooling and an account not signed in waits for a sign-in, which its sentence names.
-        var held = selection switch
-        {
-            { Absent: AgentAbsence.NotInstalled } => ReviewerHeld.NotInstalled,
-            { Absent: AgentAbsence.PinNotInstalled } => ReviewerHeld.PinNotInstalled,
-            { Cooling: not null } => ReviewerHeld.Cooling,
-            { NotReady: AccountReadiness.SignedOut } or { SignedOut: not null } => ReviewerHeld.SignedOut,
-            _ => ReviewerHeld.Refused,
-        };
-        return (null, new ReviewerTried(name, label, held, selection.Refusal!) { Cooling = selection.Cooling });
-    }
 
     private static ReviewerChoice Chose(
         Entry entry, HarnessSelection selection, IReadOnlyList<Entry> entries, IReadOnlyList<ReviewerTried> tried,
