@@ -59,7 +59,6 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs` | 42 | 658 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/AbandonTests.cs` | 44 | 791 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/AcpTests.cs` | 111 | 2071 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/HarnessTests.cs` | 48 | 1089 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 103 | 1666 |
@@ -67,21 +66,22 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/empty.md` | 43 | 311 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/full.md` | 48 | 362 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/sparse.md` | 43 | 310 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/HistoryClearingTests.cs` | 49 | 886 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/IntakeTests.cs` | 46 | 967 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/PlannerTests.cs` | 67 | 1358 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Plugins/PluginKitTests.cs` | 46 | 937 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Service/RemoteSyncTests.cs` | 68 | 1391 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/SessionGroupsTests.cs` | 52 | 896 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/SessionsCommandTests.cs` | 42 | 836 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/AbandonTests.cs` | 44 | 791 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/HistoryClearingTests.cs` | 49 | 886 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/SessionsCommandTests.cs` | 42 | 836 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/TraceTests.cs` | 41 | 691 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/SessionsOutliveTheirLookTests.cs` | 40 | 908 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/ToolInstallTests.cs` | 41 | 726 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/ToolResourcesTests.cs` | 40 | 559 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/TraceTests.cs` | 41 | 691 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/AccountRotation.cs` | 68 | 1115 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Acp.cs` | 91 | 1854 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 113 | 2006 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 91 | 1699 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/ChatRunner.cs` | 91 | 1699 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.Continue.cs` | 44 | 743 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 166 | 2808 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 65 | 1152 |
@@ -93,14 +93,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 69 | 1188 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 95 | 1731 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionEvents.cs` | 42 | 907 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 60 | 1081 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.Sync.cs` | 74 | 1234 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 92 | 1568 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionsCommand.cs` | 63 | 1239 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/SessionEvents.cs` | 42 | 907 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/SessionsCommand.cs` | 63 | 1239 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Trace.Chain.cs` | 57 | 1264 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/WorkAbandoning.cs` | 54 | 990 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Setup/StagedBuild.cs` | 46 | 959 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trace.Chain.cs` | 57 | 1264 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkAbandoning.cs` | 54 | 990 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkingTree.cs` | 54 | 1114 |
 
 ### Desktop modules (`modules`)
