@@ -271,7 +271,6 @@ into priority since that will make the code better to develop"*; D166's note). N
 `docs/2026-10-12-code-structure-design.md` as amended. Moves are behaviour-preserving; new driver files go into their module's
 folder.
 
-- [ ] **FLAT1a — the layer folders flattened, the gate narrowed** (driver, modules). Six modules' 101 `Application/` and `Infrastructure/` files to their module's top, the launcher's csproj paths with them; the gate keeps `top`, `module` (no layer folders), `loop`, `pure` and `mirror`, dropping `layered`, `layer` and `reach`. D166's note of 2026-10-14.
 - [ ] **FLAT1b-i — Plugins and Workflows: the layering's ceremony folded back** (driver; after FLAT1a). Extension blocks that split a type's I/O go back into the type (out of `Domain/` if it then does I/O); forwards for moved names retire; a port no test stands in for gives way to its implementation (`IHookChannel`, `WorkflowPorts`). D166's STRUCT3a and 3b notes.
 - [ ] **FLAT1b-ii — Review and Quests: the layering's ceremony folded back** (driver; after FLAT1a). As FLAT1b-i. D166's STRUCT3c and 3f notes.
 - [ ] **FLAT1b-iii — Service, Setup and Sessions: the layering's ceremony folded back** (driver; after FLAT1a). As FLAT1b-i; `IServiceDoors` stays, `ServiceDoorsTests` stands doors in. D166's STRUCT3d, 3e and 3g-i notes.

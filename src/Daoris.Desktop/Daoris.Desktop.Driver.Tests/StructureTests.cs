@@ -2,21 +2,22 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The structure gate (STRUCT1, D166; the code-structure design §5): every driver source sits in its module's folder, or on
-/// <c>fixtures/structure.json</c>'s list of the files not yet moved, which only shrinks; a <c>Domain</c> file does no I/O; no
-/// module reaches into another's <c>Infrastructure</c>, and a <c>Domain</c> names nothing of an <c>Application</c> or an
-/// <c>Infrastructure</c>; and nothing outside <c>Loop</c>, the composition root, names a type declared in it. The rules are
-/// held here on sources made in memory, one case each, and then run over the driver's own tree.
+/// <c>fixtures/structure.json</c>'s list of the files not yet moved, which only shrinks; a module keeps the onion for its model
+/// and rules alone (a <c>Domain</c> folder, the rest at its top: FLAT1a, D166's note of 2026-10-14), so no module holds an
+/// <c>Application</c> or an <c>Infrastructure</c> folder; a <c>Domain</c> file does no I/O; and nothing outside <c>Loop</c>, the
+/// composition root, names a type declared in it. The rules are held here on sources made in memory, one case each, and then
+/// run over the driver's own tree.
 /// </summary>
 public sealed class StructureTests
 {
     private static readonly StructureMap Map = new(
         new Dictionary<string, IReadOnlyList<string>>
         {
-            ["Platform"] = ["Domain", "Infrastructure"],
-            ["Accounts"] = ["Domain", "Application", "Infrastructure"],
-            ["Trees"] = ["Domain", "Application", "Infrastructure"],
-            ["Plugins"] = ["Domain", "Application", "Infrastructure"],
-            ["Help"] = ["Domain", "Application", "Infrastructure"],
+            ["Platform"] = [],
+            ["Accounts"] = ["Domain"],
+            ["Trees"] = ["Domain"],
+            ["Plugins"] = ["Domain"],
+            ["Help"] = [],
             ["Loop"] = [],
         },
         new Dictionary<string, string> { ["Landing.cs"] = "Trees", ["DriverWatch.cs"] = "Loop" });
@@ -54,24 +55,27 @@ public sealed class StructureTests
     }
 
     [Fact]
-    public void A_file_in_a_folder_sits_in_a_module_s_folder_and_in_a_layer_that_module_holds()
+    public void A_file_in_a_folder_sits_in_a_module_s_folder_at_its_top_or_in_the_Domain_that_module_holds()
     {
         Assert.Empty(CheckWithUnmoved(
             ("Plugins/PluginInstall.cs", "class PluginInstall { }"),
+            ("Plugins/Domain/PluginOffer.cs", "class PluginOffer { }"),
             ("Help/Room/HelpRoom.cs", "class HelpRoom { }"),
-            ("Platform/Domain/NoteCodes.cs", "class NoteCodes { }"),
+            ("Platform/NoteCodes.cs", "class NoteCodes { }"),
             ("Loop/Driver.cs", "class Driver { }")));
 
         Assert.Equal(
             [
                 "Gardens/Rose.cs:1 [module] the folder Gardens is no module's: a source goes in its module's folder (structure.json's modules)",
                 "Loop/Domain/Tick.cs:1 [module] Loop holds no Domain layer: its layers are none",
-                "Platform/Application/Clock.cs:1 [module] Platform holds no Application layer: its layers are Domain, Infrastructure",
+                "Platform/Application/Clock.cs:1 [module] Platform holds no Application folder: a module keeps its model and rules in a Domain and the rest at its top",
+                "Plugins/Infrastructure/PluginFiles.cs:1 [module] Plugins holds no Infrastructure folder: a module keeps its model and rules in a Domain and the rest at its top",
             ],
             CheckWithUnmoved(
                 ("Gardens/Rose.cs", "class Rose { }"),
                 ("Loop/Domain/Tick.cs", "class Tick { }"),
-                ("Platform/Application/Clock.cs", "class Clock { }")));
+                ("Platform/Application/Clock.cs", "class Clock { }"),
+                ("Plugins/Infrastructure/PluginFiles.cs", "class PluginFiles { }")));
     }
 
     [Fact]
@@ -97,110 +101,8 @@ public sealed class StructureTests
             ],
             CheckWithUnmoved(("Accounts/Domain/Reading.cs", impure)));
 
-        // The same I/O is an Application's or an Infrastructure's to do.
-        Assert.Empty(CheckWithUnmoved(("Accounts/Infrastructure/Reading.cs", impure), ("Accounts/Application/Read.cs", impure.Replace("Reading", "Read"))));
-    }
-
-    [Fact]
-    public void A_module_reaches_another_through_its_Domain_and_Application_never_its_Infrastructure()
-    {
-        (string, string)[] declared =
-        [
-            ("Plugins/Infrastructure/PluginStarter.cs", "public sealed class PluginStarter { private sealed record Inner(); }"),
-            ("Plugins/Domain/PluginOffer.cs", "public sealed record PluginOffer(string Id);"),
-            ("Plugins/Application/PluginInstall.cs", "public static class PluginInstall { }"),
-            ("Platform/Infrastructure/AtomicFile.cs", "public static class AtomicFile { }"),
-            ("Accounts/Application/AccountWalk.cs", "public static class AccountWalk { }"),
-        ];
-
-        Assert.Empty(Check(
-        [
-            .. declared,
-            // Another module's Domain and Application; Platform's Infrastructure from an Infrastructure; Loop composes everything.
-            ("Trees/Application/Land.cs", "class Land { PluginOffer Offer; void Go() => PluginInstall.Run(); }"),
-            ("Trees/Infrastructure/LandFile.cs", "class LandFile { void Write() => AtomicFile.Write(); }"),
-            ("Loop/Driver.cs", "class Driver { PluginStarter Starter; AccountWalk Walk; }"),
-            // A name in a comment, a nested type and a member named like a type are none.
-            ("Trees/Application/Quiet.cs", "class Quiet { /* PluginStarter */ Inner Value; int Count => this.PluginStarter; }"),
-            // A file not yet moved is not checked.
-            ("Landing.cs", "class Landing { PluginStarter Starter; }"),
-            ("DriverWatch.cs", "class DriverWatch { PluginStarter Starter; }"),
-        ]));
-
-        Assert.Equal(
-            [
-                "Accounts/Domain/Standing.cs:1 [reach] names AccountWalk, declared in Accounts/Application/AccountWalk.cs: a Domain names nothing of an Application or an Infrastructure",
-                "Trees/Application/Land.cs:3 [reach] names PluginStarter, declared in Plugins/Infrastructure/PluginStarter.cs: a module reaches another through its Domain and Application, never its Infrastructure",
-                "Trees/Application/Write.cs:1 [reach] names AtomicFile, declared in Platform/Infrastructure/AtomicFile.cs: a module reaches another through its Domain and Application, never its Infrastructure",
-            ],
-            CheckWithUnmoved(
-            [
-                .. declared,
-                ("Accounts/Domain/Standing.cs", "record Standing(AccountWalk Walk);"),
-                ("Trees/Application/Land.cs", "class Land\n{\n    PluginStarter Starter;\n    PluginStarter Again;\n}"),
-                ("Trees/Application/Write.cs", "class Write { void Go() => AtomicFile.Write(); }"),
-            ]));
-    }
-
-    [Fact]
-    public void A_layered_module_keeps_every_file_in_one_of_its_layers()
-    {
-        var layered = Map with { Layered = ["Plugins"] };
-        IReadOnlyList<string> Layered(params (string Path, string Text)[] sources) =>
-            StructureCheck.Check(layered, [.. Unmoved, .. sources]).Select(breach => breach.ToString()).ToList();
-
-        // At any depth of its layers; a module not yet layered may keep a file loose in its folder.
-        Assert.Empty(Layered(
-            ("Plugins/Domain/PluginOffer.cs", "public sealed record PluginOffer(string Id);"),
-            ("Plugins/Application/Hooks/HookSet.cs", "public sealed class HookSet { }"),
-            ("Help/HelpRoom.cs", "class HelpRoom { }")));
-
-        Assert.Equal(
-            [
-                "Plugins/Kit/PluginKit.cs:1 [layer] Plugins is layered: each of its files sits in its Domain, Application or Infrastructure",
-                "Plugins/PluginInstall.cs:1 [layer] Plugins is layered: each of its files sits in its Domain, Application or Infrastructure",
-            ],
-            Layered(("Plugins/PluginInstall.cs", "class PluginInstall { }"), ("Plugins/Kit/PluginKit.cs", "class PluginKit { }")));
-
-        Assert.Equal(
-            ["structure.json:0 [map] Gardens is listed as layered, and is no module of the map"],
-            StructureCheck.Check(Map with { Layered = ["Gardens"] }, Unmoved).Select(breach => breach.ToString()));
-    }
-
-    [Fact]
-    public void A_static_extension_member_is_named_through_its_receiver_and_belongs_to_the_layer_that_declares_it()
-    {
-        (string, string)[] declared =
-        [
-            ("Plugins/Domain/PluginCatalog.cs", "public sealed class PluginCatalog { public static bool IsId(string id) => id.Length > 0; }"),
-            ("Plugins/Application/PluginCatalogReads.cs",
-                "public static class PluginCatalogReads\n{\n    extension(PluginCatalog)\n    {\n"
-                + "        public static PluginCatalog Load(string home, IEnumerable<string>? reserved = null) => Read(home);\n"
-                + "        public static IReadOnlyList<string> Reserved => [];\n    }\n\n"
-                + "    private static PluginCatalog Read(string home) => PluginCatalog.Load(home);\n}"),
-            ("Plugins/Infrastructure/PluginFolders.cs", "public static class PluginFolders { extension(PluginCatalog) { public static string Root(string home) => home; } }"),
-        ];
-
-        // Another module's Application calls an Application's extension, and a Domain's own member is no extension.
-        Assert.Empty(CheckWithUnmoved(
-        [
-            .. declared,
-            ("Trees/Application/Land.cs", "class Land { object Go() => PluginCatalog.Load(\"h\"); bool Id() => PluginCatalog.IsId(\"x\") && PluginCatalog.Reserved.Count > 0; }"),
-            // A member of the same name on another type, and one in a comment, are none.
-            ("Trees/Domain/Words.cs", "class Words { object Go() => Other.Load(\"h\"); /* PluginCatalog.Load */ }"),
-        ]));
-
-        Assert.Equal(
-            [
-                "Plugins/Domain/Words.cs:1 [reach] names PluginCatalog.Reserved, declared in Plugins/Application/PluginCatalogReads.cs: a Domain names nothing of an Application or an Infrastructure",
-                "Trees/Application/Land.cs:2 [reach] names PluginCatalog.Root, declared in Plugins/Infrastructure/PluginFolders.cs: a module reaches another through its Domain and Application, never its Infrastructure",
-            ],
-            CheckWithUnmoved(
-            [
-                .. declared,
-                ("Plugins/Domain/Words.cs", "class Words { int Count() => PluginCatalog.Reserved.Count; }"),
-                ("Trees/Application/Land.cs", "class Land\n{ string Go() => PluginCatalog . Root(\"h\"); }"),
-            ]));
+        // The same I/O is the rest of the module's to do, at its top.
+        Assert.Empty(CheckWithUnmoved(("Accounts/Reading.cs", impure), ("Trees/Read.cs", impure.Replace("Reading", "Read"))));
     }
 
     [Fact]
@@ -280,23 +182,21 @@ public sealed class StructureTests
     }
 
     [Fact]
-    public void The_map_names_the_design_s_fourteen_modules_and_every_layer_it_lets_each_hold()
+    public void The_map_names_the_design_s_fourteen_modules_and_the_one_folder_each_may_hold()
     {
         var map = StructureMap.Read(File.ReadAllText(MapFile()));
 
         Assert.Equal(
             ["Platform", "Accounts", "Agents", "Conversations", "Sessions", "Trees", "Quests", "Review", "Workflows", "Plugins", "Help", "Service", "Setup", "Loop"],
             map.Modules.Keys);
-        Assert.Equal(["Domain", "Infrastructure"], map.Modules["Platform"]);
+        // FLAT1a, D166's note of 2026-10-14: the onion is for a module's model and rules alone, a Domain folder and the rest at its top.
+        Assert.All(map.Modules, module => Assert.True(module.Value.Count == 0 || module.Value.SequenceEqual(["Domain"]), $"{module.Key} holds {string.Join(", ", module.Value)}"));
         Assert.Empty(map.Modules["Loop"]);
-        // STRUCT3h, D166's note: Conversations keeps the onion for its model and rules alone, a Domain folder and the rest at its top.
+        Assert.Empty(map.Modules["Platform"]);
         Assert.Equal(["Domain"], map.Modules["Conversations"]);
-        Assert.All(map.Modules.Where(module => module.Key is not ("Platform" or "Loop" or "Conversations")), module => Assert.Equal(["Domain", "Application", "Infrastructure"], module.Value));
+        Assert.Equal(["Domain"], map.Modules["Review"]);
         Assert.All(map.Split.Keys, file => Assert.True(map.Root.ContainsKey(file), $"{file} is noted for a split but is on no list"));
         Assert.Equal(16, map.Tests.Count(test => test.Value == "Plugins"));
-        Assert.Contains("Plugins", map.Layered);
-        Assert.Contains("Review", map.Layered);
-        Assert.All(map.Layered, module => Assert.Equal(["Domain", "Application", "Infrastructure"], map.Modules[module]));
         Assert.All(map.Tests.Values, module => Assert.True(map.Modules.ContainsKey(module), $"a test is listed under {module}, which is no module of the map"));
     }
 

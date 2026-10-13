@@ -14158,3 +14158,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT6 — assemblies, measured** (after STRUCT3). Build time, merge collisions and what a split would buy; a decision then. Design §4.
 
 **Outcome** 2026-10-14: dropped, unbuilt, under the owner's direction of the day (*"you don't have to 100% follow onion structure since it will be over engineering"*): a module keeps a `Domain/` for its model and rules and the rest flat, so no module is layered further, the layered six are flattened (FLAT1), and the rows that served the layers go with them. Namespaces stay `Daoris.Driver`, the folder being the module; one assembly stays. Detail: D166's note of 2026-10-14.
+
+## FLAT1a — the layer folders flattened, the gate narrowed (2026-10-14, D166)
+
+> - [ ] **FLAT1a — the layer folders flattened, the gate narrowed** (driver, modules). Six modules' 101 `Application/` and `Infrastructure/` files to their module's top, the launcher's csproj paths with them; the gate keeps `top`, `module` (no layer folders), `loop`, `pure` and `mirror`, dropping `layered`, `layer` and `reach`. D166's note of 2026-10-14.
+
+**Outcome** 2026-10-14: the 101 files moved by renames alone, no name colliding; the map gives the ten modules with a `Domain/` `["Domain"]` and the rest `[]`, and `module` now refuses a layer folder; `layer`, `reach` and the extension-member reading went, `loop` needing only the declaration index. The extension blocks, forwards and ports stay for FLAT1b. On Sonnet, scouted: 59 tool calls. Detail: D166's FLAT1a note.

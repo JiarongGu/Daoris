@@ -1,28 +1,20 @@
 {
   "modules": {
-    "Platform": ["Domain", "Infrastructure"],
-    "Accounts": ["Domain", "Application", "Infrastructure"],
-    "Agents": ["Domain", "Application", "Infrastructure"],
+    "Platform": [],
+    "Accounts": ["Domain"],
+    "Agents": [],
     "Conversations": ["Domain"],
-    "Sessions": ["Domain", "Application", "Infrastructure"],
-    "Trees": ["Domain", "Application", "Infrastructure"],
-    "Quests": ["Domain", "Application", "Infrastructure"],
-    "Review": ["Domain", "Application", "Infrastructure"],
-    "Workflows": ["Domain", "Application", "Infrastructure"],
-    "Plugins": ["Domain", "Application", "Infrastructure"],
-    "Help": ["Domain", "Application", "Infrastructure"],
-    "Service": ["Domain", "Application", "Infrastructure"],
-    "Setup": ["Domain", "Application", "Infrastructure"],
+    "Sessions": ["Domain"],
+    "Trees": ["Domain"],
+    "Quests": ["Domain"],
+    "Review": ["Domain"],
+    "Workflows": ["Domain"],
+    "Plugins": ["Domain"],
+    "Help": [],
+    "Service": ["Domain"],
+    "Setup": ["Domain"],
     "Loop": []
   },
-  "layered": [
-    "Plugins",
-    "Quests",
-    "Review",
-    "Service",
-    "Setup",
-    "Workflows"
-  ],
   "root": {
   },
   "split": {
