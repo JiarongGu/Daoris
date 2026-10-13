@@ -15,8 +15,7 @@ namespace Daoris.Driver;
 /// <para><b>A file that does not read is no conversation</b>: the answer falls back to a carry-on, saying Daoris kept no
 /// id (<see cref="ContinueWhy.Unkept"/>), and never throws.</para>
 ///
-/// <para>What is kept is this use case's; the file and its format are Conversations' Infrastructure's (<see cref="GoOnFiles"/>;
-/// STRUCT3h, D166's note).</para>
+/// <para>What is kept is this store's; the file and its format are <see cref="GoOnFiles"/>' (STRUCT3h, D166's note).</para>
 /// </remarks>
 public sealed class HarnessConversations(string home)
 {

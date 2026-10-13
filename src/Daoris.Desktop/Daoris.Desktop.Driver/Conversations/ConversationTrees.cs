@@ -2,8 +2,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What the disk says of the tree a conversation ran in (STRUCT3h, D166's note): whether it still stands, and what git says it
-/// holds uncommitted. Conversations' Infrastructure: the resume's judgement (<see cref="Continuations"/>) takes the first as a
-/// value, and the hand-over's judge and its take ask here from the Application.
+/// holds uncommitted. The resume's judgement (<see cref="Continuations"/>), pure in the Domain, takes the first as a value;
+/// the hand-over's judge and its take ask here.
 /// </summary>
 internal static class ConversationTrees
 {

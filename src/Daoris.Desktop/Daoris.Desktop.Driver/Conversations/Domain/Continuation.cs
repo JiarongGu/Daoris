@@ -164,7 +164,7 @@ public static class Continuations
     /// </param>
     /// <param name="treeStands">
     /// Whether the tree the record ran in is still there, asked only at the tree's step: the disk's answer, handed in, so the
-    /// judgement stays pure (STRUCT3h, D166's note). The Application's <c>Continuations.Judge</c>, without it, asks the disk.
+    /// judgement stays pure (STRUCT3h, D166's note). <c>Continuations.Judge</c> without it (<c>ContinuationJudge</c>) asks the disk.
     /// </param>
     public static ContinueReason? Judge(
         Func<string, bool> treeStands, PriorSession park, string adapter, bool doorResumes, string? profile, HarnessConversation? kept,

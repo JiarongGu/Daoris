@@ -8,8 +8,7 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>This machine's, never the record's.</b> A file that does not read is no ask: nothing is handed over, which loses nothing.</para>
 ///
-/// <para>What is kept is this use case's; the file and its format are Conversations' Infrastructure's (<see cref="HandOverFiles"/>;
-/// STRUCT3h, D166's note).</para>
+/// <para>What is kept is this store's; the file and its format are <see cref="HandOverFiles"/>' (STRUCT3h, D166's note).</para>
 /// </remarks>
 public sealed class HandOverBox(string home)
 {

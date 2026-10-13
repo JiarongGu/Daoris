@@ -289,7 +289,9 @@ public sealed class StructureTests
             map.Modules.Keys);
         Assert.Equal(["Domain", "Infrastructure"], map.Modules["Platform"]);
         Assert.Empty(map.Modules["Loop"]);
-        Assert.All(map.Modules.Where(module => module.Key is not ("Platform" or "Loop")), module => Assert.Equal(["Domain", "Application", "Infrastructure"], module.Value));
+        // STRUCT3h, D166's note: Conversations keeps the onion for its model and rules alone, a Domain folder and the rest at its top.
+        Assert.Equal(["Domain"], map.Modules["Conversations"]);
+        Assert.All(map.Modules.Where(module => module.Key is not ("Platform" or "Loop" or "Conversations")), module => Assert.Equal(["Domain", "Application", "Infrastructure"], module.Value));
         Assert.All(map.Split.Keys, file => Assert.True(map.Root.ContainsKey(file), $"{file} is noted for a split but is on no list"));
         Assert.Equal(16, map.Tests.Count(test => test.Value == "Plugins"));
         Assert.Contains("Plugins", map.Layered);

@@ -10,10 +10,6 @@ namespace Daoris.Driver;
 /// opened a conversation is kept a day under <c>&lt;home&gt;/starts/&lt;id&gt;.json</c>, so the same id answers the original
 /// whatever its words or repository. A start that opened nothing is not kept: a retry tries again.
 /// </summary>
-/// <remarks>
-/// Conversations' Infrastructure (STRUCT3h, D166's note), whole: a store of files under the home that only the chat runner's
-/// <c>StartWithAsync</c> composes, and no other module names.
-/// </remarks>
 public sealed class StartRequests(string home)
 {
     /// <summary>How long a finished start answers its id.</summary>

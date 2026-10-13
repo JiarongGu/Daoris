@@ -11,8 +11,7 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>This machine's, never the record's.</b> A file that does not read is no override: the quest runs on the machine's agent.</para>
 ///
-/// <para>What is kept is this use case's; the files and their format are Conversations' Infrastructure's (<see cref="HandOverFiles"/>;
-/// STRUCT3h, D166's note).</para>
+/// <para>What is kept is this store's; the files and their format are <see cref="HandOverFiles"/>' (STRUCT3h, D166's note).</para>
 /// </remarks>
 public sealed partial class HandedQuests(string home)
 {

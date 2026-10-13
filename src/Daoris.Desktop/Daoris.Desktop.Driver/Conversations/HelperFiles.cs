@@ -8,11 +8,7 @@ namespace Daoris.Driver;
 /// them and written as the service reads them. The file is the contract; the service's <c>HelperBox</c> and this share no code,
 /// and each side's tests hold the same shapes.
 /// </summary>
-/// <remarks>
-/// Conversations' Infrastructure (STRUCT3h, D166's note), whole: the records are the Domain's (<see cref="HelperAsk"/>,
-/// <see cref="HelperState"/>, <see cref="HelperAnswer"/>), and only the loop's helper pass and the terminal's
-/// <see cref="SessionsHelperCommand"/> open the files.
-/// </remarks>
+/// <remarks>The records are the Domain's (<see cref="HelperAsk"/>, <see cref="HelperState"/>, <see cref="HelperAnswer"/>; STRUCT3h).</remarks>
 public sealed class HelperFiles(string home)
 {
     public const string Folder = "helpers";

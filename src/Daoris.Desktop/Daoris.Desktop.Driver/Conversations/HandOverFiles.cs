@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// atomically, as BOM-less UTF-8 with LF.
 /// </summary>
 /// <remarks>
-/// Conversations' Infrastructure (STRUCT3h, D166's note): the use cases decide what is kept and by which name; this reads and writes
+/// STRUCT3h, D166's note: the stores decide what is kept and by which name; this reads and writes
 /// it. A file that does not read is nothing kept; a write that fails throws, as it did.
 /// </remarks>
 internal static class HandOverFiles

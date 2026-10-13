@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// without trusting their shape and written whole, atomically, as BOM-less UTF-8 with LF.
 /// </summary>
 /// <remarks>
-/// Conversations' Infrastructure (STRUCT3h, D166's note): the use cases decide what is kept and whether a failed write is lost; this
+/// STRUCT3h, D166's note: the stores decide what is kept and whether a failed write is lost; this
 /// reads and writes it. A file that does not read is nothing kept; a write that fails throws.
 /// </remarks>
 internal static class GoOnFiles
