@@ -190,8 +190,11 @@ public static class HandedSources
     /// <summary>The checkouts the person declared this repository may read or change.</summary>
     public const string Checkouts = "checkouts";
 
-    /// <summary>The driver's own words, the same for every session of its kind.</summary>
-    public const string Driver = "driver";
+    /// <summary>
+    /// The driver's own words, the same for every session of its kind. Named apart from the <c>Driver</c> class (LOOPOUT1):
+    /// the structure gate reads names, and nothing outside the loop names the loop.
+    /// </summary>
+    public const string DriverWords = "driver";
 
     /// <summary>This machine's permission rules.</summary>
     public const string Permissions = "permissions";

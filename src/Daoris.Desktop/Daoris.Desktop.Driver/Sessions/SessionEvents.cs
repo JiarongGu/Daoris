@@ -757,6 +757,22 @@ public sealed class SessionEvents(string directory)
         }
     }
 
+    /// <summary>
+    /// The turns a session's record says ended — what a refused turn is counted after (D125 §3.6). Unreadable is none. The
+    /// record's, read by a driven start and a conversation alike, so not the loop's (LOOPOUT1).
+    /// </summary>
+    internal long TurnsEnded(string sessionId)
+    {
+        try
+        {
+            return After(sessionId, 0).Events.LongCount(e => e.Kind == SessionEventKind.Turn);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+        {
+            return 0;
+        }
+    }
+
     /// <summary>Each call once, by the title its updates last gave it, at the sequence where it began.</summary>
     private static IEnumerable<(long Seq, string Kind, string Text)> Calls(string path)
     {

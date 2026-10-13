@@ -989,13 +989,13 @@ public sealed partial class ChatRunner : IDisposable
         if (limited is not { } read) return null;
 
         _service.AccountSaid(AccountLine.Limited(
-            sessionId, adapter.Name, profile, read.Seen, Driver.TurnsEnded(_events, sessionId) + 1, used: null));
+            sessionId, adapter.Name, profile, read.Seen, _events.TurnsEnded(sessionId) + 1, used: null));
         return CoolingWords.ConversationOf(read.Entry, _harnesses.Zone);
     }
 
     /// <summary>
     /// A conversation's call the door refused, read for the account's sign-in (SIGNIN1b, D125 ROSTER1b) by the reader a driven
-    /// start's conclusion uses (<see cref="Driver.SignInRefused"/>): where the adapter's table recognises it, the account the
+    /// start's conclusion uses (<see cref="RefusedAccounts.SignInRefused"/>): where the adapter's table recognises it, the account the
     /// conversation runs as reads signed out, kept as a reading is, so the next start walks past it, and the line for its record
     /// comes back. Null is a refusal as today. Read from the door's failure, never from the transcript (AGT3c).
     /// </summary>
@@ -1003,7 +1003,7 @@ public sealed partial class ChatRunner : IDisposable
     {
         try
         {
-            return Driver.SignInRefused(_harnesses, adapter, profile, failure);
+            return RefusedAccounts.SignInRefused(_harnesses, adapter, profile, failure);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {
@@ -1082,7 +1082,7 @@ public sealed partial class ChatRunner : IDisposable
             var protocol = chat is not null ? CaptureProtocolAsync(sessionId, process, transcript, chat, said, keep, watched.Adapter) : null;
             Task capture = protocol
                 ?? (mapper is not null
-                    ? Driver.CaptureStructuredAsync(
+                    ? HarnessCapture.CaptureStructuredAsync(
                         process.StandardOutput, process.StandardError, transcript, sessionId, _output, _events, mapper,
                         prompt: null, CancellationToken.None,
                         // The turn's end, once the record holds it, lets the next message go (CONV4a).
@@ -1099,7 +1099,7 @@ public sealed partial class ChatRunner : IDisposable
                             // 🔴 Its harness opened the conversation its words went to, so they went (MSG1c): off the record by their ids.
                             if (goOn is not null && goOn.Named()) _ = WentOnAsync(sessionId, goOn, watched.Adapter);
                         })
-                    : Driver.CaptureAsync(process, transcript, sessionId, _output, CancellationToken.None));
+                    : HarnessCapture.CaptureAsync(process, transcript, sessionId, _output, CancellationToken.None));
 
             // A conversation going on is working already: the ledger moved it out of its ended state before the spawn.
             if (goOn is null) await _service.AdvanceAsync(sessionId, "working", transcript: transcript).ConfigureAwait(false);
@@ -1175,7 +1175,7 @@ public sealed partial class ChatRunner : IDisposable
         var offered = new List<AcpMcpServer>();
         if (KnowledgeConnector.Offer(
                 Environment.GetEnvironmentVariable(KnowledgeConnector.PathVariable), DaorisHome.Resolve(),
-                AppContext.BaseDirectory, scope: Driver.ConnectorScope(_home, sessionId, null)) is { } connector)
+                AppContext.BaseDirectory, scope: KnowledgeConnector.SessionScope(_home, sessionId, null)) is { } connector)
         {
             offered.Add(connector);
         }
@@ -1219,7 +1219,7 @@ public sealed partial class ChatRunner : IDisposable
 
         void Record(SessionEvent e) => _events.Keep(sessionId, e, Line);
 
-        var errors = Driver.PumpAsync(process.StandardError, file, sessionId, _output, CancellationToken.None);
+        var errors = HarnessCapture.PumpAsync(process.StandardError, file, sessionId, _output, CancellationToken.None);
         var session = new AcpSession(
             process.StandardOutput, process.StandardInput, Line, closeTimeout: null, chat.Posture, chat.Meta, Record,
             streams: _output is null ? null : new SessionStreams(_output, sessionId),
@@ -1234,7 +1234,7 @@ public sealed partial class ChatRunner : IDisposable
         session.OnTaken(words =>
         {
             Line($"— the conversation took what the person added: {words.Text}");
-            Record(Driver.Words(words));
+            Record(ChatMessage.Words(words));
         });
 
         Exception? failed = null;
@@ -1420,7 +1420,7 @@ public sealed partial class ChatRunner : IDisposable
             var words = message with { Id = $"said-{Guid.NewGuid():N}"[..13] };
             if (Told(words) is { } told) _record(told);
             _line($"— the person added, which reaches the conversation at its next step: {words.Text}");
-            _record(Driver.Words(words) with { Reaches = "next-step" });
+            _record(ChatMessage.Words(words) with { Reaches = "next-step" });
             lock (_gate) _onTheirWay.Add(words.Id!);
             return AnsweredAsync(words, session.SayAsync(words, CancellationToken.None));
         }

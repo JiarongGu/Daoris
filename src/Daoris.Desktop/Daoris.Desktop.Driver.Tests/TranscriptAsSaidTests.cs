@@ -50,7 +50,7 @@ public sealed class TranscriptAsSaidTests : IDisposable
         var transcript = Path.Combine(_root, "s1.log");
         var stdout = new Harness();
         var stderr = new Harness();
-        var capture = Daoris.Driver.Driver.CaptureAsync(
+        var capture = HarnessCapture.CaptureAsync(
             stdout, stderr, transcript, "s1", output: null, CancellationToken.None, preamble: "— a fact about this run");
 
         try
@@ -78,7 +78,7 @@ public sealed class TranscriptAsSaidTests : IDisposable
         var transcript = Path.Combine(_root, "s2.log");
         var stdout = new Harness();
         var stderr = new Harness();
-        var capture = Daoris.Driver.Driver.CaptureStructuredAsync(
+        var capture = HarnessCapture.CaptureStructuredAsync(
             stdout, stderr, transcript, "s2", output: null, events: null, new ClaudeStreamJson(), prompt: null,
             CancellationToken.None);
 

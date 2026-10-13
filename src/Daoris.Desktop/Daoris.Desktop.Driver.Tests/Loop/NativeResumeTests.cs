@@ -254,7 +254,7 @@ public sealed class NativeResumeTests
                 """{"type":"result","subtype":"success","is_error":false,"result":"ok"}""",
                 """{"type":"system","subtype":"init","session_id":"0b5e7c1a","cwd":"D:/trees/chat-1","tools":[],"model":"x"}"""));
 
-            await Daoris.Driver.Driver.CaptureStructuredAsync(
+            await HarnessCapture.CaptureStructuredAsync(
                 stdout, new StringReader(""), Path.Combine(folder, "s1.log"), "s1", output: null, events: null,
                 new ClaudeStreamJson(), prompt: null, CancellationToken.None, named: told.Add);
 

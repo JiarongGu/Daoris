@@ -341,7 +341,7 @@ public static class HandOver
 /// </summary>
 public static class HandOverBriefing
 {
-    /// <summary>How much of the request or of the last words is kept, as a parked session's words are (<see cref="Driver.LastWordsLimit"/>).</summary>
+    /// <summary>How much of the request or of the last words is kept, as a parked session's words are (<see cref="SessionLastWords.LastWordsLimit"/>).</summary>
     internal const int WordsLimit = 4000;
 
     /// <summary>The most plan steps or uncommitted paths named: a to-do list, not a log.</summary>
@@ -430,7 +430,7 @@ public static class HandOverTake
 
             var from = prior!.Adapter ?? "its agent";
             var uncommitted = await UncommittedAsync(prior.Tree!, ct).ConfigureAwait(false);
-            var (plan, words) = Driver.CarriedFrom(events, home, id);
+            var (plan, words) = SessionLastWords.CarriedFrom(events, home, id);
             var briefing = HandOverBriefing.Compose(from, id, ask.Why, events.FirstAsked(id), plan, words, uncommitted);
 
             await end(id).ConfigureAwait(false);

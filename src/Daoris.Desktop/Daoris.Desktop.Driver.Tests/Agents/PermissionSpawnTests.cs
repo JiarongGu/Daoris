@@ -241,8 +241,8 @@ public sealed class PermissionSpawnTests : IDisposable
     [Fact]
     public void The_connector_carries_the_session_and_the_rules_home_beside_an_intakes_scope()
     {
-        var quest = Daoris.Driver.Driver.ConnectorScope("C:/somewhere/data", "s1a2b3c4", scope: null);
-        var intake = Daoris.Driver.Driver.ConnectorScope("C:/somewhere/data", "i9n8t7k6", IntakeRoom.Scope("a1b2c3", "i9n8t7k6"));
+        var quest = KnowledgeConnector.SessionScope("C:/somewhere/data", "s1a2b3c4", scope: null);
+        var intake = KnowledgeConnector.SessionScope("C:/somewhere/data", "i9n8t7k6", IntakeRoom.Scope("a1b2c3", "i9n8t7k6"));
 
         Assert.Equal("C:/somewhere/data", quest[KnowledgeConnector.RulesHomeVariable]);
         Assert.Equal("s1a2b3c4", quest[IntakeRoom.SessionVariable]);

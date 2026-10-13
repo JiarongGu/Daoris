@@ -57,7 +57,7 @@ public sealed class NativeStreamsTests : IDisposable
             System("task_notification", new { task_id = "b1", tool_use_id = "toolu_bg", status = "stopped", output_file = file }),
         };
 
-        await Daoris.Driver.Driver.CaptureStructuredAsync(
+        await HarnessCapture.CaptureStructuredAsync(
             new StringReader(string.Join('\n', lines)), new StringReader(""), transcript, "s1", output, events: null,
             new ClaudeStreamJson(), prompt: null, CancellationToken.None);
 
@@ -91,7 +91,7 @@ public sealed class NativeStreamsTests : IDisposable
             System("task_started", new { task_id = "b2", tool_use_id = "toolu_bg2", description = "watcher", task_type = "local_bash" }),
         };
 
-        await Daoris.Driver.Driver.CaptureStructuredAsync(
+        await HarnessCapture.CaptureStructuredAsync(
             new StringReader(string.Join('\n', lines)), new StringReader(""), Path.Combine(_root, "s2.log"), "s2", output,
             events: null, new ClaudeStreamJson(), prompt: null, CancellationToken.None);
 
@@ -112,7 +112,7 @@ public sealed class NativeStreamsTests : IDisposable
             message = new { id = "msg_child", role = "assistant", content = new object[] { new { type = "text", text = "child words" } } },
         });
 
-        await Daoris.Driver.Driver.CaptureStructuredAsync(
+        await HarnessCapture.CaptureStructuredAsync(
             new StringReader(child), new StringReader(""), transcript, "s3", output: null, events: null,
             new ClaudeStreamJson(), prompt: null, CancellationToken.None);
 

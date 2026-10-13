@@ -14083,3 +14083,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT3a — layer the Plugins module** (driver). `Domain`, `Application` and `Infrastructure` with ports, the gate's purity and reach rules holding it, behaviour unchanged; the pattern for the next modules written down. D166; design §3, §6.
 
 **Outcome** 2026-10-14: Plugins is layered (Domain 15 files, Application 18, Infrastructure 6), the hook process behind `IHookChannel`; types whose rules are pure but whose callers also ask them for I/O went to Domain with their I/O as Application extension members, so about 98 outside callers did not change; `CommandPresence` left for Platform; the gate gained the map's `layered` list and its `layer` rule (Workflows added at the merge). Detail: D166's STRUCT3a note, design §3 and §5; STRUCT3PLAT, STRUCTAPP1 and PLUGNAME1 hold what it left.
+
+## LOOPOUT1 — `Loop` keeps no type another module uses (2026-10-14, D166)
+
+> - [ ] **LOOPOUT1 — `Loop` keeps no type another module uses** (driver; before Loop's STRUCT2 row). Placed as mapped, the loop rule would refuse 18 uses of types `Loop`'s files declare (`DriverHttp` 5, `ResumeAsk` 4, `SessionEnded` 3, `Driver` 3, `TickReport`, `StartRun`, `DriverLock`): move each to the module it serves. D166's STRUCT1 note; proof: StructureTests green once `Loop`'s files move.
+
+**Outcome** 2026-10-14: `SessionEnded` and `StartRun` went to Sessions, `TickReport` to Quests, `ResumeAsk` to Conversations, `DriverHttp` and `DriverLock` became Platform's; the statics the loop shared with a conversation moved to the modules whose things they read (Agents' `HarnessCapture`, Accounts' `RefusedAccounts`, Sessions' `SessionLastWords`, `KnowledgeConnector.SessionScope`, `ChatMessage.Words`). PLATEXC1 holds the one dependency left. Detail: D166's LOOPOUT1 note.
+
+## STRUCT2g — `Platform` and `Loop` into their folders (2026-10-14, D166)
+
+> - [ ] **STRUCT2g — `Platform` and `Loop` into their folders** (driver; after 2f and LOOPOUT1). As STRUCT2c; the map's `root` ends empty but for `resources.json`'s neighbours that must stay. D166.
+
+**Outcome** 2026-10-14: Platform (11 files, with `CommandPresence.cs` moved in at the merge) and Loop (11 files) moved by renames alone; the map's `root` and `split` are empty, so every driver file is in its module's folder and STRUCT2 is done; the CLI's name test reads `NoteCodes.cs` under `Platform/`. Detail: D166's STRUCT2g note.

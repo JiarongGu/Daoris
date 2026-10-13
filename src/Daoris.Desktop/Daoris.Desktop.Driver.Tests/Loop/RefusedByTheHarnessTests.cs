@@ -97,7 +97,7 @@ public sealed class RefusedByTheHarnessTests : IDisposable
     private async Task<HarnessEnding> NativeAsync(int exit, string stderr, params string[] stdout)
     {
         var own = new HarnessWords();
-        await Daoris.Driver.Driver.CaptureStructuredAsync(
+        await HarnessCapture.CaptureStructuredAsync(
             new StringReader(string.Join('\n', stdout)), new StringReader(stderr), Transcript, "s1", output: null,
             events: null, new ClaudeStreamJson(), prompt: "test the error path", CancellationToken.None, own: own);
         return Daoris.Driver.Driver.Ending(protocol: false, structured: true, exit, turnFailed: null, own, Transcript);

@@ -99,8 +99,8 @@ public sealed class SessionEventsTests : IDisposable
         var bare = Path.Combine(_directory, "bare1.log");
         File.WriteAllText(bare, "→ Read a file\nShall I go on?\n");
 
-        Assert.Equal("Which report?\n  - **Stops:** kept.\n\nI wait for your answer.", Daoris.Driver.Driver.ParkedWords(events, "park2", transcript));
-        Assert.Equal("Shall I go on?", Daoris.Driver.Driver.ParkedWords(events, "bare1", bare));
+        Assert.Equal("Which report?\n  - **Stops:** kept.\n\nI wait for your answer.", SessionLastWords.ParkedWords(events, "park2", transcript));
+        Assert.Equal("Shall I go on?", SessionLastWords.ParkedWords(events, "bare1", bare));
     }
 
     /// <summary>PARK1: a turn that said nothing after the person's words has no last words, never an older turn's.</summary>
@@ -200,9 +200,9 @@ public sealed class SessionEventsTests : IDisposable
         var events = new SessionEvents(_directory);
         var words = new ChatMessage("the budget is in level.json", []) { Id = "said-1" };
         events.Append("drive1", Asked("You are the engine repository's agent…", origin: "target"));
-        events.Append("drive1", Daoris.Driver.Driver.Words(words) with { Reaches = "next-step" });
+        events.Append("drive1", ChatMessage.Words(words) with { Reaches = "next-step" });
         events.Append("drive1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
-        var taken = events.Append("drive1", Daoris.Driver.Driver.Words(words));
+        var taken = events.Append("drive1", ChatMessage.Words(words));
 
         var lines = File.ReadAllLines(Path.Combine(_directory, "drive1.events.jsonl"));
         Assert.Contains(lines, line => line.Contains("\"origin\":\"person\"") && line.Contains("\"id\":\"said-1\"") && line.Contains("\"reaches\":\"next-step\""));

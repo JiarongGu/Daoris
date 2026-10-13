@@ -142,7 +142,7 @@ public sealed class CarryOnHandedTests : IDisposable
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.Message, Text = "is in." });
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.Plan, Entries = Plan });
 
-        var (plan, words) = Daoris.Driver.Driver.CarriedFrom(events, _home, "s1");
+        var (plan, words) = SessionLastWords.CarriedFrom(events, _home, "s1");
 
         Assert.Equal(Plan, plan);
         Assert.Equal("The column is in.", words);
@@ -155,7 +155,7 @@ public sealed class CarryOnHandedTests : IDisposable
         var events = new SessionEvents(Path.Combine(_home, "sessions"));
         File.WriteAllText(Path.Combine(_home, "sessions", "s1.log"), "→ a tool ran\n    its output\nI changed the column.\n— the driver's line\n");
 
-        var (plan, words) = Daoris.Driver.Driver.CarriedFrom(events, _home, "s1");
+        var (plan, words) = SessionLastWords.CarriedFrom(events, _home, "s1");
 
         Assert.Empty(plan);
         Assert.Equal("I changed the column.", words);
@@ -169,7 +169,7 @@ public sealed class CarryOnHandedTests : IDisposable
     {
         var events = new SessionEvents(Path.Combine(_home, "sessions"));
 
-        var (plan, words) = Daoris.Driver.Driver.CarriedFrom(events, _home, session);
+        var (plan, words) = SessionLastWords.CarriedFrom(events, _home, session);
 
         Assert.Empty(plan);
         Assert.Null(words);
@@ -182,10 +182,10 @@ public sealed class CarryOnHandedTests : IDisposable
         var events = new SessionEvents(Path.Combine(_home, "sessions"));
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.Message, Text = new string('a', 6000) + "the end." });
 
-        var (_, words) = Daoris.Driver.Driver.CarriedFrom(events, _home, "s1");
+        var (_, words) = SessionLastWords.CarriedFrom(events, _home, "s1");
 
         Assert.EndsWith("the end.", words);
-        Assert.True(words!.Length <= Daoris.Driver.Driver.LastWordsLimit + 1);
+        Assert.True(words!.Length <= SessionLastWords.LastWordsLimit + 1);
     }
 
     [Theory]

@@ -29,7 +29,7 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 
 ## `daoris-driver` (the driver's headless host)
 
-Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage `DriverCommand.Usage` in `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverCommand.cs`; handlers below are under `src/Daoris.Desktop/`. A sub-verb names where its word first appears: the handler, the library's command it hands to, or `Program.cs`.
+Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage `DriverCommand.Usage` in `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverCommand.cs`; handlers below are under `src/Daoris.Desktop/`. A sub-verb names where its word first appears: the handler, the library's command it hands to, or `Program.cs`.
 
 | Verb | Routed at | Handled in | Sub-verbs |
 |---|---|---|---|
@@ -52,7 +52,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `update` | `Program.cs:450` | `Daoris.Desktop.Driver/Setup/UpdateCommand.cs:19` UpdateCommand | — |
 | `logs` | `Program.cs:460` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
 | `plugins` | `Program.cs:467` | `Daoris.Desktop.Driver/Plugins/Application/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:443` · new `PluginsCommand.cs:47` · try `PluginsCommand.cs:47` · show `PluginsCommand.cs:49` · activity `PluginsCommand.cs:51` |
-| `drive` | `Program.cs:271` | `Daoris.Desktop.Driver/DriverCommand.cs:193` DriverCommand.Read | — |
+| `drive` | `Program.cs:271` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:193` DriverCommand.Read | — |
 
 ## `daoris-devkit`
 

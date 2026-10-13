@@ -395,12 +395,12 @@ public sealed class AskAndWaitPromptTests
     [Fact]
     public void A_carry_on_after_the_persons_answer_opens_with_the_target_and_then_their_words()
     {
-        var opening = Daoris.Driver.Driver.Opening("the target", "go ahead with the PUT");
+        var opening = HarnessCapture.Opening("the target", "go ahead with the PUT");
 
         Assert.Equal(
             [("user", "target", "the target"), ("user", "person", "go ahead with the PUT")],
             opening.Select(e => (e.Kind, e.Origin, e.Text)));
-        Assert.Equal([("user", "target", "the target")], Daoris.Driver.Driver.Opening("the target", null).Select(e => (e.Kind, e.Origin, e.Text)));
+        Assert.Equal([("user", "target", "the target")], HarnessCapture.Opening("the target", null).Select(e => (e.Kind, e.Origin, e.Text)));
     }
 
     /// <summary>

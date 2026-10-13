@@ -25,12 +25,12 @@ public sealed class HandedRecordTests : IDisposable
     {
         var account = Account();
 
-        var alone = Assert.Single(Daoris.Driver.Driver.Opening("the target", null, account));
+        var alone = Assert.Single(HarnessCapture.Opening("the target", null, account));
         Assert.Same(account, alone.Account);
 
-        var answered = Daoris.Driver.Driver.Opening("the target", "go ahead with the PUT", account);
+        var answered = HarnessCapture.Opening("the target", "go ahead with the PUT", account);
         Assert.Equal([("target", true), ("person", false)], answered.Select(e => (e.Origin!, e.Account is not null)));
-        Assert.Null(Assert.Single(Daoris.Driver.Driver.Opening("the target", null)).Account);
+        Assert.Null(Assert.Single(HarnessCapture.Opening("the target", null)).Account);
     }
 
     /// <summary>The record writes the account with the event and reads it back whole, beside the text.</summary>
@@ -54,7 +54,7 @@ public sealed class HandedRecordTests : IDisposable
         var events = new SessionEvents(Path.Combine(_home, "sessions"));
         var account = Account();
 
-        await Daoris.Driver.Driver.CaptureStructuredAsync(
+        await HarnessCapture.CaptureStructuredAsync(
             new StringReader(""), new StringReader(""), Path.Combine(_home, "s1.log"), "s1", output: null, events,
             new ClaudeStreamJson(), prompt: "take quest #q1", CancellationToken.None, account: account);
 

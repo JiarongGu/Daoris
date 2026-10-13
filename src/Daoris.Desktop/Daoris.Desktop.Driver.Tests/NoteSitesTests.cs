@@ -183,7 +183,7 @@ public sealed class NoteSitesTests
     [Fact]
     public void A_refused_credential_s_line_names_its_owner_as_a_value_and_its_account_only_in_the_English()
     {
-        var named = Daoris.Driver.Driver.RefusedNote("claude-code", "work");
+        var named = RefusedAccounts.RefusedNote("claude-code", "work");
         Line(named,
             "Its provider refused the `claude-code` account `work` (401). Replace the key or sign in again — on Settings, or "
             + "`daoris agent` — and Daoris will start sessions on it again.",
@@ -191,7 +191,7 @@ public sealed class NoteSitesTests
         Assert.Equal("claude-code", Assert.Single(named.Parts[0].Values, value => value.Key == "owner").Value);
         Assert.Single(named.Parts[0].Values);
 
-        Line(Daoris.Driver.Driver.RefusedNote("claude-code", null),
+        Line(RefusedAccounts.RefusedNote("claude-code", null),
             "Its provider refused `claude-code`'s own sign-in (401). Replace the key or sign in again — on Settings, or "
             + "`daoris agent` — and Daoris will start sessions on it again.",
             "account.refused-own");
@@ -201,7 +201,7 @@ public sealed class NoteSitesTests
     [Fact]
     public void A_refused_sign_in_s_line_names_its_owner_as_a_value_and_its_account_only_in_the_English()
     {
-        var named = Daoris.Driver.Driver.SignedOutNote("claude-code", "work");
+        var named = RefusedAccounts.SignedOutNote("claude-code", "work");
         Line(named,
             "The agent refused the `claude-code` account `work` for its sign-in, so it reads signed out and Daoris starts nothing "
             + "more on it until it is signed in: `daoris agent login claude-code --profile work`, or Agents → the agent's page → "
@@ -210,7 +210,7 @@ public sealed class NoteSitesTests
         Assert.Equal("claude-code", Assert.Single(named.Parts[0].Values, value => value.Key == "owner").Value);
         Assert.Single(named.Parts[0].Values);
 
-        Line(Daoris.Driver.Driver.SignedOutNote("claude-code", null),
+        Line(RefusedAccounts.SignedOutNote("claude-code", null),
             "The agent refused `claude-code`'s own sign-in, so Daoris starts nothing more on it until you sign in again at your "
             + "terminal and read it again on the agent's page in Agents.",
             "account.signed-out-own");

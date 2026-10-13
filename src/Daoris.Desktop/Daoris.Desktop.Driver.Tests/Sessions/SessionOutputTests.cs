@@ -368,7 +368,7 @@ public sealed class CaptureTeeTests
         var output = new SessionOutput();
         var file = new StringWriter();
 
-        await Daoris.Driver.Driver.PumpAsync(
+        await HarnessCapture.PumpAsync(
             new StringReader("first\nsecond\n"), file, "s1", output, CancellationToken.None);
 
         Assert.Equal(["first", "second"], output.Tail("s1").Lines.Select(l => l.Text));
@@ -385,7 +385,7 @@ public sealed class CaptureTeeTests
     {
         var file = new StringWriter();
 
-        await Daoris.Driver.Driver.PumpAsync(
+        await HarnessCapture.PumpAsync(
             new StringReader("alone\n"), file, "s1", output: null, CancellationToken.None);
 
         Assert.Contains("alone", file.ToString());

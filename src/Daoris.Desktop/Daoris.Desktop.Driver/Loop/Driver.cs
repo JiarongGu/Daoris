@@ -4,94 +4,6 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A session this driver brought to an end, and whose decision that was (SURF5b).
-/// </summary>
-/// <param name="ByPerson">
-/// 🔴 True when the person asked for this ending — they pressed stop, or they closed the driver.
-/// The one fact that separates an interruption worth making from a toast telling somebody what they
-/// just pressed (design §4), and the driver is the only place that knows it.
-/// </param>
-/// <param name="Quest">The quest it served, for a listener that keys on the ask rather than the session (D64).</param>
-/// <param name="Adapter">The harness it ran on, as the record names it.</param>
-/// <param name="Account">The credential profile it ran as, or null for the harness's own home.</param>
-public sealed record SessionEnded(
-    string Session, string Repository, string State, bool ByPerson, string? Note = null,
-    string? Quest = null, string? Adapter = null, string? Account = null);
-
-/// <summary>What one start came to (DEV3): a quest's session, or an ask's intake.</summary>
-/// <param name="Line">The console line a person reads, which the report carries.</param>
-/// <param name="Opened">Whether a session record was opened for it — what a look counts as progress.</param>
-/// <param name="Ended">What it ended as and whose decision that was, when it ended here; null for a hold, a refusal or a park.</param>
-/// <param name="Held">
-/// The hold's own sentence when it was held before a record opened, which the report carries as the quest's verdict, and a
-/// wait the start is among as its sentence: a quest's and an ask's intake's alike (UX6d1).
-/// </param>
-/// <param name="Cooling">The account's cool-off, when that is what held it (TOOL4d): what the report's waits are gathered from.</param>
-internal sealed record StartRun(string Line, bool Opened, SessionEnded? Ended = null, string? Held = null, CoolingEntry? Cooling = null)
-{
-    /// <summary>The accounts a held start passed because they are not signed in (TOOL6g), or null.</summary>
-    public SignedOutAccounts? SignedOut { get; init; }
-}
-
-/// <param name="Considerations">Every open quest, with its verdict and reason — the plan, printable.</param>
-/// <param name="Events">
-/// What actually happened: sessions that ended since the last look (DEV3), and this look's holds, refusals
-/// and stops.
-/// </param>
-/// <param name="Progressed">
-/// Whether any session was actually OPENED this tick. A planned start that held (dirty tree) or was
-/// refused (raced) is not progress — and treating it as progress is an infinite loop: the same quest
-/// would plan, hold, and plan again forever.
-/// </param>
-/// <param name="Active">
-/// The sessions the snapshot found running. Carried so a watcher can see a state change the driver
-/// did not cause (SURF5b) — a park is the session asking, through its own connector, and this tick's
-/// view is the only place it shows up.
-/// </param>
-/// <param name="Concluded">
-/// What ended since the last look, structurally: a session outlives the look that started it, so its
-/// ending joins the next look's report (DEV3). <paramref name="Events"/> already says so in English and
-/// nothing can parse that — deliberately, since those sentences are written for a person (D24).
-/// </param>
-public sealed record TickReport(
-    IReadOnlyList<Consideration> Considerations,
-    IReadOnlyList<string> Events,
-    bool Progressed,
-    IReadOnlyList<SessionView>? Active = null,
-    IReadOnlyList<SessionEnded>? Concluded = null)
-{
-    public bool PlannedAnything => Considerations.Any(c => c.Verdict == StartVerdict.Start);
-
-    /// <inheritdoc cref="Active"/>
-    public IReadOnlyList<SessionView> Active { get; init; } = Active ?? [];
-
-    /// <inheritdoc cref="Concluded"/>
-    public IReadOnlyList<SessionEnded> Concluded { get; init; } = Concluded ?? [];
-
-    /// <summary>
-    /// The starts this tick held because the harness has not trusted where they would run (D73) — the
-    /// folder, the file that said so, and what was held. <see cref="Events"/> says it for a person;
-    /// this says it for a screen, which offers the person the grant and nothing wider.
-    /// </summary>
-    public IReadOnlyList<TrustHold> Untrusted { get; init; } = [];
-
-    /// <summary>
-    /// The starts this look held because the account each would run on is cooling (TOOL4d, D125 §4), one per account:
-    /// the agent, the account, the first ready time and what was held. <see cref="Events"/> says each hold for a person;
-    /// this says the wait for a screen, which shows those quests as waiting for an account rather than parked, and for
-    /// the attention watch, which says it once. Then the starts held on accounts not signed in with none cooling, one per
-    /// agent with no time (UX6d1): an ask's intake among them, which no consideration carries.
-    /// </summary>
-    public IReadOnlyList<AccountWait> Waits { get; init; } = [];
-
-    /// <summary>
-    /// Each owed landing opinion's gate as this look judged it (XAGENT1g3), oldest first and one per session, for the attention band's
-    /// route to read instead of running a gate per poll. <c>steps</c> opinions are not among them.
-    /// </summary>
-    public IReadOnlyList<OpinionJudged> JudgedOpinions { get; init; } = [];
-}
-
-/// <summary>
 /// The loop D45 exists for: watch → plan → spawn → observe. One tick — a look — fetches a snapshot,
 /// plans it (pure), starts every planned start, and returns once each has opened its record or come to
 /// nothing. The sessions run on beside the looks that follow, and each one's ending joins the next
@@ -1220,7 +1132,7 @@ public sealed partial class Driver(
                 ? null
                 : new RotatedOpening.Carried(
                     prior.Session,
-                    prior.Limit ? TurnsEnded(_events, prior.Session) + 1 : null,
+                    prior.Limit ? _events.TurnsEnded(prior.Session) + 1 : null,
                     prior.Limit ? RotatedOpening.ContextOf(usage, _events, prior.Session) : null));
 
         // The stop made of it before a close cut its conclusion off, told as its run lets go (FLAKE3).
@@ -1239,7 +1151,7 @@ public sealed partial class Driver(
             // What the cut-off session left in Daoris's own record (TOOL4f, D125 §3.5): its last plan and its last words,
             // which every carry-on is handed, since a cut-off for any reason loses the same thread. And whether it ran on
             // another account that is now cooling, which only a limit makes so.
-            var (lastPlan, lastWords) = prior is null ? ([], null) : CarriedFrom(_events, home, prior.Session);
+            var (lastPlan, lastWords) = prior is null ? ([], null) : SessionLastWords.CarriedFrom(_events, home, prior.Session);
             var elsewhere = prior is not null && OnAnotherAccount(prior, selection.Profile);
             // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is;
             // their standing answer for its repository (KNOWUSE1b), and the work's session language (LANG1c), from this
@@ -1373,7 +1285,7 @@ public sealed partial class Driver(
                                 // Whose take it was, and what it last said (STANDDOWN2): a session
                                 // holding the quest it took and stopping is waiting on the person.
                                 took: status == "Taken" && await service.TookAsync(sessionId, ct).ConfigureAwait(false),
-                                lastWords: ParkedWords(_events, sessionId, transcript))
+                                lastWords: SessionLastWords.ParkedWords(_events, sessionId, transcript))
                             : SessionConclusion.Of("failed", Observation.TimedOut(config.TimeoutMinutes));
 
                     conclusion = AccountRefused(conclusion, adapter, selection, ended);
@@ -1698,7 +1610,7 @@ public sealed partial class Driver(
         if (limited is not { } read) return (conclusion, false);
 
         var (entry, seen) = read;
-        service.AccountSaid(AccountLine.Limited(sessionId, adapter.Name, selection.Profile, seen, TurnsEnded(_events, sessionId) + 1, used?.Used));
+        service.AccountSaid(AccountLine.Limited(sessionId, adapter.Name, selection.Profile, seen, _events.TurnsEnded(sessionId) + 1, used?.Used));
         return (conclusion.Unsaid(turnFailed).Then(" ", CoolingWords.NoteOf(entry, _harnesses.Zone)), true);
     }
 
@@ -1717,19 +1629,6 @@ public sealed partial class Driver(
             // Nothing kept is nothing said: the walk reads the account as unknown, as it did before the door spoke.
         }
     };
-
-    /// <summary>The turns a session's record says ended — what a refused turn is counted after (D125 §3.6). Unreadable is none.</summary>
-    internal static long TurnsEnded(SessionEvents events, string sessionId)
-    {
-        try
-        {
-            return events.After(sessionId, 0).Events.LongCount(e => e.Kind == SessionEventKind.Turn);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
-        {
-            return 0;
-        }
-    }
 
     /// <summary>
     /// 🔴 A credential its provider refused is read from what the harness itself said of its ending (AGT3b, AGT3c), and the
@@ -1757,10 +1656,10 @@ public sealed partial class Driver(
         // The hold a later start says names the account by the person's name, read now (ACCT2b); the note, which travels and
         // whose cleaner knows only the record's own id, keeps the id.
         var named = selection.Profile is { } profile ? AccountNames.Said(AccountNames.Of(_harnesses.Home, owner), profile) : null;
-        var hold = RefusedHold(owner, selection.Profile, named);
+        var hold = RefusedAccounts.RefusedHold(owner, selection.Profile, named);
         _harnesses.Refuse(adapter.Name, selection.Profile, hold.Note, hold);
         _harnesses.SignedOut(adapter.Name, selection.Profile);
-        return conclusion.Then(" ", RefusedNote(owner, selection.Profile));
+        return conclusion.Then(" ", RefusedAccounts.RefusedNote(owner, selection.Profile));
     }
 
     /// <summary>
@@ -1779,59 +1678,9 @@ public sealed partial class Driver(
     /// <param name="turnFailed">What the protocol door said refusing the call (ACPEND1), or null.</param>
     internal SessionConclusion AccountSignedOut(
         SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed) =>
-        conclusion.State == "failed" && SignInRefused(_harnesses, adapter, selection.Profile, turnFailed) is { } line
+        conclusion.State == "failed" && RefusedAccounts.SignInRefused(_harnesses, adapter, selection.Profile, turnFailed) is { } line
             ? conclusion.Then(" ", line)
             : conclusion;
-
-    /// <summary>
-    /// The one reading of a door's failure for a refused sign-in (ROSTER1b), a driven start's conclusion's and a conversation's
-    /// refused turn's (SIGNIN1b): where the adapter's table recognises <paramref name="failure"/>, the account reads signed out,
-    /// the tool's own sign-in is held until a person looks again, and the line for the record comes back. Null where the table
-    /// does not recognise it, and nothing is written.
-    /// </summary>
-    /// <param name="failure">What the door said refusing the call (ACPEND1), never the transcript (AGT3c).</param>
-    internal static Noted? SignInRefused(HarnessRoster harnesses, ISessionAdapter adapter, string? profile, string? failure)
-    {
-        if (failure is not { Length: > 0 } || adapter.Toolchain is not { } toolchain
-            || !SignInRefusals.Read(harnesses.SignInOf(adapter.Name), failure))
-        {
-            return null;
-        }
-
-        var owner = toolchain.Owner(adapter.Name);
-        harnesses.SignedOut(adapter.Name, profile);
-        if (profile is null)
-        {
-            var hold = SignedOutHold(owner);
-            harnesses.Refuse(adapter.Name, null, hold.Note, hold);
-        }
-
-        return SignedOutNote(owner, profile);
-    }
-
-    /// <summary>
-    /// What a refused sign-in says (ROSTER1b): the account by its owner and name with its sign-in, both doors named (TOOL6g's
-    /// words, D50), or the tool's own sign-in, which the person signs in to at their own terminal. The command's id is spelled for
-    /// any shell (ACCTQUOTE1b).
-    /// </summary>
-    private static string SignedOutReason(string owner, string? profile) => profile is { } named
-        ? $"the agent refused the `{owner}` account `{named}` for its sign-in, so it reads signed out and Daoris starts nothing "
-          + $"more on it until it is signed in: `daoris agent login {owner} --profile {ShellWord.Of(named, ShellWord.Account)}`, "
-          + "or Agents → the agent's page → Accounts."
-        : $"the agent refused `{owner}`'s own sign-in, so Daoris starts nothing more on it until you sign in again at your "
-          + "terminal and read it again on the agent's page in Agents.";
-
-    /// <summary>
-    /// The refused sign-in's line on a record (ROSTER1b): the English names the account, which the cleaner cuts where the note
-    /// travels; the values carry only its owner, never its name, as AGT3b's line does.
-    /// </summary>
-    internal static Noted SignedOutNote(string owner, string? profile)
-    {
-        var reason = SignedOutReason(owner, profile);
-        return Noted.Of(
-            profile is null ? NoteCodes.AccountSignedOutOwn : NoteCodes.AccountSignedOut,
-            $"{char.ToUpperInvariant(reason[0])}{reason[1..]}", ("owner", owner));
-    }
 
     /// <summary>
     /// What a start's landing is named for, as its session is told it (WSR5, LAND2c): a chain's step lands on its chain's branch,
@@ -1920,38 +1769,6 @@ public sealed partial class Driver(
 
         // Why the answer did not go on in its own conversation (ANSWER1a, D131 §2).
         return fellBack is null ? carried : carried.Then(" ", Continuations.CarriedOn(fellBack, resumes.Adapter));
-    }
-
-    /// <summary>What a refused credential says (AGT3b): the account by its owner and name, or the tool's own sign-in.</summary>
-    private static string RefusedReason(string owner, string? profile)
-    {
-        var account = profile is { } named ? $"the `{owner}` account `{named}`" : $"`{owner}`'s own sign-in";
-        return $"its provider refused {account} (401). Replace the key or sign in again — "
-            + $"on Settings, or `daoris agent` — and Daoris will start sessions on it again.";
-    }
-
-    /// <summary>
-    /// What a later start held on a refused credential says (AGT3b, ROSTERREFUSE2), by code beside its English: the account by its
-    /// owner and id, never the name <paramref name="named"/> the English says, which the page words.
-    /// </summary>
-    internal static Noted RefusedHold(string owner, string? profile, string? named) => profile is { } account
-        ? Noted.Of(NoteCodes.HeldRefusedAccount, $"an earlier session found that {RefusedReason(owner, named)}", ("owner", owner), ("account", account))
-        : Noted.Of(NoteCodes.HeldRefusedOwn, $"an earlier session found that {RefusedReason(owner, named)}", ("owner", owner));
-
-    /// <summary>What a later start held on the tool's own sign-in, refused (ROSTER1b), says by code beside its English.</summary>
-    internal static Noted SignedOutHold(string owner) =>
-        Noted.Of(NoteCodes.HeldSignInRefusedOwn, $"an earlier session found that {SignedOutReason(owner, null)}", ("owner", owner));
-
-    /// <summary>
-    /// The refused credential's line on a record (LANG1a, the language design §4 rows 23–24): the English names the account,
-    /// which the cleaner cuts where the note travels; the values carry only its owner, never its name.
-    /// </summary>
-    internal static Noted RefusedNote(string owner, string? profile)
-    {
-        var reason = RefusedReason(owner, profile);
-        return Noted.Of(
-            profile is null ? NoteCodes.AccountRefusedOwn : NoteCodes.AccountRefused,
-            $"{char.ToUpperInvariant(reason[0])}{reason[1..]}", ("owner", owner));
     }
 
     /// <summary>
@@ -2083,7 +1900,7 @@ public sealed partial class Driver(
             held.OnSaid((message, _) =>
             {
                 output?.Append(sessionId, $"— the person added, which reaches the session when its turn ends: {message.Text}");
-                _events.Keep(sessionId, Words(message) with { Reaches = "turn-end" }, say: null);
+                _events.Keep(sessionId, ChatMessage.Words(message) with { Reaches = "turn-end" }, say: null);
             });
             held.Attach(interrupt: null);
         }
@@ -2226,7 +2043,7 @@ public sealed partial class Driver(
     /// </remarks>
     private Task CaptureAsync(
         Process process, string transcript, string sessionId, CancellationToken ct, string? preamble = null) =>
-        CaptureAsync(process, transcript, sessionId, output, ct, preamble);
+        HarnessCapture.CaptureAsync(process, transcript, sessionId, output, ct, preamble);
 
     /// <summary>
     /// The structured capture for a pipe-door harness whose adapter reads its stdout (CONV3), or null
@@ -2241,7 +2058,7 @@ public sealed partial class Driver(
         CancellationToken ct, string? preamble = null, string? personSaid = null, Action<JsonElement>? said = null,
         string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null, HarnessWords? own = null) =>
         adapter.StructuredOutput() is { } mapper
-            ? KeepingAsync(mapper, CaptureStructuredAsync(
+            ? KeepingAsync(mapper, HarnessCapture.CaptureStructuredAsync(
                 process.StandardOutput, process.StandardError, transcript, sessionId, output, _events, mapper,
                 resume is null ? prompt : null, ct, preamble, personSaid: personSaid,
                 opened: resume?.Opening(), append: resume is not null, said: said, account: account, own: own), sessionId, keepAs, resume)
@@ -2263,37 +2080,6 @@ public sealed partial class Driver(
 
         return usage;
     }
-
-    /// <summary>
-    /// A session's opening in its record: the target the driver composed, with the composer's account of it beside it
-    /// (CONTEXT1), then — for a carry-on the person answered (STANDDOWN2) — their answer, as theirs.
-    /// </summary>
-    /// <remarks>
-    /// 🔴 An answer to a parked session was nowhere on the page after it was sent. The words travelled only inside the target, which the conversation folds, so the one thing the person
-    /// said was nowhere they would look.
-    /// </remarks>
-    /// <param name="account">What the target was composed of, kept on its event; null where none was composed here.</param>
-    internal static IReadOnlyList<SessionEvent> Opening(string prompt, string? personSaid, InstructionAccount? account = null) =>
-        personSaid is { Length: > 0 } said
-            ?
-            [
-                new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt, Account = account },
-                new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = said },
-            ]
-            : [new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt, Account = account }];
-
-    /// <summary>
-    /// What the person told a driven session, as its record keeps it (SESS3, STEER1): theirs, under the id that pairs the
-    /// words shown while they wait with the same words where the session took them, and the names of what they attached.
-    /// </summary>
-    internal static SessionEvent Words(ChatMessage message) => new()
-    {
-        Kind = SessionEventKind.User,
-        Origin = "person",
-        Id = message.Id,
-        Text = message.Text,
-        Files = message.Files.Count > 0 ? [.. message.Files.Select(kept => kept.Name)] : null,
-    };
 
     /// <summary>
     /// What a session with no connector is told on its transcript: what it can and cannot do, and the two commands that
@@ -2368,7 +2154,7 @@ public sealed partial class Driver(
             Event(new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts.Count > 0 ? noted.Parts : null });
         }
 
-        var errors = PumpAsync(process.StandardError, file, sessionId, output, ct);
+        var errors = HarnessCapture.PumpAsync(process.StandardError, file, sessionId, output, ct);
 
         try
         {
@@ -2385,7 +2171,7 @@ public sealed partial class Driver(
             }
             else
             {
-                foreach (var opening in Opening(prompt, personSaid, account)) Event(opening);
+                foreach (var opening in HarnessCapture.Opening(prompt, personSaid, account)) Event(opening);
             }
 
             // What this harness is doing that daoris has not been able to govern (ACP3). On the
@@ -2425,7 +2211,7 @@ public sealed partial class Driver(
                 Line(reach == DrivenReach.NextStep
                     ? $"— the person added, which reaches the session at its next step: {message.Text}"
                     : $"— the person added, which reaches the session when its turn ends: {message.Text}");
-                Event(Words(message) with { Reaches = reach == DrivenReach.NextStep ? "next-step" : "turn-end" });
+                Event(ChatMessage.Words(message) with { Reaches = reach == DrivenReach.NextStep ? "next-step" : "turn-end" });
             });
             var outcome = await session
                 .RunAsync(
@@ -2435,7 +2221,7 @@ public sealed partial class Driver(
                     asked: message =>
                     {
                         Line($"— the session took what the person added: {message.Text}");
-                        Event(Words(message));
+                        Event(ChatMessage.Words(message));
                     },
                     resume: resume?.Conversation,
                     // Each of the person's words its own block (MSG1b, D137 §2.2), and taken once the prompt is on the wire.
@@ -2503,36 +2289,7 @@ public sealed partial class Driver(
             Environment.GetEnvironmentVariable(KnowledgeConnector.PathVariable),
             DaorisHome.Resolve(),
             AppContext.BaseDirectory,
-            scope: ConnectorScope(home, sessionId, scope));
-
-    /// <summary>
-    /// What a connector carries beyond the store (PERM2): the session, so a rule proposal says who made
-    /// it, and this driver's home, so it lands beside the rules it would change — which is the folder
-    /// `driver.json` sits in and need not be the account's home. An intake's ask rides too (D65 §1b).
-    /// </summary>
-    internal static IReadOnlyDictionary<string, string> ConnectorScope(
-        string home, string sessionId, IReadOnlyDictionary<string, string>? scope)
-    {
-        var carried = new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            [KnowledgeConnector.RulesHomeVariable] = home,
-            [IntakeRoom.SessionVariable] = sessionId,
-        };
-        foreach (var (name, value) in scope ?? new Dictionary<string, string>()) carried[name] = value;
-        return carried;
-    }
-
-    /// <summary>
-    /// What a carry-on is handed of the session it carries on (TOOL4f, D125 §3.5), from Daoris's own record of it (D76):
-    /// its plan as the record last kept it, and its last words, bounded as a parked session's are. Never a path: a
-    /// machine path lands in whatever a session commits.
-    /// </summary>
-    internal static (IReadOnlyList<PlanEntry> Plan, string? Words) CarriedFrom(SessionEvents events, string home, string session)
-    {
-        // An id that is not one names no record, and never a path under the home.
-        if (!SessionEvents.IsId(session)) return ([], null);
-        return (events.LastPlan(session), ParkedWords(events, session, Path.Combine(home, "sessions", $"{session}.log")));
-    }
+            scope: KnowledgeConnector.SessionScope(home, sessionId, scope));
 
     /// <summary>
     /// A quest's target with the person's words on the ask it was asked by (DRIFT1b, D133 §2), read from the ask for this
@@ -2580,229 +2337,4 @@ public sealed partial class Driver(
         : carried.Limit && OnAnotherAccount(carried, profile)
             ? new ContinuedFrom(carried.Session, HandOverWhy.Limit, HandOverBy.Daoris)
         : null;
-
-    /// <summary>How much of a parked session's words its card keeps, from the end, where a question list sits (FG5).</summary>
-    internal const int LastWordsLimit = 4000;
-
-    /// <summary>
-    /// What a parked session said to the person (PARK1): its record's last message whole, and the
-    /// transcript's last plain lines only where the record holds none. The record keeps the message as
-    /// written; the transcript's reading stops at an indented line, which a question's own list has.
-    /// </summary>
-    internal static string? ParkedWords(SessionEvents events, string sessionId, string transcript)
-    {
-        if (events.LastSaid(sessionId) is not { } said) return LastWords(transcript);
-        return said.Length <= LastWordsLimit ? said : "…" + said[^LastWordsLimit..].TrimStart();
-    }
-
-    /// <summary>
-    /// The agent's own last words in a finished transcript (STANDDOWN2): its final block of plain lines,
-    /// after its last tool and before the driver's closing line — what a session that parks to ask the
-    /// person said to them. Kept to its END, where a question list sits, and null when there is none.
-    /// </summary>
-    /// <remarks>
-    /// Four thousand characters, not seven hundred (FG5): a parked session's message is the person's
-    /// whole brief, and the apply session's was 2,500 long — cut to its end, the card kept the command
-    /// and lost the question.
-    /// </remarks>
-    internal static string? LastWords(string transcript, int limit = LastWordsLimit)
-    {
-        IReadOnlyList<string> lines;
-        try
-        {
-            lines = [.. File.ReadLines(transcript).TakeLast(200)];
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return null;
-        }
-
-        static bool Plain(string line) =>
-            line.Length == 0 || !(line.StartsWith('→') || line.StartsWith(' ') || line.StartsWith('—')
-                                  || line.StartsWith('[') || line.StartsWith('·'));
-
-        var block = new List<string>();
-        for (var at = lines.Count - 1; at >= 0; at--)
-        {
-            var line = lines[at];
-            if (Plain(line))
-            {
-                block.Add(line);
-            }
-            else if (block.Any(said => said.Trim().Length > 0))
-            {
-                break;
-            }
-        }
-
-        block.Reverse();
-        var words = string.Join("\n", block).Trim();
-        if (words.Length == 0) return null;
-        return words.Length <= limit ? words : "…" + words[^limit..].TrimStart();
-    }
-
-    /// <summary>
-    /// The same capture for a session this class did not spawn — a chat (D49 §3), whose process
-    /// belongs to <see cref="ChatRunner"/>. Shared rather than copied: one pump, one tee, one set of
-    /// rules about which destination is the durable one.
-    /// </summary>
-    /// <param name="preamble">
-    /// A fact about how this run was set up, written ahead of anything the process says — the pipe
-    /// door's form of the protocol door's first transcript lines.
-    /// </param>
-    internal static Task CaptureAsync(
-        Process process, string transcript, string sessionId, SessionOutput? output, CancellationToken ct,
-        string? preamble = null) =>
-        CaptureAsync(process.StandardOutput, process.StandardError, transcript, sessionId, output, ct, preamble);
-
-    /// <summary>
-    /// The pipe door's capture over the two streams themselves, so it is testable without a process: what a harness says
-    /// on either reaches the transcript and the console.
-    /// </summary>
-    internal static async Task CaptureAsync(
-        TextReader stdout, TextReader stderr, string transcript, string sessionId, SessionOutput? output,
-        CancellationToken ct, string? preamble = null)
-    {
-        await using var file = TranscriptFile.Open(transcript, append: false);
-        if (preamble is { Length: > 0 })
-        {
-            lock (file) file.WriteLine(preamble);
-            output?.Append(sessionId, preamble);
-        }
-
-        var said = PumpAsync(stdout, file, sessionId, output, ct);
-        var errors = PumpAsync(stderr, file, sessionId, output, ct);
-        await Task.WhenAll(said, errors).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// The native door's capture when its harness speaks a structured stdout (D76, CONV3): each line
-    /// read by the adapter's own mapper, what it renders reaching the transcript and the console, what
-    /// it means reaching the record — the protocol door's split, on the pipe.
-    /// </summary>
-    /// <remarks>
-    /// <para><b>The transcript stays text a person reads</b>, exactly as the protocol door's does: the
-    /// rendered lines, never the JSON — and a failure's words among them, for the person.</para>
-    ///
-    /// <para><b>What the harness says in its own words is kept apart</b> (AGT3c, <paramref name="own"/>): its stderr, the lines it
-    /// prints outside its protocol and its failed turn's words, which no agent writes. A refused credential is read from those,
-    /// never from the transcript, whose last lines may be the agent quoting one.</para>
-    ///
-    /// <para><b>A record that cannot be written costs a console line, never the session</b>: the
-    /// conversation enriches the run, it does not run it.</para>
-    /// </remarks>
-    /// <param name="prompt">What was asked, for the record's opening line — the composed target of a
-    /// driven session. Null for a conversation, whose messages are recorded as the person sends them.</param>
-    /// <param name="observed">
-    /// Told each event once the record holds it — how a conversation learns its turn ended (CONV4a).
-    /// After the record, never before: its next message must land behind the ending it waited for.
-    /// </param>
-    /// <returns>The context high-water mark the harness reported, or null when it reported none.</returns>
-    /// <param name="said">Told what a line says about the account's windows (TOOL6c), apart from the agent's words.</param>
-    /// <param name="opened">
-    /// The record's opening where it is not a prompt's (ANSWER1a): a resumed run's first line and the person's answer.
-    /// </param>
-    /// <param name="append">The transcript goes on rather than starting again: a resumed run's record is the one that parked.</param>
-    /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event; null where none was.</param>
-    /// <param name="own">Where the harness's own words are kept for its run's ending (AGT3c), begun again here; null keeps none.</param>
-    internal static async Task<AcpUsage?> CaptureStructuredAsync(
-        TextReader stdout, TextReader stderr, string transcript, string sessionId, SessionOutput? output,
-        SessionEvents? events, IStreamMapper mapper, string? prompt, CancellationToken ct, string? preamble = null,
-        Action<SessionEvent>? observed = null, string? personSaid = null,
-        IReadOnlyList<SessionEvent>? opened = null, bool append = false, Action<JsonElement>? said = null,
-        Action<string>? named = null, InstructionAccount? account = null, HarnessWords? own = null)
-    {
-        own?.Begin();
-        await using var file = TranscriptFile.Open(transcript, append);
-        // Told once, the moment the harness names its conversation (MSG1c): a conversation that lives for hours keeps it
-        // before it ends, as the protocol door keeps `session/new`'s id.
-        var told = false;
-
-        void Line(string text)
-        {
-            lock (file) file.WriteLine(text);
-            output?.Append(sessionId, text);
-        }
-
-        void Event(SessionEvent e) => events?.Keep(sessionId, e, Line);
-
-        if (preamble is { Length: > 0 }) Line(preamble);
-        foreach (var opening in opened ?? (prompt is null ? [] : Opening(prompt, personSaid, account)))
-        {
-            // The driver's own first line is the transcript's too; the person's answer is the conversation's alone.
-            if (opening.Kind == SessionEventKind.Note && opening.Text is { } note) Line(note);
-            Event(opening);
-        }
-
-        var errors = PumpAsync(stderr, file, sessionId, output, ct, also: own is null ? null : own.Said);
-        // What it runs beside itself, each its own console stream (CONSOLE3c), kept wherever the
-        // session's own console is; a line that is a stream's never reaches the session's reader.
-        var beside = output is null ? null : mapper.Beside(new SessionStreams(output, sessionId), Line);
-        while (await stdout.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
-        {
-            if (beside?.Take(line) == true) continue;
-            var mapped = mapper.Read(line);
-            if (own is not null)
-            {
-                if (mapped.Outside) own.Said(line);
-                if (mapped.Failed is { } failure) own.Failed(failure);
-            }
-
-            if (named is not null && !told && mapper.Conversation is { } conversation)
-            {
-                told = true;
-                try
-                {
-                    named(conversation);
-                }
-                catch (Exception error) when (error is not OperationCanceledException)
-                {
-                    // Keeping the id enriches the session; losing it costs a resume, never the run.
-                    Line($"[the session's conversation id could not be kept: {error.Message}]");
-                }
-            }
-
-            foreach (var text in mapped.Lines) Line(text);
-            foreach (var e in mapped.Events)
-            {
-                Event(e);
-                observed?.Invoke(e);
-            }
-
-            if (mapped.Limits is { } limits && said is not null)
-            {
-                try
-                {
-                    said(limits);
-                }
-                catch (Exception error) when (error is not OperationCanceledException)
-                {
-                    // What a session says of its account's windows enriches the walk; losing it costs a line, never the session.
-                    Line($"[what the session said about its account's windows could not be kept: {error.Message}]");
-                }
-            }
-        }
-
-        // Said while the transcript is still open: what it left running ended with it.
-        if (beside is not null) await beside.EndAllAsync().ConfigureAwait(false);
-        await errors.ConfigureAwait(false);
-        return mapper.Usage;
-    }
-
-    /// <summary>
-    /// One stream into the transcript and the console. Internal rather than local so the tee itself is
-    /// testable without a process: the property worth holding is that a line reaches BOTH.
-    /// </summary>
-    /// <param name="also">Told each line too, after both: the native door's stderr is its harness's own words (AGT3c).</param>
-    internal static async Task PumpAsync(
-        TextReader reader, TextWriter file, string sessionId, SessionOutput? output, CancellationToken ct,
-        Action<string>? also = null)
-    {
-        while (await reader.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
-        {
-            lock (file) file.WriteLine(line);
-            output?.Append(sessionId, line);
-            also?.Invoke(line);
-        }
-    }
 }
