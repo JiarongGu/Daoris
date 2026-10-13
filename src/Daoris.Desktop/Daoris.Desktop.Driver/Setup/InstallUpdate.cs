@@ -1,3 +1,7 @@
+using System.Globalization;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -13,8 +17,8 @@ namespace Daoris.Driver;
 /// plugins and syncs; <see cref="Drained"/> is the config it plans with, and <see cref="HeldFor"/> says the hold in its own
 /// words where the person's hold would otherwise be named.</para>
 ///
-/// <para><b>Its rules are pure</b> (STRUCT3e): the request's file is read, written and cleared, and an install found beside a
-/// home, by <see cref="InstallUpdateFile"/>, declared as this type's own static members, so every caller keeps its call.</para>
+/// <para><b>One type</b> (FLAT1b-iii-a): the rules, the request's file read, written and cleared, and an install found beside a
+/// home are its own members.</para>
 /// </remarks>
 public static class InstallUpdate
 {
@@ -68,4 +72,56 @@ public static class InstallUpdate
 
     /// <summary>Whether the work allows the update (D139 §2): no driven session running and no conversation's turn in flight.</summary>
     public static bool Idle(int driven, int turns) => driven <= 0 && turns <= 0;
+
+    /// <summary>The request, or null when there is none or it does not read: the default then holds. The launcher's reader.</summary>
+    public static UpdateRequest? Read(string home) => UpdateRequests.Read(home);
+
+    /// <summary>Write the request, atomically, LF; refused for a mode this build does not know.</summary>
+    /// <exception cref="ArgumentException">A mode that is not one of <see cref="UpdateMode.All"/>.</exception>
+    public static void Write(string home, UpdateRequest request)
+    {
+        if (!UpdateMode.All.Contains(request.Mode, StringComparer.Ordinal))
+        {
+            throw new ArgumentException($"`{request.Mode}` is not an update mode: one of {string.Join(", ", UpdateMode.All)}.");
+        }
+
+        var root = new JsonObject
+        {
+            ["mode"] = request.Mode,
+            ["build"] = request.Build,
+            ["at"] = (request.At ?? DateTimeOffset.UtcNow).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture),
+        };
+        Directory.CreateDirectory(home);
+        AtomicFile.WriteText(PathOf(home), root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n");
+    }
+
+    /// <summary>The request said and done with: removed as the application closes for the update, so it never outlives its build.</summary>
+    public static void Clear(string home)
+    {
+        try
+        {
+            File.Delete(PathOf(home));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // A request naming an installed build holds for no later one (ModeFor), so a leftover changes nothing.
+        }
+    }
+
+    /// <summary>
+    /// The install a home belongs to (D63): the folder above it when that is a marked install and the home is its
+    /// <c>data</c> — or null, for a home named for itself (a gate's, a terminal's), which a terminal points at with <c>--install</c>.
+    /// </summary>
+    public static string? InstallOf(string home)
+    {
+        var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(home));
+        return string.Equals(Path.GetFileName(full), "data", StringComparison.OrdinalIgnoreCase)
+               && Path.GetDirectoryName(full) is { } parent
+               && File.Exists(Path.Combine(parent, StagedBuild.Marker))
+            ? parent
+            : null;
+    }
+
+    /// <summary>The install a terminal names (<c>--install &lt;folder&gt;</c>), as a full path: read against the working folder.</summary>
+    public static string InstallAt(string folder) => Path.GetFullPath(folder);
 }

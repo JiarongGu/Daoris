@@ -43,9 +43,8 @@ public sealed record RemoteTarget(string Url, string Key)
         string.IsNullOrWhiteSpace(name) ? DefaultWorkspace : name.Trim();
 
     /// <summary>
-    /// The environment's answer, where it gives one: the first half of the judgement <c>Load</c> makes over its surroundings
-    /// (STRUCT3d: the rule here, the file's read in Service's Application). Null where the environment says nothing, and
-    /// the file decides.
+    /// The environment's answer, where it gives one: the first half of the judgement <c>Load</c> makes over its surroundings.
+    /// Null where the environment says nothing, and the file decides.
     /// </summary>
     /// <remarks>
     /// Either environment variable present means the environment IS the answer — for the WHOLE
@@ -130,6 +129,45 @@ public sealed record RemoteTarget(string Url, string Key)
     /// short key is worse than printing it, because it reads as safe.
     /// </summary>
     public static string Redact(string key) => key.Length > 11 ? key[..11] + "…" : "…";
+
+    /// <summary>
+    /// The map's conventional home, beside the driver's own config under the Daoris home (D63) — and
+    /// null where there is none: a machine with no home has no remotes, the documented default anyway.
+    /// </summary>
+    public static string? DefaultPath => DaorisHome.File(Environment.GetEnvironmentVariable, FileName);
+
+    /// <summary>The file every door reads and writes — the override, or the conventional home, as the driver's and the harnesses' are.</summary>
+    public static string? ResolvePath() => Environment.GetEnvironmentVariable(PathVariable) ?? DefaultPath;
+
+    /// <summary>This machine's remotes, by workspace. Absence is the default and it is silent (D21).</summary>
+    public static IReadOnlyDictionary<string, RemoteTarget> Load() => Load(Environment.GetEnvironmentVariable, ResolvePath());
+
+    /// <summary>
+    /// The testable shape: the same judgement over injected surroundings. The environment's answer, where it gives one
+    /// (<see cref="FromEnvironment"/>), else the file's (<see cref="Parse"/>).
+    /// </summary>
+    public static IReadOnlyDictionary<string, RemoteTarget> Load(Func<string, string?> environment, string? path) =>
+        FromEnvironment(environment) ?? Parse(File.Exists(path) ? File.ReadAllText(path) : null);
+
+    /// <summary>
+    /// The map as it sits on disk, whatever the environment currently says — what an EDITOR reads.
+    /// </summary>
+    /// <remarks>
+    /// An edit must land in the file even when the environment outranks it (a machine with the env
+    /// pair set could otherwise never wire a second workspace); which one is LIVE is a separate
+    /// question, and the surface answers it separately. Same judgement as the CLI's `remote` verb.
+    /// </remarks>
+    public static IReadOnlyDictionary<string, RemoteTarget> LoadFile(string path) => Load(_ => null, path);
+
+    /// <summary>
+    /// Write the map back — atomically, beside-then-rename, like every write in this family: a driver
+    /// tick may read this file at any moment, and a torn read must never be what it finds.
+    /// </summary>
+    public static void Save(string path, IReadOnlyDictionary<string, RemoteTarget> remotes)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
+        AtomicFile.WriteText(path, Json(remotes));
+    }
 
     private static string? Text(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String

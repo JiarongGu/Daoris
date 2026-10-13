@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// A workspace plan's rules (WSSETUP6, D124 §4.1–§4.4), pure: its defaults, the most set-ups open at once at a cap, where each
 /// repository stands from the facts, whether the pilot holds, and the head line in a person's words.
-/// <see cref="WorkspaceSetup"/> works a plan against the world, and keeps these names for its callers (STRUCT3e).
+/// <see cref="WorkspaceSetup"/> works a plan against the world; its callers name the rules here.
 /// </summary>
 public static class WorkspaceSetupRules
 {

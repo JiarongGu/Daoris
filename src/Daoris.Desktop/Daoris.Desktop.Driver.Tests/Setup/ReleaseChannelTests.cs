@@ -150,7 +150,7 @@ public sealed class ReleaseChannelTests : IDisposable
         var where = HarnessSettings.ManagedHome(_home, "claude-code", "2.1.300");
         var said = new List<string>();
 
-        var executable = await ClaudeReleases.InstallAsync(
+        var executable = await ClaudeReleaseDownloads.InstallAsync(
             where, "2.1.300", said.Add, CancellationToken.None, transport,
             platform: "win32-x64", trust: (stranger.Armoured, stranger.Fingerprint));
 
@@ -181,7 +181,7 @@ public sealed class ReleaseChannelTests : IDisposable
         var where = HarnessSettings.ManagedHome(_home, "claude-code", "2.1.281");
         var said = new List<string>();
 
-        var error = await Assert.ThrowsAsync<DriverException>(() => ClaudeReleases.InstallAsync(
+        var error = await Assert.ThrowsAsync<DriverException>(() => ClaudeReleaseDownloads.InstallAsync(
             where, "2.1.281", said.Add, CancellationToken.None, transport, platform: "win32-x64"));
 
         Assert.Contains("SHA-256", error.Message);
@@ -201,7 +201,7 @@ public sealed class ReleaseChannelTests : IDisposable
             [$"{ClaudeReleases.Base}/2.1.281/manifest.json.sig"] = Encoding.UTF8.GetBytes(Signature),
         });
 
-        var error = await Assert.ThrowsAsync<DriverException>(() => ClaudeReleases.InstallAsync(
+        var error = await Assert.ThrowsAsync<DriverException>(() => ClaudeReleaseDownloads.InstallAsync(
             Path.Combine(_home, "v"), "2.1.281", _ => { }, CancellationToken.None, transport, platform: "win32-x64"));
 
         Assert.Contains("did not verify", error.Message);
@@ -221,7 +221,7 @@ public sealed class ReleaseChannelTests : IDisposable
             [$"{ClaudeReleases.Base}/2.1.290/manifest.json.sig"] = Encoding.UTF8.GetBytes(Signature),
         });
 
-        var error = await Assert.ThrowsAsync<DriverException>(() => ClaudeReleases.InstallAsync(
+        var error = await Assert.ThrowsAsync<DriverException>(() => ClaudeReleaseDownloads.InstallAsync(
             Path.Combine(_home, "v"), "2.1.290", _ => { }, CancellationToken.None, transport, platform: "win32-x64"));
 
         Assert.Contains("2.1.281, not 2.1.290", error.Message);

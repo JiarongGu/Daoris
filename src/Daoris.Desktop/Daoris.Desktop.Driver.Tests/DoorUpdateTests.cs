@@ -173,7 +173,7 @@ public sealed class DoorUpdateTests : IDisposable
                 File.ReadAllBytes(Path.Combine(vendor, "claude-code", "2.1.281", "manifest.json")),
             [$"{ClaudeReleases.Base}/2.1.281/manifest.json.sig"] =
                 File.ReadAllBytes(Path.Combine(vendor, "claude-code", "2.1.281", "manifest.json.sig")),
-            [$"{ClaudeReleases.Base}/2.1.281/{ClaudeReleases.Current()}/{(OperatingSystem.IsWindows() ? "claude.exe" : "claude")}"] =
+            [$"{ClaudeReleases.Base}/2.1.281/{ClaudeReleaseDownloads.Current()}/{(OperatingSystem.IsWindows() ? "claude.exe" : "claude")}"] =
                 "not the vendor's binary"u8.ToArray(),
         });
 
@@ -210,11 +210,11 @@ public sealed class DoorUpdateTests : IDisposable
     {
         var transport = new Served(new() { [ClaudeReleases.Latest] = "2.1.281\n"u8.ToArray() });
 
-        Assert.Equal("2.1.281", await ClaudeReleases.LatestAsync(CancellationToken.None, transport));
+        Assert.Equal("2.1.281", await ClaudeReleaseDownloads.LatestAsync(CancellationToken.None, transport));
         Assert.Equal("https://downloads.claude.ai/claude-code-releases/latest", ClaudeReleases.Latest);
 
         var nothing = await Assert.ThrowsAsync<DriverException>(
-            () => ClaudeReleases.LatestAsync(CancellationToken.None, new Served([])));
+            () => ClaudeReleaseDownloads.LatestAsync(CancellationToken.None, new Served([])));
         Assert.Contains("nothing answered at", nothing.Message);
     }
 

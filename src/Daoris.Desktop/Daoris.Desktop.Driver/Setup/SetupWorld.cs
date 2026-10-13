@@ -37,7 +37,7 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
         var line = await CanonicalLine.ResolveAsync(repository.Root!, repository.Repository, repository.Workspace, config, ct).ConfigureAwait(false);
         return line.Branch is null
             ? new LineReading(null, "it has no line: none is set, and git names none")
-            : await LayoutReader.ReadAsync(repository.Root!, line.Branch, ct).ConfigureAwait(false);
+            : await LayoutGit.ReadAsync(repository.Root!, line.Branch, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -68,7 +68,7 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
 
     public Task<IReadOnlyList<string>> EntriesAsync(string repository, CancellationToken ct) => service.EntryPathsAsync(repository, ct);
 
-    public RepositoryDescription? Describe(string root) => SelfDescription.Read(root);
+    public RepositoryDescription? Describe(string root) => SelfDescriptionFiles.Read(root);
 
     public Task<AskAnswer> PublishAsync(string workspace, string sentence, string to, CancellationToken ct) =>
         service.AskAsync(workspace, sentence, [], [], to, ct);

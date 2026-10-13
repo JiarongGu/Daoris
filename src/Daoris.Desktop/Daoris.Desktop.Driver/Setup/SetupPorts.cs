@@ -2,8 +2,8 @@ namespace Daoris.Driver;
 
 /// <summary>What a set-up press reads (LAYOUT7): the service's doors, the repository's line, the tools a child finds.</summary>
 /// <remarks>
-/// An interface so the press is held without a service, git or a spawn; <see cref="SetupWorld"/> is the real one. A port of
-/// the module's <c>Application</c> (STRUCT3e): the loop and the hosts compose the real one, and the tests hand a stand-in.
+/// An interface so the press is held without a service, git or a spawn; <see cref="SetupWorld"/> is the real one. The loop
+/// and the hosts compose the real one, and the tests hand a stand-in.
 /// </remarks>
 public interface ISetupWorld
 {

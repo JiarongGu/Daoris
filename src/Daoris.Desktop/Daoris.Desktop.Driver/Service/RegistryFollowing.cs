@@ -22,8 +22,7 @@ namespace Daoris.Driver;
 /// file has one kind of writer, so two processes can only race on the same file kind; the loser's entry is followed
 /// again at the next start.</para>
 ///
-/// <para>Service's Application (STRUCT3d, D166's note): the records' shapes and what is due are read here, and the files
-/// are read and written through <see cref="ServiceMachine"/>.</para>
+/// <para>The records' shapes and what is due are read here, and the files are read and written beside them.</para>
 /// </remarks>
 public static class RegistryFollowing
 {
@@ -48,7 +47,7 @@ public static class RegistryFollowing
                     ["moved"] = new JsonObject(moved.OrderBy(pair => pair.Key, StringComparer.Ordinal)
                         .Select(pair => KeyValuePair.Create(pair.Key, (JsonNode?)Stamp(pair.Value)))),
                 };
-                ServiceMachine.WriteIn(home, MovedFile, file.ToJsonString(Indented) + "\n");
+                WriteIn(home, MovedFile, file.ToJsonString(Indented) + "\n");
             }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -92,7 +91,7 @@ public static class RegistryFollowing
                     };
                 }
 
-                ServiceMachine.WriteIn(home, FollowedFile, new JsonObject { ["repositories"] = repositories }.ToJsonString(Indented) + "\n");
+                WriteIn(home, FollowedFile, new JsonObject { ["repositories"] = repositories }.ToJsonString(Indented) + "\n");
             }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -130,11 +129,20 @@ public static class RegistryFollowing
     // LF on every platform, as every Daoris write is: the default new line is the platform's.
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true, NewLine = "\n" };
 
+    /// <summary>A file of <paramref name="folder"/>'s written whole, atomically, the folder made first.</summary>
+    private static void WriteIn(string folder, string name, string text)
+    {
+        Directory.CreateDirectory(folder);
+        AtomicFile.WriteText(Path.Combine(folder, name), text);
+    }
+
+    private static string? TextIfThere(string path) => File.Exists(path) ? File.ReadAllText(path) : null;
+
     private static JsonNode? Load(string path)
     {
         try
         {
-            return ServiceMachine.TextIfThere(path) is { } text ? JsonNode.Parse(text) : null;
+            return TextIfThere(path) is { } text ? JsonNode.Parse(text) : null;
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
         {

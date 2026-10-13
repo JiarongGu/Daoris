@@ -35,10 +35,10 @@ public sealed class SetupPressTests : IDisposable
                 "daoris --version", "daoris init --harness agents", "daoris analyze --json", "daoris sync --dry-run",
                 "daoris sync", "daoris sync --force", "daoris check", "daoris status --json", "daoris doctor",
             ],
-            SetupPress.Verbs);
-        Assert.Equal(SetupPress.Verbs.Select(verb => $"Bash({verb})"), SetupPress.Rules);
-        Assert.All(SetupPress.Rules, rule => Assert.Null(PermissionRules.Refusal(rule)));
-        Assert.DoesNotContain(SetupPress.Rules, rule => rule.Contains('*') || rule.Contains("npx")
+            SetupPressRules.Verbs);
+        Assert.Equal(SetupPressRules.Verbs.Select(verb => $"Bash({verb})"), SetupPressRules.Rules);
+        Assert.All(SetupPressRules.Rules, rule => Assert.Null(PermissionRules.Refusal(rule)));
+        Assert.DoesNotContain(SetupPressRules.Rules, rule => rule.Contains('*') || rule.Contains("npx")
             || rule.Contains("upstream") || rule.Contains("connect") || rule.Contains("import") || rule.Contains("retire"));
     }
 
@@ -236,8 +236,8 @@ public sealed class SetupPressTests : IDisposable
         Assert.Equal(("work", "reports"), (workspace, to));
         Assert.Equal(plan.Sentence, sentence);
         Assert.Equal(plan.Title, sentence.Split('\n')[0]);
-        Assert.Equal(SetupPress.Rules, outcome.Added);
-        Assert.Equal(SetupPress.Rules, PermissionRules.Load(_home).Repositories["reports"].Allow);
+        Assert.Equal(SetupPressRules.Rules, outcome.Added);
+        Assert.Equal(SetupPressRules.Rules, PermissionRules.Load(_home).Repositories["reports"].Allow);
     }
 
     /// <summary>A press the service refused takes back the rules it added, and keeps one the person already had.</summary>

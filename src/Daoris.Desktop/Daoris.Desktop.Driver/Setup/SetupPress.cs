@@ -19,20 +19,11 @@ namespace Daoris.Driver;
 /// (D32), and a second <c>check</c> would twin the CLI's hardest table. What the line shows of it is read
 /// (<see cref="LayoutFacts.Clean"/>); the rest is that repository's own gate.</para>
 ///
-/// <para><b>The use case, against its port</b> (STRUCT3e): the world comes through <see cref="ISetupWorld"/>, and the rules
-/// it applies are <see cref="SetupPressRules"/>'s, kept here under the names its callers use.</para>
+/// <para><b>The use case, against its port</b>: the world comes through <see cref="ISetupWorld"/>, and the rules it applies
+/// are <see cref="SetupPressRules"/>', which its callers name.</para>
 /// </remarks>
 public static class SetupPress
 {
-    /// <summary>The doctrine tool's verbs a set-up's session runs, exactly (<see cref="SetupPressRules.Verbs"/>).</summary>
-    public static IReadOnlyList<string> Verbs => SetupPressRules.Verbs;
-
-    /// <summary>The rule the press adds to the repository's scope (<see cref="SetupPressRules.Rules"/>).</summary>
-    public static IReadOnlyList<string> Rules => SetupPressRules.Rules;
-
-    /// <summary>The oldest <c>node</c> the doctrine tool runs on (<see cref="SetupPressRules.NodeFloor"/>).</summary>
-    public const int NodeFloor = SetupPressRules.NodeFloor;
-
     /// <summary>What a press on <paramref name="repository"/> would do today. Reads, and writes nothing.</summary>
     /// <param name="door">The door this machine's driven sessions ride: the configured agent's wire.</param>
     public static async Task<SetupPlan> PlanAsync(
@@ -160,7 +151,7 @@ public static class SetupPress
             .Where(pair => string.Equals(pair.Key.Trim(), plan.Repository, StringComparison.OrdinalIgnoreCase))
             .SelectMany(pair => pair.Value.Allow)
             .ToHashSet(StringComparer.Ordinal);
-        var added = Rules.Where(rule => !held.Contains(rule)).ToList();
+        var added = SetupPressRules.Rules.Where(rule => !held.Contains(rule)).ToList();
         PermissionRules.Save(home, added.Aggregate(file, (rules, rule) => PermissionRules.Add(rules, RuleScope.Repository, plan.Repository, RuleList.Allow, rule)));
 
         var asked = await PublishAsync(plan, world, ct).ConfigureAwait(false);
@@ -185,19 +176,4 @@ public static class SetupPress
         var answer = await world.PublishAsync(plan.Workspace, plan.Sentence!, plan.Repository, ct).ConfigureAwait(false);
         return new(answer.Ok, answer.Message, answer.AskId, answer.Ok ? answer.QuestId : null, []);
     }
-
-    /// <summary>The refusals the tools a child finds earn (<see cref="SetupPressRules.ToolRefusals"/>).</summary>
-    public static IReadOnlyList<SetupRefusal> ToolRefusals(SetupTools tools) => SetupPressRules.ToolRefusals(tools);
-
-    /// <summary>Whether a refusal is the machine's tools' (<see cref="SetupPressRules.IsToolRefusal"/>).</summary>
-    public static bool IsToolRefusal(SetupRefusal refusal) => SetupPressRules.IsToolRefusal(refusal);
-
-    /// <summary>Which set-up the line calls for (<see cref="SetupPressRules.CaseOf"/>).</summary>
-    public static SetupCase CaseOf(LayoutFacts facts) => SetupPressRules.CaseOf(facts);
-
-    /// <summary>How the work will land, in words (<see cref="SetupPressRules.LandsAs"/>).</summary>
-    public static string LandsAs(Landing landing) => SetupPressRules.LandsAs(landing);
-
-    /// <summary>Whether <c>daoris --version</c> printed a version (<see cref="SetupPressRules.IsVersion"/>).</summary>
-    internal static bool IsVersion(string? version) => SetupPressRules.IsVersion(version);
 }

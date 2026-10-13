@@ -44,7 +44,7 @@ public sealed class SelfDescriptionTests : IDisposable
             Run it.
             """);
 
-        var described = SelfDescription.Read(_root)!;
+        var described = SelfDescriptionFiles.Read(_root)!;
 
         Assert.Equal("Parcel Tracking — The tracking backend: parcels, routes and the events that follow them.",
             described.Summary);
@@ -64,7 +64,7 @@ public sealed class SelfDescriptionTests : IDisposable
     {
         File("README.md", $"# LedgerUi\n\n{boilerplate}\n\n## Development server\n\nRun `ng serve`.\n");
 
-        var described = SelfDescription.Read(_root)!;
+        var described = SelfDescriptionFiles.Read(_root)!;
 
         Assert.Equal("LedgerUi", described.Summary);
     }
@@ -88,7 +88,7 @@ public sealed class SelfDescriptionTests : IDisposable
             If you want to learn more about creating good readme files then refer the following guidelines.
             """);
 
-        Assert.Null(SelfDescription.Read(_root));
+        Assert.Null(SelfDescriptionFiles.Read(_root));
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public sealed class SelfDescriptionTests : IDisposable
     {
         File("README.md", "Installation\n============\n\nFollow the steps to run the project.\n");
 
-        Assert.Null(SelfDescription.Read(_root)?.Summary);
+        Assert.Null(SelfDescriptionFiles.Read(_root)?.Summary);
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public sealed class SelfDescriptionTests : IDisposable
         File("README.md", "Installation\n**Follow the steps to run the project**\n* Clone the repository\n* Run `npm install`\n\n"
             + "To check the versions, run `node -v`.\n");
 
-        Assert.Null(SelfDescription.Read(_root)?.Summary);
+        Assert.Null(SelfDescriptionFiles.Read(_root)?.Summary);
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public sealed class SelfDescriptionTests : IDisposable
     {
         File("README.md", "# Getting Started with Create React App\n\nThis project was bootstrapped with Create React App.\n\n## Available Scripts\n\nnpm start\n");
 
-        Assert.Null(SelfDescription.Read(_root)?.Summary);
+        Assert.Null(SelfDescriptionFiles.Read(_root)?.Summary);
     }
 
     [Fact]
@@ -121,7 +121,7 @@ public sealed class SelfDescriptionTests : IDisposable
     {
         File("README.md", "# Introduction\n\nThe pipelines that sort archived device messages into the database.\n");
 
-        Assert.Equal("The pipelines that sort archived device messages into the database.", SelfDescription.Read(_root)!.Summary);
+        Assert.Equal("The pipelines that sort archived device messages into the database.", SelfDescriptionFiles.Read(_root)!.Summary);
     }
 
     /// <summary>
@@ -142,7 +142,7 @@ public sealed class SelfDescriptionTests : IDisposable
     {
         File("README.md", readme);
 
-        var said = SelfDescription.Read(_root)?.Summary;
+        var said = SelfDescriptionFiles.Read(_root)?.Summary;
         Assert.True(said == summary, $"{why}: {said}");
     }
 
@@ -178,7 +178,7 @@ public sealed class SelfDescriptionTests : IDisposable
     {
         File("README.md", "# X\n\n" + string.Join(" ", Enumerable.Repeat("tracking", 60)) + "\n");
 
-        var summary = SelfDescription.Read(_root)!.Summary!;
+        var summary = SelfDescriptionFiles.Read(_root)!.Summary!;
 
         Assert.True(summary.Length <= SelfDescription.MaxSummary + 1, summary.Length.ToString());
         Assert.EndsWith("…", summary);
@@ -190,7 +190,7 @@ public sealed class SelfDescriptionTests : IDisposable
     {
         File("package.json", """{ "name": "forms-fe", "description": "The inspection forms.", "dependencies": { "react": "18" } }""");
 
-        var described = SelfDescription.Read(_root)!;
+        var described = SelfDescriptionFiles.Read(_root)!;
 
         Assert.Equal("The inspection forms.", described.Summary);
         Assert.Equal("package.json", described.Source);
@@ -207,7 +207,7 @@ public sealed class SelfDescriptionTests : IDisposable
         File("host.json", "{}");
         File("main.tf", "");
 
-        var stack = SelfDescription.Read(_root)!.Stack;
+        var stack = SelfDescriptionFiles.Read(_root)!.Stack;
 
         Assert.Equal(["Angular", ".NET", "Azure Functions", "Terraform"], stack);
     }
@@ -215,8 +215,8 @@ public sealed class SelfDescriptionTests : IDisposable
     [Fact]
     public void A_folder_that_says_nothing_is_null_and_a_missing_one_too()
     {
-        Assert.Null(SelfDescription.Read(_root));
-        Assert.Null(SelfDescription.Read(Path.Combine(_root, "no-such-folder")));
+        Assert.Null(SelfDescriptionFiles.Read(_root));
+        Assert.Null(SelfDescriptionFiles.Read(Path.Combine(_root, "no-such-folder")));
     }
 
     /// <summary>It reads; it never writes (D32) — the folder is exactly as it was.</summary>
@@ -226,7 +226,7 @@ public sealed class SelfDescriptionTests : IDisposable
         File("README.md", "# X\n\nA thing.\n");
         var before = Directory.GetFileSystemEntries(_root, "*", SearchOption.AllDirectories).Order().ToList();
 
-        SelfDescription.Read(_root);
+        SelfDescriptionFiles.Read(_root);
 
         Assert.Equal(before, Directory.GetFileSystemEntries(_root, "*", SearchOption.AllDirectories).Order().ToList());
     }

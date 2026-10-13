@@ -45,7 +45,7 @@ public static class SetupCommand
             output.WriteLine();
             output.WriteLine(setup.Sentence);
             output.WriteLine($"and adds to `{setup.Repository}`'s rules, so its session may run the doctrine tool:");
-            foreach (var rule in SetupPress.Rules) output.WriteLine($"  {rule}");
+            foreach (var rule in SetupPressRules.Rules) output.WriteLine($"  {rule}");
             output.WriteLine("--plan: nothing was published, and no rule was added.");
             return 0;
         }
@@ -95,10 +95,10 @@ public static class SetupCommand
         if (setup.Adapter is { } adapter) output.WriteLine($"  agent    {adapter}" + (adapter.StartsWith("codex", StringComparison.Ordinal)
             ? " (whether its sandbox runs a program outside the workspace is not measured)"
             : ""));
-        if (setup.Landing is { } landing) output.WriteLine($"  lands    {SetupPress.LandsAs(landing)}");
+        if (setup.Landing is { } landing) output.WriteLine($"  lands    {SetupPressRules.LandsAs(landing)}");
         if (setup.Tools is { } tools)
         {
-            output.WriteLine($"  tools    node {tools.NodeVersion?.Trim() ?? "not found"} · daoris {(SetupPress.IsVersion(tools.DaorisVersion) ? tools.DaorisVersion!.Trim() : "not found")}");
+            output.WriteLine($"  tools    node {tools.NodeVersion?.Trim() ?? "not found"} · daoris {(SetupPressRules.IsVersion(tools.DaorisVersion) ? tools.DaorisVersion!.Trim() : "not found")}");
         }
     }
 

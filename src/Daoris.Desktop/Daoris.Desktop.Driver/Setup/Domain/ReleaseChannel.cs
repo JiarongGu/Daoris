@@ -376,10 +376,9 @@ public static class OpenPgp
 /// are the bytes that land. Setting the executable bit is the only change, and it is the file
 /// system's, not the binary's.</para>
 ///
-/// <para><b>The channel's names and refusals, pure</b> (STRUCT3e): the bucket, the pinned key, which builds and versions it
+/// <para><b>The channel's names and refusals, pure</b>: the bucket, the pinned key, which builds and versions it
 /// installs, and what a verified manifest says. The fetch and the install are <see cref="ClaudeReleaseDownloads"/>'s, and
-/// <c>ClaudeReleases.InstallAsync</c>, <c>LatestAsync</c> and <c>Current</c> keep their names in the module's Application
-/// (<see cref="ClaudeReleaseInstalls"/>).</para>
+/// its callers name it.</para>
 /// </remarks>
 public static class ClaudeReleases
 {

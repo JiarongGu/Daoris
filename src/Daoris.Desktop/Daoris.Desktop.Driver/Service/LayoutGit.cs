@@ -4,8 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The git half of <see cref="LayoutReader"/> (LAYOUT7, D117 §6.5): a repository's line read as git objects, which the pure
-/// half (<see cref="LayoutReader.Read"/>) makes facts of. Moved from <see cref="LayoutReader"/> as it was (STRUCT3d); the set-up
-/// press calls it as <c>LayoutReader.ReadAsync</c> (<see cref="LayoutReads"/>).
+/// half (<see cref="LayoutReader.Read"/>) makes facts of; the set-up press and the tests call it by this name.
 /// </summary>
 public static class LayoutGit
 {

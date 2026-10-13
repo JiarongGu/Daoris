@@ -17,8 +17,7 @@ public sealed class HeldMoveException(SwapHold hold, Exception refusal)
 /// <remarks>
 /// <para>Every effect on a process is handed in, so the tests move real folders in a scratch install and start nothing.</para>
 ///
-/// <para><b>Compiled into the launcher too</b> (STRUCT3e), beside <see cref="StagedBuild"/> and <see cref="StagedBuildFiles"/>
-/// (<c>Daoris.Desktop.Launcher.csproj</c>): so it uses nothing but the base library.</para>
+/// <para><b>Compiled into the launcher too</b>, beside <see cref="StagedBuild"/> (<c>Daoris.Desktop.Launcher.csproj</c>): so it uses nothing but the base library.</para>
 /// </remarks>
 public sealed class InstallSwap(
     string install,

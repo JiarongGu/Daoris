@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The service's doors as <see cref="ServiceClient"/> knocks on them (STRUCT3d, D166's note): a path under the host, a body,
-/// and what came back. The client writes each request and reads each answer; the HTTP is the Infrastructure's
-/// (<see cref="ServiceHttp"/>), which the client's own constructors compose, and a test may hand its own.
+/// The service's doors as <see cref="ServiceClient"/> knocks on them: a path under the host, a body,
+/// and what came back. The client writes each request and reads each answer; the HTTP is
+/// <see cref="ServiceHttp"/>'s, which the client's own constructors compose, and a test may hand its own.
 /// </summary>
 public interface IServiceDoors : IDisposable
 {

@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// cannot.
 /// </summary>
 /// <remarks>
-/// Service's Application (STRUCT3d, D166's note): it writes each request and reads each answer, and the HTTP is behind
+/// It writes each request and reads each answer, and the HTTP is behind
 /// <see cref="IServiceDoors"/>, whose real one, <see cref="ServiceHttp"/>, the constructors that take a URL compose. Every
 /// module names this client; none names the HTTP.
 /// </remarks>

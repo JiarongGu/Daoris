@@ -24,10 +24,9 @@ public sealed record RepositoryDescription(string? Summary, IReadOnlyList<string
 /// <para>No model reads it (D24). What a paragraph says is judged by the intake session, which is
 /// where a model is; this only decides which paragraph is worth handing it.</para>
 ///
-/// <para><b>The rules, pure</b> (STRUCT3e): the folder's top comes in as three questions (<see cref="Of"/>), asked in the
+/// <para><b>The rules, pure</b>: the folder's top comes in as three questions (<see cref="Of"/>), asked in the
 /// order a reading asks them. <see cref="SelfDescriptionFiles"/> answers them from a checkout, and
-/// <c>SelfDescription.Read(root)</c> is that reading, declared in the module's Application (<see cref="SelfDescriptionReads"/>)
-/// so the intake and the set-up press call it as they did.</para>
+/// <c>SelfDescriptionFiles.Read(root)</c> is that reading, which the intake and the set-up press call.</para>
 /// </remarks>
 public static class SelfDescription
 {

@@ -170,8 +170,7 @@ public sealed record LineReading(LayoutFacts? Facts, string? Problem);
 /// </summary>
 /// <remarks>
 /// <para><b>Pure, and handed what git answered</b> (<see cref="Read"/>), with the git half apart
-/// (<c>LayoutReader.ReadAsync</c>, <see cref="LayoutReads"/>, which <see cref="LayoutGit"/> answers in Service's
-/// Infrastructure; STRUCT3d): plan and apply, as everywhere, so every case is held without a process.</para>
+/// (<see cref="LayoutGit.ReadAsync"/>): plan and apply, as everywhere, so every case is held without a process.</para>
 ///
 /// <para>🔴 <b>A twin</b> (<c>.claude/knowledge/twins.md</c>, *the layout* and *a link held as text*): the CLI's
 /// <c>layout.ts</c> and <c>links.ts</c> write and refuse what this reads, and the service's <c>RepositoryLayout</c>

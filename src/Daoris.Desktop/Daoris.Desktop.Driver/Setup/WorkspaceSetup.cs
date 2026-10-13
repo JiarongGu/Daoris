@@ -24,19 +24,11 @@ namespace Daoris.Driver;
 /// have closed, and then the plan pauses itself and says so once, until the person resumes it with what they cost in
 /// front of them (§7). A parked one has not closed: the person's attention is what it waits on.</para>
 ///
-/// <para><b>The use cases, against their port</b> (STRUCT3e): the world comes through <see cref="IWorkspaceSetupWorld"/>,
-/// the plan's file is <see cref="WorkspaceSetupFile"/>'s, and the rules are <see cref="WorkspaceSetupRules"/>'s, kept here
-/// under the names their callers use.</para>
+/// <para><b>The use cases, against their port</b>: the world comes through <see cref="IWorkspaceSetupWorld"/>, the plan's
+/// file is <see cref="WorkspaceSetupFile"/>'s, and the rules are <see cref="WorkspaceSetupRules"/>', which its callers name.</para>
 /// </remarks>
 public static class WorkspaceSetup
 {
-    public const int DefaultAtOnce = WorkspaceSetupRules.DefaultAtOnce;
-
-    public const int DefaultPilot = WorkspaceSetupRules.DefaultPilot;
-
-    /// <summary>The most set-ups open at once at a cap (<see cref="WorkspaceSetupRules.MostAtOnce"/>).</summary>
-    public static int MostAtOnce(int cap) => WorkspaceSetupRules.MostAtOnce(cap);
-
     /// <summary>
     /// What a press on <paramref name="workspace"/> would write today: the repositories with a checkout here in §4.2's order,
     /// each with what touched it, where it stands, and what the press would refuse now; and why the press as a whole would
@@ -73,8 +65,8 @@ public static class WorkspaceSetup
                 + "may be replaced by a new press."));
         }
 
-        var atOnce = options.AtOnce ?? DefaultAtOnce;
-        var most = MostAtOnce(config.Cap);
+        var atOnce = options.AtOnce ?? WorkspaceSetupRules.DefaultAtOnce;
+        var most = WorkspaceSetupRules.MostAtOnce(config.Cap);
         if (atOnce < 1 || atOnce > most)
         {
             refusals.Add(new(WorkspaceSetupRefusals.AtOnce, atOnce < 1
@@ -83,7 +75,7 @@ public static class WorkspaceSetup
                   + "keeps a slot. Raise the cap with `daoris driver cap <n>` first, or ask for fewer."));
         }
 
-        var pilot = Math.Max(0, options.Pilot ?? DefaultPilot);
+        var pilot = Math.Max(0, options.Pilot ?? WorkspaceSetupRules.DefaultPilot);
         var first = options.First ?? [];
         var skip = options.Skip ?? [];
         foreach (var named in first.Concat(skip).Distinct(StringComparer.OrdinalIgnoreCase)
@@ -100,7 +92,7 @@ public static class WorkspaceSetup
         }
 
         // The machine's own tools: refused here, they would refuse every repository the plan reached.
-        var tools = SetupPress.ToolRefusals(await world.ToolsAsync(ct).ConfigureAwait(false));
+        var tools = SetupPressRules.ToolRefusals(await world.ToolsAsync(ct).ConfigureAwait(false));
         refusals.AddRange(tools);
 
         var quests = await world.QuestsAsync(ct).ConfigureAwait(false);
@@ -108,7 +100,7 @@ public static class WorkspaceSetup
         var touches = SetupOrder.Count(here, rows, quests, runs, world.Touched);
         var order = SetupOrder.Order(here, touches, first, skip);
         var strikes = await world.StrikesAsync(ct).ConfigureAwait(false);
-        var standings = Stand(new WorkspaceSetupPlan(spelled, order, atOnce, pilot), rows, quests, strikes, config);
+        var standings = WorkspaceSetupRules.Stand(new WorkspaceSetupPlan(spelled, order, atOnce, pilot), rows, quests, strikes, config);
 
         var listed = new List<WorkspaceSetupRow>();
         foreach (var standing in standings)
@@ -117,7 +109,7 @@ public static class WorkspaceSetup
             if (standing.State == SetupState.ToGo && tools.Count == 0)
             {
                 var judged = await SetupPress.PlanAsync(world, config, door, standing.Repository, day, ct).ConfigureAwait(false);
-                row = row with { Refusals = [.. judged.Refusals.Where(refusal => !SetupPress.IsToolRefusal(refusal))] };
+                row = row with { Refusals = [.. judged.Refusals.Where(refusal => !SetupPressRules.IsToolRefusal(refusal))] };
             }
 
             listed.Add(row);
@@ -154,7 +146,7 @@ public static class WorkspaceSetup
             .Where(pair => Same(pair.Key, preview.Workspace))
             .SelectMany(pair => pair.Value.Allow)
             .ToHashSet(StringComparer.Ordinal);
-        var added = SetupPress.Rules.Where(rule => !held.Contains(rule)).ToList();
+        var added = SetupPressRules.Rules.Where(rule => !held.Contains(rule)).ToList();
         PermissionRules.Save(home, added.Aggregate(file, (rules, rule) => PermissionRules.Add(rules, RuleScope.Workspace, preview.Workspace, RuleList.Allow, rule)));
 
         var plan = new WorkspaceSetupPlan(preview.Workspace, [.. preview.Rows.Select(row => row.Repository)], preview.AtOnce, preview.Pilot)
@@ -200,7 +192,7 @@ public static class WorkspaceSetup
         var said = new List<string>();
         foreach (var plan in plans)
         {
-            await WorkAsync(plan, Stand(plan, rows, quests, strikes, config)).ConfigureAwait(false);
+            await WorkAsync(plan, WorkspaceSetupRules.Stand(plan, rows, quests, strikes, config)).ConfigureAwait(false);
         }
 
         return said;
@@ -211,13 +203,13 @@ public static class WorkspaceSetup
             var open = standings.Count(standing => standing.State == SetupState.Open);
             var asked = plan.Order.Count(plan.Published.ContainsKey);
 
-            if (PilotHolds(plan, asked))
+            if (WorkspaceSetupRules.PilotHolds(plan, asked))
             {
                 var pilot = plan.Order.Where(plan.Published.ContainsKey).Take(plan.Pilot).ToHashSet(StringComparer.OrdinalIgnoreCase);
                 var flown = standings.Where(standing => pilot.Contains(standing.Repository)).ToList();
                 if (flown.All(standing => standing.State is not (SetupState.Open or SetupState.Parked)))
                 {
-                    var sentence = $"paused after the pilot: {string.Join(", ", flown.Select(standing => $"`{standing.Repository}` {Word(standing.State)}"))}. "
+                    var sentence = $"paused after the pilot: {string.Join(", ", flown.Select(standing => $"`{standing.Repository}` {WorkspaceSetupRules.Word(standing.State)}"))}. "
                         + $"Look at what each wrote and what it cost, then `daoris-driver setup --workspace {Spelled(workspace)} --resume` carries on.";
                     if (PauseItself(home, workspace, new SetupPause(SetupPausedBy.Pilot, sentence, now), current => !current.PilotResumed))
                     {
@@ -229,10 +221,10 @@ public static class WorkspaceSetup
                 return;
             }
 
-            var most = Math.Min(Math.Max(1, plan.AtOnce), MostAtOnce(config.Cap));
+            var most = Math.Min(Math.Max(1, plan.AtOnce), WorkspaceSetupRules.MostAtOnce(config.Cap));
             foreach (var next in standings.Where(standing => standing.State == SetupState.ToGo))
             {
-                if (open >= most || PilotHolds(plan, asked)) return;
+                if (open >= most || WorkspaceSetupRules.PilotHolds(plan, asked)) return;
 
                 var press = await SetupPress.PlanAsync(world, config, door, next.Repository, day, ct).ConfigureAwait(false);
                 if (press.Pressable)
@@ -253,7 +245,7 @@ public static class WorkspaceSetup
                 }
 
                 // The machine's tools refuse every repository alike: pause, and say why, rather than skip each in turn.
-                if (press.Refusals.FirstOrDefault(SetupPress.IsToolRefusal) is { } tool)
+                if (press.Refusals.FirstOrDefault(SetupPressRules.IsToolRefusal) is { } tool)
                 {
                     if (PauseItself(home, workspace, new SetupPause(SetupPausedBy.Tool, tool.Sentence, now), _ => true))
                     {
@@ -286,16 +278,10 @@ public static class WorkspaceSetup
         }
     }
 
-    /// <summary>Where each repository of <paramref name="plan"/> stands, read from the facts (<see cref="WorkspaceSetupRules.Stand"/>).</summary>
-    public static IReadOnlyList<SetupStanding> Stand(
-        WorkspaceSetupPlan plan, IReadOnlyList<RegistrationRow> rows, IReadOnlyList<QuestView> quests,
-        IReadOnlyDictionary<string, int> strikes, DriverConfig config) =>
-        WorkspaceSetupRules.Stand(plan, rows, quests, strikes, config);
-
     /// <summary>Where each repository of <paramref name="plan"/> stands now, read from the world.</summary>
     public static async Task<IReadOnlyList<SetupStanding>> StandAsync(
         IWorkspaceSetupWorld world, DriverConfig config, WorkspaceSetupPlan plan, CancellationToken ct = default) =>
-        Stand(
+        WorkspaceSetupRules.Stand(
             plan,
             await world.RegistrationsAsync(ct).ConfigureAwait(false),
             await world.QuestsAsync(ct).ConfigureAwait(false),
@@ -358,14 +344,6 @@ public static class WorkspaceSetup
             + "nobody has started can be deleted with `daoris-driver quest delete <id>`.",
             next);
     }
-
-    /// <summary>The head line (<see cref="WorkspaceSetupRules.Summary"/>).</summary>
-    public static string Summary(WorkspaceSetupPlan plan, IReadOnlyList<SetupStanding> standings) => WorkspaceSetupRules.Summary(plan, standings);
-
-    /// <summary>A state in the words a person reads (<see cref="WorkspaceSetupRules.Word"/>).</summary>
-    public static string Word(SetupState state) => WorkspaceSetupRules.Word(state);
-
-    private static bool PilotHolds(WorkspaceSetupPlan plan, int asked) => WorkspaceSetupRules.PilotHolds(plan, asked);
 
     /// <summary>The plan paused by a tick, once: only a live plan not already paused, where <paramref name="when"/> still holds.</summary>
     private static bool PauseItself(string home, string workspace, SetupPause pause, Func<WorkspaceSetupPlan, bool> when)

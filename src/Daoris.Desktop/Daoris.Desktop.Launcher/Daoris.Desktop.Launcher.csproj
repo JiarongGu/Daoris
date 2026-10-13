@@ -18,10 +18,9 @@
   <ItemGroup>
     <!-- The update's check and swap (UPDATE1, D139 §5): the driver library's own source, compiled in rather than
          referenced, so the launcher still references nothing and the check it runs before it moves a file is the one the
-         application runs before it closes. Three files of the Setup module (STRUCT3e): the records and names, their reads
+         application runs before it closes. Two files of the Setup module (FLAT1b-iii-a): the records, names and their reads
          and writes on the disk, and the swap. Each uses the base library alone; `StagedBuildTests` holds them. -->
-    <Compile Include="..\Daoris.Desktop.Driver\Setup\Domain\StagedBuild.cs" Link="StagedBuild.cs" />
-    <Compile Include="..\Daoris.Desktop.Driver\Setup\StagedBuildFiles.cs" Link="StagedBuildFiles.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Setup\StagedBuild.cs" Link="StagedBuild.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Setup\InstallSwap.cs" Link="InstallSwap.cs" />
   </ItemGroup>
 
