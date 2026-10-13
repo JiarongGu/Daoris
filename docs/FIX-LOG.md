@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-13 — A hand-over's take could cut a turn a word started as the take began (SWITCH1c-ii)
+
+- **Symptom:** none seen; found reading the turns while wiring the curve's automatic move, which makes the window likely: a word
+  said between a conversation's idle turn's end and its take's stop of the old process started a turn the stop then cut, its
+  words recorded as sent and its answer lost.
+- **Root cause:** the take judged *not talking* once (`HandOverAsync`'s `Taking`, `HandOverDue`'s queue) and acted later, off the
+  turns' lock; nothing stopped `ChatTurns.Take` from starting a turn in between.
+- **Fix:** every take holds the conversation's turns first (`ChatTurns.Hold`, under the turns' own lock, only where nothing runs
+  or waits; a word said while held takes nothing) and releases them after. Where a word started its turn first, the take
+  answers kept and the box waits for that turn's end. D165's SWITCH1c-ii note.
+- **Verify:** `ChatTurnsTests`' hold cases (idle held, a word refused until released; a running turn or a waiting word not held),
+  fast half; the hand-over's Process cases (`HandOverProcessTests`, `CurveMoveProcessTests`) at the merge.
 ## 2026-10-13 — a landing saved from Setup dropped the ticket key and the squash the terminal had set (DOORS1b)
 
 - **Symptom:** a landing rule set from the terminal with `--key` or `--squash` lost both when the person saved the same rule on

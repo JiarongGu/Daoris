@@ -88,6 +88,60 @@ public sealed partial class HarnessRoster
     }
 
     /// <summary>
+    /// The read at a running session's turn's end (SWITCH1c-ii; the switch design §1.2), where the curve's decision asks for it
+    /// (<see cref="SwitchChoice.ReadOthers"/>): what a start's walk does for its list (<see cref="FreshenAsync"/>), for these
+    /// accounts. Each present and ready (not cooling, not refused, not read signed out) whose last reading is older than its
+    /// question's floor is asked, under its own lock; never a key, nor one a session of Daoris's runs on. A reading not had keeps
+    /// the older one; absent is never zero (D57). Nothing for an agent whose accounts are asked nothing.
+    /// </summary>
+    /// <param name="adapter">The session's adapter, whose question, or its owner's, is asked.</param>
+    /// <param name="owner">Whose accounts: the accounts' owner (AGT7).</param>
+    public Task ReadUsageAsync(
+        string adapter, string owner, IReadOnlyList<string> accounts, DriverConfig config, CancellationToken ct = default) =>
+        FreshenAsync(adapter, owner, accounts, config, ct);
+
+    /// <summary>
+    /// The accounts of a scope's list a running session could move to (SWITCH1c-ii; the switch design §2), in the list's order:
+    /// what each last said of its windows, and whether it is ready by the walk's own judgements, before any probe: not cooling,
+    /// not refused, not read signed out, and on this machine. Reads files, asks nothing.
+    /// </summary>
+    /// <param name="owner">Whose accounts: the accounts' owner (AGT7).</param>
+    public IReadOnlyList<SwitchCandidate> SwitchCandidates(string owner, IReadOnlyList<string> list)
+    {
+        var now = Clock();
+        IReadOnlyList<string> present;
+        AgentReads reads;
+        try
+        {
+            present = HarnessSettings.Profiles(Home, owner);
+            reads = AccountReads.Of(Home, owner);
+        }
+        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
+        {
+            // Accounts not read are none ready: nothing is moved to on a guess.
+            return [.. list.Select(account => new SwitchCandidate(account, null, Ready: false))];
+        }
+
+        return [.. list.Select(account => new SwitchCandidate(
+            account,
+            SaidOf(owner, account, now),
+            Ready: present.Contains(account, StringComparer.OrdinalIgnoreCase) && Before(owner, account, now).IsReady && !SaidOut(reads, account)))];
+    }
+
+    /// <summary>What an account last said of its windows, or null where nothing was or the file does not read.</summary>
+    private AccountSaid? SaidOf(string owner, string account, DateTimeOffset now)
+    {
+        try
+        {
+            return AccountWindows.SaidOf(Home, owner, account, now);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Whether an account was asked, or said, within <paramref name="fresh"/> (the question's: <see cref="CodexUsage.Fresh"/>,
     /// or Claude's <see cref="ClaudeUsage.Floor"/>): kept from a restart too.
     /// </summary>

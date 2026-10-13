@@ -256,6 +256,58 @@ public sealed class HandOverTests : IDisposable
         Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
     }
 
+    /// <summary>
+    /// 🔴 A move by the usage curve (SWITCH1c-ii, the switch design §4) is a take on the same agent and another account: the new
+    /// conversation's first line and the old one's last are the moved pair (SWITCH1c-i), naming the accounts and how far over its
+    /// curve the one it left was, in place of the hand-over's two; its record continues the old by `curve`, asked by `daoris`.
+    /// </summary>
+    [Fact]
+    public async Task A_move_by_the_curve_is_said_by_the_moved_pair_in_place_of_the_hand_over_s_lines()
+    {
+        var events = Events;
+        var taken = new Taken();
+        var ask = new HandOverRequest("claude-code", "account-3", HandOverWhy.Curve, HandOverBy.Daoris, T0);
+        new HandOverBox(_home).Write("c0nv0001", ask);
+
+        var handed = await HandOverTake.RunAsync(
+            new Room([Chat("c0nv0001")]).Client(), _home, events, output: null, "c0nv0001", ask,
+            agent => agent == "claude-code" ? ["account-1", "account-3"] : null,
+            end: session =>
+            {
+                taken.Calls.Add($"end {session}");
+                return Task.CompletedTask;
+            },
+            start: (prior, request, from, _) =>
+            {
+                taken.Calls.Add($"start {prior.Repository} {request.Agent} {request.Account}");
+                taken.From = from;
+                return Task.FromResult(taken.Started);
+            },
+            say: (session, message) =>
+            {
+                taken.Calls.Add($"say {session}");
+                taken.Said = message;
+                return Task.FromResult(true);
+            },
+            moved: new SwitchChoice.MoveTo("account-3", "weekly", 0.62, 45.0));
+
+        Assert.Equal(["end c0nv0001", "start engine claude-code account-3", "say n3w00001"], taken.Calls);
+        Assert.Equal(new ContinuedFrom("c0nv0001", HandOverWhy.Curve, HandOverBy.Daoris), taken.From);
+        Assert.True(handed.Kept, handed.Message);
+        Assert.StartsWith(
+            "You continue the claude-code conversation `c0nv0001`, handed over because the account it ran on was over the usage curve",
+            taken.Said!.Briefing);
+        var came = taken.Said.TakenOver!;
+        Assert.Equal(["chat.moved-from"], NoteAssert.Codes(came.Parts));
+        Assert.Equal(
+            ("account-1", "weekly", 62, 45),
+            (came.Parts[0].Value("from"), came.Parts[0].Value("window"), came.Parts[0].Value("used"), came.Parts[0].Value("curve")));
+        var went = Assert.Single(events.Page("c0nv0001", limit: SessionEvents.MaxPage).Events, e => e.Kind == SessionEventKind.Note);
+        Assert.Equal(["chat.moved"], NoteAssert.Codes(went.Parts!));
+        Assert.Equal(("account-3", "account-1"), (went.Parts![0].Value("to"), went.Parts[0].Value("from")));
+        Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
+    }
+
     /// <summary>A box judged again as it is taken: a tree gone while it waited ends nothing and starts nothing, and the box is gone.</summary>
     [Fact]
     public async Task A_box_that_no_longer_holds_is_refused_with_nothing_ended_or_started()

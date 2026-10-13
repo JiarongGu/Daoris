@@ -108,15 +108,28 @@ public sealed partial class ChatRunner
             return new HandedOver(null, true, null, $"`{sessionId}` is already being taken.");
         }
 
+        ChatTurns? held = null;
         try
         {
+            // Never mid-turn (SWITCH1c-ii, the switch design §4): its turns are held while it is taken, so a word said as the take
+            // begins either started its turn first, and the box waits for that turn's end (HandOverDue), or takes nothing.
+            if (_turned.TryGetValue(sessionId, out var chat))
+            {
+                if (!chat.Turns.Hold()) return new HandedOver(null, true, null, $"`{sessionId}` is talking: it goes on as its turn ends.");
+                held = chat.Turns;
+            }
+
+            // A move by the usage curve says which accounts it moved between: the decision kept since its ask (SWITCH1c-ii).
+            var moved = ask.Why == HandOverWhy.Curve && _curveMoves.TryRemove(sessionId, out var move) ? move : null;
             return await HandOverTake.RunAsync(
                 _service, _home, _events, _output, sessionId, ask, AccountsOf, EndForHandOverAsync,
                 (prior, request, from, token) => StartAsync(prior.Repository!, request.Agent, config, onEnded, request.Account, ct: token, tree: prior.Tree, from: from),
-                SayHandedOver, ct).ConfigureAwait(false);
+                SayHandedOver, ct, moved).ConfigureAwait(false);
         }
         finally
         {
+            // Ended, nothing listens to them now; refused before its end, the conversation takes words again.
+            held?.Release();
             _goingOn.TryRemove(sessionId, out _);
             going.TrySetResult();
         }

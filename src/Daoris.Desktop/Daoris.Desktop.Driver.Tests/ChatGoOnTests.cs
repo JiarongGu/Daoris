@@ -524,9 +524,10 @@ internal sealed class ChatLedger : HttpMessageHandler
     /// <summary>A record of this machine's: a chat unless said otherwise, in the state given, on the account named or the tool's own.</summary>
     /// <param name="quest">The quest a driven record serves (MSG1f2's start-from), or null.</param>
     /// <param name="ask">The ask an intake answers, or null.</param>
+    /// <param name="from">The session it continues, why and who asked (MIXAGENT1a-iii), or null: a curve's move holds by it (SWITCH1c-ii).</param>
     public Words Chat(
         string id, string state, string adapter, string tree, string kind = "chat", string? quest = null, string repository = "engine",
-        string? ask = null, string? profile = null)
+        string? ask = null, string? profile = null, ContinuedFrom? from = null)
     {
         lock (_gate)
         {
@@ -535,7 +536,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                 ["id"] = id, ["repository"] = repository, ["state"] = state, ["kind"] = kind, ["adapter"] = adapter,
                 ["harnessVersion"] = "1.0.0", ["tree"] = tree, ["note"] = "the conversation ended; its commits are its record.",
                 ["created"] = "2026-10-03T08:00:00Z", ["said"] = new JsonArray(), ["quest"] = quest, ["ask"] = ask,
-                ["profile"] = profile,
+                ["profile"] = profile, ["from"] = from?.Session, ["fromWhy"] = from?.Why, ["fromBy"] = from?.By,
             });
         }
 

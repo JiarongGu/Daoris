@@ -236,6 +236,50 @@ public sealed class ChatTurnsTests
     }
 
     /// <summary>
+    /// 🔴 A move at a turn's end is never mid-turn (SWITCH1c-ii, the switch design §4): the turns are held only where nothing runs
+    /// or waits, and while held a word takes nothing, so no turn starts that the move's end would cut. Released, they take words
+    /// again.
+    /// </summary>
+    [Fact]
+    public async Task Idle_turns_are_held_for_a_move_and_take_no_word_until_released()
+    {
+        var door = new Door();
+        var turns = door.Turns();
+
+        Assert.True(turns.Hold());
+
+        Assert.Null(turns.Take(new ChatMessage("one more thing", [])));
+        Assert.False(turns.Running);
+        Assert.Empty(door.Took);
+
+        turns.Release();
+        Assert.Equal(TurnReach.Now, turns.Take(new ChatMessage("one more thing", [])));
+        await Poll.Until(() => door.Took.Count == 1, () => "the word said once released never reached the door");
+    }
+
+    /// <summary>A turn that runs, or a word that waits, is never held: the move waits for that turn's end (SWITCH1c-ii).</summary>
+    [Fact]
+    public async Task Turns_that_run_or_hold_a_waiting_word_are_not_held()
+    {
+        var door = new Door { TakesWordsMidTurn = false };
+        var turns = door.Turns();
+        turns.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+
+        Assert.False(turns.Hold());
+        Assert.Equal(TurnReach.TurnEnd, turns.Take(new ChatMessage("and the sixth", [])));
+        Assert.False(turns.Hold());
+
+        door.EndTurn(0);
+        await Poll.Until(() => door.Took.Count == 2, () => "the waiting word never became its own turn");
+        Assert.False(turns.Hold());
+
+        door.EndTurn(1);
+        await Poll.Until(() => !turns.Running, () => "the second turn never ended");
+        Assert.True(turns.Hold());
+    }
+
+    /// <summary>
     /// A conversation note's codes are a twin (MSG1c3; <c>.claude/knowledge/twins.md</c>): every code the driver declares is
     /// the page's <c>work.conversation.&lt;code&gt;</c>, worded in both catalogues, so a line the driver codes never reaches a
     /// 中文 window as its English. The page's <c>work/conversation.test.ts</c> parses the declarations from its side.

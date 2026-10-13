@@ -81,7 +81,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/AccountRotation.cs` | 68 | 1115 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Acp.cs` | 91 | 1854 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 113 | 2006 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 90 | 1691 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 91 | 1699 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.Continue.cs` | 44 | 743 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 166 | 2808 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 65 | 1152 |
@@ -90,9 +90,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/LandedBranches.cs` | 40 | 719 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Landing.cs` | 44 | 794 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs` | 66 | 1088 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 68 | 1181 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 69 | 1188 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 44 | 1004 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 95 | 1729 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 95 | 1731 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionEvents.cs` | 42 | 907 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 60 | 1081 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.Sync.cs` | 74 | 1234 |
@@ -201,4 +201,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-second-agent-design.md` | 57 | 769 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
-| `src/Daoris.Desktop/README.md` | 56 | 326 |
+| `src/Daoris.Desktop/README.md` | 57 | 331 |
