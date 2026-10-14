@@ -32,6 +32,12 @@ public sealed record AskWordView(string Kind, string Text, DateTimeOffset At, st
 
     /// <summary>Their words with a skip of a review (REVIEWENV1b; design §3.6).</summary>
     public const string Skipped = "skipped";
+
+    /// <summary>
+    /// Their message on the ask's channel (SESSONE2a's <c>AskWordKind.Channel</c>, D167 point 7), kept on the ask when they post it. A
+    /// part that takes it reports nothing more (SESSONE2b), so it is held here once.
+    /// </summary>
+    public const string Channel = "channel";
 }
 
 /// <summary>
@@ -226,6 +232,8 @@ public static class AskWordsText
             AskWordView.Reviewed => $"They reviewed the set-up shown{on}",
             AskWordView.NotYet => $"They said not yet to the set-up shown{on}",
             AskWordView.Skipped => $"They skipped the review of the work{on}",
+            // Their message on the ask's channel (SESSONE2b): kept on the ask when posted, to whichever of its repositories.
+            AskWordView.Channel => "They wrote on the ask's channel",
             _ => on.Length == 0 ? "They said" : $"They said,{on}",
         };
     }
