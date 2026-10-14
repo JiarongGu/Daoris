@@ -309,7 +309,7 @@ public sealed partial class Driver
             return $"opinion  {run.Line}";
         }
 
-        var view = await service.ReadOpinionAsync(run.Opinion, ct).ConfigureAwait(false);
+        var view = await service.Opinions.ReadAsync(run.Opinion, ct).ConfigureAwait(false);
         if (view is { Given: true }) service.LandingSaid(OpinionLines.Given(view, (long)watch.Elapsed.TotalSeconds));
         else if (view is { State: OpinionViews.Failed }) service.LandingSaid(OpinionLines.Unavailable(due.Session, occasion, view.Why ?? "ended"));
         return $"opinion  {run.Line}";
@@ -338,7 +338,7 @@ public sealed partial class Driver
         if (delivered.Recheck is { Opinion: { } recheck })
         {
             service.LandingSaid(OpinionLines.Asked(recheck, first.Working, first.Occasion, first.Label, first.Adapter, OpinionViews.RecheckPass));
-            if (await service.ReadOpinionAsync(recheck, ct).ConfigureAwait(false) is { Given: true } given) service.LandingSaid(OpinionLines.Given(given, null));
+            if (await service.Opinions.ReadAsync(recheck, ct).ConfigureAwait(false) is { Given: true } given) service.LandingSaid(OpinionLines.Given(given, null));
         }
 
         return $"opinion  {delivered.Line}";

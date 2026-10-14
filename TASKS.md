@@ -278,7 +278,7 @@ folder.
 **No partial type split by hand** (the owner: *"also I think we better not use partial class if we don't have auto-generated code"*; D166's note). Evidence: `docs/2026-10-14-partial-types-survey.md`. A class per domain or kind keeps one new door in one new file.
 
 - [ ] **PART7 — `HelpProposalBox` as a writer per kind** (service). A proposal-file helper and a writer class per kind, `ProposeX` kept on the box; the workflow pattern with its writer. Survey "A family".
-- [ ] **PART8 — `ServiceClient`'s parts as door classes** (driver). The opinion, helper, history, review, showing and workflow doors as classes over the client, callers re-spelled. Survey "A family".
+- [ ] **PART7b — the proposal writers' files take their classes' names** (service, driver; after PART7). `git mv` each `HelpProposalBox.<Kind>.cs` to `Help<Kind>ProposalWriter.cs`, with the driver tests that read them by path (`HelpProposalKindsTests.cs` :57, :102, :109, :129, :136; `HelpSettingProposalsTests.cs` :464) and `HelpSettingProposals.cs:27`'s comment in the same branch. D166's PART7 note.
 - [ ] **PART10 — the large five, each scouted alone** (service, modules, driver). `KnowledgeTools`, `DriverModule`, `ChatRunner`, `SessionTrees` (by concern, several rows) and the loop's `Driver` (last), each into named classes. Survey "Large".
 
 **Duplication** (the owner: *"we more focus on modularize the code to reduce duplication and easier to manage"*). Evidence: `docs/2026-10-14-duplication-survey.md`, by section. After FLAT1; DEDUP1 to 3 touch the same files, so one at a time.

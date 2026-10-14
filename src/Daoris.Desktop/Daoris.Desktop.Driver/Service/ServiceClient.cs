@@ -13,9 +13,11 @@ namespace Daoris.Driver;
 /// <remarks>
 /// It writes each request and reads each answer, and the HTTP is behind
 /// <see cref="IServiceDoors"/>, whose real one, <see cref="ServiceHttp"/>, the constructors that take a URL compose. Every
-/// module names this client; none names the HTTP.
+/// module names this client; none names the HTTP. A family of doors on a resource of its own that another module asks is a
+/// class over the client, reached through it (<see cref="Opinions"/>, <see cref="Helpers"/>; PART8): it reaches the HTTP, the
+/// JSON reading and <see cref="Opened"/> through the internal surface below (D166's PART8 note).
 /// </remarks>
-public sealed partial class ServiceClient : IDisposable
+public sealed class ServiceClient : IDisposable
 {
     private readonly IServiceDoors _doors;
     private readonly string _base;
@@ -25,6 +27,8 @@ public sealed partial class ServiceClient : IDisposable
     {
         _doors = doors;
         _base = doors.BaseUrl;
+        Opinions = new OpinionDoors(this);
+        Helpers = new HelperDoors(this);
     }
 
     /// <summary>A client over HTTP to the host at <paramref name="baseUrl"/>, with its key; a test may hand its own HTTP client.</summary>
@@ -32,6 +36,19 @@ public sealed partial class ServiceClient : IDisposable
         : this(new ServiceHttp(baseUrl, key, http))
     {
     }
+
+    /// <summary>The local host's opinion doors (XAGENT1c–XAGENT1e), over this client.</summary>
+    public OpinionDoors Opinions { get; }
+
+    /// <summary>The local host's helper doors (MIXAGENT2a-ii), over this client.</summary>
+    public HelperDoors Helpers { get; }
+
+    /// <summary>A door class's request whose every answer comes back, a refusal's included (<see cref="IServiceDoors.SendAsync"/>).</summary>
+    internal Task<ServiceReply> SendAsync(ServiceVerb verb, string path, string? json, CancellationToken ct) =>
+        _doors.SendAsync(verb, path, json, ct);
+
+    /// <summary>A record a door class opened, told to <see cref="Opened"/>'s watchers as this client's own doors tell them (LOG1b).</summary>
+    internal void RecordOpened(SessionOpened opened) => Raise(Opened, opened);
 
     public const string UrlVariable = "DAORIS_SERVICE_URL";
     public const string KeyVariable = "DAORIS_SERVICE_KEY";
@@ -1584,7 +1601,7 @@ public sealed partial class ServiceClient : IDisposable
     /// when the text is JSON. Every write this client makes goes through here (REV3 CLEAN1: five
     /// callers each wrote it out, and two of them threw on an answer that was not JSON).
     /// </summary>
-    private async Task<(bool Ok, int Status, string Payload, JsonElement? Root)> PostJsonAsync(
+    internal async Task<(bool Ok, int Status, string Payload, JsonElement? Root)> PostJsonAsync(
         string path, string body, CancellationToken ct)
     {
         var answer = await _doors.SendAsync(ServiceVerb.Post, path, body, ct).ConfigureAwait(false);
@@ -1640,7 +1657,7 @@ public sealed partial class ServiceClient : IDisposable
     }
 
     // An element that is not an object has no fields — asked as one, TryGetProperty would throw.
-    private static string? Text(JsonElement element, string name) =>
+    internal static string? Text(JsonElement element, string name) =>
         element.ValueKind == JsonValueKind.Object
         && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString()
@@ -1656,6 +1673,330 @@ public sealed partial class ServiceClient : IDisposable
 
         return Encoding.UTF8.GetString(stream.ToArray());
     }
+
+    // The service's history doors, a local host's only (HIST1b, D153; the history-clearing design §6.3): what a clear of finished
+    // history would take, and the clear itself. The driver's HistoryClearing calls them, judging this machine's half before and
+    // removing the home's files after.
+
+    /// <summary>
+    /// The units a scope holds, each judged by the service, deleting nothing: <paramref name="query"/> is the door's one scope,
+    /// <c>workspace=</c>, <c>quest=</c>, <c>ask=</c> or <c>quest=…&amp;failed=true</c>, escaped.
+    /// </summary>
+    /// <exception cref="DriverException">A host older than the door, or one that refused the scope, in its words.</exception>
+    public async Task<IReadOnlyList<HistoryUnitView>> HistoryAsync(string query, CancellationToken ct = default)
+    {
+        var answer = await _doors.SendAsync(ServiceVerb.Get, $"/api/history?{query}", null, ct).ConfigureAwait(false);
+        var root = Answered(answer.Ok, answer.Status, answer.Payload);
+        return [.. Items(root, "units").Select(ReadHistoryUnit)];
+    }
+
+    /// <summary>
+    /// The second press: exactly <paramref name="units"/>, each judged again by the service and cleared in one transaction of
+    /// its own, or kept with its word.
+    /// </summary>
+    /// <exception cref="DriverException">A host older than the door, or one that refused the press, in its words.</exception>
+    public async Task<IReadOnlyList<HistoryClearedView>> ClearHistoryAsync(IReadOnlyList<HistoryUnitName> units, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteStartArray("units");
+            foreach (var unit in units)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("kind", unit.Kind);
+                writer.WriteString("id", unit.Id);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, _) = await PostJsonAsync("/api/history/clear", body, ct).ConfigureAwait(false);
+        var root = Answered(ok, status, payload);
+        return
+        [
+            .. Items(root, "units").Select(each =>
+            {
+                // Additive (HIST1j): absent where every removal was made, and from a host before it.
+                var failed = each.TryGetProperty("failed", out var named) && named.ValueKind == JsonValueKind.Object;
+                return new HistoryClearedView(
+                    each.TryGetProperty("unit", out var unit) ? ReadHistoryUnit(unit) : new HistoryUnitView("", "", null),
+                    Flag(each, "cleared"),
+                    Text(each, "message") ?? "")
+                {
+                    FailedQuests = failed ? Strings(named, "quests") : [],
+                    FailedAsks = failed ? Strings(named, "asks") : [],
+                };
+            }),
+        ];
+    }
+
+    /// <summary>The door's answer read, or its refusal said: in its words where it gave some, else as a host older than the door.</summary>
+    private JsonElement Answered(bool ok, int status, string payload)
+    {
+        JsonElement root = default;
+        try
+        {
+            using var document = JsonDocument.Parse(payload);
+            root = document.RootElement.Clone();
+        }
+        catch (JsonException)
+        {
+            // Not JSON: a host older than the door answers a bare 404 or 405.
+        }
+
+        if (ok && root.ValueKind == JsonValueKind.Object) return root;
+        if (Text(root, "error") is { Length: > 0 } error) throw new DriverException($"the service refused the history door ({status}): {error}");
+        throw new DriverException($"the service at {_base} has no history door ({status}) — is it older than this driver?");
+    }
+
+    private static HistoryUnitView ReadHistoryUnit(JsonElement unit) => new(Text(unit, "kind") ?? "", Text(unit, "id") ?? "", Text(unit, "workspace"))
+    {
+        Clearable = Flag(unit, "clearable"),
+        Quests = Strings(unit, "quests"),
+        Forgotten = Strings(unit, "forgotten"),
+        Asks = Strings(unit, "asks"),
+        Sessions = Strings(unit, "sessions"),
+        Teammates = Strings(unit, "teammates"),
+        Refusal = unit.TryGetProperty("refusal", out var refusal) && refusal.ValueKind == JsonValueKind.Object ? ReadHistoryRefusal(refusal) : null,
+        Kept = [.. Items(unit, "kept").Select(ReadHistoryRefusal)],
+    };
+
+    private static HistoryRefusalView ReadHistoryRefusal(JsonElement refusal) => new(Text(refusal, "refusal") ?? "", Text(refusal, "error") ?? "")
+    {
+        Quest = Text(refusal, "quest"),
+        Ask = Text(refusal, "ask"),
+        Session = Text(refusal, "session"),
+        Origin = Text(refusal, "origin"),
+        Workspace = Text(refusal, "workspace"),
+        // Additive (HIST1l, HIST1m): each absent beside every other word, and from a host before it.
+        Waits = Text(refusal, "waits"),
+        Stands = Text(refusal, "stands"),
+        By = Text(refusal, "by"),
+    };
+
+    // The review on the record, read (REVIEWENV1b2): each field optional, so a quest or an ask no review touches, and one from a
+    // host before them, reads as it did. A set-up, a verdict, a choice or a proposal that is not whole is passed over, as the
+    // service passes over what it cannot read: never a failed read of the quest or the ask. Then the review's quest and ask
+    // doors.
+
+    /// <summary>A quest's chain choice (<c>review</c>), or null where it answers none, or one that names no choice.</summary>
+    private static QuestReviewChoiceView? ReadReviewChoice(JsonElement quest) =>
+        quest.TryGetProperty("review", out var review) && Text(review, "choice") is { Length: > 0 } choice
+            ? new QuestReviewChoiceView(choice, Text(review, "words"))
+            : null;
+
+    /// <summary>A set-up step's set-ups (<c>setUps</c>), each with a full commit: one without is half of one.</summary>
+    private static IReadOnlyList<QuestSetUpView> ReadSetUps(JsonElement quest) =>
+    [
+        .. Items(quest, "setUps")
+            .Where(setUp => EvidenceCodes.IsObjectId(Text(setUp, "commit")))
+            .Select(setUp => new QuestSetUpView(Text(setUp, "commit")!)
+            {
+                Look = Text(setUp, "look"),
+                Shows = Text(setUp, "shows"),
+                Again = Text(setUp, "again"),
+                Served = Text(setUp, "served"),
+                Run = Text(setUp, "run"),
+                Session = Text(setUp, "session"),
+                Local = Flag(setUp, "local"),
+                At = Moment(setUp, "at"),
+                Machine = Text(setUp, "machine"),
+                Sequence = Whole(setUp, "sequence"),
+            }),
+    ];
+
+    /// <summary>The person's verdicts (<c>verdicts</c>), each saying one: a verdict that says nothing is none.</summary>
+    private static IReadOnlyList<QuestReviewVerdictView> ReadVerdicts(JsonElement quest) =>
+    [
+        .. Items(quest, "verdicts")
+            .Where(verdict => Text(verdict, "said") is { Length: > 0 })
+            .Select(verdict =>
+            {
+                var setUp = verdict.TryGetProperty("setUp", out var named) && named.ValueKind == JsonValueKind.Object ? named : default;
+                return new QuestReviewVerdictView(Text(verdict, "said")!)
+                {
+                    SetUpMachine = Text(setUp, "machine"),
+                    SetUpSequence = Whole(setUp, "sequence"),
+                    Commit = Text(verdict, "commit"),
+                    Words = Text(verdict, "words"),
+                    At = Moment(verdict, "at"),
+                    Machine = Text(verdict, "machine"),
+                };
+            }),
+    ];
+
+    /// <summary>An ask's review choices (<c>reviewChoices</c>), each a choice with when it was made.</summary>
+    private static IReadOnlyList<AskReviewChoiceView> ReadReviewChoices(JsonElement ask) =>
+    [
+        .. Items(ask, "reviewChoices")
+            .Where(chosen => Text(chosen, "choice") is { Length: > 0 } && Moment(chosen, "at") is not null)
+            .Select(chosen => new AskReviewChoiceView(Text(chosen, "choice")!, Moment(chosen, "at")!.Value, Text(chosen, "words"))),
+    ];
+
+    /// <summary>An ask's intake's review proposals (<c>reviewProposals</c>), each a choice with its reason and when.</summary>
+    private static IReadOnlyList<AskReviewProposalView> ReadReviewProposals(JsonElement ask) =>
+    [
+        .. Items(ask, "reviewProposals")
+            .Where(proposed => Text(proposed, "choice") is { Length: > 0 } && Text(proposed, "reason") is { Length: > 0 }
+                               && Moment(proposed, "at") is not null)
+            .Select(proposed => new AskReviewProposalView(
+                Text(proposed, "choice")!, Text(proposed, "reason")!, Moment(proposed, "at")!.Value,
+                Text(proposed, "session"), Text(proposed, "quest"))),
+    ];
+
+    /// <summary>
+    /// Post a set-up step's session's said set-ups with the commit Daoris read from its tree (REVIEWENV1c, design §2.6): the local
+    /// host's <c>POST /api/quests/{id}/set-up</c>, <c>{ session, commit, kind }</c>, which keeps each said set-up once. The commit
+    /// is read, never the session's word. A refusal is an answer, in the service's words, and a host older than the door says so.
+    /// </summary>
+    /// <param name="kind">The environment's kind, as the rule declares it: <c>local</c> or <c>deployed</c>.</param>
+    public async Task<(bool Ok, string Message)> PostSetUpAsync(
+        string quest, string session, string commit, string kind, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("session", session);
+            writer.WriteString("commit", commit);
+            writer.WriteString("kind", kind);
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync($"/api/quests/{Uri.EscapeDataString(quest.TrimStart('#'))}/set-up", body, ct)
+            .ConfigureAwait(false);
+        if (root is not { } answer) return (false, $"the service at {_base} has no set-up door ({status}) — is it older than this driver?");
+        return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
+    }
+
+    /// <summary>
+    /// The person's verdict on a review (REVIEWENV1c, design §3.3): the local host's <c>POST /api/quests/{id}/review</c>, with the
+    /// set-up they were shown, named by its <c>machine</c> and <c>sequence</c> whole (REVIEWENV1b3); a skip names none. The
+    /// service's sentence comes back verbatim, a refusal included, and a host older than the door says so.
+    /// </summary>
+    /// <param name="verdict"><c>reviewed</c>, <c>not-yet</c> or <c>skipped</c>.</param>
+    public async Task<(bool Ok, string Message)> ReviewAsync(
+        string quest, string verdict, string? words, string? machine, long? sequence, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("verdict", verdict);
+            if (!string.IsNullOrWhiteSpace(words)) writer.WriteString("words", words.Trim());
+            if (machine is not null && sequence is { } at)
+            {
+                writer.WriteStartObject("setUp");
+                writer.WriteString("machine", machine);
+                writer.WriteNumber("sequence", at);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync($"/api/quests/{Uri.EscapeDataString(quest.TrimStart('#'))}/review", body, ct)
+            .ConfigureAwait(false);
+        if (root is not { } answer) return (false, $"the service at {_base} has no review door ({status}) — is it older than this driver?");
+        return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
+    }
+
+    /// <summary>
+    /// The person's <i>Set it up in <c>environment</c></i> (REVIEWENV1j, design §3.6): the local host's
+    /// <c>POST /api/quests/{id}/set-up-step</c>, <c>{ environment }</c>, the door the gate's press calls, which publishes a set-up step
+    /// following a done quest. The service's sentence comes back verbatim, a refusal included, with the step it published; a host
+    /// older than the door says so.
+    /// </summary>
+    public async Task<(bool Ok, string Message, string? Step)> PublishSetUpStepAsync(string quest, string environment, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("environment", environment);
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync(
+            $"/api/quests/{Uri.EscapeDataString(quest.TrimStart('#'))}/set-up-step", body, ct).ConfigureAwait(false);
+        if (root is not { } answer) return (false, $"the service at {_base} has no set-up step door ({status}) — is it older than this driver?", null);
+        if (!ok) return (false, Text(answer, "error") ?? payload, null);
+        var step = answer.TryGetProperty("quest", out var published) && published.ValueKind == JsonValueKind.Object ? Text(published, "id") : null;
+        return (true, Text(answer, "message") ?? "", step);
+    }
+
+    /// <summary>
+    /// The person's review choice on an ask, or its intake's proposal applied (REVIEWENV1j; design §1.5): the local host's
+    /// <c>POST /api/asks/{id}/review</c>, <c>{ choice, words? }</c>, the door the ask's page presses. The latest stands. The service's
+    /// sentence comes back verbatim, a refusal included, and a host older than the door says so.
+    /// </summary>
+    public Task<AskAnswer> ChooseAskReviewAsync(string ask, string choice, string? words, CancellationToken ct = default) =>
+        PostAskAsync($"/api/asks/{Uri.EscapeDataString(ask.TrimStart('#'))}/review", writer =>
+        {
+            writer.WriteString("choice", choice);
+            if (!string.IsNullOrWhiteSpace(words)) writer.WriteString("words", words.Trim());
+        }, ct);
+
+    /// <summary>The objects of an array field; none where the field is absent or no array, and an item that is no object is passed over.</summary>
+    private static IEnumerable<JsonElement> Items(JsonElement element, string name) =>
+        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var items) && items.ValueKind == JsonValueKind.Array
+            ? items.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.Object)
+            : [];
+
+    /// <summary>A whole number a field holds, or null where it holds none.</summary>
+    private static long? Whole(JsonElement element, string name) =>
+        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value)
+        && value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var number)
+            ? number
+            : null;
+
+    // What the review's showing reads of a session's record (REVIEWENV1d): the tree its set-up was built in.
+
+    /// <summary>
+    /// The tree a session of this machine's held (D51), closed records included, as the records answer it on loopback; null where
+    /// the service holds no such record or says no tree. What <i>Show it again</i> serves a set-up's folder from.
+    /// </summary>
+    public async Task<string?> SessionTreeAsync(string session, CancellationToken ct = default)
+    {
+        using var document = JsonDocument.Parse(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
+        if (document.RootElement.ValueKind != JsonValueKind.Array) return null;
+        return document.RootElement.EnumerateArray()
+            .Where(record => record.ValueKind == JsonValueKind.Object
+                             && string.Equals(Text(record, "id"), session, StringComparison.OrdinalIgnoreCase))
+            .Select(record => Text(record, "tree"))
+            .FirstOrDefault(tree => tree is { Length: > 0 });
+    }
+
+    // An ask's kind and workflow (WORKFLOW1e, WORKFLOW1i): the person's choices and its intake's proposals read, and the
+    // person's choice posted.
+
+    /// <summary>An ask's kind and workflow choices (<c>workflowChoices</c>), each with when it was made; one without a moment is half of one.</summary>
+    private static IReadOnlyList<AskWorkflowChoiceView> ReadWorkflowChoices(JsonElement ask) =>
+    [
+        .. Items(ask, "workflowChoices")
+            .Where(chosen => Moment(chosen, "at") is not null)
+            .Select(chosen => new AskWorkflowChoiceView(Text(chosen, "kind"), Text(chosen, "workflow"), Moment(chosen, "at")!.Value, Text(chosen, "words"))),
+    ];
+
+    /// <summary>An ask's intake's kind proposals (<c>workflowProposals</c>), each a kind with its reason and when; one without is half of one.</summary>
+    private static IReadOnlyList<AskWorkflowProposalView> ReadWorkflowProposals(JsonElement ask) =>
+    [
+        .. Items(ask, "workflowProposals")
+            .Where(proposed => Text(proposed, "kind") is { Length: > 0 } && Text(proposed, "reason") is { Length: > 0 }
+                               && Moment(proposed, "at") is not null)
+            .Select(proposed => new AskWorkflowProposalView(
+                Text(proposed, "kind")!, Text(proposed, "reason")!, Moment(proposed, "at")!.Value,
+                Text(proposed, "session"), Text(proposed, "quest"))),
+    ];
+
+    /// <summary>
+    /// The person's kind and workflow on an ask (WORKFLOW1e; the workflow design §4.3): the local host's
+    /// <c>POST /api/asks/{id}/workflow</c>, <c>{ kind?, workflow?, words? }</c>, a person's door (D156); neither clears the choice.
+    /// The latest stands. The service's sentence comes back verbatim, a refusal included, and a host older than the door says so.
+    /// </summary>
+    public Task<AskAnswer> ChooseAskWorkflowAsync(string ask, string? kind, string? workflow, string? words, CancellationToken ct = default) =>
+        PostAskAsync($"/api/asks/{Uri.EscapeDataString(ask.TrimStart('#'))}/workflow", writer =>
+        {
+            if (kind is not null) writer.WriteString("kind", kind);
+            if (workflow is not null) writer.WriteString("workflow", workflow);
+            if (!string.IsNullOrWhiteSpace(words)) writer.WriteString("words", words.Trim());
+        }, ct);
 }
 
 /// <summary>A session record the ledger opened for this client (LOG1b).</summary>

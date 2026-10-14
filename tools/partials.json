@@ -85,15 +85,6 @@
     "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Review.cs",
     "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs"
   ],
-  "ServiceClient": [
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Helpers/HelperClient.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Review/ServiceClient.Opinions.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.History.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.Review.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.Showing.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.Workflow.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs"
-  ],
   "SessionTrees": [
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Auto.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Content.cs",

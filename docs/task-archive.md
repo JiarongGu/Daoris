@@ -14284,3 +14284,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DEDUP9c — the service core's clipped text** (service; after 9b). One `Clip(text, limit)` for five copies and 46 calls; the word-boundary cuts (`TitleOf`, `Truncate`) stay theirs. Survey §7.
 
 **Outcome** 2026-10-14: `Daoris.Service.Core/Clipped.cs` holds `Clip(text, limit = 120)` and `OneLine`, reached by a global `using static`, so the 46 calls read as before; the five copies went, the remote's two calls naming their 200. The branch began before PART6 and DEDUP9b: at the merge the exchange's and the review's last copies were taken out by hand. Six tests. On Sonnet: 29 tool calls.
+
+## PART8 — `ServiceClient`'s parts as door classes (2026-10-14, D166)
+
+> - [ ] **PART8 — `ServiceClient`'s parts as door classes** (driver). The opinion, helper, history, review, showing and workflow doors as classes over the client, callers re-spelled. Survey "A family".
+
+**Outcome** 2026-10-14: the doors on another module's resource became that module's classes over the client, `OpinionDoors` (Review) and `HelperDoors` (Conversations), reached as `service.Opinions` and `service.Helpers` through four internal members of the client; the history, review, showing and workflow parts, on the client's own resources, merged into `ServiceClient.cs`, now one declaration of about 2,000 lines. Extension methods were rejected, as hiding the coupling the parts hid. The opinion, helper, landing and review Process classes passed 55 of 55 on the merge. On Opus: 132 tool calls. Detail: D166's PART8 note.
