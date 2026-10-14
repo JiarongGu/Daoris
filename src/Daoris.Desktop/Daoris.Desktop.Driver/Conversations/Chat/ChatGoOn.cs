@@ -420,7 +420,7 @@ internal sealed class ChatGoOn
 
     /// <summary>
     /// What the ledger's note gains as an ended chat goes on (MSG1b), by what waits: another agent's claims alone are never "your
-    /// words" (XAGENT1e, MIXAGENT2a-iii), as the driven path's note is (<c>Driver.Continue</c>).
+    /// words" (XAGENT1e, MIXAGENT2a-iii), as the driven path's note is (<c>DriverContinuations</c>).
     /// </summary>
     internal static Noted GoingOnNote(IReadOnlyList<SaidWordView> waiting)
     {
@@ -433,7 +433,7 @@ internal sealed class ChatGoOn
 
     /// <summary>
     /// The resumed conversation's first line (D131 §1), by what it goes on with: the same arguments the driven path passes
-    /// (<c>Driver.Continue</c>), so a helper's answer is said as that agent's claim and never as "your words" (MIXAGENT2a-iii).
+    /// (<c>DriverContinuations</c>), so a helper's answer is said as that agent's claim and never as "your words" (MIXAGENT2a-iii).
     /// </summary>
     internal static Noted OpeningNote(IReadOnlyList<SaidWordView> words, string adapter, string? now, string? then) =>
         Continuations.OpeningNoted(

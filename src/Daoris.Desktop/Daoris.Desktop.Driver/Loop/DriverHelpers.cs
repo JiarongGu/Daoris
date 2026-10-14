@@ -20,13 +20,16 @@ namespace Daoris.Driver;
 /// and one that never goes on (a teammate's, stood down) is refused with its code. A conversation takes it as its next turn
 /// (MIXAGENT2a-iii): the shell's chat runner says it, or goes the ended one on with it.</para>
 /// </remarks>
-public sealed partial class Driver
+/// <param name="driver">
+/// The driver whose run machinery a helper's pass goes through (PART10n, D166): the spawn's preparation, the connector, the rules
+/// handed, the hold of the process and the account sayings, as <see cref="DriverOpinions"/> does. The front's <c>HelperPasses</c>,
+/// <c>HelperTrees</c> and <c>HelperChoices</c> write through to the context, and this class reads them at each use.
+/// </param>
+internal sealed class DriverHelpers(LoopContext context, Driver driver)
 {
-    /// <summary>
-    /// How a helper's pass is run: <see cref="HelperPassAsync"/>, unless a test hands in a stand-in, since a real pass spawns git
-    /// and an agent, which the suite's fast half may not (MOD8).
-    /// </summary>
-    internal Func<HelperPassAsk, ReviewerChoice, CancellationToken, Task<HelperPassRun>>? HelperPasses { get; init; }
+    private readonly LoopContext _context = context;
+
+    private readonly Driver _driver = driver;
 
     /// <summary>
     /// The asks for a helper on this machine, at a look (MIXAGENT2a-ii): each judged and started, settled or delivered as the facts
@@ -34,9 +37,11 @@ public sealed partial class Driver
     /// first start, as a second opinion's pass does (D130). Nothing is read where no ask is on file.
     /// </summary>
     /// <param name="taken">The slots this look's second opinions already took.</param>
-    internal async Task<int> HelpersAsync(Snapshot snapshot, int taken, List<string> events, CancellationToken ct)
+    public async Task<int> HelpersAsync(Snapshot snapshot, int taken, List<string> events, CancellationToken ct)
     {
-        var files = new HelperFiles(home);
+        var service = _context.Service;
+        var config = _context.Config;
+        var files = new HelperFiles(_context.Home);
         var asks = files.Asks();
         if (asks.Count == 0) return 0;
 
@@ -53,18 +58,18 @@ public sealed partial class Driver
                     case HelperStates.Refused:
                         continue;
                     case HelperStates.Answered:
-                        if (state.Handed is null && _runs.TryOpinion(HelperClaim(ask.Id)))
+                        if (state.Handed is null && _context.Runs.TryOpinion(HelperClaim(ask.Id)))
                         {
                             try { if (await DeliverHelperAsync(ask, state, files, ct).ConfigureAwait(false) is { } line) events.Add(line); }
-                            finally { _runs.OpinionDone(HelperClaim(ask.Id)); }
+                            finally { _context.Runs.OpinionDone(HelperClaim(ask.Id)); }
                         }
 
                         continue;
                     case HelperStates.Started:
-                        if (_runs.TryOpinion(HelperClaim(ask.Id)))
+                        if (_context.Runs.TryOpinion(HelperClaim(ask.Id)))
                         {
                             try { if (await SettleStartedAsync(ask, state, files, ct).ConfigureAwait(false) is { } line) events.Add(line); }
-                            finally { _runs.OpinionDone(HelperClaim(ask.Id)); }
+                            finally { _context.Runs.OpinionDone(HelperClaim(ask.Id)); }
                         }
 
                         continue;
@@ -87,7 +92,7 @@ public sealed partial class Driver
                     case HelperVerdict.WaitKind:
                         Wait(files, ask, state, verdict.Code);
                         break;
-                    case HelperVerdict.GoKind when _runs.TryOpinion(HelperClaim(ask.Id)):
+                    case HelperVerdict.GoKind when _context.Runs.TryOpinion(HelperClaim(ask.Id)):
                         begun++;
                         begunFor[ask.Asker] = begunFor.GetValueOrDefault(ask.Asker) + 1;
                         HelperBeside(ask.Id, token => RunHelperAsync(ask, record!, rule, files, token), ct);
@@ -105,20 +110,11 @@ public sealed partial class Driver
         return begun;
     }
 
-    /// <summary>
-    /// How an asker's tree is read, its last commit and its repository's registered checkout: git, unless a test hands in a
-    /// stand-in, since a real read spawns git, which the suite's fast half may not (MOD8).
-    /// </summary>
-    internal Func<string, CancellationToken, Task<(string? Tip, string? Root)>>? HelperTrees { get; init; }
-
-    /// <summary>
-    /// How a helper's agent is chosen: <see cref="HelperChoice.ChooseAsync"/>, whose account walk reads this machine's installs and
-    /// sign-ins, unless a test hands in a choice (the walk itself is <see cref="ReviewerChoice"/>'s, held by its own suite).
-    /// </summary>
-    internal Func<HelperAsk, HelperRule, PriorSession, CancellationToken, Task<ReviewerChoice>>? HelperChoices { get; init; }
-
+    // The asker's tree is read with git, unless a test hands in a stand-in (the context's HelperTrees), since a real read spawns git,
+    // which the suite's fast half may not (MOD8); a helper's agent is chosen by HelperChoice.ChooseAsync, whose account walk reads this
+    // machine's installs and sign-ins, unless a test hands in a choice (the context's HelperChoices).
     private async Task<(string? Tip, string? Root)> ReadTreeAsync(string tree, CancellationToken ct) =>
-        HelperTrees is { } read
+        _context.HelperTrees is { } read
             ? await read(tree, ct).ConfigureAwait(false)
             : (await ReviewGit.HeadAsync(tree, ct).ConfigureAwait(false), await SessionTrees.CheckoutOfTreeAsync(tree, ct).ConfigureAwait(false));
 
@@ -126,7 +122,7 @@ public sealed partial class Driver
 
     /// <summary>A pass beside the look, as a second opinion's is: told opened at once, its line joining a later look's report.</summary>
     private void HelperBeside(string ask, Func<CancellationToken, Task<string>> work, CancellationToken ct) =>
-        _ = _runs.StartAsync(async opened =>
+        _ = _context.Runs.StartAsync(async opened =>
         {
             opened();
             try
@@ -141,7 +137,7 @@ public sealed partial class Driver
             }
             finally
             {
-                _runs.OpinionDone(HelperClaim(ask));
+                _context.Runs.OpinionDone(HelperClaim(ask));
             }
         });
 
@@ -163,8 +159,8 @@ public sealed partial class Driver
         var note = HelperNotes.Refused(code, agent ?? kept?.Agent);
         if (code != HelperWhy.AskerGone)
         {
-            output?.Append(ask.Asker, $"— {note.Note}");
-            _events.Keep(ask.Asker, new SessionEvent { Kind = SessionEventKind.Note, Text = note.Note, Parts = note.Parts }, say: null);
+            _context.Output?.Append(ask.Asker, $"— {note.Note}");
+            _context.Events.Keep(ask.Asker, new SessionEvent { Kind = SessionEventKind.Note, Text = note.Note, Parts = note.Parts }, say: null);
         }
 
         return Task.FromResult($"helper  ask `{ask.Id}` refused ({code}): {HelperWhy.Said(code)}.");
@@ -180,9 +176,9 @@ public sealed partial class Driver
             return await RefuseAsync(ask, HelperWhy.Unreadable, null, files, ct).ConfigureAwait(false);
         }
 
-        var choice = HelperChoices is { } choose
+        var choice = _context.HelperChoices is { } choose
             ? await choose(ask, rule, asker, ct).ConfigureAwait(false)
-            : await HelperChoice.ChooseAsync(_harnesses, ask, rule, asker.Adapter, config, asker.Workspace, ct).ConfigureAwait(false);
+            : await HelperChoice.ChooseAsync(_context.Harnesses, ask, rule, asker.Adapter, _context.Config, asker.Workspace, ct).ConfigureAwait(false);
         if (!choice.Chosen)
         {
             // No agent ready: it waits, and the state says why (a cool-off, a sign-in, no other maker), tried again at a later look.
@@ -199,14 +195,14 @@ public sealed partial class Driver
                 // 🔴 Started, naming the helper, BEFORE its turn: `helper_answer` finds its ask by this state.
                 files.WriteState(new HelperState(ask.Id, HelperStates.Started, null, helper, DateTimeOffset.UtcNow) { Agent = agent });
                 var asked = HelperNotes.Asked(agent, helper);
-                output?.Append(ask.Asker, $"— {asked.Note}");
-                _events.Keep(ask.Asker, new SessionEvent { Kind = SessionEventKind.Note, Text = asked.Note, Parts = asked.Parts }, say: null);
+                _context.Output?.Append(ask.Asker, $"— {asked.Note}");
+                _context.Events.Keep(ask.Asker, new SessionEvent { Kind = SessionEventKind.Note, Text = asked.Note, Parts = asked.Parts }, say: null);
                 var helping = HelperNotes.Helping(ask.Asker);
-                output?.Append(helper, $"— {helping.Note}");
-                _events.Keep(helper, new SessionEvent { Kind = SessionEventKind.Note, Text = helping.Note, Parts = helping.Parts }, say: null);
+                _context.Output?.Append(helper, $"— {helping.Note}");
+                _context.Events.Keep(helper, new SessionEvent { Kind = SessionEventKind.Note, Text = helping.Note, Parts = helping.Parts }, say: null);
             },
         };
-        var run = await (HelperPasses ?? HelperPassAsync)(passAsk, choice, ct).ConfigureAwait(false);
+        var run = await (_context.HelperPasses ?? HelperPassAsync)(passAsk, choice, ct).ConfigureAwait(false);
         if (run.Session is null)
         {
             return await RefuseAsync(ask, run.Code ?? HelperWhy.NotStarted, agent, files, ct).ConfigureAwait(false);
@@ -249,11 +245,11 @@ public sealed partial class Driver
     private async Task<string?> SettleStartedAsync(HelperAsk ask, HelperState state, HelperFiles files, CancellationToken ct)
     {
         if (state.Helper is not { } helper) return null;
-        var record = await service.RecordAsync(helper, ct).ConfigureAwait(false);
+        var record = await _context.Service.RecordAsync(helper, ct).ConfigureAwait(false);
         if (record is { Running: true }) return null;
 
         var lastWords = record is { State: "completed" }
-            ? SessionLastWords.ParkedWords(_events, helper, Path.Combine(home, "sessions", $"{helper}.log"))
+            ? SessionLastWords.ParkedWords(_context.Events, helper, Path.Combine(_context.Home, "sessions", $"{helper}.log"))
             : null;
         return await SettleHelperAsync(ask, files, record?.State, lastWords, ct).ConfigureAwait(false);
     }
@@ -267,6 +263,8 @@ public sealed partial class Driver
     /// </summary>
     private async Task<string?> DeliverHelperAsync(HelperAsk ask, HelperState state, HelperFiles files, CancellationToken ct)
     {
+        var service = _context.Service;
+        var output = _context.Output;
         var record = await service.RecordAsync(ask.Asker, ct).ConfigureAwait(false);
         var never = record switch
         {
@@ -295,14 +293,14 @@ public sealed partial class Driver
         files.WriteState(state with { Handed = word ?? "handed" });
         var noted = HelperNotes.Answered(agent, state.Helper!, state.LastWords);
         output?.Append(ask.Asker, $"— {noted.Note}");
-        _events.Keep(ask.Asker, new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts }, say: null);
+        _context.Events.Keep(ask.Asker, new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts }, say: null);
 
         // The shell's chat runner hears this event, as it hears the person's words to an ended conversation (D137 §3.1), after the
         // note above so the turn it makes reads beneath it: the origin is Daoris's own (`target`), never the person's, and an
         // open conversation says the word as its next turn.
         if (conversation && word is not null)
         {
-            _events.Keep(
+            _context.Events.Keep(
                 ask.Asker, new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Id = word, Text = composed, Reaches = "resume" },
                 say: null);
         }
@@ -325,7 +323,7 @@ public sealed partial class Driver
         ISessionAdapter adapter;
         try
         {
-            adapter = Context.Adapters.Resolve(helper);
+            adapter = _context.Adapters.Resolve(helper);
         }
         catch (DriverException error)
         {
@@ -335,7 +333,7 @@ public sealed partial class Driver
         OpinionTreeOpened copy;
         try
         {
-            copy = await OpinionTree.OpenAsync(home, ask.Root, ask.Repository, ask.Workspace, ask.Tip, ct).ConfigureAwait(false);
+            copy = await OpinionTree.OpenAsync(_context.Home, ask.Root, ask.Repository, ask.Workspace, ask.Tip, ct).ConfigureAwait(false);
         }
         catch (DriverException error)
         {
@@ -351,7 +349,7 @@ public sealed partial class Driver
         finally
         {
             // Removed however the run ended, the person's stop and the driver's own included: nothing in it is read back.
-            left = await OpinionTree.RemoveAsync(home, copy.Path).ConfigureAwait(false);
+            left = await OpinionTree.RemoveAsync(_context.Home, copy.Path).ConfigureAwait(false);
         }
 
         return left is null ? run : run with { Line = $"{run.Line} {left}" };
@@ -361,6 +359,9 @@ public sealed partial class Driver
     private async Task<HelperPassRun> ReadHelperInCopyAsync(
         HelperPassAsk ask, ISessionAdapter adapter, HarnessSelection selection, string agent, OpinionTreeOpened copy, CancellationToken ct)
     {
+        var service = _context.Service;
+        var home = _context.Home;
+        var output = _context.Output;
         var named = $"ask `{ask.Ask.Id}`";
         var opened = await service.Helpers.OpenAsync(ask.Ask.Asker, agent, copy.Path, selection.Profile, selection.Version, ask.Tip, ct).ConfigureAwait(false);
         if (!opened.Opened)
@@ -374,8 +375,8 @@ public sealed partial class Driver
         HelperPassRun Ended(string state, string note, string? lastWords = null) =>
             new(sessionId, $"{state}  helper {sessionId} ({named}): {note}") { State = state, LastWords = lastWords };
         // The record says who asked: an opening's line, then the helper's own on another account of the order, as a quest's start does.
-        RotatedOpening.Say(service, _events, sessionId, agent, selection, carried: null);
-        var bound = HelperPass.Bound(config);
+        RotatedOpening.Say(service, _context.Events, sessionId, agent, selection, carried: null);
+        var bound = HelperPass.Bound(_context.Config);
         var posture = OpinionPosture.Of(adapter);
 
         try
@@ -388,7 +389,7 @@ public sealed partial class Driver
                 Session = sessionId,
                 Prompt = HelperInstruction.Compose(packet),
             };
-            var (info, harnessNotice) = Prepare(adapter, target, selection);
+            var (info, harnessNotice) = _driver.Prepare(adapter, target, selection);
             await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
 
             var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
@@ -399,48 +400,48 @@ public sealed partial class Driver
             string? preamble = null;
             if (adapter.Wire == SessionWire.Pipe)
             {
-                var connector = Connector(sessionId, scope: null);
+                var connector = _driver.Connector(sessionId, scope: null);
                 if (connector is null) preamble = HelperPass.NoConnector;
                 handed = SpawnServers.Hand(adapter, info, home, sessionId, connector is null ? [] : [connector]);
             }
 
             // What it may do: the person's composition under the reviewer's read-only shape with `helper_answer`, held to its copy
             // by the tree guard.
-            var handedRules = HandRules(adapter, info, sessionId, ask.Workspace, ask.Repository, tree: copy.Path, kept: null, opinion: true, helper: true);
+            var handedRules = _driver.HandRules(adapter, info, sessionId, ask.Workspace, ask.Repository, tree: copy.Path, kept: null, opinion: true, helper: true);
             var opening = HelperPass.Opening(ask.Repository, ask.Tip, posture);
 
-            return await HoldAsync(
-                adapter, info, target, sessionId, transcript, copy.Path, JoinNotices(harnessNotice, opening), handedRules, handed,
+            return await _driver.HoldAsync(
+                adapter, info, target, sessionId, transcript, copy.Path, Driver.JoinNotices(harnessNotice, opening), handedRules, handed,
                 // One turn, and no words: nobody talks to a helper while it reads, on either door.
                 refusesInput: HelperPass.TakesNoWords(ask.Ask.Id),
                 ct: ct,
-                preamble: JoinNotices(preamble, opening),
+                preamble: Driver.JoinNotices(preamble, opening),
                 handedServers: [],
-                said: Said(adapter, selection, sessionId),
+                said: _driver.Said(adapter, selection, sessionId),
                 minutes: bound,
                 noConnector: HelperPass.NoConnector,
                 conclude: async (exitCode, used, turnFailed, ended) =>
                 {
                     if (used is not null)
                     {
-                        usage?.Record(new UsageEntry(
+                        _context.Usage?.Record(new UsageEntry(
                             sessionId, ask.Repository, adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
                     }
 
-                    var byPerson = _processes.WasStopRequested(sessionId);
+                    var byPerson = _context.Processes.WasStopRequested(sessionId);
                     var conclusion = byPerson
-                        ? SessionConclusion.Of("stopped", _processes.StopNote(sessionId) ?? Observation.Stopped)
+                        ? SessionConclusion.Of("stopped", _context.Processes.StopNote(sessionId) ?? Observation.Stopped)
                         : exitCode is int code
                             ? ReadHelper(ask.Ask.Asker, code, turnFailed)
                             : SessionConclusion.Of("failed", Observation.TimedOut(bound));
-                    conclusion = AccountRefused(conclusion, adapter, selection, ended);
-                    conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed);
-                    (conclusion, var limited) = AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
+                    conclusion = _driver.AccountRefused(conclusion, adapter, selection, ended);
+                    conclusion = _driver.AccountSignedOut(conclusion, adapter, selection, turnFailed);
+                    (conclusion, var limited) = _driver.AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
 
                     await service.AdvanceAsync(
                         sessionId, conclusion.State, note: conclusion.Note, ct: ct, limit: limited, parts: conclusion.Parts).ConfigureAwait(false);
                     // Its last words stand as the answer only where its turn completed and it used no tool (design §3).
-                    var lastWords = conclusion.State == "completed" ? SessionLastWords.ParkedWords(_events, sessionId, transcript) : null;
+                    var lastWords = conclusion.State == "completed" ? SessionLastWords.ParkedWords(_context.Events, sessionId, transcript) : null;
                     return Ended(conclusion.State, conclusion.Note, lastWords);
                 }).ConfigureAwait(false);
         }

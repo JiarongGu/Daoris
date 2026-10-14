@@ -1,11 +1,4 @@
 {
-  "Driver": [
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.Continue.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.HandOver.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.Helper.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.Intake.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs"
-  ],
   "SessionTrees": [
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Auto.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Content.cs",

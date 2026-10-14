@@ -12,8 +12,38 @@ namespace Daoris.Driver;
 /// </remarks>
 internal sealed class LoopContext(
     ServiceClient service, DriverConfig config, string home, AdapterSet adapters, SessionProcesses? processes, HarnessRoster? harnesses,
-    SessionEvents? events, SessionOutput? output, SessionUsage? usage, RunningSessions? running)
+    SessionEvents? events, SessionOutput? output, SessionUsage? usage, RunningSessions? running, HookSet? hooks, IInAppBrowser? browser)
 {
+    /// <summary>The plugins that speak (D64), shared across ticks; null where no plugin is read at all.</summary>
+    public HookSet? Hooks { get; } = hooks;
+
+    /// <summary>Daoris's own browser (D78), asked for by a plugin server that drives it; null where no shell carries one.</summary>
+    public IInAppBrowser? Browser { get; } = browser;
+
+    /// <summary>The harness's own conversation per session (ANSWER1a), beside the transcripts under the same home.</summary>
+    public HarnessConversations Conversations { get; } = new(home);
+
+    /// <summary>The words a record could not go on with (MSG1b), beside the conversations, so a later look leaves them waiting.</summary>
+    public GoOnMarks Marks { get; } = new(home);
+
+    /// <summary>The person's choices to go on in a new session rather than wait for a cooling account (MSG1g), beside the marks.</summary>
+    public NewSessionChoices NewSessions { get; } = new(home);
+
+    /// <summary>
+    /// How a running session is stopped for a take that lost (D68 §5) and for a hand-over (MIXAGENT1a-ii): its process ended through
+    /// <see cref="SessionProcesses"/>, unless a test hands in its stand-in run's stop. Set once, before a look; read at each use.
+    /// </summary>
+    public Func<string, Noted, bool>? Stops { get; set; }
+
+    /// <summary>How a helper's pass is run, unless a test hands in a stand-in, since a real pass spawns git and an agent (MOD8).</summary>
+    public Func<HelperPassAsk, ReviewerChoice, CancellationToken, Task<HelperPassRun>>? HelperPasses { get; set; }
+
+    /// <summary>How an asker's tree is read, its last commit and its repository's registered checkout, unless a test hands in a stand-in (MOD8).</summary>
+    public Func<string, CancellationToken, Task<(string? Tip, string? Root)>>? HelperTrees { get; set; }
+
+    /// <summary>How a helper's agent is chosen, unless a test hands in a choice.</summary>
+    public Func<HelperAsk, HelperRule, PriorSession, CancellationToken, Task<ReviewerChoice>>? HelperChoices { get; set; }
+
     public ServiceClient Service { get; } = service;
 
     public DriverConfig Config { get; } = config;

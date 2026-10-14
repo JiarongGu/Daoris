@@ -18,8 +18,16 @@ namespace Daoris.Driver;
 /// <para><b>It publishes; it never edits</b> (D32). Its room is Daoris's own directory, its allow-list
 /// reads the family and publishes, and it holds no repository's tree.</para>
 /// </remarks>
-public sealed partial class Driver
+/// <param name="driver">
+/// The driver whose run machinery an intake goes through (PART10n, D166): the spawn's preparation, the connector, the rules handed,
+/// the hold of the process and the account sayings, as <see cref="DriverOpinions"/> does.
+/// </param>
+internal sealed class DriverIntakes(LoopContext context, Driver driver)
 {
+    private readonly LoopContext _context = context;
+
+    private readonly Driver _driver = driver;
+
     /// <summary>
     /// What an intake with no connector can and cannot do, said on its transcript, and the two commands that lay one
     /// down in the words a session is told (CONNECTOR1c): the install's first, as <see cref="KnowledgeConnector.Candidates"/>
@@ -44,14 +52,15 @@ public sealed partial class Driver
     /// The asks due an intake this tick: none unless a harness is named for it; otherwise the oldest
     /// unserved ask in each circle, as many as the slots allow.
     /// </summary>
-    private async Task<IReadOnlyList<AskView>> IntakesDueAsync(int slots, List<string> events, CancellationToken ct)
+    public async Task<IReadOnlyList<AskView>> IntakesDueAsync(int slots, List<string> events, CancellationToken ct)
     {
+        var config = _context.Config;
         if (config.IntakeAdapter is not { Length: > 0 }) return [];
 
         IReadOnlyList<AskView> asks;
         try
         {
-            asks = await service.AsksAsync(ct).ConfigureAwait(false);
+            asks = await _context.Service.AsksAsync(ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
         {
@@ -91,9 +100,13 @@ public sealed partial class Driver
     /// is what tells them (SURF5b), once, from the one place parks are seen.
     /// </returns>
     /// <param name="onOpened">Called once the intake's record is open, and never for one that held or was refused (DEV3).</param>
-    private async Task<StartRun> RunIntakeAsync(
+    public async Task<StartRun> RunIntakeAsync(
         AskView ask, List<TrustHold> untrusted, Action onOpened, CancellationToken ct)
     {
+        var service = _context.Service;
+        var config = _context.Config;
+        var home = _context.Home;
+        var output = _context.Output;
         var adapterName = config.IntakeAdapter!;
         var named = $"ask #{ask.Id} in {ask.Workspace}";
         // The hold's own sentence beside its line, as a quest's hold carries it: what a wait the intake is among says (UX6d1).
@@ -105,9 +118,9 @@ public sealed partial class Driver
         HarnessSelection selection;
         try
         {
-            adapter = Context.Adapters.Resolve(adapterName);
+            adapter = _context.Adapters.Resolve(adapterName);
             // An intake is driven work (D130 §4.6): it never starts on an account kept for conversations.
-            selection = await _harnesses.SelectAsync(adapterName, config, ask.Workspace, chosen: null, StartKind.Driven, ct)
+            selection = await _context.Harnesses.SelectAsync(adapterName, config, ask.Workspace, chosen: null, StartKind.Driven, ct)
                 .ConfigureAwait(false);
         }
         catch (DriverException error)
@@ -139,7 +152,7 @@ public sealed partial class Driver
         // told to trust, the room's allow-list is inert — so it is asked only where the rules handed
         // over at spawn would not let the intake publish (D73), exactly as for a quest's session.
         if (adapter.Toolchain is { TrustFile: { Length: > 0 } trustFile }
-            && !HandedConnector(adapter, ask.Workspace, repository: null, "quest_publish"))
+            && !_driver.HandedConnector(adapter, ask.Workspace, repository: null, "quest_publish"))
         {
             var configHome = selection.ProfileHome ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             var trustPath = Path.Combine(configHome, trustFile);
@@ -163,7 +176,7 @@ public sealed partial class Driver
         onOpened();
 
         // An intake on another account of the order says so, as a quest's start does (TOOL4f, D125 §3.2).
-        RotatedOpening.Say(service, _events, sessionId, adapterName, selection, carried: null);
+        RotatedOpening.Say(service, _context.Events, sessionId, adapterName, selection, carried: null);
 
         try
         {
@@ -172,7 +185,7 @@ public sealed partial class Driver
             // that drives it (D78), or that server left out and the transcript told why. Handed before the instruction is
             // composed, which tells the intake the browser it was handed (BRWHINT1b).
             var (servers, browserNoted, drivesBrowser, browserDrivers) =
-                await InAppBrowserServers.HandNotedAsync(Context.Servers, browser, ct).ConfigureAwait(false);
+                await InAppBrowserServers.HandNotedAsync(_context.Servers, _context.Browser, ct).ConfigureAwait(false);
             var browserNotice = browserNoted?.Note;
             var target = new SessionTarget(
                 QuestId: "", ask.Sentence.Split('\n', 2)[0].Trim(), ask.Sentence, ask.Asker ?? "the person",
@@ -186,7 +199,7 @@ public sealed partial class Driver
                 Prompt = IntakePrompt.Compose(
                     ask, SessionLanguages.OfWorkspace(config, ask.Workspace), InAppBrowserServers.Told(browserDrivers)),
             };
-            var (info, harnessNotice) = Prepare(adapter, target, selection);
+            var (info, harnessNotice) = _driver.Prepare(adapter, target, selection);
 
             await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
 
@@ -199,53 +212,53 @@ public sealed partial class Driver
             // this session in its environment so what it publishes is asked by the ask.
             string? handed = null;
             string? preamble = null;
-            hooks?.Log.Served(Context.Catalog, sessionId, servers);
+            _context.Hooks?.Log.Served(_context.Catalog, sessionId, servers);
             if (adapter.Wire == SessionWire.Pipe)
             {
-                var connector = Connector(sessionId, scope);
+                var connector = _driver.Connector(sessionId, scope);
                 if (connector is null) preamble = NoConnectorForIntake;
                 handed = SpawnServers.Hand(adapter, info, home, sessionId, connector is null ? servers : [connector, .. servers]);
             }
 
             // What the intake may do (PERM1, D72): its circle's rules and the machine's — it serves an
             // ask, and belongs to no repository. Its tree is its room, which the guard holds it to.
-            var rules = HandRules(
+            var rules = _driver.HandRules(
                 adapter, info, sessionId, ask.Workspace, repository: null, tree: room, kept: target.AttachmentsDirectory,
                 job: IntakeRoom.Allowed);
 
-            return await HoldAsync(
-                adapter, info, target, sessionId, transcript, room, JoinNotices(harnessNotice, browserNotice), rules, handed,
+            return await _driver.HoldAsync(
+                adapter, info, target, sessionId, transcript, room, Driver.JoinNotices(harnessNotice, browserNotice), rules, handed,
                 // 🔴 One turn takes no messages (INT4h), on either door: the pipe door gives it no stdin,
                 // and the protocol door's stdin is the driver's own frames — a person's line written
                 // there would land in the middle of the JSON-RPC stream.
                 refusesInput: TakesNoMessages(ask.Id),
                 ct: ct,
                 scope: scope,
-                preamble: JoinNotices(preamble, browserNotice),
+                preamble: Driver.JoinNotices(preamble, browserNotice),
                 handedServers: servers,
                 drivesBrowser: drivesBrowser,
-                said: Said(adapter, selection, sessionId),
+                said: _driver.Said(adapter, selection, sessionId),
                 conclude: async (exitCode, used, turnFailed, ended) =>
                 {
                     if (used is not null)
                     {
-                        usage?.Record(new UsageEntry(
+                        _context.Usage?.Record(new UsageEntry(
                             sessionId, $"ask #{ask.Id}", adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
                     }
 
                     // What became of the ask is the observation — the intake's own account of it is not.
                     var after = await service.FindAskAsync(ask.Id, ct).ConfigureAwait(false);
-                    var byPerson = _processes.WasStopRequested(sessionId);
+                    var byPerson = _context.Processes.WasStopRequested(sessionId);
                     var conclusion = byPerson
                         ? SessionConclusion.Of("stopped", Observation.Stopped)
                         : exitCode is int code
                             ? IntakeObservation.Conclude(code, ask.Quests.Count, after, turnFailed)
                             : SessionConclusion.Of("failed", Observation.TimedOut(config.TimeoutMinutes));
-                    conclusion = AccountRefused(conclusion, adapter, selection, ended);
+                    conclusion = _driver.AccountRefused(conclusion, adapter, selection, ended);
                     // A refused sign-in reads its account signed out (ROSTER1b), as a driven session's does.
-                    conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed);
+                    conclusion = _driver.AccountSignedOut(conclusion, adapter, selection, turnFailed);
                     // An account's limit cools the account the intake ran as (TOOL4d), as a driven session's does.
-                    (conclusion, var limited) = AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
+                    (conclusion, var limited) = _driver.AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
 
                     await service.AdvanceAsync(
                         sessionId, conclusion.State, note: conclusion.Note, ct: ct, limit: limited, parts: conclusion.Parts).ConfigureAwait(false);
@@ -306,9 +319,10 @@ public sealed partial class Driver
     /// parked intake has no process left: it asked and ended, so the answer to its question is the
     /// only thing that can close its record. The person's own act, so nothing interrupts them for it.
     /// </summary>
-    private async Task ConcludeAnsweredAsync(
+    public async Task ConcludeAnsweredAsync(
         IReadOnlyList<SessionView> active, List<string> events, List<SessionEnded> concluded, CancellationToken ct)
     {
+        var service = _context.Service;
         foreach (var parked in active.Where(session => session.Ask is not null && SessionStates.IsParked(session.State)))
         {
             AskView? ask;

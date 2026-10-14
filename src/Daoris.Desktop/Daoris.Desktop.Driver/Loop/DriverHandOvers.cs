@@ -8,13 +8,15 @@ namespace Daoris.Driver;
 /// (<see cref="HandedQuests"/>) until it leaves this machine. The planner reads the stop as released and the next start runs on the
 /// agent named, in the same tree.
 /// </summary>
-public sealed partial class Driver
+internal sealed class DriverHandOvers(LoopContext context)
 {
+    private readonly LoopContext _context = context;
+
     /// <summary>
     /// The agents a quest may go on with, as the roster reads them for a start: the accounts it holds for an agent and the wire its
     /// door rides. Null for an agent this build, with its plugins, does not have.
     /// </summary>
-    internal HandOverAgent? Drives(string agent) => QuestHandOver.Roster(Context.Adapters, _harnesses.Home)(agent);
+    internal HandOverAgent? Drives(string agent) => QuestHandOver.Roster(_context.Adapters, _context.Harnesses.Home)(agent);
 
     /// <summary>
     /// The quests handed to another agent, at a look: each box a terminal kept for a quest's session is taken, a quest that left this
@@ -23,8 +25,8 @@ public sealed partial class Driver
     /// </summary>
     internal async Task<Snapshot> HandOversAsync(Snapshot snapshot, List<string> events, CancellationToken ct)
     {
-        var box = new HandOverBox(home);
-        var handed = new HandedQuests(home);
+        var box = new HandOverBox(_context.Home);
+        var handed = new HandedQuests(_context.Home);
 
         foreach (var id in box.Pending())
         {
@@ -61,6 +63,7 @@ public sealed partial class Driver
 
     private async Task TakeHandOverAsync(string id, HandOverBox box, HandedQuests handed, List<string> events, CancellationToken ct)
     {
+        var service = _context.Service;
         var record = (await service.SessionRecordsAsync(ct).ConfigureAwait(false))
             .FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
         // A conversation's box, or one for a record that is not here, is not this look's: the shell's chat runner takes the first.
@@ -86,13 +89,13 @@ public sealed partial class Driver
         {
             var note = HandOverNotes.QuestHandedOver(ask.Agent);
             bool stopped;
-            if (Stops is { } stand)
+            if (_context.Stops is { } stand)
             {
                 stopped = stand(id, note);
             }
             else
             {
-                var answer = await SessionMoves.StopAsync(_processes, service, id, ct, note).ConfigureAwait(false);
+                var answer = await SessionMoves.StopAsync(_context.Processes, service, id, ct, note).ConfigureAwait(false);
                 stopped = answer.Stopped;
             }
 

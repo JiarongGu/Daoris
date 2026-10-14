@@ -19,7 +19,7 @@ namespace Daoris.Driver;
 /// the quest's state (<see cref="Observation"/>); the evidence is what git says landed. Nothing is
 /// taken from the session's word, because outside sessions have no word to give.</para>
 /// </remarks>
-public sealed partial class Driver(
+public sealed class Driver(
     ServiceClient service, DriverConfig config, AdapterSet adapters, string home,
     SessionProcesses? processes = null, RemoteSyncSet? sync = null, SessionOutput? output = null,
     HarnessRoster? harnesses = null,
@@ -54,7 +54,11 @@ public sealed partial class Driver(
     /// How a running session is stopped for a take that lost (D68 §5): its process ended through <see cref="SessionProcesses"/>,
     /// unless a test hands in its stand-in run's stop beside <see cref="Runner"/> (DEV3b). True when the session was running here.
     /// </summary>
-    internal Func<string, Noted, bool>? Stops { get; init; }
+    internal Func<string, Noted, bool>? Stops
+    {
+        get => Context.Stops;
+        init => Context.Stops = value;
+    }
 
     /// <summary>
     /// The world a look's workspace plans read (WSSETUP6): <see cref="WorkspaceSetupWorld"/> over this driver's client, unless
@@ -110,21 +114,10 @@ public sealed partial class Driver(
     /// servers and catalogue, and the settables. Built once, here; the classes below hold it, and the ones that run through this
     /// driver's machinery hold the driver as well.
     /// </summary>
-    internal LoopContext Context { get; } = new(service, config, home, adapters, processes, harnesses, events, output, usage, running);
-
-    // The objects every part reads, kept in the context where the classes read them too; named as they were.
-    private RunningSessions _runs => Context.Runs;
-
-    private SessionProcesses _processes => Context.Processes;
-
-    private HarnessRoster _harnesses => Context.Harnesses;
-
-    private SessionTrees _trees => Context.Trees;
-
-    private SessionEvents _events => Context.Events;
+    internal LoopContext Context { get; } = new(service, config, home, adapters, processes, harnesses, events, output, usage, running, hooks, browser);
 
     /// <summary>The sessions still running, which outlive the look that started them (DEV3).</summary>
-    public RunningSessions Running => _runs;
+    public RunningSessions Running => Context.Runs;
 
     // The build's own adapters, which each tick's plugins are laid over — held as a field so the
     // primary constructor's parameter is captured in one place only (CS9124).
@@ -141,6 +134,78 @@ public sealed partial class Driver(
     internal OpinionDeliverer Deliverer => LazyInitializer.EnsureInitialized(ref _deliverer, () => new OpinionDeliverer(Context, Opinions));
 
     private OpinionGateLook Gate => LazyInitializer.EnsureInitialized(ref _gate, () => new OpinionGateLook(Context, Opinions, Deliverer));
+
+    // The go-on, hand-over, helper and intake classes (PART10n): each runs through this driver's machinery or the context alone.
+    private DriverContinuations? _continuations;
+    private DriverHandOvers? _handOvers;
+    private DriverHelpers? _helpers;
+    private DriverIntakes? _intakes;
+
+    private DriverContinuations GoOns => LazyInitializer.EnsureInitialized(ref _continuations, () => new DriverContinuations(Context, this));
+
+    private DriverHandOvers HandOvers => LazyInitializer.EnsureInitialized(ref _handOvers, () => new DriverHandOvers(Context));
+
+    private DriverHelpers Helpers => LazyInitializer.EnsureInitialized(ref _helpers, () => new DriverHelpers(Context, this));
+
+    private DriverIntakes Intakes => LazyInitializer.EnsureInitialized(ref _intakes, () => new DriverIntakes(Context, this));
+
+    /// <summary>
+    /// How a helper's pass is run: <see cref="DriverHelpers.HelperPassAsync"/>, unless a test hands in a stand-in, since a real pass
+    /// spawns git and an agent, which the suite's fast half may not (MOD8). Written through to the context.
+    /// </summary>
+    internal Func<HelperPassAsk, ReviewerChoice, CancellationToken, Task<HelperPassRun>>? HelperPasses
+    {
+        get => Context.HelperPasses;
+        init => Context.HelperPasses = value;
+    }
+
+    /// <summary>
+    /// How an asker's tree is read, its last commit and its repository's registered checkout: git, unless a test hands in a
+    /// stand-in, since a real read spawns git, which the suite's fast half may not (MOD8). Written through to the context.
+    /// </summary>
+    internal Func<string, CancellationToken, Task<(string? Tip, string? Root)>>? HelperTrees
+    {
+        get => Context.HelperTrees;
+        init => Context.HelperTrees = value;
+    }
+
+    /// <summary>
+    /// How a helper's agent is chosen: <see cref="HelperChoice.ChooseAsync"/>, whose account walk reads this machine's installs and
+    /// sign-ins, unless a test hands in a choice (the walk itself is <see cref="ReviewerChoice"/>'s, held by its own suite). Written
+    /// through to the context.
+    /// </summary>
+    internal Func<HelperAsk, HelperRule, PriorSession, CancellationToken, Task<ReviewerChoice>>? HelperChoices
+    {
+        get => Context.HelperChoices;
+        init => Context.HelperChoices = value;
+    }
+
+    /// <summary>The quests handed to another agent, at a look (MIXAGENT1a-ii): <see cref="DriverHandOvers.HandOversAsync"/>.</summary>
+    internal Task<Snapshot> HandOversAsync(Snapshot snapshot, List<string> events, CancellationToken ct) =>
+        HandOvers.HandOversAsync(snapshot, events, ct);
+
+    /// <summary>The asks for a helper at a look (MIXAGENT2a-ii): <see cref="DriverHelpers.HelpersAsync"/>.</summary>
+    internal Task<int> HelpersAsync(Snapshot snapshot, int taken, List<string> events, CancellationToken ct) =>
+        Helpers.HelpersAsync(snapshot, taken, events, ct);
+
+    /// <summary>The asks due an intake at a look (D65 §1b): <see cref="DriverIntakes.IntakesDueAsync"/>.</summary>
+    private Task<IReadOnlyList<AskView>> IntakesDueAsync(int slots, List<string> events, CancellationToken ct) =>
+        Intakes.IntakesDueAsync(slots, events, ct);
+
+    /// <summary>One intake run in its room (D65 §1b): <see cref="DriverIntakes.RunIntakeAsync"/>.</summary>
+    private Task<StartRun> RunIntakeAsync(AskView ask, List<TrustHold> untrusted, Action onOpened, CancellationToken ct) =>
+        Intakes.RunIntakeAsync(ask, untrusted, onOpened, ct);
+
+    /// <summary>Every parked intake whose ask was answered since is ended: <see cref="DriverIntakes.ConcludeAnsweredAsync"/>.</summary>
+    private Task ConcludeAnsweredAsync(
+        IReadOnlyList<SessionView> active, List<string> events, List<SessionEnded> concluded, CancellationToken ct) =>
+        Intakes.ConcludeAnsweredAsync(active, events, concluded, ct);
+
+    /// <summary>The record the person's words wait on, continued or ended saying why (ANSWER1a): <see cref="DriverContinuations.ContinueAsync"/>.</summary>
+    private Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> ContinueAsync(
+        Consideration start, PriorSession park, HarnessSelection selection, IReadOnlyList<RepoView> registry,
+        TreeLock? starting, Action onOpened, CancellationToken ct, string agent, ContinueReason? account = null) =>
+        GoOns.ContinueAsync(start, park, selection, registry, starting, onOpened, ct, agent, account);
 
     /// <summary>
     /// How a pass is run: <see cref="PassAsync"/>, unless a test hands in a stand-in, since a real pass spawns git and an agent,
@@ -264,8 +329,8 @@ public sealed partial class Driver(
         Context.Adapters = _built.WithPlugins(catalog);
         Context.Servers = catalog.Servers;
         Context.Catalog = catalog;
-        _harnesses.Use(Context.Adapters);
-        if (hooks is not null)
+        Context.Harnesses.Use(Context.Adapters);
+        if (Context.Hooks is { } hooks)
         {
             events.AddRange(await hooks.ReconcileAsync(catalog, ct).ConfigureAwait(false));
         }
@@ -293,16 +358,16 @@ public sealed partial class Driver(
 
         // The goal's walk counts Daoris's sessions from this look's records (TOOL6b, D130 §4.2), and every start chosen
         // while they were read: marked first, so a conversation chosen meanwhile is not lost.
-        var mark = _harnesses.Mark();
+        var mark = Context.Harnesses.Mark();
         var snapshot = await service.SnapshotAsync(ct).ConfigureAwait(false);
         // The quests of every paused work, read again at each look (PAUSE1b, design §2.3): the planner holds each.
         snapshot = await PausedWork.LookAsync(service, config, snapshot, ct).ConfigureAwait(false);
         // The words a record could not go on with, read again at each look (MSG1b): the planner leaves them waiting.
-        snapshot = snapshot with { Unable = _marks.For(snapshot.LastRun.Values) };
+        snapshot = snapshot with { Unable = Context.Marks.For(snapshot.LastRun.Values) };
         // The quests handed to another agent (MIXAGENT1a-ii, D163 point 1): the boxes taken, the quests that left dropped, and what
         // stands read for the planner, which reads the stop that handed one over as released.
         snapshot = await HandOversAsync(snapshot, events, ct).ConfigureAwait(false);
-        _harnesses.Look(snapshot.Started, mark);
+        Context.Harnesses.Look(snapshot.Started, mark);
 
         // The set-ups waiting for the person here, and each set-up step's tab let go once they answered it (REVIEWENV1d, design
         // §2.3): kept served from look to look until then. A miss is said and tried again at the next look.
@@ -330,7 +395,7 @@ public sealed partial class Driver(
         passes += await HelpersAsync(snapshot, passes, events, ct).ConfigureAwait(false);
 
         // Whether this loop carries Daoris's browser decides whether a local set-up step can be shown here (REVIEWENV1c).
-        var plan = Planner.Plan(snapshot, passes > 0 ? config with { Cap = Math.Max(0, config.Cap - passes) } : config, Door(), window: browser is not null);
+        var plan = Planner.Plan(snapshot, passes > 0 ? config with { Cap = Math.Max(0, config.Cap - passes) } : config, Door(), window: Context.Browser is not null);
         var progressed = false;
 
         // What held at spawn, by quest — the plan said Start and the spawn said no. Folded back into
@@ -349,12 +414,12 @@ public sealed partial class Driver(
         // is the quest's reason for sitting, exactly as a dirty tree or a missing binary would be —
         // and a plugin that could not decide holds too, naming itself. Asked in plan order, one at a
         // time, so two plugins' answers arrive in an order a person can predict.
-        if (hooks is not null && starts.Count > 0)
+        if (Context.Hooks is { } considering && starts.Count > 0)
         {
             var allowed = new List<Consideration>();
             foreach (var start in starts)
             {
-                var decision = await hooks.ConsiderAsync(start, ct).ConfigureAwait(false);
+                var decision = await considering.ConsiderAsync(start, ct).ConfigureAwait(false);
                 if (decision.Allowed)
                 {
                     allowed.Add(start);
@@ -389,7 +454,7 @@ public sealed partial class Driver(
         {
             if (start is { GoesOn: true, Resumes: { } record })
             {
-                if (!_runs.TryGoOn(record.Session))
+                if (!Context.Runs.TryGoOn(record.Session))
                 {
                     events.Add($"going on  session {record.Session} (#{start.Quest.Id} → {start.Quest.To}): "
                         + "a run of this machine's already goes on with the person's words in it.");
@@ -454,7 +519,7 @@ public sealed partial class Driver(
         };
 
         async Task<(Begun Started, StartRun? Came)> BeginAsync(Begun started, Func<Action, Task<StartRun>> start) =>
-            (started, await _runs.StartAsync(start).ConfigureAwait(false));
+            (started, await Context.Runs.StartAsync(start).ConfigureAwait(false));
 
         // The run, and its claim on the record its words wait on let go once it has ended, however it ended (ANSWER2).
         async Task<StartRun> ClaimedAsync(Consideration start, Action opened)
@@ -465,7 +530,7 @@ public sealed partial class Driver(
             }
             finally
             {
-                if (goingOn.TryGetValue(start.Quest.Id, out var session)) _runs.WentOn(session);
+                if (goingOn.TryGetValue(start.Quest.Id, out var session)) Context.Runs.WentOn(session);
             }
         }
     }
@@ -489,10 +554,10 @@ public sealed partial class Driver(
                 var cooling = held[0].Came!.Cooling!;
                 var workspaces = held.Select(each => each.Started.Workspace).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
                 // The person's name for the account, read as the look says the wait (ACCT2b): the page says it, the log the id.
-                var names = AccountNames.Of(_harnesses.Home, cooling.Agent);
+                var names = AccountNames.Of(Context.Harnesses.Home, cooling.Agent);
                 return new AccountWait(
                     held[0].Started.Adapter, cooling.Agent, cooling.Account, workspaces.Count == 1 ? workspaces[0] : null,
-                    cooling.Until, cooling.Stated, held[0].Came!.Held ?? CoolingWords.Hold(cooling, _harnesses.Zone, names))
+                    cooling.Until, cooling.Stated, held[0].Came!.Held ?? CoolingWords.Hold(cooling, Context.Harnesses.Zone, names))
                 {
                     Quests = [.. held.Select(each => each.Started.Quest).OfType<string>()],
                     Asks = [.. held.Select(each => each.Started.Ask).OfType<string>()],
@@ -503,7 +568,7 @@ public sealed partial class Driver(
             })
             .ToList();
 
-        foreach (var wait in waits.Where(wait => _harnesses.NewWait(wait.Agent, wait.Account, wait.Until, wait.SignedOut)))
+        foreach (var wait in waits.Where(wait => Context.Harnesses.NewWait(wait.Agent, wait.Account, wait.Until, wait.SignedOut)))
         {
             service.AccountSaid(AccountLine.Waiting(
                 wait.Adapter, wait.Account, wait.Workspace, wait.Until, wait.Quests.Count + wait.Asks.Count, wait.SignedOut));
@@ -534,7 +599,7 @@ public sealed partial class Driver(
 
         // The line is written with no time, once per agent and set of accounts. Kept apart from a cool-off of the tool's own
         // sign-in, whose account is null too: no profile name has a colon.
-        foreach (var wait in signedOut.Where(wait => _harnesses.NewWait(wait.Agent, ":signed-out", null, wait.SignedOut)))
+        foreach (var wait in signedOut.Where(wait => Context.Harnesses.NewWait(wait.Agent, ":signed-out", null, wait.SignedOut)))
         {
             service.AccountSaid(AccountLine.Waiting(
                 wait.Adapter, null, wait.Workspace, until: null, wait.Quests.Count + wait.Asks.Count, wait.SignedOut));
@@ -553,18 +618,18 @@ public sealed partial class Driver(
     /// </summary>
     private async Task LandDueAsync(List<string> events, CancellationToken ct)
     {
-        if (_runs.Landing) return;
+        if (Context.Runs.Landing) return;
         try
         {
             // The rule's plugin says its lines on the console under its name, as at a press (D100), and what the landing did
             // with it is logged where the loop's hooks are (PLUGUI1d).
             var lander = new AutoLander(
                 home, new ServiceAutoLandingWorld(service),
-                new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => output?.Append($"plugin:{plugin}", line), pluginLog: hooks?.Log)),
-                _events, service.LandingSaid);
+                new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => output?.Append($"plugin:{plugin}", line), pluginLog: Context.Hooks?.Log)),
+                Context.Events, service.LandingSaid);
             var (chosen, said) = await lander.ChooseAsync(config, ct).ConfigureAwait(false);
             events.AddRange(said);
-            if (chosen.Count > 0) _runs.Beside(token => lander.LandAsync(chosen, token), ct);
+            if (chosen.Count > 0) Context.Runs.Beside(token => lander.LandAsync(chosen, token), ct);
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or IOException
                                           or UnauthorizedAccessException)
@@ -577,14 +642,14 @@ public sealed partial class Driver(
     /// A driven record that just concluded, read against its repository's rule (LAND2b): a done under the switch joins the due
     /// list, and the rest under it is said in its conversation. Never a reason to fail the run: the record has concluded.
     /// </summary>
-    private async Task ConcludedForLandingAsync(
+    internal async Task ConcludedForLandingAsync(
         string sessionId, QuestView quest, string? status, string state, string workTree, string? workspace, CancellationToken ct)
     {
         // WORKFLOW1f: its run's process, read once for both, so a named workflow's landing step and opinion step decide what is owed.
         var process = status == "Done"
             ? await AutoLander.ProcessAsync(home, config, new ServiceReviewWorld(service), quest, workTree, workspace, ct).ConfigureAwait(false)
             : null;
-        AutoLander.Concluded(home, config, _events, sessionId, quest, status, state, workTree, workspace, process: process);
+        AutoLander.Concluded(home, config, Context.Events, sessionId, quest, status, state, workTree, workspace, process: process);
         // XAGENT1f: a done whose rule reads it is owed a second opinion, which a later look asks (the second-agent design §2.1).
         OpinionLook.Concluded(home, config, sessionId, quest, status, state, workTree, process: process);
     }
@@ -666,7 +731,7 @@ public sealed partial class Driver(
     /// </remarks>
     private async Task EndingsAsync(List<string> events, List<SessionEnded> concluded, CancellationToken ct)
     {
-        foreach (var ended in _runs.Drain())
+        foreach (var ended in Context.Runs.Drain())
         {
             events.Add(ended.Line);
             if (ended.Ended is not null) concluded.Add(ended.Ended);
@@ -674,7 +739,7 @@ public sealed partial class Driver(
 
         // Contained: nothing a plugin says here changes the record, which moved on the exit code and the
         // quest before this line ran (D46 §4).
-        if (hooks is not null)
+        if (Context.Hooks is { } hooks)
         {
             foreach (var ended in concluded)
             {
@@ -696,7 +761,7 @@ public sealed partial class Driver(
     /// </remarks>
     private async Task StopLostClaimsAsync(List<string> events, CancellationToken ct)
     {
-        foreach (var (quest, session) in _runs.Live)
+        foreach (var (quest, session) in Context.Runs.Live)
         {
             string claim;
             try
@@ -719,7 +784,7 @@ public sealed partial class Driver(
 
     /// <summary>The process's stop, unless the driver already stopped it for its reason: true only when it stopped it now.</summary>
     private bool StopForLostClaim(string session, Noted reason) =>
-        _processes.StopReason(session) is null && _processes.Stop(session, reason);
+        Context.Processes.StopReason(session) is null && Context.Processes.Stop(session, reason);
 
     /// <summary>
     /// Look until nothing runs and a look starts nothing — the deterministic mode a gate drives (D115 §3.1):
@@ -747,9 +812,9 @@ public sealed partial class Driver(
                 var report = await TickAsync(ct, failed: said).ConfigureAwait(false);
                 reports.Add(report);
                 said?.Invoke(report);
-                if (!report.Progressed && _runs.Idle) return reports;
+                if (!report.Progressed && Context.Runs.Idle) return reports;
 
-                await _runs.NextAsync(_syncBeside, ct).ConfigureAwait(false);
+                await Context.Runs.NextAsync(_syncBeside, ct).ConfigureAwait(false);
                 ct.ThrowIfCancellationRequested();
             }
         }
@@ -806,10 +871,10 @@ public sealed partial class Driver(
     /// </summary>
     private async Task LetGoAsync(Action<TickReport>? said)
     {
-        await _runs.SettledAsync().ConfigureAwait(false);
+        await Context.Runs.SettledAsync().ConfigureAwait(false);
         if (said is null) return;
 
-        var ended = _runs.Drain();
+        var ended = Context.Runs.Drain();
         if (ended.Count == 0) return;
         said(new TickReport([], [.. ended.Select(run => run.Line)], Progressed: false, Concluded: [.. ended.Select(run => run.Ended).OfType<SessionEnded>()]));
     }
@@ -847,7 +912,7 @@ public sealed partial class Driver(
             said?.Invoke(new TickReport([], lines, Progressed: false, Concluded: ended));
         }
 
-        var settled = _runs.SettledAsync();
+        var settled = Context.Runs.SettledAsync();
         try
         {
             while (sync is not null && !settled.IsCompleted && !ct.IsCancellationRequested)
@@ -950,12 +1015,12 @@ public sealed partial class Driver(
         ResumeChoice? resume = null;
         try
         {
-            if (ResumesOwn(start, agent) is { } words)
+            if (GoOns.ResumesOwn(start, agent) is { } words)
             {
                 // A resume asks for its record's own account (MSG1g, D137 §2.2): its conversation lives in that account's
                 // configuration home (D131 §1), so the walk that chooses a start's account never chooses a resume's.
-                resume = await _harnesses
-                    .ResumeAsync(agent, config, start.Workspace, words.Profile, StartKind.Driven, _newSessions.Covers(words), ct: ct)
+                resume = await Context.Harnesses
+                    .ResumeAsync(agent, config, start.Workspace, words.Profile, StartKind.Driven, Context.NewSessions.Covers(words), ct: ct)
                     .ConfigureAwait(false);
                 selection = resume.Selection;
             }
@@ -963,7 +1028,7 @@ public sealed partial class Driver(
             {
                 // A carry-on and a first start take the walk as any start does (D130 §16.2): no context stays with an account. A
                 // handed quest asks for the account its hand-over named first, and the walk goes on within the named agent's.
-                (selection, passedAccount) = await _harnesses
+                (selection, passedAccount) = await Context.Harnesses
                     .SelectHandedAsync(agent, config, start.Workspace, handedQuest?.Account, StartKind.Driven, ct)
                     .ConfigureAwait(false);
             }
@@ -978,8 +1043,8 @@ public sealed partial class Driver(
             // The words wait for the account's reset (MSG1g, D125 §2), held as any start on a cooling account is, so the look
             // says the wait once and a screen shows the quest waiting for an account; the record's conversation says why, with
             // the door out of the wait. Nothing was spawned or probed to learn it.
-            var why = WaitsFor(quest, start.Resumes!, resume.Selection);
-            HeldForAccount(start.Resumes!, ResumeWords.NotYetOn(resume, DoorOf(quest, start.Resumes!)));
+            var why = DriverContinuations.WaitsFor(quest, start.Resumes!, resume.Selection);
+            GoOns.HeldForAccount(start.Resumes!, ResumeWords.NotYetOn(resume, DriverContinuations.DoorOf(quest, start.Resumes!)));
             return Hold(why) with { Cooling = resume.Selection.Cooling };
         }
 
@@ -1034,14 +1099,14 @@ public sealed partial class Driver(
                 // the unmerged work it exists to check. Where a tidy took that branch at the parent's
                 // landing, it grows from the chain's landed branch instead, so its own done can move
                 // that branch on (LAND2c, D82 as D145 amends it).
-                opened = await _trees.OpenAsync(
+                opened = await Context.Trees.OpenAsync(
                         root, quest.To, start.Workspace ?? "default", ct,
                         // TREEFOLLOW1: the step before's branch as its tree has it now, where its agent moved it onto one of its own.
                         from: start.BuildsOn?.Tree is { Length: > 0 } parentTree
-                            ? await _trees.BranchNowAsync(parentTree, ct).ConfigureAwait(false) ?? $"daoris/{Path.GetFileName(parentTree)}"
+                            ? await Context.Trees.BranchNowAsync(parentTree, ct).ConfigureAwait(false) ?? $"daoris/{Path.GetFileName(parentTree)}"
                             : null,
                         landed: start.BuildsOn is { } stepBefore
-                                && _trees.Recorded.Landing(stepBefore.Session) is { GoneAt: null } chain
+                                && Context.Trees.Recorded.Landing(stepBefore.Session) is { GoneAt: null } chain
                                 && string.Equals(chain.Repository, quest.To, StringComparison.OrdinalIgnoreCase)
                             ? chain.Branch
                             : null)
@@ -1060,7 +1125,7 @@ public sealed partial class Driver(
         var setUp = ReviewSetUps.Environment(config, quest, start.Workspace);
         if (setUp is not null && ReviewSetUps.ProcedureMissing(setUp, quest, workTree) is { } unfollowable)
         {
-            if (opened is not null) await _trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+            if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
             return Hold(unfollowable);
         }
 
@@ -1068,7 +1133,7 @@ public sealed partial class Driver(
         // design §2.3 step 1): a tab an agent opens over CDP has no window. A browser that will not open one holds the start.
         if (setUp is not null && Reviews is { } desk && await desk.OpenForStepAsync(quest, setUp, ct).ConfigureAwait(false) is { } unshowable)
         {
-            if (opened is not null) await _trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+            if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
             return Hold(unshowable);
         }
 
@@ -1122,12 +1187,12 @@ public sealed partial class Driver(
 
             // Nothing carries the words on by itself from a closed quest's session, nor from a never (D137 §2.2): they stay
             // waiting as said, marked so a later look leaves them there, and the person's press is the next move (MSG1f).
-            if (fellBack!.Never || quest.Status is not ("Open" or "Taken")) return CannotGoOn(quest, park, fellBack);
+            if (fellBack!.Never || quest.Status is not ("Open" or "Taken")) return GoOns.CannotGoOn(quest, park, fellBack);
 
             // Another agent's findings go on only in their own session (XAGENT1e, design §6.7): where they are all that waits,
             // nothing is carried on, and they go to the person. The person's words beside them are carried on as ever.
             // A helper's answer is the same (MIXAGENT2a-ii): another agent's claim, never carried to a new session as the person's.
-            if ((park.Findings.Count > 0 || park.Helpers.Count > 0) && !park.Waiting.Any(word => word.Persons)) return CannotGoOn(quest, park, fellBack);
+            if ((park.Findings.Count > 0 || park.Helpers.Count > 0) && !park.Waiting.Any(word => word.Persons)) return GoOns.CannotGoOn(quest, park, fellBack);
 
             // A taken quest is carried on, an open one started, handed the words, in the tree the session worked in.
             start = start with { Resumes = park.Parked || park.Said is null ? park with { State = "completed" } : park };
@@ -1166,7 +1231,7 @@ public sealed partial class Driver(
             // path takes it — and if anything landed there in the meantime, the refusal keeps it.
             if (opened is not null)
             {
-                await _trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
             }
 
             return new StartRun($"refused  #{quest.Id} → {quest.To}: {message}", false);
@@ -1183,13 +1248,13 @@ public sealed partial class Driver(
         // scope begins is `account.rotated` in the log.
         var prior = carryingOn ? start.Resumes : null;
         RotatedOpening.Say(
-            service, _events, sessionId, agent, selection,
+            service, Context.Events, sessionId, agent, selection,
             prior is null
                 ? null
                 : new RotatedOpening.Carried(
                     prior.Session,
-                    prior.Limit ? _events.TurnsEnded(prior.Session) + 1 : null,
-                    prior.Limit ? RotatedOpening.ContextOf(usage, _events, prior.Session) : null));
+                    prior.Limit ? Context.Events.TurnsEnded(prior.Session) + 1 : null,
+                    prior.Limit ? RotatedOpening.ContextOf(usage, Context.Events, prior.Session) : null));
 
         // The stop made of it before a close cut its conclusion off, told as its run lets go (FLAKE3).
         SessionStop? stoppedFirst = null;
@@ -1198,7 +1263,7 @@ public sealed partial class Driver(
             // The words a session could not go on with went to this one (MSG1b, D137 §2.2): off that record by their ids, kept
             // on the ask by the service, so this start's instruction reads them among the person's words; and said in that
             // session's conversation, where the person wrote them.
-            if (fellBack is not null) await HandedOnAsync(written!, sessionId, fellBack, ct).ConfigureAwait(false);
+            if (fellBack is not null) await GoOns.HandedOnAsync(written!, sessionId, fellBack, ct).ConfigureAwait(false);
 
             var adapter = Context.Adapters.Resolve(agent);
             // What it may read and write outside its tree (D107): the rules it is handed, and the sentence
@@ -1207,7 +1272,7 @@ public sealed partial class Driver(
             // What the cut-off session left in Daoris's own record (TOOL4f, D125 §3.5): its last plan and its last words,
             // which every carry-on is handed, since a cut-off for any reason loses the same thread. And whether it ran on
             // another account that is now cooling, which only a limit makes so.
-            var (lastPlan, lastWords) = prior is null ? ([], null) : SessionLastWords.CarriedFrom(_events, home, prior.Session);
+            var (lastPlan, lastWords) = prior is null ? ([], null) : SessionLastWords.CarriedFrom(Context.Events, home, prior.Session);
             var elsewhere = prior is not null && OnAnotherAccount(prior, selection.Profile);
             // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is;
             // their standing answer for its repository (KNOWUSE1b), and the work's session language (LANG1c), from this
@@ -1216,7 +1281,7 @@ public sealed partial class Driver(
             // browser it was handed (BRWHINT1b, D78). With Daoris's own browser brought up for a server that drives it, or that server
             // left out and the transcript told why.
             var (servers, browserNoted, drivesBrowser, browserDrivers) =
-                await InAppBrowserServers.HandNotedAsync(Context.Servers, browser, ct).ConfigureAwait(false);
+                await InAppBrowserServers.HandNotedAsync(Context.Servers, Context.Browser, ct).ConfigureAwait(false);
             var browserNotice = browserNoted?.Note;
             var target = WithLanguage(WithStanding(
                 await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false),
@@ -1238,8 +1303,8 @@ public sealed partial class Driver(
                 // the review's press reaches. A chain's step is told its chain's branch, which its done moves on (LAND2c). Under a
                 // named workflow its run's bound version's landing step says it (WORKFLOW1f); a run's first start is bound after it
                 // opens, so its first session is told the rule.
-                LandsOn = _trees.Holds(workTree)
-                    ? await _trees.PlanAsync(
+                LandsOn = Context.Trees.Holds(workTree)
+                    ? await Context.Trees.PlanAsync(
                         workTree, await LandsAsAsync(sessionId, quest, id => service.FindQuestAsync(id, ct), ct).ConfigureAwait(false), ct,
                         await WorkflowProcesses.ReadAsync(home, config, new ServiceReviewWorld(service), quest.Id, quest.To, start.Workspace, ct)
                             .ConfigureAwait(false))
@@ -1248,7 +1313,7 @@ public sealed partial class Driver(
                 // How it commits (PROCESS1d-i, D164's amendment point 4): the rule standing for its repository, told with the landing
                 // to a session in a tree of its own on every form, so its agent and the repository's own rules do not stop each other;
                 // the person's checkout is told nothing. Under a named workflow the rule applies as everywhere.
-                Commits = _trees.Holds(workTree) ? CommitRules.Resolve(config, quest.To, start.Workspace) : null,
+                Commits = Context.Trees.Holds(workTree) ? CommitRules.Resolve(config, quest.To, start.Workspace) : null,
                 // The person's answer, when the session before parked to ask them (STANDDOWN2).
                 PersonSaid = carryingOn ? start.Resumes!.Answer : null,
                 // The person's stop, which they released with Try again (SESSUX1b): told so, never that it was cut off.
@@ -1258,7 +1323,7 @@ public sealed partial class Driver(
                 LastPlan = lastPlan,
                 LastWords = lastWords,
                 // Another agent's accounts are not this agent's: a hand-over says no account was cooling for it to be told of.
-                AccountChanged = elsewhere && !handedFrom && prior!.Limit && _harnesses.CoolingOf(agent, prior.Profile) is not null,
+                AccountChanged = elsewhere && !handedFrom && prior!.Limit && Context.Harnesses.CoolingOf(agent, prior.Profile) is not null,
                 // A set-up step is told its environment as the rule declares it now (REVIEWENV1c, design §2.2), and its account
                 // says where that rule was set (REVIEWENV1c2).
                 SetUp = setUp,
@@ -1279,7 +1344,7 @@ public sealed partial class Driver(
             // Words to a session that had ended are in its conversation already, where the person wrote them (MSG1b).
             if (carryingOn && !answerKept && start.Resumes!.Answer is { Length: > 0 } answeredWith && written is { Parked: true } or { Said: null })
             {
-                _events.Keep(start.Resumes.Session, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = answeredWith }, say: null);
+                Context.Events.Keep(start.Resumes.Session, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = answeredWith }, say: null);
             }
 
             var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
@@ -1287,15 +1352,15 @@ public sealed partial class Driver(
 
             // The protocol door carries the servers on the wire below; a pipe-door harness that takes a file at spawn is handed
             // one under Daoris's home, and the file goes when the session does.
-            hooks?.Log.Served(Context.Catalog, sessionId, servers);
+            Context.Hooks?.Log.Served(Context.Catalog, sessionId, servers);
             var handed = SpawnServers.Hand(adapter, info, home, sessionId, servers);
 
             // What this session may do (PERM1, D72): the rules composed for its circle and repository,
             // handed over as the harness's own settings tier.
             var rules = HandRules(adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across);
 
-            _runs.Live[quest.Id] = sessionId;
-            using var live = new Disposer(() => _runs.Live.TryRemove(quest.Id, out var _));
+            Context.Runs.Live[quest.Id] = sessionId;
+            using var live = new Disposer(() => Context.Runs.Live.TryRemove(quest.Id, out var _));
 
             return await HoldAsync(
                 adapter, info, target, sessionId, transcript, workTree, JoinNotices(harnessNotice, browserNotice), rules, handed,
@@ -1309,7 +1374,7 @@ public sealed partial class Driver(
                 drivesBrowser: drivesBrowser,
                 said: Said(adapter, selection, sessionId),
                 // A native run holds what the person says while it works, and goes on with it in its own conversation (MSG1b).
-                goOn: GoOnWith(adapter, target, selection, rules.File, handed),
+                goOn: GoOns.GoOnWith(adapter, target, selection, rules.File, handed),
                 stopMade: stop => stoppedFirst = stop,
                 // BGWAIT1: a turn that ends on the session's own background work, holding its quest as a park would, is not
                 // a question. Read from the quest as the conclusion reads it, by the conclusion's own rule.
@@ -1327,7 +1392,7 @@ public sealed partial class Driver(
                     // signals as a crashed one, and only this flag knows whose decision the end was.
                     var after = await service.FindQuestAsync(quest.Id, ct).ConfigureAwait(false);
                     var status = after?.Status ?? "Open";
-                    var stop = _processes.StopMade(sessionId);
+                    var stop = Context.Processes.StopMade(sessionId);
                     var conclusion = stop is not null
                         // The driver's own stop, for a take that lost (D68 §5), stands it down: the quest was someone
                         // else's, and the reason says who. The person's, a pause's naming the pause (PAUSE1b, design
@@ -1341,7 +1406,7 @@ public sealed partial class Driver(
                                 // Whose take it was, and what it last said (STANDDOWN2): a session
                                 // holding the quest it took and stopping is waiting on the person.
                                 took: status == "Taken" && await service.TookAsync(sessionId, ct).ConfigureAwait(false),
-                                lastWords: SessionLastWords.ParkedWords(_events, sessionId, transcript))
+                                lastWords: SessionLastWords.ParkedWords(Context.Events, sessionId, transcript))
                             : SessionConclusion.Of("failed", Observation.TimedOut(config.TimeoutMinutes));
 
                     conclusion = AccountRefused(conclusion, adapter, selection, ended);
@@ -1361,7 +1426,7 @@ public sealed partial class Driver(
 
                     // REVIEWENV1c (design §2.6): a set-up step's said set-ups posted with the commit Daoris reads from its tree now.
                     // REVIEWENV1d: and its build served to its tab from then until the person's verdict.
-                    await ReviewSetUps.PostAsync(service, config, _events, after, sessionId, workTree, start.Workspace, openedAt, ct, Reviews)
+                    await ReviewSetUps.PostAsync(service, config, Context.Events, after, sessionId, workTree, start.Workspace, openedAt, ct, Reviews)
                         .ConfigureAwait(false);
 
                     // LAND2b: a done under a rule that accepts automatically is due, and a later look lands it beside itself.
@@ -1504,7 +1569,7 @@ public sealed partial class Driver(
     /// unasked (D73) — the same composition <see cref="HandRules"/> hands over. False for a harness that
     /// takes no rules at all, which then depends on the repository's own list and so on its trust.
     /// </summary>
-    private bool HandedConnector(ISessionAdapter adapter, string? workspace, string? repository, string tool) =>
+    internal bool HandedConnector(ISessionAdapter adapter, string? workspace, string? repository, string tool) =>
         adapter.TakesSettings
         && PermissionRules.AllowsConnector(
             PermissionRules.Compose(PermissionRules.Load(home), workspace, repository), tool);
@@ -1655,7 +1720,7 @@ public sealed partial class Driver(
         (CoolingEntry Entry, LimitSeen Seen)? limited;
         try
         {
-            limited = _harnesses.Limited(adapter.Name, selection.Profile, turnFailed, sessionId, config.CoolOff);
+            limited = Context.Harnesses.Limited(adapter.Name, selection.Profile, turnFailed, sessionId, config.CoolOff);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -1666,8 +1731,8 @@ public sealed partial class Driver(
         if (limited is not { } read) return (conclusion, false);
 
         var (entry, seen) = read;
-        service.AccountSaid(AccountLine.Limited(sessionId, adapter.Name, selection.Profile, seen, _events.TurnsEnded(sessionId) + 1, used?.Used));
-        return (conclusion.Unsaid(turnFailed).Then(" ", CoolingWords.NoteOf(entry, _harnesses.Zone)), true);
+        service.AccountSaid(AccountLine.Limited(sessionId, adapter.Name, selection.Profile, seen, Context.Events.TurnsEnded(sessionId) + 1, used?.Used));
+        return (conclusion.Unsaid(turnFailed).Then(" ", CoolingWords.NoteOf(entry, Context.Harnesses.Zone)), true);
     }
 
     /// <summary>
@@ -1678,7 +1743,7 @@ public sealed partial class Driver(
     {
         try
         {
-            _harnesses.Said(adapter.Name, selection.Profile, info, sessionId);
+            Context.Harnesses.Said(adapter.Name, selection.Profile, info, sessionId);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -1711,10 +1776,10 @@ public sealed partial class Driver(
         var owner = refusing.Owner(adapter.Name);
         // The hold a later start says names the account by the person's name, read now (ACCT2b); the note, which travels and
         // whose cleaner knows only the record's own id, keeps the id.
-        var named = selection.Profile is { } profile ? AccountNames.Said(AccountNames.Of(_harnesses.Home, owner), profile) : null;
+        var named = selection.Profile is { } profile ? AccountNames.Said(AccountNames.Of(Context.Harnesses.Home, owner), profile) : null;
         var hold = RefusedAccounts.RefusedHold(owner, selection.Profile, named);
-        _harnesses.Refuse(adapter.Name, selection.Profile, hold.Note, hold);
-        _harnesses.SignedOut(adapter.Name, selection.Profile);
+        Context.Harnesses.Refuse(adapter.Name, selection.Profile, hold.Note, hold);
+        Context.Harnesses.SignedOut(adapter.Name, selection.Profile);
         return conclusion.Then(" ", RefusedAccounts.RefusedNote(owner, selection.Profile));
     }
 
@@ -1734,7 +1799,7 @@ public sealed partial class Driver(
     /// <param name="turnFailed">What the protocol door said refusing the call (ACPEND1), or null.</param>
     internal SessionConclusion AccountSignedOut(
         SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed) =>
-        conclusion.State == "failed" && RefusedAccounts.SignInRefused(_harnesses, adapter, selection.Profile, turnFailed) is { } line
+        conclusion.State == "failed" && RefusedAccounts.SignInRefused(Context.Harnesses, adapter, selection.Profile, turnFailed) is { } line
             ? conclusion.Then(" ", line)
             : conclusion;
 
@@ -1910,7 +1975,7 @@ public sealed partial class Driver(
         using var process = Process.Start(info)
             ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
         // Kept beside the process, so who is driving Daoris's browser lasts exactly as long as it (BRW8).
-        using var tracked = _processes.Track(sessionId, process, refusesInput, drivesBrowser);
+        using var tracked = Context.Processes.Track(sessionId, process, refusesInput, drivesBrowser);
         using var reaper = new Disposer(() => SessionProcesses.EndIfRunning(process));
         using var servers = new Disposer(() => SpawnServers.Remove(handed));
         using var ruled = new Disposer(() => SpawnSettings.Remove(rules.File));
@@ -1923,7 +1988,7 @@ public sealed partial class Driver(
         });
         // 🔴 The stop made of it, told as the run lets go, whatever ends it (FLAKE3): disposed before the runs above are
         // untracked, so it is read while they still are, for a close that cuts the conclusion off to record that stop.
-        using var letGo = new Disposer(() => stopMade?.Invoke(_processes.StopMade(sessionId)));
+        using var letGo = new Disposer(() => stopMade?.Invoke(Context.Processes.StopMade(sessionId)));
 
         // Which door this harness is held over (D53). The protocol door drives an ACP session on the
         // same process; the pipe door reads its text, or its structure where its own wire carries one
@@ -1946,8 +2011,8 @@ public sealed partial class Driver(
         // hand over between turns. Never an intake's or a reviewer's: each is one turn framed as one prompt (INT4h, D155 point 5).
         // On the native door, where the run can resume, held until it ends and gone on with in its own conversation (MSG1b,
         // D137 §2.1).
-        var held = goOn is not null && adapter.Wire == SessionWire.Pipe && !target.OneTurn ? _processes.OpenInbox(sessionId) : null;
-        var inbox = adapter.Wire == SessionWire.Acp && !target.OneTurn ? _processes.OpenInbox(sessionId) : held;
+        var held = goOn is not null && adapter.Wire == SessionWire.Pipe && !target.OneTurn ? Context.Processes.OpenInbox(sessionId) : null;
+        var inbox = adapter.Wire == SessionWire.Acp && !target.OneTurn ? Context.Processes.OpenInbox(sessionId) : held;
         using var unheld = new Disposer(() => inbox?.Close());
         if (held is not null)
         {
@@ -1956,7 +2021,7 @@ public sealed partial class Driver(
             held.OnSaid((message, _) =>
             {
                 output?.Append(sessionId, $"— the person added, which reaches the session when its turn ends: {message.Text}");
-                _events.Keep(sessionId, ChatMessage.Words(message) with { Reaches = "turn-end" }, say: null);
+                Context.Events.Keep(sessionId, ChatMessage.Words(message) with { Reaches = "turn-end" }, say: null);
             });
             held.Attach(interrupt: null);
         }
@@ -2001,7 +2066,7 @@ public sealed partial class Driver(
         // its own conversation is resumed with them under the same record, which stays working, until a run ends with none.
         if (held is not null)
         {
-            (exitCode, used) = await GoOnAsync(
+            (exitCode, used) = await GoOns.GoOnAsync(
                 held, goOn!, adapter, sessionId, transcript, refusesInput, drivesBrowser, exitCode, used, resume, said, wentOn, ct, own)
                 .ConfigureAwait(false);
         }
@@ -2070,7 +2135,7 @@ public sealed partial class Driver(
     /// nobody is observing is the one thing worse than a failed one.
     /// </summary>
     /// <param name="minutes">The bound where it is not the machine's session timeout: a reviewer's pass (XAGENT1d).</param>
-    private async Task<int?> WaitAsync(Process process, CancellationToken ct, int? minutes = null)
+    internal async Task<int?> WaitAsync(Process process, CancellationToken ct, int? minutes = null)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(TimeSpan.FromMinutes(minutes ?? config.TimeoutMinutes));
@@ -2115,7 +2180,7 @@ public sealed partial class Driver(
         string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null, HarnessWords? own = null) =>
         adapter.StructuredOutput() is { } mapper
             ? KeepingAsync(mapper, HarnessCapture.CaptureStructuredAsync(
-                process.StandardOutput, process.StandardError, transcript, sessionId, output, _events, mapper,
+                process.StandardOutput, process.StandardError, transcript, sessionId, output, Context.Events, mapper,
                 resume is null ? prompt : null, ct, preamble, personSaid: personSaid,
                 opened: resume?.Opening(), append: resume is not null, said: said, account: account, own: own), sessionId, keepAs, resume)
             : null;
@@ -2124,12 +2189,12 @@ public sealed partial class Driver(
     /// The native door's conversation id, once its output has ended (ANSWER1a): kept for a quest's session, and told to a
     /// resume, whose run that never named one ended before the harness opened its conversation.
     /// </summary>
-    private async Task<AcpUsage?> KeepingAsync(IStreamMapper mapper, Task<AcpUsage?> capture, string sessionId, string? keepAs, ResumeAsk? resume)
+    internal async Task<AcpUsage?> KeepingAsync(IStreamMapper mapper, Task<AcpUsage?> capture, string sessionId, string? keepAs, ResumeAsk? resume)
     {
         var usage = await capture.ConfigureAwait(false);
         if (mapper.Conversation is { } conversation)
         {
-            if (keepAs is not null) _conversations.Keep(sessionId, keepAs, conversation);
+            if (keepAs is not null) Context.Conversations.Keep(sessionId, keepAs, conversation);
             // It opened the conversation its argument carried the person's words to, so the words went (MSG1b).
             if (resume is not null) resume.Named = resume.Prompted = true;
         }
@@ -2194,7 +2259,7 @@ public sealed partial class Driver(
         }
 
         // The record's half (D76 §2): a record that cannot be written costs a console line, never the session.
-        void Event(SessionEvent e) => _events.Keep(sessionId, e, Line);
+        void Event(SessionEvent e) => Context.Events.Keep(sessionId, e, Line);
 
         // A driver line that is also part of the conversation: a note in the record as well.
         void Said(string text)
@@ -2241,7 +2306,7 @@ public sealed partial class Driver(
             var connector = Connector(sessionId, scope);
             if (connector is null)
             {
-                Said(noConnector ?? (scope is null ? NoConnectorForSession : NoConnectorForIntake));
+                Said(noConnector ?? (scope is null ? NoConnectorForSession : DriverIntakes.NoConnectorForIntake));
             }
 
             // The knowledge host first, then whatever the plugins hand every session (D65 §1f): a
@@ -2256,10 +2321,10 @@ public sealed partial class Driver(
             var session = new AcpSession(
                 process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture, meta, Event,
                 streams: output is null ? null : new SessionStreams(output, sessionId),
-                onConversation: keepAs is null ? null : conversation => _conversations.Keep(sessionId, keepAs, conversation));
+                onConversation: keepAs is null ? null : conversation => Context.Conversations.Keep(sessionId, keepAs, conversation));
             // What it says about its account's windows, kept as it says it (TOOL6c).
             if (said is not null) session.LimitsSaid += said;
-            using var stops = output is null ? null : _processes.OpenTaskStops(sessionId, session.StopTaskAsync);
+            using var stops = output is null ? null : Context.Processes.OpenTaskStops(sessionId, session.StopTaskAsync);
             // The person's words in the record the moment they are said, with when they reach the session (STEER1, D136):
             // the page shows them waiting in the turn they were said in, rather than nothing until they are handed over.
             inbox?.OnSaid((message, reach) =>

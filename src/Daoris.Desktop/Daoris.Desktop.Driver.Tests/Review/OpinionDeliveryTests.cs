@@ -271,7 +271,7 @@ public sealed class OpinionDeliveryTests : IDisposable
             "It goes on with another agent's findings in its own conversation, in the tree it worked in, to check and answer each.",
             Continuations.GoingOnWithFindingsNoted.Note);
         Assert.DoesNotContain("your words", Continuations.GoingOnWithFindingsNoted.Note);
-        Assert.Equal(["mcp__daoris-knowledge__opinion_answer"], Daoris.Driver.Driver.AnswersFindings);
+        Assert.Equal(["mcp__daoris-knowledge__opinion_answer"], DriverContinuations.AnswersFindings);
     }
 
     // ——— The answers, read as the turn ends (design §6.4).
