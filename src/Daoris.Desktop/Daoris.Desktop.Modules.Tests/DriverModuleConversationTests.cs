@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A conversation over the bridge (`DriverModule.Conversation.cs`, MOD5): its record, its start, the
+/// A conversation over the bridge (`ConversationRoutes.cs`, MOD5): its record, its start, the
 /// person's messages and files, finishing, stopping a turn, and its queue. The rows where a real process
 /// holds the session are <see cref="DriverModuleConversationProcessTests"/>'s.
 /// </summary>
@@ -287,12 +287,12 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
             """);
         using var bare = JsonDocument.Parse("""{"id":"s1","text":"look"}""");
 
-        var files = DriverModule.FilesOf(payload.RootElement);
+        var files = ConversationRoutes.FilesOf(payload.RootElement);
 
         Assert.Equal(["run.log", "shot.png"], files.Select(file => file.Name));
         Assert.Equal("exit 3", System.Text.Encoding.UTF8.GetString(files[0].Content));
         Assert.Empty(files[1].Content);
-        Assert.Empty(DriverModule.FilesOf(bare.RootElement));
+        Assert.Empty(ConversationRoutes.FilesOf(bare.RootElement));
     }
 
     /// <summary>

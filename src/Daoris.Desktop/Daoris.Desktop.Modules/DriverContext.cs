@@ -32,6 +32,17 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     public PickFile? PickFile { get; } = pickFile;
 
     /// <summary>
+    /// The folder holding the install's offers — Daoris's own example plugins, none installed until a press (PLUG9 d, D103).
+    /// Null finds them beside the running application, else beside the home; a test names its own, since every test's home
+    /// shares one parent. Set by <see cref="DriverModule"/>'s initializer after the handlers are built (PART10e), so a domain
+    /// reads <see cref="OffersFolder"/> at each request, never a value copied at build.
+    /// </summary>
+    public string? Offers { get; set; }
+
+    /// <summary>The offers' folder as it stands now: the one named, else beside the application or the home.</summary>
+    public string OffersFolder => Offers ?? PluginOffers.FolderFor(Loop.Home, AppContext.BaseDirectory);
+
+    /// <summary>
     /// A standing choice: an edit to <c>driver.json</c> under the home and a nudge, because the file is the truth and the loop
     /// re-reads it every tick, the same file the terminal's verbs edit (D50).
     /// </summary>

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The driver's state and standing choices over the bridge (`DriverModule.Driver.cs`, MOD5): the state,
+/// The driver's state and standing choices over the bridge (`DriverRoutes.cs`, MOD5): the state,
 /// the drivable set, holds, trees, notifications, strikes, the intake and helper agents, trust and *Sync now*.
 /// </summary>
 [Trait(Category.Name, Category.Process)]

@@ -10,8 +10,12 @@ namespace Daoris.Desktop;
 /// person's answer to a parked session (D52 §4), and what sessions opened with and said, read off this
 /// machine's own record (RAIL1).
 /// </summary>
-public sealed partial class DriverModule
+public sealed class SessionsRoutes(DriverContext context)
 {
+    private readonly DriverContext _context = context;
+    private readonly DriverLoop _loop = context.Loop;
+    private readonly OpenFolder? _openFolder = context.OpenFolder;
+
     [DriverRoute("STOP_SESSION")]
     private async Task<object?> StopSessionAsync(IpcRequest request, CancellationToken cancellationToken)
     {

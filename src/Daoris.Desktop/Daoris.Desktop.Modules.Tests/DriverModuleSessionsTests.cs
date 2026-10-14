@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A session as the rail acts on it over the bridge (`DriverModule.Sessions.cs`, MOD5): a stop, a parked
+/// A session as the rail acts on it over the bridge (`SessionsRoutes.cs`, MOD5): a stop, a parked
 /// session's resolution, and the openings and search read off this machine's own record.
 /// </summary>
 public sealed class DriverModuleSessionsTests : DriverModuleBridge
@@ -589,8 +589,8 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
         var failed = new SessionGrouping("f41led00", SessionGroup.Ended, "failed") { Lands = new LandOffer("daoris/s-4e6837ed", "s-4e6837ed", 1, null) };
 
-        var row = JsonSerializer.SerializeToElement(DriverModule.Grouped(failed), camel);
-        var bare = JsonSerializer.SerializeToElement(DriverModule.Grouped(failed with { Lands = null }), camel);
+        var row = JsonSerializer.SerializeToElement(SessionsRoutes.Grouped(failed), camel);
+        var bare = JsonSerializer.SerializeToElement(SessionsRoutes.Grouped(failed with { Lands = null }), camel);
 
         var lands = row.GetProperty("lands");
         Assert.Equal(("daoris/s-4e6837ed", "s-4e6837ed", 1, JsonValueKind.Null),
@@ -614,8 +614,8 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
             Discards = new DiscardOffer("daoris/s-4e6837ed", "s-4e6837ed", new HeldWork(new ContentHold("main", Squash: true), kept, null)),
         };
 
-        var row = JsonSerializer.SerializeToElement(DriverModule.Grouped(held), camel);
-        var bare = JsonSerializer.SerializeToElement(DriverModule.Grouped(held with { Discards = null }), camel);
+        var row = JsonSerializer.SerializeToElement(SessionsRoutes.Grouped(held), camel);
+        var bare = JsonSerializer.SerializeToElement(SessionsRoutes.Grouped(held with { Discards = null }), camel);
 
         var discards = row.GetProperty("discards");
         Assert.Equal(

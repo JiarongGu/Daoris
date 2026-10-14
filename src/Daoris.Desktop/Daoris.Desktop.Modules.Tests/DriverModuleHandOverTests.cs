@@ -61,7 +61,7 @@ public sealed class DriverModuleHandOverTests : DriverModuleBridge
     [InlineData("limit", "person", "person")]
     public void Daoris_asks_only_with_near_or_limit(string why, string? askedBy, string expected)
     {
-        Assert.Equal(expected, DriverModule.HandOverAskedBy(why, askedBy));
+        Assert.Equal(expected, ConversationRoutes.HandOverAskedBy(why, askedBy));
     }
 
     private async Task<(DriverLoop Loop, DriverModule Module, DriverModuleStartFromTests.StandIn Service)> UpAsync()

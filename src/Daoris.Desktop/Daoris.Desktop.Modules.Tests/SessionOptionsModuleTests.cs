@@ -45,7 +45,7 @@ public sealed class SessionOptionsModuleTests : Bridge
     public void The_options_are_answered_in_the_agents_words_in_the_shape_the_page_reads()
     {
         var answer = JsonSerializer.SerializeToElement(
-            DriverModule.OptionsAnswer("s1", [
+            ConversationRoutes.OptionsAnswer("s1", [
                 new AcpConfigOption("model", "Model", "model", "default",
                     [new AcpConfigChoice("default", "Default (recommended)", "the tool's default"), new AcpConfigChoice("sonnet", "Sonnet")]),
                 new AcpConfigOption("effort", "Effort", "thought_level", "high", [new AcpConfigChoice("high", "High")]),

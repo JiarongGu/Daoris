@@ -10,8 +10,10 @@ namespace Daoris.Desktop;
 /// a blame and a compare, for Repositories' Branches and History tabs. Shell-only: each is the driver's own read
 /// (<see cref="GitBranches"/>, <see cref="GitReads"/>) through the git the agents run, and `daoris-driver git` is the terminal's.
 /// </summary>
-public sealed partial class DriverModule
+public sealed class GitRoutes(DriverLoop loop)
 {
+    private readonly DriverLoop _loop = loop;
+
     // One reader for the module's life, so its answers, kept by whole commit ids (D147 §4.2), outlive a call: a page asking the
     // same commit twice starts no second git.
     private readonly GitReads _gitReads = new();
@@ -24,7 +26,7 @@ public sealed partial class DriverModule
     {
         var named = Optional(request, "repository");
         var service = _loop.Service ?? throw NotReady();
-        var rows = Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), named, Optional(request, "workspace"));
+        var rows = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), named, Optional(request, "workspace"));
 
         IReadOnlyList<SessionRecord>? sessions = null;
         var unread = false;
@@ -71,7 +73,7 @@ public sealed partial class DriverModule
     {
         var repository = Optional(request, "repository") ?? throw new DriverException("a Git read names its repository.");
         var service = _loop.Service ?? throw NotReady();
-        var rows = Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, Optional(request, "workspace"));
+        var rows = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, Optional(request, "workspace"));
         if (rows.FirstOrDefault(row => Directory.Exists(row.Root)).Root is not { } root)
         {
             throw Refusals.Because(Refusals.GitNoCheckout, $"{repository} has no checkout on this machine, so there is no branch to name.");
@@ -130,7 +132,7 @@ public sealed partial class DriverModule
     {
         var repository = Optional(request, "repository") ?? throw new DriverException("a Git read names its repository.");
         var service = _loop.Service ?? throw NotReady();
-        var rows = Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, Optional(request, "workspace"));
+        var rows = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, Optional(request, "workspace"));
         if (rows.FirstOrDefault(row => Directory.Exists(row.Root)).Root is not { } root)
         {
             return new

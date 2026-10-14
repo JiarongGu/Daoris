@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// This machine's plugins over the bridge (`DriverModule.Plugins.cs`, MOD5): the catalogue and offers,
+/// This machine's plugins over the bridge (`PluginsRoutes.cs`, MOD5): the catalogue and offers,
 /// the switch and removal, an update, an install, and the kit's New and Try.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
