@@ -277,6 +277,32 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.Equal(["done1"], some.GetProperty("sessions").EnumerateArray().Select(row => row.GetProperty("session").GetString()));
     }
 
+    /// <summary>
+    /// SESSONE1b (D167, the design §1.6): the answer carries <c>entries</c> beside the rows the page reads until SESSONE1c: each
+    /// session's line of work, its group, its leading part and its parts with how each began, in the terminal's fields.
+    /// </summary>
+    [Fact]
+    public async Task The_groups_answer_carries_the_entries_beside_its_rows()
+    {
+        using var ledger = Ledger();
+        var module = new DriverModule(Bus, await UpAsync(ledger));
+
+        var answer = await AnswerAsync(module, "SESSION_GROUPS");
+
+        var entries = answer.GetProperty("entries").EnumerateArray().ToList();
+        Assert.Equal(answer.GetProperty("sessions").GetArrayLength(), entries.Count);
+        var done = entries.Single(entry => entry.GetProperty("leading").GetString() == "done1");
+        Assert.Equal(SessionsCommand.JsonEntryFields, done.EnumerateObject().Select(field => field.Name));
+        Assert.Equal("ended", done.GetProperty("group").GetString());
+        var part = Assert.Single(done.GetProperty("parts").EnumerateArray());
+        Assert.Equal(SessionsCommand.JsonPartFields, part.EnumerateObject().Select(field => field.Name));
+        Assert.Equal(("done1", "opened"), (part.GetProperty("session").GetString(), part.GetProperty("began").GetString()));
+        Assert.DoesNotContain(JsonSerializer.Serialize(Home).Trim('"'), answer.GetRawText(), StringComparison.OrdinalIgnoreCase);
+
+        var some = await AnswerAsync(module, "SESSION_GROUPS", new { ids = new[] { "done1" } });
+        Assert.Equal(["done1"], some.GetProperty("entries").EnumerateArray().Select(entry => entry.GetProperty("leading").GetString()));
+    }
+
     /// <summary>Where the loop has looked, its verdicts are the ones read: the list says what the loop decided, never a second plan.</summary>
     [Fact]
     public async Task The_loops_last_look_is_the_verdict_read()

@@ -151,6 +151,12 @@ public static class SessionsCommand
         ["session", "group", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds", "deletable",
             "lands", "discards"];
 
+    /// <summary>The fields of an entry in <c>--json</c>'s <c>entries</c>, in order: <c>SESSION_GROUPS</c>' entry, field for field (SESSONE1b).</summary>
+    public static IReadOnlyList<string> JsonEntryFields { get; } = ["entry", "origin", "repository", "group", "leading", "parts"];
+
+    /// <summary>The fields of one of an entry's parts, in order.</summary>
+    public static IReadOnlyList<string> JsonPartFields { get; } = ["session", "quest", "shown", "group", "began", "after", "askedBy"];
+
     /// <summary>What the words ask, or null with what is wrong with them.</summary>
     public static SessionsAsk? Read(IReadOnlyList<string> args, out string? problem)
     {
@@ -289,8 +295,11 @@ public static class SessionsCommand
             _ => await ListAsync(world, ask, output, ct).ConfigureAwait(false),
         };
 
-    /// <summary>The written form of one listing, as <c>SESSION_GROUPS</c> answers it: <c>{"sessions": [...]}</c>.</summary>
-    public static string Json(IEnumerable<SessionGrouping> rows)
+    /// <summary>
+    /// The written form of one listing, as <c>SESSION_GROUPS</c> answers it: <c>{"sessions": [...]}</c>, and with
+    /// <paramref name="entries"/> the entries beside the rows (SESSONE1b), which stay what they were.
+    /// </summary>
+    public static string Json(IEnumerable<SessionGrouping> rows, IEnumerable<SessionEntry>? entries = null)
     {
         using var stream = new MemoryStream();
         using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
@@ -384,6 +393,38 @@ public static class SessionsCommand
             }
 
             writer.WriteEndArray();
+            if (entries is not null)
+            {
+                writer.WriteStartArray("entries");
+                foreach (var entry in entries)
+                {
+                    writer.WriteStartObject();
+                    writer.WriteString("entry", entry.Key);
+                    writer.WriteString("origin", entry.Origin);
+                    writer.WriteString("repository", entry.Repository);
+                    writer.WriteString("group", entry.Group);
+                    writer.WriteString("leading", entry.Leading);
+                    writer.WriteStartArray("parts");
+                    foreach (var part in entry.Parts)
+                    {
+                        writer.WriteStartObject();
+                        writer.WriteString("session", part.Session);
+                        writer.WriteString("quest", part.Quest);
+                        writer.WriteString("shown", part.Shown);
+                        writer.WriteString("group", part.Group);
+                        writer.WriteString("began", part.Began);
+                        writer.WriteString("after", part.After);
+                        writer.WriteString("askedBy", part.AskedBy);
+                        writer.WriteEndObject();
+                    }
+
+                    writer.WriteEndArray();
+                    writer.WriteEndObject();
+                }
+
+                writer.WriteEndArray();
+            }
+
             writer.WriteEndObject();
         }
 
@@ -404,13 +445,19 @@ public static class SessionsCommand
                 || (records.TryGetValue(row.Session, out var record) && string.Equals(record.Repository, ask.Repository, StringComparison.OrdinalIgnoreCase)))
             .ToList();
 
+        // SESSONE1b (D167): by entry, the rows kept for the page and for --json. An entry is in the group, and the repository, it is.
+        var entries = SessionGroups.ReadEntries(look)
+            .Where(entry => ask.Group is null || entry.Group == ask.Group)
+            .Where(entry => ask.Repository is null || string.Equals(entry.Repository, ask.Repository, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
         if (ask.Json)
         {
-            output.WriteLine(Json(rows));
+            output.WriteLine(Json(rows, entries));
             return 0;
         }
 
-        if (rows.Count == 0)
+        if (entries.Count == 0)
         {
             output.WriteLine($"sessions: {Nothing(ask)}.");
             return 0;
@@ -418,22 +465,41 @@ public static class SessionsCommand
 
         var quests = look.Quests.GroupBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase).ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
         var openings = new SessionEvents(Path.Combine(world.Home, "sessions"))
-            .Openings(rows.Select(row => row.Session).Where(SessionEventText.IsId));
+            .Openings(entries.Select(entry => entry.Leading).Where(SessionEventText.IsId));
+        var placed = SessionGroups.Read(look).GroupBy(row => row.Session, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
         var now = DateTimeOffset.UtcNow;
-        foreach (var group in rows.GroupBy(row => row.Group))
+        foreach (var group in entries.GroupBy(entry => entry.Group))
         {
             var each = group.ToList();
             output.WriteLine($"{GroupName(group.Key)} ({each.Count})");
-            foreach (var row in each)
+            foreach (var entry in each)
             {
-                var record = records[row.Session];
-                var line = string.Join(" · ", new[] { Title(record, quests, openings), Span(record, now) }.Concat(Facts(row, record)));
-                output.WriteLine($"  {row.Session}  {Word(row.Shown)}  {record.Repository} — {line}");
+                var record = records[entry.Leading];
+                var row = placed[entry.Leading];
+                var line = string.Join(" · ", new[] { Title(record, quests, openings), Span(record, now) }.Concat(Facts(row, record))
+                    .Concat(entry.Parts.Count > 1 ? [$"{entry.Parts.Count} parts"] : []));
+                output.WriteLine($"  {entry.Leading}  {Word(row.Shown)}  {record.Repository} — {line}");
+                if (entry.Parts.Count < 2) continue;
+                foreach (var part in entry.Parts)
+                {
+                    output.WriteLine($"      {part.Session}  {Word(part.Shown)}  {(part.Quest is { } quest ? $"#{quest}" : "conversation")} · {Began(part)}");
+                }
             }
         }
 
         return 0;
     }
+
+    /// <summary>How a part began, in the terminal's words (D167): what it followed or who asked.</summary>
+    private static string Began(EntryPart part) => part.Began switch
+    {
+        PartBegan.Retried => $"retried after {part.After}",
+        PartBegan.Resumed => $"resumed after {part.After}",
+        PartBegan.CarriedOn => part.After is { } after ? $"carried on after {after}" : "carried on",
+        PartBegan.HandedOver => $"handed over from {part.After}",
+        PartBegan.Asked => part.AskedBy is { } by ? $"asked by {by}" : "asked by a sibling",
+        _ => "opened",
+    };
 
     private static string Nothing(SessionsAsk ask) => (ask.Group, ask.Repository) switch
     {
