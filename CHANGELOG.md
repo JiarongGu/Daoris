@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- The window is on the desktop kit's 0.21.1. Opening Daoris while it is still closing now starts it once the closing one
+  has gone, where that launch used to be lost.
 - An ask's page has a *Channel* (频道), where its sessions and you talk: their messages and Daoris's lines about its quests
   (published, taken, done, declined, waiting on your yes) in your language, an open question marked, and a box to write to
   everyone on the ask or one of its repositories, answering a message if you choose. A session on an ask has the same channel
