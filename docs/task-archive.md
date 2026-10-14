@@ -14650,3 +14650,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT5c — the page's top folder in folders** (web). As STRUCT5a, 5b and 5d did, with its gate in vitest; STRUCT5d's import-rewriting script (asserted counts, read back) is a candidate tracked tool. Design §7.
 
 **Outcome** 2026-10-15: the page's top holds only its three entries; 109 files moved into domain folders with `git mv`, held by `src/test/structure.test.ts`, and `daoris.lanes.json` lost two `SettingsView*` globs the move made empty. The work, settings, bridge and projects folders still hold over twenty sources at their top and sit on the gate's `wide` list (STRUCT5c-ii); the move script stayed in scratch (MOVETOOL1). Eleven gates passed on the merge, merged with main's closed-quest fix. On Opus: 308 tool calls. Detail: D166's STRUCT5c note and the `refactor(web): STRUCT5c` commits.
+
+## TICKSHOWN1 — a refused start is said on the session (2026-10-15, D137)
+
+> - [ ] **TICKSHOWN1 — a refused start is said on the session** (driver/web). Words planned to go on and refused at the start (the FIX-LOG 2026-10-15 case) showed only *going on* in the sessions list, at every look; the refusal lived in the tick's events alone. A start the service refuses for a record the person wrote to puts the refusal on that record's row, as a hold's reason is, so the person reads why their words wait. Proof: a SessionGroups case; the window.
+
+**Outcome** 2026-10-15: `Driver.RunAsync`'s refused open now carries the refusal as the start's `Held` where `start.GoesOn`, so the look reads the consideration Blocked and the row says *your words wait: …*; other starts' refusals stay in the events. No page change or catalogue key. Proof is `AnswerGoesOnOnceTests` (tick, seen red) and a `SessionGroupsTests` case (already held by the existing Blocked path); the installed window was not looked at. Detail: D137's TICKSHOWN1 note.

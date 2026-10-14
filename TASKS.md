@@ -195,7 +195,6 @@ Contracts: session-management (D126 §9), session-messages (D137), answer-contin
 pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
 
 - [ ] **AWAITSTALE1 — a closed quest no longer names the question it waited on** (service, web). The service keeps a quest's `awaits` after it closes (the install's `711d252413bb` and `3068f74791db`, done, still naming theirs), which held the person's words (FIX-LOG 2026-10-15; the driver now reads it only while taken, `QuestView.Awaits`) and can read *awaiting reply* on the quest page: answer `awaits` only while taken, or clear it at the close, the history kept where it is read.
-- [ ] **TICKSHOWN1 — a refused start is said on the session** (driver/web). Words planned to go on and refused at the start (the FIX-LOG 2026-10-15 case) showed only *going on* in the sessions list, at every look; the refusal lived in the tick's events alone. A start the service refuses for a record the person wrote to puts the refusal on that record's row, as a hold's reason is, so the person reads why their words wait. Proof: a SessionGroups case; the window.
 
 Co-working (D167, `docs/2026-10-14-co-working-design.md`; the owner's two tasks are the canary):
 
