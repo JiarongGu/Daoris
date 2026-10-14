@@ -22,7 +22,11 @@ import { type Box, neverSentence } from './say';
  */
 export function SessionBox({
   box, quest, draft, onDraft, sending = false, refusal, held, ending = [], stopping = false, focus = 0, accepts, onSend, onSendNow,
+  onRemove, onEdit,
 }: {
+  /** Take a held word back out, or reword it, by its id (QUEUEEDIT1b); absent, none offers a control. */
+  onRemove?: (id: string) => Promise<{ done: boolean } | void>;
+  onEdit?: (id: string, text: string) => Promise<{ done: boolean } | void>;
   box: Box;
   /** Whether these words may go at all: false keeps them in the box, unsent, the caller saying why (D137 §2.4). */
   accepts?: (text: string) => boolean;
@@ -75,6 +79,8 @@ export function SessionBox({
         stopTurnLabel={t('work.steer.now')}
         stopTurnTip={t('work.steer.nowTip')}
         onStopTurn={onSendNow}
+        onRemove={onRemove}
+        onEdit={onEdit}
       />
     );
   }

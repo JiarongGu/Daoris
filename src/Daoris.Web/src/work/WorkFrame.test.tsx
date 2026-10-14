@@ -1647,6 +1647,28 @@ describe('starting and holding a conversation', () => {
       'Asked the agent to stop this turn; the conversation stays open. 1 waiting message came back to the box, unsent.');
   });
 
+  /** QUEUEEDIT1b: a waiting message is removed over the driver by its id, and a reword names the session, the id and the text. */
+  it('removes and rewords a waiting message over the driver, by its id', async () => {
+    SESSIONS = [CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return STRUCTURED_ROSTER;
+      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [{ id: 'q1', text: 'and then test it', files: [] }], taking: true };
+      if (type === 'SESSION_QUEUE_EDIT') return { done: true };
+      return DRIVER_STATE;
+    });
+
+    show('c0ffee11');
+    await userEvent.click(await screen.findByRole('button', { name: 'Remove the waiting message: and then test it' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE_EDIT', { payload: { session: 'c0ffee11', id: 'q1' } });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Edit the waiting message: and then test it' }));
+    await userEvent.type(screen.getByLabelText('Message'), ' twice');
+    await userEvent.keyboard('{Enter}');
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE_EDIT', {
+      payload: { session: 'c0ffee11', id: 'q1', text: 'and then test it twice' },
+    });
+  });
+
   // AGT6b (D98): one conversation's model and effort, as its agent offered them on the protocol door —
   // asked of the driver once, followed as news, and changed over it. The console's `/model`, typed as a
   // message, cut a turn short; this is its door.

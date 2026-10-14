@@ -768,6 +768,18 @@ describe('useChatTurns', () => {
   const queued = (session: string, state: { queued: { text: string; files: string[] }[]; taking: boolean }) =>
     act(() => { eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session, ...state }); });
 
+  /** QUEUEEDIT1b: a waiting word's id comes with it, from the answer and from every event, and is left off where there is none. */
+  it('keeps each waiting word’s id, from the answer and from the event', async () => {
+    invoke.mockResolvedValue({ session: 's1', queued: [{ id: 'a1', text: 'one', files: [] }, { id: null, text: 'two', files: [] }], taking: true });
+    const { result } = renderHook(() => useChatTurns(['s1']));
+
+    await waitFor(() => expect(result.current.s1?.queued).toEqual([
+      { id: 'a1', text: 'one', files: [] }, { text: 'two', files: [] },
+    ]));
+    queued('s1', { queued: [{ id: 'c3', text: 'one, reworded', files: [] }] as never, taking: true });
+    expect(result.current.s1?.queued).toEqual([{ id: 'c3', text: 'one, reworded', files: [] }]);
+  });
+
   it('asks once per conversation, then follows the driver live, for the ones it watches only', async () => {
     invoke.mockImplementation(async (_module: string, _type: string, request: { payload: { id: string } }) =>
       (request.payload.id === 's1'

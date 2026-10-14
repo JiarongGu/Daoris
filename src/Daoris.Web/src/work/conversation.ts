@@ -262,7 +262,12 @@ export type Ask = {
  * A message as the driver tells the page of one it has not sent yet, or handed back (CONV4a/c): the
  * words, and the names of its files — never where they are kept.
  */
-export type ChatMessage = { text: string; files: string[] };
+export type ChatMessage = {
+  /** What a waiting word is named by, to remove or reword it (QUEUEEDIT1b); absent for one that has none. */
+  id?: string;
+  text: string;
+  files: string[];
+};
 
 /**
  * One turn: what was asked, what the agent did about it, and how it ended. A turn with no `ended`

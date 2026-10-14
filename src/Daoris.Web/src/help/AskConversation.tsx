@@ -6,7 +6,7 @@ import { type Carry, NO_CARRY } from '../compose/carry';
 import { sentence } from '../format';
 import { useHelpSessions } from '../queries';
 import {
-  HELP_HISTORY, type HelpSettled, NO_TURNS, useCancelTurn, useChatTurns, useDeleteSession, useEndChat, useHarnesses,
+  HELP_HISTORY, type HelpSettled, NO_TURNS, useCancelTurn, useChatTurns, useDeleteSession, useEditQueued, useEndChat, useHarnesses,
   useHelpConversations, useHelpProposals, useHelpReadied, useHelpStartFrom, usePinHelp, useRenameHelp, useSendMessage,
   useSettleHelp, useStartHelp, useStopSession,
 } from '../shell';
@@ -174,6 +174,7 @@ export function useAskConversation(
   const end = useEndChat();
   const stop = useStopSession();
   const cancelTurn = useCancelTurn();
+  const editQueued = useEditQueued(shown?.id ?? null);
   const roster = useHarnesses();
   const held = useChatTurns(shown && live ? [shown.id] : []);
   const turns = held[shown?.id ?? ''] ?? NO_TURNS;
@@ -525,6 +526,8 @@ export function useAskConversation(
       stoppable={structured === true}
       stopping={cancelTurn.isPending}
       onStopTurn={() => { if (shown) cancelTurn.mutate(shown.id); }}
+      onRemove={editQueued.remove}
+      onEdit={editQueued.reword}
       onSend={onSend}
       onFinish={() => { if (shown) end.mutate(shown.id); }}
       onStop={() => { if (shown) stop.mutate(shown.id); }}

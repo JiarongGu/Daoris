@@ -33,6 +33,15 @@ export const RunningTurnEnd: Story = {
   },
 };
 
+/** QUEUEEDIT1b: a held word with an id can be removed or reworded. */
+export const RunningWithControls: Story = {
+  args: {
+    box: { kind: 'steer' },
+    held: { queued: [{ id: 'a1', text: 'and cap the budget at 64 KiB', files: [] }], taking: true },
+    onRemove: async () => ({ done: true }), onEdit: async () => ({ done: true }),
+  },
+};
+
 /** Parked to ask the person: the box is the answer (D126 §3.1). */
 export const Parked: Story = { args: { box: { kind: 'say', mode: 'answer' } } };
 
