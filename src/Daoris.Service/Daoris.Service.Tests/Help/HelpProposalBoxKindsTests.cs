@@ -49,8 +49,9 @@ public sealed class HelpProposalBoxKindsTests
     }
 
     /// <summary>
-    /// PART7 (D166's note, no partial type without generated code): each kind is a writer class of its own,
-    /// <c>Help&lt;Kind&gt;ProposalWriter</c>, in a file of that name, writing exactly that kind; the box is one file.
+    /// Each kind's file, <c>HelpProposalBox.&lt;Kind&gt;.cs</c> (the name the driver's twin tests read), holds that kind's
+    /// writer class, <c>Help&lt;Kind&gt;ProposalWriter</c>, writing exactly that kind, and no part of the box: since PART7
+    /// (D166's note, no partial type without generated code) the box is the one class of <c>HelpProposalBox.cs</c>.
     /// </summary>
     [Fact]
     public void Every_kind_is_written_by_a_class_in_a_file_of_its_own()
@@ -58,19 +59,16 @@ public sealed class HelpProposalBoxKindsTests
         var core = Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core");
 
         Assert.Equal(
-            Table.Select(row => $"{Writer(row.Kind)}.cs").Order(StringComparer.Ordinal),
-            Directory.GetFiles(core, "Help*ProposalWriter.cs").Select(Path.GetFileName).Order(StringComparer.Ordinal));
-        Assert.Equal("HelpProposalBox.cs", Path.GetFileName(Assert.Single(Directory.GetFiles(core, "HelpProposalBox*.cs"))));
+            Table.Select(row => $"HelpProposalBox.{Pascal(row.Kind)}.cs").Append("HelpProposalBox.cs").Order(StringComparer.Ordinal),
+            Directory.GetFiles(core, "HelpProposalBox*.cs").Select(Path.GetFileName).Order(StringComparer.Ordinal));
         foreach (var (kind, _) in Table)
         {
-            var writer = File.ReadAllText(Path.Combine(core, $"{Writer(kind)}.cs"));
-            Assert.Matches($@"\bclass {Writer(kind)}\b", writer);
+            var writer = File.ReadAllText(Path.Combine(core, $"HelpProposalBox.{Pascal(kind)}.cs"));
+            Assert.Matches($@"\bclass Help{Pascal(kind)}ProposalWriter\b", writer);
             Assert.DoesNotContain("class HelpProposalBox", writer);
             Assert.Contains($"writer.WriteString(\"kind\", \"{kind}\");", writer);
         }
     }
-
-    private static string Writer(string kind) => $"Help{Pascal(kind)}ProposalWriter";
 
     [Fact]
     public void Every_kind_has_its_connectors_tool()
