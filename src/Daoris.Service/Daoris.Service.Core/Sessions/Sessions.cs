@@ -191,6 +191,12 @@ public sealed record Session(
     public bool Took { get; init; }
 
     /// <summary>
+    /// The quest a conversation took (CHATTAKE1): a chat serves none of its own, so <see cref="Took"/> never said which. It travels
+    /// with the record, since it names a quest and no path; null for a chat from before the field, which keys its quests as it did.
+    /// </summary>
+    public string? TookQuest { get; init; }
+
+    /// <summary>
     /// The person's words waiting for this record to go on with them, in the order said (MSG1a, D137 §2.4): an answer to
     /// a park (STANDDOWN2, ANSWER1b), or words to a session that ended, which reopen it. A second word joins the first and
     /// never replaces it. Kept until taken, by the resumed run's first prompt or the session a fallback handed them to;
@@ -454,6 +460,10 @@ public sealed class SessionStore
         // SESSONE1a (D167 point 2): the entry's key, written at every open. It travels, so a mirror holds it too. A record from before it
         // says none, and the reader answers the rule's key for it without writing it here (D167 point 3).
         await SchemaColumns.EnsureAsync(_db, "sessions", "entry", "entry TEXT NULL", ct).ConfigureAwait(false);
+
+        // CHATTAKE1 (D167, the design's §1.2 rule 2): the quest a conversation took, which `took` alone never said. It travels, as the
+        // entry does, since a teammate's reader keys the quest by it. A record from before says none, which is the old reading.
+        await SchemaColumns.EnsureAsync(_db, "sessions", "took_quest", "took_quest TEXT NULL", ct).ConfigureAwait(false);
 
         await using (var cursor = _db.Command())
         {
@@ -727,9 +737,10 @@ public sealed class SessionStore
     {
         await using var command = _db.Command();
         command.CommandText = $"""
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, note_parts, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, origin, limited, entry, revision)
-            VALUES ($id, $quest, $repository, $adapter, $state, $note, $noteParts, $evidence, NULL, $created, $updated, $workspace, $kind, $harnessVersion, NULL, NULL, $origin, $limited, $entry, {NextRevision})
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, note_parts, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, origin, limited, entry, took_quest, revision)
+            VALUES ($id, $quest, $repository, $adapter, $state, $note, $noteParts, $evidence, NULL, $created, $updated, $workspace, $kind, $harnessVersion, NULL, NULL, $origin, $limited, $entry, $tookQuest, {NextRevision})
             ON CONFLICT (id) DO UPDATE SET
+              took_quest = COALESCE($tookQuest, took_quest),
               state = $state, note = $note, note_parts = $noteParts, evidence = $evidence, updated = $updated, workspace = $workspace,
               kind = $kind, harness_version = $harnessVersion, origin = $origin, limited = $limited,
               entry = COALESCE($entry, entry),
@@ -738,6 +749,8 @@ public sealed class SessionStore
         // SESSONE1a: the entry's key travels with the record (it names a line of work and a repository). A record from a machine from before
         // it brings none, which keeps whatever this one holds and otherwise leaves the reader to derive it.
         command.Parameters.AddWithValue("$entry", (object?)Blank(record.Entry) ?? DBNull.Value);
+        // CHATTAKE1: the quest a chat took travels with it; none from a machine from before.
+        command.Parameters.AddWithValue("$tookQuest", (object?)Blank(record.TookQuest) ?? DBNull.Value);
         // A limit names no account (TOOL4c), so it is copied like the state beside it.
         command.Parameters.AddWithValue("$limited", record.Limit ? 1 : (object)DBNull.Value);
         // The note's parts travel with the note, already cleaned where they left their machine (LANG1a).
@@ -786,6 +799,22 @@ public sealed class SessionStore
             ORDER BY origin IS NOT NULL, revision LIMIT 1
             """;
         command.Parameters.AddWithValue("$id", id);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
+    }, ct);
+
+    /// <summary>
+    /// The conversation that took <paramref name="questId"/> (CHATTAKE1, design §1.2 rule 2): this machine's first, else a teammate's
+    /// mirror, the earliest taker standing. Null when none recorded one, which is every chat from before the field.
+    /// </summary>
+    public Task<Session?> FindChatTookAsync(string questId, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = """
+            SELECT * FROM sessions WHERE took_quest = $quest COLLATE NOCASE AND quest IS NULL
+            ORDER BY origin IS NOT NULL, created, rowid LIMIT 1
+            """;
+        command.Parameters.AddWithValue("$quest", questId.TrimStart('#'));
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
     }, ct);
@@ -1070,6 +1099,7 @@ public sealed class SessionStore
         FromBy = reader.IsDBNull(reader.GetOrdinal("from_by")) ? null : reader.GetString(reader.GetOrdinal("from_by")),
         Entry = reader.IsDBNull(reader.GetOrdinal("entry")) ? null : reader.GetString(reader.GetOrdinal("entry")),
         Took = !reader.IsDBNull(reader.GetOrdinal("took")) && reader.GetInt64(reader.GetOrdinal("took")) != 0,
+        TookQuest = reader.IsDBNull(reader.GetOrdinal("took_quest")) ? null : reader.GetString(reader.GetOrdinal("took_quest")),
         Said = SaidOf(reader),
         Interrupted = !reader.IsDBNull(reader.GetOrdinal("interrupted")) && reader.GetInt64(reader.GetOrdinal("interrupted")) != 0,
         Limit = !reader.IsDBNull(reader.GetOrdinal("limited")) && reader.GetInt64(reader.GetOrdinal("limited")) != 0,
@@ -1264,11 +1294,16 @@ public sealed class SessionStore
     /// Mark that this session took its quest itself (STANDDOWN2) — said by the session's own connector
     /// at the moment of the take. False when there is no such record of this machine's.
     /// </summary>
-    public Task<bool> MarkTookAsync(string id, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
+    public Task<bool> MarkTookAsync(string id, string? quest = null, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
         await using var command = _db.Command();
-        command.CommandText = "UPDATE sessions SET took = 1 WHERE id = $id AND origin IS NULL";
+        // CHATTAKE1: a chat has no quest of its own, so the quest it took is named here, which keeps an earlier take's id when none is said.
+        // The revision moves only with a quest named, so the team's copy of the chat learns it at the next push.
+        command.CommandText = quest is null
+            ? "UPDATE sessions SET took = 1 WHERE id = $id AND origin IS NULL"
+            : $"UPDATE sessions SET took = 1, took_quest = $quest, revision = {NextRevision} WHERE id = $id AND origin IS NULL";
         command.Parameters.AddWithValue("$id", id);
+        if (quest is not null) command.Parameters.AddWithValue("$quest", quest);
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
     }, ct);
 
