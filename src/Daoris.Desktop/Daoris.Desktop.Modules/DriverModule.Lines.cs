@@ -29,7 +29,7 @@ public sealed partial class DriverModule
         _context.Change(config => workspace is not null
             ? config.WithWorkspaceLine(workspace, branch)
             : config.WithLine(repository!, branch));
-        return State();
+        return State(_loop);
     }
 
     // A repository's session language, or a workspace's (LANG1c, D142 point 7), or either cleared with no language — the
@@ -49,7 +49,7 @@ public sealed partial class DriverModule
         _context.Change(config => workspace is not null
             ? config.WithWorkspaceLanguage(workspace, language)
             : config.WithLanguage(repository!, language));
-        return State();
+        return State(_loop);
     }
 
     // Every repository's line here and what said so (WSR2), for the screen. The checkouts are
@@ -169,7 +169,7 @@ public sealed partial class DriverModule
         _context.Change(config => workspace is not null
             ? config.WithWorkspaceLanding(workspace, rule)
             : config.WithLanding(repository!, rule));
-        return State();
+        return State(_loop);
     }
 
     /// <summary>
@@ -475,7 +475,7 @@ public sealed partial class DriverModule
 
         _context.Change(config => ReviewRules.Apply(config, edit));
         // Only a put looked for anything, so only a put says what the look found.
-        return State(reviewed: edit.Put is null ? null : new { Lacking = lacking, Unchecked = unchecked_ });
+        return State(_loop, reviewed: edit.Put is null ? null : new { Lacking = lacking, Unchecked = unchecked_ });
     }
 
     /// <summary>The page's edit, read as the shared table's: a field of another type is absent, <c>none</c> and <c>clear</c> only when true.</summary>
@@ -528,7 +528,7 @@ public sealed partial class DriverModule
         // The twin's refusals come first, in its words, before anything is written.
         OpinionRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
         _context.Change(config => OpinionRules.Apply(config, edit));
-        return State();
+        return State(_loop);
     }
 
     /// <summary>
@@ -568,7 +568,7 @@ public sealed partial class DriverModule
         // The twin's refusals come first, in its words, before anything is written.
         HelperRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
         _context.Change(config => HelperRules.Apply(config, edit));
-        return State();
+        return State(_loop);
     }
 
     /// <summary>
@@ -582,7 +582,7 @@ public sealed partial class DriverModule
         var edit = CommitRules.EditOf(request.Payload ?? default);
         CommitRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
         _context.Change(config => CommitRules.Apply(config, edit));
-        return State();
+        return State(_loop);
     }
 
     /// <summary>A helpers rule as the bridge carries it (DOORS1b): its mode, and the agents in the order they are tried.</summary>

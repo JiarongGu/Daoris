@@ -9,8 +9,11 @@ namespace Daoris.Desktop;
 /// Reading and writing across repositories, the page's `bridge/across.ts` (READ1, D107): how each registered
 /// repository's checkout stands, and the screen's half of `daoris driver across` over the same `driver.json`.
 /// </summary>
-public sealed partial class DriverModule
+public sealed class AcrossRoutes(DriverContext context)
 {
+    private readonly DriverContext _context = context;
+    private readonly DriverLoop _loop = context.Loop;
+
     // Every repository here, whether agents outside it read its checkout and what said so, and what its
     // sessions were declared to write into. The workspaces are the registry's, so this waits for the driver
     // as the lines do.
@@ -60,7 +63,7 @@ public sealed partial class DriverModule
         _context.Change(config => workspace is not null
             ? config.WithWorkspaceReadAcross(workspace, read)
             : config.WithReadAcross(repository!, read));
-        return State();
+        return DriverModule.State(_loop);
     }
 
     // A relationship declared, or taken back — the same file `daoris driver across <repo> write-to <other>`
@@ -72,6 +75,6 @@ public sealed partial class DriverModule
         var to = Optional(request, "to") ?? "";
         var allow = Flag(request, "allow");
         _context.Change(config => config.WithWriteAcross(repository, to, allow));
-        return State();
+        return DriverModule.State(_loop);
     }
 }

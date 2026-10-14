@@ -13,7 +13,7 @@ namespace Daoris.Desktop;
 public sealed partial class DriverModule
 {
     [DriverRoute("STATE")]
-    private object? GetState(IpcRequest request) => State();
+    private object? GetState(IpcRequest request) => State(_loop);
 
     [DriverRoute("SET_DRIVABLE")]
     private object? SetDrivable(IpcRequest request)
@@ -21,7 +21,7 @@ public sealed partial class DriverModule
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
         var drivable = PayloadHelper.GetRequiredValue<bool>(request.Payload, "drivable");
         _context.Change(config => config.WithDrivable(repository, drivable));
-        return State();
+        return State(_loop);
     }
 
     [DriverRoute("SET_HOLD")]
@@ -30,7 +30,7 @@ public sealed partial class DriverModule
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
         var held = PayloadHelper.GetRequiredValue<bool>(request.Payload, "held");
         _context.Change(config => config.WithHold(repository, held));
-        return State();
+        return State(_loop);
     }
 
     // Session trees (D51): the desktop's half of the standing opt-in, over the same file
@@ -41,7 +41,7 @@ public sealed partial class DriverModule
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
         var ownTree = PayloadHelper.GetRequiredValue<bool>(request.Payload, "ownTree");
         _context.Change(config => config.WithTrees(repository, ownTree));
-        return State();
+        return State(_loop);
     }
 
     // A repository's standing answer (KNOWUSE1b, D135 §3): the person's words, handed to every session there, over the same
@@ -53,7 +53,7 @@ public sealed partial class DriverModule
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
         var says = Optional(request, "says");
         _context.Change(config => config.WithStanding(repository, says, DateTimeOffset.UtcNow));
-        return State();
+        return State(_loop);
     }
 
     // Whether this machine interrupts the person at all (SURF5b). The same file
@@ -63,7 +63,7 @@ public sealed partial class DriverModule
     {
         var notify = PayloadHelper.GetRequiredValue<bool>(request.Payload, "notify");
         _context.Change(config => config.WithNotify(notify));
-        return State();
+        return State(_loop);
     }
 
     // How many failed sessions park a quest (DRV6/D58), and the person's way back in. Both
@@ -73,7 +73,7 @@ public sealed partial class DriverModule
     {
         var strikes = PayloadHelper.GetRequiredValue<int>(request.Payload, "strikes");
         _context.Change(config => config.WithStrikes(strikes));
-        return State();
+        return State(_loop);
     }
 
     // How long an account cools when its agent names no time (TOOL4g, D125 §2.2, §6): whole minutes, at least one, the same
@@ -84,7 +84,7 @@ public sealed partial class DriverModule
         var minutes = Number(request, "minutes")
             ?? throw new DriverException(DriverConfig.CoolOffRefusal);
         _context.Change(config => config.WithCoolOff((int)Math.Clamp(minutes, int.MinValue, int.MaxValue)));
-        return State();
+        return State(_loop);
     }
 
     // Which harness answers asks with an intake session (INT4b), or null for none — the same
@@ -94,7 +94,7 @@ public sealed partial class DriverModule
     {
         var adapter = Optional(request, "adapter");
         _context.Change(config => config.WithIntake(adapter));
-        return State();
+        return State(_loop);
     }
 
     // The agent Ask Daoris runs on (HELP1, D89), or null for none — the same file
@@ -104,7 +104,7 @@ public sealed partial class DriverModule
     {
         var adapter = Optional(request, "adapter");
         _context.Change(config => config.WithHelper(adapter));
-        return State();
+        return State(_loop);
     }
 
     // The person's grant of a folder the driver is holding for the harness's trust (D73) — the
@@ -167,11 +167,11 @@ public sealed partial class DriverModule
                 // more failures than the limit, and a mark at the limit left it parked. A verdict carrying no count is
                 // marked at the least count the planner parks at.
                 _context.Change(config => config.WithForgiven(quest, exhausted.Failures ?? config.ForgivenAt(quest) + config.Strikes));
-                return State(new { Quest = quest, Did = "marked", Session = (string?)null });
+                return State(_loop, new { Quest = quest, Did = "marked", Session = (string?)null });
             case { Verdict: StartVerdict.Stopped, HeldBy: { } stop }:
                 // Released from that stop, and no mark: a stop is not a strike (D58). A later stop holds it again.
                 _context.Change(config => config.WithReleased(quest, stop.Session));
-                return State(new { Quest = quest, Did = "released", Session = (string?)stop.Session });
+                return State(_loop, new { Quest = quest, Did = "released", Session = (string?)stop.Session });
             case { Verdict: StartVerdict.Paused, PausedBy: { } pause }:
                 // A pause is the reason before a stop and the strikes (PAUSE1b, D132 §6.1): Resume moves it, and nothing is written.
                 throw pause.Scope == WorkScope.Ask
@@ -204,7 +204,7 @@ public sealed partial class DriverModule
         var service = _loop.Service ?? throw NotReady();
         var (ok, message) = await desk.ShowAgainAsync(service, DriverConfig.Load(_loop.ConfigPath), quest, cancellationToken);
         if (!ok) throw new DriverException(message);
-        return State(shownAgain: new { Quest = quest, Message = message });
+        return State(_loop, shownAgain: new { Quest = quest, Message = message });
     }
 
     // "Look now": a person who just published a quest should not watch a poll countdown.
@@ -235,9 +235,13 @@ public sealed partial class DriverModule
     /// session for a release. Null for every other answer, which the bridge leaves out.</param>
     /// <param name="reviewed">What a review's procedure look found (REVIEWENV1a), on the answer to <c>SET_REVIEW</c> alone.</param>
     /// <param name="shownAgain">What *Show it again* said (REVIEWENV1d), on the answer to <c>SHOW_REVIEW_AGAIN</c> alone.</param>
-    private object State(object? retried = null, object? reviewed = null, object? shownAgain = null)
+    /// <remarks>
+    /// A read of the loop alone, so the domains whose standing choices answer with it (Across, Lines) reach it by name over
+    /// their loop, holding no other domain's class (PART10d).
+    /// </remarks>
+    internal static object State(DriverLoop loop, object? retried = null, object? reviewed = null, object? shownAgain = null)
     {
-        var config = DriverConfig.Load(_loop.ConfigPath);
+        var config = DriverConfig.Load(loop.ConfigPath);
         return new
         {
             Retried = retried,
@@ -245,15 +249,15 @@ public sealed partial class DriverModule
             ShownAgain = shownAgain,
             // Whether the loop's service is up (LOOK2a): until it is, every route that reads it refuses *still coming up*,
             // so the status bar says starting rather than ready, which this file alone would claim.
-            Ready = _loop.Service is not null,
-            _loop.ConfigPath,
+            Ready = loop.Service is not null,
+            loop.ConfigPath,
             // Where this machine's Daoris lives (D63), and what establishing it did this start — a
             // machine-local path, answered only over this bridge, like every path here.
-            _loop.Home,
-            _loop.HomeNotice,
+            loop.Home,
+            loop.HomeNotice,
             // How that home stands to the account's DAORIS_HOME (LEFT2): what the page's hint says of a terminal.
-            _loop.HomeAccount,
-            _loop.HostNotice,
+            loop.HomeAccount,
+            loop.HostNotice,
             config.Drivable,
             config.Holds,
             config.Trees,
@@ -317,9 +321,9 @@ public sealed partial class DriverModule
             // The second-opinion rules as set (XAGENT1a), as rows for the same reason, each naming the working agent's family
             // over the loop's agents, a plugin's among them (XAGENT1b3).
             Opinions = config.Opinions.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Repository = p.Key, Rule = OpinionWire(p.Value, config.Adapter, _loop.Harnesses.Adapters) }).ToArray(),
+                .Select(p => new { Repository = p.Key, Rule = OpinionWire(p.Value, config.Adapter, loop.Harnesses.Adapters) }).ToArray(),
             WorkspaceOpinions = config.WorkspaceOpinions.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Workspace = p.Key, Rule = OpinionWire(p.Value, config.Adapter, _loop.Harnesses.Adapters) }).ToArray(),
+                .Select(p => new { Workspace = p.Key, Rule = OpinionWire(p.Value, config.Adapter, loop.Harnesses.Adapters) }).ToArray(),
             // The helpers and commit rules as set (DOORS1b), as rows for the same reason: a workspace's Defaults reads its own here.
             Helpers = config.Helpers.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Repository = p.Key, Rule = HelperWire(p.Value) }).ToArray(),
@@ -329,12 +333,12 @@ public sealed partial class DriverModule
                 .Select(p => new { Repository = p.Key, Rule = CommitWire(p.Value) }).ToArray(),
             WorkspaceCommits = config.WorkspaceCommits.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Workspace = p.Key, Rule = CommitWire(p.Value) }).ToArray(),
-            Running = _loop.Processes.Running,
+            Running = loop.Processes.Running,
             // Who is driving Daoris's browser (BRW8): the running sessions handed a server that drives it.
-            DrivingBrowser = _loop.Processes.DrivingBrowser,
+            DrivingBrowser = loop.Processes.DrivingBrowser,
             // The set-ups waiting for the person here (REVIEWENV1d, design §3.3), each with whether Daoris serves its tab now: the
             // strip's chip beside the browser's door. Left out where the loop carries no browser, which shows nothing.
-            InReview = _loop.Reviews?.Waiting
+            InReview = loop.Reviews?.Waiting
                 .Select(row => new { row.Quest, row.Title, row.Environment, row.Look, row.Shows, row.Served })
                 .ToArray(),
         };

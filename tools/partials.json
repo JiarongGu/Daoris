@@ -22,7 +22,6 @@
   ],
   "DriverModule": [
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Accounts.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Across.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Conversation.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Driver.cs",
