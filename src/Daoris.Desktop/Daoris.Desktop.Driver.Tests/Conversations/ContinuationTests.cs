@@ -431,6 +431,52 @@ public sealed class ContinuationTests : IDisposable
         Assert.Equal(("failed", "it went on with your words and exited 3; its quest stays as it closed."), (failed.State, failed.Note));
     }
 
+    private const string Dropped = "the ACP agent refused the call: Internal error: API Error: Connection dropped (ECONNRESET)";
+
+    /// <summary>
+    /// 🔴 TURNFAIL1: a closed quest's session went on with the person's words, its door failed after 27 minutes, and the agent
+    /// exited 0 as stdin closed, so the record ended <c>completed</c>, "it went on with your words and ended" (the install's
+    /// record, 2026-10-14). A failed turn is a failed run, said with the door's reason in the agent's words.
+    /// </summary>
+    [Fact]
+    public void A_closed_quests_session_whose_turn_failed_going_on_ends_failed_with_the_doors_reason()
+    {
+        var failed = Observation.WentOn(0, "completed", Dropped);
+
+        Assert.Equal("failed", failed.State);
+        Assert.Equal($"it went on with your words, and its turn failed: {Dropped}", failed.Note);
+        Assert.Equal(["ended.went-on-failed", null], NoteAssert.Codes(failed.Parts));
+        Assert.Equal(NoteBy.Agent, failed.Parts![1].By);
+        NoteAssert.Holds(failed.Note, failed.Parts);
+        Assert.Equal("failed", Observation.Resumed(0, before: "completed", startedOn: "Done", questStatus: "Done", turnFailed: Dropped).State);
+    }
+
+    /// <summary>
+    /// 🔴 TURNFAIL1 (D137 §2.2, as a cooling account's): the words a run carried when its turn failed were never answered, so
+    /// they stay waiting on its record, unmarked, and the next look takes them again; the record's note says why. Words a run
+    /// that went on with them after such a failure failed again are held for the person, so a door that keeps failing is not
+    /// tried at every look. A run that did not fail, or whose quest reached its close all the same, took them.
+    /// </summary>
+    [Fact]
+    public void The_words_a_failed_turn_carried_wait_to_go_again_and_after_a_second_failure_wait_for_the_person()
+    {
+        var failed = Observation.Resumed(0, before: "completed", startedOn: "Done", questStatus: "Done", turnFailed: Dropped);
+        var ended = new PriorSession("s1", "D:/fam/Game", "completed", "it went on with your words and ended; its quest stays as it closed.");
+
+        Assert.Equal(WordsAfter.Wait, FailedTurnWords.Judge(failed, Dropped, ended));
+        var wait = FailedTurnWords.Line(WordsAfter.Wait)!;
+        Assert.Equal(["ended.words-wait"], NoteAssert.Codes(wait.Parts));
+        Assert.Equal("Your words wait to go again at the next look.", wait.Note);
+
+        var again = ended with { State = "failed", Note = failed.Then("\n\n", wait).Note, NoteParts = failed.Then("\n\n", wait).Parts };
+        Assert.Equal(WordsAfter.Held, FailedTurnWords.Judge(failed, Dropped, again));
+        Assert.Equal(["ended.words-wait-you"], NoteAssert.Codes(FailedTurnWords.Line(WordsAfter.Held)!.Parts));
+
+        Assert.Equal(WordsAfter.Taken, FailedTurnWords.Judge(Observation.Resumed(0, "awaiting-person", "Taken", "Done", turnFailed: Dropped), Dropped, ended));
+        Assert.Equal(WordsAfter.Taken, FailedTurnWords.Judge(Observation.WentOn(3, "completed"), null, ended));
+        Assert.Null(FailedTurnWords.Line(WordsAfter.Taken));
+    }
+
     /// <summary>
     /// 🔴 Whether a resumed run's quest had closed is read from the quest as the look planned it, never as the run left it
     /// (the merge of 2026-10-03). An answered park's run that closes its own quest done is a completed record, as ANSWER1a

@@ -365,20 +365,6 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             _context.Usage?.Record(new UsageEntry(sessionId, quest.To, adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
         }
 
-        // The words went: off the record by their ids, before the conclusion moves it (MSG1a's taken door).
-        if (resume.Prompted && resume.Ids.Count > 0)
-        {
-            var (taken, message) = await service.TakenAsync(sessionId, resume.Ids, by: null, ct).ConfigureAwait(false);
-            if (!taken)
-            {
-                var untaken = WordsNotes.NotTaken(message);
-                _context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = untaken.Note, Parts = untaken.Parts }, say: null);
-            }
-
-            // Its own account carried them, so a choice of a new session made while it cooled is spent with them (MSG1g).
-            _context.NewSessions.Clear(sessionId);
-        }
-
         // XAGENT1e (design §6.4): another agent's findings it took are answered as its turn ends, read before the record moves,
         // with each fix's commit read from its tree as it stands now; one it left unanswered is unresolved.
         await _driver.Deliverer.OpinionsAnsweredAsync(resume, sessionId, workTree, ct).ConfigureAwait(false);
@@ -400,6 +386,31 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         conclusion = _driver.AccountRefused(conclusion, adapter, selection, ended);
         conclusion = _driver.AccountSignedOut(conclusion, adapter, selection, turnFailed);
         (conclusion, var limited) = _driver.AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
+
+        // 🔴 TURNFAIL1: words a failed turn carried were never answered. They stay waiting on the record, unmarked, as a cooling
+        // account's do (D137 §2.2), and its note and conversation say why; failing a second time running, they wait for the
+        // person (FailedTurnWords). Every other run took them.
+        var words = stop is null && resume.Prompted && resume.Ids.Count > 0 ? FailedTurnWords.Judge(conclusion, turnFailed, park) : WordsAfter.Taken;
+        if (FailedTurnWords.Line(words) is { } waits)
+        {
+            conclusion = conclusion.Then("\n\n", waits);
+            if (words == WordsAfter.Held) _context.Marks.Mark(sessionId, resume.Ids, GoOnMarks.FailedTwice, DateTimeOffset.UtcNow);
+            _context.Events.Keep(
+                sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = waits.Note, Parts = waits.Parts, Words = resume.Ids }, say: null);
+        }
+        else if (resume.Prompted && resume.Ids.Count > 0)
+        {
+            // The words went: off the record by their ids, before the conclusion moves it (MSG1a's taken door).
+            var (taken, message) = await service.TakenAsync(sessionId, resume.Ids, by: null, ct).ConfigureAwait(false);
+            if (!taken)
+            {
+                var untaken = WordsNotes.NotTaken(message);
+                _context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = untaken.Note, Parts = untaken.Parts }, say: null);
+            }
+
+            // Its own account carried them, so a choice of a new session made while it cooled is spent with them (MSG1g).
+            _context.NewSessions.Clear(sessionId);
+        }
 
         var evidence = await WorkingTree.CommitsSinceAsync(workTree, park.BaseCommit ?? before, ct).ConfigureAwait(false);
         await service.AdvanceAsync(

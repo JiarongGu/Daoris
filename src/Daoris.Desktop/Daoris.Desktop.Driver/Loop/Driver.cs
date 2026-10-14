@@ -2063,7 +2063,7 @@ public sealed class Driver(
 
         // What it consumed, where the door reported it (TOOL3/D57 §4). A pipe with only text reports
         // nothing, and a surface then says "not measured" rather than zero.
-        var (outcome, turnFailed) = acp is not null ? await acp.ConfigureAwait(false) : (null, null);
+        var (outcome, turnFailed, left) = acp is not null ? await acp.ConfigureAwait(false) : (null, null, []);
         var used = acp is not null ? outcome?.Usage
             : structured is not null ? await structured.ConfigureAwait(false)
             : null;
@@ -2077,8 +2077,14 @@ public sealed class Driver(
                 .ConfigureAwait(false);
         }
 
-        return await conclude(exitCode, used, turnFailed, Ending(acp is not null, structured is not null, exitCode, turnFailed, own, transcript))
+        var concluded = await conclude(exitCode, used, turnFailed, Ending(acp is not null, structured is not null, exitCode, turnFailed, own, transcript))
             .ConfigureAwait(false);
+
+        // The words its failed door never delivered wait on its ended record to go again (TURNFAIL1, USERSHOWN1): kept once the
+        // conclusion moved it, since the say door refuses a running record.
+        if (left.Count > 0) await WordsLeft.KeepAsync(service, Context.Events, sessionId, left, CancellationToken.None).ConfigureAwait(false);
+
+        return concluded;
     }
 
     /// <summary>Where a run's capture failed once the run was ended before awaiting it (ANSWER2): the machine log's <c>where</c>.</summary>
@@ -2248,7 +2254,7 @@ public sealed class Driver(
     /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event; null for a resume.</param>
     /// <param name="waitsOnBackground">Whether a turn that ended on its own background work waits for it (BGWAIT1); null never.</param>
     /// <param name="noConnector">What is said where there is no connector, when it is neither a quest's nor an intake's sentence.</param>
-    private async Task<(AcpOutcome? Outcome, string? Failure)> CaptureAcpAsync(
+    private async Task<(AcpOutcome? Outcome, string? Failure, IReadOnlyList<ChatMessage> Left)> CaptureAcpAsync(
         Process process, string transcript, string sessionId, string cwd, string prompt,
         string? posture, string? harnessNotice, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, object? meta = null,
@@ -2282,6 +2288,7 @@ public sealed class Driver(
         }
 
         var errors = HarnessCapture.PumpAsync(process.StandardError, file, sessionId, output, ct);
+        AcpSession? session = null;
 
         try
         {
@@ -2324,7 +2331,7 @@ public sealed class Driver(
 
             // What it runs beside itself, each its own console stream (CONSOLE2) — kept wherever the
             // session's own console is — and stoppable from its tab while the session runs (CONSOLE3a).
-            var session = new AcpSession(
+            session = new AcpSession(
                 process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture, meta, Event,
                 streams: output is null ? null : new SessionStreams(output, sessionId),
                 onConversation: keepAs is null ? null : conversation => Context.Conversations.Keep(sessionId, keepAs, conversation));
@@ -2368,7 +2375,7 @@ public sealed class Driver(
             Line($"— the turn ended: {outcome.StopReason}, after {outcome.Updates} update(s). The "
                  + "session record is concluded from the exit code and the quest's own state, not "
                  + "from this line (D46 §4).");
-            return (outcome, null);
+            return (outcome, null, []);
         }
         catch (AcpResumeRefused refused) when (resume is not null)
         {
@@ -2378,7 +2385,7 @@ public sealed class Driver(
             // Its reason by code, the agent's words its own (CONVNOTE2e). A resume keeps its conversation under the adapter it
             // runs on, which is the one it ran on, so that is the agent `elsewhere` names.
             SaidByCode(DoorNotes.AnswerCarriedOn(refused, keepAs));
-            return (null, null);
+            return (null, null, []);
         }
         catch (DriverException error)
         {
@@ -2389,7 +2396,10 @@ public sealed class Driver(
             // quest as a stand-down. A failed call is not the session describing its work, which is
             // the self-report D46 §4 keeps out; it is the door saying the work was cut off.
             SaidByCode(DoorNotes.Failed(error.Message));
-            return (null, error.Message);
+            // 🔴 The person's words it never took (TURNFAIL1, USERSHOWN1): sent behind the failed turn, or held for its end. They
+            // go back to the run, which keeps them on the record once it ended, to go again (WordsLeft); closed here, so the
+            // finally below says nothing of them.
+            return (null, error.Message, [.. session?.Unreached ?? [], .. inbox?.Close() ?? []]);
         }
         finally
         {

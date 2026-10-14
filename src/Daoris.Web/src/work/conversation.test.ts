@@ -190,10 +190,11 @@ describe('toTurns', () => {
     ]);
 
     expect(taken.turns.map((turn) => turn.ask?.text ?? null)).toEqual([
-      'take quest #q1', null, 'also cap it at 64 KiB', 'and say so in the notes',
+      'take quest #q1', 'also cap it at 64 KiB', 'and say so in the notes',
     ]);
-    // The waiting turn keeps the driver's opening line, and no word waits any more.
-    expect(taken.turns[1]!.items.map((b) => b.kind)).toEqual(['note']);
+    // The driver's opening line goes with the turn that took the first word (USERSHOWN1), and no word waits any more: a
+    // waiting turn holding only the line was a ghost above every resume.
+    expect(taken.turns[1]!.items.map((b) => [b.kind, b.key])).toEqual([['note', 'e5']]);
     expect(taken.turns.flatMap((turn) => turn.items).some((b) => b.kind === 'held')).toBe(false);
     expect(taken.where[3]).toBe('e6');
   });
@@ -910,5 +911,82 @@ describe('the words’ answers', () => {
         .toEqual({ sent: true, reaches: 'resume', why: null });
     });
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: { id: 's1', text: 'also cap it' } });
+  });
+});
+
+// The install's record of a driven session on `claude-code-acp` (2026-10-14, times UTC), as it was kept: each resume's words
+// shown waiting, its note, the words taken; a word said while the turn hung; the harness's error; the door's failure.
+describe('toTurns, on a resumed turn whose door failed (TURNFAIL1, USERSHOWN1)', () => {
+  const at = (time: string) => `2026-10-14T${time}Z`;
+  const opening = (seq: number, time: string): SessionEvent => ({
+    seq, at: at(time), kind: 'note', text: '— It goes on with your words, on `claude-code-acp`.',
+    parts: [{ code: 'resumed.opening', values: { adapter: 'claude-code-acp', why: 'words' }, text: '— It goes on with your words, on `claude-code-acp`.' }],
+  });
+  const reason = 'the ACP agent refused the call: Internal error: API Error: Connection dropped (ECONNRESET)';
+  const failed = (seq: number, time: string): SessionEvent => ({
+    seq, at: at(time), kind: 'note', text: `— the ACP session failed: ${reason}`,
+    parts: [{ code: 'door.failed', text: '— the ACP session failed:' }, { words: reason, by: 'program' }],
+  });
+  const dropped = (seq: number, time: string): SessionEvent => ({
+    seq, at: at(time), kind: 'message', text: 'API Error: Connection dropped (ECONNRESET)',
+  });
+  const record: SessionEvent[] = [
+    { seq: 3627, at: at('06:31:50'), kind: 'user', origin: 'person', reaches: 'resume', door: 'screen', id: '6fab2d10', text: 'released please continue' },
+    opening(3628, '06:32:01'),
+    { seq: 3629, at: at('06:32:01'), kind: 'user', origin: 'person', id: '6fab2d10', text: 'released please continue' },
+    { seq: 3630, at: at('06:48:20'), kind: 'user', origin: 'person', reaches: 'next-step', id: 'said-1', text: 'stuck?' },
+    dropped(3631, '06:53:37'),
+    { seq: 3632, at: at('06:53:37'), kind: 'user', origin: 'person', id: 'said-1', text: 'stuck?' },
+    failed(3633, '06:53:37'),
+    { seq: 4564, at: at('07:46:37'), kind: 'user', origin: 'person', reaches: 'resume', door: 'screen', id: 'bf36a50d', text: 'go on please' },
+    opening(4565, '07:46:40'),
+    { seq: 4566, at: at('07:46:40'), kind: 'user', origin: 'person', id: 'bf36a50d', text: 'go on please' },
+    dropped(4567, '08:13:33'),
+    failed(4568, '08:13:33'),
+  ];
+
+  it('leaves no waiting turn holding only the note of a resume that took its words', () => {
+    const { turns, where } = toTurns(record);
+
+    expect(turns.some((turn) => turn.waiting)).toBe(false);
+    expect(turns.map((turn) => turn.ask?.text)).toEqual(['released please continue', 'go on please']);
+    // The resume's note goes with the turn that took its words, at its head.
+    expect(turns[0]!.items[0]).toMatchObject({ kind: 'note', key: 'e3628' });
+    expect(turns[1]!.items[0]).toMatchObject({ kind: 'note', key: 'e4565' });
+    expect(where[3627]).toBe('e3629');
+  });
+
+  it('never shows a word the failed door never delivered as a turn the agent took', () => {
+    const { turns, where } = toTurns(record);
+    const settled = settle(turns, false);
+
+    expect(settled.some((turn) => turn.ask?.text === 'stuck?')).toBe(false);
+    expect(settled[0]!.items.find((item) => item.kind === 'held')).toMatchObject({ id: 'said-1', text: 'stuck?', unreached: true });
+    expect(where[3632]).toBe('e3630');
+  });
+
+  it("reads the harness's API error before the failure as the failure, not as the agent's words", () => {
+    const { turns, where } = toTurns(record);
+
+    for (const turn of turns) {
+      expect(turn.items.filter((item) => item.kind === 'message')).toEqual([]);
+      expect(turn.items.at(-1)).toMatchObject({ kind: 'note', parts: [{ code: 'door.failed' }, { words: reason }] });
+    }
+    expect(where[4567]).toBe('e4568');
+  });
+
+  it('shows the words a failed door left waiting at the foot, as the driver now keeps them', () => {
+    const kept: SessionEvent[] = [
+      ...record.slice(0, 5),
+      { seq: 3632, at: at('06:53:37'), kind: 'note', text: '— 1 message(s) the person sent while it worked never reached it: it ended first.' },
+      failed(3633, '06:53:37'),
+      { seq: 3634, at: at('06:53:38'), kind: 'note', text: 'Your words wait to go again at the next look.', words: ['said-1'], parts: [{ code: 'ended.words-wait', text: 'Your words wait to go again at the next look.' }] },
+      { seq: 3635, at: at('06:53:38'), kind: 'user', origin: 'person', reaches: 'resume', id: 'w9', text: 'stuck?' },
+    ];
+    const turns = settle(toTurns(kept).turns, false);
+
+    expect(turns.map((turn) => [turn.ask?.text, Boolean(turn.waiting)])).toEqual([['released please continue', false], [undefined, true]]);
+    expect(turns[0]!.items.find((item) => item.kind === 'held')).toMatchObject({ id: 'said-1', settled: true });
+    expect(turns[1]!.items).toMatchObject([{ kind: 'held', id: 'w9', reaches: 'resume' }]);
   });
 });
