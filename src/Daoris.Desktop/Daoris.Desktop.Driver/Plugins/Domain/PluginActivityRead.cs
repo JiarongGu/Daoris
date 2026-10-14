@@ -179,14 +179,9 @@ public static class PluginActivitySummary
         words[word] = words.GetValueOrDefault(word) + 1;
     }
 
-    private static string? Text(LogLine line, string key) =>
-        line.Data.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+    private static string? Text(LogLine line, string key) => Json.Text(line.Data, key);
 
-    private static long? Number(LogLine line, string key) =>
-        line.Data.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var number)
-            ? number
-            : null;
+    private static long? Number(LogLine line, string key) => Json.Long(line.Data, key);
 
-    private static bool Flag(LogLine line, string key) =>
-        line.Data.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.True;
+    private static bool Flag(LogLine line, string key) => Json.Flag(line.Data, key);
 }

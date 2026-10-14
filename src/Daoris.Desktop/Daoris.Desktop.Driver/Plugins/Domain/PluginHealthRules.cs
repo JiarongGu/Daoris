@@ -1,4 +1,5 @@
 using System.Text.Json;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -169,9 +170,4 @@ public static class PluginHealthRules
             ? new(Running, record.UpSince, null, listening)
             : new(Ready, null, null, []);
     }
-
-    private static string? Text(JsonElement data, string key) =>
-        data.ValueKind == JsonValueKind.Object && data.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
 }
