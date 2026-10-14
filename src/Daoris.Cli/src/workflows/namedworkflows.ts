@@ -12,10 +12,10 @@
 // file, reaches no network and spawns nothing.
 
 import { createHash } from 'node:crypto';
-import { sameName } from './platform/casefold.ts';
-import { isoMoment } from './accounts/cooling.ts';
-import { landingProblem } from './driver/driverconfig.ts';
-import { isPluginId } from './plugins.ts';
+import { sameName } from '../platform/casefold.ts';
+import { isoMoment } from '../accounts/cooling.ts';
+import { landingProblem } from '../driver/driverconfig.ts';
+import { isPluginId } from '../plugins.ts';
 import { ID_SHAPE, isDeviceName, isWorkflowId } from './workflowid.ts';
 
 // The id is `workflowid.ts`'s, which `workflowchoice.ts` reads too; read here as it always was.

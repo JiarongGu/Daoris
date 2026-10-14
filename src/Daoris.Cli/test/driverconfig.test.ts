@@ -18,7 +18,7 @@ import { applyHelperEdit, helperFor, helperListed, helperRuleOf } from '../src/d
 import { MANIFEST, pluginsRoot, readPlugins } from '../src/plugins.ts';
 import {
   applyWorkflowEdit, keptVersions, resolveWorkflow, workflowChoiceOf, type WorkflowChoiceEdit, type WorkflowTaskChoice,
-} from '../src/workflowchoice.ts';
+} from '../src/workflows/workflowchoice.ts';
 import type { RecordsReader } from '../src/driver/strikes.ts';
 import { driverRows as csharpRows, driverTestFile } from './_csharp.ts';
 import { makeFixture, captureError } from './_fixture.ts';

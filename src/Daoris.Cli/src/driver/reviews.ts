@@ -14,7 +14,7 @@ import { join } from 'node:path';
 import { DaorisError } from '../platform/errors.ts';
 import { atName, findName, sameName } from '../platform/casefold.ts';
 import { normalizeWorkspace } from '../service/remotemap.ts';
-import { isKebabId } from '../workflowid.ts';
+import { isKebabId } from '../workflows/workflowid.ts';
 
 /** One review environment, as kept: its name, kind and procedure, a local one's address, and a local one's command. */
 export interface ReviewEnvironment {

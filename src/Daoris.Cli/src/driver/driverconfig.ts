@@ -37,7 +37,7 @@ import {
 } from './opinions.ts';
 import { applyCommitEdit, commitListed, commitsOf, type CommitEdit, type CommitRule } from './commits.ts';
 import { applyHelperEdit, helperListed, helpersOf, type HelperEdit, type HelperRule } from './helpers.ts';
-import { workflowChoicesOf, writtenChoices, type WorkflowChoice } from '../workflowchoice.ts';
+import { workflowChoicesOf, writtenChoices, type WorkflowChoice } from '../workflows/workflowchoice.ts';
 import type { CommandArgs } from '../platform/types.ts';
 import type { ExitCode } from '../platform/errors.ts';
 

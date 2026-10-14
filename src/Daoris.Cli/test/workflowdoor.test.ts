@@ -6,7 +6,7 @@ import { commandDriver } from '../src/driver/driverconfig.ts';
 import { DaorisError } from '../src/platform/errors.ts';
 import { HOME_SENTENCE } from '../src/platform/home.ts';
 import type { CheckoutsReader } from '../src/driver/reviews.ts';
-import { WHAT_CHOOSES, commandWorkflow } from '../src/workflowdoor.ts';
+import { WHAT_CHOOSES, commandWorkflow } from '../src/workflows/workflowdoor.ts';
 import { makeFixture, type Fixture } from './_fixture.ts';
 
 /**

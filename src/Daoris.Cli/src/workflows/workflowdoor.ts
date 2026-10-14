@@ -18,18 +18,18 @@
 
 import { existsSync, readdirSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
-import { flagValue } from './platform/args.ts';
-import { atName } from './platform/casefold.ts';
-import { DaorisError, type ExitCode } from './platform/errors.ts';
-import { readText, writeTextAtomic } from './platform/fsx.ts';
-import { readPlugins } from './plugins.ts';
-import { normalizeWorkspace } from './service/remotemap.ts';
-import { inScope, type CheckoutsReader } from './driver/reviews.ts';
-import { writeDriverChoices, type DriverChoices } from './driver/driverconfig.ts';
+import { flagValue } from '../platform/args.ts';
+import { atName } from '../platform/casefold.ts';
+import { DaorisError, type ExitCode } from '../platform/errors.ts';
+import { readText, writeTextAtomic } from '../platform/fsx.ts';
+import { readPlugins } from '../plugins.ts';
+import { normalizeWorkspace } from '../service/remotemap.ts';
+import { inScope, type CheckoutsReader } from '../driver/reviews.ts';
+import { writeDriverChoices, type DriverChoices } from '../driver/driverconfig.ts';
 import {
   CURRENT, applyWorkflowEdit, readKeptVersions, resolveWorkflow, type WorkflowChoiceEdit, type WorkflowSelected,
 } from './workflowchoice.ts';
-import type { CommandArgs } from './platform/types.ts';
+import type { CommandArgs } from '../platform/types.ts';
 import { WORKFLOW_LIMITS, currentWorkflow, workflowPluginsOf, workflowSaid, type CurrentWorkflow } from './workflows.ts';
 import {
   WORKFLOW_PRESETS, field, isWorkflowId, kindOf, planAddVersion, readSteps, readWorkflowFile, rendered, versionDigest,
