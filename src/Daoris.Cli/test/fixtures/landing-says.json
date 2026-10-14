@@ -1,0 +1,18 @@
+{
+  "note": "The sentences `daoris driver landing`, `helpers` and `commits` say as a rule is set, which Ask Daoris's cards say too (TWINWORDS1, D164's DOORS1a note). The CLI's driverconfig.ts and the driver's HelpSettingProposals each say them from their own code; each suite reads this table, so a change to one side's words fails the other's test.",
+  "ticket": [
+    { "key": null, "says": "`{ticket}` is the first match of `[A-Z][A-Z0-9]+-\\d+` in the title, then the request, then its links, as written (the default shape); where none is found, the session's id stands in." },
+    { "key": "TK-\\d+", "says": "`{ticket}` is the first match of `TK-\\d+` in the title, then the request, then its links, as written; where none is found, the session's id stands in." }
+  ],
+  "squash": "Squashed: Accept makes the pull request's branch one commit from the session's work — the quest's title, then each of the session's commits' subjects — made by git as the repository's own `user.name` and `user.email`; where git has none there, Accept is refused and says how to set them. A tree on a branch of its own lands as it stands.",
+  "helpers": [
+    { "mode": "ask", "says": "Each helper an agent asks for waits for your yes." },
+    { "mode": "on", "says": "A helper an agent asks for starts at once, within the limits: two at once for a session, one turn each." },
+    { "mode": "off", "says": "A helper is not offered to a session here: only your own press asks one." }
+  ],
+  "commits": [
+    { "mode": "as-you-go", "says": "Each piece that passes its checks is committed as the work goes." },
+    { "mode": "ask", "says": "Each commit waits for your yes before it is made." },
+    { "mode": "at-end", "says": "One commit is made when the work is done." }
+  ]
+}

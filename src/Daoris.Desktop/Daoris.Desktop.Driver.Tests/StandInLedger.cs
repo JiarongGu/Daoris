@@ -69,6 +69,18 @@ internal sealed class StandInLedger : HttpMessageHandler
 
     private string? _syncProblem;
 
+    /// <summary>
+    /// The sentence the open-session door refuses every open with (TICKSHOWN1), as the service does one that someone else got to
+    /// first: null for an open that goes through.
+    /// </summary>
+    public string? OpenRefusal
+    {
+        get { lock (_gate) return _openRefusal; }
+        set { lock (_gate) _openRefusal = value; }
+    }
+
+    private string? _openRefusal;
+
     /// <summary>How many sync passes a driver asked this host for.</summary>
     public int SyncPasses => Volatile.Read(ref _syncPasses);
 
@@ -389,8 +401,9 @@ internal sealed class StandInLedger : HttpMessageHandler
 
                 case ("POST", "/api/sessions"):
                 {
+                    if (_openRefusal is { } refusal) return Answer(HttpStatusCode.Conflict, new JsonObject { ["error"] = refusal });
                     var quest = body!["quest"]!.GetValue<string>();
-                    var to = _quests.Single(q => q["id"]!.GetValue<string>() == quest)["to"]!.GetValue<string>();
+                    var to =_quests.Single(q => q["id"]!.GetValue<string>() == quest)["to"]!.GetValue<string>();
                     _clock = _clock.AddSeconds(1);
                     var session = new JsonObject
                     {
@@ -628,7 +641,8 @@ internal sealed class StandInRuns(ServiceClient service, StandInLedger ledger)
     {
         var quest = start.Quest;
         var (id, message) = await service.OpenSessionAsync(quest.Id, "stub", ct: ct);
-        if (id is null) return new StartRun($"refused  #{quest.Id} → {quest.To}: {message}", false);
+        // In step with Driver.RunAsync's refusal (TICKSHOWN1): the person's words' refusal is the consideration's hold.
+        if (id is null) return new StartRun($"refused  #{quest.Id} → {quest.To}: {message}", false, null, start.GoesOn ? $"the service refused the open: {message}" : null);
 
         await service.AdvanceAsync(id, "working", ct: ct);
         if (Takes) ledger.Move(quest.Id, "Taken");

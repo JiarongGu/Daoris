@@ -16,6 +16,7 @@ import type { SessionEntry } from './entries';
 import type { DiscardOffer, LandOffer } from './groups';
 import { type PartFacts, PartsStrip } from './PartsStrip';
 import type { Relations } from './relations';
+import type { LineBehind } from './diff';
 import { type HeadLink, type HeadOpinion, type HeadReview, type LandingPlan, SessionHead } from './SessionHead';
 import { SessionRelations } from './SessionRelations';
 import { SessionTimeline } from './SessionTimeline';
@@ -52,7 +53,7 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
 export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, onDiscardBranch, discardingBranch,
-  headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onName, discards, onDiscardTree, review,
+  headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onName, discards, onDiscardTree, review, behind,
   opinion, continues, helps, parts, channel,
 }: {
   /**
@@ -76,6 +77,8 @@ export function AttendedSession({
   lands?: LandOffer | null;
   /** And the review's gate where it holds that work (REVIEWENV1g): the set-up step, its tab and the verdict's presses. */
   review?: HeadReview | null;
+  /** And how the tree stands against its line, from the review's answer (REVIEWBASE5): none beyond it, no *Accept…*. */
+  behind?: LineBehind | null;
   /** And the second opinion's gate before it (XAGENT1g): its findings beside their answers, and its presses. */
   opinion?: HeadOpinion | null;
   /** And what it offers where the line holds its commits by content (SQUASHTIDY1b): no landing, its discard. */
@@ -206,6 +209,7 @@ export function AttendedSession({
         planning={planning}
         onName={onName}
         review={review}
+        behind={behind}
         opinion={opinion}
         discards={discards}
         onDiscardTree={onDiscardTree}

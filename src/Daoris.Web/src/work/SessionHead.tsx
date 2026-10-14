@@ -19,6 +19,7 @@ import { AwaitingIntake } from './AwaitingIntake';
 import { AwaitingPerson, type QuestClose, type Resolution } from './AwaitingPerson';
 import { type DetailRow, DetailsFold } from './DetailsFold';
 import { type Answered, InlineConfirm } from './InlineConfirm';
+import type { LineBehind } from './diff';
 import type { DiscardOffer, LandOffer } from './groups';
 import { HeldDiscardAsk, HeldDiscardButton, heldDiscardable } from './HeldDiscard';
 import { isIntake, sessionOrigin, sessionTitle } from './identity';
@@ -95,7 +96,7 @@ import { RunningIntake } from './RunningIntake';
 export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, branch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
-  ownSignIn = false, nameOf, lands, landing, planning, onLand, onName, discards, onDiscardTree, review, opinion, onOpenQuest,
+  ownSignIn = false, nameOf, lands, landing, planning, onLand, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
   continues, helps, onOpenSession,
 }: {
   /**
@@ -129,6 +130,11 @@ export function SessionHead({
    * the verdict's presses. Read only where the landing's plan says the gate holds.
    */
   review?: HeadReview | null;
+  /**
+   * How the tree stands against its line, from the review's answer (REVIEWBASE5, D164's note): where `ahead` is 0 and nothing is
+   * uncommitted, there is nothing to land and no *Accept…* is offered, as in the review. Absent before it answers or where not read.
+   */
+  behind?: LineBehind | null;
   /**
    * What its own tree offers where the line holds its commits by content (SQUASHTIDY1b), as the driver's reader said it: its
    * sentences, shown as they are, and whether an unforced discard would go. Absent where it offers none.
@@ -285,7 +291,7 @@ export function SessionHead({
           its tree offers to land are the reader's to say (LAND4), keyed by the session for the same reason. */}
       {lands ? (
         <Lands
-          key={session.id} session={session} lands={lands} landing={landing} planning={planning} onReview={onReview} onLand={onLand} onName={onName} review={review}
+          key={session.id} session={session} lands={lands} landing={landing} planning={planning} onReview={onReview} onLand={onLand} onName={onName} review={review} behind={behind}
           opinion={opinion}
         />
       ) : discards ? (
@@ -506,7 +512,8 @@ export type HeadOpinion = {
  * refuses, and for a session that did not finish that only what it committed lands. The move is the review's Accept, in
  * the primary's hue: a landing destroys nothing. Open until the landing answers, a refusal said inside it (UXFIX2).
  */
-function Lands({ session, lands, landing, planning, onReview, onLand, onName, review, opinion }: {
+function Lands({ session, lands, landing, planning, onReview, onLand, onName, review, behind, opinion }: {
+  behind?: LineBehind | null;
   /** The plan shown is the previous name's while the entered one is read (LANDNAME1b). */
   planning?: boolean;
   session: Session;
@@ -552,7 +559,9 @@ function Lands({ session, lands, landing, planning, onReview, onLand, onName, re
   const second = opinionAsked(landing);
   const opinionWaits = opinionHolds(landing);
   const answers = opinionWaits && acceptAnswers(opinionWaits) ? opinionWaits.answers ?? null : null;
-  const acceptable = !workflow && !waits && (!opinionWaits || answers !== null);
+  // Nothing beyond the line, committed or not, is nothing to land (REVIEWBASE5): the review's own condition, REVIEWBASE4.
+  const nothingBeyond = behind?.ahead === 0 && !(typeof lands.uncommitted === 'number' && lands.uncommitted > 0);
+  const acceptable = !workflow && !waits && !nothingBeyond && (!opinionWaits || answers !== null);
   // A session that did not finish lands what it committed before it ended (LAND4); one finished, at a checkpoint or by
   // itself, lands its work.
   const unfinished = session.state !== 'completed';

@@ -939,8 +939,8 @@ public static class ReviewNotes
     public static Noted Posted(string commit, string named, string message, string? served)
     {
         var noted = Noted.Of(
-                NoteCodes.ReviewPosted, $"Daoris read `{commit[..8]}` from its tree and posted what it showed in `{named}`:",
-                ("commit", commit[..8]), ("named", named))
+                NoteCodes.ReviewPosted, $"Daoris read `{TextBounds.ShortCommit(commit, 8)}` from its tree and posted what it showed in `{named}`:",
+                ("commit", TextBounds.ShortCommit(commit, 8)),("named", named))
             .Then(" ", Noted.Said(message, NoteBy.Program));
         return served is { Length: > 0 }
             ? noted.Then(" ", Noted.Said($"{char.ToUpperInvariant(served[0])}{served[1..]}", NoteBy.Program))

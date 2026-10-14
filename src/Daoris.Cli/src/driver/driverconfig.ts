@@ -324,6 +324,10 @@ export function keyProblem(key: string): string | null {
       }
       at += 1; // the escaped character is the escape's own: `\\1` is a backslash and a one, `\(?` a bracket made optional
     } else if (inClass) {
+      // .NET reads `[a-z-[aeiou]]` as a class minus a class, JavaScript as a class then `]` (KEYPARITY2).
+      if (key[at] === '-' && next === '[') {
+        return 'a ticket\'s key may not subtract a class (`-[` inside a class), which the driver and the CLI read differently.';
+      }
       if (key[at] === ']') inClass = false;
     } else if (key[at] === '(' && next === '?') {
       return 'a ticket\'s key may not use `(?` — a lookaround, a named group or an inline option, which the driver and the '
@@ -352,6 +356,34 @@ export function keyProblem(key: string): string | null {
 export function ticketSays(key: string | undefined): string {
   return `\`{ticket}\` is the first match of \`${key ?? DEFAULT_KEY}\` in the title, then the request, then its links, as written`
     + `${key === undefined ? ' (the default shape)' : ''}; where none is found, the session's id stands in.`;
+}
+
+/**
+ * What a door says of a squash (PROCESS1b-ii), one line per written line. Ask Daoris's card says the same sentence joined by
+ * spaces from the driver's code, and both suites read `test/fixtures/landing-says.json` (TWINWORDS1).
+ */
+export const SQUASH_SAYS = [
+  'Squashed: Accept makes the pull request\'s branch one commit from the session\'s work — the quest\'s title, then',
+  'each of the session\'s commits\' subjects — made by git as the repository\'s own `user.name` and `user.email`;',
+  'where git has none there, Accept is refused and says how to set them. A tree on a branch of its own lands as it stands.',
+];
+
+/** What `driver helpers` says of a mode as it is set; Ask Daoris's card says it too (TWINWORDS1). */
+export function helperModeSays(mode: string): string {
+  return mode === 'ask'
+    ? 'Each helper an agent asks for waits for your yes.'
+    : mode === 'on'
+      ? 'A helper an agent asks for starts at once, within the limits: two at once for a session, one turn each.'
+      : 'A helper is not offered to a session here: only your own press asks one.';
+}
+
+/** What `driver commits` says of a mode as it is set; Ask Daoris's card says it too (TWINWORDS1). */
+export function commitModeSays(mode: string): string {
+  return mode === 'ask'
+    ? 'Each commit waits for your yes before it is made.'
+    : mode === 'at-end'
+      ? 'One commit is made when the work is done.'
+      : 'Each piece that passes its checks is committed as the work goes.';
 }
 
 /**
@@ -1105,9 +1137,7 @@ export function commandDriver(
 
       // The first commit Daoris itself makes (PROCESS1b-ii), said with the identity it is made under.
       if (rule?.squash) {
-        write('  Squashed: Accept makes the pull request\'s branch one commit from the session\'s work — the quest\'s title, then');
-        write('  each of the session\'s commits\' subjects — made by git as the repository\'s own `user.name` and `user.email`;');
-        write('  where git has none there, Accept is refused and says how to set them. A tree on a branch of its own lands as it stands.');
+        for (const line of SQUASH_SAYS) write(`  ${line}`);
       } else if (rule?.form === 'branch' && argv.includes('--no-squash')) {
         write('  The branch holds the session\'s own commits — a repository\'s own rule replaces its workspace\'s whole, the squash with it.');
       }
@@ -1671,11 +1701,7 @@ export function commandDriver(
       write(workspace
         ? `daoris: helpers for repositories in the workspace \`${key}\` that set none of their own: ${helperListed(rule)}.`
         : `daoris: helpers for \`${key}\`: ${helperListed(rule)}.`);
-      write(rule.mode === 'ask'
-        ? '  Each helper an agent asks for waits for your yes.'
-        : rule.mode === 'on'
-          ? '  A helper an agent asks for starts at once, within the limits: two at once for a session, one turn each.'
-          : '  A helper is not offered to a session here: only your own press asks one.');
+      write(`  ${helperModeSays(rule.mode)}`);
     }
 
     write(`  Written to ${path}.`);
@@ -1733,11 +1759,7 @@ export function commandDriver(
       write(workspace
         ? `daoris: commits for repositories in the workspace \`${key}\` that set none of their own: ${commitListed(rule)}`
         : `daoris: commits for \`${key}\`: ${commitListed(rule)}`);
-      write(rule.mode === 'ask'
-        ? '  Each commit waits for your yes before it is made.'
-        : rule.mode === 'at-end'
-          ? '  One commit is made when the work is done.'
-          : '  Each piece that passes its checks is committed as the work goes.');
+      write(`  ${commitModeSays(rule.mode)}`);
     }
 
     write(`  Written to ${path}.`);

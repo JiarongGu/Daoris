@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Knowledge;
 
 namespace Daoris.Service.Http.Tests;
 
@@ -89,6 +90,40 @@ public sealed class ChannelHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal((400, "bad-re"), (re.Status, re.Json.GetProperty("code").GetString()));
         Assert.Equal(404, (await host.GetAsync("/api/asks/ffffff/channel")).Status);
         Assert.Equal(404, (await host.PostAsync("/api/asks/ffffff/channel", new { text = "hi" })).Status);
+    }
+
+    private static ChannelMessage Teammates(string id, string ask, string text, DateTimeOffset at) => new(
+        id, ask, "default", at, Session: "ab12cd34", Repository: "Keeper", Agent: "claude", Entry: "ask-" + ask + "/keeper", To: null, Re: null,
+        Question: false, text, Origin: "teammate-key");
+
+    /// <summary>🔴 SESSONE2g: an ask held elsewhere reads from the mirrored messages by its id, with their origin, in time order and no lines.</summary>
+    [Fact]
+    public async Task A_teammates_ask_reads_from_the_mirrored_messages()
+    {
+        var now = DateTimeOffset.UtcNow;
+        await host.Composed.Messages.MirrorAsync(Teammates("m2", "9a8b7c", "second", now.AddMinutes(1)));
+        await host.Composed.Messages.MirrorAsync(Teammates("m1", "9a8b7c", "first", now));
+
+        var read = await host.GetAsync("/api/asks/9a8b7c/channel");
+
+        Assert.Equal(200, read.Status);
+        var items = read.Json.GetProperty("items").EnumerateArray().ToArray();
+        Assert.Equal(["first", "second"], items.Select(i => i.GetProperty("text").GetString()));
+        Assert.Equal("teammate-key", items[0].GetProperty("origin").GetString());
+        Assert.Equal(2, read.Json.GetProperty("unread").GetInt32());
+        Assert.Equal(404, (await host.GetAsync("/api/asks/9a8b7d/channel")).Status);
+    }
+
+    /// <summary>🔴 Posting to a teammate's ask is refused with its own code, not as an unknown ask: the read is all this machine does there.</summary>
+    [Fact]
+    public async Task A_post_to_a_teammates_ask_is_refused_as_held_elsewhere()
+    {
+        await host.Composed.Messages.MirrorAsync(Teammates("m3", "9a8b7e", "theirs", DateTimeOffset.UtcNow));
+
+        var posted = await host.PostAsync("/api/asks/9a8b7e/channel", new { text = "mine" });
+
+        Assert.Equal((409, "held-elsewhere"), (posted.Status, posted.Json.GetProperty("code").GetString()));
+        Assert.Single((await host.GetAsync("/api/asks/9a8b7e/channel")).Json.GetProperty("items").EnumerateArray());
     }
 
     /// <summary>Deleting an ask forgets its channel, so the same words asked again find none of it.</summary>
