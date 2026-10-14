@@ -46,6 +46,7 @@
   "work.trace.word.answered": "回答会话 {{session}}",
   "work.trace.word.added": "在会话 {{session}} 运行时补充",
   "work.trace.word.reopened": "在会话 {{session}} 结束后对它说",
+  "work.trace.word.channel": "在需求的频道上写道",
   "work.trace.word.said": "{{kind}}，对会话 {{session}}",
   "work.trace.word.onQuest": "在委托 #{{quest}} 上",
   "work.trace.goAhead.approved": "{{at}} 已放行",

@@ -51,6 +51,22 @@ describe('how this came to be', () => {
     expect(ask).toHaveTextContent('Its intake: session i1 · completed');
   });
 
+  /** SESSONE2c (D167): the person's words written on the ask's channel are a kind of their own, said so in both languages. */
+  it('says the person’s words on the ask’s channel as written there, in either language', async () => {
+    const withChannel = {
+      ...QUEST_CHAIN,
+      links: QUEST_CHAIN.links.map((link) => link.kind === 'ask' && link.ask
+        ? { ...link, ask: { ...link.ask, words: [...(link.ask.words ?? []), { kind: 'channel', text: 'use the v3 one', at: '2026-10-03T09:55:00Z' }] } }
+        : link),
+    } as typeof QUEST_CHAIN;
+    const { rerender } = render(<HowItCameToBe kind="quest" id="q1" open onToggle={() => {}} answer={answer(withChannel)} />);
+    expect(screen.getByText('use the v3 one').closest('li')).toHaveTextContent(`${at('2026-10-03T09:55:00Z')} · wrote on the ask's channel`);
+
+    await i18n.changeLanguage('zh');
+    rerender(<HowItCameToBe kind="quest" id="q1" open onToggle={() => {}} answer={answer(withChannel)} />);
+    expect(screen.getByText('use the v3 one').closest('li')).toHaveTextContent('在需求的频道上写道');
+  });
+
   /** ACCTNAME1 (D152 §4.2): a session's account by the person's name, where the page hands the roster's namer. */
   it('names a session’s account by the person’s name where a namer is handed', () => {
     const nameOf = (owner: string, profile?: string | null) => (owner === 'claude-code' && profile === 'personal' ? 'home' : profile ?? '');

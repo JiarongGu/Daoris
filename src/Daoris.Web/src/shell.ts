@@ -9,6 +9,7 @@
 export * from './bridge/accounts';
 export * from './bridge/across';
 export * from './bridge/agents';
+export * from './bridge/asks';
 export * from './bridge/browser';
 export * from './bridge/console';
 export * from './bridge/conversation';

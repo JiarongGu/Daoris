@@ -24,7 +24,12 @@ export type QuestRowFacts = {
 };
 
 /** What an ask's row says beside the ask: its intake session's state, where the page holds that record. */
-export type AskRowFacts = { ask: Ask; intake?: Session['state'] | null };
+export type AskRowFacts = {
+  ask: Ask;
+  intake?: Session['state'] | null;
+  /** What is unread on its channel (SESSONE2c), where this machine's driver answers one. */
+  unread?: number;
+};
 
 /**
  * **Quests' list** (FRAME1d, D118 §2): the asks first, since they are where quests come from and a proposal waits on
@@ -80,8 +85,8 @@ export function QuestList({
       {/* Each heading's id is what a door into its group brings into view (ENTRY1b). */}
       {asks.length > 0 && (
         <ListGroup id={groupHeading('quests', 'asks')} title={t('asks.group', { count: asks.length })}>
-          {asks.map(({ ask, intake }) => (
-            <AskRow key={ask.id} ask={ask} intake={intake ?? null} chosen={chosen === askItem(ask.id)} onOpen={() => onChoose(askItem(ask.id))} />
+          {asks.map(({ ask, intake, unread }) => (
+            <AskRow key={ask.id} ask={ask} intake={intake ?? null} unread={unread} chosen={chosen === askItem(ask.id)} onOpen={() => onChoose(askItem(ask.id))} />
           ))}
         </ListGroup>
       )}

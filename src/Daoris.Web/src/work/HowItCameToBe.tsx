@@ -636,7 +636,7 @@ function given(t: T, word: { kind: string; session?: string | null; quest?: stri
     : word.kind === 'answered' ? t('work.trace.word.answered', { session })
     : word.kind === 'added' ? t('work.trace.word.added', { session })
     : word.kind === 'reopened' ? t('work.trace.word.reopened', { session })
-    : t('work.trace.word.said', { kind: word.kind, session });
+    : word.kind === 'channel' ? t('work.trace.word.channel')    : t('work.trace.word.said', { kind: word.kind, session });
   return word.quest ? `${how} · ${t('work.trace.word.onQuest', { quest: word.quest })}` : how;
 }
 

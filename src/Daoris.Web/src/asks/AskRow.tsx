@@ -62,8 +62,10 @@ const INTAKE_READING: ReadonlySet<Session['state']> = new Set(['queued', 'starti
  * somebody else's to answer and one was waiting on the reader. Its place is named as a workspace,
  * because a bare name beside `game → engine` reads as one more repository.
  */
-export function AskRow({ ask, intake = null, chosen = false, onOpen }: {
+export function AskRow({ ask, intake = null, unread = 0, chosen = false, onOpen }: {
   ask: Ask;
+  /** What is unread on its channel (SESSONE2c, D167), counted in the row; none is said where there is none or no driver. */
+  unread?: number;
   /** Its intake session's state, when one served it and the page holds that record. */
   intake?: Session['state'] | null;
   /** The list has it chosen: its record is the main area. */
@@ -94,7 +96,10 @@ export function AskRow({ ask, intake = null, chosen = false, onOpen }: {
       <ListRowDoor chosen={chosen} dimmed={askEnded(ask)} onPress={() => onOpen(ask)}>
         <span className="flex items-baseline justify-between gap-2">
           <Pill tone={ASK_TONE[ask.state]}>{t(`asks.state.${ask.state}`)}</Pill>
-          <CarriedCount links={ask.links.length} files={ask.attachments.length} />
+          <span className="flex items-baseline gap-2">
+            {unread > 0 && <Pill tone="open">{t('asks.channel.unread', { count: unread })}</Pill>}
+            <CarriedCount links={ask.links.length} files={ask.attachments.length} />
+          </span>
         </span>
         <span title={title} className="mt-0.5 block truncate text-body text-ink">{title}</span>
         <span className="block truncate font-mono text-meta text-ink-faint">
