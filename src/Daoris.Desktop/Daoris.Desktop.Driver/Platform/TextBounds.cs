@@ -34,7 +34,14 @@ public static class TextBounds
     }
 
     /// <summary>
-    /// The end of <paramref name="text"/> when it is longer than <paramref name="limit"/>: the mark, then the last
+    /// A commit id's first <paramref name="length"/> characters (DEDUP7b: seventeen copies, of 7, 8 or 12), the id itself when
+    /// it is no longer. No mark: an id is not prose.
+    /// </summary>
+    public static string ShortCommit(string commit, int length) =>
+        commit.Length > length ? commit[..length] : commit;
+
+    /// <summary>
+    /// The end of<paramref name="text"/> when it is longer than <paramref name="limit"/>: the mark, then the last
     /// <paramref name="limit"/> characters without the space they may open with (the last words, not the first).
     /// </summary>
     public static string ClipStart(string text, int limit) =>

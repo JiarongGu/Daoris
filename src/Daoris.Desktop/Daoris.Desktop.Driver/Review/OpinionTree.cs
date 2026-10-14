@@ -146,7 +146,7 @@ public static class OpinionTree
         }
     }
 
-    private static string Short(string commit) => commit.Length > 7 ? commit[..7] : commit;
+    private static string Short(string commit) => TextBounds.ShortCommit(commit, 7);
 
     /// <summary>git's reason: its last <c>fatal:</c> or <c>error:</c> line, else its last line.</summary>
     private static string Failure(string stderr)

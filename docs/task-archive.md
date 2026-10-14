@@ -14626,3 +14626,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SESSONE2f — next-step delivery proved by a real tick** (driver, Process). A queueing ACP stand-in takes another session's message at its next step as a Daoris turn, and a turn-end one is never extended (D155).
 
 **Outcome** 2026-10-15: `Loop/ChannelNextStepTickTests` drives the loop's real `TickAsync` over an ACP stand-in and a channel-aware stand-in service: a part on the next-step door takes another session's message as `ChannelText.Claim` in a second prompt, the record holding it as `target` (said, then taken under one id), the mark moved; a turn-end part is sent one prompt only across two looks, the message waiting for the next part and never in the record. Green at first, since SESSONE2b built it. The race of a claim sent as a turn ends is still unmeasured. Gates passed on the merge, the class 2 of 2. On Sonnet: 33 tool calls. Detail: D167's SESSONE2f note.
+
+## DEDUP7b — a commit's short id once, and the service's text bounds (2026-10-15, D166)
+
+> - [ ] **DEDUP7b — a commit's short id once, and the service's text bounds** (driver, service). About 15 `Short(commit)` copies; the service core's own clip and quote copies, surveyed first. D166's DEDUP7 note.
+
+**Outcome** 2026-10-15: `TextBounds.ShortCommit` in the driver and `Clipped.ShortCommit` in the service core (twins by shape, no shared code) cut a commit's id to each caller's length, leaving a shorter id whole: seventeen private helpers now delegate and fourteen inline cuts call them, in the driver, one bridge route and the service core; the service's clips were already one since DEDUP9c. No output changed. The Mcp host's cuts and four unguarded cuts are DEDUP7c. Ten gates passed on the merge. On Sonnet: 79 tool calls. Detail: D166's DEDUP7b note.

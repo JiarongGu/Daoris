@@ -110,7 +110,7 @@ internal sealed class TreeSquashes(TreeContext context)
             root, ["update-ref", "-m", $"daoris: {branch} squashed onto {name}", $"refs/heads/{name}", made, standsAt], ct).ConfigureAwait(false);
         if (moved != 0)
         {
-            return new TreeLanding(false, $"git would not move `{name}` on from {standsAt[..Math.Min(8, standsAt.Length)]}: "
+            return new TreeLanding(false, $"git would not move `{name}` on from {TextBounds.ShortCommit(standsAt, 8)}: "
                 + $"{FirstLine(moveErr)} It may have moved meanwhile; nothing was changed.")
             { Refusal = AutoLandingCode.Exists };
         }
@@ -126,7 +126,7 @@ internal sealed class TreeSquashes(TreeContext context)
         var pushIt = handedOn ? "" : $" Push it to grow its pull request: `git push origin {name}`.";
         return new Branched(
             new TreeLanding(true,
-                $"moved `{name}` on from {standsAt[..Math.Min(8, standsAt.Length)]} to this session's work — {adds.Count} more commit(s), "
+                $"moved `{name}` on from {TextBounds.ShortCommit(standsAt, 8)} to this session's work — {adds.Count} more commit(s), "
                 + $"squashed into one.{pushIt} Nothing was merged and the checkout was not touched.{TreeLands.TreeStays}",
                 name)
             { AdvancedFrom = standsAt },

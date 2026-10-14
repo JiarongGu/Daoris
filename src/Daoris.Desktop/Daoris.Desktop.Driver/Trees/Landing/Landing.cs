@@ -284,7 +284,7 @@ public static class LandingAdvance
             };
     }
 
-    private static string Short(string commit) => commit[..Math.Min(8, commit.Length)];
+    private static string Short(string commit) => TextBounds.ShortCommit(commit, 8);
 }
 
 /// <summary>What a session branch holds, for the clean-up's list (D88). Only the empty, the landed and the carried go.</summary>

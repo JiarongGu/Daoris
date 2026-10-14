@@ -28,6 +28,17 @@ public sealed class ClipTests
         Assert.Equal(new string('b', 120) + "…", Clipped.Clip(new string('b', 500)));
     }
 
+    [Theory]
+    [InlineData("0123456789abcdef", 7, "0123456")]
+    [InlineData("0123456789abcdef", 8, "01234567")]
+    [InlineData("01234567", 8, "01234567")]
+    [InlineData("abc", 7, "abc")]
+    [InlineData("", 7, "")]
+    public void ShortCommit_keeps_the_head_and_leaves_a_short_id_alone(string id, int length, string expected)
+    {
+        Assert.Equal(expected, Clipped.ShortCommit(id, length));
+    }
+
     [Fact]
     public void OneLine_turns_line_ends_to_spaces_and_trims()
     {

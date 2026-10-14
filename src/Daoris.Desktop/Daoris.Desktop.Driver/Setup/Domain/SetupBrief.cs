@@ -440,5 +440,5 @@ public static class SetupBrief
     private static string Count(int count, string noun) =>
         count == 1 ? $"1 {noun}" : $"{count} {(noun.EndsWith('y') ? noun[..^1] + "ies" : noun + "s")}";
 
-    private static string Short(string commit) => commit.Length > 12 ? commit[..12] : commit;
+    private static string Short(string commit) => TextBounds.ShortCommit(commit, 12);
 }

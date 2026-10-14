@@ -62,7 +62,7 @@ internal sealed class LandedReviews(TreeContext context)
 
         var diff = await WorkingTree.DiffBetweenAsync(root, from, tip, ct).ConfigureAwait(false);
         return diff is null
-            ? new(entry, LandedState.Standing, Detail: $"git could not read `{entry.Branch}`'s changes from {from[..Math.Min(8, from.Length)]} in the repository's checkout.")
+            ? new(entry, LandedState.Standing, Detail: $"git could not read `{entry.Branch}`'s changes from {TextBounds.ShortCommit(from, 8)} in the repository's checkout.")
             : new(entry, LandedState.Standing, diff);
     }
 
