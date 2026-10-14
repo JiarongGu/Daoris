@@ -119,6 +119,13 @@ public sealed record SessionTarget(
     public AskWords? Words { get; init; }
 
     /// <summary>
+    /// What waited on the ask's channel for this part's line of work (SESSONE2b, D167 point 7), read for this start: the person's
+    /// messages and the ask's other sessions', since the entry last read it, beneath the quest. Null for a quest on no ask, a
+    /// channel that could not be read, or nothing waiting, and the instruction reads as it did.
+    /// </summary>
+    public ChannelHeld? Channel { get; init; }
+
+    /// <summary>
     /// What the person has told this machine holds for every quest in this repository (KNOWUSE1b, D135 §3), read from
     /// <c>driver.json</c> for this start and handed beneath the quest: a claim, a resume, a carry-on and a follow-up alike.
     /// Null where the repository keeps none, and the instruction reads as it did.
@@ -295,6 +302,9 @@ public static class TargetPrompt
         new(HandedSections.Words, Words(target)),
         new(HandedSections.GoAheads, GoAheads(target)),
         new(HandedSections.Standing, Standing(target)),
+        // What waited on the ask's channel for this line of work (SESSONE2b), counted with what the sessions before it left, as the
+        // parts before it are (SESSONE1d), so no page catalogue changed.
+        new(HandedSections.CarryOn, ChannelText.Beneath(target.Channel)),
     ];
 
     /// <summary>

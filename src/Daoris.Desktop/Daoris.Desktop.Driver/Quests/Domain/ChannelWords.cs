@@ -270,14 +270,20 @@ public static class ChannelText
     /// <summary>Who wrote a message and to whom, with what it answers and whether it asks.</summary>
     private static string Who(ChannelItemView message)
     {
-        var to = message.To is { } repository ? $"to `{repository}`" : "to everyone";
+        var to = (message.To, message.Question) switch
+        {
+            ({ } repository, true) => $"`{repository}`",
+            ({ } repository, false) => $"to `{repository}`",
+            (null, true) => "everyone",
+            (null, false) => "to everyone",
+        };
         var by = message.Person
-            ? "the person wrote"
+            ? "The person"
             : $"`{message.Repository ?? "another repository"}`'s session `{message.Session ?? "?"}`"
-              + (message.Agent is { Length: > 0 } agent ? $" on {agent}" : "") + (message.Question ? " asked" : " wrote");
+              + (message.Agent is { Length: > 0 } agent ? $" on {agent}" : "");
         var re = message.Re is { Length: > 0 } answered ? $", answering message `{answered}`" : "";
         var id = message.Id is { Length: > 0 } own ? $" (message `{own}`)" : "";
-        return $"{by} {to}{re}{id}";
+        return $"{by} {(message.Question ? "asked" : "wrote")} {to}{re}{id}";
     }
 
     /// <summary>A message quoted line by line beneath its item, cut at <paramref name="limit"/> and said to be.</summary>

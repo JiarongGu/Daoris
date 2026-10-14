@@ -89,6 +89,46 @@ public sealed class ChannelReach
         return parts;
     }
 
+    /// <summary>
+    /// What a starting part of <paramref name="entry"/> is handed from the ask's channel (design §2.3, <i>held for the next part</i>):
+    /// the messages for its entry past its mark, with the newest item read, which its mark moves to once the part has started
+    /// (<see cref="HandedAsync"/>). Null where nothing waits, or the channel could not be read: a start is never held by it, and
+    /// its mark stays for the next part.
+    /// </summary>
+    /// <exception cref="OperationCanceledException">The loop is closing.</exception>
+    public static async Task<ChannelHeld?> HandAsync(IChannelDoors doors, ChannelEntry entry, CancellationToken ct)
+    {
+        try
+        {
+            if (await doors.ReadAsync(entry.Ask, entry.Key, ct).ConfigureAwait(false) is not { } read) return null;
+            return new ChannelHeld(entry.Ask, entry.Key, read.ForEntry(), read.Newest);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or InvalidOperationException
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// The entry's mark moved to what its started part was handed (design §2.3: <i>the mark moves when the part starts</i>), to the
+    /// newest item read, a line included, so a message that arrived since is handed at the part's next step. A miss is the next
+    /// part's to be handed again, never a failure of the start.
+    /// </summary>
+    public static async Task HandedAsync(IChannelDoors doors, ChannelHeld? held, CancellationToken ct)
+    {
+        if (held?.Through is not { } through) return;
+        try
+        {
+            await doors.MarkAsync(held.Ask, held.Entry, through, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or InvalidOperationException
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
+        {
+            // The mark stays: the entry's next part is handed the same messages again, which is no harm to a new conversation.
+        }
+    }
+
     /// <summary>One look's reach over <paramref name="parts"/>: the lines it says, one for each message that reached a part.</summary>
     /// <exception cref="OperationCanceledException">The loop is closing.</exception>
     public async Task<IReadOnlyList<string>> LookAsync(IChannelDoors doors, IReadOnlyList<ChannelPart> parts, CancellationToken ct)

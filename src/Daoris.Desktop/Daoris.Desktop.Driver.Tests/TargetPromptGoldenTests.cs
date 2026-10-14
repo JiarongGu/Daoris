@@ -148,6 +148,27 @@ public sealed class TargetPromptGoldenTests
         },
     };
 
+    /// <summary>
+    /// A sibling's request on an ask, whose line of work is handed what waited on the ask's channel (SESSONE2b, D167 point 7): the
+    /// person's message to everyone, as their words, and another session's question to its repository, as that agent's claim.
+    /// </summary>
+    internal static readonly SessionTarget Channel = Bare with
+    {
+        Channel = new ChannelHeld("a1b2c3", "ask:a1b2c3/console-ui",
+        [
+            new ChannelItemView(ChannelItemView.Message, Asked.AddHours(1))
+            {
+                Id = "m1a2", Person = true, Text = "Keep the note optional; most rows have none.",
+            },
+            new ChannelItemView(ChannelItemView.Message, Asked.AddHours(2))
+            {
+                Id = "m3b4", Session = "62c005bc", Repository = "console-api", Agent = "claude-code", Entry = "ask:a1b2c3/console-api",
+                To = "console-ui", Re = "m1a2", Question = true,
+                Text = "Should the API send the note as null or as an empty string?\nThe report reads both.",
+            },
+        ], Asked.AddHours(2)),
+    };
+
     private static string RepositoryRoot()
     {
         var at = new DirectoryInfo(AppContext.BaseDirectory);
@@ -167,6 +188,7 @@ public sealed class TargetPromptGoldenTests
         "own-tree" => OwnTree,
         "part" => Part,
         "part-alongside" => PartAlongside,
+        "channel" => Channel,
         _ => throw new ArgumentOutOfRangeException(nameof(which), which, null),
     };
 
@@ -178,6 +200,7 @@ public sealed class TargetPromptGoldenTests
     [InlineData("own-tree")]
     [InlineData("part")]
     [InlineData("part-alongside")]
+    [InlineData("channel")]
     public void The_quests_instruction_is_its_golden_text(string which)
     {
         Assert.Equal(File.ReadAllText(GoldenPath($"{which}.md")), TargetPrompt.Compose(Of(which)));
@@ -198,6 +221,7 @@ public sealed class TargetPromptGoldenTests
     [InlineData("own-tree")]
     [InlineData("part")]
     [InlineData("part-alongside")]
+    [InlineData("channel")]
     public void The_account_beside_it_is_its_golden(string which)
     {
         var account = TargetPrompt.Composed(Of(which)).Account;
