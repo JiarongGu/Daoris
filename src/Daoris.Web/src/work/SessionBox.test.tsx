@@ -114,6 +114,12 @@ describe('SessionBox', () => {
     expect(screen.queryByLabelText('Message')).toBeNull();
   });
 
+  /** HANDWORDS1: a conversation handed over or moved names the one it went on in, as the module answered it. */
+  it('names the conversation a continued one went on in', () => {
+    show({ box: { kind: 'line', why: 'continued', to: 'c2' } });
+    expect(screen.getByText('It went on in conversation c2; say it to that one.')).toBeInTheDocument();
+  });
+
   it('says the line in 中文', async () => {
     await i18n.changeLanguage('zh');
     try {

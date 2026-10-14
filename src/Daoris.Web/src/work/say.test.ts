@@ -54,6 +54,9 @@ describe('boxOf', () => {
   it('draws the line for the code the module answered', () => {
     expect(boxOf(facts({ session: session({ state: 'completed' }), reach: { reaches: null, why: 'superseded' } })))
       .toEqual({ kind: 'line', why: 'superseded' });
+    // HANDWORDS1: the conversation a continued one went on in rides the line.
+    expect(boxOf(facts({ session: session({ kind: 'chat', state: 'completed' }), reach: { reaches: null, why: 'continued', to: 'c2' } })))
+      .toEqual({ kind: 'line', why: 'continued', to: 'c2' });
     expect(boxOf(facts({ session: session({ kind: 'chat', quest: null, state: 'stopped' }), reach: { reaches: null, why: 'help' } })))
       .toEqual({ kind: 'line', why: 'help' });
   });
