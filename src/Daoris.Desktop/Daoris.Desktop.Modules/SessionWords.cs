@@ -1,4 +1,5 @@
 using System.Text.Json;
+using static Daoris.Driver.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop;
@@ -632,9 +633,6 @@ public sealed class SessionWords : IDisposable
         {
             return [];
         }
-
-        static string? Text(JsonElement entry, string name) =>
-            entry.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
         var words = new List<(string Session, Word Word)>();
         foreach (var entry in held.EnumerateArray())

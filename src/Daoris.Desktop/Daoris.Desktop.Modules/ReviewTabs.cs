@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.WebSockets;
 using System.Text.Json;
+using static Daoris.Driver.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop;
@@ -384,9 +385,4 @@ public sealed class ReviewTabs(IInAppBrowser browser) : IReviewTabs, IDisposable
             // The tab or the browser went while it was answered.
         }
     }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
 }

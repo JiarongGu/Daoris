@@ -214,22 +214,17 @@ public sealed partial class DriverModule
         foreach (var session in document.RootElement.EnumerateArray())
         {
             if (session.ValueKind != JsonValueKind.Object) continue;
-            var id = Text(session, "id");
-            var adapter = Text(session, "adapter");
-            var profile = Text(session, "profile");
+            var id = Json.NonEmpty(session, "id");
+            var adapter = Json.NonEmpty(session, "adapter");
+            var profile = Json.NonEmpty(session, "profile");
             if (id is null || adapter is null || profile is null) continue;
-            var record = new SessionRecord(id, "", Text(session, "state") ?? "");
+            var record = new SessionRecord(id, "", Json.NonEmpty(session, "state") ?? "");
             if (record.Teammate || !record.Live) continue;
             var key = Key(ownerOf(adapter), profile);
             counted[key] = counted.GetValueOrDefault(key) + 1;
         }
 
         return counted;
-
-        static string? Text(JsonElement element, string name) =>
-            element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String && value.GetString() is { Length: > 0 } text
-                ? text
-                : null;
     }
 
     private static string Key(string agent, string account) => $"{agent}/{account}".ToLowerInvariant();
