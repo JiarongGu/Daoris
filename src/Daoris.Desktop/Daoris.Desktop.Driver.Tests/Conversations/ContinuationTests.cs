@@ -345,13 +345,13 @@ public sealed class ContinuationTests : IDisposable
         Assert.Equal(kept, resume.Files);
         Assert.Equal(["See the trace.", "And log the port."], resume.Blocks);
         // The run is handed a read of exactly where they lie, outside its tree, or every read there is asked and refused (D52).
-        Assert.Equal(ChatFiles.Folder(_tree, "s1"), Daoris.Driver.Driver.SaidFilesFolder(_tree, "s1", resume));
+        Assert.Equal(ChatFiles.Folder(_tree, "s1"), DriverContinuations.SaidFilesFolder(_tree, "s1", resume));
 
         // Handed nothing to find them by, it is handed the words alone, as before, and no read.
         var alone = new ResumeAsk("0b5e7c1a", words, "— your words are the next turn.");
         Assert.Equal("See the trace.\n\nAnd log the port.", alone.Prompt);
         Assert.Empty(alone.Files);
-        Assert.Null(Daoris.Driver.Driver.SaidFilesFolder(_tree, "s1", alone));
+        Assert.Null(DriverContinuations.SaidFilesFolder(_tree, "s1", alone));
     }
 
     /// <summary>

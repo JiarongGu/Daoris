@@ -99,7 +99,7 @@ public sealed class NativeResumeTests
     [Fact]
     public void Words_held_while_it_worked_resume_its_own_conversation_under_the_same_rules()
     {
-        var info = Daoris.Driver.Driver.GoOnStart(
+        var info = DriverContinuations.GoOnStart(
             new ClaudeCodeAdapter(), Target(), ["claude"], "0b5e7c1a", "Also log the port.",
             settings: "D:/daoris-data/sessions/s1.settings.json", servers: "D:/daoris-data/sessions/s1.mcp.json")!;
 
@@ -144,7 +144,7 @@ public sealed class NativeResumeTests
     [Fact]
     public void A_door_that_cannot_resume_goes_on_with_nothing()
     {
-        Assert.Null(Daoris.Driver.Driver.GoOnStart(AdapterSet.Built().Resolve("stub"), Target(), ["node", "stub.mjs"], "abc", "go on", null, null));
+        Assert.Null(DriverContinuations.GoOnStart(AdapterSet.Built().Resolve("stub"), Target(), ["node", "stub.mjs"], "abc", "go on", null, null));
     }
 
     /// <summary>

@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Driven over the real client, the real planner and a look's real scheduling, as <c>AnswerGoesOnOnceTests</c> is. The
 /// service's doors stand in, in-process: its go-ahead door keeps the park's blank answer as the service does
 /// (<c>SessionLedger.GoOnWithGoAheadsAsync</c>, held by the service's <c>GoAheadTests</c>). The resumed run stands in for
-/// <c>Driver.ContinueAsync</c>, its turn composed by the driver's own <see cref="Daoris.Driver.Driver.ResumedAfterAsync"/> from
+/// <c>Driver.ContinueAsync</c>, its turn composed by the driver's own <see cref="DriverContinuations.ResumedAfterAsync"/> from
 /// the ask as the real client reads it. The real resume over a protocol stub is the <c>Process</c> half's.
 /// </remarks>
 public sealed class GoAheadsGoOnTests : IDisposable
@@ -162,7 +162,7 @@ public sealed class GoAheadsGoOnTests : IDisposable
 
             var resume = new ResumeAsk(
                 "conversation-1", record.Waiting, "It goes on.",
-                await Daoris.Driver.Driver.ResumedAfterAsync(service, quest, record.Session, language: null, ct));
+                await DriverContinuations.ResumedAfterAsync(service, quest, record.Session, language: null, ct));
             lock (_turns) _turns.Add(resume.Blocks);
 
             await _ending.Task.WaitAsync(ct);

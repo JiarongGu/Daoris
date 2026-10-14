@@ -279,7 +279,6 @@ folder.
 
 - [ ] **PART10k — `SessionTrees`: update, review, opinion, only-here and work** (driver; after 10j, since the update calls ten of the sync's privates). As classes over the shared context; who implements `IWorkTrees`. Survey "The large five, as scouted".
 - [ ] **PART10l — `SessionTrees`: tidying and landing, and the type whole** (driver; Opus; after 10j, 10k). Content holds, tidy, auto, removal; landed, squash, pull requests, hand and the core's land; the front's delegations, `partial` gone. Survey "The large five, as scouted".
-- [ ] **PART10n — the loop's `Driver`: the go-on, hand-over, helper and intake parts, and the type whole** (driver; after 10m). `Driver.Continue.cs` (with `NativeWords`), `.HandOver.cs`, `.Helper.cs` and `.Intake.cs` as classes in `Loop/` over the same context; `partial` gone and the `Driver` entry cut from `tools/partials.json`. Survey "The loop's `Driver`, as scouted".
 
 **Duplication** (the owner: *"we more focus on modularize the code to reduce duplication and easier to manage"*). Evidence: `docs/2026-10-14-duplication-survey.md`, by section. After FLAT1; DEDUP1 to 3 touch the same files, so one at a time.
 
