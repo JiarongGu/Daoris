@@ -126,6 +126,9 @@ var contentRoot = Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(),
 
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions { Args = args, ContentRootPath = contentRoot });
 builder.Logging.AddProvider(new MachineLogProvider(log));
+// FLAKE2: a host the shell started waits for its requests in flight less than the shell waits for it (InputEndStop.Drain).
+builder.Services.Configure<HostOptions>(host =>
+    InputEndStop.BoundDrain(host, Environment.GetEnvironmentVariable(InputEndStop.Variable)));
 
 // The documented address, made true by construction: with nothing configured, Kestrel binds its own
 // default and the README's port is a lie. An explicit `--urls` or ASPNETCORE_URLS still wins — and

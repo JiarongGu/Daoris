@@ -571,8 +571,8 @@ public sealed class PersonDoorProcessTests : IDisposable
             Assert.Contains("\"proof\":\"gQMDWolsIQRnw-_d19k3A1c9E6ey2aP9-8RL_n_pJ50\"", proved);
         }
 
-        host.Process.StandardInput.Close();
-        Assert.True(host.Process.WaitForExit(15_000), "the host did not stop when its input closed");
+        var missed = host.StopByInput(TimeSpan.FromSeconds(15));
+        Assert.True(missed is null, missed);
         Assert.Equal(0, host.Process.ExitCode);
         var lines = host.LogLines();
         Assert.Contains(lines, line => line.Contains($"\"event\":\"{PersonDoors.Event}\"", StringComparison.Ordinal));

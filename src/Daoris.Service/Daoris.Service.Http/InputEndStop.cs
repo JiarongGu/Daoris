@@ -31,6 +31,22 @@ public static class InputEndStop
     public static bool Asks(string? value) => value == "1";
 
     /// <summary>
+    /// How long a stop the shell asked waits for the requests in flight before it ends them (FLAKE2): under the five seconds
+    /// the shell waits for the host to exit before it kills it (<c>HostSupervisor.StopWithin</c>, a twin by value), so the
+    /// stop the shell asked finishes as a stop rather than a kill. The framework's own is 30 seconds.
+    /// </summary>
+    public static readonly TimeSpan Drain = TimeSpan.FromSeconds(3);
+
+    /// <summary>
+    /// Bound <paramref name="options"/>' drain to <see cref="Drain"/> when <paramref name="value"/> asks for the stop on the
+    /// input's end; a host started from a terminal keeps the framework's.
+    /// </summary>
+    public static void BoundDrain(HostOptions options, string? value)
+    {
+        if (Asks(value)) options.ShutdownTimeout = Drain;
+    }
+
+    /// <summary>
     /// The watch, when <paramref name="value"/> asks for it; null otherwise, and then
     /// <paramref name="input"/> is never called.
     /// </summary>

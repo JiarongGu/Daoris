@@ -49,6 +49,28 @@ public sealed class InputEndStopTests : IDisposable
         Assert.Equal(asks, InputEndStop.Asks(value));
     }
 
+    /// <summary>
+    /// FLAKE2: the one wait in a host's stop that runs long by design is the framework's drain of the requests in flight, 30
+    /// seconds by default, six times the five the shell waits before it kills the host it started (<c>HostSupervisor.StopWithin</c>)
+    /// and twice what a test waits. A host the shell started bounds it under the shell's wait; one started from a terminal
+    /// keeps the framework's.
+    /// </summary>
+    [Theory]
+    [InlineData("1", true)]
+    [InlineData(null, false)]
+    [InlineData("0", false)]
+    public void A_host_the_shell_started_waits_for_requests_in_flight_less_than_the_shell_waits_for_it(string? value, bool bounded)
+    {
+        var options = new HostOptions();
+        var framework = options.ShutdownTimeout;
+
+        InputEndStop.BoundDrain(options, value);
+
+        Assert.Equal(bounded ? InputEndStop.Drain : framework, options.ShutdownTimeout);
+        Assert.True(InputEndStop.Drain < TimeSpan.FromSeconds(5), "the shell kills the host it started after five seconds");
+        Assert.True(InputEndStop.Drain > TimeSpan.Zero);
+    }
+
     [Fact]
     public async Task A_host_asked_stops_once_its_input_ends()
     {
@@ -130,9 +152,9 @@ public sealed class InputEndStopTests : IDisposable
     {
         using var host = await StartHostAsync(asked: true);
 
-        host.Process.StandardInput.Close();
+        var missed = host.StopByInput(TimeSpan.FromSeconds(15));
 
-        Assert.True(host.Process.WaitForExit(15_000), "the host did not stop when its input closed");
+        Assert.True(missed is null, missed);
         Assert.Equal(0, host.Process.ExitCode);
         var lines = host.LogLines();
         Assert.Contains(lines, line => line.Contains("\"event\":\"app.started\"", StringComparison.Ordinal));
@@ -140,15 +162,21 @@ public sealed class InputEndStopTests : IDisposable
         Assert.Contains("\"uptimeSeconds\":", stopped);
     }
 
-    /// <summary>The same host from a terminal, not asked: its input closing is nothing to it.</summary>
+    /// <summary>
+    /// The same host from a terminal, not asked: its input closing is nothing to it. The stop that misses says so, which is
+    /// what a stop that missed its bound under load says of where it sat (FLAKE2).
+    /// </summary>
     [Fact]
     public async Task The_real_host_not_asked_keeps_serving_when_its_input_closes()
     {
         using var host = await StartHostAsync(asked: false);
 
-        host.Process.StandardInput.Close();
+        var missed = host.StopByInput(TimeSpan.FromSeconds(2));
 
-        Assert.False(host.Process.WaitForExit(2_000), "a host nobody asked stopped when its input closed");
+        Assert.NotNull(missed);
+        Assert.Contains("has no app.stopped, so its stop was never asked", missed);
+        Assert.Contains("test input closed", missed);
+        Assert.Contains("Application started", missed);
         Assert.True(await RealHost.AnswersAsync(host.Url));
         Assert.DoesNotContain(host.LogLines(), line => line.Contains("\"event\":\"app.stopped\"", StringComparison.Ordinal));
     }
