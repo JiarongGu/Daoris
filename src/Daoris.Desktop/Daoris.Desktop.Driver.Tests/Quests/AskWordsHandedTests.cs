@@ -406,6 +406,19 @@ public sealed class AskWordsHandedTests
         Assert.Equal(asked, unread.Replace("Whether they said more on it since the ask could not be read just now.\n\n", "", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// SESSONE2b (SESSONE2a's note): the person's message on the ask's channel is kept on the ask as the word kind <c>channel</c>,
+    /// which a later session is handed among their words as written on the channel, once; never as a word they said to a session.
+    /// </summary>
+    [Fact]
+    public void A_word_written_on_the_asks_channel_is_said_as_written_there()
+    {
+        var text = AskWordsText.Beneath(Read(Word(AskWordView.Asked, Sentence, 0), Word(AskWordView.Channel, "Use the older bridge.", 30)), "q2");
+
+        Assert.Contains("- They wrote on the ask's channel, 2026-10-01 09:30 UTC:\n\n  > Use the older bridge.\n", text);
+        Assert.Single(text.Split("Use the older bridge.").Skip(1));
+    }
+
     /// <summary>A service standing in: each request recorded by its path, then answered, or 404 where the answer is null.</summary>
     private sealed class StandIn(Func<HttpRequestMessage, (HttpStatusCode Status, string Body)?> answer) : HttpMessageHandler
     {

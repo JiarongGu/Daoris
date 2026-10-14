@@ -373,6 +373,8 @@ public sealed class ReviewGateTests
                             new AskWordView(AskWordView.NotYet, "the total is off", at.AddHours(1), Quest: "q2"),
                             new AskWordView(AskWordView.Reviewed, "right now", at.AddHours(2), Quest: "q2"),
                             new AskWordView(AskWordView.Skipped, "a readme change", at.AddHours(3), Quest: "q4"),
+                            // SESSONE2b: the person's message on the ask's channel, said to no session.
+                            new AskWordView(AskWordView.Channel, "use the older bridge", at.AddHours(4)),
                         ],
                         GoAheads = [],
                     },
@@ -393,6 +395,7 @@ public sealed class ReviewGateTests
         Assert.Contains("· said not yet to what a set-up step showed, on quest #q2\n", said);
         Assert.Contains("· reviewed what a set-up step showed, on quest #q2\n", said);
         Assert.Contains("· skipped the review of the work, on quest #q4\n", said);
+        Assert.Contains("· wrote on the ask's channel\n", said);
         Assert.DoesNotContain("to session a session", said);
         Assert.Contains("  held: it waits for your review of what it showed (`daoris-driver quest review q2 reviewed`", said);
         Assert.DoesNotContain("departed from what you required", said);

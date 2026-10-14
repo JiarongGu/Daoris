@@ -95,7 +95,9 @@ rules (`SetupPressRules.Rules`), the files (`SelfDescriptionFiles.Read`) and the
 
 `Quests/` keeps the onion for its model and rules alone (STRUCT3f, flattened by FLAT1a, folded by FLAT1b-ii): the plan and its
 records (`Planner`, `QuestView`, the considerations), the evidence's records, the attention events, the ask's words (`AskWords`,
-which reads the service in `ReadAsync`) and the intake's records, prompt and observation in `Domain/`; the commands, the evidence
+which reads the service in `ReadAsync`), the ask's channel as an entry reads it and how it is written to a session (`ChannelWords`,
+SESSONE2b, D167 point 7; the look's reach of it is `Loop/ChannelReach`) and the intake's records, prompt and observation in
+`Domain/`; the commands, the evidence
 check, the intake's kinds, the park reader, the git read of a done's evidence (which names `WorkingTree`'s git read directly) and
 `IntakeRoom`, which makes the room's folder and writes its files, sit at the module's top.
 

@@ -35,6 +35,8 @@ const CONNECTOR = [
   'mcp__daoris-knowledge__opinion_answer',
   'mcp__daoris-knowledge__helper_ask',
   'mcp__daoris-knowledge__helper_answer',
+  'mcp__daoris-knowledge__channel_post',
+  'mcp__daoris-knowledge__channel_read',
 ];
 
 function run(argv: string[], home: string): { code: number; out: string } {

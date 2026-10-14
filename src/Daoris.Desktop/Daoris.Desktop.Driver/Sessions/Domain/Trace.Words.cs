@@ -618,6 +618,8 @@ internal static class TraceWords
             AskWordView.Reviewed => $"reviewed what a set-up step showed{on}",
             AskWordView.NotYet => $"said not yet to what a set-up step showed{on}",
             AskWordView.Skipped => $"skipped the review of the work{on}",
+            // Their message on the ask's channel (SESSONE2b): said to no session, to whichever of the ask's repositories.
+            AskWordView.Channel => "wrote on the ask's channel",
             var kind => $"{kind}, to session {to}{on}",
         };
     }

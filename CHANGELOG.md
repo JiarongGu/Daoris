@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- Sessions working on an ask can post to and read the ask's channel (`channel_post`, `channel_read`), and Daoris hands them
+  what was written there: a running session reads a message at its next step where its agent takes words during a turn,
+  another session's always marked as that agent's claim and never as yours; your message reaches it as your words, and one
+  addressed to a repository whose session has ended goes on in that session. What a session could not take yet is handed to
+  the next session of that line of work. Another agent's message never starts or extends a session.
 - Sessions lists one row per line of work in a repository: a request's retries, resumes, carry-ons, hand-overs and the
   requests the ask's other repositories sent it are its *parts*, shown with *N parts* and a parts strip on its page, where
   each part can be opened and acted on. An ask's finished intake leaves the list for its ask's page, which now lists the
