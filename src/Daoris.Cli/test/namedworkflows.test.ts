@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   KEPT_VERSIONS, MAX_STEPS, WORKFLOW_KINDS, WORKFLOW_PRESETS, planAddVersion, readSteps, readVersion, readWorkflowFile,
-  versionCanonical, withGates, workflowDiff, workflowLine, type NamedStep, type SavedStep, type VersionAdded,
+  versionCanonical, withGates, workflowDiff, workflowIdProblem, workflowLine, type NamedStep, type SavedStep, type VersionAdded,
 } from '../src/namedworkflows.ts';
 import { WORKFLOW_LIMITS } from '../src/workflows.ts';
 
@@ -57,6 +57,15 @@ test('a workflow file is read as the driver reads it: the file\'s problem, then 
     assert.deepEqual(read.versions.map((each) => ({ version: each.version, problem: each.problem, digest: each.digest })),
       row.versions, `${row.name}: its versions`);
   }
+});
+
+test('a Windows device name is no id, and a word that only starts like one is (DEDUP6b)', () => {
+  for (const id of ['con', 'nul', 'lpt9', 'com1']) assert.notEqual(workflowIdProblem(id), null, id);
+  for (const id of ['con-a', 'console', 'lpt10', 'com0']) assert.equal(workflowIdProblem(id), null, id);
+  const at = '2026-10-09T09:12:00Z';
+  const steps = [{ id: 'work', kind: 'work' }, { id: 'landing', kind: 'landing', form: 'merge', accept: 'you' }];
+  for (const door of ['con', 'NUL', 'lpt9']) assert.notEqual(readVersion({ version: 1, at, door: `ask-daoris:${door}`, steps }, 1, []).problem, null, door);
+  for (const door of ['con-a', 'console']) assert.equal(readVersion({ version: 1, at, door: `ask-daoris:${door}`, steps }, 1, []).problem, null, door);
 });
 
 test('a version\'s steps are read as the driver reads them, the first problem said in its words, else its digest', () => {

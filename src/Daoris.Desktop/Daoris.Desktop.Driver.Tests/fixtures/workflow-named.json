@@ -82,6 +82,18 @@
       "versions": []
     },
     {
+      "name": "an id that is a Windows device name",
+      "file": {"id": "con", "name": "Docs", "versions": []},
+      "problem": "`con` is not a workflow's id — lower-case letters, digits and dashes, at most 40, such as `docs-to-pr`.",
+      "versions": []
+    },
+    {
+      "name": "an id that is a numbered device name",
+      "file": {"id": "lpt9", "name": "Docs", "versions": []},
+      "problem": "`lpt9` is not a workflow's id — lower-case letters, digits and dashes, at most 40, such as `docs-to-pr`.",
+      "versions": []
+    },
+    {
       "name": "an id ending in a dash",
       "file": {"id": "docs-", "name": "Docs", "versions": []},
       "problem": "`docs-` is not a workflow's id — lower-case letters, digits and dashes, at most 40, such as `docs-to-pr`.",
@@ -187,6 +199,20 @@
         {"version": 1, "at": "2026-10-09T09:12:00Z", "door": "the person", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
         {"version": 2, "at": "2026-10-09T09:12:00Z", "door": "ask-daoris:", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
         {"version": 3, "at": "2026-10-09T09:12:00Z", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]}
+      ]},
+      "problem": null,
+      "versions": [
+        {"version": 1, "problem": "v1: its `door` is `screen`, `terminal` or `ask-daoris:<proposal>`.", "digest": null},
+        {"version": 2, "problem": "v2: its `door` is `screen`, `terminal` or `ask-daoris:<proposal>`.", "digest": null},
+        {"version": 3, "problem": "v3: its `door` is `screen`, `terminal` or `ask-daoris:<proposal>`.", "digest": null}
+      ]
+    },
+    {
+      "name": "Ask Daoris's door naming a Windows device name",
+      "file": {"id": "docs-to-pr", "name": "Docs", "versions": [
+        {"version": 1, "at": "2026-10-09T09:12:00Z", "door": "ask-daoris:con", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+        {"version": 2, "at": "2026-10-09T09:12:00Z", "door": "ask-daoris:NUL", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+        {"version": 3, "at": "2026-10-09T09:12:00Z", "door": "ask-daoris:lpt9", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]}
       ]},
       "problem": null,
       "versions": [
