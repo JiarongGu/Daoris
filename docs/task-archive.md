@@ -14727,3 +14727,8 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SWITCH1c-iii — a quest's carry-on says the curve moved it** (driver; after 1c-i). A quest's next session already starts on the account the curve ranks first (SWITCH1b-ii); where that moves it from the last session's account by the curve, its record's `from` says `curve`, by `daoris`, and its opening line says why. Design §4.
 
 **Outcome** 2026-10-15: `Driver.ContinuesFrom` takes the walk's first reason; a carry-on moved to another account by `over-curve` or `most-room` names the last session with `curve`, by `daoris` (a hand-over's and a limit's links first, as before). The opening line already carried the curve's step by code, so no catalogue changed. Detail: D165's SWITCH1c-iii note; `HandOverLookTests`.
+## SESSONE2h — a page door to a teammate's ask (2026-10-15, D167)
+
+> - [ ] **SESSONE2h — a page door to a teammate's ask** (service/web). SESSONE2g reads a teammate's ask's channel by id, but the page lists and opens only this machine's asks: list the asks the mirrored messages name, and an ask page that renders without a local ask record. D167's SESSONE2g note.
+
+**Outcome** 2026-10-15: `GET /api/channel/elsewhere` lists the asks the mirrored messages name that this machine does not hold (circle, origins, latest, unread against the local mark; no title), and the Asks list gains a *Teammates' asks* group whose row opens a read-only page of the ask's channel with none of an ask's sections. The driver's `ASKS_ELSEWHERE` (modules route over `ServiceClient.ElsewhereAsksAsync`) carries it between them. Detail: D167's SESSONE2h note.

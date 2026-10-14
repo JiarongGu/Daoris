@@ -16,7 +16,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { keys } from '../data/queries';
-import { channelKey, useChannel, useChannelUnreads, useMarkChannel, usePostChannel } from './asks';
+import { channelKey, elsewhereKey, useChannel, useElsewhereAsks, useChannelUnreads, useMarkChannel, usePostChannel } from './asks';
 
 const wrapper = (client: QueryClient) => ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={client}>{children}</QueryClientProvider>
@@ -72,6 +72,24 @@ describe('the asks domain', () => {
 
     await waitFor(() => expect(result.current).toEqual({ a1: 3, a2: 0 }));
     expect(client.getQueryData(channelKey('a1'))).toMatchObject({ unread: 3 });
+  });
+
+  /** SESSONE2h: the asks held elsewhere are one read of the driver, under the asks' key; a shell before it answers none. */
+  it('lists the asks held elsewhere on ASKS_ELSEWHERE, and none from a shell that answers something else', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const held = { id: '7e6f51', workspace: 'default', origins: ['key-a'], latest: '2026-10-15T09:00:00Z', messages: 2, unread: 1 };
+    invoke.mockImplementation(async () => ({ asks: [held] }));
+
+    const listed = renderHook(() => useElsewhereAsks(), { wrapper: wrapper(client) });
+    await waitFor(() => expect(listed.result.current.asks).toEqual([held]));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ASKS_ELSEWHERE', { payload: {} });
+    expect(elsewhereKey.slice(0, 1)).toEqual(keys.allAsks);
+
+    const older = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    invoke.mockImplementation(async () => ({ drivable: [] }));
+    const none = renderHook(() => useElsewhereAsks(), { wrapper: wrapper(older) });
+    await waitFor(() => expect(none.result.current.loading).toBe(false));
+    expect(none.result.current.asks).toEqual([]);
   });
 
   it('asks nothing in a browser, which has no driver and so no channel', () => {

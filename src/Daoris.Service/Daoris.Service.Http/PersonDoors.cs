@@ -147,6 +147,8 @@ public static class PersonDoors
         new("GET", "/api/asks/{id}", DoorClass.Open),
         // An ask's channel (SESSONE2a): a read that moves no mark, so a driver and a page may both look.
         new("GET", "/api/asks/{id}/channel", DoorClass.Open),
+        // The asks the mirrored messages name that this machine does not hold (SESSONE2h): a read of kept messages, moving nothing.
+        new("GET", "/api/channel/elsewhere", DoorClass.Open),
         new("GET", "/api/sessions", DoorClass.Open),
         new("GET", "/api/sessions/{id}/deletable", DoorClass.Open),
         // A plan, which deletes nothing.
