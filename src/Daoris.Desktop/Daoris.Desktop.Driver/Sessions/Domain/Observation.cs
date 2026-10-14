@@ -291,6 +291,14 @@ public static class FailedTurnWords
             ? WordsAfter.Held
             : WordsAfter.Wait;
 
+    /// <summary>
+    /// As above, a failed turn read from either door (TURNFAIL4): the protocol door's refused turn, or the native door's failed
+    /// <c>result</c> its harness ended with (<see cref="HarnessEnding.Failure"/>, which TURNFAIL2's words left read), so the bound
+    /// marks a native run's words as it marks a protocol run's.
+    /// </summary>
+    public static WordsAfter Judge(SessionConclusion conclusion, string? turnFailed, HarnessEnding ended, PriorSession before) =>
+        Judge(conclusion, turnFailed is { Length: > 0 } ? turnFailed : ended.Failure, before);
+
     /// <summary>The line the record's note and its conversation say why the words wait by; null for words taken.</summary>
     public static Noted? Line(WordsAfter after) => after switch
     {
