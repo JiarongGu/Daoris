@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { EntryMainNotice, EntryPage } from './EntryPage';
 import { CJK_ENTRY, ENTRY, INDEX_ENTRY, LONG_LINES, RULE } from './fixtures';
-import { chinese } from '../storyLanguage';
+import { chinese } from '../design/storyLanguage';
 import { InTheme } from '../plugins/storyIcons';
 
 // An entry's page (FRAME1f, D118 §2) in Search's main area, where it was the reader drawer: a knowledge document with

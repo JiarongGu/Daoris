@@ -1,7 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { keepPreviousData, type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 // The shape lives beside the components that render it, so a molecule can name it without
 // importing this module (SURF6).
 import { REVIEW_BOUND_MINUTES, type SessionDiff } from '../work/diff';

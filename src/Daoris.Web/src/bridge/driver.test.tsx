@@ -20,7 +20,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 import { useDriverReady, useNudge, useSyncNow } from './driver';
 import { useLines } from './lines';
 

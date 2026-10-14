@@ -1,4 +1,4 @@
-import { size } from '../format';
+import { size } from '../locales/format';
 import type { Answered } from './InlineConfirm';
 import type { Translate } from './pausing';
 

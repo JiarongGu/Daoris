@@ -1,8 +1,8 @@
 import { Fragment, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { figure, stamp } from '../format';
+import { figure, stamp } from '../locales/format';
 import { cn } from '../lib/cn';
-import { Button, Card, Icon, Inline, MonoWell, PathText, Prose, Segmented, SelectField, SettingRow, SkeletonRows } from '../ui';
+import { Button, Card, Icon, Inline, MonoWell, PathText, Prose, Segmented, SelectField, SettingRow, SkeletonRows } from '../design/ui';
 
 /** The process kinds that write a file (D94 §2), in the order the terminal names them. */
 export const LOG_SOURCES = ['desktop', 'host', 'mcp', 'browser', 'driver'] as const;

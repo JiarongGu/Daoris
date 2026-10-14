@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import type { SetUpRef } from '../api';
+import type { SetUpRef } from '../data/api';
 import { cn } from '../lib/cn';
-import { Icon, Menu, Tip } from '../ui';
+import { Icon, Menu, Tip } from '../design/ui';
 
 /**
  * A set-up waiting for the person's review on this machine, as the driver's state says it (`inReview`, REVIEWENV1d): the step,

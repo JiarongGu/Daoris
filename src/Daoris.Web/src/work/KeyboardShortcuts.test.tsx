@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
-import '../i18n';
-import i18n from '../i18n';
-import { type CommandState, commandTable, shortcutGroups } from '../commands';
+import '../locales/i18n';
+import i18n from '../locales/i18n';
+import { type CommandState, commandTable, shortcutGroups } from '../menus/commands';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
 
 // Help › Keyboard shortcuts (UX7a, D152 §3.2): the table's keys, by menu, in the reader's language.

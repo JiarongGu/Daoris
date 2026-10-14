@@ -1,0 +1,117 @@
+import { describe, expect, it } from 'vitest';
+import i18n from './i18n';
+import { areas, en, homeOf, zh } from './index';
+
+/**
+ * One file per area (MOD2): the build gate (`scripts/i18n-check.mjs`) holds these too, and this holds
+ * them for anyone running the tests without it.
+ */
+describe('the catalogues by area', () => {
+  it('are areas at all: every language is read from files, not one file', () => {
+    expect(Object.keys(areas.en).length).toBeGreaterThan(1);
+    expect(Object.keys(areas.zh).sort()).toEqual(Object.keys(areas.en).sort());
+  });
+
+  it('hold the same keys in each area, both directions', () => {
+    for (const [area, keys] of Object.entries(areas.en)) {
+      expect(Object.keys(areas.zh[area] ?? {}).sort(), area).toEqual(Object.keys(keys).sort());
+    }
+  });
+
+  it('lose no key to the merge: no key is in two areas', () => {
+    for (const language of [areas.en, areas.zh]) {
+      const counted = Object.values(language).reduce((sum, keys) => sum + Object.keys(keys).length, 0);
+      expect(counted).toBe(Object.keys(language === areas.en ? en : zh).length);
+    }
+  });
+
+  it('keep each key in the area its prefix names, so a new key has one home', () => {
+    const names = Object.keys(areas.en);
+    const misplaced = Object.entries(areas.en).flatMap(([area, keys]) =>
+      Object.keys(keys).filter((key) => homeOf(key, names) !== area).map((key) => `${key} in ${area}`));
+    expect(misplaced).toEqual([]);
+  });
+
+  it('find the home by the longest prefix with a file, and none where no file starts it', () => {
+    const names = ['settings', 'settings.rules', 'work', 'work.intake'];
+    expect(homeOf('settings.rules.add', names)).toBe('settings.rules');
+    expect(homeOf('settings.rulesBook', names)).toBe('settings');
+    expect(homeOf('settings.rules', names)).toBe('settings.rules');
+    expect(homeOf('work.intakeRunning.title', names)).toBe('work');
+    expect(homeOf('nav.quests', names)).toBeNull();
+  });
+});
+
+describe('the catalogs', () => {
+  it('agree on their key sets at runtime, not only in the build gate', () => {
+    // scripts/i18n-check.mjs guards the build; this guards anyone running tests without it.
+    expect(Object.keys(zh).sort()).toEqual(Object.keys(en).sort());
+  });
+
+  /**
+   * One word for the scope (D75): the interface said *workspace* 41 times and *circle* 26, 工作区 27
+   * and 圈子 24, and once both in one tooltip. The CLI's word is the one both doors can share. A key or
+   * a placeholder may still be named `circle`, because nobody reads those.
+   */
+  it('call the scope a workspace, never a circle, in both languages', () => {
+    const said = (value: string) => value.replace(/\{\{[^}]*\}\}/g, '');
+    expect(Object.entries(en).filter(([, value]) => /\bcircles?\b/i.test(said(value))).map(([key]) => key)).toEqual([]);
+    expect(Object.entries(zh).filter(([, value]) => said(value).includes('圈子')).map(([key]) => key)).toEqual([]);
+  });
+
+  /**
+   * The page's inline renderer draws `code`, never `**bold**`, so a value that says `**New**` shows its
+   * asterisks (PLUG8's kit card, seen on the window). Emphasis in a catalogue is left out, not marked up.
+   */
+  it('carry no markdown bold, which the page would show as asterisks', () => {
+    const bold = (catalogue: Record<string, string>) =>
+      Object.entries(catalogue).filter(([, value]) => /\*\*[^*]+\*\*/.test(value)).map(([key]) => key);
+    expect(bold(en)).toEqual([]);
+    expect(bold(zh)).toEqual([]);
+  });
+
+  /** The same drift for an account: 账户 15 times and 账号 11, found building the menus (FRAME3). */
+  it('call an account 账户 in 中文, one word as for the workspace', () => {
+    expect(Object.entries(zh).filter(([, value]) => value.includes('账号')).map(([key]) => key)).toEqual([]);
+  });
+
+  /**
+   * And for a quest (POLISH4): 委托 43 times, and 任务 in about twenty strings the map, the chain
+   * strip, the monitor and the strikes setting grew later. 任务 is the family's word for a *task*, and
+   * the glossary keeps the two apart, so a string about a quest never says 任务.
+   */
+  it('call a quest 委托 in 中文, never 任务', () => {
+    const aboutQuests = Object.entries(en).filter(([, value]) => /\bquests?\b/i.test(value)).map(([key]) => key);
+    expect(aboutQuests.filter((key) => zh[key]!.includes('任务'))).toEqual([]);
+  });
+
+  /**
+   * A view is named by the name it has (UX5 U19). D66 made the Work frame the Sessions view, and two
+   * sentences still sent a person to Work: the status bar's sessions tip and a quest's *open in Work*.
+   * Nothing on the window is called that any more.
+   */
+  it('name only views that exist: Work has been Sessions since D66', () => {
+    expect(Object.entries(en).filter(([, value]) => /\bWork\b/.test(value)).map(([key]) => key)).toEqual([]);
+    expect(Object.entries(zh).filter(([, value]) => /工作台|「工作」/.test(value)).map(([key]) => key)).toEqual([]);
+  });
+
+  /**
+   * A count is said in its number (UX5 U54): *1 session(s)* on the usage rows, where every other
+   * count in the catalogue has its `_other` form. English pluralises; the catalogue can say both.
+   */
+  it('say a count in its number, never with (s)', () => {
+    expect(Object.entries(en).filter(([, value]) => /\w\(s\)/.test(value)).map(([key]) => key)).toEqual([]);
+  });
+
+  it('serve flat dotted keys in both languages, placeholders intact', async () => {
+    await i18n.changeLanguage('en');
+    expect(i18n.t('nav.quests')).toBe('Quests');
+    expect(i18n.t('quests.card.sat', { days: 12 })).toBe('sat 12d');
+
+    await i18n.changeLanguage('zh');
+    expect(i18n.t('nav.quests')).toBe('委托');
+    expect(i18n.t('quests.card.sat', { days: 12 })).toBe('搁置 12 天');
+
+    await i18n.changeLanguage('en');
+  });
+});

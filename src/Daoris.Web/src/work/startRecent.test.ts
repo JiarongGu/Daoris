@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { HELP_REPOSITORY } from '../api';
+import { HELP_REPOSITORY } from '../data/api';
 import { CHOSEN_START, keepChosen, keepRecent, MAX_RECENT, mergeRecent, readChosen, readRecent, RECENT_STARTS, withRecent } from './startRecent';
 
 /** What this machine remembers of its starts (NEW1b, the entry design §1): the picker's *Recent*, and the one last chosen. */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { RepositoryGroup } from './RepositoryGroup';
 
 // The rail's second level (design §3): grouping is by repository because that is the axis a person

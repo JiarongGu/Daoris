@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { cappedBlocks } from '../test/measure';
-import { Prose } from '../ui';
+import { Prose } from '../design/ui';
 import { PageHead, PageTabs, ViewMain } from './ViewMain';
 
 // The main area (D118 §3b): props only, since a molecule imports no hook. jsdom lays nothing out, so what

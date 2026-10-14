@@ -5,7 +5,7 @@
 // manifest's), whether a declared path stays inside the repository (D18 over the declared roots), and
 // which of the repository's own documents sit in a tier its index no longer lists.
 
-import type { Harness, HarnessTier, Lock, Manifest } from '../platform/types.ts';
+import type { Harness, HarnessTier, Lock, Manifest } from '../doctrine/records.ts';
 import { existsSync, readdirSync, rmdirSync, statSync } from 'node:fs';
 import { dirname, join, posix, resolve, sep, win32 } from 'node:path';
 import { listFiles, listMarkdown } from '../platform/fsx.ts';

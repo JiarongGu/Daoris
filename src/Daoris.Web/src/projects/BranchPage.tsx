@@ -1,8 +1,8 @@
 import { type ReactNode, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { ExternalLink } from '../links';
-import { Button, Icon, Inline, Pill, Prose, SESSION_TONE, type ShownState } from '../ui';
+import { ExternalLink } from '../design/links';
+import { Button, Icon, Inline, Pill, Prose, SESSION_TONE, type ShownState } from '../design/ui';
 import { PageHead, ViewMain } from '../work/ViewMain';
 import { type ListedBranch, When } from './BranchList';
 import { kindOf, landedStanding, pullRequestSaid, standing } from './branchStanding';

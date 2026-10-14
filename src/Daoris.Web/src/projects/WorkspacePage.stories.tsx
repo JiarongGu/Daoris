@@ -6,7 +6,7 @@ import type { LogRow } from '../settings/Logs';
 import type { LandedBranch, SweepBranch } from '../settings/Sweep';
 import { SweepList } from '../settings/Sweep';
 import { SyncSection } from '../settings/Sync';
-import { chinese } from '../storyLanguage';
+import { chinese } from '../design/storyLanguage';
 import type { HistoryPlan } from '../work/history';
 import { WORKSPACE_EMPTY, WORKSPACE_PLAN } from '../work/historyFixtures';
 import { WORKSPACE } from '../workflow/fixtures';

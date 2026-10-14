@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Quest, Session } from '../api';
-import { ago } from '../format';
+import type { Quest, Session } from '../data/api';
+import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
-import { Button, SectionTitle } from '../ui';
+import { Button, SectionTitle } from '../design/ui';
 import { Note } from './Note';
 import { linesTaken, noteBlocks, noteLines } from './noteLines';
 import { type TimelineEvent, sessionTimeline } from './timeline';

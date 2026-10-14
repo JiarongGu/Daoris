@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ago } from '../format';
-import { ExternalLink } from '../links';
-import { Button, Icon, Inline, Pill, Prose, SkeletonRows } from '../ui';
+import { ago } from '../locales/format';
+import { ExternalLink } from '../design/links';
+import { Button, Icon, Inline, Pill, Prose, SkeletonRows } from '../design/ui';
 import type { CurrentWorkflow } from './current';
 import { type RunStep, runTone, type WorkflowRun, type WorkflowRunAnswer } from './run';
 import { addedSaid, runSaid, runShort, stateSaid } from './runSaid';

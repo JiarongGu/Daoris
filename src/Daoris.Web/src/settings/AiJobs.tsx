@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Card, Pill, Prose, SelectField, SettingRow } from '../ui';
+import { Card, Pill, Prose, SelectField, SettingRow } from '../design/ui';
 import type { StartWiring } from '../map/wiring';
 
 /** What the service says answers search and convergence (D24) — its own words, verbatim. */

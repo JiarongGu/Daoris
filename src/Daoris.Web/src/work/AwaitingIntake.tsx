@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import type { NotePart } from '../api';
-import { Button, WaitingCard } from '../ui';
+import type { NotePart } from '../data/api';
+import { Button, WaitingCard } from '../design/ui';
 import { Note } from './Note';
 
 /**

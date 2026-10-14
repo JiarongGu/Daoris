@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { InTheme } from '../plugins/storyIcons';
-import { chinese } from '../storyLanguage';
-import { Button } from '../ui';
+import { chinese } from '../design/storyLanguage';
+import { Button } from '../design/ui';
 import { Composer } from '../work/Composer';
 import { DOCK } from '../work/layout';
 import { Markdown } from '../work/Markdown';

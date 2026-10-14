@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Button, Inline, PathText } from '../ui';
+import { Button, Inline, PathText } from '../design/ui';
 
 /** Where an installed plugin came from (PLUG9 c, D103): a folder, the install's offer, no record, or one that does not read. */
 export type PluginSourceShown = {

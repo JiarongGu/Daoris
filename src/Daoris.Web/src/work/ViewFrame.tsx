@@ -1,5 +1,5 @@
 import { type ReactNode, type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { OpenGroup } from '../opener';
+import type { OpenGroup } from '../app/opener';
 import { LIST_BOUNDS, type ListChoice, type ListLayout, type ListMode, type ListView, listLayout, listToggled } from './layout';
 import { type ListMake, ListPane } from './ListPane';
 import type { ChoiceStanding, ListPanes } from './listPanes';

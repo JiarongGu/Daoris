@@ -1,5 +1,5 @@
-import i18n from '../i18n';
-import { type CommandDoors, type CommandEntry, type CommandState, commandTable, type Translate } from '../commands';
+import i18n from '../locales/i18n';
+import { type CommandDoors, type CommandEntry, type CommandState, commandTable, type Translate } from '../menus/commands';
 
 // The world the menu bar's stories and the palette's stand in (UX7a): the install's two workspaces, an agent, the
 // domains a shell's Settings has, each record group as its page would offer it. Every press does nothing.

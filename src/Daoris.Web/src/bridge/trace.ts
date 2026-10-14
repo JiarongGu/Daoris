@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 import type { TraceAnswer, TraceKind } from '../work/trace';
 import { call } from './call';
 

@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Inline, Prose, SkeletonRows, Tip } from '../ui';
+import { Button, Inline, Prose, SkeletonRows, Tip } from '../design/ui';
 import { PageSection } from '../work/ViewMain';
 import type { CurrentWorkflow, WorkflowRepository } from './current';
 import { partSaid } from './said';

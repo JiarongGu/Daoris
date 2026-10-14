@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Button, Inline, Pill } from '../ui';
+import { Button, Inline, Pill } from '../design/ui';
 import type { KitPoint } from './PluginKit';
 import { ViewMain } from '../work/ViewMain';
 import type { OfferShown } from './catalog';

@@ -305,7 +305,7 @@ node ../Daoris/src/Daoris.Cli/bin/daoris.mjs plugin workshop repository Daoris.P
 |---|---|---|
 | `examples/plugins/github-pull-request`, `azure-devops-pull-request` | `plugins/` in Daoris.Plugins, each with a `plugin.test.mjs` that carries the kit's wire test and the WSR4 cases, rewritten in plain Node: a fake `gh` or `az` first on the PATH, and a bare repository as `origin` | they are products Daoris offers, not a contract its gates hold |
 | `examples/plugins/in-app-browser` | `plugins/in-app-browser`, with a test that its server keeps `${browser}` and `${data}` as written and pins its MCP version | the same |
-| `src/Daoris.Cli/test/landing-plugins.test.ts` | retired once its cases pass in Daoris.Plugins | a repository's plugins are tested where they live |
+| `src/Daoris.Cli/test/plugins/landing-plugins.test.ts` | retired once its cases pass in Daoris.Plugins | a repository's plugins are tested where they live |
 | `PluginOfferTests`' check of the tracked examples | a check over a fixture package (PLUGDIST1a), and the deployment rehearsal's check of the real offers | the offers are no longer in this tree |
 | `examples/plugins/hold-by-title` | **stays** | the rehearsals' speaking plugin: the wire's contract at `quest/consider` and `session/ended`, driven by two gates |
 | `examples/plugins/browser` | **stays** | the family rehearsal's *plugin that declares a server*; it is not offered (D103) |

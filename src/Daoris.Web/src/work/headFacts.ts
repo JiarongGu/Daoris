@@ -1,10 +1,10 @@
 import type { TFunction } from 'i18next';
-import type { Quest, Session } from '../api';
-import { ago, elapsed, moment } from '../format';
-import type { Consideration } from '../signals';
+import type { Quest, Session } from '../data/api';
+import { ago, elapsed, moment } from '../locales/format';
+import type { Consideration } from '../data/signals';
 import type { SweepBranch } from '../settings/Sweep';
-import type { AccountNamer } from '../tools';
-import { SESSION_ACTIVE } from '../ui';
+import type { AccountNamer } from '../agents/tools';
+import { SESSION_ACTIVE } from '../design/ui';
 import type { SessionGrouping } from './groups';
 import { isIntake } from './identity';
 import { HANDED_REASONS } from './noteLines';

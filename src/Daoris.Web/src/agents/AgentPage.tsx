@@ -1,10 +1,10 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { clockOf, figure } from '../format';
-import type { Account, AccountSettingsChange, Tool } from '../tools';
+import { clockOf, figure } from '../locales/format';
+import type { Account, AccountSettingsChange, Tool } from './tools';
 import {
   Button, Chip, Icon, Inline, Menu, type MenuAct, Pill, Prose, SectionTitle, Tip,
-} from '../ui';
+} from '../design/ui';
 import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
 import { PageHead, ViewMain } from '../work/ViewMain';
 import {

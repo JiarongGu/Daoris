@@ -1,6 +1,5 @@
-import type {
-  AnalysisReport, Canon, CanonFile, CommandArgs, Harness, Lock, LockEntry, PackSuggestion, Survey, Twin,
-} from '../platform/types.ts';
+import type { CommandArgs } from '../platform/types.ts';
+import type { AnalysisReport, Canon, CanonFile, Harness, Lock, LockEntry, PackSuggestion, Survey, Twin } from './records.ts';
 import type { ExitCode } from '../platform/errors.ts';
 import { existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';

@@ -1,4 +1,4 @@
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 import type { WorkflowStep } from './current';
 
 // Where a piece of work stands in its workflow, as the shell answers it (WORKFLOW1c; D157 point 11, the workflow design §5.1–§5.2,

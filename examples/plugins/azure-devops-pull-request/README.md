@@ -124,7 +124,7 @@ yourself, and once the cause is fixed the review's *hand it to* or `daoris-drive
 gives the branch to the plugin again. On Windows `az` is a `.cmd` script, so it is run through `cmd`: a title's or a line's double
 quotes become single ones and a percent sign is spelled out, because cmd would read them.
 
-`land.mjs` is the whole of it; `src/Daoris.Cli/test/landing-plugins.test.ts` drives it against a bare
+`land.mjs` is the whole of it; `src/Daoris.Cli/test/plugins/landing-plugins.test.ts` drives it against a bare
 repository and a fake `az`, never a network. It has not been run against a real Azure DevOps
 organisation: the arguments are `az repos pr create`'s, `az repos pr list`'s and `az repos pr show`'s
 documented ones, and whether `lastMergeCommit` names a squash's commit on the target was never

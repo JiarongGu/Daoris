@@ -2,7 +2,7 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InTheme } from '../plugins/storyIcons';
-import { chinese } from '../storyLanguage';
+import { chinese } from '../design/storyLanguage';
 import { InlineConfirm } from './InlineConfirm';
 
 // The one inline confirmation for a destructive act (UXFIX2): a sentence on one line with the move first and *Never mind*;

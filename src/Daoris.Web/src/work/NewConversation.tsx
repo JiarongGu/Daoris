@@ -1,12 +1,12 @@
 import { type KeyboardEvent, useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MAX_FILE_BYTES, MAX_FILES } from '../attachments';
+import { MAX_FILE_BYTES, MAX_FILES } from '../compose/attachments';
 import { type Carry, NO_CARRY, useCarry, useFileChooser } from '../compose/carry';
-import { size } from '../format';
+import { size } from '../locales/format';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
-import type { Account } from '../tools';
-import { Button, Icon, Inline, Menu, Tip } from '../ui';
+import type { Account } from '../agents/tools';
+import { Button, Icon, Inline, Menu, Tip } from '../design/ui';
 import { type AgentChoice, AgentChip } from './AgentChip';
 import { CHIP, RepositoryPicker, type StartRepository } from './RepositoryPicker';
 

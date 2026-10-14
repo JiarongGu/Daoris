@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import '../i18n';
-import type { Ask, Quest, Registration } from '../api';
-import { clockOf, moment } from '../format';
+import '../locales/i18n';
+import type { Ask, Quest, Registration } from '../data/api';
+import { clockOf, moment } from '../locales/format';
 import { type AccountScope, type AccountsAnswer, USE_DEFAULTS } from '../settings/accounts';
-import type { AccountWaitTick, Consideration } from '../signals';
-import { byTool, type ToolDoor } from '../tools';
+import type { AccountWaitTick, Consideration } from '../data/signals';
+import { byTool, type ToolDoor } from '../agents/tools';
 import { accountAttention, type AccountsKnown } from './accountAttention';
 import { attentionOffers } from './attention';
 

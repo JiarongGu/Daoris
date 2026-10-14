@@ -1,14 +1,14 @@
 import { Fragment, type KeyboardEvent, type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ago } from '../format';
+import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
-import { shellWord } from '../shellWord';
-import { Button, Icon, type IconName, Inline, Menu, type MenuAct, SkeletonRows, Tip } from '../ui';
+import { shellWord } from '../lib/shellWord';
+import { Button, Icon, type IconName, Inline, Menu, type MenuAct, SkeletonRows, Tip } from '../design/ui';
 import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
 import { useListKeys } from '../work/listKeys';
 import { marked } from '../work/railSearch';
-import { searchable } from '../searchable';
+import { searchable } from '../lib/searchable';
 import { HELP_NAME_LIMIT, type HelpConversationRow, historyGroups } from './history';
 import { previewText, rowLine } from './preview';
 

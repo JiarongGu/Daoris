@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { AwaitingIntake } from './AwaitingIntake';
 
 // A parked INTAKE (INT4g): the declarations did not settle whose an ask is, so the intake asked the

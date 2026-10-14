@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
-import { Button, CheckField, Inline, Segmented, SelectField } from '../ui';
+import { Button, CheckField, Inline, Segmented, SelectField } from '../design/ui';
 
 /**
  * How a session's work lands (WSR1, D87): merged into the line, or put on a branch the pattern names —

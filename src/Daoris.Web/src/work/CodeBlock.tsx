@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import hljs from 'highlight.js/lib/common';
 import { cn } from '../lib/cn';
 import { useWidth } from '../map/useWidth';
-import { Icon } from '../ui';
+import { Icon } from '../design/ui';
 import './code.css';
 
 /** Text as HTML with nothing interpreted — what a block in no known language shows. */

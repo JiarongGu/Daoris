@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Menu, type MenuAct } from '../ui';
+import { Menu, type MenuAct } from '../design/ui';
 import {
   type ContextDoors, contextSections, insideMenu, isMenuKey, isTextField, keyPoint, offeredContext, pressedOn,
 } from './press';

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { AskRow } from './AskRow';
 import { PROPOSED } from './fixtures';
 

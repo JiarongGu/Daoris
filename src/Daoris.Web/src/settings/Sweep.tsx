@@ -1,7 +1,7 @@
 import { type ReactNode, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
-import { Button, Card, Chip, Inline, type Notify, PathText, Prose, SectionTitle } from '../ui';
+import { Button, Card, Chip, Inline, type Notify, PathText, Prose, SectionTitle } from '../design/ui';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 
 /**

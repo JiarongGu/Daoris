@@ -1,7 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { InTheme } from '../plugins/storyIcons';
-import { chinese } from '../storyLanguage';
-import { Button } from '../ui';
+import { chinese } from '../design/storyLanguage';
+import { Button } from '../design/ui';
 import {
   answerOf, FAILED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED, OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL,
   WAITING_ON_YOU, WORKING,

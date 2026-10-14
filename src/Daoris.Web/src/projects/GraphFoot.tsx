@@ -1,6 +1,6 @@
 import { type RefObject, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '../ui';
+import { Button } from '../design/ui';
 import { Refused } from '../work/InlineConfirm';
 
 /** What a graph's holder holds of its paging: the foot's press, and the foot's place for the focus to be told from. */

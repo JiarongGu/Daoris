@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { SessionConsole } from '../SessionConsole';
+import { SessionConsole } from './SessionConsole';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { OutputPanel, StatusBar } from './frame';
 

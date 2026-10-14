@@ -4,7 +4,7 @@
 // imports, not their erasure — and it would be right to, because a molecule that knows where its
 // data comes from is one refactor away from fetching it.
 
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 import { sessionOrigin, treeName } from './identity';
 import { readEvidence } from './timeline';
 

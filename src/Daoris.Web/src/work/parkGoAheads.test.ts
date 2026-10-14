@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import i18n from '../i18n';
-import type { Ask, GoAhead } from '../api';
+import i18n from '../locales/i18n';
+import type { Ask, GoAhead } from '../data/api';
 import { goAheadsAsked, goAheadToast } from './parkGoAheads';
 
 const goAhead = (number: number, ...sessions: string[]): GoAhead => ({

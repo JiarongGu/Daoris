@@ -8,7 +8,6 @@
       "summary": "The page but its Settings: the frame, the bridge, the atoms, the work frame, every other screen, the modules they share, the catalogues outside Settings' areas, and the page's build and end-to-end suite.",
       "paths": [
         "src/Daoris.Web/**",
-        "!src/Daoris.Web/src/SettingsView*.tsx",
         "!src/Daoris.Web/src/settings/**",
         "!src/Daoris.Web/src/locales/*/settings.json",
         "!src/Daoris.Web/src/locales/*/settings.*.json"
@@ -19,7 +18,6 @@
       "title": "Web settings",
       "summary": "The Settings screen: its frame, one file per domain, and its catalogue areas.",
       "paths": [
-        "src/Daoris.Web/src/SettingsView*.tsx",
         "src/Daoris.Web/src/settings/**",
         "src/Daoris.Web/src/locales/*/settings.json",
         "src/Daoris.Web/src/locales/*/settings.*.json"

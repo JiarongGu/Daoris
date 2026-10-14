@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import '../i18n';
+import '../locales/i18n';
 import { ViewsMenu, viewEntries } from './ViewsMenu';
 
 // DOCK1b: the button at the end of a region's tab row. Chrome's tab list, so a tab drawn as its icon

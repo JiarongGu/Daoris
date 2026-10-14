@@ -42,9 +42,9 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { ContextMenus } from '../menus/ContextMenu';
-import type { OpenGroup } from '../opener';
+import type { OpenGroup } from '../app/opener';
 import { menuActs, rightClick } from '../test/contextMenu';
 import { WorkFrame } from './WorkFrame';
 import { DiffPane } from './DiffPane';

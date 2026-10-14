@@ -1,5 +1,5 @@
 import { accountName } from '../agents/agents';
-import { byTool, type ToolDoor } from '../tools';
+import { byTool, type ToolDoor } from '../agents/tools';
 
 /** What a person calls each account, by its id: the names a conversation's notes say an account by (NOTENAME1). */
 export type AccountNames = ReadonlyMap<string, string>;

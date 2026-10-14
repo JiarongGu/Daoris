@@ -12,7 +12,7 @@ namespace Daoris.Knowledge;
 /// a path in a search where a document should be.</para>
 ///
 /// <para>🔴 <b>A twin</b> (<c>.claude/knowledge/twins.md</c>, *a link held as text*): the CLI's
-/// <c>heldAsText</c> (<c>src/Daoris.Cli/src/links.ts</c>) refuses to write through the same files this
+/// <c>heldAsText</c> (<c>src/Daoris.Cli/src/layout/links.ts</c>) refuses to write through the same files this
 /// skips reading, by the same content cases. The two share no code; <c>RepositoryLayoutTests</c> holds
 /// the CLI's cases in its order.</para>
 /// </remarks>

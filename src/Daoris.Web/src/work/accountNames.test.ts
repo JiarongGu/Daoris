@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ToolDoor } from '../tools';
+import type { ToolDoor } from '../agents/tools';
 import { accountNames } from './accountNames';
 
 /**

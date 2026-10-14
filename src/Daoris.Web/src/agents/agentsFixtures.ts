@@ -1,4 +1,4 @@
-import { byTool, type Tool, type ToolDoor } from '../tools';
+import { byTool, type Tool, type ToolDoor } from './tools';
 import { type AccountSaid, type AgentAccounts, USE_DEFAULTS } from '../settings/accounts';
 import type { AgentRulesState } from '../settings/AgentRules';
 import { scopeOf } from '../settings/accountsFixtures';

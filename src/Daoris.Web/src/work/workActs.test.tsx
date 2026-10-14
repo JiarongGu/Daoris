@@ -15,7 +15,7 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => undefined,
 }));
 
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import type { ResumeHold } from './pausing';
 import { ABANDON_ANSWER } from './pausingFixtures';
 import { useWorkActs } from './workActs';

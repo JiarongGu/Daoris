@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import {
   clearLead, clearList, clearOffered, clearRefusal, clearSaid, clearWent, goingSaid, historyPayload, historyPlanOf, keptDoor,
   readingSaid, reasonSaid,

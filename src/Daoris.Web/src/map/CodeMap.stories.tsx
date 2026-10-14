@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { CodeDependency, CodeModule, Provenance } from '../api';
+import type { CodeDependency, CodeModule, Provenance } from '../data/api';
 import { CodeMapCanvas, CodeMapDetail } from './CodeMap';
 
 // A repository's own code map (MAP3a), in the shapes a producer writes: a small layered service, a

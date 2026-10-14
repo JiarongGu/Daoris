@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { SessionBox } from './SessionBox';
 
 // The box at the foot of a session's page (MSG1f, D137 §5.1), props in: the running door's box, the park's answer, the

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ago } from '../format';
+import { ago } from '../locales/format';
 import type { LogRow } from '../settings/Logs';
-import { Button } from '../ui';
+import { Button } from '../design/ui';
 
 /** Rows drawn before the rest are one press away, as the groups above are (UX6h2b2). */
 export const TIDIED_SHOWN = 5;

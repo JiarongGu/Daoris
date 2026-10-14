@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import i18n from '../i18n';
-import { paletteCommands } from '../commands';
+import i18n from '../locales/i18n';
+import { paletteCommands } from '../menus/commands';
 import { CommandPalette } from './CommandPalette';
 import { ATTENDED, IN_A_BROWSER, menuWorld } from './menuFixtures';
 

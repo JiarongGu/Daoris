@@ -4,7 +4,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
 import { code } from '../test/code';
 import { AccountSettingsForm, AccountSettingsSummary } from './AccountSettings';
-import type { AccountSettings, SettingsChoices } from '../tools';
+import type { AccountSettings, SettingsChoices } from '../agents/tools';
 
 // AGT6 (D98): an account's own model and effort, as molecules — props in, states out. The values are the
 // tool's own file's and the choices the tool's own words; the form sends only what the person changed.

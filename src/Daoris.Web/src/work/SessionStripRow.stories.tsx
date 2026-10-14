@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 import { SessionStripRow } from './SessionRow';
 
 // A session in the rail's 56px strip (FRAME6): its repository's initial and its mark, with the title,

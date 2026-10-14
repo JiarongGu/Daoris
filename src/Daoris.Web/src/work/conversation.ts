@@ -11,7 +11,7 @@
  * read the same as an absence.
  */
 
-import type { NotePart } from '../api';
+import type { NotePart } from '../data/api';
 
 /**
  * The codes a driver's note in a conversation carries, each the key the page words it by (MSG1c3, D142 point 1): the

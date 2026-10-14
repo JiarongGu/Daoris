@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Pill } from '../ui';
+import { Pill } from '../design/ui';
 import type { ChoiceFrom, StartWiring } from './wiring';
 
 /**

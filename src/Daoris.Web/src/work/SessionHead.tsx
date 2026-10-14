@@ -7,13 +7,13 @@ import type { TFunction } from 'i18next';
 import { workflowHolds } from '../workflow/gate';
 import { WorkflowHold } from '../workflow/WorkflowHold';
 import { DiscardBranchAsk, type SweepBranch } from '../settings/Sweep';
-import type { GoAhead, Quest, Session } from '../api';
-import type { AccountNamer } from '../tools';
+import type { GoAhead, Quest, Session } from '../data/api';
+import type { AccountNamer } from '../agents/tools';
 import { type GoAheadAnswer, GoAheadList } from '../asks/GoAheadList';
-import { ago, elapsed, sessionTool, stamp } from '../format';
+import { ago, elapsed, sessionTool, stamp } from '../locales/format';
 import {
   answeredPark, Button, Inline, PathText, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
-} from '../ui';
+} from '../design/ui';
 import { AnsweredPark } from './AnsweredPark';
 import { AwaitingIntake } from './AwaitingIntake';
 import { AwaitingPerson, type QuestClose, type Resolution } from './AwaitingPerson';

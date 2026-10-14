@@ -48,7 +48,7 @@ Repositories. The desktop's seven menus share one command table, with shortcuts 
 
 Each Settings domain is `src/settings/<Name>Domain.tsx`, with its tests beside it, and
 `src/settings/domains.ts` lists them: the one place a domain is added, since the frame
-(`SettingsView.tsx`) renders whichever one is chosen and names none itself (MOD4).
+(`settings/SettingsView.tsx`) renders whichever one is chosen and names none itself (MOD4).
 
 **The design language is written down** — `docs/2026-09-19-platform-ux.md` (D41): the console shell
 (an activity bar, page headers, one primary action per view), the token system, the drawer as the single
@@ -61,9 +61,9 @@ status pill never appears without its text label.
 runs, says a refusal inside itself rather than in a toast, and returns focus to the press. A question the agent
 asks in the page (the trust question, a go-ahead) holds its own wait the same way and says a refusal beside what
 was pressed (UXFIX2b3b). A search gate asks
-`src/searchable.ts`: two characters, or one Han character, as the driver's own rule does (D158). A page opened from a
+`src/lib/searchable.ts`: two characters, or one Han character, as the driver's own rule does (D158). A page opened from a
 press (a branch's page from its name, the code map from *Open code map*) goes back with the focus on that press, waited
-for until it is drawn, else on the page's heading: `src/returnFocus.ts` (UX6h3d).
+for until it is drawn, else on the page's heading: `src/lib/returnFocus.ts` (UX6h3d).
 
 ## Built on (D42, `docs/2026-09-19-frontend-architecture.md`)
 
@@ -74,7 +74,7 @@ for until it is drawn, else on the page's heading: `src/returnFocus.ts` (UX6h3d)
 | Icons | **lucide-react**, tree-shaken |
 | Server state | **TanStack Query** — deduped fetches, refetch-on-focus, invalidation after every mutation |
 | i18n | **react-i18next**, `en` + `zh`, flat dotted keys, **one file per area** (`src/locales/<language>/<area>.json`, merged at load by `src/locales/index.ts`): a key lives in the file named by its longest dotted prefix that has one, so `settings.rules.add` is in `settings.rules.json` and `nav.quests` in `nav.json`. `scripts/i18n-check.mjs` fails the build when an area's two files diverge, a key is in two files, or a key is not in its home (MOD2); `scripts/names-check.mjs --strict` beside it fails the build when a label breaks the glossary (`src/locales/glossary.json`), its kind's form or its door, and reports the budgets without failing (D116, NAME1b) |
-| Shell bridge | **@shenora/react** — in the desktop, `DAORIS.DRIVER` carries the person's controls and `DRIVER_TICK` pushes the loop's reports into toasts and refetches (`ShellSignals.tsx`); in a browser none of it mounts, by design. **One file per domain** (MOD3): each domain's types and calls are `src/bridge/<domain>.ts` (driver, sessions, conversation, console, terminal, trees, lines, agents, plugins, rules, help, browser, windows, remotes, registry, log), `src/shell.ts` is only the barrel re-exporting them, and `bridge/bridge.test.ts` holds that it stays one. The desktop answers each route in a handler class per domain, `<Domain>Routes.cs` in `Daoris.Desktop.Modules` (D166), which is the file a comment here names for a route's refusals |
+| Shell bridge | **@shenora/react** — in the desktop, `DAORIS.DRIVER` carries the person's controls and `DRIVER_TICK` pushes the loop's reports into toasts and refetches (`app/ShellSignals.tsx`); in a browser none of it mounts, by design. **One file per domain** (MOD3): each domain's types and calls are `src/bridge/<domain>.ts` (driver, sessions, conversation, console, terminal, trees, lines, agents, plugins, rules, help, browser, windows, remotes, registry, log), `src/bridge/shell.ts` is only the barrel re-exporting them, and `bridge/bridge.test.ts` holds that it stays one. The desktop answers each route in a handler class per domain, `<Domain>Routes.cs` in `Daoris.Desktop.Modules` (D166), which is the file a comment here names for a route's refusals |
 | Design tool | **Storybook** (`npm run storybook`) — the component states and the token gallery, on the shipped code |
 | Test loop | **Vitest + Testing Library** as the millisecond inner loop (view logic, primitives, catalogs — with the sibling's proven jsdom shims), **Playwright** as the outer loop — the real host over `examples/`, driving the shipped bundle. `npm run test:web` at the workspace root runs the whole pyramid |
 
@@ -120,6 +120,22 @@ their codes in the reader's language and the messages shown as written.
 **Knowledge results identify the active tier** — a reader looking at results has no way to
 know the semantic half was absent, and would read them as complete rather than as
 complete-for-word-overlap (D24).
+
+## Where things are in `src/` (STRUCT5c, D166)
+
+The top holds the entries alone: `main.tsx`, which `index.html` runs, the theme `tokens.css` it and Storybook load,
+and Vite's ambient types. Everything else sits in a folder by domain: `app/` (the frame, its windows and the opener),
+`data/` (the service's API, the queries, the host, the workspace scope, the tick's news), `bridge/` (the shell's calls
+by domain and their barrel), `design/` (the atoms in `ui.tsx`, the mark, the theme, the links, and the design's
+tree-wide gates), `lib/` (helpers no domain owns), `locales/` (the catalogues, i18n and the formatters), `menus/`
+(the command table, its shortcuts and the menus), each place's own folder (`overview/`, `quests/`, `asks/`,
+`projects/`, `knowledge/`, `map/`, `agents/`, `plugins/`, `settings/`, `help/`, `work/` for Sessions, `workflow/`,
+`compose/`, `update/`), and `test/` for the tests' support. A test or a story sits beside its source.
+`src/test/structure.test.ts` holds this with its map, `structure.json`: a new file at the top, a folder no module
+declares, a test apart from its source or a folder's top past twenty sources fails it, unless the map's `wide` list
+names that folder until a row cuts it into scopes. A gate that reads the whole tree globs from the project's root and
+names each path from the sources' top (`test/sources.ts`). A view in a folder the presentational boundary covers is an
+organism by name in `design/presentational.test.ts`.
 
 ## One UI, two shells
 

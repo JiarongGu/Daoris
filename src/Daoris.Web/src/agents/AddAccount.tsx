@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { list } from '../format';
-import { shellWord } from '../shellWord';
-import { Button, CheckField, Inline, Pill } from '../ui';
+import { list } from '../locales/format';
+import { shellWord } from '../lib/shellWord';
+import { Button, CheckField, Inline, Pill } from '../design/ui';
 // Why a question's act was refused, said under it, whole (ACCTEDIT1): the inline confirmation's, so every ask says it alike.
 import { Refused } from '../work/InlineConfirm';
 import { type AccountState, type JoinChoice, stateWhen, stateWord } from './agents';

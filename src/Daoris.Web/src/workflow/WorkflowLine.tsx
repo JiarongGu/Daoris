@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
-import { Icon } from '../ui';
+import { Icon } from '../design/ui';
 import { waitsOnYou, type WorkflowRun } from './run';
 import { runShort } from './runSaid';
 

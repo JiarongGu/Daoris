@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import i18n from '../i18n';
-import type { Quest, Session } from '../api';
+import i18n from '../locales/i18n';
+import type { Quest, Session } from '../data/api';
 import { SessionTimeline, TimelineEntry } from './SessionTimeline';
 
 const NOW = new Date('2026-09-21T12:00:00Z');

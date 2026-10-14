@@ -1,4 +1,4 @@
-import type { Quest, QuestSetUp, QuestVerdict, SetUpRef } from '../api';
+import type { Quest, QuestSetUp, QuestVerdict, SetUpRef } from '../data/api';
 
 /**
  * Where a review's gate stands for a chain's work in one repository (REVIEWENV1c, D154 point 7; the review environment design

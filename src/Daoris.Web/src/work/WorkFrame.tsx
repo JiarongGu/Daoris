@@ -1,10 +1,10 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SessionConsole } from '../SessionConsole';
-import { sentence } from '../format';
+import { SessionConsole } from './SessionConsole';
+import { sentence } from '../locales/format';
 import { buildChain } from '../map/chain';
-import type { Compose, OpenGroup } from '../opener';
-import { useAnswerSession, useAsks, usePersonDone, useQuests, useRegistry, useSessions } from '../queries';
+import type { Compose, OpenGroup } from '../app/opener';
+import { useAnswerSession, useAsks, usePersonDone, useQuests, useRegistry, useSessions } from '../data/queries';
 import {
   type TurnStop, useCancelTurn, useEditQueued, useEndChat, useHarnesses, useResolveSession, useSendMessage,
   NO_TURNS, useChatTurns, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionStreams, useSessionWhere,
@@ -12,7 +12,7 @@ import {
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree,
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun,
-} from '../shell';
+} from '../bridge/shell';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
 import { opinionAsked, opinionHolds } from './opinion';
 import { useOpinionActs } from './opinionActs';
@@ -20,10 +20,10 @@ import { OpinionGate } from './OpinionGate';
 import { reviewHolds, reviewState } from './review';
 import { ReviewGate } from './ReviewGate';
 import { useReviewActs } from './reviewActs';
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 import type { HeadLink, HeadOpinion, HeadReview } from './SessionHead';
 import { sayDiscard } from '../settings/Sweep';
-import { doorOf, toolOf } from '../tools';
+import { doorOf, toolOf } from '../agents/tools';
 import { agentOf, machineScope, workspaceScope } from '../settings/accounts';
 import { namer } from '../settings/namer';
 import {
@@ -37,13 +37,13 @@ import { PauseAsk } from './WorkAsks';
 import { FilePreview } from './FilePreview';
 import { type FileOpen, FileOpener, fileName } from './preview';
 import { TerminalView } from './TerminalView';
-import { failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../ui';
-import type { FrameIntent } from '../commands';
+import { failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../design/ui';
+import type { FrameIntent } from '../menus/commands';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';
 import type { Usage } from './conversation';
 import { isHelper, isIntake, isOpinion, linkedSessions, ownTree, sessionOrigin, sessionTitle } from './identity';
-import { doorLabel } from '../tools';
+import { doorLabel } from '../agents/tools';
 import type { QuestClose, Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
 import { DiffPane } from './DiffPane';
@@ -53,7 +53,7 @@ import { SessionTimeline } from './SessionTimeline';
 import { SessionRail } from './SessionRail';
 import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } from './acts';
 import { askOfEntry, entryOfSession, isIntakeEntry } from './entries';
-import { useChannel, usePostChannel } from '../shell';
+import { useChannel, usePostChannel } from '../bridge/shell';
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
 import { sessionFacts } from './headFacts';
 import type { Answered } from './InlineConfirm';
@@ -64,7 +64,7 @@ import { HandOverOfferLine } from './HandOverOfferLine';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { type SessionDoors, useSessionActs } from './sessionActs';
 import { ListMore } from './ListPane';
-import { AddProjectDrawer, ImportFolderDrawer } from '../ProjectManage';
+import { AddProjectDrawer, ImportFolderDrawer } from '../projects/ProjectManage';
 import { useCheckoutBranch } from '../bridge/git';
 import { type CheckoutReader, NewConversation, type NewStart } from './NewConversation';
 import { keepChosen, keepRecent, mergeRecent, readChosen, readRecent } from './startRecent';

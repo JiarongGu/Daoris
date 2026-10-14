@@ -1,22 +1,22 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type Ask, canBeAsked, type Quest } from '../api';
-import { linksOf, toUpload } from '../attachments';
+import { type Ask, canBeAsked, type Quest } from '../data/api';
+import { linksOf, toUpload } from '../compose/attachments';
 import { NO_CARRY } from '../compose/carry';
-import { sentence } from '../format';
-import { askItem } from '../opener';
+import { sentence } from '../locales/format';
+import { askItem } from '../app/opener';
 import {
   useAnswerGoAhead, useAsk, useAsks, useChooseAskReview, useChooseAskWorkflow, useCloseAsk, useDeleteAsk, usePublishAsk, useRegistry, useSessions,
-} from '../queries';
-import { useScope } from '../scope';
+} from '../data/queries';
+import { useScope } from '../data/scope';
 import { namer } from '../settings/namer';
 import { askLines } from '../work/entries';
 import {
   useChannel, useChannelUnreads, useMarkChannel, usePostChannel,
-} from '../shell';
-import { useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useSessionEntries, useWorkflowRun, useWorkPlan } from '../shell';
-import { workspaceOf, workspacesOf } from '../workspaces';
-import { failure, type Notify, useErrorNotify } from '../ui';
+} from '../bridge/shell';
+import { useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useSessionEntries, useWorkflowRun, useWorkPlan } from '../bridge/shell';
+import { workspaceOf, workspacesOf } from '../data/workspaces';
+import { failure, type Notify, useErrorNotify } from '../design/ui';
 import { askStanding, freshest } from '../quests/records';
 import type { ChoiceStanding } from '../work/listPanes';
 import type { AskRowFacts } from '../quests/QuestList';

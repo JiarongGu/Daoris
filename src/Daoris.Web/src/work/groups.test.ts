@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 import {
   cutEnded, endedToArchive, GROUP_ORDER, keptSessionFilters, sessionFilters, type SessionGrouping, sessionsByRepository, sessionsByState,
   shownOf, stripSessions, waitsOnYou,

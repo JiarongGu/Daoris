@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
-import { Button } from '../ui';
+import { Button } from '../design/ui';
 
 /** Where a repository's line came from (WSR2): set for it, set for its workspace, the checkout's guess, or nothing. */
 export type LineSource = 'repository' | 'workspace' | 'checkout' | 'none';
