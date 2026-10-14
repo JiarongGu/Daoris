@@ -116,7 +116,8 @@ each open the line first. The key holds what the entry is; its name, state and p
 > **Amended 2026-10-14 (D167, the owner's choice):** a new request of an entry that finds the entry's tree held **runs
 > alongside** in a tree of its own, as a further part of the same entry, rather than waiting; `EntryBusy`, *Run as its own
 > session* and the one-branch rule below are superseded, and an entry may land more than one branch. Read this section, the
-> replay in §3 and the rows in §6 with that change.
+> replay in §3 and the rows in §6 with that change. **Amended again 2026-10-15 (D167, LANDSYNC0):** parts still run
+> alongside, but one Accept lands an entry's parts on one branch; D167's amendment says when it is more than one.
 
 **The entry is what a tree belongs to.** The tree stays the unit of exclusion (D51): one live part per tree. An entry's tree
 is the tree its newest part on this machine held.
