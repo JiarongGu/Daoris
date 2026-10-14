@@ -462,14 +462,9 @@ public static class ToolInstall
     /// A client that follows no redirect on its own: <see cref="GetAsync"/> follows each, held to the address rule. A
     /// download outlives any fixed timeout; the person's stop is the token, and a look's bound is its own.
     /// </summary>
-    private static HttpClient Client(HttpMessageHandler? transport)
-    {
-        var http = transport is null
-            ? new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan }
-            : new HttpClient(transport, disposeHandler: false) { Timeout = Timeout.InfiniteTimeSpan };
-        http.DefaultRequestHeaders.UserAgent.ParseAdd("daoris");
-        return http;
-    }
+    private static HttpClient Client(HttpMessageHandler? transport) => Downloads.Client(transport, redirects: false);
+
+    private static Exception Unreachable(string said) => new ToolRefusal("unreachable", said);
 
     /// <summary>The response at an address, every hop held to the address rule; null for a 404, an answer the caller words.</summary>
     private static async Task<HttpResponseMessage?> GetAsync(HttpClient http, string url, CancellationToken ct)
@@ -484,18 +479,10 @@ public static class ToolInstall
                     : $"{url} redirected to {at}, which is not https://, or http:// to this machine — nothing was fetched from it.");
             }
 
-            HttpResponseMessage response;
-            try
-            {
-                response = await http.GetAsync(at, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
-            }
-            catch (HttpRequestException error)
-            {
-                throw new ToolRefusal("unreachable", $"could not reach {new Uri(at).Host} — {error.Message}. Nothing was installed.");
-            }
+            var response = await Downloads.GetAsync(http, at, ct, Unreachable, passRedirects: true).ConfigureAwait(false);
+            if (response is null) return null;
 
-            var status = (int)response.StatusCode;
-            if (status is >= 300 and < 400 && response.Headers.Location is { } location)
+            if ((int)response.StatusCode is >= 300 and < 400 && response.Headers.Location is { } location)
             {
                 response.Dispose();
                 if (hops >= Redirects)
@@ -505,18 +492,6 @@ public static class ToolInstall
 
                 at = new Uri(new Uri(at), location).AbsoluteUri;
                 continue;
-            }
-
-            if (status == 404)
-            {
-                response.Dispose();
-                return null;
-            }
-
-            if (!response.IsSuccessStatusCode)
-            {
-                response.Dispose();
-                throw new ToolRefusal("unreachable", $"{at} answered {status} — nothing was installed.");
             }
 
             return response;
@@ -533,23 +508,6 @@ public static class ToolInstall
     private static async Task<(string Sha256, long Size)?> SaveAsync(HttpClient http, string url, string to, CancellationToken ct)
     {
         using var response = await GetAsync(http, url, ct).ConfigureAwait(false);
-        if (response is null) return null;
-
-        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-        long size = 0;
-        await using (var source = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false))
-        await using (var target = File.Create(to))
-        {
-            var buffer = new byte[81920];
-            int read;
-            while ((read = await source.ReadAsync(buffer, ct).ConfigureAwait(false)) > 0)
-            {
-                hash.AppendData(buffer, 0, read);
-                size += read;
-                await target.WriteAsync(buffer.AsMemory(0, read), ct).ConfigureAwait(false);
-            }
-        }
-
-        return (Convert.ToHexStringLower(hash.GetHashAndReset()), size);
+        return response is null ? null : await Downloads.SaveAsync(response, to, ct).ConfigureAwait(false);
     }
 }
