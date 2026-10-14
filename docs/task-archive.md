@@ -14398,3 +14398,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DEDUP5 — the accounts' files share their helpers** (driver). One helper for the `Load`, `Key`, `Child`, `Text`, `Flag` and `Moment` that `AccountCooling`, `AccountNames`, `AccountReads` and `AccountWindows` copy; a small store for the eight gate-and-edit stores only where each one fits. Survey §5.
 
 **Outcome** 2026-10-14: `Accounts/AccountFileNodes.cs` holds the four account files' read, key, child, made-child and strict moment, the same bytes written; `Platform/RecordList<T>` is the one-array store `SessionBranches`, `LandedBranches`, `AutoLanding` and `AbandonRecord` now use, and `SessionBranches.SameBranch` the one same-branch predicate. `OpinionDues`, `OpinionGates` and `SessionArchive` keep their own, for the reasons the note gives. Seven gates passed on the merge. On Sonnet: 57 tool calls. Detail: D166's DEDUP5 note.
+
+## PART10g — `ChatRunner`: the context, the hand-over and the curve's move (2026-10-14, D166)
+
+> - [ ] **PART10g — `ChatRunner`: the context, the hand-over and the curve's move** (driver; Opus; after DEDUP3a). A `ChatContext` of the runner's fields and live maps, `ITurnedChat` internal, `ChatHandOver` and `CurveMove` as classes, the front keeping its users' calls. Survey "The large five, as scouted".
+
+**Outcome** 2026-10-14: `ChatContext` holds what more than one class reads of the runner's construction, its two stores and every live map more than one class reads; `ChatHandOver(context, runner)` and `CurveMove(context, handOver)` are classes (`git mv` of their parts), the front's `HandOverAsync`, `MoveByCurveAsync` and `CurveJudged` one-line calls, and `ITurnedChat` and `Handing` internal. Nine gates passed on the merge, and the go-on, hand-over and curve Process classes and Modules' conversation Process class passed 19 of 19. On Opus: 157 tool calls. Detail: D166's PART10g note.

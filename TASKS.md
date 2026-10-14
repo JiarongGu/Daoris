@@ -277,10 +277,9 @@ folder.
 **No partial type split by hand** (the owner: *"also I think we better not use partial class if we don't have auto-generated code"*; D166's note). Evidence: `docs/2026-10-14-partial-types-survey.md`. A class per domain or kind keeps one new door in one new file.
 
 - [ ] **PART10f — `DriverModule`: Trees, Agents and Help, and the type whole** (modules, driver; after 10e). The three largest, Help's doors onto the context, `partial` gone and cut from the gate's list. Survey "The large five, as scouted".
-- [ ] **PART10g — `ChatRunner`: the context, the hand-over and the curve's move** (driver; Opus; after DEDUP3a). A `ChatContext` of the runner's fields and live maps, `ITurnedChat` internal, `ChatHandOver` and `CurveMove` as classes, the front keeping its users' calls. Survey "The large five, as scouted".
 - [ ] **PART10h — `ChatRunner`: the go-on, Help, the helper words, and the type whole** (driver; after 10g). `ChatGoOn`, the help chat and `HelperWords` as classes, the two start fronts folded into `ChatRunner.cs`; `ClosedNote` stays there and `StartFrom` in `ChatRunner.StartFrom.cs`, which tests read. Survey "The large five, as scouted".
 - [ ] **PART10j — `SessionTrees`: the sync and the review ranges** (driver; Opus; after 10i). The 1,234-line sync as the line's sync, the branch replays and the review ranges, `PullRequestOccasionTests`' file read moved with it. Survey "The large five, as scouted".
-- [ ] **PART10k — `SessionTrees`: update, review, opinion, only-here and work** (driver; after 10i). As classes over the shared context; who implements `IWorkTrees`. Survey "The large five, as scouted".
+- [ ] **PART10k — `SessionTrees`: update, review, opinion, only-here and work** (driver; after 10j, since the update calls ten of the sync's privates). As classes over the shared context; who implements `IWorkTrees`. Survey "The large five, as scouted".
 - [ ] **PART10l — `SessionTrees`: tidying and landing, and the type whole** (driver; Opus; after 10j, 10k). Content holds, tidy, auto, removal; landed, squash, pull requests, hand and the core's land; the front's delegations, `partial` gone. Survey "The large five, as scouted".
 - [ ] **PART10m — the loop's `Driver`, scouted** (driver; last). Its parts that D166 places in Conversations, Quests and Review as classes over a loop context. Survey "Large".
 

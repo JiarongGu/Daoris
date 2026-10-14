@@ -12,7 +12,7 @@ public sealed partial class ChatRunner
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> _helperSaying = new(StringComparer.Ordinal);
 
     /// <summary>Whether this runner holds the conversation open, with its process or its turns.</summary>
-    private bool Holds(string sessionId) => _turned.ContainsKey(sessionId) || _talking.ContainsKey(sessionId);
+    private bool Holds(string sessionId) => _context.Turned.ContainsKey(sessionId) || _context.Talking.ContainsKey(sessionId);
 
     /// <summary>
     /// Say the helper's answers waiting on an open conversation as its turns, once each (MIXAGENT2a-iii): in the order they were
@@ -22,13 +22,13 @@ public sealed partial class ChatRunner
     /// <param name="record">The record as already read, or null to read it now.</param>
     private async Task SayHelperWordsAsync(string sessionId, PriorSession? record = null)
     {
-        if (_closing || !Holds(sessionId)) return;
+        if (_context.Closing || !Holds(sessionId)) return;
         record ??= await ReadAgainAsync(sessionId, CancellationToken.None).ConfigureAwait(false);
         if (record is not { Kind: "chat" } || record.Teammate) return;
 
         foreach (var word in record.Waiting.Where(word => word.Helper is not null && word.Id is not null))
         {
-            if (_closing || !Holds(sessionId)) return;
+            if (_context.Closing || !Holds(sessionId)) return;
             if (!_helperSaying.TryAdd(word.Id!, 0)) continue;
 
             bool said;
@@ -54,11 +54,11 @@ public sealed partial class ChatRunner
     private bool SayHelperWord(string sessionId, SaidWordView word)
     {
         var message = new ChatMessage(word.Text, []) { Helped = word, Delivered = () => _ = TakeOffAsync(sessionId, word.Id!) };
-        if (_turned.TryGetValue(sessionId, out var chat)) return chat.Turns.Take(message) is not null;
-        if (!_talking.TryGetValue(sessionId, out var adapter)) return false;
+        if (_context.Turned.TryGetValue(sessionId, out var chat)) return chat.Turns.Take(message) is not null;
+        if (!_context.Talking.TryGetValue(sessionId, out var adapter)) return false;
 
         if (!_processes.Send(sessionId, adapter.FrameMessage(message.Prompt))) return false;
-        foreach (var recorded in Recorded(message)) Record(sessionId, recorded);
+        foreach (var recorded in Recorded(message)) _context.Record(sessionId, recorded);
         message.Delivered!();
         return true;
     }

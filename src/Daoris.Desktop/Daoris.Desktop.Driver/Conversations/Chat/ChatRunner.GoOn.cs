@@ -1,5 +1,3 @@
-using System.Collections.Concurrent;
-
 namespace Daoris.Driver;
 
 /// <summary>
@@ -32,12 +30,6 @@ public sealed partial class ChatRunner
 
     // The words a chat could not go on with (MSG1b's marks), so a reader knows they were tried.
     private readonly GoOnMarks _marks;
-
-    // Each chat going on, until its run is watched or it is said why not: one at a time, and what closing waits on.
-    private readonly ConcurrentDictionary<string, Task> _goingOn = new(StringComparer.OrdinalIgnoreCase);
-
-    // Closing: no chat goes on from here.
-    private volatile bool _closing;
 
     /// <summary>The endings a chat goes on from: every one but a stand-down, which never goes on (D137 §2.2).</summary>
     private static readonly HashSet<string> Ended = new(StringComparer.OrdinalIgnoreCase) { "completed", "declined", "failed", "stopped" };
@@ -127,7 +119,7 @@ public sealed partial class ChatRunner
         var taken = new List<ChatStart>();
         foreach (var each in records)
         {
-            if (_closing || ct.IsCancellationRequested) break;
+            if (_context.Closing || ct.IsCancellationRequested) break;
 
             // A helper's answer left on a conversation this runner holds open is said as its next turn (MIXAGENT2a-iii).
             if (each.Kind == "chat" && !each.Teammate && Holds(each.Id) && ServiceClient.ReadRecord(json, each.Id) is { } open)
@@ -153,7 +145,7 @@ public sealed partial class ChatRunner
         }
 
         // Every hand-over asked while no runner heard it (MIXAGENT1a-i) is taken too.
-        taken.AddRange(await TakeHandOversAsync(ct).ConfigureAwait(false));
+        taken.AddRange(await _handOver.TakeAllAsync(Announce, ct).ConfigureAwait(false));
         return taken;
     }
 
@@ -164,7 +156,7 @@ public sealed partial class ChatRunner
     /// </summary>
     private void Heard(string session, SessionEvent e)
     {
-        if (_closing || e.Kind != SessionEventKind.User || e.Reaches != "resume") return;
+        if (_context.Closing || e.Kind != SessionEventKind.User || e.Reaches != "resume") return;
 
         // A helper's answer for a conversation open here (MIXAGENT2a-iii): Daoris's words, never the person's, which a person's say
         // door never shows for a conversation that runs (its words reach it at its door). Said as its next turn.
@@ -184,7 +176,7 @@ public sealed partial class ChatRunner
             return;
         }
 
-        if (_talking.ContainsKey(session) || _turned.ContainsKey(session) || _goingOn.ContainsKey(session)) return;
+        if (_context.Talking.ContainsKey(session) || _context.Turned.ContainsKey(session) || _context.GoingOn.ContainsKey(session)) return;
         _ = Task.Run(async () =>
         {
             try
@@ -210,17 +202,17 @@ public sealed partial class ChatRunner
     public async Task<ChatStart> GoOnAsync(
         string sessionId, DriverConfig? config = null, Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
     {
-        if (_closing) return new(null, "the application is closing, so no conversation goes on now.");
-        if (_talking.ContainsKey(sessionId)) return new(null, $"conversation `{sessionId}` runs here: its words reach it at its door.");
+        if (_context.Closing) return new(null, "the application is closing, so no conversation goes on now.");
+        if (_context.Talking.ContainsKey(sessionId)) return new(null, $"conversation `{sessionId}` runs here: its words reach it at its door.");
 
         var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        if (!_goingOn.TryAdd(sessionId, going.Task)) return new(null, $"conversation `{sessionId}` is already going on.");
+        if (!_context.GoingOn.TryAdd(sessionId, going.Task)) return new(null, $"conversation `{sessionId}` is already going on.");
         try
         {
             DriverConfig choices;
             try
             {
-                choices = config ?? MachineConfig();
+                choices = config ?? _context.MachineConfig();
             }
             catch (Exception unreadable) when (unreadable is DriverException or System.Text.Json.JsonException or IOException
                                                    or UnauthorizedAccessException)
@@ -233,17 +225,10 @@ public sealed partial class ChatRunner
         }
         finally
         {
-            _goingOn.TryRemove(sessionId, out _);
+            _context.GoingOn.TryRemove(sessionId, out _);
             going.TrySetResult();
         }
     }
-
-    /// <summary>
-    /// The machine's choices for a chat taken up by itself (MSG1c): the file every door reads where its override names this
-    /// home's, as the shell's own config path is; this home's <c>driver.json</c> otherwise — the one resolution for a door that
-    /// holds its home (CONFIGSEAM1).
-    /// </summary>
-    private DriverConfig MachineConfig() => DriverConfig.Load(DriverConfig.ResolvePath(_home));
 
     private async Task<ChatStart> GoingOnAsync(
         string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct)

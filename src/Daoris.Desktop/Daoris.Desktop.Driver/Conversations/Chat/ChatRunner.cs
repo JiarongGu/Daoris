@@ -51,6 +51,16 @@ public sealed partial class ChatRunner : IDisposable
 
     private readonly SessionEvents _events;
 
+    // What the runner's classes share (PART10g): the fields above that more than one reads, the stores and the live maps. The
+    // fields stay here too, the same objects, for the front and its parts until they are classes (PART10h).
+    private readonly ChatContext _context;
+
+    // A conversation handed over, and one moved by its account's usage curve: classes over the context, the front keeping its
+    // users' calls (PART10g).
+    private readonly ChatHandOver _handOver;
+
+    private readonly CurveMove _curve;
+
     /// <param name="events">
     /// Where a conversation's structure is kept (D76): the shell's shared record, so its page hears each message live; the
     /// home's own where nobody passes one, which is the headless chat door's case.
@@ -88,34 +98,48 @@ public sealed partial class ChatRunner : IDisposable
         _plugins = plugins ?? PluginLog.None;
         _harnesses = harnesses ?? new HarnessRoster(adapters);
         _events = events ?? new SessionEvents(Path.Combine(home, "sessions"));
-        _conversations = new HarnessConversations(home);
-        _marks = new GoOnMarks(home);
+        _context = new ChatContext(service, home, processes, output, _harnesses, _events);
+        _conversations = _context.Conversations;
+        _marks = _context.Marks;
+        _handOver = new ChatHandOver(_context, this);
+        _curve = new CurveMove(_context, _handOver);
 
         // The person's words to an ended chat are kept on its record and shown in its conversation by whichever door they
         // were said at (MSG1d); hearing them there is what takes them up at once (MSG1c, D137 §2.2).
         _events.Evented += Heard;
     }
 
-    // Which adapter each live conversation runs on — how a person's message is framed for its harness
-    // (CONV3). An entry lives exactly as long as the conversation's process.
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ISessionAdapter> _talking =
-        new(StringComparer.OrdinalIgnoreCase);
-
-    // Each live conversation's watch, which ends by writing its record — what closing the driver waits
-    // on, because the host goes next and a record written after it is never written (2026-09-25).
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task> _watching =
-        new(StringComparer.OrdinalIgnoreCase);
-
-    // The conversations whose turns are visible, by session: the protocol door's (CONV3b) and the
-    // native door's on a structured wire (CONV4a). Every question a page asks of a turn is the same on
-    // both, so one map answers it (REV3 CLEAN1: it was two, and each question asked both in turn).
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ITurnedChat> _turned =
-        new(StringComparer.OrdinalIgnoreCase);
-
     // The process a new conversation in a tree of its own is told with its first message (PROCESS1d-ii), held until then. A map of
     // its own, never the browser's, which a hand-over's briefing appends: a conversation handed over is told Daoris's record instead.
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ProcessBriefing> _toldProcess =
         new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// *Hand a conversation over* (MIXAGENT1a-i, D163): judged and kept in its box, then taken at once, or as its turn ends where
+    /// it is talking (<see cref="ChatHandOver.HandOverAsync"/>).
+    /// </summary>
+    /// <param name="why">One of <see cref="HandOverWhy"/>.</param>
+    /// <param name="askedBy">One of <see cref="HandOverBy"/>.</param>
+    /// <param name="onEnded">Told when the new conversation ends, as a start's is.</param>
+    public Task<HandedOver> HandOverAsync(
+        string sessionId, string agent, string? account, string why, string askedBy, DriverConfig config,
+        Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
+        _handOver.HandOverAsync(sessionId, agent, account, why, askedBy, config, onEnded, ct);
+
+    /// <summary>
+    /// Judge a conversation by its account's usage curve and, where the decision says so, move it (SWITCH1c-ii,
+    /// <see cref="CurveMove.MoveAsync"/>): null where nothing was judged.
+    /// </summary>
+    internal Task<SwitchChoice?> MoveByCurveAsync(
+        string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct = default) =>
+        _curve.MoveAsync(sessionId, config, onEnded, ct);
+
+    /// <summary>What each judged turn's end came to, by session: a test hears it; no person reads it.</summary>
+    internal event Action<string, SwitchChoice>? CurveJudged
+    {
+        add => _curve.Judged += value;
+        remove => _curve.Judged -= value;
+    }
 
     /// <summary>
     /// Where a conversation's turns stand — whether one is in flight, and what the person sent that is
@@ -503,10 +527,10 @@ public sealed partial class ChatRunner : IDisposable
                     _home, _browser, _plugins, sessionId, ct).ConfigureAwait(false);
                 // A new conversation's agent is told of the browser with its first message (BRWHINT1a); one going on resumes a
                 // conversation already told when it opened, so it is told nothing again.
-                if (goOn is null && InAppBrowserServers.Told(drivers) is { } line) _browsers[sessionId] = line;
+                if (goOn is null && InAppBrowserServers.Told(drivers) is { } line) _context.Browsers[sessionId] = line;
                 if (browserNotice is not null)
                 {
-                    Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = browserNotice.Note, Parts = browserNotice.Parts });
+                    _context.Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = browserNotice.Note, Parts = browserNotice.Parts });
                 }
             }
 
@@ -545,9 +569,9 @@ public sealed partial class ChatRunner : IDisposable
         // The conversation outlives this call: the person types, the harness answers, and the record
         // moves when the process does. Watched on an unbound token deliberately — a chat is not ended
         // by the request that started it.
-        _talking[sessionId] = resolved;
+        _context.Talking[sessionId] = resolved;
         // The room holds one at a time (ASKHIST1): going back to an earlier conversation sets this one aside first.
-        if (string.Equals(place.Name, HelpRoom.Repository, StringComparison.Ordinal)) _rooms[sessionId] = 0;
+        if (string.Equals(place.Name, HelpRoom.Repository, StringComparison.Ordinal)) _context.Rooms[sessionId] = 0;
 
         // 🔴 On the protocol door a conversation is ONE session held over the wire (CONV3b): opened
         // once, each message a turn on it. It used to be spawned as a pipe, and a person's words went
@@ -562,12 +586,12 @@ public sealed partial class ChatRunner : IDisposable
         {
             QueueChanged?.Invoke(sessionId, queue);
             // A conversation asked to go on with another agent while it talked is handed over as its turn ends (MIXAGENT1a-i).
-            HandOverDue(sessionId, queue, config, onEnded);
+            _handOver.Due(sessionId, queue, config, onEnded);
             // One over its account's usage curve goes on with another account of its agent as its turn ends (SWITCH1c-ii), judged once.
-            if (TurnJustEnded(queue, judged))
+            if (CurveMove.TurnJustEnded(queue, judged))
             {
                 judged = queue.LastTurnEnded;
-                CurveDue(sessionId, config, onEnded);
+                _curve.Due(sessionId, config, onEnded);
             }
         }
         // A conversation going on hands its words to the native door only once its process is tracked, so a word the person
@@ -586,20 +610,20 @@ public sealed partial class ChatRunner : IDisposable
                 {
                     if (goOn.Sent(named: false)) _ = WentOnAsync(sessionId, goOn, resolved.Name);
                 });
-            _turned[sessionId] = chat;
+            _context.Turned[sessionId] = chat;
         }
         else if (mapper is not null)
         {
             // 🔴 Turns are only visible where the wire says where one ends (CONV4a). A text-only pipe
             // takes each line at once, as it always did.
             native = new NativeChat(
-                sessionId, resolved, _processes, e => Record(sessionId, e), Changed, tracked?.Task,
+                sessionId, resolved, _processes, e => _context.Record(sessionId, e), Changed, tracked?.Task,
                 // On this door the words went once their line is on stdin and the harness has opened the conversation.
                 wentOn: goOn is null ? null : () =>
                 {
                     if (goOn.Sent(named: true)) _ = WentOnAsync(sessionId, goOn, resolved.Name);
                 });
-            _turned[sessionId] = native;
+            _context.Turned[sessionId] = native;
         }
 
         // The person's words a conversation goes on with are its first turn (MSG1c, D137 §2.2), queued before any word said
@@ -628,9 +652,9 @@ public sealed partial class ChatRunner : IDisposable
         var watch = WatchAsync(
             sessionId, process, transcript, onEnded, Measured, rules, mapper, chat, native, servers, drivesBrowser, Said,
             new Watched(resolved.Name, place.Keeps, goOn));
-        _watching[sessionId] = watch;
+        _context.Watching[sessionId] = watch;
         _ = watch.ContinueWith(
-            _ => _watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);
+            _ => _context.Watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);
         // Its process is tracked now (the watch's first statements): the words it goes on with may reach it.
         tracked?.TrySetResult(true);
 
@@ -649,18 +673,18 @@ public sealed partial class ChatRunner : IDisposable
     {
         // No conversation goes on from here (MSG1c), and one already on its way is let finish its start first, so its
         // process is among those stopped below rather than spawned after them.
-        _closing = true;
+        _context.Close();
         _events.Evented -= Heard;
         try
         {
-            Task.WaitAll([.. _goingOn.Values], bound);
+            Task.WaitAll([.. _context.GoingOn.Values], bound);
         }
         catch (AggregateException)
         {
             // A start that failed has said so where it could; either way it has ended.
         }
 
-        var watches = _watching.ToArray();
+        var watches = _context.Watching.ToArray();
         foreach (var (id, _) in watches) _processes.Stop(id, ClosedNoted);
 
         try
@@ -692,7 +716,7 @@ public sealed partial class ChatRunner : IDisposable
     public bool Finish(string sessionId)
     {
         // On the native door too, the turns already asked for run first: finishing is not withdrawing (CONV4a).
-        if (_turned.TryGetValue(sessionId, out var chat))
+        if (_context.Turned.TryGetValue(sessionId, out var chat))
         {
             _ = chat.FinishAsync(() => _processes.CloseInput(sessionId));
             return true;
@@ -729,23 +753,23 @@ public sealed partial class ChatRunner : IDisposable
         string sessionId, string message, out string? reaches, IReadOnlyList<ChatUpload>? files = null, string? preface = null)
     {
         reaches = null;
-        var held = _turned.ContainsKey(sessionId) || _talking.ContainsKey(sessionId);
+        var held = _context.Turned.ContainsKey(sessionId) || _context.Talking.ContainsKey(sessionId);
         IReadOnlyList<KeptFile> kept = held && files is { Count: > 0 } ? ChatFiles.Keep(_home, sessionId, files) : [];
         // A conversation started from an earlier one is handed that one's words with the person's first message (ASKHIST1), its
         // line first, so where the person is never crowds it out of the preface's bound.
-        if (held && _handing.TryRemove(sessionId, out var handed))
+        if (held && _context.Handing.TryRemove(sessionId, out var handed))
         {
             kept = [.. handed.Files, .. kept];
             preface = preface?.Trim() is { Length: > 0 } where ? $"{handed.Preface}\n\n{where}" : handed.Preface;
         }
 
         // The browser it was handed is told once, ahead of the first message's words (BRWHINT1a).
-        var briefing = held && _browsers.TryRemove(sessionId, out var browserLine) ? browserLine : null;
+        var briefing = held && _context.Browsers.TryRemove(sessionId, out var browserLine) ? browserLine : null;
         // So is the repository's process, for a conversation in a tree it grew (PROCESS1d-ii).
         var process = held && _toldProcess.TryRemove(sessionId, out var told) ? told : null;
         var said = new ChatMessage(message, kept) { Preface = ChatMessage.Bound(preface), Briefing = briefing, Process = process };
 
-        if (_turned.TryGetValue(sessionId, out var chat))
+        if (_context.Turned.TryGetValue(sessionId, out var chat))
         {
             var reach = chat.Turns.Take(said);
             reaches = Spelled(reach);
@@ -756,12 +780,12 @@ public sealed partial class ChatRunner : IDisposable
         // record they would be half a conversation: questions with no answers beside them. A file it is
         // handed is named by its path, which any agent can read.
         var text = said.Prompt + ChatFiles.PathLines(kept);
-        var framed = _talking.TryGetValue(sessionId, out var adapter) ? adapter.FrameMessage(text) : text;
+        var framed = _context.Talking.TryGetValue(sessionId, out var adapter) ? adapter.FrameMessage(text) : text;
         return _processes.Send(sessionId, framed);
     }
 
     /// <summary>Whether a conversation's turn is on its way to the harness or running there — false on a text-only door.</summary>
-    public bool Taking(string sessionId) => _turned.TryGetValue(sessionId, out var chat) && chat.Turns.Running;
+    public bool Taking(string sessionId) => _context.Turned.TryGetValue(sessionId, out var chat) && chat.Turns.Running;
 
     /// <summary>
     /// What a word said now to a live conversation would do (MSG1c, D137 §2.1), in the record's spelling: <c>next-step</c>
@@ -769,7 +793,7 @@ public sealed partial class ChatRunner : IDisposable
     /// where it would be the next turn at once, or the door carries only text.
     /// </summary>
     public string? Reach(string sessionId) =>
-        _turned.TryGetValue(sessionId, out var chat) && chat.Turns.Running
+        _context.Turned.TryGetValue(sessionId, out var chat) && chat.Turns.Running
             ? chat is ProtocolChat { Session.NextStep: true } && !chat.Turns.Stopped ? "next-step" : "turn-end"
             : null;
 
@@ -783,7 +807,7 @@ public sealed partial class ChatRunner : IDisposable
 
     /// <summary>Where a conversation's turns stand; <see cref="ChatQueue.Idle"/> for one nothing here holds.</summary>
     public ChatQueue Queue(string sessionId) =>
-        _turned.TryGetValue(sessionId, out var chat) ? chat.Turns.State : ChatQueue.Idle;
+        _context.Turned.TryGetValue(sessionId, out var chat) ? chat.Turns.State : ChatQueue.Idle;
 
     /// <summary>
     /// Stop the turn a conversation is taking and keep the conversation (CONV4a): what was waiting is
@@ -793,8 +817,8 @@ public sealed partial class ChatRunner : IDisposable
     /// <exception cref="DriverException">The conversation's door carries only text, so it has no turn to stop.</exception>
     public Task<TurnStop> CancelTurnAsync(string sessionId)
     {
-        if (_turned.TryGetValue(sessionId, out var chat)) return chat.Turns.StopAsync();
-        if (_talking.TryGetValue(sessionId, out var adapter))
+        if (_context.Turned.TryGetValue(sessionId, out var chat)) return chat.Turns.StopAsync();
+        if (_context.Talking.TryGetValue(sessionId, out var adapter))
         {
             throw new DriverException(
                 $"the `{adapter.Name}` agent carries only text, so the driver cannot tell where one turn ends "
@@ -809,7 +833,7 @@ public sealed partial class ChatRunner : IDisposable
     /// that carries none, one whose agent offered none, one still opening, and one nothing here holds.
     /// </summary>
     public IReadOnlyList<AcpConfigOption> Options(string sessionId) =>
-        _turned.TryGetValue(sessionId, out var turned) && turned is ProtocolChat { Session: { } session }
+        _context.Turned.TryGetValue(sessionId, out var turned) && turned is ProtocolChat { Session: { } session }
             ? ThePersons(session.ConfigOptions)
             : [];
 
@@ -829,9 +853,9 @@ public sealed partial class ChatRunner : IDisposable
     public async Task<IReadOnlyList<AcpConfigOption>> SetOptionAsync(
         string sessionId, string configId, string value, CancellationToken ct)
     {
-        if (!_turned.TryGetValue(sessionId, out var turned) || turned is not ProtocolChat chat)
+        if (!_context.Turned.TryGetValue(sessionId, out var turned) || turned is not ProtocolChat chat)
         {
-            throw new DriverException(turned is not null || _talking.ContainsKey(sessionId)
+            throw new DriverException(turned is not null || _context.Talking.ContainsKey(sessionId)
                 ? $"conversation `{sessionId}` runs on a door that carries no options to change — only the protocol "
                   + "door carries the model and effort an agent offers."
                 : $"nothing on this machine holds conversation `{sessionId}` — it has ended, or runs elsewhere.");
@@ -855,7 +879,7 @@ public sealed partial class ChatRunner : IDisposable
         var set = Noted.Of(
             NoteCodes.ChatOptionSet, $"the person set {option.Name} to {chosen} for this conversation.",
             ("option", option.Name), ("chosen", chosen));
-        Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = set.Note, Parts = set.Parts });
+        _context.Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = set.Note, Parts = set.Parts });
         return ThePersons(after);
     }
 
@@ -1013,9 +1037,6 @@ public sealed partial class ChatRunner : IDisposable
         }
     }
 
-    /// <summary>One event into a conversation's record. Sent is what the person asked for; the record's failure is its own.</summary>
-    private void Record(string sessionId, SessionEvent e) => _events.Keep(sessionId, e, say: null);
-
     /// <summary>What a conversation's watch knows of it beyond its process (MSG1c).</summary>
     /// <param name="Adapter">The adapter it runs on, whose conversation id is kept for it.</param>
     /// <param name="Keeps">Whether its conversation's id is kept, so it can go on once it ended (<see cref="ChatPlace.Keeps"/>).</param>
@@ -1065,11 +1086,11 @@ public sealed partial class ChatRunner : IDisposable
         using var tracked = _processes.Track(sessionId, process, drivesBrowser: drivesBrowser);
         using var talking = new Disposer(() =>
         {
-            _talking.TryRemove(sessionId, out _);
-            _turned.TryRemove(sessionId, out _);
-            _rooms.TryRemove(sessionId, out _);
-            _handing.TryRemove(sessionId, out _);
-            _browsers.TryRemove(sessionId, out _);
+            _context.Talking.TryRemove(sessionId, out _);
+            _context.Turned.TryRemove(sessionId, out _);
+            _context.Rooms.TryRemove(sessionId, out _);
+            _context.Handing.TryRemove(sessionId, out _);
+            _context.Browsers.TryRemove(sessionId, out _);
             _toldProcess.TryRemove(sessionId, out _);
             // Nothing waiting will be sent now, and the page is told its queue emptied.
             chat?.Turns.Gone();
@@ -1298,7 +1319,7 @@ public sealed partial class ChatRunner : IDisposable
     }
 
     /// <summary>A conversation whose turns are visible — what every door's question about a turn asks.</summary>
-    private interface ITurnedChat
+    internal interface ITurnedChat
     {
         ChatTurns Turns { get; }
 

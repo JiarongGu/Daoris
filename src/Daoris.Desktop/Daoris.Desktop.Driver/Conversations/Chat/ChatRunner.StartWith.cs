@@ -50,7 +50,7 @@ public sealed partial class ChatRunner
         string repository, string adapter, DriverConfig config, string text, IReadOnlyList<ChatUpload> files, string? requestId,
         bool? ownTree = null, string? profile = null, Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
     {
-        Task<StartedFrom> Run() => _closing
+        Task<StartedFrom> Run() => _context.Closing
             ? Task.FromResult(new StartedFrom(null, false, null, "the application is closing, so no conversation starts now."))
             : StartWith.RunAsync(
                 token => StartAsync(repository, adapter, config, onEnded, profile, ownTree, token),

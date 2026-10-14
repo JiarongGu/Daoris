@@ -151,14 +151,14 @@ public sealed class CurveMoveTests : IDisposable
     [Fact]
     public void A_turn_s_end_is_judged_once_and_only_with_nothing_running_opening_or_queued()
     {
-        Assert.True(ChatRunner.TurnJustEnded(new ChatQueue(false, [], Ended), judged: null));
-        Assert.True(ChatRunner.TurnJustEnded(new ChatQueue(false, [], Ended), judged: Ended.AddMinutes(-3)));
+        Assert.True(CurveMove.TurnJustEnded(new ChatQueue(false, [], Ended), judged: null));
+        Assert.True(CurveMove.TurnJustEnded(new ChatQueue(false, [], Ended), judged: Ended.AddMinutes(-3)));
 
-        Assert.False(ChatRunner.TurnJustEnded(new ChatQueue(false, [], Ended), judged: Ended));
-        Assert.False(ChatRunner.TurnJustEnded(new ChatQueue(false, [], null), judged: null));
-        Assert.False(ChatRunner.TurnJustEnded(new ChatQueue(true, [], Ended), judged: null));
-        Assert.False(ChatRunner.TurnJustEnded(new ChatQueue(false, [], Ended, Opening: true), judged: null));
-        Assert.False(ChatRunner.TurnJustEnded(new ChatQueue(false, [Word], Ended), judged: null));
+        Assert.False(CurveMove.TurnJustEnded(new ChatQueue(false, [], Ended), judged: Ended));
+        Assert.False(CurveMove.TurnJustEnded(new ChatQueue(false, [], null), judged: null));
+        Assert.False(CurveMove.TurnJustEnded(new ChatQueue(true, [], Ended), judged: null));
+        Assert.False(CurveMove.TurnJustEnded(new ChatQueue(false, [], Ended, Opening: true), judged: null));
+        Assert.False(CurveMove.TurnJustEnded(new ChatQueue(false, [Word], Ended), judged: null));
     }
 
     private ChatRunner Runner(ChatLedger ledger, HarnessRoster roster) =>

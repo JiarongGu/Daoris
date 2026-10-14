@@ -195,10 +195,10 @@ public sealed partial class ChatRunner
     public async Task<StartedFrom> StartFromAsync(
         string sessionId, string adapter, DriverConfig config, Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
     {
-        if (_closing) return new StartedFrom(null, false, null, "the application is closing, so no conversation starts now.");
+        if (_context.Closing) return new StartedFrom(null, false, null, "the application is closing, so no conversation starts now.");
 
         var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        if (!_goingOn.TryAdd(sessionId, going.Task))
+        if (!_context.GoingOn.TryAdd(sessionId, going.Task))
         {
             return new StartedFrom(null, false, StartFrom.Running, $"conversation `{sessionId}` is going on with its words already.");
         }
@@ -213,7 +213,7 @@ public sealed partial class ChatRunner
         }
         finally
         {
-            _goingOn.TryRemove(sessionId, out _);
+            _context.GoingOn.TryRemove(sessionId, out _);
             going.TrySetResult();
         }
     }
