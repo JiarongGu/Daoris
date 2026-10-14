@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -235,8 +236,6 @@ public static class RegistrationFollow
             && knowledge == row.SharesKnowledge
             && lanes.SequenceEqual(row.Lanes);
     }
-
-    private static string? Text(JsonNode? node) => node?.GetValueKind() == JsonValueKind.String ? node.GetValue<string>() : null;
 
     private static string? Blank(string? text) => string.IsNullOrWhiteSpace(text) ? null : text;
 

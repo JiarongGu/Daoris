@@ -14326,3 +14326,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PART10a — `KnowledgeTools`: the search, quest and rule tools, and the registration** (service; Opus). A shared workspace scope, `KnowledgeSearchTools`, `QuestTools` and `RuleProposalTools`, one list of tool types the host registers and the tests enumerate, the fixture reworked; the type stays listed until 10c. Survey "The large five, as scouted".
 
 **Outcome** 2026-10-14: `WorkspaceScope`, `KnowledgeSearchTools`, `QuestTools` and `RuleProposalTools` are classes each built with only its services; `KnowledgeServer` holds the one list of tool types (and the instructions) that the host registers and the tests enumerate; a test pins the 33 names on the wire. The pin caught `WithTools(ToolTypes)` binding the SDK's generic overload and advertising nothing, fixed by naming the argument. The family rehearsal and the connector's Process classes passed on the merge. On Opus: 183 tool calls. Detail: D166's PART10a note.
+
+## DEDUP1b — the JSON field reader, its second half (2026-10-14, D166)
+
+> - [ ] **DEDUP1b — the JSON field reader, its second half** (driver, modules; after 1a). The copies in Quests, Review, Service, Sessions, Trees, Workflows and the Modules bridge. Survey §1.
+
+**Outcome** 2026-10-14: the private readers in Quests, Review, Service, Sessions, Setup, Trees, Workflows and the Modules bridge read through `Json`, each keeping its empty-string and number rule (four keep a one-line `Strings` wrapper for empties); `ServiceClient.Text` went, the door classes reading `Json` themselves. Kept apart: `OpinionRules.EditOf`'s tri-state flag, `LandedBranches`' number that answers 0, `WorkspaceSetupFile.Count`, `WorkflowNamed.WholeOf`. On Sonnet: 137 tool calls. Detail: D166's DEDUP1b note.

@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -240,10 +241,10 @@ public static class Trace
                 Filed = Moment(quest, "filed"),
                 Updated = Moment(quest, "updated"),
                 Parent = Filled(quest, "parent"),
-                Then = [.. Objects(quest, "then").Select(step => new QuestStepView(Text(step, "to") ?? "", Text(step, "title") ?? "", Text(step, "body") ?? ""))],
+                Then = [.. Items(quest, "then").Select(step => new QuestStepView(Text(step, "to") ?? "", Text(step, "title") ?? "", Text(step, "body") ?? ""))],
                 Requirements =
                 [
-                    .. Objects(quest, "requirements")
+                    .. Items(quest, "requirements")
                         .Where(requirement => Text(requirement, "quote") is not null)
                         .Select(requirement => new QuestRequirementView(Text(requirement, "quote")!, Text(requirement, "check") ?? "")
                         {
@@ -252,7 +253,7 @@ public static class Trace
                 ],
                 Answers =
                 [
-                    .. Objects(quest, "answers")
+                    .. Items(quest, "answers")
                         .Select(answer => (Answer: answer, Number: answer.TryGetProperty("requirement", out var number)
                             && number.ValueKind == JsonValueKind.Number && number.TryGetInt32(out var n) ? n : (int?)null))
                         .Where(each => each.Number is not null)
@@ -292,25 +293,12 @@ public static class Trace
         error is DriverException or HttpRequestException or JsonException or InvalidOperationException
         || (error is OperationCanceledException && !ct.IsCancellationRequested);
 
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
-
     /// <summary>Text with something in it, or null: an empty string on the wire says as little as none.</summary>
-    private static string? Filled(JsonElement element, string name) => Text(element, name) is { Length: > 0 } text ? text : null;
-
-    private static bool Flag(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.True;
+    private static string? Filled(JsonElement element, string name) => NonEmpty(element, name);
 
     private static DateTimeOffset? Moment(JsonElement element, string name) =>
         DateTimeOffset.TryParse(Text(element, name), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at) ? at : null;
 
-    private static IReadOnlyList<JsonElement> Objects(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array
-            ? [.. value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.Object)]
-            : [];
-
-    private static IReadOnlyList<string> Strings(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array
-            ? [.. value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!)]
-            : [];
+    // Empty strings are kept here, as the copy this replaced kept them.
+    private static IReadOnlyList<string> Strings(JsonElement element, string name) => Json.Strings(element, name, keepEmpty: true);
 }

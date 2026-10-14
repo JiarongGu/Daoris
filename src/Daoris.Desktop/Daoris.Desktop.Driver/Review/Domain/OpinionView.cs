@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -158,15 +159,15 @@ public static class OpinionViews
             Product = Text(reviewer, "product"),
             Maker = Text(reviewer, "maker"),
             Why = Text(root, "why"),
-            Minutes = Number(root, "minutes"),
+            Minutes = Int(root, "minutes"),
             Commits = Strings(candidate, "commits"),
             Findings = given is { } opinion ? [.. Items(opinion, "findings").Select(Finding).OfType<OpinionFindingView>()] : null,
             Read = given is { } reading ? Text(reading, "read") : null,
             Limits = given is { } limits ? Text(limits, "limits") : null,
             Rechecked = given is { } rechecked
                 ? Items(rechecked, "rechecked")
-                    .Where(each => Number(each, "finding") is > 0 && Text(each, "says") is { Length: > 0 })
-                    .GroupBy(each => Number(each, "finding")!.Value)
+                    .Where(each => Int(each, "finding") is > 0 && Text(each, "says") is { Length: > 0 })
+                    .GroupBy(each => Int(each, "finding")!.Value)
                     .ToDictionary(each => each.Key, each => Text(each.Last(), "says")!)
                 : new Dictionary<int, string>(),
             HandedTo = handed is { } to ? Text(to, "session") : null,
@@ -176,7 +177,7 @@ public static class OpinionViews
     }
 
     private static OpinionFindingView? Finding(JsonElement each) =>
-        Number(each, "number") is { } number and > 0
+        Int(each, "number") is { } number and > 0
         && Text(each, "weight") is { } weight && Text(each, "where") is { } where && Text(each, "claim") is { } claim
             ? new OpinionFindingView(
                 number, weight, where, claim, Text(each, "consequence") ?? "", Text(each, "reproduce") ?? "", Text(each, "sure") ?? "")
@@ -186,30 +187,12 @@ public static class OpinionViews
             : null;
 
     private static OpinionAnswerView? Answer(JsonElement each) =>
-        Number(each, "finding") is { } finding and > 0 && Text(each, "said") is { Length: > 0 } said
+        Int(each, "finding") is { } finding and > 0 && Text(each, "said") is { Length: > 0 } said
             ? new OpinionAnswerView(finding, said) { Commit = Text(each, "commit"), Evidence = Text(each, "evidence"), Why = Text(each, "why") }
             : null;
 
-    private static IEnumerable<JsonElement> Items(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var items) && items.ValueKind == JsonValueKind.Array
-            ? items.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.Object)
-            : [];
-
-    private static IReadOnlyList<string> Strings(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var items) && items.ValueKind == JsonValueKind.Array
-            ? [.. items.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!)]
-            : [];
-
-    private static string? Text(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
-
-    private static int? Number(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number
-        && value.TryGetInt32(out var number)
-            ? number
-            : null;
+    // Empty strings are kept here, as the copy this replaced kept them.
+    private static IReadOnlyList<string> Strings(JsonElement element, string name) => Json.Strings(element, name, keepEmpty: true);
 
     /// <summary>A moment as the store writes it: ISO 8601, round trip.</summary>
     internal static string Moment(DateTimeOffset at) => at.ToString("O", CultureInfo.InvariantCulture);

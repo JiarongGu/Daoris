@@ -1,4 +1,5 @@
 using System.Text.Json;
+using static Daoris.Driver.Json;
 using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
@@ -172,9 +173,6 @@ public static class WorkflowRunBindings
             ? $"{where}: its run was bound to {follows}, {WorkflowRunBinding.Why(binding)}, which cannot start it: {problem}"
             : $"{where}: its run follows {follows}, {WorkflowRunBinding.Why(binding)}.";
     }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
     private static DateTimeOffset ToTheSecond(DateTimeOffset at)
     {

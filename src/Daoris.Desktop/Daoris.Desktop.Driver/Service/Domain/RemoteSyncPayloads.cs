@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -576,29 +577,6 @@ public static class RemoteSyncPayloads
         {
             writer.WriteNumber(name, number);
         }
-    }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
-
-    private static IEnumerable<JsonElement> Items(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array
-            ? value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.Object).ToList()
-            : [];
-
-    private static IReadOnlyList<string> Strings(JsonElement element, string name)
-    {
-        if (!element.TryGetProperty(name, out var value) || value.ValueKind != JsonValueKind.Array) return [];
-
-        var items = new List<string>();
-        foreach (var item in value.EnumerateArray())
-        {
-            if (item.ValueKind == JsonValueKind.String && item.GetString() is { Length: > 0 } text) items.Add(text);
-        }
-
-        return items;
     }
 
     private static string Write(Action<Utf8JsonWriter> write)

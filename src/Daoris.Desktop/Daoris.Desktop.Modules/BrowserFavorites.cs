@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using static Daoris.Driver.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop;
@@ -144,7 +145,4 @@ public static class BrowserFavorites
 
     private static string Title(JsonObject row, string page) =>
         Text(row, "title") is { } title && !string.IsNullOrWhiteSpace(title) ? title.Trim() : new Uri(page).Host;
-
-    private static string? Text(JsonObject row, string name) =>
-        row.TryGetPropertyValue(name, out var value) && value is JsonValue text && text.TryGetValue<string>(out var s) ? s : null;
 }

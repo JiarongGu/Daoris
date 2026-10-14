@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -713,7 +714,4 @@ public sealed class LandedBranches(string home)
         if (advances.Count == 0) return [];
         return advances;
     }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 }

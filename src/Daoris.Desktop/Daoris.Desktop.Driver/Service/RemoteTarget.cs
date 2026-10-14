@@ -1,4 +1,5 @@
 using System.Text.Json;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -168,9 +169,4 @@ public sealed record RemoteTarget(string Url, string Key)
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
         AtomicFile.WriteText(path, Json(remotes));
     }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
 }

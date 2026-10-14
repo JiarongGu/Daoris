@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -385,9 +386,9 @@ public sealed class AutoLandings(string home)
                 {
                     Tip = Text(each, "tip"),
                     Status = Text(each, "status"),
-                    Uncommitted = Number(each, "uncommitted"),
+                    Uncommitted = Int(each, "uncommitted"),
                     Branch = Text(each, "branch"),
-                    Commits = Number(each, "commits"),
+                    Commits = Int(each, "commits"),
                 })
                 .ToList()
             : [];
@@ -403,11 +404,6 @@ public sealed class AutoLandings(string home)
     private static DateTimeOffset? When(string? text) =>
         DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at) ? at : null;
 
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
-
-    private static int? Number(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var n) ? n : null;
 }
 
 /// <summary>

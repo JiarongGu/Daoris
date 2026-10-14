@@ -1,4 +1,5 @@
 using System.Text.Json;
+using static Daoris.Driver.Json;
 using Daoris.Driver;
 using Shenora.Core.Ipc;
 
@@ -480,8 +481,6 @@ public sealed partial class DriverModule
     private static ReviewEdit ReviewEditOf(JsonElement? payload)
     {
         if (payload is not { ValueKind: JsonValueKind.Object } root) return new ReviewEdit();
-        static string? Text(JsonElement element, string name) =>
-            element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
         return new ReviewEdit
         {

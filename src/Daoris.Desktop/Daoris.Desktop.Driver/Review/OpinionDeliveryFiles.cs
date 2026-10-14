@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -119,9 +120,6 @@ internal static class OpinionDeliveryFiles
 
         return new OpinionReading(session, Text(answered, "tip"), at, findings);
     }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
     private static DateTimeOffset? Moment(JsonElement element, string name) =>
         Text(element, name) is { } when
