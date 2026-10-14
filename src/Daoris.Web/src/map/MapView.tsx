@@ -1,18 +1,18 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CodeMapCanvas, CodeMapDetail } from './map/CodeMap';
-import { MapCanvas, type MapSelection } from './map/MapCanvas';
-import { LayeredMap } from './map/LayeredMap';
-import { RING_MAX } from './map/layers';
-import { LinesMenu, lineCounts, useMapWhen, useShownLines } from './map/LinesMenu';
-import { MapDetail } from './map/MapDetail';
-import { buildTopology, keepQuests, type LineKind, showLines } from './map/topology';
-import { useCodeMap, useConvergence, useQuests, useRegistry, useSessions } from './queries';
-import { useScope } from './scope';
-import { buttonNamed, returnFocus } from './returnFocus';
+import { CodeMapCanvas, CodeMapDetail } from './CodeMap';
+import { MapCanvas, type MapSelection } from './MapCanvas';
+import { LayeredMap } from './LayeredMap';
+import { RING_MAX } from './layers';
+import { LinesMenu, lineCounts, useMapWhen, useShownLines } from './LinesMenu';
+import { MapDetail } from './MapDetail';
+import { buildTopology, keepQuests, type LineKind, showLines } from './topology';
+import { useCodeMap, useConvergence, useQuests, useRegistry, useSessions } from '../queries';
+import { useScope } from '../scope';
+import { buttonNamed, returnFocus } from '../returnFocus';
 import {
   Button, Card, EmptyState, Icon, type Notify, PageHeader, SkeletonRows, useErrorNotify,
-} from './ui';
+} from '../ui';
 
 /** The similarity the Convergence view opens at — the map's dotted lines are the same findings. */
 const SHARED = 0.75;

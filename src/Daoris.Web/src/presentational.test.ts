@@ -88,6 +88,8 @@ const ORGANISMS = new Set<string>([
   './knowledge/SearchView.tsx',
   './knowledge/ConvergenceView.tsx',
   './knowledge/KnowledgeView.tsx',
+  // The map's view (MAP2): the workspace's wiring, so the drawing and the detail below it hold none.
+  './map/MapView.tsx',
 ]);
 
 /**

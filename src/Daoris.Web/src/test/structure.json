@@ -97,9 +97,6 @@
     "ProjectsView.workflow.test.tsx": "projects",
     "ProjectManage.tsx": "projects",
 
-    "MapView.tsx": "map",
-    "MapView.test.tsx": "map",
-
     "tools.ts": "agents",
     "tools.test.ts": "agents",
     "harnessRuns.tsx": "agents",
