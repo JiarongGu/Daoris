@@ -43,6 +43,9 @@ public static class DriverCommand
               ask at a workspace, or turn an ask into a quest, close it, or delete one made by mistake; answer a
               go-ahead a session asked on it, which every session on the ask is handed from then on, and which
               sends a parked session on once none of its go-aheads waits.
+          ask channel <id> [--to <repository>] [--re <message>] ["…"]
+              read an ask's channel, where its sessions and you talk, and mark it read; or with words post them as
+              yours, to everyone on the ask or one of its repositories, which each session reads.
           ask --pause <id>  ·  ask --resume <id>  ·  quest pause <id>  ·  quest resume <id>
               stop what of an ask's work, or a quest's, runs on this machine and start nothing of it until
               you resume it, which carries it on where it stood.

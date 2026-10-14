@@ -225,6 +225,7 @@ internal static class AskConsole
         Console.Error.WriteLine("       daoris-driver ask --close <id> --reason \"…\"");
         Console.Error.WriteLine("       daoris-driver ask --delete <id>");
         Console.Error.WriteLine("       daoris-driver ask --go-ahead <id> <n> approve|refuse [\"…\"]");
+        Console.Error.WriteLine($"       daoris-driver {ChannelCommand.Usage}");
         Console.Error.WriteLine("       daoris-driver ask … --short \"…\"");
         Console.Error.WriteLine("       daoris-driver ask … --review rule|on|<environment>|off [--review-words \"…\"]");
         Console.Error.WriteLine("       daoris-driver ask --set-review <id> on|<environment>|off [\"…\"]");

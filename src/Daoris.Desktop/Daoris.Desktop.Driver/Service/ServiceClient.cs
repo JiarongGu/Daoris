@@ -671,10 +671,16 @@ public sealed class ServiceClient : IDisposable
     /// is one from before the channel, which answers the route not found as well.
     /// </summary>
     /// <exception cref="DriverException">The host answered something other than the channel.</exception>
-    public async Task<ChannelView?> ChannelAsync(string ask, string entry, CancellationToken ct = default)
+    public async Task<ChannelView?> ChannelAsync(string ask, string? entry, CancellationToken ct = default, DateTimeOffset? since = null)
     {
+        // SESSONE2c: no entry is the person's own (the service's default), and `since` the page's tail of a long channel.
+        var query = string.Join('&', new[]
+        {
+            entry is null ? null : $"entry={Uri.EscapeDataString(entry)}",
+            since is { } after ? $"since={Uri.EscapeDataString(Moments.Write(after))}" : null,
+        }.OfType<string>());
         var answer = await _doors.SendAsync(
-            ServiceVerb.Get, $"/api/asks/{Uri.EscapeDataString(ask.TrimStart('#'))}/channel?entry={Uri.EscapeDataString(entry)}", null, ct)
+            ServiceVerb.Get, $"/api/asks/{Uri.EscapeDataString(ask.TrimStart('#'))}/channel{(query.Length == 0 ? "" : "?" + query)}", null, ct)
             .ConfigureAwait(false);
         if (answer.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
         if (!answer.Ok) throw new DriverException($"the service would not read ask `#{ask}`'s channel: {answer.Payload}");
@@ -704,6 +710,59 @@ public sealed class ServiceClient : IDisposable
         {
             throw new DriverException($"the service would not move `{entry}`'s mark on ask `#{ask}`'s channel: {payload}");
         }
+    }
+
+    /// <summary>
+    /// Move the person's own read mark on an ask's channel (SESSONE2c, <c>POST …/channel/read</c> with no entry), through
+    /// <paramref name="through"/> or the newest item, and answer the channel as it then reads. Null where the host holds no such ask,
+    /// or is one from before the channel.
+    /// </summary>
+    /// <exception cref="DriverException">The host refused the move.</exception>
+    public async Task<ChannelView?> ChannelMarkAsync(string ask, DateTimeOffset? through = null, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            if (through is { } moment) writer.WriteString("through", Moments.Write(moment));
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, _) = await PostJsonAsync(
+            $"/api/asks/{Uri.EscapeDataString(ask.TrimStart('#'))}/channel/read", body, ct).ConfigureAwait(false);
+        if (status == (int)System.Net.HttpStatusCode.NotFound) return null;
+        if (!ok) throw new DriverException($"the service would not move the person's mark on ask `#{ask}`'s channel: {payload}");
+
+        return ChannelView.Read(payload);
+    }
+
+    /// <summary>
+    /// The person's post on an ask's channel (SESSONE2c, <c>POST /api/asks/{id}/channel</c>): their words, to everyone or one of the
+    /// ask's repositories, answering a message or not. A refusal is an answer carrying the service's code (<c>empty</c>,
+    /// <c>too-long</c>, <c>bad-to</c>, <c>bad-re</c>, <c>not-found</c>), which each door words its own way.
+    /// </summary>
+    /// <exception cref="DriverException">The host answered neither the post nor a code.</exception>
+    public async Task<ChannelPosted> ChannelPostAsync(string ask, string text, string? to, string? re, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("text", text);
+            if (to is not null) writer.WriteString("to", to);
+            if (re is not null) writer.WriteString("re", re);
+            writer.WriteEndObject();
+        });
+        var (ok, _, payload, root) = await PostJsonAsync($"/api/asks/{Uri.EscapeDataString(ask.TrimStart('#'))}/channel", body, ct)
+            .ConfigureAwait(false);
+        if (ok)
+        {
+            return root is { ValueKind: JsonValueKind.Object } posted && posted.TryGetProperty("message", out var message)
+                   && ChannelView.ReadItem(message) is { } item
+                ? new ChannelPosted(true, item, null)
+                : throw new DriverException($"the service answered something other than a posted message on ask `#{ask}`'s channel: {payload}");
+        }
+
+        return root is { ValueKind: JsonValueKind.Object } refused && Text(refused, "code") is { Length: > 0 } code
+            ? new ChannelPosted(false, null, code)
+            : throw new DriverException($"the service would not take the post on ask `#{ask}`'s channel: {payload}");
     }
 
     /// <summary>
