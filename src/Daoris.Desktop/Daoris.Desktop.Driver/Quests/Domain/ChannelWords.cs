@@ -149,12 +149,15 @@ public sealed record ChannelEntry(string Key, string Ask, string Repository)
     /// <summary>An entry on an ask, from its key; null for a key on no ask, an intake's, or none.</summary>
     public static ChannelEntry? Of(string? key)
     {
-        if (key is null || !key.StartsWith(AskOrigin, StringComparison.Ordinal)) return null;
-        var slash = key.IndexOf('/', AskOrigin.Length);
-        if (slash <= AskOrigin.Length || slash == key.Length - 1) return null;
+        // The driver's one reader of a key (SESSONE1h), so the channel and the session groups agree on an odd one.
+        var read = EntryKey.Parse(key);
+        if (!read.HasSlash || !read.Origin.StartsWith(AskOrigin, StringComparison.Ordinal) || read.Origin.Length == AskOrigin.Length
+            || read.Repository.Length == 0 || read.Repository == Intake)
+        {
+            return null;
+        }
 
-        var repository = key[(slash + 1)..];
-        return repository == Intake ? null : new ChannelEntry(key, key[AskOrigin.Length..slash], repository);
+        return new ChannelEntry(key!, read.Origin[AskOrigin.Length..], read.Repository);
     }
 
     /// <summary>

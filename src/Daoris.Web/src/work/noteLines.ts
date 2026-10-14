@@ -75,6 +75,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // While it starts and works.
   'started.tree': { values: ['branch', 'basedOn'] },
   'started.tree-unrecorded': { values: [] },
+  'started.joined': { values: ['session'] },
   'started.resumes-answered': { values: ['quest', 'answered'] },
   'started.in-asking-tree': { values: ['session'] },
   'started.words-open': { values: ['quest', 'session'] },

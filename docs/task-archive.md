@@ -14548,3 +14548,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CHATTAKE1 — a chat records the quest it took** (service; after SESSONE1a). The design's §1.2 rule 2 (a quest a chat took joins that chat's line) is not built: `MarkTookAsync` marks a chat's take without the quest's id, so only a quest the chat published joins its line. Record the taken quest on the chat's record and read it in `SessionEntries`. Proof: a service test where a chat takes a quest and a later part joins its line. D167's as-built note.
 
 **Outcome** 2026-10-14: a chat's take records the quest it took (`took_quest`, added after the table rebuild, null for older records), moving the record's revision so it travels (`tookQuest` on the wire and the feed); `SessionEntries` reads it after the ask and before the publisher, so a quest a chat took opens its later parts under that chat's entry. A take made before this stays unrecorded. Nine gates passed on the merge. On Sonnet: 62 tool calls. Detail: D167's CHATTAKE1 note.
+
+## SESSONE1h — one reader of an entry's key in the driver (2026-10-14, D167)
+
+> - [ ] **SESSONE1h — one reader of an entry's key in the driver** (driver; after 1d). `EntryParts.OriginOf` and `SessionEntries`' private `Origin` both split the key at its first `/`: one shared reader, so the two cannot drift. Proof: `SessionGroupsTests` and `EntryPartsPlanTests` stay green.
+
+**Outcome** 2026-10-14: `Quests/Domain/EntryKey.cs` parses a key at its first `/` (origin, repository, whether it had one); `EntryParts` and `SessionEntries` both read it, a key with no `/` now giving an empty repository. The service keeps its own split in `SessionEntries.OriginOf`, its lane. Built with SESSONE1g. On Sonnet: 46 tool calls for both. Detail: D167's last as-built note.
+
+## SESSONE1g — a part gone into its entry's tree says so (2026-10-14, D167)
+
+> - [ ] **SESSONE1g — a part gone into its entry's tree says so** (driver/web; after 1d). Its start writes no note line today, as a start in the root does: a `started.*` code saying whose tree it went into, with its catalogue words in `note.json` (en, zh). Proof: the `NoteCodesTests` twin and a starting-note test.
+
+**Outcome** 2026-10-14: `started.joined` {session}, written by the start of a first run that went into an earlier part's tree (*Went into the tree of session {{session}}, which holds the earlier part of this work.*, 进入了会话 {{session}} 的工作树…), twinned in `NoteCodes`, `note.json` and `NOTE_CODES`; a part grown again after its tree went keeps `started.tree`'s `basedOn`. No tick drives the call site yet. Gates passed on the merge. Detail: D167's last as-built note.
