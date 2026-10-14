@@ -33,11 +33,11 @@ public sealed class GoOnNewTests : IDisposable
 
     private static JsonObject Record(
         string id, string state = "completed", string? quest = "q1", string kind = "driven", string? ask = null,
-        string repository = "engine", int minutes = 0, params string[] said) => new()
+        string repository = "engine", int minutes = 0, string? from = null, params string[] said) => new()
         {
             ["id"] = id, ["repository"] = repository, ["state"] = state, ["kind"] = kind, ["quest"] = quest, ["ask"] = ask,
             ["adapter"] = "claude-code", ["profile"] = "account-1", ["created"] = T0.AddMinutes(minutes).ToString("O"),
-            ["updated"] = T0.AddMinutes(minutes + 5).ToString("O"), ["said"] = new JsonArray([.. said.Select(Word)]),
+            ["updated"] = T0.AddMinutes(minutes + 5).ToString("O"), ["said"] = new JsonArray([.. said.Select(Word)]), ["from"] = from,
         };
 
     private static JsonObject Quest(string id, string status) => new()
@@ -87,6 +87,7 @@ public sealed class GoOnNewTests : IDisposable
         { "1ntake00", WordsNever.Intake, "1ntake00 is an intake; answer its ask #a1 instead: publish it or close it." },
         { "st00d000", WordsNever.StoodDown, "it stood down: #q3 is someone else's, so it has nothing to go on with." },
         { "e4rl1er0", WordsNever.Superseded, "#q2 went on in a later session here, l4t3r000, and its words go there." },
+        { "h4nd3d00", WordsNever.Continued, "h4nd3d00 went on in conversation m0v3d000; say it to that one." },
         { "qu1et000", GoOnNew.NoWords, "no words wait on qu1et000 to go on with: `daoris-driver sessions say qu1et000 \"…\"` says some." },
         { "w0rk1ng0", GoOnNew.Running, "w0rk1ng0 is working: words reach it there, so it needs no new session." },
         { "ch4t0000", GoOnNew.Conversation,
@@ -117,6 +118,8 @@ public sealed class GoOnNewTests : IDisposable
                 Record("w0rk1ng0", state: "working", quest: "q6", said: ["w1"]),
                 Record("ch4t0000", state: "completed", quest: null, kind: "chat", said: ["w1"]),
                 Record("cl0sed00", state: "completed", quest: "q4", said: ["w1"]),
+                Record("h4nd3d00", state: "completed", quest: null, kind: "chat", said: ["w1"]),
+                Record("m0v3d000", state: "working", quest: null, kind: "chat", minutes: 1, from: "h4nd3d00"),
             ],
             [Quest("q2", "Taken"), Quest("q3", "Taken"), Quest("q4", "Done"), Quest("q5", "Taken"), Quest("q6", "Taken")]);
 

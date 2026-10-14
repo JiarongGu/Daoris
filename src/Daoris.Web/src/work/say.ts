@@ -91,16 +91,21 @@ export const NEVER: Record<string, string> = {
   'opinion': 'work.say.opinion',
   'help': 'work.say.help',
   'superseded': 'work.say.superseded',
+  // HANDWORDS1: a conversation handed over or moved went on in another, which the module names as `to`.
+  'continued': 'work.say.continued',
   'not-found': 'work.say.notFound',
 };
 
 /**
  * Why a session takes no words, in the page's own words (D137 §5.1): a code the module answered, or one the page knows.
- * A code a newer host answers that this page has no sentence for is named rather than left unsaid.
+ * A code a newer host answers that this page has no sentence for is named rather than left unsaid. `to` is the conversation
+ * a `continued` one went on in (HANDWORDS1), as the module answers it beside the code.
  */
-export function neverSentence(t: Translate, code: string, { quest }: { quest?: string | null }): string {
+export function neverSentence(
+  t: Translate, code: string, { quest, to }: { quest?: string | null; to?: string | null },
+): string {
   const key = NEVER[code];
-  return key ? t(key, { quest: quest ?? '' }) : t('work.say.takesNone', { code });
+  return key ? t(key, { quest: quest ?? '', to: to ?? '' }) : t('work.say.takesNone', { code });
 }
 
 /** The sentence for each code *Start a conversation with these words* is refused by that is not a never (MSG1f2), by its key. */

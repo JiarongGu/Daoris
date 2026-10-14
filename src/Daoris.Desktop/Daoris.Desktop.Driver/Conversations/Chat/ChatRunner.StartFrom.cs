@@ -56,10 +56,14 @@ public static class StartFrom
         if (record is null) return Refused(WordsNever.NotFound, $"no session here is {id}.");
 
         var last = WordsNever.LastHere(json, record.Quest);
+        var next = WordsNever.ContinuedIn(json, id);
         // Ask Daoris's own conversation has no repository to start one in (ASKHIST1): its words go on in itself, or its history
         // starts a new one from it.
-        switch (WordsNever.Judge(record, last) ?? (WordsNever.IsHelp(record) ? WordsNever.Help : null))
+        switch (WordsNever.Judge(record, last, next) ?? (WordsNever.IsHelp(record) ? WordsNever.Help : null))
         {
+            // HANDWORDS1: a conversation handed over or moved went on in another, which takes its words; no new one starts from them.
+            case WordsNever.Continued:
+                return Refused(WordsNever.Continued, WordsNever.WentOn(id, next!));
             case WordsNever.Teammate:
                 return Refused(WordsNever.Teammate, $"{id} ran on {id[..id.IndexOf('/')]}, where its words are; nothing here takes them.");
             case WordsNever.Help:

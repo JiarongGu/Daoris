@@ -820,9 +820,10 @@ public static class SessionsCommand
         }
 
         var last = WordsNever.LastHere(json, record.Quest);
-        if (WordsNever.Judge(record, last) is { } never)
+        var next = WordsNever.ContinuedIn(json, id);
+        if (WordsNever.Judge(record, last, next) is { } never)
         {
-            output.WriteLine($"sessions: {Refusal(never, id, record, last, null)}");
+            output.WriteLine($"sessions: {Refusal(never, id, record, last, null, next)}");
             return 1;
         }
 
@@ -1082,8 +1083,10 @@ public static class SessionsCommand
     }
 
     /// <summary>What never goes on, by its code, in the terminal's words (D137 §2.2, §5.1); any other code, the service's sentence.</summary>
-    private static string Refusal(string code, string id, SessionRecord? record, string? last, string? message) => code switch
+    /// <param name="next">The conversation a conversation went on in (HANDWORDS1), where it was read; else its code says the sentence it came with.</param>
+    private static string Refusal(string code, string id, SessionRecord? record, string? last, string? message, string? next = null) => code switch
     {
+        WordsNever.Continued when next is not null => $"{WordsNever.WentOn(id, next).TrimEnd('.')}: daoris-driver sessions say {next} \"…\"",
         WordsNever.NotFound => $"no session here is {id}.",
         WordsNever.Teammate =>
             $"{id} ran on {(id.Contains('/') ? id[..id.IndexOf('/')] : "another machine")}, where its conversation is; nothing said here reaches it.",
