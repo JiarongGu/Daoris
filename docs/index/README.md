@@ -117,7 +117,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Asks/History.cs` | 41 | 826 |
 | `src/Daoris.Service/Daoris.Service.Core/Knowledge/KnowledgeService.cs` | 53 | 1055 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 105 | 1953 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 149 | 2685 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 150 | 2695 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 75 | 1395 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 79 | 1360 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
@@ -156,7 +156,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/deployment-rehearsal.mjs` | 99 | 1736 |
 | `tools/desktop-publish.mjs` | 59 | 1051 |
 | `tools/desktop.mjs` | 51 | 1052 |
-| `tools/family-rehearsal.mjs` | 339 | 5982 |
+| `tools/family-rehearsal.mjs` | 340 | 5983 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
 | `tools/merge-branch.mjs` | 131 | 2395 |
 | `tools/orient-index.mjs` | 66 | 1424 |

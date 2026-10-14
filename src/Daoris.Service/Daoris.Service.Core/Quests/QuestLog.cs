@@ -364,11 +364,13 @@ public static class QuestLog
             Updated = operation.At,
         },
         // A done carries how it answered each requirement (DRIFT1d); a take or a decline answers none. The note's parts are the
-        // move's own, so a note written without them clears the last one's (QUESTCLOSE1b1, D142 point 2).
+        // move's own, so a note written without them clears the last one's (QUESTCLOSE1b1, D142 point 2). A close also clears
+        // the question the quest waited on: it names one only while taken, the Waited operation staying in the history (AWAITSTALE1, D79).
         _ => quest! with
         {
             Status = QuestTransitions.Target(operation.Kind)!.Value, Note = operation.Note, NoteParts = operation.NoteParts,
             Updated = operation.At, Answers = operation.Answers ?? [],
+            Awaits = QuestTransitions.Target(operation.Kind) == QuestStatus.Taken ? quest.Awaits : null,
         },
     };
 

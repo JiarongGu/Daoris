@@ -14650,3 +14650,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT5c — the page's top folder in folders** (web). As STRUCT5a, 5b and 5d did, with its gate in vitest; STRUCT5d's import-rewriting script (asserted counts, read back) is a candidate tracked tool. Design §7.
 
 **Outcome** 2026-10-15: the page's top holds only its three entries; 109 files moved into domain folders with `git mv`, held by `src/test/structure.test.ts`, and `daoris.lanes.json` lost two `SettingsView*` globs the move made empty. The work, settings, bridge and projects folders still hold over twenty sources at their top and sit on the gate's `wide` list (STRUCT5c-ii); the move script stayed in scratch (MOVETOOL1). Eleven gates passed on the merge, merged with main's closed-quest fix. On Opus: 308 tool calls. Detail: D166's STRUCT5c note and the `refactor(web): STRUCT5c` commits.
+
+## AWAITSTALE1 — a closed quest no longer names the question it waited on (2026-10-15, D79)
+
+> - [ ] **AWAITSTALE1 — a closed quest no longer names the question it waited on** (service, web). The service keeps a quest's `awaits` after it closes (the install's `711d252413bb` and `3068f74791db`, done, still naming theirs), which held the person's words (FIX-LOG 2026-10-15; the driver now reads it only while taken, `QuestView.Awaits`) and can read *awaiting reply* on the quest page: answer `awaits` only while taken, or clear it at the close, the history kept where it is read.
+
+**Outcome** 2026-10-15: a done or declined close clears `awaits` in `QuestLog.Step`; the store open recaches closed rows still naming one; the Waited operation stays in the history. The web needed no change (QuestPage test added). Detail: D79's AWAITSTALE1 note.
