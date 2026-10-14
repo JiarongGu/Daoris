@@ -360,7 +360,9 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     public void The_screens_discard_is_the_drivers_one_discard()
     {
         var modules = Path.Combine(WorkspaceRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Modules");
-        var sources = Directory.EnumerateFiles(modules, "DriverModule*.cs").Select(path => (File: Path.GetFileName(path), Text: File.ReadAllText(path))).ToList();
+        // The bridge's files: its domains' handler classes and the partials not yet moved (PART10d).
+        var sources = Directory.EnumerateFiles(modules, "DriverModule*.cs").Concat(Directory.EnumerateFiles(modules, "*Routes.cs"))
+            .Select(path => (File: Path.GetFileName(path), Text: File.ReadAllText(path))).ToList();
 
         Assert.Contains(sources, source => source.File == "DriverModule.Lines.cs" && source.Text.Contains(".DiscardAsync(service, repository, branch, force,", StringComparison.Ordinal));
         Assert.All(sources, source =>
@@ -458,7 +460,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     public void Every_press_of_bringing_up_to_date_asks_the_sessions_in_use_again()
     {
         var modules = Path.Combine(WorkspaceRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Modules");
-        var presses = Directory.EnumerateFiles(modules, "DriverModule*.cs")
+        var presses = Directory.EnumerateFiles(modules, "DriverModule*.cs").Concat(Directory.EnumerateFiles(modules, "*Routes.cs"))
             .SelectMany(path =>
             {
                 var source = File.ReadAllText(path);

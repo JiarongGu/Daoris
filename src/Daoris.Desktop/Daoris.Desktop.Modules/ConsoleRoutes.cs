@@ -8,8 +8,10 @@ namespace Daoris.Desktop;
 /// A session's live console, the page's `bridge/console.ts` (MOD5): its backlog (D49 §2), the streams it
 /// runs beside itself (CONSOLE2c), and a task stopped from its tab (CONSOLE3a).
 /// </summary>
-public sealed partial class DriverModule
+public sealed class ConsoleRoutes(DriverLoop loop)
 {
+    private readonly DriverLoop _loop = loop;
+
     // The console's backlog (D49 §2): what this session has said, or what it has said since
     // the page last heard. Live lines arrive as `SESSION_OUTPUT` events; this is how a page
     // that just opened catches up, and how one that missed a batch closes the gap — the
