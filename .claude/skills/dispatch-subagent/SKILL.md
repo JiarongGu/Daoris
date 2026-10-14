@@ -84,7 +84,10 @@ sessions take the same roles once the trial says which split works (MODELROLE1).
 4. **Name the lanes by id** (`daoris.lanes.json`, design §5) and the files the branch must not touch,
    which is anything a branch in flight holds. When two branches need the same lane, one waits for the
    other or the work is split.
-5. **Run at most three workers at once.** More load makes real-process tests flake. **Dispatch between merges: before one
+5. **Run at most three workers at once.** More load makes real-process tests flake, and the owner's installed window shares
+   the machine: on 2026-10-15 seven workers, a full gate set and one worker's CPU-load script (briefed to "reproduce under
+   load") froze it for minutes while the owner worked. Never brief a worker to generate load, and while the owner works keep
+   the builds and tests below normal priority, so the window always wins the processor. **Dispatch between merges: before one
    starts, or after its commit and before `--continue`.** The harness's worktree isolation reads the checkout's git
    metadata, refuses while the merge tool is writing it, and leaves a locked worktree behind. A dispatch made once a merge's
    first gates had passed was refused the same way (2026-10-10), so a merge's gates are no safe moment either. Unlock it
