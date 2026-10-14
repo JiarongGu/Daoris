@@ -308,9 +308,9 @@ public static class HelpCommand
                 Text(writer, "name", row.Name);
                 Text(writer, "opening", row.Opening);
                 Text(writer, "about", row.About);
-                writer.WriteString("created", row.Created.ToString("O", CultureInfo.InvariantCulture));
-                writer.WriteString("last", row.Last.ToString("O", CultureInfo.InvariantCulture));
-                Text(writer, "pinned", row.Pinned?.ToString("O", CultureInfo.InvariantCulture));
+                writer.WriteString("created", Moments.Write(row.Created));
+                writer.WriteString("last", Moments.Write(row.Last));
+                Text(writer, "pinned", Moments.Write(row.Pinned));
                 writer.WriteBoolean("live", row.Live);
                 writer.WriteBoolean("resumable", row.Resumable);
                 Text(writer, "from", row.From);
