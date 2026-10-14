@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using static Daoris.Driver.TreeGit;
 
 namespace Daoris.Driver;
 
@@ -29,10 +30,10 @@ public sealed partial class SessionTrees
         string path, string? quest, IOpinionWorld world, string? session = null, CancellationToken ct = default, WorkflowProcess? process = null)
     {
         var full = Path.GetFullPath(path);
-        var (workspace, repository) = OwnerOf(full);
+        var (workspace, repository) = _context.OwnerOf(full);
         // WORKFLOW1f (the workflow design §2.3, §4.6): the run's bound version where it names one, the rules live where it does not,
         // read once and handed to every part, so the look, the opinion and the landing decide by one process.
-        var config = Config();
+        var config = _context.Config();
         process ??= await ProcessAsync(config, repository, workspace, quest, world, ct).ConfigureAwait(false);
         var workflow = await WorkflowAsync(full, process, session, ct).ConfigureAwait(false);
         var review = await ReviewGate.ReadAsync(world, config, full, repository, workspace, quest, ct, process).ConfigureAwait(false);
@@ -60,7 +61,7 @@ public sealed partial class SessionTrees
         KindPathsRead? paths = null;
         if (WorkflowGate.ChecksPaths(process))
         {
-            var (otherwise, steps) = WorkflowProcesses.Otherwise(home, Config(), process.Repository, process.Binding!.Workspace);
+            var (otherwise, steps) = WorkflowProcesses.Otherwise(home, _context.Config(), process.Repository, process.Binding!.Workspace);
             var lowered = steps is null
                 ? [$"what {otherwise} asks of you could not be read here, so it is taken as more"]
                 : Involvement.Lowers(process.Steps, steps);
@@ -92,7 +93,7 @@ public sealed partial class SessionTrees
         string tree, string repository, string workspace, string? quest, string? session, IOpinionWorld world, ReviewGateState? review,
         string occasion, CancellationToken ct = default, WorkflowProcess? process = null)
     {
-        var rule = process is null ? OpinionRules.Resolve(Config(), repository, workspace) : process.Opinion;
+        var rule = process is null ? OpinionRules.Resolve(_context.Config(), repository, workspace) : process.Opinion;
         var cannot = process?.OpinionCannot;
         var facts = new OpinionGateFacts(repository, rule) { Session = session, Occasion = occasion, Review = review, Cannot = cannot };
         if (quest is null || !OpinionGate.Reads(rule, cannot, occasion))
@@ -156,8 +157,8 @@ public sealed partial class SessionTrees
         var (code, commonDir, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct).ConfigureAwait(false);
         if (code != 0) return null;
         var root = Path.GetDirectoryName(commonDir.Trim())!;
-        var (workspace, repository) = OwnerOf(full);
-        var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        var (workspace, repository) = _context.OwnerOf(full);
+        var line = (await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         var against = line is null ? null : await ComparableAsync(root, line, ct).ConfigureAwait(false);
         if (against is null) return null;
         var (forkCode, fork, _) = await WorkingTree.GitAsync(full, ["merge-base", against, "HEAD"], ct).ConfigureAwait(false);

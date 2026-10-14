@@ -1,4 +1,7 @@
 using System.Globalization;
+using static Daoris.Driver.TreeGit;
+using static Daoris.Driver.TreeLeftovers;
+using static Daoris.Driver.TreeWorktrees;
 
 namespace Daoris.Driver;
 
@@ -62,22 +65,26 @@ public sealed record SessionTree(string Path, string Workspace, string Repositor
 /// </param>
 public sealed partial class SessionTrees(string home, LandingPlugins? plugins = null)
 {
-    private readonly LandingPlugins _plugins = plugins ?? new LandingPlugins(home);
+    /// <summary>What the parts and the classes moved out of them share (PART10i): the home, the plugin wire, the seams.</summary>
+    private readonly TreeContext _context = new(home, plugins ?? new LandingPlugins(home));
 
     /// <summary>
     /// The test seam (SQUASHTIDY1c): run with the branch's name between a judgement and the delete it cleared, where a test
     /// moves the branch as a session or a person could. Production sets none.
     /// </summary>
-    internal Func<string, Task>? BeforeDeleting { get; init; }
+    internal Func<string, Task>? BeforeDeleting { get => _context.BeforeDeleting; init => _context.BeforeDeleting = value; }
+
+    /// <summary>The test seam (AUTOTIDY1): true for a checkout whose working trees git could not list. Production sets none.</summary>
+    internal Func<string, bool>? ListFails { get => _context.ListFails; init => _context.ListFails = value; }
 
     /// <summary>The branches this machine's landings made (WSR5) — the only ones the clean-up and the hand-off act on.</summary>
-    public LandedBranches Recorded => new(home);
+    public LandedBranches Recorded => _context.Recorded;
 
     /// <summary>Where this machine's session branches started (WSR6) — what bringing one up to date cuts at.</summary>
-    public SessionBranches Grown => new(home);
+    public SessionBranches Grown => _context.Grown;
 
     /// <summary>Every tree this machine's Daoris has opened lives under here, and only here.</summary>
-    public string TreesRoot => Path.Combine(home, "trees");
+    public string TreesRoot => _context.TreesRoot;
 
     /// <summary>
     /// Open a fresh tree for a session in <paramref name="root"/>. Throws <see cref="DriverException"/>
@@ -122,7 +129,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         // The repository's line (WSR2): what the person set for it or its workspace, else the
         // checkout's guess, else the root's HEAD — and the answer SAYS which, because a branch grown
         // from the wrong point is invisible until merge time.
-        var line = await LineAsync(root, repository, workspace, ct).ConfigureAwait(false);
+        var line = await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false);
         var basedOn = line.Branch is not null
             ? CanonicalLine.Describe(line)
             : "the root's HEAD (no canonical line is declared)";
@@ -289,8 +296,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 + "leave behind. Commit it in the tree first, or decide it is not wanted.");
         }
 
-        var (workspace, repository) = OwnerOf(full);
-        var line = await LineAsync(root, repository, workspace, ct).ConfigureAwait(false);
+        var (workspace, repository) = _context.OwnerOf(full);
+        var line = await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false);
         if (line.Branch is not { } canonical)
         {
             return new(false, "this repository has no canonical line git can name, and none is set, so "
@@ -369,8 +376,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     public async Task<LandingPlan> PlanAsync(string path, LandingSubject subject, CancellationToken ct = default, WorkflowProcess? process = null)
     {
         var full = Path.GetFullPath(path);
-        var (workspace, repository) = OwnerOf(full);
-        var landing = process is { Named: true } named ? named.Landing : LandingRules.Choose(Config(), repository, workspace);
+        var (workspace, repository) = _context.OwnerOf(full);
+        var landing = process is { Named: true } named ? named.Landing : LandingRules.Choose(_context.Config(), repository, workspace);
         // A named workflow's landing that cannot start says so before the press, as the press would be refused (design §3.7).
         if (process?.LandingCannot is not null)
         {
@@ -384,7 +391,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             // TREEFOLLOW1: a tree its agent moved onto a branch of its own lands as that branch stands, the one the pull request is from.
             if (Directory.Exists(full) && Holds(full) && await OwnBranchOfAsync(full, ct).ConfigureAwait(false) is { } own)
             {
-                return new(LandingForm.Branch, own, landing.Source, plugin, subject.EnteredName is not null ? EnteredOwn(own) : plugin is null ? null : _plugins.Problem(plugin),
+                return new(LandingForm.Branch, own, landing.Source, plugin, subject.EnteredName is not null ? EnteredOwn(own) : plugin is null ? null : _context.Plugins.Problem(plugin),
                     landing.Rule.AutoAccept)
                 { Own = true };
             }
@@ -392,7 +399,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             var name = BranchNamed(subject, landing.Rule, repository);
             // A name the press would refuse is said before it (LANDNAME1a), where the plan keeps the sentence a press is refused with.
             var problem = subject.EnteredName is not null && !BranchName.IsValid(name) ? EnteredInvalid(name)
-                : plugin is null ? null : _plugins.Problem(plugin);
+                : plugin is null ? null : _context.Plugins.Problem(plugin);
             return new(LandingForm.Branch, name, landing.Source, plugin, problem, landing.Rule.AutoAccept);
         }
 
@@ -400,7 +407,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             ? await WorkingTree.GitAsync(full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct).ConfigureAwait(false)
             : (1, "", "");
         var line = code == 0
-            ? (await LineAsync(Path.GetDirectoryName(commonDir.Trim())!, repository, workspace, ct).ConfigureAwait(false)).Branch
+            ? (await _context.LineAsync(Path.GetDirectoryName(commonDir.Trim())!, repository, workspace, ct).ConfigureAwait(false)).Branch
             : null;
         return new(LandingForm.Merge, line ?? "", landing.Source, Problem: subject.EnteredName is not null ? EnteredMerge : null);
     }
@@ -413,8 +420,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     public Task<ReviewGateState> ReviewAsync(string path, string? quest, IReviewWorld world, CancellationToken ct = default)
     {
         var full = Path.GetFullPath(path);
-        var (workspace, repository) = OwnerOf(full);
-        return ReviewGate.ReadAsync(world, Config(), full, repository, workspace, quest, ct);
+        var (workspace, repository) = _context.OwnerOf(full);
+        return ReviewGate.ReadAsync(world, _context.Config(), full, repository, workspace, quest, ct);
     }
 
     /// <summary>What a landing says of the tree it leaves — dropped when a tidy removed it.</summary>
@@ -471,12 +478,12 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         if (gate?.Refusal is { } refused) return refused;
         var review = gate?.Review;
 
-        var (workspace, repository) = OwnerOf(full);
+        var (workspace, repository) = _context.OwnerOf(full);
         // Under a named workflow the run's bound version decides how it lands, read with the gate (WORKFLOW1f): a version is never
         // edited, so nothing changes under it. Under Current the rule is read again here, as before.
         var process = gate?.Process;
         var named = process is { Named: true } ? process : null;
-        var landing = named?.Landing ?? LandingRules.Choose(Config(), repository, workspace);
+        var landing = named?.Landing ?? LandingRules.Choose(_context.Config(), repository, workspace);
         // 🔴 Read again here, not only where the look chose it (LAND2b): a rule changed between the two must never let a landing
         // at done merge into the person's checkout with no press (D145 point 1, D51 rule 6), nor land under a switch now off.
         if (acceptedBy == AcceptedBy.Auto && landing.Rule is not { Form: LandingForm.Branch, AutoAccept: true })
@@ -500,7 +507,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         else
         {
             var plugin = landing.Rule.Plugin;
-            var unready = plugin is null ? null : _plugins.Problem(plugin);
+            var unready = plugin is null ? null : _context.Plugins.Problem(plugin);
             if (unready is not null && acceptedBy != AcceptedBy.Auto)
             {
                 return new(false, $"{unready} Nothing was landed: the rule hands the branch to that plugin, so fix the "
@@ -565,7 +572,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 // An advance grows the pull request its first landing opened (LAND2c, D149 point 4): the plugin is told it, so it
                 // pushes and opens no second one, and is told who accepted the work, so its description says so truly.
                 var open = landed.AdvancedFrom is null ? null : Recorded.Of(repository, landed.Branch!) is { Pushed: true } entry ? entry.PullRequest : null;
-                var said = await _plugins.LandAsync(plugin, new LandingFrame(
+                var said = await _context.Plugins.LandAsync(plugin, new LandingFrame(
                     repository, workspace, branched.Root, landed.Branch!, branched.Base, subject.Title, subject.Quest,
                     subject.Session, branched.Commits, open, acceptedBy), ct).ConfigureAwait(false);
                 landed = landed with
@@ -617,7 +624,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         var root = Path.GetDirectoryName(commonDir.Trim())!;
         var into = landing.Rule.Form == LandingForm.Branch
             ? landed.Branch
-            : (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+            : (await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         if (into is null) return landed with { Tidied = [] };
         // A squash holds no session commit, so what it squashed is what it holds (PROCESS1b-ii point 3).
         var held = await TidyHeldAsync(root, repository, workspace, squashedTip ?? $"refs/heads/{into}", pressedOut.Trim(), inUse, ct)
@@ -648,8 +655,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             .ConfigureAwait(false);
         if (code != 0) return null;
         var root = Path.GetDirectoryName(commonDir.Trim())!;
-        var (workspace, repository) = OwnerOf(full);
-        var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        var (workspace, repository) = _context.OwnerOf(full);
+        var line = (await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         var against = line is null ? null : await ComparableAsync(root, line, ct).ConfigureAwait(false);
         if (against is null) return null;
         var (countCode, count, _) = await WorkingTree.GitAsync(full, ["rev-list", "--count", $"{against}..HEAD"], ct).ConfigureAwait(false);
@@ -657,7 +664,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     }
 
     /// <summary>A tree's workspace and repository, read from the layout this home chose (<c>trees/&lt;workspace&gt;/&lt;repository&gt;/&lt;name&gt;</c>).</summary>
-    public (string Workspace, string Repository) Owner(string tree) => OwnerOf(Path.GetFullPath(tree));
+    public (string Workspace, string Repository) Owner(string tree) => _context.OwnerOf(Path.GetFullPath(tree));
 
     private static Task<(int Code, string Stdout, string Stderr)> UnlandedLogAsync(
         string cwd, string revision, CancellationToken ct, string? except = null) =>
@@ -690,7 +697,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 .Where(branch => only is null || only.Contains($"{repository}:{branch}"))
                 .ToList();
             // A list git could not give is never read as "no tree here" (AUTOTIDY1): every branch is kept, saying why.
-            if (await ListWorktreesAsync(root, ct).ConfigureAwait(false) is not { } listed)
+            if (await _context.Worktrees.ListAsync(root, ct).ConfigureAwait(false) is not { } listed)
             {
                 items.AddRange(named.Select(branch => new SweepItem(
                     repository, RemoteTarget.Workspace(workspace), branch, null, SweepKind.Unlanded, 0, null, $"git could not tell: {ListUnread}")
@@ -701,7 +708,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             }
 
             var worktrees = ByBranch(listed);
-            var line = (await LineAsync(root, repository, RemoteTarget.Workspace(workspace), ct).ConfigureAwait(false)).Branch;
+            var line = (await _context.LineAsync(root, repository, RemoteTarget.Workspace(workspace), ct).ConfigureAwait(false)).Branch;
             // The completed pull requests the record keeps, confirmed here (PLUGHOOK1a): nothing is asked at a list or a press.
             var carriers = await CarriersAsync(root, repository, line, ct).ConfigureAwait(false);
             foreach (var branch in named)
@@ -760,14 +767,14 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             }
 
             var root = known.First(r => string.Equals(r.Repository, item.Repository, StringComparison.OrdinalIgnoreCase)).Root!;
-            if (await ListWorktreesAsync(root, ct).ConfigureAwait(false) is not { } listed)
+            if (await _context.Worktrees.ListAsync(root, ct).ConfigureAwait(false) is not { } listed)
             {
                 results.Add(new(item with { Unread = true, Detail = ListUnread }, false, $"{ListUnread}, so it is kept") { Kept = TidyKept.Unread, Cause = TidyCause.List });
                 continue;
             }
 
             var worktrees = ByBranch(listed);
-            var line = (await LineAsync(root, item.Repository, item.Workspace, ct).ConfigureAwait(false)).Branch;
+            var line = (await _context.LineAsync(root, item.Repository, item.Workspace, ct).ConfigureAwait(false)).Branch;
             var carriers = item.Kind == SweepKind.Carried ? await CarriersAsync(root, item.Repository, line, ct).ConfigureAwait(false) : [];
             // The commit it was judged at (SQUASHTIDY1c): the one its delete must still find, and the one a pull request's answer
             // removed, for the record of it (PLUGHOOK1a, design §2.5).
@@ -865,7 +872,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             {
                 try
                 {
-                    Recorded.Carried(carrier, new CarriedBranch(now.Branch, judged, _plugins.Now, CarriedBy.CleanUp));
+                    Recorded.Carried(carrier, new CarriedBranch(now.Branch, judged, _context.Plugins.Now, CarriedBy.CleanUp));
                 }
                 catch (Exception error) when (error is IOException or UnauthorizedAccessException)
                 {
@@ -1026,7 +1033,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             { Refusal = AutoLandingCode.Uncommitted };
         }
 
-        var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        var line = (await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         var against = line is null ? "HEAD" : await ComparableAsync(root, line, ct).ConfigureAwait(false) ?? line;
         // Oldest first, each commit's id and subject: what a plugin writes a pull request from (D100).
         var (logCode, ahead, logErr) = await WorkingTree.GitAsync(
@@ -1228,30 +1235,6 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             root, line, commits, branch);
     }
 
-    /// <summary>
-    /// What the plugin's step came to, in the landing's words (D100). Anything short of a push says the
-    /// branch stands and how the person pushes it themselves.
-    /// </summary>
-    private static string Said(PluginLanding said, string branch)
-    {
-        var byHand = $"The branch stands — push it and open the pull request yourself: `git push -u origin {branch}`.";
-        if (said.Failed) return $"Plugin `{said.Plugin}`'s step failed — {Sentence(said.Message)} {byHand}";
-        if (!said.Pushed) return $"Plugin `{said.Plugin}` did not push it: {Sentence(said.Message)} {byHand}";
-
-        var opened = said.PullRequest is { } pr && !said.Message.Contains(pr, StringComparison.Ordinal) ? $" The pull request: {pr}" : "";
-        return $"Plugin `{said.Plugin}`: {Sentence(said.Message)}{opened}";
-    }
-
-    /// <summary>A plugin's words closed as a sentence, so the one after it does not run on.</summary>
-    private static string Sentence(string words) =>
-        words.TrimEnd() is var trimmed && trimmed.Length > 0 && ".!?".Contains(trimmed[^1]) ? trimmed : $"{trimmed}.";
-
-    /// <summary>
-    /// The person's choices, from the file the loop and the planner read (CONFIGSEAM1): this home's <c>driver.json</c> alone
-    /// ignored an override's landing and review rules, so the work merged into the line while the planner sat a review for it.
-    /// </summary>
-    private DriverConfig Config() => DriverConfig.Load(DriverConfig.ResolvePath(home));
-
     /// <summary>What a pattern is expanded from: the quest, or the session where there is none; the quest's name's words (LANDNAME1).</summary>
     private static string EnteredInvalid(string name) =>
         $"the branch name you entered, `{name}`, is not a branch name git would take. Enter another, or leave it blank for the rule's.";
@@ -1357,8 +1340,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 }
 
                 judged = tipOut.Trim();
-                var (workspace, repository) = OwnerOf(full);
-                var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+                var (workspace, repository) = _context.OwnerOf(full);
+                var line = (await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
                 var canonical = line ?? "HEAD";
                 // Landed (D88): a branch of the person's holds every commit — the line, a branch the branch form
                 // made, one they pushed. Asked of the tree's own HEAD, so a detached tree is judged by what it
@@ -1444,7 +1427,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             }
 
             // The record drops what is gone (LAND3): a name no branch has is never judged by a start it no longer has.
-            if (stays is null) Forget(OwnerOf(full).Repository, branch);
+            if (stays is null) Forget(_context.OwnerOf(full).Repository, branch);
         }
 
         if (stays is not null)
@@ -1487,13 +1470,6 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     }
 
     /// <summary>
-    /// The repository's line (WSR2), from the choices beside this home, read per call: the person may
-    /// set it between one tree and the next, and a cached answer would grow the second from the old line.
-    /// </summary>
-    private Task<Line> LineAsync(string root, string repository, string workspace, CancellationToken ct) =>
-        CanonicalLine.ResolveAsync(root, repository, workspace, Config(), ct);
-
-    /// <summary>
     /// Where a tree on <paramref name="branch"/> grows from: the branch itself where this checkout has
     /// it, its copy on <c>origin</c> where only that exists, and a refusal for a line set to a branch
     /// the checkout has nowhere — a tree grown from the wrong point is invisible until merge time.
@@ -1514,55 +1490,4 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             + $"or on origin. Fetch it, or set another with `daoris driver line {repository} <branch>`.");
     }
 
-    /// <summary>
-    /// The reference git compares <paramref name="branch"/> by here, by its full name: the local branch, else origin's copy,
-    /// else null — a line this checkout has nowhere. Never the short name (AUTOTIDY1): git reads a tag of that name first.
-    /// </summary>
-    private static async Task<string?> ComparableAsync(string root, string branch, CancellationToken ct)
-    {
-        foreach (var reference in new[] { $"refs/heads/{branch}", $"refs/remotes/origin/{branch}" })
-        {
-            var (code, _, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], ct).ConfigureAwait(false);
-            if (code == 0) return reference;
-        }
-
-        return null;
-    }
-
-    /// <summary>A tree's workspace and repository, read from the layout Daoris itself chose (`trees/&lt;workspace&gt;/&lt;repository&gt;/&lt;name&gt;`).</summary>
-    private (string Workspace, string Repository) OwnerOf(string full)
-    {
-        var parts = Path.GetRelativePath(TreesRoot, full).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        return parts.Length >= 3 ? (parts[0], parts[1]) : ("", "");
-    }
-
-    private static string FirstLine(string text)
-    {
-        var trimmed = text.Trim();
-        var newline = trimmed.IndexOf('\n');
-        return newline < 0 ? trimmed : trimmed[..newline].Trim();
-    }
-
-    /// <summary>
-    /// git's reason, not its progress. `worktree add` says *"Preparing worktree (new branch …)"*
-    /// before anything can fail, and a refusal that quoted the first line quoted that. The last
-    /// `fatal:` or `error:` line is why; failing those, the last line said.
-    /// </summary>
-    private static string Failure(string stderr)
-    {
-        var lines = stderr.Split('\n').Select(line => line.Trim()).Where(line => line.Length > 0).ToList();
-        return lines.LastOrDefault(line => line.StartsWith("fatal:", StringComparison.Ordinal))
-               ?? lines.LastOrDefault(line => line.StartsWith("error:", StringComparison.Ordinal))
-               ?? lines.LastOrDefault()
-               ?? "nothing";
-    }
-
-    /// <summary>
-    /// One filesystem location under two spellings: git prints forward slashes on every platform, the
-    /// caller passes whatever the registry holds, and Windows compares blind to case.
-    /// </summary>
-    private static bool SamePath(string left, string right) => string.Equals(
-        Path.TrimEndingDirectorySeparator(Path.GetFullPath(left)).Replace('\\', '/'),
-        Path.TrimEndingDirectorySeparator(Path.GetFullPath(right)).Replace('\\', '/'),
-        OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
 }

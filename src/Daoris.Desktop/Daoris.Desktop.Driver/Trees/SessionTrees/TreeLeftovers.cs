@@ -1,3 +1,5 @@
+using static Daoris.Driver.TreeGit;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -13,10 +15,10 @@ namespace Daoris.Driver;
 /// <para>🔴 <b>Only an empty folder is ever deleted here</b>, and only under the trees home. One that still holds
 /// anything is named and left: whatever is in it, git did not know it as the tree's.</para>
 /// </remarks>
-public sealed partial class SessionTrees
+internal sealed class TreeLeftovers(TreeContext context)
 {
     /// <summary>Whether git still counts <paramref name="tree"/> as one of this repository's working trees.</summary>
-    private static async Task<bool?> RegisteredAsync(string root, string tree, CancellationToken ct)
+    internal static async Task<bool?> RegisteredAsync(string root, string tree, CancellationToken ct)
     {
         var (code, porcelain, _) = await WorkingTree.GitAsync(root, ["worktree", "list", "--porcelain"], ct).ConfigureAwait(false);
         if (code != 0) return null;
@@ -30,7 +32,7 @@ public sealed partial class SessionTrees
     /// After git failed to remove a tree: whether git let go of it all the same, and then what became of its folder —
     /// a sentence where it stays, null where it went after all.
     /// </summary>
-    private static async Task<(bool LetGo, string? Left)> LetGoAsync(string root, string tree, CancellationToken ct)
+    internal static async Task<(bool LetGo, string? Left)> LetGoAsync(string root, string tree, CancellationToken ct)
     {
         if (await RegisteredAsync(root, tree, ct).ConfigureAwait(false) is not false) return (false, null);
         return (true, EmptyFolderGone(tree) is { } why ? $"Its folder at {tree} is left behind: {why}" : null);
@@ -40,7 +42,7 @@ public sealed partial class SessionTrees
     /// Delete a leftover folder if it is empty: null where it is gone, else why it stays — the words the removal and the
     /// clean-up both put in their own sentence.
     /// </summary>
-    private static string? EmptyFolderGone(string folder)
+    internal static string? EmptyFolderGone(string folder)
     {
         try
         {
@@ -64,13 +66,14 @@ public sealed partial class SessionTrees
     /// The clean-up's retry (the first real post-merge run): every empty folder where a tree was, under the trees home,
     /// deleted — and a sentence for each one removed or still held.
     /// </summary>
-    private IReadOnlyList<string> EmptyFoldersGone()
+    internal IReadOnlyList<string> EmptyFoldersGone()
     {
+        var treesRoot = context.TreesRoot;
         var said = new List<string>();
-        if (!Directory.Exists(TreesRoot)) return said;
+        if (!Directory.Exists(treesRoot)) return said;
         try
         {
-            foreach (var workspace in Directory.EnumerateDirectories(TreesRoot))
+            foreach (var workspace in Directory.EnumerateDirectories(treesRoot))
             foreach (var repository in Directory.EnumerateDirectories(workspace))
             foreach (var tree in Directory.EnumerateDirectories(repository))
             {
@@ -85,7 +88,7 @@ public sealed partial class SessionTrees
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            said.Add($"Daoris could not look under {TreesRoot} for folders trees left behind ({error.Message}).");
+            said.Add($"Daoris could not look under {treesRoot} for folders trees left behind ({error.Message}).");
         }
 
         return said;

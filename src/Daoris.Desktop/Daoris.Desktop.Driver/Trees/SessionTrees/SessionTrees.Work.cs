@@ -118,8 +118,8 @@ public sealed partial class SessionTrees
                 full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct).ConfigureAwait(false);
             if (rootCode != 0) return null;
             var root = Path.GetDirectoryName(commonDir.Trim())!;
-            var (workspace, repository) = OwnerOf(full);
-            var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+            var (workspace, repository) = _context.OwnerOf(full);
+            var line = (await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
             // TREEFOLLOW1: the branch its agent moved the tree onto holds its commits because it is where they are, not a copy.
             var notHolders = LandedHere(repository);
             if (await OwnBranchOfAsync(full, ct).ConfigureAwait(false) is { } ownBranch)

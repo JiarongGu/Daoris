@@ -1,3 +1,5 @@
+using static Daoris.Driver.TreeGit;
+
 namespace Daoris.Driver;
 
 /// <summary>What a landed branch holds, for the clean-up's list (WSR5). Only the first three go.</summary>
@@ -124,7 +126,7 @@ public sealed partial class SessionTrees
 
         var sessions = await SweepPlanAsync(known, inUse, ct).ConfigureAwait(false);
         var record = Recorded.All();
-        var config = Config();
+        var config = _context.Config();
         var landed = new List<LandedItem>();
         foreach (var (repository, workspace, root) in known)
         {
@@ -186,7 +188,7 @@ public sealed partial class SessionTrees
 
         var landed = await CleanLandedAsync(known, only, ct).ConfigureAwait(false);
         // The empty folders trees left where something held them open (the first real post-merge run), tried again.
-        return new(sessions, landed, EmptyFoldersGone());
+        return new(sessions, landed, _context.Leftovers.EmptyFoldersGone());
     }
 
     /// <summary>
@@ -303,8 +305,8 @@ public sealed partial class SessionTrees
         List<string>? stale, CancellationToken ct)
     {
         // A list git could not give is never "no tree here" (AUTOTIDY1): every branch is then kept as one checked out.
-        var worktrees = await ReadWorktreesAsync(root, ct).ConfigureAwait(false);
-        var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        var worktrees = await _context.Worktrees.ReadAsync(root, ct).ConfigureAwait(false);
+        var line = (await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         var forms = await LineFormsAsync(root, line, ct).ConfigureAwait(false);
 
         var judged = new List<(LandedBranch Entry, string Tip, Proof Proof, string? Keep, int Ahead, PullRequestVerdict? Verdict)>();

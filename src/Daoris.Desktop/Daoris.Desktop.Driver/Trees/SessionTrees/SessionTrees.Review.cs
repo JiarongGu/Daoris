@@ -1,4 +1,5 @@
 using System.Globalization;
+using static Daoris.Driver.TreeGit;
 
 namespace Daoris.Driver;
 
@@ -227,7 +228,7 @@ public sealed partial class SessionTrees
             }
         }
 
-        var line = (await LineAsync(root, entry.Repository, RemoteTarget.Workspace(entry.Workspace), ct).ConfigureAwait(false)).Branch ?? entry.Line;
+        var line = (await _context.LineAsync(root, entry.Repository, RemoteTarget.Workspace(entry.Workspace), ct).ConfigureAwait(false)).Branch ?? entry.Line;
         var against = line is null ? null : await ComparableAsync(root, line, ct).ConfigureAwait(false);
         if (against is null) return null;
         var (code, fork, _) = await WorkingTree.GitAsync(root, ["merge-base", against, tip], ct).ConfigureAwait(false);
@@ -240,7 +241,7 @@ public sealed partial class SessionTrees
         var (held, _, _) = await WorkingTree.GitAsync(root, ["cat-file", "-e", $"{entry.Tip}^{{commit}}"], ct).ConfigureAwait(false);
         if (held != 0) return new(LandedReads.CommitsGone, null, [], null);
 
-        var line = (await LineAsync(root, entry.Repository, RemoteTarget.Workspace(entry.Workspace), ct).ConfigureAwait(false)).Branch ?? entry.Line;
+        var line = (await _context.LineAsync(root, entry.Repository, RemoteTarget.Workspace(entry.Workspace), ct).ConfigureAwait(false)).Branch ?? entry.Line;
         var proof = await ProveAsync(root, entry.Tip, line, await LineFormsAsync(root, line, ct).ConfigureAwait(false), ct).ConfigureAwait(false);
         return new(proof.Kind, proof.Where, proof.Kind == LandedKind.Differs ? proof.Files : [], proof.Detail);
     }

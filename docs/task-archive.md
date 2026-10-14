@@ -14386,3 +14386,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PART10e — `DriverModule`: the middle domains** (modules; after 10d). Git, Conversation, Sessions, Driver, Lines, Plugins and Tools as handler classes, their tests' statics re-spelled. Survey "The large five, as scouted".
 
 **Outcome** 2026-10-14: Git, Conversation, Sessions, Driver, Lines, Plugins and Tools are `<Domain>Routes` classes, each with only what it uses, their state moved in; what Help and Trees still reach is static over the loop or the context, and `Offers` reads through the context at request time. Routes unchanged; the moved domains' Process classes passed 52 of 52 on the merge. On Sonnet: 129 tool calls. Detail: D166's PART10e note.
+
+## PART10i — `SessionTrees`: its shared helpers, worktrees and types (2026-10-14, D166)
+
+> - [ ] **PART10i — `SessionTrees`: its shared helpers, worktrees and types** (driver). The git words most parts use, the worktree reads, the scratch walk, the leftovers and the records into classes and files of their own; the front stays partial. Survey "The large five, as scouted".
+
+**Outcome** 2026-10-14: a `TreeContext` built once by the front holds the home, the plugins, the two test seams, the derived reads, the line and owner reads and the worktree and leftover classes; `TreeGit`, `TreeWorktrees`, `TreeScratch` and `TreeLeftovers` are classes of their own, and the parts call them. The front keeps every public member; the remaining records stay with their parts for 10j-l. The Trees Process classes passed on the merge. On Sonnet: 126 tool calls. Detail: D166's PART10i note.

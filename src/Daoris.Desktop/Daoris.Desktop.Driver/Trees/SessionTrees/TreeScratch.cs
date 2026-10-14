@@ -1,6 +1,10 @@
 namespace Daoris.Driver;
 
-public sealed partial class SessionTrees
+/// <summary>
+/// The walk over a tree's shared ignored folders (TREEKEEP1): what a session wrote there that the checkout does not hold. It reads
+/// nothing of the trees' context, so it is static.
+/// </summary>
+internal static class TreeScratch
 {
     /// <summary>
     /// The folders a build or an install writes and writes again (TREEKEEP1): an ignored path under one of these, which the

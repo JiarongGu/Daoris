@@ -1,3 +1,6 @@
+using static Daoris.Driver.TreeGit;
+using static Daoris.Driver.TreeLeftovers;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -237,8 +240,8 @@ public sealed partial class SessionTrees : IWorkTrees
             return code == 0 ? resolved.Trim() : null;
         }
 
-        var (workspace, repository) = OwnerOf(tree);
-        var line = (await LineAsync(checkout, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        var (workspace, repository) = _context.OwnerOf(tree);
+        var line = (await _context.LineAsync(checkout, repository, workspace, ct).ConfigureAwait(false)).Branch;
         var against = line is null ? null : await ComparableAsync(checkout, line, ct).ConfigureAwait(false);
         if (against is null) return null;
         var (mergeCode, mergeBase, _) = await WorkingTree.GitAsync(checkout, ["merge-base", against, tip], ct).ConfigureAwait(false);
