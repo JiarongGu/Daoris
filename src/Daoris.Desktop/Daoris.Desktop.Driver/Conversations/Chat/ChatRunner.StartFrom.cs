@@ -1,3 +1,5 @@
+// This file keeps the name ChatRunner.StartFrom.cs although it holds the StartFrom class alone (PART10h, D166): the web's
+// say.test.ts and tools/merge-branch.mjs read it by that name.
 namespace Daoris.Driver;
 
 /// <summary>
@@ -182,39 +184,4 @@ public static class StartFrom
     }
 
     private static StartedFrom Refused(string why, string message) => new(null, false, why, message);
-}
-
-public sealed partial class ChatRunner
-{
-    /// <summary>
-    /// *Start a conversation with these words* (MSG1f2): <see cref="StartFrom.RunAsync"/> through this runner's own start, on
-    /// the adapter and account a new conversation takes, and its own first message. The record they were written to goes on
-    /// nowhere meanwhile: a word said to it while this runs waits rather than reopening it under the words handed on.
-    /// </summary>
-    /// <param name="onEnded">Told when the new conversation ends, as a start's is.</param>
-    public async Task<StartedFrom> StartFromAsync(
-        string sessionId, string adapter, DriverConfig config, Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
-    {
-        if (_context.Closing) return new StartedFrom(null, false, null, "the application is closing, so no conversation starts now.");
-
-        var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        if (!_context.GoingOn.TryAdd(sessionId, going.Task))
-        {
-            return new StartedFrom(null, false, StartFrom.Running, $"conversation `{sessionId}` is going on with its words already.");
-        }
-
-        try
-        {
-            return await StartFrom.RunAsync(
-                _service, _home, _events, _output, sessionId,
-                (repository, token) => StartAsync(repository, adapter, config, onEnded, ct: token),
-                (id, text, files, preface) => Say(id, text, files, preface),
-                ct).ConfigureAwait(false);
-        }
-        finally
-        {
-            _context.GoingOn.TryRemove(sessionId, out _);
-            going.TrySetResult();
-        }
-    }
 }

@@ -27,9 +27,9 @@ public sealed record ChatStart(string? SessionId, string Message);
 /// judged in one place for every door. This asks, and reports the refusal verbatim.</para>
 ///
 /// <para><b>An ended chat goes on</b> (MSG1c, D137 §2.2): the person's words kept on its record are taken up here at
-/// once, its record reopening and its own conversation resumed with them (<c>ChatRunner.GoOn.cs</c>).</para>
+/// once, its record reopening and its own conversation resumed with them (<see cref="ChatGoOn"/>).</para>
 /// </remarks>
-public sealed partial class ChatRunner : IDisposable
+public sealed class ChatRunner : IDisposable
 {
     private readonly ServiceClient _service;
 
@@ -52,7 +52,7 @@ public sealed partial class ChatRunner : IDisposable
     private readonly SessionEvents _events;
 
     // What the runner's classes share (PART10g): the fields above that more than one reads, the stores and the live maps. The
-    // fields stay here too, the same objects, for the front and its parts until they are classes (PART10h).
+    // fields stay here too, the same objects, for the front itself (PART10h left them).
     private readonly ChatContext _context;
 
     // A conversation handed over, and one moved by its account's usage curve: classes over the context, the front keeping its
@@ -60,6 +60,17 @@ public sealed partial class ChatRunner : IDisposable
     private readonly ChatHandOver _handOver;
 
     private readonly CurveMove _curve;
+
+    // Ask Daoris's conversations, the helpers' words and an ended chat's going-on: classes over the context too (PART10h). The
+    // go-on holds the runner and reads the other two.
+    private readonly ChatHelp _help;
+
+    private readonly ChatHelperWords _words;
+
+    private readonly ChatGoOn _goOn;
+
+    // The requests *Start a conversation on its first words* has answered (NEW1a), made when the first carries an id.
+    private StartRequests? _starts;
 
     /// <param name="events">
     /// Where a conversation's structure is kept (D76): the shell's shared record, so its page hears each message live; the
@@ -99,15 +110,109 @@ public sealed partial class ChatRunner : IDisposable
         _harnesses = harnesses ?? new HarnessRoster(adapters);
         _events = events ?? new SessionEvents(Path.Combine(home, "sessions"));
         _context = new ChatContext(service, home, processes, output, _harnesses, _events);
-        _conversations = _context.Conversations;
-        _marks = _context.Marks;
         _handOver = new ChatHandOver(_context, this);
         _curve = new CurveMove(_context, _handOver);
+        _help = new ChatHelp(_context, this);
+        _words = new ChatHelperWords(_context);
 
-        // The person's words to an ended chat are kept on its record and shown in its conversation by whichever door they
-        // were said at (MSG1d); hearing them there is what takes them up at once (MSG1c, D137 §2.2).
-        _events.Evented += Heard;
+        // The go-on hears the record's events from its construction: the person's words to an ended chat (MSG1d, MSG1c).
+        _goOn = new ChatGoOn(_context, this, _handOver, _help, _words);
     }
+
+    /// <summary>
+    /// The ended chats whose words wait from while no runner heard them are taken up, as the shell comes up (MSG1c2,
+    /// <see cref="ChatGoOn.TakeUpAsync"/>).
+    /// </summary>
+    public Task<IReadOnlyList<ChatStart>> TakeUpAsync(CancellationToken ct = default) => _goOn.TakeUpAsync(ct);
+
+    /// <summary>Go on with an ended chat the person wrote to (MSG1c, <see cref="ChatGoOn.GoOnAsync"/>).</summary>
+    public Task<ChatStart> GoOnAsync(
+        string sessionId, DriverConfig? config = null, Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
+        _goOn.GoOnAsync(sessionId, config, onEnded, ct);
+
+    /// <summary>
+    /// A conversation this runner took up by itself ended (MSG1c2): the session and the state its record took, as a start's
+    /// <c>onEnded</c> is told. No route started it, so the shell announces it as the page's <c>SESSION_ENDED</c>.
+    /// </summary>
+    public event Action<string, string>? TakenUpEnded
+    {
+        add => _goOn.TakenUpEnded += value;
+        remove => _goOn.TakenUpEnded -= value;
+    }
+
+    /// <summary>
+    /// The machine as Ask Daoris's room says it (ASKHIST1, <see cref="ChatHelp.DescribeHelp"/>): the shell's reading, which a
+    /// conversation going on finds the room written from. Null where nothing reads it.
+    /// </summary>
+    public Func<CancellationToken, Task<HelpMachine?>>? DescribeHelp
+    {
+        get => _help.DescribeHelp;
+        set => _help.DescribeHelp = value;
+    }
+
+    /// <summary>Start a new Ask Daoris conversation from an earlier one's words (ASKHIST1, <see cref="ChatHelp.StartHelpFromAsync"/>).</summary>
+    public Task<ChatStart> StartHelpFromAsync(
+        string earlier, string adapter, DriverConfig config, HelpMachine machine,
+        Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
+        _help.StartHelpFromAsync(earlier, adapter, config, machine, onEnded, ct);
+
+    /// <summary>
+    /// *Start a conversation with these words* (MSG1f2): <see cref="StartFrom.RunAsync"/> through this runner's own start, on
+    /// the adapter and account a new conversation takes, and its own first message. The record they were written to goes on
+    /// nowhere meanwhile: a word said to it while this runs waits rather than reopening it under the words handed on.
+    /// </summary>
+    /// <param name="onEnded">Told when the new conversation ends, as a start's is.</param>
+    public async Task<StartedFrom> StartFromAsync(
+        string sessionId, string adapter, DriverConfig config, Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
+    {
+        if (_context.Closing) return new StartedFrom(null, false, null, "the application is closing, so no conversation starts now.");
+
+        var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (!_context.GoingOn.TryAdd(sessionId, going.Task))
+        {
+            return new StartedFrom(null, false, StartFrom.Running, $"conversation `{sessionId}` is going on with its words already.");
+        }
+
+        try
+        {
+            return await StartFrom.RunAsync(
+                _service, _home, _events, _output, sessionId,
+                (repository, token) => StartAsync(repository, adapter, config, onEnded, ct: token),
+                (id, text, files, preface) => Say(id, text, files, preface),
+                ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            _context.GoingOn.TryRemove(sessionId, out _);
+            going.TrySetResult();
+        }
+    }
+
+    /// <summary>
+    /// Open a conversation on its first words (NEW1a): <see cref="StartAsync"/>, then <see cref="Say"/> with the words and
+    /// files. A request id makes a retry answer the first start (<see cref="StartRequests"/>).
+    /// </summary>
+    /// <param name="ownTree">Absent is the driver's choice; true a tree of its own; false the checkout.</param>
+    /// <exception cref="DriverException">The request id is malformed.</exception>
+    public Task<StartedFrom> StartWithAsync(
+        string repository, string adapter, DriverConfig config, string text, IReadOnlyList<ChatUpload> files, string? requestId,
+        bool? ownTree = null, string? profile = null, Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
+    {
+        Task<StartedFrom> Run() => _context.Closing
+            ? Task.FromResult(new StartedFrom(null, false, null, "the application is closing, so no conversation starts now."))
+            : StartWith.RunAsync(
+                token => StartAsync(repository, adapter, config, onEnded, profile, ownTree, token),
+                (id, words, attached, preface) => Say(id, words, attached, preface),
+                text, files, ct);
+
+        if (requestId is null) return Run();
+        _starts ??= new StartRequests(_home);
+        return _starts.RunAsync(requestId, Run);
+    }
+
+    /// <summary>Whether a conversation opens in a tree of its own: said, or else the repository's standing choice (D51).</summary>
+    public static bool Isolates(bool? ownTree, DriverConfig config, string repository) =>
+        ownTree ?? config.OpensOwnTree(repository);
 
     // The process a new conversation in a tree of its own is told with its first message (PROCESS1d-ii), held until then. A map of
     // its own, never the browser's, which a hand-over's briefing appends: a conversation handed over is told Daoris's record instead.
@@ -154,6 +259,9 @@ public sealed partial class ChatRunner : IDisposable
     /// are the person's (<see cref="AcpConfigOption.ThePersons"/>).
     /// </summary>
     public event Action<string, IReadOnlyList<AcpConfigOption>>? OptionsChanged;
+
+    /// <summary>The earlier conversation's words, kept as this conversation's file, and the line its agent is told beside them.</summary>
+    internal sealed record Handing(IReadOnlyList<KeptFile> Files, string Preface);
 
     /// <summary>The note a conversation's record takes when the driver holding it closes.</summary>
     public const string ClosedNote =
@@ -306,7 +414,7 @@ public sealed partial class ChatRunner : IDisposable
     /// driven session in this repository would, the plugins' servers, and its conversation kept for it to go on (MSG1c).
     /// </summary>
     /// <param name="repository">The repository as the conversation names it, which its rules are composed for.</param>
-    private ChatPlace RepositoryPlace(
+    internal ChatPlace RepositoryPlace(
         DriverConfig config, IReadOnlyList<RepoView> registry, RepoView known, string repository, string workTree)
     {
         var across = AcrossRules.Reach(config, registry, known.Repository, known.Workspace);
@@ -398,7 +506,7 @@ public sealed partial class ChatRunner : IDisposable
     /// <b>Its conversation is kept</b> (ASKHIST1): the person goes back to an earlier one from its history, and words written to
     /// one that ended go on in its own harness conversation by the id kept for it (D137 §2.2), as a repository's chat does.
     /// </remarks>
-    private ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads) =>
+    internal ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads) =>
         new(
             HelpRoom.Repository, room, (file, id) => HelpRoom.Rules(file, ChatFiles.Folder(_home, id), reads),
             Plugins: false, ConnectorOnPipe: true, Posture: HelpRoom.Posture, ToolsUpFront: true)
@@ -420,7 +528,7 @@ public sealed partial class ChatRunner : IDisposable
     /// Whether its tools load with the first request, by the adapter's own switch (HELP5): true for the room,
     /// whose every answer reads the family, and false for a repository, which keeps the harness's default.
     /// </param>
-    private sealed record ChatPlace(
+    internal sealed record ChatPlace(
         string Name, string Tree, Func<PermissionFile, string, RuleLists> Rules, bool Plugins, bool ConnectorOnPipe,
         string? Posture, bool ToolsUpFront)
     {
@@ -462,7 +570,7 @@ public sealed partial class ChatRunner : IDisposable
     /// ended state, its own conversation resumed rather than opened, and the person's words waiting its first turn. Null
     /// for a new conversation.
     /// </param>
-    private async Task<ChatStart> RunAsync(
+    internal async Task<ChatStart> RunAsync(
         string sessionId, string message, ISessionAdapter resolved, HarnessSelection selection, DriverConfig config,
         ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn = null)
     {
@@ -608,7 +716,7 @@ public sealed partial class ChatRunner : IDisposable
                 // On this door the words went once their prompt is on the wire.
                 wentOn: goOn is null ? null : () =>
                 {
-                    if (goOn.Sent(named: false)) _ = WentOnAsync(sessionId, goOn, resolved.Name);
+                    if (goOn.Sent(named: false)) _ = _goOn.WentOnAsync(sessionId, goOn, resolved.Name);
                 });
             _context.Turned[sessionId] = chat;
         }
@@ -621,7 +729,7 @@ public sealed partial class ChatRunner : IDisposable
                 // On this door the words went once their line is on stdin and the harness has opened the conversation.
                 wentOn: goOn is null ? null : () =>
                 {
-                    if (goOn.Sent(named: true)) _ = WentOnAsync(sessionId, goOn, resolved.Name);
+                    if (goOn.Sent(named: true)) _ = _goOn.WentOnAsync(sessionId, goOn, resolved.Name);
                 });
             _context.Turned[sessionId] = native;
         }
@@ -674,7 +782,7 @@ public sealed partial class ChatRunner : IDisposable
         // No conversation goes on from here (MSG1c), and one already on its way is let finish its start first, so its
         // process is among those stopped below rather than spawned after them.
         _context.Close();
-        _events.Evented -= Heard;
+        _goOn.Stop();
         try
         {
             Task.WaitAll([.. _context.GoingOn.Values], bound);
@@ -1078,7 +1186,7 @@ public sealed partial class ChatRunner : IDisposable
     {
         var goOn = watched.GoOn;
         // Its harness conversation's id, kept for its record the moment its door names it (MSG1c, D137 §4.2).
-        var keep = watched.Keeps ? _conversations.Keeping(sessionId, watched.Adapter) : null;
+        var keep = watched.Keeps ? _context.Conversations.Keeping(sessionId, watched.Adapter) : null;
 
         // Declared first, so it is disposed LAST — after the process is untracked and every map that
         // talks to it has let go (REV3: nothing disposed a conversation's process or its pipes).
@@ -1118,7 +1226,7 @@ public sealed partial class ChatRunner : IDisposable
                         {
                             keep?.Invoke(conversation);
                             // 🔴 Its harness opened the conversation its words went to, so they went (MSG1c): off the record by their ids.
-                            if (goOn is not null && goOn.Named()) _ = WentOnAsync(sessionId, goOn, watched.Adapter);
+                            if (goOn is not null && goOn.Named()) _ = _goOn.WentOnAsync(sessionId, goOn, watched.Adapter);
                         })
                     : HarnessCapture.CaptureAsync(process, transcript, sessionId, _output, CancellationToken.None));
 
@@ -1138,7 +1246,7 @@ public sealed partial class ChatRunner : IDisposable
 
             if (goOn?.Ask.Refused is { } refused)
             {
-                await WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
+                await _goOn.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
                 return;
             }
 
@@ -1158,7 +1266,7 @@ public sealed partial class ChatRunner : IDisposable
             // writes to it (MSG1c): a conversation whose harness named no id cannot go on in it. Never on the driver's own
             // reason, which a reader matches whole (ClosedNote's twin in the deployment rehearsal).
             var note = _processes.StopReason(sessionId)
-                ?? EndedNote(stopped, notKept: watched.Keeps && _conversations.Read(sessionId) is null);
+                ?? EndedNote(stopped, notKept: watched.Keeps && _context.Conversations.Read(sessionId) is null);
             await Conclude(sessionId, stopped ? "stopped" : "completed", note, onEnded).ConfigureAwait(false);
         }
         catch (Exception error)
@@ -1171,7 +1279,7 @@ public sealed partial class ChatRunner : IDisposable
             // An agent that would not resume the conversation (MSG1c): nothing went, so the record goes back to how it ended.
             if (goOn?.Ask.Refused is { } refused)
             {
-                await WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
+                await _goOn.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
                 return;
             }
 

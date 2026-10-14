@@ -299,13 +299,13 @@ public sealed class ChatGoOnTests : IDisposable
         var persons = new SaidWordView("w1", "Also log the port.", DateTimeOffset.UtcNow, [], true);
         var helper = new SaidWordView("w2", "Another agent says five.", DateTimeOffset.UtcNow, [], true) { Helper = "h1" };
 
-        Assert.Equal(Continuations.GoingOn, ChatRunner.GoingOnNote([persons]).Note);
-        Assert.Equal(Continuations.GoingOn, ChatRunner.GoingOnNote([persons, helper]).Note);
-        Assert.Equal(Continuations.GoingOnWithHelper, ChatRunner.GoingOnNote([helper]).Note);
+        Assert.Equal(Continuations.GoingOn, ChatGoOn.GoingOnNote([persons]).Note);
+        Assert.Equal(Continuations.GoingOn, ChatGoOn.GoingOnNote([persons, helper]).Note);
+        Assert.Equal(Continuations.GoingOnWithHelper, ChatGoOn.GoingOnNote([helper]).Note);
 
-        Assert.StartsWith("— your words are the next turn", ChatRunner.OpeningNote([persons], "talk", "2", "2").Note);
-        Assert.StartsWith("— your words and a helper's answer are the next turn", ChatRunner.OpeningNote([persons, helper], "talk", "2", "2").Note);
-        var only = ChatRunner.OpeningNote([helper], "talk", "2", "2");
+        Assert.StartsWith("— your words are the next turn", ChatGoOn.OpeningNote([persons], "talk", "2", "2").Note);
+        Assert.StartsWith("— your words and a helper's answer are the next turn", ChatGoOn.OpeningNote([persons, helper], "talk", "2", "2").Note);
+        var only = ChatGoOn.OpeningNote([helper], "talk", "2", "2");
         Assert.StartsWith("— a helper's answer is the next turn", only.Note);
         Assert.Equal(["resumed.opening"], NoteAssert.Codes(only.Parts));
         Assert.Equal(ResumedWhy.Helper, only.Parts[0].Value("why"));
