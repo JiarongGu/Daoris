@@ -2136,7 +2136,8 @@ public sealed class Driver(
 
         // What it consumed, where the door reported it (TOOL3/D57 §4). A pipe with only text reports
         // nothing, and a surface then says "not measured" rather than zero.
-        var (outcome, turnFailed, left) = acp is not null ? await acp.ConfigureAwait(false) : (null, null, []);
+        var (outcome, turnFailed, acpLeft) = acp is not null ? await acp.ConfigureAwait(false) : (null, null, []);
+        List<ChatMessage> left = [.. acpLeft];
         var used = acp is not null ? outcome?.Usage
             : structured is not null ? await structured.ConfigureAwait(false)
             : null;
@@ -2146,7 +2147,7 @@ public sealed class Driver(
         if (held is not null)
         {
             (exitCode, used) = await GoOns.GoOnAsync(
-                held, goOn!, adapter, sessionId, transcript, refusesInput, drivesBrowser, exitCode, used, resume, said, wentOn, ct, own)
+                held, goOn!, adapter, sessionId, transcript, refusesInput, drivesBrowser, exitCode, used, resume, said, wentOn, left, ct, own)
                 .ConfigureAwait(false);
         }
 

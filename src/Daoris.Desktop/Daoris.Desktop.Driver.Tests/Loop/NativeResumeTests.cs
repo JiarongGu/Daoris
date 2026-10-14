@@ -206,6 +206,54 @@ public sealed class NativeResumeTests
     }
 
     /// <summary>
+    /// TURNFAIL2 (D137's TURNFAIL1 note): a native run whose turn the harness said failed (<c>result</c> with <c>is_error</c>) is
+    /// not gone on from with the words held. They are handed back to wait on its ended record, as the protocol door's are, and the
+    /// inbox is closed so a word said as it winds up is refused for the record's door to keep.
+    /// </summary>
+    [Fact]
+    public void A_native_run_that_failed_leaves_its_held_words_waiting_instead_of_going_on_with_them()
+    {
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(interrupt: null);
+        Assert.True(inbox.Hold(new ChatMessage("Also log the port.", [])));
+        var own = new HarnessWords();
+        own.Failed("API Error: Connection dropped (ECONNRESET)");
+
+        var left = NativeWords.Left(own, exit: 0, inbox, carried: []);
+
+        Assert.Equal(["Also log the port."], left!.Select(word => word.Text));
+        Assert.False(inbox.Hold(new ChatMessage("Too late.", [])));
+    }
+
+    /// <summary>The words a go-on run carried when it failed wait too, before any held behind it, in the order said.</summary>
+    [Fact]
+    public void A_go_on_run_that_failed_leaves_the_words_it_carried_waiting_too()
+    {
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(interrupt: null);
+        Assert.True(inbox.Hold(new ChatMessage("And 9090.", [])));
+        var own = new HarnessWords();
+        own.Failed("API Error");
+
+        var left = NativeWords.Left(own, exit: 1, inbox, carried: [new ChatMessage("Also log the port.", [])]);
+
+        Assert.Equal(["Also log the port.", "And 9090."], left!.Select(word => word.Text));
+    }
+
+    /// <summary>A run that did not fail, whatever its exit, goes on with them as before: nothing waits and the inbox stays open.</summary>
+    [Fact]
+    public void A_native_run_that_did_not_fail_goes_on_with_its_held_words()
+    {
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(interrupt: null);
+        Assert.True(inbox.Hold(new ChatMessage("Also log the port.", [])));
+
+        Assert.Null(NativeWords.Left(new HarnessWords(), exit: 0, inbox, carried: []));
+        Assert.Null(NativeWords.Left(null, exit: 0, inbox, carried: []));
+        Assert.Single(inbox.TakeAllOrClose());
+    }
+
+    /// <summary>
     /// 🔴 A conversation that goes on, on the native door (MSG1c, D137 §4.2): its own conversation resumed by the id it kept,
     /// <c>--resume &lt;id&gt;</c> beside the structured stdin a conversation always has, so the words go as its first message.
     /// Never <c>--continue</c>, which takes the newest conversation in the folder.
