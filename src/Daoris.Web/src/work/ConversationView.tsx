@@ -1,6 +1,6 @@
-import { createContext, type ReactNode, useContext, useState } from 'react';
+import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { compact, moment, span } from '../format';
+import { compact, elapsed, moment, span } from '../format';
 import { cn } from '../lib/cn';
 import { Button, Dot, Icon, Inline, Tip } from '../ui';
 import type { NotePart } from '../api';
@@ -217,6 +217,8 @@ function TurnView({ turn, tree, running, onLoadEarlier, reveal }: {
         : <Held key={part.block.key} id={part.block.key} reveal={reveal}><BlockView block={part.block} tree={tree} /></Held>))}
       {turn.waiting && <NewSessionDoor turn={turn} />}
       {running && <Dot tone="live" label={t('work.conversation.working')} className="mt-1" />}
+      {/* A resumed conversation can wait many minutes on its model before anything shows (WAITSHOWN1): said, with the count. */}
+      {running && turn.waitingSince && <FirstAnswer since={turn.waitingSince} />}
       {/* The session ended inside this turn (SESS1 S4): said once, in the passive, never as a failure —
           the driver's note above says why, when it knows. */}
       {turn.cut && <p className="m-0 text-meta text-ink-faint">{t('work.conversation.cut')}</p>}
@@ -228,6 +230,29 @@ function TurnView({ turn, tree, running, onLoadEarlier, reveal }: {
       )}
       {turn.ended && <TurnMeter turn={turn} />}
     </div>
+  );
+}
+
+/** Re-reads the clock every `every` ms while mounted, so a count of elapsed time steps without a new record (WAITSHOWN1). */
+function useNow(every: number): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), every);
+    return () => clearInterval(timer);
+  }, [every]);
+  return now;
+}
+
+/** The wait for a turn's first answer (WAITSHOWN1): when it was asked, and for how long it has waited, ticking. */
+function FirstAnswer({ since }: { since: string }) {
+  const { t, i18n } = useTranslation();
+  const now = useNow(10_000);
+  return (
+    <p role="status" className="m-0 text-meta text-ink-faint">
+      {t('work.conversation.firstAnswer', {
+        time: moment(since, i18n.language), elapsed: elapsed(since, new Date(now).toISOString()),
+      })}
+    </p>
   );
 }
 

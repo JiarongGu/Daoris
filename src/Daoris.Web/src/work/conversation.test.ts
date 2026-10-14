@@ -24,7 +24,7 @@ vi.mock('@shenora/react', () => ({
 import { en, zh } from '../locales';
 import { useChatTurns, useSay, useSessionEvents, useSessionReach } from '../shell';
 import { driverSource } from '../test/driverSource';
-import { CONVERSATION_CODES, mergeEvents, runCount, segments, type SessionEvent, settle, toTurns } from './conversation';
+import { CONVERSATION_CODES, firstAnswerWait, mergeEvents, runCount, segments, type SessionEvent, settle, toTurns } from './conversation';
 
 const said = (seq: number, text = `m${seq}`): SessionEvent => ({ seq, at: '2026-09-25T00:00:00Z', kind: 'message', text });
 
@@ -454,6 +454,39 @@ describe('toTurns', () => {
     expect(turns).toHaveLength(1);
     expect(turns[0]!.ask).toBeUndefined();
     expect(turns[0]!.items[0]).toMatchObject({ kind: 'note', text: 'no connector here' });
+  });
+});
+
+/** WAITSHOWN1: the wait for the first answer, read from the record alone. */
+describe('the wait for a turn’s first answer', () => {
+  const ask = e(1, { kind: 'user', text: 'go on', origin: 'person' });
+
+  it('is the ask’s time while the last turn is open and the agent has done nothing', () => {
+    const { turns } = toTurns([ask]);
+    expect(turns[0]!.waitingSince).toBe(ask.at);
+    expect(firstAnswerWait(turns)).toBe(ask.at);
+  });
+
+  it('a note of the driver’s is no answer', () => {
+    const { turns } = toTurns([ask, e(2, { kind: 'note', text: 'resumed' })]);
+    expect(firstAnswerWait(turns)).toBe(ask.at);
+  });
+
+  it('is cleared by any agent block', () => {
+    for (const kind of ['message', 'thought', 'tool'] as const) {
+      const { turns } = toTurns([ask, e(2, { kind, text: 'x', title: 'x' })]);
+      expect(firstAnswerWait(turns)).toBeUndefined();
+    }
+  });
+
+  it('is cleared when the turn ended', () => {
+    const { turns } = toTurns([ask, e(2, { kind: 'turn', stopReason: 'end_turn' })]);
+    expect(firstAnswerWait(turns)).toBeUndefined();
+  });
+
+  it('is not the wait of words waiting at the foot', () => {
+    const { turns } = toTurns([e(1, { kind: 'user', text: 'later', reaches: 'resume', id: 'w1' })]);
+    expect(firstAnswerWait(turns)).toBeUndefined();
   });
 });
 

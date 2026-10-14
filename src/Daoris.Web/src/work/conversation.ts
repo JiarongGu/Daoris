@@ -288,6 +288,12 @@ export type Turn = {
   tokens?: TurnTokens;
   took?: number;
   firstAfter?: number;
+  /**
+   * The ask's time, while the agent has done nothing in answer (WAITSHOWN1): set on the last turn only, while it is open,
+   * not waiting, and holds no message, thought, call or plan. A resumed 700k-token conversation waited 25 minutes with
+   * nothing on the page saying so.
+   */
+  waitingSince?: string;
 };
 
 /** Context as the harness reported it: the latest reading and the highest (TOOL3's high-water mark). */
@@ -510,8 +516,18 @@ export function toTurns(
     if (turn.ask && first) turn.firstAfter = since(turn.ask.at, first.at);
   }
 
+  // The wait for the first answer (WAITSHOWN1): the last turn, still open, asked and with nothing of the agent's yet.
+  const tail = turns[turns.length - 1];
+  if (tail?.ask && !tail.ended && !tail.waiting && !tail.items.some(AGENT)) tail.waitingSince = tail.ask.at;
+
   return { turns, usage, where };
 }
+
+/** What counts as the agent answering (WAITSHOWN1): its words, its thinking, its calls and its plan. */
+const AGENT = (item: Block) => item.kind === 'message' || item.kind === 'thought' || item.kind === 'tool' || item.kind === 'plan';
+
+/** When the turn the agent is on was asked, while it has not answered yet (WAITSHOWN1); undefined once it has, or when none is open. */
+export const firstAnswerWait = (turns: readonly Turn[]): string | undefined => turns[turns.length - 1]?.waitingSince;
 
 /**
  * The turns as a session that has ended leaves them (SESS1 S4): the last one, if the wire never said
@@ -536,6 +552,7 @@ export function settle(turns: Turn[], live: boolean): Turn[] {
   const cut: Turn = {
     ...last,
     cut: true,
+    waitingSince: undefined,
     items: last.items.map((item) => (item.kind === 'tool' && item.status !== 'completed' && item.status !== 'failed'
       ? { ...item, stopped: true }
       : item)),
