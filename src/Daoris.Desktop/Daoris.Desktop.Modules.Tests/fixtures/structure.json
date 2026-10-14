@@ -2,10 +2,6 @@
   "modules": ["Bridge", "Browser", "Windows", "Update", "Loop", "Platform"],
   "loose": ["Bridge.cs", "DriverModuleBridge.cs", "LoopbackHost.cs", "Category.cs", "GlobalUsings.cs", "Parallelism.cs", "EveryModuleChildIsHandedTheToolsTests.cs", "SourceFiles.cs", "StructureCheck.cs", "StructureTests.cs"],
   "root": {
-    "DriverLoop.cs": "Loop",
-    "HostSupervisor.cs": "Loop",
-    "LastLines.cs": "Loop",
-    "SessionWords.cs": "Loop",
     "Refusals.cs": "Platform",
     "RefusalLog.cs": "Platform",
     "LogModule.cs": "Platform",
@@ -96,6 +92,15 @@
     "WindowsModuleTests.cs": "Windows",
     "InstallHomeTests.cs": "Update",
     "InstallUpdaterTests.cs": "Update",
-    "UpdateModuleTests.cs": "Update"
+    "UpdateModuleTests.cs": "Update",
+    "DriverLoopChatTakenUpTests.cs": "Loop",
+    "DriverLoopLockTests.cs": "Loop",
+    "DriverLoopQueuedTests.cs": "Loop",
+    "HostSupervisorTests.cs": "Loop",
+    "LastLinesTests.cs": "Loop",
+    "SessionWordsTerminalTests.cs": "Loop",
+    "TickConsiderationTests.cs": "Loop",
+    "TickErrorsTests.cs": "Loop",
+    "TickWaitTests.cs": "Loop"
   }
 }
