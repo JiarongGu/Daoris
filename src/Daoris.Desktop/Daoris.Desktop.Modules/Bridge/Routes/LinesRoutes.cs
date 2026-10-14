@@ -228,11 +228,11 @@ public sealed class LinesRoutes(DriverContext context)
             // LAND4: the session each kept branch's tree is, so its row says how to land it as that session's page does. The
             // records are read only where a row could offer one, and records that do not read offer none: the list stands.
             var records = plan.Sessions.Any(item => item.Kind == SweepKind.Unlanded && item.Tree is not null)
-                ? await SessionTrees.RecordsOrNoneAsync(_loop.Service ?? throw NotReady(), cancellationToken)
+                ? await SessionBranchDoors.RecordsOrNoneAsync(_loop.Service ?? throw NotReady(), cancellationToken)
                 : [];
             return new
             {
-                Branches = plan.Sessions.Select(item => SweepRow(item, SessionTrees.SessionOfTree(records, item.Tree))).ToArray(),
+                Branches = plan.Sessions.Select(item => SweepRow(item, SessionBranchDoors.SessionOfTree(records, item.Tree))).ToArray(),
                 Landed = plan.Landed.Select(LandedRow).ToArray(),
             };
         }
@@ -380,17 +380,17 @@ public sealed class LinesRoutes(DriverContext context)
     /// whether there is one.
     /// </summary>
     /// <param name="session">
-    /// The session its tree is (LAND4, <see cref="SessionTrees.SessionOfTree"/>), or null: named by id and how it ended, with
-    /// whether its landing is offered by the driver's rule (<see cref="SessionTrees.LandingOffered"/>), the line `trees clean`
+    /// The session its tree is (LAND4, <see cref="SessionBranchDoors.SessionOfTree"/>), or null: named by id and how it ended, with
+    /// whether its landing is offered by the driver's rule (<see cref="SessionBranchDoors.LandingOffered"/>), the line `trees clean`
     /// prints beside the same row. A clean-up's press answers none.
     /// </param>
     public static object SweepRow(SweepItem item, SessionRecord? session = null) => new
     {
         item.Repository, item.Workspace, item.Branch, HasTree = item.Tree is not null,
         item.Kind, item.Commits, item.Where, item.Detail, item.Removable,
-        Discardable = SessionTrees.RemovalOffered(item) is not null,
+        Discardable = SessionBranchDoors.RemovalOffered(item) is not null,
         Session = item.Tree is not null && session is not null ? new { session.Id, session.State } : null,
-        Landable = SessionTrees.LandingOffered(item, session) is not null,
+        Landable = SessionBranchDoors.LandingOffered(item, session) is not null,
     };
 
     /// <summary>A landed branch's row: what the proof found, and the files that keep it where some do (WSR5).</summary>

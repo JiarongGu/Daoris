@@ -220,7 +220,7 @@ public sealed record LandOffer(string Branch, string Tree, int Commits, int? Unc
     {
         if (work.Commits is not > 0 || work.Held is not null || SessionGroups.Normal(tree).Split('/')[^1] is not { Length: > 0 } name) return null;
         // The tree's own branch where it moved onto one (TREEFOLLOW1), else the layout's name for it.
-        return new LandOffer(work.Branch ?? SessionTrees.SessionPrefix + name, name, work.Commits.Value, work.Uncommitted);
+        return new LandOffer(work.Branch ?? TreeFollows.SessionPrefix + name, name, work.Commits.Value, work.Uncommitted);
     }
 }
 
@@ -268,7 +268,7 @@ public sealed record DiscardOffer(string Branch, string Tree, HeldWork Work)
     public static DiscardOffer? Of(string tree, TreeWork work)
     {
         if (work.Commits is not > 0 || work.Held is not { } held || SessionGroups.Normal(tree).Split('/')[^1] is not { Length: > 0 } name) return null;
-        return new DiscardOffer(work.Branch ?? SessionTrees.SessionPrefix + name, name, held);
+        return new DiscardOffer(work.Branch ?? TreeFollows.SessionPrefix + name, name, held);
     }
 }
 
