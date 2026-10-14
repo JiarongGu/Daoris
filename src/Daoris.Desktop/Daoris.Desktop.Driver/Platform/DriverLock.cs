@@ -148,8 +148,7 @@ public sealed class DriverLock : IDisposable
     private static string Describe(DriverKind kind)
     {
         using var self = Process.GetCurrentProcess();
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        return JsonFile.Serialize(writer =>
         {
             writer.WriteStartObject();
             writer.WriteString("kind", kind == DriverKind.Desktop ? "desktop" : "headless");
@@ -157,9 +156,7 @@ public sealed class DriverLock : IDisposable
             writer.WriteNumber("started", self.StartTime.ToUniversalTime().Ticks);
             writer.WriteString("since", DateTimeOffset.UtcNow);
             writer.WriteEndObject();
-        }
-
-        return Utf8.GetString(stream.ToArray()) + "\n";
+        });
     }
 
     /// <summary>Written beside, then moved into place only where nothing is — never over another lock.</summary>
