@@ -14560,3 +14560,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SESSONE1g — a part gone into its entry's tree says so** (driver/web; after 1d). Its start writes no note line today, as a start in the root does: a `started.*` code saying whose tree it went into, with its catalogue words in `note.json` (en, zh). Proof: the `NoteCodesTests` twin and a starting-note test.
 
 **Outcome** 2026-10-14: `started.joined` {session}, written by the start of a first run that went into an earlier part's tree (*Went into the tree of session {{session}}, which holds the earlier part of this work.*, 进入了会话 {{session}} 的工作树…), twinned in `NoteCodes`, `note.json` and `NOTE_CODES`; a part grown again after its tree went keeps `started.tree`'s `basedOn`. No tick drives the call site yet. Gates passed on the merge. Detail: D167's last as-built note.
+
+## TURNFAIL2 — the native door's held words after a failed run (2026-10-15, D137)
+
+> - [ ] **TURNFAIL2 — the native door's held words after a failed run** (driver). `GoOnAsync` still takes them into a run that fails; they wait as the protocol door's do. D137's TURNFAIL1 note; a `NativeResumeTests` row.
+
+**Outcome** 2026-10-15: the native door names a failed run in its stream's error `result` (`own.Ended(exit).Failure`), so `NativeWords.Left` reads it before each take in `GoOnAsync`: on a named failure the words the run carried and those held behind it are left, the inbox closed, and kept after the conclusion through `WordsLeft`, the conversation's `ended.words-wait` note settling them; a bare non-zero exit is not a failure. The second-failure bound on this door is TURNFAIL4. Built with TURNFAIL3; eight gates passed on the merge, the desktop README naming `WordsLeft` in `GoOn/`. On Sonnet: 60 tool calls for both. Detail: D137's TURNFAIL2/TURNFAIL3 note.
+
+## TURNFAIL3 — the failed door end to end (2026-10-15, D137)
+
+> - [ ] **TURNFAIL3 — the failed door end to end** (driver, Process). A tick whose door fails with a word said mid-turn ends failed with it on `said`; the next resumes carrying it.
+
+**Outcome** 2026-10-15: `SessionMessagesTickTests` gains a real tick with a stand-in agent that fails its first prompt with `API Error: Connection dropped (ECONNRESET)`: the record ends `failed` with the words in its note and the word on `said` under `ended.words-wait`, and the next tick resumes the same session carrying it, no second session made. Never red, since TURNFAIL1 had built what it checks. Detail: D137's TURNFAIL2/TURNFAIL3 note.

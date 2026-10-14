@@ -114,7 +114,7 @@ conversation's pure records, rules and words (the message, the resume's judgemen
 briefing and notes, the helpers' asks, rules, words and judge, the turns' and the inbox's records, the go-on records); the chat
 runner, the use cases, the stores and their files sit in scope folders (SCOPE1c): `Chat/` (the chat runner and its parts, the
 turns, the chat files, the start requests), `GoOn/` (going on: marks, files, the new-session choice, the harness's own
-conversations, the continuation judge, the say), `HandOver/` and `Helpers/`; `ConversationTrees`, `DrivenInbox` and
+conversations, the continuation judge, the say, and the words a failed run left, kept to go again, `WordsLeft`), `HandOver/` and `Helpers/`; `ConversationTrees`, `DrivenInbox` and
 `TranscriptFile` stay at the top, named by several scopes.
 
 ## What the page can ask this machine

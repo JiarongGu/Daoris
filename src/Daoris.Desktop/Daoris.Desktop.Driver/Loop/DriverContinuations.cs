@@ -579,16 +579,28 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// any words still held are said, never dropped without a trace.
     /// </summary>
     /// <param name="keep">Where each run's process, its tracking and its reaper are kept, until the record has concluded.</param>
+    /// <param name="left">Where the words a failed run carried or left held are handed back to wait (TURNFAIL2).</param>
     /// <param name="own">Where the harness's own words are kept (AGT3c): each run begins it again, so it says the last run's ending.</param>
     internal async Task<(int? ExitCode, AcpUsage? Used)> GoOnAsync(
         DrivenInbox held, Func<string, string, System.Diagnostics.ProcessStartInfo?> goOn, ISessionAdapter adapter,
         string sessionId, string transcript, string? refusesInput, bool drivesBrowser, int? exitCode, AcpUsage? used,
-        ResumeAsk? resume, Action<System.Text.Json.JsonElement>? said, List<IDisposable> keep, CancellationToken ct,
-        HarnessWords? own = null)
+        ResumeAsk? resume, Action<System.Text.Json.JsonElement>? said, List<IDisposable> keep, List<ChatMessage> left,
+        CancellationToken ct, HarnessWords? own = null)
     {
         var processes = _context.Processes;
-        while (exitCode is not null && !processes.WasStopRequested(sessionId) && held.TakeAllOrClose() is { Count: > 0 } words)
+        IReadOnlyList<ChatMessage> carried = [];
+        while (exitCode is not null && !processes.WasStopRequested(sessionId))
         {
+            // TURNFAIL2: a run whose turn the harness said failed is not gone on from: the words it carried and those held wait,
+            // handed back for the record's say door (WordsLeft), as the protocol door's do (D137's TURNFAIL1 note).
+            if (NativeWords.Left(own, exitCode, held, carried) is { } waiting)
+            {
+                left.AddRange(waiting);
+                return (exitCode, used);
+            }
+
+            if (held.TakeAllOrClose() is not { Count: > 0 } words) break;
+            carried = words;
             // The id its harness named, kept as each run's output ended (ANSWER1a); never read from the account's home.
             var conversation = _context.Conversations.Read(sessionId)?.Conversation ?? resume?.Conversation;
             var info = conversation is null ? null : goOn(conversation, NativeWords.Prompt(words));
@@ -616,7 +628,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         }
 
         // Words held when it could go on no more: a stop, a timeout. Said, never dropped without a trace.
-        if (held.Close() is { Count: > 0 } left) Untaken(sessionId, left.Count, UnreachedWhy.EndedFirst);
+        if (held.Close() is { Count: > 0 } unreached) Untaken(sessionId, unreached.Count, UnreachedWhy.EndedFirst);
         return (exitCode, used);
     }
 
@@ -641,6 +653,15 @@ internal static class NativeWords
     /// </summary>
     public static string Prompt(IReadOnlyList<ChatMessage> words) =>
         string.Join("\n\n", words.Select(word => word.Prompt + ChatFiles.PathLines(word.Files)));
+
+    /// <summary>
+    /// The words a native run leaves waiting when its turn failed (TURNFAIL2): what the harness said failed, its <c>result</c>'s
+    /// reason (<see cref="HarnessWords.Failed"/>), never its exit alone, which ends a run no word was lost to. The words the run
+    /// carried and those held behind it, in the order said, with the inbox closed so a word said as it winds up is refused for
+    /// the record's door to keep. Null where the run did not fail: it goes on with what is held.
+    /// </summary>
+    public static IReadOnlyList<ChatMessage>? Left(HarnessWords? own, int? exit, DrivenInbox held, IReadOnlyList<ChatMessage> carried) =>
+        own?.Ended(exit).Failure is { Length: > 0 } ? [.. carried, .. held.Close()] : null;
 
     /// <summary>
     /// The run's opening in the record: the driver's line, then the same words again under the ids they were shown with

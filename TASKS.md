@@ -187,8 +187,7 @@ Contracts: session-management (D126 §9), session-messages (D137), answer-contin
 pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
 
 - [ ] **WAITSHOWN1b — the monitor's tile reads awaiting** (driver/web). The monitor asks no groups (SESSUX1c), so a session whose quest awaits another repository reads *completed* there: a cheap awaiting read for its tile. `MonitorWindow` test.
-- [ ] **TURNFAIL2 — the native door's held words after a failed run** (driver). `GoOnAsync` still takes them into a run that fails; they wait as the protocol door's do. D137's TURNFAIL1 note; a `NativeResumeTests` row.
-- [ ] **TURNFAIL3 — the failed door end to end** (driver, Process). A tick whose door fails with a word said mid-turn ends failed with it on `said`; the next resumes carrying it.
+- [ ] **TURNFAIL4 — the second-failure bound on the native door** (driver). A native resume's own words are judged by the protocol door's `turnFailed` alone, so `GoOnMarks.FailedTwice` never marks them: judge `FailedTurnWords` from `own.Ended(...).Failure` too. D137's TURNFAIL2 note.
 
 Co-working (D167, `docs/2026-10-14-co-working-design.md`; the owner's two tasks are the canary):
 
