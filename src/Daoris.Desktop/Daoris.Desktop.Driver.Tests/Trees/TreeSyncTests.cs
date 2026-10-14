@@ -55,26 +55,22 @@ public sealed class TreeSyncTests : LandedFixture
         Assert.False(first.Rebases.Single(result => result.Item.Branch == step.Branch).Replayed);
         Assert.Contains(b, await GitAsync(root, "branch", "--list"));
 
-        // S finishes, and its landing makes a branch at its tip.
+        // S finishes, and its landing makes a branch (LANDSYNC1, D87's 2026-10-15 amendment): B's two commits, on the line by content
+        // since the squash, are left out, S's own is replayed onto the line, and S's tree follows it, so the sync has nothing to replay.
         var landed = await trees.LandAsync(step.Path, new LandingSubject("s2", "q2", "Second"));
         Assert.True(landed.Landed, landed.Message);
+        Assert.Equal([LeftOutWhy.Content, LeftOutWhy.Content], landed.LeftOut!.Select(commit => commit.Why));
         var b2 = landed.Branch!;
 
         var plan2 = await trees.SyncPlanAsync(repositories, Nobody);
         Assert.Equal(PullKind.UpToDate, plan2.Lines.Single().Kind);
-        var s = plan2.Rebases.Single(item => item.Branch == step.Branch);
-        Assert.Equal(RebaseKind.Replay, s.Kind);
-        Assert.Equal(CutBy.Record, s.CutBy);
-        Assert.Equal(parent.Branch, s.GrewFrom);
-        Assert.Equal(1, s.Commits);
+        Assert.Equal(RebaseKind.UpToDate, plan2.Rebases.Single(item => item.Branch == step.Branch).Kind);
         var l2 = plan2.Rebases.Single(item => item.Branch == b2);
         Assert.True(l2.Landed);
-        Assert.Equal(RebaseKind.Replay, l2.Kind);
-        Assert.Equal(1, l2.Commits);
+        Assert.Equal(RebaseKind.UpToDate, l2.Kind);
         Assert.True(plan2.Deletes.Single(item => item.Branch == b).Removable);
 
         var done = await trees.SyncAsync(repositories, Nobody);
-        Assert.All(done.Rebases, result => Assert.True(result.Replayed, result.Message));
         Assert.True(done.Deletes.Single(result => result.Item.Branch == b).Removed);
 
         var main = await RevAsync(root, "main");
