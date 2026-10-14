@@ -30,43 +30,40 @@ internal static class DriverHttp
         return http;
     }
 
-    public static async Task<string> GetAsync(HttpClient http, string url, CancellationToken ct)
-    {
-        using var response = await http.GetAsync(url, ct).ConfigureAwait(false);
-        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new DriverException($"{url} answered {(int)response.StatusCode}: {ErrorOf(payload)}");
-        }
-
-        return payload;
-    }
+    public static Task<string> GetAsync(HttpClient http, string url, CancellationToken ct) =>
+        SendAsync(http, HttpMethod.Get, url, null, ct);
 
     /// <returns>What the host answered — the quest sync reads it; a feed ignores it.</returns>
-    public static async Task<string> PostAsync(HttpClient http, string url, string json, CancellationToken ct)
-    {
-        using var response = await http.PostAsync(
-            url, new StringContent(json, Encoding.UTF8, "application/json"), ct).ConfigureAwait(false);
-        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new DriverException($"{url} answered {(int)response.StatusCode}: {ErrorOf(payload)}");
-        }
+    public static Task<string> PostAsync(HttpClient http, string url, string json, CancellationToken ct) =>
+        SendAsync(http, HttpMethod.Post, url, json, ct);
 
-        return payload;
+    public static Task<string> DeleteAsync(HttpClient http, string url, CancellationToken ct) =>
+        SendAsync(http, HttpMethod.Delete, url, null, ct);
+
+    /// <summary>The one send: the payload on success, the refusal sentence thrown otherwise.</summary>
+    private static async Task<string> SendAsync(
+        HttpClient http, HttpMethod method, string url, string? json, CancellationToken ct)
+    {
+        var (response, payload) = await ExchangeAsync(http, method, url, json, ct).ConfigureAwait(false);
+        using (response)
+        {
+            if (!response.IsSuccessStatusCode) throw Refused(url, response, payload);
+            return payload;
+        }
     }
 
-    public static async Task<string> DeleteAsync(HttpClient http, string url, CancellationToken ct)
+    private static async Task<(HttpResponseMessage Response, string Payload)> ExchangeAsync(
+        HttpClient http, HttpMethod method, string url, string? json, CancellationToken ct)
     {
-        using var response = await http.DeleteAsync(url, ct).ConfigureAwait(false);
+        using var request = new HttpRequestMessage(method, url);
+        if (json is not null) request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+        var response = await http.SendAsync(request, ct).ConfigureAwait(false);
         var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new DriverException($"{url} answered {(int)response.StatusCode}: {ErrorOf(payload)}");
-        }
-
-        return payload;
+        return (response, payload);
     }
+
+    private static DriverException Refused(string url, HttpResponseMessage response, string payload) =>
+        new($"{url} answered {(int)response.StatusCode}: {ErrorOf(payload)}");
 
     /// <summary>
     /// POST that tells a deliberate refusal from a wall (D48 §6).
@@ -86,13 +83,14 @@ internal static class DriverHttp
     public static async Task<string?> PostInformableAsync(
         HttpClient http, string url, string json, CancellationToken ct)
     {
-        using var response = await http.PostAsync(
-            url, new StringContent(json, Encoding.UTF8, "application/json"), ct).ConfigureAwait(false);
-        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        if (response.IsSuccessStatusCode) return null;
-        if (IsInformation(payload)) return ErrorOf(payload);
+        var (response, payload) = await ExchangeAsync(http, HttpMethod.Post, url, json, ct).ConfigureAwait(false);
+        using (response)
+        {
+            if (response.IsSuccessStatusCode) return null;
+            if (IsInformation(payload)) return ErrorOf(payload);
 
-        throw new DriverException($"{url} answered {(int)response.StatusCode}: {ErrorOf(payload)}");
+            throw Refused(url, response, payload);
+        }
     }
 
     private static bool IsInformation(string payload)

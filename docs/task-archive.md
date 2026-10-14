@@ -14290,3 +14290,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PART8 — `ServiceClient`'s parts as door classes** (driver). The opinion, helper, history, review, showing and workflow doors as classes over the client, callers re-spelled. Survey "A family".
 
 **Outcome** 2026-10-14: the doors on another module's resource became that module's classes over the client, `OpinionDoors` (Review) and `HelperDoors` (Conversations), reached as `service.Opinions` and `service.Helpers` through four internal members of the client; the history, review, showing and workflow parts, on the client's own resources, merged into `ServiceClient.cs`, now one declaration of about 2,000 lines. Extension methods were rejected, as hiding the coupling the parts hid. The opinion, helper, landing and review Process classes passed 55 of 55 on the merge. On Opus: 132 tool calls. Detail: D166's PART8 note.
+
+## DEDUP8 — the driver's HTTP verbs and downloads (2026-10-14, D166)
+
+> - [ ] **DEDUP8 — the driver's HTTP verbs and downloads** (driver). `DriverHttp`'s three verbs as one send; one download wrapper and hash for `ToolInstall` and `ClaudeReleaseDownloads`. Survey §8.
+
+**Outcome** 2026-10-14: `DriverHttp`'s verbs and its informable post send through one private exchange, the refusal sentence thrown from one place; `Platform/Downloads.cs` holds the downloads' client, the fetch with its words (each caller choosing its exception) and the streaming hash, for the tool installer and the Claude release. Seven tests; the install and release classes passed on the merge. On Sonnet: 31 tool calls. Detail: D166's DEDUP8 note.
