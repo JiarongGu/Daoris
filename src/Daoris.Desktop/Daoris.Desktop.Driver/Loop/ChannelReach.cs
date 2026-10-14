@@ -123,9 +123,10 @@ public sealed class ChannelReach
             await doors.MarkAsync(held.Ask, held.Entry, through, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or InvalidOperationException
-                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
+                                          or ObjectDisposedException or OperationCanceledException)
         {
-            // The mark stays: the entry's next part is handed the same messages again, which is no harm to a new conversation.
+            // The mark stays: the entry's next part is handed the same messages again, which is no harm to a new conversation. Never
+            // thrown, since the run's working moment calls it unawaited.
         }
     }
 

@@ -685,6 +685,12 @@ public sealed record Consideration(
     public EntryParts? Entry { get; init; }
 
     /// <summary>
+    /// The line of work on an ask a start is a part of (SESSONE2b, D167 point 7), whose channel its instruction is handed what
+    /// waited on: set by the look for a start (<see cref="ChannelEntry.ForQuest"/>). Null for a quest on no ask.
+    /// </summary>
+    public ChannelEntry? Channel { get; init; }
+
+    /// <summary>
     /// For a quest the person's stop holds (<see cref="StartVerdict.Stopped"/>): the session they stopped, which *Try
     /// again* names to release it (SESSUX1b). Null for every other verdict.
     /// </summary>

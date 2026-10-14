@@ -369,6 +369,12 @@ public sealed class Driver(
         snapshot = await HandOversAsync(snapshot, events, ct).ConfigureAwait(false);
         Context.Harnesses.Look(snapshot.Started, mark);
 
+        // The ask's channel (SESSONE2b, D167 point 7; the co-working design §2.3): what is new for each line of work on an ask reaches
+        // its newest part here where it can take it now, and otherwise waits for the entry's next part. One read per such line of work.
+        events.AddRange(await Context.Channel
+            .LookAsync(new ServiceChannelDoors(service), ChannelReach.Parts(snapshot, Context.Processes), ct)
+            .ConfigureAwait(false));
+
         // The set-ups waiting for the person here, and each set-up step's tab let go once they answered it (REVIEWENV1d, design
         // §2.3): kept served from look to look until then. A miss is said and tried again at the next look.
         if (Reviews is { } showing)
@@ -408,7 +414,10 @@ public sealed class Driver(
         // The holds that are the harness's trust (D73), as facts: the screen offers exactly these.
         var untrusted = new List<TrustHold>();
 
-        var starts = plan.Where(c => c.Verdict == StartVerdict.Start).ToList();
+        // Each start's line of work on an ask, whose channel its instruction is handed what waited on (SESSONE2b).
+        var starts = plan.Where(c => c.Verdict == StartVerdict.Start)
+            .Select(c => c with { Channel = ChannelEntry.ForQuest(c.Quest, snapshot) })
+            .ToList();
 
         // The plugins' say, BEFORE a start costs anything (D64 §4): the first hold in catalogue order
         // is the quest's reason for sitting, exactly as a dirty tree or a missing binary would be —
@@ -1288,6 +1297,10 @@ public sealed class Driver(
             var (servers, browserNoted, drivesBrowser, browserDrivers) =
                 await InAppBrowserServers.HandNotedAsync(Context.Servers, Context.Browser, ct).ConfigureAwait(false);
             var browserNotice = browserNoted?.Note;
+            // What waited on the ask's channel for this part's line of work (SESSONE2b, D167 point 7): read for its instruction, never
+            // holding the start, and its entry's mark moved once the record works, not before, so a start that fails hands it on.
+            var channelDoors = new ServiceChannelDoors(service);
+            var channelHeld = start.Channel is { } line ? await ChannelReach.HandAsync(channelDoors, line, ct).ConfigureAwait(false) : null;
             var target = WithLanguage(WithStanding(
                 await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false),
                 config), config, start.Workspace) with
@@ -1307,6 +1320,8 @@ public sealed class Driver(
                 GrewFrom = opened?.GrewFrom,
                 // The parts before it on its session's line, and how its tree stands to theirs (SESSONE1d).
                 Parts = start.Entry is { } entry ? await PartsAsync(entry, joinedIn, entryTree, opened, quest.To, ct).ConfigureAwait(false) : null,
+                // What waited on the ask's channel for its line of work (SESSONE2b, design §2.3), its mark moved once it works.
+                Channel = channelHeld,
                 // How its work will land (WSR1, D87), for a session in a tree of its own — the only kind
                 // the review's press reaches. A chain's step is told its chain's branch, which its done moves on (LAND2c). Under a
                 // named workflow its run's bound version's landing step says it (WORKFLOW1f); a run's first start is bound after it
@@ -1384,6 +1399,8 @@ public sealed class Driver(
                 // A native run holds what the person says while it works, and goes on with it in its own conversation (MSG1b).
                 goOn: GoOns.GoOnWith(adapter, target, selection, rules.File, handed),
                 stopMade: stop => stoppedFirst = stop,
+                // The part works: what it was handed from the ask's channel is read, so its entry's mark moves (SESSONE2b).
+                working: channelHeld is null ? null : () => _ = ChannelReach.HandedAsync(channelDoors, channelHeld, CancellationToken.None),
                 // BGWAIT1: a turn that ends on the session's own background work, holding its quest as a park would, is not
                 // a question. Read from the quest as the conclusion reads it, by the conclusion's own rule.
                 waitsOnBackground: WaitsOnBackground(service, quest, sessionId, resumed: start.Resumes is not null),
@@ -2402,7 +2419,10 @@ public sealed class Driver(
             // the page shows them waiting in the turn they were said in, rather than nothing until they are handed over.
             inbox?.OnSaid((message, reach) =>
             {
-                Line(reach == DrivenReach.NextStep
+                // Another session's message on the ask's channel is that agent's claim, never the person's (SESSONE2b).
+                Line(message.Channel is { Person: false } claim
+                    ? $"— another session's message `{claim.Id}` on the ask's channel, which reaches the session at its next step"
+                    : reach == DrivenReach.NextStep
                     ? $"— the person added, which reaches the session at its next step: {message.Text}"
                     : $"— the person added, which reaches the session when its turn ends: {message.Text}");
                 Event(ChatMessage.Words(message) with { Reaches = reach == DrivenReach.NextStep ? "next-step" : "turn-end" });
@@ -2420,7 +2440,9 @@ public sealed class Driver(
                     // anything the agent did with them, so the answer never sits above the question.
                     asked: message =>
                     {
-                        Line($"— the session took what the person added: {message.Text}");
+                        Line(message.Channel is { Person: false } claim
+                            ? $"— the session took another session's message `{claim.Id}` on the ask's channel"
+                            : $"— the session took what the person added: {message.Text}");
                         Event(ChatMessage.Words(message));
                     },
                     resume: resume?.Conversation,
