@@ -14392,3 +14392,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PART10i — `SessionTrees`: its shared helpers, worktrees and types** (driver). The git words most parts use, the worktree reads, the scratch walk, the leftovers and the records into classes and files of their own; the front stays partial. Survey "The large five, as scouted".
 
 **Outcome** 2026-10-14: a `TreeContext` built once by the front holds the home, the plugins, the two test seams, the derived reads, the line and owner reads and the worktree and leftover classes; `TreeGit`, `TreeWorktrees`, `TreeScratch` and `TreeLeftovers` are classes of their own, and the parts call them. The front keeps every public member; the remaining records stay with their parts for 10j-l. The Trees Process classes passed on the merge. On Sonnet: 126 tool calls. Detail: D166's PART10i note.
+
+## DEDUP5 — the accounts' files share their helpers (2026-10-14, D166)
+
+> - [ ] **DEDUP5 — the accounts' files share their helpers** (driver). One helper for the `Load`, `Key`, `Child`, `Text`, `Flag` and `Moment` that `AccountCooling`, `AccountNames`, `AccountReads` and `AccountWindows` copy; a small store for the eight gate-and-edit stores only where each one fits. Survey §5.
+
+**Outcome** 2026-10-14: `Accounts/AccountFileNodes.cs` holds the four account files' read, key, child, made-child and strict moment, the same bytes written; `Platform/RecordList<T>` is the one-array store `SessionBranches`, `LandedBranches`, `AutoLanding` and `AbandonRecord` now use, and `SessionBranches.SameBranch` the one same-branch predicate. `OpinionDues`, `OpinionGates` and `SessionArchive` keep their own, for the reasons the note gives. Seven gates passed on the merge. On Sonnet: 57 tool calls. Detail: D166's DEDUP5 note.

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using static Daoris.Driver.AccountFileNodes;
 
 namespace Daoris.Driver;
 
@@ -90,8 +91,7 @@ public static class AccountWindows
         lock (Gate)
         {
             var root = Load(home);
-            var owner = Child(root, agent) ?? (JsonObject)(root[agent] = new JsonObject());
-            var held = Child(owner, account) ?? (JsonObject)(owner[account] = new JsonObject());
+            var held = Made(Made(root, agent), account);
             var week = new JsonObject { ["reset"] = AccountCooling.Stamp(reset), ["seen"] = AccountCooling.Stamp(seen) };
             if (session is { Length: > 0 }) week["session"] = session;
             if (Key(held, Weekly) is { } was) held.Remove(was);
@@ -119,8 +119,7 @@ public static class AccountWindows
         lock (Gate)
         {
             var root = Load(home);
-            var owner = Child(root, agent) ?? (JsonObject)(root[agent] = new JsonObject());
-            var held = Child(owner, account) ?? (JsonObject)(owner[account] = new JsonObject());
+            var held = Made(Made(root, agent), account);
             foreach (var reading in readings)
             {
                 if (Key(held, reading.Window) is { } existing && held[existing] is JsonObject kept
@@ -178,25 +177,5 @@ public static class AccountWindows
     }
 
     /// <summary>The file's root, or an empty one when it is missing or does not read.</summary>
-    private static JsonObject Load(string home)
-    {
-        try
-        {
-            return File.Exists(PathOf(home)) && JsonNode.Parse(File.ReadAllText(PathOf(home))) is JsonObject root ? root : new JsonObject();
-        }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
-        {
-            return new JsonObject();
-        }
-    }
-
-    /// <summary>A name in an object, compared without case, as the wiring compares names.</summary>
-    private static string? Key(JsonObject held, string name) =>
-        held.Select(pair => pair.Key).FirstOrDefault(key => string.Equals(key, name, StringComparison.OrdinalIgnoreCase));
-
-    private static JsonObject? Child(JsonObject? parent, string name) =>
-        parent is not null && Key(parent, name) is { } key ? parent[key] as JsonObject : null;
-
-    /// <summary>A moment as ISO 8601 writes it, and only so, as <c>cooling.json</c> reads one.</summary>
-    private static DateTimeOffset? Moment(JsonObject entry, string name) => Moments.ReadStrict(Json.Text(entry[name]));
+    private static JsonObject Load(string home) => AccountFileNodes.Load(PathOf(home));
 }

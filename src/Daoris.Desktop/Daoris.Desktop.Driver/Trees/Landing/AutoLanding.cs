@@ -244,23 +244,12 @@ public sealed class AutoLandings(string home)
     // One writer at a time in this process: the look's pass and a conclusion may write at once.
     private static readonly object Gate = new();
 
+    private static readonly RecordList<AutoLanding> List = new(Gate, "due", Read, ToJson, Bounded);
+
     public string FilePath => Path.Combine(home, "sessions", FileName);
 
     /// <summary>Every entry, open and closed, in the order they became due.</summary>
-    public IReadOnlyList<AutoLanding> All()
-    {
-        try
-        {
-            if (!File.Exists(FilePath)) return [];
-            using var document = JsonDocument.Parse(File.ReadAllText(FilePath));
-            if (!document.RootElement.TryGetProperty("due", out var due) || due.ValueKind != JsonValueKind.Array) return [];
-            return [.. due.EnumerateArray().Select(Read).OfType<AutoLanding>()];
-        }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
-        {
-            return [];
-        }
-    }
+    public IReadOnlyList<AutoLanding> All() => List.Read(FilePath);
 
     /// <summary>The entries still waiting to land, in the order they became due.</summary>
     public IReadOnlyList<AutoLanding> Open() => [.. All().Where(entry => entry.Closed is null)];
@@ -303,14 +292,7 @@ public sealed class AutoLandings(string home)
 
     private static bool Same(AutoLanding entry, string session) => string.Equals(entry.Session, session, StringComparison.OrdinalIgnoreCase);
 
-    private void Edit(Func<IReadOnlyList<AutoLanding>, IReadOnlyList<AutoLanding>> change)
-    {
-        lock (Gate)
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
-            AtomicFile.WriteText(FilePath, ToJson(Bounded(change(All()))));
-        }
-    }
+    private void Edit(Func<IReadOnlyList<AutoLanding>, IReadOnlyList<AutoLanding>> change) => List.Edit(FilePath, change);
 
     /// <summary>The entries with the closed ones beyond the newest <see cref="ClosedKept"/> dropped, the rest in their order.</summary>
     private static IReadOnlyList<AutoLanding> Bounded(IReadOnlyList<AutoLanding> entries)

@@ -288,7 +288,6 @@ folder.
 
 - [ ] **DEDUP2c — the bridge's moments** (modules; after PART10f). `RulesRoutes`' two writes without the culture (~:110, 111) and `DriverModule.Trees.cs`'s five invariant ones (~:163, 177, 533, 620, 681) through `Moments`, left by DEDUP2b while the bridge moved. D166's DEDUP2b note.
 - [ ] **DEDUP3b — the JSON file writer, its second half** (driver, modules; after 3a and PART10f). Quests, Review, Service, Sessions, Setup, Trees, Workflows and the Modules project. Survey §3.
-- [ ] **DEDUP5 — the accounts' files share their helpers** (driver). One helper for the `Load`, `Key`, `Child`, `Text`, `Flag` and `Moment` that `AccountCooling`, `AccountNames`, `AccountReads` and `AccountWindows` copy; a small store for the eight gate-and-edit stores only where each one fits. Survey §5.
 - [ ] **DEDUP7 — text clipped, one-lined and quoted once** (driver, modules). `TextBounds` in `Platform/` for about 44 copies, each call keeping its own limit. Survey §7.
 
 ## Development and agent layout

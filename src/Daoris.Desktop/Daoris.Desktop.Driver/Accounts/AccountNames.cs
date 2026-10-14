@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using static Daoris.Driver.AccountFileNodes;
 
 namespace Daoris.Driver;
 
@@ -295,24 +296,5 @@ public static class AccountNames
     }
 
     /// <summary>The file's root, and whether it was there and did not read; a missing file is an empty root.</summary>
-    private static (JsonObject Root, bool Unreadable) Load(string home)
-    {
-        var path = PathOf(home);
-        if (!File.Exists(path)) return (new JsonObject(), false);
-        try
-        {
-            return JsonNode.Parse(File.ReadAllText(path)) is JsonObject root ? (root, false) : (new JsonObject(), true);
-        }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
-        {
-            return (new JsonObject(), true);
-        }
-    }
-
-    /// <summary>A name in an object, compared without case, as the readings compare names.</summary>
-    private static string? Key(JsonObject held, string name) =>
-        held.Select(pair => pair.Key).FirstOrDefault(key => string.Equals(key, name, StringComparison.OrdinalIgnoreCase));
-
-    private static JsonObject? Child(JsonObject? parent, string name) =>
-        parent is not null && Key(parent, name) is { } key ? parent[key] as JsonObject : null;
+    private static (JsonObject Root, bool Unreadable) Load(string home) => AccountFileNodes.Read(PathOf(home));
 }
