@@ -1,4 +1,4 @@
-import type { DetectedHarness, Harness } from '../platform/types.ts';
+import type { DetectedHarness, Harness } from '../doctrine/records.ts';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { listFiles, listMarkdown, readText } from '../platform/fsx.ts';

@@ -1,4 +1,5 @@
-import type { CommandArgs, Lock, LockEntry, Manifest, MirrorEntry } from '../platform/types.ts';
+import type { CommandArgs } from '../platform/types.ts';
+import type { Lock, LockEntry, Manifest, MirrorEntry } from './records.ts';
 import type { ExitCode } from '../platform/errors.ts';
 import { existsSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';

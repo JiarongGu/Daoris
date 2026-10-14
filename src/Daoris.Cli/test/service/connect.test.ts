@@ -7,7 +7,7 @@ import { isLocalService } from '../../src/service/service.ts';
 import { readManifest } from '../../src/doctrine/config.ts';
 import { DaorisError } from '../../src/platform/errors.ts';
 import { makeFixture } from '../_fixture.ts';
-import type { Manifest } from '../../src/platform/types.ts';
+import type { Manifest } from '../../src/doctrine/records.ts';
 
 const manifest = {
   source: 'github:Owner/Daoris#v0.0.1',

@@ -136,7 +136,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `src/Daoris.Cli/src/agents/toolchain.ts` | 149 | 2884 |
-| `src/Daoris.Cli/src/doctrine/materialize.ts` | 47 | 936 |
+| `src/Daoris.Cli/src/doctrine/materialize.ts` | 47 | 935 |
 | `src/Daoris.Cli/src/driver/driverconfig.ts` | 115 | 2096 |
 | `src/Daoris.Cli/src/plugins/plugins.ts` | 69 | 1383 |
 | `src/Daoris.Cli/src/workflows/workflowdoor.ts` | 46 | 836 |

@@ -6,7 +6,7 @@
 // follows the import and the others read the room's `AGENTS.md` themselves. Declared in the manifest
 // rather than found: the CLI never runs git, and a walk of the tree meets build output and worktrees.
 
-import type { Harness, Lock, Manifest, RoomPlan } from '../platform/types.ts';
+import type { Harness, Lock, Manifest, RoomPlan } from '../doctrine/records.ts';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { readText } from '../platform/fsx.ts';
