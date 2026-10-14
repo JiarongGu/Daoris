@@ -82,6 +82,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-08-second-agent-design.md` | Contract: another maker's agent reviews | D155/D157 |
 | `2026-10-09-person-door-design.md` | Contract: person/driver authorization | D156; starter integration remains in TASKS |
 | `2026-10-09-workflow-design.md` | Contract: choices, versions and gates | D157 |
+| `2026-10-14-co-working-design.md` | Contract: one session per line of work, its records its parts; an ask's channel | D167; SESSONE rows in TASKS |
 
 ## UI, browser, tools and plugin contracts
 
