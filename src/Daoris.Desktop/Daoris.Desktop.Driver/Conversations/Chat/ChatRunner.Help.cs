@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Text;
 
 namespace Daoris.Driver;
@@ -20,17 +19,8 @@ public sealed partial class ChatRunner
     /// <summary>How long a conversation set aside is waited for to end, so the ledger sees the room free.</summary>
     private static readonly TimeSpan SetAsideBound = TimeSpan.FromSeconds(10);
 
-    // Ask Daoris's conversations running here, by session: the room's, which one at a time holds.
-    private readonly ConcurrentDictionary<string, byte> _rooms = new(StringComparer.OrdinalIgnoreCase);
-
-    // What a conversation started from an earlier one is handed with the person's first words: that one's transcript as a file.
-    private readonly ConcurrentDictionary<string, Handing> _handing = new(StringComparer.OrdinalIgnoreCase);
-
-    // The line a new conversation's agent is told of the browser it was handed, held for its first message (BRWHINT1a).
-    private readonly ConcurrentDictionary<string, string> _browsers = new(StringComparer.OrdinalIgnoreCase);
-
     /// <summary>The earlier conversation's words, kept as this conversation's file, and the line its agent is told beside them.</summary>
-    private sealed record Handing(IReadOnlyList<KeptFile> Files, string Preface);
+    internal sealed record Handing(IReadOnlyList<KeptFile> Files, string Preface);
 
     /// <summary>
     /// The machine as the room says it (ASKHIST1): the shell's reading, which <c>START_HELP</c> writes the room from, so a
@@ -102,7 +92,7 @@ public sealed partial class ChatRunner
         string earlier, string adapter, DriverConfig config, HelpMachine machine,
         Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
     {
-        if (_closing) return new(null, "the application is closing, so no conversation starts now.");
+        if (_context.Closing) return new(null, "the application is closing, so no conversation starts now.");
 
         var kept = new HelpConversations(_home);
         var title = (SessionEventText.IsId(earlier) ? kept.Read(earlier).Name : null)
@@ -120,7 +110,7 @@ public sealed partial class ChatRunner
         try
         {
             var files = ChatFiles.Keep(_home, id, [new ChatUpload(HelpTranscript.FileName(earlier), Encoding.UTF8.GetBytes(transcript))]);
-            _handing[id] = new Handing(files, HelpTranscript.Preface(earlier));
+            _context.Handing[id] = new Handing(files, HelpTranscript.Preface(earlier));
             kept.StartedFrom(id, earlier, HelpConversations.Transcript);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
@@ -139,7 +129,7 @@ public sealed partial class ChatRunner
     /// <param name="goingOn">The conversation going on, which is never its own obstacle; null for a new one.</param>
     private async Task<string?> SetAsideHelpAsync(string? goingOn, CancellationToken ct)
     {
-        foreach (var other in _rooms.Keys.Where(id => !string.Equals(id, goingOn, StringComparison.OrdinalIgnoreCase)).ToList())
+        foreach (var other in _context.Rooms.Keys.Where(id => !string.Equals(id, goingOn, StringComparison.OrdinalIgnoreCase)).ToList())
         {
             if (Taking(other))
             {
@@ -147,7 +137,7 @@ public sealed partial class ChatRunner
             }
 
             _processes.Stop(other);
-            if (_watching.TryGetValue(other, out var watch)) await Task.WhenAny(watch, Task.Delay(SetAsideBound, ct)).ConfigureAwait(false);
+            if (_context.Watching.TryGetValue(other, out var watch)) await Task.WhenAny(watch, Task.Delay(SetAsideBound, ct)).ConfigureAwait(false);
         }
 
         return null;

@@ -25,13 +25,13 @@ public sealed partial class ChatRunner
         string sessionId, string agent, string? account, string why, string askedBy, DriverConfig config,
         Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
     {
-        if (_closing) return new HandedOver(null, false, null, "the application is closing, so no conversation is handed over now.");
+        if (_context.Closing) return new HandedOver(null, false, null, "the application is closing, so no conversation is handed over now.");
 
         var (refused, prior) = await HandOver.JudgeAsync(_service, AccountsOf, sessionId, agent, account, ct).ConfigureAwait(false);
         if (refused is not null) return new HandedOver(null, false, refused.Why, refused.Message);
 
         // A conversation another Daoris process runs cannot be ended from here: its own shell takes the ask, or it is stopped there.
-        if (LiveStates.Contains(prior!.State) && !_talking.ContainsKey(sessionId))
+        if (LiveStates.Contains(prior!.State) && !_context.Talking.ContainsKey(sessionId))
         {
             return new HandedOver(
                 null, false, HandOver.Running,
@@ -53,7 +53,7 @@ public sealed partial class ChatRunner
     /// </summary>
     private void HandOverDue(string sessionId, ChatQueue queue, DriverConfig config, Func<string, string, Task>? onEnded)
     {
-        if (_closing || queue.Taking || queue.Opening || queue.Queued.Count > 0) return;
+        if (_context.Closing || queue.Taking || queue.Opening || queue.Queued.Count > 0) return;
         if (new HandOverBox(_home).Read(sessionId) is null) return;
         _ = Task.Run(async () =>
         {
@@ -77,10 +77,10 @@ public sealed partial class ChatRunner
         var taken = new List<ChatStart>();
         foreach (var id in new HandOverBox(_home).Pending())
         {
-            if (_closing || ct.IsCancellationRequested) break;
+            if (_context.Closing || ct.IsCancellationRequested) break;
             try
             {
-                var handed = await TakeHandOverAsync(id, MachineConfig(), Announce, ct).ConfigureAwait(false);
+                var handed = await TakeHandOverAsync(id, _context.MachineConfig(), Announce, ct).ConfigureAwait(false);
                 taken.Add(new ChatStart(handed.SessionId, handed.Message));
             }
             catch (Exception error) when (error is not OperationCanceledException || !ct.IsCancellationRequested)
@@ -103,7 +103,7 @@ public sealed partial class ChatRunner
         }
 
         var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        if (!_goingOn.TryAdd(sessionId, going.Task))
+        if (!_context.GoingOn.TryAdd(sessionId, going.Task))
         {
             return new HandedOver(null, true, null, $"`{sessionId}` is already being taken.");
         }
@@ -113,14 +113,14 @@ public sealed partial class ChatRunner
         {
             // Never mid-turn (SWITCH1c-ii, the switch design §4): its turns are held while it is taken, so a word said as the take
             // begins either started its turn first, and the box waits for that turn's end (HandOverDue), or takes nothing.
-            if (_turned.TryGetValue(sessionId, out var chat))
+            if (_context.Turned.TryGetValue(sessionId, out var chat))
             {
                 if (!chat.Turns.Hold()) return new HandedOver(null, true, null, $"`{sessionId}` is talking: it goes on as its turn ends.");
                 held = chat.Turns;
             }
 
             // A move by the usage curve says which accounts it moved between: the decision kept since its ask (SWITCH1c-ii).
-            var moved = ask.Why == HandOverWhy.Curve && _curveMoves.TryRemove(sessionId, out var move) ? move : null;
+            var moved = ask.Why == HandOverWhy.Curve && _context.CurveMoves.TryRemove(sessionId, out var move) ? move : null;
             return await HandOverTake.RunAsync(
                 _service, _home, _events, _output, sessionId, ask, AccountsOf, EndForHandOverAsync,
                 (prior, request, from, token) => StartAsync(prior.Repository!, request.Agent, config, onEnded, request.Account, ct: token, tree: prior.Tree, from: from),
@@ -130,7 +130,7 @@ public sealed partial class ChatRunner
         {
             // Ended, nothing listens to them now; refused before its end, the conversation takes words again.
             held?.Release();
-            _goingOn.TryRemove(sessionId, out _);
+            _context.GoingOn.TryRemove(sessionId, out _);
             going.TrySetResult();
         }
     }
@@ -159,7 +159,7 @@ public sealed partial class ChatRunner
     /// </summary>
     private async Task EndForHandOverAsync(string sessionId)
     {
-        if (!_watching.TryGetValue(sessionId, out var watch)) return;
+        if (!_context.Watching.TryGetValue(sessionId, out var watch)) return;
 
         _processes.Stop(sessionId, EndedNote(stopped: false, notKept: false));
         await Task.WhenAny(watch, Task.Delay(HandOverEnd)).ConfigureAwait(false);
@@ -171,23 +171,23 @@ public sealed partial class ChatRunner
     /// </summary>
     private async Task<bool> SayHandedOver(string sessionId, ChatMessage message)
     {
-        if (!_turned.ContainsKey(sessionId) && !_talking.ContainsKey(sessionId)) return false;
+        if (!_context.Turned.ContainsKey(sessionId) && !_context.Talking.ContainsKey(sessionId)) return false;
 
-        if (_browsers.TryRemove(sessionId, out var browser)) message = message with { Briefing = $"{message.Briefing}\n\n{browser}" };
-        if (_turned.TryGetValue(sessionId, out var chat)) return chat.Turns.Take(message) is not null;
+        if (_context.Browsers.TryRemove(sessionId, out var browser)) message = message with { Briefing = $"{message.Briefing}\n\n{browser}" };
+        if (_context.Turned.TryGetValue(sessionId, out var chat)) return chat.Turns.Take(message) is not null;
 
         // A text door has no turns to record it as they are sent: the note is kept here, with what is sent, so no path says nothing.
         // Its process is tracked a moment after the start returns, and a send before that reaches nothing: tried again, bounded.
-        var framed = _talking.TryGetValue(sessionId, out var adapter) ? adapter.FrameMessage(message.Prompt) : message.Prompt;
+        var framed = _context.Talking.TryGetValue(sessionId, out var adapter) ? adapter.FrameMessage(message.Prompt) : message.Prompt;
         for (var attempt = 0; attempt < 50; attempt++)
         {
             if (_processes.Send(sessionId, framed))
             {
-                foreach (var recorded in Recorded(message)) Record(sessionId, recorded);
+                foreach (var recorded in Recorded(message)) _context.Record(sessionId, recorded);
                 return true;
             }
 
-            if (!_talking.ContainsKey(sessionId)) return false;
+            if (!_context.Talking.ContainsKey(sessionId)) return false;
             await Task.Delay(100).ConfigureAwait(false);
         }
 

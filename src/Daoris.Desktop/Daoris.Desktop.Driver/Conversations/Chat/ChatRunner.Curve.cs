@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Text.Json;
 
 namespace Daoris.Driver;
@@ -21,10 +20,6 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed partial class ChatRunner
 {
-    // What each curve move's decision said, by session, from its ask to its take: the take's two lines say it (SWITCH1c-i's pair).
-    // A box taken without it (a shell come up since) says the hand-over's lines, its reason `curve`.
-    private readonly ConcurrentDictionary<string, SwitchChoice.MoveTo> _curveMoves = new(StringComparer.OrdinalIgnoreCase);
-
     /// <summary>What each judged turn's end came to, by session: a test hears it; no person reads it.</summary>
     internal event Action<string, SwitchChoice>? CurveJudged;
 
@@ -39,7 +34,7 @@ public sealed partial class ChatRunner
     /// <summary>A turn's end, told as the turns move: judged on a task of its own, as <see cref="HandOverDue"/>'s take is.</summary>
     private void CurveDue(string sessionId, DriverConfig config, Func<string, string, Task>? onEnded)
     {
-        if (_closing) return;
+        if (_context.Closing) return;
         _ = Task.Run(async () =>
         {
             try
@@ -62,7 +57,7 @@ public sealed partial class ChatRunner
     internal async Task<SwitchChoice?> MoveByCurveAsync(
         string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct = default)
     {
-        if (_closing || _goingOn.ContainsKey(sessionId) || new HandOverBox(_home).Read(sessionId) is not null) return null;
+        if (_context.Closing || _context.GoingOn.ContainsKey(sessionId) || new HandOverBox(_home).Read(sessionId) is not null) return null;
 
         // Ask Daoris's own conversations and intakes never go on elsewhere (D137 §2.2), and one on the tool's own home has no account.
         var prior = await _service.RecordAsync(sessionId, ct).ConfigureAwait(false);
@@ -99,13 +94,13 @@ public sealed partial class ChatRunner
         CurveJudged?.Invoke(sessionId, choice);
         if (choice is not SwitchChoice.MoveTo move) return choice;
 
-        _curveMoves[sessionId] = move;
+        _context.CurveMoves[sessionId] = move;
         var asked = await HandOver.AskAsync(
             _service, _home, AccountsOf, sessionId, agent, move.Account, HandOverWhy.Curve, HandOverBy.Daoris, DateTimeOffset.UtcNow, ct)
             .ConfigureAwait(false);
         if (!asked.Kept)
         {
-            _curveMoves.TryRemove(sessionId, out _);
+            _context.CurveMoves.TryRemove(sessionId, out _);
             return choice;
         }
 
