@@ -110,6 +110,8 @@ builder.Services.AddSingleton(composed.Asks);
 builder.Services.AddSingleton(composed.Ledger);
 // Second opinions (XAGENT1c): a reviewer's connector says its opinion, and a working session's answers what it was handed.
 builder.Services.AddSingleton(composed.Opinions);
+// The ask's channel (SESSONE2a): a session posts and reads for the ask its entry names.
+builder.Services.AddSingleton(composed.Channel);
 
 // An intake's connector (D65 §1b): the driver that opened the session names the ask it answers, and a
 // quest published here is then asked BY that ask. Every other session names none.

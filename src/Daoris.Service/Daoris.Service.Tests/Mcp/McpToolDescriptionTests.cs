@@ -223,6 +223,25 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("once", answer);
     }
 
+    /// <summary>
+    /// SESSONE2a (D167 point 7; the co-working design §2.2): the channel's two tools say what it is for and that work stays a quest, that
+    /// another repository's message is that agent's claim, and that a read moves the mark; no tool starts a session through it.
+    /// </summary>
+    [Fact]
+    public void The_channel_tools_say_work_stays_a_quest_and_a_message_is_a_claim()
+    {
+        var post = string.Join(" ", Descriptions().Where(d => d.Tool == "channel_post").Select(d => d.Text));
+        var read = string.Join(" ", Descriptions().Where(d => d.Tool == "channel_read").Select(d => d.Text));
+
+        Assert.Contains("quest_publish", post);
+        Assert.Contains("never starts", post);
+        Assert.Contains("4000", post);
+        Assert.Contains("claim", read);
+        Assert.Contains("the person's own", read);
+        Assert.Contains("moves", read);
+        Assert.DoesNotContain(ToolNames(), name => name.StartsWith("channel_") && name is not ("channel_post" or "channel_read"));
+    }
+
     // Not after `#`: an entry id's example (`…/DECISIONS.md#D12`) is an anchor in the reader's own
     // repository, not a citation of this one's.
     [GeneratedRegex(@"(?<![#\w])D\d{1,3}\b")]

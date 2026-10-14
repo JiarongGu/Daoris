@@ -1,0 +1,493 @@
+using Microsoft.Data.Sqlite;
+
+namespace Daoris.Knowledge;
+
+/// <summary>
+/// The channel's bounds (SESSONE2a; the co-working design §2.6). First values, read again at the canary: a message's text, how many
+/// messages one part posts, and how many of the newest a next part is handed.
+/// </summary>
+public static class ChannelBounds
+{
+    /// <summary>The most characters one message holds. A link travels as text, a file not at all in this version.</summary>
+    public const int MaxText = 4000;
+
+    /// <summary>The most messages one part (one session record) posts.</summary>
+    public const int MaxPerPart = 10;
+
+    /// <summary>The most messages a next part is handed on starting: the newest, within the instruction's share (SESSONE2b).</summary>
+    public const int HandedNewest = 20;
+}
+
+/// <summary>Why the channel did not do what was asked of it, by a code: a tool says it in a sentence, a door answers the code.</summary>
+public enum ChannelRefusal
+{
+    None,
+
+    /// <summary>No words, or only whitespace.</summary>
+    Empty,
+
+    /// <summary>Words past <see cref="ChannelBounds.MaxText"/> characters.</summary>
+    TooLong,
+
+    /// <summary>No ask under that id on this machine.</summary>
+    NotFound,
+
+    /// <summary>The connector names no session this machine holds.</summary>
+    NoSession,
+
+    /// <summary>The session is on no ask, so it has no channel: work or a request goes in a quest.</summary>
+    NoAsk,
+
+    /// <summary>A helper or a reviewer: each answers one question, and neither posts nor reads (D155, D163).</summary>
+    Helper,
+
+    /// <summary>A <c>to</c> that is not one of the ask's repositories.</summary>
+    BadTo,
+
+    /// <summary>A <c>re</c> the ask's channel does not hold.</summary>
+    BadRe,
+
+    /// <summary>The part has posted <see cref="ChannelBounds.MaxPerPart"/> messages already.</summary>
+    TooMany,
+}
+
+/// <summary>What the channel shows in time order: a message, or one of Daoris's lines.</summary>
+public interface IChannelItem
+{
+    /// <summary>When it was posted, or when the quest reached the state the line says.</summary>
+    DateTimeOffset At { get; }
+}
+
+/// <summary>
+/// One message on an ask's channel (SESSONE2a). Kept as the record shape that can travel (SESSONE2d): an id the poster's machine made
+/// with <see cref="Origin"/> naming the machine it came from where it was not made here, and words that carry no machine path.
+/// </summary>
+/// <param name="Id">Short and stable; <c>origin/id</c> across machines.</param>
+/// <param name="Ask">The ask it is on.</param>
+/// <param name="Workspace">The ask's circle, which decides where the record travels.</param>
+/// <param name="At">When it was posted.</param>
+/// <param name="Session">The session that posted it; null for the person.</param>
+/// <param name="Repository">The poster's repository, for a session.</param>
+/// <param name="Agent">The poster's harness adapter, a name and never a model (D24), for a session.</param>
+/// <param name="Entry">The poster's entry (D167 point 2), for a session: its read mark's key.</param>
+/// <param name="To">The one repository it is addressed to; null for everyone.</param>
+/// <param name="Re">The message it answers, where it answers one.</param>
+/// <param name="Question">Whether its poster marked it a question.</param>
+/// <param name="Text">The words as written, at most <see cref="ChannelBounds.MaxText"/> characters.</param>
+/// <param name="Origin">The machine that posted it, where not this one; null for this machine's own.</param>
+public sealed record ChannelMessage(
+    string Id, string Ask, string Workspace, DateTimeOffset At, string? Session, string? Repository, string? Agent,
+    string? Entry, string? To, string? Re, bool Question, string Text, string? Origin = null) : IChannelItem
+{
+    /// <summary>Whether the person wrote it: no session did. A session's message is that agent's claim, never the person's.</summary>
+    public bool ByPerson => Session is null;
+
+    /// <summary>A question no message has answered yet; false for every other message. Read from the channel, never stored.</summary>
+    public bool Open { get; init; }
+}
+
+/// <summary>
+/// One of Daoris's lines (SESSONE2a; design §2.2): a quest of the ask in the state it stands in, read from the quest and never stored.
+/// Coded, so the page words it in the reader's language (D142).
+/// </summary>
+/// <param name="Code"><c>published</c>, <c>taken</c>, <c>done</c>, <c>declined</c>, or <c>awaiting</c>: done, waiting on the person's yes (D133 §4).</param>
+/// <param name="Quest">The quest's id, the line's door.</param>
+/// <param name="Name">What a list calls the quest, as its publisher wrote it.</param>
+/// <param name="From">The asker: a repository, or <c>ask #id</c>.</param>
+/// <param name="To">The repository asked.</param>
+/// <param name="At">When the quest was published, or last moved.</param>
+public sealed record ChannelLine(string Code, string Quest, string Name, string From, string To, DateTimeOffset At) : IChannelItem;
+
+/// <summary>An ask's channel as one entry reads it.</summary>
+/// <param name="Messages">The messages in the read, oldest first.</param>
+/// <param name="Lines">Daoris's lines in the read, oldest first.</param>
+/// <param name="Unread">How many of the channel's items are after this entry's mark, counted before a read moved it.</param>
+/// <param name="Mark">The moment the entry had read up to before this read moved it; null when it never has.</param>
+public sealed record ChannelRead(
+    IReadOnlyList<ChannelMessage> Messages, IReadOnlyList<ChannelLine> Lines, int Unread, DateTimeOffset? Mark = null)
+{
+    /// <summary>Both kinds in time order, a line before a message of the same moment.</summary>
+    public IReadOnlyList<IChannelItem> Items =>
+        [.. Lines.Cast<IChannelItem>().Concat(Messages).OrderBy(item => item.At)];
+}
+
+/// <summary>What a post did.</summary>
+public sealed record ChannelOutcome(ChannelRefusal Refusal, ChannelMessage? Message);
+
+/// <summary>What a session's read did: its refusal, or the ask it read and what it read.</summary>
+public sealed record ChannelReadOutcome(ChannelRefusal Refusal, Ask? Ask, ChannelRead? Read);
+
+/// <summary>
+/// The messages of every ask's channel, and each entry's read mark (SESSONE2a; design §2.5). Machine-local service records beside the
+/// asks they are on; Daoris's own lines are not here, they are read from the quests.
+/// </summary>
+public sealed class ChannelStore
+{
+    private readonly ConnectionGate _db;
+
+    private ChannelStore(SqliteConnection connection) => _db = ConnectionGate.For(connection);
+
+    public static Task<ChannelStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default) =>
+        ConnectionGate.For(connection).RunAsync(() => new ChannelStore(connection).EnsureSchemaAsync(ct), ct);
+
+    private async Task<ChannelStore> EnsureSchemaAsync(CancellationToken ct)
+    {
+        await using var command = _db.Command();
+        // `seq` is this machine's arrival order; `id` is the record's own, which a feed will carry as `origin/id`. The marks are one per
+        // (ask, entry): the person's is the entry `person`.
+        command.CommandText = """
+            CREATE TABLE IF NOT EXISTS channel (
+              seq        INTEGER PRIMARY KEY AUTOINCREMENT,
+              id         TEXT NOT NULL,
+              ask        TEXT NOT NULL,
+              workspace  TEXT NOT NULL,
+              at         TEXT NOT NULL,
+              session    TEXT NULL,
+              repository TEXT NULL,
+              agent      TEXT NULL,
+              entry      TEXT NULL,
+              to_repo    TEXT NULL,
+              re         TEXT NULL,
+              question   INTEGER NOT NULL DEFAULT 0,
+              text       TEXT NOT NULL,
+              origin     TEXT NULL
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS channel_id ON channel (COALESCE(origin, ''), id);
+            CREATE INDEX IF NOT EXISTS channel_ask ON channel (ask, seq);
+            CREATE INDEX IF NOT EXISTS channel_session ON channel (session);
+            CREATE TABLE IF NOT EXISTS channel_marks (
+              ask     TEXT NOT NULL,
+              entry   TEXT NOT NULL,
+              read_at TEXT NOT NULL,
+              PRIMARY KEY (ask, entry)
+            );
+            """;
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        return this;
+    }
+
+    /// <summary>
+    /// Keep a message, unless its session has posted <paramref name="perPart"/> already: one statement, so two posts at once cannot both
+    /// pass the count. A message of no session (the person's) has no cap.
+    /// </summary>
+    /// <returns>False when the cap refused it, and nothing was kept.</returns>
+    public Task<bool> AddAsync(ChannelMessage message, int perPart, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = """
+            INSERT INTO channel (id, ask, workspace, at, session, repository, agent, entry, to_repo, re, question, text, origin)
+            SELECT $id, $ask, $workspace, $at, $session, $repository, $agent, $entry, $to, $re, $question, $text, $origin
+            WHERE $session IS NULL OR (SELECT COUNT(*) FROM channel WHERE session = $session) < $cap
+            """;
+        command.Parameters.AddWithValue("$id", message.Id);
+        command.Parameters.AddWithValue("$ask", message.Ask);
+        command.Parameters.AddWithValue("$workspace", message.Workspace);
+        command.Parameters.AddWithValue("$at", Moments.Write(message.At));
+        command.Parameters.AddWithValue("$session", (object?)message.Session ?? DBNull.Value);
+        command.Parameters.AddWithValue("$repository", (object?)message.Repository ?? DBNull.Value);
+        command.Parameters.AddWithValue("$agent", (object?)message.Agent ?? DBNull.Value);
+        command.Parameters.AddWithValue("$entry", (object?)message.Entry ?? DBNull.Value);
+        command.Parameters.AddWithValue("$to", (object?)message.To ?? DBNull.Value);
+        command.Parameters.AddWithValue("$re", (object?)message.Re ?? DBNull.Value);
+        command.Parameters.AddWithValue("$question", message.Question ? 1 : 0);
+        command.Parameters.AddWithValue("$text", message.Text);
+        command.Parameters.AddWithValue("$origin", (object?)message.Origin ?? DBNull.Value);
+        command.Parameters.AddWithValue("$cap", perPart);
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+    }, ct);
+
+    /// <summary>The ask's messages, oldest arrival first; a question's <see cref="ChannelMessage.Open"/> is read from the answers among them.</summary>
+    public Task<IReadOnlyList<ChannelMessage>> OfAsync(string ask, CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<ChannelMessage>>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "SELECT * FROM channel WHERE ask = $ask ORDER BY seq";
+        command.Parameters.AddWithValue("$ask", ask);
+        var read = new List<ChannelMessage>();
+        await using (var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false))
+        {
+            while (await reader.ReadAsync(ct).ConfigureAwait(false)) read.Add(Read(reader));
+        }
+
+        var answered = read.Where(m => m.Re is not null).Select(m => m.Re!).ToHashSet(StringComparer.Ordinal);
+        return [.. read.Select(m => m with { Open = m.Question && !answered.Contains(m.Id) })];
+    }, ct);
+
+    private static ChannelMessage Read(SqliteDataReader reader)
+    {
+        string Text(string column) => reader.GetString(reader.GetOrdinal(column));
+        string? Maybe(string column) => reader.IsDBNull(reader.GetOrdinal(column)) ? null : reader.GetString(reader.GetOrdinal(column));
+        return new ChannelMessage(
+            Text("id"), Text("ask"), Text("workspace"), Moments.ReadRequired(Text("at")), Maybe("session"), Maybe("repository"),
+            Maybe("agent"), Maybe("entry"), Maybe("to_repo"), Maybe("re"), reader.GetInt32(reader.GetOrdinal("question")) != 0,
+            Text("text"), Maybe("origin"));
+    }
+
+    /// <summary>The moment an entry last read the ask's channel up to, or null when it never has.</summary>
+    public Task<DateTimeOffset?> MarkAsync(string ask, string entry, CancellationToken ct = default) => _db.RunAsync<DateTimeOffset?>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "SELECT read_at FROM channel_marks WHERE ask = $ask AND entry = $entry";
+        command.Parameters.AddWithValue("$ask", ask);
+        command.Parameters.AddWithValue("$entry", entry);
+        return await command.ExecuteScalarAsync(ct).ConfigureAwait(false) is string at ? Moments.Read(at) : null;
+    }, ct);
+
+    /// <summary>Move an entry's mark forward to <paramref name="at"/>; a mark never moves back.</summary>
+    public Task MoveMarkAsync(string ask, string entry, DateTimeOffset at, CancellationToken ct = default) => _db.RunAsync(async () =>
+    {
+        await using var read = _db.Command();
+        read.CommandText = "SELECT read_at FROM channel_marks WHERE ask = $ask AND entry = $entry";
+        read.Parameters.AddWithValue("$ask", ask);
+        read.Parameters.AddWithValue("$entry", entry);
+        if (await read.ExecuteScalarAsync(ct).ConfigureAwait(false) is string held && Moments.Read(held) is { } mark && mark >= at) return;
+
+        await using var write = _db.Command();
+        write.CommandText = """
+            INSERT INTO channel_marks (ask, entry, read_at) VALUES ($ask, $entry, $at)
+            ON CONFLICT (ask, entry) DO UPDATE SET read_at = $at
+            """;
+        write.Parameters.AddWithValue("$ask", ask);
+        write.Parameters.AddWithValue("$entry", entry);
+        write.Parameters.AddWithValue("$at", Moments.Write(at));
+        await write.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }, ct);
+
+    /// <summary>Remove an ask's channel with the ask: its messages and its marks. Content-derived ids mean the same words asked again are the same ask.</summary>
+    public Task ForgetAsync(string ask, CancellationToken ct = default) => _db.RunAsync(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "DELETE FROM channel WHERE ask = $ask; DELETE FROM channel_marks WHERE ask = $ask;";
+        command.Parameters.AddWithValue("$ask", ask);
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }, ct);
+}
+
+/// <summary>
+/// The judgement over an ask's channel (SESSONE2a; the co-working design §2): who may post, what a message may say and to whom, what a
+/// read holds, and Daoris's lines, read from the ask's quests. The store holds the messages; this decides, for the connector's two tools
+/// and the HTTP host's two doors alike.
+/// </summary>
+/// <remarks>
+/// A message asks nothing of anyone and starts nothing: it is read at a session's next look (SESSONE2b), and work stays a quest (D79).
+/// </remarks>
+public sealed class ChannelDesk(
+    ChannelStore store, AskDesk asks, AskStore askStore, SessionLedger ledger, QuestStore quests, ISessionEntryFacts facts)
+{
+    /// <summary>The entry the person reads as: their read mark's key.</summary>
+    public const string PersonEntry = "person";
+
+    /// <summary>The address that means every repository, said the way a person or an agent may say it.</summary>
+    private const string Everyone = "everyone";
+
+    /// <summary>Post as the session the connector names: its record gives the ask (through its entry), its repository and its adapter.</summary>
+    public async Task<ChannelOutcome> PostAsSessionAsync(
+        string? sessionId, string? text, string? to, string? re, bool question, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var (refusal, ask, session) = await SpeakerAsync(sessionId, ct).ConfigureAwait(false);
+        if (refusal != ChannelRefusal.None) return new(refusal, null);
+
+        var judged = await JudgeAsync(ask!, text, to, re, ct).ConfigureAwait(false);
+        if (judged.Refusal != ChannelRefusal.None) return new(judged.Refusal, null);
+
+        var entry = (await ledger.WithEntryAsync(session!, ct).ConfigureAwait(false)).Entry;
+        var message = new ChannelMessage(
+            NewId(), ask!.Id, ask.Workspace, now, session!.Id, session.Repository, session.Adapter, entry,
+            judged.To, judged.Re, question, judged.Text!);
+        return await store.AddAsync(message, ChannelBounds.MaxPerPart, ct).ConfigureAwait(false)
+            ? new(ChannelRefusal.None, message)
+            : new(ChannelRefusal.TooMany, null);
+    }
+
+    /// <summary>
+    /// Post as the person (D167 point 7): kept on the channel by no session, and on the ask as a word of the <c>channel</c> kind (D133 §1),
+    /// which an older build passes over as it does any kind it does not know. A person has no cap.
+    /// </summary>
+    public async Task<ChannelOutcome> PostAsPersonAsync(
+        string askId, string? text, string? to, string? re, DateTimeOffset now, CancellationToken ct = default)
+    {
+        if (await asks.FindAsync(askId, ct).ConfigureAwait(false) is not { } ask) return new(ChannelRefusal.NotFound, null);
+        var judged = await JudgeAsync(ask, text, to, re, ct).ConfigureAwait(false);
+        if (judged.Refusal != ChannelRefusal.None) return new(judged.Refusal, null);
+
+        var message = new ChannelMessage(
+            NewId(), ask.Id, ask.Workspace, now, Session: null, Repository: null, Agent: null, Entry: null, judged.To, judged.Re,
+            Question: false, judged.Text!);
+        await store.AddAsync(message, int.MaxValue, ct).ConfigureAwait(false);
+        await askStore.RecordWordAsync(ask.Id, new AskWord(AskWordKind.Channel, judged.Text!, now), now, ct).ConfigureAwait(false);
+        return new(ChannelRefusal.None, message);
+    }
+
+    /// <summary>
+    /// What the channel holds for <paramref name="entry"/>: every message and line of it, or those after <paramref name="since"/>. The
+    /// unread count is against the entry's mark. <paramref name="moveMark"/> moves the mark to the newest item, as a session's read does.
+    /// Null when this machine holds no such ask.
+    /// </summary>
+    public async Task<ChannelRead?> ReadAsync(
+        string askId, string entry, DateTimeOffset? since, bool moveMark, CancellationToken ct = default)
+    {
+        if (await asks.FindAsync(askId, ct).ConfigureAwait(false) is not { } ask) return null;
+        return await ReadOfAsync(ask, entry, since, moveMark, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// A session's read: what is new since its entry last read (or since <paramref name="since"/>, whatever the mark says), and the mark
+    /// moves. The same speaker's rules as a post: a session on an ask, and no helper or reviewer.
+    /// </summary>
+    public async Task<ChannelReadOutcome> ReadAsSessionAsync(string? sessionId, DateTimeOffset? since, CancellationToken ct = default)
+    {
+        var (refusal, ask, session) = await SpeakerAsync(sessionId, ct).ConfigureAwait(false);
+        if (refusal != ChannelRefusal.None) return new(refusal, null, null);
+
+        var entry = (await ledger.WithEntryAsync(session!, ct).ConfigureAwait(false)).Entry!;
+        var from = since ?? await store.MarkAsync(ask!.Id, entry, ct).ConfigureAwait(false);
+        return new(ChannelRefusal.None, ask, await ReadOfAsync(ask!, entry, from, moveMark: true, ct).ConfigureAwait(false));
+    }
+
+    /// <summary>Remove an ask's channel with the ask (D95).</summary>
+    public Task ForgetAsync(string askId, CancellationToken ct = default) => store.ForgetAsync(askId.TrimStart('#'), ct);
+
+    private async Task<ChannelRead> ReadOfAsync(Ask ask, string entry, DateTimeOffset? from, bool moveMark, CancellationToken ct)
+    {
+        var mark = await store.MarkAsync(ask.Id, entry, ct).ConfigureAwait(false);
+        var messages = await store.OfAsync(ask.Id, ct).ConfigureAwait(false);
+        var lines = await LinesAsync(ask, ct).ConfigureAwait(false);
+
+        var newest = messages.Select(m => m.At).Concat(lines.Select(l => l.At)).DefaultIfEmpty().Max();
+        var unread = messages.Count(m => mark is null || m.At > mark) + lines.Count(l => mark is null || l.At > mark);
+        if (moveMark && (messages.Count > 0 || lines.Count > 0)) await store.MoveMarkAsync(ask.Id, entry, newest, ct).ConfigureAwait(false);
+
+        return new ChannelRead(
+            [.. messages.Where(m => from is null || m.At > from)], [.. lines.Where(l => from is null || l.At > from)], unread, mark);
+    }
+
+    /// <summary>
+    /// Move an entry's mark to <paramref name="through"/>, or to the newest item when none is given (the driver moves a part's mark when
+    /// the part starts, to the moment it handed the channel over), and answer the channel as it then reads. Null when no such ask.
+    /// </summary>
+    public async Task<ChannelRead?> MarkReadAsync(string askId, string entry, DateTimeOffset? through, CancellationToken ct = default)
+    {
+        if (await asks.FindAsync(askId, ct).ConfigureAwait(false) is not { } ask) return null;
+        if (through is { } moment) await store.MoveMarkAsync(ask.Id, entry, moment, ct).ConfigureAwait(false);
+        else await ReadOfAsync(ask, entry, from: null, moveMark: true, ct).ConfigureAwait(false);
+
+        return await ReadOfAsync(ask, entry, from: null, moveMark: false, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>A refusal's code, as a door answers it.</summary>
+    public static string Spell(ChannelRefusal refusal) => refusal switch
+    {
+        ChannelRefusal.TooLong => "too-long",
+        ChannelRefusal.NotFound => "not-found",
+        ChannelRefusal.NoSession => "no-session",
+        ChannelRefusal.NoAsk => "no-ask",
+        ChannelRefusal.BadTo => "bad-to",
+        ChannelRefusal.BadRe => "bad-re",
+        ChannelRefusal.TooMany => "too-many",
+        _ => refusal.ToString().ToLowerInvariant(),
+    };
+
+    /// <summary>
+    /// Daoris's lines for the ask (design §2.2), read from its quests as they stand and never stored: each quest asked by the ask or
+    /// published by a session on it, published, and where it has moved, taken, done, declined, or done and awaiting the person's yes.
+    /// </summary>
+    private async Task<IReadOnlyList<ChannelLine>> LinesAsync(Ask ask, CancellationToken ct)
+    {
+        var lines = new List<ChannelLine>();
+        foreach (var quest in await QuestsOfAsync(ask, ct).ConfigureAwait(false))
+        {
+            lines.Add(new ChannelLine("published", quest.Id, quest.Name, quest.From, quest.To, quest.Filed));
+            var code = quest.Status switch
+            {
+                QuestStatus.Taken => "taken",
+                QuestStatus.Done when quest.Held => "awaiting",
+                QuestStatus.Done => "done",
+                QuestStatus.Declined => "declined",
+                _ => null,
+            };
+            if (code is not null) lines.Add(new ChannelLine(code, quest.Id, quest.Name, quest.From, quest.To, quest.Updated));
+        }
+
+        return [.. lines.OrderBy(line => line.At)];
+    }
+
+    /// <summary>The quests that belong to the ask: asked by it (chain steps included), or whose entry's origin is it (D167 point 2).</summary>
+    private async Task<IReadOnlyList<Quest>> QuestsOfAsync(Ask ask, CancellationToken ct)
+    {
+        var origin = SessionEntries.AskOrigin(ask.Id);
+        var held = new List<Quest>();
+        foreach (var quest in await quests.ListAsync(includeClosed: true, workspace: ask.Workspace, ct: ct).ConfigureAwait(false))
+        {
+            if (AskDesk.AskOf(quest.From) == ask.Id
+                || await SessionEntries.OriginOfQuestAsync(quest, facts, ct).ConfigureAwait(false) == origin)
+            {
+                held.Add(quest);
+            }
+        }
+
+        return held;
+    }
+
+    /// <summary>The session that speaks and the ask its entry names, or why it may not.</summary>
+    private async Task<(ChannelRefusal Refusal, Ask? Ask, Session? Session)> SpeakerAsync(string? sessionId, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(sessionId) || await ledger.FindAsync(sessionId.Trim(), ct).ConfigureAwait(false) is not { } session)
+        {
+            return (ChannelRefusal.NoSession, null, null);
+        }
+
+        if (session.Serves is not null || session.Opinion is not null) return (ChannelRefusal.Helper, null, null);
+
+        var key = (await ledger.WithEntryAsync(session, ct).ConfigureAwait(false)).Entry ?? "";
+        var origin = key.IndexOf('/') is > 0 and var slash ? key[..slash] : key;
+        var prefix = SessionEntries.AskOrigin("");
+        if (!origin.StartsWith(prefix, StringComparison.Ordinal) || origin.Length == prefix.Length
+            || await asks.FindAsync(origin[prefix.Length..], ct).ConfigureAwait(false) is not { } ask)
+        {
+            return (ChannelRefusal.NoAsk, null, null);
+        }
+
+        return (ChannelRefusal.None, ask, session);
+    }
+
+    /// <summary>The words trimmed and bounded, and where they are addressed and what they answer, each as the ask's channel holds it.</summary>
+    private async Task<(ChannelRefusal Refusal, string? Text, string? To, string? Re)> JudgeAsync(
+        Ask ask, string? text, string? to, string? re, CancellationToken ct)
+    {
+        var words = text?.Trim() ?? "";
+        if (words.Length == 0) return (ChannelRefusal.Empty, null, null, null);
+        if (words.Length > ChannelBounds.MaxText) return (ChannelRefusal.TooLong, null, null, null);
+
+        string? address = null;
+        var named = to?.Trim().TrimStart('#') ?? "";
+        if (named.Length > 0 && !named.Equals(Everyone, StringComparison.OrdinalIgnoreCase))
+        {
+            address = (await RepositoriesAsync(ask, ct).ConfigureAwait(false))
+                .FirstOrDefault(repository => repository.Equals(named, StringComparison.OrdinalIgnoreCase));
+            if (address is null) return (ChannelRefusal.BadTo, null, null, null);
+        }
+
+        string? answers = null;
+        if (!string.IsNullOrWhiteSpace(re))
+        {
+            answers = (await store.OfAsync(ask.Id, ct).ConfigureAwait(false)).FirstOrDefault(m => m.Id == re.Trim())?.Id;
+            if (answers is null) return (ChannelRefusal.BadRe, null, null, null);
+        }
+
+        return (ChannelRefusal.None, words, address, answers);
+    }
+
+    /// <summary>The repositories the ask reaches: every receiver and every repository asker among its quests.</summary>
+    private async Task<IReadOnlyList<string>> RepositoriesAsync(Ask ask, CancellationToken ct)
+    {
+        var names = new List<string>();
+        foreach (var quest in await QuestsOfAsync(ask, ct).ConfigureAwait(false))
+        {
+            names.Add(quest.To);
+            if (AskDesk.AskOf(quest.From) is null) names.Add(quest.From);
+        }
+
+        return [.. names.Distinct(StringComparer.OrdinalIgnoreCase)];
+    }
+
+    private static string NewId() => Guid.NewGuid().ToString("N")[..8];
+}
