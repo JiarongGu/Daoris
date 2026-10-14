@@ -6,9 +6,9 @@
 import type { Fixture } from './_fixture.ts';
 import type { Lock, SyncPlan } from '../src/platform/types.ts';
 import { makeFixture } from './_fixture.ts';
-import { readCanon } from '../src/canon.ts';
-import { readLock, readManifest } from '../src/config.ts';
-import { applySync, planSync } from '../src/materialize.ts';
+import { readCanon } from '../src/doctrine/canon.ts';
+import { readLock, readManifest } from '../src/doctrine/config.ts';
+import { applySync, planSync } from '../src/doctrine/materialize.ts';
 import { runCli } from '../src/cli.ts';
 
 export const doc = (name: string, body = `Body of ${name}.`) =>

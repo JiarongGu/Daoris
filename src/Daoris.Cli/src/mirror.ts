@@ -14,7 +14,7 @@ import type { Harness, LockEntry, MirrorEntry, MirrorPlan } from './platform/typ
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { digestBytes, listFiles, normalize, sha256 } from './platform/fsx.ts';
-import { stripHeader, withHeader } from './document.ts';
+import { stripHeader, withHeader } from './doctrine/document.ts';
 import { isFile } from './layout.ts';
 
 /** One file a mirror copies: where from, where to, and what the copy holds. */

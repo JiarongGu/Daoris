@@ -1,5 +1,5 @@
 import type { CliCommand } from '../platform/types.ts';
-import { commandSync } from '../materialize.ts';
+import { commandSync } from '../doctrine/materialize.ts';
 
 export const command: CliCommand = {
   name: 'sync',

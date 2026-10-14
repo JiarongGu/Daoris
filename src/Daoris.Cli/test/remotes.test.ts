@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { commandRemote } from '../src/remotes.ts';
 import { readRemotes, redactKey, remotesPath } from '../src/remotemap.ts';
-import { commandStatus } from '../src/commands.ts';
+import { commandStatus } from '../src/doctrine/commands.ts';
 import { makeFixture } from './_fixture.ts';
 import { DaorisError } from '../src/platform/errors.ts';
 

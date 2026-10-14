@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { captureError } from './_fixture.ts';
 import {
   CLOSE, IMPORT, OPEN, ensureImport, findRegion, hasImport, writeRegion,
-} from '../src/region.ts';
+} from '../src/doctrine/region.ts';
 
 /**
  * The marked region (CANON8a/D59) — where the always-loaded tier lives once it leaves

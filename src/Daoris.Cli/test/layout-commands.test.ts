@@ -7,8 +7,8 @@ import { join } from 'node:path';
 import type { LayoutFixture } from './_layout.ts';
 import { captureError } from './_fixture.ts';
 import { doc, layoutFixture, skill } from './_layout.ts';
-import { readLock, readManifest } from '../src/config.ts';
-import { upstreamAll, upstreamFile } from '../src/upstream.ts';
+import { readLock, readManifest } from '../src/doctrine/config.ts';
+import { upstreamAll, upstreamFile } from '../src/doctrine/upstream.ts';
 import { DaorisError } from '../src/platform/errors.ts';
 
 const MIRROR = '.claude/skills/finder/SKILL.md';

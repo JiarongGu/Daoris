@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { captureError, makeFixture } from './_fixture.ts';
 import { layoutFixture, skill } from './_layout.ts';
-import { readManifest, readLock, writeLock } from '../src/config.ts';
+import { readManifest, readLock, writeLock } from '../src/doctrine/config.ts';
 import { HARNESSES, resolveHarness, verifyHarnessContract } from '../src/harness.ts';
 import { lockLayout } from '../src/layout.ts';
 import { digestBytes } from '../src/platform/fsx.ts';

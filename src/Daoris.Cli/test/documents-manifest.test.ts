@@ -8,7 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { captureError, makeFixture } from './_fixture.ts';
-import { readManifest } from '../src/config.ts';
+import { readManifest } from '../src/doctrine/config.ts';
 import { DaorisError } from '../src/platform/errors.ts';
 
 // ---------------------------------------------------------------- the manifest's reading

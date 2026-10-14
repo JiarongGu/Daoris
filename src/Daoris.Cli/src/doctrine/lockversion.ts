@@ -1,9 +1,9 @@
-import type { Lock } from './platform/types.ts';
+import type { Lock } from '../platform/types.ts';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { readText } from './platform/fsx.ts';
+import { readText } from '../platform/fsx.ts';
 import { compareVersions } from './notes.ts';
-import { DaorisError } from './platform/errors.ts';
+import { DaorisError } from '../platform/errors.ts';
 
 /** A lock a newer canon wrote than the one this tool carries, and the command that runs the tool at the lock's. */
 export interface NewerLock {

@@ -5,6 +5,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readText } from '../src/platform/fsx.ts';
 import { COMMANDS } from '../src/cli.ts';
+import { cliSource } from './_sources.ts';
 
 // package.json and the sources are this package's; the canon, the manifest and
 // the README belong to the workspace two levels up.
@@ -69,9 +70,11 @@ test('every shipped reference names the npm package, and none the git ref that c
     assert.equal(GIT_REF.test(read(rel)), false, `${rel} still names a git ref`);
   }
   assert.ok(read('README.md').includes(`npx daoris@${version()} init`));
-  assert.ok(readCli('src/commands.ts').includes('`daoris@${canon.version}`'), 'what init writes');
-  assert.equal(GIT_REF.test(readCli('src/commands.ts')), false, 'init must not write the git ref');
-  assert.equal(/OWNER/.test(readCli('src/commands.ts')), false, 'the placeholder must not ship');
+  // By its name, in whichever module folder it sits (STRUCT5d).
+  const init = readCli(`src/${cliSource('commands.ts')}`);
+  assert.ok(init.includes('`daoris@${canon.version}`'), 'what init writes');
+  assert.equal(GIT_REF.test(init), false, 'init must not write the git ref');
+  assert.equal(/OWNER/.test(init), false, 'the placeholder must not ship');
 });
 
 /**

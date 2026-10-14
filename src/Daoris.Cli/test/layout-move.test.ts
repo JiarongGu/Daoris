@@ -14,7 +14,7 @@ import { join } from 'node:path';
 import type { LayoutFixture } from './_layout.ts';
 import { captureError } from './_fixture.ts';
 import { doc, layoutFixture, skill } from './_layout.ts';
-import { renderCanonFile } from '../src/document.ts';
+import { renderCanonFile } from '../src/doctrine/document.ts';
 import { DaorisError } from '../src/platform/errors.ts';
 
 /** Synced on the older layout, then flipped: the state every cell below starts from. */

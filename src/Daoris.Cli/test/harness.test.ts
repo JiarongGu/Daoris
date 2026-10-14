@@ -5,7 +5,7 @@ import {
   detectHarnesses, verifyHarnessContract, harnessVerdict,
   resolveHarness, HARNESSES, DEFAULT_HARNESS, alwaysLoadedTiers, tierNames,
 } from '../src/harness.ts';
-import { readManifest } from '../src/config.ts';
+import { readManifest } from '../src/doctrine/config.ts';
 import { captureError } from './_fixture.ts';
 import { DaorisError } from '../src/platform/errors.ts';
 

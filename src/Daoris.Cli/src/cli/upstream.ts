@@ -1,5 +1,5 @@
 import type { CliCommand } from '../platform/types.ts';
-import { commandUpstream } from '../upstream.ts';
+import { commandUpstream } from '../doctrine/upstream.ts';
 
 export const command: CliCommand = {
   name: 'upstream',

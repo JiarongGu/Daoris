@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeFixture, captureError } from './_fixture.ts';
-import { readCanon, PACK_API } from '../src/canon.ts';
+import { readCanon, PACK_API } from '../src/doctrine/canon.ts';
 import { DaorisError } from '../src/platform/errors.ts';
 
 /**

@@ -8,6 +8,7 @@ import type { Curve, Switch } from '../src/rotation.ts';
 import { saidLine } from '../src/windows.ts';
 import type { WindowSaid } from '../src/windows.ts';
 import { driverFile, driverTestFile } from './_csharp.ts';
+import { cliSource, SOURCES } from './_sources.ts';
 
 /**
  * The usage curve (D165 point 2; the switch design §2, §3 and §5; SWITCH1b-iii): how much of each window an account may have
@@ -64,7 +65,7 @@ test('the said line marks a window over its curve with the curve\'s value now, a
 
 test('the curve\'s constants are the driver\'s, each copy naming the other', () => {
   const driver = readFileSync(driverFile('UsageCurves.cs'), 'utf8');
-  const cli = readFileSync(join(here, '..', 'src', 'usagecurves.ts'), 'utf8');
+  const cli = readFileSync(join(SOURCES, cliSource('usagecurves.ts')), 'utf8');
 
   assert.match(driver, /WeeklyLead = 20, WeeklyCap = 95;/);
   assert.match(driver, /"session" => TimeSpan\.FromHours\(5\),\s+"weekly" => TimeSpan\.FromDays\(7\),/);

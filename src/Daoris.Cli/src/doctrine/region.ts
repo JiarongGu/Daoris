@@ -14,7 +14,7 @@
 // of the file with it." So markers are matched as WHOLE LINES, damage is reported with the line
 // number, and nothing is ever inferred from position.
 
-import { DaorisError } from './platform/errors.ts';
+import { DaorisError } from '../platform/errors.ts';
 
 /** The opening marker for a named region. Carries the warning, like every generated file's header. */
 export function OPEN(name: string): string {

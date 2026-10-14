@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeFixture } from './_fixture.ts';
-import { indexFromDisk, rosterFromDisk } from '../src/indexgen.ts';
+import { indexFromDisk, rosterFromDisk } from '../src/doctrine/indexgen.ts';
 
 const doc = (name: string) => `---
 name: ${name}

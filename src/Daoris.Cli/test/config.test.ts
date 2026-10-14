@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeFixture, captureError } from './_fixture.ts';
-import { readManifest, writeManifest, readLock, writeLock, lockIndex } from '../src/config.ts';
+import { readManifest, writeManifest, readLock, writeLock, lockIndex } from '../src/doctrine/config.ts';
 import { DaorisError } from '../src/platform/errors.ts';
 
 test('a missing manifest is a tool error that says how to fix it', () => {

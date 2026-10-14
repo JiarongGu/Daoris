@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { makeFixture, captureError } from './_fixture.ts';
-import { readManifest } from '../src/config.ts';
-import { commandInit, commandStatus } from '../src/commands.ts';
-import { readCanon } from '../src/canon.ts';
-import { planSync, applySync } from '../src/materialize.ts';
+import { readManifest } from '../src/doctrine/config.ts';
+import { commandInit, commandStatus } from '../src/doctrine/commands.ts';
+import { readCanon } from '../src/doctrine/canon.ts';
+import { planSync, applySync } from '../src/doctrine/materialize.ts';
 import { DaorisError } from '../src/platform/errors.ts';
 
 const doc = (name: string) => `---\nname: ${name}\napplies_when: w\nenforces: e\n---\nx\n`;

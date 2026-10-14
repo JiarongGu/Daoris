@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeFixture } from './_fixture.ts';
-import { compareVersions, notesBetween } from '../src/notes.ts';
+import { compareVersions, notesBetween } from '../src/doctrine/notes.ts';
 
 const CHANGELOG = `# Canon changelog
 

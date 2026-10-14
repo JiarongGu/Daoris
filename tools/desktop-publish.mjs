@@ -283,7 +283,7 @@ export function layResources(source, install) {
  * release publishes, unpacked the way npm lays a package out under a prefix, `<prefix>/node_modules/daoris`.
  *
  * 🔴 The `node_modules` folder is load-bearing. The CLI reads the canon it ships only when its own folder sits
- * under one (`resolveCanonRoot`, `src/Daoris.Cli/src/canon.ts`); anywhere else it takes itself for a development
+ * under one (`resolveCanonRoot`, `src/Daoris.Cli/src/doctrine/canon.ts`); anywhere else it takes itself for a development
  * checkout and reads `../../canon`, which in an install is `<install>/canon`: a folder nothing publishes, or a
  * neighbour's under `--beside`. Laid out as npm would, the package finds its canon by the same rule wherever
  * it is installed, and that rule needs no second case. `desktop-publish.test.ts` holds the two together.

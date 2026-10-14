@@ -1,5 +1,5 @@
 import type { CliCommand } from '../platform/types.ts';
-import { commandAnalyze } from '../analyze.ts';
+import { commandAnalyze } from '../doctrine/analyze.ts';
 
 export const command: CliCommand = {
   name: 'analyze',

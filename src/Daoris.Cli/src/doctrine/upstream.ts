@@ -1,15 +1,15 @@
-import type { CommandArgs, Lock, LockEntry, Manifest, MirrorEntry } from './platform/types.ts';
-import type { ExitCode } from './platform/errors.ts';
+import type { CommandArgs, Lock, LockEntry, Manifest, MirrorEntry } from '../platform/types.ts';
+import type { ExitCode } from '../platform/errors.ts';
 import { existsSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
-import { readText, sha256, writeTextAtomic } from './platform/fsx.ts';
+import { readText, sha256, writeTextAtomic } from '../platform/fsx.ts';
 import { frontmatterEnd, stripHeader } from './document.ts';
 import { resolveCanonRoot } from './canon.ts';
 import { lockIndex, readLock, readManifest } from './config.ts';
 import { canonVersionAt, refuseNewerLock } from './lockversion.ts';
 import { spanBody } from './tierrender.ts';
-import { declared, lockLayout } from './layout.ts';
-import { DaorisError } from './platform/errors.ts';
+import { declared, lockLayout } from '../layout.ts';
+import { DaorisError } from '../platform/errors.ts';
 
 /**
  * The 衍 half: a refinement found in one repo flows back and evolves the canon.

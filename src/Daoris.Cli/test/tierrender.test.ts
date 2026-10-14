@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderIndex, renderTier, tierRuleBody } from '../src/tierrender.ts';
+import { renderIndex, renderTier, tierRuleBody } from '../src/doctrine/tierrender.ts';
 import type { CanonFile } from '../src/platform/types.ts';
 
 /**

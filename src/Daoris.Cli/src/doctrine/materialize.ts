@@ -1,10 +1,10 @@
 import type {
   Canon, CommandArgs, CoreSwitch, Harness, IndexPlan, Lock, Manifest, Move, PlannedWrite, Rename, SyncPlan,
-} from './platform/types.ts';
-import type { ExitCode } from './platform/errors.ts';
+} from '../platform/types.ts';
+import type { ExitCode } from '../platform/errors.ts';
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { readText, sha256, writeBytesAtomic, writeTextAtomic } from './platform/fsx.ts';
+import { readText, sha256, writeBytesAtomic, writeTextAtomic } from '../platform/fsx.ts';
 import { parseFrontmatter, renderCanonFile, stripFrontmatter, stripHeader } from './document.ts';
 import { significantTokens, containment } from './twins.ts';
 import { isSwitchedOff, readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
@@ -13,15 +13,15 @@ import { refuseNewerLock } from './lockversion.ts';
 import { indexInput, rosterExtras } from './indexgen.ts';
 import { indexPath, renderIndex, renderTier, spanBody, tierRuleBody } from './tierrender.ts';
 import { ensureImport, findRegion, writeRegion } from './region.ts';
-import { resolveHarness } from './harness.ts';
+import { resolveHarness } from '../harness.ts';
 import {
   contained, folderTiers, isFile, layoutFields, lockLayout, planLeftBehind, pruneEmpty,
-} from './layout.ts';
-import { mirrorSources, planMirrors } from './mirror.ts';
-import { planRooms } from './rooms.ts';
-import { describeLink, linkProblems, shortLink } from './links.ts';
-import { declaredPaths, describeDocumentLink, documentLinks, present, shortDocumentLink } from './documents.ts';
-import { DaorisError } from './platform/errors.ts';
+} from '../layout.ts';
+import { mirrorSources, planMirrors } from '../mirror.ts';
+import { planRooms } from '../rooms.ts';
+import { describeLink, linkProblems, shortLink } from '../links.ts';
+import { declaredPaths, describeDocumentLink, documentLinks, present, shortDocumentLink } from '../documents.ts';
+import { DaorisError } from '../platform/errors.ts';
 
 /** Which directory name a tier answers to, for matching a canon target against it. */
 function tierPrefix(tier: { region?: { name: string }; dir?: string }, _harness: unknown): string {

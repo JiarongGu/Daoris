@@ -2,10 +2,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Fixture } from './_fixture.ts';
 import { makeFixture } from './_fixture.ts';
-import { readCanon } from '../src/canon.ts';
-import { readManifest, readLock } from '../src/config.ts';
-import { planSync, applySync } from '../src/materialize.ts';
-import { findTwins, commandDoctor } from '../src/twins.ts';
+import { readCanon } from '../src/doctrine/canon.ts';
+import { readManifest, readLock } from '../src/doctrine/config.ts';
+import { planSync, applySync } from '../src/doctrine/materialize.ts';
+import { findTwins, commandDoctor } from '../src/doctrine/twins.ts';
 
 // Deliberately the real case: the canonical rule and the repo's own rule say
 // the same thing under different names.

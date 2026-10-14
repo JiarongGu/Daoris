@@ -1,20 +1,20 @@
 import type {
   AnalysisReport, Canon, CanonFile, CommandArgs, Harness, Lock, LockEntry, PackSuggestion, Survey, Twin,
-} from './platform/types.ts';
-import type { ExitCode } from './platform/errors.ts';
+} from '../platform/types.ts';
+import type { ExitCode } from '../platform/errors.ts';
 import { existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { listFiles, listMarkdown, readText, sha256 } from './platform/fsx.ts';
+import { listFiles, listMarkdown, readText, sha256 } from '../platform/fsx.ts';
 import { parseFrontmatter, renderCanonFile } from './document.ts';
 import { findRegion } from './region.ts';
 import { tierRuleBody } from './tierrender.ts';
 import { readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
 import { DEFAULT_CORE_BUDGET_BYTES, lockIndex, readLock, readManifest } from './config.ts';
 import { isEntry, significantTokens, containment } from './twins.ts';
-import { candidateDocuments, sayCandidates } from './documents.ts';
+import { candidateDocuments, sayCandidates } from '../documents.ts';
 import {
   DEFAULT_HARNESS, HARNESSES, harnessVerdict, tierNames, verifyHarnessContract,
-} from './harness.ts';
+} from '../harness.ts';
 
 // Pre-adoption there is no manifest to resolve a harness from, so this command reads the DEFAULT
 // harness's descriptor — one definition, not a constant quietly asserting one harness's conventions

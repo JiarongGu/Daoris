@@ -10,8 +10,8 @@ import type { Harness, Lock, Manifest, RoomPlan } from './platform/types.ts';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { readText } from './platform/fsx.ts';
-import { firstHeading } from './document.ts';
-import { ensureImport, findRegion, IMPORT, removeRegion } from './region.ts';
+import { firstHeading } from './doctrine/document.ts';
+import { ensureImport, findRegion, IMPORT, removeRegion } from './doctrine/region.ts';
 import { contained, isFile } from './layout.ts';
 import { DaorisError } from './platform/errors.ts';
 

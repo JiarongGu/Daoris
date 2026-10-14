@@ -2,8 +2,8 @@ import type { DaorisError } from '../src/platform/errors.ts';
 import { mkdirSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { findRegion } from '../src/region.ts';
-import { tierRuleBody } from '../src/tierrender.ts';
+import { findRegion } from '../src/doctrine/region.ts';
+import { tierRuleBody } from '../src/doctrine/tierrender.ts';
 
 const FIXTURE_ROOT = join(dirname(dirname(fileURLToPath(import.meta.url))), '_fixtures');
 

@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import type { LayoutFixture } from './_layout.ts';
 import { captureError } from './_fixture.ts';
 import { layoutFixture } from './_layout.ts';
-import { CLOSE, IMPORT, OPEN } from '../src/region.ts';
+import { CLOSE, IMPORT, OPEN } from '../src/doctrine/region.ts';
 import { DaorisError } from '../src/platform/errors.ts';
 
 const ROOM = 'src/cli';
