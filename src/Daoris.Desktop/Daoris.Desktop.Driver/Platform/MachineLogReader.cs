@@ -113,11 +113,11 @@ public static class MachineLogReader
             using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object
-                || Named(root, "time") is not { } time || !TimeShape.IsMatch(time)
+                || Json.NonEmpty(root, "time") is not { } time || !TimeShape.IsMatch(time)
                 || !DateTimeOffset.TryParse(time, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal, out var at)
-                || Named(root, "source") is not { } source
-                || Named(root, "level") is not { } level
-                || Named(root, "event") is not { } name)
+                || Json.NonEmpty(root, "source") is not { } source
+                || Json.NonEmpty(root, "level") is not { } level
+                || Json.NonEmpty(root, "event") is not { } name)
             {
                 return false;
             }
@@ -275,11 +275,6 @@ public static class MachineLogReader
         if (read.Lines.Count == 0) yield return $"logs: nothing in `{folder}` for that filter.";
         if (read.Skipped > 0) yield return $"logs: {read.Skipped} line(s) could not be read and were skipped.";
     }
-
-    private static string? Named(JsonElement root, string field) =>
-        root.TryGetProperty(field, out var value) && value.ValueKind == JsonValueKind.String && value.GetString() is { Length: > 0 } text
-            ? text
-            : null;
 
     private static string Value(JsonElement value)
     {
