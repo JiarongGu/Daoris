@@ -29,8 +29,7 @@ public sealed class PluginRecordWiringTests : DriverModuleBridge
     [Fact]
     public void The_hook_set_and_every_landing_a_route_builds_are_handed_the_loops_log_and_record()
     {
-        var modules = Path.Combine(WorkspaceRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Modules");
-        var built = Directory.EnumerateFiles(modules, "*.cs")
+        var built = SourceFiles.All(SourceFiles.ModulesProject, "*.cs")
             .SelectMany(path =>
             {
                 var source = File.ReadAllText(path);
@@ -54,17 +53,10 @@ public sealed class PluginRecordWiringTests : DriverModuleBridge
     [Fact]
     public void The_loops_conversations_are_handed_its_log_for_the_servers_they_are_handed()
     {
-        var source = File.ReadAllText(Path.Combine(WorkspaceRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Modules", "DriverLoop.cs"));
+        var source = File.ReadAllText(SourceFiles.Module("DriverLoop.cs"));
         var built = Regex.Matches(source, @"new ChatRunner\(").Select(call => source[call.Index..source.IndexOf(';', call.Index)]).ToList();
 
         var call = Assert.Single(built);
         Assert.Matches(@"\bplugins:\s*new PluginLog\(log\b", call);
-    }
-
-    private static string WorkspaceRoot()
-    {
-        var at = new DirectoryInfo(AppContext.BaseDirectory);
-        while (at is not null && !File.Exists(Path.Combine(at.FullName, "daoris.json"))) at = at.Parent;
-        return at?.FullName ?? throw new InvalidOperationException("no workspace root above the test binary");
     }
 }

@@ -40,7 +40,7 @@ public sealed class SourceFilesTests
 
         Assert.Equal(Path.Combine(driver, "Platform", "NoteCodes.cs"), SourceFiles.Driver("NoteCodes.cs"));
         Assert.Equal(Path.Combine(driver, "Help", "Proposals", "HelpGoProposals.cs"), SourceFiles.Driver("HelpGoProposals.cs"));
-        Assert.Equal(Path.Combine(SourceFiles.Project("Daoris.Desktop.Modules"), "DriverLoop.cs"), SourceFiles.Find("Daoris.Desktop.Modules", "DriverLoop.cs"));
+        Assert.Equal(Path.Combine(SourceFiles.Project("Daoris.Desktop.Modules"), "Loop", "DriverLoop.cs"), SourceFiles.Find("Daoris.Desktop.Modules", "DriverLoop.cs"));
 
         var all = SourceFiles.All(SourceFiles.DriverProject, "*.cs").ToList();
         Assert.Contains(Path.Combine(driver, "Help", "Room", "HelpRoomAsks.cs"), all);

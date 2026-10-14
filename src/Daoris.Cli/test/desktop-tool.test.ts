@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { createServer, type Server } from 'node:net';
 import { readText, listFiles } from '../src/fsx.ts';
+import { desktopFile } from './_csharp.ts';
 // The workspace's own tooling is plain `.mjs` and ships no declarations, so this import is untyped
 // by construction. Suppressed at the one site rather than given a hand-written `.d.mts`, which would
 // be a second description of the tool to keep in step with it — and the thing this suite asserts is
@@ -532,7 +533,7 @@ test('the browser is told from the application and from the engine processes', (
  * in two languages, and held together only here.
  */
 test('the tools and the application spell the browser’s argument the same', () => {
-  const engine = readText(join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Modules', 'EngineBrowser.cs'));
+  const engine = readText(desktopFile('Daoris.Desktop.Modules', 'EngineBrowser.cs'));
   assert.ok(engine.includes(`const string Argument = "${BROWSER_ARGUMENT}";`),
     `the tools look for ${BROWSER_ARGUMENT} and EngineBrowser routes on another`);
 });

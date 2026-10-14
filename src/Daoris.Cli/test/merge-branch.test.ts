@@ -450,8 +450,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // GATE6: a browser test is the web gate's alone; no .NET suite reads it (the test below holds that).
     ['a browser test', ['src/Daoris.Web/e2e/platform.spec.ts'], [...BASE, 'web']],
     // MOD9c: the driver's console and occasion scans read every C# source of the modules and the app, from its source root.
-    ['the modules', ['src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
-    ["the modules' loop", ['src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
+    ['the modules', ['src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/DriverModule.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
+    ["the modules' loop", ['src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
     ['the desktop app', ['src/Daoris.Desktop/Daoris.Desktop.App/Program.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
     // What those scans do not read stays the modules lane's alone: a project file, the icon, the launcher, the modules' tests.
     ["the modules' project", ['src/Daoris.Desktop/Daoris.Desktop.Modules/Daoris.Desktop.Modules.csproj'], [...BASE, 'modules', 'modules-process', 'deployment']],
