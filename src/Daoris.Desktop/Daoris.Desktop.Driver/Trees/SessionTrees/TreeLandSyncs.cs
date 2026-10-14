@@ -174,10 +174,27 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
 }
 
 /// <summary>A landing in sync with its line, in words (LANDSYNC1): what it left out and why, the fetch, the follow and the rebase words.</summary>
-internal static class LandingSyncWords
+public static class LandingSyncWords
 {
+    /// <summary>
+    /// What <c>trees land --plan</c> says of what the line holds (LANDSYNC1, D87's amendment point 4): what the press would leave out
+    /// and why, what it would replay, and a conflict it would be refused for; nothing where the line holds none of the tree's commits.
+    /// </summary>
+    public static IEnumerable<string> Plan(LandingPlan plan)
+    {
+        if (plan.LeftOut is not { Count: > 0 } left) yield break;
+        yield return $"trees: it would leave out {left.Count} commit(s) the line holds: {string.Join(", ", left.Select(Each))}.";
+        var lands = plan.Lands ?? [];
+        yield return $"trees: it would replay {lands.Count} commit(s) onto the line: "
+            + string.Join(", ", lands.Select(commit => $"`{TextBounds.ShortCommit(commit.Sha, 8)}` “{commit.Subject}”")) + ".";
+        if (plan.Conflict is { } conflict)
+        {
+            yield return $"trees: replaying them conflicts now, so a press would be refused: {conflict.Says} Its session can be asked: {conflict.Words}";
+        }
+    }
+
     /// <summary>One commit left out: its short id, subject and why (D87's amendment point 4).</summary>
-    internal static string Each(LeftOutCommit commit) => $"`{TextBounds.ShortCommit(commit.Sha, 8)}` “{commit.Subject}”" + commit.Why switch
+    public static string Each(LeftOutCommit commit) => $"`{TextBounds.ShortCommit(commit.Sha, 8)}` “{commit.Subject}”" + commit.Why switch
     {
         LeftOutWhy.Content => " (on the line by content)",
         LeftOutWhy.Patch when commit.On is { } on => $" (on the line as `{TextBounds.ShortCommit(on, 8)}`, the same change)",
@@ -186,14 +203,14 @@ internal static class LandingSyncWords
     };
 
     /// <summary>What a replayed landing carried: <c>N commit(s) replayed onto `line`, leaving out M the line holds: …</c>.</summary>
-    internal static string Replayed(int landed, string ontoName, IReadOnlyList<LeftOutCommit> leftOut)
+    public static string Replayed(int landed, string ontoName, IReadOnlyList<LeftOutCommit> leftOut)
     {
         var held = leftOut.Where(each => each.Why != LeftOutWhy.Empty).ToList();
         return $"{landed} commit(s) replayed onto `{ontoName}`, leaving out {held.Count} the line holds: {string.Join(", ", held.Select(Each))}";
     }
 
     /// <summary>The commits the replay found empty, said after the sentence; nothing where none was.</summary>
-    internal static string Emptied(IReadOnlyList<LeftOutCommit> leftOut)
+    public static string Emptied(IReadOnlyList<LeftOutCommit> leftOut)
     {
         var empty = leftOut.Where(each => each.Why == LeftOutWhy.Empty).ToList();
         return empty.Count == 0 ? ""
@@ -202,21 +219,21 @@ internal static class LandingSyncWords
     }
 
     /// <summary>What a landing that moved a branch on left out, said after it, with what became empty.</summary>
-    internal static string LeftOutLanded(IReadOnlyList<LeftOutCommit> leftOut)
+    public static string LeftOutLanded(IReadOnlyList<LeftOutCommit> leftOut)
     {
         var held = leftOut.Where(each => each.Why != LeftOutWhy.Empty).ToList();
         return (held.Count == 0 ? "" : $" It left out {held.Count} the line holds: {string.Join(", ", held.Select(Each))}.") + Emptied(leftOut);
     }
 
     /// <summary>What a refusal left out, said beside it; nothing where nothing was.</summary>
-    internal static string LeftOutSentence(IReadOnlyList<LeftOutCommit> leftOut) =>
+    public static string LeftOutSentence(IReadOnlyList<LeftOutCommit> leftOut) =>
         leftOut.Count == 0 ? "" : $" The line already holds {string.Join(", ", leftOut.Select(Each))}.";
 
     /// <summary>
     /// The words the review offers to say to the session where its replay conflicts (point 5): that the line moved and holds some of
     /// its work, the files, and to replay its own commits onto the line, keeping only what the line lacks.
     /// </summary>
-    internal static string Rebase(string ontoName, IReadOnlyList<LeftOutCommit> leftOut, string? conflicts) =>
+    public static string Rebase(string ontoName, IReadOnlyList<LeftOutCommit> leftOut, string? conflicts) =>
         $"Rebase your work onto `{ontoName}`: the line moved since your work began and already holds some of it"
         + (leftOut.Count == 0 ? "" : $" ({string.Join(", ", leftOut.Select(Each))})")
         + (conflicts is null ? "." : $", and landing the rest conflicts with it: {conflicts}")
@@ -227,12 +244,12 @@ internal static class LandingSyncWords
     /// A fetch that failed (point 6), in WSR7's words: git's reason, that the landing was judged against what origin said when it was
     /// last fetched here and when that was, and what the git Daoris runs needs to reach an origin over SSH or HTTPS.
     /// </summary>
-    internal static string NotFetched(string reason, DateTimeOffset? lastFetch, string? reach, DateTimeOffset now) =>
+    public static string NotFetched(string reason, DateTimeOffset? lastFetch, string? reach, DateTimeOffset now) =>
         $" `origin` was not fetched ({reason}), so this was judged against what it said when it was last fetched here "
         + $"({SyncWords.LastFetched(lastFetch, now)})." + (SyncWords.Reaching(reach) is { } needs ? $" {needs}" : "");
 
     /// <summary>The follow's words (point 7): the tree moved to what landed, or why it stays.</summary>
-    internal static string Followed(string? stays) => stays is null
+    public static string Followed(string? stays) => stays is null
         ? " The session's tree now stands on what landed, so its next turn starts in sync with the line."
         : $" The session's tree stays where it was ({stays}), so its next turn starts from its old commits.";
 }

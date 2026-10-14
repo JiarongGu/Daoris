@@ -9,6 +9,7 @@ import { WorkflowHold } from '../workflow/WorkflowHold';
 import { DiscardBranchAsk, type SweepBranch } from '../settings/Sweep';
 import type { GoAhead, Quest, Session } from '../data/api';
 import type { AccountNamer } from '../agents/tools';
+import type { LandingConflict, LandsCommit, LeftOutCommit } from '../bridge/shell';
 import { type GoAheadAnswer, GoAheadList } from '../asks/GoAheadList';
 import { ago, elapsed, sessionTool, stamp } from '../locales/format';
 import {
@@ -22,6 +23,7 @@ import { type Answered, InlineConfirm } from './InlineConfirm';
 import type { DiscardOffer, LandOffer } from './groups';
 import { HeldDiscardAsk, HeldDiscardButton, heldDiscardable } from './HeldDiscard';
 import { isIntake, sessionOrigin, sessionTitle } from './identity';
+import { LeftOutLines, RebaseAsk } from './LandingSync';
 import { Note } from './Note';
 import { hasNote, noteBlocks, noteLines } from './noteLines';
 import {
@@ -486,6 +488,10 @@ export type LandingPlan = {
   review?: ReviewWaits | null;
   /** The second opinion's gate where a level asks one (XAGENT1f), which the head draws before the review's (XAGENT1g). */
   opinion?: OpinionGateState | null;
+  /** What the press leaves out because the line holds it, what it replays, and a conflict it would be refused for (LANDSYNC1). */
+  leftOut?: LeftOutCommit[] | null;
+  lands?: LandsCommit[] | null;
+  conflict?: LandingConflict | null;
 };
 
 /** The review's gate as the head draws it (REVIEWENV1g): the set-up step's record where the frame holds it, and the presses. */
@@ -553,6 +559,9 @@ function Lands({ session, lands, landing, planning, onReview, onLand, onName, re
   const opinionWaits = opinionHolds(landing);
   const answers = opinionWaits && acceptAnswers(opinionWaits) ? opinionWaits.answers ?? null : null;
   const acceptable = !workflow && !waits && (!opinionWaits || answers !== null);
+  // LANDSYNC1 (D87's 2026-10-15 amendment point 5): replaying the work onto the line conflicts, so in *Accept…*'s place, the words its
+  // session is asked to rebase with; *Accept…* comes back once the tree changes and the plan reads it again.
+  const conflict = acceptable ? landing?.conflict ?? null : null;
   // A session that did not finish lands what it committed before it ended (LAND4); one finished, at a checkpoint or by
   // itself, lands its work.
   const unfinished = session.state !== 'completed';
@@ -567,11 +576,12 @@ function Lands({ session, lands, landing, planning, onReview, onLand, onName, re
         <span className="text-ink-open">{t('work.head.landed.not', { count: lands.commits })}</span>
         <PathText path={lands.branch} className="min-w-0 text-meta text-ink-faint" />
         <span className="text-ink-faint">{t('work.head.inTree', { tree: lands.tree })}</span>
-        {onLand && !asking && acceptable && (
+        {onLand && !asking && acceptable && !conflict && (
           <Button variant="primary" className="px-2 py-0.5 text-small" onClick={() => setAsking(true)}>{t('work.head.accept')}</Button>
         )}
         {onReview && <Button className="px-2 py-0.5 text-small" onClick={onReview}>{t('work.head.review')}</Button>}
       </p>
+      {onLand && !asking && conflict && <RebaseAsk key={session.id} session={session.id} conflict={conflict} />}
       {workflow && <WorkflowHold gate={workflow} />}
       {second && (
         <OpinionGate
@@ -605,6 +615,8 @@ function Lands({ session, lands, landing, planning, onReview, onLand, onName, re
           says={(
             <>
               <p className="m-0 text-small text-ink-soft"><Inline text={where ?? t('work.head.landReading')} /></p>
+              {/* What it leaves out because the line holds it, and what it replays (LANDSYNC1), said before the press. */}
+              <LeftOutLines leftOut={landing?.leftOut} lands={landing?.lands} />
               {/* What the press answers, shown in it (the second-agent design §8.2–§8.3): making it is the person's answer. */}
               {answers && opinionWaits && (
                 <p className="m-0 border-l-[3px] border-st-open pl-2 text-small text-ink-soft">

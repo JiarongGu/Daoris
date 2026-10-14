@@ -266,6 +266,18 @@ export const useReviewedPatch = (session: string | null, path: string | null): s
 export type TreeAct = { session: string; done: boolean; message: string };
 
 /**
+ * One commit a landing leaves out because the line already holds it (LANDSYNC1, D87's 2026-10-15 amendment point 4): its short id,
+ * subject, why (`content`, `patch`, or `empty` where the replay found it so), and the line's commit with the same patch.
+ */
+export type LeftOutCommit = { commit: string; subject: string; why: string; on?: string | null };
+
+/** One commit a landing would replay onto the line, by its short id and subject (LANDSYNC1). */
+export type LandsCommit = { commit: string; subject: string };
+
+/** A replay that conflicts with the line (D87's amendment point 5): git's lines, and the words its session is asked to rebase with. */
+export type LandingConflict = { says: string; words: string };
+
+/**
  * What accepting this session would do under its repository's landing rule (WSR1, D87): merge into
  * the line, or the branch it would make — said before the press. Only for a session with a tree here.
  * Where the rule names a plugin (D100), which one pushes it, and the sentence a press would be refused
@@ -287,6 +299,13 @@ export const useLanding = (id: string | null, branch?: string | null) => {
       uncommitted?: number;
       opinion?: OpinionGate | null;
       workflow?: import('../workflow/gate').WorkflowGateState | null;
+      /**
+       * What the press would leave out because the line holds it, what it would replay onto the line, and a conflict it would be
+       * refused for (LANDSYNC1, D87's 2026-10-15 amendment): judged against the last fetch, each absent where the line holds none.
+       */
+      leftOut?: LeftOutCommit[] | null;
+      lands?: LandsCommit[] | null;
+      conflict?: LandingConflict | null;
     }>('LANDING', { id, ...(named ? { branch: named } : {}) }),
     enabled: isAvailable && id !== null,
   });
@@ -391,12 +410,19 @@ export const useLandSessionTree = () => {
       const { id, answers, branch } = typeof land === 'string' ? { id: land, answers: null, branch: null } : land;
       // LANDNAME1b: a name the person entered replaces the rule's whole name; blank sends none, so the payload is today's.
       const named = branch?.trim();
-      return call<TreeAct & { branch?: string; plugin?: PluginLanding }>(
+      // LANDSYNC1: what it left out because the line holds it, and the conflict a refusal names with the words to rebase with.
+      return call<TreeAct & {
+        branch?: string; plugin?: PluginLanding;
+        leftOut?: LeftOutCommit[] | null;
+        conflict?: LandingConflict | null;
+      }>(
         'LAND_SESSION_TREE', { id, ...(answers ? { answers } : {}), ...(named ? { branch: named } : {}) }, { timeoutMs: pluginBound });
     },
-    onSettled: (_result, _error, land) => {
+    onSettled: (result, _error, land) => {
       // A press that answered the second opinion's gate, or was refused because it moved: every gate is read again (XAGENT1g).
       if (typeof land !== 'string' && land.answers) void client.invalidateQueries({ queryKey: keys.allLandings });
+      // LANDSYNC1: the press fetched the line, so its plan is read again against what it fetched, and a conflict stands there.
+      if (result && !result.done && result.conflict) void client.invalidateQueries({ queryKey: keys.landing(result.session) });
     },
     onSuccess: (result) => {
       // Only a merge that happened changes what a diff or a removal would say.

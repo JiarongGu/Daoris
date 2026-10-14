@@ -475,6 +475,10 @@ public sealed class TreesRoutes(DriverLoop loop)
                 // Own (TREEFOLLOW1): the target is the branch the session's agent made, which lands as it stands.
                 Session = id, plan.Form, plan.Target, plan.Source, plan.Plugin, plan.Problem, plan.Own, Uncommitted = uncommitted,
                 Workflow = WorkflowWaits(gate.Workflow), Review = Waits(gate.Review), Opinion = Opinion(gate.Opinion),
+                // LANDSYNC1 (D87's 2026-10-15 amendment point 4): what the press would leave out because the line holds it, what it
+                // would land, and a conflict it would be refused for; each absent where the line holds none of the tree's commits.
+                LeftOut = LeftOut(plan.LeftOut), Lands = plan.Lands?.Select(commit => new { Commit = Short(commit.Sha), commit.Subject }).ToArray(),
+                Conflict = Conflict(plan.Conflict),
             };
         }
 
@@ -501,8 +505,21 @@ public sealed class TreesRoutes(DriverLoop loop)
             Review = Waits(gate.Review),
             Opinion = Opinion(gate.Opinion),
             Workflow = WorkflowWaits(gate.Workflow),
+            // LANDSYNC1: what it left out, and the conflict that refused it with the words the review offers to say to the session.
+            LeftOut = LeftOut(landed.LeftOut),
+            Conflict = Conflict(landed.Conflict),
         };
     }
+
+    /// <summary>A landing's left-out commits on the wire (LANDSYNC1): short id, subject, why, and the line's commit with its patch.</summary>
+    public static object[]? LeftOut(IReadOnlyList<LeftOutCommit>? leftOut) => leftOut?
+        .Select(commit => new { Commit = Short(commit.Sha), commit.Subject, commit.Why, On = commit.On is { } on ? Short(on) : null })
+        .ToArray<object>();
+
+    /// <summary>A replay's conflict on the wire (LANDSYNC1): git's lines, and the rebase words the review's press says to the session.</summary>
+    public static object? Conflict(LandingConflict? conflict) => conflict is null ? null : new { conflict.Says, conflict.Words };
+
+    private static string Short(string sha) => TextBounds.ShortCommit(sha, 8);
 
     /// <summary>The workflow gate's own explanation and terminal doors, shared by the preview and the press.</summary>
     public static object? WorkflowWaits(WorkflowGateState? gate) => gate is null || gate.State == WorkflowGateStates.None

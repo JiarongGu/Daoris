@@ -8,7 +8,7 @@ import { cn } from '../lib/cn';
 import { ExternalLink } from '../design/links';
 import { store, stored } from '../lib/stored';
 import {
-  useDiscardSessionTree, useHandOff, useHandOffPress, useLandSessionTree, useLanding, useReadingSince, useSessionDiff,
+  type LandingConflict, useDiscardSessionTree, useHandOff, useHandOffPress, useLandSessionTree, useLanding, useReadingSince, useSessionDiff,
 } from '../bridge/shell';
 import { Button, EmptyState, Inline, SESSION_ACTIVE } from '../design/ui';
 import { reviewBranch, reviewKnown } from './diff';
@@ -16,6 +16,7 @@ import type { DiscardOffer } from './groups';
 import { HeldDiscardAsk, HeldDiscardButton, heldDiscardable } from './HeldDiscard';
 import { type Answered, InlineConfirm } from './InlineConfirm';
 import { LandedNote } from './LandedNote';
+import { LeftOutLines, RebaseAsk } from './LandingSync';
 import type { DiffLayout } from './PatchView';
 import { opinionHolds, opinionState } from './opinion';
 import { reviewHolds, reviewState } from './review';
@@ -148,6 +149,12 @@ export function DiffPane({
   // nothing it answers, so the head's *Accept…*, which lists a dispute or the commits nobody read, is the press that answers them.
   const opinionWaits = opinionHolds(landing.data);
   const canAccept = plannable && !workflow && !waits && !opinionWaits;
+  // LANDSYNC1 (D87's 2026-10-15 amendment point 5): a replay onto the line that conflicts, as the plan tried it or the press was refused
+  // for it, until the plan is read again after the press. In Accept's place, the words its session is asked to rebase with.
+  const [pressed, setPressed] = useState<{ session: string; conflict: LandingConflict; at: number } | null>(null);
+  const conflict = canAccept
+    ? (pressed && pressed.session === session && pressed.at === landing.dataUpdatedAt ? pressed.conflict : landing.data?.conflict ?? null)
+    : null;
   const discard = useDiscardSessionTree();
   // The branch this session's landing made, handed to a landing plugin afterwards (WSR5b) — asked whether
   // or not a tree is still here, since a tidy removes it and the branch stands.
@@ -308,6 +315,9 @@ export function DiffPane({
             : t('work.review.landsOnBranch', { branch: landing.data.target })} />
         </p>
       )}
+      {/* What the press leaves out because the line holds it, and what it replays (LANDSYNC1), said before it. */}
+      {!said && canAccept && <LeftOutLines leftOut={landing.data?.leftOut} lands={landing.data?.lands} />}
+      {conflict && <RebaseAsk key={session} session={session} conflict={conflict} />}
       {!said && canAccept && landing.data?.problem && (
         <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
           {t('work.review.landingProblem', { problem: landing.data.problem })}
@@ -353,11 +363,17 @@ export function DiffPane({
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        {canAccept && (
+        {canAccept && !conflict && (
           <Button
             variant="primary"
             disabled={land.isPending}
-            onClick={() => act(land.mutateAsync(session))}
+            onClick={() => {
+              const at = landing.dataUpdatedAt;
+              act(land.mutateAsync(session).then((result) => {
+                if (!result.done && result.conflict) setPressed({ session, conflict: result.conflict, at });
+                return result;
+              }));
+            }}
           >
             {land.isPending ? t('work.review.accepting') : t('work.review.accept')}
           </Button>
