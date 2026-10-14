@@ -7,7 +7,7 @@ import type { Compose, OpenGroup } from '../opener';
 import { useAnswerSession, useAsks, usePersonDone, useQuests, useRegistry, useSessions } from '../queries';
 import {
   type TurnStop, useCancelTurn, useEditQueued, useEndChat, useHarnesses, useResolveSession, useSendMessage,
-  NO_TURNS, useChatTurns, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionStreams, useSessionWhere,
+  NO_TURNS, useChatTurns, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionStreams, useSessionWhere,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree,
@@ -52,6 +52,7 @@ import { dockOpensOn, type DockTab, followed, NothingFollowed, RightDock } from 
 import { SessionTimeline } from './SessionTimeline';
 import { SessionRail } from './SessionRail';
 import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } from './acts';
+import { entryOfSession } from './entries';
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
 import { sessionFacts } from './headFacts';
 import type { Answered } from './InlineConfirm';
@@ -362,6 +363,8 @@ export function WorkFrame({
   // Where the attended session is listed, and where its work is (SESSUX1d): the rail's own two answers, asked under the
   // same keys, so the page header and its row are offered one set of acts and the bridge is asked once.
   const groups = useSessionGroups();
+  // The entries beside them (SESSONE1c, D167): the attended session's parts, and what an archive reaches. The same answer.
+  const entries = useSessionEntries().data;
   const where = useSessionWhere(sessions.data);
   const quests = useQuests(null, true);
   const registry = useRegistry();
@@ -1188,7 +1191,7 @@ export function WorkFrame({
       },
     } : {}),
   };
-  const actions = useSessionActs({ notify, doors });
+  const actions = useSessionActs({ notify, doors, entries });
 
   // The menu bar's verbs that are this frame's (UX7a, D152 §3.2): the attended session's answer, the views of the regions,
   // a new terminal where the attended session works, and *Archive what ended…*'s first press. Each from an effect, since
@@ -1453,11 +1456,13 @@ export function WorkFrame({
           options: [
             { value: 'state', label: t('work.list.byState') },
             { value: 'repository', label: t('work.list.byRepository') },
+            // Each ask its entries (D167 point 5): offered where the reader answers entries, since it groups by them.
+            ...(entries ? [{ value: 'ask', label: t('work.list.byAsk') }] : []),
           ],
           onChoose: (value) => {
             setGoByState(false);
             listed.setFilters('sessions', keptSessionFilters({
-              ...sessionsFilters, group: value === 'repository' ? 'repository' : 'state',
+              ...sessionsFilters, group: value === 'repository' ? 'repository' : value === 'ask' ? 'ask' : 'state',
             }));
           },
         }}
@@ -1620,6 +1625,15 @@ export function WorkFrame({
             // An agent on the roster has accounts, so a record naming none ran on the tool's own sign-in (D125 §3.7).
             ownSignIn={Boolean(attended && roster.some((row) => row.harness === attended.adapter))}
             nameOf={nameOf}
+            // Its entry's parts (SESSONE1c, D167 point 5): every act on this page stays the part shown's, and the strip picks it.
+            parts={attended && entryOfSession(entries, attended.id) ? {
+              entry: entryOfSession(entries, attended.id)!,
+              attended: attended.id,
+              rows: Object.fromEntries((sessions.data ?? []).map((row) => [row.id, {
+                session: row, root: rootOf(row.repository), where: where[row.id],
+              }])),
+              onShow: (id: string) => attend(id),
+            } : undefined}
             resolving={resolve.isPending || answer.isPending || parkGoAhead.isPending || personDone.isPending}
             onResolve={here ? onResolve : undefined}
             onAnswerSession={here && !answering ? onAnswerSession : undefined}

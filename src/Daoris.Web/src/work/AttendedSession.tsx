@@ -11,7 +11,9 @@ import type { AccountNamer } from '../tools';
 import type { QuestClose, Resolution } from './AwaitingPerson';
 import { HowItCameToBe, type TraceDoor } from './HowItCameToBe';
 import type { Answered } from './InlineConfirm';
+import type { SessionEntry } from './entries';
 import type { DiscardOffer, LandOffer } from './groups';
+import { type PartFacts, PartsStrip } from './PartsStrip';
 import type { Relations } from './relations';
 import { type HeadLink, type HeadOpinion, type HeadReview, type LandingPlan, SessionHead } from './SessionHead';
 import { SessionRelations } from './SessionRelations';
@@ -50,8 +52,19 @@ export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onName, discards, onDiscardTree, review,
-  opinion, continues, helps,
+  opinion, continues, helps, parts,
 }: {
+  /**
+   * Its entry's parts (SESSONE1c, D167 point 5): under the head, a strip of every record of the line of work it belongs to, the
+   * one shown marked, so the page's acts stay the part shown's and a press shows another. Absent where it is a record alone,
+   * and from a host before entries.
+   */
+  parts?: {
+    entry: SessionEntry;
+    attended: string;
+    rows: Readonly<Record<string, PartFacts | undefined>>;
+    onShow: (session: string) => void;
+  };
   /**
    * Passed straight through to the head: the session it continues and the one a helper helps, where the frame holds them
    * (MIXAGENT3a-i). Its *Details* opens them with `onSession`.
@@ -191,6 +204,7 @@ export function AttendedSession({
         discards={discards}
         onDiscardTree={onDiscardTree}
       />
+      {parts && <PartsStrip {...parts} />}
       {/* Every stop a door (the study's §5: "every stop pressable"): a session attends, a quest opens.
           One line of stops by default, since the whole strip stood 350 to 450px between the head and
           the conversation, saying the head's title again (SESS2 H7); whole on a press. */}

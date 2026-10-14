@@ -119,6 +119,25 @@ describe('the attended session', () => {
   });
 
   /**
+   * SESSONE1c (D167 point 5): a session that is a part of an entry of several shows its parts under its head, and a press shows
+   * another part; a record alone shows no strip.
+   */
+  it('shows its entry\'s parts under the head, and shows another part on a press', async () => {
+    const { EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } = await import('./entries.fixtures');
+    const userEvent = (await import('@testing-library/user-event')).default;
+    vi.useRealTimers();
+    const onShow = vi.fn();
+    const rows = Object.fromEntries(EVIDENCE_SESSIONS.map((row) => [row.id, { session: row }]));
+    const { rerender } = render(<AttendedSession session={session()} />);
+    expect(screen.queryByRole('navigation', { name: 'Parts' })).toBeNull();
+
+    rerender(<AttendedSession session={session({ id: 'ap000003' })} parts={{ entry: EVIDENCE_ENTRIES[0]!, attended: 'ap000003', rows, onShow }} />);
+    const strip = screen.getByRole('navigation', { name: 'Parts' });
+    await userEvent.click(strip.querySelectorAll('button')[0]!);
+    expect(onShow).toHaveBeenCalledWith('ap000001');
+  });
+
+  /**
    * One rule for where a parked session's note is shown, read by the column AND the dock (REV3). The
    * dock hid the note of every parked session, while the head shows it only where it can be answered
    * here — so another machine's parked note, on a wide window, was shown nowhere.
