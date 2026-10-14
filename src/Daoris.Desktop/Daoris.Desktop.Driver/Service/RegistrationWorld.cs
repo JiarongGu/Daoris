@@ -81,7 +81,7 @@ public static class LineDeclarationReader
 
         var (listed, output, problem) = await WorkingTree.GitAsync(
             root, ["ls-tree", "-z", commit, "--", LineRegistration.ManifestFile, LineRegistration.LanesFile], ct).ConfigureAwait(false);
-        if (listed != 0) return new(line, null, $"git could not list `{line}` at `{commit[..7]}`: {problem.Trim()}");
+        if (listed != 0) return new(line, null, $"git could not list `{line}` at `{TextBounds.ShortCommit(commit, 7)}`: {problem.Trim()}");
 
         var entries = LineEntry.Parse(output);
         string? manifest = null, lanes = null, odd = null;

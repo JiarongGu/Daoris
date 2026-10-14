@@ -1598,10 +1598,11 @@ check(
   (after.json ?? []).some((q) => q.id === questId && q.status === 'Done'),
   after.text,
 );
-// The wait is a logged move like any other (D79), so the store replayed from the log still knows it.
+// The wait is a logged move like any other (D79), so the store replayed from the log still knows it; the quest it waited on
+// closed since, and a close clears what it names (AWAITSTALE1), so the closed quest reads none.
 check(
-  '…and so is what a quest waited on',
-  (after.json ?? []).some((q) => q.id === needingId && q.awaits === questionId),
+  '…and a quest that closed after a wait names no question',
+  (after.json ?? []).some((q) => q.id === needingId && q.status === 'Done' && (q.awaits ?? null) === null),
   after.text,
 );
 // A deleted quest stays deleted (D95): its row and its history went together, so the open that gives

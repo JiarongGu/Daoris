@@ -14651,6 +14651,18 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 **Outcome** 2026-10-15: the page's top holds only its three entries; 109 files moved into domain folders with `git mv`, held by `src/test/structure.test.ts`, and `daoris.lanes.json` lost two `SettingsView*` globs the move made empty. The work, settings, bridge and projects folders still hold over twenty sources at their top and sit on the gate's `wide` list (STRUCT5c-ii); the move script stayed in scratch (MOVETOOL1). Eleven gates passed on the merge, merged with main's closed-quest fix. On Opus: 308 tool calls. Detail: D166's STRUCT5c note and the `refactor(web): STRUCT5c` commits.
 
+## AWAITSTALE1 — a closed quest no longer names the question it waited on (2026-10-15, D79)
+
+> - [ ] **AWAITSTALE1 — a closed quest no longer names the question it waited on** (service, web). The service keeps a quest's `awaits` after it closes (the install's `711d252413bb` and `3068f74791db`, done, still naming theirs), which held the person's words (FIX-LOG 2026-10-15; the driver now reads it only while taken, `QuestView.Awaits`) and can read *awaiting reply* on the quest page: answer `awaits` only while taken, or clear it at the close, the history kept where it is read.
+
+**Outcome** 2026-10-15: a done or declined close clears `awaits` in `QuestLog.Step`; the store open recaches closed rows still naming one; the Waited operation stays in the history. The web needed no change (QuestPage test added); the family rehearsal's check now reads a quest that closed after a wait as naming no question. On Sonnet: 39 tool calls. Detail: D79's AWAITSTALE1 note.
+
+## TICKSHOWN1 — a refused start is said on the session (2026-10-15, D137)
+
+> - [ ] **TICKSHOWN1 — a refused start is said on the session** (driver/web). Words planned to go on and refused at the start (the FIX-LOG 2026-10-15 case) showed only *going on* in the sessions list, at every look; the refusal lived in the tick's events alone. A start the service refuses for a record the person wrote to puts the refusal on that record's row, as a hold's reason is, so the person reads why their words wait. Proof: a SessionGroups case; the window.
+
+**Outcome** 2026-10-15: `Driver.RunAsync`'s refused open now carries the refusal as the start's `Held` where `start.GoesOn`, so the look reads the consideration Blocked and the row says *your words wait: …*; other starts' refusals stay in the events. No page change or catalogue key. Proof is `AnswerGoesOnOnceTests` (tick, seen red) and a `SessionGroupsTests` case (already held by the existing Blocked path); the installed window was not looked at. On Sonnet: 44 tool calls. Detail: D137's TICKSHOWN1 note.
+
 ## LANDSYNC0 — the design: a landing in sync with its line, and an entry's one Accept (2026-10-15, D87/D167)
 
 > - [ ] **LANDSYNC0 — the design: a landing in sync with its line, and an entry's one Accept** (decision; first). Amend D87 as D109 did: where the line holds some of a tree's commits by content (patch id, as `git cherry` says `-`), the landing builds its branch from the line with only the commits it lacks, by WSR6's replay in a tree of Daoris's own; what it left out, and why, is said before the press. Amend D167: an entry lands as one, its parts' work in order on one branch per repository, and *Group by ask* lands the ask's entries in one press. Settle: a replay conflict (refuse naming the files, and offer the session the words to rebase), a part whose work another part superseded (the install's `a0c7ed37`), moving the session's own branch to what landed, and the Daoris git that cannot fetch (judged against the last fetch, said).
@@ -14662,3 +14674,52 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **LANDSYNC1 — Accept lands only what the line lacks** (driver/modules/web; after 0). `LANDING` names what it leaves out and why; `LAND_SESSION_TREE` fetches, replays the rest onto the line aside, refuses a conflict offering the session the rebase words, and moves its tree to what landed. D87's 2026-10-15 amendment. Proof: Process cases for a squash-merged first commit, a squash of several, a conflict and a failed fetch; the plan's words in both languages.
 
 **Outcome** 2026-10-15: a landing judges each commit beyond the line (`LineHolds`: the walk by content, then patch id), and where the line holds some, the press fetches once, replays the rest aside onto the line, refuses a conflict with the rebase words the review offers through `useSay`, and moves the session's tree to what landed; a tree the line holds none of lands as before. The plan, `trees land --plan`, the review's foot and the head's ask say what it leaves out, in en and zh. Detail: D87's LANDSYNC1 note and the `LANDSYNC1` commits.
+**Outcome** 2026-10-15: D87 amended: where the line holds some of a tree's commits, a landing replays only the rest onto the line, says first what it leaves out, refuses a conflict offering the session rebase words, judges a failed fetch against the last, and moves the session's tree to what landed. D167 amended: one Accept per entry and per ask, answered per repository. At the merge, D164 gained a pointer: the person's own *Bring up to date* still refuses a failed fetch, while a landing and LANDSYNC2's start judge against the last. On Opus: 74 tool calls. Detail: D87's and D167's 2026-10-15 amendments, D109's LANDSYNC0 note.
+
+## DEDUP7c — the short ids left (2026-10-15, D166)
+
+> - [ ] **DEDUP7c — the short ids left** (service, driver). The Mcp host's three `Math.Min(7, …)` cuts cannot see the core's internal `Clipped.ShortCommit`; four unguarded `[..7]`/`[..8]` cuts (`NoteCodes.cs:942`, `LayoutGit.cs:36`, `RegistrationWorld.cs:84`, `PluginTrials.cs:290`) throw on a short id: decide what a short id should do, then one helper each side. D166's DEDUP7b note.
+
+**Outcome** 2026-10-15: a short id shows whole: the four unguarded cuts call `TextBounds.ShortCommit` (`PluginTrials.StateWords` extracted to test it; `LayoutGit` and `RegistrationWorld` could not throw, `IsCommitId` holds ids to seven or more); the Mcp host calls the core's `Clipped.ShortCommit` through an `InternalsVisibleTo` grant instead of a twin. On Sonnet: 45 tool calls. Detail: D166's DEDUP7c note.
+
+## REVIEWBASE5 — the session head offers no *Accept…* where Review says nothing is beyond the line (2026-10-15, D164)
+
+> - [ ] **REVIEWBASE5 — the session head offers no *Accept…* where Review says nothing is beyond the line** (web). REVIEWBASE4 took Accept out of Review's panel for a tree that holds nothing beyond its line; the session head's own *Accept…* (SessionHead) reads the landing plan alone and may still offer it. Read the review's `behind.ahead` there too. Proof: a SessionHead test with `ahead` 0; the window. D164's REVIEWBASE4 note.
+
+**Outcome** 2026-10-15: `SessionHead` takes the review's `behind`; where `ahead` is 0 and its tree holds nothing uncommitted, *Accept…* is not offered (*Review* stays). `WorkFrame` reads it from the review's own `useSessionDiff` query, passed through `AttendedSession`. On Sonnet: 52 tool calls. Detail: D164's REVIEWBASE5 note.
+
+## SESSONE2g — a teammate's ask's channel, read here (2026-10-15, D167)
+
+> - [ ] **SESSONE2g — a teammate's ask's channel, read here** (service/web). The sync mirrors every message of the workspace, but `GET /api/asks/{id}/channel` answers only an ask held on this machine: a channel of an ask held elsewhere, readable by its id. D167's SESSONE2d note.
+
+**Outcome** 2026-10-15: `GET /api/asks/{id}/channel` answers an ask held elsewhere from the messages the sync mirrored (their `origin` kept, read-only, no Daoris lines); a post to such an ask is refused `held-elsewhere` (409). The page has no door to a teammate's ask (its asks list and `GET /api/asks/{id}` are this machine's), so the route alone is built and the page is unchanged (SESSONE2h, SESSONE2i). On Sonnet: 36 tool calls. Detail: D167's SESSONE2g note.
+
+## HELPDOOR1 — adding a `setting` door, written down (2026-10-15, D110)
+
+> - [ ] **HELPDOOR1 — adding a `setting` door, written down** (docs). Driver `Doors` with its case and method; the service's `Doors` with its case and flags; every tool description; the coverage row; a room row placed with the workflow-after-opinion order; goldens rewritten by `DAORIS_GOLDEN_WRITE=1`; the index. A knowledge note and its index row. D110; D164's DOORS1a note.
+
+**Outcome** 2026-10-15: `.claude/knowledge/setting-doors.md` lists the ten places a `setting` door goes, walked from DOORS1a's two commits and TOOL4l-b's smallest one, with its row in `.claude/INDEX.md`. Documents only. On Sonnet: 35 tool calls. Detail: D110's HELPDOOR1 note and the note itself.
+
+## MOVETOOL1 — a tracked move tool (2026-10-15, D166)
+
+> - [ ] **MOVETOOL1 — a tracked move tool** (tools). A `tools/` script that moves files with `git mv`, respells relative imports, and checks its counts and that every import still resolves; the CLI's and the page's moves each built one in scratch. Contract: `file-tool-discipline`; proof: its own test on a fixture tree.
+
+**Outcome** 2026-10-15: `tools/move-files.mjs` moves files or folders with `git mv` (`from=to` or a JSON file), respells every relative import of them and in them in the form it had, asserts `--expect-moved`, `--expect-rewritten` and `--expect-files` before any change, and checks from disk that each import still reaches its file; `--plan` changes nothing. Its test, `tools/move-files.test.mjs`, is in `verify` (the cli gate), about 68 s of git starts on Windows. On Sonnet: 42 tool calls. Detail: D166's MOVETOOL1 note.
+
+## TWINWORDS1 — the cards' copied sentences, held to the terminal's (2026-10-15, D164)
+
+> - [ ] **TWINWORDS1 — the cards' copied sentences, held to the terminal's** (driver/cli). Ask Daoris's landing, helpers and commits cards say the CLI's sentences by hand (`TicketSays`, the squash lines, the mode sentences in `HelpSettingProposals`); move them beside the rules' twins on a shared table both suites read. D164's DOORS1a note; `.claude/knowledge/twins.md`.
+
+**Outcome** 2026-10-15: the ticket, squash, helpers-mode and commits-mode sentences sit in one table, `src/Daoris.Cli/test/fixtures/landing-says.json`, which `landing-says.test.ts` (against `ticketSays`, `SQUASH_SAYS`, `helperModeSays`, `commitModeSays`, now exported and used by the verbs) and the driver's `LandingSaysTwinTests` (against the cards) both read; changing one side's words by hand fails the other's test, seen red on both. The merge tool's REACH row holds the table. On Sonnet: 67 tool calls. Detail: D164's TWINWORDS1 note and the twins record.
+
+## KEYPARITY2 — a key's class subtraction (2026-10-15, D164)
+
+> - [ ] **KEYPARITY2 — a key's class subtraction** (driver/cli). .NET reads `[a-z-[aeiou]]` as a class minus a class, JavaScript as a class then `]`: both compile, so each twin finds a different ticket. Refuse `-[` inside a class on both twins with one sentence. D164's PROCESS1b-i note.
+
+**Outcome** 2026-10-15: both twins' key readers refuse `-[` inside a character class with one sentence (`LandingRules.KeyProblem`, `keyProblem`); a test case on each side, an escaped `\-[` still taken. On Sonnet: 52 tool calls, with NAMEZH1. Detail: D164's KEYPARITY2 note.
+
+## NAMEZH1 — 本机 in a helper's note (2026-10-15, D163)
+
+> - [ ] **NAMEZH1 — 本机 in a helper's note** (web). `note.helper.why.asker-gone` says 这台机器 where the glossary's name is 本机; correct it and drop its entry from `names.test.ts`'s list. D163's MIXAGENT3a-i note.
+
+**Outcome** 2026-10-15: `note.helper.why.asker-gone` (zh) now says 提问的会话不在本机上, and its entry left the names test's list of strays. Built with KEYPARITY2 (its count). Detail: D163's NAMEZH1 note.

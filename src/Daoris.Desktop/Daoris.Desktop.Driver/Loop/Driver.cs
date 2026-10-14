@@ -1248,7 +1248,11 @@ public sealed class Driver(
                 await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
             }
 
-            return new StartRun($"refused  #{quest.Id} → {quest.To}: {message}", false);
+            // The words of a record the person wrote to are the start's own to say (TICKSHOWN1, D137): carried as the hold's
+            // sentence, the consideration reads Blocked and the record's row says its words wait and why, not only going on.
+            // Any other start's refusal stays in the events: its quest's row has no words waiting to show it on.
+            return new StartRun(
+                $"refused  #{quest.Id} → {quest.To}: {message}", false, null, start.GoesOn ? $"the service refused the open: {message}" : null);
         }
 
         // The record is open, so the ledger holds the tree and a replay's own look sees it in use (LEFT2).

@@ -49,6 +49,9 @@ public enum ChannelRefusal
 
     /// <summary>The part has posted <see cref="ChannelBounds.MaxPerPart"/> messages already.</summary>
     TooMany,
+
+    /// <summary>The ask is a teammate's, held on another machine and only read here (SESSONE2g): a post to it is theirs to take.</summary>
+    HeldElsewhere,
 }
 
 /// <summary>What the channel shows in time order: a message, or one of Daoris's lines.</summary>
@@ -410,7 +413,11 @@ public sealed class ChannelDesk(
     public async Task<ChannelOutcome> PostAsPersonAsync(
         string askId, string? text, string? to, string? re, DateTimeOffset now, CancellationToken ct = default)
     {
-        if (await asks.FindAsync(askId, ct).ConfigureAwait(false) is not { } ask) return new(ChannelRefusal.NotFound, null);
+        if (await asks.FindAsync(askId, ct).ConfigureAwait(false) is not { } ask)
+        {
+            return new(await IsMirroredAsync(askId, ct).ConfigureAwait(false) ? ChannelRefusal.HeldElsewhere : ChannelRefusal.NotFound, null);
+        }
+
         var judged = await JudgeAsync(ask, text, to, re, ct).ConfigureAwait(false);
         if (judged.Refusal != ChannelRefusal.None) return new(judged.Refusal, null);
 
@@ -425,14 +432,29 @@ public sealed class ChannelDesk(
     /// <summary>
     /// What the channel holds for <paramref name="entry"/>: every message and line of it, or those after <paramref name="since"/>. The
     /// unread count is against the entry's mark. <paramref name="moveMark"/> moves the mark to the newest item, as a session's read does.
-    /// Null when this machine holds no such ask.
+    /// Null when this machine holds no such ask and has mirrored no message of one. An ask held elsewhere (SESSONE2g) reads from the
+    /// messages the sync mirrored, read-only: no mark moves and Daoris's lines, which come from this machine's quests, are not in it.
     /// </summary>
     public async Task<ChannelRead?> ReadAsync(
         string askId, string entry, DateTimeOffset? since, bool moveMark, CancellationToken ct = default)
     {
-        if (await asks.FindAsync(askId, ct).ConfigureAwait(false) is not { } ask) return null;
-        return await ReadOfAsync(ask, entry, since, moveMark, ct).ConfigureAwait(false);
+        if (await asks.FindAsync(askId, ct).ConfigureAwait(false) is { } ask)
+        {
+            return await ReadOfAsync(ask, entry, since, moveMark, ct).ConfigureAwait(false);
+        }
+
+        var id = askId.TrimStart('#');
+        var mirrored = await store.OfAsync(id, ct).ConfigureAwait(false);
+        if (mirrored.Count == 0) return null;
+
+        var mark = await store.MarkAsync(id, entry, ct).ConfigureAwait(false);
+        return new ChannelRead(
+            [.. mirrored.Where(m => since is null || m.At > since).OrderBy(m => m.At)], [],
+            mirrored.Count(m => mark is null || m.At > mark), mark);
     }
+
+    private async Task<bool> IsMirroredAsync(string askId, CancellationToken ct) =>
+        (await store.OfAsync(askId.TrimStart('#'), ct).ConfigureAwait(false)).Count > 0;
 
     /// <summary>
     /// A session's read: what is new since its entry last read (or since <paramref name="since"/>, whatever the mark says), and the mark
@@ -488,6 +510,7 @@ public sealed class ChannelDesk(
         ChannelRefusal.BadTo => "bad-to",
         ChannelRefusal.BadRe => "bad-re",
         ChannelRefusal.TooMany => "too-many",
+        ChannelRefusal.HeldElsewhere => "held-elsewhere",
         _ => refusal.ToString().ToLowerInvariant(),
     };
 

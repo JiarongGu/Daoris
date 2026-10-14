@@ -191,6 +191,14 @@ describe('a quest’s session', () => {
     expect(within(section).getByText('waits on #b2c3d4, asked of billing')).toBeInTheDocument();
   });
 
+  it('reads no awaiting reply on a quest that closed, whose question the service cleared (AWAITSTALE1)', () => {
+    page({ quest: { ...OPEN, status: 'Done', awaits: null }, session: ended });
+    const section = screen.getByRole('region', { name: 'Session' });
+    expect(within(section).queryByText('awaiting reply')).toBeNull();
+    expect(within(section).queryByText(/waits on/)).toBeNull();
+    expect(within(section).getByText('completed')).toBeInTheDocument();
+  });
+
   it('keeps the record’s state where the reader says nothing of it', () => {
     page({ quest: { ...OPEN, status: 'Taken' }, session: ended });
     expect(within(screen.getByRole('region', { name: 'Session' })).getByText('completed')).toBeInTheDocument();

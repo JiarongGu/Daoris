@@ -647,6 +647,12 @@ public static class LandingRules
             }
             else if (inClass)
             {
+                // .NET reads `[a-z-[aeiou]]` as a class minus a class, JavaScript as a class then `]` (KEYPARITY2).
+                if (key[at] == '-' && next == '[')
+                {
+                    return "a ticket's key may not subtract a class (`-[` inside a class), which the driver and the CLI read differently.";
+                }
+
                 if (key[at] == ']') inClass = false;
             }
             else if (key[at] == '(' && next == '?')
