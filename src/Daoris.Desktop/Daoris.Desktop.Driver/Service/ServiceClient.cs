@@ -693,6 +693,36 @@ public sealed class ServiceClient : IDisposable
     }
 
     /// <summary>
+    /// The asks the mirrored channel messages name that this machine does not hold (SESSONE2h's <c>GET /api/channel/elsewhere</c>),
+    /// newest message first. Empty where the host is one from before the door, which answers the route not found.
+    /// </summary>
+    /// <exception cref="DriverException">The host answered something other than the list.</exception>
+    public async Task<IReadOnlyList<ElsewhereAskAnswer>> ElsewhereAsksAsync(CancellationToken ct = default)
+    {
+        var answer = await _doors.SendAsync(ServiceVerb.Get, "/api/channel/elsewhere", null, ct).ConfigureAwait(false);
+        if (answer.Status == (int)System.Net.HttpStatusCode.NotFound) return [];
+        if (!answer.Ok) throw new DriverException($"the service would not list the asks held elsewhere: {answer.Payload}");
+
+        using var document = JsonDocument.Parse(answer.Payload);
+        if (document.RootElement.ValueKind != JsonValueKind.Object
+            || !document.RootElement.TryGetProperty("asks", out var listed) || listed.ValueKind != JsonValueKind.Array)
+        {
+            throw new DriverException($"the service answered something other than the asks held elsewhere: {answer.Payload}");
+        }
+
+        return [.. listed.EnumerateArray().Select(row => (row, id: Json.Text(row, "id"), latest: Moments.Read(row, "latest")))
+            .Where(read => read.id is { Length: > 0 } && read.latest is not null)
+            .Select(read => new ElsewhereAskAnswer(
+                read.id!, Json.Text(read.row, "workspace") ?? "",
+                read.row.TryGetProperty("origins", out var origins) && origins.ValueKind == JsonValueKind.Array
+                    ? [.. origins.EnumerateArray().Where(o => o.ValueKind == JsonValueKind.String).Select(o => o.GetString()!)]
+                    : [],
+                read.latest!.Value, Count(read.row, "messages"), Count(read.row, "unread")))];
+
+        static int Count(JsonElement row, string name) => row.TryGetProperty(name, out var n) && n.ValueKind == JsonValueKind.Number ? n.GetInt32() : 0;
+    }
+
+    /// <summary>
     /// Move an entry's read mark on an ask's channel to <paramref name="through"/> (SESSONE2a's <c>POST …/channel/read</c>): what
     /// reached a running part, or what a starting part was handed (SESSONE2b). A mark never moves back; a host without the door, or
     /// without the ask, moves none, and the next read hands the same messages again.

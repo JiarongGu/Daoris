@@ -1,5 +1,4 @@
 using Daoris.Knowledge;
-using Microsoft.Data.Sqlite;
 
 namespace Daoris.Service.Tests;
 
@@ -15,7 +14,7 @@ public sealed class OneCheckoutTests : IDisposable
 
     public void Dispose()
     {
-        SqliteConnection.ClearAllPools();
+        SqlitePools.Release(Path.Combine(_root, "knowledge.db"));
         if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
     }
 

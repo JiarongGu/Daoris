@@ -365,7 +365,7 @@ public sealed class IndexEntriesTests : IDisposable
         }
         finally
         {
-            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            SqlitePools.Release(database);
         }
     }
 
@@ -411,7 +411,7 @@ public sealed class IndexEntriesTests : IDisposable
         }
         finally
         {
-            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            SqlitePools.Release(database);
         }
     }
 
@@ -572,7 +572,7 @@ public sealed class IndexEntriesTests : IDisposable
         }
         finally
         {
-            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            SqlitePools.Release(database);
         }
     }
 
@@ -942,7 +942,7 @@ public sealed class IndexEntriesTests : IDisposable
         }
         finally
         {
-            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            SqlitePools.Release(database);
         }
     }
 

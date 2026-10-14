@@ -153,6 +153,9 @@ internal sealed class ChatGoOn
             // Ask Daoris's conversations among them (ASKHIST1): each goes on in its own conversation as a repository's chat does.
             if (each.Kind != "chat" || each.Teammate || !Ended.Contains(each.State)) continue;
 
+            // HANDWORDS1: one handed over or moved went on in another, which holds its tree: words left on it never restart it.
+            if (WordsNever.ContinuedIn(records, each.Id) is not null) continue;
+
             if (ServiceClient.ReadRecord(json, each.Id) is not { WordsWaiting: true } record) continue;
             if (GoOnMarks.Judged(record, _context.Marks.Read(each.Id))) continue;
 
@@ -257,11 +260,19 @@ internal sealed class ChatGoOn
     {
         // Only an ended chat of this machine's with words waiting: a driven record goes on through the planner (MSG1b), and a
         // live one hears words at its door. Ask Daoris's conversation goes on too, in its room (ASKHIST1).
-        var record = await _context.Service.RecordAsync(sessionId, ct).ConfigureAwait(false);
+        var json = await _context.Service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
+        var record = ServiceClient.ReadRecord(json, sessionId);
         if (record is not { Kind: "chat", WordsWaiting: true } || record.Teammate
             || !(Ended.Contains(record.State) || string.Equals(record.State, "stood-down", StringComparison.OrdinalIgnoreCase)))
         {
             return new(null, $"session `{sessionId}` is no ended conversation of this machine's with words waiting.");
+        }
+
+        // 🔴 HANDWORDS1 (D163 point 1, D165 point 3): one handed over or moved went on in another, which holds its tree now and takes
+        // its words. Restarted, it would open a second conversation in that tree: it stays as it ended, its words unmarked.
+        if (WordsNever.ContinuedIn(json, sessionId) is { } next)
+        {
+            return new(null, $"conversation `{sessionId}` went on in conversation `{next}`, which takes its words.");
         }
 
         // The person wrote to it, so it stays in view whatever comes of it (D137 §2.3), and an earlier mark of words it could

@@ -722,6 +722,9 @@ public sealed class DriverLoop(
                 if (reach is null) Words.Tell(session);
             };
             chat.TakenUpEnded += (session, state) => _ = Ended(eventBus, session, state);
+            // A hand-over's or a curve move's take is over (HANDWORDS1): the words held while it was taken go to the conversation
+            // that continues it, and what a word said to the old one now would do is told again.
+            chat.TakeEnded += Words.OnTakeEnded;
             // An Ask Daoris conversation going on writes its room as an open does (ASKHIST1), from the module's reading.
             chat.DescribeHelp = ct => DescribeHelp is { } describe ? describe(ct) : Task.FromResult<HelpMachine?>(null);
             Chat = chat;

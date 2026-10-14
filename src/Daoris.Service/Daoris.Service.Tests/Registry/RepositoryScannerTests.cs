@@ -186,7 +186,7 @@ public sealed class RepositoryScannerTests : IDisposable
         }
         finally
         {
-            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            SqlitePools.Release(database);
         }
 
         // Each path is the test's own file under its temporary root, held in a constant: written as an argument after

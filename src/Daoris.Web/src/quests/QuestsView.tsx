@@ -512,7 +512,7 @@ export function useQuestsView({
         />
       ),
       loading: quests.isPending || asks.loading,
-      empty: listed && rows.length === 0 && asks.rows.length === 0
+      empty: listed && rows.length === 0 && asks.rows.length === 0 && asks.teammates.length === 0
         ? { headline, body: t('quests.empty.body') }
         : undefined,
       chosen,
@@ -521,6 +521,7 @@ export function useQuestsView({
       body: (
         <QuestList
           asks={asks.rows}
+          teammates={asks.teammates}
           quests={rows}
           closed={filters.closed}
           filteredTo={receiver}

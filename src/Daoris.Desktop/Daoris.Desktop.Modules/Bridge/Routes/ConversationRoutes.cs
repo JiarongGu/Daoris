@@ -92,7 +92,8 @@ public sealed class ConversationRoutes(DriverContext context)
         // Words a running session took are kept on its ask now (DRIFT1a2); words kept on a record are kept there once a
         // session takes them (MSG1a's taken door), so they are never posted twice.
         if (said.Running) _loop.Words.KeepOnAsk(id, text);
-        return new { said.Sent, said.Reaches, said.Why };
+        // `to`: the conversation a conversation handed over or moved went on in, where `why` is `continued` (HANDWORDS1).
+        return new { said.Sent, said.Reaches, said.Why, said.To };
     }
 
     // *Start a conversation with these words* (MSG1f2, D137 §2.2, §5.3): words a session cannot go on with, and that nothing
@@ -291,6 +292,8 @@ public sealed class ConversationRoutes(DriverContext context)
             LastTurn = queue.LastTurnEnded,
             reach.Reaches,
             reach.Why,
+            // The conversation it went on in, where `why` is `continued` (HANDWORDS1): where a word goes instead.
+            reach.To,
             Reach = ReachOf(reach),
         };
     }
@@ -299,10 +302,11 @@ public sealed class ConversationRoutes(DriverContext context)
     /// What a word said now would do, as <c>SESSION_QUEUED</c> carries it (MSG1f2): <c>{ reaches, why }</c>, an object even
     /// where both are null (a word that would start a turn at once), because the bridge leaves a null out and an absent
     /// field could not tell that from a shell older than the field. Null, and so absent, where nothing is known: nothing here
-    /// runs the session and its record has not answered.
+    /// runs the session and its record has not answered. <c>to</c> names the conversation a <c>continued</c> one went on in
+    /// (HANDWORDS1), and is left out with the rest of the nulls.
     /// </summary>
     public static object? ReachOf(WordsAnswer? reach) =>
-        reach is null or { Sent: false, Why: null } ? null : new { reach.Reaches, reach.Why };
+        reach is null or { Sent: false, Why: null } ? null : new { reach.Reaches, reach.Why, reach.To };
 
     /// <summary>
     /// A conversation's options as the page reads them (AGT6b), the answer and the live event alike: each

@@ -20,7 +20,7 @@ public sealed class KnowledgeStoreContractTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _sqlite.DisposeAsync();
-        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        SqlitePools.Release(_file);
         if (File.Exists(_file)) File.Delete(_file);
     }
 

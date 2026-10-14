@@ -12,6 +12,15 @@ public sealed record ChannelAnswer(string Ask, string Entry, IReadOnlyList<Chann
 public sealed record ChannelPostAnswer(bool Posted, string? Code, ChannelItemAnswer? Message);
 
 /// <summary>
+/// An ask the mirrored messages name and this machine does not hold (SESSONE2h): the service's list row, field for field. There is
+/// no ask record here, so no title; <paramref name="Origins"/> are the machines its messages came from.
+/// </summary>
+public sealed record ElsewhereAskAnswer(string Id, string Workspace, IReadOnlyList<string> Origins, DateTimeOffset Latest, int Messages, int Unread);
+
+/// <summary>The asks held elsewhere as the page reads them (<c>ASKS_ELSEWHERE</c>).</summary>
+public sealed record ElsewhereAnswer(IReadOnlyList<ElsewhereAskAnswer> Asks);
+
+/// <summary>
 /// What the channel's doors answer the page (SESSONE2c, D167, D50): the shell's <c>CHANNEL_READ</c>, <c>CHANNEL_POST</c> and
 /// <c>CHANNEL_MARK</c> return these, so the page reads what the service says field for field. A session and an entry are ids and
 /// keys, and a message's words are as written, cleaned of paths by the service (D167 point 8): never a path of this machine.

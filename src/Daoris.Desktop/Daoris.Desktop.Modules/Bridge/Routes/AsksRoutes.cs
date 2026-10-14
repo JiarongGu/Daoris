@@ -65,6 +65,17 @@ public sealed class AsksRoutes(DriverLoop loop)
         return view is null ? ChannelAnswers.Empty(ask) : ChannelAnswers.Read(view);
     }
 
+    /// <summary>
+    /// The asks the mirrored channel messages name that this machine does not hold (SESSONE2h): the Asks list's <i>Teammates' asks</i>.
+    /// Each is read at <c>CHANNEL_READ</c> by its id; the service holds no record of it, so it has no title.
+    /// </summary>
+    [DriverRoute("ASKS_ELSEWHERE")]
+    private async Task<object?> AsksElsewhereAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var service = _loop.Service ?? throw NotReady();
+        return new ElsewhereAnswer(await service.ElsewhereAsksAsync(cancellationToken).ConfigureAwait(false));
+    }
+
     /// <summary>The ask a route is about, as the service names it.</summary>
     /// <exception cref="DriverException">None named: the driver's sentence, said verbatim.</exception>
     private static string Asked(IpcRequest request) =>

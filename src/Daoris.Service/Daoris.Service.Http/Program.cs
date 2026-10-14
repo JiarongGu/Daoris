@@ -126,6 +126,9 @@ var contentRoot = Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(),
 
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions { Args = args, ContentRootPath = contentRoot });
 builder.Logging.AddProvider(new MachineLogProvider(log));
+// FLAKE2: a host the shell started waits for its requests in flight less than the shell waits for it (InputEndStop.Drain).
+builder.Services.Configure<HostOptions>(host =>
+    InputEndStop.BoundDrain(host, Environment.GetEnvironmentVariable(InputEndStop.Variable)));
 
 // The documented address, made true by construction: with nothing configured, Kestrel binds its own
 // default and the README's port is a lie. An explicit `--urls` or ASPNETCORE_URLS still wins — and
@@ -948,6 +951,12 @@ if (mode == ServiceMode.Local)
             ? Results.Ok(ToChannel(id, reader, read))
             : Results.NotFound(new ErrorResponse($"No ask `#{id.TrimStart('#')}`.", ChannelDesk.Spell(ChannelRefusal.NotFound)));
     });
+
+    // The asks the mirrored messages name that this machine does not hold (SESSONE2h), for a list that opens each one's channel above.
+    // No ask record is here, so there is no title; the circle, the machines and the moments are all the messages carry.
+    app.MapGet("/api/channel/elsewhere", async (ComposedService s, CancellationToken ct) =>
+        Results.Ok(new ElsewhereAsksResponse([.. (await s.Channel.ElsewhereAsync(ct)).Select(a =>
+            new ElsewhereAskResponse(a.Id, a.Workspace, a.Origins, a.Latest, a.Messages, a.Unread))])));
 
     // The person's message on the channel (D167 point 7): their words, kept on the ask as a `channel` word. A refusal is a code.
     app.MapPost("/api/asks/{id}/channel", async (

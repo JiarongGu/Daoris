@@ -46,7 +46,9 @@ describe('the refusal codes the driver declares, held to the page’s tables', (
   it('reads the driver’s declarations', () => {
     // A scan that matched nothing would pass on a moved or renamed class: it has to see them.
     expect(codesOf('GoOnNew.cs', 'GoOnNew').sort()).toEqual(['closed', 'conversation', 'no-words', 'not-cooling', 'running']);
-    expect(codesOf('SessionSay.cs', 'WordsNever').sort()).toEqual(['help', 'intake', 'not-found', 'stood-down', 'superseded', 'teammate']);
+    expect(codesOf('SessionSay.cs', 'WordsNever').sort()).toEqual([
+      'continued', 'help', 'intake', 'not-found', 'stood-down', 'superseded', 'teammate',
+    ]);
     expect(codesOf('ChatRunner.StartFrom.cs', 'StartFrom').sort()).toEqual(['carried', 'no-words', 'running']);
     expect(codesOf('HandOver.cs', 'HandOver').sort()).toEqual([
       'no-door', 'not-conversation', 'not-its-account', 'not-last-run', 'parked', 'quest-closed', 'quest-elsewhere', 'running',
