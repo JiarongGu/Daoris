@@ -59,8 +59,7 @@ public static class WorkingTree
 
         var lines = stdout.Trim().Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         if (lines.Length != 2
-            || !DateTimeOffset.TryParse(
-                lines[1], null, System.Globalization.DateTimeStyles.RoundtripKind, out var committedAt))
+            || Moments.Read(lines[1]) is not { } committedAt)
         {
             return null;
         }

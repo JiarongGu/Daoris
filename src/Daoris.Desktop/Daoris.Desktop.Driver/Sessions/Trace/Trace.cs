@@ -296,8 +296,7 @@ public static class Trace
     /// <summary>Text with something in it, or null: an empty string on the wire says as little as none.</summary>
     private static string? Filled(JsonElement element, string name) => NonEmpty(element, name);
 
-    private static DateTimeOffset? Moment(JsonElement element, string name) =>
-        DateTimeOffset.TryParse(Text(element, name), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at) ? at : null;
+    private static DateTimeOffset? Moment(JsonElement element, string name) => Moments.Read(element, name);
 
     // Empty strings are kept here, as the copy this replaced kept them.
     private static IReadOnlyList<string> Strings(JsonElement element, string name) => Json.Strings(element, name, keepEmpty: true);

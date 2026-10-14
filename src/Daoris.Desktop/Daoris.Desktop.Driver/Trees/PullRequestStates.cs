@@ -151,7 +151,7 @@ public static partial class PullRequestAnswers
         DateTimeOffset? when = null;
         if (at is not null)
         {
-            if (!DateTimeOffset.TryParse(at, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsed)) return null;
+            if (Moments.Read(at) is not { } parsed) return null;
             when = parsed;
         }
 

@@ -384,13 +384,13 @@ public sealed class LandedBranches(string home)
                 writer.WriteString("session", entry.Session);
                 if (entry.Quest is not null) writer.WriteString("quest", entry.Quest);
                 if (entry.Title is not null) writer.WriteString("title", entry.Title);
-                writer.WriteString("landedAt", entry.LandedAt.ToString("O", CultureInfo.InvariantCulture));
+                writer.WriteString("landedAt", Moments.Write(entry.LandedAt));
                 if (entry.Plugin is not null) writer.WriteString("plugin", entry.Plugin);
                 if (entry.Pushed) writer.WriteBoolean("pushed", true);
                 if (entry.PullRequest is not null) writer.WriteString("pullRequest", entry.PullRequest);
                 if (entry.PushedTip is not null) writer.WriteString("pushedTip", entry.PushedTip);
                 if (entry.From is not null) writer.WriteString("from", entry.From);
-                if (entry.GoneAt is { } gone) writer.WriteString("goneAt", gone.ToString("O", CultureInfo.InvariantCulture));
+                if (entry.GoneAt is { } gone) writer.WriteString("goneAt", Moments.Write(gone));
                 if (entry.RemovedAs is not null) writer.WriteString("removedAs", entry.RemovedAs);
                 if (entry.RemovedOn is not null) writer.WriteString("removedOn", entry.RemovedOn);
                 if (entry.AcceptedBy is not null) writer.WriteString("acceptedBy", entry.AcceptedBy);
@@ -415,7 +415,7 @@ public sealed class LandedBranches(string home)
                         writer.WriteStartObject();
                         writer.WriteString("from", advance.From);
                         writer.WriteString("to", advance.To);
-                        writer.WriteString("at", advance.At.ToString("O", CultureInfo.InvariantCulture));
+                        writer.WriteString("at", Moments.Write(advance.At));
                         writer.WriteString("session", advance.Session);
                         if (advance.AcceptedBy is not null) writer.WriteString("acceptedBy", advance.AcceptedBy);
                         if (advance.Review is { } advanced) WriteReview(writer, advanced);
@@ -434,7 +434,7 @@ public sealed class LandedBranches(string home)
                     writer.WriteStartObject("pullRequestAskFailed");
                     writer.WriteString("code", failed.Code);
                     writer.WriteString("plugin", failed.Plugin);
-                    writer.WriteString("at", failed.At.ToString("O", CultureInfo.InvariantCulture));
+                    writer.WriteString("at", Moments.Write(failed.At));
                     writer.WriteEndObject();
                 }
 
@@ -446,7 +446,7 @@ public sealed class LandedBranches(string home)
                         writer.WriteStartObject();
                         writer.WriteString("branch", carried.Branch);
                         writer.WriteString("tip", carried.Tip);
-                        writer.WriteString("at", carried.At.ToString("O", CultureInfo.InvariantCulture));
+                        writer.WriteString("at", Moments.Write(carried.At));
                         writer.WriteString("by", carried.By);
                         writer.WriteEndObject();
                     }
@@ -472,7 +472,7 @@ public sealed class LandedBranches(string home)
         if (review.Environment is not null) writer.WriteString("environment", review.Environment);
         if (review.Quest is not null) writer.WriteString("quest", review.Quest);
         if (review.Commit is not null) writer.WriteString("commit", review.Commit);
-        if (review.At is { } at) writer.WriteString("at", at.ToString("O", CultureInfo.InvariantCulture));
+        if (review.At is { } at) writer.WriteString("at", Moments.Write(at));
         if (review.Words is not null) writer.WriteString("words", review.Words);
         writer.WriteEndObject();
     }
@@ -483,7 +483,7 @@ public sealed class LandedBranches(string home)
             ? new LandingReview(said, Text(review, "environment"), Text(review, "quest"))
             {
                 Commit = Text(review, "commit"),
-                At = DateTimeOffset.TryParse(Text(review, "at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at) ? at : null,
+                At = Moments.Read(Text(review, "at")),
                 Words = Text(review, "words"),
             }
             : null;
@@ -504,7 +504,7 @@ public sealed class LandedBranches(string home)
         writer.WriteNumber("disputes", opinion.Disputes);
         writer.WriteNumber("unread", opinion.Unread);
         if (opinion.Person is not null) writer.WriteString("person", opinion.Person);
-        if (opinion.At is { } at) writer.WriteString("at", at.ToString("O", CultureInfo.InvariantCulture));
+        if (opinion.At is { } at) writer.WriteString("at", Moments.Write(at));
         if (opinion.Words is not null) writer.WriteString("words", opinion.Words);
         if (opinion.Code is not null) writer.WriteString("code", opinion.Code);
         writer.WriteEndObject();
@@ -552,7 +552,7 @@ public sealed class LandedBranches(string home)
             Disputes = Number(opinion, "disputes"),
             Unread = Number(opinion, "unread"),
             Person = Text(opinion, "person"),
-            At = DateTimeOffset.TryParse(Text(opinion, "at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at) ? at : null,
+            At = Moments.Read(Text(opinion, "at")),
             Words = Text(opinion, "words"),
             Code = Text(opinion, "code"),
         };
@@ -587,10 +587,10 @@ public sealed class LandedBranches(string home)
         if (state.SourceCommit is not null) writer.WriteString("sourceCommit", state.SourceCommit);
         if (state.Target is not null) writer.WriteString("target", state.Target);
         if (state.How is not null) writer.WriteString("how", state.How);
-        if (state.At is { } at) writer.WriteString("at", at.ToString("O", CultureInfo.InvariantCulture));
+        if (state.At is { } at) writer.WriteString("at", Moments.Write(at));
         if (state.Message is not null) writer.WriteString("message", state.Message);
         if (state.Plugin is not null) writer.WriteString("plugin", state.Plugin);
-        writer.WriteString("askedAt", state.AskedAt.ToString("O", CultureInfo.InvariantCulture));
+        writer.WriteString("askedAt", Moments.Write(state.AskedAt));
         writer.WriteEndObject();
     }
 
@@ -606,9 +606,7 @@ public sealed class LandedBranches(string home)
             ? state with
             {
                 Plugin = plugin,
-                AskedAt = DateTimeOffset.TryParse(Text(kept, "askedAt"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var asked)
-                    ? asked
-                    : DateTimeOffset.MinValue,
+                AskedAt = Moments.Read(Text(kept, "askedAt")) ?? DateTimeOffset.MinValue,
             }
             : null;
     }
@@ -617,7 +615,7 @@ public sealed class LandedBranches(string home)
     private static PullRequestAskFailed? AskFailedOf(JsonElement element) =>
         element.TryGetProperty("pullRequestAskFailed", out var failed) && failed.ValueKind == JsonValueKind.Object
         && Text(failed, "code") is { } code && Text(failed, "plugin") is { } plugin
-        && DateTimeOffset.TryParse(Text(failed, "at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at)
+        && Moments.Read(Text(failed, "at")) is { } at
             ? new PullRequestAskFailed(code, plugin, at)
             : null;
 
@@ -630,7 +628,7 @@ public sealed class LandedBranches(string home)
         {
             if (each.ValueKind != JsonValueKind.Object || Text(each, "branch") is not { } branch || Text(each, "tip") is not { } tip
                 || Text(each, "by") is not { } by
-                || !DateTimeOffset.TryParse(Text(each, "at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at))
+                || Moments.Read(Text(each, "at")) is not { } at)
             {
                 continue;
             }
@@ -652,9 +650,7 @@ public sealed class LandedBranches(string home)
         var tip = Text(element, "tip");
         var session = Text(element, "session");
         if (repository is null || branch is null || tip is null || session is null) return null;
-        var at = DateTimeOffset.TryParse(Text(element, "landedAt"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var when)
-            ? when
-            : DateTimeOffset.MinValue;
+        var at = Moments.Read(Text(element, "landedAt")) ?? DateTimeOffset.MinValue;
         return new LandedBranch(repository, Text(element, "workspace") ?? "default", branch, Text(element, "line"), tip, session,
             Text(element, "quest"), Text(element, "title"), at)
         {
@@ -663,9 +659,7 @@ public sealed class LandedBranches(string home)
             PullRequest = Text(element, "pullRequest"),
             PushedTip = Text(element, "pushedTip"),
             From = Text(element, "from"),
-            GoneAt = DateTimeOffset.TryParse(Text(element, "goneAt"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var gone)
-                ? gone
-                : null,
+            GoneAt = Moments.Read(Text(element, "goneAt")),
             RemovedAs = Text(element, "removedAs"),
             RemovedOn = Text(element, "removedOn"),
             AcceptedBy = Text(element, "acceptedBy"),
@@ -698,7 +692,7 @@ public sealed class LandedBranches(string home)
         {
             if (each.ValueKind != JsonValueKind.Object || Text(each, "from") is not { } from || Text(each, "to") is not { } to
                 || Text(each, "session") is not { } session
-                || !DateTimeOffset.TryParse(Text(each, "at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at))
+                || Moments.Read(Text(each, "at")) is not { } at)
             {
                 continue;
             }

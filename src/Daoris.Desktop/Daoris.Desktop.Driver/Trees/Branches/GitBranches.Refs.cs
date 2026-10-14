@@ -106,7 +106,7 @@ public static class GitRefs
             var (ahead, behind) = Distance(fields[at + 5]);
             refs.Add(new GitRef(name, commit)
             {
-                At = DateTimeOffset.TryParse(fields[at + 2], CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var when) ? when : null,
+                At = Moments.Read(fields[at + 2]),
                 Symref = Filled(fields[at + 3]),
                 Worktree = Filled(fields[at + 4]),
                 Ahead = ahead,

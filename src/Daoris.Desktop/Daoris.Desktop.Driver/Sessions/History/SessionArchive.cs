@@ -140,7 +140,7 @@ public sealed class SessionArchive(string home)
             {
                 writer.WriteStartObject();
                 writer.WriteString("session", mark.Session);
-                writer.WriteString("at", mark.At.ToString("O", CultureInfo.InvariantCulture));
+                writer.WriteString("at", Moments.Write(mark.At));
                 writer.WriteEndObject();
             }
 
@@ -161,10 +161,7 @@ public sealed class SessionArchive(string home)
             return null;
         }
 
-        var at = element.TryGetProperty("at", out var when) && when.ValueKind == JsonValueKind.String
-                 && DateTimeOffset.TryParse(when.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsed)
-            ? parsed
-            : DateTimeOffset.MinValue;
+        var at = Moments.Read(element, "at") ?? DateTimeOffset.MinValue;
         return new ArchiveMark(id, at);
     }
 }

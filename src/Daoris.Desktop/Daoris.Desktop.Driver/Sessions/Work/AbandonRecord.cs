@@ -93,7 +93,7 @@ public sealed class AbandonRecord(string home)
                 writer.WriteStartObject();
                 writer.WriteString("scope", entry.Scope);
                 writer.WriteString("id", entry.Id);
-                writer.WriteString("at", entry.At.ToString("O", CultureInfo.InvariantCulture));
+                writer.WriteString("at", Moments.Write(entry.At));
                 writer.WriteString("door", entry.Door);
                 writer.WriteString("reason", entry.Reason);
                 Strings(writer, "declined", entry.Declined);
@@ -164,9 +164,7 @@ public sealed class AbandonRecord(string home)
         var door = Text(element, "door");
         var reason = Text(element, "reason");
         if (scope is not ("ask" or "quest") || id is null || door is null || reason is null) return null;
-        var at = DateTimeOffset.TryParse(Text(element, "at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var when)
-            ? when
-            : DateTimeOffset.MinValue;
+        var at = Moments.Read(Text(element, "at")) ?? DateTimeOffset.MinValue;
         return new AbandonEntry(scope, id, at, door, reason)
         {
             Declined = Strings(element, "declined"),

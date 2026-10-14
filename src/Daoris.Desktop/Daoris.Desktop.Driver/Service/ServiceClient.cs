@@ -719,8 +719,7 @@ public sealed class ServiceClient : IDisposable
     }
 
     /// <summary>An ISO 8601 moment the service wrote, or null where it wrote none that reads.</summary>
-    private static DateTimeOffset? Moment(JsonElement element, string name) =>
-        DateTimeOffset.TryParse(Text(element, name), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at) ? at : null;
+    private static DateTimeOffset? Moment(JsonElement element, string name) => Moments.Read(element, name);
 
     private static AskView ReadAsk(JsonElement ask)
     {
@@ -1408,7 +1407,7 @@ public sealed class ServiceClient : IDisposable
             if (Text(session, "quest") is not { Length: > 0 } quest) continue;
             if (string.Equals(Text(session, "state"), "stood-down", StringComparison.OrdinalIgnoreCase)) continue;
 
-            var at = DateTimeOffset.TryParse(Text(session, "created"), out var created) ? created : DateTimeOffset.MinValue;
+            var at = Moments.Read(Text(session, "created")) ?? DateTimeOffset.MinValue;
             if (last.TryGetValue(quest, out var seen) && seen.At > at) continue;
             last[quest] = (Prior(session), at);
         }
@@ -1565,7 +1564,7 @@ public sealed class ServiceClient : IDisposable
             started.Add(new SessionStarted(
                 adapter,
                 Text(session, "profile"),
-                DateTimeOffset.TryParse(Text(session, "created"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var created) ? created : null,
+                Moments.Read(Text(session, "created")),
                 running.Contains(Text(session, "id") ?? "")));
         }
 
