@@ -6,6 +6,7 @@ import type { SessionActId } from './acts';
 import {
   cutEnded, ENDED_SHOWN, type SessionArrangement, type SessionGrouping, sessionsByRepository, sessionsByState, stripSessions,
 } from './groups';
+import { type EntryFacts, type SessionEntry, sessionsByAsk } from './entries';
 import { isHelp, isIntake } from './identity';
 import { type Answered, InlineConfirm } from './InlineConfirm';
 import { groupHeading, ListGroup } from './ListPane';
@@ -33,6 +34,10 @@ export type SessionRowFacts = {
   continues?: string | null;
   /** The session a helper helps, by that session's title, where the rail joined them (MIXAGENT3a-i). */
   helps?: string | null;
+  /** The entry's name where it is not the record's own: the ask's (SESSONE1c, D167). Not drawn by ask, whose heading says it. */
+  name?: string | null;
+  /** The entry this row stands for (SESSONE1c): how many parts it holds, and all their ids, so any part attended marks the row. */
+  entry?: EntryFacts | null;
 };
 
 /** A repository group's facts by repository (`RepositoryGroup`): what the driver and the registry answer of it. */
@@ -73,8 +78,13 @@ type RowActs = {
  */
 export function SessionList({
   arrangement, rows, groupings, selected = null, archived = false, live = false, repositoryFacts, onSelect, actsFor, onAct,
+  entries, askNames = {},
 }: RowActs & {
   arrangement: SessionArrangement;
+  /** The reader's entries (SESSONE1c, D167): what *by ask* groups by. Absent, the list by ask is the list by state. */
+  entries?: readonly SessionEntry[];
+  /** Each ask's name by its id (`askName`), for the headings *by ask* draws; an ask the page does not hold is named by its id. */
+  askNames?: Readonly<Record<string, string>>;
   /** Every session the list holds, in the records' order. */
   rows: readonly SessionRowFacts[];
   /** The reader's answer, in its order; absent where none answered, and then each record speaks alone. */
@@ -103,17 +113,21 @@ export function SessionList({
   };
 
   // `underArchived`: the row is drawn under the Archived heading, which already says what its line would (§4.5).
-  const row = (session: Session, byState: boolean, underArchived = false) => {
+  const row = (session: Session, byState: boolean, underArchived = false, byAsk = false) => {
     const facts = factsOf.get(session.id) ?? { session };
     const grouping = live ? null : placed.get(session.id);
     return (
       <SessionRow
         key={session.id}
         {...facts}
+        // The ask's heading says whose it is, so each row there is the line of work's own name (its leading part's).
+        name={byAsk ? null : facts.name}
+        parts={facts.entry?.parts}
         grouping={grouping}
         place={byState ? placeOf(facts) : null}
         archived={Boolean(grouping?.archived) && !underArchived}
-        selected={session.id === selected}
+        // The entry is attended while any of its parts is: the strip on its page picks which one (SESSONE1c).
+        selected={session.id === selected || Boolean(selected && facts.entry?.ids.includes(selected))}
         onSelect={onSelect}
         acts={actsFor?.(session)}
         onAct={onAct}
@@ -142,7 +156,22 @@ export function SessionList({
     return <EmptyState icon="inbox" headline={t('work.rail.empty.headline')} body={t('work.rail.empty.body')} />;
   }
 
-  if (arrangement === 'state') {
+  // By ask (D167 point 5): each ask a heading, its entries under it with their repositories, what no ask began last.
+  if (arrangement === 'ask' && entries && !live) {
+    const asks = sessionsByAsk(sessions, entries, { selected, archived });
+    return (
+      <>
+        {asks.map(({ ask, sessions: members }) => (
+          <ListGroup key={ask ?? 'none'} title={ask === null ? t('work.group.noAsk') : askNames[ask] ?? `#${ask}`}>
+            {members.map((session) => row(session, true, false, true))}
+          </ListGroup>
+        ))}
+        {asks.length === 0 && <p className="px-3 py-2 text-small text-ink-faint">{t('work.rail.empty.headline')}</p>}
+      </>
+    );
+  }
+
+  if (arrangement !== 'repository') {
     const groups = sessionsByState(sessions, groupings, { selected, archived });
     return (
       <>

@@ -22,6 +22,8 @@
   "work.list.groupBy": "Group by",
   "work.list.byState": "State",
   "work.list.byRepository": "Repository",
+  "work.list.byAsk": "Ask",
+  "work.group.noAsk": "Not on an ask",
   "work.list.showMore": "Show {{count}} more",
   "work.list.showArchived": "Show archived",
   "work.list.archiveEnded": "Archive what ended…",

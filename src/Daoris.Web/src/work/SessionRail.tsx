@@ -1,11 +1,12 @@
 import { Fragment, type ReactNode, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HELP_REPOSITORY, type Quest, type Session } from '../api';
-import { useOpinions, useQuests, useRegistry, useSessions } from '../queries';
+import { useAsks, useOpinions, useQuests, useRegistry, useSessions } from '../queries';
 import { searchable } from '../searchable';
 import {
-  type SessionHit, useDriver, useSessionGroups, useSessionOpenings, useSessionSearch, useSessionWhere,
+  type SessionHit, useDriver, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionSearch, useSessionWhere,
 } from '../shell';
+import { askOfEntry, entryFacts, listedSessions, nameOfEntry, type SessionEntry } from './entries';
 import { sentence } from '../format';
 import { Button, Icon, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
 import { cn } from '../lib/cn';
@@ -18,7 +19,7 @@ import { groupHeading, useBringGroup } from './ListPane';
 import { SessionRow } from './SessionRow';
 import { Refused } from './InlineConfirm';
 import { ArchiveEndedAsk, type RepositoryFacts, SessionList, type SessionRowFacts, SessionStrip } from './SessionList';
-import { isIntake, isOpinion, linkedSessions, ownTree, sessionTitle } from './identity';
+import { askName, isIntake, isOpinion, linkedSessions, ownTree, sessionTitle } from './identity';
 import { byName, marked, readable } from './railSearch';
 import { type SessionDoors, useSessionActs } from './sessionActs';
 
@@ -103,10 +104,16 @@ export function SessionRail({
   const registry = useRegistry();
   const driver = useDriver();
   // Each act on a row, by the one owner the page header calls too (SESSUX1d).
-  const actions = useSessionActs({ notify, doors });
   // Where each session is listed by state (SESSUX1a): the driver's one reader, asked under the sessions' key, so every
   // tick that asks the records again asks this too. The monitor's list draws no group and asks nothing.
   const groups = useSessionGroups(undefined, { enabled: !live });
+  // The entries beside them (SESSONE1c, D167 point 5): one row per line of work in one repository, its records its parts.
+  // The same answer, so nothing more is asked. The monitor's list is the present tense, by record; a host before entries
+  // answers none and the list is the records it always was.
+  const entryAnswer = useSessionEntries(undefined, { enabled: !live });
+  const entries = live ? undefined : entryAnswer.data;
+  // Each act on a row, by the one owner the page header calls too (SESSUX1d); an archive reaches every part of its entry.
+  const actions = useSessionActs({ notify, doors, entries });
   // A query that is not asking and has never answered is one with no driver to ask: a browser (D47 §4).
   const noReader = live || (groups.fetchStatus === 'idle' && groups.status === 'pending');
   const drawn: SessionArrangement = noReader ? 'repository' : arrangement;
@@ -115,7 +122,15 @@ export function SessionRail({
   const openings = useSessionOpenings(sessions.data);
   // What the list holds: every record, or where the rail is live, what runs and the attended session, whatever state it
   // reached.
-  const listed = (sessions.data ?? []).filter((session) => !live || SESSION_ACTIVE.has(session.state) || session.id === selected);
+  // One record per entry, its leading part (D167); the others are its page's strip.
+  const listed = listedSessions(
+    (sessions.data ?? []).filter((session) => !live || SESSION_ACTIVE.has(session.state) || session.id === selected),
+    entries,
+  );
+  // The asks the entries came from, named as the ask's page names them (`askName`): asked only where an entry has one.
+  const asked = (entries ?? []).some((entry) => askOfEntry(entry) !== null);
+  const asks = useAsks(true, asked);
+  const askNames = Object.fromEntries((asks.data ?? []).map((ask): [string, string] => [ask.id, askName(ask)]));
   // Where each row's work is now (LOOK2b): its tree, or where its landing put the work — asked once, for the rows listed.
   const where = useSessionWhere(listed);
   // Searching (RAIL1): by name at once, and by what was said once the typing settles.
@@ -161,8 +176,14 @@ export function SessionRail({
   // What a search may find: everything the list holds, or only what is running where the rail is live.
   const pool = live ? (sessions.data ?? []).filter((session) => SESSION_ACTIVE.has(session.state)) : (sessions.data ?? []);
   // Each row the list holds, with what it is drawn from besides its record.
+  const factsOfEntry = entryFacts(entries);
+  const entryOf = new Map((entries ?? []).map((entry): [string, SessionEntry] => [entry.leading, entry]));
   const rows: SessionRowFacts[] = listed.map((session) => ({
     session,
+    // A line of work an ask began is named by its ask, whose page names it the same way (D167, design §1.6); an intake
+    // keeps its own name, which already names its ask.
+    name: nameOfEntry(entryOf.get(session.id), askNames),
+    entry: factsOfEntry.get(session.id),
     quest: session.quest ? questFor.get(session.quest) : null,
     opening: openings[session.id],
     taking: taking[session.id],
@@ -272,6 +293,7 @@ export function SessionRail({
         <ArchiveEndedAsk
           {...endedToArchive(listed, groupings)}
           busy={actions.archiving}
+          // What the first press listed are entries (D167): every part of each goes, and is counted once.
           onArchive={(ids, answered) => actions.archiveListed(ids, answered)}
           onCancel={() => onArchiveEnded?.()}
         />
@@ -329,6 +351,8 @@ export function SessionRail({
           archived={archived}
           live={live}
           repositoryFacts={repositoryFacts}
+          entries={entries}
+          askNames={askNames}
           {...acts}
         />
       )}
