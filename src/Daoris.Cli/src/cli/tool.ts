@@ -1,7 +1,7 @@
 import type { CliCommand } from '../platform/types.ts';
 import { LOOK_BOUND_MS, REDIRECTS, commandTool } from '../tools/toolinstall.ts';
 import { isAddress } from '../tools/tools.ts';
-import { releaseFetcher } from '../service.ts';
+import { releaseFetcher } from '../service/service.ts';
 
 export const command: CliCommand = {
   name: 'tool',

@@ -1,6 +1,6 @@
 import type { CliCommand } from '../platform/types.ts';
 import { commandDriver } from '../driverconfig.ts';
-import { registryCheckouts, sessionRecords } from '../service.ts';
+import { registryCheckouts, sessionRecords } from '../service/service.ts';
 import { commandWorkflow } from '../workflowdoor.ts';
 
 export const command: CliCommand = {

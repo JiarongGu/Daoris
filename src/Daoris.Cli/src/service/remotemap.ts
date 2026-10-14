@@ -13,9 +13,9 @@
 //   2. A half-set pair is no remote at all — never an env url with the file's key.
 //   3. Absence is the default, and it is silent (D21).
 
-import { findName } from './platform/casefold.ts';
-import { readJsonObject, writeJsonAtomic } from './platform/fsx.ts';
-import { homeFile, requireHomeFile } from './platform/home.ts';
+import { findName } from '../platform/casefold.ts';
+import { readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
+import { homeFile, requireHomeFile } from '../platform/home.ts';
 
 /** Where a workspace's shared deployment is, and the key this machine speaks to it with. */
 export interface Remote {

@@ -24,7 +24,7 @@ import { readJsonObject, writeJsonAtomic } from './platform/fsx.ts';
 import { findName, sameName } from './platform/casefold.ts';
 import { isoMoment } from './accounts/cooling.ts';
 import { isPluginId, readPlugins, type PluginCatalog } from './plugins.ts';
-import { normalizeWorkspace } from './remotemap.ts';
+import { normalizeWorkspace } from './service/remotemap.ts';
 import { TOOLCHAINS } from './agents/toolchain.ts';
 import { failuresOf, type RecordsReader } from './strikes.ts';
 import {

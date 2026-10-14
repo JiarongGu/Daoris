@@ -14,7 +14,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { atName, findName } from './platform/casefold.ts';
 import { readText } from './platform/fsx.ts';
-import { normalizeWorkspace } from './remotemap.ts';
+import { normalizeWorkspace } from './service/remotemap.ts';
 import { isKebabId, isWorkflowId } from './workflowid.ts';
 
 /** The workflow drawn from the rules as they stand (design §2.7). */

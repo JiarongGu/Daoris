@@ -109,7 +109,7 @@ import { DaorisError } from '../platform/errors.ts';
 import { AGENT_SETTINGS_FILE, readAgentSettings, writeAgentSettings } from '../accounts/agentsettings.ts';
 import type { AgentSettingsEdit } from '../accounts/agentsettings.ts';
 import { onPath, readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
-import { normalizeWorkspace } from '../remotemap.ts';
+import { normalizeWorkspace } from '../service/remotemap.ts';
 // A cycle with `plugins.ts`, harmless because both sides read the other only inside functions:
 // `harness list` shows the harnesses plugins declare, and the catalogue refuses the names this table has.
 import { readPlugins, resolvable } from '../plugins.ts';

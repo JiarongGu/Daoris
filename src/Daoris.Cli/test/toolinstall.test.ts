@@ -8,7 +8,7 @@ import { DaorisError, RefusalError } from '../src/platform/errors.ts';
 import {
   BUILT_IN, currentPlatform, locationCopy, mergeResources, parseResources, type ArchiveKind, type MergedResources, type OfferedVersion,
 } from '../src/tools/resources.ts';
-import { releaseFetcher } from '../src/service.ts';
+import { releaseFetcher } from '../src/service/service.ts';
 import {
   LOOK_BOUND_MS, RECORD_KEYS, REDIRECTS, STAGING, commandTool, deleteVersion, downloadVersion, downloadedVersions, lookLocations,
   planTool, unpackPackage, versionFolder, type ToolAction,

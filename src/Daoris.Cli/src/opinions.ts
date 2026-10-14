@@ -14,7 +14,7 @@
 import { DaorisError } from './platform/errors.ts';
 import { atName, findName, sameName } from './platform/casefold.ts';
 import type { PluginCatalog } from './plugins.ts';
-import { normalizeWorkspace } from './remotemap.ts';
+import { normalizeWorkspace } from './service/remotemap.ts';
 import { TOOLCHAINS } from './agents/toolchain.ts';
 
 /** A rule as kept: its occasions, landing first, and its reviewers in order, then each switch only where it differs from absent. */

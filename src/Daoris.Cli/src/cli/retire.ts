@@ -1,5 +1,5 @@
 import type { CliCommand } from '../platform/types.ts';
-import { commandRetire } from '../manage.ts';
+import { commandRetire } from '../service/manage.ts';
 
 export const command: CliCommand = {
   name: 'retire',

@@ -15,7 +15,7 @@ import { describeLink, linkProblems } from '../layout/links.ts';
 import { candidateDocuments, sayCandidates } from '../layout/documents.ts';
 import { applyLineEndings, LINE_ENDINGS_RULE, planLineEndings } from './lineendings.ts';
 import { flagValue } from '../platform/args.ts';
-import { readRemotes, redactKey } from '../remotemap.ts';
+import { readRemotes, redactKey } from '../service/remotemap.ts';
 import { DaorisError } from '../platform/errors.ts';
 
 /**

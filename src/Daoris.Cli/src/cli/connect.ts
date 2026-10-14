@@ -1,5 +1,5 @@
 import type { CliCommand } from '../platform/types.ts';
-import { commandConnect } from '../connect.ts';
+import { commandConnect } from '../service/connect.ts';
 
 export const command: CliCommand = {
   name: 'connect',

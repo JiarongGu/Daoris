@@ -13,7 +13,7 @@ import { lstatSync } from 'node:fs';
 import { join } from 'node:path';
 import { DaorisError } from './platform/errors.ts';
 import { atName, findName, sameName } from './platform/casefold.ts';
-import { normalizeWorkspace } from './remotemap.ts';
+import { normalizeWorkspace } from './service/remotemap.ts';
 import { isKebabId } from './workflowid.ts';
 
 /** One review environment, as kept: its name, kind and procedure, a local one's address, and a local one's command. */

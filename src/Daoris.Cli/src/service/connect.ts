@@ -13,15 +13,15 @@
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
-import { flagValue } from './platform/args.ts';
-import { sameName } from './platform/casefold.ts';
-import { readManifest } from './doctrine/config.ts';
-import { DaorisError } from './platform/errors.ts';
-import { readLanes } from './layout/lanes.ts';
-import type { LaneWords } from './layout/lanes.ts';
+import { flagValue } from '../platform/args.ts';
+import { sameName } from '../platform/casefold.ts';
+import { readManifest } from '../doctrine/config.ts';
+import { DaorisError } from '../platform/errors.ts';
+import { readLanes } from '../layout/lanes.ts';
+import type { LaneWords } from '../layout/lanes.ts';
 import { endpoint, isLocalService, refusal, request } from './service.ts';
-import type { CommandArgs, Domain, Manifest } from './platform/types.ts';
-import type { ExitCode } from './platform/errors.ts';
+import type { CommandArgs, Domain, Manifest } from '../platform/types.ts';
+import type { ExitCode } from '../platform/errors.ts';
 
 const REGISTRY_PATH = '/api/registry';
 
