@@ -449,8 +449,8 @@ public static class TargetPrompt
         ? (AskWordsText.Quotes(target.Words, said)
             ? "An earlier session on this quest stopped to ask the person, and they answered: their answer is quoted among "
               + $"their words above.\n\nIts record reads: {record}"
-            : $"An earlier session on this quest stopped to ask the person, and they answered:\n\n> "
-              + said.ReplaceLineEndings("\n> ") + $"\n\nIts record reads: {record}")
+            : $"An earlier session on this quest stopped to ask the person, and they answered:\n\n"
+              + TextBounds.Quote(said, bareBlank: false) + $"\n\nIts record reads: {record}")
         : target.HandedOver is { } agent
             ? $"An earlier session on this quest, run by {agent}, was stopped so that the quest could go on with you: it was handed "
               + $"over, and you carry on from its plan and last words below. Its record reads: {record}"
@@ -491,7 +491,7 @@ public static class TargetPrompt
     private static string WrittenTo(SessionTarget target) => target is { PersonSaid: { } said, CutOff: null, Answered: null }
         ? "\nThe person wrote to an earlier session on this quest after it ended, and it could not go on with their words, so "
           + "they are yours to act on:\n\n"
-          + string.Join("\n", said.ReplaceLineEndings("\n").Split('\n').Select(line => line.Length == 0 ? "  >" : $"  > {line}"))
+          + TextBounds.Quote(said, indent: "  ")
           + "\n"
         : "";
 
@@ -521,7 +521,7 @@ public static class TargetPrompt
         {
             shown++;
             text.Append($"\n- Requirement {shown}:\n\n")
-                .Append(string.Join("\n", requirement.Quote.ReplaceLineEndings("\n").Split('\n').Select(line => line.Length == 0 ? "  >" : $"  > {line}")))
+                .Append(TextBounds.Quote(requirement.Quote, indent: "  "))
                 .Append("\n\n  Check: ")
                 .Append(requirement.Check.ReplaceLineEndings("\n").Replace("\n", "\n  ", StringComparison.Ordinal))
                 .Append('\n')
@@ -612,14 +612,14 @@ public static class TargetPrompt
     {
         if (target.LastPlan.Count == 0) return "";
         var steps = target.LastPlan.Take(PlanLimit)
-            .Select(step => $"    - {(step.Status is { Length: > 0 } status ? $"[{status}] " : "")}{step.Content.ReplaceLineEndings(" ")}");
+            .Select(step => $"    - {(step.Status is { Length: > 0 } status ? $"[{status}] " : "")}{TextBounds.OneLine(step.Content, trim: false)}");
         var more = target.LastPlan.Count > PlanLimit ? $"\n    … and {target.LastPlan.Count - PlanLimit} more" : "";
         return "\n\nIts plan, as its record last kept it:\n\n" + string.Join("\n", steps) + more;
     }
 
     /// <summary>The cut-off session's last words, quoted (TOOL4f, D125 §3.5), or nothing where it said none.</summary>
     private static string LastWords(SessionTarget target) => target.LastWords is { Length: > 0 } words
-        ? "\n\nIts last words were:\n\n> " + words.ReplaceLineEndings("\n> ")
+        ? "\n\nIts last words were:\n\n" + TextBounds.Quote(words, bareBlank: false)
         : "";
 
     /// <summary>
@@ -639,7 +639,7 @@ public static class TargetPrompt
             ? $"`{answered.To}` declined it"
             : $"`{answered.To}` closed it done";
         return answered.Note is { Length: > 0 } note
-            ? $"{closed}, saying:\n\n> {note.ReplaceLineEndings("\n> ")}"
+            ? $"{closed}, saying:\n\n{TextBounds.Quote(note, bareBlank: false)}"
             : $"{closed} without a note — read that quest, and what `{answered.To}` landed, for the answer.";
     }
 

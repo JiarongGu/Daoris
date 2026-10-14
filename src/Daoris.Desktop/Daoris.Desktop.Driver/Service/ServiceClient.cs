@@ -386,12 +386,15 @@ public sealed class ServiceClient : IDisposable
     /// never an exception: a refusal carries the service's word beside its sentence, and a host without the door (one older
     /// than MSG1a, or a shared one) says so.
     /// </summary>
-    public async Task<SayAnswer> SayAsync(string id, string text, IReadOnlyList<string>? files = null, CancellationToken ct = default)
+    public async Task<SayAnswer> SayAsync(
+        string id, string text, IReadOnlyList<string>? files = null, CancellationToken ct = default, string? channel = null)
     {
         var body = WriteJson(writer =>
         {
             writer.WriteStartObject();
             writer.WriteString("text", text);
+            // SESSONE2e: the channel message these words are, which the ask holds already; an older service ignores it.
+            if (channel is { Length: > 0 }) writer.WriteString("channel", channel);
             if (files is { Count: > 0 })
             {
                 writer.WriteStartArray("files");

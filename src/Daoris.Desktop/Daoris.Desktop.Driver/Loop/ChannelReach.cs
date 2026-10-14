@@ -13,7 +13,8 @@ public interface IChannelDoors
     Task MarkAsync(string ask, string entry, DateTimeOffset through, CancellationToken ct);
 
     /// <summary>The say door (MSG1a): the person's words kept on a parked or ended record of this machine's, for it to go on with.</summary>
-    Task<SayAnswer> SayAsync(string session, string text, CancellationToken ct);
+    /// <param name="channel">The channel message's id (SESSONE2e): the ask holds the words as `channel`, so the door keeps no second word.</param>
+    Task<SayAnswer> SayAsync(string session, string text, string channel, CancellationToken ct);
 }
 
 /// <summary>The channel's doors through the loop's service: <c>GET /api/asks/{id}/channel</c>, <c>POST …/channel/read</c> and the say door.</summary>
@@ -24,7 +25,8 @@ public sealed class ServiceChannelDoors(ServiceClient service) : IChannelDoors
     public Task MarkAsync(string ask, string entry, DateTimeOffset through, CancellationToken ct) =>
         service.ChannelReadAsync(ask, entry, through, ct);
 
-    public Task<SayAnswer> SayAsync(string session, string text, CancellationToken ct) => service.SayAsync(session, text, null, ct);
+    public Task<SayAnswer> SayAsync(string session, string text, string channel, CancellationToken ct) =>
+        service.SayAsync(session, text, null, ct, channel);
 }
 
 /// <summary>
@@ -200,7 +202,7 @@ public sealed class ChannelReach
         // Only the person's words reopen a part, and only those addressed to its repository (design §2.3's third row).
         if (!message.Person || message.To is null) return false;
 
-        var said = await doors.SayAsync(part.Session, message.Text!, ct).ConfigureAwait(false);
+        var said = await doors.SayAsync(part.Session, message.Text!, id, ct).ConfigureAwait(false);
         reached[id] = said.Kept;
         lines.Add(said.Kept
             ? $"channel  the person's message `{id}` on ask #{part.Entry.Ask} was kept on session {part.Session}'s record, which goes on with it"

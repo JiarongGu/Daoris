@@ -121,7 +121,7 @@ internal static class DriverHttp
         }
         catch (JsonException)
         {
-            return payload.Length <= 200 ? payload : payload[..200] + "…";
+            return TextBounds.Clip(payload, 200);
         }
     }
 }

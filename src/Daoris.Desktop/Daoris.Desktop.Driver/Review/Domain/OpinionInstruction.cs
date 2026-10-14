@@ -242,7 +242,7 @@ public static class OpinionInstruction
 
     /// <summary>Words quoted line by line, each line under <paramref name="indent"/>, ending with a line break.</summary>
     private static string Quoted(string words, string indent) =>
-        string.Join("\n", words.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n').Select(line => line.Length == 0 ? $"{indent}>" : $"{indent}> {line}")) + "\n";
+        TextBounds.Quote(words, indent, trimEnd: true) + "\n";
 
     private static string Plural(int count, string noun) => count == 1 ? $"1 {noun}" : $"{count} {noun}s";
 }

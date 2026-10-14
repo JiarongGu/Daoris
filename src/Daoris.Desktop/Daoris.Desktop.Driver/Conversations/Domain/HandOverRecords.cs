@@ -114,19 +114,19 @@ public static class HandOverBriefing
 
         if (request?.Trim() is { Length: > 0 } asked)
         {
-            parts.Add("The person first wrote:\n\n> " + Quoted(asked.Length <= WordsLimit ? asked : asked[..WordsLimit] + "…"));
+            parts.Add("The person first wrote:\n\n" + TextBounds.Quote(TextBounds.Clip(asked, WordsLimit), bareBlank: false));
         }
 
         if (plan.Count > 0)
         {
             var steps = plan.Take(ListLimit)
-                .Select(step => $"    - {(step.Status is { Length: > 0 } status ? $"[{status}] " : "")}{step.Content.ReplaceLineEndings(" ")}");
+                .Select(step => $"    - {(step.Status is { Length: > 0 } status ? $"[{status}] " : "")}{TextBounds.OneLine(step.Content, trim: false)}");
             parts.Add("Its plan, as its record last kept it:\n\n" + string.Join("\n", steps) + More(plan.Count));
         }
 
         if (lastWords?.Trim() is { Length: > 0 } said)
         {
-            parts.Add("Its last words were:\n\n> " + Quoted(said.Length <= WordsLimit ? said : "…" + said[^WordsLimit..].TrimStart()));
+            parts.Add("Its last words were:\n\n" + TextBounds.Quote(TextBounds.ClipStart(said, WordsLimit), bareBlank: false));
         }
 
         if (uncommitted.Count > 0)
@@ -136,8 +136,6 @@ public static class HandOverBriefing
 
         return string.Join("\n\n", parts);
     }
-
-    private static string Quoted(string words) => words.ReplaceLineEndings("\n").Replace("\n", "\n> ");
 
     private static string More(int count) => count > ListLimit ? $"\n    … and {count - ListLimit} more" : "";
 }

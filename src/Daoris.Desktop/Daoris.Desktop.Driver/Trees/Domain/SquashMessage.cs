@@ -34,10 +34,10 @@ public static class SquashMessage
     /// </summary>
     public static string Subject(string? title, IReadOnlyList<LandingCommit> commits, string session)
     {
-        var said = OneLine(title);
-        if (said.Length == 0 && commits.Count > 0) said = OneLine(commits[0].Subject);
+        var said = TextBounds.Fold(title);
+        if (said.Length == 0 && commits.Count > 0) said = TextBounds.Fold(commits[0].Subject);
         if (said.Length == 0) said = $"Work from session {session}";
-        return said.Length <= SubjectLimit ? said : Cut(said, SubjectLimit - 1) + "…";
+        return TextBounds.Clip(said, SubjectLimit, keep: SubjectLimit - 1, trimEnd: true, wholePairs: true);
     }
 
     /// <summary>
@@ -46,7 +46,7 @@ public static class SquashMessage
     /// </summary>
     public static string Body(IReadOnlyList<LandingCommit> commits)
     {
-        var lines = commits.Select(commit => "- " + OneLine(commit.Subject)).ToList();
+        var lines = commits.Select(commit => "- " + TextBounds.Fold(commit.Subject)).ToList();
         if (lines.Count <= BodyLines && lines.Sum(line => line.Length) + Math.Max(0, lines.Count - 1) <= BodyLimit)
         {
             return string.Join('\n', lines);
@@ -67,15 +67,4 @@ public static class SquashMessage
     }
 
     private static string More(int left) => left == 1 ? "… and 1 more commit" : $"… and {left} more commits";
-
-    /// <summary>Every run of white space, line breaks among them, as one space, and none at either end.</summary>
-    private static string OneLine(string? text) =>
-        string.Join(' ', (text ?? "").Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
-
-    /// <summary>The first <paramref name="limit"/> characters, never half of a surrogate pair, and no space at the end.</summary>
-    private static string Cut(string text, int limit)
-    {
-        var end = char.IsHighSurrogate(text[limit - 1]) ? limit - 1 : limit;
-        return text[..end].TrimEnd();
-    }
 }

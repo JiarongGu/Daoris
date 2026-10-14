@@ -45,7 +45,7 @@ public sealed class ChannelReachTests
 
         public List<DateTimeOffset> Marks { get; } = [];
 
-        public List<(string Session, string Text)> Said { get; } = [];
+        public List<(string Session, string Text, string Channel)> Said { get; } = [];
 
         public string? Refuse { get; init; }
 
@@ -62,9 +62,9 @@ public sealed class ChannelReachTests
             return Task.CompletedTask;
         }
 
-        public Task<SayAnswer> SayAsync(string session, string text, CancellationToken ct)
+        public Task<SayAnswer> SayAsync(string session, string text, string channel, CancellationToken ct)
         {
-            Said.Add((session, text));
+            Said.Add((session, text, channel));
             return Task.FromResult(Refuse is null ? new SayAnswer(true, "kept") : new SayAnswer(false, "refused") { Refusal = Refuse });
         }
     }
@@ -235,7 +235,8 @@ public sealed class ChannelReachTests
         var lines = await reach.LookAsync(doors, [Ended()], CancellationToken.None);
         await reach.LookAsync(doors, [Ended()], CancellationToken.None);
 
-        Assert.Equal([("s1", "Also log the port.")], doors.Said);
+        // SESSONE2e: the message's id goes with the words, so the service keeps no second ask word for them.
+        Assert.Equal([("s1", "Also log the port.", "p1")], doors.Said);
         Assert.Equal([At.AddMinutes(2)], doors.Marks);
         Assert.Contains(lines, line => line.Contains("`p1`", StringComparison.Ordinal) && line.Contains("session s1", StringComparison.Ordinal));
     }

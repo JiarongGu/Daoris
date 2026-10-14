@@ -317,7 +317,7 @@ public static class HarnessActions
         }
 
         var said = heard.Select(line => line.Trim()).FirstOrDefault(line => line.Length > 0);
-        var shown = said is null ? "" : $" ({(said.Length > 160 ? said[..160] + "…" : said)})";
+        var shown = said is null ? "" : $" ({TextBounds.Clip(said, 160)})";
         if (code != 0)
         {
             throw new DriverException($"npm could not say which release of {package} is newest — it exited {code}{shown}. {stays}");

@@ -143,8 +143,8 @@ public static class GoAheadsText
     /// <summary>One go-ahead as an item: its act, then what became of it, the person's words on an answer quoted line by line.</summary>
     private static string Item(GoAheadView goAhead)
     {
-        var act = goAhead.Act.Length > ActLimit ? goAhead.Act[..ActLimit] + "…" : goAhead.Act;
-        var head = $"\n- Go-ahead {goAhead.Number}, {goAhead.Kind} on {goAhead.On}: \"{act.ReplaceLineEndings(" ")}\"";
+        var act = TextBounds.Clip(goAhead.Act, ActLimit);
+        var head = $"\n- Go-ahead {goAhead.Number}, {goAhead.Kind} on {goAhead.On}: \"{TextBounds.OneLine(act, trim: false)}\"";
         if (goAhead.Answer is not { } answer)
         {
             var first = goAhead.Asked.Count > 0 ? $", first asked {When(goAhead.Asked[0].At)}" : "";
@@ -153,7 +153,7 @@ public static class GoAheadsText
 
         var said = answer.Approved ? "approved" : "refused";
         if (answer.Words is not { Length: > 0 } words) return $"{head} — {said} {When(answer.At)}.\n";
-        var quoted = string.Join("\n", words.ReplaceLineEndings("\n").Split('\n').Select(line => line.Length == 0 ? "  >" : $"  > {line}"));
+        var quoted = TextBounds.Quote(words, indent: "  ");
         return $"{head} — {said} {When(answer.At)}, saying:\n\n{quoted}\n";
     }
 

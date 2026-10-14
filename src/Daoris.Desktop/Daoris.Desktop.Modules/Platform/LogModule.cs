@@ -131,7 +131,7 @@ public sealed class LogModule(
         _ => null,
     };
 
-    private static string Cut(string text) => text.Length <= MaxText ? text : $"{text[..MaxText]}…";
+    private static string Cut(string text) => TextBounds.Clip(text, MaxText);
 
     /// <summary>
     /// The recent lines, newest first, at most the limit; with the folder they are read from, how many

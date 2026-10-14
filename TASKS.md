@@ -190,7 +190,6 @@ pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build 
 Co-working (D167, `docs/2026-10-14-co-working-design.md`; the owner's two tasks are the canary):
 
 - [ ] **SESSONE1c-look — co-working on the installed window** (parent). Seen 2026-10-14 (中文): three sessions with parts and the strip. Left: acts on a part, archive per entry, *Group by ask*, the ask page, English; WAITSHOWN1, QUEUEEDIT1b, USERSHOWN1 on live turns.
-- [ ] **SESSONE2e — a channel message that reopens a part is on the ask once** (service, driver; after 2b). The say door keeps it again as `answered` or `reopened`: it takes the channel message's id and keeps no second word, and `ChannelReach` sends it. D167's SESSONE2b note.
 - [ ] **SESSONE2f — next-step delivery proved by a real tick** (driver, Process). A queueing ACP stand-in takes another session's message at its next step as a Daoris turn, and a turn-end one is never extended (D155).
 - [ ] **SESSONE2c — the channel on the page and the terminal** (modules/web/driver; after 2b). `CHANNEL_READ`/`CHANNEL_POST`, the ask page's *Channel*, a session's panel with *To*, unread counts, `daoris-driver ask channel`; glossary *channel* 频道. Design §2.4, §2.7.
 - [ ] **SESSONE2d — the channel travels** (service/tools; after 2a). `ChannelSync` beside `SessionSync`, `origin/id`, words cleaned of paths; history's clear forgets channels. Design §2.5.
@@ -284,7 +283,7 @@ folder.
 
 **Duplication** (the owner: *"we more focus on modularize the code to reduce duplication and easier to manage"*). Evidence: `docs/2026-10-14-duplication-survey.md`, by section. After FLAT1; DEDUP1 to 3 touch the same files, so one at a time.
 
-- [ ] **DEDUP7 — text clipped, one-lined and quoted once** (driver, modules). `TextBounds` in `Platform/` for about 44 copies, each call keeping its own limit. Survey §7.
+- [ ] **DEDUP7b — a commit's short id once, and the service's text bounds** (driver, service). About 15 `Short(commit)` copies; the service core's own clip and quote copies, surveyed first. D166's DEDUP7 note.
 
 ## Development and agent layout
 

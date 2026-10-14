@@ -225,7 +225,7 @@ public static class QuestReviewCommand
         lines.Add(setUp.Look is { } look
             ? $"  look: {look}"
             : setUp.Local ? $"  look: on {setUp.Machine ?? "the machine that showed it"}, where its tab is" : "  look: not said");
-        if (setUp.Again is { Length: > 0 } again) lines.Add($"  again: {again.ReplaceLineEndings(" ")}");
+        if (setUp.Again is { Length: > 0 } again) lines.Add($"  again: {TextBounds.OneLine(again, trim: false)}");
         return lines;
     }
 

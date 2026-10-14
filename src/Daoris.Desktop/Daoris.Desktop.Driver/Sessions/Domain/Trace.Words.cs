@@ -632,9 +632,9 @@ internal static class TraceWords
 
     /// <summary>Someone's words, line by line beneath their item, as the instructions quote them.</summary>
     private static string Quoted(string words, string indent) =>
-        string.Join("\n", words.ReplaceLineEndings("\n").Split('\n').Select(line => line.Length == 0 ? $"{indent}>" : $"{indent}> {line}")) + "\n";
+        TextBounds.Quote(words, indent) + "\n";
 
-    private static string OneLine(string text) => text.ReplaceLineEndings(" ").Trim();
+    private static string OneLine(string text) => TextBounds.OneLine(text);
 
     /// <summary>A moment as the instructions say it: to the minute, in UTC, the same on every machine.</summary>
     private static string When(DateTimeOffset at) => at.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture);

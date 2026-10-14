@@ -159,7 +159,7 @@ public sealed class SessionEvents(string directory)
 
             var first = text.Split('\n', 2)[0].Trim();
             if (first.Length == 0) continue;
-            openings[id] = first.Length <= OpeningLimit ? first : $"{first[..OpeningLimit]}…";
+            openings[id] = TextBounds.Clip(first, OpeningLimit);
         }
 
         return openings;

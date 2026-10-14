@@ -84,7 +84,7 @@ internal static class SessionPartsText
     private static string? Bounded(string? note)
     {
         if (note?.ReplaceLineEndings("\n").Split('\n')[0].Trim() is not { Length: > 0 } line) return null;
-        return line.Length <= NoteLimit ? line : line[..NoteLimit].TrimEnd() + "…";
+        return TextBounds.Clip(line, NoteLimit, trimEnd: true);
     }
 
     /// <summary>Where this part's tree stands to theirs: gone into, beside a live part, or grown again after theirs went.</summary>

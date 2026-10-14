@@ -34,8 +34,7 @@ internal sealed class HelpRoomAsks : IHelpRoomSection
     /// <summary>An ask's words on one line, cut where they run long: the id is what a proposal names.</summary>
     private static string Clipped(string sentence)
     {
-        var line = string.Join(' ', sentence.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
-        return line.Length <= 120 ? line : line[..119].TrimEnd() + "…";
+        return TextBounds.Clip(TextBounds.Fold(sentence), 120, keep: 119, trimEnd: true);
     }
 }
 

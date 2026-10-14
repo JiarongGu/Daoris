@@ -14596,3 +14596,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PART10l-ii — `SessionTrees`: tidying, removal, the sweep and the core's land, and the type whole** (driver; Opus; after 10l-i). Removal, tidy (with `TidyCarriedAsync`), set-aside, the sweep and the auto tidy split leaf from pass, the core's plan, land, branch and advance; the stubs folded into the front, `partial` gone and the entry cut from `tools/partials.json`.
 
 **Outcome** 2026-10-15: `TreeSetAside` (the leaf, with `GoesByItself`, which the sweep calls), `TreeRemovals`, `TreeSweeps`, `AutoTidies`, `TreeTidies` (with `TidyCarriedAsync`) and `TreeLands` (with `MergeAsync`) are classes over `TreeContext`, each handed what it uses; no class holds the front any more. The twelve stubs folded into `SessionTrees.cs`, one sealed type over `(home, plugins)` keeping its callers' one-line calls and the `s-{Guid}` line; the statics the host and the bridge read are the public `SessionBranchDoors`, `SessionPrefix` is `TreeFollows`'. `tools/partials.json` is empty: **no type in the repository is split by hand across files** (the owner's *"we better not use partial class if we don't have auto-generated code"*). Gates passed on the merge; the worker's whole Trees Process set passed, 284 of 284. On Opus: 150 tool calls. Detail: D166's PART10l-ii note.
+
+## SESSONE2e — a channel message that reopens a part is on the ask once (2026-10-15, D167)
+
+> - [ ] **SESSONE2e — a channel message that reopens a part is on the ask once** (service, driver; after 2b). The say door keeps it again as `answered` or `reopened`: it takes the channel message's id and keeps no second word, and `ChannelReach` sends it. D167's SESSONE2b note.
+
+**Outcome** 2026-10-15: `SayRequest` and the stored said word carry the channel message's id (`channel`, written only when set); the say door keeps no `answered` and the taken door no `reopened` for such words, so the ask holds them once, as `channel`; `ChannelReach` sends the id on a reopen. The service README's say row says so. Ten gates passed on the merge. On Sonnet: 47 tool calls. Detail: D167's SESSONE2e note.
+
+## DEDUP7 — text clipped, one-lined and quoted once (2026-10-15, D166)
+
+> - [ ] **DEDUP7 — text clipped, one-lined and quoted once** (driver, modules). `TextBounds` in `Platform/` for about 44 copies, each call keeping its own limit. Survey §7.
+
+**Outcome** 2026-10-15: `Platform/TextBounds.cs` (`Clip`, `Cut`, `ClipStart`, `ClipCounted`, `OneLine`, `Fold`, `Quote`, their parameters naming where the copies differed) replaces about 45 copies of clipping, one-lining and quoting in the driver and Modules, each caller keeping its limit and its bytes; no output changed. Kept on purpose: a key's head or tail, a tool's first line, a word-boundary cut, two snippet windows, a markless cut, the commit short ids (DEDUP7b). The CLI's `orient-report.test.ts`, which reads the driver's `… (N chars)` spelling, reads it where it now lives. Nine gates passed on the merge. On Sonnet: 128 tool calls. Detail: D166's DEDUP7 note.

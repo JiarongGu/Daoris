@@ -51,7 +51,7 @@ public static class ClaudeReleaseDownloads
         var said = Encoding.UTF8.GetString(body).Trim();
         if (!System.Text.RegularExpressions.Regex.IsMatch(said, @"^\d+\.\d+\.\d+$"))
         {
-            var shown = said.Length > 60 ? said[..60] + "…" : said;
+            var shown = TextBounds.Clip(said, 60);
             throw new DriverException(
                 $"the release channel's newest-release pointer at {ClaudeReleases.Latest} answered `{shown}`, which is not a version — "
                 + "nothing was fetched or pinned.");

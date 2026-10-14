@@ -373,7 +373,7 @@ public sealed class HookPeer(
     private static string Raw(JsonElement answer) =>
         answer.ValueKind == JsonValueKind.Undefined ? "(no result)" : Truncate(answer.GetRawText());
 
-    private static string Truncate(string text) => text.Length <= 80 ? text : text[..77] + "…";
+    private static string Truncate(string text) => TextBounds.Clip(text, 80, keep: 77);
 }
 
 /// <summary>
