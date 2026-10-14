@@ -224,6 +224,8 @@ public static class PersonDoors
         // A shared host's alone (design §6, 7): its feed and sync doors, gated by minted keys.
         new("POST", "/api/feed/sessions", DoorClass.Shared),
         new("GET", "/api/sessions/since", DoorClass.Shared),
+        new("POST", "/api/feed/channel", DoorClass.Shared),
+        new("GET", "/api/channel/since", DoorClass.Shared),
         new("POST", "/api/feed/entries", DoorClass.Shared),
         new("POST", "/api/feed/code-map", DoorClass.Shared),
         new("GET", "/api/feed/held", DoorClass.Shared),

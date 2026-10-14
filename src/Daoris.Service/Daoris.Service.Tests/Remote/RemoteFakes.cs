@@ -10,10 +10,28 @@ namespace Daoris.Service.Tests;
 /// the key this machine's feed would carry.
 /// </summary>
 internal sealed class StoreRemote(
-    QuestStore remote, SessionStore? sessions = null, KnowledgeService? registry = null, string caller = "person@machine")
+    QuestStore remote, SessionStore? sessions = null, KnowledgeService? registry = null, string caller = "person@machine",
+    ChannelStore? channels = null)
     : IRemote
 {
     public int Calls { get; private set; }
+
+    /// <summary>The last channel feed as it crossed the wire (SESSONE2d) — what a disclosure test reads.</summary>
+    public string? LastChannelFeed { get; private set; }
+
+    public async Task PushChannelAsync(IReadOnlyList<ChannelMessage> messages, CancellationToken ct = default)
+    {
+        Calls++;
+        LastChannelFeed = ChannelWire.Feed(messages);
+        var outcome = await new ChannelFeed(registry!, channels!).FeedAsync(caller, ChannelWire.ReadFeed(LastChannelFeed)!, ct);
+        if (outcome.Refusal != SessionFeedRefusal.None) throw new RemoteException(outcome.Message);
+    }
+
+    public async Task<ChannelFetch> FetchChannelAsync(long since, CancellationToken ct = default)
+    {
+        Calls++;
+        return ChannelWire.ReadPage(ChannelWire.Page(await channels!.TeamSinceAsync(since, caller, ct: ct)))!;
+    }
 
     /// <summary>The last session feed as it crossed the wire — what a disclosure test reads.</summary>
     public string? LastFeed { get; private set; }
@@ -91,6 +109,10 @@ internal sealed class OlderRemote(QuestStore remote) : IRemote
 
     public Task<SessionFetch> FetchSessionsAsync(long since, CancellationToken ct = default) => throw QuestsOnly();
 
+    public Task PushChannelAsync(IReadOnlyList<ChannelMessage> messages, CancellationToken ct = default) => throw QuestsOnly();
+
+    public Task<ChannelFetch> FetchChannelAsync(long since, CancellationToken ct = default) => throw QuestsOnly();
+
     public Task<string?> HeldCodeMapAsync(string repository, CancellationToken ct = default) => throw QuestsOnly();
 
     public Task<FedCodeMap?> FetchCodeMapAsync(string repository, CancellationToken ct = default) => throw QuestsOnly();
@@ -117,6 +139,10 @@ internal sealed class UnreachableRemote : IRemote
     public Task PushSessionsAsync(IReadOnlyList<FedSessionRecord> records, CancellationToken ct = default) => throw Wall();
 
     public Task<SessionFetch> FetchSessionsAsync(long since, CancellationToken ct = default) => throw Wall();
+
+    public Task PushChannelAsync(IReadOnlyList<ChannelMessage> messages, CancellationToken ct = default) => throw Wall();
+
+    public Task<ChannelFetch> FetchChannelAsync(long since, CancellationToken ct = default) => throw Wall();
 
     public Task<string?> HeldCodeMapAsync(string repository, CancellationToken ct = default) => throw Wall();
 

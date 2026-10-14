@@ -31,6 +31,14 @@ public interface IRemote
     /// <exception cref="RemoteException">The remote could not be reached, or answered with a wall.</exception>
     Task<SessionFetch> FetchSessionsAsync(long since, CancellationToken ct = default);
 
+    /// <summary>An ask's channel messages of this machine, fed up (SESSONE2d); taken whole or refused whole, as the session feed is.</summary>
+    /// <exception cref="RemoteException">The remote could not be reached, or refused the feed; a <c>Status</c> of 404 is a remote from before the channel.</exception>
+    Task PushChannelAsync(IReadOnlyList<ChannelMessage> messages, CancellationToken ct = default);
+
+    /// <summary>The team's channel messages the remote holds after <paramref name="since"/>, every origin but the caller's own (SESSONE2d).</summary>
+    /// <exception cref="RemoteException">The remote could not be reached, or answered with a wall.</exception>
+    Task<ChannelFetch> FetchChannelAsync(long since, CancellationToken ct = default);
+
     /// <summary>
     /// The commit a repository's code map is held at there (MAP3e), or null where it holds none — asked
     /// before the map itself, so a map that has not moved is not sent again.
@@ -49,7 +57,11 @@ public interface IRemote
 public sealed record SessionFetch(IReadOnlyList<Session> Records, long Through, bool More);
 
 /// <summary>The remote could not be reached, or refused the conversation outright — named, never swallowed.</summary>
-public sealed class RemoteException(string message) : Exception(message);
+/// <param name="Status">The HTTP status the remote answered, where it answered one: a 404 on a door is a remote from before it (SESSONE2d).</param>
+public sealed class RemoteException(string message, int? status = null) : Exception(message)
+{
+    public int? Status { get; } = status;
+}
 
 /// <summary>Which remote serves a workspace, on this machine — or none, which is the silent default (D21).</summary>
 public interface IRemotes
@@ -95,6 +107,13 @@ public sealed class HttpRemote(RemoteConfig config) : IRemote
         SessionWire.ReadPage(await SendAsync(HttpMethod.Get, $"/api/sessions/since?since={since}", null, ct).ConfigureAwait(false))
         ?? throw new RemoteException("the remote answered a fetch of session records with something that is not a page of them");
 
+    public Task PushChannelAsync(IReadOnlyList<ChannelMessage> messages, CancellationToken ct = default) =>
+        SendAsync(HttpMethod.Post, "/api/feed/channel", ChannelWire.Feed(messages), ct);
+
+    public async Task<ChannelFetch> FetchChannelAsync(long since, CancellationToken ct = default) =>
+        ChannelWire.ReadPage(await SendAsync(HttpMethod.Get, $"/api/channel/since?since={since}", null, ct).ConfigureAwait(false))
+        ?? throw new RemoteException("the remote answered a fetch of channel messages with something that is not a page of them");
+
     public async Task<string?> HeldCodeMapAsync(string repository, CancellationToken ct = default)
     {
         var held = await SendAsync(
@@ -131,7 +150,7 @@ public sealed class HttpRemote(RemoteConfig config) : IRemote
             if (response.IsSuccessStatusCode) return payload;
 
             // The remote's own sentence — an expired key names itself — and never the key we sent.
-            throw new RemoteException($"the remote answered {(int)response.StatusCode}: {ErrorOf(payload)}");
+            throw new RemoteException($"the remote answered {(int)response.StatusCode}: {ErrorOf(payload)}", (int)response.StatusCode);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {

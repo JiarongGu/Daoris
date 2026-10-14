@@ -234,5 +234,10 @@ public sealed class CodeMapSyncTests : IAsyncLifetime, IDisposable
             throw new NotSupportedException();
 
         public Task<SessionFetch> FetchSessionsAsync(long since, CancellationToken ct = default) => throw new NotSupportedException();
+
+        public Task PushChannelAsync(IReadOnlyList<ChannelMessage> messages, CancellationToken ct = default) =>
+            throw new NotSupportedException();
+
+        public Task<ChannelFetch> FetchChannelAsync(long since, CancellationToken ct = default) => throw new NotSupportedException();
     }
 }
