@@ -43,7 +43,6 @@
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs"
   ],
   "KnowledgeTools": [
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.GoAhead.cs",
     "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Accept.cs",
     "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Account.cs",
     "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Agent.cs",
@@ -60,9 +59,6 @@
     "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Setting.cs",
     "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Sync.cs",
     "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Workflow.cs",
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Helper.cs",
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Opinion.cs",
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Review.cs",
     "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs"
   ],
   "SessionTrees": [

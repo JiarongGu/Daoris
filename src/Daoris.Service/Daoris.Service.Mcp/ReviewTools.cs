@@ -8,7 +8,10 @@ namespace Daoris.Knowledge.Mcp;
 /// §2.6). Allowed only to a set-up step's own session, which its connector names; the verdict has no tool, since it is the
 /// person's alone.
 /// </summary>
-public sealed partial class KnowledgeTools
+/// <param name="intake">Which session this connector speaks for, when the driver started it.</param>
+/// <param name="ledger">The ledger, where the build is served and the set-up said on the session's record.</param>
+[McpServerToolType]
+public sealed class ReviewTools(IntakeScope? intake = null, SessionLedger? ledger = null)
 {
     [McpServerTool(Name = "review_serve")]
     [Description(
@@ -43,22 +46,3 @@ public sealed partial class KnowledgeTools
     private const string NoSession =
         "This connector speaks for no session the driver started here, so there is no set-up step to say it for.";
 }
-
-/// <summary>
-/// A chain's review choice as an agent writes it (REVIEWENV1b): nullable for the chain step's reason, the exchange refusing one
-/// that is not one, naming why.
-/// </summary>
-public sealed record ReviewChoice(
-    [property: Description("off, on (the repository's default environment), or an environment's name.")]
-    string? Choice,
-    [property: Description(
-        "The person's own words you set it on, copied exactly from what they asked or said since. Without them, propose one "
-        + "instead.")]
-    string? Words);
-
-/// <summary>An intake's review proposal as it writes it (REVIEWENV1b): a choice and its reason, for the person's press.</summary>
-public sealed record ReviewProposal(
-    [property: Description("off, on (the repository's default environment), or an environment's name.")]
-    string? Choice,
-    [property: Description("Why, in at most 300 characters, such as that the work changes only a document.")]
-    string? Reason);

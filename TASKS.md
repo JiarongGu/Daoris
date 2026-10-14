@@ -277,7 +277,6 @@ folder.
 
 **No partial type split by hand** (the owner: *"also I think we better not use partial class if we don't have auto-generated code"*; D166's note). Evidence: `docs/2026-10-14-partial-types-survey.md`. A class per domain or kind keeps one new door in one new file.
 
-- [ ] **PART10b — `KnowledgeTools`: the review, go-ahead, helper and opinion tools** (service; after 10a). Each its class with only its services, added to `KnowledgeServer.ToolTypes`; `quest_publish`'s records `ReviewChoice` and `ReviewProposal` beside `QuestTools`' own. Survey "The large five, as scouted".
 - [ ] **PART10c — `KnowledgeTools`: a tool class per Help kind, and the type gone** (service, driver; after 10b and PART7b). `Help<Kind>Tool` in a file each, the driver's file-name test re-pointed, `KnowledgeTools` deleted and cut from the gate's list. Survey "The large five, as scouted".
 - [ ] **PART10d — `DriverModule`: the context, the table from handler classes, the small domains** (modules, tools; Opus). A context object, the shared arguments' helper, a table built from an explicit handler list, the routes test and `orient-index`'s handler files for `*Routes.cs`; the nine smallest domains moved. Survey "The large five, as scouted".
 - [ ] **PART10e — `DriverModule`: the middle domains** (modules; after 10d). Git, Conversation, Sessions, Driver, Lines, Plugins and Tools as handler classes, their tests' statics re-spelled. Survey "The large five, as scouted".

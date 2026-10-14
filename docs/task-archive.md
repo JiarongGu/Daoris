@@ -14338,3 +14338,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DEDUP6b — the CLI's id twins refuse a device name** (cli). `workflowid.ts`, `reviews.ts`'s name shape and `namedworkflows.ts` refuse a Windows device name (`con`, `lpt9`) as the driver's `SafeNames` now does, a twin row each. D166's DEDUP6 build note.
 
 **Outcome** 2026-10-14: `workflowid.ts`'s `isKebabId` holds the kebab shape and no device name, used by the workflow, step and kind ids and the review name; `namedworkflows.ts` refuses one in an environment id and an Ask Daoris door; the shared fixtures `review-rules.json` and `workflow-named.json` hold the device rows both twins read. On Sonnet: 36 tool calls.
+
+## PART10b — `KnowledgeTools`: the review, go-ahead, helper and opinion tools (2026-10-14, D166)
+
+> - [ ] **PART10b — `KnowledgeTools`: the review, go-ahead, helper and opinion tools** (service; after 10a). Each its class with only its services, added to `KnowledgeServer.ToolTypes`; `quest_publish`'s records `ReviewChoice` and `ReviewProposal` beside `QuestTools`' own. Survey "The large five, as scouted".
+
+**Outcome** 2026-10-14: `ReviewTools`, `GoAheadTools`, `HelperTools` and `OpinionTools` are classes in `KnowledgeServer.ToolTypes`, each with only the services it uses; `quest_publish`'s two records sit with `QuestTools`; `KnowledgeTools` keeps only the Help kinds' tools, built from the intake and the help box. The 33 names unchanged. On Sonnet: 47 tool calls. Detail: D166's PART10b note.

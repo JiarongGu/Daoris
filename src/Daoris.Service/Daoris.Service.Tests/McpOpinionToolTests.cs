@@ -32,7 +32,7 @@ public sealed class McpOpinionToolTests : McpToolsFixture
     }
 
     /// <summary>The connector a session the driver started is handed: it names its session, and nothing else.</summary>
-    private static KnowledgeTools Connector(string? session, OpinionDesk desk) =>
+    private static OpinionTools Connector(string? session, OpinionDesk desk) =>
         new(intake: new IntakeScope(null, session), opinions: desk);
 
     private static OpinionFindingInput Claim(string weight = "must") => new(
@@ -50,7 +50,7 @@ public sealed class McpOpinionToolTests : McpToolsFixture
 
         Assert.Contains("reads no work for a second opinion", await Connector(working.Id, desk).GiveOpinionAsync([Claim()], "src/"));
         Assert.Contains("speaks for no session", await Connector(null, desk).GiveOpinionAsync([Claim()], "src/"));
-        Assert.Contains("speaks for no session", await _tools.GiveOpinionAsync([Claim()], "src/"));
+        Assert.Contains("speaks for no session", await new OpinionTools().GiveOpinionAsync([Claim()], "src/"));
         Assert.Null((await desk.ReadAsync(opinion, DateTimeOffset.UtcNow))!.Opinion.Given);
 
         var given = await Connector(reviewer.Id, desk).GiveOpinionAsync(
@@ -80,7 +80,7 @@ public sealed class McpOpinionToolTests : McpToolsFixture
         Assert.Contains("No second opinion was handed", await Connector(reviewer.Id, desk).AnswerOpinionAsync([new OpinionAnswerInput(1, "fixed", "a1b2c3d")]));
         Assert.Contains("No second opinion was handed", await Connector(other.Id, desk).AnswerOpinionAsync([new OpinionAnswerInput(1, "fixed", "a1b2c3d")]));
         Assert.Contains("speaks for no session", await Connector(null, desk).AnswerOpinionAsync([new OpinionAnswerInput(1, "fixed", "a1b2c3d")]));
-        Assert.Contains("speaks for no session", await _tools.AnswerOpinionAsync([new OpinionAnswerInput(1, "fixed", "a1b2c3d")]));
+        Assert.Contains("speaks for no session", await new OpinionTools().AnswerOpinionAsync([new OpinionAnswerInput(1, "fixed", "a1b2c3d")]));
         Assert.Contains("gave no finding 3", await Connector(working.Id, desk).AnswerOpinionAsync([new OpinionAnswerInput(3, "fixed", "a1b2c3d")]));
         Assert.Empty((await desk.ReadAsync(opinion, DateTimeOffset.UtcNow))!.Opinion.Answers);
 

@@ -28,7 +28,11 @@ public static class KnowledgeServer
         typeof(KnowledgeSearchTools),
         typeof(QuestTools),
         typeof(RuleProposalTools),
-        // The tools not yet a class of their own (PART10b, PART10c).
+        typeof(ReviewTools),
+        typeof(GoAheadTools),
+        typeof(HelperTools),
+        typeof(OpinionTools),
+        // The tools not yet a class of their own (PART10c).
         typeof(KnowledgeTools),
     ];
 
