@@ -14716,3 +14716,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NAMEZH1 — 本机 in a helper's note** (web). `note.helper.why.asker-gone` says 这台机器 where the glossary's name is 本机; correct it and drop its entry from `names.test.ts`'s list. D163's MIXAGENT3a-i note.
 
 **Outcome** 2026-10-15: `note.helper.why.asker-gone` (zh) now says 提问的会话不在本机上, and its entry left the names test's list of strays. Built with KEYPARITY2 (its count). Detail: D163's NAMEZH1 note.
+
+## UIFREEZE1 — the window frozen behind a sweep's process starts (2026-10-15, D56)
+
+> - [ ] **UIFREEZE1 — the window frozen behind a sweep's process starts** (modules/driver). The owner's window stopped answering for minutes (`ui.stalled` ongoing, 406 s, no route named): a stack report found its thread in .NET's process-start lock, inside a sweep's git fan-out resumed there by the kit's context-keeping pipeline, with 51 threads queued on the lock. Keep Daoris routes off the window after their first wait, gate process starts off the caller's thread, and ask each checkout's line once per sweep. D56/log §4; a red test for each part.
+
+**Outcome** 2026-10-15: `OffTheWindow` runs a `DAORIS.*` route's call with no synchronization context (its synchronous part still on the window, timed by the stall watch); `ProcessStarts` lets four starts through at once, each on the thread pool, for `ChildProcess` and `WorkingTree`'s streaming readers; `TreeContext.OneLook` asks git a checkout's line once per clean-up list, press and sweep. FREEZE1b stays open for the next capture. Detail: the fix log's 2026-10-15 UIFREEZE1 entry, D56's UIFREEZE1 note.

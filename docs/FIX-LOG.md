@@ -5,6 +5,35 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-15 — The window froze for minutes behind a sweep's git starts (UIFREEZE1)
+
+- **Symptom:** the owner's, on the install: *"I think the local daoris is stuck"*. The window did not answer for minutes; the
+  machine log's `ui.stalled` was ongoing, 406 s at worst, with no route in `during`, and every route's synchronous part was
+  under 20 ms. The Sessions page asks for the clean-up's list routinely, so it came back in daily use.
+- **Root cause:** a stack report of the frozen install (`dotnet-stack`) held the window's thread in `Monitor.Enter` inside
+  `Process.StartWithCreateProcess`, .NET's one process-start lock, reached from `LinesRoutes.SweepAsync` →
+  `LandedCleanups.CleanPlanAsync` → `PullRequestAsks.DueAsksAsync` → `CanonicalLine.ResolveAsync` →
+  `WorkingTree.DefaultBranchAsync` → `ChildProcess.RunAsync` → `Process.Start`, resumed there through
+  `Control.InvokeMarshaledCallbacks`. Three things met: the bridge dispatches on the window's thread and the kit's pipeline
+  keeps the caller's context, so every await in a route came back to the window (the stall watch's own remark, "a route runs
+  there until its first wait", was untrue after the wait); `ChildProcess.RunAsync` started each process synchronously on its
+  caller's thread; and the clean-up's list asked git for each checkout's line three times (the pull requests' asks, the
+  session branches' list, the landed branches' judgement), up to three git processes each. 51 of 76 threads waited on the
+  lock behind one slow `CreateProcess` (an antivirus hooks process creation on that machine), and the window waited with them.
+  The stall named no route because the route's part on the thread was its continuation, which the middleware never sees.
+- **Fix:** `OffTheWindow`, a middleware after `UiStallWatch`, runs a `DAORIS.*` route's call with no synchronization context
+  and puts it back before returning, so its awaits go on on the thread pool while its synchronous part is still timed and
+  named; the kit's own window modules keep the window's thread. `ProcessStarts` gates every start through `ChildProcess` (and
+  `WorkingTree`'s two streaming git readers): four at once, waiting asynchronously, each on the thread pool, so a fan-out
+  queues as tasks rather than as parked threads. `TreeContext.OneLook` asks git each checkout's line once per look (the
+  list, the press and the sweeps' one path), still reading the person's set line at every call.
+- **Verify:** `OffTheWindowTests` (a Daoris route's continuation timed out waiting for the window's pump before the fix, and
+  goes on off it after; the kit's own route still resumes on it), `ProcessStartsTests` (forty starts against a held start:
+  never more than four inside, none on the calling thread; red with the gate unbounded), `TreeLineLookTests` and
+  `SweepLineProcessTests` (the list asked the line 3 times a repository before, once after; the press once; the next look
+  asks again). Reasoned from the stack, not reproduced on the owner's machine; the install's `ui.stalled` lines after the
+  republish are the field proof.
+
 ## 2026-10-15 — The person's words to a session whose closed quest had once waited on a question never went on
 
 - **Symptom:** the owner's, on the install: words said to the reporting app's session cf8faff5 (asking it to rebase a branch whose
