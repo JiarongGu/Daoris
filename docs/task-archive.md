@@ -14650,3 +14650,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT5c — the page's top folder in folders** (web). As STRUCT5a, 5b and 5d did, with its gate in vitest; STRUCT5d's import-rewriting script (asserted counts, read back) is a candidate tracked tool. Design §7.
 
 **Outcome** 2026-10-15: the page's top holds only its three entries; 109 files moved into domain folders with `git mv`, held by `src/test/structure.test.ts`, and `daoris.lanes.json` lost two `SettingsView*` globs the move made empty. The work, settings, bridge and projects folders still hold over twenty sources at their top and sit on the gate's `wide` list (STRUCT5c-ii); the move script stayed in scratch (MOVETOOL1). Eleven gates passed on the merge, merged with main's closed-quest fix. On Opus: 308 tool calls. Detail: D166's STRUCT5c note and the `refactor(web): STRUCT5c` commits.
+
+## REVIEWBASE5 — the session head offers no *Accept…* where Review says nothing is beyond the line (2026-10-15, D164)
+
+> - [ ] **REVIEWBASE5 — the session head offers no *Accept…* where Review says nothing is beyond the line** (web). REVIEWBASE4 took Accept out of Review's panel for a tree that holds nothing beyond its line; the session head's own *Accept…* (SessionHead) reads the landing plan alone and may still offer it. Read the review's `behind.ahead` there too. Proof: a SessionHead test with `ahead` 0; the window. D164's REVIEWBASE4 note.
+
+**Outcome** 2026-10-15: `SessionHead` takes the review's `behind`; where `ahead` is 0 and its tree holds nothing uncommitted, *Accept…* is not offered (*Review* stays). `WorkFrame` reads it from the review's own `useSessionDiff` query, passed through `AttendedSession`. Detail: D164's REVIEWBASE5 note.

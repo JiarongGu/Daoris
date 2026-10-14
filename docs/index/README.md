@@ -45,10 +45,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 49 | 920 |
 | `src/Daoris.Web/src/quests/QuestsView.test.tsx` | 70 | 1377 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 51 | 964 |
-| `src/Daoris.Web/src/work/SessionHead.test.tsx` | 54 | 1040 |
+| `src/Daoris.Web/src/work/SessionHead.test.tsx` | 55 | 1060 |
 | `src/Daoris.Web/src/work/SessionRail.test.tsx` | 50 | 981 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 243 | 4661 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 103 | 1888 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 103 | 1893 |
 | `src/Daoris.Web/src/work/attention.test.ts` | 42 | 857 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 51 | 992 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 877 |
