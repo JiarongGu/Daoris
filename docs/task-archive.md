@@ -14676,3 +14676,8 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **REVIEWBASE5 — the session head offers no *Accept…* where Review says nothing is beyond the line** (web). REVIEWBASE4 took Accept out of Review's panel for a tree that holds nothing beyond its line; the session head's own *Accept…* (SessionHead) reads the landing plan alone and may still offer it. Read the review's `behind.ahead` there too. Proof: a SessionHead test with `ahead` 0; the window. D164's REVIEWBASE4 note.
 
 **Outcome** 2026-10-15: `SessionHead` takes the review's `behind`; where `ahead` is 0 and its tree holds nothing uncommitted, *Accept…* is not offered (*Review* stays). `WorkFrame` reads it from the review's own `useSessionDiff` query, passed through `AttendedSession`. Detail: D164's REVIEWBASE5 note.
+## SESSONE2g — a teammate's ask's channel, read here (2026-10-15, D167)
+
+> - [ ] **SESSONE2g — a teammate's ask's channel, read here** (service/web). The sync mirrors every message of the workspace, but `GET /api/asks/{id}/channel` answers only an ask held on this machine: a channel of an ask held elsewhere, readable by its id. D167's SESSONE2d note.
+
+**Outcome** 2026-10-15: `GET /api/asks/{id}/channel` answers an ask held elsewhere from the messages the sync mirrored (their `origin` kept, read-only, no Daoris lines); a post to such an ask is refused `held-elsewhere` (409). The page has no door to a teammate's ask (its asks list and `GET /api/asks/{id}` are this machine's), so the route alone is built and the page is unchanged. Detail: D167's SESSONE2g note.
