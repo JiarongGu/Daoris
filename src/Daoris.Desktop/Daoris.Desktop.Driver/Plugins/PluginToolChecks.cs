@@ -183,7 +183,7 @@ public static partial class PluginToolChecks
     private static string? LastLine(string said) =>
         said.Split('\n').Select(line => line.Trim()).LastOrDefault(line => line.Length > 0);
 
-    private static string Clip(string line) => line.Length <= 120 ? line : line[..117] + "…";
+    private static string Clip(string line) => TextBounds.Clip(line, 120, keep: 117);
 
     [GeneratedRegex("[0-9]+(?:\\.[0-9]+)+")]
     private static partial Regex DottedNumber();

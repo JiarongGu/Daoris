@@ -257,7 +257,7 @@ public static class HelpCommand
             text.Append(row.Session).Append("  ").Append(Ago(row.Last, now)).Append("  ").Append(row.Title);
             if (marks.Count > 0) text.Append("  · ").Append(string.Join(" · ", marks));
             text.Append('\n');
-            if (row.About is { } about) text.Append("    ").Append(about.Length <= LineLimit ? about : $"{about[..LineLimit]}…").Append('\n');
+            if (row.About is { } about) text.Append("    ").Append(TextBounds.Clip(about, LineLimit)).Append('\n');
             if (row.Found is { } found && found != row.Title) text.Append("    found: ").Append(found).Append('\n');
         }
 

@@ -283,7 +283,7 @@ folder.
 
 **Duplication** (the owner: *"we more focus on modularize the code to reduce duplication and easier to manage"*). Evidence: `docs/2026-10-14-duplication-survey.md`, by section. After FLAT1; DEDUP1 to 3 touch the same files, so one at a time.
 
-- [ ] **DEDUP7 — text clipped, one-lined and quoted once** (driver, modules). `TextBounds` in `Platform/` for about 44 copies, each call keeping its own limit. Survey §7.
+- [ ] **DEDUP7b — a commit's short id once, and the service's text bounds** (driver, service). About 15 `Short(commit)` copies; the service core's own clip and quote copies, surveyed first. D166's DEDUP7 note.
 
 ## Development and agent layout
 

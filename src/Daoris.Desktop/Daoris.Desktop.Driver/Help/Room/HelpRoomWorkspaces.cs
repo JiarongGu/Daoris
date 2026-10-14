@@ -114,7 +114,7 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
             {
                 text.Append($"Standing answers in `{circle.Key}`, each handed to every session in its repository beneath its quest "
                             + "(`daoris driver standing <repository> \"…\"|--clear`):\n\n");
-                foreach (var repository in standing) text.Append($"- `{repository.Name}`: \"{repository.Standing!.ReplaceLineEndings(" ")}\"\n");
+                foreach (var repository in standing) text.Append($"- `{repository.Name}`: \"{TextBounds.OneLine(repository.Standing!, trim: false)}\"\n");
                 text.Append('\n');
             }
         }

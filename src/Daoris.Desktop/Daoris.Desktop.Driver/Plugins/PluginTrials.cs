@@ -324,7 +324,7 @@ public static class PluginTrials
 
     private static string Listed(IReadOnlyList<string> points) => points.Count > 0 ? string.Join(", ", points) : "nothing";
 
-    private static string Clip(string line) => line.Length <= 80 ? line : line[..77] + "…";
+    private static string Clip(string line) => TextBounds.Clip(line, 80, keep: 77);
 
     private static List<string> Snapshot(List<string> lines)
     {

@@ -36,7 +36,7 @@ public static class StandingText
 
         var cut = standing.Says.Length > Limit;
         var quoted = cut ? standing.Says[..Limit] : standing.Says;
-        text.Append(string.Join("\n", quoted.ReplaceLineEndings("\n").Split('\n').Select(line => line.Length == 0 ? "  >" : $"  > {line}")))
+        text.Append(TextBounds.Quote(quoted, indent: "  "))
             .Append('\n');
         if (cut)
         {
