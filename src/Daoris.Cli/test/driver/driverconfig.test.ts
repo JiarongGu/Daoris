@@ -546,6 +546,8 @@ const KEY_SHAPES: [form: string, pattern: string | null, key: string | null, pro
   ['branch', 'feature/{ticket}-{slug}', '\\x', 'may escape only'],
   ['branch', 'feature/{ticket}-{slug}', '[^]', 'empty class'],
   ['branch', 'feature/{ticket}-{slug}', '[]', 'empty class'],
+  ['branch', 'feature/{ticket}-{slug}', '[a-z-[aeiou]]+-\\d+', 'subtract a class'],
+  ['branch', 'feature/{ticket}-{slug}', '[a-z\\-[]+-\\d+', null],
   ['branch', 'feature/{quest}-{slug}', '[A-Z]+-\\d+', 'only for `{ticket}`'],
   ['merge', null, '[A-Z]+-\\d+', 'only a branch rule reads a ticket\'s key'],
   ['branch', 'feature/{ticket}-{slug}', '  ', 'needs a shape'],

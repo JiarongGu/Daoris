@@ -532,6 +532,15 @@ public sealed class ReviewAndOpinionNotesTests
         Assert.Equal("Daoris read `01234567` from its tree and posted what it showed in `browser`: Kept.", ReviewNotes.Posted("0123456789abcdef", "browser", "Kept.", null).Note);
     }
 
+    [Fact]
+    public void A_set_up_posted_at_a_commit_shorter_than_eight_names_it_whole()
+    {
+        // DEDUP7c: the cut was commit[..8], which threw on a short id.
+        var posted = ReviewNotes.Posted("abc12", "browser", "Kept.", null);
+        Assert.Equal("Daoris read `abc12` from its tree and posted what it showed in `browser`: Kept.", posted.Note);
+        Assert.Equal("abc12", posted.Parts[0].Value("commit"));
+    }
+
     private static OpinionView View() =>
         new("op1", "occ", "first", "w", "s1", "repo", "b", "t", "codex-acp", "Label", "given") { Product = "Codex", Maker = "OpenAI" };
 

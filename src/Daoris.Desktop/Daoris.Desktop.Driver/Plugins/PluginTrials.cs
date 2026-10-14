@@ -259,6 +259,15 @@ public static class PluginTrials
         return Trial();
     }
 
+    /// <summary>A `state` answer in words; the commits are cut with <see cref="TextBounds.ShortCommit"/>, so a short id is shown whole (DEDUP7c).</summary>
+    internal static string StateWords(PullRequestState state) =>
+        state.State
+        + (state.PullRequest is { } address ? $", pull request {address}" : "")
+        + (state.State == PullRequestStates.Completed
+            ? $", merged {TextBounds.ShortCommit(state.SourceCommit ?? "", 8)} as {TextBounds.ShortCommit(state.MergeCommit ?? "", 8)}"
+            : "")
+        + (state.Message is { } words ? $" — {words}" : "");
+
     /// <summary>One frame at one point, and the answer in words — read by the driver's own reader, which throws for a wrong one.</summary>
     private static async Task<string> AskAsync(HookPeer peer, string point, JsonObject frame, CancellationToken ct)
     {
@@ -285,10 +294,7 @@ public static class PluginTrials
             case HookPoints.State:
             {
                 var state = await peer.StateAsync(frame, ct).ConfigureAwait(false);
-                return state.State
-                    + (state.PullRequest is { } address ? $", pull request {address}" : "")
-                    + (state.State == PullRequestStates.Completed ? $", merged {state.SourceCommit![..8]} as {state.MergeCommit![..8]}" : "")
-                    + (state.Message is { } words ? $" — {words}" : "");
+                return StateWords(state);
             }
 
             default:

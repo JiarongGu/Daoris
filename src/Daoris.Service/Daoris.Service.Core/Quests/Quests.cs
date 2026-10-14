@@ -95,8 +95,9 @@ public sealed record Quest(
 
     /// <summary>
     /// The question its taker asked another repository and waits on (D79) — null when it waits on
-    /// nothing. It stays set once the question is answered: the driver reads the answer from the
-    /// question itself when it resumes the quest.
+    /// nothing. It stays set once the question is answered, while the quest is taken: the driver reads the
+    /// answer from the question itself when it resumes the quest. A close (done or declined) clears it, the
+    /// Waited operation staying in the history (AWAITSTALE1).
     /// </summary>
     public string? Awaits { get; init; }
 
@@ -377,6 +378,7 @@ public sealed class QuestStore
             store.Machine = await store.EnsureMachineAsync(ct).ConfigureAwait(false);
             await store.GiveHistoriesAsync(ct).ConfigureAwait(false);
             await store.RecacheUnnamedConflictsAsync(ct).ConfigureAwait(false);
+            await store.RecacheClosedAwaitsAsync(ct).ConfigureAwait(false);
             return store;
         }, ct);
 
@@ -385,13 +387,21 @@ public sealed class QuestStore
     /// and a conflict that cannot be named cannot be dismissed. Those quests are replayed from the log,
     /// which has always kept the sequence — the cache is only ever what the history replays to.
     /// </summary>
-    private async Task RecacheUnnamedConflictsAsync(CancellationToken ct)
-    {
-        const string Unnamed = "SELECT id FROM quests WHERE conflicts <> '[]' AND conflicts NOT LIKE '%\"sequence\"%'";
+    private Task RecacheUnnamedConflictsAsync(CancellationToken ct) =>
+        RecacheAsync("SELECT id FROM quests WHERE conflicts <> '[]' AND conflicts NOT LIKE '%\"sequence\"%'", ct);
 
+    /// <summary>
+    /// A quest closed before a close cleared <c>awaits</c> (AWAITSTALE1, D79) still names the question it waited on.
+    /// Those closed rows are replayed from the log, which clears it and keeps the Waited operation.
+    /// </summary>
+    private Task RecacheClosedAwaitsAsync(CancellationToken ct) =>
+        RecacheAsync("SELECT id FROM quests WHERE status IN ('Done', 'Declined') AND awaits IS NOT NULL", ct);
+
+    private async Task RecacheAsync(string stale,CancellationToken ct)
+    {
         await using (var probe = _db.Command())
         {
-            probe.CommandText = $"SELECT EXISTS ({Unnamed})";
+            probe.CommandText = $"SELECT EXISTS ({stale})";
             if (Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) == 0) return;
         }
 
@@ -401,7 +411,7 @@ public sealed class QuestStore
             await using (var select = _db.Command())
             {
                 select.Transaction = transaction;
-                select.CommandText = Unnamed;
+                select.CommandText = stale;
                 await using var reader = await select.ExecuteReaderAsync(inside).ConfigureAwait(false);
                 while (await reader.ReadAsync(inside).ConfigureAwait(false)) ids.Add(reader.GetString(0));
             }

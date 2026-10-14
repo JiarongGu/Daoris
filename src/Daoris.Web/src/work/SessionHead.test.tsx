@@ -491,6 +491,26 @@ describe('the attended session\'s head', () => {
     const LANDS = { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 };
     const PLAN = { session: 's1a2b3c4', form: 'branch', target: 'feature/delta-release', plugin: 'azure-devops-pull-request' };
 
+    it('offers no Accept where the review says nothing is beyond the line, and keeps Review (REVIEWBASE5)', () => {
+      const behind = { line: 'master', commits: 2, ahead: 0 };
+      render(<SessionHead session={session({ state: 'failed' })} lands={LANDS} landing={PLAN} onLand={vi.fn()} onReview={vi.fn()} behind={behind} />);
+
+      expect(screen.queryByRole('button', { name: 'Accept…' })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Review' })).toBeInTheDocument();
+    });
+
+    it('still offers Accept where the review has commits beyond the line, or uncommitted work (REVIEWBASE5)', () => {
+      const { rerender } = render(
+        <SessionHead session={session({ state: 'failed' })} lands={LANDS} landing={PLAN} onLand={vi.fn()} behind={{ line: 'master', commits: 0, ahead: 1 }} />,
+      );
+      expect(screen.getByRole('button', { name: 'Accept…' })).toBeInTheDocument();
+
+      rerender(
+        <SessionHead session={session({ state: 'failed' })} lands={{ ...LANDS, uncommitted: 2 }} landing={PLAN} onLand={vi.fn()} behind={{ line: 'master', commits: 0, ahead: 0 }} />,
+      );
+      expect(screen.getByRole('button', { name: 'Accept…' })).toBeInTheDocument();
+    });
+
     it('offers a failed session’s commits to land, naming its branch and tree, and lands them on the second press', () => {
       const onLand = vi.fn();
       render(<SessionHead session={session({ state: 'failed' })} lands={LANDS} landing={PLAN} onLand={onLand} onReview={vi.fn()} />);

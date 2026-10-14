@@ -942,7 +942,7 @@ if (mode == ServiceMode.Local)
 
     // An ask's channel (SESSONE2a, D167 points 6 to 8): what the ask's sessions and the person said, and Daoris's own coded lines read
     // from the ask's quests, in time order. A read moves no mark: `entry` (the person's by default) says whose unread count it carries,
-    // and the mark moves at the POST below. Local like every ask route, since asks are this machine's; no machine path is in it.
+    // and the mark moves at the POST below. An ask held elsewhere reads from the messages the sync mirrored (SESSONE2g), read-only; no machine path is in it.
     app.MapGet("/api/asks/{id}/channel", async (
         ComposedService s, string id, string? entry, DateTimeOffset? since, CancellationToken ct) =>
     {
@@ -960,9 +960,13 @@ if (mode == ServiceMode.Local)
         if (posted.Refusal == ChannelRefusal.None) return Results.Ok(new ChannelPostResponse(ToChannelItem(posted.Message!)));
 
         var code = ChannelDesk.Spell(posted.Refusal);
-        return posted.Refusal == ChannelRefusal.NotFound
-            ? Results.NotFound(new ErrorResponse(code, code))
-            : Results.BadRequest(new ErrorResponse(code, code));
+        return posted.Refusal switch
+        {
+            ChannelRefusal.NotFound => Results.NotFound(new ErrorResponse(code, code)),
+            ChannelRefusal.HeldElsewhere => Results.Conflict(new ErrorResponse(
+                $"Ask `#{id.TrimStart('#')}` is a teammate's, held on their machine: this machine reads its channel and cannot post to it.", code)),
+            _ => Results.BadRequest(new ErrorResponse(code, code)),
+        };
     });
 
     // An entry's read mark, moved: the person's, or a part's that a driver handed the channel to (SESSONE2b). Answers the channel as it then reads.

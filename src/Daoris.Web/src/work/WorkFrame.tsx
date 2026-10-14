@@ -10,7 +10,7 @@ import {
   NO_TURNS, useChatTurns, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionStreams, useSessionWhere,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
-  useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree,
+  useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useSessionDiff,
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun,
 } from '../bridge/shell';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
@@ -1236,6 +1236,10 @@ export function WorkFrame({
   // LANDNAME1b: the branch name typed in the head's land ask, so its plan is asked again with it and a refusal shows first.
   const [landName, setLandName] = useState('');
   const landing = useLanding(lands ? attended!.id : null, landName);
+  // How the tree stands against its line, from the review's own answer (REVIEWBASE5): the same query the review reads, so the
+  // head offers no *Accept…* where the review says nothing is beyond the line. Asked only where there is something offered.
+  const reviewRead = useSessionDiff(lands ? attended!.id : null, attended ? { updated: attended.updated, live: SESSION_ACTIVE.has(attended.state) } : null);
+  const behind = reviewRead.data?.behind ?? null;
   // Another session's page is another ask: a name typed for one is not carried to the next.
   useEffect(() => setLandName(''), [attended?.id]);
   const land = useLandSessionTree();
@@ -1681,6 +1685,7 @@ export function WorkFrame({
             // sentence said once it landed and a refusal said inside the ask (UXFIX2).
             lands={lands}
             review={headReview}
+            behind={behind}
             opinion={headOpinion}
             landing={landing.data}
             planning={landing.isPlaceholderData}

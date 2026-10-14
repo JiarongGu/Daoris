@@ -332,6 +332,15 @@ public sealed class SessionGroupsTests
             {
                 Also = row => Assert.Equal((WordsHold.Waits, (DateTimeOffset?)null), (row.Holds!.Why, row.Holds.Until)),
             },
+        // TICKSHOWN1: a start the service refused for the person's words is the verdict Blocked with the refusal's sentence.
+        ["words whose start the service refused resume later, with the refusal's sentence"] =
+            new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done],
+                    [GoesOn(Done) with { Verdict = StartVerdict.Blocked, Reason = "refused  #q1 → engine: a session is already open." }]),
+                "s1", SessionGroup.Later, "completed")
+            {
+                Also = row => Assert.Equal(
+                    (WordsHold.Waits, "refused  #q1 → engine: a session is already open."), (row.Holds!.Why, row.Holds.Reason)),
+            },
         ["words a pause holds resume later, naming the pause"] =
             new(Look([Record("s1", "stopped", "q1", said: ["w1"])], [Taken], [PausedVerdict(Taken)]),
                 "s1", SessionGroup.Later, "stopped")
