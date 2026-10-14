@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { VIEWS } from '../commands';
+import { VIEWS } from '../menus/commands';
 import { askItem } from '../opener';
 import { offerItem } from '../plugins/catalog';
 import { SETTINGS_SECTIONS } from '../settings/SettingsView';

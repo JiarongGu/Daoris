@@ -21,7 +21,7 @@ import { type ListMode, type ListView, listToggled } from './work/layout';
 import { useListPanes } from './work/listPanes';
 import { usePlacements, viewsIn } from './work/placements';
 import { type LayoutRegion, LayoutToggles } from './work/LayoutToggles';
-import { commandForKey } from './shortcuts';
+import { commandForKey } from './menus/shortcuts';
 import { focusRegion } from './work/regions';
 import type { StarterDoor } from './help/starters';
 import {
@@ -67,7 +67,7 @@ import { useWindowChrome } from './windowChrome';
 import {
   type Command, type CommandDoors, type CommandState, commandTable, type FrameIntent, listOf, MENUS, paletteCommands, shortcutGroups,
   type View, VIEWS,
-} from './commands';
+} from './menus/commands';
 import { CommandPalette } from './work/CommandPalette';
 import { CommandCenter } from './work/CommandCenter';
 import { AppMenuBar, type BarMenu, focusMenuBar, useMenuFold } from './work/AppMenu';

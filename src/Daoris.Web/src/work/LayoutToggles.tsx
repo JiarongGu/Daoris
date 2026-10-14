@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { keysOf } from '../commands';
+import { keysOf } from '../menus/commands';
 import { Button, Icon, type IconName, Tip } from '../ui';
 import { LIST_DOOR } from './listKeys';
 

@@ -38,7 +38,7 @@ import { FilePreview } from './FilePreview';
 import { type FileOpen, FileOpener, fileName } from './preview';
 import { TerminalView } from './TerminalView';
 import { failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../ui';
-import type { FrameIntent } from '../commands';
+import type { FrameIntent } from '../menus/commands';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';
 import type { Usage } from './conversation';

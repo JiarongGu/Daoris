@@ -34,11 +34,11 @@ vi.mock('@shenora/react', async () => {
   };
 });
 
-import './i18n';
-import { App } from './App';
-import { AT_START } from './setupGuide';
-import { WorkspaceScopeProvider } from './scope';
-import { menuActs, rightClick } from './test/contextMenu';
+import '../i18n';
+import { App } from '../App';
+import { AT_START } from '../setupGuide';
+import { WorkspaceScopeProvider } from '../scope';
+import { menuActs, rightClick } from '../test/contextMenu';
 
 const TICKET = 'https://tickets.example/browse/T-1';
 

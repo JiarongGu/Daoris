@@ -1,5 +1,5 @@
 import type { AgentPart } from '../agents/agents';
-import type { View } from '../commands';
+import type { View } from '../menus/commands';
 import type { KnowledgeMode } from '../knowledge/modes';
 import { askItem, questsItem, type OpenGroup } from '../opener';
 import { offerItem } from '../plugins/catalog';

@@ -19,7 +19,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import '../i18n';
-import type { FrameIntent } from '../commands';
+import type { FrameIntent } from '../menus/commands';
 import { answerOf, IN_REVIEW, WORKING } from '../workflow/runFixtures';
 import { WorkFrame } from './WorkFrame';
 

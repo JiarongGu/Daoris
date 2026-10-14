@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '../i18n';
-import type { Command } from '../commands';
+import type { Command } from '../menus/commands';
 import { CommandPalette } from './CommandPalette';
 
 // The widget half of SURF9. What is IN the list is the registry's job and is tested there; this is

@@ -76,13 +76,6 @@
     "shell.ts": "bridge",
     "log.test.ts": "bridge",
 
-    "commands.ts": "menus",
-    "commands.test.ts": "menus",
-    "shortcuts.ts": "menus",
-    "shortcuts.test.ts": "menus",
-    "menuBar.test.tsx": "menus",
-    "contextMenus.test.tsx": "menus",
-
     "setupGuide.tsx": "help",
     "setupGuide.test.tsx": "help"
   }

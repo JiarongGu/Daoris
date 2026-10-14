@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { useQuests, useSessions } from '../queries';
 import { useChatTurns, useDriver, useHarnesses, useOpenWindow, useSessionOpenings } from '../shell';
-import { frameShortcut } from '../shortcuts';
+import { frameShortcut } from '../menus/shortcuts';
 import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
 import { SessionConsole } from './SessionConsole';
 import { type ListMode, listToggled } from './layout';

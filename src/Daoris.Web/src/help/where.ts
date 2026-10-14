@@ -1,5 +1,5 @@
 import type { Session } from '../api';
-import type { View } from '../commands';
+import type { View } from '../menus/commands';
 import type { KnowledgeMode } from '../knowledge/modes';
 import type { SettingsSection } from '../settings/SettingsView';
 import { projectsItem, questsItem } from '../opener';

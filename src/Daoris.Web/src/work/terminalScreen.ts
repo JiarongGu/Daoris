@@ -1,7 +1,7 @@
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
-import { frameShortcut } from '../shortcuts';
+import { frameShortcut } from '../menus/shortcuts';
 import type { TerminalTheme } from './terminalTheme';
 
 /** How a screen looks: the tokens' colours, and the platform's monospace at its size. */

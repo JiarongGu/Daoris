@@ -1,5 +1,5 @@
 import type { AgentPart } from '../agents/agents';
-import type { View } from '../commands';
+import type { View } from '../menus/commands';
 import type { KnowledgeMode } from '../knowledge/modes';
 import type { Compose, OpenGroup } from '../opener';
 import type { ProjectTab, WorkspaceSection, WorkspaceTab } from '../projects/tabs';
