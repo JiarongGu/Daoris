@@ -359,9 +359,8 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     [Fact]
     public void The_screens_discard_is_the_drivers_one_discard()
     {
-        var modules = Path.Combine(WorkspaceRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Modules");
         // The bridge's files: its domains' handler classes (PART10d, PART10f).
-        var sources = Directory.EnumerateFiles(modules, "*Routes.cs")
+        var sources = SourceFiles.All(SourceFiles.ModulesProject, "*Routes.cs")
             .Select(path => (File: Path.GetFileName(path), Text: File.ReadAllText(path))).ToList();
 
         Assert.Contains(sources, source => source.File == "LinesRoutes.cs" && source.Text.Contains(".DiscardAsync(service, repository, branch, force,", StringComparison.Ordinal));
@@ -459,8 +458,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     [Fact]
     public void Every_press_of_bringing_up_to_date_asks_the_sessions_in_use_again()
     {
-        var modules = Path.Combine(WorkspaceRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Modules");
-        var presses = Directory.EnumerateFiles(modules, "*Routes.cs")
+        var presses = SourceFiles.All(SourceFiles.ModulesProject, "*Routes.cs")
             .SelectMany(path =>
             {
                 var source = File.ReadAllText(path);

@@ -117,8 +117,7 @@ public sealed partial class DriverModuleRoutesTests
     /// <summary>Each route's mark, and the file it is in, read off the module's sources: its domain's handler class.</summary>
     private static List<(string Route, string File)> Marks()
     {
-        var modules = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Modules");
-        return Directory.EnumerateFiles(modules, "*Routes.cs")
+        return SourceFiles.All(SourceFiles.ModulesProject, "*Routes.cs")
             .SelectMany(path => Mark().Matches(File.ReadAllText(path))
                 .Select(mark => (mark.Groups["route"].Value, Path.GetFileName(path))))
             .ToList();

@@ -211,9 +211,7 @@ public sealed class SessionWordsTerminalTests : DriverModuleBridge
     [Fact]
     public void The_shells_watch_takes_a_terminals_words_with_the_screens_judge()
     {
-        var root = new DirectoryInfo(AppContext.BaseDirectory);
-        while (root is not null && !File.Exists(Path.Combine(root.FullName, "daoris.json"))) root = root.Parent;
-        var source = File.ReadAllText(Path.Combine(root!.FullName, "src", "Daoris.Desktop", "Daoris.Desktop.Modules", "DriverLoop.cs"));
+        var source = File.ReadAllText(SourceFiles.Module("DriverLoop.cs"));
 
         var watch = source[source.IndexOf("new SessionRequestWatch(homeDirectory", StringComparison.Ordinal)..];
         watch = watch[..watch.IndexOf(';')];

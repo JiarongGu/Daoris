@@ -31,7 +31,7 @@ test("the driver's sources and tests are found at any depth, and the build's out
   assert.equal(driverFile('NoteCodes.cs'), join(DESKTOP, DRIVER, 'Platform', 'NoteCodes.cs'));
   assert.equal(driverFile('HelpGoProposals.cs'), join(DESKTOP, DRIVER, 'Help', 'Proposals', 'HelpGoProposals.cs'));
   assert.equal(driverTestFile('StructureTests.cs'), join(DESKTOP, DRIVER_TESTS, 'StructureTests.cs'));
-  assert.equal(desktopFile('Daoris.Desktop.Modules', 'DriverLoop.cs'), join(DESKTOP, 'Daoris.Desktop.Modules', 'DriverLoop.cs'));
+  assert.equal(desktopFile('Daoris.Desktop.Modules', 'DriverLoop.cs'), join(DESKTOP, 'Daoris.Desktop.Modules', 'Loop', 'DriverLoop.cs'));
   for (const project of [DRIVER, DRIVER_TESTS]) {
     const outside = projectFiles(project).filter((path) => /^(?:bin|obj)$/.test(relative(join(DESKTOP, project), path).split(/[\\/]/)[0]!));
     assert.deepEqual(outside, [], `${project}: the build's output is no source`);
@@ -61,6 +61,7 @@ const SCANNERS = new Set([
 /** Each way a reader reads a desktop source by name, and the project it looks in when the call does not name one. */
 const BY_NAME: readonly { call: RegExp; project?: string }[] = [
   { call: /\bSourceFiles\.Driver\(\s*"([^"\\]+)"\s*\)/g, project: DRIVER },
+  { call: /\bSourceFiles\.Module\(\s*"([^"\\]+)"\s*\)/g, project: 'Daoris.Desktop.Modules' },
   { call: /\bSourceFiles\.Find\(\s*"([^"\\]+)"\s*,\s*"([^"\\]+)"\s*\)/g },
   { call: /\bdriverFile\(\s*'([^'\\]+)'\s*\)/g, project: DRIVER },
   { call: /\bdriverTestFile\(\s*'([^'\\]+)'\s*\)/g, project: DRIVER_TESTS },
