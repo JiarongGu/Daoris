@@ -244,6 +244,15 @@ public sealed class NoteSitesTests
     private static QuestView Quest(string status = "Taken") => new("q1", "game", "engine", "Fix it", "Body", status);
 
     [Fact]
+    public void A_further_part_gone_into_its_entrys_tree_says_whose_tree_and_a_start_in_the_root_says_nothing()
+    {
+        var joined = Daoris.Driver.Driver.StartingNote(null, Quest(), null, null, false, null, null, false, null, joinedSession: "s0")!;
+        Line(joined, "goes into the tree of session `s0`, which holds the earlier part of this work.", "started.joined");
+        Assert.Equal("s0", joined.Parts[0].Value("session"));
+        Assert.Null(Daoris.Driver.Driver.StartingNote(null, Quest(), null, null, false, null, null, false, null));
+    }
+
+    [Fact]
     public void A_resume_once_its_question_closed_says_which_and_in_which_tree()
     {
         var asked = new PriorSession("s0", "/t", "completed");

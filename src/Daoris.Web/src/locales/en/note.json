@@ -39,6 +39,7 @@
   "note.account.resume-new-session": "You chose a new session over waiting for that account.",
   "note.started.tree": "Opened a session tree on {{branch}}, from {{basedOn}}. A fresh tree holds nothing git does not track: no installed dependencies, no build outputs.",
   "note.started.tree-unrecorded": "Daoris could not record where its branch started, so bringing it up to date will cut where its work first differs from the line:",
+  "note.started.joined": "Went into the tree of session {{session}}, which holds the earlier part of this work.",
   "note.started.resumes-answered": "Resumes #{{quest}} now that #{{answered}} is answered.",
   "note.started.in-asking-tree": "In the tree session {{session}} asked from.",
   "note.started.words-open": "Starts #{{quest}} with your words to session {{session}}.",

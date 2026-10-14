@@ -39,6 +39,7 @@
   "note.account.resume-new-session": "你选择了新会话，而不是等那个账户。",
   "note.started.tree": "已从 {{basedOn}} 在 {{branch}} 上打开会话工作树。新工作树只含 git 跟踪的内容：没有安装的依赖，也没有构建产物。",
   "note.started.tree-unrecorded": "Daoris 无法记录它的分支从哪里开始，更新到最新时会从它与主线首次不同处切开：",
+  "note.started.joined": "进入了会话 {{session}} 的工作树，其中有这项工作的前一部分。",
   "note.started.resumes-answered": "#{{answered}} 已答复，继续 #{{quest}}。",
   "note.started.in-asking-tree": "在会话 {{session}} 提问时所在的工作树中。",
   "note.started.words-open": "带着你对会话 {{session}} 说的话开始 #{{quest}}。",
