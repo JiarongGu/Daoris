@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -137,9 +138,4 @@ public sealed class HelperFiles(string home)
             return null;
         }
     }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
 }

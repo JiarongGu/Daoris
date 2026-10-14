@@ -3,6 +3,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -543,9 +544,6 @@ public static class Tools
 
         return parsed is JsonObject root ? (root, null) : (null, $"{path} is not a JSON object");
     }
-
-    private static string? Text(JsonNode? node) =>
-        node is JsonValue value && value.GetValueKind() == JsonValueKind.String ? value.GetValue<string>() : null;
 
     /// <summary>Two-space indent, LF, and text left as text: the CLI's <c>JSON.stringify(value, null, 2)</c>.</summary>
     private static readonly JsonSerializerOptions Written = new()

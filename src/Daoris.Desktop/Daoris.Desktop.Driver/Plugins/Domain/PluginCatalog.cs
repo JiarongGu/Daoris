@@ -1,4 +1,5 @@
 using System.Text.Json;
+using static Daoris.Driver.Json;
 using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
@@ -483,13 +484,6 @@ public sealed class PluginCatalog
             }, null);
         }
     }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object
-        && element.TryGetProperty(name, out var value)
-        && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
 
     /// <summary>A string array, each entry expanded as <paramref name="expand"/> says.</summary>
     private static IReadOnlyList<string>? Strings(JsonElement element, string name, Func<string, string> expand)

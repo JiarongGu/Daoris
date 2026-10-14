@@ -14308,3 +14308,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DEDUP6 — path and id rules decided once** (driver, modules). A `SafeNames` in `Platform/` with the rules D166's DEDUP6 note decided (a repository path joined to the disk, an id under the home, the plain and kebab ids), each caller keeping its sentence; after FLAT1a, whose moves it would cross. Survey §6.
 
 **Outcome** 2026-10-14: `Platform/SafeNames.cs` answers the repository-path, folder-id, plain-id and kebab-id rules; seven path checks, the local session ids' `PathOf`s, the history's and the markers' ids, five plain and four kebab copies ask it, each keeping its sentence, none widened. At the merge the plain and kebab rules refuse device names too; the CLI's twins follow in DEDUP6b. 76 tests. On Sonnet: 95 tool calls. Detail: D166's DEDUP6 notes.
+
+## DEDUP1a — one JSON field reader, its first half (2026-10-14, D166)
+
+> - [ ] **DEDUP1a — one JSON field reader, its first half** (driver). A public `Json` reader in `Platform/` on `C/JsonFields.cs`'s model (the object guard always, each caller's empty-string rule kept) for the copies in Accounts, Agents, Conversations, Help, Platform and Plugins. Survey §1.
+
+**Outcome** 2026-10-14: `Platform/Json.cs` reads a field's text, non-empty text, integer, long, finite number, flag, strings and objects, and a node's text, trimmed text and trimmed strings, answering absent for an element that is not an object; the copies in six modules read through it, each keeping its empty and trimming rule. Kept apart on purpose: `Acp.Field` (raw text), `DriverConfig.Int` (throws, as the config's validation needs), `DriverConfig.Bool`, `PluginTools.Filled`. Forty tests. On Sonnet: 207 tool calls. Detail: D166's DEDUP1a note.

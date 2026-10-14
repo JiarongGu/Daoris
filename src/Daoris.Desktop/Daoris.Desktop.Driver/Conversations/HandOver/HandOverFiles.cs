@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -134,7 +135,4 @@ internal static class HandOverFiles
             // Left behind: its use case judges it again where it is read.
         }
     }
-
-    private static string? Text(JsonElement root, string name) =>
-        root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 }

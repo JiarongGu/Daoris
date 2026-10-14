@@ -38,18 +38,18 @@ internal sealed class AcpBackground
     {
         switch (AcpSession.Kind(update))
         {
-            case "async_task_spawned" when Str(update, "asyncTaskId") is { Length: > 0 } id:
+            case "async_task_spawned" when Json.Text(update, "asyncTaskId") is { Length: > 0 } id:
                 lock (_gate)
                 {
                     // Announced once, whatever the wire repeats.
                     if (_work.Any(work => work.Id == id)) return;
-                    _work.Add(new Work(id, Str(update, "name") is { Length: > 0 } name ? AcpSession.OneLine(name) : id));
+                    _work.Add(new Work(id, Json.Text(update, "name") is { Length: > 0 } name ? AcpSession.OneLine(name) : id));
                 }
 
                 break;
 
-            case "async_task_state_update" when Str(update, "asyncTaskId") is { } id
-                                                && Str(update, "state") is { } state and not ("running" or "paused"):
+            case "async_task_state_update" when Json.Text(update, "asyncTaskId") is { } id
+                                                && Json.Text(update, "state") is { } state and not ("running" or "paused"):
                 lock (_gate)
                 {
                     if (_work.FirstOrDefault(work => work.Id == id) is not { } known) return;
@@ -129,7 +129,4 @@ internal sealed class AcpBackground
     }
 
     private static TaskCompletionSource NewSignal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-    private static string? Str(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 }

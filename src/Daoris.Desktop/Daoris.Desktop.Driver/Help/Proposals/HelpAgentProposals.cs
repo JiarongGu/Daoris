@@ -53,12 +53,12 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
             return proposal with { AccountOrder = new AccountOrder(accounts, clear) };
         }
 
-        return proposal.Door == "ready" ? proposal with { ReadyAccount = HelpProposals.Text(file, "account") } : proposal;
+        return proposal.Door == "ready" ? proposal with { ReadyAccount = Json.Text(file, "account") } : proposal;
     }
 
     private static HelpProposal ReadUse(HelpProposal proposal, JsonElement file)
     {
-        var use = HelpProposals.Text(file, "use");
+        var use = Json.Text(file, "use");
         var keeps = file.TryGetProperty("keep", out var keep);
         bool? early = file.TryGetProperty("early", out var flag)
             ? flag.ValueKind switch { JsonValueKind.True => true, JsonValueKind.False => false, _ => null }

@@ -161,7 +161,7 @@ public sealed class NotePartJson : JsonConverter<NotePart>
     internal static NotePart? ReadPart(JsonElement part)
     {
         if (part.ValueKind != JsonValueKind.Object) return null;
-        if (Text(part, "code") is { Length: > 0 } code)
+        if (Json.Text(part, "code") is { Length: > 0 } code)
         {
             var values = new List<KeyValuePair<string, object>>();
             if (part.TryGetProperty("values", out var given) && given.ValueKind == JsonValueKind.Object)
@@ -172,10 +172,10 @@ public sealed class NotePartJson : JsonConverter<NotePart>
                 }
             }
 
-            return new NotePart { Code = code, Values = values, Text = Text(part, "text") };
+            return new NotePart { Code = code, Values = values, Text = Json.Text(part, "text") };
         }
 
-        return Text(part, "words") is { } words ? NotePart.Said(words, Text(part, "by") ?? NoteBy.Before) : null;
+        return Json.Text(part, "words") is { } words ? NotePart.Said(words, Json.Text(part, "by") ?? NoteBy.Before) : null;
     }
 
     private static object ReadValue(JsonElement value) => value.ValueKind switch
@@ -186,9 +186,6 @@ public sealed class NotePartJson : JsonConverter<NotePart>
             (IReadOnlyList<string>)[.. value.EnumerateArray().Select(item => item.GetString()!)],
         _ => value.Clone(),
     };
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 }
 
 /// <summary>
