@@ -156,11 +156,8 @@ public sealed record HarnessSettings(
                 + "Fix the file or remove it, then make the change again.");
         }
 
-        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
-
-        using var stream = new MemoryStream();
         // LF on every platform, as the CLI's writer writes it: both write this file, the same wiring as the same bytes.
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true, NewLine = "\n" }))
+        JsonFile.Write(path, writer =>
         {
             writer.WriteStartObject();
 
@@ -223,9 +220,7 @@ public sealed record HarnessSettings(
             WriteUseCircles(writer, "workspaceRotationUse", WorkspaceUses);
 
             writer.WriteEndObject();
-        }
-
-        AtomicFile.WriteText(path, System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n");
+        });
     }
 
     /// <summary>

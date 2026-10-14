@@ -212,38 +212,20 @@ public static class ClaudeTrust
             projects[key] = new JsonObject { ["hasTrustDialogAccepted"] = true };
         }
 
-        var text = root.ToJsonString(Written);
+        var text = root.ToJsonString(JsonFile.Options);
         if (original is null || original.EndsWith('\n')) text += "\n";
         WriteBeside(configPath, text);
 
         return new TrustGrant(key, Changed: true, Verified: Accepted(configPath, folder) == true);
     }
 
-    /// <summary>
-    /// The harness's own formatting, as near as a re-serialisation comes: two-space indent, LF, and
-    /// text left as text rather than escaped — a folder named in any script stays readable.
-    /// </summary>
-    private static readonly JsonSerializerOptions Written = new()
-    {
-        WriteIndented = true,
-        NewLine = "\n",
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-    };
-
+    // The harness's own formatting, as near as a re-serialisation comes: two-space indent, LF, and text left as text
+    // rather than escaped (JsonFile.Options) — a folder named in any script stays readable. The write is AtomicFile's
+    // (DEDUP3a): same bytes, same target, a beside file of its own name that a retry waits out.
     private static void WriteBeside(string path, string text)
     {
-        var directory = Path.GetDirectoryName(Path.GetFullPath(path))!;
-        Directory.CreateDirectory(directory);
-        var beside = Path.Combine(directory, $"{Path.GetFileName(path)}.daoris-{Guid.NewGuid():N}.tmp");
-        try
-        {
-            File.WriteAllText(beside, text, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-            File.Move(beside, path, overwrite: true);
-        }
-        finally
-        {
-            if (File.Exists(beside)) File.Delete(beside);
-        }
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
+        AtomicFile.WriteText(path, text);
     }
 
     private static DriverException Unreadable(string configPath) =>

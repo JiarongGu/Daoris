@@ -160,10 +160,7 @@ public sealed class SessionUsage(string home)
     /// <summary>Written atomically, beside-then-rename, like every write in this family.</summary>
     private void Save(IReadOnlyList<UsageEntry> entries)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(_path))!);
-
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        JsonFile.Write(_path, writer =>
         {
             writer.WriteStartArray();
             foreach (var entry in entries)
@@ -180,8 +177,6 @@ public sealed class SessionUsage(string home)
             }
 
             writer.WriteEndArray();
-        }
-
-        AtomicFile.WriteText(_path, System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n");
+        });
     }
 }

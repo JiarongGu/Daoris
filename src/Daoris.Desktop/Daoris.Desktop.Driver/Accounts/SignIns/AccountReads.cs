@@ -43,14 +43,6 @@ public static class AccountReads
     // One writer at a time in this process: a press and a start's question may answer together.
     private static readonly object Gate = new();
 
-    // A name or a word beyond plain ASCII written as it is, as the CLI's `accountreads.ts` writes it (AGENTREAD1b), so the
-    // twins write the same bytes for a name in Chinese or one holding HTML's marks, not only the same JSON.
-    private static readonly JsonSerializerOptions Indented = new()
-    {
-        WriteIndented = true,
-        NewLine = "\n",
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-    };
 
     private static readonly AgentReads Nothing = new(null, new Dictionary<string, AccountRead>(StringComparer.OrdinalIgnoreCase));
 
@@ -108,8 +100,9 @@ public static class AccountReads
 
     private static void Save(string home, JsonObject root)
     {
-        Directory.CreateDirectory(home);
-        AtomicFile.WriteText(PathOf(home), root.ToJsonString(Indented) + "\n");
+        // A name or a word beyond plain ASCII written as it is, as the CLI's `accountreads.ts` writes it (AGENTREAD1b), so the
+        // twins write the same bytes for a name in Chinese or one holding HTML's marks, not only the same JSON.
+        JsonFile.Write(PathOf(home), root);
     }
 
     private static string Word(LoginState login) => login switch

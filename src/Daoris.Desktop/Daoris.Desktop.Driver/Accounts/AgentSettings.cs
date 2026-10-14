@@ -156,7 +156,7 @@ public static class AgentSettings
         }
 
         // The tool's own formatting: two-space indent, LF, and the final newline it had (a new file gets one).
-        var next = root.ToJsonString(Written);
+        var next = root.ToJsonString(JsonFile.Options);
         if (text is null || text.EndsWith('\n')) next += "\n";
         if (next != text)
         {
@@ -218,15 +218,4 @@ public static class AgentSettings
 
     private static DriverException Unwritable(string problem) =>
         new($"{problem}, so nothing was written to it — fix it, or change the setting with the tool itself.");
-
-    /// <summary>
-    /// The tool's own formatting, as near as a re-serialisation comes: two-space indent, LF, and text left
-    /// as text rather than escaped — the same options the trust flag's writer uses.
-    /// </summary>
-    private static readonly JsonSerializerOptions Written = new()
-    {
-        WriteIndented = true,
-        NewLine = "\n",
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-    };
 }

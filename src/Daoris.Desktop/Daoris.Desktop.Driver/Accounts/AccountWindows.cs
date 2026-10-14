@@ -58,8 +58,6 @@ public static class AccountWindows
     // One writer at a time in this process: the conclusions of sessions side by side.
     private static readonly object Gate = new();
 
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true, NewLine = "\n" };
-
     /// <summary>Where the file is: beside <c>cooling.json</c>, under the home.</summary>
     public static string PathOf(string home) => Path.Combine(home, FileName);
 
@@ -99,8 +97,7 @@ public static class AccountWindows
             if (Key(held, Weekly) is { } was) held.Remove(was);
             held[Weekly] = week;
 
-            Directory.CreateDirectory(home);
-            AtomicFile.WriteText(PathOf(home), root.ToJsonString(Indented) + "\n");
+            JsonFile.Write(PathOf(home), root);
         }
     }
 
@@ -144,8 +141,7 @@ public static class AccountWindows
                 held[reading.Window] = window;
             }
 
-            Directory.CreateDirectory(home);
-            AtomicFile.WriteText(PathOf(home), root.ToJsonString(Indented) + "\n");
+            JsonFile.Write(PathOf(home), root);
         }
     }
 
