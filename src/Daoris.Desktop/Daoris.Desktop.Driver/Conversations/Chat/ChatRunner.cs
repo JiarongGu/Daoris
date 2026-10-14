@@ -141,6 +141,16 @@ public sealed class ChatRunner : IDisposable
     }
 
     /// <summary>
+    /// A hand-over's or a curve move's take is over, its box gone (HANDWORDS1, <see cref="ChatHandOver.TakeEnded"/>): the shell's
+    /// judge hands the words it held meanwhile to the conversation that continues it.
+    /// </summary>
+    public event Action<string>? TakeEnded
+    {
+        add => _handOver.TakeEnded += value;
+        remove => _handOver.TakeEnded -= value;
+    }
+
+    /// <summary>
     /// The machine as Ask Daoris's room says it (ASKHIST1, <see cref="ChatHelp.DescribeHelp"/>): the shell's reading, which a
     /// conversation going on finds the room written from. Null where nothing reads it.
     /// </summary>

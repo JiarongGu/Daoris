@@ -165,6 +165,26 @@ public sealed class StartFromTests : IDisposable
         Assert.Empty(Events.After(id.Replace('/', '-'), 0).Events);
     }
 
+    /// <summary>
+    /// HANDWORDS1: a conversation handed over or moved went on in another, which takes its words: nothing starts from them, and the
+    /// refusal names the one that continues it.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_that_went_on_in_another_starts_nothing_and_names_it()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "talk", _root).Say("w1", "One more thing.");
+        ledger.Chat("c2", "working", "talk", _root, from: new ContinuedFrom("c1", HandOverWhy.Press, HandOverBy.Person));
+        var asked = new Asked();
+
+        var started = await RunAsync(ledger, "c1", asked);
+
+        Assert.Equal((null, false, WordsNever.Continued), (started.SessionId, started.Sent, started.Why));
+        Assert.Equal("c1 went on in conversation c2; say it to that one.", started.Message);
+        Assert.Empty(asked.Started);
+        Assert.Empty(ledger.TakenBy);
+    }
+
     /// <summary>An intake takes no words, and an id no record has is said as such: both refused by their codes.</summary>
     [Theory]
     [InlineData("i1", WordsNever.Intake)]

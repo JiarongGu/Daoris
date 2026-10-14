@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// <remarks>
 /// The first three are <see cref="ContinueWhy"/>'s nevers, the codes the driver's judgement says them by; the rest are the
 /// screen's: a session whose quest went on in a later session here (MSG1b plans a quest's last session only, so no look would
-/// take its words up), and no record. <see cref="Help"/> is no never since ASKHIST1: Ask Daoris's own conversation goes on in
+/// take its words up), a conversation that went on in another (HANDWORDS1, the same for a conversation), and no record. <see cref="Help"/> is no never since ASKHIST1: Ask Daoris's own conversation goes on in
 /// itself as a chat does, and the code stays the word for what only a repository's session has (a new session, a conversation
 /// started in its repository), which <see cref="IsHelp"/> says.
 /// </remarks>
@@ -28,14 +28,56 @@ public static class WordsNever
 
     public const string NotFound = "not-found";
 
+    /// <summary>
+    /// A conversation handed over or moved (HANDWORDS1; D163 point 1, D165 point 3): it went on in another, which holds its tree now
+    /// and takes its words, so they are said to that one (<see cref="ContinuedIn"/>), as a quest's go to its later session.
+    /// </summary>
+    public const string Continued = "continued";
+
     /// <summary>The code of what never goes on, in D137 §2.2's order, or null where the record can go on with words.</summary>
     /// <param name="last">The session its quest last ran in here (D79's reading, <see cref="LastHere"/>), or null.</param>
-    public static string? Judge(SessionRecord record, string? last) =>
+    /// <param name="next">The conversation it went on in (<see cref="ContinuedIn"/>), or null.</param>
+    public static string? Judge(SessionRecord record, string? last, string? next = null) =>
         record.Teammate ? Teammate
         : record.Ask is not null ? Intake
         : record.State == "stood-down" ? StoodDown
         : record.Quest is not null && last is not null && !string.Equals(last, record.Id, StringComparison.Ordinal) ? Superseded
+        : next is not null ? Continued
         : null;
+
+    /// <summary>
+    /// The conversation a conversation went on in (HANDWORDS1): the latest down the chain of records whose <c>from</c> names the one
+    /// before (MIXAGENT1a-iii), so one handed over and then moved names where it is now. Null where none continues it, or it is no
+    /// conversation of this machine's: a quest's session that went on is <see cref="Superseded"/>'s, and a teammate's record
+    /// continues nothing here. A chain that comes back on itself ends where it would repeat.
+    /// </summary>
+    public static string? ContinuedIn(IReadOnlyList<SessionRecord> records, string id)
+    {
+        if (records.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal)) is not { Kind: "chat", Teammate: false })
+        {
+            return null;
+        }
+
+        string? latest = null;
+        var at = id;
+        var seen = new HashSet<string>(StringComparer.Ordinal) { id };
+        while (Following(at) is { } next && seen.Add(next.Id)) latest = at = next.Id;
+        return latest;
+
+        // The conversation whose record continues this one: a take opens one, and the newest stands should a record name it twice.
+        SessionRecord? Following(string before) => records
+            .Where(each => each is { Kind: "chat", Teammate: false } && string.Equals(each.From, before, StringComparison.Ordinal))
+            .MaxBy(each => each.Created);
+    }
+
+    /// <summary>The conversation a conversation went on in, read from the records as the service answers them (<see cref="ContinuedIn(IReadOnlyList{SessionRecord}, string)"/>).</summary>
+    public static string? ContinuedIn(string recordsJson, string id) => ContinuedIn(SessionRecords.Parse(recordsJson), id);
+
+    /// <summary>
+    /// <see cref="Continued"/>'s sentence in the terminal's words: where the words go instead. The page words the code itself
+    /// (<c>work.say.continued</c>), naming the conversation it went on in.
+    /// </summary>
+    public static string WentOn(string id, string next) => $"{id} went on in conversation {next}; say it to that one.";
 
     /// <summary>
     /// Whether a record is Ask Daoris's own conversation (HELP1a), which belongs to no repository: its words go on in itself

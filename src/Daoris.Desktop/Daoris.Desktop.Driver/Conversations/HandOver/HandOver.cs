@@ -135,7 +135,7 @@ public static class HandOver
         var record = SessionRecords.Parse(json).FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
         if (record is null) return (Refused(WordsNever.NotFound, $"no session here is {id}."), null);
 
-        if (Never(record, id, WordsNever.LastHere(json, record.Quest)) is { } never) return (never, null);
+        if (Never(record, id, WordsNever.LastHere(json, record.Quest), WordsNever.ContinuedIn(json, id)) is { } never) return (never, null);
 
         if (record.Kind != "chat" || record.Quest is not null)
         {
@@ -168,11 +168,18 @@ public static class HandOver
         return (null, prior);
     }
 
-    /// <summary>What never goes on elsewhere, whichever kind of session asks: a teammate's record, Ask Daoris's own conversation and an intake.</summary>
-    internal static HandOverAnswer? Never(SessionRecord record, string id, string? last)
+    /// <summary>
+    /// What never goes on elsewhere, whichever kind of session asks: a teammate's record, Ask Daoris's own conversation, an intake,
+    /// and a conversation that went on in another already (HANDWORDS1), whose tree that one holds: a second take would open another
+    /// conversation in it, and a box left from before the shell closed is refused as it is taken.
+    /// </summary>
+    /// <param name="next">The conversation it went on in (<see cref="WordsNever.ContinuedIn(string, string)"/>), or null.</param>
+    internal static HandOverAnswer? Never(SessionRecord record, string id, string? last, string? next = null)
     {
-        switch (WordsNever.Judge(record, last) ?? (WordsNever.IsHelp(record) ? WordsNever.Help : null))
+        switch (WordsNever.Judge(record, last, next) ?? (WordsNever.IsHelp(record) ? WordsNever.Help : null))
         {
+            case WordsNever.Continued:
+                return Refused(WordsNever.Continued, $"{id} went on in conversation {next}; hand that one over instead.");
             case WordsNever.Teammate:
                 return Refused(WordsNever.Teammate, $"{id} ran on {id[..id.IndexOf('/')]}, where its conversation is; nothing said here reaches it.");
             case WordsNever.Help:
