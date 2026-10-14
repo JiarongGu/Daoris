@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 /// <para><b>The commits judged</b> are those after the session's base up to the branch's tip; with no base, the merge-base
 /// with the repository's line (D86) stands in. <b>Anywhere else</b> is any branch but this machine's local
 /// <c>refs/heads/daoris/*</c>, any remote-tracking branch (a pushed <c>daoris/*</c> included: pushed means somebody may have
-/// it), and any tag. D88's <see cref="SessionTrees.UnlandedAsync"/> leaves <c>*/daoris/*</c> out, rightly for a clean-up, since a pushed
+/// it), and any tag. D88's <see cref="TreeFollows.UnlandedAsync"/> leaves <c>*/daoris/*</c> out, rightly for a clean-up, since a pushed
 /// session branch has not landed.</para>
 ///
 /// <para><b>Partly elsewhere is kept whole</b>, as the clean-up keeps it: which half the person meant is its review's to

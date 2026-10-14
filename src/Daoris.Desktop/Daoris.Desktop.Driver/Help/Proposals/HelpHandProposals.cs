@@ -45,7 +45,7 @@ internal sealed class HelpHandProposals : IHelpProposalKind
                             || string.Equals(entry.Branch, named, StringComparison.Ordinal))
             .Reverse()
             .ToList();
-        if (found.Count == 0) return Refused(SessionTrees.NotLanded(named));
+        if (found.Count == 0) return Refused(TreeHand.NotLanded(named));
         var repositories = found.Select(entry => entry.Repository).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         if (repositories.Count > 1)
         {

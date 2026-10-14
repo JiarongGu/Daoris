@@ -37,6 +37,21 @@ public sealed record TreeMerge(bool Merged, string Message);
 public sealed record SessionTree(string Path, string Workspace, string Repository, string Branch);
 
 /// <summary>
+/// What the branch form made, and what a plugin is told of it (D100): where, from which line, which commits — and the session
+/// branch it was made from. At file level since PART10l, as the squash's advance (<see cref="TreeSquashes"/>) makes one too.
+/// </summary>
+internal sealed record Branched(
+    TreeLanding Landing, string Root = "", string? Base = null, IReadOnlyList<LandingCommit>? Carried = null, string? Source = null)
+{
+    public IReadOnlyList<LandingCommit> Commits => Carried ?? [];
+
+    /// <summary>The session's tip squashed into the branch's new commit (PROCESS1b-ii), which the record keeps; null where nothing was squashed.</summary>
+    public string? Squashed { get; init; }
+
+    public static implicit operator Branched(TreeLanding refused) => new(refused);
+}
+
+/// <summary>
 /// The worktree half of D51: a repository may have more than one working tree, and the extra ones are
 /// Daoris's to open and account for — <c>&lt;home&gt;/trees/&lt;workspace&gt;/&lt;repository&gt;/&lt;name&gt;</c>,
 /// each a real linked worktree of the registered root on a branch of its own.
@@ -388,7 +403,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             // Who pushes it, said before the press, and what would refuse the press where something would (D100).
             var plugin = landing.Rule.Plugin;
             // TREEFOLLOW1: a tree its agent moved onto a branch of its own lands as that branch stands, the one the pull request is from.
-            if (Directory.Exists(full) && Holds(full) && await OwnBranchOfAsync(full, ct).ConfigureAwait(false) is { } own)
+            if (Directory.Exists(full) && Holds(full) && await TreeFollows.OwnBranchOfAsync(full, ct).ConfigureAwait(false) is { } own)
             {
                 return new(LandingForm.Branch, own, landing.Source, plugin, subject.EnteredName is not null ? EnteredOwn(own) : plugin is null ? null : _context.Plugins.Problem(plugin),
                     landing.Rule.AutoAccept)
@@ -423,8 +438,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         return ReviewGate.ReadAsync(world, _context.Config(), full, repository, workspace, quest, ct);
     }
 
-    /// <summary>What a landing says of the tree it leaves — dropped when a tidy removed it.</summary>
-    private const string TreeStays = " The tree is still there; discard it when you are done with it.";
+    /// <summary>What a landing says of the tree it leaves — dropped when a tidy removed it; the squash's advance says it too.</summary>
+    internal const string TreeStays =" The tree is still there; discard it when you are done with it.";
 
     /// <summary>
     /// The press on a reviewed session (WSR1, D87): its work lands as its repository's rule says —
@@ -632,14 +647,23 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     }
 
     /// <summary>
-    /// How many commits on <paramref name="revision"/> no branch of the person's holds (D88) — a local
-    /// branch outside <c>daoris/</c>, or a remote-tracking one. Zero is landed; null is git unable to say.
+    /// A note the landing appends when the record could not be written: the branch stands, and only its
+    /// clean-up and its hand-off are lost — the safe side, said rather than swallowed.
     /// </summary>
-    /// <param name="except">A local branch not counted as holding them (TREEFOLLOW1): the tree's own branch, which holds its own commits.</param>
-    public static async Task<int?> UnlandedAsync(string cwd, string revision, CancellationToken ct = default, string? except = null)
+    private static TreeLanding Remember(TreeLanding landed, Action write)
     {
-        var (code, log, _) = await UnlandedLogAsync(cwd, revision, ct, except).ConfigureAwait(false);
-        return code != 0 ? null : log.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length;
+        try
+        {
+            write();
+            return landed;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return landed with
+            {
+                Message = landed.Message + $" Daoris could not record the branch as a landing's ({error.Message}), so its clean-up will not judge it.",
+            };
+        }
     }
 
     /// <summary>
@@ -664,14 +688,6 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
 
     /// <summary>A tree's workspace and repository, read from the layout this home chose (<c>trees/&lt;workspace&gt;/&lt;repository&gt;/&lt;name&gt;</c>).</summary>
     public (string Workspace, string Repository) Owner(string tree) => _context.OwnerOf(Path.GetFullPath(tree));
-
-    private static Task<(int Code, string Stdout, string Stderr)> UnlandedLogAsync(
-        string cwd, string revision, CancellationToken ct, string? except = null) =>
-        WorkingTree.GitAsync(cwd,
-            except is null
-                ? ["log", "--oneline", revision, "--not", "--exclude=daoris/*", "--branches", "--exclude=*/daoris/*", "--remotes"]
-                : ["log", "--oneline", revision, "--not", "--exclude=daoris/*", $"--exclude={except}", "--branches", "--exclude=*/daoris/*", "--remotes"],
-            ct);
 
     /// <summary>
     /// Every session branch in these repositories, with what it holds (D88) — the list a person reads
@@ -709,12 +725,12 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             var worktrees = ByBranch(listed);
             var line = (await _context.LineAsync(root, repository, RemoteTarget.Workspace(workspace), ct).ConfigureAwait(false)).Branch;
             // The completed pull requests the record keeps, confirmed here (PLUGHOOK1a): nothing is asked at a list or a press.
-            var carriers = await CarriersAsync(root, repository, line, ct).ConfigureAwait(false);
+            var carriers = await Asks.CarriersAsync(root, repository, line, ct).ConfigureAwait(false);
             foreach (var branch in named)
             {
                 items.Add((await JudgeAsync(
                     root, repository, RemoteTarget.Workspace(workspace), branch, worktrees.GetValueOrDefault(branch), line, busy, carriers, ct,
-                    MovedOnTo(listed, RemoteTarget.Workspace(workspace), repository, branch))
+                    Follows.MovedOnTo(listed, RemoteTarget.Workspace(workspace), repository, branch))
                     .ConfigureAwait(false)).Item);
             }
         }
@@ -774,12 +790,12 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
 
             var worktrees = ByBranch(listed);
             var line = (await _context.LineAsync(root, item.Repository, item.Workspace, ct).ConfigureAwait(false)).Branch;
-            var carriers = item.Kind == SweepKind.Carried ? await CarriersAsync(root, item.Repository, line, ct).ConfigureAwait(false) : [];
+            var carriers = item.Kind == SweepKind.Carried ? await Asks.CarriersAsync(root, item.Repository, line, ct).ConfigureAwait(false) : [];
             // The commit it was judged at (SQUASHTIDY1c): the one its delete must still find, and the one a pull request's answer
             // removed, for the record of it (PLUGHOOK1a, design §2.5).
             var (now, judged) = await JudgeAsync(
                     root, item.Repository, item.Workspace, item.Branch, worktrees.GetValueOrDefault(item.Branch), line, busy, carriers, ct,
-                    MovedOnTo(listed, item.Workspace, item.Repository, item.Branch))
+                    Follows.MovedOnTo(listed, item.Workspace, item.Repository, item.Branch))
                 .ConfigureAwait(false);
             if (!goes(now) || judged is null)
             {
@@ -800,7 +816,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             string? kept = null;
             if (now.HeldBy is not null)
             {
-                var (reference, why) = await KeepDiscardedAsync(root, now.Branch, judged, done).ConfigureAwait(false);
+                var (reference, why) = await ContentHolds.KeepDiscardedAsync(root, now.Branch, judged, done).ConfigureAwait(false);
                 if (reference is null)
                 {
                     results.Add(new(now, false, $"Daoris could not keep its commits on a ref of their own ({why}), so it is kept"));
@@ -834,7 +850,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                     var (letGo, why) = await LetGoAsync(root, pressed, done).ConfigureAwait(false);
                     if (!letGo)
                     {
-                        await DropKeptAsync(root, now.Branch, kept, judged, done).ConfigureAwait(false);
+                        await ContentHolds.DropKeptAsync(root, now.Branch, kept, judged, done).ConfigureAwait(false);
                         results.Add(new(now, false, $"git would not remove its tree: {FirstLine(removeErr)}"));
                         continue;
                     }
@@ -844,14 +860,14 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             }
 
             // Only while it is still the commit judged (SQUASHTIDY1c); git's own -d asks only about the checkout's HEAD.
-            var stays = await DeleteJudgedAsync(root, now.Branch, judged, done).ConfigureAwait(false);
+            var stays = await Content.DeleteJudgedAsync(root, now.Branch, judged, done).ConfigureAwait(false);
             if (stays is not null)
             {
-                await DropKeptAsync(root, now.Branch, kept, judged, done).ConfigureAwait(false);
+                await ContentHolds.DropKeptAsync(root, now.Branch, kept, judged, done).ConfigureAwait(false);
                 var treeSaid = movedTo is not null ? $"; its tree's folder was moved aside to {movedTo}"
                     : now.Tree is null ? "" : "; its tree was removed";
-                results.Add(new(now, false, stays == MovedSince
-                    ? $"{MovedSince}, and is kept" + treeSaid
+                results.Add(new(now, false, stays == ContentHolds.MovedSince
+                    ? $"{ContentHolds.MovedSince}, and is kept" + treeSaid
                     : $"git would not delete the branch: {stays}" + (movedTo is null ? "" : treeSaid))
                 {
                     Kept = byItself ? TidyKept.Refused : null,
@@ -904,7 +920,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         if (tree is not null && Directory.Exists(tree))
         {
             // Everything no commit holds, whatever git's settings hide (SQUASHTIDY1c): what a removal would destroy.
-            var holds = await HoldsAsync(tree, root, ct).ConfigureAwait(false);
+            var holds = await ContentHolds.HoldsAsync(tree, root, ct).ConfigureAwait(false);
             if (holds is null) return (Item(SweepKind.Dirty, detail: "git could not say what its tree holds") with { Unread = true }, null);
             shared = holds.Shared.Count;
             if (holds.Uncommitted.Count > 0) return (Item(SweepKind.Dirty, detail: $"{holds.Uncommitted.Count} path(s) uncommitted"), null);
@@ -916,21 +932,21 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         if (tipCode != 0) return (Item(SweepKind.Unlanded, detail: $"git could not tell: {FirstLine(tipErr)}") with { Unread = true }, null);
         var tip = tipOut.Trim();
 
-        var (code, log, err) = await UnlandedLogAsync(root, tip, ct).ConfigureAwait(false);
+        var (code, log, err) = await TreeFollows.UnlandedLogAsync(root, tip, ct).ConfigureAwait(false);
         if (code != 0) return (Item(SweepKind.Unlanded, detail: $"git could not tell: {FirstLine(err)}") with { Unread = true }, null);
         var unlanded = log.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (unlanded.Length > 0)
         {
             // PROCESS1b-ii (point 3): a squashing landing's record holds them, as the branch it made would by ancestry, so the row
             // is landed where that branch is, with no ref to keep.
-            if (await SquashedHolderAsync(root, repository, tip, ct).ConfigureAwait(false) is { } squashedOn)
+            if (await Squashes.SquashedHolderAsync(root, repository, tip, ct).ConfigureAwait(false) is { } squashedOn)
             {
                 return (Item(SweepKind.Landed, unlanded.Length, squashedOn.Branch, string.Join('\n', unlanded.Take(3))), tip);
             }
 
             // PLUGHOOK1a: a squash left these commits on no branch of the person's, and a completed pull request carried them.
             // A branch checked out outside the trees home is the person's to move, so it is never taken on the platform's word.
-            if ((tree is null || Holds(tree)) && await CarrierOfAsync(root, tip, carriers, ct).ConfigureAwait(false) is { } carrier)
+            if ((tree is null || Holds(tree)) && await PullRequestAsks.CarrierOfAsync(root, tip, carriers, ct).ConfigureAwait(false) is { } carrier)
             {
                 return (Item(SweepKind.Carried, unlanded.Length, carrier.Entry.Branch, string.Join('\n', unlanded.Take(3))) with { CarriedBy = carrier.Entry }, tip);
             }
@@ -938,7 +954,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             // SQUASHTIDY1: the review's Discard's proof by content, so the list offers what that door would take unforced. Its
             // work is where the row says, and the row is landed. Not a branch checked out outside the trees home, as above.
             if ((tree is null || Holds(tree))
-                && await HeldByContentAsync(root, tip, line, LandedHere(repository), ct).ConfigureAwait(false) is { } held)
+                && await ContentHolds.HeldByContentAsync(root, tip, line, Content.LandedHere(repository), ct).ConfigureAwait(false) is { } held)
             {
                 return (Item(SweepKind.Landed, unlanded.Length, held.Where, string.Join('\n', unlanded.Take(3))) with { HeldBy = held }, tip);
             }
@@ -966,18 +982,6 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         var (_, count, _) = await WorkingTree.GitAsync(
             root, ["rev-list", "--count", tip, "--not", against ?? "HEAD"], ct).ConfigureAwait(false);
         return (Item(SweepKind.Landed, int.TryParse(count.Trim(), out var n) ? n : 0, where), tip);
-    }
-
-    /// <summary>What the branch form made, and what a plugin is told of it (D100): where, from which line, which commits — and the session branch it was made from.</summary>
-    private sealed record Branched(
-        TreeLanding Landing, string Root = "", string? Base = null, IReadOnlyList<LandingCommit>? Carried = null, string? Source = null)
-    {
-        public IReadOnlyList<LandingCommit> Commits => Carried ?? [];
-
-        /// <summary>The session's tip squashed into the branch's new commit (PROCESS1b-ii), which the record keeps; null where nothing was squashed.</summary>
-        public string? Squashed { get; init; }
-
-        public static implicit operator Branched(TreeLanding refused) => new(refused);
     }
 
     /// <summary>
@@ -1076,7 +1080,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         }
 
         // PROCESS1b-ii (point 1): the squash is a commit Daoris makes, so git's own identity here makes it, asked before anything is.
-        if (squash is not null && await IdentityProblemAsync(root, repository, ct).ConfigureAwait(false) is { } nobody)
+        if (squash is not null && await TreeSquashes.IdentityProblemAsync(root, repository, ct).ConfigureAwait(false) is { } nobody)
         {
             return new TreeLanding(false, nobody);
         }
@@ -1113,7 +1117,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                     + $"{FirstLine(baseErr)} Nothing was landed.");
             }
 
-            var (made, why) = await SquashAsync(root, tip, mergeBase.Trim(), SquashMessage.Of(squash.Title, commits, squash.Session), ct)
+            var (made, why) = await TreeSquashes.SquashAsync(root, tip, mergeBase.Trim(), SquashMessage.Of(squash.Title, commits, squash.Session), ct)
                 .ConfigureAwait(false);
             if (made is null) return new TreeLanding(false, $"git would not make the squashed commit for `{name}`: {why} Nothing was landed.");
             start = made;
@@ -1183,7 +1187,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             checkedOut = (await WorktreesAsync(root, ct).ConfigureAwait(false)).GetValueOrDefault(name);
             if (checkedOut is null)
             {
-                var proof = await ProveAsync(root, recorded.Tip, line, await LineFormsAsync(root, line, ct).ConfigureAwait(false), ct)
+                var proof = await LandedProofs.ProveAsync(root, recorded.Tip, line, await LandedProofs.LineFormsAsync(root, line, ct).ConfigureAwait(false), ct)
                     .ConfigureAwait(false);
                 completed = proof.Kind is LandedKind.Merged or LandedKind.OnLine ? proof.Where : null;
             }
@@ -1210,7 +1214,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
 
         if (squash is not null)
         {
-            return await AdvanceSquashedAsync(root, name, standsAt, branch, line, head, grewFrom!, handedOn, against, squash, ct)
+            return await TreeSquashes.AdvanceSquashedAsync(root, name, standsAt, branch, line, head, grewFrom!, handedOn, against, squash, ct)
                 .ConfigureAwait(false);
         }
 
@@ -1289,7 +1293,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         // The name a recovery ref is kept under: the branch, or for a detached tree the one its layout names.
         var named = detached ? BranchOfTree(full)?.Branch ?? "HEAD" : branch;
         // The branch the session's agent made where the tree is on one (TREEFOLLOW1): it goes with no tree, whatever force says.
-        var madeBy = detached ? null : await OwnBranchOfAsync(full, ct).ConfigureAwait(false);
+        var madeBy = detached ? null : await TreeFollows.OwnBranchOfAsync(full, ct).ConfigureAwait(false);
         ContentHold? held = null;
         LandedBranch? squashedOn = null;
         string? judged = null;
@@ -1302,7 +1306,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             // committed or abandoned IN the tree; unmerged commits are merged FROM it (SURF6's surface).
             // Asked so no setting hides one (SQUASHTIDY1c): an untracked file `status.showUntrackedFiles=no` hides,
             // and an ignored one only this tree holds, which `git worktree remove` deletes without asking.
-            var holds = await HoldsAsync(full, root, ct).ConfigureAwait(false);
+            var holds = await ContentHolds.HoldsAsync(full, root, ct).ConfigureAwait(false);
             if (holds is null)
             {
                 return new(false, $"Daoris cannot tell what the tree at {path} holds beyond its commits. "
@@ -1345,7 +1349,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 // Landed (D88): a branch of the person's holds every commit — the line, a branch the branch form
                 // made, one they pushed. Asked of the tree's own HEAD, so a detached tree is judged by what it
                 // holds. 🔴 A comparison git could not make keeps the tree: an empty answer is not "landed".
-                var (logCode, unmerged, logErr) = await UnlandedLogAsync(full, judged, ct).ConfigureAwait(false);
+                var (logCode, unmerged, logErr) = await TreeFollows.UnlandedLogAsync(full, judged, ct).ConfigureAwait(false);
                 if (logCode != 0)
                 {
                     return new(false,
@@ -1357,8 +1361,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 // the content can. Before it, a squashing landing's record, which vouches as ancestry would (PROCESS1b-ii point 3).
                 // Work held nowhere still refuses, and force stays its door.
                 if (!string.IsNullOrWhiteSpace(unmerged)
-                    && (squashedOn = await SquashedHolderAsync(full, repository, judged, ct).ConfigureAwait(false)) is null
-                    && (held = await HeldByContentAsync(full, judged, line, LandedHere(repository), ct).ConfigureAwait(false)) is null)
+                    && (squashedOn = await Squashes.SquashedHolderAsync(full, repository, judged, ct).ConfigureAwait(false)) is null
+                    && (held = await ContentHolds.HeldByContentAsync(full, judged, line, Content.LandedHere(repository), ct).ConfigureAwait(false)) is null)
                 {
                     return new(false,
                         $"the tree at {path} holds commits `{canonical}` has not taken, and no other branch of yours holds "
@@ -1368,7 +1372,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 // SQUASHTIDY1c: the proof compared files, so the commits themselves are kept on a ref of their own before anything goes.
                 if (held is not null)
                 {
-                    var (reference, why) = await KeepDiscardedAsync(root, named, judged, ct).ConfigureAwait(false);
+                    var (reference, why) = await ContentHolds.KeepDiscardedAsync(root, named, judged, ct).ConfigureAwait(false);
                     if (reference is null)
                     {
                         return new(false, $"Daoris could not keep the commits on `{branch}` on a ref of their own ({why}), so nothing "
@@ -1394,7 +1398,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             var (letGo, why) = await LetGoAsync(root, full, ct).ConfigureAwait(false);
             if (!letGo)
             {
-                if (judged is not null) await DropKeptAsync(root, branch, kept, judged, ct).ConfigureAwait(false);
+                if (judged is not null) await ContentHolds.DropKeptAsync(root, branch, kept, judged, ct).ConfigureAwait(false);
                 return new(false, $"git would not remove the tree: {FirstLine(removeErr)}");
             }
 
@@ -1421,8 +1425,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             }
             else
             {
-                stays = await DeleteJudgedAsync(root, branch, judged, ct).ConfigureAwait(false);
-                if (stays is not null) await DropKeptAsync(root, branch, kept, judged, ct).ConfigureAwait(false);
+                stays = await Content.DeleteJudgedAsync(root, branch, judged, ct).ConfigureAwait(false);
+                if (stays is not null) await ContentHolds.DropKeptAsync(root, branch, kept, judged, ct).ConfigureAwait(false);
             }
 
             // The record drops what is gone (LAND3): a name no branch has is never judged by a start it no longer has.
@@ -1432,13 +1436,13 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         if (stays is not null)
         {
             return new(true, $"removed the session tree at {path}, and kept its branch `{branch}`: {stays}"
-                + (stays == MovedSince ? ", so it holds work this removal did not judge." : ".") + (left is null ? "" : $" {left}"));
+                + (stays == ContentHolds.MovedSince ? ", so it holds work this removal did not judge." : ".") + (left is null ? "" : $" {left}"));
         }
 
         // How the work was found held, where ancestry could not say (SQUASHTIDY1), and where its commits stay (SQUASHTIDY1c): the
         // sentence the review's Discard shows as it is.
         return new(true, $"removed the session tree at {path} (branch `{branch}`)"
-            + (held is not null ? $": {held.Said}." : squashedOn is not null ? $": {SquashedSaid(squashedOn)}." : ".")
+            + (held is not null ? $": {held.Said}." : squashedOn is not null ? $": {TreeSquashes.SquashedSaid(squashedOn)}." : ".")
             + (left is null ? "" : $" {left}") + (kept is null ? "" : $" {ContentHold.KeptAt(named, kept)}"));
     }
 

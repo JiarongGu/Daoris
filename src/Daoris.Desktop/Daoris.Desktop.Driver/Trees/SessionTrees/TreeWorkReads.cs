@@ -5,14 +5,15 @@ namespace Daoris.Driver;
 /// the fact Sessions' *To review* is read from, by the clean-up's own proof (D88).
 /// </summary>
 /// <remarks>
-/// It holds the front for the landing's, the content proof's, the squash's and the follow's members it reads
-/// (<c>LandedHere</c>, <c>SquashedHolderAsync</c>, <c>BranchOfTree</c>), and names their statics by it (<c>SessionTrees.HeldByContentAsync</c>,
-/// <c>HoldsAsync</c>, <c>OwnBranchOfAsync</c>, <c>UnlandedAsync</c>, <c>DiscardedPrefix</c>): interim, until PART10l makes them classes.
+/// It takes the squash, the content proof and the follow for the members it reads (<c>SquashedHolderAsync</c>, <c>LandedHere</c>,
+/// <c>BranchOfTree</c>; PART10l), and names their statics by their classes (<see cref="ContentHolds.HeldByContentAsync"/>,
+/// <see cref="ContentHolds.HoldsAsync"/>, <see cref="TreeFollows.OwnBranchOfAsync"/>, <see cref="TreeFollows.UnlandedAsync"/>,
+/// <see cref="ContentHolds.DiscardedPrefix"/>).
 /// </remarks>
-internal sealed class TreeWorkReads(TreeContext context, SessionTrees trees)
+internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, ContentHolds content, TreeFollows follows)
 {
     /// <summary>
-    /// The tree's uncommitted paths and the commits on it no branch of the person's holds (<see cref="SessionTrees.UnlandedAsync"/>);
+    /// The tree's uncommitted paths and the commits on it no branch of the person's holds (<see cref="TreeFollows.UnlandedAsync"/>);
     /// null where there is no tree of this home's to ask. Where there are such commits, whether the line or a person's branch
     /// holds them by content (SQUASHTIDY1b), and what an unforced discard would do then.
     /// </summary>
@@ -40,11 +41,11 @@ internal sealed class TreeWorkReads(TreeContext context, SessionTrees trees)
             .ConfigureAwait(false);
         var judged = tipCode == 0 ? tipOut.Trim() : null;
         // TREEFOLLOW1: a tree its agent moved onto a branch of its own is judged by what that branch holds beyond every other.
-        var own = await SessionTrees.OwnBranchOfAsync(tree, ct).ConfigureAwait(false);
-        var work = new TreeWork(await SessionTrees.UnlandedAsync(tree, judged ?? "HEAD", ct, own).ConfigureAwait(false), uncommitted) { Branch = own };
+        var own = await TreeFollows.OwnBranchOfAsync(tree, ct).ConfigureAwait(false);
+        var work = new TreeWork(await TreeFollows.UnlandedAsync(tree, judged ?? "HEAD", ct, own).ConfigureAwait(false), uncommitted) { Branch = own };
         // PROCESS1b-ii (point 3): a squashing landing's record holds them, as the branch a landing made holds its commits by ancestry.
         if (work.Commits is > 0 && judged is not null
-            && await trees.SquashedHolderAsync(tree, context.OwnerOf(Path.GetFullPath(tree)).Repository, judged, ct).ConfigureAwait(false) is not null)
+            && await squashes.SquashedHolderAsync(tree, context.OwnerOf(Path.GetFullPath(tree)).Repository, judged, ct).ConfigureAwait(false) is not null)
         {
             return work with { Commits = 0 };
         }
@@ -94,7 +95,7 @@ internal sealed class TreeWorkReads(TreeContext context, SessionTrees trees)
 
     /// <summary>
     /// Where a tree's commits are held by content, by the review's Discard's own proof (SQUASHTIDY1's
-    /// <see cref="SessionTrees.HeldByContentAsync"/>, with SQUASHTIDY1c's guarantees), and what an unforced discard of it would do now; null
+    /// <see cref="ContentHolds.HeldByContentAsync"/>, with SQUASHTIDY1c's guarantees), and what an unforced discard of it would do now; null
     /// where nothing holds them, or git could not say.
     /// </summary>
     /// <remarks>
@@ -119,15 +120,15 @@ internal sealed class TreeWorkReads(TreeContext context, SessionTrees trees)
             var (workspace, repository) = context.OwnerOf(full);
             var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
             // TREEFOLLOW1: the branch its agent moved the tree onto holds its commits because it is where they are, not a copy.
-            var notHolders = trees.LandedHere(repository);
-            if (await SessionTrees.OwnBranchOfAsync(full, ct).ConfigureAwait(false) is { } ownBranch)
+            var notHolders = content.LandedHere(repository);
+            if (await TreeFollows.OwnBranchOfAsync(full, ct).ConfigureAwait(false) is { } ownBranch)
             {
                 notHolders = new HashSet<string>(notHolders, StringComparer.Ordinal) { ownBranch };
             }
 
-            if (await SessionTrees.HeldByContentAsync(full, judged, line, notHolders, ct).ConfigureAwait(false) is not { } held) return null;
+            if (await ContentHolds.HeldByContentAsync(full, judged, line, notHolders, ct).ConfigureAwait(false) is not { } held) return null;
 
-            var holds = await SessionTrees.HoldsAsync(full, root, ct).ConfigureAwait(false);
+            var holds = await ContentHolds.HoldsAsync(full, root, ct).ConfigureAwait(false);
             var stays = holds is null ? "Daoris cannot tell what it holds beyond its commits"
                 : holds.Uncommitted.Count > 0 ? $"it has {holds.Uncommitted.Count} uncommitted path(s), which a discard would destroy"
                 : holds.OwnSaid is { } own ? $"it holds {own}, which a discard would destroy"
@@ -136,7 +137,7 @@ internal sealed class TreeWorkReads(TreeContext context, SessionTrees trees)
 
             // The name the discard keeps its commits under: the tree's branch, or for a detached tree the one its layout names.
             var (_, branchOut, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
-            var named = branchOut.Trim() is { Length: > 0 } branch and not "HEAD" ? branch : trees.BranchOfTree(full)?.Branch ?? "HEAD";
+            var named = branchOut.Trim() is { Length: > 0 } branch and not "HEAD" ? branch : follows.BranchOfTree(full)?.Branch ?? "HEAD";
             return await DiscardedNameAsync(root, named, judged, ct).ConfigureAwait(false) is { } keeps
                 ? new HeldWork(held, keeps, null)
                 : new HeldWork(held, null, "every name for a ref to keep its commits at is taken");
@@ -150,14 +151,14 @@ internal sealed class TreeWorkReads(TreeContext context, SessionTrees trees)
 
     /// <summary>
     /// The recovery ref an unforced discard of <paramref name="branch"/> at <paramref name="judged"/> would keep its commits at
-    /// (SQUASHTIDY1c's <see cref="SessionTrees.KeepDiscardedAsync"/>), named without making it: the first of its names no ref holds, or one
+    /// (SQUASHTIDY1c's <see cref="ContentHolds.KeepDiscardedAsync"/>), named without making it: the first of its names no ref holds, or one
     /// that holds that commit already. Null where every name is taken.
     /// </summary>
     private static async Task<string?> DiscardedNameAsync(string root, string branch, string judged, CancellationToken ct)
     {
-        for (var n = 1; n <= SessionTrees.DiscardedNames; n++)
+        for (var n = 1; n <= ContentHolds.DiscardedNames; n++)
         {
-            var reference = SessionTrees.DiscardedPrefix + branch + (n == 1 ? "" : $"-{n}");
+            var reference = ContentHolds.DiscardedPrefix + branch + (n == 1 ? "" : $"-{n}");
             var (exists, at, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], ct).ConfigureAwait(false);
             if (exists != 0 || at.Trim() == judged) return reference;
         }

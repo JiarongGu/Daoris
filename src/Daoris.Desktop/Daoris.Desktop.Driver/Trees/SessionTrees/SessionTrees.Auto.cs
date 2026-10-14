@@ -131,7 +131,7 @@ public sealed partial class SessionTrees
 
         // Where each tree is now (TREEFOLLOW1), written on the ledger before anything is judged, so what the look removes never
         // takes with it where a tree's work is.
-        await LearnTreesAsync(space, repository, ct).ConfigureAwait(false);
+        await Follows.LearnTreesAsync(space, repository, ct).ConfigureAwait(false);
         // The ledger forgets an entry with no tree and no branch standing at each look, not only after a removal (TREEFOLLOW1): a
         // branch deleted by hand left one behind. A list git cannot give forgets nothing; not cancelled, as the removal's is not.
         await Replays.ForgetGoneAsync(root, repository, CancellationToken.None).ConfigureAwait(false);

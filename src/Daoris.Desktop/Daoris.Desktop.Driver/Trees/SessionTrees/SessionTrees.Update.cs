@@ -9,7 +9,7 @@ public sealed partial class SessionTrees
     private TreeUpdates? _updates;
 
     /// <summary>The press that brings one tree up to date (REVIEWBASE2-i).</summary>
-    private TreeUpdates Updates => _updates ??= new(_context, this, Judging, Replays, Ranges);
+    private TreeUpdates Updates => _updates ??= new(_context, Follows, Judging, Replays, Ranges);
 
     /// <inheritdoc cref="TreeUpdates.UpdateTreeAsync"/>
     public Task<TreeUpdate> UpdateTreeAsync(string tree, Func<CancellationToken, Task<bool>> running, CancellationToken ct = default) =>

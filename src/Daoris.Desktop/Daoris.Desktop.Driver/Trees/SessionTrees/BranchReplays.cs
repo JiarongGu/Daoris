@@ -191,8 +191,8 @@ internal sealed class BranchReplays(TreeContext context)
     /// </summary>
     internal static async Task<string?> BeyondTheLineAsync(string root, string tip, string now, string upstream, string onto, CancellationToken ct)
     {
-        var changed = await SessionTrees.NamesAsync(root, tip, now, ct).ConfigureAwait(false);
-        var brought = await SessionTrees.NamesAsync(root, upstream, onto, ct).ConfigureAwait(false);
+        var changed = await LandedProofs.NamesAsync(root, tip, now, ct).ConfigureAwait(false);
+        var brought = await LandedProofs.NamesAsync(root, upstream, onto, ct).ConfigureAwait(false);
         if (changed is null || brought is null) return "git could not compare the two";
         var beyond = changed.Where(path => !brought.Contains(path, StringComparer.Ordinal)).ToList();
         return beyond.Count == 0 ? null : string.Join(", ", beyond.Take(3)) + (beyond.Count > 3 ? $" and {beyond.Count - 3} more" : "");

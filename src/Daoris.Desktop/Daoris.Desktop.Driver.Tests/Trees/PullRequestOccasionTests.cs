@@ -36,8 +36,9 @@ public sealed class PullRequestOccasionTests
 
         Assert.True(calls.Count >= 3, $"expected to find the asks, found {calls.Count}");
         // The plugins are asked by the one helper the occasions share, and it by the occasions alone.
-        // The plugin wire is the shared context's since PART10i (`_context.Plugins.`; `_plugins.` before).
-        static bool OnTheWire(string expression) => expression.Contains("_context.Plugins.", StringComparison.Ordinal);
+        // The plugin wire is the shared context's since PART10i (`_context.Plugins.`; `_plugins.` before), and the asks' class
+        // holds that context as its constructor's `context` since PART10l (`context.Plugins.`).
+        static bool OnTheWire(string expression) => expression.Contains("context.Plugins.", StringComparison.Ordinal);
         Assert.All(calls.Where(call => OnTheWire(call.Expression)), call => Assert.Equal("AskStatesAsync", call.Method));
         var occasions = calls.Where(call => !OnTheWire(call.Expression)).ToList();
         Assert.All(occasions, call => Assert.True(Occasions.Contains(call.Method), $"{call.File} asks from `{call.Method}`, which is no occasion"));
