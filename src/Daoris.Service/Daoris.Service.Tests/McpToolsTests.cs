@@ -500,7 +500,7 @@ public sealed class McpToolsTests : McpToolsFixture
         var desk = new AskDesk(_service, asks, exchange, _files);
         var asked = await desk.AskAsync(new AskRequest("default", "The dashboard figure reads zero.") { To = "Owner" }, DateTimeOffset.UtcNow);
         var quest = asked.Quest!;
-        KnowledgeTools Connector(string? session) => new(new IntakeScope(null, session), ledger);
+        GoAheadTools Connector(string? session) => new(new IntakeScope(null, session), ledger);
         var first = (await ledger.OpenAsync(quest.Id, "stub", DateTimeOffset.UtcNow, tree: Path.Combine(_root, "trees", "a"))).Session!;
         var second = (await ledger.OpenAsync(quest.Id, "stub", DateTimeOffset.UtcNow, tree: Path.Combine(_root, "trees", "b"))).Session!;
 
@@ -604,7 +604,7 @@ public sealed class McpToolsTests : McpToolsFixture
         Directory.CreateDirectory(Path.Combine(tree, "dist"));
         var session = (await ledger.OpenAsync(setUp.Id, "stub", DateTimeOffset.UtcNow, tree: tree)).Session!;
         // The set-up step's session holds both classes on its one connector: its quest's and the review's.
-        KnowledgeTools Connector(string? id) => new(new IntakeScope(null, id), ledger);
+        ReviewTools Connector(string? id) => new(new IntakeScope(null, id), ledger);
         var quests = new QuestTools(
             _quests, exchange, In("Owner"), new AskDesk(_service, asks, exchange, _files), new IntakeScope(null, session.Id), ledger);
         var tools = Connector(session.Id);

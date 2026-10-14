@@ -434,3 +434,22 @@ public sealed record WorkflowProposal(
         "The person's own words that say why, copied exactly from what they asked or said since, in at most 300 characters. "
         + "A reason that is not their words is refused.")]
     string? Reason);
+
+/// <summary>
+/// A chain's review choice as an agent writes it (REVIEWENV1b): nullable for the chain step's reason, the exchange refusing one
+/// that is not one, naming why.
+/// </summary>
+public sealed record ReviewChoice(
+    [property: Description("off, on (the repository's default environment), or an environment's name.")]
+    string? Choice,
+    [property: Description(
+        "The person's own words you set it on, copied exactly from what they asked or said since. Without them, propose one "
+        + "instead.")]
+    string? Words);
+
+/// <summary>An intake's review proposal as it writes it (REVIEWENV1b): a choice and its reason, for the person's press.</summary>
+public sealed record ReviewProposal(
+    [property: Description("off, on (the repository's default environment), or an environment's name.")]
+    string? Choice,
+    [property: Description("Why, in at most 300 characters, such as that the work changes only a document.")]
+    string? Reason);

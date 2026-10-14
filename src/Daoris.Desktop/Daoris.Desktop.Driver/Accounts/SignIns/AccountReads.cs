@@ -149,17 +149,5 @@ public static class AccountReads
         parent is not null && Key(parent, name) is { } key ? parent[key] as JsonObject : null;
 
     /// <summary>A moment as ISO 8601 writes it, and only so, as <c>cooling.json</c> reads one.</summary>
-    private static DateTimeOffset? Moment(JsonObject entry, string name) =>
-        entry[name] is JsonValue value && value.TryGetValue<string>(out var text)
-        && DateTimeOffset.TryParseExact(
-            text, IsoMoments, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
-            out var moment)
-            ? moment
-            : null;
-
-    private static readonly string[] IsoMoments =
-    [
-        "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm:ss.FFFFFFF'Z'", "yyyy-MM-dd'T'HH:mm:sszzz",
-        "yyyy-MM-dd'T'HH:mm:ss.FFFFFFFzzz",
-    ];
+    private static DateTimeOffset? Moment(JsonObject entry, string name) => Moments.ReadStrict(Json.Text(entry[name]));
 }

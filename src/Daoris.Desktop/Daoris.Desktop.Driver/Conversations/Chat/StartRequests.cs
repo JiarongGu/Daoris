@@ -66,8 +66,7 @@ public sealed class StartRequests(string home)
             using var document = JsonDocument.Parse(File.ReadAllText(path));
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object
-                || !root.TryGetProperty("at", out var when) || when.ValueKind != JsonValueKind.String
-                || !DateTimeOffset.TryParse(when.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at)
+                || Moments.Read(root, "at") is not { } at
                 || DateTimeOffset.UtcNow - at > Keeps
                 || !root.TryGetProperty("sessionId", out var session) || session.ValueKind != JsonValueKind.String
                 || !root.TryGetProperty("sent", out var sent) || sent.ValueKind is not (JsonValueKind.True or JsonValueKind.False)
@@ -100,7 +99,7 @@ public sealed class StartRequests(string home)
                 writer.WriteBoolean("sent", result.Sent);
                 if (result.Why is not null) writer.WriteString("why", result.Why);
                 writer.WriteString("message", result.Message);
-                writer.WriteString("at", at.ToString("O", CultureInfo.InvariantCulture));
+                writer.WriteString("at", Moments.Write(at));
                 writer.WriteEndObject();
             }
 

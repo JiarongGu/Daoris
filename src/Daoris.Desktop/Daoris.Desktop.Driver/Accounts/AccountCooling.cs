@@ -226,19 +226,7 @@ public static class AccountCooling
     /// A moment as ISO 8601 writes it, and only so: a lenient parse reads <i>Oct 3</i> as this year's, which would make a
     /// hand-mangled entry an account cooling.
     /// </summary>
-    private static DateTimeOffset? Moment(JsonObject entry, string name) =>
-        Json.NonEmpty(entry, name) is { } text
-        && DateTimeOffset.TryParseExact(
-            text, IsoMoments, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
-            out var moment)
-            ? moment
-            : null;
-
-    private static readonly string[] IsoMoments =
-    [
-        "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm:ss.FFFFFFF'Z'", "yyyy-MM-dd'T'HH:mm:sszzz",
-        "yyyy-MM-dd'T'HH:mm:ss.FFFFFFFzzz",
-    ];
+    private static DateTimeOffset? Moment(JsonObject entry, string name) => Moments.ReadStrict(Json.Text(entry, name));
 }
 
 /// <summary>

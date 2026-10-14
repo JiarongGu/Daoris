@@ -14,13 +14,13 @@ public sealed class McpHelperToolTests : McpToolsFixture
     private string HelpersHome => Path.Combine(_root, "rules-home");
 
     /// <summary>The connector a session is handed, with a ledger to read its record and a box under the rules home.</summary>
-    private async Task<(KnowledgeTools Tools, SessionStore Sessions)> HelperConnectorAsync(Func<SessionStore, Task<string?>> session)
+    private async Task<(HelperTools Tools, SessionStore Sessions)> HelperConnectorAsync(Func<SessionStore, Task<string?>> session)
     {
         var sessions = await SessionStore.OpenAsync(_connection);
         var asks = await AskStore.OpenAsync(_connection);
         var ledger = new SessionLedger(_quests, sessions, _service, asks);
         var named = await session(sessions);
-        var tools = new KnowledgeTools(intake: new IntakeScope(null, named), ledger: ledger, helpers: new HelperBox(HelpersHome));
+        var tools = new HelperTools(intake: new IntakeScope(null, named), ledger: ledger, helpers: new HelperBox(HelpersHome));
         return (tools, sessions);
     }
 
@@ -73,7 +73,7 @@ public sealed class McpHelperToolTests : McpToolsFixture
             return null;
         });
         async Task<string> AskAs(string? id, string question = "What does this do?") =>
-            await new KnowledgeTools(
+            await new HelperTools(
                 intake: new IntakeScope(null, id), ledger: new SessionLedger(_quests, sessions, _service, await AskStore.OpenAsync(_connection)),
                 helpers: new HelperBox(HelpersHome)).AskHelperAsync(question);
 
@@ -101,7 +101,7 @@ public sealed class McpHelperToolTests : McpToolsFixture
             other = (await store.CreateAsync(null, "Owner", "codex-acp", DateTimeOffset.UtcNow, kind: SessionKind.Chat, serves: asker)).Id;
             return null;
         });
-        KnowledgeTools As(string? id) => new(
+        HelperTools As(string? id) => new(
             intake: new IntakeScope(null, id), ledger: new SessionLedger(_quests, sessions, _service, AskStore.OpenAsync(_connection).GetAwaiter().GetResult()),
             helpers: new HelperBox(HelpersHome));
         await As(asker).AskHelperAsync("Where is the cap read?");
@@ -134,7 +134,7 @@ public sealed class McpHelperToolTests : McpToolsFixture
     {
         string asker = null!;
         var (_, sessions) = await HelperConnectorAsync(async store => asker = (await WorkingAsync(store)).Id);
-        var tools = new KnowledgeTools(
+        var tools = new HelperTools(
             intake: new IntakeScope(null, asker), ledger: new SessionLedger(_quests, sessions, _service, await AskStore.OpenAsync(_connection)),
             helpers: new HelperBox(null));
 

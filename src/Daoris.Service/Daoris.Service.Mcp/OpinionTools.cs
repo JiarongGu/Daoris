@@ -8,7 +8,10 @@ namespace Daoris.Knowledge.Mcp;
 /// working session answers the findings it was handed. Each answers only the session its connector names, as an agent: no
 /// tool here asks for an opinion, hands one on, or answers a dispute for the person.
 /// </summary>
-public sealed partial class KnowledgeTools
+/// <param name="intake">Which session this connector speaks for, when the driver started it.</param>
+/// <param name="opinions">Second opinions: what a reviewer says and what a working session answers.</param>
+[McpServerToolType]
+public sealed class OpinionTools(IntakeScope? intake = null, OpinionDesk? opinions = null)
 {
     [McpServerTool(Name = "opinion_give")]
     [Description(

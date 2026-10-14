@@ -277,7 +277,6 @@ folder.
 
 **No partial type split by hand** (the owner: *"also I think we better not use partial class if we don't have auto-generated code"*; D166's note). Evidence: `docs/2026-10-14-partial-types-survey.md`. A class per domain or kind keeps one new door in one new file.
 
-- [ ] **PART10b — `KnowledgeTools`: the review, go-ahead, helper and opinion tools** (service; after 10a). Each its class with only its services, added to `KnowledgeServer.ToolTypes`; `quest_publish`'s records `ReviewChoice` and `ReviewProposal` beside `QuestTools`' own. Survey "The large five, as scouted".
 - [ ] **PART10c — `KnowledgeTools`: a tool class per Help kind, and the type gone** (service, driver; after 10b and PART7b). `Help<Kind>Tool` in a file each, the driver's file-name test re-pointed, `KnowledgeTools` deleted and cut from the gate's list. Survey "The large five, as scouted".
 - [ ] **PART10d — `DriverModule`: the context, the table from handler classes, the small domains** (modules, tools; Opus). A context object, the shared arguments' helper, a table built from an explicit handler list, the routes test and `orient-index`'s handler files for `*Routes.cs`; the nine smallest domains moved. Survey "The large five, as scouted".
 - [ ] **PART10e — `DriverModule`: the middle domains** (modules; after 10d). Git, Conversation, Sessions, Driver, Lines, Plugins and Tools as handler classes, their tests' statics re-spelled. Survey "The large five, as scouted".
@@ -286,7 +285,6 @@ folder.
 
 **Duplication** (the owner: *"we more focus on modularize the code to reduce duplication and easier to manage"*). Evidence: `docs/2026-10-14-duplication-survey.md`, by section. After FLAT1; DEDUP1 to 3 touch the same files, so one at a time.
 
-- [ ] **DEDUP2a — one way to write and read a moment, its first half** (driver). A public `Moments` in `Platform/` (round-trip write, invariant read, strict read) for the writers and readers in Accounts, Agents, Conversations, Help, Platform and Plugins, those read in the machine's culture among them. Survey §2.
 - [ ] **DEDUP2b — the moments, their second half** (driver, modules; after 2a). Quests, Review, Service, Sessions, Setup, Trees, Workflows and the Modules bridge. Survey §2.
 - [ ] **DEDUP3 — one way to write a JSON file** (driver, modules). A public `JsonFile` in `Platform/` (LF text with a trailing newline, one options object, its folder made, an atomic write) for about 65 sites: it fixes the seven written with CRLF on Windows and the plain writes past `AtomicFile`. Survey §3, §9.
 - [ ] **DEDUP5 — the accounts' files share their helpers** (driver). One helper for the `Load`, `Key`, `Child`, `Text`, `Flag` and `Moment` that `AccountCooling`, `AccountNames`, `AccountReads` and `AccountWindows` copy; a small store for the eight gate-and-edit stores only where each one fits. Survey §5.

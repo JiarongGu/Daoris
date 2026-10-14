@@ -114,7 +114,7 @@ public static class MachineLogReader
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object
                 || Json.NonEmpty(root, "time") is not { } time || !TimeShape.IsMatch(time)
-                || !DateTimeOffset.TryParse(time, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal, out var at)
+                || Moments.Read(time)?.ToUniversalTime() is not { } at
                 || Json.NonEmpty(root, "source") is not { } source
                 || Json.NonEmpty(root, "level") is not { } level
                 || Json.NonEmpty(root, "event") is not { } name)

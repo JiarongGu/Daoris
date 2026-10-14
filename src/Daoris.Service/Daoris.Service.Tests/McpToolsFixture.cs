@@ -26,7 +26,7 @@ public abstract class McpToolsFixture : IAsyncLifetime
     protected QuestTools _questTools = null!;
 
     /// <summary>The tools not yet a class of their own, as a connector that speaks for no session holds them.</summary>
-    protected KnowledgeTools _tools = null!;
+    protected ReviewTools _tools = null!;
 
     /// <summary>The workspace a session running in <paramref name="room"/> answers from, or its ask's circle.</summary>
     protected WorkspaceScope Circle(string room, string? circle = null) => new(_service, new AmbientWorkspace(room, circle));
@@ -59,7 +59,7 @@ public abstract class McpToolsFixture : IAsyncLifetime
         _files = new QuestFiles(Path.Combine(_root, "home"));
         _search = new KnowledgeSearchTools(service, In("Asker"));
         _questTools = new QuestTools(_quests, new QuestExchange(service, _quests, files: _files), In("Asker"));
-        _tools = new KnowledgeTools();
+        _tools = new ReviewTools();
     }
 
     public async Task DisposeAsync()

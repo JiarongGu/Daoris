@@ -35,7 +35,7 @@ public sealed class HelperFiles(string home)
                 var id = Text(element, "id") ?? name[..^".ask.json".Length];
                 if (Text(element, "asker") is not { Length: > 0 } asker || Text(element, "question") is not { Length: > 0 } question) continue;
                 var by = Text(element, "askedBy") == HelperAsk.ByPerson ? HelperAsk.ByPerson : HelperAsk.ByAgent;
-                var at = DateTimeOffset.TryParse(Text(element, "at"), out var when) ? when : File.GetLastWriteTimeUtc(path);
+                var at = Moments.Read(element, "at") ?? File.GetLastWriteTimeUtc(path);
                 asks.Add(new HelperAsk(id, asker, question, Text(element, "agent") is { Length: > 0 } agent ? agent : null, by, at));
             }
         }
@@ -53,7 +53,7 @@ public sealed class HelperFiles(string home)
             if (Text(element, "state") is not { } state || !HelperStates.All.Contains(state)) return null;
             return new HelperState(
                 Text(element, "id") ?? id, state, Text(element, "code"), Text(element, "helper"),
-                DateTimeOffset.TryParse(Text(element, "at"), out var at) ? at : DateTimeOffset.UtcNow)
+                Moments.Read(element, "at") ?? DateTimeOffset.UtcNow)
             {
                 LastWords = element.TryGetProperty("lastWords", out var last) && last.ValueKind == JsonValueKind.True,
                 Handed = Text(element, "handed"),
@@ -76,7 +76,7 @@ public sealed class HelperFiles(string home)
             else writer.WriteString("code", state.Code);
             if (state.Helper is null) writer.WriteNull("helper");
             else writer.WriteString("helper", state.Helper);
-            writer.WriteString("at", state.At.ToString("O"));
+            writer.WriteString("at", Moments.Write(state.At));
             if (state.LastWords) writer.WriteBoolean("lastWords", true);
             if (state.Handed is not null) writer.WriteString("handed", state.Handed);
             if (state.Agent is not null) writer.WriteString("agent", state.Agent);
@@ -96,7 +96,7 @@ public sealed class HelperFiles(string home)
         {
             var element = root.RootElement;
             return Text(element, "answer") is { Length: > 0 } answer && Text(element, "helper") is { } helper
-                ? new HelperAnswer(Text(element, "id") ?? id, helper, answer, DateTimeOffset.TryParse(Text(element, "at"), out var at) ? at : DateTimeOffset.UtcNow)
+                ? new HelperAnswer(Text(element, "id") ?? id, helper, answer, Moments.Read(element, "at") ?? DateTimeOffset.UtcNow)
                 : null;
         }
     }
@@ -118,7 +118,7 @@ public sealed class HelperFiles(string home)
             if (agent is null) writer.WriteNull("agent");
             else writer.WriteString("agent", agent);
             writer.WriteString("askedBy", HelperAsk.ByPerson);
-            writer.WriteString("at", at.ToString("O"));
+            writer.WriteString("at", Moments.Write(at));
             writer.WriteEndObject();
         }
 
