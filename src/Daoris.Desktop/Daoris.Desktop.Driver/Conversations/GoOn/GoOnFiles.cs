@@ -134,7 +134,8 @@ internal static class GoOnFiles
             using var document = JsonDocument.Parse(File.ReadAllText(path));
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object) return null;
-            return Text(root, "adapter") is { Length: > 0 } adapter && Text(root, "conversation") is { Length: > 0 } conversation
+            return Json.Text(root, "adapter")?.Trim() is { Length: > 0 } adapter
+                   && Json.Text(root, "conversation")?.Trim() is { Length: > 0 } conversation
                 ? new HarnessConversation(adapter, conversation)
                 : null;
         }
@@ -156,7 +157,4 @@ internal static class GoOnFiles
             // Left behind: what it names is judged again where it is read.
         }
     }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString()?.Trim() : null;
 }
