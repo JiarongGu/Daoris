@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../i18n';
-import { HELD, OPEN, REFILED, REFILED_NAMED, REFILED_UNNAMED, STARTING } from './fixtures';
+import { HELD, OPEN, REFILED, REFILED_NAMED, REFILED_UNNAMED, STARTING, WORKING } from './fixtures';
 import { bodyUnderHead, QuestPage } from './QuestPage';
 
 // A quest's head, titles first (UX7c, D152 §7; the UX7 design §5.3), as a molecule: its state leads, its name follows on
@@ -168,6 +168,42 @@ describe('a quest’s head', () => {
     await i18n.changeLanguage('zh');
     page({ quest: REFILED_UNNAMED, session: STARTING });
     expect(screen.getByText('致 engine · 4 小时前发起 · 一个会话正在这里启动')).toBeInTheDocument();
+  });
+});
+
+/**
+ * WAITSHOWN1: its driven session's record, read as the session list's reader reads it (D126 §2.4). A session whose quest waits
+ * on another repository's answer ended as completed, and read so beside a quest that has not finished; a working session
+ * carries its last end in its note, which the page leaves out while it works.
+ */
+describe('a quest’s session', () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+  const ended = { ...WORKING, state: 'completed' as const, note: 'It finished.' };
+
+  it('reads awaiting reply, and what it waits on, where the reader derived it', () => {
+    page({
+      quest: { ...OPEN, status: 'Taken', awaits: 'b2c3d4' }, session: ended,
+      grouping: { session: ended.id, group: 'later', shown: 'awaiting-reply', archived: false, teammate: false, awaits: 'b2c3d4', awaitsOf: 'billing' },
+    });
+    const section = screen.getByRole('region', { name: 'Session' });
+    expect(within(section).getByText('awaiting reply')).toBeInTheDocument();
+    expect(within(section).queryByText('completed')).toBeNull();
+    expect(within(section).getByText('waits on #b2c3d4, asked of billing')).toBeInTheDocument();
+  });
+
+  it('keeps the record’s state where the reader says nothing of it', () => {
+    page({ quest: { ...OPEN, status: 'Taken' }, session: ended });
+    expect(within(screen.getByRole('region', { name: 'Session' })).getByText('completed')).toBeInTheDocument();
+  });
+
+  it('leaves out what a working session’s past ending said, and keeps what it says now', () => {
+    const parts = [
+      { code: 'ended.went-on', values: {}, text: 'It went on with your words and ended; its quest stays as it closed.' },
+      { code: 'working.goes-on', values: {}, text: 'It goes on with your words in its own conversation.' },
+    ];
+    page({ quest: { ...OPEN, status: 'Taken' }, session: { ...WORKING, note: parts[0]!.text, noteParts: parts } });
+    expect(screen.queryByText(/ended; its quest stays as it closed/)).toBeNull();
+    expect(screen.getByText(/goes on with your words in its own/)).toBeInTheDocument();
   });
 });
 

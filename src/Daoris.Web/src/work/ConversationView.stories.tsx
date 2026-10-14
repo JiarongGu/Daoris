@@ -190,7 +190,14 @@ export const AnotherAgentsFindings: Story = {
   },
 };
 export const Running: Story = { args: { turns: toTurns(RUNNING).turns, live: true } };
-export const FailedAndCancelled: Story = { args: { turns: toTurns(FAILED).turns } };
+/** WAITSHOWN1: a resumed conversation asked seven minutes ago, its agent still waiting on the model: *working…* and the wait, ticking. */
+const WAITING: SessionEvent[] = [
+  ev({ kind: 'user', origin: 'person', at: new Date(Date.now() - 7 * 60_000).toISOString(), text: 'Go on with the budget, and cap the other loader too.' }),
+  ev({ kind: 'note', text: 'It resumed on its own conversation.' }),
+];
+export const WaitingForFirstAnswer: Story = { args: { turns: toTurns(WAITING).turns, live: true } };
+export const WaitingForFirstAnswerChinese: Story = { ...WaitingForFirstAnswer, decorators: [chinese] };
+export const FailedAndCancelled: Story ={ args: { turns: toTurns(FAILED).turns } };
 export const Stopped: Story = { args: { turns: toTurns(STOPPED).turns } };
 export const ToldWhileWorking: Story = { args: { turns: toTurns(TOLD).turns, live: true } };
 export const WrittenToAfterItEnded: Story = { args: { turns: settle(toTurns(WRITTEN_TO).turns, false) } };

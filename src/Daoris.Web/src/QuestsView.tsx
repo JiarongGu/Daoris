@@ -18,7 +18,7 @@ import {
 import { QuestPage, QuestsMainNotice } from './quests/QuestPage';
 import { namer } from './settings/namer';
 import {
-  retryNotice, useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useRetryQuest, useSetHold, useTrace,
+  retryNotice, useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useRetryQuest, useSessionGroups, useSetHold, useTrace,
   useTrustFolder, useUntrusted, useWorkflowRun, useWorkPlan,
 } from './shell';
 import { sittingBecause } from './signals';
@@ -225,6 +225,9 @@ export function useQuestsView({
   );
 
   const latest = latestSessions(sessions.data ?? []);
+  // Where the session list's reader placed each session (D126 §2.4), the one cache the app's other views read: a quest's
+  // session whose quest awaits another repository's answer reads as awaiting there (WAITSHOWN1).
+  const groups = useSessionGroups();
   // Only what the host says can be asked is offered (D70: an adopter, or a repository registered with a root) —
   // anything else would invite an ask the service refuses. The service still holds the judgement.
   const adopters = (registry.data ?? []).filter(canBeAsked).map((row) => row.repository);
@@ -395,6 +398,7 @@ export function useQuestsView({
         hold={hold}
         chain={buildChain(quest.id, everything.data ?? quests.data ?? [quest], sessions.data ?? [])}
         session={session}
+        grouping={session ? groups.data?.find((row) => row.session === session.id) ?? null : null}
         nameOf={nameOf}
         busy={busy}
         retrying={retry.isPending}

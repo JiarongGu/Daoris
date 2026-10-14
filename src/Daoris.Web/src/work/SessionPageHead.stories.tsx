@@ -175,6 +175,15 @@ export const FourthAttemptWithNoShortTitle: Story = {
   args: { title: REFILED_TITLE, facts: ['engine', 'account-1', '2m', 'attempt 4: the 3 before it failed'] },
 };
 
+/** WAITSHOWN1: working, with nothing yet answered since it was asked: the fact follows its age. */
+export const WorkingWithNoAnswerYet: Story = {
+  args: { title: 'Continue the production half', facts: ['engine', '25m', 'no answer yet, asked Oct 14, 09:12 GMT'] },
+};
+export const WorkingWithNoAnswerYetChinese: Story = {
+  args: { title: '继续生产环境的部分', facts: ['engine', '25 分钟', '尚无回答，10月14日 09:12 GMT发出'] },
+  decorators: [chinese],
+};
+
 /** Parked after its failed sessions: its line says so, in the row's words, beside *Try again*. */
 export const ParkedFacts: Story = {
   args: {
