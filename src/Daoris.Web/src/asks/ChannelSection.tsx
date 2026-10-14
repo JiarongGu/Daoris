@@ -7,7 +7,7 @@ import {
   type Channel, type ChannelItem, type ChannelPost, forEntry, lineWords, newestAt, repliesTo, repositoriesOf, sinceMark,
 } from '../work/channel';
 import { Refused } from '../work/InlineConfirm';
-import { Button, Icon, Pill, SelectField } from '../ui';
+import { Button, Icon, Pill, SelectField } from '../design/ui';
 
 /** How a post ended, as the composer hears it: `done` once the service kept it, `refused` with the service's code, which this page words. */
 export type ChannelAnswered = { done: () => void; refused: (code: string) => void };

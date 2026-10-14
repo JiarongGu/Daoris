@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { isComposing } from '../lib/composing';
 import { searchable } from '../lib/searchable';
-import { Button, Icon } from '../ui';
+import { Button, Icon } from '../design/ui';
 
 /**
  * The way through a long run (SESS1 S9): a jump to where it first failed and to its last words, and a

@@ -6,7 +6,7 @@ import {
   type GitTarget, useToolDelete, useToolDownload, useToolGit, useToolLocation, useToolPick, useTools, useToolsEnded,
   useToolsLook, useToolStop, useToolUse,
 } from '../bridge/shell';
-import { failure, Inline, type Notify, Prose, useErrorNotify } from '../ui';
+import { failure, Inline, type Notify, Prose, useErrorNotify } from '../design/ui';
 import { DomainLoading } from './DomainLoading';
 import {
   choiceOf, endSaid, type ToolChoice, ToolCard, ToolLocations, type ToolLookShown, type ToolShown, type ToolUse,

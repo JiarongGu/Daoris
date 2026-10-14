@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Inline, Prose } from '../ui';
+import { Button, Inline, Prose } from '../design/ui';
 import { ClearAsk, KeptDoorButton, type KeptDoors } from '../work/ClearAsk';
 import { clearOffered, type HistoryPlan, type HistoryUnitName, readingSaid } from '../work/history';
 import type { Answered } from '../work/InlineConfirm';

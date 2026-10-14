@@ -1,6 +1,6 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { InTheme } from '../plugins/storyIcons';
-import { chinese } from '../storyLanguage';
+import { chinese } from '../design/storyLanguage';
 import { FULL, NOTHING_SET, PLUGIN_UNREADY, WORK, WORKSPACE } from './fixtures';
 import { WorkflowTab } from './WorkflowTab';
 

@@ -13,7 +13,7 @@
  * line.
  */
 import type { Convergence, Quest, QuestStep, Registration, Session } from '../data/api';
-import { answeredPark } from '../ui';
+import { answeredPark } from '../design/ui';
 
 export type MapNode = {
   id: string;

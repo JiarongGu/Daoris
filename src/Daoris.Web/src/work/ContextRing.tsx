@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
-import { Tip } from '../ui';
+import { Tip } from '../design/ui';
 import type { Usage } from './conversation';
 
 /** From here on, the ring says the window is filling: the harness compacts or refuses near the top. */

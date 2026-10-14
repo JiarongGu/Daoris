@@ -4,7 +4,7 @@ import type { KnowledgeMode } from '../knowledge/modes';
 import type { SettingsSection } from '../settings/SettingsView';
 import { projectsItem, questsItem } from '../opener';
 import { offerItem } from '../plugins/catalog';
-import { answeredPark } from '../ui';
+import { answeredPark } from '../design/ui';
 import type { ChoiceStanding } from '../work/listPanes';
 import type { ViewId } from '../work/placements';
 

@@ -4,7 +4,7 @@ import { cn } from '../lib/cn';
 import { useDebounced } from '../lib/useDebounced';
 import { searchable } from '../lib/searchable';
 import { useHarnesses, useSessionEvents, useSessionSearch } from '../bridge/shell';
-import { Icon } from '../ui';
+import { Icon } from '../design/ui';
 import { accountNames } from './accountNames';
 import { firstAnswerWait, settle, toTurns, type Turn, type Usage } from './conversation';
 import { ConversationFind } from './ConversationFind';

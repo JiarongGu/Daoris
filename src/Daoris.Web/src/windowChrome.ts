@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { CaptionButtonRect } from '@shenora/react';
 import { WindowCommands, useShenora, useWindowMaximized } from '@shenora/react';
 import { CAPTION_ATTRIBUTE, CAPTION_SLOTS } from './work/caption';
-import { effectiveDark, subscribeTheme } from './theme';
+import { effectiveDark, subscribeTheme } from './design/theme';
 
 export { CAPTION_ATTRIBUTE, CAPTION_SLOTS, type CaptionSlot } from './work/caption';
 

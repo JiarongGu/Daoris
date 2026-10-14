@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import i18n from '../locales/i18n';
 import { InTheme } from '../plugins/storyIcons';
-import { chinese } from '../storyLanguage';
+import { chinese } from '../design/storyLanguage';
 import type { Session } from '../data/api';
 import { HandOverAsk, type HandOverRoster } from './HandOverAsk';
 import { HandOverOfferLine } from './HandOverOfferLine';

@@ -2,7 +2,8 @@ import type { ComponentType } from 'react';
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import { composeStories } from '@storybook/react-vite';
-import './locales/i18n';
+import '../locales/i18n';
+import { rooted } from '../test/sources';
 
 /**
  * Every story, rendered — Storybook's states are the design review (D42 §5), and this makes each one
@@ -23,7 +24,7 @@ import './locales/i18n';
  * `storyLanguage.test.tsx`'s, since these modules are imported before any test runs.
  */
 type StoriesModule = Parameters<typeof composeStories>[0];
-const modules = import.meta.glob('./**/*.stories.tsx', { eager: true }) as Record<string, StoriesModule>;
+const modules = rooted(import.meta.glob('/src/**/*.stories.tsx', { eager: true }) as Record<string, StoriesModule>);
 const LANGUAGE_KEY = 'daoris.language';
 
 describe('the stories', () => {

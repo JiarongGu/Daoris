@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   useDriver, usePlugins, useSayUpdate, useSetCoolOff, useSetNotify, useSetStrikes, useUpdateState,
 } from '../bridge/shell';
-import { Button, Card, CheckField, failure, Icon, PathText, SettingRow } from '../ui';
+import { Button, Card, CheckField, failure, Icon, PathText, SettingRow } from '../design/ui';
 import type { SettingsDomainProps } from './domains';
 import { UpdateSection } from './Update';
 

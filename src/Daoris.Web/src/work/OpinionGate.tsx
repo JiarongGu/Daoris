@@ -2,7 +2,7 @@ import { useContext, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { moment } from '../locales/format';
 import { cn } from '../lib/cn';
-import { Button, Inline, Pill } from '../ui';
+import { Button, Inline, Pill } from '../design/ui';
 import { type Answered, InlineConfirm, Refused } from './InlineConfirm';
 import {
   findingPlace, findingsOf, type OpinionDetail, type OpinionFinding, type OpinionGate as Gate, type OpinionPress,

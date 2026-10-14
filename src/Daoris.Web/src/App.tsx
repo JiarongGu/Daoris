@@ -28,7 +28,7 @@ import {
   askItem, type Compose, doorOpening, type OpenGroup, type Opening, type OpenPart, opening as plannedOpening, questsItem, workspaceItem,
 } from './opener';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
-import { Drawer, failure, Prose, SESSION_ACTIVE, Toasts, useToasts } from './ui';
+import { Drawer, failure, Prose, SESSION_ACTIVE, Toasts, useToasts } from './design/ui';
 import { OverviewView } from './overview/OverviewView';
 import { useKnowledgeMode, useKnowledgeView } from './knowledge/KnowledgeView';
 import { MapView } from './map/MapView';
@@ -45,7 +45,7 @@ import {
 } from './bridge/shell';
 import { byTool } from './agents/tools';
 import { UpdateBanner } from './update/UpdateBanner';
-import { LinkOpener } from './links';
+import { LinkOpener } from './design/links';
 import { BrowserDoor } from './work/BrowserDoor';
 import { browserDrivers } from './work/browserDrivers';
 import { ReviewChip } from './work/ReviewChip';
@@ -71,7 +71,7 @@ import {
 import { CommandPalette } from './work/CommandPalette';
 import { CommandCenter } from './work/CommandCenter';
 import { AppMenuBar, type BarMenu, focusMenuBar, useMenuFold } from './work/AppMenu';
-import { useThemeChoice } from './theme';
+import { useThemeChoice } from './design/theme';
 import { rememberedDomain, SETTINGS_DOMAINS } from './settings/domains';
 import { store, stored } from './lib/stored';
 import { figure } from './locales/format';

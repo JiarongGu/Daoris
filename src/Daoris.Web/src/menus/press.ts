@@ -1,6 +1,6 @@
 import type { MouseEvent as ReactMouseEvent } from 'react';
-import { webAddress } from '../links';
-import type { MenuAct } from '../ui';
+import { webAddress } from '../design/links';
+import type { MenuAct } from '../design/ui';
 
 // The right-click menu's rules (CTX1, D138, design §3): what a press is on, what a surface offers, and the groups the
 // menu draws, most specific first. Pure, so `ContextMenus` only listens and draws, and each case is an assertion.

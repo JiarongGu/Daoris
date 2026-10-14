@@ -1,7 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { GoAhead, Quest, Session } from '../data/api';
 import { InTheme } from '../plugins/storyIcons';
-import { chinese } from '../storyLanguage';
+import { chinese } from '../design/storyLanguage';
 import { STEP_REVIEWED, STEP_SETTING_UP, STEP_SHOWN } from './reviewFixtures';
 import { SessionHead } from './SessionHead';
 

@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TrustHold } from '../data/signals';
-import { Button, PathText, WaitingCard } from '../ui';
+import { Button, PathText, WaitingCard } from '../design/ui';
 import { type Answered, Refused } from './InlineConfirm';
 
 /**

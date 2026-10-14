@@ -1,5 +1,5 @@
 import type { Quest, Session } from '../data/api';
-import { answeredPark, type IconName, type MenuAct, SESSION_ACTIVE } from '../ui';
+import { answeredPark, type IconName, type MenuAct, SESSION_ACTIVE } from '../design/ui';
 import type { SessionGrouping } from './groups';
 import { isHelp, isIntake, sessionOrigin } from './identity';
 import { askOf, type WorkTarget } from './pausing';

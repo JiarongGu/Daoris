@@ -1,7 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { Quest, Session, SessionState } from '../data/api';
 import { InTheme } from '../plugins/storyIcons';
-import { chinese } from '../storyLanguage';
+import { chinese } from '../design/storyLanguage';
 import type { SessionGrouping } from './groups';
 import { SessionRow } from './SessionRow';
 

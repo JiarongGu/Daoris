@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { Ask } from '../data/api';
 import { ago } from '../locales/format';
-import { Button, Inline } from '../ui';
+import { Button, Inline } from '../design/ui';
 
 /**
  * **An ask's kind of work** (WORKFLOW1i-c, the workflow design §4.3, D157): the kind the person chose for its work, the latest

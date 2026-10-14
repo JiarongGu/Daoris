@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { stamp } from '../locales/format';
-import { ExternalLink } from '../links';
-import { Inline } from '../ui';
+import { ExternalLink } from '../design/links';
+import { Inline } from '../design/ui';
 import type { LandedWork } from './diff';
 
 /**

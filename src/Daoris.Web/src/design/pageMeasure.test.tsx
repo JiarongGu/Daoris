@@ -2,8 +2,9 @@ import type { ComponentType } from 'react';
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import { composeStories } from '@storybook/react-vite';
-import { cappedBlocks } from './test/measure';
-import './locales/i18n';
+import { cappedBlocks } from '../test/measure';
+import { rooted } from '../test/sources';
+import '../locales/i18n';
 
 /**
  * 🔴 **Every block of a record page wraps at one edge, the pane's** (D141, LAYOUT11), in every state its stories carry.
@@ -21,22 +22,22 @@ import './locales/i18n';
  * - **a notice**: the main area's *nothing chosen* and *gone*, a centred empty state with its own narrow body.
  */
 type StoriesModule = Parameters<typeof composeStories>[0];
-const modules = import.meta.glob([
-  './quests/QuestPage.stories.tsx',
-  './asks/AskPage.stories.tsx',
-  './asks/asks.stories.tsx',
-  './plugins/PluginPage.stories.tsx',
-  './plugins/OfferPage.stories.tsx',
-  './projects/ProjectPage.stories.tsx',
-  './projects/StandingAnswer.stories.tsx',
-  './knowledge/EntryPage.stories.tsx',
-  './knowledge/FindingPage.stories.tsx',
-  './work/SessionHead.stories.tsx',
-  './work/SessionPageHead.stories.tsx',
-  './work/WorkAsks.stories.tsx',
-  './work/ConversationView.stories.tsx',
-  './settings/*.stories.tsx',
-], { eager: true }) as Record<string, StoriesModule>;
+const modules = rooted(import.meta.glob([
+  '/src/quests/QuestPage.stories.tsx',
+  '/src/asks/AskPage.stories.tsx',
+  '/src/asks/asks.stories.tsx',
+  '/src/plugins/PluginPage.stories.tsx',
+  '/src/plugins/OfferPage.stories.tsx',
+  '/src/projects/ProjectPage.stories.tsx',
+  '/src/projects/StandingAnswer.stories.tsx',
+  '/src/knowledge/EntryPage.stories.tsx',
+  '/src/knowledge/FindingPage.stories.tsx',
+  '/src/work/SessionHead.stories.tsx',
+  '/src/work/SessionPageHead.stories.tsx',
+  '/src/work/WorkAsks.stories.tsx',
+  '/src/work/ConversationView.stories.tsx',
+  '/src/settings/*.stories.tsx',
+], { eager: true }) as Record<string, StoriesModule>);
 
 const STORY_FRAME = /(?:^|:)max-w-(?:xs|sm|md|lg|xl|[2-7]xl)$/;
 const CONTROL = 'input, textarea, button, [role="combobox"], [role="switch"]';

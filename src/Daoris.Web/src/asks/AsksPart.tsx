@@ -16,7 +16,7 @@ import {
 } from '../bridge/shell';
 import { useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useSessionEntries, useWorkflowRun, useWorkPlan } from '../bridge/shell';
 import { workspaceOf, workspacesOf } from '../data/workspaces';
-import { failure, type Notify, useErrorNotify } from '../ui';
+import { failure, type Notify, useErrorNotify } from '../design/ui';
 import { askStanding, freshest } from '../quests/records';
 import type { ChoiceStanding } from '../work/listPanes';
 import type { AskRowFacts } from '../quests/QuestList';

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Button } from '../ui';
+import { Button } from '../design/ui';
 
 /**
  * A RUNNING intake, and why it has no message box (INT4h).

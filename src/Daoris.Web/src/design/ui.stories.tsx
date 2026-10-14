@@ -3,8 +3,8 @@ import {
   Button, CheckField, Chip, CodeText, Dot, Drawer, EmptyState, Menu, MetaLine, MonoWell, PathText, Pill, SettingRow,
   SkeletonRows, Tile, Toasts,
 } from './ui';
-import { InTheme } from './plugins/storyIcons';
-import { InlineConfirm } from './work/InlineConfirm';
+import { InTheme } from '../plugins/storyIcons';
+import { InlineConfirm } from '../work/InlineConfirm';
 
 // Every state of every primitive, on the shipped components — including the states real data rarely
 // shows. This is where the design is reviewed and kept (D42); the product cannot drift from it,

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { moment } from '../locales/format';
 import { shellWord } from '../lib/shellWord';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
-import { Button, CheckField, Icon, Inline, Pill, Prose, Segmented, SelectField, SettingRow, Tip } from '../ui';
+import { Button, CheckField, Icon, Inline, Pill, Prose, Segmented, SelectField, SettingRow, Tip } from '../design/ui';
 import {
   type AccountCooling, type AccountFacts, type AccountScope, type AccountUseChange, type AgentAccounts, cannotLeave,
   coolingLine, heldLine, moved, NEAR_RANGE, nextLine, nothingSaid, offeredLine, ownLine, saidLine, used,

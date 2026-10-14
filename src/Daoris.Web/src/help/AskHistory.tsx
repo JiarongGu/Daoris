@@ -4,7 +4,7 @@ import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { shellWord } from '../lib/shellWord';
-import { Button, Icon, type IconName, Inline, Menu, type MenuAct, SkeletonRows, Tip } from '../ui';
+import { Button, Icon, type IconName, Inline, Menu, type MenuAct, SkeletonRows, Tip } from '../design/ui';
 import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
 import { useListKeys } from '../work/listKeys';
 import { marked } from '../work/railSearch';

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Button, Card, Icon, PageHeader } from '../ui';
+import { Button, Card, Icon, PageHeader } from '../design/ui';
 import { PageHead, ViewMain } from './ViewMain';
 
 // A view's main area (D118 §3b, §5) in each of its four states, and as a container its page lays out by:

@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Segmented } from '../ui';
+import { Button, Segmented } from '../design/ui';
 
 /**
  * A commit rule as the driver answers it (PROCESS1a, D164's amendment point 1): how a session commits its work in its own tree,

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { chinese } from '../storyLanguage';
+import { chinese } from '../design/storyLanguage';
 import { InTheme } from '../plugins/storyIcons';
 import { DOCK } from '../work/layout';
 import { AskHistory } from './AskHistory';

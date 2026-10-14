@@ -1,7 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { ReactNode } from 'react';
 import { InTheme } from '../plugins/storyIcons';
-import { chinese } from '../storyLanguage';
+import { chinese } from '../design/storyLanguage';
 import { DiscardBranchAsk, SweepList, type LandedBranch, type SweepBranch } from './Sweep';
 import { SyncSection } from './Sync';
 

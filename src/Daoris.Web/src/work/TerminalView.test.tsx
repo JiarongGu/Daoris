@@ -49,7 +49,7 @@ vi.mock('./terminalScreen', () => ({ createScreen }));
 
 import '../locales/i18n';
 import { useTerminals } from '../bridge/shell';
-import { setThemeChoice } from '../theme';
+import { setThemeChoice } from '../design/theme';
 import { TerminalView } from './TerminalView';
 
 /** The view as the frame holds it: the terminals above, outliving the view. */

@@ -5,12 +5,12 @@ import { WorkflowHold } from '../workflow/WorkflowHold';
 import type { Session } from '../data/api';
 import { sentence } from '../locales/format';
 import { cn } from '../lib/cn';
-import { ExternalLink } from '../links';
+import { ExternalLink } from '../design/links';
 import { store, stored } from '../lib/stored';
 import {
   useDiscardSessionTree, useHandOff, useHandOffPress, useLandSessionTree, useLanding, useReadingSince, useSessionDiff,
 } from '../bridge/shell';
-import { Button, EmptyState, Inline, SESSION_ACTIVE } from '../ui';
+import { Button, EmptyState, Inline, SESSION_ACTIVE } from '../design/ui';
 import { reviewBranch, reviewKnown } from './diff';
 import type { DiscardOffer } from './groups';
 import { HeldDiscardAsk, HeldDiscardButton, heldDiscardable } from './HeldDiscard';

@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { store, stored } from './lib/stored';
+import { store, stored } from '../lib/stored';
 
 // The theme is the viewer's choice (D66): the system, or light, or dark. It is a per-window-profile
 // preference like the language and the scope — never machine wiring and never a tracked file — and

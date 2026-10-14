@@ -6,7 +6,7 @@ import { size } from '../locales/format';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import type { Account } from '../agents/tools';
-import { Button, Icon, Inline, Menu, Tip } from '../ui';
+import { Button, Icon, Inline, Menu, Tip } from '../design/ui';
 import { type AgentChoice, AgentChip } from './AgentChip';
 import { CHIP, RepositoryPicker, type StartRepository } from './RepositoryPicker';
 

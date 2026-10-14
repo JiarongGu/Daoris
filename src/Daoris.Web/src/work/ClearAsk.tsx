@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Inline, Prose } from '../ui';
+import { Button, Inline, Prose } from '../design/ui';
 import {
   clearEnd, clearLead, type ClearList, clearList, goingSaid, type HistoryPlan, type HistoryReason, type HistoryTarget,
   type HistoryUnit, type HistoryUnitName, type KeptDoor, keptDoor, reasonSaid,

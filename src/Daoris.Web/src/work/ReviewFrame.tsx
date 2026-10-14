@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence, span } from '../locales/format';
 import { cn } from '../lib/cn';
-import { Button, EmptyState, type IconName, Inline, Segmented } from '../ui';
+import { Button, EmptyState, type IconName, Inline, Segmented } from '../design/ui';
 import { type DiffFile, type LineBehind, REVIEW_BOUND_MINUTES, type ReviewKnown } from './diff';
 import { DiffFileRow } from './DiffFileRow';
 import type { DiffLayout } from './PatchView';

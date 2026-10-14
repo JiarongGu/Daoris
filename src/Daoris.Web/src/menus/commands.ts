@@ -1,6 +1,6 @@
 import type { KnowledgeMode } from '../knowledge/modes';
-import type { ThemeChoice } from '../theme';
-import type { IconName } from '../ui';
+import type { ThemeChoice } from '../design/theme';
+import type { IconName } from '../design/ui';
 
 // The one table of verbs (UX7a, D152 §2; SURF9 before it). The menus, the palette, the key handler and the *Keyboard
 // shortcuts* drawer read it, so the four never disagree: before it the menus were two lists, the palette a third and the

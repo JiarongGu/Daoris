@@ -8,7 +8,7 @@ import {
 } from '../bridge/shell';
 import { askOfEntry, entryFacts, listedSessions, nameOfEntry, type SessionEntry } from './entries';
 import { sentence } from '../locales/format';
-import { Button, Icon, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
+import { Button, Icon, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../design/ui';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { useDebounced } from '../lib/useDebounced';

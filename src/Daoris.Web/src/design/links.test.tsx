@@ -1,13 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { ExternalLink, LinkOpener, webAddress } from './links';
+import { rooted } from '../test/sources';
 
 /** Every source that renders, which is where a link could be written by hand. */
-const sources = import.meta.glob('./**/*.tsx', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>;
+const sources = rooted(import.meta.glob('/src/**/*.tsx', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>);
 
 /** A hand-written anchor: `<a` followed by a space, a newline or `>`. */
 const handWritten =(files: [path: string, source: string][]): string[] =>
-  files.filter(([path, source]) => path !== './links.tsx' && /<a[\s>]/.test(source)).map(([path]) => path);
+  files.filter(([path, source]) => path !== './design/links.tsx' && /<a[\s>]/.test(source)).map(([path]) => path);
 
 /**
  * 🔴 One place, held (BRW7): a link written by hand is a link the person's choice never reaches, and it
@@ -22,7 +23,7 @@ describe('the one place a link opens', () => {
 
   it('is looking at files at all', () => {
     expect(Object.keys(sources).length).toBeGreaterThan(50);
-    expect(sources['./links.tsx']).toContain('<a ');
+    expect(sources['./design/links.tsx']).toContain('<a ');
   });
 
   it('holds: no component but ExternalLink writes a link', () => {

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { SelectField } from '../ui';
+import { SelectField } from '../design/ui';
 
 /** One value an option takes, in the agent's own words. */
 export type SessionOptionChoice = { value: string; name: string; description?: string | null };

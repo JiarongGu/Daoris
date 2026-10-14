@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { Quest, Session } from '../data/api';
 import { InTheme } from '../plugins/storyIcons';
-import { chinese } from '../storyLanguage';
+import { chinese } from '../design/storyLanguage';
 import { offeredActs } from './acts';
 import { endedToArchive, type SessionArrangement, type SessionGrouping } from './groups';
 import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from './layout';

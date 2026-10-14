@@ -2,7 +2,7 @@ import { useShenora } from '@shenora/react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from '../locales/format';
 import { type OpinionPressed, useAskOpinion, useOpinionAnyway, useOpinionMyself, useSay, useStopOpinion } from '../bridge/shell';
-import type { Notify } from '../ui';
+import type { Notify } from '../design/ui';
 import type { Answered } from './InlineConfirm';
 import type { OpinionGate } from './opinion';
 import type { OpinionGateActs } from './OpinionGate';

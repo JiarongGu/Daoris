@@ -4,7 +4,7 @@ import { ago, size } from '../locales/format';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import {
   Button, Card, CardHeader, Inline, PathText, Pill, Prose, Segmented, SelectField, SettingRow,
-} from '../ui';
+} from '../design/ui';
 
 /** How a tool is run (D121 §2.2): the system's, from PATH; a version Daoris keeps; or a file the person names. */
 export type ToolWay = 'system' | 'managed' | 'file';

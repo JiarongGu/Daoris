@@ -18,7 +18,7 @@ import {
   useSweep, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
 } from '../bridge/shell';
 import { byTool } from '../agents/tools';
-import { failure, type Notify, useErrorNotify } from '../ui';
+import { failure, type Notify, useErrorNotify } from '../design/ui';
 import type { KeptDoors } from '../work/ClearAsk';
 import { useHistoryActs } from '../work/historyActs';
 import { WorkflowTab } from '../workflow/WorkflowTab';

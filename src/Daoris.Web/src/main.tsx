@@ -6,7 +6,7 @@ import { App } from './App';
 import { SecondaryWindowRoot } from './SecondaryWindowRoot';
 import { WorkspaceScopeProvider } from './data/scope';
 import { secondaryWindow } from './work/window';
-import { applyTheme } from './theme';
+import { applyTheme } from './design/theme';
 import { installPageErrors } from './bridge/shell';
 import './tokens.css';
 import './locales/i18n';

@@ -2,8 +2,9 @@ import type { ComponentType } from 'react';
 import { describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { composeStories } from '@storybook/react-vite';
-import i18n from './locales/i18n';
+import i18n from '../locales/i18n';
 import { readerIn } from './storyLanguage';
+import { rooted } from '../test/sources';
 
 /**
  * A story's language is the story's, never the page's remembered choice (STORY2, found by TRACE1b). A 中文 reader made
@@ -23,7 +24,7 @@ describe('a story in another language (STORY2)', () => {
   // first here, and its module-scope code runs after the remembered language is set.
   it('shows 中文 and leaves daoris.language as found, from its module’s import to its render', async () => {
     localStorage.setItem(KEY, 'en');
-    const quest = composed(await import('./quests/QuestPage.stories'));
+    const quest = composed(await import('../quests/QuestPage.stories'));
 
     // The same quest and session, in English and then in 中文: the 中文 words are the reader's, not the fixture's.
     const english = render(<quest.LongTitleWithNoShortTitle />);
@@ -35,7 +36,7 @@ describe('a story in another language (STORY2)', () => {
     expect(localStorage.getItem(KEY)).toBe('en');
 
     // The menu bar's language is an arg a reviewer sets from the controls, and either one is drawn by a reader of its own.
-    const menu = composed(await import('./work/AppMenu.stories'));
+    const menu = composed(await import('../work/AppMenu.stories'));
     render(<menu.Closed language="zh" />);
     cleanup();
     expect(localStorage.getItem(KEY)).toBe('en');
@@ -52,7 +53,7 @@ describe('a story in another language (STORY2)', () => {
   // which added stories (FIX-LOG's FLAKE1). A hang still fails; a slow import of one more story does not.
   it('remembers no language for any story module imported, as a fresh profile finds it', { timeout: 60_000 }, async () => {
     localStorage.removeItem(KEY);
-    for (const load of Object.values(import.meta.glob<StoriesModule>('./**/*.stories.tsx'))) await load();
+    for (const load of Object.values(import.meta.glob<StoriesModule>('/src/**/*.stories.tsx'))) await load();
     expect(localStorage.getItem(KEY)).toBeNull();
   });
 
@@ -72,7 +73,7 @@ describe('a story in another language (STORY2)', () => {
   it('draws a 中文 story’s helpers in 中文 and gives the page’s language and choice back as found', async () => {
     localStorage.setItem(KEY, 'en');
     await i18n.changeLanguage('en');
-    const agents = composed(await import('./agents/AgentPage.stories'));
+    const agents = composed(await import('../agents/AgentPage.stories'));
     const { container, unmount } = render(<agents.CodexWindowsChinese />);
     expect(container.textContent).toContain('（优先）');
     expect(container.textContent).toContain('下一次启动使用');
@@ -93,7 +94,7 @@ describe('a story in another language (STORY2)', () => {
   });
 
   it('clones no reader from the page’s instance in any story: a clone shares the detector that remembers', () => {
-    const sources = import.meta.glob<string>('./**/*.stories.tsx', { query: '?raw', import: 'default', eager: true });
+    const sources = rooted(import.meta.glob<string>('/src/**/*.stories.tsx', { query: '?raw', import: 'default', eager: true }));
     expect(Object.entries(sources).filter(([, source]) => /\.cloneInstance\(/.test(source)).map(([path]) => path)).toEqual([]);
   });
 });

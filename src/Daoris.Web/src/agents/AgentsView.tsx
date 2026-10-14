@@ -11,7 +11,7 @@ import {
 } from '../bridge/shell';
 import { SignIn } from './SignIn';
 import { byTool, type Tool } from './tools';
-import { failure, type Notify, useErrorNotify } from '../ui';
+import { failure, type Notify, useErrorNotify } from '../design/ui';
 import type { ViewLayout } from '../work/ViewFrame';
 import { workspacesOf } from '../data/workspaces';
 import { agentOf } from '../settings/accounts';

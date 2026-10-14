@@ -2,17 +2,17 @@ import { type ReactElement, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { SessionState } from './data/api';
-import i18n from './locales/i18n';
+import type { SessionState } from '../data/api';
+import i18n from '../locales/i18n';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
   Button, CodeText, CountBadge, Dot, Drawer, EmptyState, Inline, Menu, MetaLine, MonoWell, PathText, Pill, QuickPanel, Segmented,
   SelectField, SESSION_ACTIVE, SESSION_DOT, SESSION_TONE, SettingRow, shownKey, type ShownState, shownState, StripMark, Tile,
   Tip, Toasts, WaitingCard,
 } from './ui';
-import { code } from './test/code';
-import { CommandPalette } from './work/CommandPalette';
-import { InlineConfirm } from './work/InlineConfirm';
+import { code } from '../test/code';
+import { CommandPalette } from '../work/CommandPalette';
+import { InlineConfirm } from '../work/InlineConfirm';
 
 describe('the primitives', () => {
   it('a pill always carries its text label — status never rides on hue alone', () => {

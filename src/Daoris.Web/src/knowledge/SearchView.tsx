@@ -6,7 +6,7 @@ import { HitList, type HitsAnswer } from './HitList';
 import { answeredBy, readingOf, searchFilters } from './records';
 import { useEntry, useSearch } from '../data/queries';
 import { page } from '../data/results';
-import { type Notify, useErrorNotify } from '../ui';
+import { type Notify, useErrorNotify } from '../design/ui';
 import { useDebounced } from '../lib/useDebounced';
 import type { ViewLayout } from '../work/ViewFrame';
 

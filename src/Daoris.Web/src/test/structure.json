@@ -25,25 +25,6 @@
     "rememberedChoice.test.tsx": "app",
     "sessionsBadge.test.tsx": "app",
     "setupStart.test.tsx": "app",
-    "syncDoor.test.tsx": "app",
-
-    "ui.tsx": "design",
-    "ui.test.tsx": "design",
-    "ui.stories.tsx": "design",
-    "StripMark.stories.tsx": "design",
-    "Mark.tsx": "design",
-    "theme.ts": "design",
-    "theme.test.ts": "design",
-    "tokens.stories.tsx": "design",
-    "tokens.test.ts": "design",
-    "links.tsx": "design",
-    "links.test.tsx": "design",
-    "storyLanguage.tsx": "design",
-    "storyLanguage.test.tsx": "design",
-    "stories.test.tsx": "design",
-    "primitives.test.ts": "design",
-    "presentational.test.ts": "design",
-    "motion.test.ts": "design",
-    "pageMeasure.test.tsx": "design"
+    "syncDoor.test.tsx": "app"
   }
 }

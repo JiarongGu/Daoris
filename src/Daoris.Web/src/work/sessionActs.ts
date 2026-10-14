@@ -5,7 +5,7 @@ import {
   useResolveSession, useRetryQuest, useStopSession,
 } from '../bridge/shell';
 import { list, sentence } from '../locales/format';
-import { failure, type Notify, SESSION_ACTIVE } from '../ui';
+import { failure, type Notify, SESSION_ACTIVE } from '../design/ui';
 import { handOverSaid } from './say';
 import { type ActFacts, folderOf, type SessionActId, workTargetOf } from './acts';
 import { forgetDraft } from './drafts';

@@ -5,7 +5,7 @@ import { clockOf, elapsed } from '../locales/format';
 import { cn } from '../lib/cn';
 import { shellWord } from '../lib/shellWord';
 import type { TrustHold } from '../data/signals';
-import { Button, Dot, Icon, Inline, SelectField } from '../ui';
+import { Button, Dot, Icon, Inline, SelectField } from '../design/ui';
 import type { AccountRowFacts } from './accountAttention';
 import { ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers } from './attention';
 import { Note } from './Note';

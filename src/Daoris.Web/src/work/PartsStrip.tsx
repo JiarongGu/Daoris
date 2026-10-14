@@ -3,7 +3,7 @@ import type { TFunction } from 'i18next';
 import type { Session } from '../data/api';
 import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
-import { Dot, SectionTitle, SESSION_DOT, shownKey } from '../ui';
+import { Dot, SectionTitle, SESSION_DOT, shownKey } from '../design/ui';
 import type { EntryPart, SessionEntry } from './entries';
 import { shownOf } from './groups';
 import { ownTree } from './identity';

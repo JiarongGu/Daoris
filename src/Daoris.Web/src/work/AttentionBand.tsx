@@ -11,7 +11,7 @@ import {
 } from '../bridge/shell';
 import { SignIn } from '../agents/SignIn';
 import { byTool } from '../agents/tools';
-import { failure, type Notify } from '../ui';
+import { failure, type Notify } from '../design/ui';
 import type { AccountsKnown } from './accountAttention';
 import { sentence } from '../locales/format';
 import type { Attention, AttentionActs } from './AttentionRow';

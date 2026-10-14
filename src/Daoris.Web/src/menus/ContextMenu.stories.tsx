@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import i18n from '../locales/i18n';
-import type { MenuAct } from '../ui';
+import type { MenuAct } from '../design/ui';
 import { actMenu } from '../work/acts';
 import { ContextMenu } from './ContextMenu';
 

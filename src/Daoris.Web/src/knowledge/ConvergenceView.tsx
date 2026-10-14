@@ -6,7 +6,7 @@ import { FindingMainNotice, FindingPage } from './FindingPage';
 import { convergenceFilters, type EntryReading, findingId, readingOf } from './records';
 import { useConvergence, useEntries } from '../data/queries';
 import { page } from '../data/results';
-import { type Notify, useErrorNotify } from '../ui';
+import { type Notify, useErrorNotify } from '../design/ui';
 import { useDebounced } from '../lib/useDebounced';
 import type { ViewLayout } from '../work/ViewFrame';
 

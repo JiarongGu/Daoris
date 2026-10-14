@@ -37,7 +37,7 @@ import { PauseAsk } from './WorkAsks';
 import { FilePreview } from './FilePreview';
 import { type FileOpen, FileOpener, fileName } from './preview';
 import { TerminalView } from './TerminalView';
-import { failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../ui';
+import { failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../design/ui';
 import type { FrameIntent } from '../menus/commands';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';

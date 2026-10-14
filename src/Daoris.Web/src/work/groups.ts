@@ -1,5 +1,5 @@
 import type { Session } from '../data/api';
-import { answeredPark, SESSION_ACTIVE, type ShownState, shownState } from '../ui';
+import { answeredPark, SESSION_ACTIVE, type ShownState, shownState } from '../design/ui';
 import { sessionOrigin } from './identity';
 
 // The session list by state (SESSUX1c, D126 §2.1, §4): the groups the driver's one reader answers, as the list

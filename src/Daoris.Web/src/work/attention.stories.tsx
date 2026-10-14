@@ -2,7 +2,7 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { ReactNode } from 'react';
 import { clockOf, list, moment } from '../locales/format';
 import { InTheme } from '../plugins/storyIcons';
-import { chinese, readerIn } from '../storyLanguage';
+import { chinese, readerIn } from '../design/storyLanguage';
 import { AnsweredPark } from './AnsweredPark';
 import { type Attention, type AttentionActs, AttentionRow } from './AttentionRow';
 import { AttentionList, type AttentionDoors, AttentionRegion, NothingNeedsYou } from './AttentionList';

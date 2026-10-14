@@ -3,7 +3,7 @@ import { useLayoutEffect, useMemo, useState } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { COMMANDS, type CommandState, MENUS, type MenuId, shortcutGroups, type Translate } from '../menus/commands';
 import { isPress } from '../menus/shortcuts';
-import { readerIn } from '../storyLanguage';
+import { readerIn } from '../design/storyLanguage';
 import { menuRows } from './appMenus';
 import { AppMenuBar, FOLD_OPEN, foldsMenus } from './AppMenu';
 import { BrowserDoor } from './BrowserDoor';

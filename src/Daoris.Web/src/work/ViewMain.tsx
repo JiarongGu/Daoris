@@ -1,6 +1,6 @@
 import { type ReactNode, type Ref, type RefObject, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, EmptyState, type IconName, Prose, SectionTitle, SkeletonRows } from '../ui';
+import { Button, EmptyState, type IconName, Prose, SectionTitle, SkeletonRows } from '../design/ui';
 import { cn } from '../lib/cn';
 import { type ContextOffer, contextOffer } from '../menus/press';
 import { usePublishedOffer } from '../menus/mainOffer';

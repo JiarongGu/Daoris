@@ -5,7 +5,7 @@ import { useProjectsView } from '../projects/ProjectsView';
 import {
   type ProjectTab, readProjectTab, readWorkspaceTab, storeProjectTab, storeWorkspaceTab, type WorkspaceSection, type WorkspaceTab,
 } from '../projects/tabs';
-import type { Notify } from '../ui';
+import type { Notify } from '../design/ui';
 import { useListPanes } from '../work/listPanes';
 import { ViewFrame } from '../work/ViewFrame';
 import { useDoor } from './door';

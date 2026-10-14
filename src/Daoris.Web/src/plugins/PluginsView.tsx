@@ -4,7 +4,7 @@ import {
   usePickFolder, usePluginAction, usePluginInstall, usePluginNew, usePlugins, usePluginTry, usePluginUpdate,
 } from '../bridge/shell';
 import { sentence } from '../locales/format';
-import { Drawer, failure, type Notify, useErrorNotify } from '../ui';
+import { Drawer, failure, type Notify, useErrorNotify } from '../design/ui';
 import { type KitPoint, PluginKitCard, type PluginTrialResult } from './PluginKit';
 import type { PluginUpdatePlanShown } from './PluginUpdate';
 import type { Answered } from '../work/InlineConfirm';

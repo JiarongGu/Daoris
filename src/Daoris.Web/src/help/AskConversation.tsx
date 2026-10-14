@@ -11,7 +11,7 @@ import {
   useSettleHelp, useStartHelp, useStopSession,
 } from '../bridge/shell';
 import { useHeldHarnessRun } from '../agents/harnessRuns';
-import { Button, Prose, SESSION_ACTIVE } from '../ui';
+import { Button, Prose, SESSION_ACTIVE } from '../design/ui';
 import type { ChatMessage } from '../work/conversation';
 import { Composer } from '../work/Composer';
 import { BackToBottom, SessionConversation, type TailState } from '../work/SessionConversation';

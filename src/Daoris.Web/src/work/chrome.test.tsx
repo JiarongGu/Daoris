@@ -7,7 +7,7 @@ import i18n from '../locales/i18n';
 import { en, zh } from '../locales';
 import { SessionConsole } from './SessionConsole';
 import { layTabs } from '../test/tabRoom';
-import { SESSION_ACTIVE } from '../ui';
+import { SESSION_ACTIVE } from '../design/ui';
 import { ActivityBar, AppStrip, OutputPanel, type PanelTab, Splitter, StatusBar } from './frame';
 
 /** The provider the application mounts once (`main.tsx`); a tooltip outside one throws. */

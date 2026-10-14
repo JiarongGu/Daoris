@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { QuestAnswer, QuestRequirement, QuestStep } from '../data/api';
 import { ago } from '../locales/format';
-import { Button, Pill, SectionTitle } from '../ui';
+import { Button, Pill, SectionTitle } from '../design/ui';
 
 /** The person's words, quoted: set apart by a rule, never slanted, kept as they were said (D133 §1). */
 function Quoted({ words }: { words: string }) {

@@ -3,7 +3,7 @@ import { type Ask, canBeAsked, type GoAhead, type Quest, type Registration, type
 import type { RuleProposal } from '../settings/AgentRules';
 import { proposalAuthor, proposalChange } from '../settings/proposals';
 import { type Consideration, type TrustHold, sittingSentence } from '../data/signals';
-import { answeredPark } from '../ui';
+import { answeredPark } from '../design/ui';
 import { workspaceOf } from '../data/workspaces';
 import { accountAttention, type AccountsKnown } from './accountAttention';
 import type { SessionGrouping } from './groups';

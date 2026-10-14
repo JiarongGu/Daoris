@@ -1,7 +1,7 @@
 import { type KeyboardEvent, type ReactNode, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
-import { Button, Icon, type IconName, Inline, Tip } from '../ui';
+import { Button, Icon, type IconName, Inline, Tip } from '../design/ui';
 import { aroundTheLanding, setupDoorOf, textOf, type CurrentWorkflow, type WorkflowParticipation, type WorkflowStep } from './current';
 import { edgeSaid, executorSaid, holdsSaid, limitSaid, sourceSaid, stepSet, stepTitle } from './said';
 

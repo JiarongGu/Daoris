@@ -24,7 +24,7 @@ import {
   useSetWriteAcross, useSweepPlan, useWorkflowCurrent,
 } from '../bridge/shell';
 import { doorOf } from '../agents/tools';
-import { failure, type Notify, useErrorNotify } from '../ui';
+import { failure, type Notify, useErrorNotify } from '../design/ui';
 import { ListMore } from '../work/ListPane';
 import type { ViewLayout } from '../work/ViewFrame';
 import { workspaceOf, workspacesOf } from '../data/workspaces';

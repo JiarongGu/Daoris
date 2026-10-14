@@ -12,7 +12,7 @@ import { useScope } from '../data/scope';
 import { buttonNamed, returnFocus } from '../lib/returnFocus';
 import {
   Button, Card, EmptyState, Icon, type Notify, PageHeader, SkeletonRows, useErrorNotify,
-} from '../ui';
+} from '../design/ui';
 
 /** The similarity the Convergence view opens at — the map's dotted lines are the same findings. */
 const SHARED = 0.75;

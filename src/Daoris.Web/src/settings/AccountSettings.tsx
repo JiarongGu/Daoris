@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { shellWord } from '../lib/shellWord';
-import { Button, CodeText, SelectField } from '../ui';
+import { Button, CodeText, SelectField } from '../design/ui';
 import type { AccountSettings, AccountSettingsChange, SettingsChoices } from '../agents/tools';
 
 /** A choice that is not a value: the tool's own default, a model the aliases do not name, a key not set. */

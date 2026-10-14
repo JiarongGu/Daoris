@@ -7,7 +7,7 @@ import '../locales/i18n';
 import { OverviewView } from './OverviewView';
 import { WorkspaceScopeProvider } from '../data/scope';
 import { columnsFollow } from '../test/mainSplit';
-import type { Notify } from '../ui';
+import type { Notify } from '../design/ui';
 
 // Overview (D40), over a stubbed service, in a browser. Its page takes its final shape with FRAME1c: no
 // list (D118 §4), and its two cards laid out by the main area's own width (§3b). Since UX6c *What needs you* leads it,

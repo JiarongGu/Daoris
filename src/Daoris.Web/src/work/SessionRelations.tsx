@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../data/api';
-import { Pill, QUEST_TONE, SectionTitle } from '../ui';
+import { Pill, QUEST_TONE, SectionTitle } from '../design/ui';
 import { questName } from './identity';
 import { Note } from './Note';
 import type { Relations } from './relations';

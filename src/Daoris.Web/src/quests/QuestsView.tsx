@@ -22,7 +22,7 @@ import {
   useTrustFolder, useUntrusted, useWorkflowRun, useWorkPlan,
 } from '../bridge/shell';
 import { sittingBecause } from '../data/signals';
-import { failure, type Notify, useErrorNotify } from '../ui';
+import { failure, type Notify, useErrorNotify } from '../design/ui';
 import type { HistoryDoor } from '../work/history';
 import { useHistoryActs } from '../work/historyActs';
 import { stepState } from '../work/review';

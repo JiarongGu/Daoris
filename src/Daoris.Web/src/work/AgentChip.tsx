@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { accountName, accountWho } from '../agents/agents';
 import type { Account } from '../agents/tools';
-import { Icon, Menu } from '../ui';
+import { Icon, Menu } from '../design/ui';
 import { CHIP } from './RepositoryPicker';
 
 /** "Leave it to the driver", as a radio row's value: a row's value is never empty, and a default stays choosable. */

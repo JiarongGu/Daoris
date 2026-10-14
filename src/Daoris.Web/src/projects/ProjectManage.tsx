@@ -6,7 +6,7 @@ import { InlineConfirm } from '../work/InlineConfirm';
 import { workspaceOf } from '../data/workspaces';
 import { useImportFolder, useRegisterRepository, useRetireRepository, useWireRepository } from '../data/queries';
 import { type FolderInspection, usePickFolder, useWriteDeclaration } from '../bridge/shell';
-import { Button, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTitle, Tip } from '../ui';
+import { Button, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTitle, Tip } from '../design/ui';
 
 /**
  * Managing the machine's repositories (D48 §7) — the surfaces that exist only where a shell is

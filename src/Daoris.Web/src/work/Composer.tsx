@@ -5,7 +5,7 @@ import { type Carry, NO_CARRY, useCarry, useFileChooser } from '../compose/carry
 import { size } from '../locales/format';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
-import { Button, Icon, Tip } from '../ui';
+import { Button, Icon, Tip } from '../design/ui';
 import { ContextRing } from './ContextRing';
 import type { ChatMessage, Usage } from './conversation';
 import { MentionList } from './MentionList';

@@ -4,7 +4,7 @@ import { useConvergenceView } from './ConvergenceView';
 import { KnowledgeModes, KnowledgeStrip } from './KnowledgeModes';
 import { type KnowledgeMode, readKnowledgeMode, storeKnowledgeMode } from './modes';
 import { useSearchView } from './SearchView';
-import type { Notify } from '../ui';
+import type { Notify } from '../design/ui';
 import type { ListPanes } from '../work/listPanes';
 import type { ViewLayout } from '../work/ViewFrame';
 

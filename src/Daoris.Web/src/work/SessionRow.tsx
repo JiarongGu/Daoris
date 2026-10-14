@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../data/api';
 import { ago, elapsed, moment } from '../locales/format';
-import { Dot, Icon, Menu, SESSION_ACTIVE, SESSION_DOT, shownKey, StripMark } from '../ui';
+import { Dot, Icon, Menu, SESSION_ACTIVE, SESSION_DOT, shownKey, StripMark } from '../design/ui';
 import { cn } from '../lib/cn';
 import { contextOffer } from '../menus/press';
 import { actMenu, type SessionActId } from './acts';

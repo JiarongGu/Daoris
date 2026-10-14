@@ -4,7 +4,7 @@ import { useQuests, useSessions } from '../data/queries';
 import { namer } from '../settings/namer';
 import { useChatTurns, useHarnesses, useSessionOpenings, useSessionStreams } from '../bridge/shell';
 import { frameShortcut } from '../menus/shortcuts';
-import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
+import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../design/ui';
 import { SessionConsole } from './SessionConsole';
 import { AttendedSession } from './AttendedSession';
 import { useDetachedPanel } from './closings';

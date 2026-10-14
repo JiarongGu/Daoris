@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { DiffFile } from './diff';
-import { Button, CheckField, Icon, Inline, Tip } from '../ui';
+import { Button, CheckField, Icon, Inline, Tip } from '../design/ui';
 import { cn } from '../lib/cn';
 import { type DiffLayout, PatchView } from './PatchView';
 

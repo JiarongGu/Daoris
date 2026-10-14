@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import type { Quest, QuestSetUp, SetUpRef } from '../data/api';
 import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
-import { ExternalLink } from '../links';
+import { ExternalLink } from '../design/links';
 import { shellWord } from '../lib/shellWord';
-import { Button, CodeText, Inline, Pill } from '../ui';
+import { Button, CodeText, Inline, Pill } from '../design/ui';
 import { type Answered, InlineConfirm, Refused } from './InlineConfirm';
 import {
   newestSetUp, type ReviewPress, reviewPresses, type ReviewState, setUpRef, shortCommit, verdictOn,

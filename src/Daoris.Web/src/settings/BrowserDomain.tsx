@@ -5,7 +5,7 @@ import {
 } from '../bridge/shell';
 import {
   Button, Card, failure, Icon, type Notify, PathText, Prose, SectionTitle, Segmented, SettingRow, useErrorNotify,
-} from '../ui';
+} from '../design/ui';
 import type { BrowserDriver } from '../work/browserDrivers';
 
 /**

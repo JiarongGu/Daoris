@@ -2,7 +2,7 @@ import type { Session } from '../data/api';
 import type { RepositoryLanding } from '../settings/Landings';
 import type { RepositoryLine } from '../settings/Lines';
 import { byTool, type Tool, type ToolDoor } from '../agents/tools';
-import { answeredPark } from '../ui';
+import { answeredPark } from '../design/ui';
 
 /**
  * What this machine holds, as Ask Daoris's starters (HELP1d) and the setup guide (SETUP1a, D97) read

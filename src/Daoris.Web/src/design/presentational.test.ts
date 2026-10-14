@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { rooted } from '../test/sources';
 
 /**
  * **A molecule imports no hook** (D52 as amended) — the rule that makes every state of the working
@@ -158,9 +159,9 @@ export function offenders(files: [path: string, source: string][]): string[] {
 // `agents/` since UX6e: the Agents place's list, strip, page and account rows, drawn from props — AgentsView holds the data.
 // `workflow/` since WORKFLOW1b: the Workflow tab and its chart, drawn from props — the Repositories view and a workspace's
 // page hold the answer.
-const sources = import.meta.glob('./{ui.tsx,links.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx},asks/**/*.{ts,tsx},compose/**/*.{ts,tsx},settings/**/*.{ts,tsx},projects/**/*.{ts,tsx},help/**/*.{ts,tsx},plugins/**/*.{ts,tsx},quests/**/*.{ts,tsx},knowledge/**/*.{ts,tsx},update/**/*.{ts,tsx},menus/**/*.{ts,tsx},agents/**/*.{ts,tsx},workflow/**/*.{ts,tsx}}', {
+const sources = rooted(import.meta.glob('/src/{design/ui.tsx,design/links.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx},asks/**/*.{ts,tsx},compose/**/*.{ts,tsx},settings/**/*.{ts,tsx},projects/**/*.{ts,tsx},help/**/*.{ts,tsx},plugins/**/*.{ts,tsx},quests/**/*.{ts,tsx},knowledge/**/*.{ts,tsx},update/**/*.{ts,tsx},menus/**/*.{ts,tsx},agents/**/*.{ts,tsx},workflow/**/*.{ts,tsx}}', {
   eager: true, query: '?raw', import: 'default',
-}) as Record<string, string>;
+}) as Record<string, string>);
 
 const presentational = Object.entries(sources)
   .filter(([path]) => !ORGANISMS.has(path) && !SETTINGS_ORGANISM.test(path) && !/\.(test|stories)\.tsx?$/.test(path));

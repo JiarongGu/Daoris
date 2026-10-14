@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { TYPE_STEPS } from './lib/cn';
+import { TYPE_STEPS } from '../lib/cn';
+import { rooted } from '../test/sources';
 
 /**
  * **The type scale is a set of named steps, and a raw size is not one of them** (D41 §3 as amended
@@ -141,9 +142,9 @@ export function overlaysOverTheStatusBar(files: [path: string, source: string][]
     (source.match(OVER_THE_STATUS_BAR) ?? []).map((hit) => `${path} covers the status bar: ${hit}`));
 }
 
-const sources = import.meta.glob('./**/*.tsx', {
+const sources = rooted(import.meta.glob('/src/**/*.tsx', {
   eager: true, query: '?raw', import: 'default',
-}) as Record<string, string>;
+}) as Record<string, string>);
 
 const components = Object.entries(sources).filter(([path]) => !/\.test\.tsx$/.test(path));
 
@@ -463,7 +464,7 @@ export function hueAngle(hex: string): number {
 const hueApart = (a: number, b: number) => Math.abs((((a - b) % 360) + 540) % 360 - 180);
 
 /** The stylesheets beside the sources, read from disk: a raw import of a stylesheet answers an empty string. */
-const stylesheets = Object.keys(import.meta.glob('./**/*.css'))
+const stylesheets = Object.keys(rooted(import.meta.glob('/src/**/*.css')))
   .map((path) => [path, readFileSync(join(process.cwd(), 'src', path), 'utf8')] as [string, string]);
 
 describe('the status inks', () => {
@@ -610,7 +611,7 @@ const NATIVE_CHOICE = /<select\b|type=["']checkbox["']|type=["']radio["']/g;
 
 export function nativeChoices(files: [path: string, source: string][]): string[] {
   return files
-    .filter(([path]) => path !== './ui.tsx')
+    .filter(([path]) => path !== './design/ui.tsx')
     .flatMap(([path, source]) =>
       (source.match(NATIVE_CHOICE) ?? []).map((hit) => `${path} builds a native control: ${hit}`));
 }
@@ -624,14 +625,14 @@ const LANGUAGE_BLIND = /\.toLocale(?:String|DateString|TimeString)\(\s*\)/g;
 
 export function languageBlind(files: [path: string, source: string][]): string[] {
   return files
-    .filter(([path]) => path !== './format.ts')
+    .filter(([path]) => path !== './locales/format.ts')
     .flatMap(([path, source]) =>
       (source.match(LANGUAGE_BLIND) ?? []).map((hit) => `${path} leaves the locale to the machine: ${hit}`));
 }
 
-const modules = Object.entries(import.meta.glob('./**/*.ts', {
+const modules = Object.entries(rooted(import.meta.glob('/src/**/*.ts', {
   eager: true, query: '?raw', import: 'default',
-}) as Record<string, string>).filter(([path]) => !/\.test\.ts$/.test(path));
+}) as Record<string, string>)).filter(([path]) => !/\.test\.ts$/.test(path));
 
 describe('dates and counts', () => {
   it("catches a locale left to the machine, and leaves format.ts its own", () => {
@@ -639,7 +640,7 @@ describe('dates and counts', () => {
     expect(languageBlind([['./App.tsx', 'entries: indexed.toLocaleString( ),']])).toHaveLength(1);
     expect(languageBlind([['./x.tsx', 'd.toLocaleDateString()']])).toHaveLength(1);
     expect(languageBlind([['./x.tsx', 'n.toLocaleString(i18n.language)']])).toEqual([]);
-    expect(languageBlind([['./format.ts', 'value.toLocaleString()']])).toEqual([]);
+    expect(languageBlind([['./locales/format.ts', 'value.toLocaleString()']])).toEqual([]);
   });
 
   it("holds: every date and count on the page is in the reader's language", () => {
@@ -715,7 +716,7 @@ describe('the form controls', () => {
     expect(nativeChoices([['./work/Start.tsx', '<select value={x}>']])).toHaveLength(1);
     expect(nativeChoices([['./work/Row.tsx', '<input type="checkbox" checked />']])).toHaveLength(1);
     expect(nativeChoices([['./work/Row.tsx', "<input type='radio' />"]])).toHaveLength(1);
-    expect(nativeChoices([['./ui.tsx', '<select value={x}>']])).toEqual([]);
+    expect(nativeChoices([['./design/ui.tsx', '<select value={x}>']])).toEqual([]);
     expect(nativeChoices([['./work/Row.tsx', '<SelectField value={x} />']])).toEqual([]);
   });
 

@@ -4,7 +4,7 @@ import type { CodeDependency, CodeModule, Provenance } from '../data/api';
 import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
-import { PathText } from '../ui';
+import { PathText } from '../design/ui';
 import { layerModules } from './codeLayout';
 import { useWidth } from './useWidth';
 

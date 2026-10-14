@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Icon, type IconName, Menu, Tip } from '../ui';
+import { Icon, type IconName, Menu, Tip } from '../design/ui';
 import { cn } from '../lib/cn';
 import type { Place, ViewId } from './placements';
 

@@ -1,11 +1,11 @@
 import { useShenora } from '@shenora/react';
 import { useTranslation } from 'react-i18next';
 import { App } from './App';
-import { LinkOpener } from './links';
+import { LinkOpener } from './design/links';
 import { ContextMenus } from './menus/ContextMenu';
 import { clipped } from './menus/press';
 import { ShellSignals } from './ShellSignals';
-import { failure, Toasts, useToasts } from './ui';
+import { failure, Toasts, useToasts } from './design/ui';
 import { DetachedSession } from './work/DetachedSession';
 import { MonitorWindow } from './work/MonitorWindow';
 import { useLinkOpener, useOpenBrowser, useSecondaryWindowTheme } from './bridge/shell';

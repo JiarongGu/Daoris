@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { rooted } from '../test/sources';
 
 /**
  * **The atoms own the primitives** (MENU1). Radix supplies the behaviour and `ui.tsx` every pixel (D42), so a
@@ -14,7 +15,7 @@ import { describe, expect, it } from 'vitest';
 const PRIMITIVE = /(?:\bfrom\s+|\bimport\s*\(?\s*)['"](@radix-ui\/[^'"]+)['"]/g;
 
 /** The atoms, which may import any primitive: they are where the pixels are. */
-const ATOMS = new Set<string>(['./ui.tsx']);
+const ATOMS = new Set<string>(['./design/ui.tsx']);
 
 /**
  * What else may import one, and which. The application's root mounts the one tooltip provider every `Tip`
@@ -36,9 +37,9 @@ export function reachers(files: [path: string, source: string][]): string[] {
       .map((primitive) => `${path} imports ${primitive}`));
 }
 
-const sources = import.meta.glob('./**/*.{ts,tsx}', {
+const sources = rooted(import.meta.glob('/src/**/*.{ts,tsx}', {
   eager: true, query: '?raw', import: 'default',
-}) as Record<string, string>;
+}) as Record<string, string>);
 
 const shipped = Object.entries(sources).filter(([path]) => !HARNESS.test(path));
 
@@ -57,7 +58,7 @@ describe('the atoms own the primitives', () => {
     expect(reachers([['./main.tsx', "import * as Dialog from '@radix-ui/react-dialog';\n"]]))
       .toEqual(['./main.tsx imports @radix-ui/react-dialog']);
     // The atoms may import any.
-    expect(reachers([['./ui.tsx', "import * as Menu from '@radix-ui/react-dropdown-menu';\n"]])).toEqual([]);
+    expect(reachers([['./design/ui.tsx', "import * as Menu from '@radix-ui/react-dropdown-menu';\n"]])).toEqual([]);
     // And the atoms' own import is no primitive.
     expect(reachers([['./work/AppMenu.tsx', "import { Menu } from '../ui';\n"]])).toEqual([]);
     // The harness is told apart by its name.
@@ -69,7 +70,7 @@ describe('the atoms own the primitives', () => {
 
   it('is looking at files at all — a vacuous check is a check that has stopped working', () => {
     expect(shipped.length).toBeGreaterThan(50);
-    expect(shipped.some(([path]) => path === './ui.tsx')).toBe(true);
+    expect(shipped.some(([path]) => path === './design/ui.tsx')).toBe(true);
     expect(shipped.some(([path]) => path === './main.tsx')).toBe(true);
   });
 

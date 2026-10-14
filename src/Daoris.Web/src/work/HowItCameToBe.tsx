@@ -2,9 +2,9 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { figure, list, moment } from '../locales/format';
 import { cn } from '../lib/cn';
-import { ExternalLink } from '../links';
+import { ExternalLink } from '../design/links';
 import type { AccountNamer } from '../agents/tools';
-import { Icon, type IconName, Inline, Pill, QUEST_TONE, SESSION_TONE } from '../ui';
+import { Icon, type IconName, Inline, Pill, QUEST_TONE, SESSION_TONE } from '../design/ui';
 import { HandedAccount } from './HandedAccount';
 import { Note } from './Note';
 import {

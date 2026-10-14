@@ -3,7 +3,7 @@ import type { Quest, Session } from '../data/api';
 import i18n from '../locales/i18n';
 import { buildChain } from '../map/chain';
 import { InTheme } from '../plugins/storyIcons';
-import { chinese } from '../storyLanguage';
+import { chinese } from '../design/storyLanguage';
 import { AttendedSession } from './AttendedSession';
 import { sessionFacts } from './headFacts';
 import { questName } from './identity';

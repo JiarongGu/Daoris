@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { GoAhead, Quest, Session } from '../data/api';
 import { ChannelPanel } from '../asks/ChannelSection';
 import type { GoAheadAnswer } from '../asks/GoAheadList';
-import { answeredPark, Button, EmptyState } from '../ui';
+import { answeredPark, Button, EmptyState } from '../design/ui';
 import type { ChainStep } from '../map/chain';
 import { ChainLine } from '../map/ChainLine';
 import { ChainStrip } from '../map/ChainStrip';

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Button, Inline } from '../ui';
+import { Button, Inline } from '../design/ui';
 import { type Answered, InlineConfirm } from './InlineConfirm';
 import type { DiscardOffer } from './groups';
 

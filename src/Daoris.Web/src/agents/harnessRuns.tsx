@@ -6,7 +6,7 @@ import { type DefaultStanding, type HarnessRoster, useHarnessAction, useHarnessE
 import { byTool, type AccountPlace } from './tools';
 import { accountName } from './agents';
 import { keys } from '../data/queries';
-import type { Notify } from '../ui';
+import type { Notify } from '../design/ui';
 import type { Answered } from '../work/InlineConfirm';
 
 /** A process action a person started on a tool: an install, an update, a pin, or a sign-in. */

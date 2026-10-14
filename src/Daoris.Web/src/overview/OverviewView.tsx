@@ -7,7 +7,7 @@ import { sittingBecause, sittingSentence } from '../data/signals';
 import {
   Card, CardHeader, Button, EmptyState, Icon, Inline, type Notify, PageHeader, Pill, QUEST_TONE,
   SkeletonRows, Tile, Tip, useErrorNotify,
-} from '../ui';
+} from '../design/ui';
 import { AttentionBand, type AttentionDoors } from '../work/AttentionBand';
 import { questName } from '../work/identity';
 

@@ -4,9 +4,9 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import userEvent from '@testing-library/user-event';
 import i18n from '../locales/i18n';
 import { Markdown } from '../work/Markdown';
-import { ExternalLink } from '../links';
+import { ExternalLink } from '../design/links';
 import { rightClick } from '../test/contextMenu';
-import { PathText } from '../ui';
+import { PathText } from '../design/ui';
 import { type ContextDoors, type ContextOffer, contextOffer } from './press';
 import { ContextMenus } from './ContextMenu';
 
