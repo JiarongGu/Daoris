@@ -190,5 +190,5 @@ public static class QuestCheckCommand
         return 1;
     }
 
-    private static string Short(string commit) => commit.Length > 8 ? commit[..8] : commit;
+    private static string Short(string commit) => TextBounds.ShortCommit(commit, 8);
 }

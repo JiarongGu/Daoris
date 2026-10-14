@@ -312,7 +312,7 @@ public static class EvidenceReader
         return (code, output.ToString());
     }
 
-    private static string Short(string commit) => commit.Length > 8 ? commit[..8] : commit;
+    private static string Short(string commit) => TextBounds.ShortCommit(commit, 8);
 
     /// <summary>One entry of <c>ls-tree -z</c>: <c>mode SP type SP object TAB name</c>, NUL-terminated and never quoted.</summary>
     private sealed record TreeEntry(string Type, string Object, string Name)

@@ -526,7 +526,7 @@ internal static class TraceWords
                 .Append(tried.Branch is { } branch ? $" · branch {branch}" : "")
                 .Append(tried.Commits is { } commits ? $" · {commits} commit(s)" : "")
                 .Append(tried.Uncommitted is { } paths ? $" · {paths} uncommitted path(s)" : "")
-                .Append(tried.Tip is { } tip ? $" · at {tip[..Math.Min(12, tip.Length)]}" : "")
+                .Append(tried.Tip is { } tip ? $" · at {TextBounds.ShortCommit(tip, 12)}" : "")
                 .Append('\n');
         }
     }
@@ -641,7 +641,7 @@ internal static class TraceWords
 
     private static string WhenOr(DateTimeOffset? at) => at is { } moment ? When(moment) : "at a moment not recorded";
 
-    private static string Short(string commit) => commit.Length > 8 ? commit[..8] : commit;
+    private static string Short(string commit) => TextBounds.ShortCommit(commit, 8);
 
     private static string Count(int number) => number.ToString("N0", CultureInfo.InvariantCulture);
 }

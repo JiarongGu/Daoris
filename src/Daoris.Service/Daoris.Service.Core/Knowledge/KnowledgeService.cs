@@ -20,7 +20,7 @@ public sealed record FeedProvenance(
     string Commit, DateTimeOffset CommittedAt, string Branch, string? Origin = null)
 {
     /// <summary>The form a person reads, in a sentence or a table cell.</summary>
-    public string ShortCommit => Commit.Length <= 8 ? Commit : Commit[..8];
+    public string ShortCommit => Clipped.ShortCommit(Commit, 8);
 
     /// <summary>
     /// The commit this deployment held when the feeding machine asked git whether <see cref="Commit"/>
@@ -819,7 +819,7 @@ public sealed class KnowledgeService(
         };
     }
 
-    private static string Short(string commit) => commit.Length <= 8 ? commit : commit[..8];
+    private static string Short(string commit) => Clipped.ShortCommit(commit, 8);
 
     /// <summary>Re-read every repository and rebuild the index.</summary>
     public async Task<IndexReport> RefreshAsync(CancellationToken ct = default)

@@ -50,7 +50,7 @@ public static class HelperPass
 
     /// <summary>The line a helper's transcript opens with: what it reads, where, and what holds it read-only.</summary>
     public static string Opening(string repository, string tip, string posture) =>
-        $"— a helper for a session working in `{repository}`, at `{tip[..Math.Min(7, tip.Length)]}`, {OpinionPosture.Said(posture)}: "
+        $"— a helper for a session working in `{repository}`, at `{TextBounds.ShortCommit(tip, 7)}`, {OpinionPosture.Said(posture)}: "
         + "it reads in a copy of its own, and nothing in it is taken back.";
 
     /// <summary>Why a person's words are refused for a helper while it reads, the sentence the bridge carries verbatim.</summary>

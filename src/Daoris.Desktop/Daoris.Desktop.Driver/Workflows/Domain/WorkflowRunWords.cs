@@ -285,7 +285,7 @@ public static class WorkflowRunWords
     }
 
     /// <summary>A commit as a person reads it: its first eight characters, as the driver says one.</summary>
-    private static string Short(string commit) => commit.Length > 8 ? commit[..8] : commit;
+    private static string Short(string commit) => TextBounds.ShortCommit(commit, 8);
 
     /// <summary>Why no second opinion could be had, by the code the gate kept (<c>ReviewerUnavailable</c>, a failed pass's).</summary>
     private static string Unavailable(string? code) => code switch

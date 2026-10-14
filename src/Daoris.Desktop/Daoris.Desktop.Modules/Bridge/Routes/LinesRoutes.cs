@@ -308,7 +308,7 @@ public sealed class LinesRoutes(DriverContext context)
         var scope = Flag(request, "all") ? SyncScope.Everything : SyncScope.Named(also);
         static object Repository(SyncRepository each) => new { each.Repository, each.Workspace, each.Holds };
 
-        static string? Short(string? commit) => commit is null ? null : commit[..Math.Min(8, commit.Length)];
+        static string? Short(string? commit) => commit is null ? null : Daoris.Driver.TextBounds.ShortCommit(commit, 8);
         object Pull(LinePull pull) => new
         {
             pull.Repository, pull.Workspace, pull.Line, pull.Kind, From = Short(pull.From), To = Short(pull.To), pull.Commits,

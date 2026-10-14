@@ -114,7 +114,7 @@ public static class OpinionPass
 
     /// <summary>The line a reviewer's transcript opens with: what it reads, where, and what holds it read-only (§5.2).</summary>
     public static string Opening(OpinionCandidateRead candidate, string posture) =>
-        $"— a second opinion on `{candidate.Repository}` at `{candidate.Tip[..Math.Min(7, candidate.Tip.Length)]}`, "
+        $"— a second opinion on `{candidate.Repository}` at `{TextBounds.ShortCommit(candidate.Tip, 7)}`, "
         + $"{OpinionPosture.Said(posture)}: it reads in a copy of its own, and nothing in it is taken back.";
 
     /// <summary>Why a person's words are refused for a reviewer while it reads, the sentence the bridge carries verbatim.</summary>

@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 public sealed record TreeProvenance(string Commit, DateTimeOffset CommittedAt, string Branch)
 {
     /// <summary>The form a person reads in a note.</summary>
-    public string ShortCommit => Commit.Length <= 8 ? Commit : Commit[..8];
+    public string ShortCommit => TextBounds.ShortCommit(Commit, 8);
 }
 
 /// <summary>How this checkout's commit stands to one a deployment holds, as git answered (SYNC5a).</summary>
@@ -424,7 +424,7 @@ public static class WorkingTree
             .ConfigureAwait(false);
     }
 
-    private static string Short(string commit) => commit.Length > 8 ? commit[..8] : commit;
+    private static string Short(string commit) => TextBounds.ShortCommit(commit, 8);
 
     /// <summary>
     /// The files and patches of one range, bounded, from ONE git process (REVIEW3); <paramref name="rest"/> says where the

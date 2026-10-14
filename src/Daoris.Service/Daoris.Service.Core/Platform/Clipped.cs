@@ -16,6 +16,10 @@ internal static class Clipped
     internal static string Clip(string text, int limit = DefaultLimit) =>
         text.Length <= limit ? text : text[..limit] + "…";
 
+    /// <summary>A commit id's first <paramref name="length"/> characters (DEDUP7b), the id itself when it is no longer; no mark, since an id is not prose.</summary>
+    internal static string ShortCommit(string commit, int length) =>
+        commit.Length > length ? commit[..length] : commit;
+
     /// <summary>One line: line ends become spaces and the ends are trimmed, so a quote never breaks its caller's layout.</summary>
     internal static string OneLine(string text) => text.Replace('\n', ' ').Replace('\r', ' ').Trim();
 }

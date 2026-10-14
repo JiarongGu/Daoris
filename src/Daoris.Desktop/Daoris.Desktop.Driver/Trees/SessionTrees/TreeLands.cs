@@ -670,7 +670,7 @@ internal sealed class TreeLands(TreeContext context, TreeFollows follows, TreeWo
             root, ["update-ref", "-m", $"daoris: {branch} moves {name} on", $"refs/heads/{name}", head, standsAt], ct).ConfigureAwait(false);
         if (moved != 0)
         {
-            return new TreeLanding(false, $"git would not move `{name}` on from {standsAt[..Math.Min(8, standsAt.Length)]}: "
+            return new TreeLanding(false, $"git would not move `{name}` on from {TextBounds.ShortCommit(standsAt, 8)}: "
                 + $"{FirstLine(moveErr)} It may have moved meanwhile; nothing was changed.")
             { Refusal = AutoLandingCode.Exists };
         }
@@ -678,7 +678,7 @@ internal sealed class TreeLands(TreeContext context, TreeFollows follows, TreeWo
         var pushIt = handedOn ? "" : $" Push it to grow its pull request: `git push origin {name}`.";
         return new Branched(
             new TreeLanding(true,
-                $"moved `{name}` on from {standsAt[..Math.Min(8, standsAt.Length)]} to this session's work — {newer} more commit(s), "
+                $"moved `{name}` on from {TextBounds.ShortCommit(standsAt, 8)} to this session's work — {newer} more commit(s), "
                 + $"{commits.Count} from `{line ?? "HEAD"}` in all.{pushIt} Nothing was merged and the checkout was not touched.{TreeStays}",
                 name)
             { AdvancedFrom = standsAt },

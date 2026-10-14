@@ -565,7 +565,7 @@ public static class OpinionGate
 
     private static string Plural(int count, string noun) => count == 1 ? $"1 {noun}" : $"{count} {noun}s";
 
-    private static string Short(string commit) => commit.Length > 8 ? commit[..8] : commit;
+    private static string Short(string commit) => TextBounds.ShortCommit(commit, 8);
 
     /// <summary>What the landing record keeps of a gate that let the work go (§8.6); null where the level asked none.</summary>
     internal static LandingOpinion? Landing(OpinionGateState gate)

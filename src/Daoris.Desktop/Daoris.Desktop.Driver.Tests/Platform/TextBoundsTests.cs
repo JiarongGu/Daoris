@@ -74,4 +74,16 @@ public sealed class TextBoundsTests
     {
         Assert.Equal("> a\n> b", TextBounds.Quote("a\nb\n\n", trimEnd: true));
     }
+
+    [Theory]
+    [InlineData("0123456789abcdef", 7, "0123456")]
+    [InlineData("0123456789abcdef", 8, "01234567")]
+    [InlineData("0123456789abcdef", 12, "0123456789ab")]
+    [InlineData("01234567", 8, "01234567")]
+    [InlineData("abc", 8, "abc")]
+    [InlineData("", 7, "")]
+    public void ShortCommitKeepsTheHeadAndLeavesAShortIdAlone(string id, int length, string expected)
+    {
+        Assert.Equal(expected, TextBounds.ShortCommit(id, length));
+    }
 }

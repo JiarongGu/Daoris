@@ -283,7 +283,7 @@ public static class GitFormats
     public static string ResolveCommand(string revision) => GitRefs.Command(["rev-parse", "--verify", revision + "^{commit}"]);
 
     /// <summary>A commit id as a sentence names it.</summary>
-    internal static string Short(string commit) => commit.Length > 8 ? commit[..8] : commit;
+    internal static string Short(string commit) => TextBounds.ShortCommit(commit, 8);
 
     /// <summary>One commit's seven fields from <paramref name="at"/>, or null where they name no commit.</summary>
     private static GitLogCommit? Commit(string[] fields, int at)
