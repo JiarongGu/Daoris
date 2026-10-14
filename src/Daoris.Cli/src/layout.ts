@@ -5,12 +5,12 @@
 // manifest's), whether a declared path stays inside the repository (D18 over the declared roots), and
 // which of the repository's own documents sit in a tier its index no longer lists.
 
-import type { Harness, HarnessTier, Lock, Manifest } from './types.ts';
+import type { Harness, HarnessTier, Lock, Manifest } from './platform/types.ts';
 import { existsSync, readdirSync, rmdirSync, statSync } from 'node:fs';
 import { dirname, join, posix, resolve, sep, win32 } from 'node:path';
-import { listFiles, listMarkdown } from './fsx.ts';
+import { listFiles, listMarkdown } from './platform/fsx.ts';
 import { DEFAULT_HARNESS, HARNESSES, resolveHarness } from './harness.ts';
-import { DaorisError } from './errors.ts';
+import { DaorisError } from './platform/errors.ts';
 
 /**
  * The smallest limit an agent puts on a repository's instruction files: codex reads 32,768 bytes of

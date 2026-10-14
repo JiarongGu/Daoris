@@ -49,12 +49,12 @@
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { daorisHome, requireHomeFile } from './home.ts';
+import { daorisHome, requireHomeFile } from './platform/home.ts';
 import { commandOnTheSystem, commandThroughTools, handTools } from './tools.ts';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import type { SpawnSyncReturns, StdioOptions } from 'node:child_process';
-import { flagValue, operands } from './args.ts';
+import { flagValue, operands } from './platform/args.ts';
 
 /** The `agent` flags that take a value — so that value is never read as an operand. */
 const AGENT_VALUED: ReadonlySet<string> = new Set([
@@ -105,10 +105,10 @@ function accountWord(shown: string, id: string): string {
 function either(choices: readonly string[]): string {
   return choices.length > 1 ? `${choices.slice(0, -1).join(', ')} or ${choices.at(-1)}` : choices.join('');
 }
-import { DaorisError } from './errors.ts';
+import { DaorisError } from './platform/errors.ts';
 import { AGENT_SETTINGS_FILE, readAgentSettings, writeAgentSettings } from './agentsettings.ts';
 import type { AgentSettingsEdit } from './agentsettings.ts';
-import { onPath, readJsonObject, writeJsonAtomic } from './fsx.ts';
+import { onPath, readJsonObject, writeJsonAtomic } from './platform/fsx.ts';
 import { normalizeWorkspace } from './remotemap.ts';
 // A cycle with `plugins.ts`, harmless because both sides read the other only inside functions:
 // `harness list` shows the harnesses plugins declare, and the catalogue refuses the names this table has.
@@ -132,14 +132,14 @@ import {
 } from './accountnames.ts';
 import { forgetRead, keepRead } from './accountreads.ts';
 import type { Login } from './accountreads.ts';
-import { atName, byName, findName, sameName } from './casefold.ts';
+import { atName, byName, findName, sameName } from './platform/casefold.ts';
 import { coolingLine, coolingOf, coolingWhen, endCooling, machineZone, readCooling } from './cooling.ts';
-import { shellWord, shellWords } from './shellword.ts';
+import { shellWord, shellWords } from './platform/shellword.ts';
 import { OWN_WINDOWS, saidLine, saidOf } from './windows.ts';
 import { markSignedIn, probeLockPath, takeProbeLock } from './probelock.ts';
 import type { Channel, Fetcher } from './channels.ts';
-import type { CommandArgs } from './types.ts';
-import type { ExitCode } from './errors.ts';
+import type { CommandArgs } from './platform/types.ts';
+import type { ExitCode } from './platform/errors.ts';
 
 export const PATH_VARIABLE = 'DAORIS_HARNESS_CONFIG';
 

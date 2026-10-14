@@ -1,4 +1,4 @@
-import type { DaorisError } from '../src/errors.ts';
+import type { DaorisError } from '../src/platform/errors.ts';
 import { mkdirSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

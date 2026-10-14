@@ -8,7 +8,7 @@ import { planChanges, planSync, applySync, commandSync } from '../src/materializ
 import { commandCheck } from '../src/drift.ts';
 import { commandInit, commandStatus } from '../src/commands.ts';
 import { analyze } from '../src/analyze.ts';
-import { DaorisError } from '../src/errors.ts';
+import { DaorisError } from '../src/platform/errors.ts';
 
 /**
  * 🔴 **A pack may switch a core row off, the repository confirms it, and it is never silent** (D71).

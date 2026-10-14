@@ -1,7 +1,7 @@
-import type { CommandArgs, Harness, Lock, Manifest, Twin } from './types.ts';
-import type { ExitCode } from './errors.ts';
+import type { CommandArgs, Harness, Lock, Manifest, Twin } from './platform/types.ts';
+import type { ExitCode } from './platform/errors.ts';
 import { join } from 'node:path';
-import { listMarkdown, readText } from './fsx.ts';
+import { listMarkdown, readText } from './platform/fsx.ts';
 import { parseFrontmatter, stripHeader } from './document.ts';
 import { lockIndex, readLock, readManifest } from './config.ts';
 import { spanBody } from './tierrender.ts';

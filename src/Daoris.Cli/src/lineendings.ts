@@ -12,7 +12,7 @@
 
 import { lstatSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { normalize, writeTextAtomic } from './fsx.ts';
+import { normalize, writeTextAtomic } from './platform/fsx.ts';
 
 export const GITATTRIBUTES = '.gitattributes';
 

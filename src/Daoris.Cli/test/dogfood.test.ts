@@ -6,7 +6,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { COMMANDS } from '../src/cli.ts';
 import { readCanon } from '../src/canon.ts';
 import { frontmatterEnd, parseFrontmatter, SKILL_FIELDS } from '../src/document.ts';
-import { listFiles, readText } from '../src/fsx.ts';
+import { listFiles, readText } from '../src/platform/fsx.ts';
 import { readManifest, readLock } from '../src/config.ts';
 import { inspect, commandCheck } from '../src/drift.ts';
 import { ROLES } from '../src/documents.ts';

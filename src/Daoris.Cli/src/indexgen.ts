@@ -1,8 +1,8 @@
-import type { CommandArgs, DeclaredDocument, Harness, LockLike } from './types.ts';
-import type { ExitCode } from './errors.ts';
+import type { CommandArgs, DeclaredDocument, Harness, LockLike } from './platform/types.ts';
+import type { ExitCode } from './platform/errors.ts';
 import type { IndexInput, TierDocument, TierInput } from './tierrender.ts';
 import { join } from 'node:path';
-import { listMarkdown, readText } from './fsx.ts';
+import { listMarkdown, readText } from './platform/fsx.ts';
 import { stripHeader } from './document.ts';
 import { lockIndex, readManifest } from './config.ts';
 import { indexPath, renderIndex, renderRoster } from './tierrender.ts';

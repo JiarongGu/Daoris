@@ -1,4 +1,4 @@
-import type { CliCommand } from '../types.ts';
+import type { CliCommand } from '../platform/types.ts';
 import { LOOK_BOUND_MS, REDIRECTS, commandTool } from '../toolinstall.ts';
 import { isAddress } from '../tools.ts';
 import { releaseFetcher } from '../service.ts';

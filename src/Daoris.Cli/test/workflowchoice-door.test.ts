@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import { commandDriver } from '../src/driverconfig.ts';
-import { DaorisError } from '../src/errors.ts';
+import { DaorisError } from '../src/platform/errors.ts';
 import type { CheckoutsReader } from '../src/reviews.ts';
 import { GATE_READS, WHAT_CHOOSES, commandWorkflow } from '../src/workflowdoor.ts';
 import { makeFixture, type Fixture } from './_fixture.ts';

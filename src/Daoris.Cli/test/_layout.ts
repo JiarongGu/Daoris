@@ -4,7 +4,7 @@
 // deleting each other's scratch.
 
 import type { Fixture } from './_fixture.ts';
-import type { Lock, SyncPlan } from '../src/types.ts';
+import type { Lock, SyncPlan } from '../src/platform/types.ts';
 import { makeFixture } from './_fixture.ts';
 import { readCanon } from '../src/canon.ts';
 import { readLock, readManifest } from '../src/config.ts';

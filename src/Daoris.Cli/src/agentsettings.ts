@@ -24,8 +24,8 @@
 // It edits one file and nothing else: no spawn, no network.
 
 import { existsSync } from 'node:fs';
-import { DaorisError } from './errors.ts';
-import { readText, writeTextAtomic } from './fsx.ts';
+import { DaorisError } from './platform/errors.ts';
+import { readText, writeTextAtomic } from './platform/fsx.ts';
 
 /** The tool's own settings file, in the account's configuration home. The driver's `AgentSettings.FileName`. */
 export const AGENT_SETTINGS_FILE = 'settings.json';

@@ -8,8 +8,8 @@
 //
 // Pure: it reads no file, reaches no network and spawns nothing.
 
-import { DaorisError } from './errors.ts';
-import { atName, findName } from './casefold.ts';
+import { DaorisError } from './platform/errors.ts';
+import { atName, findName } from './platform/casefold.ts';
 import { normalizeWorkspace } from './remotemap.ts';
 
 /** What a helper an agent asks for does: wait for the person's yes, start at once, or not be offered. */

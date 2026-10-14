@@ -11,8 +11,8 @@ import { layoutFixture, skill } from './_layout.ts';
 import { readManifest, readLock, writeLock } from '../src/config.ts';
 import { HARNESSES, resolveHarness, verifyHarnessContract } from '../src/harness.ts';
 import { lockLayout } from '../src/layout.ts';
-import { digestBytes } from '../src/fsx.ts';
-import { DaorisError } from '../src/errors.ts';
+import { digestBytes } from '../src/platform/fsx.ts';
+import { DaorisError } from '../src/platform/errors.ts';
 
 test('the agents descriptor keeps the tiers under .agents, the region in AGENTS.md, and mirrors skills for Claude Code', () => {
   const agents = resolveHarness('agents');

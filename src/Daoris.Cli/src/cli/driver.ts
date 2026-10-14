@@ -1,4 +1,4 @@
-import type { CliCommand } from '../types.ts';
+import type { CliCommand } from '../platform/types.ts';
 import { commandDriver } from '../driverconfig.ts';
 import { registryCheckouts, sessionRecords } from '../service.ts';
 import { commandWorkflow } from '../workflowdoor.ts';

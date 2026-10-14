@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { DaorisError, type ExitCode } from './errors.ts';
-import type { CliCommand } from './types.ts';
+import { DaorisError, type ExitCode } from './platform/errors.ts';
+import type { CliCommand } from './platform/types.ts';
 import { command as analyze } from './cli/analyze.ts';
 import { command as init } from './cli/init.ts';
 import { command as sync } from './cli/sync.ts';

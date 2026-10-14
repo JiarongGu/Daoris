@@ -13,7 +13,7 @@ import type { LayoutFixture } from './_layout.ts';
 import { captureError } from './_fixture.ts';
 import { layoutFixture, skill } from './_layout.ts';
 import { writeLock } from '../src/config.ts';
-import { DaorisError } from '../src/errors.ts';
+import { DaorisError } from '../src/platform/errors.ts';
 
 const MIRROR = '.claude/skills/finder/SKILL.md';
 const SOURCE = '.agents/skills/finder/SKILL.md';

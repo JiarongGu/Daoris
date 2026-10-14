@@ -12,7 +12,7 @@
 // file, reaches no network and spawns nothing.
 
 import { createHash } from 'node:crypto';
-import { sameName } from './casefold.ts';
+import { sameName } from './platform/casefold.ts';
 import { isoMoment } from './cooling.ts';
 import { landingProblem } from './driverconfig.ts';
 import { isPluginId } from './plugins.ts';

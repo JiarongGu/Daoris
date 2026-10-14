@@ -1,8 +1,8 @@
-import type { CommandArgs, DriftReport, Lock, Manifest } from './types.ts';
-import type { ExitCode } from './errors.ts';
+import type { CommandArgs, DriftReport, Lock, Manifest } from './platform/types.ts';
+import type { ExitCode } from './platform/errors.ts';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { digestBytes, listMarkdown, readText, sha256 } from './fsx.ts';
+import { digestBytes, listMarkdown, readText, sha256 } from './platform/fsx.ts';
 import { readLock, readManifest } from './config.ts';
 import { indexInput, rosterFromDisk } from './indexgen.ts';
 import { findRegion, hasImport, removeRegion } from './region.ts';

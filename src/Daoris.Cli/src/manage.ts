@@ -7,12 +7,12 @@
 // tests name. Nothing here is imported by `check` or anything `check` reaches.
 
 import { isAbsolute, resolve } from 'node:path';
-import { DaorisError } from './errors.ts';
-import { flagValue, operands } from './args.ts';
+import { DaorisError } from './platform/errors.ts';
+import { flagValue, operands } from './platform/args.ts';
 import { endpoint, isLocalService, refusal, request } from './service.ts';
 import { repositoryName } from './connect.ts';
-import type { CommandArgs } from './types.ts';
-import type { ExitCode } from './errors.ts';
+import type { CommandArgs } from './platform/types.ts';
+import type { ExitCode } from './platform/errors.ts';
 
 /** The first bare argument, if there is one. Flags are never a value. */
 function named(argv: string[]): string | undefined {

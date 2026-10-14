@@ -48,14 +48,14 @@
 
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, resolve, sep } from 'node:path';
-import { foldName, sameName } from './casefold.ts';
-import { DaorisError } from './errors.ts';
-import { onPath, readJsonObject, readText, renameHeld, writeJsonAtomic } from './fsx.ts';
-import type { ExitCode } from './errors.ts';
-import { daorisHome, HOME_SENTENCE } from './home.ts';
+import { foldName, sameName } from './platform/casefold.ts';
+import { DaorisError } from './platform/errors.ts';
+import { onPath, readJsonObject, readText, renameHeld, writeJsonAtomic } from './platform/fsx.ts';
+import type { ExitCode } from './platform/errors.ts';
+import { daorisHome, HOME_SENTENCE } from './platform/home.ts';
 import { TOOLCHAINS } from './toolchain.ts';
 import { TOOLS, isAddress } from './tools.ts';
-import type { CommandArgs } from './types.ts';
+import type { CommandArgs } from './platform/types.ts';
 
 /** The plugin API this build speaks. Raised only when a plugin written for the new shape cannot work on the old one. */
 export const API_VERSION = 1;

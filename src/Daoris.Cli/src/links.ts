@@ -10,7 +10,7 @@
 // another shape. On the other side of the guess is how the repository is laid out for its other
 // contributors, so the refusal names both answers and leaves the choice to the repository.
 
-import type { LinkProblem } from './types.ts';
+import type { LinkProblem } from './platform/types.ts';
 import { existsSync, lstatSync, readFileSync } from 'node:fs';
 import { join, posix } from 'node:path';
 

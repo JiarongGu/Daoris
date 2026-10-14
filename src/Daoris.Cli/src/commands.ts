@@ -1,8 +1,8 @@
-import type { CommandArgs, Harness } from './types.ts';
-import type { ExitCode } from './errors.ts';
+import type { CommandArgs, Harness } from './platform/types.ts';
+import type { ExitCode } from './platform/errors.ts';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { listFiles, listMarkdown } from './fsx.ts';
+import { listFiles, listMarkdown } from './platform/fsx.ts';
 import { readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
 import { MANIFEST_FILE, lockIndex, readLock, readManifest, writeManifest } from './config.ts';
 import { planChanges } from './materialize.ts';
@@ -14,9 +14,9 @@ import { formerDocuments, lockLayout } from './layout.ts';
 import { describeLink, linkProblems } from './links.ts';
 import { candidateDocuments, sayCandidates } from './documents.ts';
 import { applyLineEndings, LINE_ENDINGS_RULE, planLineEndings } from './lineendings.ts';
-import { flagValue } from './args.ts';
+import { flagValue } from './platform/args.ts';
 import { readRemotes, redactKey } from './remotemap.ts';
-import { DaorisError } from './errors.ts';
+import { DaorisError } from './platform/errors.ts';
 
 /**
  * Everything under the target dir that the lock does not claim is this repo's

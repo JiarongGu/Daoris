@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { atName, byName, compareNames, findName, foldName, sameName } from '../src/casefold.ts';
+import { atName, byName, compareNames, findName, foldName, sameName } from '../src/platform/casefold.ts';
 
 /**
  * A name compared without case (CASEFOLD1; AGENTREAD1c, D125's notes): as the driver's `OrdinalIgnoreCase` compares it,

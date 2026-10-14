@@ -7,8 +7,8 @@
 //
 // Pure: it reads no file, reaches no network and spawns nothing.
 
-import { DaorisError } from './errors.ts';
-import { atName, findName } from './casefold.ts';
+import { DaorisError } from './platform/errors.ts';
+import { atName, findName } from './platform/casefold.ts';
 import { normalizeWorkspace } from './remotemap.ts';
 
 /** How work is committed: each piece as it passes its checks, after the person's yes, or once at the end. */

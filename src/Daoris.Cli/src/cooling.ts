@@ -22,9 +22,9 @@
 // No HTTP route reaches it (D47 §4), and this module opens no socket and spawns nothing.
 
 import { join } from 'node:path';
-import { compareNames, findName, sameName } from './casefold.ts';
-import { readJsonObject, writeJsonAtomic } from './fsx.ts';
-import { shellWord } from './shellword.ts';
+import { compareNames, findName, sameName } from './platform/casefold.ts';
+import { readJsonObject, writeJsonAtomic } from './platform/fsx.ts';
+import { shellWord } from './platform/shellword.ts';
 
 export const COOLING_FILE = 'cooling.json';
 

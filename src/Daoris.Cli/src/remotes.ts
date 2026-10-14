@@ -15,15 +15,15 @@
 // console is a transcript, a log, and eventually an issue someone pastes into.
 
 import { createInterface } from 'node:readline';
-import { flagValue, operands } from './args.ts';
-import { DaorisError } from './errors.ts';
+import { flagValue, operands } from './platform/args.ts';
+import { DaorisError } from './platform/errors.ts';
 import {
   KEY_VARIABLE, PATH_VARIABLE, URL_VARIABLE, WORKSPACE_VARIABLE,
   heldAs, normalizeWorkspace, readRemotes, redactKey, remotesPath, remotesPathRequired, writeRemotes,
 } from './remotemap.ts';
 import type { Remote } from './remotemap.ts';
-import type { CommandArgs } from './types.ts';
-import type { ExitCode } from './errors.ts';
+import type { CommandArgs } from './platform/types.ts';
+import type { ExitCode } from './platform/errors.ts';
 
 /** Flags whose next token belongs to them, and is therefore not the workspace name. */
 const VALUED = new Set(['--url', '--key']);

@@ -11,7 +11,7 @@
 // Pure: it reads no file, reaches no network and spawns nothing. The door hands it the plugins it reads beside its file.
 
 import { createHash } from 'node:crypto';
-import { atName, findName, sameName } from './casefold.ts';
+import { atName, findName, sameName } from './platform/casefold.ts';
 import type { DriverChoices, LandingRule } from './driverconfig.ts';
 import { opinionFor } from './opinions.ts';
 import type { PluginCatalog } from './plugins.ts';

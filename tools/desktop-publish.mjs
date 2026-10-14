@@ -59,7 +59,7 @@ import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync,
 import { dirname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // The tar reader the CLI carries (AGT2b): what unpacks the doctrine tool's package (D124 §1.2).
-import { extractTarGz } from '../src/Daoris.Cli/src/tarball.ts';
+import { extractTarGz } from '../src/Daoris.Cli/src/platform/tarball.ts';
 import { copyTree, isMain, renameHeld, writeAtomic } from './fsx.mjs';
 import { running } from './processes.mjs';
 // The service hosts' one build recipe (CONNECTOR1): what `--service` lays under `app/`, built as the service publish builds it.

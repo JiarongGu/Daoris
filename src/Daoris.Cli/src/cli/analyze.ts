@@ -1,4 +1,4 @@
-import type { CliCommand } from '../types.ts';
+import type { CliCommand } from '../platform/types.ts';
 import { commandAnalyze } from '../analyze.ts';
 
 export const command: CliCommand = {

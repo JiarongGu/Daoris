@@ -22,7 +22,7 @@
 
 import { closeSync, mkdirSync, openSync, statSync, unlinkSync, writeSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { writeTextAtomic } from './fsx.ts';
+import { writeTextAtomic } from './platform/fsx.ts';
 
 /** The folder under the home's `harnesses` the locks are kept in; no agent is ever named so. */
 export const PROBE_FOLDER = '.probing';

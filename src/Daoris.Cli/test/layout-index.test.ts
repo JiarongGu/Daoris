@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import { captureError } from './_fixture.ts';
 import { doc, layoutFixture, skill } from './_layout.ts';
 import { writeLock } from '../src/config.ts';
-import { DaorisError } from '../src/errors.ts';
+import { DaorisError } from '../src/platform/errors.ts';
 
 const INDEX = '.claude/INDEX.md';
 const pointer = (path: string) => `The knowledge and the skills, each with when it applies, are listed in [${path}](${path}), `

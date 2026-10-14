@@ -1,10 +1,10 @@
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { flagValue, operands } from './args.ts';
-import { DaorisError, type ExitCode } from './errors.ts';
-import { readJsonObject, writeJsonAtomic } from './fsx.ts';
-import { HOME_SENTENCE, daorisHome } from './home.ts';
-import type { CommandArgs } from './types.ts';
+import { flagValue, operands } from './platform/args.ts';
+import { DaorisError, type ExitCode } from './platform/errors.ts';
+import { readJsonObject, writeJsonAtomic } from './platform/fsx.ts';
+import { HOME_SENTENCE, daorisHome } from './platform/home.ts';
+import type { CommandArgs } from './platform/types.ts';
 
 /**
  * The in-app browser's favorites (BRW5, CHR5): `<home>/browser/favorites.json`, the person's and never a

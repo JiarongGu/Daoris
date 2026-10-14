@@ -17,11 +17,11 @@
 // an `i` with a dot above, which a lowered `İzmir` would have met.
 
 import { dirname } from 'node:path';
-import { requireHomeFile } from './home.ts';
-import { DaorisError } from './errors.ts';
-import { flagValue, operands } from './args.ts';
-import { readJsonObject, writeJsonAtomic } from './fsx.ts';
-import { findName, sameName } from './casefold.ts';
+import { requireHomeFile } from './platform/home.ts';
+import { DaorisError } from './platform/errors.ts';
+import { flagValue, operands } from './platform/args.ts';
+import { readJsonObject, writeJsonAtomic } from './platform/fsx.ts';
+import { findName, sameName } from './platform/casefold.ts';
 import { isoMoment } from './cooling.ts';
 import { isPluginId, readPlugins, type PluginCatalog } from './plugins.ts';
 import { normalizeWorkspace } from './remotemap.ts';
@@ -38,8 +38,8 @@ import {
 import { applyCommitEdit, commitListed, commitsOf, type CommitEdit, type CommitRule } from './commits.ts';
 import { applyHelperEdit, helperListed, helpersOf, type HelperEdit, type HelperRule } from './helpers.ts';
 import { workflowChoicesOf, writtenChoices, type WorkflowChoice } from './workflowchoice.ts';
-import type { CommandArgs } from './types.ts';
-import type { ExitCode } from './errors.ts';
+import type { CommandArgs } from './platform/types.ts';
+import type { ExitCode } from './platform/errors.ts';
 
 export const PATH_VARIABLE = 'DAORIS_DRIVER_CONFIG';
 

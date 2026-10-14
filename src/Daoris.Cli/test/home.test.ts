@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
-import { daorisHome, homeFile, HOME_VARIABLE, requireHomeFile } from '../src/home.ts';
+import { daorisHome, homeFile, HOME_VARIABLE, requireHomeFile } from '../src/platform/home.ts';
 import { captureError } from './_fixture.ts';
 
 /**

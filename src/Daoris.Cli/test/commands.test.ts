@@ -7,7 +7,7 @@ import { readManifest } from '../src/config.ts';
 import { commandInit, commandStatus } from '../src/commands.ts';
 import { readCanon } from '../src/canon.ts';
 import { planSync, applySync } from '../src/materialize.ts';
-import { DaorisError } from '../src/errors.ts';
+import { DaorisError } from '../src/platform/errors.ts';
 
 const doc = (name: string) => `---\nname: ${name}\napplies_when: w\nenforces: e\n---\nx\n`;
 

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { CLI_BIN, CLI_ENTRY, CLI_PACKAGE, cliLaunchers } from '../../../tools/desktop-publish.mjs';
 import { coolingLine } from '../src/cooling.ts';
 import { joinRefusal } from '../src/rotation.ts';
-import { shellWord, shellWords } from '../src/shellword.ts';
+import { shellWord, shellWords } from '../src/platform/shellword.ts';
 import { TOOLCHAINS, accountLines, commandHarness, profileHome, readHarnessSettings } from '../src/toolchain.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 

@@ -35,9 +35,9 @@
 // No HTTP route reaches it (D47 §4), and this module opens no socket and spawns nothing.
 
 import { join } from 'node:path';
-import { findName } from './casefold.ts';
+import { findName } from './platform/casefold.ts';
 import { isoMoment } from './cooling.ts';
-import { readJsonObject, writeTextAtomic } from './fsx.ts';
+import { readJsonObject, writeTextAtomic } from './platform/fsx.ts';
 
 /** The file's name, as the driver's `AccountReads.FileName` spells it. */
 export const READS_FILE = 'reads.json';

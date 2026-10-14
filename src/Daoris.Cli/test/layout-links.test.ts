@@ -13,7 +13,7 @@ import { join } from 'node:path';
 import type { TestContext } from 'node:test';
 import { captureError } from './_fixture.ts';
 import { layoutFixture, skill } from './_layout.ts';
-import { DaorisError } from '../src/errors.ts';
+import { DaorisError } from '../src/platform/errors.ts';
 
 const TEXT = /looks like a link checked out as text/;
 

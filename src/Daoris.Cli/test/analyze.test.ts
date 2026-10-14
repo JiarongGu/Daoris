@@ -5,7 +5,7 @@ import { makeFixture } from './_fixture.ts';
 import { readCanon } from '../src/canon.ts';
 import { readManifest, readLock } from '../src/config.ts';
 import { planSync, applySync } from '../src/materialize.ts';
-import type { Lock } from '../src/types.ts';
+import type { Lock } from '../src/platform/types.ts';
 import { analyze, commandAnalyze } from '../src/analyze.ts';
 
 const doc = (name: string, body = 'Body.') =>

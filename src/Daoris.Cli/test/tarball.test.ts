@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
-import { extractTarGz } from '../src/tarball.ts';
+import { extractTarGz } from '../src/platform/tarball.ts';
 import { makeFixture } from './_fixture.ts';
 import { TAR_END as END, pax, tarEntry as entry } from './_tar.ts';
 

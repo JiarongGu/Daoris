@@ -22,10 +22,10 @@
 import { chmodSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
-import { DaorisError } from './errors.ts';
-import { renameHeld } from './fsx.ts';
+import { DaorisError } from './platform/errors.ts';
+import { renameHeld } from './platform/fsx.ts';
 import { fingerprintOf, spaced, verifyDetached } from './openpgp.ts';
-import { extractTarGz } from './tarball.ts';
+import { extractTarGz } from './platform/tarball.ts';
 
 /** How the channel's bytes arrive. `null` means the host answered that there is nothing there. */
 export interface Fetcher {

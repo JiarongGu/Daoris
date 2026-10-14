@@ -1,7 +1,7 @@
-import type { CanonNote } from './types.ts';
+import type { CanonNote } from './platform/types.ts';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { readText } from './fsx.ts';
+import { readText } from './platform/fsx.ts';
 
 const CANON_CHANGELOG = 'CHANGELOG.md';
 

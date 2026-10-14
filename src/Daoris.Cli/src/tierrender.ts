@@ -15,11 +15,11 @@
 //      and the region says where: a row per document put the pilot's first rule past the byte at which
 //      one agent stops reading.
 
-import type { CanonFile, Harness, LockEntry } from './types.ts';
+import type { CanonFile, Harness, LockEntry } from './platform/types.ts';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { firstHeading, frontmatterEnd, makeHeader, parseFrontmatter, SKILL_FIELDS, stripFrontmatter } from './document.ts';
-import { readText } from './fsx.ts';
+import { readText } from './platform/fsx.ts';
 import { DEFAULT_HARNESS, HARNESSES, regionIn } from './harness.ts';
 import { findRegion } from './region.ts';
 

@@ -7,7 +7,7 @@ import {
 } from '../src/harness.ts';
 import { readManifest } from '../src/config.ts';
 import { captureError } from './_fixture.ts';
-import { DaorisError } from '../src/errors.ts';
+import { DaorisError } from '../src/platform/errors.ts';
 
 test('the supported harness is recognised by its own layout', () => {
   const fx = makeFixture('harness-claude');

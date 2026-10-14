@@ -20,8 +20,8 @@
 // because a person named the folder.
 
 import { existsSync, readFileSync } from 'node:fs';
-import { DaorisError } from './errors.ts';
-import { writeTextAtomic } from './fsx.ts';
+import { DaorisError } from './platform/errors.ts';
+import { writeTextAtomic } from './platform/fsx.ts';
 
 /** The harness's own config, in the account's configuration home. The driver's `ClaudeTrust.FileName`. */
 export const TRUST_FILE = '.claude.json';

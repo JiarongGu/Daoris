@@ -6,14 +6,14 @@
 // follows the import and the others read the room's `AGENTS.md` themselves. Declared in the manifest
 // rather than found: the CLI never runs git, and a walk of the tree meets build output and worktrees.
 
-import type { Harness, Lock, Manifest, RoomPlan } from './types.ts';
+import type { Harness, Lock, Manifest, RoomPlan } from './platform/types.ts';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { readText } from './fsx.ts';
+import { readText } from './platform/fsx.ts';
 import { firstHeading } from './document.ts';
 import { ensureImport, findRegion, IMPORT, removeRegion } from './region.ts';
 import { contained, isFile } from './layout.ts';
-import { DaorisError } from './errors.ts';
+import { DaorisError } from './platform/errors.ts';
 
 /** The instruction file a room holds, and the one its pointer is written to. */
 const instructionsOf = (harness: Harness) => harness.pointer?.imports ?? 'AGENTS.md';

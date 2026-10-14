@@ -11,8 +11,8 @@
 // declares and the plugin catalogue a caller hands it, as the driver reads the machine's adapters, a plugin's among them
 // (XAGENT1b2). The driver's gate reads the rule since XAGENT1f, and each door says what it does (`opinionGate`, XAGENT1f4).
 
-import { DaorisError } from './errors.ts';
-import { atName, findName, sameName } from './casefold.ts';
+import { DaorisError } from './platform/errors.ts';
+import { atName, findName, sameName } from './platform/casefold.ts';
 import type { PluginCatalog } from './plugins.ts';
 import { normalizeWorkspace } from './remotemap.ts';
 import { TOOLCHAINS } from './toolchain.ts';

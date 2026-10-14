@@ -13,12 +13,12 @@
 // (DOC5), and the declared index (ORIENT2e): the manifest-reading table in `documents-manifest.test.ts` is
 // the one its reader matches.
 
-import type { DeclaredDocument, DocumentLinkProblem, Harness } from './types.ts';
+import type { DeclaredDocument, DocumentLinkProblem, Harness } from './platform/types.ts';
 import { readdirSync, statSync } from 'node:fs';
 import { join, posix } from 'node:path';
 import { declared, escapes, within } from './layout.ts';
 import { linkProblems } from './links.ts';
-import { DaorisError } from './errors.ts';
+import { DaorisError } from './platform/errors.ts';
 
 /** How a role is bound: to a path the repository chooses, or only to a ceiling on a file the layout names. */
 type Binding = 'path' | 'ceiling';

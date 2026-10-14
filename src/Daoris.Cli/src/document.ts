@@ -1,4 +1,4 @@
-import type { CanonFile } from './types.ts';
+import type { CanonFile } from './platform/types.ts';
 
 const HEADER_PREFIX = '<!-- daoris:';
 

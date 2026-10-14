@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { makeFixture } from './_fixture.ts';
-import { normalize, readText, writeTextAtomic, sha256, listMarkdown, onPath, renameHeld } from '../src/fsx.ts';
+import { normalize, readText, writeTextAtomic, sha256, listMarkdown, onPath, renameHeld } from '../src/platform/fsx.ts';
 
 /** A rename that refuses with `code` for its first `refusals` calls, then records the move. */
 function refusing(code: string, refusals: number): { rename: (from: string, to: string) => void; calls: string[][] } {

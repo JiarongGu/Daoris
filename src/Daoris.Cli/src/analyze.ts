@@ -1,10 +1,10 @@
 import type {
   AnalysisReport, Canon, CanonFile, CommandArgs, Harness, Lock, LockEntry, PackSuggestion, Survey, Twin,
-} from './types.ts';
-import type { ExitCode } from './errors.ts';
+} from './platform/types.ts';
+import type { ExitCode } from './platform/errors.ts';
 import { existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { listFiles, listMarkdown, readText, sha256 } from './fsx.ts';
+import { listFiles, listMarkdown, readText, sha256 } from './platform/fsx.ts';
 import { parseFrontmatter, renderCanonFile } from './document.ts';
 import { findRegion } from './region.ts';
 import { tierRuleBody } from './tierrender.ts';

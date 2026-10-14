@@ -1,5 +1,5 @@
 // The `index` command, not a barrel: an ES module resolves no folder index, and nothing imports `cli/`.
-import type { CliCommand } from '../types.ts';
+import type { CliCommand } from '../platform/types.ts';
 import { commandIndex } from '../indexgen.ts';
 
 export const command: CliCommand = {

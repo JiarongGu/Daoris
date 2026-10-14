@@ -12,8 +12,8 @@
 
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { atName, findName } from './casefold.ts';
-import { readText } from './fsx.ts';
+import { atName, findName } from './platform/casefold.ts';
+import { readText } from './platform/fsx.ts';
 import { normalizeWorkspace } from './remotemap.ts';
 import { isKebabId, isWorkflowId } from './workflowid.ts';
 

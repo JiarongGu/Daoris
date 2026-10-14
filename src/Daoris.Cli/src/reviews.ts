@@ -11,8 +11,8 @@
 
 import { lstatSync } from 'node:fs';
 import { join } from 'node:path';
-import { DaorisError } from './errors.ts';
-import { atName, findName, sameName } from './casefold.ts';
+import { DaorisError } from './platform/errors.ts';
+import { atName, findName, sameName } from './platform/casefold.ts';
 import { normalizeWorkspace } from './remotemap.ts';
 import { isKebabId } from './workflowid.ts';
 

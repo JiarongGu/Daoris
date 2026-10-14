@@ -9,7 +9,7 @@ import { captureError } from './_fixture.ts';
 import { doc, layoutFixture, skill } from './_layout.ts';
 import { readLock, readManifest } from '../src/config.ts';
 import { upstreamAll, upstreamFile } from '../src/upstream.ts';
-import { DaorisError } from '../src/errors.ts';
+import { DaorisError } from '../src/platform/errors.ts';
 
 const MIRROR = '.claude/skills/finder/SKILL.md';
 const SOURCE = '.agents/skills/finder/SKILL.md';
