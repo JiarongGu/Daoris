@@ -14681,3 +14681,8 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SESSONE2g — a teammate's ask's channel, read here** (service/web). The sync mirrors every message of the workspace, but `GET /api/asks/{id}/channel` answers only an ask held on this machine: a channel of an ask held elsewhere, readable by its id. D167's SESSONE2d note.
 
 **Outcome** 2026-10-15: `GET /api/asks/{id}/channel` answers an ask held elsewhere from the messages the sync mirrored (their `origin` kept, read-only, no Daoris lines); a post to such an ask is refused `held-elsewhere` (409). The page has no door to a teammate's ask (its asks list and `GET /api/asks/{id}` are this machine's), so the route alone is built and the page is unchanged. Detail: D167's SESSONE2g note.
+## HELPDOOR1 — adding a `setting` door, written down (2026-10-15, D110)
+
+> - [ ] **HELPDOOR1 — adding a `setting` door, written down** (docs). Driver `Doors` with its case and method; the service's `Doors` with its case and flags; every tool description; the coverage row; a room row placed with the workflow-after-opinion order; goldens rewritten by `DAORIS_GOLDEN_WRITE=1`; the index. A knowledge note and its index row. D110; D164's DOORS1a note.
+
+**Outcome** 2026-10-15: `.claude/knowledge/setting-doors.md` lists the ten places a `setting` door goes, walked from DOORS1a's two commits and TOOL4l-b's smallest one, with its row in `.claude/INDEX.md`. Documents only. Detail: D110's HELPDOOR1 note and the note itself.
