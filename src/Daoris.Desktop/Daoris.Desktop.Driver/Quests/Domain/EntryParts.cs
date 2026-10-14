@@ -54,5 +54,5 @@ public sealed record EntryParts(string Key, IReadOnlyList<PriorSession> Parts)
             : entries.FirstOrDefault(pair => pair.Key.EndsWith($"/{publisher}", StringComparison.Ordinal)).Value;
 
     /// <summary>The origin a key holds, what comes before its first slash, as the service reads a stored key; null for none.</summary>
-    private static string? OriginOf(string? key) => key is { Length: > 0 } && key.IndexOf('/') is > 0 and var slash ? key[..slash] : null;
+    private static string? OriginOf(string? key) => EntryKey.Parse(key) is { HasSlash: true } parsed ? parsed.Origin : null;
 }

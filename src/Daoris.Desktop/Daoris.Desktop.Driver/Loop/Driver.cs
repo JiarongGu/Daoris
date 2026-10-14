@@ -1343,7 +1343,8 @@ public sealed class Driver(
             // tree does not hold. The conclusion's note replaces it — by then the record's Tree field and the evidence say the rest.
             var startingNote = StartingNote(
                 opened, quest, answered, resumedIn, carryingOn, start.Resumes, written, elsewhere, fellBack,
-                handedOver: carryingOn && handedFrom, walked: carryingOn && handedFrom && passedAccount is not null);
+                handedOver: carryingOn && handedFrom, walked: carryingOn && handedFrom && passedAccount is not null,
+                joinedSession: joinedIn is not null ? start.Entry?.Into?.Session : null);
             await service.AdvanceAsync(sessionId, "starting", note: startingNote?.Note, ct: ct, parts: startingNote?.Parts).ConfigureAwait(false);
 
             // The answer beneath the question it answers (STANDDOWN2): the session that asked ends with
@@ -1898,9 +1899,11 @@ public sealed class Driver(
     /// <param name="elsewhere">Whether it runs on another account than the record it carries on.</param>
     /// <param name="handedOver">The quest was handed over from <paramref name="resumes"/> (MIXAGENT1a-ii): said by the agent it came from.</param>
     /// <param name="walked">The account the hand-over named could not run it, and another account of the named agent did.</param>
+    /// <param name="joinedSession">The earlier part's session whose free tree this start went into (SESSONE1g), or null.</param>
     internal static Noted? StartingNote(
         TreeOpened? opened, QuestView quest, QuestView? answered, string? resumedIn, bool carryingOn,
-        PriorSession? resumes, PriorSession? written, bool elsewhere, ContinueReason? fellBack, bool handedOver = false, bool walked = false)
+        PriorSession? resumes, PriorSession? written, bool elsewhere, ContinueReason? fellBack, bool handedOver = false, bool walked = false,
+        string? joinedSession = null)
     {
         if (opened is not null) return opened.Opening ?? Noted.From(opened.Sentence, null);
 
@@ -1915,7 +1918,17 @@ public sealed class Driver(
                     NoteCodes.StartedInAskingTree, $"in the tree session `{resumes!.Session}` asked from.", ("session", resumes.Session)));
         }
 
-        if (!carryingOn) return null;
+        // A further part gone into a free tree of its entry (SESSONE1g, D167): said, as a start in the root is not. A part whose
+        // tree was removed grows again, and its opening (`started.tree`) already says whose tree went.
+        if (!carryingOn)
+        {
+            return joinedSession is null
+                ? null
+                : Noted.Of(
+                    NoteCodes.StartedJoined,
+                    $"goes into the tree of session `{joinedSession}`, which holds the earlier part of this work.",
+                    ("session", joinedSession));
+        }
 
         var session = resumes!.Session;
         (string Name, object? Value)[] facts = [("quest", quest.Id), ("session", session)];
