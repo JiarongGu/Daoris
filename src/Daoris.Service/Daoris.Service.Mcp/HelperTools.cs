@@ -8,7 +8,11 @@ namespace Daoris.Knowledge.Mcp;
 /// helper the driver started answers it. Each speaks only for the session its connector names, as an agent: the ask is a file
 /// the driver takes, and the person's rule for helpers is the driver's to apply.
 /// </summary>
-public sealed partial class KnowledgeTools
+/// <param name="intake">Which session this connector speaks for, when the driver started it.</param>
+/// <param name="ledger">The ledger, for the session's record the box reads.</param>
+/// <param name="helpers">Where a working session's ask and a helper's answer are written — under the home.</param>
+[McpServerToolType]
+public sealed class HelperTools(IntakeScope? intake = null, SessionLedger? ledger = null, HelperBox? helpers = null)
 {
     [McpServerTool(Name = "helper_ask")]
     [Description(

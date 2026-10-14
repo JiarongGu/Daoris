@@ -4,7 +4,10 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>A session asks the person for a go-ahead, once per act, on the ask its work is for (KNOWUSE1a, D135 §2).</summary>
-public sealed partial class KnowledgeTools
+/// <param name="intake">Which session this connector speaks for, when the driver started it.</param>
+/// <param name="ledger">The ledger, where the go-ahead is held on the session's ask.</param>
+[McpServerToolType]
+public sealed class GoAheadTools(IntakeScope? intake = null, SessionLedger? ledger = null)
 {
     [McpServerTool(Name = "go_ahead_ask")]
     [Description(
