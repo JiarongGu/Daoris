@@ -216,9 +216,6 @@ internal static class OpinionGateFiles
     /// </summary>
     private static class Kept
     {
-        public static DateTimeOffset? Moment(JsonElement element, string name) =>
-            Json.Text(element, name) is { } when && DateTimeOffset.TryParse(when, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at)
-                ? at
-                : null;
+        public static DateTimeOffset? Moment(JsonElement element, string name) => Moments.Read(element, name);
     }
 }

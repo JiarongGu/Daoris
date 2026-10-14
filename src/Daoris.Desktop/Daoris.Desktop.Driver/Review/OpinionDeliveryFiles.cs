@@ -121,9 +121,5 @@ internal static class OpinionDeliveryFiles
         return new OpinionReading(session, Text(answered, "tip"), at, findings);
     }
 
-    private static DateTimeOffset? Moment(JsonElement element, string name) =>
-        Text(element, name) is { } when
-        && DateTimeOffset.TryParse(when, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at)
-            ? at
-            : null;
+    private static DateTimeOffset? Moment(JsonElement element, string name) => Moments.Read(Text(element, name));
 }
