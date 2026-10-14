@@ -82,7 +82,7 @@ public static class SessionEntries
             .GroupBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
         var askedOf = look.Records.Where(record => !Intake(record) && record.EntryKey.StartsWith("ask:", StringComparison.Ordinal))
-            .Select(record => Origin(record.EntryKey))
+            .Select(record => EntryKey.Parse(record.EntryKey).Origin)
             .Concat(look.Quests.Where(quest => quest.From.StartsWith("ask #", StringComparison.OrdinalIgnoreCase)).Select(quest => "ask:" + quest.From[5..]))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -102,14 +102,12 @@ public static class SessionEntries
             var lead = placed.Last(part => part.Row.Group == group);
             var parts = Began(placed.Select(part => part.Record).ToList(), placed.Select(part => part.Row).ToList(), quests);
             var key = line.Key;
-            entries.Add((new SessionEntry(key, Origin(key), key[Math.Min(key.IndexOf('/') + 1, key.Length)..], group, lead.Record.Id, parts), position[lead.Record.Id]));
+            var read = EntryKey.Parse(key);
+            entries.Add((new SessionEntry(key, read.Origin, read.Repository, group, lead.Record.Id, parts), position[lead.Record.Id]));
         }
 
         return [.. entries.OrderBy(each => each.At).Select(each => each.Entry)];
     }
-
-    /// <summary>The text before the key's first <c>/</c>.</summary>
-    private static string Origin(string key) => key.IndexOf('/') is var at and >= 0 ? key[..at] : key;
 
     /// <summary>An ask's intake (D65 §1b): the conversation that answers it.</summary>
     private static bool Intake(SessionRecord record) =>
