@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- Sessions lists one row per line of work in a repository: a request's retries, resumes, carry-ons, hand-overs and the
+  requests the ask's other repositories sent it are its *parts*, shown with *N parts* and a parts strip on its page, where
+  each part can be opened and acted on. An ask's finished intake leaves the list for its ask's page, which now lists the
+  ask's sessions; *Group by ask* in the list's ⋯ arranges sessions under their asks; archiving a session archives all its
+  parts. A new request of the same ask goes into its line's tree when that tree is free, and runs alongside when it is not.
 - A session that goes on with your words and whose agent's connection fails no longer ends as *completed*: it ends failed,
   saying why, and your words wait to go again at the next look (after a second failure in a row, with the next words you
   say). Words you add while a turn hangs are no longer shown as taken when the turn fails; they wait to go again too. The

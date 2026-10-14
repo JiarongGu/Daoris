@@ -224,6 +224,42 @@ describe('the Work frame', () => {
   });
 
   /**
+   * SESSONE1c, D167 point 5: *Ask* joins the ⋯'s *Group by* only where the reader answers entries, which it groups by; chosen,
+   * it is remembered beside the arrangement, and what no ask began is listed under *Not on an ask*.
+   */
+  it('offers Group by ask only where the reader answers entries, and remembers the choice', async () => {
+    SESSIONS = [DRIVEN, PARKED];
+    const entry = (leading: string) => ({
+      entry: `quest:${leading}/engine`, origin: `quest:${leading}`, repository: 'engine', group: 'working', leading,
+      parts: [{ session: leading, quest: null, shown: 'working', group: 'working', began: 'opened', after: null, askedBy: null }],
+    });
+    const answerEntries = (withEntries: boolean) => invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_GROUPS'
+      ? { sessions: [], ...(withEntries ? { entries: [entry(DRIVEN.id), entry(PARKED.id)] } : {}) }
+      : DRIVER_STATE));
+    answerEntries(false);
+    const first = show();
+    const user = userEvent.setup();
+    let list = await screen.findByRole('complementary', { name: 'Sessions' });
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', {}));
+    within(list).getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+    expect(screen.queryByRole('menuitemradio', { name: 'Ask' })).toBeNull();
+    await user.keyboard('{Escape}');
+    first.unmount();
+
+    answerEntries(true);
+    show();
+    list = await screen.findByRole('complementary', { name: 'Sessions' });
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', {}));
+    within(list).getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(await screen.findByRole('menuitemradio', { name: 'Ask' }));
+
+    expect(await within(list).findByRole('heading', { level: 3, name: 'Not on an ask' })).toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem('daoris.list.sessions.filters')!)).toEqual({ group: 'ask' });
+  });
+
+  /**
    * ENTRY1b (D161's ENTRY1 note): a door into what waits on the person names a group of Sessions' list, which the frame
    * hands its rail: the group's heading is brought into view and focused, and the door told.
    */

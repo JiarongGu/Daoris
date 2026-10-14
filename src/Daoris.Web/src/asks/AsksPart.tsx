@@ -10,7 +10,8 @@ import {
 } from '../queries';
 import { useScope } from '../scope';
 import { namer } from '../settings/namer';
-import { useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useWorkflowRun, useWorkPlan } from '../shell';
+import { askLines } from '../work/entries';
+import { useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useSessionEntries, useWorkflowRun, useWorkPlan } from '../shell';
 import { workspaceOf, workspacesOf } from '../workspaces';
 import { failure, type Notify, useErrorNotify } from '../ui';
 import { askStanding, freshest } from '../quests/records';
@@ -104,6 +105,8 @@ export function useAsksPart({
   // unscoped, they are every circle's, which is exactly the list the composer asks the person to pick from.
   const family = useRegistry();
   const sessions = useSessions(null, true);
+  // The driver's entries (SESSONE1c, D167): an ask's page lists its work by them. None before a host answers them.
+  const entries = useSessionEntries().data;
   // What a person calls an account (ACCTNAME1, D152 §4.2): an intake's line names its account as the agent's page does.
   const { t } = useTranslation();
   const harnesses = useHarnesses();
@@ -281,6 +284,7 @@ export function useAsksPart({
           receivers={receiversIn(shown.workspace)}
           questTitles={questTitles}
           intake={intakeOf(shown)}
+          lines={askLines(entries, shown.id)}
           onAttend={onAttend}
           busy={busy}
           onPublish={(to) => onPublish(shown.id, to)}

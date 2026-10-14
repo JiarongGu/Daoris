@@ -69,9 +69,16 @@ export type SessionWhere = {
 
 export function SessionRow({
   session, quest, opening, root, where, reads, continues, helps, taking, lastTurn, grouping, place, archived = false,
-  selected = false, onSelect, acts = [], onAct,
+  selected = false, onSelect, acts = [], onAct, name, parts,
 }: {
   session: Session;
+  /**
+   * The entry's name where it is not this record's own (SESSONE1c, D167): the ask's, for a line of work an ask began. Absent,
+   * the record's own name, which `sessionTitle` gives, so the row and the head still agree.
+   */
+  name?: string | null;
+  /** How many parts the entry this row stands for holds (D167): said where there is more than one. */
+  parts?: number;
   /**
    * Whether a turn is in flight, as the driver says. A live chat between turns reads idle, a quiet
    * mark and the word (UX5 U17); absent, the record's word stands.
@@ -132,7 +139,7 @@ export function SessionRow({
   onAct?: (act: SessionActId, id: string) => void;
 }) {
   const { t } = useTranslation();
-  const title = sessionTitle(session, quest, opening);
+  const title = name || sessionTitle(session, quest, opening);
   const origin = sessionOrigin(session);
   // Where its work is (LOOK2b): where it landed while that reads as landed, as its review does (D113) — the landed
   // branch still stands, or the tree is gone — else the tree it opened, unless that is gone too.
@@ -149,6 +156,7 @@ export function SessionRow({
   const meta = [
     place ?? null,
     archived ? t('work.rail.archived') : null,
+    parts && parts > 1 ? t('work.rail.parts', { count: parts }) : null,
     placed ? t(placed.line, placed.values) : null,
     // An intake is a chat only by the way it was opened (INT4b); it says what it is (INT4g). So is a second opinion's reviewer,
     // marked as one (XAGENT1g, the second-agent design §9).

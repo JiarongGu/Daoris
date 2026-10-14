@@ -9,6 +9,7 @@ import { failure, type Notify, SESSION_ACTIVE } from '../ui';
 import { handOverSaid } from './say';
 import { type ActFacts, folderOf, type SessionActId, workTargetOf } from './acts';
 import { forgetDraft } from './drafts';
+import { partIds, type SessionEntry } from './entries';
 import type { Answered } from './InlineConfirm';
 import type { Translate, WorkTarget } from './pausing';
 import { sessionWindowName } from './window';
@@ -83,7 +84,12 @@ const keptSaid = (t: Translate, name: string) =>
  *   pause ends work in flight; **Resume** goes to the work's one owner (`workActs.ts`), the press the pages make too, and
  *   never asks, since it starts nothing itself.
  */
-export function useSessionActs({ notify, doors = {} }: { notify: Notify; doors?: SessionDoors }) {
+export function useSessionActs({ notify, doors = {}, entries }: {
+  notify: Notify;
+  doors?: SessionDoors;
+  /** The reader's entries (SESSONE1c): an archive reaches every part of the entry it is pressed for. Absent, a record is its own. */
+  entries?: readonly SessionEntry[];
+}) {
   const { t } = useTranslation();
   const archive = useArchiveSessions();
   const retry = useRetryQuest();
@@ -101,11 +107,20 @@ export function useSessionActs({ notify, doors = {} }: { notify: Notify; doors?:
 
   // Asked of one session, a refusal is the host's answer, said in the catalogue's words with the group that kept it; one
   // that was not archived is information (D48 §6).
-  const archiveOne = (id: string, mark: boolean) => archive.mutate({ ids: [id], archived: mark }, {
-    onSuccess: (answer) => notify(t(mark ? 'work.archive.done'
-      : answer?.notArchived?.includes(id) ? 'work.archive.wasNot' : 'work.archive.back')),
-    onError: failure(notify),
-  });
+  // An archive is of the entry (D167 point 5, D126 §5.2): every part's id goes, so no part is left as a row of its own.
+  const archiveOne = (id: string, mark: boolean) => {
+    const ids = partIds(entries, id);
+    archive.mutate({ ids, archived: mark }, {
+      onSuccess: (answer) => {
+        const kept = answer?.kept?.length ?? 0;
+        notify(t(mark
+          ? kept > 0 ? 'work.archive.endedKept' : 'work.archive.done'
+          : ids.every((part) => answer?.notArchived?.includes(part)) ? 'work.archive.wasNot' : 'work.archive.back',
+        { archived: ids.length - kept, count: ids.length }));
+      },
+      onError: failure(notify),
+    });
+  };
 
   const run = (act: SessionActId, facts: ActFacts) => {
     const { session } = facts;
@@ -244,9 +259,11 @@ export function useSessionActs({ notify, doors = {} }: { notify: Notify; doors?:
    * *Archive what ended…*'s second press (§5.3): what its first listed, each judged again by the host as it goes. What
    * changed since the list is kept and counted, never refused as a whole.
    */
-  const archiveListed = (ids: readonly string[], answered?: Answered) => archive.mutate({ ids, archived: true }, {
+  const archiveListed = (ids: readonly string[], answered?: Answered) => archive.mutate({ ids: ids.flatMap((id) => partIds(entries, id)), archived: true }, {
     onSuccess: (answer) => {
-      const kept = answer?.kept?.length ?? 0;
+      // What the list counts are entries: one kept part keeps its entry in the list.
+      const keptParts = new Set((answer?.kept ?? []).map((row) => row.session));
+      const kept = ids.filter((id) => partIds(entries, id).some((part) => keptParts.has(part))).length;
       notify(kept > 0
         ? t('work.archive.endedKept', { archived: ids.length - kept, count: ids.length })
         : t('work.archive.ended', { count: ids.length }));

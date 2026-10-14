@@ -4,6 +4,7 @@ import type { Session } from '../api';
 import { keys } from '../queries';
 import { searchable } from '../searchable';
 import type { SessionEvent } from '../work/conversation';
+import type { SessionEntry } from '../work/entries';
 import type { SessionGroupName, SessionGrouping } from '../work/groups';
 import type { NewSessionAnswer } from '../work/say';
 import type { SessionWhere } from '../work/SessionRow';
@@ -152,10 +153,43 @@ export const useSessionGroups = (ids?: readonly string[], { enabled = true }: { 
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: groupsKey(ids),
-    queryFn: async () => {
-      const answer = await call<{ sessions?: SessionGrouping[] }>('SESSION_GROUPS', ids ? { ids: [...new Set(ids)] } : undefined);
-      return Array.isArray(answer?.sessions) ? answer.sessions : [];
-    },
+    queryFn: () => askGroups(ids),
+    select: (answer) => answer.sessions,
+    enabled: isAvailable && enabled,
+    refetchOnWindowFocus: false,
+  });
+};
+
+/** One `SESSION_GROUPS` answer: the rows, and the entries beside them where the host is new enough to answer them (D167). */
+type GroupsAnswer = { sessions: SessionGrouping[]; entries: SessionEntry[] | undefined };
+
+/**
+ * The entries as the answer holds them, read defensively: absent where the host is older than the entries, and then the list
+ * is the records it always was. A malformed entry is left out rather than guessed at.
+ */
+const readEntries = (answer: unknown): SessionEntry[] | undefined => (Array.isArray(answer)
+  ? answer.filter((row): row is SessionEntry => Boolean(row)
+    && typeof (row as SessionEntry).leading === 'string'
+    && Array.isArray((row as SessionEntry).parts)
+    && (row as SessionEntry).parts.length > 0)
+  : undefined);
+
+const askGroups = async (ids?: readonly string[]): Promise<GroupsAnswer> => {
+  const answer = await call<{ sessions?: SessionGrouping[]; entries?: unknown }>('SESSION_GROUPS', ids ? { ids: [...new Set(ids)] } : undefined);
+  return { sessions: Array.isArray(answer?.sessions) ? answer.sessions : [], entries: readEntries(answer?.entries) };
+};
+
+/**
+ * The session list's entries (SESSONE1c, D167 point 5): one line of work in one repository, its records its parts, in the
+ * reader's group order. The same answer as `useSessionGroups`, under the same key, so asking both asks once. Undefined while
+ * no answer has come and from a host older than entries, and then the list is the records it always was; shell-only.
+ */
+export const useSessionEntries = (ids?: readonly string[], { enabled = true }: { enabled?: boolean } = {}) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: groupsKey(ids),
+    queryFn: () => askGroups(ids),
+    select: (answer) => answer.entries,
     enabled: isAvailable && enabled,
     refetchOnWindowFocus: false,
   });
