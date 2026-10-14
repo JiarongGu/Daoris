@@ -225,6 +225,28 @@ public sealed class NativeResumeTests
         Assert.False(inbox.Hold(new ChatMessage("Too late.", [])));
     }
 
+    /// <summary>
+    /// TURNFAIL4 (D137's TURNFAIL2 note): the second-failure bound reads the native door's failed <c>result</c> as it reads the
+    /// protocol door's refused turn. The first failure leaves the words waiting; a run that went on from that, failing again,
+    /// marks them for the person, so a door that fails at once is not tried at every look.
+    /// </summary>
+    [Fact]
+    public void Two_native_failures_in_a_row_mark_the_words_for_the_person()
+    {
+        var failed = Observation.Resumed(1, before: "completed", startedOn: "Done", questStatus: "Done");
+        var ended = new PriorSession("s1", "D:/fam/Game", "completed", "it went on with your words and ended; its quest stays as it closed.");
+        var door = new HarnessEnding(1, "API Error: Connection dropped (ECONNRESET)", []);
+
+        Assert.Equal(WordsAfter.Wait, FailedTurnWords.Judge(failed, null, door, ended));
+
+        var line = FailedTurnWords.Line(WordsAfter.Wait)!;
+        var again = ended with { State = "failed", Note = failed.Then("\n\n", line).Note, NoteParts = failed.Then("\n\n", line).Parts };
+        Assert.Equal(WordsAfter.Held, FailedTurnWords.Judge(failed, null, door, again));
+
+        // An exit alone, with no failed result, took them as before.
+        Assert.Equal(WordsAfter.Taken, FailedTurnWords.Judge(failed, null, new HarnessEnding(1, null, []), ended));
+    }
+
     /// <summary>The words a go-on run carried when it failed wait too, before any held behind it, in the order said.</summary>
     [Fact]
     public void A_go_on_run_that_failed_leaves_the_words_it_carried_waiting_too()
