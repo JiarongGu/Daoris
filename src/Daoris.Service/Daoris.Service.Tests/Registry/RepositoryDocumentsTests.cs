@@ -9,7 +9,7 @@ namespace Daoris.Service.Tests;
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>A twin</b> (<c>.claude/knowledge/twins.md</c>, *the development documents*): the CLI's
-/// <c>checkDocuments</c> (<c>src/Daoris.Cli/src/documents.ts</c>) reads the same field, and the two share
+/// <c>checkDocuments</c> (<c>src/Daoris.Cli/src/layout/documents.ts</c>) reads the same field, and the two share
 /// no code. <see cref="What_a_declaration_is_read_as"/> holds the CLI's <c>documents-manifest.test.ts</c>
 /// rows, its reading table and then its refusals, in their order, before this side's own edges.</para>
 ///

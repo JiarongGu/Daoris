@@ -8,24 +8,24 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 
 | Verb | Class | Row | Handler | Usage |
 |---|---|---|---|---|
-| `analyze` | doctrine | `cli/analyze.ts:5` | `analyze.ts:268` commandAnalyze | [packs...] what adopting would do here: collisions, duplicates… |
-| `init` | doctrine | `cli/init.ts:5` | `commands.ts:55` commandInit | detect what this repo has, write daoris.json |
-| `sync` | doctrine | `cli/sync.ts:5` | `materialize.ts:811` commandSync | materialize the manifest's packs; write daoris.lock |
-| `check` | doctrine | `cli/check.ts:5` | `drift.ts:292` commandCheck | drift, staleness, index freshness (offline); the core budget is… |
-| `upstream` | doctrine | `cli/upstream.ts:5` | `upstream.ts:171` commandUpstream | <file> promote a locally-edited canonical file back to the canon |
-| `index` | doctrine | `cli/index.ts:6` | `indexgen.ts:148` commandIndex | say where the roster is: the rules in AGENTS.md, the |
-| `status` | doctrine | `cli/status.ts:5` | `commands.ts:142` commandStatus | summary of packs, drift, local files, and any pending |
-| `doctor` | doctrine | `cli/doctor.ts:5` | `twins.ts:142` commandDoctor | report local documents that look like canonical ones |
-| `connect` | management | `cli/connect.ts:5` | `connect.ts:154` commandConnect | register this repo with a knowledge service: what it owns |
-| `retire` | management | `cli/retire.ts:5` | `manage.ts:31` commandRetire | [name] take a repository off this machine's registry. Ends the |
-| `wire` | management | `cli/wire.ts:5` | `manage.ts:58` commandWire | <repo> --workspace W |
-| `import` | management | `cli/import.ts:5` | `manage.ts:87` commandImport | [folder] register a folder's subdirectories in one go; safe to |
-| `remote` | management | `cli/remote.ts:5` | `remotes.ts:90` commandRemote | [verb] this machine's remotes, one per workspace: |
-| `agent` | management | `cli/agent.ts:6` | `toolchain.ts:1520` commandHarness | [verb] this machine's agents — Claude Code, Codex, dsh — and the |
-| `driver` | management | `cli/driver.ts:7` | `driverconfig.ts:686` commandDriver | [verb] what this machine drives ($DAORIS_HOME/driver.json): |
-| `plugin` | management | `cli/plugin.ts:5` | `plugins.ts:1144` commandPlugin | [verb] this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json): |
-| `browser` | management | `cli/browser.ts:5` | `browser.ts:316` commandBrowser | [verb] Daoris's browser: its favorites and its settings… |
-| `tool` | management | `cli/tool.ts:7` | `toolinstall.ts:429` commandTool | [verb] the programs Daoris runs beside its agents — Git, Node.js, |
+| `analyze` | doctrine | `cli/analyze.ts:5` | `doctrine/analyze.ts:268` commandAnalyze | [packs...] what adopting would do here: collisions, duplicates… |
+| `init` | doctrine | `cli/init.ts:5` | `doctrine/commands.ts:55` commandInit | detect what this repo has, write daoris.json |
+| `sync` | doctrine | `cli/sync.ts:5` | `doctrine/materialize.ts:811` commandSync | materialize the manifest's packs; write daoris.lock |
+| `check` | doctrine | `cli/check.ts:5` | `doctrine/drift.ts:292` commandCheck | drift, staleness, index freshness (offline); the core budget is… |
+| `upstream` | doctrine | `cli/upstream.ts:5` | `doctrine/upstream.ts:171` commandUpstream | <file> promote a locally-edited canonical file back to the canon |
+| `index` | doctrine | `cli/index.ts:6` | `doctrine/indexgen.ts:148` commandIndex | say where the roster is: the rules in AGENTS.md, the |
+| `status` | doctrine | `cli/status.ts:5` | `doctrine/commands.ts:142` commandStatus | summary of packs, drift, local files, and any pending |
+| `doctor` | doctrine | `cli/doctor.ts:5` | `doctrine/twins.ts:142` commandDoctor | report local documents that look like canonical ones |
+| `connect` | management | `cli/connect.ts:5` | `service/connect.ts:154` commandConnect | register this repo with a knowledge service: what it owns |
+| `retire` | management | `cli/retire.ts:5` | `service/manage.ts:31` commandRetire | [name] take a repository off this machine's registry. Ends the |
+| `wire` | management | `cli/wire.ts:5` | `service/manage.ts:58` commandWire | <repo> --workspace W |
+| `import` | management | `cli/import.ts:5` | `service/manage.ts:87` commandImport | [folder] register a folder's subdirectories in one go; safe to |
+| `remote` | management | `cli/remote.ts:5` | `service/remotes.ts:90` commandRemote | [verb] this machine's remotes, one per workspace: |
+| `agent` | management | `cli/agent.ts:6` | `agents/toolchain.ts:1520` commandHarness | [verb] this machine's agents — Claude Code, Codex, dsh — and the |
+| `driver` | management | `cli/driver.ts:7` | `driver/driverconfig.ts:686` commandDriver | [verb] what this machine drives ($DAORIS_HOME/driver.json): |
+| `plugin` | management | `cli/plugin.ts:5` | `plugins/plugins.ts:1144` commandPlugin | [verb] this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json): |
+| `browser` | management | `cli/browser.ts:5` | `browser/browser.ts:316` commandBrowser | [verb] Daoris's browser: its favorites and its settings… |
+| `tool` | management | `cli/tool.ts:7` | `tools/toolinstall.ts:429` commandTool | [verb] the programs Daoris runs beside its agents — Git, Node.js, |
 
 ## `daoris-driver` (the driver's headless host)
 
