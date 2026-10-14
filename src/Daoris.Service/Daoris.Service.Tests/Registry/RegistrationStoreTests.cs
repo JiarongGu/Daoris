@@ -409,7 +409,7 @@ public sealed class RegistrationPersistenceTests : IDisposable
     {
         // Pooled connections outlive their store; without this the database file is still held when
         // the directory goes — the same cleanup SqliteStoreTests needs.
-        SqliteConnection.ClearAllPools();
+        SqlitePools.Release(Path.Combine(_root, "knowledge.db"));
         if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
     }
 

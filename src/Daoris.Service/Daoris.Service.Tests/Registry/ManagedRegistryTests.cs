@@ -344,7 +344,7 @@ public sealed class FirstRunImportTests : IDisposable
 
     public void Dispose()
     {
-        SqliteConnection.ClearAllPools();
+        SqlitePools.Release(Path.Combine(_root, "knowledge.db"));
         if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
     }
 

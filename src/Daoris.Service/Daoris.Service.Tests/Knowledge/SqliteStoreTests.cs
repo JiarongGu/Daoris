@@ -14,7 +14,7 @@ public sealed class SqliteStoreTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _store.DisposeAsync();
-        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        SqlitePools.Release(_file);
         if (File.Exists(_file)) File.Delete(_file);
     }
 
@@ -220,15 +220,14 @@ public sealed class SqliteStoreTests : IAsyncLifetime
     {
         await _store.ReplaceRepositoryAsync("alpha", [Entry("alpha", "Named", "Held by `ProbeLock`.")]);
         await _store.DisposeAsync();
-        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
-        await using (var older = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={_file}"))
+        SqlitePools.Release(_file);
+        await using (var older = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={_file};Pooling=False"))
         {
             await older.OpenAsync();
             await using var command = older.CreateCommand();
             command.CommandText = "PRAGMA user_version = 3;";
             await command.ExecuteNonQueryAsync();
         }
-        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
 
         _store = await SqliteKnowledgeStore.OpenAsync(_file);
 

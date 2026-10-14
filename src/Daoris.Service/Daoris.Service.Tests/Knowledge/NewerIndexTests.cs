@@ -28,7 +28,7 @@ public sealed class NewerIndexTests : IDisposable
 
     public void Dispose()
     {
-        SqliteConnection.ClearAllPools();
+        SqlitePools.Release(Database);
         for (var attempt = 0; attempt < 20 && Directory.Exists(_root); attempt++)
         {
             try
@@ -212,7 +212,7 @@ public sealed class NewerIndexTests : IDisposable
         {
         }
 
-        SqliteConnection.ClearAllPools();
+        SqlitePools.Release(Database);
         await using var newer = new SqliteConnection($"Data Source={Database};Pooling=False");
         await newer.OpenAsync();
         await using var transaction = newer.BeginTransaction(deferred: false);
@@ -388,7 +388,7 @@ public sealed class NewerIndexTests : IDisposable
     /// <summary>What a newer (or older) build leaves in the file's header, as only that build would write it.</summary>
     private static void Stamp(string database, int version)
     {
-        SqliteConnection.ClearAllPools();
+        SqlitePools.Release(database);
         using (var connection = new SqliteConnection($"Data Source={database};Pooling=False"))
         {
             connection.Open();
@@ -396,13 +396,11 @@ public sealed class NewerIndexTests : IDisposable
             command.CommandText = $"PRAGMA user_version = {version};";
             command.ExecuteNonQuery();
         }
-
-        SqliteConnection.ClearAllPools();
     }
 
     private static int Version(string database)
     {
-        SqliteConnection.ClearAllPools();
+        SqlitePools.Release(database);
         using var connection = new SqliteConnection($"Data Source={database};Mode=ReadOnly;Pooling=False");
         connection.Open();
         using var command = connection.CreateCommand();
@@ -416,7 +414,7 @@ public sealed class NewerIndexTests : IDisposable
     /// </summary>
     private static string Snapshot(string database, Func<string, bool>? include = null)
     {
-        SqliteConnection.ClearAllPools();
+        SqlitePools.Release(database);
         using var connection = new SqliteConnection($"Data Source={database};Mode=ReadOnly;Pooling=False");
         connection.Open();
 

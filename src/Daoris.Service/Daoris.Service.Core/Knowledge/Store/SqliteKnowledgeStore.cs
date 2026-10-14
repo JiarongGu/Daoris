@@ -62,13 +62,7 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
     /// <summary>Open (or create) a store at a path. Use <c>":memory:"</c> for a throwaway one.</summary>
     public static async Task<SqliteKnowledgeStore> OpenAsync(string path, CancellationToken ct = default)
     {
-        var connection = new SqliteConnection(new SqliteConnectionStringBuilder
-        {
-            DataSource = path,
-            Mode = SqliteOpenMode.ReadWriteCreate,
-            // Shared cache keeps an in-memory database alive across the pool for the process.
-            Cache = path == ":memory:" ? SqliteCacheMode.Shared : SqliteCacheMode.Default,
-        }.ToString());
+        var connection = new SqliteConnection(ConnectionString(path));
 
         await connection.OpenAsync(ct).ConfigureAwait(false);
         var store = new SqliteKnowledgeStore(connection);
@@ -85,6 +79,18 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
 
         return store;
     }
+
+    /// <summary>
+    /// The connection string a store at <paramref name="path"/> opens with. Its pool is named by this text, so a test that lets
+    /// go of its file clears this pool and no other (FLAKE3).
+    /// </summary>
+    internal static string ConnectionString(string path) => new SqliteConnectionStringBuilder
+    {
+        DataSource = path,
+        Mode = SqliteOpenMode.ReadWriteCreate,
+        // Shared cache keeps an in-memory database alive across the pool for the process.
+        Cache = path == ":memory:" ? SqliteCacheMode.Shared : SqliteCacheMode.Default,
+    }.ToString();
 
     /// <remarks>
     /// One write transaction, the read through the stamp (KSCHEMA1): every host on the machine opens this file, and an

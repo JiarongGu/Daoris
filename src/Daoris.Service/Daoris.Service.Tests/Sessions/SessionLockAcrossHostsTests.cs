@@ -20,9 +20,10 @@ public sealed class SessionLockAcrossHostsTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        _mine = new SqliteConnection($"Data Source={_file}");
+        // Unpooled, so each closes its file when it goes: nothing here clears a pool another class is opening from (FLAKE3).
+        _mine = new SqliteConnection($"Data Source={_file};Pooling=False");
         await _mine.OpenAsync();
-        _theirs = new SqliteConnection($"Data Source={_file}");
+        _theirs = new SqliteConnection($"Data Source={_file};Pooling=False");
         await _theirs.OpenAsync();
     }
 
@@ -30,7 +31,6 @@ public sealed class SessionLockAcrossHostsTests : IAsyncLifetime
     {
         await _mine.DisposeAsync();
         await _theirs.DisposeAsync();
-        SqliteConnection.ClearAllPools();
         if (File.Exists(_file)) File.Delete(_file);
     }
 
