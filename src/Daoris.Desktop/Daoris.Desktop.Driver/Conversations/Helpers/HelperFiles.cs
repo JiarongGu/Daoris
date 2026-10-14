@@ -14,9 +14,6 @@ public sealed class HelperFiles(string home)
 {
     public const string Folder = "helpers";
 
-    // Indented, and a plus sign and a quote's neighbours left as written: the files are read by people and by the service's box.
-    private static readonly JsonWriterOptions Options = new() { Indented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
-
     public string PathOf(string id, string kind) => Path.Combine(home, Folder, $"{id}.{kind}.json");
 
     /// <summary>Every ask on file, oldest first; one unreadable or of another shape is not an ask here.</summary>
@@ -66,8 +63,7 @@ public sealed class HelperFiles(string home)
     /// <summary>Keep one ask's state whole, atomically: the driver is its only writer.</summary>
     public void WriteState(HelperState state)
     {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, Options))
+        JsonFile.Write(PathOf(state.Id, "state"), writer =>
         {
             writer.WriteStartObject();
             writer.WriteString("id", state.Id);
@@ -82,10 +78,7 @@ public sealed class HelperFiles(string home)
             if (state.Agent is not null) writer.WriteString("agent", state.Agent);
             if (state.Words is not null) writer.WriteString("words", state.Words);
             writer.WriteEndObject();
-        }
-
-        Directory.CreateDirectory(Path.Combine(home, Folder));
-        AtomicFile.WriteText(PathOf(state.Id, "state"), Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n");
+        });
     }
 
     /// <summary>The helper's answer to an ask, or null where it said none or the file is unreadable.</summary>
@@ -108,8 +101,7 @@ public sealed class HelperFiles(string home)
     public string WriteAsk(string asker, string question, string? agent, DateTimeOffset at)
     {
         var id = Guid.NewGuid().ToString("N")[..8];
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, Options))
+        JsonFile.Write(PathOf(id, "ask"), writer =>
         {
             writer.WriteStartObject();
             writer.WriteString("id", id);
@@ -120,10 +112,7 @@ public sealed class HelperFiles(string home)
             writer.WriteString("askedBy", HelperAsk.ByPerson);
             writer.WriteString("at", Moments.Write(at));
             writer.WriteEndObject();
-        }
-
-        Directory.CreateDirectory(Path.Combine(home, Folder));
-        AtomicFile.WriteText(PathOf(id, "ask"), Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n");
+        });
         return id;
     }
 

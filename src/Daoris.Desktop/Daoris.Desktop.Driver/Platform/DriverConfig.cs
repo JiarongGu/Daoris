@@ -596,8 +596,7 @@ public sealed record DriverConfig(
     /// <summary>The file's shape, written by hand for the same AOT reason it is read by hand.</summary>
     public string ToJson()
     {
-        using var stream = new MemoryStream();
-        using (var writer = new System.Text.Json.Utf8JsonWriter(stream, new System.Text.Json.JsonWriterOptions { Indented = true }))
+        return JsonFile.Serialize(writer =>
         {
             writer.WriteStartObject();
             writer.WriteStartArray("drivable");
@@ -684,9 +683,7 @@ public sealed record DriverConfig(
 
             writer.WriteEndObject();
             writer.WriteEndObject();
-        }
-
-        return System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n";
+        });
     }
 
     private static void WriteMap(Utf8JsonWriter writer, string name, IReadOnlyDictionary<string, string> map)

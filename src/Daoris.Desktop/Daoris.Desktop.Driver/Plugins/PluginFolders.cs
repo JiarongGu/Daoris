@@ -60,8 +60,8 @@ internal static class PluginFolders
         AtomicFile.WriteText(path, text);
     }
 
-    /// <summary>A file written in place, as UTF-8 with no byte-order mark: one inside a staged copy, which moves whole.</summary>
-    public static void WriteFile(string path, string text) => File.WriteAllText(path, text, new System.Text.UTF8Encoding(false));
+    /// <summary>A file inside a staged copy, which moves whole; written beside and renamed all the same, as UTF-8 with no byte-order mark (DEDUP3a).</summary>
+    public static void WriteFile(string path, string text) => AtomicFile.WriteText(path, text);
 
     /// <summary>A folder made, with every folder above it.</summary>
     public static void Make(string folder) => Directory.CreateDirectory(folder);

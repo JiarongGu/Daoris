@@ -83,7 +83,8 @@ public static class DshProfile
                 + $"`{SkillRoot}` added to skill-filesystem's `customSkillDirs`.");
         }
 
-        File.WriteAllText(path, Compose());
+        // Atomic, so a reader of the overlay never meets half of it (DEDUP3a); the bytes are the plain write's.
+        AtomicFile.WriteText(path, Compose());
         return path;
     }
 

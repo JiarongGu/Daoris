@@ -66,13 +66,6 @@ public static class ToolInstall
     /// <summary>How long one location may take to answer a look (§3.7). The CLI's <c>LOOK_BOUND_MS</c>.</summary>
     public static readonly TimeSpan LookBound = TimeSpan.FromSeconds(30);
 
-    private static readonly JsonSerializerOptions Written = new()
-    {
-        WriteIndented = true,
-        NewLine = "\n",
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-    };
-
     /// <summary>A version's folder under the home: <c>&lt;home&gt;/tools/&lt;tool&gt;/&lt;version&gt;</c>.</summary>
     public static string VersionFolder(string home, string tool, string version) => Path.Combine(home, Tools.Folder, tool, version);
 
@@ -263,7 +256,7 @@ public static class ToolInstall
             ["paths"] = new JsonArray([.. offered.Paths.Select(each => (JsonNode?)each)]),
             ["at"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture),
         };
-        AtomicFile.WriteText(path, record.ToJsonString(Written) + "\n");
+        JsonFile.Write(path, record);
     }
 
     /// <summary>The archive, from the first address whose bytes are the list's (rule 3).</summary>

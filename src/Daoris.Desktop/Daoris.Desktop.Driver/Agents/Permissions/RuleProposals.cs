@@ -343,6 +343,6 @@ public static class RuleProposals
         root["state"] = state.ToString().ToLowerInvariant();
         root["settled"] = new JsonObject { ["at"] = Moments.Write(at), ["by"] = by, ["note"] = note };
 
-        AtomicFile.WriteText(path, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n");
+        JsonFile.Write(path, root);
     }
 }

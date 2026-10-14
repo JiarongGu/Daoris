@@ -295,8 +295,8 @@ public static class HelpCommand
     /// </summary>
     public static string Json(HelpListing listing)
     {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        // The answer is printed, not kept: the file form's final newline is left off (JsonFile, DEDUP3a).
+        return JsonFile.Serialize(writer =>
         {
             writer.WriteStartObject();
             writer.WriteStartArray("conversations");
@@ -326,9 +326,7 @@ public static class HelpCommand
             if (listing.Next is { } next) writer.WriteNumber("next", next);
             else writer.WriteNull("next");
             writer.WriteEndObject();
-        }
-
-        return Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n");
+        }).TrimEnd('\n');
 
         static void Text(Utf8JsonWriter writer, string name, string? value)
         {

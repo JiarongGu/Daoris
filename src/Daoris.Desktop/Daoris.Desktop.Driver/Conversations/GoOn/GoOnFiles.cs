@@ -19,9 +19,8 @@ internal static class GoOnFiles
     /// <summary>A mark written to <paramref name="path"/>, its folder made where it is not.</summary>
     public static void WriteMark(string path, IReadOnlyList<string> said, string why, DateTimeOffset at)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        using var buffer = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Indented = true }))
+        // LF on every platform, as every file under the home is written (JsonFile).
+        JsonFile.Write(path, writer =>
         {
             writer.WriteStartObject();
             writer.WriteStartArray("said");
@@ -30,10 +29,7 @@ internal static class GoOnFiles
             writer.WriteString("why", why);
             writer.WriteString("at", Moments.Write(at));
             writer.WriteEndObject();
-        }
-
-        // LF on every platform, as every file under the home is written.
-        AtomicFile.WriteText(path, Encoding.UTF8.GetString(buffer.ToArray()).Replace("\r\n", "\n") + "\n");
+        });
     }
 
     /// <summary>The mark at <paramref name="path"/>, or null for none or a file that does not read.</summary>
@@ -64,9 +60,7 @@ internal static class GoOnFiles
     /// <summary>A choice written to <paramref name="path"/>, its folder made where it is not.</summary>
     public static void WriteChoice(string path, IReadOnlyList<string> said, DateTimeOffset at)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        using var buffer = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Indented = true }))
+        JsonFile.Write(path, writer =>
         {
             writer.WriteStartObject();
             writer.WriteStartArray("said");
@@ -74,10 +68,7 @@ internal static class GoOnFiles
             writer.WriteEndArray();
             writer.WriteString("at", Moments.Write(at));
             writer.WriteEndObject();
-        }
-
-        // LF on every platform, as every file under the home is written.
-        AtomicFile.WriteText(path, Encoding.UTF8.GetString(buffer.ToArray()).Replace("\r\n", "\n") + "\n");
+        });
     }
 
     /// <summary>The choice at <paramref name="path"/>, or null for none or a file that does not read.</summary>
@@ -106,19 +97,13 @@ internal static class GoOnFiles
     /// <summary>A conversation id written to <paramref name="path"/>, its folder made where it is not.</summary>
     public static void WriteConversation(string path, string adapter, string conversation)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        using var buffer = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Indented = true }))
+        JsonFile.Write(path, writer =>
         {
             writer.WriteStartObject();
             writer.WriteString("adapter", adapter);
             writer.WriteString("conversation", conversation);
             writer.WriteEndObject();
-        }
-
-        // LF on every platform, as every file under the home is written: the writer's own line end is the platform's.
-        var text = Encoding.UTF8.GetString(buffer.ToArray()).Replace("\r\n", "\n") + "\n";
-        AtomicFile.WriteText(path, text);
+        });
     }
 
     /// <summary>The conversation id at <paramref name="path"/>, or null for none or a file that does not read.</summary>

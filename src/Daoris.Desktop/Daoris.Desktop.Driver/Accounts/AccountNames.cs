@@ -74,13 +74,6 @@ public static class AccountNames
     // One writer at a time in this process: two screens may rename at once.
     private static readonly object Gate = new();
 
-    private static readonly JsonSerializerOptions Indented = new()
-    {
-        WriteIndented = true,
-        NewLine = "\n",
-        // A name in Chinese is written as typed, as the CLI's writer writes it.
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-    };
 
     /// <summary>Where the file is: beside <c>reads.json</c>, under the home.</summary>
     public static string PathOf(string home) => Path.Combine(home, FileName);
@@ -297,8 +290,8 @@ public static class AccountNames
 
     private static void Save(string home, JsonObject root)
     {
-        Directory.CreateDirectory(home);
-        AtomicFile.WriteText(PathOf(home), root.ToJsonString(Indented) + "\n");
+        // A name in Chinese is written as typed, as the CLI's writer writes it (JsonFile).
+        JsonFile.Write(PathOf(home), root);
     }
 
     /// <summary>The file's root, and whether it was there and did not read; a missing file is an empty root.</summary>

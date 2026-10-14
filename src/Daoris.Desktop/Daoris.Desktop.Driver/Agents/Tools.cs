@@ -366,7 +366,7 @@ public static class Tools
         if (locations.Any(each => Text(each) == address)) return false;
         locations.Add(address);
         Directory.CreateDirectory(home);
-        AtomicFile.WriteText(path, root.ToJsonString(Written) + "\n");
+        JsonFile.Write(path, root);
         return true;
     }
 
@@ -388,7 +388,7 @@ public static class Tools
         }
 
         if (!removed) return false;
-        AtomicFile.WriteText(path, root.ToJsonString(Written) + "\n");
+        JsonFile.Write(path, root);
         return true;
     }
 
@@ -452,7 +452,7 @@ public static class Tools
         if (file is not null) entry["file"] = file;
 
         Directory.CreateDirectory(home);
-        AtomicFile.WriteText(path, root.ToJsonString(Written) + "\n");
+        JsonFile.Write(path, root);
     }
 
     /// <summary>A downloaded version's executable, or why there is none (§3.6's layout).</summary>
@@ -544,14 +544,6 @@ public static class Tools
 
         return parsed is JsonObject root ? (root, null) : (null, $"{path} is not a JSON object");
     }
-
-    /// <summary>Two-space indent, LF, and text left as text: the CLI's <c>JSON.stringify(value, null, 2)</c>.</summary>
-    private static readonly JsonSerializerOptions Written = new()
-    {
-        WriteIndented = true,
-        NewLine = "\n",
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-    };
 
     // ---- Children (TOOLS5, D121; docs/2026-10-01-tools-design.md §2.4) ----
     // One answer for Daoris and every child: the file a command's first word starts, and the environment every process

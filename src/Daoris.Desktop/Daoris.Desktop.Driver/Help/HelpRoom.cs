@@ -129,22 +129,16 @@ public static class HelpRoom
         string.Concat(HelpRoomSections.All.Select(section => section.Render(machine)));
 
     /// <summary>The allow-list, as the harness reads a project's settings.</summary>
-    private static string Settings()
+    private static string Settings() => JsonFile.Serialize(writer =>
     {
-        using var stream = new MemoryStream();
-        using (var writer = new System.Text.Json.Utf8JsonWriter(stream, new System.Text.Json.JsonWriterOptions { Indented = true }))
-        {
-            writer.WriteStartObject();
-            writer.WriteStartObject("permissions");
-            writer.WriteStartArray("allow");
-            foreach (var rule in Allowed) writer.WriteStringValue(rule);
-            writer.WriteEndArray();
-            writer.WriteEndObject();
-            writer.WriteEndObject();
-        }
-
-        return Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n";
-    }
+        writer.WriteStartObject();
+        writer.WriteStartObject("permissions");
+        writer.WriteStartArray("allow");
+        foreach (var rule in Allowed) writer.WriteStringValue(rule);
+        writer.WriteEndArray();
+        writer.WriteEndObject();
+        writer.WriteEndObject();
+    });
 }
 
 /// <summary>

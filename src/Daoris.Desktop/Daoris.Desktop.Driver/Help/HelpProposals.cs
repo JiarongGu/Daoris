@@ -453,7 +453,7 @@ public static class HelpProposals
         var node = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
         node["state"] = state;
         node["note"] = note;
-        AtomicFile.WriteText(path, node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n");
+        JsonFile.Write(path, node);
     }
 
     /// <summary>One proposal, found by its id, whatever its state — what Apply and Not now read.</summary>

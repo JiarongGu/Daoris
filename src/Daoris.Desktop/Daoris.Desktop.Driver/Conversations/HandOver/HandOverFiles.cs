@@ -20,9 +20,8 @@ internal static class HandOverFiles
     /// <summary>A box written to <paramref name="path"/>, its folder made where it is not.</summary>
     public static void WriteBox(string path, HandOverRequest request)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        using var buffer = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Indented = true }))
+        // LF on every platform, as every file under the home is written (JsonFile).
+        JsonFile.Write(path, writer =>
         {
             writer.WriteStartObject();
             writer.WriteString("agent", request.Agent);
@@ -31,10 +30,7 @@ internal static class HandOverFiles
             writer.WriteString("askedBy", request.AskedBy);
             writer.WriteString("at", Moments.Write(request.At));
             writer.WriteEndObject();
-        }
-
-        // LF on every platform, as every file under the home is written.
-        AtomicFile.WriteText(path, Encoding.UTF8.GetString(buffer.ToArray()).Replace("\r\n", "\n") + "\n");
+        });
     }
 
     /// <summary>The box at <paramref name="path"/>, or null for none or a file that does not read.</summary>
@@ -65,9 +61,7 @@ internal static class HandOverFiles
     /// <summary>A quest as handed, written to <paramref name="path"/>, its folder made where it is not.</summary>
     public static void WriteHanded(string path, HandedQuest handed)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        using var buffer = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Indented = true }))
+        JsonFile.Write(path, writer =>
         {
             writer.WriteStartObject();
             writer.WriteString("agent", handed.Agent);
@@ -77,10 +71,7 @@ internal static class HandOverFiles
             writer.WriteString("askedBy", handed.AskedBy);
             writer.WriteString("at", Moments.Write(handed.At));
             writer.WriteEndObject();
-        }
-
-        // LF on every platform, as every file under the home is written.
-        AtomicFile.WriteText(path, Encoding.UTF8.GetString(buffer.ToArray()).Replace("\r\n", "\n") + "\n");
+        });
     }
 
     /// <summary>The quest as handed at <paramref name="path"/>, or null for none or a file that does not read.</summary>

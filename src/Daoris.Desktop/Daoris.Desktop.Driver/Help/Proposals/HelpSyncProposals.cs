@@ -239,7 +239,7 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
             ["lastFetch"] = Moments.Write(pull.LastFetch), ["reach"] = pull.Reach,
         })]);
         node["apart"] = new JsonArray([.. listed.Apart.Select(each => (JsonNode)JsonValue.Create(each.Repository))]);
-        AtomicFile.WriteText(path, node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n");
+        JsonFile.Write(path, node);
     }
 
     private static string? Repository(HelpProposal proposal) => proposal.Target?.Trim() is { Length: > 0 } named ? named : null;

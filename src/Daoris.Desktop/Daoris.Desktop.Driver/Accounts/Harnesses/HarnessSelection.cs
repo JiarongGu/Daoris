@@ -163,9 +163,7 @@ public static class HarnessKeys
 
     private static void Write(string home, Dictionary<string, Dictionary<string, string>> keys)
     {
-        Directory.CreateDirectory(home);
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        JsonFile.Write(Path.Combine(home, FileName), writer =>
         {
             writer.WriteStartObject();
             foreach (var (agent, held) in keys.OrderBy(e => e.Key, StringComparer.Ordinal))
@@ -180,10 +178,7 @@ public static class HarnessKeys
             }
 
             writer.WriteEndObject();
-        }
-
-        var path = Path.Combine(home, FileName);
-        AtomicFile.WriteText(path, Encoding.UTF8.GetString(stream.ToArray()) + "\n");
+        });
     }
 }
 

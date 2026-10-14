@@ -49,8 +49,6 @@ public static class AccountCooling
     // One writer at a time in this process: the conclusions of sessions side by side, and a screen's early end.
     private static readonly object Gate = new();
 
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true, NewLine = "\n" };
-
     /// <summary>Where the file is: beside <c>harnesses.json</c> and the accounts, under the home.</summary>
     public static string PathOf(string home) => Path.Combine(home, FileName);
 
@@ -194,9 +192,8 @@ public static class AccountCooling
                 if (held.Count == 0) root.Remove(name);
             }
 
-            Directory.CreateDirectory(home);
-            // LF on every platform, as the CLI's `endCooling` writes the file (TOOL4e).
-            AtomicFile.WriteText(PathOf(home), root.ToJsonString(Indented) + "\n");
+            // LF on every platform, text as written, as the CLI's `endCooling` writes the file (TOOL4e, DEDUP3a).
+            JsonFile.Write(PathOf(home), root);
         }
     }
 
