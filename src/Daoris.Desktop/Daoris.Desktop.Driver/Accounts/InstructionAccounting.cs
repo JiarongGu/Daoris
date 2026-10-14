@@ -93,7 +93,8 @@ internal static class InstructionAccounting
                 Chars = chars,
                 From = target.Answered.Id,
             },
-            HandedSections.CarryOn => CarryOn(target, chars, size),
+            // A first start's is the parts before it on its session's line (SESSONE1d); a carry-on's, the session it carries on.
+            HandedSections.CarryOn => target.CutOff is null ? Parts(target, chars, size) : CarryOn(target, chars, size),
             HandedSections.Close => Own(target.Answered is null && target.CutOff is null
                 ? "how to take it and close it"
                 : "how to carry it on and close it"),
@@ -328,6 +329,35 @@ internal static class InstructionAccounting
                         Limit = StandingText.Limit,
                     },
                 ],
+        };
+    }
+
+    /// <summary>
+    /// A further part's account of the parts before it (SESSONE1d): how many, and where its tree stands to theirs, from their
+    /// records and this machine's trees. Named by the session it went into, ran beside, or whose tree it grew again for.
+    /// </summary>
+    private static HandedSection Parts(SessionTarget target, int chars, string size)
+    {
+        var parts = target.Parts!;
+        var count = parts.Earlier.Count;
+        var stance = parts switch
+        {
+            { Into: { } into } => $"in session `{into}`'s tree"
+                                  + (target.InFlight.Count == 0 ? "" : $", {Plural(target.InFlight.Count, "uncommitted change")}"),
+            { Gone: { } gone, GrewFrom: { } branch } => $"session `{gone}`'s tree gone, grown from `{branch}`",
+            { Gone: { } gone } => $"session `{gone}`'s tree gone, grown from the line",
+            { HeldBy: { } held } => $"beside session `{held}`, in a tree of its own",
+            _ => "in a tree of its own",
+        };
+
+        return new HandedSection(
+            HandedSections.CarryOn, HandedSources.Record,
+            $"the sessions before it on its line of work: {size}: {Plural(count, "session")}, {stance}")
+        {
+            Chars = chars,
+            From = parts.Into ?? parts.Gone ?? parts.HeldBy,
+            Shown = count > TargetPrompt.PartsShown ? TargetPrompt.PartsShown : null,
+            Of = count > TargetPrompt.PartsShown ? count : null,
         };
     }
 

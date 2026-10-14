@@ -114,10 +114,16 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     /// <param name="landed">
     /// The branch the chain's step before landed on (LAND2c, D82 as D145 amends it), tried when <paramref name="from"/> is gone:
     /// a rule's tidy removes that session branch at its landing, and a step grown from the line could not move the chain's
-    /// branch on.
+    /// branch on. With <paramref name="partOf"/>, the branch that part's work landed on.
+    /// </param>
+    /// <param name="partOf">
+    /// For a further part of a session (SESSONE1d, D167 point 4, D82): the earlier part whose tree it would have gone into, gone
+    /// since its landing. The tree grows from <paramref name="landed"/> where that branch stands, else from the line, and the
+    /// opening says which and whose tree is gone. Without <paramref name="from"/>: a part grows from where its work landed.
     /// </param>
     public async Task<TreeOpened> OpenAsync(
-        string root, string repository, string workspace, CancellationToken ct = default, string? from = null, string? landed = null)
+        string root, string repository, string workspace, CancellationToken ct = default, string? from = null, string? landed = null,
+        string? partOf = null)
     {
         // The root must BE the top of its own working tree — proven, not assumed. Git resolves a
         // repository by walking UP from wherever it is asked, so a root that is not one (a
@@ -174,6 +180,25 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             else
             {
                 basedOn += $" — `{from}`, the branch the step before it landed on, is gone";
+            }
+        }
+        else if (partOf is not null)
+        {
+            // A further part whose session's tree went at its landing (SESSONE1d): the branch that work landed on, where it stands.
+            var gone = $"the tree session `{partOf}` worked in is gone";
+            var (stands, _, _) = landed is { Length: > 0 } && BranchName.IsValid(landed)
+                ? await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{landed}"], ct).ConfigureAwait(false)
+                : (1, "", "");
+            if (stands == 0 && landed is { } standing)
+            {
+                start = grewFrom = standing;
+                basedOn = $"`{standing}`, the branch its session's work landed on (not merged yet) — {gone}";
+            }
+            else
+            {
+                basedOn += landed is { Length: > 0 }
+                    ? $" — {gone}, and `{landed}`, the branch its work landed on, is gone too"
+                    : $" — {gone}, and no branch holds its work here";
             }
         }
 

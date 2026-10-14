@@ -559,6 +559,49 @@ public sealed class LandingTests : IDisposable
     }
 
     /// <summary>
+    /// SESSONE1d (D167 point 4, D82): a further part of a session whose tree the tidy took at its landing grows a tree from the branch
+    /// that work landed on, and its opening says so and whose tree is gone.
+    /// </summary>
+    [Fact]
+    public async Task A_further_part_whose_sessions_tree_the_tidy_took_grows_from_the_branch_its_work_landed_on()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true));
+        var trees = new SessionTrees(_home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "work.txt", "the first part's work", "the first work");
+        Assert.True((await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "Fix the gap"))).Landed);
+        Assert.False(Directory.Exists(first.Path));
+        const string landed = "feature/q1-fix-the-gap";
+
+        var next = await trees.OpenAsync(root, "engine", "aurora", landed: landed, partOf: "s1");
+
+        Assert.Equal(landed, next.GrewFrom);
+        Assert.Contains($"`{landed}`, the branch its session's work landed on (not merged yet)", next.BasedOn);
+        Assert.Contains("the tree session `s1` worked in is gone", next.BasedOn);
+        Assert.Equal((await GitAsync(root, "rev-parse", landed)).Trim(), (await GitAsync(next.Path, "rev-parse", "HEAD")).Trim());
+        // The fact the page says (LANG1a): the branch it started at.
+        Assert.Contains(next.Opening!.Parts[0].Values, fact => fact.Key == "basedOn" && Equals(fact.Value, landed));
+    }
+
+    /// <summary>SESSONE1d: where no branch holds that work, the part grows from the line, and says that the tree it would have gone into is gone.</summary>
+    [Fact]
+    public async Task A_further_part_whose_sessions_tree_is_gone_with_nothing_landed_grows_from_the_line_and_says_so()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+
+        var next = await trees.OpenAsync(root, "engine", "aurora", landed: "feature/q1-never-landed", partOf: "s1");
+
+        Assert.Null(next.GrewFrom);
+        Assert.Contains("the tree session `s1` worked in is gone, and `feature/q1-never-landed`, the branch its work landed on, is gone too", next.BasedOn);
+        Assert.Equal((await GitAsync(root, "rev-parse", "main")).Trim(), (await GitAsync(next.Path, "rev-parse", "HEAD")).Trim());
+
+        var bare = await trees.OpenAsync(root, "engine", "aurora", partOf: "s1");
+        Assert.Contains("the tree session `s1` worked in is gone, and no branch holds its work here", bare.BasedOn);
+    }
+
+    /// <summary>
     /// D149 point 4: at an advance the rule's plugin is told the pull request its first landing opened, and who accepted this
     /// work, so it pushes and opens no second one; an answer naming no pull request keeps the one the record holds.
     /// </summary>
