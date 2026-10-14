@@ -16,7 +16,7 @@ import type { ChatMessage } from '../work/conversation';
 import { Composer } from '../work/Composer';
 import { BackToBottom, SessionConversation, type TailState } from '../work/SessionConversation';
 import { AskHistory } from './AskHistory';
-import { searchable } from '../searchable';
+import { searchable } from '../lib/searchable';
 import { type HelpConversationRow } from './history';
 import type { AskConversationSlot } from './AskPanel';
 import { placeDoor } from './places';

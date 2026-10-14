@@ -2,7 +2,7 @@ import { type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { useDebounced } from '../lib/useDebounced';
-import { searchable } from '../searchable';
+import { searchable } from '../lib/searchable';
 import { useHarnesses, useSessionEvents, useSessionSearch } from '../shell';
 import { Icon } from '../ui';
 import { accountNames } from './accountNames';

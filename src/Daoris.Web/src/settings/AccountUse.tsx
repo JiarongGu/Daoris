@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { moment } from '../format';
-import { shellWord } from '../shellWord';
+import { shellWord } from '../lib/shellWord';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { Button, CheckField, Icon, Inline, Pill, Prose, Segmented, SelectField, SettingRow, Tip } from '../ui';
 import {

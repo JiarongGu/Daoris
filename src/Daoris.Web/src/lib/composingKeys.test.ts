@@ -1,5 +1,6 @@
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
+import { rooted } from '../test/sources';
 
 /**
  * **A key an input method is composing with is never the page's** (IME1). Every handler that checks Enter or Escape
@@ -78,9 +79,9 @@ export function checks(files: [path: string, source: string][]): number {
   return unasked(files.map(([path, source]) => [path, source.replaceAll('isComposing(', 'notAsked(')])).length;
 }
 
-const sources = import.meta.glob('./**/*.{ts,tsx}', {
+const sources = rooted(import.meta.glob('/src/**/*.{ts,tsx}', {
   eager: true, query: '?raw', import: 'default',
-}) as Record<string, string>;
+}) as Record<string, string>);
 
 /** Tests and stories press keys to prove a handler; they handle none. */
 const HARNESS = /\.(test|stories)\.tsx?$|^\.\/test\//;

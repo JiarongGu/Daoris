@@ -2,7 +2,7 @@ import { type InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryCli
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import type { Session } from '../api';
 import { keys } from '../queries';
-import { searchable } from '../searchable';
+import { searchable } from '../lib/searchable';
 import type { SessionEvent } from '../work/conversation';
 import type { SessionEntry } from '../work/entries';
 import type { SessionGroupName, SessionGrouping } from '../work/groups';

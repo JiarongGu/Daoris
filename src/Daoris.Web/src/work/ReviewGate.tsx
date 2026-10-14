@@ -4,7 +4,7 @@ import type { Quest, QuestSetUp, SetUpRef } from '../api';
 import { ago } from '../format';
 import { cn } from '../lib/cn';
 import { ExternalLink } from '../links';
-import { shellWord } from '../shellWord';
+import { shellWord } from '../lib/shellWord';
 import { Button, CodeText, Inline, Pill } from '../ui';
 import { type Answered, InlineConfirm, Refused } from './InlineConfirm';
 import {

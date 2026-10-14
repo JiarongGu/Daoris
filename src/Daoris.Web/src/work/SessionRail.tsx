@@ -2,7 +2,7 @@ import { Fragment, type ReactNode, useLayoutEffect, useRef, useState } from 'rea
 import { useTranslation } from 'react-i18next';
 import { HELP_REPOSITORY, type Quest, type Session } from '../api';
 import { useAsks, useOpinions, useQuests, useRegistry, useSessions } from '../queries';
-import { searchable } from '../searchable';
+import { searchable } from '../lib/searchable';
 import {
   type SessionHit, useChannelUnreads, useDriver, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionSearch, useSessionWhere,
 } from '../shell';

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { isComposing } from '../lib/composing';
-import { searchable } from '../searchable';
+import { searchable } from '../lib/searchable';
 import { Button, Icon } from '../ui';
 
 /**

@@ -61,13 +61,6 @@
     "motion.test.ts": "design",
     "pageMeasure.test.tsx": "design",
 
-    "searchable.ts": "lib",
-    "searchable.test.ts": "lib",
-    "returnFocus.ts": "lib",
-    "shellWord.ts": "lib",
-    "shellWord.test.ts": "lib",
-    "composingKeys.test.ts": "lib",
-
     "i18n.ts": "locales",
     "i18n.test.ts": "locales",
     "format.ts": "locales",

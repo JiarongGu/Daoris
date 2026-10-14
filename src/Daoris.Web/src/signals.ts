@@ -1,6 +1,6 @@
 import { moment } from './format';
 import i18n from './i18n';
-import { shellWord } from './shellWord';
+import { shellWord } from './lib/shellWord';
 
 /**
  * Which of a driver tick's lines are NEWS, and which the person has already been told.

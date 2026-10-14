@@ -28,7 +28,7 @@ import { failure, type Notify, useErrorNotify } from '../ui';
 import { ListMore } from '../work/ListPane';
 import type { ViewLayout } from '../work/ViewFrame';
 import { workspaceOf, workspacesOf } from '../workspaces';
-import { buttonNamed, returnFocus } from '../returnFocus';
+import { buttonNamed, returnFocus } from '../lib/returnFocus';
 
 const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] : []);
 

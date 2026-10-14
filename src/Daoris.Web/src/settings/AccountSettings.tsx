@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { shellWord } from '../shellWord';
+import { shellWord } from '../lib/shellWord';
 import { Button, CodeText, SelectField } from '../ui';
 import type { AccountSettings, AccountSettingsChange, SettingsChoices } from '../agents/tools';
 

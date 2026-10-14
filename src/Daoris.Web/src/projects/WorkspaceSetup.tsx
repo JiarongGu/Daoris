@@ -8,7 +8,7 @@ import { LanguageChoice, type LanguageOption } from '../settings/Languages';
 import { LineField } from '../settings/Lines';
 import { type OpinionEdit, OpinionField, type OpinionRule, opinionRowSays, opinionSummary } from '../settings/Opinions';
 import { type ReviewEdit, ReviewField, type ReviewRule, reviewRowSays, reviewSummary } from '../settings/Reviews';
-import { shellWord } from '../shellWord';
+import { shellWord } from '../lib/shellWord';
 import { Button, Icon, Inline, PathText, Prose, Segmented, SettingRow, Tip } from '../ui';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
 import { Inheritable, landingRowSays, landingSays, SetupSection } from './SetupParts';

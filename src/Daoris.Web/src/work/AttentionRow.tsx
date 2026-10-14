@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { SetUpRef } from '../api';
 import { clockOf, elapsed } from '../format';
 import { cn } from '../lib/cn';
-import { shellWord } from '../shellWord';
+import { shellWord } from '../lib/shellWord';
 import type { TrustHold } from '../signals';
 import { Button, Dot, Icon, Inline, SelectField } from '../ui';
 import type { AccountRowFacts } from './accountAttention';
