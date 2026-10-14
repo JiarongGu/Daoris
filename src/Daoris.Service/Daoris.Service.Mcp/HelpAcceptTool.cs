@@ -4,7 +4,8 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>Ask Daoris's <c>accept_propose</c> (DRIFT1d2): the <c>accept</c> kind's tool, written by <see cref="HelpProposalBox.ProposeAccept"/>.</summary>
-public sealed partial class KnowledgeTools
+[McpServerToolType]
+public sealed class HelpAcceptTool(IntakeScope? intake = null, HelpProposalBox? help = null)
 {
     [McpServerTool(Name = "accept_propose")]
     [Description(

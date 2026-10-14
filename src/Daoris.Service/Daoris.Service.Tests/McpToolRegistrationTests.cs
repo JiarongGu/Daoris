@@ -60,8 +60,10 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         Assert.Equal(marked, KnowledgeServer.ToolTypes.Select(type => type.Name).Order(StringComparer.Ordinal));
         Assert.Equal(
             [
-                "GoAheadTools", "HelperTools", "KnowledgeSearchTools", "KnowledgeTools", "OpinionTools", "QuestTools", "ReviewTools",
-                "RuleProposalTools",
+                "GoAheadTools", "HelpAcceptTool", "HelpAccountTool", "HelpAgentTool", "HelpAskTool", "HelpBrowserTool", "HelpClearTool",
+                "HelpDeleteTool", "HelpGoTool", "HelpHandTool", "HelpPauseTool", "HelpPluginTool", "HelpRepositoryTool", "HelpSessionTool",
+                "HelpSettingTool", "HelpSyncTool", "HelpWorkflowTool", "HelperTools", "KnowledgeSearchTools", "OpinionTools", "QuestTools",
+                "ReviewTools", "RuleProposalTools",
             ],
             KnowledgeServer.ToolTypes.Select(type => type.Name).Order(StringComparer.Ordinal));
     }

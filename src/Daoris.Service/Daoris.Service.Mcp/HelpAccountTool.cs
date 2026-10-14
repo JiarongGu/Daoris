@@ -4,7 +4,8 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>Ask Daoris's <c>agent_settings_propose</c> (HELP6): the <c>account</c> kind's tool, written by <see cref="HelpProposalBox.ProposeAgentSettings"/>.</summary>
-public sealed partial class KnowledgeTools
+[McpServerToolType]
+public sealed class HelpAccountTool(IntakeScope? intake = null, HelpProposalBox? help = null)
 {
     [McpServerTool(Name = "agent_settings_propose")]
     [Description(

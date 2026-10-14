@@ -12,7 +12,7 @@ public sealed class HelpSyncProposalTests : HelpProposalBoxFixture
     [Fact]
     public void The_tool_names_the_workspaces_page_not_Settings()
     {
-        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeSync))!;
+        var method = typeof(Daoris.Knowledge.Mcp.HelpSyncTool).GetMethod(nameof(Daoris.Knowledge.Mcp.HelpSyncTool.ProposeSync))!;
         var tool = method.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
             .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
 

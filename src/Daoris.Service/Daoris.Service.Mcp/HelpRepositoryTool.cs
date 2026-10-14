@@ -4,7 +4,8 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>Ask Daoris's <c>repository_propose</c> (ENTRY1d1): the <c>repository</c> kind's tool, written by <see cref="HelpProposalBox.ProposeRepository"/>.</summary>
-public sealed partial class KnowledgeTools
+[McpServerToolType]
+public sealed class HelpRepositoryTool(IntakeScope? intake = null, HelpProposalBox? help = null)
 {
     [McpServerTool(Name = "repository_propose")]
     [Description(

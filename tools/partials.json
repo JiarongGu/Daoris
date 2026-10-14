@@ -42,25 +42,6 @@
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Workflow.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs"
   ],
-  "KnowledgeTools": [
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Accept.cs",
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Account.cs",
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Agent.cs",
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Ask.cs",
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Browser.cs",
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Clear.cs",
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Delete.cs",
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Go.cs",
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Hand.cs",
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Pause.cs",
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Plugin.cs",
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Repository.cs",
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Session.cs",
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Setting.cs",
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Sync.cs",
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Workflow.cs",
-    "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs"
-  ],
   "SessionTrees": [
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Auto.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Content.cs",

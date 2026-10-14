@@ -32,8 +32,23 @@ public static class KnowledgeServer
         typeof(GoAheadTools),
         typeof(HelperTools),
         typeof(OpinionTools),
-        // The tools not yet a class of their own (PART10c).
-        typeof(KnowledgeTools),
+        // Ask Daoris's proposals, a class for each kind of proposal the box writes (PART10c).
+        typeof(HelpAcceptTool),
+        typeof(HelpAccountTool),
+        typeof(HelpAgentTool),
+        typeof(HelpAskTool),
+        typeof(HelpBrowserTool),
+        typeof(HelpClearTool),
+        typeof(HelpDeleteTool),
+        typeof(HelpGoTool),
+        typeof(HelpHandTool),
+        typeof(HelpPauseTool),
+        typeof(HelpPluginTool),
+        typeof(HelpRepositoryTool),
+        typeof(HelpSessionTool),
+        typeof(HelpSettingTool),
+        typeof(HelpSyncTool),
+        typeof(HelpWorkflowTool),
     ];
 
     /// <summary>

@@ -643,21 +643,27 @@ public sealed class McpToolsTests : McpToolsFixture
     public void Ask_Daoris_proposes_an_agent_action_a_delete_an_accounts_settings_and_a_screen()
     {
         var home = Path.Combine(_root, "help-home");
-        var tools = new KnowledgeTools(intake: new IntakeScope(null, "h1e1p000"), help: new HelpProposalBox(home));
+        var intake = new IntakeScope(null, "h1e1p000");
+        var box = new HelpProposalBox(home);
+        var agent = new HelpAgentTool(intake, box);
+        var delete = new HelpDeleteTool(intake, box);
+        var account = new HelpAccountTool(intake, box);
+        var go = new HelpGoTool(intake, box);
+        var session = new HelpSessionTool(intake, box);
 
-        Assert.Contains("Proposed", tools.ProposeAgent("pin", "claude-code", "the person wants that release", version: "2.1.300"));
-        Assert.Contains("Proposed", tools.ProposeDelete("made by mistake", quest: "q1a2b3c4"));
-        Assert.Contains("Proposed", tools.ProposeAgentSettings("claude-code", "work", "the person asked", effort: "high"));
-        Assert.Contains("Proposed", tools.ProposeGo("settings", "the person asked where accounts are", domain: "agents"));
+        Assert.Contains("Proposed", agent.ProposeAgent("pin", "claude-code", "the person wants that release", version: "2.1.300"));
+        Assert.Contains("Proposed", delete.ProposeDelete("made by mistake", quest: "q1a2b3c4"));
+        Assert.Contains("Proposed", account.ProposeAgentSettings("claude-code", "work", "the person asked", effort: "high"));
+        Assert.Contains("Proposed", go.ProposeGo("settings", "the person asked where accounts are", domain: "agents"));
         // ENTRY1f1: the tool hands the box the item it names.
-        Assert.Contains("Proposed", tools.ProposeGo("quests", "the person asked where their ask went", item: "ask:a1b2c3d4"));
+        Assert.Contains("Proposed", go.ProposeGo("quests", "the person asked where their ask went", item: "ask:a1b2c3d4"));
         // ENTRY1d2a: and the workspace Add repository opens with.
-        Assert.Contains("Proposed", tools.ProposeGo("projects", "the person asked to add a repository to it", part: "add", workspace: "work"));
-        Assert.Contains("Nothing was proposed", tools.ProposeDelete("no id at all"));
+        Assert.Contains("Proposed", go.ProposeGo("projects", "the person asked to add a repository to it", part: "add", workspace: "work"));
+        Assert.Contains("Nothing was proposed", delete.ProposeDelete("no id at all"));
         // SESSUX1h2a: the session kind's tool, and delete's session door.
-        Assert.Contains("Proposed", tools.ProposeSession("archive", "the person is done with them", sessions: "s1,s2"));
-        Assert.Contains("Proposed", tools.ProposeSession("archive", "tidy up", ended: true));
-        Assert.Contains("Proposed", tools.ProposeDelete("made by mistake", session: "s9"));
+        Assert.Contains("Proposed", session.ProposeSession("archive", "the person is done with them", sessions: "s1,s2"));
+        Assert.Contains("Proposed", session.ProposeSession("archive", "tidy up", ended: true));
+        Assert.Contains("Proposed", delete.ProposeDelete("made by mistake", session: "s9"));
 
         var written = Directory.GetFiles(HelpProposalBox.FolderOf(home))
             .Select(path => JsonDocument.Parse(File.ReadAllText(path)).RootElement)
@@ -676,7 +682,7 @@ public sealed class McpToolsTests : McpToolsFixture
     public void Ask_Daoris_proposes_adding_a_plugin_or_switching_one()
     {
         var home = Path.Combine(_root, "help-plugin-home");
-        var tools = new KnowledgeTools(intake: new IntakeScope(null, "h1e1p000"), help: new HelpProposalBox(home));
+        var tools = new HelpPluginTool(intake: new IntakeScope(null, "h1e1p000"), help: new HelpProposalBox(home));
 
         Assert.Contains("Proposed", tools.ProposePlugin("add", "the person wants quests held overnight", repository: "house-plugins", folder: "quiet-hours"));
         Assert.Contains("Proposed", tools.ProposePlugin("enable", "the person wants it on", id: "example.lands"));
@@ -701,7 +707,7 @@ public sealed class McpToolsTests : McpToolsFixture
     public void Ask_Daoris_proposes_handing_a_landed_branch_on()
     {
         var home = Path.Combine(_root, "help-hand-home");
-        var tools = new KnowledgeTools(intake: new IntakeScope(null, "h1e1p000"), help: new HelpProposalBox(home));
+        var tools = new HelpHandTool(intake: new IntakeScope(null, "h1e1p000"), help: new HelpProposalBox(home));
 
         Assert.Contains("Proposed", tools.ProposeHand("s2a3b4c5", "the person wants its pull request opened"));
         Assert.Contains("Proposed", tools.ProposeHand("feature/q2-second", "the rule names none yet", repository: "engine", plugin: "example.lands"));

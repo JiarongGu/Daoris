@@ -14356,3 +14356,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PLATEXC1 — `DriverException` is Platform's** (driver). Platform's `DriverHttp` and `DriverLock` throw a type declared in `Agents/Adapters/Adapters.cs`, so the shared kernel depends on Agents: move it to Platform. Proof: the build and the driver's tests. D166's LOOPOUT1 note.
 
 **Outcome** 2026-10-14: `DriverException` moved whole to `Platform/DriverException.cs`, its remarks saying why it sits there; one namespace, so no caller changed. The kernel no longer depends on Agents. On Sonnet: 7 tool calls.
+
+## PART10c — `KnowledgeTools`: a tool class per Help kind, and the type gone (2026-10-14, D166)
+
+> - [ ] **PART10c — `KnowledgeTools`: a tool class per Help kind, and the type gone** (service, driver; after 10b and PART7b). `Help<Kind>Tool` in a file each, the driver's file-name test re-pointed, `KnowledgeTools` deleted and cut from the gate's list. Survey "The large five, as scouted".
+
+**Outcome** 2026-10-14: each Help kind's propose tool is a `Help<Kind>Tool` built from the intake and the help box, listed in `KnowledgeServer.ToolTypes`; `KnowledgeTools` is deleted and off the gate's list (four large types left); the driver's kinds test reads `Help<Kind>Tool.cs`. The 33 tool names unchanged. On Sonnet: 73 tool calls. Detail: D166's PART10c note.
