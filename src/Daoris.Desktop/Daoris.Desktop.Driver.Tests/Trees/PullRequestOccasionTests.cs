@@ -88,7 +88,8 @@ public sealed class PullRequestOccasionTests
             .ToList();
 
         Assert.Equal(["HelpSyncProposals.cs", "LinesRoutes.cs", "TreesConsole.cs"], doors);
-        var sync = File.ReadAllText(SourceFiles.Driver("SessionTrees.Sync.cs"));
+        // The look and the press are `TreeSync`'s since PART10j; the front keeps one-line calls, which hold no body to read.
+        var sync = File.ReadAllText(SourceFiles.Driver("TreeSync.cs"));
         var look = Body(sync, "SyncPlanAsync");
         var fetched = look.IndexOf("FetchedAsync(", StringComparison.Ordinal);
         var asked = look.IndexOf("AskStatesAsync(", StringComparison.Ordinal);

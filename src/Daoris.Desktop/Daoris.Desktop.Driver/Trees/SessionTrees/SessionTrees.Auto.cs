@@ -134,7 +134,7 @@ public sealed partial class SessionTrees
         await LearnTreesAsync(space, repository, ct).ConfigureAwait(false);
         // The ledger forgets an entry with no tree and no branch standing at each look, not only after a removal (TREEFOLLOW1): a
         // branch deleted by hand left one behind. A list git cannot give forgets nothing; not cancelled, as the removal's is not.
-        await ForgetGoneAsync(root, repository, CancellationToken.None).ConfigureAwait(false);
+        await Replays.ForgetGoneAsync(root, repository, CancellationToken.None).ConfigureAwait(false);
 
         // The line here, read with no fetch: the local branch, else origin's copy as this checkout last saw it.
         var line = (await _context.LineAsync(root, repository, space, ct).ConfigureAwait(false)).Branch;
@@ -166,7 +166,7 @@ public sealed partial class SessionTrees
         var results = await SweepAsync([(repository, space, root)], busy, candidates, byItself: true, ct).ConfigureAwait(false);
         // The record of where session branches grew from drops what is gone (LAND3), as the press's does: after a removal, so not
         // cancelled either.
-        if (results.Any(result => result.Removed)) await ForgetGoneAsync(root, repository, CancellationToken.None).ConfigureAwait(false);
+        if (results.Any(result => result.Removed)) await Replays.ForgetGoneAsync(root, repository, CancellationToken.None).ConfigureAwait(false);
         return Pass(results);
     }
 

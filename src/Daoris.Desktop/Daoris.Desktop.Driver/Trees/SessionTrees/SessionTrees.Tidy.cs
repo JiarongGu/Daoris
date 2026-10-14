@@ -88,7 +88,7 @@ public sealed partial class SessionTrees
         // where git confirms its merge commit on the line.
         results.AddRange(await TidyCarriedAsync(root, repository, workspace, held.Select(each => each.Branch).ToList(), pressed, inUse, ct)
             .ConfigureAwait(false));
-        await ForgetGoneAsync(root, repository, ct).ConfigureAwait(false);
+        await Replays.ForgetGoneAsync(root, repository, ct).ConfigureAwait(false);
         return results;
     }
 

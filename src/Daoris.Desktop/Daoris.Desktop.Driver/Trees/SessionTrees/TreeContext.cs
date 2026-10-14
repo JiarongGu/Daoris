@@ -41,6 +41,10 @@ internal sealed class TreeContext
     /// <summary>Every tree this machine's Daoris has opened lives under here, and only here.</summary>
     internal string TreesRoot => Path.Combine(Home, "trees");
 
+    /// <summary>Whether <paramref name="path"/> is a tree this home opened — the only kind a landing rule reaches.</summary>
+    internal bool Holds(string path) =>
+        Path.GetFullPath(path).StartsWith(Path.GetFullPath(TreesRoot) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+
     /// <summary>
     /// The person's choices, from the file the loop and the planner read (CONFIGSEAM1): this home's <c>driver.json</c> alone
     /// ignored an override's landing and review rules, so the work merged into the line while the planner sat a review for it.

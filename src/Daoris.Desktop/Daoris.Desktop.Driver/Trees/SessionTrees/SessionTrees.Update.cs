@@ -1,4 +1,5 @@
 using static Daoris.Driver.TreeGit;
+using static Daoris.Driver.TreeRefs;
 
 namespace Daoris.Driver;
 
@@ -105,7 +106,7 @@ public sealed partial class SessionTrees
     }
 
     /// <summary>
-    /// A tree on a branch, by WSR6's judgement and replay (<see cref="JudgeReplayAsync"/>, <see cref="ReplayAsync"/>): its own commits
+    /// A tree on a branch, by WSR6's judgement and replay (<see cref="BranchJudging.JudgeReplayAsync"/>, <see cref="BranchReplays.ReplayAsync"/>): its own commits
     /// cut where its record says it grew from, rebased in its tree detached, proven, and the branch moved last from the commit judged,
     /// its grown ledger recorded. A branch of its own (TREEFOLLOW1) has no entry of its own, and grew where its session branch did.
     /// </summary>
@@ -115,7 +116,7 @@ public sealed partial class SessionTrees
     {
         var grown = Grown.Of(repository, branch) ?? (BranchOfTree(tree) is { } layout ? Grown.Of(repository, layout.Branch) : null);
         // Nothing is in use by WSR6's word here: what runs in the tree was asked of the caller, inside the hold.
-        var judged = await JudgeReplayAsync(
+        var judged = await Judging.JudgeReplayAsync(
             root, repository, workspace, branch, landed: false, tree, grown?.From, grown?.GrewFrom, pushedOnRecord: false, line, onto,
             busy: [], ct).ConfigureAwait(false);
         if (!judged.Item.Replays)
@@ -130,7 +131,7 @@ public sealed partial class SessionTrees
             });
         }
 
-        var result = await ReplayAsync(root, repository, workspace, line, onto, judged, [], ct).ConfigureAwait(false);
+        var result = await Replays.ReplayAsync(root, repository, workspace, line, onto, judged, [], ct).ConfigureAwait(false);
         if (!result.Replayed) return new(false, result.Message);
         var now = (await CommitOfAsync(root, $"refs/heads/{branch}", ct).ConfigureAwait(false))!;
         return new(true, result.Message, new TreeMoved(line, judged.Tip!, now, branch, await CountAsync(root, $"{onto}..{now}", ct).ConfigureAwait(false)));
@@ -149,7 +150,7 @@ public sealed partial class SessionTrees
     /// </remarks>
     private async Task<TreeUpdate> UpdateDetachedAsync(string tree, string root, string line, string onto, string head, CancellationToken ct)
     {
-        var from = (await ReviewRangeAsync(tree, "", ct).ConfigureAwait(false)).From;
+        var from = (await Ranges.ReviewRangeAsync(tree, "", ct).ConfigureAwait(false)).From;
         if (from.Length == 0)
         {
             return new(false, TreeUpdateWords.Left(new TreeFacts(), RebaseKind.Unknown, null, "git found no point where it left the line"));
@@ -163,12 +164,12 @@ public sealed partial class SessionTrees
             return new(false, TreeUpdateWords.MovedSince);
         }
 
-        var (failed, words) = await RebaseInAsync(tree, onto, from, ct).ConfigureAwait(false);
+        var (failed, words) = await BranchReplays.RebaseInAsync(tree, onto, from, ct).ConfigureAwait(false);
         if (failed) return new(false, TreeUpdateWords.NotReplayed(line, words, await PutBackAsync(tree, head, ct).ConfigureAwait(false)));
 
         // 🔴 Proven before it is kept: nothing of its own changed but what the line brought.
         var now = await CommitOfAsync(tree, "HEAD", ct).ConfigureAwait(false);
-        var beyond = now is null ? "git could not say where it went" : await BeyondTheLineAsync(root, head, now, from, onto, ct).ConfigureAwait(false);
+        var beyond = now is null ? "git could not say where it went" : await BranchReplays.BeyondTheLineAsync(root, head, now, from, onto, ct).ConfigureAwait(false);
         if (beyond is not null) return new(false, TreeUpdateWords.NotKept(beyond, await PutBackAsync(tree, head, ct).ConfigureAwait(false)));
 
         var kept = await CountAsync(root, $"{onto}..{now}", ct).ConfigureAwait(false);

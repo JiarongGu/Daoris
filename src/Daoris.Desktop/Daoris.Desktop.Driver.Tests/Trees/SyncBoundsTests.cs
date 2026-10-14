@@ -56,7 +56,7 @@ public sealed partial class SyncBoundsTests
         var together = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var items = Enumerable.Range(0, 10).ToList();
 
-        var answers = await SessionTrees.AtMostAsync(items, SyncBounds.FetchesAtOnce, async (item, ct) =>
+        var answers = await TreeRefs.AtMostAsync(items, SyncBounds.FetchesAtOnce, async (item, ct) =>
         {
             var now = Interlocked.Increment(ref running);
             InterlockedMax(ref most, now);
