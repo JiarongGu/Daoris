@@ -25,24 +25,30 @@ public static class SpawnServers
     {
         if (servers.Count == 0) return null;
 
-        var folder = Path.Combine(home, Folder);
-        Directory.CreateDirectory(folder);
-        var path = Path.Combine(folder, $"{sessionId}.mcp.json");
+        var path = Path.Combine(home, Folder, $"{sessionId}.mcp.json");
 
-        var document = new
+        // By name, so a name given twice is refused as it always was (the writer is reflection-free: JsonFile).
+        var byName = servers.ToDictionary(server => server.Name, StringComparer.Ordinal);
+        JsonFile.Write(path, writer =>
         {
-            mcpServers = servers.ToDictionary(
-                server => server.Name,
-                server => new
-                {
-                    command = server.Command,
-                    args = server.Arguments,
-                    env = server.Environment,
-                },
-                StringComparer.Ordinal),
-        };
+            writer.WriteStartObject();
+            writer.WriteStartObject("mcpServers");
+            foreach (var (name, server) in byName)
+            {
+                writer.WriteStartObject(name);
+                writer.WriteString("command", server.Command);
+                writer.WriteStartArray("args");
+                foreach (var argument in server.Arguments) writer.WriteStringValue(argument);
+                writer.WriteEndArray();
+                writer.WriteStartObject("env");
+                foreach (var (key, value) in server.Environment) writer.WriteString(key, value);
+                writer.WriteEndObject();
+                writer.WriteEndObject();
+            }
 
-        AtomicFile.WriteText(path, JsonSerializer.Serialize(document, new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n");
+            writer.WriteEndObject();
+            writer.WriteEndObject();
+        });
         return path;
     }
 
