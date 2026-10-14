@@ -7,7 +7,7 @@ repository.
 
 ## 2026-10-15 — The person's words to a session whose closed quest had once waited on a question never went on
 
-- **Symptom:** the owner's, on the install: words said to report-ui's session cf8faff5 (asking it to rebase a branch whose
+- **Symptom:** the owner's, on the install: words said to the reporting app's session cf8faff5 (asking it to rebase a branch whose
   pull request now conflicted) were kept on its record (`said`, `reopens`) and the terminal answered *held: the same session
   goes on with this at the driver's next look*, but no look ever went on with them, and nothing said why. The same words to
   another session (cbf2fe70) went on within a second.
