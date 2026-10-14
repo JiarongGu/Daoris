@@ -299,8 +299,7 @@ public sealed class HelpConversations(string home)
                 return;
             }
 
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            AtomicFile.WriteText(path, ToJson(next));
+            JsonFile.Write(path, writer => WriteKept(writer, next));
         }
     }
 
@@ -309,20 +308,14 @@ public sealed class HelpConversations(string home)
         SessionEventText.IsId(session) ? session : throw new DriverException($"`{session}` is not a session id, so it names no conversation.");
 
     /// <summary>Written by hand, as the driver's other files are, for the AOT reason <see cref="DriverConfig"/> gives.</summary>
-    private static string ToJson(HelpKept kept)
+    private static void WriteKept(Utf8JsonWriter writer, HelpKept kept)
     {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
-        {
-            writer.WriteStartObject();
-            if (kept.Name is { } name) writer.WriteString("name", name);
-            if (kept.Pinned is { } pinned) writer.WriteString("pinned", Moments.Write(pinned));
-            if (kept.From is { } from) writer.WriteString("from", from);
-            if (kept.Handed is { } handed) writer.WriteString("handed", handed);
-            writer.WriteEndObject();
-        }
-
-        return Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n";
+        writer.WriteStartObject();
+        if (kept.Name is { } name) writer.WriteString("name", name);
+        if (kept.Pinned is { } pinned) writer.WriteString("pinned", Moments.Write(pinned));
+        if (kept.From is { } from) writer.WriteString("from", from);
+        if (kept.Handed is { } handed) writer.WriteString("handed", handed);
+        writer.WriteEndObject();
     }
 
     private static DateTimeOffset? Time(JsonElement element, string name) => Moments.Read(element, name);

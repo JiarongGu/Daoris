@@ -84,7 +84,7 @@ internal sealed class HelpClearProposals : IHelpProposalKind
         // A second draw keeps the first list: the card the person read first is the one its Apply sends.
         if (node.ContainsKey("units")) return;
         node["units"] = new JsonArray([.. clear.Units.Select(unit => (JsonNode)new JsonObject { ["kind"] = unit.Kind, ["id"] = unit.Id })]);
-        AtomicFile.WriteText(path, node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n");
+        JsonFile.Write(path, node);
     }
 
     public async Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct)
