@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session that goes on with your words and whose agent's connection fails no longer ends as *completed*: it ends failed,
+  saying why, and your words wait to go again at the next look (after a second failure in a row, with the next words you
+  say). Words you add while a turn hangs are no longer shown as taken when the turn fails; they wait to go again too. The
+  conversation no longer shows an empty *waiting* turn above each resumed turn, and the agent's `API Error: …` line reads
+  as part of the failure.
 - The desktop's own settings and record files, and a repository's `daoris.json` when the desktop edits it, are written with
   plain line ends on Windows too, and keep Chinese text and marks such as `<` as written rather than as `\u` escapes; Ask
   Daoris's JSON answers show them as written as well.

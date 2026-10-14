@@ -411,6 +411,96 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
+    /// 🔴 USERSHOWN1: a word sent mid-turn waits behind the prompt before it, and that prompt's answer hands the turn to it. An
+    /// answer that is an error hands nothing on: the door failed and the agent never read the word, which the install's record
+    /// kept as taken at the instant its connection dropped (2026-10-14). The run hands it back as never reached, for the driver
+    /// to keep waiting.
+    /// </summary>
+    [Fact]
+    public async Task A_word_sent_mid_turn_is_not_taken_when_the_turn_before_it_fails()
+    {
+        var first = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize":
+                    return Ok(frame, Queues);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt" when !first.Task.IsCompleted:
+                    first.SetResult(frame.GetProperty("id").GetInt32());
+                    return null;
+                case "session/prompt":
+                    // The word queues behind the turn; the turn's own prompt then fails, as a dropped connection does.
+                    self.Push($$$"""{"jsonrpc":"2.0","id":{{{first.Task.Result}}},"error":{"code":-32603,"message":"Internal error: API Error: Connection dropped (ECONNRESET)"}}""");
+                    return null;
+                default:
+                    return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var record = new Record();
+        var inbox = new DrivenInbox(_ => { });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event);
+
+        var run = session.RunAsync("D:/fam/Game", "read the five files", CancellationToken.None, inbox: inbox, asked: record.Asked);
+        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.True(inbox.Hold(new ChatMessage("stuck?", [])));
+
+        var failed = await Assert.ThrowsAnyAsync<DriverException>(() => run.WaitAsync(TimeSpan.FromSeconds(10)));
+
+        Assert.Contains("ECONNRESET", failed.Message);
+        Assert.DoesNotContain(record.Lines, line => line.StartsWith("taken:", StringComparison.Ordinal));
+        Assert.Equal([("said-1", "stuck?")], session.Unreached.Select(word => (word.Id, word.Text)));
+    }
+
+    /// <summary>
+    /// USERSHOWN1, a conversation's door, which goes on after a turn's error: the word behind the failed turn is taken by the
+    /// first thing the agent does for it, and said before that thing, so the answer never sits above the question.
+    /// </summary>
+    [Fact]
+    public async Task A_conversations_word_behind_a_failed_turn_is_taken_when_the_agent_answers_it()
+    {
+        var first = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var second = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize":
+                    return Ok(frame, Queues);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt" when !first.Task.IsCompleted:
+                    first.SetResult(frame.GetProperty("id").GetInt32());
+                    return null;
+                case "session/prompt":
+                    self.Push($$$"""{"jsonrpc":"2.0","id":{{{first.Task.Result}}},"error":{"code":-32603,"message":"Internal error: overloaded"}}""");
+                    self.Push(Said("PINEAPPLE"));
+                    second.SetResult(frame.GetProperty("id").GetInt32());
+                    return null;
+                default:
+                    return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var record = new Record();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event);
+
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+        session.OnTaken(record.Asked);
+        var turn = session.PromptAsync("read the five files", CancellationToken.None);
+        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var words = session.SayAsync(new ChatMessage("put PINEAPPLE after the words", []) { Id = "said-c1" }, CancellationToken.None);
+        var id = await second.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        await Assert.ThrowsAnyAsync<DriverException>(() => turn.WaitAsync(TimeSpan.FromSeconds(10)));
+        agent.Push(Answer(id, "end_turn"));
+        Assert.Equal("end_turn", await words.WaitAsync(TimeSpan.FromSeconds(10)));
+        Assert.Equal(["taken:said-c1:put PINEAPPLE after the words", "message:PINEAPPLE", "turn:end_turn"], record.Lines);
+        session.Release();
+    }
+
+    /// <summary>
     /// 🔴 A conversation on the next-step door (MSG1c, D137 §2.1): the session says so once it opens, and the person's word
     /// said while a turn runs goes at once as a prompt of the same session. It is taken when the agent hands the turn before
     /// it off, and the record reads as the driven door's does: the turn the wire ended there, the words taken, the work after.

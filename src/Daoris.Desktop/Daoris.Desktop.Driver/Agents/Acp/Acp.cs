@@ -592,14 +592,20 @@ public sealed class AcpSession(
             .ConfigureAwait(false);
     }
 
-    /// <summary>How many of the person's words are on the wire and not yet taken, forgotten as they are counted.</summary>
+    /// <summary>
+    /// The person's words this run sent and the session never took, once the run has ended (TURNFAIL1): on the wire behind a
+    /// turn that ended first, a failed one included. The driver keeps them waiting where the door failed; empty until then.
+    /// </summary>
+    public IReadOnlyList<ChatMessage> Unreached { get; private set; } = [];
+
+    /// <summary>How many of the person's words are on the wire and not yet taken, forgotten as they are counted and kept as <see cref="Unreached"/>.</summary>
     private int Untaken()
     {
         lock (_promptsGate)
         {
-            var untaken = _prompts.Count(open => open.Words is not null && !open.Taken);
+            Unreached = [.. _prompts.Where(open => open.Words is not null && !open.Taken).Select(open => open.Words!)];
             _prompts.Clear();
-            return untaken;
+            return Unreached.Count;
         }
     }
 
@@ -865,8 +871,12 @@ public sealed class AcpSession(
     /// </summary>
     private void Answered(OpenPrompt open, JsonElement frame)
     {
-        if (frame.TryGetProperty("result", out var result))
+        var answered = frame.TryGetProperty("result", out var result);
+        if (answered)
         {
+            // A word an error handed nothing to, answered before the agent did anything else for it: it was taken after all.
+            if (open.Words is not null && TakeLate(open) is { } own) Asked(own);
+
             Emit(new SessionEvent
             {
                 Kind = SessionEventKind.Turn,
@@ -884,15 +894,45 @@ public sealed class AcpSession(
         lock (_promptsGate)
         {
             _prompts.Remove(open);
-            if (_prompts.First?.Value is { Taken: false, Words: { } next } head)
+            // 🔴 USERSHOWN1: an error hands the turn to nothing. The install's record kept a word as taken at the instant its
+            // door failed (ECONNRESET), the agent never having read it. The word is taken once the agent does something for
+            // it (TakeLate, a conversation's door going on after the error), or is handed back as never reached.
+            if (answered && _prompts.First?.Value is { Taken: false, Words: { } next } head)
             {
                 head.Taken = true;
                 taken = next;
             }
+
+            _afterError = !answered;
         }
 
         if (taken is not null) Asked(taken);
     }
+
+    /// <summary>
+    /// After an error answered the prompt before it (USERSHOWN1), the next word is taken by the first thing the agent does on
+    /// the wire for the session, or by its own answer: told then, before that thing is kept, so the answer never sits above the
+    /// question. The words taken now, where they are <paramref name="only"/>'s (or, null, the first waiting); else null.
+    /// </summary>
+    private ChatMessage? TakeLate(OpenPrompt? only = null)
+    {
+        lock (_promptsGate)
+        {
+            if (!_afterError || _prompts.First?.Value is not { Taken: false, Words: { } words } head)
+            {
+                _afterError = false;
+                return null;
+            }
+
+            if (only is not null && head != only) return null;
+            _afterError = false;
+            head.Taken = true;
+            return words;
+        }
+    }
+
+    /// <summary>An error answered the prompt before a word, which waits for the agent's next update to be taken (USERSHOWN1).</summary>
+    private bool _afterError;
 
     /// <summary>Tell the run's listener the session took the person's words; its failure costs a line, never the turn.</summary>
     private void Asked(ChatMessage words)
@@ -1090,6 +1130,16 @@ public sealed class AcpSession(
             // The session's own background work (BGWAIT1), before the console takes the same frames for its streams.
             var from = StringField(p, "sessionId");
             if (from is null || from == _sessionId) _background.Take(update);
+
+            // The agent went on after an error answered the turn before a word (USERSHOWN1): its words, thinking, calls or plan
+            // are that word's turn, so it was taken. A meter or a mode said meanwhile is nobody's answer.
+            if ((from is null || from == _sessionId)
+                && StringField(update, "sessionUpdate") is { } kind
+                && (kind.StartsWith("agent_", StringComparison.Ordinal) || kind.StartsWith("tool_call", StringComparison.Ordinal) || kind == "plan")
+                && TakeLate() is { } late)
+            {
+                Asked(late);
+            }
 
             // 🔴 Routed by whose it is (CONSOLE2): a subagent speaks under its own session id, and a
             // client that reads every update as the session's merges the child into the parent.
