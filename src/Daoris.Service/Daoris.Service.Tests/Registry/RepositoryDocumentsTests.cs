@@ -271,7 +271,8 @@ public sealed class RepositoryDocumentsTests : IDisposable
     [Fact]
     public void The_roles_are_the_CLI_s_role_for_role_in_its_order()
     {
-        var source = File.ReadAllText(Path.Combine(WorkspaceRoot(), "src", "Daoris.Cli", "src", "documents.ts"));
+        // By its name, in whichever module folder of the CLI's sources it sits (STRUCT5d, D166).
+        var source = File.ReadAllText(Directory.EnumerateFiles(Path.Combine(WorkspaceRoot(), "src", "Daoris.Cli", "src"), "documents.ts", SearchOption.AllDirectories).Single());
         var block = source[source.IndexOf("export const ROLES", StringComparison.Ordinal)..];
         block = block[..block.IndexOf("];", StringComparison.Ordinal)];
         var cli = System.Text.RegularExpressions.Regex.Matches(block, @"\{ role: '([a-z]+)', binding: '(path|ceiling)'")

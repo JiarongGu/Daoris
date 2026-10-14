@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -8,6 +8,7 @@ import {
   enablePlugin, isPluginId, pluginsRoot, readPluginState, readPlugins, reservedHarnesses, resolvable,
 } from '../src/plugins.ts';
 import { captureError, makeFixture } from './_fixture.ts';
+import { cliSource, SOURCES, sourcePaths } from './_sources.ts';
 
 /**
  * `daoris plugin` — the CLI's half of the plugin catalogue's TWIN CONTRACT (D64). The driver's
@@ -561,10 +562,10 @@ test('enable and disable edit the row, and an unknown id is refused naming the l
  * in two places. Each caller keeps its own lowering. The driver's `PluginCatalog.IsId` is the twin, held by its own tables.
  */
 test('only plugins.ts spells a plugin id’s shape, and isPluginId answers it', () => {
-  const sources = join(dirname(dirname(fileURLToPath(import.meta.url))), 'src');
-  const spelled = readdirSync(sources)
-    .filter((name) => name.endsWith('.ts') && /\[a-z0-9\]\[a-z0-9\.-\]/.test(readFileSync(join(sources, name), 'utf8')));
-  assert.deepEqual(spelled, ['plugins.ts']);
+  // Every source at any depth (STRUCT5d): the sources sit in module folders.
+  const spelled = sourcePaths()
+    .filter((path) => path.endsWith('.ts') && /\[a-z0-9\]\[a-z0-9\.-\]/.test(readFileSync(join(SOURCES, path), 'utf8')));
+  assert.deepEqual(spelled, [cliSource('plugins.ts')]);
 
   for (const id of ['acme.agent', 'example.github-pull-request', '0day', 'a']) assert.equal(isPluginId(id), true, id);
   for (const id of ['', '.data', '-x', 'Acme', 'acme/agent', 'acme agent', 'acme.agent\n', 'straße']) {

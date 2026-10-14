@@ -95,7 +95,7 @@ public sealed class CodexAccountTests : IDisposable
     [Fact]
     public void The_declaration_is_the_cli_s_codex_entry()
     {
-        var source = File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "src", "toolchain.ts"));
+        var source = File.ReadAllText(SourceFiles.Cli("toolchain.ts"));
         var start = source.IndexOf("\n  codex: {", StringComparison.Ordinal);
         Assert.True(start >= 0, "the CLI declares no `codex` entry");
         var entry = source[start..source.IndexOf("\n  },", start, StringComparison.Ordinal)];

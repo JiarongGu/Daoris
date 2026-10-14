@@ -489,8 +489,9 @@ export const REACH = Object.freeze([
     why: "the service's MarkdownFence and the driver's SelfDescription fence twins read the shared fence table (ORIENT2h6, ORIENT2h6b)",
   },
   { paths: ['tools/orient-index-fixtures/**'], gates: ['service'], why: "the service's DecisionNotes twin reads the digest's note table (ORIENT1h)" },
+  // STRUCT5d (D166): by its name at any depth of the CLI's sources, which sit in module folders.
   {
-    paths: ['src/Daoris.Cli/src/documents.ts'],
+    paths: ['src/Daoris.Cli/src/**/documents.ts'],
     gates: ['service', ...CLI_READERS],
     why: "the CLI's own, and the service's roles twin reads its ROLES from the file (ORIENT2e2)",
   },

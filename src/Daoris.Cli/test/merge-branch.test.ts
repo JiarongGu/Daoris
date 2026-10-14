@@ -484,8 +484,10 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['the usage curve table', ['src/Daoris.Cli/test/fixtures/usage-curves.json'], [...BASE, 'driver']],
     ['release tooling', ['tools/release-rehearsal.mjs'], [...BASE, 'rehearse']],
     ['the CLI', ['src/Daoris.Cli/src/cli.ts'], [...BASE, 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
-    // ORIENT2e2: the service's roles twin reads the CLI's ROLES from its file, so that file reaches the service too.
-    ["the CLI's roles", ['src/Daoris.Cli/src/documents.ts'], [...BASE, 'service', 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
+    // ORIENT2e2: the service's roles twin reads the CLI's ROLES from its file, so that file reaches the service too; by its
+    // name in whichever module folder it sits (STRUCT5d).
+    ["the CLI's roles", ['src/Daoris.Cli/src/layout/documents.ts'], [...BASE, 'service', 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
+    ["the CLI's roles, at the sources' top", ['src/Daoris.Cli/src/documents.ts'], [...BASE, 'service', 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     ['the merge tool and its tests', ['tools/merge-branch.mjs', 'src/Daoris.Cli/test/merge-branch.test.ts'], BASE],
     ['the service', ['src/Daoris.Service/Daoris.Service.Core/Asks.cs'],
       [...BASE, 'service', 'devkit', 'driver', 'rehearse-family', 'web', 'deployment']],
@@ -1065,10 +1067,30 @@ function srcReads(text: string, files: readonly string[]): string[] {
     const base = text.slice(0, match.index).trimEnd().replace(/,$/, '').trimEnd();
     if (base.endsWith('"') || BARE_NAME.test(base)) continue;
     const segments = ['src', match[1]!, ...[...match[2]!.matchAll(/"([^"]*)"/g)].map((part) => part[1]!)];
-    reads.push(/\.(cs|ts|tsx|mjs|js|json|css|md|props|txt)$/.test(segments.at(-1)!) ? segments.join('/') : `${segments.join('/')}/probe.txt`);
+    if (/\.(cs|ts|tsx|mjs|js|json|css|md|props|txt)$/.test(segments.at(-1)!)) {
+      reads.push(segments.join('/'));
+      continue;
+    }
+    // STRUCT5d: a folder searched for one name at any depth (`Directory.EnumerateFiles(Path.Combine(…, "src"), "documents.ts",
+    // SearchOption.AllDirectories)`) reads the file of that name wherever it lies under it, and nothing else of the folder.
+    const folder = segments.join('/');
+    const named = /^\s*\)\s*,\s*"([^"*?\\/]+)"\s*,\s*SearchOption\.AllDirectories\b/.exec(text.slice(match.index + match[0].length));
+    const found = named ? files.filter((file) => file.startsWith(`${folder}/`) && file.split('/').at(-1) === named[1]) : [];
+    reads.push(...(named ? (found.length ? found : [`${folder}/${named[1]}`]) : [`${folder}/probe.txt`]));
   }
   return reads;
 }
+
+test('a folder searched for one name at any depth reads that file wherever it lies, and nothing else of it (STRUCT5d)', () => {
+  const files = ['src/Daoris.Cli/src/layout/documents.ts', 'src/Daoris.Cli/src/cli.ts'];
+  const byName = 'var source = File.ReadAllText(Directory.EnumerateFiles(Path.Combine(WorkspaceRoot(), "src", "Daoris.Cli", "src"), "documents.ts", SearchOption.AllDirectories).Single());';
+  assert.deepEqual(srcReads(byName, files), ['src/Daoris.Cli/src/layout/documents.ts']);
+  // A name found nowhere is still that name's read, and a pattern is no name: the folder is read whole, as before.
+  assert.deepEqual(srcReads(byName.replace('"documents.ts"', '"gone.ts"'), files), ['src/Daoris.Cli/src/gone.ts']);
+  assert.deepEqual(srcReads(byName.replace('"documents.ts"', '"*.ts"'), files), ['src/Daoris.Cli/src/probe.txt']);
+  // What the scan then asks of the lane table: a change to the roles' file runs the service's suite (ORIENT2e2).
+  assert.ok(runs(['src/Daoris.Cli/src/layout/documents.ts']).includes('service'));
+});
 
 /** A base that is a name alone, a local, a field or a parameter, rather than a call or a member: MOD9b's folder the test made. */
 const BARE_NAME = /(?:^|[^\w.!?])@?[A-Za-z_]\w*$/;
