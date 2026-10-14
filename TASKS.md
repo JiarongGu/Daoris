@@ -292,7 +292,6 @@ folder.
 
 **Duplication** (the owner: *"we more focus on modularize the code to reduce duplication and easier to manage"*). Evidence: `docs/2026-10-14-duplication-survey.md`, by section. After FLAT1; DEDUP1 to 3 touch the same files, so one at a time.
 
-- [ ] **DEDUP7c — the short ids left** (service, driver). The Mcp host's three `Math.Min(7, …)` cuts cannot see the core's internal `Clipped.ShortCommit`; four unguarded `[..7]`/`[..8]` cuts (`NoteCodes.cs:942`, `LayoutGit.cs:36`, `RegistrationWorld.cs:84`, `PluginTrials.cs:290`) throw on a short id: decide what a short id should do, then one helper each side. D166's DEDUP7b note.
 
 ## Development and agent layout
 

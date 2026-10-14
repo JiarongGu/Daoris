@@ -14650,3 +14650,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT5c — the page's top folder in folders** (web). As STRUCT5a, 5b and 5d did, with its gate in vitest; STRUCT5d's import-rewriting script (asserted counts, read back) is a candidate tracked tool. Design §7.
 
 **Outcome** 2026-10-15: the page's top holds only its three entries; 109 files moved into domain folders with `git mv`, held by `src/test/structure.test.ts`, and `daoris.lanes.json` lost two `SettingsView*` globs the move made empty. The work, settings, bridge and projects folders still hold over twenty sources at their top and sit on the gate's `wide` list (STRUCT5c-ii); the move script stayed in scratch (MOVETOOL1). Eleven gates passed on the merge, merged with main's closed-quest fix. On Opus: 308 tool calls. Detail: D166's STRUCT5c note and the `refactor(web): STRUCT5c` commits.
+
+## DEDUP7c — the short ids left (2026-10-15, D166)
+
+> - [ ] **DEDUP7c — the short ids left** (service, driver). The Mcp host's three `Math.Min(7, …)` cuts cannot see the core's internal `Clipped.ShortCommit`; four unguarded `[..7]`/`[..8]` cuts (`NoteCodes.cs:942`, `LayoutGit.cs:36`, `RegistrationWorld.cs:84`, `PluginTrials.cs:290`) throw on a short id: decide what a short id should do, then one helper each side. D166's DEDUP7b note.
+
+**Outcome** 2026-10-15: a short id shows whole: the four unguarded cuts call `TextBounds.ShortCommit` (`PluginTrials.StateWords` extracted to test it; `LayoutGit` and `RegistrationWorld` could not throw, `IsCommitId` holds ids to seven or more); the Mcp host calls the core's `Clipped.ShortCommit` through an `InternalsVisibleTo` grant instead of a twin. Detail: D166's DEDUP7c note.

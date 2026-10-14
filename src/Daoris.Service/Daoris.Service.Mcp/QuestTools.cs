@@ -249,7 +249,7 @@ public sealed class QuestTools(
                 if (quest.SetUpIn is { } environment) text.AppendLine($"  set-up step: shows the work it follows in `{environment}` for the person's review");
                 foreach (var setUp in quest.SetUps)
                 {
-                    text.AppendLine($"  set up at `{setUp.Commit[..Math.Min(7, setUp.Commit.Length)]}`"
+                    text.AppendLine($"  set up at `{Clipped.ShortCommit(setUp.Commit, 7)}`"
                         + (setUp.Look is { } look ? $": <{look}>" : setUp.Local ? ", locally on the machine that showed it" : "")
                         + (setUp.Shows is { } shows ? $" — {shows}" : "")
                         + (setUp.Session is null ? " (the person's own)" : ""));
@@ -257,7 +257,7 @@ public sealed class QuestTools(
 
                 foreach (var verdict in quest.Verdicts)
                 {
-                    text.AppendLine($"  the person said {verdict.Said}" + (verdict.Commit is { } at ? $" of the set-up at `{at[..Math.Min(7, at.Length)]}`" : "")
+                    text.AppendLine($"  the person said {verdict.Said}" + (verdict.Commit is { } at ? $" of the set-up at `{Clipped.ShortCommit(at, 7)}`" : "")
                         + (verdict.Words is { } words ? $": \"{words}\"" : ""));
                 }
                 // What the person requires (DRIFT1c): their words as quoted, and the check, whole.
@@ -284,7 +284,7 @@ public sealed class QuestTools(
                 // What Daoris last read of its evidence (EVID1a): the commit, and each item's code.
                 if (quest.Evidence is { } read)
                 {
-                    text.AppendLine($"  evidence read at `{read.Commit[..Math.Min(7, read.Commit.Length)]}` ({read.How}): "
+                    text.AppendLine($"  evidence read at `{Clipped.ShortCommit(read.Commit, 7)}` ({read.How}): "
                         + string.Join(" · ", read.Items.Select(item => $"requirement {item.Requirement} `{item.Path ?? item.Gate}` {item.Result}")));
                 }
 

@@ -33,7 +33,7 @@ public static class LayoutGit
         if (found != 0 || !WorkingTree.IsCommitId(commit)) return new(null, $"its line `{line}` names no commit here");
 
         var (listed, output, problem) = await WorkingTree.GitAsync(root, ["ls-tree", "-r", "-z", commit], ct).ConfigureAwait(false);
-        if (listed != 0) return new(null, $"git could not list `{line}` at `{commit[..7]}`: {problem.Trim()}");
+        if (listed != 0) return new(null, $"git could not list `{line}` at `{TextBounds.ShortCommit(commit, 7)}`: {problem.Trim()}");
 
         var tree = LineEntry.Parse(output);
         var texts = new Dictionary<string, string>(StringComparer.Ordinal);
