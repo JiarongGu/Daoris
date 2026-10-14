@@ -138,7 +138,7 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
     public void Each_hold_a_resume_names_carries_the_facts_its_sentence_is_said_from()
     {
         var wire = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
-        System.Text.Json.JsonElement Shown(WorkHold hold) => System.Text.Json.JsonSerializer.SerializeToElement(DriverModule.WorkHoldShown(hold), wire);
+        System.Text.Json.JsonElement Shown(WorkHold hold) => System.Text.Json.JsonSerializer.SerializeToElement(WorkRoutes.WorkHoldShown(hold), wire);
         const string StopSaid = "you stopped session `b3f0re00`; Try again carries it on — `daoris driver retry q8 --session b3f0re00`.";
         const string Null = nameof(System.Text.Json.JsonValueKind.Null);
 

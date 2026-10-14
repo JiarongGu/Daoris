@@ -114,6 +114,7 @@ public sealed partial class DriverModule : ModuleBase
         Domain.Of(module => new RegistryRoutes(module._loop)),
         Domain.Of(module => new RulesRoutes(module._loop)),
         Domain.Of(module => new TraceRoutes(module._loop)),
+        Domain.Of(module => new WorkRoutes(module._context)),
         Domain.Of(module => new WorkflowRoutes(module._loop)),
     ];
 

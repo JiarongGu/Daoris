@@ -358,7 +358,7 @@ public sealed partial class DriverModule
         // have is not applied; a pause that finds nothing to hold is said, as the route says it (D48 §6).
         public async Task<(bool Ok, string Message)> PauseWorkAsync(WorkScope scope, string id, CancellationToken ct)
         {
-            var outcome = await WorkPausing.PauseAsync(module.WorkWorldOf(), scope, id, PluginEvents.Screen, ct).ConfigureAwait(false);
+            var outcome = await WorkPausing.PauseAsync(WorkRoutes.WorldOf(module._context), scope, id, PluginEvents.Screen, ct).ConfigureAwait(false);
             if (outcome.Verdict == PauseVerdict.Unknown) return (false, WorkPausing.Unknown(scope, id));
 
             module._loop.Nudge();
@@ -368,7 +368,7 @@ public sealed partial class DriverModule
         // WORK_RESUME's own resume, the same way.
         public async Task<(bool Ok, string Message)> ResumeWorkAsync(WorkScope scope, string id, CancellationToken ct)
         {
-            var outcome = await WorkPausing.ResumeAsync(module.WorkWorldOf(), scope, id, PluginEvents.Screen, ct).ConfigureAwait(false);
+            var outcome = await WorkPausing.ResumeAsync(WorkRoutes.WorldOf(module._context), scope, id, PluginEvents.Screen, ct).ConfigureAwait(false);
             if (outcome.Verdict == ResumeVerdict.Unknown) return (false, WorkPausing.Unknown(scope, id));
 
             module._loop.Nudge();
@@ -760,7 +760,7 @@ public sealed partial class DriverModule
         // the id as an ask's and as a quest's, and by which workspaces sync with a remote (PAUSE1f-c, D132 §7.4, §5.1).
         if (JudgedAgainstWork(proposals))
         {
-            var world = WorkWorldOf();
+            var world = WorkRoutes.WorldOf(_context);
             var plans = new List<WorkPlan>();
             foreach (var proposal in proposals.Where(each => each.Kind == "pause"))
             {

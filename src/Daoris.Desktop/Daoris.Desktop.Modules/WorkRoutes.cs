@@ -18,8 +18,11 @@ namespace Daoris.Desktop;
 /// the reader's language; a still-held quest carries the planner's verdict beside its sentence, which the page translates by
 /// the verdict, as it does a tick's (UX5 U27).</para>
 /// </remarks>
-public sealed partial class DriverModule
+public sealed class WorkRoutes(DriverContext context)
 {
+    private readonly DriverContext _context = context;
+    private readonly DriverLoop _loop = context.Loop;
+
     /// <summary>
     /// The work and what a pause and an abandon would do with each piece, why an abandon keeps what it keeps, and its own pause
     /// and last abandon here (design §1, §2.1, §3.2, §4.2). The abandon's half is the first press: <c>abandon.pieces</c> is
@@ -29,7 +32,7 @@ public sealed partial class DriverModule
     private async Task<object?> WorkPlanAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var (scope, id) = WorkNamed(request);
-        var abandon = await WorkAbandoning.PlanAsync(WorkWorldOf(), scope, id, cancellationToken).ConfigureAwait(false)
+        var abandon = await WorkAbandoning.PlanAsync(WorldOf(_context), scope, id, cancellationToken).ConfigureAwait(false)
                       ?? throw WorkUnknown(scope, id);
         var plan = abandon.Work;
         var quests = abandon.Quests.ToDictionary(each => each.Quest.Quest.Id, StringComparer.OrdinalIgnoreCase);
@@ -126,7 +129,7 @@ public sealed partial class DriverModule
         }
 
         var pieces = Pieces(request);
-        var outcome = await WorkAbandoning.AbandonAsync(WorkWorldOf(), scope, id, reason, pieces, PluginEvents.Screen, cancellationToken)
+        var outcome = await WorkAbandoning.AbandonAsync(WorldOf(_context), scope, id, reason, pieces, PluginEvents.Screen, cancellationToken)
             .ConfigureAwait(false);
         if (outcome.Verdict == AbandonVerdict.Unknown) throw WorkUnknown(scope, id);
         _loop.Nudge();
@@ -200,7 +203,7 @@ public sealed partial class DriverModule
     private async Task<object?> WorkPauseAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var (scope, id) = WorkNamed(request);
-        var outcome = await WorkPausing.PauseAsync(WorkWorldOf(), scope, id, PluginEvents.Screen, cancellationToken).ConfigureAwait(false);
+        var outcome = await WorkPausing.PauseAsync(WorldOf(_context), scope, id, PluginEvents.Screen, cancellationToken).ConfigureAwait(false);
         if (outcome.Verdict == PauseVerdict.Unknown) throw WorkUnknown(scope, id);
         _loop.Nudge();
         return new
@@ -222,7 +225,7 @@ public sealed partial class DriverModule
     private async Task<object?> WorkResumeAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var (scope, id) = WorkNamed(request);
-        var outcome = await WorkPausing.ResumeAsync(WorkWorldOf(), scope, id, PluginEvents.Screen, cancellationToken).ConfigureAwait(false);
+        var outcome = await WorkPausing.ResumeAsync(WorldOf(_context), scope, id, PluginEvents.Screen, cancellationToken).ConfigureAwait(false);
         if (outcome.Verdict == ResumeVerdict.Unknown) throw WorkUnknown(scope, id);
         _loop.Nudge();
         return new
@@ -271,19 +274,21 @@ public sealed partial class DriverModule
     /// <summary>
     /// The loop's world for a pause or an abandon: its service, its home, its file and its own registry, which stops what it
     /// runs; and for an abandon's pass, the loop's own sync (SYNC6b), where the workspace has a remote in the map its passes read.
+    /// Ask Daoris's pause cards and its pause proposals' judging go through it too, as the screen's own door.
     /// </summary>
-    private WorkWorld WorkWorldOf()
+    internal static WorkWorld WorldOf(DriverContext context)
     {
-        var service = _loop.Service ?? throw NotReady();
-        return new WorkWorld(service, _loop.Home, _loop.ConfigPath, _loop.Processes)
+        var loop = context.Loop;
+        var service = loop.Service ?? throw NotReady();
+        return new WorkWorld(service, loop.Home, loop.ConfigPath, loop.Processes)
         {
-            Door = _context.Door(DriverConfig.Load(_loop.ConfigPath)),
-            Log = _loop.Log,
+            Door = context.Door(DriverConfig.Load(loop.ConfigPath)),
+            Log = loop.Log,
             Sync = async (workspace, ct) =>
             {
                 if (!RemoteTarget.Load().ContainsKey(RemoteTarget.Workspace(workspace))) return null;
                 // Before the loop's sync set is up there is no pass to run: the decline travels on the loop's first.
-                return _loop.SyncNowAsync(workspace, ct) is { } pass
+                return loop.SyncNowAsync(workspace, ct) is { } pass
                     ? await pass.ConfigureAwait(false)
                     : new SyncReport("the driver's sync is not running yet; the next pass carries the decline");
             },

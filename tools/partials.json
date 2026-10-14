@@ -32,7 +32,6 @@
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Sessions.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Tools.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Trees.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Work.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs"
   ],
   "KnowledgeTools": [
