@@ -217,6 +217,11 @@ public sealed record ChannelItemResponse(
 // The channel as one entry reads it: every item (or those after `since`), `unread` against the entry's `mark` (absent for none).
 public sealed record ChannelResponse(string Ask, string Entry, IReadOnlyList<ChannelItemResponse> Items, int Unread, DateTimeOffset? Mark);
 public sealed record ChannelPostResponse(ChannelItemResponse Message);
+// The asks the mirrored messages name that this machine does not hold (SESSONE2h), newest message first. There is no ask record here,
+// so no title: `workspace` is from the messages, `origins` the machines they came from, `unread` is against the person's local mark.
+public sealed record ElsewhereAskResponse(
+    string Id, string Workspace, IReadOnlyList<string> Origins, DateTimeOffset Latest, int Messages, int Unread);
+public sealed record ElsewhereAsksResponse(IReadOnlyList<ElsewhereAskResponse> Asks);
 // One go-ahead (KNOWUSE1a): the act by its `kind` (write, release, push, sign-in, run), where it lands (`on`) and what it
 // touches (`act`); `state` is `asked`, `approved` or `refused`; `asked` is each session's request, oldest first; `answer`
 // the person's, absent while it waits; `near` the go-ahead whose words it shared where they could not tell.
