@@ -14716,3 +14716,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NAMEZH1 — 本机 in a helper's note** (web). `note.helper.why.asker-gone` says 这台机器 where the glossary's name is 本机; correct it and drop its entry from `names.test.ts`'s list. D163's MIXAGENT3a-i note.
 
 **Outcome** 2026-10-15: `note.helper.why.asker-gone` (zh) now says 提问的会话不在本机上, and its entry left the names test's list of strays. Built with KEYPARITY2 (its count). Detail: D163's NAMEZH1 note.
+
+## SESSFIELD1 — the session record's field chain, written down (2026-10-15, D163)
+
+> - [ ] **SESSFIELD1 — the session record's field chain, written down** (docs). A field answered on this machine only is added in a fixed set of places that no document lists: the record's property, `EnsureAsync`, `CreateAsync` with its INSERT and reader, the ledger's opens, the request and response records, `ToSession` on loopback, the driver's `ServiceClient` write, `Prior` and `PriorSession`, and the three stand-ins (`StandInLedger`, `ChatGoOnTests`' `ChatLedger`, `AskAndWaitTickTests.StandIn`). A knowledge row the next such field cites. D163's MIXAGENT1a-iii note.
+
+**Outcome** 2026-10-15: `.claude/knowledge/session-record-fields.md`, walked from MIXAGENT1a-iii's two commits to today's paths: thirteen places for a machine-only field (the row's list, plus the routes, the web's `Session` type and the records), the sync wire as the place a machine-only field is kept out of by having no member, and five more for a field that travels (`entry`, `tookQuest`). Documents only. Detail: the knowledge note; D163's SESSFIELD1 note.
