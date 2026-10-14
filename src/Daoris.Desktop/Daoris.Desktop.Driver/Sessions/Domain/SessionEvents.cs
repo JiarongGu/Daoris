@@ -364,7 +364,7 @@ public static class SessionEventText
     {
         var start = Math.Max(0, at - SnippetRadius);
         var end = Math.Min(text.Length, at + length + SnippetRadius);
-        var window = text[start..end].ReplaceLineEndings(" ").Trim();
+        var window = TextBounds.OneLine(text[start..end]);
         return $"{(start > 0 ? "…" : "")}{window}{(end < text.Length ? "…" : "")}";
     }
 
@@ -385,5 +385,5 @@ public static class SessionEventText
 
     /// <summary>A field cut to a limit, saying how long it was — never silently shortened.</summary>
     internal static string? Cut(string? text, int limit) =>
-        text is null || text.Length <= limit ? text : $"{text[..limit]}… ({text.Length} chars)";
+        TextBounds.ClipCounted(text, limit);
 }

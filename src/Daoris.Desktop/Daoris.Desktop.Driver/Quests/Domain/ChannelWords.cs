@@ -294,8 +294,7 @@ public static class ChannelText
     {
         var cut = text.Length > limit;
         var quoted = cut ? text[..limit] : text;
-        var lines = quoted.ReplaceLineEndings("\n").Split('\n').Select(line => line.Length == 0 ? "  >" : $"  > {line}");
-        var result = string.Join("\n", lines) + "\n";
+        var result = TextBounds.Quote(quoted, indent: "  ") + "\n";
         return cut
             ? result + $"  (… and {text.Length - limit} more characters of this one, left out here; `channel_read` shows it whole.)\n"
             : result;

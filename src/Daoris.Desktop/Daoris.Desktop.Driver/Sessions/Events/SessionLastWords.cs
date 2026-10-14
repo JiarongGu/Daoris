@@ -30,7 +30,7 @@ internal static class SessionLastWords
     internal static string? ParkedWords(SessionEvents events, string sessionId, string transcript)
     {
         if (events.LastSaid(sessionId) is not { } said) return LastWords(transcript);
-        return said.Length <= LastWordsLimit ? said : "…" + said[^LastWordsLimit..].TrimStart();
+        return TextBounds.ClipStart(said, LastWordsLimit);
     }
 
     /// <summary>
@@ -76,6 +76,6 @@ internal static class SessionLastWords
         block.Reverse();
         var words = string.Join("\n", block).Trim();
         if (words.Length == 0) return null;
-        return words.Length <= limit ? words : "…" + words[^limit..].TrimStart();
+        return TextBounds.ClipStart(words, limit);
     }
 }

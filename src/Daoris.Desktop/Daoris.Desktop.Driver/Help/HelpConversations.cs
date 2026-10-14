@@ -265,7 +265,7 @@ public sealed class HelpConversations(string home)
     private static string? FirstLine(string? text)
     {
         var line = text?.Split('\n').Select(each => each.Trim()).FirstOrDefault(each => each.Length > 0);
-        return line is null ? null : line.Length <= PreviewLimit ? line : $"{line[..PreviewLimit]}…";
+        return line is null ? null : TextBounds.Clip(line, PreviewLimit);
     }
 
     /// <summary>

@@ -25,5 +25,5 @@ public static class HelperWords
 
     /// <summary>Words quoted line by line, ending with a line break.</summary>
     private static string Quoted(string words) =>
-        string.Join("\n", words.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n').Select(line => line.Length == 0 ? ">" : $"> {line}")) + "\n";
+        TextBounds.Quote(words, trimEnd: true) + "\n";
 }

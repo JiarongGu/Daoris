@@ -1,4 +1,5 @@
 using System.Text;
+using Daoris.Driver;
 
 namespace Daoris.Desktop;
 
@@ -124,9 +125,7 @@ public sealed class LastLines
         var line = _open.ToString();
         if (_cut)
         {
-            var keep = MostCharacters - 1;
-            if (char.IsHighSurrogate(line[keep - 1])) keep -= 1;
-            line = line[..keep] + "…";
+            line = TextBounds.Cut(line, MostCharacters - 1, wholePairs: true);
         }
 
         _open.Clear();

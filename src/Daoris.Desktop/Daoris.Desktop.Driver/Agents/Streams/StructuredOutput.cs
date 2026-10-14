@@ -442,7 +442,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
             _ => null,
         };
         var title = said ?? name;
-        return title.Length <= 160 ? title : $"{title[..160]}…";
+        return TextBounds.Clip(title, 160);
     }
 
     /// <summary>A tool's name as ACP's kind vocabulary, so both doors' cards wear the same glyphs.</summary>

@@ -96,7 +96,7 @@ public static partial class EvidenceCheck
     public static string? DonesCommit(string? bundle) =>
         bundle is not null && DrivenRead().Match(bundle) is { Success: true } read ? read.Groups[1].Value : null;
 
-    private static string OneLine(string text) => text.ReplaceLineEndings(" ").Trim();
+    private static string OneLine(string text) => TextBounds.OneLine(text);
 
     [GeneratedRegex(@"^evidence read at ([0-9a-f]{64}|[0-9a-f]{40}) \((?:session-end|sweep)\)", RegexOptions.Multiline | RegexOptions.CultureInvariant)]
     private static partial Regex DrivenRead();

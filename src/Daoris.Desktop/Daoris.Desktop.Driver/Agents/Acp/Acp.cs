@@ -1650,7 +1650,7 @@ public sealed class AcpSession(
         if (c.TryGetProperty("title", out var title) && title.ValueKind == JsonValueKind.String
             && title.GetString()?.Trim() is { Length: > 0 } text)
         {
-            return $"`{(text.Length <= 160 ? text : text[..160] + "…")}`";
+            return $"`{TextBounds.Clip(text, 160)}`";
         }
 
         return c.TryGetProperty("kind", out var kind) && kind.ValueKind == JsonValueKind.String
@@ -1662,7 +1662,7 @@ public sealed class AcpSession(
     private static string Compact(JsonElement element)
     {
         var raw = element.GetRawText();
-        return raw.Length <= 400 ? raw : $"{raw[..400]}… ({raw.Length} chars)";
+        return TextBounds.ClipCounted(raw, 400);
     }
 
     /// <param name="sent">Told once the request is on the wire, before its answer is awaited.</param>

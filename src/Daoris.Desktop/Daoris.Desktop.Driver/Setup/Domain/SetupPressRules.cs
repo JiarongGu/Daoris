@@ -92,7 +92,7 @@ public static partial class SetupPressRules
     private static string Said(string? text)
     {
         var first = (text ?? "").Trim().Split('\n')[0].Trim();
-        return first.Length == 0 ? "nothing" : first.Length > 80 ? first[..80] + "…" : first;
+        return first.Length == 0 ? "nothing" : TextBounds.Clip(first, 80);
     }
 
     [GeneratedRegex(@"^v?(\d+)\.\d+\.\d+")]

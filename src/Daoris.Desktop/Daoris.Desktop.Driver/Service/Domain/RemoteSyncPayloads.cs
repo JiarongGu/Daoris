@@ -429,7 +429,7 @@ public static class RemoteSyncPayloads
         return document.RootElement.ValueKind == JsonValueKind.Object ? Text(document.RootElement, "claim") ?? "none" : "none";
     }
 
-    private static string Clip(string text) => text.Length <= 120 ? text : text[..120] + "…";
+    private static string Clip(string text) => TextBounds.Clip(text, 120);
 
     /// <param name="Write">The team's rows to write here — new, or with a declaration that changed.</param>
     /// <param name="Retire">This circle's copies the circle no longer lists, to retire here.</param>
