@@ -54,7 +54,7 @@ import { onPath, readJsonObject, readText, renameHeld, writeJsonAtomic } from '.
 import type { ExitCode } from './platform/errors.ts';
 import { daorisHome, HOME_SENTENCE } from './platform/home.ts';
 import { TOOLCHAINS } from './agents/toolchain.ts';
-import { TOOLS, isAddress } from './tools.ts';
+import { TOOLS, isAddress } from './tools/tools.ts';
 import type { CommandArgs } from './platform/types.ts';
 
 /** The plugin API this build speaks. Raised only when a plugin written for the new shape cannot work on the old one. */

@@ -5,7 +5,7 @@ import { delimiter, dirname, join, sep } from 'node:path';
 import {
   PATH_VARIABLE, TOOLS, TOOLS_FILE, TOOLS_FOLDER, TOOL_PACKAGE, TOOL_RECORD, childEnvironment, childPath,
   commandOnTheSystem, commandThroughTools, handTools, installBin, readTools, resolveCommand,
-} from '../src/tools.ts';
+} from '../src/tools/tools.ts';
 import { probe, readHarnessSettings } from '../src/agents/toolchain.ts';
 import type { Toolchain } from '../src/agents/toolchain.ts';
 import { driverRows as csharpRows, driverTestFile } from './_csharp.ts';

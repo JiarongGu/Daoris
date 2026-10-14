@@ -50,7 +50,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { daorisHome, requireHomeFile } from '../platform/home.ts';
-import { commandOnTheSystem, commandThroughTools, handTools } from '../tools.ts';
+import { commandOnTheSystem, commandThroughTools, handTools } from '../tools/tools.ts';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import type { SpawnSyncReturns, StdioOptions } from 'node:child_process';

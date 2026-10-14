@@ -26,8 +26,8 @@
 
 import { existsSync, statSync } from 'node:fs';
 import { delimiter, dirname, join, resolve } from 'node:path';
-import { DaorisError } from './platform/errors.ts';
-import { onPath, readJsonObject, writeJsonAtomic } from './platform/fsx.ts';
+import { DaorisError } from '../platform/errors.ts';
+import { onPath, readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
 
 type Env = Record<string, string | undefined>;
 

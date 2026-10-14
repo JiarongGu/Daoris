@@ -2,9 +2,6 @@
   "modules": ["cli", "platform", "doctrine", "layout", "accounts", "agents", "tools", "service", "driver", "workflows", "plugins", "browser"],
   "entry": ["cli.ts"],
   "root": {
-    "resources.ts": "tools",
-    "toolinstall.ts": "tools",
-    "tools.ts": "tools",
     "connect.ts": "service",
     "manage.ts": "service",
     "remotemap.ts": "service",

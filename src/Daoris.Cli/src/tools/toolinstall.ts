@@ -22,23 +22,23 @@
 
 import { chmodSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { operands } from './platform/args.ts';
-import type { Fetcher } from './agents/channels.ts';
-import { DaorisError, RefusalError, type ExitCode } from './platform/errors.ts';
-import { renameHeld, writeBytesAtomic, writeJsonAtomic } from './platform/fsx.ts';
-import { HOME_SENTENCE, daorisHome } from './platform/home.ts';
+import { operands } from '../platform/args.ts';
+import type { Fetcher } from '../agents/channels.ts';
+import { DaorisError, RefusalError, type ExitCode } from '../platform/errors.ts';
+import { renameHeld, writeBytesAtomic, writeJsonAtomic } from '../platform/fsx.ts';
+import { HOME_SENTENCE, daorisHome } from '../platform/home.ts';
 import {
   ARCHIVES, BUILT_IN, builtInList, compareVersions, currentPlatform, locationCopy, mergeResources, parseResources, readLists,
   readResourceFile, type Licence, type MergedResources, type OfferedVersion, type ResourceList,
 } from './resources.ts';
-import { extractTarGz } from './platform/tarball.ts';
+import { extractTarGz } from '../platform/tarball.ts';
 import {
   TOOLS, TOOLS_FILE, TOOLS_FOLDER, TOOL_PACKAGE, TOOL_RECORD, addLocation, declaredTool, isAddress, isExactVersion, isWholePath,
   managedExecutable, readTools, removeLocation, resolveFrom, resolveTool, toolsFile, undeclaredTool, useFile, useManaged, useSystem,
   wayWords, type ToolDeclaration, type ToolResolution,
 } from './tools.ts';
-import type { CommandArgs } from './platform/types.ts';
-import { extractZip } from './platform/zipfile.ts';
+import type { CommandArgs } from '../platform/types.ts';
+import { extractZip } from '../platform/zipfile.ts';
 
 type Env = Record<string, string | undefined>;
 
