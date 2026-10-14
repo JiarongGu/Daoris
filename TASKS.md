@@ -290,7 +290,8 @@ folder.
 
 **No partial type split by hand** (the owner: *"also I think we better not use partial class if we don't have auto-generated code"*; D166's note). Evidence: `docs/2026-10-14-partial-types-survey.md`. A class per domain or kind keeps one new door in one new file.
 
-- [ ] **PART10l — `SessionTrees`: tidying and landing, and the type whole** (driver; Opus; after 10j, 10k). Content holds, tidy, auto, removal; landed, squash, pull requests, hand and the core's land; the front's delegations, `partial` gone. Survey "The large five, as scouted".
+- [ ] **PART10l-i — `SessionTrees`: the landing family** (driver; Opus; after 10j, 10k). Follow (with `BranchOfTree`, `FindBranches` and the unlanded reads), the static `LandedProofs` (ending the Landed–PullRequests and Landed–Content cycles), content holds, squash, pull requests (less `TidyCarriedAsync`), hand and the landed clean-up as classes over `TreeContext`, and the 10j/10k classes handed them in place of the front. Scouted 2026-10-14 (the classes and their order in the scout's §6).
+- [ ] **PART10l-ii — `SessionTrees`: tidying, removal, the sweep and the core's land, and the type whole** (driver; Opus; after 10l-i). Removal, tidy (with `TidyCarriedAsync`), set-aside, the sweep and the auto tidy split leaf from pass, the core's plan, land, branch and advance; the stubs folded into the front, `partial` gone and the entry cut from `tools/partials.json`.
 
 **Duplication** (the owner: *"we more focus on modularize the code to reduce duplication and easier to manage"*). Evidence: `docs/2026-10-14-duplication-survey.md`, by section. After FLAT1; DEDUP1 to 3 touch the same files, so one at a time.
 
