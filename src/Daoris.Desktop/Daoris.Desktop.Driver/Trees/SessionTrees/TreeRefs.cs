@@ -96,6 +96,19 @@ internal static class TreeRefs
         return (code == 0 ? null : Failure(err), url.Trim());
     }
 
+    /// <summary>
+    /// The line's latest as this checkout knows it once fetched (REVIEWBASE2-i): origin's where the line here is behind it or absent,
+    /// which is what WSR6's pull would take; else the line here. Null where neither is here. A landing's branch form builds on it
+    /// (LANDSYNC1, D87's 2026-10-15 amendment point 3).
+    /// </summary>
+    internal static async Task<string?> LatestAsync(string root, string line, CancellationToken ct)
+    {
+        var here = await CommitOfAsync(root, $"refs/heads/{line}", ct).ConfigureAwait(false);
+        var origin = await CommitOfAsync(root, $"refs/remotes/origin/{line}", ct).ConfigureAwait(false);
+        if (here is null || origin is null) return here ?? origin;
+        return await IsAncestorAsync(root, here, origin, ct).ConfigureAwait(false) ? origin : here;
+    }
+
     /// <summary>Where the line stands as the rest of Daoris reads it — the local branch, else origin's — as a commit, or null.</summary>
     internal static async Task<string?> OntoAsync(string root, string? line, CancellationToken ct)
     {

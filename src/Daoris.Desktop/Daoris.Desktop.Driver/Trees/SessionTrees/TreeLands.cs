@@ -1,5 +1,6 @@
 using System.Globalization;
 using static Daoris.Driver.TreeGit;
+using static Daoris.Driver.TreeRefs;
 using static Daoris.Driver.TreeWorktrees;
 
 namespace Daoris.Driver;
@@ -16,6 +17,12 @@ internal sealed record Branched(
     /// <summary>The session's tip squashed into the branch's new commit (PROCESS1b-ii), which the record keeps; null where nothing was squashed.</summary>
     public string? Squashed { get; init; }
 
+    /// <summary>What the landing replayed onto the line, leaving out what it holds (LANDSYNC1); null where it landed the commits as made.</summary>
+    internal LandReplay? Replay { get; init; }
+
+    /// <summary>The tree's own branch was replayed in place (TREEFOLLOW1, LANDSYNC1): the tree already stands on what landed.</summary>
+    public bool Followed { get; init; }
+
     public static implicit operator Branched(TreeLanding refused) => new(refused);
 }
 
@@ -25,17 +32,46 @@ internal sealed record Branched(
 /// the rule's tidy after. Over the trees' context, the layout's answer of a tree's branch, the head's own judgement of what the
 /// line holds by content (<see cref="TreeWorkReads"/>), the removal and the tidy. The front keeps its public calls.
 /// </summary>
-internal sealed class TreeLands(TreeContext context, TreeFollows follows, TreeWorkReads workReads, TreeRemovals removals, TreeTidies tidies)
+internal sealed class TreeLands(
+    TreeContext context, TreeFollows follows, TreeWorkReads workReads, TreeRemovals removals, TreeTidies tidies, TreeLandSyncs syncs)
 {
     /// <summary>
     /// What a press on this tree would do under its repository's landing rule (WSR1, D87): merge into
     /// the line, or make the branch the pattern names for this session — said before the press.
     /// </summary>
+    /// <remarks>
+    /// LANDSYNC1 (D87's 2026-10-15 amendment point 4): and what the press would leave out because the line holds it, what it would
+    /// land, and whether that conflicts now, judged against the line as last fetched. It reaches no network and writes no ref and no
+    /// tree: the conflict's trial is <c>git merge-tree</c>'s, which writes objects only.
+    /// </remarks>
     /// <param name="process">
     /// The run's process the door read with its gate (WORKFLOW1f): under a named workflow, its version's landing step over the
     /// declared rule. Null reads the rule live, as before.
     /// </param>
     internal async Task<LandingPlan> PlanAsync(string path, LandingSubject subject, CancellationToken ct = default, WorkflowProcess? process = null)
+    {
+        var plan = await PlanRuleAsync(path, subject, ct, process).ConfigureAwait(false);
+        if (process?.LandingCannot is not null || plan.Target.Length == 0) return plan;
+        var full = Path.GetFullPath(path);
+        var (workspace, repository) = context.OwnerOf(full);
+        var (sync, _) = await syncs.JudgeAsync(full, repository, workspace, plan.Form == LandingForm.Branch, fetch: false, ct).ConfigureAwait(false);
+        if (sync is null || sync.Held.HoldsNone) return plan;
+        if (plan.Own && await OnRemoteAsync(sync.Root, sync.Branch, ct).ConfigureAwait(false))
+        {
+            return plan with { LeftOut = sync.Held.LeftOut, Lands = sync.Held.Kept, Conflict = TreeLandSyncs.OwnOnRemote(sync).Conflict };
+        }
+
+        var conflicts = await LineHolds.TrialAsync(sync.Root, sync.Onto, sync.Held.Kept, ct).ConfigureAwait(false);
+        return plan with
+        {
+            LeftOut = sync.Held.LeftOut,
+            Lands = sync.Held.Kept,
+            Conflict = conflicts is null ? null : TreeLandSyncs.Conflicted(sync, conflicts).Conflict,
+        };
+    }
+
+    /// <summary>What a press would do under the rule, before LANDSYNC1's judgement of what the line holds.</summary>
+    private async Task<LandingPlan> PlanRuleAsync(string path, LandingSubject subject, CancellationToken ct, WorkflowProcess? process)
     {
         var full = Path.GetFullPath(path);
         var (workspace, repository) = context.OwnerOf(full);
@@ -96,7 +132,11 @@ internal sealed class TreeLands(TreeContext context, TreeFollows follows, TreeWo
     /// resolves anything, forces anything or removes anything: the tree survives a merge whether it
     /// succeeded or not, and discarding it stays a separate act the person asks for.</para>
     /// </remarks>
-    internal async Task<TreeMerge> MergeAsync(string path, CancellationToken ct = default)
+    /// <param name="replay">
+    /// What the landing replayed onto the line here, leaving out what the line holds (LANDSYNC1, D87's 2026-10-15 amendment point 2):
+    /// its tip is merged in place of the session's branch, as D86 merges one. Null merges the branch as made.
+    /// </param>
+    internal async Task<TreeMerge> MergeAsync(string path, CancellationToken ct = default, LandReplay? replay = null)
     {
         var full = Path.GetFullPath(path);
         if (!full.StartsWith(Path.GetFullPath(context.TreesRoot) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
@@ -184,9 +224,10 @@ internal sealed class TreeLands(TreeContext context, TreeFollows follows, TreeWo
         }
 
         // `--no-ff` so the merge is one commit a person can read and revert as a unit, and `--no-edit`
-        // so nothing opens an editor on a machine nobody is sitting at.
+        // so nothing opens an editor on a machine nobody is sitting at. A replay's tip is merged under the branch's name.
         var (mergeCode, _, mergeErr) = await WorkingTree.GitAsync(
-            root, ["merge", "--no-ff", "--no-edit", branch], ct).ConfigureAwait(false);
+            root, replay is null ? ["merge", "--no-ff", "--no-edit", branch] : ["merge", "--no-ff", "-m", $"Merge branch '{branch}'", replay.Now], ct)
+            .ConfigureAwait(false);
         if (mergeCode != 0)
         {
             // Leave the root as it was found. Nothing here resolves a conflict: the person does that
@@ -200,7 +241,10 @@ internal sealed class TreeLands(TreeContext context, TreeFollows follows, TreeWo
         var landed = ahead.Trim().Split('\n').Length;
         // The line moved: the registry follows it at the next look (WSSETUP5, D124 §3.1), whichever door pressed this.
         RegistryFollowing.Moved(context.Home, repository, DateTimeOffset.UtcNow);
-        return new(true, $"merged `{branch}` into `{canonical}` — {landed} commit(s).{TreeStays}");
+        return replay is null
+            ? new(true, $"merged `{branch}` into `{canonical}` — {landed} commit(s).{TreeStays}")
+            : new(true, $"merged `{branch}` into `{canonical}` — {LandingSyncWords.Replayed(replay.Landed.Count, canonical, replay.LeftOut)}."
+                + $"{LandingSyncWords.Emptied(replay.LeftOut)}{TreeStays}");
     }
 
     /// <summary>What a landing says of the tree it leaves — dropped when a tidy removed it; the squash's advance says it too.</summary>
@@ -276,27 +320,56 @@ internal sealed class TreeLands(TreeContext context, TreeFollows follows, TreeWo
         TreeLanding landed;
         // The session tip a squash made the branch's commit from (PROCESS1b-ii): the tidy's proof of what the landing holds.
         string? squashedTip = null;
-        if (landing.Rule.Form != LandingForm.Branch)
+        var branchForm = landing.Rule.Form == LandingForm.Branch;
+        // A name entered where nothing is branched is refused, not ignored (LANDNAME1a): the person would think it was used.
+        if (!branchForm && subject.EnteredName is not null) return new(false, EnteredMerge);
+        var plugin = branchForm ? landing.Rule.Plugin : null;
+        var unready = plugin is null ? null : context.Plugins.Problem(plugin);
+        if (unready is not null && acceptedBy != AcceptedBy.Auto)
         {
-            // A name entered where nothing is branched is refused, not ignored (LANDNAME1a): the person would think it was used.
-            if (subject.EnteredName is not null) return new(false, EnteredMerge);
-            var merged = await MergeAsync(path, ct).ConfigureAwait(false);
-            landed = new(merged.Merged, merged.Message);
+            return new(false, $"{unready} Nothing was landed: the rule hands the branch to that plugin, so fix the "
+                + "plugin or the rule (`daoris driver landing`), then accept again.");
+        }
+
+        // LANDSYNC1 (D87's 2026-10-15 amendment): only what the line lacks lands. The person's press fetches the line once first
+        // (point 6), a failed fetch said and judged against the last one; the look's automatic landing has no press and fetches nothing.
+        var (sync, fetched) = await syncs.JudgeAsync(full, repository, workspace, branchForm, fetch: acceptedBy != AcceptedBy.Auto, ct)
+            .ConfigureAwait(false);
+        var replaying = sync is { Held.HoldsNone: false } ? sync : null;
+        if (replaying is { Held.Kept.Count: 0 })
+        {
+            // The fetch brought what holds all of it: SQUASHTIDY1f's sentence where its proof now finds it, else nothing to land.
+            return Fetched(await workReads.DiscardOfferAsync(full, ct).ConfigureAwait(false) is { } heldNow
+                ? new(false, heldNow.NotLanded) { Refusal = AutoLandingCode.Carried, LeftOut = replaying.Held.LeftOut }
+                : new(false, $"`{replaying.Branch}` holds nothing `{replaying.OntoName}` lacks: the line already holds "
+                    + $"{string.Join(", ", replaying.Held.LeftOut.Select(LandingSyncWords.Each))} — nothing to land.")
+                { Refusal = AutoLandingCode.Nothing, LeftOut = replaying.Held.LeftOut }, fetched);
+        }
+
+        // What a replay made, to move the session's tree to (point 7): a merge's here, a branch's from what it made.
+        LandReplay? replayed = null;
+        var followed = false;
+        if (!branchForm)
+        {
+            if (replaying is not null)
+            {
+                var (made, notMade) = await syncs.ReplayAsync(replaying, repository, workspace, replaying.Onto, replaying.Held.Kept, ct).ConfigureAwait(false);
+                if (notMade is not null) return Fetched(notMade, fetched);
+                replayed = made;
+            }
+
+            var merged = await MergeAsync(path, ct, replayed).ConfigureAwait(false);
+            landed = new(merged.Merged, merged.Message) { LeftOut = merged.Merged ? replayed?.LeftOut : null };
+            landed = Fetched(landed, fetched);
         }
         else
         {
-            var plugin = landing.Rule.Plugin;
-            var unready = plugin is null ? null : context.Plugins.Problem(plugin);
-            if (unready is not null && acceptedBy != AcceptedBy.Auto)
-            {
-                return new(false, $"{unready} Nothing was landed: the rule hands the branch to that plugin, so fix the "
-                    + "plugin or the rule (`daoris driver landing`), then accept again.");
-            }
-
             var branched = await BranchAsync(full, workspace, repository,
                 BranchNamed(subject, landing.Rule, repository), handedOn: plugin is not null, ct,
-                entered: subject.EnteredName is not null, squash: landing.Rule.Squash ? subject : null).ConfigureAwait(false);
-            landed = branched.Landing;
+                entered: subject.EnteredName is not null, squash: landing.Rule.Squash ? subject : null, sync: replaying).ConfigureAwait(false);
+            landed = Fetched(branched.Landing, fetched);
+            replayed = landed.Landed ? branched.Replay : null;
+            followed = branched.Followed;
             squashedTip = landed.Landed ? branched.Squashed : null;
             // Recorded the moment it exists (WSR5): the branch is Daoris's to judge and to hand on only
             // because this line wrote it down, at the commit it was made at.
@@ -314,8 +387,10 @@ internal sealed class TreeLands(TreeContext context, TreeFollows follows, TreeWo
             }
             else if (landed.Landed && tip is not null)
             {
-                // Where its work grew from (WSR6): the session branch's start, so bringing it up to date replays only its own.
-                var from = branched.Source is { } source ? context.Grown.Of(repository, source)?.From : null;
+                // Where its work grew from (WSR6): the session branch's start, so bringing it up to date replays only its own; the line's
+                // commit a replay was made onto (LANDSYNC1).
+                var from = branched.Replay is not null && replaying is not null ? replaying.Onto
+                    : branched.Source is { } source ? context.Grown.Of(repository, source)?.From : null;
                 landed = Remember(landed, () => context.Recorded.Record(new LandedBranch(
                     repository, workspace, landed.Branch!, branched.Base, tip, subject.Session, subject.Quest, subject.Title,
                     DateTimeOffset.UtcNow)
@@ -380,6 +455,15 @@ internal sealed class TreeLands(TreeContext context, TreeFollows follows, TreeWo
             };
         }
 
+        // LANDSYNC1 (D87's amendment point 7): the session follows what landed, so its next turn starts in sync with the line. Before the
+        // rule's tidy, whose proof then finds the tree's branch inside what landed; where it cannot move, the landing stands and says why.
+        if (landed.Landed && replayed is not null && replaying is not null && !followed)
+        {
+            var stays = await syncs.MoveTreeAsync(full, replaying, replayed.Now, repository, workspace,
+                inUse is null ? null : await inUse(ct).ConfigureAwait(false), ct).ConfigureAwait(false);
+            landed = landed with { Message = BeforeTreeStays(landed.Message, LandingSyncWords.Followed(stays)) };
+        }
+
         // The tidy the person's rule asked for (D88): the tree and its branch go once the work lands, behind
         // the same proof an unforced removal makes — never forced.
         if (!landed.Landed || !landing.Rule.Tidy) return landed;
@@ -410,6 +494,15 @@ internal sealed class TreeLands(TreeContext context, TreeFollows follows, TreeWo
             .ConfigureAwait(false);
         return landed with { Message = landed.Message + TreeTidies.TidiedSaid(held, into), Tidied = held };
     }
+
+    /// <summary>Words said before the sentence that the tree stays, which a tidy takes out; at the end where it is not there.</summary>
+    private static string BeforeTreeStays(string message, string words) => message.EndsWith(TreeStays, StringComparison.Ordinal)
+        ? message[..^TreeStays.Length] + words + TreeStays
+        : message + words;
+
+    /// <summary>A failed fetch's words (LANDSYNC1, D87's amendment point 6), said with whatever the landing came to; none where it fetched.</summary>
+    private static TreeLanding Fetched(TreeLanding landed, string? fetched) =>
+        fetched is null ? landed : landed with { Message = BeforeTreeStays(landed.Message, fetched) };
 
     /// <summary>
     /// A note the landing appends when the record could not be written: the branch stands, and only its
@@ -444,9 +537,15 @@ internal sealed class TreeLands(TreeContext context, TreeFollows follows, TreeWo
     /// The session the rule squashes (PROCESS1b-ii), whose title and id the one commit's message says; null where the rule keeps
     /// the session's own commits. A tree on a branch of its own is never squashed.
     /// </param>
+    /// <param name="sync">
+    /// What the line holds of the tree's commits, where it holds some (LANDSYNC1, D87's 2026-10-15 amendment points 2 and 3): only the
+    /// rest is replayed, aside, onto the line's latest, and the branch is made at the replay's tip; a branch the landing advances takes
+    /// what neither it nor the line holds, replayed onto its tip; a branch of the tree's own is replayed in place. Null lands the
+    /// commits as made.
+    /// </param>
     private async Task<Branched> BranchAsync(
         string full, string workspace, string repository, string name, bool handedOn, CancellationToken ct, bool entered = false,
-        LandingSubject? squash = null)
+        LandingSubject? squash = null, LandSync? sync = null)
     {
         if (!context.Holds(full))
         {
@@ -511,6 +610,29 @@ internal sealed class TreeLands(TreeContext context, TreeFollows follows, TreeWo
         {
             if (entered) return new TreeLanding(false, EnteredOwn(branch));
             var pushOwn = handedOn ? "" : $" Push it and open the pull request from there: `git push -u origin {branch}`.";
+            // LANDSYNC1 (point 3): where the line holds some of its commits, the branch is replayed in place and keeps its name; one on its
+            // remote is never rewritten (D109), and is refused as a conflict is.
+            if (sync is not null)
+            {
+                if (await OnRemoteAsync(root, branch, ct).ConfigureAwait(false)) return TreeLandSyncs.OwnOnRemote(sync);
+                var (made, refused) = await syncs.ReplayAsync(sync, repository, workspace, sync.Onto, sync.Held.Kept, ct).ConfigureAwait(false);
+                if (refused is not null) return refused;
+                if (await syncs.MoveTreeAsync(full, sync, made!.Now, repository, workspace, inUse: null, ct).ConfigureAwait(false) is { } stays)
+                {
+                    return new TreeLanding(false, $"Nothing was landed: `{branch}`, the session's own branch, could not be replayed in place ({stays}). "
+                        + "The tree and its branch are as they were.") { Refusal = AutoLandingCode.Refused, LeftOut = sync.Held.LeftOut };
+                }
+
+                return new Branched(
+                    new TreeLanding(true,
+                        $"lands `{branch}`, the session's own branch, replayed in place — {LandingSyncWords.Replayed(made.Landed.Count, sync.OntoName, made.LeftOut)}."
+                        + $"{LandingSyncWords.Emptied(made.LeftOut)} No other branch was made.{pushOwn} Nothing was merged and the checkout was not touched."
+                        + $"{LandingSyncWords.Followed(null)}{TreeStays}",
+                        branch) { LeftOut = made.LeftOut },
+                    root, line, made.Landed, follows.BranchOfTree(full)?.Branch)
+                { Replay = made, Followed = true };
+            }
+
             return new Branched(
                 new TreeLanding(true,
                     $"lands `{branch}`, the session's own branch, as it stands — {commits.Count} commit(s) from `{line ?? "HEAD"}`, and no "
@@ -545,8 +667,34 @@ internal sealed class TreeLands(TreeContext context, TreeFollows follows, TreeWo
         {
             // A chain's later done moves the chain's branch on (LAND2c, D149): only one Daoris made, as a fast-forward, or under
             // a squash by one more commit (PROCESS1b-ii point 4).
-            return await AdvanceAsync(root, repository, name, standing.Trim(), branch, line, commits, handedOn, ct, against, squash)
+            var standsAt = standing.Trim();
+            if (sync is null)
+            {
+                return await AdvanceAsync(root, repository, name, standsAt, branch, line, commits, handedOn, ct, against, squash).ConfigureAwait(false);
+            }
+
+            // LANDSYNC1 (point 3): what neither the branch nor the line holds, replayed onto the branch's tip, which then moves by D145
+            // §3's fast-forward as before.
+            var lacking = new List<LandingCommit>();
+            foreach (var commit in sync.Held.Kept)
+            {
+                if (!await IsAncestorAsync(root, commit.Sha, standsAt, ct).ConfigureAwait(false)) lacking.Add(commit);
+            }
+
+            var (onBranch, refusedOn) = await syncs.ReplayAsync(sync, repository, workspace, standsAt, lacking, ct).ConfigureAwait(false);
+            if (refusedOn is not null) return refusedOn;
+            var holds = await LineHolds.CommitsAsync(root, $"{against}..{onBranch!.Now}", ct).ConfigureAwait(false) ?? onBranch.Landed;
+            var advanced = await AdvanceAsync(root, repository, name, standsAt, branch, line, holds, handedOn, ct, against, squash, onBranch.Now)
                 .ConfigureAwait(false);
+            return !advanced.Landing.Landed ? advanced : advanced with
+            {
+                Landing = advanced.Landing with
+                {
+                    LeftOut = onBranch.LeftOut,
+                    Message = BeforeTreeStays(advanced.Landing.Message, LandingSyncWords.LeftOutLanded(onBranch.LeftOut)),
+                },
+                Replay = onBranch,
+            };
         }
 
         // PROCESS1b-ii (points 1 and 2): one commit of the session's tip's tree, its parent where the session left the line, and the
@@ -554,22 +702,36 @@ internal sealed class TreeLands(TreeContext context, TreeFollows follows, TreeWo
         var start = branch;
         string? squashed = null;
         IReadOnlyList<LandingCommit> carried = commits;
+        // LANDSYNC1 (point 2): only what the line lacks, replayed aside onto the line's latest; the branch is made at the replay's tip.
+        LandReplay? replayed = null;
+        if (sync is not null)
+        {
+            var (made, refused) = await syncs.ReplayAsync(sync, repository, workspace, sync.Onto, sync.Held.Kept, ct).ConfigureAwait(false);
+            if (refused is not null) return refused;
+            replayed = made!;
+            start = replayed.Now;
+            carried = replayed.Landed;
+        }
+
         if (squash is not null)
         {
-            var tip = commits[^1].Sha;
-            var (baseCode, mergeBase, baseErr) = await WorkingTree.GitAsync(root, ["merge-base", against, tip], ct).ConfigureAwait(false);
+            var tip = replayed?.Now ?? commits[^1].Sha;
+            var (baseCode, mergeBase, baseErr) = replayed is not null && sync is not null
+                ? (0, sync.Onto, "")
+                : await WorkingTree.GitAsync(root, ["merge-base", against, tip], ct).ConfigureAwait(false);
             if (baseCode != 0 || mergeBase.Trim().Length == 0)
             {
                 return new TreeLanding(false, $"git cannot say where `{branch}` left `{line ?? "HEAD"}`, so its work could not be squashed: "
                     + $"{FirstLine(baseErr)} Nothing was landed.");
             }
 
-            var (made, why) = await TreeSquashes.SquashAsync(root, tip, mergeBase.Trim(), SquashMessage.Of(squash.Title, commits, squash.Session), ct)
+            var squashing = replayed?.Landed ?? commits;
+            var (made, why) = await TreeSquashes.SquashAsync(root, tip, mergeBase.Trim(), SquashMessage.Of(squash.Title, squashing, squash.Session), ct)
                 .ConfigureAwait(false);
             if (made is null) return new TreeLanding(false, $"git would not make the squashed commit for `{name}`: {why} Nothing was landed.");
             start = made;
             squashed = tip;
-            carried = [new LandingCommit(made, SquashMessage.Subject(squash.Title, commits, squash.Session))];
+            carried = [new LandingCommit(made, SquashMessage.Subject(squash.Title, squashing, squash.Session))];
         }
 
         var (code, _, err) = await WorkingTree.GitAsync(root, ["branch", name, start], ct).ConfigureAwait(false);
@@ -579,14 +741,17 @@ internal sealed class TreeLands(TreeContext context, TreeFollows follows, TreeWo
         }
 
         var pushIt = handedOn ? "" : $" Push it and open the pull request from there: `git push -u origin {name}`.";
+        var what = replayed is not null && sync is not null
+            ? LandingSyncWords.Replayed(replayed.Landed.Count, sync.OntoName, replayed.LeftOut)
+            : $"{commits.Count} commit(s) from `{line ?? "HEAD"}`";
         return new Branched(
             new TreeLanding(true,
-                $"put the work on `{name}` — {commits.Count} commit(s) from `{line ?? "HEAD"}`"
-                + (squashed is null ? "" : ", squashed into one commit") + $".{pushIt} Nothing was merged "
-                + $"and the checkout was not touched.{TreeStays}",
-                name),
+                $"put the work on `{name}` — {what}"
+                + (squashed is null ? "" : ", squashed into one commit") + $".{(replayed is null ? "" : LandingSyncWords.Emptied(replayed.LeftOut))}"
+                + $"{pushIt} Nothing was merged and the checkout was not touched.{TreeStays}",
+                name) { LeftOut = replayed?.LeftOut },
             root, line, carried, branch)
-        { Squashed = squashed };
+        { Squashed = squashed, Replay = replayed };
     }
 
     /// <summary>
@@ -612,14 +777,19 @@ internal sealed class TreeLands(TreeContext context, TreeFollows follows, TreeWo
     /// The session the rule squashes (PROCESS1b-ii point 4): the advance is one more commit on the branch, its tree the session's
     /// tip's, its parent the branch's tip, its message only what was added since the recorded tip; null is the fast-forward.
     /// </param>
+    /// <param name="replayed">
+    /// The tip of what the line lacks replayed onto the branch's (LANDSYNC1), which the branch moves to in place of the session's tip;
+    /// null moves it to the session's tip, as before.
+    /// </param>
     private async Task<Branched> AdvanceAsync(
         string root, string repository, string name, string standsAt, string branch, string? line,
-        IReadOnlyList<LandingCommit> commits, bool handedOn, CancellationToken ct, string? against = null, LandingSubject? squash = null)
+        IReadOnlyList<LandingCommit> commits, bool handedOn, CancellationToken ct, string? against = null, LandingSubject? squash = null,
+        string? replayed = null)
     {
         var recorded = context.Recorded.Of(repository, name);
         var (_, headOut, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}^{{commit}}"], ct)
             .ConfigureAwait(false);
-        var head = headOut.Trim();
+        var head = replayed ?? headOut.Trim();
         // What the session's work must grow from: the tip the record says was squashed where it says one (point 4), else the tip
         // the branch was made or last moved at, its commits the session's own.
         var grewFrom = squash is not null ? recorded?.Squashed ?? recorded?.Tip : recorded?.Tip;

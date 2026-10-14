@@ -143,8 +143,9 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
     /// <summary>
     /// Where a branch with no record starts its own work (WSR6): walking back from its tip along its first parents,
     /// the newest commit whose work reads on the line by the clean-up's proof; none, and where it leaves the line.
+    /// The landing's judgement of what the line holds walks the same way (<see cref="LineHolds"/>, LANDSYNC1).
     /// </summary>
-    private static async Task<(string Cut, string CutBy)> CutByContentAsync(
+    internal static async Task<(string Cut, string CutBy)> CutByContentAsync(
         string root, string tip, string leaves, string? line, string onto, CancellationToken ct)
     {
         var (code, list, _) = await WorkingTree.GitAsync(

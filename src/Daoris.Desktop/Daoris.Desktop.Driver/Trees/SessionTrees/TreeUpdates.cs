@@ -181,18 +181,6 @@ internal sealed class TreeUpdates(
         return new(true, TreeUpdateWords.Replayed(line, kept, had), new TreeMoved(line, head, now!, null, kept));
     }
 
-    /// <summary>
-    /// The line's latest as this checkout knows it once fetched: origin's where the line here is behind it or absent, which is what
-    /// WSR6's pull would take; else the line here. Null where neither is here.
-    /// </summary>
-    private static async Task<string?> LatestAsync(string root, string line, CancellationToken ct)
-    {
-        var here = await CommitOfAsync(root, $"refs/heads/{line}", ct).ConfigureAwait(false);
-        var origin = await CommitOfAsync(root, $"refs/remotes/origin/{line}", ct).ConfigureAwait(false);
-        if (here is null || origin is null) return here ?? origin;
-        return await IsAncestorAsync(root, here, origin, ct).ConfigureAwait(false) ? origin : here;
-    }
-
     /// <summary>The paths a tree's <c>git status --porcelain</c> lists: its uncommitted work, untracked files included.</summary>
     private static async Task<int> StatusPathsAsync(string tree, CancellationToken ct)
     {
