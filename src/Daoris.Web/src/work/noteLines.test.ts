@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import type { NotePart } from '../api';
 import { moment } from '../format';
-import { linesTaken, NOTE_CODES, noteBlocks, noteLines, noteText } from './noteLines';
+import { linesTaken, liveParts, NOTE_CODES, noteBlocks, noteLines, noteText } from './noteLines';
 
 // A session's note as the page words it (LANG1b, D142 points 1, 4, 5; the language design §2, §5, §6): a coded part from
 // the catalogue in the reader's language with its values, someone's words as written, and what the page cannot word as
@@ -68,6 +68,24 @@ describe('noteLines', () => {
       { kind: 'recorded', text: note },
       { kind: 'said', text: '它带着你的话在自己的对话中继续，在它原来的工作树中。' },
     ]);
+  });
+
+  /**
+   * WAITSHOWN1: a session that is working again carries its last end in its note (`ended.went-on`, with the ledger's
+   * `ledger.went-on` before it), which says it ended while it works. The page reads past those; the record keeps them.
+   */
+  it('leaves out what a live session’s past ending and going on said, and keeps the rest', () => {
+    const parts = [
+      coded('ledger.went-on', 'Went on with your words at noon.', { at: '2026-10-03T09:30:00Z' }),
+      coded('ended.went-on', 'It went on with your words and ended; its quest stays as it closed.'),
+      coded('working.goes-on', 'It goes on with your words in its own conversation.'),
+    ];
+    expect(liveParts(parts)?.map((part) => part.code)).toEqual(['working.goes-on']);
+    expect(noteLines(t, { parts: liveParts(parts) }, 'en')).toHaveLength(1);
+    // The record is not changed, and a note with no parts or no such part passes as it was.
+    expect(parts).toHaveLength(3);
+    expect(liveParts(null)).toBeNull();
+    expect(liveParts([words('hello', 'person')])).toEqual([words('hello', 'person')]);
   });
 
   /** §4: a list of quests joined in the reader's language, each an id as the page draws one. */

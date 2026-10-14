@@ -99,6 +99,19 @@ describe('ConversationView', () => {
     expect(screen.getByText('working…')).toBeTruthy();
   });
 
+  /** WAITSHOWN1: a turn asked and not answered says it waits for its first answer, since when and for how long. */
+  it('says a running turn is waiting for its first answer, until the agent does anything', () => {
+    const asked = ev({ kind: 'user', origin: 'person', text: 'go on', at: new Date(Date.now() - 7 * 60_000).toISOString() });
+    const { unmount } = view([asked], { live: true });
+    const line = screen.getByText(/waiting for its first answer since .+ \(7m\)/);
+    expect(line).toBeTruthy();
+    expect(screen.getByText('working…')).toBeTruthy();
+    unmount();
+
+    view([asked, ev({ kind: 'message', text: 'here' })], { live: true });
+    expect(screen.queryByText(/waiting for its first answer/)).toBeNull();
+  });
+
   /**
    * The agent speaks after its turn has ended when its background work finishes (CONSOLE2a). Those
    * words are no turn running: with the driver saying none is in flight, they carry no *working…*,

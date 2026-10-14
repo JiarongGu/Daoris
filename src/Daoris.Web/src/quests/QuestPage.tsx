@@ -8,7 +8,10 @@ import type { ChainStep } from '../map/chain';
 import { ChainStrip } from '../map/ChainStrip';
 import type { AccountNamer } from '../tools';
 import { type Consideration, sittingSentence, type TrustHold, waitsForAccount } from '../signals';
-import { Button, Icon, type IconName, Inline, Menu, Pill, Prose, QUEST_TONE, SectionTitle, SESSION_TONE } from '../ui';
+import { Button, Icon, type IconName, Inline, Menu, Pill, Prose, QUEST_TONE, SectionTitle, SESSION_TONE, shownKey } from '../ui';
+import { type SessionGrouping, shownOf } from '../work/groups';
+import { liveParts } from '../work/noteLines';
+import { placedFact } from '../work/SessionRow';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing';
 import { ClearAsk } from '../work/ClearAsk';
 import { DetailsFold } from '../work/DetailsFold';
@@ -133,7 +136,7 @@ export function QuestPage({
   quest, lanes, question, sitting, hold, chain = [], session,
   busy = false, retrying = false, trusting = false, granting = false, dismissing = false, accepting = false,
   onRespond, onDelete, onDismiss, onRetry, onTrusting, onGrant, onOpenQuest, onAttend, onOpenAsk, onAccept, work, history, trace,
-  nameOf, review, workflow,
+  nameOf, review, workflow, grouping,
 }: {
   /**
    * Where its chain's work here stands in its workflow (WORKFLOW1c, the workflow design §7), said in one line among the head's
@@ -171,6 +174,12 @@ export function QuestPage({
    * here and managed in Sessions (D126 §3.6): its stop is its page header's there, behind the door below.
    */
   session?: Session | null;
+  /**
+   * Where the session list's reader placed that session (D126 §2.4), which says the words the record cannot: *awaiting reply*
+   * for the last session of a quest that waits on another repository's answer (WAITSHOWN1). Absent where no driver answers,
+   * and the record's own state shows.
+   */
+  grouping?: SessionGrouping | null;
   busy?: boolean;
   retrying?: boolean;
   /** The agent's trust question is open for the hold (D73), asked only on the press. */
@@ -246,6 +255,10 @@ export function QuestPage({
   const ownPause = pausedBy?.scope === 'quest' && pausedBy.id === quest.id;
   // Its own pause where the tick has no verdict for it (its session waits on you, D132 §2.1): said from the plan, with Resume.
   const pausedUnseen = offers.paused && !pausedBy;
+  // The session as the list's reader reads it (D126 §2.4, WAITSHOWN1): its derived word where it said one, so the last session
+  // of a quest that awaits another repository's answer reads as awaiting, not as completed; the record's own otherwise.
+  const shown = session ? shownOf(session, grouping, undefined) : null;
+  const waitsOn = shown === 'awaiting-reply' ? placedFact(grouping, shown) : null;
   // Taken, and its last session here ended in a way nothing here carries on (QUESTCLOSE1): finished or declined at a
   // checkpoint, no answer waiting. The planner says nothing of it, so the page does, with the person's done beside it. A
   // failure, a stop and an answered park are the driver's to say (a carry-on, a park, *Try again*), and a teammate's record
@@ -829,13 +842,20 @@ export function QuestPage({
         <section className="mt-5" aria-label={t('quests.session.title')}>
           <SectionTitle>{t('quests.session.title')}</SectionTitle>
           <div className="flex flex-wrap items-center gap-2">
-            <Pill tone={SESSION_TONE[session.state]}>{t(`sessionState.${session.state}`)}</Pill>
+            <Pill tone={SESSION_TONE[shown ?? session.state]}>{t(shownKey(shown ?? session.state))}</Pill>
             <span className="font-mono text-meta text-ink-faint">
               {session.id} · {sessionTool(session, false, nameOf)}
               {' · '}{t('quests.session.moved', { ago: ago(session.updated) })}
             </span>
           </div>
-          <Note note={session.note} parts={session.noteParts} className="mt-2 text-body text-ink-soft" />
+          {/* What it waits on, in the row's own words (D126 §2.4): its last end reads as finished beside a quest that is not. */}
+          {waitsOn && <p className="m-0 mt-2 text-body text-ink-soft">{t(waitsOn.line, waitsOn.values)}</p>}
+          {/* A working session's past ending is left out of the reading, never of the record (WAITSHOWN1, D137 §2.3). */}
+          <Note
+            note={session.state === 'working' ? (session.noteParts?.length ? undefined : session.note) : session.note}
+            parts={session.state === 'working' ? liveParts(session.noteParts) : session.noteParts}
+            className="mt-2 text-body text-ink-soft"
+          />
           {session.evidence && (
             <pre className="mt-2 mb-0 overflow-x-auto whitespace-pre-wrap rounded-control border border-line-strong bg-raised px-3 py-2.5 font-mono text-small">
               {session.evidence}

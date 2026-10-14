@@ -481,6 +481,9 @@ export function WorkFrame({
   // kept with the session it came from, so switching never shows one session's ring under another.
   const [reading, setReading] = useState<{ session: string; usage?: Usage } | null>(null);
   const onUsage = useCallback((session: string, usage?: Usage) => setReading({ session, usage }), []);
+  // When the attended session's agent was asked and has answered nothing (WAITSHOWN1), likewise told by the conversation.
+  const [waiting, setWaiting] = useState<{ session: string; since?: string } | null>(null);
+  const onWaiting = useCallback((session: string, since?: string) => setWaiting({ session, since }), []);
 
   // Cleared only when the record it pointed at is gone entirely. A session that ENDED stays
   // attended, because the person is very likely reading exactly that. 🔴 And only a record this
@@ -1342,6 +1345,7 @@ export function WorkFrame({
           ? roster.find((row) => row.harness === continues.session.adapter)?.product || continues.session.adapter
           : null,
         helping: helps?.title,
+        waitingSince: waiting?.session === attended.id ? waiting.since : undefined,
       })}
       acts={headActs}
       primary={headPrimary}
@@ -1692,6 +1696,7 @@ export function WorkFrame({
                   turnRunning={talking && chatTurns[attended.id] ? turns.taking : undefined}
                   scroller={centre}
                   onUsage={onUsage}
+                  onWaiting={onWaiting}
                   // Where the person's words went, a door to that session; and words that cannot go on here, one press
                   // that starts a conversation with them, where a chat can start here (MSG1f, D137 §3.1, §2.2).
                   onSession={(id) => attend(id)}

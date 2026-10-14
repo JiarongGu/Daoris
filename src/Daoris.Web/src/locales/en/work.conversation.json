@@ -12,6 +12,7 @@
   "work.conversation.tools_other": "{{count}} tool calls",
   "work.conversation.worked": "what it did",
   "work.conversation.working": "working…",
+  "work.conversation.firstAnswer": "waiting for its first answer since {{time}} ({{elapsed}})",
   "work.conversation.ended": "the turn ended: {{reason}}",
   "work.conversation.stopped": "the turn was stopped here",
   "work.conversation.cut": "The session ended here, before this turn did.",

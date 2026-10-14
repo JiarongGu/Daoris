@@ -586,6 +586,16 @@ export function noteLines(t: Translate, { note, parts }: NoteRecord, language: s
   return lines;
 }
 
+/**
+ * A working session's note parts as the page reads them (WAITSHOWN1): what the session said of an ending it has since gone on
+ * from (`ended.*`) and of the words it went on with (`ledger.went-on*`) are history, and read beside its working they say it
+ * ended while it works. The ledger keeps them (D137 §2.3); only this reading leaves them out.
+ */
+export function liveParts<T extends { code?: string }>(parts: readonly T[] | null | undefined): T[] | null | undefined {
+  if (!parts) return parts as null | undefined;
+  return parts.filter((part) => !part.code || !(part.code.startsWith('ended.') || part.code.startsWith('ledger.went-on')));
+}
+
 /** Two lines joined the catalogue's way: English puts a space after a full stop and Chinese does not (platform language §4). */
 export function joinLines(t: Translate, lines: readonly string[]): string {
   return lines.reduce((first, second) => (first ? t('work.note.join', { first, second }) : second), '');
