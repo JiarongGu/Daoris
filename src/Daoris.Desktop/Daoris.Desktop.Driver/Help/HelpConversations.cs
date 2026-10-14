@@ -132,7 +132,8 @@ public sealed class HelpConversations(string home)
             using var document = JsonDocument.Parse(File.ReadAllText(path));
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object) return HelpKept.None;
-            return new HelpKept(Text(root, "name"), Time(root, "pinned"), Text(root, "from"), Text(root, "handed"));
+            return new HelpKept(
+                Json.NonEmpty(root, "name"), Time(root, "pinned"), Json.NonEmpty(root, "from"), Json.NonEmpty(root, "handed"));
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
         {
@@ -324,13 +325,8 @@ public sealed class HelpConversations(string home)
         return Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n";
     }
 
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String && value.GetString() is { Length: > 0 } text
-            ? text
-            : null;
-
     private static DateTimeOffset? Time(JsonElement element, string name) =>
-        DateTimeOffset.TryParse(Text(element, name), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at) ? at : null;
+        DateTimeOffset.TryParse(Json.NonEmpty(element, name), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at) ? at : null;
 }
 
 /// <summary>

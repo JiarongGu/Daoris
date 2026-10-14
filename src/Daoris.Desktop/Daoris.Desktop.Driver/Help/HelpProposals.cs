@@ -434,7 +434,7 @@ public static class HelpProposals
                 var root = document.RootElement;
                 var proposal = Read(root, Path.GetFileNameWithoutExtension(path));
                 if (proposal.State != "proposed" || !string.Equals(proposal.Session, session, StringComparison.OrdinalIgnoreCase)) continue;
-                var at = DateTimeOffset.TryParse(Text(root, "proposed"), CultureInfo.InvariantCulture, DateTimeStyles.None, out var when) ? when : DateTimeOffset.MinValue;
+                var at = DateTimeOffset.TryParse(Json.Text(root, "proposed"), CultureInfo.InvariantCulture, DateTimeStyles.None, out var when) ? when : DateTimeOffset.MinValue;
                 found.Add((at, proposal));
             }
             catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
@@ -473,11 +473,11 @@ public static class HelpProposals
     private static HelpProposal Read(JsonElement root, string id)
     {
         var read = new HelpProposal(
-            Text(root, "id") ?? id, Text(root, "kind") ?? "", Text(root, "door") ?? "", Text(root, "target"),
-            Text(root, "workspace"), Text(root, "value"), Text(root, "sentence"), Text(root, "why") ?? "",
-            root.TryGetProperty("by", out var by) ? Text(by, "session") : null, Text(root, "state") ?? "")
+            Json.Text(root, "id") ?? id, Json.Text(root, "kind") ?? "", Json.Text(root, "door") ?? "", Json.Text(root, "target"),
+            Json.Text(root, "workspace"), Json.Text(root, "value"), Json.Text(root, "sentence"), Json.Text(root, "why") ?? "",
+            root.TryGetProperty("by", out var by) ? Json.Text(by, "session") : null, Json.Text(root, "state") ?? "")
         {
-            Repository = Text(root, "repository"),
+            Repository = Json.Text(root, "repository"),
         };
         return HelpProposalKinds.All.Aggregate(read, (proposal, kind) => kind.Read(proposal, root));
     }
@@ -564,9 +564,4 @@ public static class HelpProposals
 
     internal static string Names(IEnumerable<string> names) =>
         string.Join(", ", names.OrderBy(name => name, StringComparer.Ordinal).Select(name => $"`{name}`"));
-
-    internal static string? Text(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
 }
