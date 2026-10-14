@@ -416,4 +416,48 @@ public sealed class SessionSyncTests : IAsyncLifetime
         Assert.Equal(1, pass.Pushed);
         Assert.Null(await store.ActiveForAsync("Shared"));
     }
+
+    /// <summary>
+    /// 🔴 SESSONE1a (D167 point 3): the entry's key rides the wire. A record from before it, which holds none, goes up with the
+    /// key derived by the rule from the quest it serves, and comes down to a teammate carrying it — and the sender's own record
+    /// is not rewritten.
+    /// </summary>
+    [Fact]
+    public async Task The_entry_key_goes_up_derived_and_comes_down_to_a_teammate()
+    {
+        var quest = await _quests[_a].PublishAsync("ask #c98a7e", "Shared", "Do it", "Why.", Now);
+        var old = await _a.CreateAsync(quest.Id, "Shared", "stub", Now);
+        Assert.Null(old.Entry);
+
+        await SyncAsync(_a, "a@one");
+        await SyncAsync(_b, "b@two");
+
+        Assert.Equal("ask:c98a7e/Shared", (await _remote.FindAsync($"a@one/{old.Id}"))!.Entry);
+        Assert.Equal("ask:c98a7e/Shared", (await _b.FindAsync($"a@one/{old.Id}"))!.Entry);
+        Assert.Null((await _a.FindAsync(old.Id))!.Entry);
+    }
+
+    /// <summary>A record the key was written for goes up as stored, and the wire's reader hands it back with the record.</summary>
+    [Fact]
+    public void The_wires_feed_and_page_carry_the_entry_and_a_feed_without_it_reads_as_before()
+    {
+        var feed = SessionWire.Feed([
+            new FedSessionRecord("abcd1234", "q1", "Shared", "stub", "completed", null, null, Now, Now, Entry: "ask:c98a7e/app"),
+            new FedSessionRecord("ef567890", null, "Shared", "stub", "completed", null, null, Now, Now),
+        ]);
+        var read = SessionWire.ReadFeed(feed)!;
+        Assert.Equal("ask:c98a7e/app", read[0].Entry);
+        Assert.Null(read[1].Entry);
+        Assert.DoesNotContain("\"entry\":null", feed);
+
+        var page = SessionWire.Page(new SessionFetch(
+            [new Session("a@one/abcd1234", "q1", "Shared", "stub", SessionState.Completed, null, null, null, Now, Now) { Origin = "a@one", Entry = "ask:c98a7e/app" }],
+            1, More: false));
+        Assert.Equal("ask:c98a7e/app", SessionWire.ReadPage(page)!.Records.Single().Entry);
+
+        // A remote from before the field sends none: read as a record with none, which the reader then derives.
+        var older = SessionWire.ReadPage(
+            """{"through":1,"more":false,"records":[{"id":"x1","origin":"a@one","repository":"Shared","adapter":"stub","state":"completed","created":"2026-09-24T10:00:00Z","updated":"2026-09-24T10:00:00Z"}]}""")!;
+        Assert.Null(older.Records.Single().Entry);
+    }
 }

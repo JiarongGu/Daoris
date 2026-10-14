@@ -316,7 +316,11 @@ public sealed record SessionResponse(
     // like the opinion: answered to it only, and absent for a session that continues none.
     string? From = null,
     string? FromWhy = null,
-    string? FromBy = null);
+    string? FromBy = null,
+    // SESSONE1a (D167 points 2 and 3): the line of work this record belongs to, `<origin>/<repository>` — the key the records that
+    // continue one line of work share. It names no path and no account, so every caller is told; a record from before it is answered
+    // the key the same rule derives, never one written back.
+    string? Entry = null);
 // MSG1a: one word waiting on a record — its id, which the record's events say again where the session took it; the
 // words; when; its files' names, never where they are; and whether it was said after the record ended. XAGENT1c: `by`, the
 // second opinion whose findings these are, another agent's claims; absent, the person's words, as every word before it was.

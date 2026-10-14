@@ -22,7 +22,7 @@ namespace Daoris.Knowledge;
 public sealed record FedSessionRecord(
     string? Id, string? Quest, string? Repository, string? Adapter, string? State,
     string? Note, string? Evidence, DateTimeOffset Created, DateTimeOffset Updated,
-    string? Kind = null, string? HarnessVersion = null, bool Limit = false, string? NoteParts = null);
+    string? Kind = null, string? HarnessVersion = null, bool Limit = false, string? NoteParts = null, string? Entry = null);
 
 /// <summary>Why a feed of records was not taken — or <see cref="None"/> when it was.</summary>
 public enum SessionFeedRefusal
@@ -112,6 +112,8 @@ public sealed class SessionFeed(KnowledgeService service, SessionStore sessions)
                     Limit = record.Limit,
                     // Read back through the door's own reader, so only what a part is lands in the store (LANG1a).
                     NoteParts = record.NoteParts,
+                    // SESSONE1a: the line of work it belongs to, as its machine answered it; none from a machine from before.
+                    Entry = record.Entry,
                 }, ct)
                 .ConfigureAwait(false);
         }

@@ -313,7 +313,8 @@ public sealed class SessionLedger(
             var session = await sessions
                 .CreateAsync(
                     null, AskDesk.SenderOf(ask.Id), adapter, now, ask.Workspace, SessionKind.Chat,
-                    harnessVersion, profile, holding, baseCommit: null, inside, ask: ask.Id)
+                    harnessVersion, profile, holding, baseCommit: null, inside, ask: ask.Id,
+                    entryOrigin: SessionEntries.AskOrigin(ask.Id), entryPart: "intake")
                 .ConfigureAwait(false);
             await asks!.RecordIntakeAsync(ask.Id, session.Id, now, inside).ConfigureAwait(false);
 
@@ -366,7 +367,7 @@ public sealed class SessionLedger(
             var session = await sessions
                 .CreateAsync(
                     null, HelpRepository, adapter, now, workspace: null, SessionKind.Chat,
-                    harnessVersion, profile, holding, baseCommit: null, inside)
+                    harnessVersion, profile, holding, baseCommit: null, inside, ownEntry: true)
                 .ConfigureAwait(false);
 
             return new SessionOpenOutcome(
@@ -417,6 +418,11 @@ public sealed class SessionLedger(
         // same key instead of holding one tree twice.
         var holding = Trees.Normalize(tree) ?? Trees.Normalize(known.Root);
 
+        // SESSONE1a: a conversation is its own line, and one handed over or started from another's words takes that one's (D167 point 2).
+        var continuedOrigin = from is not null && await sessions.FindOrMirrorAsync(from, ct).ConfigureAwait(false) is { } continued
+            ? await SessionEntries.OriginOfAsync(continued, new StoreEntryFacts(quests, sessions), ct).ConfigureAwait(false)
+            : null;
+
         return await sessions.ExclusiveAsync(async inside =>
         {
             var active = await sessions.ActiveForAsync(known.Repository, holding, inside).ConfigureAwait(false);
@@ -432,7 +438,8 @@ public sealed class SessionLedger(
             var session = await sessions
                 .CreateAsync(
                     null, known.Repository, adapter, now, known.InWorkspace, SessionKind.Chat,
-                    harnessVersion, profile, holding, baseCommit, inside, from: from, fromWhy: fromWhy, fromBy: fromBy)
+                    harnessVersion, profile, holding, baseCommit, inside, from: from, fromWhy: fromWhy, fromBy: fromBy,
+                    entryOrigin: continuedOrigin, ownEntry: continuedOrigin is null)
                 .ConfigureAwait(false);
 
             return new SessionOpenOutcome(
@@ -440,6 +447,23 @@ public sealed class SessionLedger(
                 $"Chat `{session.Id}` opened in `{known.Repository}`, via {adapter}.",
                 session);
         }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The record with the entry's key it answers (SESSONE1a, D167 point 3): the one stored, else the rule's over the facts held now.
+    /// Never written back, so a record from before groups the day a reader asks, and the rule stays in <see cref="SessionEntries"/>.
+    /// </summary>
+    public async Task<Session> WithEntryAsync(Session session, CancellationToken ct = default) =>
+        session.Entry is not null
+            ? session
+            : session with { Entry = await SessionEntries.KeyAsync(session, new StoreEntryFacts(quests, sessions), ct).ConfigureAwait(false) };
+
+    /// <summary>Each record with the key it answers, as <see cref="WithEntryAsync"/> answers one.</summary>
+    public async Task<IReadOnlyList<Session>> WithEntriesAsync(IEnumerable<Session> records, CancellationToken ct = default)
+    {
+        var answered = new List<Session>();
+        foreach (var record in records) answered.Add(await WithEntryAsync(record, ct).ConfigureAwait(false));
+        return answered;
     }
 
     /// <summary>The record of one session, as the store holds it: what a connector's tool judges the session it speaks for by.</summary>
@@ -858,6 +882,9 @@ public sealed class SessionLedger(
         // onto one tree must agree about which tree that is.
         var holding = Trees.Normalize(tree) ?? Trees.Normalize(await RootOfAsync(quest.To, ct).ConfigureAwait(false));
 
+        // SESSONE1a: the line of work the quest belongs to (D167 point 2), read before the lock is taken so it holds nothing while it asks.
+        var origin = await SessionEntries.OriginOfQuestAsync(quest, new StoreEntryFacts(quests, sessions), ct).ConfigureAwait(false);
+
         return await sessions.ExclusiveAsync(async inside =>
         {
             var active = await sessions.ActiveForAsync(quest.To, holding, inside).ConfigureAwait(false);
@@ -871,7 +898,8 @@ public sealed class SessionLedger(
             var session = await sessions
                 .CreateAsync(
                     quest.Id, quest.To, adapter, now, quest.Workspace, SessionKind.Driven,
-                    harnessVersion, profile, holding, baseCommit, inside, from: from, fromWhy: fromWhy, fromBy: fromBy)
+                    harnessVersion, profile, holding, baseCommit, inside, from: from, fromWhy: fromWhy, fromBy: fromBy,
+                    entryOrigin: origin)
                 .ConfigureAwait(false);
 
             return new SessionOpenOutcome(

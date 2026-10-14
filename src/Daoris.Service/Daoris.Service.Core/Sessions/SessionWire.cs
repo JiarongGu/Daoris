@@ -29,7 +29,7 @@ public static class SessionWire
             writer.WriteStartObject();
             Write(writer, record.Id, origin: null, record.Quest, record.Repository, record.Adapter, record.State,
                 record.Note, record.Evidence, record.Created, record.Updated, record.Kind, record.HarnessVersion,
-                record.Limit, record.NoteParts);
+                record.Limit, record.NoteParts, record.Entry);
             writer.WriteEndObject();
         }
 
@@ -53,7 +53,7 @@ public static class SessionWire
             records.Add(new FedSessionRecord(
                 Text(item, "id"), Text(item, "quest"), Text(item, "repository"), Text(item, "adapter"),
                 Text(item, "state"), Text(item, "note"), Text(item, "evidence"), created, updated,
-                Text(item, "kind"), Text(item, "harnessVersion"), Said(item, "limit"), Parts(item)));
+                Text(item, "kind"), Text(item, "harnessVersion"), Said(item, "limit"), Parts(item), Text(item, "entry")));
         }
 
         return records;
@@ -71,7 +71,7 @@ public static class SessionWire
             writer.WriteStartObject();
             Write(writer, session.Id, session.Origin, session.Quest, session.Repository, session.Adapter,
                 session.StateName, session.Note, session.Evidence, session.Created, session.Updated,
-                session.Kind.ToString(), session.HarnessVersion, session.Limit, session.NoteParts);
+                session.Kind.ToString(), session.HarnessVersion, session.Limit, session.NoteParts, session.Entry);
             writer.WriteEndObject();
         }
 
@@ -104,6 +104,7 @@ public static class SessionWire
                 Origin = origin,
                 Limit = Said(item, "limit"),
                 NoteParts = Parts(item),
+                Entry = Text(item, "entry") is { Length: > 0 } entry ? entry : null,
             });
         }
 
@@ -116,7 +117,7 @@ public static class SessionWire
     private static void Write(
         Utf8JsonWriter writer, string? id, string? origin, string? quest, string? repository, string? adapter,
         string? state, string? note, string? evidence, DateTimeOffset created, DateTimeOffset updated,
-        string? kind, string? harnessVersion, bool limit, string? noteParts)
+        string? kind, string? harnessVersion, bool limit, string? noteParts, string? entry)
     {
         writer.WriteString("id", id);
         if (origin is not null) writer.WriteString("origin", origin);
@@ -142,6 +143,9 @@ public static class SessionWire
         // TOOL4c: said only where true, so a record from before the field and one it never applied to read
         // alike on both sides, as false. It names no account, which is why it has a field at all.
         if (limit) writer.WriteBoolean("limit", true);
+        // SESSONE1a (D167 point 3): the line of work the record belongs to. It names no path and no account, so it goes with the record;
+        // absent from a machine from before, which the reader then derives as it does for a record that holds none.
+        if (entry is { Length: > 0 }) writer.WriteString("entry", entry);
     }
 
     /// <summary>A record's note parts as the wire carried them, kept only as what a part is (LANG1a); null for none.</summary>

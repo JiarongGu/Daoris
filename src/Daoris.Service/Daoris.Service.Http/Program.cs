@@ -1050,7 +1050,7 @@ if (mode == ServiceMode.Local)
         return outcome.Refusal switch
         {
             SessionOpenRefusal.None => Results.Ok(
-                new SessionActionResponse(ToSession(outcome.Session!, MachineLocal(http)), outcome.Message)),
+                new SessionActionResponse(await ToSessionAsync(s, outcome.Session!, MachineLocal(http)), outcome.Message)),
             SessionOpenRefusal.AskNotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
             // Answered and busy are state conflicts, the shape every open door teaches.
             SessionOpenRefusal.AskAnswered or SessionOpenRefusal.RepositoryBusy =>
@@ -1077,7 +1077,7 @@ if (mode == ServiceMode.Local)
         return outcome.Refusal switch
         {
             SessionOpenRefusal.None => Results.Ok(
-                new SessionActionResponse(ToSession(outcome.Session!, MachineLocal(http)), outcome.Message)),
+                new SessionActionResponse(await ToSessionAsync(s, outcome.Session!, MachineLocal(http)), outcome.Message)),
             SessionOpenRefusal.RepositoryBusy => Results.Conflict(new ErrorResponse(outcome.Message)),
             _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
         };
@@ -1146,7 +1146,7 @@ if (mode == ServiceMode.Local)
             }
 
             var local = MachineLocal(http);
-            return Results.Ok(new SaidResponse(ToSession(outcome.Session!, local), outcome.Message, local ? ToSaid(outcome.Word) : null));
+            return Results.Ok(new SaidResponse(await ToSessionAsync(s, outcome.Session!, local), outcome.Message, local ? ToSaid(outcome.Word) : null));
         }
 
         var refused = new SessionSayRefusalResponse(
@@ -1177,7 +1177,7 @@ if (mode == ServiceMode.Local)
                     string.IsNullOrWhiteSpace(body.By) ? id : body.By, AskWordKind.Reopened, word.Text, word.At, ct);
             }
 
-            return Results.Ok(new SessionActionResponse(ToSession(outcome.Session!, MachineLocal(http)), outcome.Message));
+            return Results.Ok(new SessionActionResponse(await ToSessionAsync(s, outcome.Session!, MachineLocal(http)), outcome.Message));
         }
 
         var refused = new SessionSayRefusalResponse(outcome.Message, SayRefusal(outcome.Refusal));
@@ -1247,30 +1247,30 @@ if (mode == ServiceMode.Local)
     // (a chat that serves the asker, in a clone of its own) and hands the helper's answer to the asker as a word marked `helper`.
     app.MapPost("/api/helpers", async (ComposedService s, HttpContext http, HelperOpenRequest body, CancellationToken ct) =>
         MachineLocal(http)
-            ? HelperReply(
+            ? await HelperReply(
                 await s.Helpers.OpenAsync(
                     new HelperOpen(body.Asker ?? "", body.Adapter ?? "", body.Tree ?? "")
                     {
                         Account = body.Account, HarnessVersion = body.HarnessVersion, BaseCommit = body.BaseCommit,
                     },
                     DateTimeOffset.UtcNow, ct),
-                http)
+                s, http)
             : OffMachineOpinion());
 
     app.MapPost("/api/helpers/{helper}/hand", async (ComposedService s, HttpContext http, string helper, HelperHandRequest body, CancellationToken ct) =>
         MachineLocal(http)
-            ? HelperReply(await s.Helpers.HandAsync(helper, body.Text ?? "", DateTimeOffset.UtcNow, ct), http)
+            ? await HelperReply(await s.Helpers.HandAsync(helper, body.Text ?? "", DateTimeOffset.UtcNow, ct), s, http)
             : OffMachineOpinion());
 }
 
 // A door to a helper answers as a second opinion's does: a shape is a bad request, nothing by that name is not found, and a
 // state it is in is the lock's own shape, 409.
-IResult HelperReply(HelperOutcome outcome, HttpContext http) =>
+async Task<IResult> HelperReply(HelperOutcome outcome, ComposedService s, HttpContext http) =>
     outcome.Refusal switch
     {
         HelperRefusal.None => Results.Ok(new HelperActionResponse(
             outcome.Message,
-            outcome.Session is { } session ? ToSession(session, MachineLocal(http)) : null,
+            outcome.Session is { } session ? await ToSessionAsync(s, session, MachineLocal(http)) : null,
             outcome.Word is { } word ? ToSaid(word) : null)),
         HelperRefusal.NotFound or HelperRefusal.Shared => Results.NotFound(new ErrorResponse(outcome.Message)),
         HelperRefusal.BadShape => Results.BadRequest(new ErrorResponse(outcome.Message)),
@@ -1294,7 +1294,7 @@ async Task<IResult> OpinionReply(OpinionOutcome outcome, ComposedService s, Http
     var standing = (await s.Opinions.ReadAsync(outcome.Opinion!.Id, DateTimeOffset.UtcNow, ct))!;
     return Results.Ok(new OpinionActionResponse(
         ToOpinion(standing), outcome.Message,
-        outcome.Session is { } session ? ToSession(session, MachineLocal(http)) : null,
+        outcome.Session is { } session ? await ToSessionAsync(s, session, MachineLocal(http)) : null,
         outcome.Word is { } word ? ToSaid(word) : null));
 }
 
@@ -1365,7 +1365,8 @@ app.MapGet("/api/sessions", async (
     var sessions = await s.Sessions.ListAsync(repository, includeClosed ?? false, workspace, ct);
     // Which records the ledger would delete (SESSUX1f), D95's way; none at a shared deployment, which has no delete door.
     var deletable = mode == ServiceMode.Local ? await s.Ledger.DeletableAsync(sessions, ct) : new HashSet<string>();
-    return sessions.Select(session => ToSession(session, MachineLocal(http)) with { Deletable = deletable.Contains(session.Id) });
+    var answered = await s.Ledger.WithEntriesAsync(sessions, ct);
+    return answered.Select(session => ToSession(session, MachineLocal(http)) with { Deletable = deletable.Contains(session.Id) });
 });
 
 app.MapPost("/api/sessions", async (
@@ -1386,7 +1387,7 @@ app.MapPost("/api/sessions", async (
     return outcome.Refusal switch
     {
         SessionOpenRefusal.None => Results.Ok(
-            new SessionActionResponse(ToSession(outcome.Session!, MachineLocal(http)), outcome.Message)),
+            new SessionActionResponse(await ToSessionAsync(s, outcome.Session!, MachineLocal(http)), outcome.Message)),
         SessionOpenRefusal.QuestNotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
         // State conflicts wear 409, the same shape the quest door teaches (D47 §5): a driver racing
         // another machine for a repository slot got beaten, not malformed.
@@ -1418,7 +1419,7 @@ app.MapPost("/api/sessions/chat", async (
     return outcome.Refusal switch
     {
         SessionOpenRefusal.None => Results.Ok(
-            new SessionActionResponse(ToSession(outcome.Session!, MachineLocal(http)), outcome.Message)),
+            new SessionActionResponse(await ToSessionAsync(s, outcome.Session!, MachineLocal(http)), outcome.Message)),
         SessionOpenRefusal.RepositoryUnknown => Results.NotFound(new ErrorResponse(outcome.Message)),
         // Busy is a state conflict, the same shape the driven door and the quest lock teach.
         SessionOpenRefusal.RepositoryBusy => Results.Conflict(new ErrorResponse(outcome.Message)),
@@ -1438,7 +1439,7 @@ app.MapPost("/api/sessions/{id}/state", async (
     return outcome.Refusal switch
     {
         SessionAdvanceRefusal.None => Results.Ok(
-            new SessionActionResponse(ToSession(outcome.Session!, MachineLocal(http)), outcome.Message)),
+            new SessionActionResponse(await ToSessionAsync(s, outcome.Session!, MachineLocal(http)), outcome.Message)),
         SessionAdvanceRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
         // Terminal and an illegal move are conflicts with the record's current state — 409 like the
         // quest door, and so is a tree another session holds when an ended record would go on (MSG1a).
@@ -1468,7 +1469,7 @@ app.MapPost("/api/sessions/{id}/answer", async (
     return outcome.Refusal switch
     {
         SessionAdvanceRefusal.None => Results.Ok(
-            new SessionActionResponse(ToSession(outcome.Session!, MachineLocal(http)), outcome.Message)),
+            new SessionActionResponse(await ToSessionAsync(s, outcome.Session!, MachineLocal(http)), outcome.Message)),
         SessionAdvanceRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
         _ => Results.Conflict(new ErrorResponse(outcome.Message)),
     };
@@ -2090,6 +2091,10 @@ static EntryResponse ToEntry(KnowledgeEntry entry) => new(
 // ran as is this machine's wiring, and it is the one field a person is likely to name after
 // themselves. So is the TREE (D51), which is a filesystem path outright. The harness version is a
 // fact about a tool and travels with the record.
+// A record answered with the entry's key the one rule gives it (SESSONE1a): the stored one, else derived at read and never written back.
+static async Task<SessionResponse> ToSessionAsync(ComposedService service, Session session, bool loopback) =>
+    ToSession(await service.Ledger.WithEntryAsync(session), loopback);
+
 static SessionResponse ToSession(Session s, bool loopback) => new(
     s.Id, s.Quest, s.Repository, s.Adapter, s.StateName,
     // The note is free text the driver wrote, and it named the tree and the account (REV3).
@@ -2118,7 +2123,9 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     // The session this one continues, why and who asked (MIXAGENT1a-iii): this machine's, like the opinion, so answered to it only.
     From: loopback ? s.From : null,
     FromWhy: loopback ? s.FromWhy : null,
-    FromBy: loopback ? s.FromBy : null);
+    FromBy: loopback ? s.FromBy : null,
+    // The line of work it belongs to (SESSONE1a): a key, no path and no account, so every caller is told. Filled by the ledger's reader.
+    Entry: s.Entry);
 
 // A word with whose it is (XAGENT1c): `by` names the second opinion whose findings these are, and is absent for the person's.
 static SaidWordResponse ToSaid(SaidWord word) => new(word.Id, word.Text, word.At, word.Files, word.Reopens, word.By, word.Helper);

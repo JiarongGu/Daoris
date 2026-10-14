@@ -174,6 +174,16 @@ public sealed record Session(
     public string? FromBy { get; init; }
 
     /// <summary>
+    /// The line of work this record belongs to, <c>&lt;origin&gt;/&lt;repository&gt;</c> (SESSONE1a, D167 points 2 and 3): written by the ledger
+    /// when the session opens, and the one key the records that continue one line of work share. Null for a record from before it, which
+    /// every reader is answered the rule's key for (<see cref="SessionEntries"/>), never written back.
+    /// </summary>
+    /// <remarks>
+    /// It <b>travels</b> with the record, unlike <see cref="From"/>: it names a line of work and a repository, no path and no account (D47 §4).
+    /// </remarks>
+    public string? Entry { get; init; }
+
+    /// <summary>
     /// Whether this session took its own quest, through its own connector (STANDDOWN2). A session
     /// ending with its quest still taken is then waiting on the person, not standing down for
     /// somebody else — which the quest's state alone cannot tell.
@@ -441,6 +451,10 @@ public sealed class SessionStore
         await SchemaColumns.EnsureAsync(_db, "sessions", "from_why", "from_why TEXT NULL", ct).ConfigureAwait(false);
         await SchemaColumns.EnsureAsync(_db, "sessions", "from_by", "from_by TEXT NULL", ct).ConfigureAwait(false);
 
+        // SESSONE1a (D167 point 2): the entry's key, written at every open. It travels, so a mirror holds it too. A record from before it
+        // says none, and the reader answers the rule's key for it without writing it here (D167 point 3).
+        await SchemaColumns.EnsureAsync(_db, "sessions", "entry", "entry TEXT NULL", ct).ConfigureAwait(false);
+
         await using (var cursor = _db.Command())
         {
             cursor.CommandText = """
@@ -589,12 +603,14 @@ public sealed class SessionStore
         string? workspace = null, SessionKind kind = SessionKind.Driven,
         string? harnessVersion = null, string? profile = null, string? tree = null,
         string? baseCommit = null, CancellationToken ct = default, string? ask = null, string? opinion = null,
-        string? serves = null, string? from = null, string? fromWhy = null, string? fromBy = null) => _db.RunAsync<Session>(async () =>
+        string? serves = null, string? from = null, string? fromWhy = null, string? fromBy = null,
+        string? entryOrigin = null, string? entryPart = null, bool ownEntry = false) => _db.RunAsync<Session>(async () =>
     {
         // A why or an asker with no session continued is no link (MIXAGENT1a-iii): the three are kept together or not at all.
         var continues = Blank(from);
+        var id = Guid.NewGuid().ToString("N")[..8];
         var session = new Session(
-            Guid.NewGuid().ToString("N")[..8], quest, repository, adapter,
+            id, quest, repository, adapter,
             SessionState.Queued, null, null, null, now, now, Workspaces.Normalize(workspace), kind,
             // Written at creation and never again: these say what the spawn ran ON, AS and IN, and a
             // later state change is about how it ended, not about what it was.
@@ -606,13 +622,18 @@ public sealed class SessionStore
             From = continues,
             FromWhy = continues is null ? null : Blank(fromWhy),
             FromBy = continues is null ? null : Blank(fromBy),
+            // SESSONE1a: the key is the ledger's to decide, since the rule reads quests; this store writes what it is told. A caller that
+            // tells it nothing leaves a record as one from before, which the reader answers a derived key and never writes back.
+            Entry = ownEntry ? SessionEntries.Compose($"session:{id}", entryPart ?? repository)
+                : Blank(entryOrigin) is { } origin ? SessionEntries.Compose(origin, entryPart ?? repository) : null,
         };
 
         await using var command = _db.Command();
         command.CommandText = $"""
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, base_commit, ask, opinion, serves, from_session, from_why, from_by, revision)
-            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree, $baseCommit, $ask, $opinion, $serves, $from, $fromWhy, $fromBy, {NextRevision})
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, base_commit, ask, opinion, serves, from_session, from_why, from_by, entry, revision)
+            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree, $baseCommit, $ask, $opinion, $serves, $from, $fromWhy, $fromBy, $entry, {NextRevision})
             """;
+        command.Parameters.AddWithValue("$entry", (object?)session.Entry ?? DBNull.Value);
         command.Parameters.AddWithValue("$serves", (object?)session.Serves ?? DBNull.Value);
         command.Parameters.AddWithValue("$from", (object?)session.From ?? DBNull.Value);
         command.Parameters.AddWithValue("$fromWhy", (object?)session.FromWhy ?? DBNull.Value);
@@ -706,13 +727,17 @@ public sealed class SessionStore
     {
         await using var command = _db.Command();
         command.CommandText = $"""
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, note_parts, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, origin, limited, revision)
-            VALUES ($id, $quest, $repository, $adapter, $state, $note, $noteParts, $evidence, NULL, $created, $updated, $workspace, $kind, $harnessVersion, NULL, NULL, $origin, $limited, {NextRevision})
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, note_parts, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, origin, limited, entry, revision)
+            VALUES ($id, $quest, $repository, $adapter, $state, $note, $noteParts, $evidence, NULL, $created, $updated, $workspace, $kind, $harnessVersion, NULL, NULL, $origin, $limited, $entry, {NextRevision})
             ON CONFLICT (id) DO UPDATE SET
               state = $state, note = $note, note_parts = $noteParts, evidence = $evidence, updated = $updated, workspace = $workspace,
               kind = $kind, harness_version = $harnessVersion, origin = $origin, limited = $limited,
+              entry = COALESCE($entry, entry),
               revision = {NextRevision}
             """;
+        // SESSONE1a: the entry's key travels with the record (it names a line of work and a repository). A record from a machine from before
+        // it brings none, which keeps whatever this one holds and otherwise leaves the reader to derive it.
+        command.Parameters.AddWithValue("$entry", (object?)Blank(record.Entry) ?? DBNull.Value);
         // A limit names no account (TOOL4c), so it is copied like the state beside it.
         command.Parameters.AddWithValue("$limited", record.Limit ? 1 : (object)DBNull.Value);
         // The note's parts travel with the note, already cleaned where they left their machine (LANG1a).
@@ -743,6 +768,23 @@ public sealed class SessionStore
     {
         await using var command = _db.Command();
         command.CommandText = "SELECT * FROM sessions WHERE id = $id";
+        command.Parameters.AddWithValue("$id", id);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
+    }, ct);
+
+    /// <summary>
+    /// The record a quest's <c>PublishedBy</c> names (SESSONE1a): this machine's by that id, else a teammate's mirror, keyed
+    /// <c>origin/id</c>, since the publisher's own machine wrote the id it knew the session by. Ids are random and 32 bits wide, so the
+    /// first match stands; this machine's own is preferred.
+    /// </summary>
+    public Task<Session?> FindOrMirrorAsync(string id, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = """
+            SELECT * FROM sessions WHERE id = $id OR (origin IS NOT NULL AND substr(id, instr(id, '/') + 1) = $id)
+            ORDER BY origin IS NOT NULL, revision LIMIT 1
+            """;
         command.Parameters.AddWithValue("$id", id);
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
@@ -1026,6 +1068,7 @@ public sealed class SessionStore
         From = reader.IsDBNull(reader.GetOrdinal("from_session")) ? null : reader.GetString(reader.GetOrdinal("from_session")),
         FromWhy = reader.IsDBNull(reader.GetOrdinal("from_why")) ? null : reader.GetString(reader.GetOrdinal("from_why")),
         FromBy = reader.IsDBNull(reader.GetOrdinal("from_by")) ? null : reader.GetString(reader.GetOrdinal("from_by")),
+        Entry = reader.IsDBNull(reader.GetOrdinal("entry")) ? null : reader.GetString(reader.GetOrdinal("entry")),
         Took = !reader.IsDBNull(reader.GetOrdinal("took")) && reader.GetInt64(reader.GetOrdinal("took")) != 0,
         Said = SaidOf(reader),
         Interrupted = !reader.IsDBNull(reader.GetOrdinal("interrupted")) && reader.GetInt64(reader.GetOrdinal("interrupted")) != 0,
