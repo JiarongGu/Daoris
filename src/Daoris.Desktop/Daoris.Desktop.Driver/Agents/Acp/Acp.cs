@@ -93,9 +93,9 @@ public sealed record AcpConfigOption(
         foreach (var option in list.EnumerateArray())
         {
             if (option.ValueKind != JsonValueKind.Object
-                || Text(option, "type") != "select"
-                || Text(option, "id") is not { Length: > 0 } id
-                || Text(option, "currentValue") is not { } current
+                || Json.Text(option, "type") != "select"
+                || Json.Text(option, "id") is not { Length: > 0 } id
+                || Json.Text(option, "currentValue") is not { } current
                 || !option.TryGetProperty("options", out var values) || values.ValueKind != JsonValueKind.Array)
             {
                 continue;
@@ -116,7 +116,8 @@ public sealed record AcpConfigOption(
             }
 
             read.Add(new AcpConfigOption(
-                id, Text(option, "name") ?? id, Text(option, "category"), current, choices, Text(option, "description")));
+                id, Json.Text(option, "name") ?? id, Json.Text(option, "category"), current, choices,
+                Json.Text(option, "description")));
         }
 
         return read;
@@ -124,14 +125,11 @@ public sealed record AcpConfigOption(
 
     private static void Choice(JsonElement entry, List<AcpConfigChoice> into)
     {
-        if (entry.ValueKind == JsonValueKind.Object && Text(entry, "value") is { Length: > 0 } value)
+        if (entry.ValueKind == JsonValueKind.Object && Json.Text(entry, "value") is { Length: > 0 } value)
         {
-            into.Add(new AcpConfigChoice(value, Text(entry, "name") ?? value, Text(entry, "description")));
+            into.Add(new AcpConfigChoice(value, Json.Text(entry, "name") ?? value, Json.Text(entry, "description")));
         }
     }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 }
 
 /// <param name="Usage">
@@ -190,22 +188,18 @@ public sealed class AcpRefusal(
     /// </summary>
     internal static AcpRefusal Of(JsonElement error)
     {
-        var message = Text(error, "message") ?? error.GetRawText();
+        var message = Json.Text(error, "message") ?? error.GetRawText();
         var data = error.ValueKind == JsonValueKind.Object && error.TryGetProperty("data", out var d) ? d : default;
-        var said = Text(data, "message") is { } words && !string.IsNullOrWhiteSpace(words) ? words.Trim() : null;
+        var said = Json.Text(data, "message") is { } words && !string.IsNullOrWhiteSpace(words) ? words.Trim() : null;
         var sentence = said is null || message.Contains(said, StringComparison.Ordinal) ? message : $"{message}: {said}";
         var code = error.ValueKind == JsonValueKind.Object && error.TryGetProperty("code", out var c)
                    && c.ValueKind == JsonValueKind.Number && c.TryGetInt32(out var number)
             ? number
             : (int?)null;
         return new AcpRefusal(
-            $"the ACP agent refused the call: {sentence}", said, Text(data, "errorKind"), code, sentence, Text(data, "reason"));
+            $"the ACP agent refused the call: {sentence}", said, Json.Text(data, "errorKind"), code, sentence,
+            Json.Text(data, "reason"));
     }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
 }
 
 /// <summary>
@@ -1365,20 +1359,13 @@ public sealed class AcpSession(
             }
         }
 
-        if (Number(update, "used") is not { } used || Number(update, "size") is not { } size) return;
+        if (Json.Long(update, "used") is not { } used || Json.Long(update, "size") is not { } size) return;
 
         lock (_measured)
         {
             if (_usage is null || used > _usage.Used) _usage = new AcpUsage(used, size);
         }
     }
-
-    private static long? Number(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value)
-            && value.ValueKind == JsonValueKind.Number
-            && value.TryGetInt64(out var number)
-            ? number
-            : null;
 
     /// <summary>
     /// One update as a console line — the structured source rendered for a transcript a person reads.
@@ -1488,7 +1475,7 @@ public sealed class AcpSession(
             "plan" => new SessionEvent { Kind = SessionEventKind.Plan, Entries = Entries(update) },
             "usage_update" => new SessionEvent
             {
-                Kind = SessionEventKind.Usage, Used = Number(update, "used"), Size = Number(update, "size"),
+                Kind = SessionEventKind.Usage, Used = Json.Long(update, "used"), Size = Json.Long(update, "size"),
             },
             // Known, and deliberately not the conversation: the session's own settings — the commands it
             // offers, its mode, its config options. The options are kept by the session itself (AGT6b), and
@@ -1592,12 +1579,7 @@ public sealed class AcpSession(
     /// the first real run (ACP2, 2026-09-24).
     /// </remarks>
     private static string? Text(JsonElement update) =>
-        update.TryGetProperty("content", out var content)
-            && content.ValueKind == JsonValueKind.Object
-            && content.TryGetProperty("text", out var t)
-            && t.ValueKind == JsonValueKind.String
-                ? t.GetString()
-                : null;
+        update.TryGetProperty("content", out var content) ? Json.Text(content, "text") : null;
 
     /// <summary>Which update this is, or null when the wire did not say in a string.</summary>
     internal static string? Kind(JsonElement update) =>

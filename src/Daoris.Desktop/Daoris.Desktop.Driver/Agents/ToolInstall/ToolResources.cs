@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -512,7 +513,4 @@ public static class ToolResources
     /// <summary>An object's members in ordinal order: JSON's own order is not one both runtimes keep.</summary>
     private static IEnumerable<KeyValuePair<string, JsonNode?>> Ordinal(JsonObject value) =>
         value.OrderBy(pair => pair.Key, StringComparer.Ordinal);
-
-    private static string? Text(JsonNode? node) =>
-        node is JsonValue value && value.GetValueKind() == JsonValueKind.String ? value.GetValue<string>() : null;
 }

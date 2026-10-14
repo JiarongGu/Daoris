@@ -262,7 +262,7 @@ public static class PermissionRules
                 Lists(root["machine"]),
                 Scopes(root["workspaces"]),
                 Scopes(root["repositories"]),
-                Strings(root["defaultsOff"]))
+                Json.TrimmedStrings(root["defaultsOff"]))
             {
                 Rest = rest,
             };
@@ -412,13 +412,7 @@ public static class PermissionRules
 
     /// <summary>A hand edit's rule that is not the shape is left out rather than handed to the harness.</summary>
     private static IReadOnlyList<string> Rules(JsonNode? node) =>
-        [.. Strings(node).Where(rule => Refusal(rule) is null).Distinct(StringComparer.Ordinal)];
-
-    private static IReadOnlyList<string> Strings(JsonNode? node) =>
-        node is JsonArray items
-            ? [.. items.OfType<JsonValue>().Select(item => item.TryGetValue<string>(out var text) ? text : null)
-                .Where(text => !string.IsNullOrWhiteSpace(text)).Select(text => text!.Trim())]
-            : [];
+        [.. Json.TrimmedStrings(node).Where(rule => Refusal(rule) is null).Distinct(StringComparer.Ordinal)];
 
     private static IReadOnlyDictionary<string, RuleLists> Scopes(JsonNode? node)
     {
