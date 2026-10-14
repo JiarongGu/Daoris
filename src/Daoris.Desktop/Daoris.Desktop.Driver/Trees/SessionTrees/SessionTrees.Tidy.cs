@@ -92,6 +92,69 @@ public sealed partial class SessionTrees
         return results;
     }
 
+    /// <summary>
+    /// LAND3's tidy on a pull request's word (PLUGHOOK1a, design §2.1 occasion 1): after the containment pass, the repository's
+    /// entries are asked about, and each recorded session branch a completed pull request carried goes too, with the tidy's
+    /// keeps. Each removal is kept on the entry whose answer allowed it.
+    /// </summary>
+    private async Task<IReadOnlyList<TidiedBranch>> TidyCarriedAsync(
+        string root, string repository, string workspace, IReadOnlyCollection<string> handled, string? pressed,
+        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse, CancellationToken ct)
+    {
+        await Asks.AskStatesAsync([(root, repository, workspace)], landedMayGo: false, ct).ConfigureAwait(false);
+        var line = (await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        var carriers = await Asks.CarriersAsync(root, repository, line, ct).ConfigureAwait(false);
+        if (carriers.Count == 0) return [];
+
+        var carried = new List<(string Branch, string Tip, PullRequestCarrier Carrier)>();
+        foreach (var branch in Grown.All()
+                     .Where(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))
+                     .Select(entry => entry.Branch)
+                     .Where(branch => branch.StartsWith(SessionPrefix, StringComparison.Ordinal)
+                                      && !string.Equals(branch, pressed, StringComparison.Ordinal) && !handled.Contains(branch))
+                     .Distinct(StringComparer.Ordinal))
+        {
+            var (code, tip, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct)
+                .ConfigureAwait(false);
+            if (code != 0) continue;
+            if (await PullRequestAsks.CarrierOfAsync(root, $"refs/heads/{branch}", carriers, ct).ConfigureAwait(false) is { } carrier)
+            {
+                carried.Add((branch, tip.Trim(), carrier));
+            }
+        }
+
+        if (carried.Count == 0) return [];
+        var results = new List<TidiedBranch>();
+        // A list git could not give is never "no tree here" (AUTOTIDY1): each branch is kept, saying why.
+        var worktrees = await _context.Worktrees.ReadAsync(root, ct).ConfigureAwait(false);
+        using var hold = TreeLock.TryReplaying(home, workspace, repository);
+        var busy = hold is not null && inUse is not null
+            ? new HashSet<string>((await inUse(ct).ConfigureAwait(false)).Select(Normal), StringComparer.OrdinalIgnoreCase)
+            : null;
+        var unasked = inUse is null
+            ? "whether a session still holds its tree was not asked here"
+            : "a session was starting in one of the repository's trees";
+        foreach (var (branch, tip, carrier) in carried)
+        {
+            var tidied = (worktrees is null
+                    ? new TidiedBranch(branch, false, false, ListUnread)
+                    : await TidyOneAsync(root, branch, tip, worktrees.GetValueOrDefault(branch), busy, unasked, ct).ConfigureAwait(false))
+                with { CarriedBy = carrier.Entry.Branch };
+            results.Add(tidied);
+            if (!tidied.Removed) continue;
+            try
+            {
+                Recorded.Carried(carrier.Entry, new CarriedBranch(branch, tip, _context.Plugins.Now, CarriedBy.Tidy));
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                // The branch went on a confirmed answer; only the note of it on the record is lost.
+            }
+        }
+
+        return results;
+    }
+
     private async Task<TidiedBranch> TidyOneAsync(
         string root, string branch, string tip, string? tree, HashSet<string>? busy, string unasked, CancellationToken ct)
     {
@@ -105,7 +168,7 @@ public sealed partial class SessionTrees
             // Everything no commit holds, whatever git's settings hide (SQUASHTIDY1c): what removing the tree would destroy.
             if (Directory.Exists(tree))
             {
-                var holds = await HoldsAsync(tree, root, ct).ConfigureAwait(false);
+                var holds = await ContentHolds.HoldsAsync(tree, root, ct).ConfigureAwait(false);
                 if (holds is null) return Kept("git could not say what its tree holds");
                 if (holds.Uncommitted.Count > 0) return Kept($"its tree has {holds.Uncommitted.Count} path(s) uncommitted");
                 if (holds.OwnSaid is { } own) return Kept($"its tree holds {own}");
@@ -115,7 +178,7 @@ public sealed partial class SessionTrees
         // 🔴 Judged a moment ago; removed only while it is still the commit judged.
         var (code, now, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct)
             .ConfigureAwait(false);
-        if (code != 0 || now.Trim() != tip) return Kept(MovedSince);
+        if (code != 0 || now.Trim() != tip) return Kept(ContentHolds.MovedSince);
 
         if (tree is not null)
         {
@@ -128,7 +191,7 @@ public sealed partial class SessionTrees
 
         // The look above leaves a moment before the delete, so the delete itself compares (SQUASHTIDY1c); git's own -d asks
         // only about the checkout's HEAD.
-        var stays = await DeleteJudgedAsync(root, branch, tip, ct).ConfigureAwait(false);
+        var stays = await Content.DeleteJudgedAsync(root, branch, tip, ct).ConfigureAwait(false);
         return stays is null ? new(branch, true, tree is not null) : Kept(stays);
     }
 
@@ -227,7 +290,7 @@ public sealed partial class SessionTrees
     /// </summary>
     /// <remarks>
     /// Unforced it is the clean-up's proof (D88): it goes only where a branch of the person's holds every commit, or where its
-    /// work is held by content (SQUASHTIDY1, <see cref="HeldByContentAsync"/>), and the refusal names the commits it would lose.
+    /// work is held by content (SQUASHTIDY1, <see cref="ContentHolds.HeldByContentAsync"/>), and the refusal names the commits it would lose.
     /// It deletes the branch only while it is the commit judged, and a content-held one's commits stay on a recovery ref the
     /// sentence names (SQUASHTIDY1c).
     /// <paramref name="force"/> is the person saying it again, meaning it. The record
@@ -291,12 +354,12 @@ public sealed partial class SessionTrees
             // SQUASHTIDY1: the same proof by content as a tree's removal, against the line of the workspace it grew in; before it,
             // a squashing landing's record, which vouches as ancestry would and keeps no ref (PROCESS1b-ii point 3).
             if (!string.IsNullOrWhiteSpace(unlanded)
-                && (squashedOn = await SquashedHolderAsync(root, repository, judged, ct).ConfigureAwait(false)) is null)
+                && (squashedOn = await Squashes.SquashedHolderAsync(root, repository, judged, ct).ConfigureAwait(false)) is null)
             {
                 var grewIn = Grown.All().LastOrDefault(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
                                                                 && string.Equals(entry.Branch, branch, StringComparison.Ordinal))?.Workspace;
                 var line = (await _context.LineAsync(root, repository, RemoteTarget.Workspace(grewIn), ct).ConfigureAwait(false)).Branch;
-                held = await HeldByContentAsync(root, judged, line, LandedHere(repository), ct).ConfigureAwait(false);
+                held = await ContentHolds.HeldByContentAsync(root, judged, line, Content.LandedHere(repository), ct).ConfigureAwait(false);
                 if (held is null)
                 {
                     return new(false, $"`{branch}` holds commits no branch of yours holds:\n{unlanded.Trim()}\n"
@@ -304,7 +367,7 @@ public sealed partial class SessionTrees
                 }
 
                 // SQUASHTIDY1c: the proof compared files, so the commits themselves are kept on a ref of their own first.
-                var (reference, why) = await KeepDiscardedAsync(root, branch, judged, ct).ConfigureAwait(false);
+                var (reference, why) = await ContentHolds.KeepDiscardedAsync(root, branch, judged, ct).ConfigureAwait(false);
                 if (reference is null)
                 {
                     return new(false, $"Daoris could not keep the commits on `{branch}` on a ref of their own ({why}), so it stays. "
@@ -314,12 +377,12 @@ public sealed partial class SessionTrees
                 kept = reference;
             }
 
-            var stays = await DeleteJudgedAsync(root, branch, judged, ct).ConfigureAwait(false);
+            var stays = await Content.DeleteJudgedAsync(root, branch, judged, ct).ConfigureAwait(false);
             if (stays is not null)
             {
-                await DropKeptAsync(root, branch, kept, judged, ct).ConfigureAwait(false);
+                await ContentHolds.DropKeptAsync(root, branch, kept, judged, ct).ConfigureAwait(false);
                 return new(false, $"`{branch}` stays: {stays}"
-                    + (stays == MovedSince ? ", so it holds work this removal did not judge." : "."));
+                    + (stays == ContentHolds.MovedSince ? ", so it holds work this removal did not judge." : "."));
             }
         }
         else
@@ -330,7 +393,7 @@ public sealed partial class SessionTrees
 
         Forget(repository, branch);
         return new(true, $"removed the session branch `{branch}` from `{repository}`"
-            + (held is not null ? $": {held.Said}." : squashedOn is not null ? $": {SquashedSaid(squashedOn)}." : ".")
+            + (held is not null ? $": {held.Said}." : squashedOn is not null ? $": {TreeSquashes.SquashedSaid(squashedOn)}." : ".")
             + (kept is null ? "" : $" {ContentHold.KeptAt(branch, kept)}"));
     }
 

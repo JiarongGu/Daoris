@@ -571,7 +571,7 @@ public sealed class HelpRoutes(DriverContext context)
             var trees = new SessionTrees(_loop.Home, new LandingPlugins(
                 _loop.Home, say: (id, line) => _loop.Output.Append($"plugin:{id}", line),
                 log: _loop.Log, health: _loop.Health));
-            if (trees.Recorded.Of(repository, branch) is not { } entry) return new TreeHand(false, SessionTrees.NotLanded(branch), branch);
+            if (trees.Recorded.Of(repository, branch) is not { } entry) return new TreeHand(false, TreeHand.NotLanded(branch), branch);
             var root = await TreesRoutes.CheckoutOfAsync(service ?? throw NotReady(), repository, ct).ConfigureAwait(false);
             return root is null
                 ? new TreeHand(false, $"`{repository}` has no checkout on this machine, so there is no `{branch}` here to hand on.", branch)
