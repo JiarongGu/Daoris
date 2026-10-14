@@ -54,9 +54,57 @@ internal sealed class TreeContext
     /// <summary>
     /// The repository's line (WSR2), from the choices beside this home, read per call: the person may
     /// set it between one tree and the next, and a cached answer would grow the second from the old line.
+    /// Within one look (<see cref="OneLook"/>), git's guess at a checkout's line is asked once (UIFREEZE1).
     /// </summary>
     internal Task<Line> LineAsync(string root, string repository, string workspace, CancellationToken ct) =>
-        CanonicalLine.ResolveAsync(root, repository, workspace, Config(), ct);
+        CanonicalLine.ResolveAsync(root, repository, workspace, Config(), GuessAsync, ct);
+
+    /// <summary>The test seam (UIFREEZE1): git's guess at a checkout's line, counted by a test. Production asks git.</summary>
+    internal Func<string, CancellationToken, Task<string?>> CheckoutLine { get; set; } = WorkingTree.DefaultBranchAsync;
+
+    // The look this flow is in, or null: an async local, so a look running beside it on the same context shares nothing.
+    private readonly AsyncLocal<Dictionary<string, Task<string?>>?> _look = new();
+
+    /// <summary>
+    /// One look over the repositories (UIFREEZE1): until it is disposed, each checkout's guess at its line is asked of git once
+    /// in this flow, and every caller in the look shares the answer. The sweep's list asked it three times a repository, up to
+    /// three git processes each, and a frozen window's stack held seventeen such asks on the process-start lock.
+    /// </summary>
+    /// <remarks>
+    /// Only git's guess is kept, never the person's choice: a line set in the choices is still read at each call. A look
+    /// inside a look is the outer one's. A look ends with the flow that opened it, so a later look asks git again.
+    /// </remarks>
+    internal IDisposable OneLook()
+    {
+        if (_look.Value is not null) return Nothing.Instance;
+        _look.Value = new Dictionary<string, Task<string?>>(StringComparer.OrdinalIgnoreCase);
+        return new Ending(_look);
+    }
+
+    private Task<string?> GuessAsync(string root, CancellationToken ct)
+    {
+        if (_look.Value is not { } look) return CheckoutLine(root, ct);
+        var key = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root));
+        lock (look)
+        {
+            if (look.TryGetValue(key, out var asked) && !asked.IsFaulted && !asked.IsCanceled) return asked;
+            return look[key] = CheckoutLine(root, ct);
+        }
+    }
+
+    private sealed class Ending(AsyncLocal<Dictionary<string, Task<string?>>?> look) : IDisposable
+    {
+        public void Dispose() => look.Value = null;
+    }
+
+    private sealed class Nothing : IDisposable
+    {
+        public static readonly Nothing Instance = new();
+
+        public void Dispose()
+        {
+        }
+    }
 
     /// <summary>A tree's workspace and repository, read from the layout Daoris itself chose (`trees/&lt;workspace&gt;/&lt;repository&gt;/&lt;name&gt;`).</summary>
     internal (string Workspace, string Repository) OwnerOf(string full)

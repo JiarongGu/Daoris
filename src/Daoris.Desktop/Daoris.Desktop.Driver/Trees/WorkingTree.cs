@@ -980,7 +980,8 @@ public static class WorkingTree
         Process? process = null;
         try
         {
-            process = Process.Start(info) ?? throw new DriverException("git did not start");
+            // Through the process-wide gate, off the caller's thread (UIFREEZE1).
+            process = await ProcessStarts.Shared.StartAsync(info, ct).ConfigureAwait(false) ?? throw new DriverException("git did not start");
             var stderr = process.StandardError.ReadToEndAsync(ct);
             var buffer = new byte[Math.Max(0, limit)];
             var count = 0;
@@ -1040,7 +1041,8 @@ public static class WorkingTree
         Process? process = null;
         try
         {
-            process = Process.Start(info) ?? throw new DriverException("git did not start");
+            // Through the process-wide gate, off the caller's thread (UIFREEZE1).
+            process = await ProcessStarts.Shared.StartAsync(info, ct).ConfigureAwait(false) ?? throw new DriverException("git did not start");
             var stderr = process.StandardError.ReadToEndAsync(ct);
             var buffer = new char[16 * 1024];
             var stopped = false;

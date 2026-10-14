@@ -7,6 +7,8 @@ with the version and date at release.
 
 - The window is on the desktop kit's 0.21.1. Opening Daoris while it is still closing now starts it once the closing one
   has gone, where that launch used to be lost.
+- The window no longer freezes for minutes while the Sessions page's clean-up list is read: its git work goes on away from
+  the window's thread, at most four programs start at once, and each repository's line is asked of git once per list.
 - An ask's page has a *Channel* (频道), where its sessions and you talk: their messages and Daoris's lines about its quests
   (published, taken, done, declined, waiting on your yes) in your language, an open question marked, and a box to write to
   everyone on the ask or one of its repositories, answering a message if you choose. A session on an ask has the same channel
