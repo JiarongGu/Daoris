@@ -26,9 +26,18 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
 
     /// <summary>
     /// The question its taker waits on (D79) — another quest, asked of the repository that knows — or
-    /// null. A taken quest carrying one is its taker's to resume once the question closes.
+    /// null. A taken quest carrying one is its taker's to resume once the question closes. Only a taken quest waits: a
+    /// service keeps the field after the quest closes (AWAITSTALE1), and the owner's words of 2026-10-15 to a done quest's
+    /// session were planned and then sent down the open door, which refused them, because the start read it. So a quest
+    /// that is not taken names none here, to every reader.
     /// </summary>
-    public string? Awaits { get; init; }
+    public string? Awaits
+    {
+        get => Status == "Taken" ? awaits : null;
+        init => awaits = value;
+    }
+
+    private readonly string? awaits;
 
     /// <summary>
     /// The session whose connector published it (SESS1), as the machine that ran it spells it, or null: a person's publish,
@@ -904,9 +913,9 @@ public static class Planner
         // Whether the person's words wait on this quest's last session here (MSG1b, D137 §2.2), parked or ended, and are not
         // all words a reopen already found it could not take (MSG1a's open point). A taken quest waiting on a question waits
         // with them: D79's resume is its next start, and the words stay on the record they were said to. A closed quest waits
-        // on nothing, whatever question its record still names from before it closed (the owner's case of 2026-10-15).
+        // on nothing, whatever question the service still keeps for it (QuestView.Awaits reads none).
         bool WrittenTo(QuestView quest) =>
-            (quest.Awaits is null or "" || quest.Status != "Taken")
+            quest.Awaits is null or ""
             && snapshot.LastRun.TryGetValue(quest.Id, out var written)
             && written.WordsWaiting
             && !GoOnMarks.Judged(written, snapshot.Unable.GetValueOrDefault(written.Session));

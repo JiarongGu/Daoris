@@ -70,6 +70,20 @@ public sealed class SessionMessagesPlanTests
         Assert.Equal(record, only.Resumes);
     }
 
+    /// <summary>
+    /// 🔴 The same case at the start: planned to go on, the words were then sent down the open door, because the start read the
+    /// closed quest's old question as a wait and skipped the record's own continuation, and the service refused a session on a
+    /// done quest. The quest itself names no question unless it is taken, so no reader can take a closed quest for one waiting.
+    /// </summary>
+    [Fact]
+    public void A_quest_names_the_question_it_waits_on_only_while_taken()
+    {
+        Assert.Equal("q0", (Quest("q1", "Taken") with { Awaits = "q0" }).Awaits);
+        Assert.Null((Quest("q1", "Done") with { Awaits = "q0" }).Awaits);
+        Assert.Null((Quest("q1", "Declined") with { Awaits = "q0" }).Awaits);
+        Assert.Null((Quest("q1", "Open") with { Awaits = "q0" }).Awaits);
+    }
+
     /// <summary>A failed record the person writes to goes on in itself, where without words it would be carried on in a new one.</summary>
     [Fact]
     public void Words_to_a_failed_session_go_on_in_it_rather_than_a_carry_on()
