@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { markSignedIn, probeLockPath, probeLockStale, signedInPath, takeProbeLock } from '../src/accounts/probelock.ts';
-import { probe, profileHome, readHarnessSettings, TOOLCHAINS } from '../src/toolchain.ts';
-import type { Toolchain } from '../src/toolchain.ts';
+import { probe, profileHome, readHarnessSettings, TOOLCHAINS } from '../src/agents/toolchain.ts';
+import type { Toolchain } from '../src/agents/toolchain.ts';
 import { driverRows, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 

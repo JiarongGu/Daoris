@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { commandHarness, profileHome, readHarnessSettings, writeHarnessSettings } from '../src/toolchain.ts';
+import { commandHarness, profileHome, readHarnessSettings, writeHarnessSettings } from '../src/agents/toolchain.ts';
 import {
   CURVE_MOST_POINTS, CURVE_WINDOWS, SWITCHES, USE_DEFAULTS, USE_MODES, curveProblem, resolveScope, scopeProblem, withRotation, withUse,
 } from '../src/accounts/rotation.ts';

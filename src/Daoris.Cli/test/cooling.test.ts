@@ -6,8 +6,8 @@ import { COOLING_FILE, coolingLine, coolingOf, coolingWhen, coolingWhy, endCooli
 import type { CoolingEntry } from '../src/accounts/cooling.ts';
 import {
   TOOLCHAINS, accountLines, addKeyAccount, commandHarness, profileHome, removeProfile, signInNew, signInTo,
-} from '../src/toolchain.ts';
-import type { HarnessReport, HarnessSettings } from '../src/toolchain.ts';
+} from '../src/agents/toolchain.ts';
+import type { HarnessReport, HarnessSettings } from '../src/agents/toolchain.ts';
 import { driverRows as csharpRows, driverTestFile } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 

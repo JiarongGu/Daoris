@@ -23,7 +23,7 @@
 import { chmodSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { operands } from './platform/args.ts';
-import type { Fetcher } from './channels.ts';
+import type { Fetcher } from './agents/channels.ts';
 import { DaorisError, RefusalError, type ExitCode } from './platform/errors.ts';
 import { renameHeld, writeBytesAtomic, writeJsonAtomic } from './platform/fsx.ts';
 import { HOME_SENTENCE, daorisHome } from './platform/home.ts';

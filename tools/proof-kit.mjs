@@ -17,7 +17,7 @@ import { capture, makeChecker, openTranscript } from './rehearsal-kit.mjs';
 // the CLI and the driver find one, so a proof cannot disagree with them about what would run.
 import {
   harnessHome, harnessesPath, managedBinary, readHarnessSettings, resolveVersion,
-} from '../src/Daoris.Cli/src/toolchain.ts';
+} from '../src/Daoris.Cli/src/agents/toolchain.ts';
 
 export const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 export const cliBin = join(repoRoot, 'src', 'Daoris.Cli', 'bin', 'daoris.mjs');

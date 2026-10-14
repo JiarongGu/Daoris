@@ -27,7 +27,7 @@ import { createHash } from 'node:crypto';
 import { once } from 'node:events';
 import { finished } from 'node:stream/promises';
 import { DaorisError, RefusalError } from './platform/errors.ts';
-import type { Fetcher } from './channels.ts';
+import type { Fetcher } from './agents/channels.ts';
 
 /** Where the service is, and the key it wants — supplied by the environment, never committed. */
 export function endpoint(env: NodeJS.ProcessEnv = process.env): { url: string; key: string | null } {

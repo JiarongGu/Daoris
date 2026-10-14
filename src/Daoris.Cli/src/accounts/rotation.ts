@@ -63,7 +63,7 @@
 
 import { atName, byName, findName, foldName } from '../platform/casefold.ts';
 import { shellWord } from '../platform/shellword.ts';
-import type { HarnessSettings } from '../toolchain.ts';
+import type { HarnessSettings } from '../agents/toolchain.ts';
 
 /** Agent → the accounts rotation may use, in order. */
 export type Orders = Record<string, string[]>;

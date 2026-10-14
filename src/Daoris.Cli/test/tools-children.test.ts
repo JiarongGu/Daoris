@@ -6,8 +6,8 @@ import {
   PATH_VARIABLE, TOOLS, TOOLS_FILE, TOOLS_FOLDER, TOOL_PACKAGE, TOOL_RECORD, childEnvironment, childPath,
   commandOnTheSystem, commandThroughTools, handTools, installBin, readTools, resolveCommand,
 } from '../src/tools.ts';
-import { probe, readHarnessSettings } from '../src/toolchain.ts';
-import type { Toolchain } from '../src/toolchain.ts';
+import { probe, readHarnessSettings } from '../src/agents/toolchain.ts';
+import type { Toolchain } from '../src/agents/toolchain.ts';
 import { driverRows as csharpRows, driverTestFile } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 

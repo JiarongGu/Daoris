@@ -9,7 +9,7 @@ import { CLI_BIN, CLI_ENTRY, CLI_PACKAGE, cliLaunchers } from '../../../tools/de
 import { coolingLine } from '../src/accounts/cooling.ts';
 import { joinRefusal } from '../src/accounts/rotation.ts';
 import { shellWord, shellWords } from '../src/platform/shellword.ts';
-import { TOOLCHAINS, accountLines, commandHarness, profileHome, readHarnessSettings } from '../src/toolchain.ts';
+import { TOOLCHAINS, accountLines, commandHarness, profileHome, readHarnessSettings } from '../src/agents/toolchain.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**

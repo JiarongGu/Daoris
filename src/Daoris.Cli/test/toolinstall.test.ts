@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import type { Fetcher } from '../src/channels.ts';
+import type { Fetcher } from '../src/agents/channels.ts';
 import { DaorisError, RefusalError } from '../src/platform/errors.ts';
 import {
   BUILT_IN, currentPlatform, locationCopy, mergeResources, parseResources, type ArchiveKind, type MergedResources, type OfferedVersion,

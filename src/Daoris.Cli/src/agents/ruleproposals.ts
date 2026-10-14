@@ -18,16 +18,16 @@
 
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { flagValue } from './platform/args.ts';
-import { DaorisError } from './platform/errors.ts';
-import type { ExitCode } from './platform/errors.ts';
-import { readJsonObject, writeJsonAtomic } from './platform/fsx.ts';
-import { requireHomeFile } from './platform/home.ts';
+import { flagValue } from '../platform/args.ts';
+import { DaorisError } from '../platform/errors.ts';
+import type { ExitCode } from '../platform/errors.ts';
+import { readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
+import { requireHomeFile } from '../platform/home.ts';
 import {
   PERMISSIONS_FILE, addRule, readPermissions, removeRule, switchDefault, writePermissions,
 } from './permissions.ts';
 import type { PermissionFile, RuleList, RuleScope } from './permissions.ts';
-import type { CommandArgs } from './platform/types.ts';
+import type { CommandArgs } from '../platform/types.ts';
 
 export const PROPOSALS_FOLDER = 'proposals';
 

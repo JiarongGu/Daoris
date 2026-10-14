@@ -25,7 +25,7 @@ import { findName, sameName } from './platform/casefold.ts';
 import { isoMoment } from './accounts/cooling.ts';
 import { isPluginId, readPlugins, type PluginCatalog } from './plugins.ts';
 import { normalizeWorkspace } from './remotemap.ts';
-import { TOOLCHAINS } from './toolchain.ts';
+import { TOOLCHAINS } from './agents/toolchain.ts';
 import { failuresOf, type RecordsReader } from './strikes.ts';
 import {
   applyReviewEdit, holdsProcedure, inScope, reviewGate, reviewListed, reviewSays, reviewsOf, type CheckoutsReader,

@@ -1,5 +1,5 @@
 import type { CliCommand } from '../platform/types.ts';
-import { commandHarness } from '../toolchain.ts';
+import { commandHarness } from '../agents/toolchain.ts';
 import { releaseFetcher } from '../service.ts';
 
 export const command: CliCommand = {

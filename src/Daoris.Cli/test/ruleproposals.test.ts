@@ -2,9 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { PERMISSIONS_FILE, readPermissions } from '../src/permissions.ts';
-import { PROPOSALS_FOLDER, answerProposal, describeChange, loadProposals } from '../src/ruleproposals.ts';
-import { commandHarness } from '../src/toolchain.ts';
+import { PERMISSIONS_FILE, readPermissions } from '../src/agents/permissions.ts';
+import { PROPOSALS_FOLDER, answerProposal, describeChange, loadProposals } from '../src/agents/ruleproposals.ts';
+import { commandHarness } from '../src/agents/toolchain.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 import type { Fixture } from './_fixture.ts';
 

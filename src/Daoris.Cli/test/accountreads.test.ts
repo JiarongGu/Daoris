@@ -7,8 +7,8 @@ import { READS_FILE, forgetRead, keepRead, readOf, readsOf } from '../src/accoun
 import type { Login } from '../src/accounts/accountreads.ts';
 import {
   TOOLCHAINS, commandHarness, managedHome, profileHome, removeProfile, signInNew, signInTo,
-} from '../src/toolchain.ts';
-import type { Toolchain } from '../src/toolchain.ts';
+} from '../src/agents/toolchain.ts';
+import type { Toolchain } from '../src/agents/toolchain.ts';
 import { driverFile, driverRows, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 

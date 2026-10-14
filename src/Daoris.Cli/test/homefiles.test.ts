@@ -2,12 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { PERMISSIONS_FILE, commandRules, readPermissions } from '../src/permissions.ts';
+import { PERMISSIONS_FILE, commandRules, readPermissions } from '../src/agents/permissions.ts';
 import { commandRemote } from '../src/remotes.ts';
 import { readRemotes } from '../src/remotemap.ts';
 import {
   addKeyAccount, keyOf, profileHome, readHarnessSettings, writeHarnessSettings,
-} from '../src/toolchain.ts';
+} from '../src/agents/toolchain.ts';
 import { STATE_FILE, disablePlugin, readPluginState } from '../src/plugins.ts';
 import { readDriverChoices, writeDriverChoices } from '../src/driverconfig.ts';
 import { TOOLS_FILE, readTools, useSystem } from '../src/tools.ts';

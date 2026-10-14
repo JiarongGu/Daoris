@@ -17,14 +17,14 @@
 //
 // It is a MANAGEMENT verb and it opens no socket and spawns nothing: it reads and writes one file.
 
-import { flagValue, operands as positionals } from './platform/args.ts';
-import { findName, sameName } from './platform/casefold.ts';
-import { DaorisError } from './platform/errors.ts';
-import type { ExitCode } from './platform/errors.ts';
-import { readJsonObject, writeJsonAtomic } from './platform/fsx.ts';
-import { requireHomeFile } from './platform/home.ts';
-import { normalizeWorkspace } from './remotemap.ts';
-import type { CommandArgs } from './platform/types.ts';
+import { flagValue, operands as positionals } from '../platform/args.ts';
+import { findName, sameName } from '../platform/casefold.ts';
+import { DaorisError } from '../platform/errors.ts';
+import type { ExitCode } from '../platform/errors.ts';
+import { readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
+import { requireHomeFile } from '../platform/home.ts';
+import { normalizeWorkspace } from '../remotemap.ts';
+import type { CommandArgs } from '../platform/types.ts';
 
 export const PERMISSIONS_FILE = 'permissions.json';
 

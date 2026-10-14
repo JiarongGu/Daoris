@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dearmor, fingerprintOf, readPublicKeys, readSignature, verifyDetached } from '../src/openpgp.ts';
+import { dearmor, fingerprintOf, readPublicKeys, readSignature, verifyDetached } from '../src/agents/openpgp.ts';
 import { signDetached, strangerKey } from './_openpgp.ts';
 
 /**
