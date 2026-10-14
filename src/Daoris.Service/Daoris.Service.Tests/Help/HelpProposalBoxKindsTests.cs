@@ -73,7 +73,8 @@ public sealed class HelpProposalBoxKindsTests
     [Fact]
     public void Every_kind_has_its_connectors_tool()
     {
-        var tools = typeof(KnowledgeTools).GetMethods()
+        // Every class the host registers (PART10a), so a kind's tool is found whichever class holds it.
+        var tools = KnowledgeServer.ToolTypes.SelectMany(type => type.GetMethods())
             .Select(method => method.GetCustomAttribute<McpServerToolAttribute>()?.Name)
             .OfType<string>()
             .ToList();

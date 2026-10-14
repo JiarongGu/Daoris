@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Daoris.Knowledge;
 using Daoris.Knowledge.Mcp;
-using Microsoft.Data.Sqlite;
 using ModelContextProtocol.Server;
 
 namespace Daoris.Service.Tests;
@@ -40,9 +39,8 @@ public sealed class McpToolsTests : McpToolsFixture
             store,
             new HybridKnowledgeSearch(new LexicalKnowledgeSearch(store), new SemanticKnowledgeSearch(store, embedder, vectors)),
             new Entries(longOne, shortOne), DisclosurePolicy.LocalOnly, embedder, vectors);
-        var tools = new KnowledgeTools(
-            service, _quests, new QuestExchange(service, _quests, files: _files),
-            new AmbientWorkspace(Path.Combine(_root, "family", "Asker")));
+        var tools = new KnowledgeSearchTools(
+            service, new WorkspaceScope(service, new AmbientWorkspace(Path.Combine(_root, "family", "Asker"))));
 
         var said = await tools.RefreshAsync();
 
@@ -60,7 +58,7 @@ public sealed class McpToolsTests : McpToolsFixture
         var trace = Path.Combine(_root, "trace.log");
         await File.WriteAllTextAsync(trace, "chunk 7: field not found");
 
-        var answer = await _tools.PublishQuestAsync(
+        var answer = await _questTools.PublishQuestAsync(
             "Asker", "Owner", "Read the field names from config", "They are hard-coded.",
             links: ["https://tickets.example/T-1"],
             attachments: [trace],
@@ -80,12 +78,12 @@ public sealed class McpToolsTests : McpToolsFixture
     [Fact]
     public async Task Publishing_carries_a_short_title_and_the_listing_says_it()
     {
-        Assert.Contains("Published quest", await _tools.PublishQuestAsync(
+        Assert.Contains("Published quest", await _questTools.PublishQuestAsync(
             "Asker", "Owner", "Cap the frame's work so the editor stays responsive", "It stalls.", shortTitle: "Frame cap"));
         Assert.Equal("Frame cap", (await _quests.ListAsync(receiver: "Owner")).Single().Short);
-        Assert.Contains("short title: Frame cap", await _tools.ListQuestsAsync("Owner"));
+        Assert.Contains("short title: Frame cap", await _questTools.ListQuestsAsync("Owner"));
 
-        var refused = await _tools.PublishQuestAsync(
+        var refused = await _questTools.PublishQuestAsync(
             "Asker", "Owner", "Another quest", "b", shortTitle: "A short title that runs well past the forty characters a list gives it");
         Assert.Contains("40 characters", refused);
         Assert.Single(await _quests.ListAsync(receiver: "Owner"));
@@ -103,13 +101,13 @@ public sealed class McpToolsTests : McpToolsFixture
             owner with { Lanes = [new("core", "Core", "The runtime."), new("records", "Records", "The backlog.", Steward: true)] },
             DateTimeOffset.UtcNow);
 
-        var registry = await _tools.RegistryAsync();
+        var registry = await _search.RegistryAsync();
         Assert.Contains("`Owner:core`", registry);
         Assert.Contains("The runtime.", registry);
         Assert.Contains("the steward's", registry);
 
-        Assert.Contains("Published quest", await _tools.PublishQuestAsync("Asker", "Owner:core", "Cap the frame", "It is unbounded."));
-        Assert.Contains("lanes: `core`", await _tools.ListQuestsAsync("Owner"));
+        Assert.Contains("Published quest", await _questTools.PublishQuestAsync("Asker", "Owner:core", "Cap the frame", "It is unbounded."));
+        Assert.Contains("lanes: `core`", await _questTools.ListQuestsAsync("Owner"));
     }
 
     /// <summary>
@@ -128,9 +126,8 @@ public sealed class McpToolsTests : McpToolsFixture
         var room = Path.Combine(_root, "home", "intake", "default");
         var session = (await new SessionLedger(_quests, sessions, _service, asks)
             .OpenIntakeAsync(ask.Id, "stub", room, DateTimeOffset.UtcNow)).Session!;
-        var tools = new KnowledgeTools(
-            _service, _quests, exchange, new AmbientWorkspace(room, ask.Workspace), desk,
-            new IntakeScope(ask.Id, session.Id));
+        var circle = Circle(room, ask.Workspace);
+        var tools = new QuestTools(_quests, exchange, circle, desk, new IntakeScope(ask.Id, session.Id));
 
         var answer = await tools.PublishQuestAsync(
             "intake", "Owner", "Read the field names from config", "The ticket names both fields.",
@@ -144,7 +141,7 @@ public sealed class McpToolsTests : McpToolsFixture
         Assert.Equal(AskDesk.ByIntake, answered.Tier);
         Assert.Equal([quest.Id], answered.Quests);
         // Its own circle, though nothing registered sits where it runs.
-        Assert.Contains("in workspace `default`", await tools.RegistryAsync());
+        Assert.Contains("in workspace `default`", await new KnowledgeSearchTools(_service, circle).RegistryAsync());
     }
 
     /// <summary>
@@ -163,8 +160,7 @@ public sealed class McpToolsTests : McpToolsFixture
         var room = Path.Combine(_root, "home", "intake", "default");
         var session = (await new SessionLedger(_quests, sessions, _service, asks)
             .OpenIntakeAsync(ask.Id, "stub", room, DateTimeOffset.UtcNow)).Session!;
-        var tools = new KnowledgeTools(
-            _service, _quests, exchange, new AmbientWorkspace(room, ask.Workspace), desk, new IntakeScope(ask.Id, session.Id));
+        var tools = new QuestTools(_quests, exchange, Circle(room, ask.Workspace), desk, new IntakeScope(ask.Id, session.Id));
 
         var refused = await tools.PublishQuestAsync(
             "intake", "Owner", "Build the report", "Reached through the bridge.",
@@ -191,7 +187,7 @@ public sealed class McpToolsTests : McpToolsFixture
     [Fact]
     public async Task A_publish_with_no_short_title_is_told_what_a_list_will_call_it()
     {
-        var answer = await _tools.PublishQuestAsync(
+        var answer = await _questTools.PublishQuestAsync(
             "Asker", "Owner", "Create release/delta-northwind-and-harbor from master with three branches merged (no push)", "b");
 
         Assert.Contains("Published quest", answer);
@@ -199,7 +195,7 @@ public sealed class McpToolsTests : McpToolsFixture
             "It has no short title, so a list will call it \"Create release/delta-northwind-and…\", a name read from its own words.",
             answer);
 
-        var named = await _tools.PublishQuestAsync("Asker", "Owner", "Cap the frame's work", "b", shortTitle: "Frame cap");
+        var named = await _questTools.PublishQuestAsync("Asker", "Owner", "Cap the frame's work", "b", shortTitle: "Frame cap");
         Assert.Contains("Published quest", named);
         Assert.DoesNotContain("a list will call it", named);
     }
@@ -220,8 +216,7 @@ public sealed class McpToolsTests : McpToolsFixture
         var room = Path.Combine(_root, "home", "intake", "default");
         var session = (await new SessionLedger(_quests, sessions, _service, asks)
             .OpenIntakeAsync(ask.Id, "stub", room, DateTimeOffset.UtcNow)).Session!;
-        var tools = new KnowledgeTools(
-            _service, _quests, exchange, new AmbientWorkspace(room, ask.Workspace), desk, new IntakeScope(ask.Id, session.Id));
+        var tools = new QuestTools(_quests, exchange, Circle(room, ask.Workspace), desk, new IntakeScope(ask.Id, session.Id));
         const string Unchecked = "It carries no requirements, so nothing of the person's words will be checked when it is done.";
 
         var bare = await tools.PublishQuestAsync("intake", "Owner", "Build the report", "Reached through the bridge.", shortTitle: "Report");
@@ -235,7 +230,7 @@ public sealed class McpToolsTests : McpToolsFixture
         Assert.Contains("Published quest", required);
         Assert.DoesNotContain(Unchecked, required);
 
-        var repository = await _tools.PublishQuestAsync("Asker", "Owner", "Read the field names from config", "b", shortTitle: "Field names");
+        var repository = await _questTools.PublishQuestAsync("Asker", "Owner", "Read the field names from config", "b", shortTitle: "Field names");
         Assert.Contains("Published quest", repository);
         Assert.DoesNotContain("nothing of the person's words", repository);
     }
@@ -247,7 +242,7 @@ public sealed class McpToolsTests : McpToolsFixture
     [Fact]
     public async Task A_requirement_missing_its_check_is_refused_naming_which()
     {
-        var answer = await _tools.PublishQuestAsync(
+        var answer = await _questTools.PublishQuestAsync(
             "Asker", "Owner", "Read the field names from config", "b", requirements: [new Requirement("the field names", null)]);
 
         Assert.Contains("Requirement 1", answer);
@@ -258,7 +253,7 @@ public sealed class McpToolsTests : McpToolsFixture
     /// A quest an intake published with the person's requirements, taken by the receiving repository's connector
     /// (DRIFT1d): the receiver's tools, over the same exchange, which holds the asks a departure is checked against.
     /// </summary>
-    private async Task<(KnowledgeTools Owner, Quest Quest)> RequiredQuestAsync()
+    private async Task<(QuestTools Owner, Quest Quest)> RequiredQuestAsync()
     {
         var asks = await AskStore.OpenAsync(_connection);
         var exchange = new QuestExchange(_service, _quests, files: _files, asks: asks);
@@ -272,7 +267,7 @@ public sealed class McpToolsTests : McpToolsFixture
                 new QuestRequirement("the common-report", "The report is a common-report configuration."),
             ],
         });
-        var owner = new KnowledgeTools(_service, _quests, exchange, new AmbientWorkspace(Path.Combine(_root, "family", "Owner")));
+        var owner = new QuestTools(_quests, exchange, In("Owner"));
         Assert.Contains("is now Taken", await owner.RespondToQuestAsync(published.Quest!.Id, "take"));
         return (owner, published.Quest);
     }
@@ -344,8 +339,7 @@ public sealed class McpToolsTests : McpToolsFixture
         var room = Path.Combine(_root, "home", "intake", "default");
         var session = (await new SessionLedger(_quests, sessions, _service, asks)
             .OpenIntakeAsync(ask.Id, "stub", room, DateTimeOffset.UtcNow)).Session!;
-        var tools = new KnowledgeTools(
-            _service, _quests, exchange, new AmbientWorkspace(room, ask.Workspace), desk, new IntakeScope(ask.Id, session.Id));
+        var tools = new QuestTools(_quests, exchange, Circle(room, ask.Workspace), desk, new IntakeScope(ask.Id, session.Id));
 
         var gated = await tools.PublishQuestAsync(
             "intake", "Owner", "Write the bridge report", "For the review.",
@@ -379,7 +373,7 @@ public sealed class McpToolsTests : McpToolsFixture
         {
             Requirements = [new QuestRequirement("the bridge report", "It is in the file.") { Evidence = [new QuestEvidence("docs/report-bridge.md")] }],
         });
-        var owner = new KnowledgeTools(_service, _quests, exchange, new AmbientWorkspace(Path.Combine(_root, "family", "Owner")));
+        var owner = new QuestTools(_quests, exchange, In("Owner"));
         await owner.RespondToQuestAsync(published.Quest!.Id, "take");
 
         var closed = await owner.RespondToQuestAsync(
@@ -407,9 +401,8 @@ public sealed class McpToolsTests : McpToolsFixture
     {
         var asks = await AskStore.OpenAsync(_connection);
         var exchange = new QuestExchange(_service, _quests, files: _files);
-        var tools = new KnowledgeTools(
-            _service, _quests, exchange, new AmbientWorkspace(Path.Combine(_root, "family", "Asker")),
-            new AskDesk(_service, asks, exchange, _files), new IntakeScope(null, "s1a2b3c4"));
+        var tools = new QuestTools(
+            _quests, exchange, In("Asker"), new AskDesk(_service, asks, exchange, _files), new IntakeScope(null, "s1a2b3c4"));
 
         var answer = await tools.PublishQuestAsync("Asker", "Owner", "Read the field names from config", "b");
 
@@ -429,19 +422,16 @@ public sealed class McpToolsTests : McpToolsFixture
         var sessions = await SessionStore.OpenAsync(_connection);
         var exchange = new QuestExchange(_service, _quests, files: _files);
         var desk = new AskDesk(_service, asks, exchange, _files);
-        var driven = new KnowledgeTools(
-            _service, _quests, exchange, new AmbientWorkspace(Path.Combine(_root, "family", "Asker")),
-            desk, new IntakeScope(null, "s1a2b3c4"));
+        var driven = new QuestTools(_quests, exchange, In("Asker"), desk, new IntakeScope(null, "s1a2b3c4"));
 
         await driven.PublishQuestAsync("Asker", "Owner", "Read the field names from config", "b");
-        await _tools.PublishQuestAsync("Asker", "Checker", "Verify the field names", "b");
+        await _questTools.PublishQuestAsync("Asker", "Checker", "Verify the field names", "b");
 
         var ask = (await desk.AskAsync(new AskRequest("default", "the chunk budget is hard-coded"), DateTimeOffset.UtcNow)).Ask!;
         var room = Path.Combine(_root, "home", "intake", "default");
         var intake = (await new SessionLedger(_quests, sessions, _service, asks)
             .OpenIntakeAsync(ask.Id, "stub", room, DateTimeOffset.UtcNow)).Session!;
-        await new KnowledgeTools(
-                _service, _quests, exchange, new AmbientWorkspace(room, ask.Workspace), desk, new IntakeScope(ask.Id, intake.Id))
+        await new QuestTools(_quests, exchange, Circle(room, ask.Workspace), desk, new IntakeScope(ask.Id, intake.Id))
             .PublishQuestAsync("intake", "Owner", "Cap the chunk budget", "The ask names it.");
 
         var owed = await _quests.ListAsync(includeClosed: true);
@@ -462,12 +452,11 @@ public sealed class McpToolsTests : McpToolsFixture
         var asks = await AskStore.OpenAsync(_connection);
         var ledger = new SessionLedger(_quests, sessions, _service, asks);
         var exchange = new QuestExchange(_service, _quests, files: _files);
-        await _tools.PublishQuestAsync("Asker", "Owner", "Verify it", "Open it and look.");
+        await _questTools.PublishQuestAsync("Asker", "Owner", "Verify it", "Open it and look.");
         var quest = (await _quests.ListAsync(receiver: "Owner")).Single();
         var session = (await ledger.OpenAsync(quest.Id, "stub", DateTimeOffset.UtcNow)).Session!;
-        var tools = new KnowledgeTools(
-            _service, _quests, exchange, new AmbientWorkspace(Path.Combine(_root, "family", "Owner")),
-            new AskDesk(_service, asks, exchange, _files), new IntakeScope(null, session.Id), ledger: ledger);
+        var tools = new QuestTools(
+            _quests, exchange, In("Owner"), new AskDesk(_service, asks, exchange, _files), new IntakeScope(null, session.Id), ledger);
 
         await tools.RespondToQuestAsync(quest.Id, "take");
 
@@ -485,12 +474,11 @@ public sealed class McpToolsTests : McpToolsFixture
         var asks = await AskStore.OpenAsync(_connection);
         var ledger = new SessionLedger(_quests, sessions, _service, asks);
         var exchange = new QuestExchange(_service, _quests, files: _files);
-        await _tools.PublishQuestAsync("Asker", "Owner", "Verify it", "Open it and look.");
+        await _questTools.PublishQuestAsync("Asker", "Owner", "Verify it", "Open it and look.");
         var quest = (await _quests.ListAsync(receiver: "Owner")).Single();
         var chat = await sessions.CreateAsync(null, "Owner", "stub", DateTimeOffset.UtcNow, kind: SessionKind.Chat);
-        var tools = new KnowledgeTools(
-            _service, _quests, exchange, new AmbientWorkspace(Path.Combine(_root, "family", "Owner")),
-            new AskDesk(_service, asks, exchange, _files), new IntakeScope(null, chat.Id), ledger: ledger);
+        var tools = new QuestTools(
+            _quests, exchange, In("Owner"), new AskDesk(_service, asks, exchange, _files), new IntakeScope(null, chat.Id), ledger);
 
         await tools.RespondToQuestAsync(quest.Id, "take");
 
@@ -512,9 +500,7 @@ public sealed class McpToolsTests : McpToolsFixture
         var desk = new AskDesk(_service, asks, exchange, _files);
         var asked = await desk.AskAsync(new AskRequest("default", "The dashboard figure reads zero.") { To = "Owner" }, DateTimeOffset.UtcNow);
         var quest = asked.Quest!;
-        KnowledgeTools Connector(string? session) => new(
-            _service, _quests, exchange, new AmbientWorkspace(Path.Combine(_root, "family", "Owner")),
-            desk, new IntakeScope(null, session), ledger: ledger);
+        KnowledgeTools Connector(string? session) => new(new IntakeScope(null, session), ledger);
         var first = (await ledger.OpenAsync(quest.Id, "stub", DateTimeOffset.UtcNow, tree: Path.Combine(_root, "trees", "a"))).Session!;
         var second = (await ledger.OpenAsync(quest.Id, "stub", DateTimeOffset.UtcNow, tree: Path.Combine(_root, "trees", "b"))).Session!;
 
@@ -548,8 +534,7 @@ public sealed class McpToolsTests : McpToolsFixture
         var room = Path.Combine(_root, "home", "intake", "default");
         var intake = (await new SessionLedger(_quests, sessions, _service, asks)
             .OpenIntakeAsync(ask.Id, "stub", room, DateTimeOffset.UtcNow)).Session!;
-        var tools = new KnowledgeTools(
-            _service, _quests, exchange, new AmbientWorkspace(room, ask.Workspace), desk, new IntakeScope(ask.Id, intake.Id));
+        var tools = new QuestTools(_quests, exchange, Circle(room, ask.Workspace), desk, new IntakeScope(ask.Id, intake.Id));
 
         var unsaid = await tools.PublishQuestAsync(
             "intake", "Owner", "Add the setting", "b", review: new ReviewChoice("local", "please show me"));
@@ -572,7 +557,7 @@ public sealed class McpToolsTests : McpToolsFixture
         Assert.Contains("Proposed review `off`", proposed);
         Assert.Equal("It changes only a document.", Assert.Single((await desk.FindAsync(ask.Id))!.ReviewProposals).Reason);
 
-        var nobody = new KnowledgeTools(_service, _quests, exchange, new AmbientWorkspace(Path.Combine(_root, "family", "Asker")));
+        var nobody = new QuestTools(_quests, exchange, In("Asker"));
         var refused = await nobody.PublishQuestAsync(
             "Asker", "Owner", "Another", "b", reviewProposal: new ReviewProposal("off", "Why."));
         Assert.Contains("speaks for no intake", refused);
@@ -608,7 +593,7 @@ public sealed class McpToolsTests : McpToolsFixture
         var asks = await AskStore.OpenAsync(_connection);
         var ledger = new SessionLedger(_quests, sessions, _service, asks);
         var exchange = new QuestExchange(_service, _quests, files: _files, sessions: sessions, asks: asks);
-        await _tools.PublishQuestAsync(
+        await _questTools.PublishQuestAsync(
             "Asker", "Owner", "Add the setting", "b",
             then: [new ChainStep("Owner", "Show {parent} in local for review", "Set it up.", SetUpIn: "local")]);
         var build = (await _quests.ListAsync(receiver: "Owner")).Single();
@@ -618,19 +603,20 @@ public sealed class McpToolsTests : McpToolsFixture
         var tree = Path.Combine(_root, "trees", "setup");
         Directory.CreateDirectory(Path.Combine(tree, "dist"));
         var session = (await ledger.OpenAsync(setUp.Id, "stub", DateTimeOffset.UtcNow, tree: tree)).Session!;
-        KnowledgeTools Connector(string? id) => new(
-            _service, _quests, exchange, new AmbientWorkspace(Path.Combine(_root, "family", "Owner")),
-            new AskDesk(_service, asks, exchange, _files), new IntakeScope(null, id), ledger: ledger);
+        // The set-up step's session holds both classes on its one connector: its quest's and the review's.
+        KnowledgeTools Connector(string? id) => new(new IntakeScope(null, id), ledger);
+        var quests = new QuestTools(
+            _quests, exchange, In("Owner"), new AskDesk(_service, asks, exchange, _files), new IntakeScope(null, session.Id), ledger);
         var tools = Connector(session.Id);
-        await tools.RespondToQuestAsync(setUp.Id, "take");
+        await quests.RespondToQuestAsync(setUp.Id, "take");
 
-        Assert.Contains("review_ready", await tools.RespondToQuestAsync(setUp.Id, "done", "Shown."));
+        Assert.Contains("review_ready", await quests.RespondToQuestAsync(setUp.Id, "done", "Shown."));
         Assert.Contains("Kept: `dist`", await tools.ServeForReviewAsync("dist", "http://localhost:4200"));
         var said = await tools.ReadyForReviewAsync("http://localhost:4200/reports/7", "The report with the setting on.", "Open the report.");
         Assert.Contains("Said set-up 1", said);
         Assert.Contains("Close your quest done", said);
-        Assert.Contains("waits for the person's review in `local`", await tools.RespondToQuestAsync(setUp.Id, "done", "Shown."));
-        Assert.Contains("held for the person's review in `local`", await tools.ListQuestsAsync("Owner", includeClosed: true));
+        Assert.Contains("waits for the person's review in `local`", await quests.RespondToQuestAsync(setUp.Id, "done", "Shown."));
+        Assert.Contains("held for the person's review in `local`", await quests.ListQuestsAsync("Owner", includeClosed: true));
 
         var other = (await sessions.CreateAsync(build.Id, "Owner", "stub", DateTimeOffset.UtcNow, tree: Path.Combine(_root, "trees", "b")));
         Assert.Contains("no set-up step", await Connector(other.Id).ReadyForReviewAsync("http://localhost:4200", "x", "y"));
@@ -641,7 +627,7 @@ public sealed class McpToolsTests : McpToolsFixture
     [Fact]
     public async Task A_path_that_is_not_a_file_is_refused_and_nothing_is_published()
     {
-        var answer = await _tools.PublishQuestAsync(
+        var answer = await _questTools.PublishQuestAsync(
             "Asker", "Owner", "An ask", "b", attachments: [Path.Combine(_root, "missing.png")]);
 
         Assert.Contains("missing.png", answer);
@@ -657,10 +643,7 @@ public sealed class McpToolsTests : McpToolsFixture
     public void Ask_Daoris_proposes_an_agent_action_a_delete_an_accounts_settings_and_a_screen()
     {
         var home = Path.Combine(_root, "help-home");
-        var tools = new KnowledgeTools(
-            _service, _quests, new QuestExchange(_service, _quests, files: _files),
-            new AmbientWorkspace(Path.Combine(_root, "family", "Asker")),
-            intake: new IntakeScope(null, "h1e1p000"), help: new HelpProposalBox(home));
+        var tools = new KnowledgeTools(intake: new IntakeScope(null, "h1e1p000"), help: new HelpProposalBox(home));
 
         Assert.Contains("Proposed", tools.ProposeAgent("pin", "claude-code", "the person wants that release", version: "2.1.300"));
         Assert.Contains("Proposed", tools.ProposeDelete("made by mistake", quest: "q1a2b3c4"));
@@ -693,10 +676,7 @@ public sealed class McpToolsTests : McpToolsFixture
     public void Ask_Daoris_proposes_adding_a_plugin_or_switching_one()
     {
         var home = Path.Combine(_root, "help-plugin-home");
-        var tools = new KnowledgeTools(
-            _service, _quests, new QuestExchange(_service, _quests, files: _files),
-            new AmbientWorkspace(Path.Combine(_root, "family", "Asker")),
-            intake: new IntakeScope(null, "h1e1p000"), help: new HelpProposalBox(home));
+        var tools = new KnowledgeTools(intake: new IntakeScope(null, "h1e1p000"), help: new HelpProposalBox(home));
 
         Assert.Contains("Proposed", tools.ProposePlugin("add", "the person wants quests held overnight", repository: "house-plugins", folder: "quiet-hours"));
         Assert.Contains("Proposed", tools.ProposePlugin("enable", "the person wants it on", id: "example.lands"));
@@ -721,10 +701,7 @@ public sealed class McpToolsTests : McpToolsFixture
     public void Ask_Daoris_proposes_handing_a_landed_branch_on()
     {
         var home = Path.Combine(_root, "help-hand-home");
-        var tools = new KnowledgeTools(
-            _service, _quests, new QuestExchange(_service, _quests, files: _files),
-            new AmbientWorkspace(Path.Combine(_root, "family", "Asker")),
-            intake: new IntakeScope(null, "h1e1p000"), help: new HelpProposalBox(home));
+        var tools = new KnowledgeTools(intake: new IntakeScope(null, "h1e1p000"), help: new HelpProposalBox(home));
 
         Assert.Contains("Proposed", tools.ProposeHand("s2a3b4c5", "the person wants its pull request opened"));
         Assert.Contains("Proposed", tools.ProposeHand("feature/q2-second", "the rule names none yet", repository: "engine", plugin: "example.lands"));
@@ -742,14 +719,14 @@ public sealed class McpToolsTests : McpToolsFixture
     [Fact]
     public async Task The_list_says_what_a_quest_carries_what_follows_it_and_what_it_follows()
     {
-        await _tools.PublishQuestAsync(
+        await _questTools.PublishQuestAsync(
             "Asker", "Owner", "Develop it", "b",
             links: ["https://tickets.example/T-2"],
             then: [new ChainStep("Checker", "Verify {parent}", "Look.")]);
         var develop = (await _quests.ListAsync(receiver: "Owner")).Single();
-        await _tools.RespondToQuestAsync(develop.Id, "done", "Landed.");
+        await _questTools.RespondToQuestAsync(develop.Id, "done", "Landed.");
 
-        var list = await _tools.ListQuestsAsync(includeClosed: true, workspace: "all");
+        var list = await _questTools.ListQuestsAsync(includeClosed: true, workspace: "all");
 
         Assert.Contains("links: https://tickets.example/T-2", list);
         Assert.Contains("then → `Checker`: Verify {parent}", list);
@@ -764,7 +741,7 @@ public sealed class McpToolsTests : McpToolsFixture
     public void The_tool_offers_a_chain_as_a_list_of_steps_it_can_read()
     {
         var tool = McpServerTool.Create(
-            typeof(KnowledgeTools).GetMethod(nameof(KnowledgeTools.PublishQuestAsync))!, _tools);
+            typeof(QuestTools).GetMethod(nameof(QuestTools.PublishQuestAsync))!, _questTools);
 
         var then = tool.ProtocolTool.InputSchema.GetProperty("properties").GetProperty("then");
         var step = then.GetProperty("items").GetProperty("properties");
@@ -783,31 +760,19 @@ public sealed class McpToolsTests : McpToolsFixture
 /// down it said nothing at all, because the configured tier was semantic — an agent read a
 /// words-only answer as complete.
 /// </summary>
-public sealed class SearchToolTierTests : IAsyncLifetime
+public sealed class SearchToolTierTests
 {
-    private SqliteConnection _connection = null!;
-    private QuestStore _quests = null!;
-
     private sealed class DownSearch : IKnowledgeSearch
     {
         public Task<IReadOnlyList<KnowledgeHit>> SearchAsync(KnowledgeQuery query, CancellationToken ct = default) =>
             throw new HttpRequestException("the embedding endpoint is unreachable");
     }
 
-    public async Task InitializeAsync()
-    {
-        _connection = new SqliteConnection("Data Source=:memory:");
-        await _connection.OpenAsync();
-        _quests = await QuestStore.OpenAsync(_connection);
-    }
-
-    public async Task DisposeAsync() => await _connection.DisposeAsync();
-
     /// <summary>
     /// The tools over one stored entry, with a meaning half that is configured and down. The lexical
     /// half is made from the store, so a test can hand in one that works or one that is down too.
     /// </summary>
-    private async Task<KnowledgeTools> ToolsAsync(Func<IKnowledgeStore, IKnowledgeSearch> lexicalHalf)
+    private static async Task<KnowledgeSearchTools> ToolsAsync(Func<IKnowledgeStore, IKnowledgeSearch> lexicalHalf)
     {
         var store = new InMemoryKnowledgeStore();
         await store.ReplaceRepositoryAsync("alpha", [
@@ -818,8 +783,7 @@ public sealed class SearchToolTierTests : IAsyncLifetime
             store, new HybridKnowledgeSearch(lexicalHalf(store), new DownSearch()), new EmptyKnowledgeSource(),
             DisclosurePolicy.LocalOnly, new DimensionEmbedder(["drift"]), new Lyntai.Memory.InMemoryVectorStore(),
             registry: new Registry());
-        return new KnowledgeTools(
-            service, _quests, new QuestExchange(service, _quests), new AmbientWorkspace(Path.GetTempPath()));
+        return new KnowledgeSearchTools(service, new WorkspaceScope(service, new AmbientWorkspace(Path.GetTempPath())));
     }
 
     [Fact]

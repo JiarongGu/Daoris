@@ -138,13 +138,14 @@ builder.Services
         options.ServerInfo = new() { Name = "daoris-knowledge", Version = "0.1.0" };
         // A server over one checkout says what it reads and which tier answers, before the first search
         // (ORIENT1c); one over a family says nothing its tools do not.
-        options.ServerInstructions = KnowledgeTools.Instructions(serviceOptions, composed.SemanticEnabled);
+        options.ServerInstructions = KnowledgeServer.Instructions(serviceOptions, composed.SemanticEnabled);
     })
     .WithStdioServerTransport()
     // The harness's client opens with the 2026-07-28 revision's probe, which this server predates: answered
     // method not found, so it falls back to initialize, and said at debug rather than warned (MCPDISCOVER1).
     .AnswerDiscoverProbe()
-    .WithTools<KnowledgeTools>();
+    // Every class of tools, from the one list the tests read too (PART10a).
+    .WithKnowledgeTools();
 
 log.Info("app.started", ("repository", Path.GetFileName(Directory.GetCurrentDirectory())));
 var host = builder.Build();

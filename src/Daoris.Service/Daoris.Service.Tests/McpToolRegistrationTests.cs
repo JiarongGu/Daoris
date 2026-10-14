@@ -1,6 +1,8 @@
+using System.Reflection;
 using Daoris.Knowledge;
 using Daoris.Knowledge.Mcp;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using ModelContextProtocol.Server;
 
 namespace Daoris.Service.Tests;
@@ -23,11 +25,12 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         "workflow_propose",
     ];
 
+    /// <summary>A host registered as <c>Program.cs</c> registers its tools, over whatever services the test hands it.</summary>
     private static ServiceProvider Host(Action<IServiceCollection>? services = null)
     {
         var collection = new ServiceCollection();
         services?.Invoke(collection);
-        collection.AddMcpServer().WithTools<KnowledgeTools>();
+        collection.AddMcpServer().WithKnowledgeTools();
         return collection.BuildServiceProvider();
     }
 
@@ -36,14 +39,34 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
     {
         using var host = Host();
 
-        var names = host.GetServices<McpServerTool>().Select(tool => tool.ProtocolTool.Name).Order(StringComparer.Ordinal);
+        var names = host.GetRequiredService<IOptions<McpServerOptions>>().Value.ToolCollection!
+            .Select(tool => tool.ProtocolTool.Name).Order(StringComparer.Ordinal);
 
         Assert.Equal(Advertised, names);
     }
 
     /// <summary>
+    /// The list is the connector's whole: a class of tools left off it is never offered, and nothing else finds one, since
+    /// the host registers the list and does not scan.
+    /// </summary>
+    [Fact]
+    public void The_list_is_every_tool_class_the_connector_has()
+    {
+        var marked = typeof(KnowledgeServer).Assembly.GetTypes()
+            .Where(type => type.GetCustomAttribute<McpServerToolTypeAttribute>() is not null)
+            .Select(type => type.Name)
+            .Order(StringComparer.Ordinal);
+
+        Assert.Equal(marked, KnowledgeServer.ToolTypes.Select(type => type.Name).Order(StringComparer.Ordinal));
+        Assert.Equal(
+            ["KnowledgeSearchTools", "KnowledgeTools", "QuestTools", "RuleProposalTools"],
+            KnowledgeServer.ToolTypes.Select(type => type.Name).Order(StringComparer.Ordinal));
+    }
+
+    /// <summary>
     /// The SDK builds a tool's class for each call from the host's services, so a class asking for one nobody registers
-    /// fails only when an agent calls it. The host's required services are the fixture's here; the rest are optional.
+    /// fails only when an agent calls it. The host's required services are the fixture's here; the rest are optional, and
+    /// the workspace scope is the registration's own.
     /// </summary>
     [Fact]
     public void Every_tool_class_is_built_from_the_hosts_services()
@@ -54,7 +77,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
             .AddSingleton(new QuestExchange(_service, _quests, files: _files))
             .AddSingleton(new AmbientWorkspace(Path.Combine(_root, "family", "Asker"))));
 
-        foreach (var type in new[] { typeof(KnowledgeTools) })
+        foreach (var type in KnowledgeServer.ToolTypes)
         {
             Assert.IsType(type, ActivatorUtilities.CreateInstance(host, type));
         }

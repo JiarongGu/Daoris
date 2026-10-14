@@ -32,9 +32,8 @@ public sealed class McpOpinionToolTests : McpToolsFixture
     }
 
     /// <summary>The connector a session the driver started is handed: it names its session, and nothing else.</summary>
-    private KnowledgeTools Connector(string? session, OpinionDesk desk) => new(
-        _service, _quests, new QuestExchange(_service, _quests, files: _files), new AmbientWorkspace(Path.Combine(_root, "family", "Owner")),
-        intake: new IntakeScope(null, session), opinions: desk);
+    private static KnowledgeTools Connector(string? session, OpinionDesk desk) =>
+        new(intake: new IntakeScope(null, session), opinions: desk);
 
     private static OpinionFindingInput Claim(string weight = "must") => new(
         weight, "src/Report.cs:42", "The workspace name is not quoted.", "A name with a space breaks the command.",
