@@ -324,6 +324,10 @@ export function keyProblem(key: string): string | null {
       }
       at += 1; // the escaped character is the escape's own: `\\1` is a backslash and a one, `\(?` a bracket made optional
     } else if (inClass) {
+      // .NET reads `[a-z-[aeiou]]` as a class minus a class, JavaScript as a class then `]` (KEYPARITY2).
+      if (key[at] === '-' && next === '[') {
+        return 'a ticket\'s key may not subtract a class (`-[` inside a class), which the driver and the CLI read differently.';
+      }
       if (key[at] === ']') inClass = false;
     } else if (key[at] === '(' && next === '?') {
       return 'a ticket\'s key may not use `(?` — a lookaround, a named group or an inline option, which the driver and the '

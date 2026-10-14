@@ -14650,3 +14650,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT5c — the page's top folder in folders** (web). As STRUCT5a, 5b and 5d did, with its gate in vitest; STRUCT5d's import-rewriting script (asserted counts, read back) is a candidate tracked tool. Design §7.
 
 **Outcome** 2026-10-15: the page's top holds only its three entries; 109 files moved into domain folders with `git mv`, held by `src/test/structure.test.ts`, and `daoris.lanes.json` lost two `SettingsView*` globs the move made empty. The work, settings, bridge and projects folders still hold over twenty sources at their top and sit on the gate's `wide` list (STRUCT5c-ii); the move script stayed in scratch (MOVETOOL1). Eleven gates passed on the merge, merged with main's closed-quest fix. On Opus: 308 tool calls. Detail: D166's STRUCT5c note and the `refactor(web): STRUCT5c` commits.
+
+## KEYPARITY2 — a key's class subtraction (2026-10-15, D164)
+
+> - [ ] **KEYPARITY2 — a key's class subtraction** (driver/cli). .NET reads `[a-z-[aeiou]]` as a class minus a class, JavaScript as a class then `]`: both compile, so each twin finds a different ticket. Refuse `-[` inside a class on both twins with one sentence. D164's PROCESS1b-i note.
+
+**Outcome** 2026-10-15: both twins' key readers refuse `-[` inside a character class with one sentence (`LandingRules.KeyProblem`, `keyProblem`); a test case on each side, an escaped `\-[` still taken. Detail: D164's KEYPARITY2 note.
