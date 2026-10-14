@@ -43,23 +43,12 @@ public sealed class SessionBranches(string home)
     // One writer at a time in this process, as the landings' record has: a tick and a press in one shell.
     private static readonly object Gate = new();
 
+    private static readonly RecordList<GrownBranch> List = new(Gate, "branches", Read, ToJson);
+
     public string FilePath => Path.Combine(home, FileName);
 
     /// <summary>Every branch recorded, in the order they were written.</summary>
-    public IReadOnlyList<GrownBranch> All()
-    {
-        try
-        {
-            if (!File.Exists(FilePath)) return [];
-            using var document = JsonDocument.Parse(File.ReadAllText(FilePath));
-            if (!document.RootElement.TryGetProperty("branches", out var branches) || branches.ValueKind != JsonValueKind.Array) return [];
-            return [.. branches.EnumerateArray().Select(Read).OfType<GrownBranch>()];
-        }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
-        {
-            return [];
-        }
-    }
+    public IReadOnlyList<GrownBranch> All() => List.Read(FilePath);
 
     /// <summary>The record of that branch in that repository, or null.</summary>
     public GrownBranch? Of(string repository, string branch) =>
@@ -73,18 +62,17 @@ public sealed class SessionBranches(string home)
         [.. all.Where(each => !(string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase)
                                 && branches.Contains(each.Branch, StringComparer.Ordinal)))]);
 
-    private void Edit(Func<IReadOnlyList<GrownBranch>, IReadOnlyList<GrownBranch>> change)
-    {
-        lock (Gate)
-        {
-            Directory.CreateDirectory(home);
-            AtomicFile.WriteText(FilePath, ToJson(change(All())));
-        }
-    }
+    private void Edit(Func<IReadOnlyList<GrownBranch>, IReadOnlyList<GrownBranch>> change) => List.Edit(FilePath, change);
 
-    private static bool Same(GrownBranch entry, string repository, string branch) =>
-        string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
-        && string.Equals(entry.Branch, branch, StringComparison.Ordinal);
+    private static bool Same(GrownBranch entry, string repository, string branch) => SameBranch(entry.Repository, entry.Branch, repository, branch);
+
+    /// <summary>
+    /// The same branch in the same repository: the repository by name in any case, the branch exactly. The session branches and
+    /// the landed branches (<see cref="LandedBranches"/>) name a branch alike, so they share this one predicate (DEDUP5).
+    /// </summary>
+    internal static bool SameBranch(string entryRepository, string entryBranch, string repository, string branch) =>
+        string.Equals(entryRepository, repository, StringComparison.OrdinalIgnoreCase)
+        && string.Equals(entryBranch, branch, StringComparison.Ordinal);
 
     /// <summary>Written by hand, as the driver's other files are, for the AOT reason <see cref="DriverConfig"/> gives.</summary>
     private static string ToJson(IReadOnlyList<GrownBranch> entries)

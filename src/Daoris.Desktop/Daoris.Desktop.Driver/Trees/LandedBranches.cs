@@ -173,6 +173,8 @@ public sealed class LandedBranches(string home)
     // the second write would drop the first's branch.
     private static readonly object Gate = new();
 
+    private static readonly RecordList<LandedBranch> List = new(Gate, "branches", Read, ToJson, Bounded);
+
     public string FilePath => Path.Combine(home, FileName);
 
     /// <summary>Every branch recorded that still stands, in the order they landed: what the clean-up, the hand-off and Ask Daoris act on.</summary>
@@ -199,20 +201,7 @@ public sealed class LandedBranches(string home)
     public IReadOnlyList<LandedBranch> Entries() => Everything();
 
     /// <summary>Every entry, standing and traces, in the order they landed.</summary>
-    private IReadOnlyList<LandedBranch> Everything()
-    {
-        try
-        {
-            if (!File.Exists(FilePath)) return [];
-            using var document = JsonDocument.Parse(File.ReadAllText(FilePath));
-            if (!document.RootElement.TryGetProperty("branches", out var branches) || branches.ValueKind != JsonValueKind.Array) return [];
-            return [.. branches.EnumerateArray().Select(Read).OfType<LandedBranch>()];
-        }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
-        {
-            return [];
-        }
-    }
+    private IReadOnlyList<LandedBranch> Everything() => List.Read(FilePath);
 
     /// <summary>The recorded branch of that name in that repository, or null.</summary>
     public LandedBranch? Of(string repository, string branch) =>
@@ -331,15 +320,8 @@ public sealed class LandedBranches(string home)
         && string.Equals(each.Session, entry.Session, StringComparison.OrdinalIgnoreCase)
         && each.LandedAt == entry.LandedAt;
 
-    private void Edit(Func<IReadOnlyList<LandedBranch>, IReadOnlyList<LandedBranch>> change)
-    {
-        lock (Gate)
-        {
-            Directory.CreateDirectory(home);
-            // Every entry, traces included: a write that read only the standing ones would drop every trace (D113).
-            AtomicFile.WriteText(FilePath, ToJson(Bounded(change(Everything()))));
-        }
-    }
+    // Every entry, traces included: a write that read only the standing ones would drop every trace (D113).
+    private void Edit(Func<IReadOnlyList<LandedBranch>, IReadOnlyList<LandedBranch>> change) => List.Edit(FilePath, change);
 
     /// <summary>
     /// The entries with each repository's traces beyond its newest <see cref="TracesKept"/> dropped (LEFT3), the one that
@@ -358,8 +340,7 @@ public sealed class LandedBranches(string home)
     }
 
     private static bool Same(LandedBranch entry, string repository, string branch) =>
-        string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
-        && string.Equals(entry.Branch, branch, StringComparison.Ordinal);
+        SessionBranches.SameBranch(entry.Repository, entry.Branch, repository, branch);
 
     private static bool Standing(LandedBranch entry, string repository, string branch) => entry.GoneAt is null && Same(entry, repository, branch);
 

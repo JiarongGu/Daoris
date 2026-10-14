@@ -26,23 +26,12 @@ public sealed class AbandonRecord(string home)
     // One writer at a time in this process: two presses would otherwise read the same file, and the second drop the first.
     private static readonly object Gate = new();
 
+    private static readonly RecordList<AbandonEntry> List = new(Gate, "abandoned", Read, ToJson);
+
     public string FilePath => Path.Combine(home, FileName);
 
     /// <summary>Every entry, oldest first; none when the file is missing or does not read.</summary>
-    public IReadOnlyList<AbandonEntry> Entries()
-    {
-        try
-        {
-            if (!File.Exists(FilePath)) return [];
-            using var document = JsonDocument.Parse(File.ReadAllText(FilePath));
-            if (!document.RootElement.TryGetProperty("abandoned", out var all) || all.ValueKind != JsonValueKind.Array) return [];
-            return [.. all.EnumerateArray().Select(Read).OfType<AbandonEntry>()];
-        }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException or InvalidOperationException)
-        {
-            return [];
-        }
-    }
+    public IReadOnlyList<AbandonEntry> Entries() => List.Read(FilePath);
 
     /// <summary>The newest abandon of this ask or quest here, or null: what its page shows as *What went* and *What stayed*.</summary>
     public AbandonEntry? Last(WorkScope scope, string id) =>
@@ -53,15 +42,8 @@ public sealed class AbandonRecord(string home)
     /// Keep one more entry, dropping those whose ask or quest no longer has a record here.
     /// </summary>
     /// <param name="known">Whether an entry's ask or quest still has a record here; null keeps every entry.</param>
-    public void Write(AbandonEntry entry, Func<AbandonEntry, bool>? known = null)
-    {
-        lock (Gate)
-        {
-            var kept = Entries().Where(each => known is null || known(each)).Append(entry).ToList();
-            Directory.CreateDirectory(home);
-            AtomicFile.WriteText(FilePath, ToJson(kept));
-        }
-    }
+    public void Write(AbandonEntry entry, Func<AbandonEntry, bool>? known = null) =>
+        List.Edit(FilePath, all => [.. all.Where(each => known is null || known(each)), entry]);
 
     /// <summary>
     /// Drop the entries whose ask or quest no longer has a record here (HIST1c, the history-clearing design §2.2), as
