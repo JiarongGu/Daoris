@@ -61,43 +61,9 @@
     "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Workflow.cs",
     "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.cs"
   ],
-  "HelpStandInDoors": [
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpProposalsFixture.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpAcceptProposalsTests.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpAccountProposalsTests.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpAgentProposalsTests.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpAskProposalsTests.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpBrowserProposalsTests.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpClearProposalsTests.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpDeleteProposalsTests.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpHandProposalsTests.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpPauseProposalsTests.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpPluginProposalsTests.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpRepositoryProposalsTests.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSessionProposalsTests.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSyncProposalsTests.cs"
-  ],
   "HistoryClearing": [
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/History/HistoryClearing.Home.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/History/HistoryClearing.cs"
-  ],
-  "IHelpDoors": [
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpAcceptProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpAccountProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpAgentProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpAskProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpBrowserProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpClearProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpDeleteProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpHandProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpPauseProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpPluginProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpRepositoryProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSessionProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSyncProposals.cs"
   ],
   "KnowledgeTools": [
     "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.GoAhead.cs",

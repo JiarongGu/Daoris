@@ -118,15 +118,3 @@ public sealed class HelpHandProposalsTests : HelpProposalsFixture
         Assert.Equal("refused", HelpProposals.Find(_home, "p6")!.State);
     }
 }
-
-public sealed partial class HelpStandInDoors
-{
-    /// <summary>What the hand-off's door answers (WSR5b): pushed by default, or its refusal in its own words.</summary>
-    public TreeHand? HandAnswer { get; init; }
-
-    public Task<TreeHand> HandAsync(string repository, string branch, string? plugin, CancellationToken ct)
-    {
-        Calls.Add($"HANDOFF {repository} {branch} {plugin ?? "(the rule's)"}".TrimEnd());
-        return Task.FromResult(HandAnswer ?? new TreeHand(true, $"handed `{branch}` to plugin `example.lands`. Plugin `example.lands`: pushed it.", branch));
-    }
-}

@@ -365,22 +365,3 @@ public sealed class HelpPauseProposalsTests : HelpProposalsFixture
         return (applied, doors);
     }
 }
-
-public sealed partial class HelpStandInDoors
-{
-    public (bool Ok, string Message) WorkPaused { get; set; } = (true, "Paused it.");
-
-    public (bool Ok, string Message) WorkResumed { get; set; } = (true, "Resumed it.");
-
-    public Task<(bool Ok, string Message)> PauseWorkAsync(WorkScope scope, string id, CancellationToken ct)
-    {
-        Calls.Add($"WORK_PAUSE {WorkPausing.Word(scope)} {id}");
-        return Task.FromResult(WorkPaused);
-    }
-
-    public Task<(bool Ok, string Message)> ResumeWorkAsync(WorkScope scope, string id, CancellationToken ct)
-    {
-        Calls.Add($"WORK_RESUME {WorkPausing.Word(scope)} {id}");
-        return Task.FromResult(WorkResumed);
-    }
-}

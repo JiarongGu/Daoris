@@ -278,33 +278,3 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
         Assert.Contains("1 did not happen: engine  daoris/s-step  stopped at a conflict in src/a.cs", applied.Told);
     }
 }
-
-public sealed partial class HelpStandInDoors
-{
-    /// <summary>What the look lists, as <c>TREES_SYNC_PLAN</c> would.</summary>
-    public SyncPlan Listed { get; init; } = new([], [], []);
-
-    /// <summary>What the look's door refuses with; null to list.</summary>
-    public string? SyncRefusal { get; init; }
-
-    /// <summary>A replay the press stops at a conflict, in the tree layer's words; null for none.</summary>
-    public string? Conflict { get; init; }
-
-    public Task<SyncPlan> SyncPlanAsync(string? repository, string? workspace, CancellationToken ct)
-    {
-        if (SyncRefusal is { } refused) throw new DriverException(refused);
-        // BRSCOPE1b: the workspace is recorded only where one is named, so a call without one reads as it always did.
-        Calls.Add($"TREES_SYNC_PLAN {repository}".TrimEnd() + (workspace is null ? "" : $" in:{workspace}"));
-        return Task.FromResult(Listed);
-    }
-
-    public Task<SyncDone> SyncAsync(string? repository, string? workspace, IReadOnlySet<string> only, CancellationToken ct)
-    {
-        Calls.Add($"TREES_SYNC {repository} {string.Join(' ', only.Order(StringComparer.Ordinal))}" + (workspace is null ? "" : $" in:{workspace}"));
-        return Task.FromResult(new SyncDone(
-            [.. Listed.Lines.Where(pull => only.Contains($"{pull.Repository}:{pull.Line}")).Select(pull => new PullResult(pull, pull.Moves, "moved"))],
-            [.. Listed.Rebases.Where(item => only.Contains($"{item.Repository}:{item.Branch}"))
-                .Select(item => Conflict is { } conflict ? new RebaseResult(item, false, conflict) : new RebaseResult(item, item.Replays, "replayed"))],
-            [.. Listed.Deletes.Where(item => only.Contains($"{item.Repository}:{item.Branch}")).Select(item => new LandedResult(item, item.Removable, "removed"))]));
-    }
-}

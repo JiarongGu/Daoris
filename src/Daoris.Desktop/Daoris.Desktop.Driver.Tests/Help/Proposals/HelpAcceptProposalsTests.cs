@@ -207,15 +207,3 @@ public sealed class HelpAcceptProposalsTests : HelpProposalsFixture
         }
     }
 }
-
-public sealed partial class HelpStandInDoors
-{
-    public (bool Ok, string Message) Accepted { get; set; } =
-        (true, "Accepted the departure on quest `#q3done00`: what it held goes on.");
-
-    public Task<(bool Ok, string Message)> AcceptDepartureAsync(string id, CancellationToken ct)
-    {
-        Calls.Add($"POST /api/quests/{id}/accept");
-        return Task.FromResult(Accepted);
-    }
-}

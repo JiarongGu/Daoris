@@ -314,7 +314,7 @@ public sealed record HelpPluginView(
 /// <summary>A harness a plugin declares, or a server it hands every session: its name, and the command that runs it.</summary>
 public sealed record HelpPluginPart(string Name, IReadOnlyList<string> Command);
 
-public partial interface IHelpDoors
+public interface IHelpPluginDoors
 {
     /// <summary>
     /// <c>daoris plugin add</c>'s copy, the driver's twin (<see cref="PluginInstall.Add"/>, PLUG9): the

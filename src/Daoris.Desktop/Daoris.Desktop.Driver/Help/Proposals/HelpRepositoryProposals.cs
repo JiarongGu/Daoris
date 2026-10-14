@@ -80,7 +80,7 @@ internal sealed class HelpRepositoryProposals : IHelpProposalKind
 /// </summary>
 public sealed record HelpRepositoryMove(string Repository, string? From, string Workspace);
 
-public partial interface IHelpDoors
+public interface IHelpRepositoryDoors
 {
     /// <summary>
     /// The local host's <c>POST /api/registry/{repository}/workspace</c> (ENTRY1d1), the Manage drawer's *Move to workspace*:

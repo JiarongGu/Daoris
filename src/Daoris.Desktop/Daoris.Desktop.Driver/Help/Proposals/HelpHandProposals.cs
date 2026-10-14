@@ -96,7 +96,7 @@ internal sealed class HelpHandProposals : IHelpProposalKind
 /// <summary>What a hand-off's Apply hands on (WSR5b): the recorded branch, and the plugin the card named — null for the rule's.</summary>
 public sealed record HelpHandOff(string Repository, string Branch, string? Plugin);
 
-public partial interface IHelpDoors
+public interface IHelpHandDoors
 {
     /// <summary>
     /// The review's own hand-off (<c>HANDOFF</c>, WSR5b): the recorded branch given to the plugin named, else the

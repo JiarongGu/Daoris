@@ -186,7 +186,7 @@ public sealed record HelpQuestFacts(string Id, string Title, string To, string S
 /// <summary>An ask as the service answered it, with the quests it became and whether it may be deleted (D95).</summary>
 public sealed record HelpAskFacts(string Id, string Sentence, string Workspace, string State, IReadOnlyList<string> Quests, bool Deletable);
 
-public partial interface IHelpDoors
+public interface IHelpDeleteDoors
 {
     /// <summary>The local host's <c>DELETE /api/quests/{id}</c>, the quest drawer's route.</summary>
     Task<(bool Ok, string Message)> DeleteQuestAsync(string id, CancellationToken ct);

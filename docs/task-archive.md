@@ -14260,3 +14260,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PART6 — the service core's short parts and test classes** (service). The six short parts merged, and four test classes merged or split. Survey "Merge".
 
 **Outcome** 2026-10-14: `AskDesk`'s three parts merged into `Asks.cs` (`WorkflowChoices` in a file of its own, partial for its pattern); the exchange's review family became `QuestReviews`, the ledger's go-ahead and set-up families `SessionGoAheads` and `SessionReviews`, with one-line calls kept where many callers use them; the store's review queries merged, its stored shape in `SessionReviewJson`; the four test classes split over fixture bases or merged. Service tests 1967 of 1967. The gate's list was regenerated at the merge (10 left). On Sonnet: 104 tool calls. Detail: D166's PART6 note.
+
+## PART5 — Help's doors (2026-10-14, D166)
+
+> - [ ] **PART5 — Help's doors** (driver; after PART4). `IHelpDoors` inheriting a per-kind interface each kind file declares, its stand-in likewise; callers and `ScreenDoors` unchanged. Survey "Records".
+
+**Outcome** 2026-10-14: each of fourteen kind files declares its own door interface (`IHelpGoDoors` and the rest have none to add), and `IHelpDoors`, declared once, inherits them, so a new kind is one file and one name in that list; callers and `ScreenDoors` unchanged. The stand-in is one fixture class, its members grouped by interface, since about 35 tests set a kind's answer in an initializer. The gate's list holds 8. On Sonnet: 63 tool calls. Detail: D166's PART5 note.

@@ -916,7 +916,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     }
 }
 
-public partial interface IHelpDoors
+public interface IHelpSettingDoors
 {
     /// <summary>An edit to the driver's file, as the `SET_*` routes and `RETRY_QUEST` make it.</summary>
     void Change(Func<DriverConfig, DriverConfig> edit);
