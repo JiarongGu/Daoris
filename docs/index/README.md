@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (136)
+## Files over 40 KB (135)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -125,10 +125,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 100 | 1754 |
 | `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 48 | 587 |
 | `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 127 | 2208 |
-| `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 50 | 875 |
 | `src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs` | 44 | 839 |
 | `src/Daoris.Service/Daoris.Service.Tests/IndexEntriesTests.cs` | 51 | 983 |
-| `src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.cs` | 49 | 847 |
+| `src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.cs` | 47 | 811 |
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 85 | 1745 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 72 | 1464 |
 | `src/Daoris.Service/README.md` | 79 | 748 |

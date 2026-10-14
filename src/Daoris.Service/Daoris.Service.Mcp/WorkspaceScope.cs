@@ -2,8 +2,7 @@ namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
 /// Which circle a tool's call answers from (D48 §4), shared by the tools that answer from one: the search tools and
-/// <c>quest_list</c>. The host registers one beside the tool classes (PART10a); a tool file imports its statics with
-/// <c>using static</c>, so its descriptions and sentences read as they did.
+/// <c>quest_list</c>. The tools' registration adds one (PART10a); a tool file imports its statics with <c>using static</c>.
 /// </summary>
 /// <remarks>
 /// An agent asking "has anyone solved this" means its own family, not every family the machine can see — and it has no
