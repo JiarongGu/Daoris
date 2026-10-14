@@ -49,8 +49,8 @@ public sealed class HelpProposalBoxKindsTests
     }
 
     /// <summary>
-    /// Each kind's file, <c>HelpProposalBox.&lt;Kind&gt;.cs</c> (the name the driver's twin tests read), holds that kind's
-    /// writer class, <c>Help&lt;Kind&gt;ProposalWriter</c>, writing exactly that kind, and no part of the box: since PART7
+    /// Each kind's file, <c>Help&lt;Kind&gt;ProposalWriter.cs</c> (the name the driver's twin tests read), holds that kind's
+    /// writer class of the same name, writing exactly that kind, and no part of the box: since PART7
     /// (D166's note, no partial type without generated code) the box is the one class of <c>HelpProposalBox.cs</c>.
     /// </summary>
     [Fact]
@@ -59,11 +59,12 @@ public sealed class HelpProposalBoxKindsTests
         var core = Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core");
 
         Assert.Equal(
-            Table.Select(row => $"HelpProposalBox.{Pascal(row.Kind)}.cs").Append("HelpProposalBox.cs").Order(StringComparer.Ordinal),
-            Directory.GetFiles(core, "HelpProposalBox*.cs").Select(Path.GetFileName).Order(StringComparer.Ordinal));
+            Table.Select(row => $"Help{Pascal(row.Kind)}ProposalWriter.cs").Order(StringComparer.Ordinal),
+            Directory.GetFiles(core, "Help*ProposalWriter.cs").Select(Path.GetFileName).Order(StringComparer.Ordinal));
+        Assert.Empty(Directory.GetFiles(core, "HelpProposalBox.*.cs"));
         foreach (var (kind, _) in Table)
         {
-            var writer = File.ReadAllText(Path.Combine(core, $"HelpProposalBox.{Pascal(kind)}.cs"));
+            var writer = File.ReadAllText(Path.Combine(core, $"Help{Pascal(kind)}ProposalWriter.cs"));
             Assert.Matches($@"\bclass Help{Pascal(kind)}ProposalWriter\b", writer);
             Assert.DoesNotContain("class HelpProposalBox", writer);
             Assert.Contains($"writer.WriteString(\"kind\", \"{kind}\");", writer);

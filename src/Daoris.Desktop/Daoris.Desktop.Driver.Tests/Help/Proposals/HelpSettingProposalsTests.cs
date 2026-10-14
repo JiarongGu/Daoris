@@ -454,14 +454,14 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
 
     /// <summary>
     /// LANG1c2: the service's setting writer shape-checks a language against a deliberate copy of the table's codes
-    /// (<c>HelpProposalBox.Languages</c>), read here as text since the two share no code, so a language added to the table is
+    /// (<c>HelpSettingProposalWriter.Languages</c>), read here as text since the two share no code, so a language added to the table is
     /// one the box takes, and the box takes none the table does not hold.
     /// </summary>
     [Fact]
     public void The_service_box_takes_the_languages_the_table_holds()
     {
         var writer = System.IO.File.ReadAllText(Path.Combine(
-            HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core", "HelpProposalBox.Setting.cs"));
+            HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core", "HelpSettingProposalWriter.cs"));
         var listed = System.Text.RegularExpressions.Regex.Match(writer, @"IReadOnlyList<string> Languages\s*=\s*\[([^\]]*)\]");
 
         Assert.True(listed.Success, "the service's session languages are a list, `Languages`.");
