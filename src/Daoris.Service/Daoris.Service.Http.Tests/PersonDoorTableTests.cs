@@ -97,6 +97,8 @@ public sealed class PersonDoorTableTests
 
         ("POST", "/api/feed/sessions", Shared),
         ("GET", "/api/sessions/since", Shared),
+        ("POST", "/api/feed/channel", Shared),
+        ("GET", "/api/channel/since", Shared),
         ("POST", "/api/feed/entries", Shared),
         ("POST", "/api/feed/code-map", Shared),
         ("GET", "/api/feed/held", Shared),
@@ -122,7 +124,8 @@ public sealed class PersonDoorTableTests
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
         Assert.Equal(16, Routes.Count(route => route.Class == Driver));
         Assert.Equal(24, Routes.Count(route => route.Class == Person));
-        Assert.Equal(7, Routes.Count(route => route.Class == Shared));
+        // And a shared host's two channel doors, a feed and a page (SESSONE2d).
+        Assert.Equal(9, Routes.Count(route => route.Class == Shared));
     }
 
     /// <summary>Every gated door has its own name, which a refusal says; a read and a shared host's door have none.</summary>

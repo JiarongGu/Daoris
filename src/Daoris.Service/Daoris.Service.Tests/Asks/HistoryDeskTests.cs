@@ -693,6 +693,31 @@ public sealed class HistoryDeskTests : IAsyncLifetime
 
     // ——— An ask's work (design §1.1): the ask, its intake, every quest of its work, or not at all.
 
+    /// <summary>🔴 SESSONE2d: a clear forgets the ask's channel, messages and marks both, inside its transaction, as deleting the ask does.</summary>
+    [Fact]
+    public async Task A_cleared_ask_forgets_its_channel()
+    {
+        var ask = (await Asking().AskAsync(new AskRequest(Workspaces.Default, "Look into the slow start") { To = "Homebody" }, Now)).Ask!;
+        var other = (await Asking().AskAsync(new AskRequest(Workspaces.Default, "Look into the fast stop") { To = "Homebody" }, Now)).Ask!;
+        var quest = ask.Quests[0];
+        await _quests.MoveAsync(quest, QuestStatus.Taken, null, Now.AddMinutes(1));
+        await _quests.MoveAsync(quest, QuestStatus.Done, "Faster now.", Now.AddMinutes(2));
+        var channel = await ChannelStore.OpenAsync(_connection);
+        ChannelMessage On(string askId, string id) =>
+            new(id, askId, Workspaces.Default, Now, null, null, null, null, null, null, false, "words");
+        await channel.AddAsync(On(ask.Id, "m1"), 10);
+        await channel.AddAsync(On(ask.Id, "m2") with { Origin = "b@two" }, 10);
+        await channel.AddAsync(On(other.Id, "m3"), 10);
+        await channel.MoveMarkAsync(ask.Id, ChannelDesk.PersonEntry, Now);
+        var desk = new HistoryDesk(_quests, _sessions, _asks, _service, null, _files, _proposals, channel);
+
+        Assert.True(Assert.Single(await desk.ClearAsync([AskUnit(ask.Id)], Now.AddHours(1))).Cleared);
+
+        Assert.Empty(await channel.OfAsync(ask.Id));
+        Assert.Null(await channel.MarkAsync(ask.Id, ChannelDesk.PersonEntry));
+        Assert.Single(await channel.OfAsync(other.Id));
+    }
+
     /// <summary>
     /// An ask whose work closed goes whole: the ask, the quests it became and their sessions, its intake's record, and the
     /// files both kept on this machine. Asks never leave the machine (D65), so an ask always simply goes.

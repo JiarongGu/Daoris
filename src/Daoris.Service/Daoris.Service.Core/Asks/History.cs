@@ -238,7 +238,7 @@ public sealed record HistoryOutcome(HistoryUnit Unit, bool Cleared, string Messa
 /// </remarks>
 public sealed class HistoryDesk(
     QuestStore quests, SessionStore sessions, AskStore? asks, KnowledgeService service,
-    IRemotes? remotes = null, QuestFiles? files = null, RuleProposalBox? proposals = null)
+    IRemotes? remotes = null, QuestFiles? files = null, RuleProposalBox? proposals = null, ChannelStore? channel = null)
 {
     /// <summary>One unit: what it holds, what a clear would take, and why it would stay. Changes nothing.</summary>
     public async Task<HistoryUnit> PlanAsync(HistoryUnitRef unit, CancellationToken ct = default)
@@ -315,6 +315,8 @@ public sealed class HistoryDesk(
                 foreach (var ask in judged.Asks)
                 {
                     if (asks is not null) await asks.DeleteAsync(ask, inside).ConfigureAwait(false);
+                    // SESSONE2d: the ask's channel goes with it, messages and marks, as deleting the ask forgets it (D167 point 8).
+                    if (channel is not null) await channel.ForgetAsync(ask, inside).ConfigureAwait(false);
                 }
 
                 return (judged, true);
