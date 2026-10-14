@@ -2,9 +2,6 @@
   "modules": ["Bridge", "Browser", "Windows", "Update", "Loop", "Platform"],
   "loose": ["Bridge.cs", "DriverModuleBridge.cs", "LoopbackHost.cs", "Category.cs", "GlobalUsings.cs", "Parallelism.cs", "EveryModuleChildIsHandedTheToolsTests.cs", "SourceFiles.cs", "StructureCheck.cs", "StructureTests.cs"],
   "root": {
-    "UpdateModule.cs": "Update",
-    "InstallUpdater.cs": "Update",
-    "InstallHome.cs": "Update",
     "DriverLoop.cs": "Loop",
     "HostSupervisor.cs": "Loop",
     "LastLines.cs": "Loop",
@@ -96,6 +93,9 @@
     "TaskbarIdentityTests.cs": "Windows",
     "TerminalModuleTests.cs": "Windows",
     "UiStallWatchTests.cs": "Windows",
-    "WindowsModuleTests.cs": "Windows"
+    "WindowsModuleTests.cs": "Windows",
+    "InstallHomeTests.cs": "Update",
+    "InstallUpdaterTests.cs": "Update",
+    "UpdateModuleTests.cs": "Update"
   }
 }
