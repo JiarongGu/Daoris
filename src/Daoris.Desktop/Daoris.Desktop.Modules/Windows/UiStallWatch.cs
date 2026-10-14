@@ -17,7 +17,7 @@ namespace Daoris.Desktop;
 /// not end is written once every <see cref="Longest"/>, so a thread that never recovers still says so.</para>
 ///
 /// <para><b>What held it.</b> The bridge dispatches each page request on this thread, and a route runs there until its
-/// first wait (<see cref="Middleware"/>). The route on the thread whenever the timer found a probe waiting is named
+/// first wait (<see cref="Middleware"/>), and a Daoris route not after it (<see cref="OffTheWindow"/>, UIFREEZE1). The route on the thread whenever the timer found a probe waiting is named
 /// (<c>during</c>), and so is the slowest route's synchronous part (<c>slowest</c>, <c>slowestMs</c>), with how many routes
 /// ran (<c>requests</c>). Beside them, what else the thread does that no route shows: the bus events the kit's flush
 /// serializes on it (<c>events</c>) and the full collections that stop every thread (<c>gc2</c>), each since the thread last
