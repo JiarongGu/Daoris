@@ -1,5 +1,6 @@
 using Daoris.Driver;
 using Shenora.Core.Ipc;
+using static Daoris.Desktop.DriverArguments;
 
 namespace Daoris.Desktop;
 
@@ -276,7 +277,7 @@ public sealed partial class DriverModule
         var service = _loop.Service ?? throw NotReady();
         return new WorkWorld(service, _loop.Home, _loop.ConfigPath, _loop.Processes)
         {
-            Door = Door(DriverConfig.Load(_loop.ConfigPath)),
+            Door = _context.Door(DriverConfig.Load(_loop.ConfigPath)),
             Log = _loop.Log,
             Sync = async (workspace, ct) =>
             {

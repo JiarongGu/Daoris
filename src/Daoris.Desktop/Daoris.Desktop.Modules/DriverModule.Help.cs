@@ -1,5 +1,6 @@
 using Daoris.Driver;
 using Shenora.Core.Ipc;
+using static Daoris.Desktop.DriverArguments;
 
 namespace Daoris.Desktop;
 
@@ -66,7 +67,7 @@ public sealed partial class DriverModule
         var looking = System.Diagnostics.Stopwatch.StartNew();
         try
         {
-            sessions = await SessionGroups.LookAsync(service, config, Door(config), _loop.Look.Latest, _loop.Home, null, cancellationToken).ConfigureAwait(false);
+            sessions = await SessionGroups.LookAsync(service, config, _context.Door(config), _loop.Look.Latest, _loop.Home, null, cancellationToken).ConfigureAwait(false);
             sessions = sessions with { Waits = _loop.Look.Waits };
         }
         catch (DriverException)
@@ -294,7 +295,7 @@ public sealed partial class DriverModule
     private sealed class ScreenDoors(DriverModule module, ServiceClient? service) : IHelpDoors
     {
         // SET_DRIVABLE, SET_LINE, SET_LANDING…: an edit to the driver's file, then a nudge.
-        public void Change(Func<DriverConfig, DriverConfig> edit) => module.Change(edit);
+        public void Change(Func<DriverConfig, DriverConfig> edit) => module._context.Change(edit);
 
         // The ask composer's door, the local host's `POST /api/asks`, with its review choice and words (ENTRY1c). A named
         // environment the workspace does not declare is refused before anything is sent, as `daoris-driver ask --review` refuses
@@ -340,7 +341,7 @@ public sealed partial class DriverModule
 
             var asked = service ?? throw NotReady();
             var config = DriverConfig.Load(module._loop.ConfigPath);
-            var look = await SessionGroups.LookAsync(asked, config, module.Door(config), module._loop.Look.Latest, module._loop.Home, ids, ct)
+            var look = await SessionGroups.LookAsync(asked, config, module._context.Door(config), module._loop.Look.Latest, module._loop.Home, ids, ct)
                 .ConfigureAwait(false);
             look = look with { Waits = module._loop.Look.Waits };
             var answer = marks.Archive(ids, SessionGroups.Read(look, ids), [.. look.Records.Select(record => record.Id)], DateTimeOffset.UtcNow);
@@ -733,7 +734,7 @@ public sealed partial class DriverModule
         // ledger's own answer (SESSUX1h2c, D126 §5.2, §5.4): the one look the Sessions screen takes, read only for those.
         if (proposals.Any(SessionKind))
         {
-            var look = await SessionGroups.LookAsync(service, config, Door(config), _loop.Look.Latest, _loop.Home, null, ct).ConfigureAwait(false);
+            var look = await SessionGroups.LookAsync(service, config, _context.Door(config), _loop.Look.Latest, _loop.Home, null, ct).ConfigureAwait(false);
             look = look with { Waits = _loop.Look.Waits };
             var judged = new Dictionary<string, SessionDeleteAnswer>(StringComparer.Ordinal);
             foreach (var proposal in proposals.Where(each => each.Kind == "delete" && each.Door == "session"))

@@ -1,0 +1,56 @@
+using Daoris.Driver;
+using Shenora.Core.Events;
+
+namespace Daoris.Desktop;
+
+/// <summary>
+/// What the driver bridge's domains share beyond the loop (PART10d, D166): the event bus, the file manager and the file picker
+/// the host hands <see cref="DriverModule"/>, a standing choice written to <c>driver.json</c>, and the wire the configured
+/// adapter's sessions run on. A domain's handler class is handed this where it uses more than the loop, and the loop alone
+/// where it does not.
+/// </summary>
+/// <param name="events">
+/// The bus the module answers on, held as well because a domain raises news of its own (D49 §3): a conversation ending is
+/// news the page wants without asking.
+/// </param>
+/// <param name="openFolder">
+/// The file manager, for a plugin's and a session's Open folder (PLUGUI1e, SESSUX1d): the window kit's launcher. Null where the
+/// host carries none: then nothing opens, and the answer says so.
+/// </param>
+/// <param name="pickFile">
+/// The system's file picker, for a tool's *Browse…* (TOOLS7): the window's dialog. Null where the host carries none, and the
+/// answer says so.
+/// </param>
+public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder? openFolder, PickFile? pickFile)
+{
+    public IEventBus Events { get; } = events;
+
+    public DriverLoop Loop { get; } = loop;
+
+    public OpenFolder? OpenFolder { get; } = openFolder;
+
+    public PickFile? PickFile { get; } = pickFile;
+
+    /// <summary>
+    /// A standing choice: an edit to <c>driver.json</c> under the home and a nudge, because the file is the truth and the loop
+    /// re-reads it every tick, the same file the terminal's verbs edit (D50).
+    /// </summary>
+    public void Change(Func<DriverConfig, DriverConfig> change)
+    {
+        change(DriverConfig.Load(Loop.ConfigPath)).Save(Loop.ConfigPath);
+        Loop.Nudge();
+    }
+
+    /// <summary>The configured adapter's wire, as the loop plans by it (D70); the pipe, the stricter door, when it names none this build has.</summary>
+    public SessionWire Door(DriverConfig config)
+    {
+        try
+        {
+            return Loop.Harnesses.Adapters.Resolve(config.Adapter).Wire;
+        }
+        catch (DriverException)
+        {
+            return SessionWire.Pipe;
+        }
+    }
+}

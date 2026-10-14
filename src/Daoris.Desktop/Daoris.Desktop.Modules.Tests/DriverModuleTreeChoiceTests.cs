@@ -17,13 +17,13 @@ public sealed class DriverModuleTreeChoiceTests
     {
         using var document = JsonDocument.Parse(payload);
 
-        Assert.Equal(expected, DriverModule.TreeChoice(Request(document.RootElement)));
+        Assert.Equal(expected, DriverArguments.TreeChoice(Request(document.RootElement)));
     }
 
     [Fact]
     public void A_request_with_no_payload_leaves_it_to_the_driver()
     {
-        Assert.Null(DriverModule.TreeChoice(Request(null)));
+        Assert.Null(DriverArguments.TreeChoice(Request(null)));
     }
 
     private static IpcRequest Request(JsonElement? payload) => new() { Id = "t1", Module = "DAORIS.DRIVER", Type = "START_CHAT", Payload = payload };

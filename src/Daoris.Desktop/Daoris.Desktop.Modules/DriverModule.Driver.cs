@@ -1,5 +1,6 @@
 using Daoris.Driver;
 using Shenora.Core.Ipc;
+using static Daoris.Desktop.DriverArguments;
 
 namespace Daoris.Desktop;
 
@@ -19,7 +20,7 @@ public sealed partial class DriverModule
     {
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
         var drivable = PayloadHelper.GetRequiredValue<bool>(request.Payload, "drivable");
-        Change(config => config.WithDrivable(repository, drivable));
+        _context.Change(config => config.WithDrivable(repository, drivable));
         return State();
     }
 
@@ -28,7 +29,7 @@ public sealed partial class DriverModule
     {
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
         var held = PayloadHelper.GetRequiredValue<bool>(request.Payload, "held");
-        Change(config => config.WithHold(repository, held));
+        _context.Change(config => config.WithHold(repository, held));
         return State();
     }
 
@@ -39,7 +40,7 @@ public sealed partial class DriverModule
     {
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
         var ownTree = PayloadHelper.GetRequiredValue<bool>(request.Payload, "ownTree");
-        Change(config => config.WithTrees(repository, ownTree));
+        _context.Change(config => config.WithTrees(repository, ownTree));
         return State();
     }
 
@@ -51,7 +52,7 @@ public sealed partial class DriverModule
     {
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
         var says = Optional(request, "says");
-        Change(config => config.WithStanding(repository, says, DateTimeOffset.UtcNow));
+        _context.Change(config => config.WithStanding(repository, says, DateTimeOffset.UtcNow));
         return State();
     }
 
@@ -61,7 +62,7 @@ public sealed partial class DriverModule
     private object? SetNotify(IpcRequest request)
     {
         var notify = PayloadHelper.GetRequiredValue<bool>(request.Payload, "notify");
-        Change(config => config.WithNotify(notify));
+        _context.Change(config => config.WithNotify(notify));
         return State();
     }
 
@@ -71,7 +72,7 @@ public sealed partial class DriverModule
     private object? SetStrikes(IpcRequest request)
     {
         var strikes = PayloadHelper.GetRequiredValue<int>(request.Payload, "strikes");
-        Change(config => config.WithStrikes(strikes));
+        _context.Change(config => config.WithStrikes(strikes));
         return State();
     }
 
@@ -82,7 +83,7 @@ public sealed partial class DriverModule
     {
         var minutes = Number(request, "minutes")
             ?? throw new DriverException(DriverConfig.CoolOffRefusal);
-        Change(config => config.WithCoolOff((int)Math.Clamp(minutes, int.MinValue, int.MaxValue)));
+        _context.Change(config => config.WithCoolOff((int)Math.Clamp(minutes, int.MinValue, int.MaxValue)));
         return State();
     }
 
@@ -92,7 +93,7 @@ public sealed partial class DriverModule
     private object? SetIntake(IpcRequest request)
     {
         var adapter = Optional(request, "adapter");
-        Change(config => config.WithIntake(adapter));
+        _context.Change(config => config.WithIntake(adapter));
         return State();
     }
 
@@ -102,7 +103,7 @@ public sealed partial class DriverModule
     private object? SetHelper(IpcRequest request)
     {
         var adapter = Optional(request, "adapter");
-        Change(config => config.WithHelper(adapter));
+        _context.Change(config => config.WithHelper(adapter));
         return State();
     }
 
@@ -154,7 +155,7 @@ public sealed partial class DriverModule
         var quest = PayloadHelper.GetRequiredValue<string>(request.Payload, "quest").Trim().TrimStart('#');
         var config = DriverConfig.Load(_loop.ConfigPath);
         var considered = _loop.Look.Latest
-            ?? await SessionGroups.VerdictsAsync(_loop.Service ?? throw NotReady(), config, Door(config), lastLook: null, cancellationToken)
+            ?? await SessionGroups.VerdictsAsync(_loop.Service ?? throw NotReady(), config, _context.Door(config), lastLook: null, cancellationToken)
                 .ConfigureAwait(false);
         var verdict = considered.FirstOrDefault(c => string.Equals(c.Quest.Id, quest, StringComparison.OrdinalIgnoreCase));
 
@@ -165,11 +166,11 @@ public sealed partial class DriverModule
                 // failures park it again. At its failures, not the limit (RETRY1b): a quest parked a second time has
                 // more failures than the limit, and a mark at the limit left it parked. A verdict carrying no count is
                 // marked at the least count the planner parks at.
-                Change(config => config.WithForgiven(quest, exhausted.Failures ?? config.ForgivenAt(quest) + config.Strikes));
+                _context.Change(config => config.WithForgiven(quest, exhausted.Failures ?? config.ForgivenAt(quest) + config.Strikes));
                 return State(new { Quest = quest, Did = "marked", Session = (string?)null });
             case { Verdict: StartVerdict.Stopped, HeldBy: { } stop }:
                 // Released from that stop, and no mark: a stop is not a strike (D58). A later stop holds it again.
-                Change(config => config.WithReleased(quest, stop.Session));
+                _context.Change(config => config.WithReleased(quest, stop.Session));
                 return State(new { Quest = quest, Did = "released", Session = (string?)stop.Session });
             case { Verdict: StartVerdict.Paused, PausedBy: { } pause }:
                 // A pause is the reason before a stop and the strikes (PAUSE1b, D132 §6.1): Resume moves it, and nothing is written.

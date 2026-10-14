@@ -2,6 +2,7 @@ using System.Text.Json;
 using static Daoris.Driver.Json;
 using Daoris.Driver;
 using Shenora.Core.Ipc;
+using static Daoris.Desktop.DriverArguments;
 
 namespace Daoris.Desktop;
 
@@ -25,7 +26,7 @@ public sealed partial class DriverModule
             throw new DriverException("a line is set for a `repository` or a `workspace` — name one of them.");
         }
 
-        Change(config => workspace is not null
+        _context.Change(config => workspace is not null
             ? config.WithWorkspaceLine(workspace, branch)
             : config.WithLine(repository!, branch));
         return State();
@@ -45,7 +46,7 @@ public sealed partial class DriverModule
             throw new DriverException("a session language is set for a `repository` or a `workspace` — name one of them.");
         }
 
-        Change(config => workspace is not null
+        _context.Change(config => workspace is not null
             ? config.WithWorkspaceLanguage(workspace, language)
             : config.WithLanguage(repository!, language));
         return State();
@@ -165,7 +166,7 @@ public sealed partial class DriverModule
             throw new DriverException(problem);
         }
 
-        Change(config => workspace is not null
+        _context.Change(config => workspace is not null
             ? config.WithWorkspaceLanding(workspace, rule)
             : config.WithLanding(repository!, rule));
         return State();
@@ -472,7 +473,7 @@ public sealed partial class DriverModule
             }
         }
 
-        Change(config => ReviewRules.Apply(config, edit));
+        _context.Change(config => ReviewRules.Apply(config, edit));
         // Only a put looked for anything, so only a put says what the look found.
         return State(reviewed: edit.Put is null ? null : new { Lacking = lacking, Unchecked = unchecked_ });
     }
@@ -526,7 +527,7 @@ public sealed partial class DriverModule
         var edit = OpinionRules.EditOf(request.Payload ?? default);
         // The twin's refusals come first, in its words, before anything is written.
         OpinionRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
-        Change(config => OpinionRules.Apply(config, edit));
+        _context.Change(config => OpinionRules.Apply(config, edit));
         return State();
     }
 
@@ -566,7 +567,7 @@ public sealed partial class DriverModule
         var edit = HelperRules.EditOf(request.Payload ?? default);
         // The twin's refusals come first, in its words, before anything is written.
         HelperRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
-        Change(config => HelperRules.Apply(config, edit));
+        _context.Change(config => HelperRules.Apply(config, edit));
         return State();
     }
 
@@ -580,7 +581,7 @@ public sealed partial class DriverModule
     {
         var edit = CommitRules.EditOf(request.Payload ?? default);
         CommitRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
-        Change(config => CommitRules.Apply(config, edit));
+        _context.Change(config => CommitRules.Apply(config, edit));
         return State();
     }
 

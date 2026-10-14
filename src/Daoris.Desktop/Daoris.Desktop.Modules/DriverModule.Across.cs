@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Daoris.Driver;
 using Shenora.Core.Ipc;
+using static Daoris.Desktop.DriverArguments;
 
 namespace Daoris.Desktop;
 
@@ -56,7 +57,7 @@ public sealed partial class DriverModule
             && value.ValueKind is JsonValueKind.True or JsonValueKind.False
                 ? value.GetBoolean()
                 : null;
-        Change(config => workspace is not null
+        _context.Change(config => workspace is not null
             ? config.WithWorkspaceReadAcross(workspace, read)
             : config.WithReadAcross(repository!, read));
         return State();
@@ -70,7 +71,7 @@ public sealed partial class DriverModule
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
         var to = Optional(request, "to") ?? "";
         var allow = Flag(request, "allow");
-        Change(config => config.WithWriteAcross(repository, to, allow));
+        _context.Change(config => config.WithWriteAcross(repository, to, allow));
         return State();
     }
 }
