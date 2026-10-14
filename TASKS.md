@@ -284,8 +284,6 @@ folder.
 
 **Duplication** (the owner: *"we more focus on modularize the code to reduce duplication and easier to manage"*). Evidence: `docs/2026-10-14-duplication-survey.md`, by section. After FLAT1; DEDUP1 to 3 touch the same files, so one at a time.
 
-- [ ] **DEDUP2c — the bridge's moments** (modules; after PART10f). `RulesRoutes`' two writes without the culture (~:113, 114) and `TreesRoutes`' five invariant ones (~:166, 180, 536, 623, 684) through `Moments`, left by DEDUP2b while the bridge moved. D166's DEDUP2b note.
-- [ ] **DEDUP3b — the JSON file writer, its second half** (driver, modules; after 3a and PART10f). Quests, Review, Service, Sessions, Setup, Trees, Workflows and the Modules project. Survey §3.
 - [ ] **DEDUP7 — text clipped, one-lined and quoted once** (driver, modules). `TextBounds` in `Platform/` for about 44 copies, each call keeping its own limit. Survey §7.
 
 ## Development and agent layout

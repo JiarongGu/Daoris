@@ -26,8 +26,6 @@ public sealed record FavoritesRead(IReadOnlyList<Favorite> Favorites, string? Pr
 /// </remarks>
 public static class BrowserFavorites
 {
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
-
     public static string FilePath(string home) => Path.Combine(home, "browser", "favorites.json");
 
     /// <summary>
@@ -138,9 +136,7 @@ public static class BrowserFavorites
 
     private static void Save(string home, JsonObject file)
     {
-        var path = FilePath(home);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        AtomicFile.WriteText(path, file.ToJsonString(Indented).ReplaceLineEndings("\n") + "\n");
+        JsonFile.Write(FilePath(home), file);
     }
 
     private static string Title(JsonObject row, string page) =>

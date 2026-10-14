@@ -299,8 +299,7 @@ public static class HeldWordsFile
             return dropped;
         }
 
-        var text = root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n";
-        AtomicFile.WriteText(path, text);
+        JsonFile.Write(path, root);
         return dropped;
     }
 }

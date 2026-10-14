@@ -361,7 +361,7 @@ public sealed partial class SessionRequests(string home)
     }
 
     /// <summary>Written by hand, as the driver's other files are, for the AOT reason <see cref="DriverConfig"/> gives.</summary>
-    private static string ToJson(SessionRequest request) => Written(writer =>
+    private static string ToJson(SessionRequest request) => JsonFile.Serialize(writer =>
     {
         writer.WriteStartObject();
         writer.WriteString("session", request.Session);
@@ -388,7 +388,7 @@ public sealed partial class SessionRequests(string home)
         writer.WriteEndObject();
     });
 
-    private static string ToJson(WordsHeld held) => Written(writer =>
+    private static string ToJson(WordsHeld held) => JsonFile.Serialize(writer =>
     {
         writer.WriteStartObject();
         writer.WriteBoolean("sent", held.Sent);
@@ -398,20 +398,4 @@ public sealed partial class SessionRequests(string home)
         if (held.Message is not null) writer.WriteString("message", held.Message);
         writer.WriteEndObject();
     });
-
-    private static string Written(Action<Utf8JsonWriter> write)
-    {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions
-        {
-            Indented = true,
-            // The person's words stay readable in the file, 中文 included.
-            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        }))
-        {
-            write(writer);
-        }
-
-        return System.Text.Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n";
-    }
 }

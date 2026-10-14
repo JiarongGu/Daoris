@@ -27,9 +27,6 @@ public static class WorkspaceSetupFile
     // One writer at a time in this process: a tick and a terminal in one shell would otherwise drop each other's change.
     private static readonly object Gate = new();
 
-    // LF on every platform, as every Daoris write is: the default new line is the platform's.
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true, NewLine = "\n" };
-
     /// <summary>Where <paramref name="workspace"/>'s plan is kept.</summary>
     public static string PathOf(string home, string workspace) =>
         Path.Combine(home, Folder, IntakeRoom.SafeName(RemoteTarget.Workspace(workspace)) + ".json");
@@ -75,8 +72,7 @@ public static class WorkspaceSetupFile
         lock (Gate)
         {
             var path = PathOf(home, plan.Workspace);
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            AtomicFile.WriteText(path, Write(plan).ToJsonString(Indented) + "\n");
+            JsonFile.Write(path, Write(plan));
         }
     }
 

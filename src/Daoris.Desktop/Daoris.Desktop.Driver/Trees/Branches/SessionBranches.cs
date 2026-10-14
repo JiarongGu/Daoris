@@ -75,33 +75,27 @@ public sealed class SessionBranches(string home)
         && string.Equals(entryBranch, branch, StringComparison.Ordinal);
 
     /// <summary>Written by hand, as the driver's other files are, for the AOT reason <see cref="DriverConfig"/> gives.</summary>
-    private static string ToJson(IReadOnlyList<GrownBranch> entries)
+    private static string ToJson(IReadOnlyList<GrownBranch> entries) => JsonFile.Serialize(writer =>
     {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        writer.WriteStartObject();
+        writer.WriteStartArray("branches");
+        foreach (var entry in entries)
         {
             writer.WriteStartObject();
-            writer.WriteStartArray("branches");
-            foreach (var entry in entries)
-            {
-                writer.WriteStartObject();
-                writer.WriteString("repository", entry.Repository);
-                writer.WriteString("workspace", entry.Workspace);
-                writer.WriteString("branch", entry.Branch);
-                if (entry.Line is not null) writer.WriteString("line", entry.Line);
-                writer.WriteString("from", entry.From);
-                if (entry.GrewFrom is not null) writer.WriteString("grewFrom", entry.GrewFrom);
-                writer.WriteString("at", Moments.Write(entry.At));
-                if (entry.Now is not null) writer.WriteString("now", entry.Now);
-                writer.WriteEndObject();
-            }
-
-            writer.WriteEndArray();
+            writer.WriteString("repository", entry.Repository);
+            writer.WriteString("workspace", entry.Workspace);
+            writer.WriteString("branch", entry.Branch);
+            if (entry.Line is not null) writer.WriteString("line", entry.Line);
+            writer.WriteString("from", entry.From);
+            if (entry.GrewFrom is not null) writer.WriteString("grewFrom", entry.GrewFrom);
+            writer.WriteString("at", Moments.Write(entry.At));
+            if (entry.Now is not null) writer.WriteString("now", entry.Now);
             writer.WriteEndObject();
         }
 
-        return System.Text.Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n";
-    }
+        writer.WriteEndArray();
+        writer.WriteEndObject();
+    });
 
     /// <summary>One entry, or null where it lacks what makes it one: a repository, a branch, the commit it started at.</summary>
     private static GrownBranch? Read(JsonElement element)

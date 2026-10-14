@@ -558,13 +558,6 @@ public static class WorkflowNamed
     // then the newest 20 and every version a kept run names. A TWIN with the CLI's planAddVersion (namedworkflows.ts): the
     // plan is held to the driver suite's fixtures/workflow-named.json `store`, cell for cell.
 
-    private static readonly JsonSerializerOptions Indented = new()
-    {
-        WriteIndented = true,
-        NewLine = "\n",
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-    };
-
     /// <summary>
     /// A version added to a workflow's file, planned and not written (design §2.6): the next number after the last, the file's
     /// other fields and every version kept as written, a version that does not read here included, then the newest 20 kept with
@@ -610,7 +603,7 @@ public static class WorkflowNamed
     }
 
     /// <summary>A workflow's file as written: indented by two, LF, with a last newline, its words as written.</summary>
-    public static string Text(JsonNode file) => file.ToJsonString(Indented) + "\n";
+    public static string Text(JsonNode file) => JsonFile.Serialize(file);
 
     /// <summary>A file's node as the readers read it, an element of its own.</summary>
     internal static JsonElement ElementOf(JsonNode node)

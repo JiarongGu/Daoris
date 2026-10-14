@@ -562,9 +562,7 @@ public sealed class SessionWords : IDisposable
                 return;
             }
 
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            using var buffer = new MemoryStream();
-            using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Indented = true }))
+            JsonFile.Write(path, writer =>
             {
                 writer.WriteStartObject();
                 writer.WriteStartArray("held");
@@ -582,9 +580,7 @@ public sealed class SessionWords : IDisposable
 
                 writer.WriteEndArray();
                 writer.WriteEndObject();
-            }
-
-            AtomicFile.WriteText(path, System.Text.Encoding.UTF8.GetString(buffer.ToArray()).Replace("\r\n", "\n") + "\n");
+            });
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

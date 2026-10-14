@@ -119,8 +119,7 @@ public sealed class SessionArchive(string home)
     private IReadOnlyList<ArchiveMark> Write(IEnumerable<KeyValuePair<string, DateTimeOffset>> marks)
     {
         var sorted = Sorted(marks).ToList();
-        Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
-        AtomicFile.WriteText(FilePath, ToJson(sorted));
+        JsonFile.Write(FilePath, writer => Compose(writer, sorted));
         return sorted;
     }
 
@@ -129,26 +128,20 @@ public sealed class SessionArchive(string home)
             .OrderBy(mark => mark.At).ThenBy(mark => mark.Session, StringComparer.Ordinal);
 
     /// <summary>Written by hand, as the driver's other files are, for the AOT reason <see cref="DriverConfig"/> gives.</summary>
-    private static string ToJson(IReadOnlyList<ArchiveMark> marks)
+    private static void Compose(Utf8JsonWriter writer, IReadOnlyList<ArchiveMark> marks)
     {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        writer.WriteStartObject();
+        writer.WriteStartArray("archived");
+        foreach (var mark in marks)
         {
             writer.WriteStartObject();
-            writer.WriteStartArray("archived");
-            foreach (var mark in marks)
-            {
-                writer.WriteStartObject();
-                writer.WriteString("session", mark.Session);
-                writer.WriteString("at", Moments.Write(mark.At));
-                writer.WriteEndObject();
-            }
-
-            writer.WriteEndArray();
+            writer.WriteString("session", mark.Session);
+            writer.WriteString("at", Moments.Write(mark.At));
             writer.WriteEndObject();
         }
 
-        return System.Text.Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n";
+        writer.WriteEndArray();
+        writer.WriteEndObject();
     }
 
     /// <summary>One mark, or null where it names no session.</summary>

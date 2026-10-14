@@ -91,8 +91,7 @@ public static class InstallUpdate
             ["build"] = request.Build,
             ["at"] = (request.At ?? DateTimeOffset.UtcNow).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture),
         };
-        Directory.CreateDirectory(home);
-        AtomicFile.WriteText(PathOf(home), root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n");
+        JsonFile.Write(PathOf(home), root);
     }
 
     /// <summary>The request said and done with: removed as the application closes for the update, so it never outlives its build.</summary>

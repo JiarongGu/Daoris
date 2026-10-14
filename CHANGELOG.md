@@ -5,8 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
-- The desktop's own settings and record files are written with plain line ends on Windows too, and keep Chinese text and
-  marks such as `<` as written rather than as `\u` escapes; Ask Daoris's JSON answers show them as written as well.
+- The desktop's own settings and record files, and a repository's `daoris.json` when the desktop edits it, are written with
+  plain line ends on Windows too, and keep Chinese text and marks such as `<` as written rather than as `\u` escapes; Ask
+  Daoris's JSON answers show them as written as well.
 - A tool that ends just as Daoris stops waiting for it no longer breaks the check: setup says the tool did not answer in
   time, where it said the tool "would not start", and an account's probe no longer fails outright. A run Daoris stops early
   now ends the tool's own child processes too, where they were left running.

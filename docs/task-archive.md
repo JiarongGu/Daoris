@@ -14428,3 +14428,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PART10m — the loop's `Driver`: a loop context, and the opinion and workflow parts as classes** (driver). `Driver.Opinion.cs`, `.OpinionDelivery.cs`, `.OpinionGate.cs` (with `OpinionLook`) and `.Workflow.cs` as classes in `Loop/` over a context of the front's per-look and settable state, each holding the front where it runs through the front's shared run machinery, as `ChatHandOver` holds the runner; no port. Survey "The loop's `Driver`, as scouted".
 
 **Outcome** 2026-10-14: `LoopContext` holds the front's shared objects, the per-look adapters, servers and catalogue and the test settables, the front's `init` writing through; `DriverOpinions` (holding the front for its run machinery, now internal), `OpinionDeliverer` (`OpinionDeliveries` was taken) and `OpinionGateLook` are classes in `Loop/`, `OpinionLook` and the `OpinionDelivery` record files of their own, and the workflow binding folded into the front. The four files are cut from the `Driver` entry of `tools/partials.json`. Seven gates passed on the merge, with the loop Process classes 31 of 31. On Sonnet: 95 tool calls. Detail: D166's PART10m note.
+
+## DEDUP2c — the bridge's moments (2026-10-14, D166)
+
+> - [ ] **DEDUP2c — the bridge's moments** (modules; after PART10f). `RulesRoutes`' two writes without the culture (~:113, 114) and `TreesRoutes`' five invariant ones (~:166, 180, 536, 623, 684) through `Moments`, left by DEDUP2b while the bridge moved. D166's DEDUP2b note.
+
+**Outcome** 2026-10-14: the seven writes go through `Moments.Write`, the same bytes in a Gregorian culture, `RulesRoutes` no longer following the machine's; no other moment write is left in Modules (`DriverLoop`'s Unix seconds kept). Built with DEDUP3b on one branch; nine gates passed on the merge. On Sonnet: 89 tool calls for both rows. Detail: D166's DEDUP2c note.
+
+## DEDUP3b — the JSON file writer, its second half (2026-10-14, D166)
+
+> - [ ] **DEDUP3b — the JSON file writer, its second half** (driver, modules; after 3a and PART10f). Quests, Review, Service, Sessions, Setup, Trees, Workflows and the Modules project. Survey §3.
+
+**Outcome** 2026-10-14: the intake's settings, the opinion delivery and gate files, the session archive, the four list stores' bodies, the session requests, the remote target, the registry following, the held words, the update and setup files and the workflow's named text and run files in the driver, and the browser favourites and settings, the registry manifest and the held words in Modules, write through `JsonFile`. Changed: the default-encoder files keep non-ASCII and `< > & + '` as written; `RemoteTarget`'s file is LF on Windows. Kept: the launcher's staged build, the sealed cookies, Chromium's preferences, the compact records and the take/withdraw moves. Nine gates passed on the merge, and the writers' Process classes 62 of 62. The changelog's line on written files names the `daoris.json` the desktop edits. Detail: D166's DEDUP3b note.
