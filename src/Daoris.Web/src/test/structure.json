@@ -59,9 +59,6 @@
     "primitives.test.ts": "design",
     "presentational.test.ts": "design",
     "motion.test.ts": "design",
-    "pageMeasure.test.tsx": "design",
-
-    "shell.ts": "bridge",
-    "log.test.ts": "bridge"
+    "pageMeasure.test.tsx": "design"
   }
 }

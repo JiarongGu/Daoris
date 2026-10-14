@@ -21,7 +21,7 @@ vi.mock('@shenora/react', () => ({
 
 import '../locales/i18n';
 import { keys } from '../queries';
-import { useDiscardSessionBranch, useSweep, useTreesSync } from '../shell';
+import { useDiscardSessionBranch, useSweep, useTreesSync } from '../bridge/shell';
 import { DiffPane } from './DiffPane';
 
 const ENDED: Session = {

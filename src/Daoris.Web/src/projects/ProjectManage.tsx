@@ -5,7 +5,7 @@ import { sentence } from '../locales/format';
 import { InlineConfirm } from '../work/InlineConfirm';
 import { workspaceOf } from '../workspaces';
 import { useImportFolder, useRegisterRepository, useRetireRepository, useWireRepository } from '../queries';
-import { type FolderInspection, usePickFolder, useWriteDeclaration } from '../shell';
+import { type FolderInspection, usePickFolder, useWriteDeclaration } from '../bridge/shell';
 import { Button, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTitle, Tip } from '../ui';
 
 /**

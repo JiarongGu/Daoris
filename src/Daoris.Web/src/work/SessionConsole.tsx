@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useSessionConsole } from '../shell';
+import { useSessionConsole } from '../bridge/shell';
 import { MonoWell } from '../ui';
 
 /**

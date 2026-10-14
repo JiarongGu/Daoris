@@ -9,7 +9,7 @@ import {
   HELP_HISTORY, type HelpSettled, NO_TURNS, useCancelTurn, useChatTurns, useDeleteSession, useEditQueued, useEndChat, useHarnesses,
   useHelpConversations, useHelpProposals, useHelpReadied, useHelpStartFrom, usePinHelp, useRenameHelp, useSendMessage,
   useSettleHelp, useStartHelp, useStopSession,
-} from '../shell';
+} from '../bridge/shell';
 import { useHeldHarnessRun } from '../agents/harnessRuns';
 import { Button, Prose, SESSION_ACTIVE } from '../ui';
 import type { ChatMessage } from '../work/conversation';
@@ -23,7 +23,7 @@ import { placeDoor } from './places';
 import { ProposalCard } from './ProposalCard';
 import type { StarterDoor } from './starters';
 import { type HelpWhere, prefaceOf } from './where';
-import { logEvent } from '../shell';
+import { logEvent } from '../bridge/shell';
 
 /** How often the list is asked again while words to an ended conversation wait for it to go on (ASKHIST1). */
 const GOING_ON_POLL = 1500;

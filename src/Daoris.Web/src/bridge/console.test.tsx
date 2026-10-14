@@ -17,7 +17,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import { useSessionConsole } from '../shell';
+import { useSessionConsole } from './shell';
 
 type Line = { sequence: number; text: string };
 const lines = (...sequences: number[]): Line[] => sequences.map((sequence) => ({ sequence, text: `line ${sequence}` }));

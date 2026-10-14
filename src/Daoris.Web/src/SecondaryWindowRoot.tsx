@@ -8,7 +8,7 @@ import { ShellSignals } from './ShellSignals';
 import { failure, Toasts, useToasts } from './ui';
 import { DetachedSession } from './work/DetachedSession';
 import { MonitorWindow } from './work/MonitorWindow';
-import { useLinkOpener, useOpenBrowser, useSecondaryWindowTheme } from './shell';
+import { useLinkOpener, useOpenBrowser, useSecondaryWindowTheme } from './bridge/shell';
 import { MONITOR_WINDOW, type SecondaryWindow, sessionWindowName } from './work/window';
 
 /**

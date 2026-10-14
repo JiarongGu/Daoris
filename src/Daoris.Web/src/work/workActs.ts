@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { sentence } from '../locales/format';
-import { useAbandonWork, usePauseWork, useResumeWork } from '../shell';
+import { useAbandonWork, usePauseWork, useResumeWork } from '../bridge/shell';
 import { sittingSentence } from '../signals';
 import { failure, type Notify } from '../ui';
 import type { Answered } from './InlineConfirm';

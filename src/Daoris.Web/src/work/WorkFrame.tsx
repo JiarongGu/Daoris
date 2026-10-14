@@ -12,7 +12,7 @@ import {
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree,
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun,
-} from '../shell';
+} from '../bridge/shell';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
 import { opinionAsked, opinionHolds } from './opinion';
 import { useOpinionActs } from './opinionActs';
@@ -53,7 +53,7 @@ import { SessionTimeline } from './SessionTimeline';
 import { SessionRail } from './SessionRail';
 import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } from './acts';
 import { askOfEntry, entryOfSession, isIntakeEntry } from './entries';
-import { useChannel, usePostChannel } from '../shell';
+import { useChannel, usePostChannel } from '../bridge/shell';
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
 import { sessionFacts } from './headFacts';
 import type { Answered } from './InlineConfirm';

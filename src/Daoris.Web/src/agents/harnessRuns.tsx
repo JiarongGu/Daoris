@@ -2,7 +2,7 @@ import { createContext, type ReactNode, useContext, useRef, useState } from 'rea
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { sentence } from '../locales/format';
-import { type DefaultStanding, type HarnessRoster, useHarnessAction, useHarnessEnded } from '../shell';
+import { type DefaultStanding, type HarnessRoster, useHarnessAction, useHarnessEnded } from '../bridge/shell';
 import { byTool, type AccountPlace } from './tools';
 import { accountName } from './agents';
 import { keys } from '../queries';

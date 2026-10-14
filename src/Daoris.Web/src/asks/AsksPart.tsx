@@ -13,8 +13,8 @@ import { namer } from '../settings/namer';
 import { askLines } from '../work/entries';
 import {
   useChannel, useChannelUnreads, useMarkChannel, usePostChannel,
-} from '../shell';
-import { useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useSessionEntries, useWorkflowRun, useWorkPlan } from '../shell';
+} from '../bridge/shell';
+import { useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useSessionEntries, useWorkflowRun, useWorkPlan } from '../bridge/shell';
 import { workspaceOf, workspacesOf } from '../workspaces';
 import { failure, type Notify, useErrorNotify } from '../ui';
 import { askStanding, freshest } from '../quests/records';

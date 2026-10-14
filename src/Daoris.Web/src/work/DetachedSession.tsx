@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuests, useSessions } from '../queries';
 import { namer } from '../settings/namer';
-import { useChatTurns, useHarnesses, useSessionOpenings, useSessionStreams } from '../shell';
+import { useChatTurns, useHarnesses, useSessionOpenings, useSessionStreams } from '../bridge/shell';
 import { frameShortcut } from '../menus/shortcuts';
 import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
 import { SessionConsole } from './SessionConsole';

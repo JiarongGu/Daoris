@@ -20,7 +20,7 @@ import { namer } from '../settings/namer';
 import {
   retryNotice, useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useRetryQuest, useSessionGroups, useSetHold, useTrace,
   useTrustFolder, useUntrusted, useWorkflowRun, useWorkPlan,
-} from '../shell';
+} from '../bridge/shell';
 import { sittingBecause } from '../signals';
 import { failure, type Notify, useErrorNotify } from '../ui';
 import type { HistoryDoor } from '../work/history';

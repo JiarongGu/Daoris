@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { sentence } from '../locales/format';
-import { useClearHistory } from '../shell';
+import { useClearHistory } from '../bridge/shell';
 import { failure, type Notify } from '../ui';
 import { clearRefusal, clearSaid, clearWent, type HistoryTarget, type HistoryUnitName } from './history';
 import type { Answered } from './InlineConfirm';

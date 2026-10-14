@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useMachineLog, useOpenLogFolder } from '../shell';
+import { useMachineLog, useOpenLogFolder } from '../bridge/shell';
 import { failure, type Notify, useErrorNotify } from '../ui';
 import { LOG_FILTERS, LogList, type LogFilters } from './Logs';
 

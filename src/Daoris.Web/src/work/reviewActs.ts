@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Quest, QuestAction, SetUpRef } from '../api';
 import { sentence } from '../locales/format';
 import { usePublishSetUpStep, useReviewVerdict } from '../queries';
-import { useNudge, useSay, useShowReviewAgain } from '../shell';
+import { useNudge, useSay, useShowReviewAgain } from '../bridge/shell';
 import { failure, type Notify } from '../ui';
 import type { Answered } from './InlineConfirm';
 import { type ReviewState, skipOn } from './review';

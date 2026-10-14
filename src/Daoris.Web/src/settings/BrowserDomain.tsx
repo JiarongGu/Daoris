@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   useAddFavorite, useBrowserSettings, useRemoveFavorite, useSetBrowser, useSetExtensions, useSetLinks,
-} from '../shell';
+} from '../bridge/shell';
 import {
   Button, Card, failure, Icon, type Notify, PathText, Prose, SectionTitle, Segmented, SettingRow, useErrorNotify,
 } from '../ui';

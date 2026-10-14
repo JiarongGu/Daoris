@@ -42,7 +42,7 @@ import { ShellSignals } from './ShellSignals';
 import {
   logEvent, useConsidered, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
   useRules, useSayUpdate, useSessionGroups, useShowReviewAgain, useSyncNow, useUntrusted, useUpdateState,
-} from './shell';
+} from './bridge/shell';
 import { byTool } from './agents/tools';
 import { UpdateBanner } from './update/UpdateBanner';
 import { LinkOpener } from './links';

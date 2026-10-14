@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { sentence } from './locales/format';
 import { keys } from './queries';
-import { useDriverReady } from './shell';
+import { useDriverReady } from './bridge/shell';
 import { type AccountWaitTick, type Consideration, type TrustHold, newsFrom } from './signals';
 import type { Notify } from './ui';
 

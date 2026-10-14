@@ -8,7 +8,7 @@ import {
 import {
   retryNotice, useAccounts, useConsidered, useHarnessAction, useHarnesses, useNudge, useOpinionWaits, useRefreshHarnesses,
   useRetryQuest, useRuleProposal, useRules, useSessionGroups, useTrustFolder, useUntrusted, useWaits,
-} from '../shell';
+} from '../bridge/shell';
 import { SignIn } from '../agents/SignIn';
 import { byTool } from '../agents/tools';
 import { failure, type Notify } from '../ui';

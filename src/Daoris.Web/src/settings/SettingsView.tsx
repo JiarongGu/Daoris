@@ -1,7 +1,7 @@
 import { type ComponentType, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WithHarnessRuns } from '../agents/harnessRuns';
-import { useDriver } from '../shell';
+import { useDriver } from '../bridge/shell';
 import type { Notify } from '../ui';
 import type { StarterDoor } from '../help/starters';
 import type { SetupStepId } from '../help/setup';

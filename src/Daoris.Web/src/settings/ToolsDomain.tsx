@@ -5,7 +5,7 @@ import { SessionConsole } from '../work/SessionConsole';
 import {
   type GitTarget, useToolDelete, useToolDownload, useToolGit, useToolLocation, useToolPick, useTools, useToolsEnded,
   useToolsLook, useToolStop, useToolUse,
-} from '../shell';
+} from '../bridge/shell';
 import { failure, Inline, type Notify, Prose, useErrorNotify } from '../ui';
 import { DomainLoading } from './DomainLoading';
 import {

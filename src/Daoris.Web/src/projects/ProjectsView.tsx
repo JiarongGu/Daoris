@@ -22,7 +22,7 @@ import {
   useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetCommits, useSetDrivable, useSetHelpers,
   useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees,
   useSetWriteAcross, useSweepPlan, useWorkflowCurrent,
-} from '../shell';
+} from '../bridge/shell';
 import { doorOf } from '../agents/tools';
 import { failure, type Notify, useErrorNotify } from '../ui';
 import { ListMore } from '../work/ListPane';

@@ -22,7 +22,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { en, zh } from '../locales';
-import { useChatTurns, useSay, useSessionEvents, useSessionReach } from '../shell';
+import { useChatTurns, useSay, useSessionEvents, useSessionReach } from '../bridge/shell';
 import { driverSource } from '../test/driverSource';
 import { CONVERSATION_CODES, firstAnswerWait, mergeEvents, runCount, segments, type SessionEvent, settle, toTurns } from './conversation';
 

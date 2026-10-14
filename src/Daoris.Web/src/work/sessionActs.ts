@@ -3,7 +3,7 @@ import type { Session } from '../api';
 import {
   retryNotice, stopNotice, useArchiveSessions, useCancelTurn, useDeleteSession, useHandOver, useOpenSessionFolder, useOpenWindow,
   useResolveSession, useRetryQuest, useStopSession,
-} from '../shell';
+} from '../bridge/shell';
 import { list, sentence } from '../locales/format';
 import { failure, type Notify, SESSION_ACTIVE } from '../ui';
 import { handOverSaid } from './say';

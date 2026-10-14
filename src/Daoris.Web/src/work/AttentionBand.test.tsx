@@ -30,7 +30,7 @@ import { keys } from '../queries';
 import { WorkspaceScopeProvider } from '../scope';
 import type { RuleProposal } from '../settings/AgentRules';
 import { type AccountScope, type AccountsAnswer, USE_DEFAULTS } from '../settings/accounts';
-import type { HarnessRoster } from '../shell';
+import type { HarnessRoster } from '../bridge/shell';
 import type { AccountWaitTick, Consideration, TrustHold } from '../signals';
 import { AttentionBand, type AttentionDoors } from './AttentionBand';
 import type { SessionGrouping } from './groups';

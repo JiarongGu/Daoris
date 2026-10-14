@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useHarnessCancel, useHarnessInput, useSessionConsole } from '../shell';
+import { useHarnessCancel, useHarnessInput, useSessionConsole } from '../bridge/shell';
 import { ExternalLink } from '../links';
 import { Button, Dot, Icon, MonoWell } from '../ui';
 

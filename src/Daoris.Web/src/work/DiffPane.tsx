@@ -9,7 +9,7 @@ import { ExternalLink } from '../links';
 import { store, stored } from '../lib/stored';
 import {
   useDiscardSessionTree, useHandOff, useHandOffPress, useLandSessionTree, useLanding, useReadingSince, useSessionDiff,
-} from '../shell';
+} from '../bridge/shell';
 import { Button, EmptyState, Inline, SESSION_ACTIVE } from '../ui';
 import { reviewBranch, reviewKnown } from './diff';
 import type { DiscardOffer } from './groups';

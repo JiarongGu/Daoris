@@ -7,7 +7,7 @@ import { SecondaryWindowRoot } from './SecondaryWindowRoot';
 import { WorkspaceScopeProvider } from './scope';
 import { secondaryWindow } from './work/window';
 import { applyTheme } from './theme';
-import { installPageErrors } from './shell';
+import { installPageErrors } from './bridge/shell';
 import './tokens.css';
 import './locales/i18n';
 

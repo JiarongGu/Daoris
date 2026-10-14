@@ -5,7 +5,7 @@ import { useAsks, useOpinions, useQuests, useRegistry, useSessions } from '../qu
 import { searchable } from '../lib/searchable';
 import {
   type SessionHit, useChannelUnreads, useDriver, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionSearch, useSessionWhere,
-} from '../shell';
+} from '../bridge/shell';
 import { askOfEntry, entryFacts, listedSessions, nameOfEntry, type SessionEntry } from './entries';
 import { sentence } from '../locales/format';
 import { Button, Icon, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';

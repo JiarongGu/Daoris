@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { Session } from '../api';
-import { type SessionHit } from '../shell';
+import { type SessionHit } from '../bridge/shell';
 import { SearchResults } from './SessionRail';
 
 // What the rail's search found in what was said (RAIL1), read a page of sessions at a time (RAILPAGE1b, UX §4): the foot's count

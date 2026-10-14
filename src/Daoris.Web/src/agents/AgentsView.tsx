@@ -8,7 +8,7 @@ import { SessionConsole } from '../work/SessionConsole';
 import {
   useAccountUse, useAccounts, useHarnessAction, useHarnesses, useRefreshHarnesses, useRuleAction, useRuleProposal, useRules,
   useSetAgentSettings, useUsage,
-} from '../shell';
+} from '../bridge/shell';
 import { SignIn } from './SignIn';
 import { byTool, type Tool } from './tools';
 import { failure, type Notify, useErrorNotify } from '../ui';
