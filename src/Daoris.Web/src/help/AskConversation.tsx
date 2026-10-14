@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { HELP_REPOSITORY } from '../api';
 import { type Carry, NO_CARRY } from '../compose/carry';
-import { sentence } from '../format';
+import { sentence } from '../locales/format';
 import { useHelpSessions } from '../queries';
 import {
   HELP_HISTORY, type HelpSettled, NO_TURNS, useCancelTurn, useChatTurns, useDeleteSession, useEditQueued, useEndChat, useHarnesses,

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ago } from '../format';
+import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
 import { Button, CheckField, Chip, Icon, Inline, Prose } from '../ui';
 import { BRANCH_ROWS, BranchRow, sweepKey, type LandedBranch } from './Sweep';

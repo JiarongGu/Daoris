@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, QuestSetUp, SetUpRef } from '../api';
-import { ago } from '../format';
+import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
 import { ExternalLink } from '../links';
 import { shellWord } from '../lib/shellWord';

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Registration } from '../api';
-import { figure } from '../format';
+import { figure } from '../locales/format';
 import { Button, Icon, Inline, Pill } from '../ui';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';

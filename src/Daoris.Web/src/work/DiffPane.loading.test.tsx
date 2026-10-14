@@ -19,7 +19,7 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => {},
 }));
 
-import '../i18n';
+import '../locales/i18n';
 import { keys } from '../queries';
 import { useDiscardSessionBranch, useSweep, useTreesSync } from '../shell';
 import { DiffPane } from './DiffPane';

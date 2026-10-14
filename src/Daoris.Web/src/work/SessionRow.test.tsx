@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import type { Quest, Session, SessionState } from '../api';
-import { moment } from '../format';
+import { moment } from '../locales/format';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
 import type { SessionGrouping } from './groups';

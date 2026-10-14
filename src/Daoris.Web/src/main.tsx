@@ -9,7 +9,7 @@ import { secondaryWindow } from './work/window';
 import { applyTheme } from './theme';
 import { installPageErrors } from './shell';
 import './tokens.css';
-import './i18n';
+import './locales/i18n';
 
 // The viewer's theme (D66), on the document BEFORE the first paint — applied after React mounted,
 // every launch with a chosen theme would flash the OS's one first. A secondary window runs this

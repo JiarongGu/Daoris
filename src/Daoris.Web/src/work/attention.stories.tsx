@@ -1,6 +1,6 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { ReactNode } from 'react';
-import { clockOf, list, moment } from '../format';
+import { clockOf, list, moment } from '../locales/format';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese, readerIn } from '../storyLanguage';
 import { AnsweredPark } from './AnsweredPark';

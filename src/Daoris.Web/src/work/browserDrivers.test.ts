@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import '../i18n';
+import '../locales/i18n';
 import type { Quest, Session } from '../api';
 import { browserDrivers } from './browserDrivers';
 

@@ -1,4 +1,4 @@
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import type { Quest, Session } from '../api';
 import { sessionTitle } from './identity';
 

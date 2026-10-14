@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { canBeAsked, type Registration } from '../api';
-import { sentence } from '../format';
+import { sentence } from '../locales/format';
 import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
 import { projectsItem, workspaceItem } from '../opener';
 import type { WorkflowTabProps } from '../workflow/WorkflowTab';

@@ -1,5 +1,5 @@
 import type { NotePart } from '../api';
-import { figure, list, moment } from '../format';
+import { figure, list, moment } from '../locales/format';
 import { windowName } from '../settings/accounts';
 import type { AccountNames } from './accountNames';
 import { reasonOf } from './say';

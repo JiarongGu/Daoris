@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { ReactElement } from 'react';
 import { cleanup, render as rtlRender, screen } from '@testing-library/react';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { byTool, type ToolDoor } from './tools';
 import { type AgentActs, AgentPage } from './AgentPage';
 import { CLAUDE_USE, DOORS, READ } from './agentsFixtures';

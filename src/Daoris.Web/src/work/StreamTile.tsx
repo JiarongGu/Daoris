@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
-import { elapsed } from '../format';
+import { elapsed } from '../locales/format';
 import { Button, Dot, Icon, SESSION_ACTIVE, SESSION_DOT, shownKey } from '../ui';
 import { type SessionGrouping, shownOf } from './groups';
 import { sessionOrigin, sessionTitle } from './identity';

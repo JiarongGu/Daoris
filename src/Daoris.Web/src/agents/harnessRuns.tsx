@@ -1,7 +1,7 @@
 import { createContext, type ReactNode, useContext, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { sentence } from '../format';
+import { sentence } from '../locales/format';
 import { type DefaultStanding, type HarnessRoster, useHarnessAction, useHarnessEnded } from '../shell';
 import { byTool, type AccountPlace } from './tools';
 import { accountName } from './agents';

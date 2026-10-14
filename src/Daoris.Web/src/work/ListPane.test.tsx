@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import '../i18n';
+import '../locales/i18n';
 import { StripMark } from '../ui';
 import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from './layout';
 import { LIST_DOOR, LIST_ROW } from './listKeys';

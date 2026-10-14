@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import type { Quest, Session } from '../api';
 import type { SessionGrouping } from './groups';
 import { questFacts, sessionFacts } from './headFacts';

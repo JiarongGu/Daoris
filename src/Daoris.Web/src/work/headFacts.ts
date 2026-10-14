@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { Quest, Session } from '../api';
-import { ago, elapsed, moment } from '../format';
+import { ago, elapsed, moment } from '../locales/format';
 import type { Consideration } from '../signals';
 import type { SweepBranch } from '../settings/Sweep';
 import type { AccountNamer } from '../agents/tools';

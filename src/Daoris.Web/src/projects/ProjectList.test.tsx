@@ -4,7 +4,7 @@ import { render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { Registration } from '../api';
-import '../i18n';
+import '../locales/i18n';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
 import { CJK, ELSEWHERE, ENGINE, GAME, MIRRORED, NEWBIE, UNDECLARED } from './fixtures';

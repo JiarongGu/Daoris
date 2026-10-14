@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sentence } from '../format';
+import { sentence } from '../locales/format';
 import { Button } from '../ui';
 import { effectiveDark, subscribeTheme } from '../theme';
 import { createScreen, type Screen, type ScreenLook } from './terminalScreen';

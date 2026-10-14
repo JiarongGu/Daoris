@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { type ComponentProps, useState } from 'react';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { type CheckoutReader, NewConversation, type StartRepository } from './NewConversation';
 
 /**

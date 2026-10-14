@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTidiedBranches } from '../bridge/log';
-import { sentence } from '../format';
+import { sentence } from '../locales/format';
 import { useSyncStanding } from '../queries';
 import { commitToast } from '../settings/Commits';
 import { helperToast } from '../settings/Helpers';

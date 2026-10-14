@@ -16,7 +16,7 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => {},
 }));
 
-import '../i18n';
+import '../locales/i18n';
 import { WorkFrame } from './WorkFrame';
 
 const ROOT = 'C:/somewhere/engine';

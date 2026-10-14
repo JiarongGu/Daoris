@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { workflowHolds } from '../workflow/gate';
 import { WorkflowHold } from '../workflow/WorkflowHold';
 import type { Session } from '../api';
-import { sentence } from '../format';
+import { sentence } from '../locales/format';
 import { cn } from '../lib/cn';
 import { ExternalLink } from '../links';
 import { store, stored } from '../lib/stored';

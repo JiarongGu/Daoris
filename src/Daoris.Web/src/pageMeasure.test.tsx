@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import { composeStories } from '@storybook/react-vite';
 import { cappedBlocks } from './test/measure';
-import './i18n';
+import './locales/i18n';
 
 /**
  * 🔴 **Every block of a record page wraps at one edge, the pane's** (D141, LAYOUT11), in every state its stories carry.

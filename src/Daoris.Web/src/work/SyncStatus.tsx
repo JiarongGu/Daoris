@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { SyncStanding } from '../api';
-import { ago } from '../format';
+import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
 import { Icon, Menu, Tip } from '../ui';
 import { STATUS_PRESSABLE } from './frame';

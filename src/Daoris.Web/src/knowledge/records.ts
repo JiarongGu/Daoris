@@ -1,5 +1,5 @@
 import { type Convergence, type Entry, notFound } from '../api';
-import { sentence } from '../format';
+import { sentence } from '../locales/format';
 
 // What Search's and Convergence's lists remember and read (FRAME1f, D118 §2, §3f): their filters as kept, a finding's
 // name, the tier an answer was made by, and an entry as a page reads it. Pure, so the list, the page and the memory

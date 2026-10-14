@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { CommitField, type CommitRule, commitRowSays, commitSays, commitSummary, commitToast } from './Commits';
 
 // DOORS1b (D164's amendment points 1 and 3): how a repository's work is committed, set on its Setup's *Line and landing* and on

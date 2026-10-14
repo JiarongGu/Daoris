@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { figure, list } from '../format';
+import { figure, list } from '../locales/format';
 import { cn } from '../lib/cn';
 import { CodeText, Icon, Inline } from '../ui';
 import type { InstructionAccount } from './conversation';

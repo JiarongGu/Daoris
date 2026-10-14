@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sentence } from '../format';
+import { sentence } from '../locales/format';
 import { SessionConsole } from '../work/SessionConsole';
 import {
   type GitTarget, useToolDelete, useToolDownload, useToolGit, useToolLocation, useToolPick, useTools, useToolsEnded,

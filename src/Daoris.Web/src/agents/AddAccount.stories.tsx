@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { PlaceAccount, RenameAccount, ReSignIn } from './AddAccount';
 import { accountState, type JoinChoice } from './agents';
 import { READ } from './agentsFixtures';

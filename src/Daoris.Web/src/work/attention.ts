@@ -1,4 +1,4 @@
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { type Ask, canBeAsked, type GoAhead, type Quest, type Registration, type Session } from '../api';
 import type { RuleProposal } from '../settings/AgentRules';
 import { proposalAuthor, proposalChange } from '../settings/proposals';

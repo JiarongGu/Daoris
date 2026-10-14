@@ -297,7 +297,7 @@ describe('QuestsView', () => {
   });
 
   it('says a quest\'s lanes in 中文, the lanes\' own names left as they are', async () => {
-    const { default: i18n } = await import('../i18n');
+    const { default: i18n } = await import('../locales/i18n');
     await i18n.changeLanguage('zh');
     try {
       stubLaned();

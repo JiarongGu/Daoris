@@ -10,7 +10,7 @@ import { DiscardBranchAsk, type SweepBranch } from '../settings/Sweep';
 import type { GoAhead, Quest, Session } from '../api';
 import type { AccountNamer } from '../agents/tools';
 import { type GoAheadAnswer, GoAheadList } from '../asks/GoAheadList';
-import { ago, elapsed, sessionTool, stamp } from '../format';
+import { ago, elapsed, sessionTool, stamp } from '../locales/format';
 import {
   answeredPark, Button, Inline, PathText, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
 } from '../ui';

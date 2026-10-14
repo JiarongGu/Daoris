@@ -4,7 +4,7 @@ import {
 } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { sentence } from './format';
+import { sentence } from './locales/format';
 import * as Toast from '@radix-ui/react-toast';
 import * as RadixSelect from '@radix-ui/react-select';
 import * as Tooltip from '@radix-ui/react-tooltip';

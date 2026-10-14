@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ago, figure } from '../format';
+import { ago, figure } from '../locales/format';
 import { Button, SettingRow } from '../ui';
 
 /** The most characters a standing answer holds — the driver's `DriverConfig.StandingLimit`, a deliberate copy. */

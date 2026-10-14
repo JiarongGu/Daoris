@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sentence, span } from '../format';
+import { sentence, span } from '../locales/format';
 import { cn } from '../lib/cn';
 import { Button, EmptyState, type IconName, Inline, Segmented } from '../ui';
 import { type DiffFile, type LineBehind, REVIEW_BOUND_MINUTES, type ReviewKnown } from './diff';

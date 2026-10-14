@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ago } from '../format';
+import { ago } from '../locales/format';
 import { ExternalLink } from '../links';
 import { Button, Icon, Inline, Pill, Prose, SkeletonRows } from '../ui';
 import type { CurrentWorkflow } from './current';

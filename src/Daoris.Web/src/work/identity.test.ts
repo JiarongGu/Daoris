@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { HELP_REPOSITORY, type Ask, type Quest, type Session } from '../api';
 import {
   askName, inTree, isHelp, isHelper, linkedSessions, ownTree, questName, sessionOrigin, sessionTitle, shortened, treeName,

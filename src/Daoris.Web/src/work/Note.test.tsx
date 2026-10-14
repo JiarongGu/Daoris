@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import type { NotePart } from '../api';
 import { code } from '../test/code';
 import { Note } from './Note';

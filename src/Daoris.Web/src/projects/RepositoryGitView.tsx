@@ -3,7 +3,7 @@ import {
   type GitAnswer, type GitBranch, type GitGraphPage, type GitLogCommit, type GitRepositoryBranches, gitRefusal, useGitBranches, useGitGraphPages,
 } from '../bridge/git';
 import { useSessionOpenings } from '../bridge/sessions';
-import { sentence } from '../format';
+import { sentence } from '../locales/format';
 import { useQuests, useSessions } from '../queries';
 import { questName, sessionTitle } from '../work/identity';
 import { BranchPage, type BranchRead } from './BranchPage';

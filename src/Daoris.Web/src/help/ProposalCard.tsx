@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { ago } from '../format';
+import { ago } from '../locales/format';
 import { RequirementItem } from '../quests/Requirements';
 import { Button, Inline } from '../ui';
 

@@ -3,7 +3,7 @@ import type { ReactElement } from 'react';
 import { cleanup, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { byTool, type ToolDoor } from './tools';
 import { AccountRow } from './AccountRow';
 import { type AgentActs, AgentPage } from './AgentPage';

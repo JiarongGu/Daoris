@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import '../i18n';
+import '../locales/i18n';
 import { ConversationFind } from './ConversationFind';
 
 // SESS1 S9: the way through a long run — the jumps and the search — props in, presses out.

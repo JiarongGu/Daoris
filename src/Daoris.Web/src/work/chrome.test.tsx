@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { en, zh } from '../locales';
 import { SessionConsole } from './SessionConsole';
 import { layTabs } from '../test/tabRoom';

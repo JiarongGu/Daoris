@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { moment } from '../format';
+import { moment } from '../locales/format';
 import { Button, Card, MetaLine, Pill, SectionTitle, SettingRow } from '../ui';
 import type { UpdateMode, UpdateOutcome, UpdateState } from '../update/UpdateBanner';
 

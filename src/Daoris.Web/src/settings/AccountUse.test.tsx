@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import type { Answered } from '../work/InlineConfirm';
 import { USE_DEFAULTS } from './accounts';
 import {

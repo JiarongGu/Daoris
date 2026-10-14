@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sentence } from '../format';
+import { sentence } from '../locales/format';
 import { useHarnessRun, WithHarnessRuns } from './harnessRuns';
 import { useRegistry } from '../queries';
 import { useScope } from '../scope';

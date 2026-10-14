@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ago } from '../format';
+import { ago } from '../locales/format';
 import type { LogRow } from '../settings/Logs';
 import { Button } from '../ui';
 

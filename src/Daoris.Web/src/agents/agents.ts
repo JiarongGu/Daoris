@@ -1,5 +1,5 @@
-import i18n from '../i18n';
-import { ago, clockOf, moment } from '../format';
+import i18n from '../locales/i18n';
+import { ago, clockOf, moment } from '../locales/format';
 import type { Account, AccountPlace, Tool } from './tools';
 import {
   type AccountCooling, type AccountFacts, type AccountSaid, type AccountScope, type AccountsAnswer, type AgentAccounts, agentOf,

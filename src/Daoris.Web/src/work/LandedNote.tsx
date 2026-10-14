@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { stamp } from '../format';
+import { stamp } from '../locales/format';
 import { ExternalLink } from '../links';
 import { Inline } from '../ui';
 import type { LandedWork } from './diff';

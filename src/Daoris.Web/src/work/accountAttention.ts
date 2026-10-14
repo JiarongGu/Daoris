@@ -1,7 +1,7 @@
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import type { Ask, Quest, Registration } from '../api';
 import { accountName, accountState, accountStates, joinChoices, ownState, runsFor, waitsOnPerson } from '../agents/agents';
-import { clockOf, list, moment } from '../format';
+import { clockOf, list, moment } from '../locales/format';
 import {
   type AccountCooling, type AccountScope, type AccountsAnswer, type AgentAccounts, agentOf, machineScope, workspaceScope,
 } from '../settings/accounts';

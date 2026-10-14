@@ -48,7 +48,7 @@ vi.mock('@shenora/react', async () => {
   };
 });
 
-import './i18n';
+import './locales/i18n';
 import { CAPTION_ATTRIBUTE, CAPTION_SLOTS, captionRects, useWindowChrome } from './windowChrome';
 import { AppStrip, DRAG_DISTANCE, STRIP_SPACE } from './work/frame';
 

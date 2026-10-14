@@ -1,6 +1,6 @@
 import { useContext, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { moment } from '../format';
+import { moment } from '../locales/format';
 import { cn } from '../lib/cn';
 import { Button, Inline, Pill } from '../ui';
 import { type Answered, InlineConfirm, Refused } from './InlineConfirm';

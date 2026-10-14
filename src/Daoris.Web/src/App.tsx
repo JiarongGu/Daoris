@@ -74,7 +74,7 @@ import { AppMenuBar, type BarMenu, focusMenuBar, useMenuFold } from './work/AppM
 import { useThemeChoice } from './theme';
 import { rememberedDomain, SETTINGS_DOMAINS } from './settings/domains';
 import { store, stored } from './lib/stored';
-import { figure } from './format';
+import { figure } from './locales/format';
 import { HarnessRuns } from './agents/harnessRuns';
 import { usePluginsView } from './plugins/PluginsView';
 import { useAgentsView, useAgentsWaiting } from './agents/AgentsView';

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
-import { ago } from '../format';
+import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
 import { Button, SectionTitle } from '../ui';
 import { Note } from './Note';

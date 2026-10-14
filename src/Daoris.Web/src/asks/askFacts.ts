@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { Ask } from '../api';
-import { ago } from '../format';
+import { ago } from '../locales/format';
 
 // The facts line under an ask's title (HEAD2d, D162 §4, the entry-and-heads design §2): where it goes, its age, and the one
 // live fact. Built here, not in `work/headFacts.ts`, which the quest's and the session's heads edit. Pure, so a head is

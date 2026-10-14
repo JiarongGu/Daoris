@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { SessionState } from './api';
-import i18n from './i18n';
+import i18n from './locales/i18n';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
   Button, CodeText, CountBadge, Dot, Drawer, EmptyState, Inline, Menu, MetaLine, MonoWell, PathText, Pill, QuickPanel, Segmented,

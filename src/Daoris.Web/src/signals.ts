@@ -1,5 +1,5 @@
-import { moment } from './format';
-import i18n from './i18n';
+import { moment } from './locales/format';
+import i18n from './locales/i18n';
 import { shellWord } from './lib/shellWord';
 
 /**

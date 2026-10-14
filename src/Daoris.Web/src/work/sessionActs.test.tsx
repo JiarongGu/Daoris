@@ -18,8 +18,8 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import type { Session } from '../api';
-import { list } from '../format';
-import i18n from '../i18n';
+import { list } from '../locales/format';
+import i18n from '../locales/i18n';
 import { en, zh } from '../locales';
 import { type SessionDoors, useSessionActs } from './sessionActs';
 

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { sentence } from '../format';
+import { sentence } from '../locales/format';
 import { useAbandonWork, usePauseWork, useResumeWork } from '../shell';
 import { sittingSentence } from '../signals';
 import { failure, type Notify } from '../ui';

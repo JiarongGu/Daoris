@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import userEvent from '@testing-library/user-event';
 import { composeStories } from '@storybook/react-vite';
 import { useState } from 'react';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { Button, Drawer, Icon, Menu } from '../ui';
 import { type Answered, InlineConfirm } from './InlineConfirm';
 import * as stories from './InlineConfirm.stories';

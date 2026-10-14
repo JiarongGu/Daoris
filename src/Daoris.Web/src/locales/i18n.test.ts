@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import i18n from './i18n';
-import { areas, en, homeOf, zh } from './locales';
+import { areas, en, homeOf, zh } from './index';
 
 /**
  * One file per area (MOD2): the build gate (`scripts/i18n-check.mjs`) holds these too, and this holds

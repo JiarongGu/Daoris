@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
-import { sentence } from './format';
+import { sentence } from './locales/format';
 import { keys } from './queries';
 import { useDriverReady } from './shell';
 import { type AccountWaitTick, type Consideration, type TrustHold, newsFrom } from './signals';

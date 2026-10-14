@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import '../i18n';
+import '../locales/i18n';
 import { attentionActs, needsAPerson } from './attention';
 import { STEP_DEPLOYED, STEP_NOT_YET, STEP_REVIEWED, STEP_SETTING_UP, STEP_SHOWN, STEP_SHOWN_AGAIN, WORK } from './reviewFixtures';
 

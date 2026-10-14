@@ -4,7 +4,7 @@ import { cleanup, render as rtlRender, screen, within } from '@testing-library/r
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { Ask } from '../api';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import type { WorkDoor } from '../work/pausing';
 import { PAUSABLE_ASK, PAUSED_ASK } from '../work/pausingFixtures';
 import { AskPage } from './AskPage';

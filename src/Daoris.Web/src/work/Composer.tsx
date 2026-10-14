@@ -2,7 +2,7 @@ import { type KeyboardEvent, useEffect, useId, useLayoutEffect, useRef, useState
 import { useTranslation } from 'react-i18next';
 import { MAX_FILE_BYTES, MAX_FILES } from '../compose/attachments';
 import { type Carry, NO_CARRY, useCarry, useFileChooser } from '../compose/carry';
-import { size } from '../format';
+import { size } from '../locales/format';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { Button, Icon, Tip } from '../ui';

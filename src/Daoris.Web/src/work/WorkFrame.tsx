@@ -1,7 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionConsole } from './SessionConsole';
-import { sentence } from '../format';
+import { sentence } from '../locales/format';
 import { buildChain } from '../map/chain';
 import type { Compose, OpenGroup } from '../opener';
 import { useAnswerSession, useAsks, usePersonDone, useQuests, useRegistry, useSessions } from '../queries';

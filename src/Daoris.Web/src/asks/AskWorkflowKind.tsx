@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { Ask } from '../api';
-import { ago } from '../format';
+import { ago } from '../locales/format';
 import { Button, Inline } from '../ui';
 
 /**

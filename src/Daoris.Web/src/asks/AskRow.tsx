@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { Ask, AskState, Session } from '../api';
-import { ago } from '../format';
+import { ago } from '../locales/format';
 import { Dot, Pill } from '../ui';
 import { CarriedCount } from '../compose/carry';
 import { contextOffer } from '../menus/press';

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { sentence } from '../format';
+import { sentence } from '../locales/format';
 import { useClearHistory } from '../shell';
 import { failure, type Notify } from '../ui';
 import { clearRefusal, clearSaid, clearWent, type HistoryTarget, type HistoryUnitName } from './history';

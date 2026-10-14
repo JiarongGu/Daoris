@@ -2,7 +2,7 @@ import type { ComponentType } from 'react';
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import { composeStories } from '@storybook/react-vite';
-import './i18n';
+import './locales/i18n';
 
 /**
  * Every story, rendered — Storybook's states are the design review (D42 §5), and this makes each one

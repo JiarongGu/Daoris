@@ -1,6 +1,6 @@
 import { useShenora } from '@shenora/react';
 import { useTranslation } from 'react-i18next';
-import { sentence } from '../format';
+import { sentence } from '../locales/format';
 import { type OpinionPressed, useAskOpinion, useOpinionAnyway, useOpinionMyself, useSay, useStopOpinion } from '../shell';
 import type { Notify } from '../ui';
 import type { Answered } from './InlineConfirm';

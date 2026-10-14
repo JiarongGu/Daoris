@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { moment } from '../format';
+import { moment } from '../locales/format';
 import { shellWord } from '../lib/shellWord';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { Button, CheckField, Icon, Inline, Pill, Prose, Segmented, SelectField, SettingRow, Tip } from '../ui';

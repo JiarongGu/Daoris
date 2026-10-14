@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import '../i18n';
+import '../locales/i18n';
 import type { Ask, Quest, Registration } from '../api';
-import { clockOf, moment } from '../format';
+import { clockOf, moment } from '../locales/format';
 import { type AccountScope, type AccountsAnswer, USE_DEFAULTS } from '../settings/accounts';
 import type { AccountWaitTick, Consideration } from '../signals';
 import { byTool, type ToolDoor } from '../agents/tools';

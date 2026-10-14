@@ -4,7 +4,7 @@ import {
   retryNotice, stopNotice, useArchiveSessions, useCancelTurn, useDeleteSession, useHandOver, useOpenSessionFolder, useOpenWindow,
   useResolveSession, useRetryQuest, useStopSession,
 } from '../shell';
-import { list, sentence } from '../format';
+import { list, sentence } from '../locales/format';
 import { failure, type Notify, SESSION_ACTIVE } from '../ui';
 import { handOverSaid } from './say';
 import { type ActFacts, folderOf, type SessionActId, workTargetOf } from './acts';

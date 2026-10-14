@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ago, size } from '../format';
+import { ago, size } from '../locales/format';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import {
   Button, Card, CardHeader, Inline, PathText, Pill, Prose, Segmented, SelectField, SettingRow,

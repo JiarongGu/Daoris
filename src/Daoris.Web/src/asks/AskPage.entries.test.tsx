@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { ReactElement } from 'react';
 import type { Ask } from '../api';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { askLines } from '../work/entries';
 import { EVIDENCE_ENTRIES } from '../work/entries.fixtures';
 import { AskPage } from './AskPage';

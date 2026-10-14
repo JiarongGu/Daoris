@@ -1,7 +1,7 @@
 import { type ReactNode, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SetUpRef } from '../api';
-import { clockOf, elapsed } from '../format';
+import { clockOf, elapsed } from '../locales/format';
 import { cn } from '../lib/cn';
 import { shellWord } from '../lib/shellWord';
 import type { TrustHold } from '../signals';

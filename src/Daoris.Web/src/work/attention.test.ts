@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import type { Ask, GoAhead, Quest, Registration, Session } from '../api';
 import type { RuleProposal } from '../settings/AgentRules';
 import type { Consideration } from '../signals';

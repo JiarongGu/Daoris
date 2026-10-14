@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { type Ask, canBeAsked, type Quest } from '../api';
 import { linksOf, toUpload } from '../compose/attachments';
 import { NO_CARRY } from '../compose/carry';
-import { sentence } from '../format';
+import { sentence } from '../locales/format';
 import { askItem } from '../opener';
 import {
   useAnswerGoAhead, useAsk, useAsks, useChooseAskReview, useChooseAskWorkflow, useCloseAsk, useDeleteAsk, usePublishAsk, useRegistry, useSessions,

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import {
   type AccountScope, type AgentAccounts, agentOf, cannotLeave, coolingLine, heldLine, listedIn, machineScope, moved, nextLine,
   type NextStart, nothingSaid, offeredLine, ownLine, saidLine, used, USE_DEFAULTS, windowName, workspaceScope,

@@ -47,7 +47,7 @@ vi.mock('@shenora/react', () => ({
 }));
 vi.mock('./terminalScreen', () => ({ createScreen }));
 
-import '../i18n';
+import '../locales/i18n';
 import { useTerminals } from '../shell';
 import { setThemeChoice } from '../theme';
 import { TerminalView } from './TerminalView';

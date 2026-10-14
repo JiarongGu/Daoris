@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { api, Registration } from '../api';
-import { sentence } from '../format';
+import { sentence } from '../locales/format';
 import { InlineConfirm } from '../work/InlineConfirm';
 import { workspaceOf } from '../workspaces';
 import { useImportFolder, useRegisterRepository, useRetireRepository, useWireRepository } from '../queries';

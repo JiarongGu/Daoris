@@ -16,7 +16,7 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => {},
 }));
 
-import '../i18n';
+import '../locales/i18n';
 import type { Session } from '../api';
 import { DiffPane } from './DiffPane';
 

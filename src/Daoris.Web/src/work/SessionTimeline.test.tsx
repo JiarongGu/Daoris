@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import type { Quest, Session } from '../api';
 import { SessionTimeline, TimelineEntry } from './SessionTimeline';
 

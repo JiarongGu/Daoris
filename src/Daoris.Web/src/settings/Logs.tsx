@@ -1,6 +1,6 @@
 import { Fragment, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { figure, stamp } from '../format';
+import { figure, stamp } from '../locales/format';
 import { cn } from '../lib/cn';
 import { Button, Card, Icon, Inline, MonoWell, PathText, Prose, Segmented, SelectField, SettingRow, SkeletonRows } from '../ui';
 

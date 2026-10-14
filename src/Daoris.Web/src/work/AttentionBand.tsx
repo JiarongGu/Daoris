@@ -13,7 +13,7 @@ import { SignIn } from '../agents/SignIn';
 import { byTool } from '../agents/tools';
 import { failure, type Notify } from '../ui';
 import type { AccountsKnown } from './accountAttention';
-import { sentence } from '../format';
+import { sentence } from '../locales/format';
 import type { Attention, AttentionActs } from './AttentionRow';
 import type { Answered } from './InlineConfirm';
 import { attentionKey, AttentionList, type AttentionDoors, AttentionRegion, NothingNeedsYou } from './AttentionList';

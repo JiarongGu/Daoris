@@ -1,4 +1,4 @@
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { type Ask, HELP_REPOSITORY, type Quest, type Session } from '../api';
 
 // The working surface's derived identity (docs/2026-09-21-working-surface-design.md §3). Pure, so

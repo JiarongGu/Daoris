@@ -22,7 +22,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import '../i18n';
+import '../locales/i18n';
 import { SignIn } from './SignIn';
 
 const ID = 'claude-code:login';

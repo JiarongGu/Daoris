@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import type { GoAhead, Quest, Session } from '../api';
 import type { SweepBranch } from '../settings/Sweep';
 import type { Answered } from './InlineConfirm';

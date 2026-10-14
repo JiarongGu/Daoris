@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../storyLanguage';
 import type { Session } from '../api';

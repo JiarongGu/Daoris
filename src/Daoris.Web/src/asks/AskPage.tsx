@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Ask, DeclarationMatch, Session } from '../api';
-import { ago, sessionTool, size, stamp } from '../format';
+import { ago, sessionTool, size, stamp } from '../locales/format';
 import { ExternalLink } from '../links';
 import type { Consideration } from '../signals';
 import type { AccountNamer } from '../agents/tools';

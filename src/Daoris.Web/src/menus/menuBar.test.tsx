@@ -24,7 +24,7 @@ vi.mock('@shenora/react', async () => {
   };
 });
 
-import '../i18n';
+import '../locales/i18n';
 import { App } from '../App';
 import { AT_START } from '../help/setupGuide';
 import { WorkspaceScopeProvider } from '../scope';

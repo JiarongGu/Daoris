@@ -1,7 +1,7 @@
 import { useShenora } from '@shenora/react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, QuestAction, SetUpRef } from '../api';
-import { sentence } from '../format';
+import { sentence } from '../locales/format';
 import { usePublishSetUpStep, useReviewVerdict } from '../queries';
 import { useNudge, useSay, useShowReviewAgain } from '../shell';
 import { failure, type Notify } from '../ui';

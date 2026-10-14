@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import type { NotePart } from '../api';
-import { moment } from '../format';
+import { moment } from '../locales/format';
 import { linesTaken, liveParts, NOTE_CODES, noteBlocks, noteLines, noteText } from './noteLines';
 
 // A session's note as the page words it (LANG1b, D142 points 1, 4, 5; the language design §2, §5, §6): a coded part from

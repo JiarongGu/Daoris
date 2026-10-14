@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sentence } from '../format';
+import { sentence } from '../locales/format';
 import { FindingList, type FindingsAnswer } from './FindingList';
 import { FindingMainNotice, FindingPage } from './FindingPage';
 import { convergenceFilters, type EntryReading, findingId, readingOf } from './records';

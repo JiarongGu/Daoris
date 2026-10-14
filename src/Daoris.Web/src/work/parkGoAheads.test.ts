@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import type { Ask, GoAhead } from '../api';
 import { goAheadsAsked, goAheadToast } from './parkGoAheads';
 

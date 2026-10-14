@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { act, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import type { SessionState } from '../api';
 import { layTabs } from '../test/tabRoom';
 import { type DockPreview, dockOpensOn, followed, RightDock } from './RightDock';

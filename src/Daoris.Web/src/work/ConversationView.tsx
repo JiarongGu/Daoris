@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { compact, elapsed, moment, span } from '../format';
+import { compact, elapsed, moment, span } from '../locales/format';
 import { cn } from '../lib/cn';
 import { Button, Dot, Icon, Inline, Tip } from '../ui';
 import type { NotePart } from '../api';

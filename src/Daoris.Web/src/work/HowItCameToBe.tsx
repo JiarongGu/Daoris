@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { figure, list, moment } from '../format';
+import { figure, list, moment } from '../locales/format';
 import { cn } from '../lib/cn';
 import { ExternalLink } from '../links';
 import type { AccountNamer } from '../agents/tools';

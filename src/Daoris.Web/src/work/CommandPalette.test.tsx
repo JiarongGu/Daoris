@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import '../i18n';
+import '../locales/i18n';
 import type { Command } from '../menus/commands';
 import { CommandPalette } from './CommandPalette';
 

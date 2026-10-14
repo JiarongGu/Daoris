@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import type { Session } from '../api';
 import type { AccountsAnswer, AgentAccounts } from '../settings/accounts';
 import type { ToolDoor } from '../agents/tools';

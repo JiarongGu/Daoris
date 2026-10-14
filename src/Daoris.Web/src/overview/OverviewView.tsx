@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useQuests, useRegistry, useRepositories } from '../queries';
-import { ago, compact, figure, sittingDays } from '../format';
+import { ago, compact, figure, sittingDays } from '../locales/format';
 import { ranked, widest } from './overview';
 import { useConsidered } from '../shell';
 import { sittingBecause, sittingSentence } from '../signals';

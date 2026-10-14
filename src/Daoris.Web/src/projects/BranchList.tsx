@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { ago, stamp } from '../format';
+import { ago, stamp } from '../locales/format';
 import { ExternalLink } from '../links';
 import { ListMore } from '../work/ListPane';
 import { Button, Inline, Pill, Prose, SESSION_TONE, type ShownState } from '../ui';

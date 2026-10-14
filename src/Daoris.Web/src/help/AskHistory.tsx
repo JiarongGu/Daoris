@@ -1,6 +1,6 @@
 import { Fragment, type KeyboardEvent, type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ago } from '../format';
+import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { shellWord } from '../lib/shellWord';

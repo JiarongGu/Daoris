@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
-import { ago, elapsed, moment } from '../format';
+import { ago, elapsed, moment } from '../locales/format';
 import { Dot, Icon, Menu, SESSION_ACTIVE, SESSION_DOT, shownKey, StripMark } from '../ui';
 import { cn } from '../lib/cn';
 import { contextOffer } from '../menus/press';

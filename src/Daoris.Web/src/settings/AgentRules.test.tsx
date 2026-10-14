@@ -2,7 +2,7 @@ import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { code } from '../test/code';
 import { AgentRules, type AgentRulesState, type RuleProposal } from './AgentRules';
 

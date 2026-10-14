@@ -20,7 +20,7 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => {},
 }));
 
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { keys } from '../queries';
 import { code } from '../test/code';
 import { AskDaoris } from './AskDaoris';

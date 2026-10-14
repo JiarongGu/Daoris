@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GoAhead } from '../api';
-import { ago } from '../format';
+import { ago } from '../locales/format';
 import { Button, Pill } from '../ui';
 import { type Answered, Refused } from '../work/InlineConfirm';
 

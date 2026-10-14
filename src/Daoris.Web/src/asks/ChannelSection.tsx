@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { ago } from '../format';
+import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
 import {
   type Channel, type ChannelItem, type ChannelPost, forEntry, lineWords, newestAt, repliesTo, repositoriesOf, sinceMark,

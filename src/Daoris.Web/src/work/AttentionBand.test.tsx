@@ -25,7 +25,7 @@ vi.mock('@shenora/react', async () => {
   };
 });
 
-import '../i18n';
+import '../locales/i18n';
 import { keys } from '../queries';
 import { WorkspaceScopeProvider } from '../scope';
 import type { RuleProposal } from '../settings/AgentRules';

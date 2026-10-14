@@ -14,8 +14,8 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => undefined,
 }));
 
-import { sentence } from '../format';
-import i18n from '../i18n';
+import { sentence } from '../locales/format';
+import i18n from '../locales/i18n';
 import { keys } from '../queries';
 import {
   useArchiveSessions, useDeleteSession, useGoOnNew, useOpenSessionFolder, useSessionGroups, type SessionGrouping,

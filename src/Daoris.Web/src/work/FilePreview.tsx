@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { size } from '../format';
+import { size } from '../locales/format';
 import { cn } from '../lib/cn';
 import { Button, Icon, Inline, Segmented, SkeletonRows, Tip } from '../ui';
 import { highlightLines, languageOf } from './codeLines';

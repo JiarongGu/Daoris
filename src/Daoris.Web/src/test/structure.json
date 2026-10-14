@@ -61,11 +61,6 @@
     "motion.test.ts": "design",
     "pageMeasure.test.tsx": "design",
 
-    "i18n.ts": "locales",
-    "i18n.test.ts": "locales",
-    "format.ts": "locales",
-    "format.test.ts": "locales",
-
     "shell.ts": "bridge",
     "log.test.ts": "bridge"
   }
