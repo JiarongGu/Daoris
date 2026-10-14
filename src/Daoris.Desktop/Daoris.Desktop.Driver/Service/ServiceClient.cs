@@ -144,6 +144,8 @@ public sealed class ServiceClient : IDisposable
             Closed = closed,
             // Whose the take is on each taken quest a look would carry on (CARRY2b), the claim asked of the host for those alone.
             Takes = ReadTakes(records, await CarryOnClaimsAsync(quests, lastRun, ct).ConfigureAwait(false)),
+            // Each record's entry, which a quest's publisher names its line by (SESSONE1d).
+            Entries = ReadEntries(records),
         };
     }
 
@@ -1501,7 +1503,30 @@ public sealed class ServiceClient : IDisposable
             Updated = Moment(session, "updated"),
             // When it was made, which a curve move's hold is counted from (SWITCH1c-ii).
             Created = Moment(session, "created"),
+            // Its session entry and its quest (SESSONE1a): what a later quest of the same line goes into its tree by (SESSONE1d).
+            Entry = Text(session, "entry") is { Length: > 0 } entry ? entry : null,
+            Quest = Text(session, "quest") is { Length: > 0 } quest ? quest : null,
         };
+
+    /// <summary>
+    /// Every record's entry key by its id (SESSONE1d), as the service answered it: this machine's and a teammate's mirror, keyed
+    /// <c>origin/id</c>, since a quest's publisher may be either. A record from a host before the key answers none, and is absent.
+    /// </summary>
+    internal static IReadOnlyDictionary<string, string> ReadEntries(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var entries = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (document.RootElement.ValueKind != JsonValueKind.Array) return entries;
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            if (session.ValueKind == JsonValueKind.Object && Text(session, "id") is { Length: > 0 } id && Text(session, "entry") is { Length: > 0 } entry)
+            {
+                entries[id] = entry;
+            }
+        }
+
+        return entries;
+    }
 
     /// <summary>
     /// The words waiting on a record (MSG1a, D137 §2.4), one by one, read without trusting the shape: a word without its id,

@@ -1067,6 +1067,10 @@ public sealed class Driver(
             ? priorTree
             : null;
         var carryingOn = start.Resumes is not null && quest.Awaits is null or "";
+        // A further part of a session (SESSONE1d, D167 point 4 as amended) goes into the tree the planner found free, where it still
+        // stands; one the tidy took at its landing grows again below, from the branch that work landed on (D82), else from the line.
+        var entryTree = isolated && start.Entry?.Into is { Tree: { Length: > 0 } partTree } ? partTree : null;
+        var joinedIn = entryTree is not null && Directory.Exists(entryTree) ? entryTree : null;
 
         // What the question came back with, which is the whole point of resuming: the session is handed
         // it. Read before the record opens, like every hold above — a question the service no longer
@@ -1090,7 +1094,7 @@ public sealed class Driver(
         if (isolated && starting is null) return Hold(TreeLock.Replaying(quest.To));
 
         TreeOpened? opened = null;
-        if (isolated && resumedIn is null)
+        if (isolated && resumedIn is null && joinedIn is null)
         {
             try
             {
@@ -1109,7 +1113,8 @@ public sealed class Driver(
                                 && Context.Trees.Recorded.Landing(stepBefore.Session) is { GoneAt: null } chain
                                 && string.Equals(chain.Repository, quest.To, StringComparison.OrdinalIgnoreCase)
                             ? chain.Branch
-                            : null)
+                            : entryTree is not null ? EntryLanded(start.Entry!, quest.To) : null,
+                        partOf: entryTree is not null ? start.Entry!.Into!.Session : null)
                     .ConfigureAwait(false);
             }
             catch (DriverException error)
@@ -1118,7 +1123,7 @@ public sealed class Driver(
             }
         }
 
-        var workTree = opened?.Path ?? resumedIn ?? root;
+        var workTree = opened?.Path ?? resumedIn ?? joinedIn ?? root;
 
         // A set-up step follows its repository's own procedure, which its tree must hold (REVIEWENV1c, design §2.1): checked
         // here, once the tree exists, and held before any record, a fresh tree going as a refused open's does.
@@ -1297,8 +1302,11 @@ public sealed class Driver(
                 // driver, because the session may not run `git status` itself. An open quest's start, handed the words its
                 // session could not go on with (MSG1b), takes it as any first start does: it is not yet anyone's.
                 CutOff = carryingOn && quest.Status != "Open" ? start.Resumes!.Note ?? "it ended before closing the quest." : null,
-                InFlight = carryingOn ? await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) : [],
+                // A further part gone into its session's tree is told what the part before it left uncommitted there (SESSONE1d).
+                InFlight = carryingOn || joinedIn is not null ? await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) : [],
                 GrewFrom = opened?.GrewFrom,
+                // The parts before it on its session's line, and how its tree stands to theirs (SESSONE1d).
+                Parts = start.Entry is { } entry ? await PartsAsync(entry, joinedIn, entryTree, opened, quest.To, ct).ConfigureAwait(false) : null,
                 // How its work will land (WSR1, D87), for a session in a tree of its own — the only kind
                 // the review's press reaches. A chain's step is told its chain's branch, which its done moves on (LAND2c). Under a
                 // named workflow its run's bound version's landing step says it (WORKFLOW1f); a run's first start is bound after it
@@ -1825,6 +1833,58 @@ public sealed class Driver(
         {
             return own;
         }
+    }
+
+    /// <summary>
+    /// The branch a session's work last landed on here (SESSONE1d; D82 by entry rather than by chain): the newest of its parts'
+    /// landings in the repository whose record stands, or null where none of them landed on a branch.
+    /// </summary>
+    private string? EntryLanded(EntryParts entry, string repository) =>
+        entry.Parts
+            .Select(part => Context.Trees.Recorded.Landing(part.Session))
+            .FirstOrDefault(landing => landing is { GoneAt: null }
+                                       && string.Equals(landing.Repository, repository, StringComparison.OrdinalIgnoreCase))
+            ?.Branch;
+
+    /// <summary>
+    /// What a further part of a session is handed of the parts before it (SESSONE1d): each one's record, its tree's name where the
+    /// tree stands and its branch now, or the branch its work landed on where the tree is gone; and how its own tree stands to
+    /// theirs. Only the newest the instruction names are read from git; a running part's note is its opening, so none is said.
+    /// </summary>
+    /// <param name="joinedIn">The tree it went into, standing; null where it did not.</param>
+    /// <param name="entryTree">The tree the planner found free, gone or not; null where it found none.</param>
+    private async Task<SessionParts> PartsAsync(
+        EntryParts entry, string? joinedIn, string? entryTree, TreeOpened? opened, string repository, CancellationToken ct)
+    {
+        var earlier = new List<EarlierPart>();
+        foreach (var part in entry.Parts)
+        {
+            var named = earlier.Count < TargetPrompt.PartsShown;
+            var tree = named && part.Tree is { Length: > 0 } path && Directory.Exists(path) ? path : null;
+            var branch = tree is not null
+                ? await Context.Trees.BranchNowAsync(tree, ct).ConfigureAwait(false) ?? $"daoris/{TreeName(tree)}"
+                : named && Context.Trees.Recorded.Landing(part.Session) is { GoneAt: null } landing
+                        && string.Equals(landing.Repository, repository, StringComparison.OrdinalIgnoreCase)
+                    ? landing.Branch
+                    : null;
+            earlier.Add(new EarlierPart(part.Session, part.Quest, part.State)
+            {
+                Note = part.Running ? null : part.Note,
+                Tree = tree is null ? null : TreeName(tree),
+                Branch = branch,
+            });
+        }
+
+        var regrown = entryTree is not null && joinedIn is null;
+        return new SessionParts(earlier)
+        {
+            Into = joinedIn is not null ? entry.Into?.Session : null,
+            HeldBy = entry.HeldBy,
+            Gone = regrown ? entry.Into?.Session : null,
+            GrewFrom = regrown ? opened?.GrewFrom : null,
+        };
+
+        static string TreeName(string tree) => Path.GetFileName(tree.TrimEnd('/', '\\'));
     }
 
     /// <summary>

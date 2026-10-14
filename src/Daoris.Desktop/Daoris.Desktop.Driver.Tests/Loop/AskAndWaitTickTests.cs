@@ -101,6 +101,48 @@ public sealed class AskAndWaitTickTests : IDisposable
         Assert.Equal(2, service.SessionCount);
     }
 
+    /// <summary>
+    /// SESSONE1d (D167 point 4 as amended; the co-working design §3): while the first part waits on its question, a request of the
+    /// same ask reaches the same repository, published by the session that answers the question. It is a further part of the same
+    /// session, so it goes into the tree the first part left free, and is told what that part did and where.
+    /// </summary>
+    [Fact]
+    public async Task A_further_part_of_a_session_goes_into_the_tree_its_earlier_part_left_free()
+    {
+        await using var service = StandIn.Start(_repository);
+        service.Entries["q1"] = "ask:a1/engine";
+        var log = Path.Combine(_home, "agent.log");
+        var driver = Driver(service, log);
+
+        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var first = service.Session("s1");
+        Assert.Equal("completed", first["state"]!.GetValue<string>());
+        var tree = first["tree"]!.GetValue<string>();
+
+        // `backend`'s session, on the same ask, asks `engine` for something more while `q1` still waits on `q2`.
+        service.Keep(new JsonObject { ["id"] = "b1", ["repository"] = "backend", ["state"] = "completed", ["entry"] = "ask:a1/backend" });
+        service.Add(new JsonObject
+        {
+            ["id"] = "q3", ["from"] = "backend", ["to"] = "engine", ["title"] = "Keep the note's author too",
+            ["body"] = "The notes endpoint takes an author.", ["status"] = "Open", ["publishedBy"] = "b1",
+        });
+        service.Entries["q3"] = "ask:a1/engine";
+        var look = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+
+        var started = Assert.Single(look.Considerations, c => c.Quest.Id == "q3");
+        Assert.Equal("s1", started.Entry?.Into?.Session);
+        var part = service.Session("s3");
+        Assert.Equal("q3", part["quest"]!.GetValue<string>());
+        Assert.Equal(Path.GetFullPath(tree), Path.GetFullPath(part["tree"]!.GetValue<string>()), ignoreCase: true);
+
+        var handed = File.ReadAllLines(log).Select(line => JsonNode.Parse(line)!).Last();
+        Assert.Equal(Path.GetFullPath(tree), Path.GetFullPath(handed["cwd"]!.GetValue<string>()), ignoreCase: true);
+        var target = handed["target"]!.GetValue<string>();
+        Assert.Contains("This quest continues a line of work already under way in `engine`", target);
+        Assert.Contains("- Session `s1` (quest `#q1`), completed", target);
+        Assert.Contains("You are in session `s1`'s tree, on its branch", target);
+    }
+
     private Daoris.Driver.Driver Driver(StandIn service, string log, bool resumedDoesNothing = false)
     {
         var config = DriverConfig.Empty with
@@ -135,6 +177,8 @@ public sealed class AskAndWaitTickTests : IDisposable
             const [log, mode] = process.argv.slice(2);
             const target = process.env.DAORIS_TARGET ?? '';
             appendFileSync(log, JSON.stringify({ cwd: process.cwd(), target }) + '\n');
+            // A further part of the session (SESSONE1d) only says where it ran: its quest is not `q1`'s to answer for.
+            if (target.includes('line of work already under way')) process.exit(0);
             const respond = (body) => fetch(`${process.env.DAORIS_SERVICE_URL}/api/quests/q1/respond`, {
               method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
             if (!target.includes('resuming quest')) {
@@ -242,6 +286,24 @@ public sealed class AskAndWaitTickTests : IDisposable
             }
         }
 
+        /// <summary>
+        /// The session entry the ledger writes at each open (SESSONE1a), by the quest the session serves: the stand-in holds no rule,
+        /// so a test names each key. A quest named none opens a record with none, as a host from before the key answers.
+        /// </summary>
+        public Dictionary<string, string> Entries { get; } = new(StringComparer.Ordinal);
+
+        /// <summary>A quest published since, served beside the two (SESSONE1d).</summary>
+        public void Add(JsonObject quest)
+        {
+            lock (_sessions) _quests.Add(quest);
+        }
+
+        /// <summary>A record of another repository's session, served among the records as a teammate's or a sibling's is (SESSONE1d).</summary>
+        public void Keep(JsonObject session)
+        {
+            lock (_sessions) _sessions.Add(session);
+        }
+
         private JsonObject Quest(string id) => _quests.Single(q => q["id"]!.GetValue<string>() == id);
 
         private async Task ServeAsync()
@@ -313,6 +375,7 @@ public sealed class AskAndWaitTickTests : IDisposable
                             ["created"] = DateTimeOffset.UtcNow.AddMinutes(_sessions.Count).ToString("O"),
                         };
                         if (KeepsAdapter) session["adapter"] = body["adapter"]?.GetValue<string>();
+                        if (Entries.TryGetValue(body["quest"]!.GetValue<string>(), out var entry)) session["entry"] = entry;
                         // The session it continues, why and who asked (MIXAGENT1a-iii), as the service answers them on loopback.
                         StandInLedger.Continues(session, body.AsObject());
                         _sessions.Add(session);

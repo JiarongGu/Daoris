@@ -118,6 +118,36 @@ public sealed class TargetPromptGoldenTests
             OpinionSource.Workspace),
     };
 
+    /// <summary>
+    /// A further part of a session (SESSONE1d, D167 point 4 as amended): a new quest of the session's entry, gone into the tree its
+    /// earlier part left free, which left a change uncommitted there. Handed what the earlier part did, its tree and its branch.
+    /// </summary>
+    internal static readonly SessionTarget Part = Bare with
+    {
+        Parts = new SessionParts(
+        [
+            new EarlierPart("283ef343", "3068f747", "completed")
+            {
+                Note = "asked #711d2524 of `console-api`, and waits on its answer.", Tree = "s-283ef343", Branch = "daoris/s-283ef343",
+            },
+            new EarlierPart("1f0e9d8c", "3068f747", "failed") { Note = "the agent refused the call: Authentication required." },
+        ])
+        {
+            Into = "283ef343",
+        },
+        InFlight = [" M src/notes.ts"],
+    };
+
+    /// <summary>A further part whose session's tree a live part holds (SESSONE1d): it runs alongside, in a tree of its own.</summary>
+    internal static readonly SessionTarget PartAlongside = Bare with
+    {
+        Parts = new SessionParts(
+            [new EarlierPart("62c005bc", "28b052ac", "working") { Tree = "s-62c005bc", Branch = "daoris/s-62c005bc" }])
+        {
+            HeldBy = "62c005bc",
+        },
+    };
+
     private static string RepositoryRoot()
     {
         var at = new DirectoryInfo(AppContext.BaseDirectory);
@@ -135,6 +165,8 @@ public sealed class TargetPromptGoldenTests
         "carry-on" => CarryOn,
         "set-up" => SetUpStep,
         "own-tree" => OwnTree,
+        "part" => Part,
+        "part-alongside" => PartAlongside,
         _ => throw new ArgumentOutOfRangeException(nameof(which), which, null),
     };
 
@@ -144,6 +176,8 @@ public sealed class TargetPromptGoldenTests
     [InlineData("carry-on")]
     [InlineData("set-up")]
     [InlineData("own-tree")]
+    [InlineData("part")]
+    [InlineData("part-alongside")]
     public void The_quests_instruction_is_its_golden_text(string which)
     {
         Assert.Equal(File.ReadAllText(GoldenPath($"{which}.md")), TargetPrompt.Compose(Of(which)));
@@ -162,6 +196,8 @@ public sealed class TargetPromptGoldenTests
     [InlineData("carry-on")]
     [InlineData("set-up")]
     [InlineData("own-tree")]
+    [InlineData("part")]
+    [InlineData("part-alongside")]
     public void The_account_beside_it_is_its_golden(string which)
     {
         var account = TargetPrompt.Composed(Of(which)).Account;
