@@ -63,63 +63,56 @@ public sealed class AbandonRecord(string home)
     }
 
     /// <summary>Written by hand, as the driver's other files are, for the AOT reason <see cref="DriverConfig"/> gives.</summary>
-    private static string ToJson(IReadOnlyList<AbandonEntry> entries)
+    private static string ToJson(IReadOnlyList<AbandonEntry> entries) => JsonFile.Serialize(writer =>
     {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        writer.WriteStartObject();
+        writer.WriteStartArray("abandoned");
+        foreach (var entry in entries)
         {
             writer.WriteStartObject();
-            writer.WriteStartArray("abandoned");
-            foreach (var entry in entries)
+            writer.WriteString("scope", entry.Scope);
+            writer.WriteString("id", entry.Id);
+            writer.WriteString("at", Moments.Write(entry.At));
+            writer.WriteString("door", entry.Door);
+            writer.WriteString("reason", entry.Reason);
+            Strings(writer, "declined", entry.Declined);
+            if (entry.Closed) writer.WriteBoolean("closed", true);
+            writer.WriteStartArray("trees");
+            foreach (var tree in entry.Trees)
             {
                 writer.WriteStartObject();
-                writer.WriteString("scope", entry.Scope);
-                writer.WriteString("id", entry.Id);
-                writer.WriteString("at", Moments.Write(entry.At));
-                writer.WriteString("door", entry.Door);
-                writer.WriteString("reason", entry.Reason);
-                Strings(writer, "declined", entry.Declined);
-                if (entry.Closed) writer.WriteBoolean("closed", true);
-                writer.WriteStartArray("trees");
-                foreach (var tree in entry.Trees)
-                {
-                    writer.WriteStartObject();
-                    writer.WriteString("repository", tree.Repository);
-                    writer.WriteString("branch", tree.Branch);
-                    if (tree.Tip is not null) writer.WriteString("tip", tree.Tip);
-                    if (tree.Commits is { } commits) writer.WriteNumber("commits", commits);
-                    if (tree.Uncommitted is { } uncommitted) writer.WriteNumber("uncommitted", uncommitted);
-                    Strings(writer, "sessions", tree.Sessions);
-                    if (tree.Alone) writer.WriteBoolean("alone", true);
-                    writer.WriteEndObject();
-                }
+                writer.WriteString("repository", tree.Repository);
+                writer.WriteString("branch", tree.Branch);
+                if (tree.Tip is not null) writer.WriteString("tip", tree.Tip);
+                if (tree.Commits is { } commits) writer.WriteNumber("commits", commits);
+                if (tree.Uncommitted is { } uncommitted) writer.WriteNumber("uncommitted", uncommitted);
+                Strings(writer, "sessions", tree.Sessions);
+                if (tree.Alone) writer.WriteBoolean("alone", true);
+                writer.WriteEndObject();
+            }
 
-                writer.WriteEndArray();
-                Strings(writer, "stopped", entry.Stopped);
-                Strings(writer, "archived", entry.Archived);
-                writer.WriteStartArray("stayed");
-                foreach (var keep in entry.Stayed)
-                {
-                    writer.WriteStartObject();
-                    writer.WriteString("piece", keep.Piece);
-                    writer.WriteString("why", keep.Why);
-                    if (keep.Machine is not null) writer.WriteString("machine", keep.Machine);
-                    if (keep.Where is not null) writer.WriteString("where", keep.Where);
-                    if (keep.Changed is { } changed) writer.WriteBoolean("changed", changed);
-                    writer.WriteEndObject();
-                }
+            writer.WriteEndArray();
+            Strings(writer, "stopped", entry.Stopped);
+            Strings(writer, "archived", entry.Archived);
+            writer.WriteStartArray("stayed");
+            foreach (var keep in entry.Stayed)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("piece", keep.Piece);
+                writer.WriteString("why", keep.Why);
+                if (keep.Machine is not null) writer.WriteString("machine", keep.Machine);
+                if (keep.Where is not null) writer.WriteString("where", keep.Where);
+                if (keep.Changed is { } changed) writer.WriteBoolean("changed", changed);
+                writer.WriteEndObject();
+            }
 
-                writer.WriteEndArray();
-                writer.WriteStartArray("declines");
-                foreach (var decline in entry.Declines)
-                {
-                    writer.WriteStartObject();
-                    writer.WriteString("quest", decline.Quest);
-                    writer.WriteString("answer", decline.Answer);
-                    writer.WriteEndObject();
-                }
-
-                writer.WriteEndArray();
+            writer.WriteEndArray();
+            writer.WriteStartArray("declines");
+            foreach (var decline in entry.Declines)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("quest", decline.Quest);
+                writer.WriteString("answer", decline.Answer);
                 writer.WriteEndObject();
             }
 
@@ -127,8 +120,9 @@ public sealed class AbandonRecord(string home)
             writer.WriteEndObject();
         }
 
-        return System.Text.Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n";
-    }
+        writer.WriteEndArray();
+        writer.WriteEndObject();
+    });
 
     private static void Strings(Utf8JsonWriter writer, string name, IReadOnlyList<string> values)
     {

@@ -34,8 +34,7 @@ internal static class OpinionGateFiles
     /// <summary>Every entry written to <paramref name="path"/>, its folder made where it is not.</summary>
     public static void WriteDues(string path, IReadOnlyList<OpinionDue> all)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        AtomicFile.WriteText(path, DuesJson(all));
+        JsonFile.Write(path, writer => ComposeDues(writer, all));
     }
 
     /// <summary>Each repository's part of the chain's record at <paramref name="path"/>, by name in any case; none where nothing reads.</summary>
@@ -69,38 +68,30 @@ internal static class OpinionGateFiles
     /// <summary>The chain's record written whole to <paramref name="path"/>, its folder made where it is not.</summary>
     public static void WriteGates(string path, string chain, IReadOnlyDictionary<string, OpinionGateKept> all)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        AtomicFile.WriteText(path, GatesJson(chain, all));
+        JsonFile.Write(path, writer => ComposeGates(writer, chain, all));
     }
 
-    private static string DuesJson(IReadOnlyList<OpinionDue> all)
+    private static void ComposeDues(Utf8JsonWriter writer, IReadOnlyList<OpinionDue> all)
     {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        writer.WriteStartObject();
+        writer.WriteStartArray("due");
+        foreach (var entry in all)
         {
             writer.WriteStartObject();
-            writer.WriteStartArray("due");
-            foreach (var entry in all)
-            {
-                writer.WriteStartObject();
-                writer.WriteString("session", entry.Session);
-                writer.WriteString("quest", entry.Quest);
-                writer.WriteString("repository", entry.Repository);
-                writer.WriteString("workspace", entry.Workspace);
-                writer.WriteString("tree", entry.Tree);
-                writer.WriteString("occasion", entry.Occasion);
-                writer.WriteString("at", OpinionViews.Moment(entry.At));
-                if (entry.Closed is { } closed) writer.WriteString("closed", OpinionViews.Moment(closed));
-                if (entry.Why is not null) writer.WriteString("why", entry.Why);
-                writer.WriteEndObject();
-            }
-
-            writer.WriteEndArray();
+            writer.WriteString("session", entry.Session);
+            writer.WriteString("quest", entry.Quest);
+            writer.WriteString("repository", entry.Repository);
+            writer.WriteString("workspace", entry.Workspace);
+            writer.WriteString("tree", entry.Tree);
+            writer.WriteString("occasion", entry.Occasion);
+            writer.WriteString("at", OpinionViews.Moment(entry.At));
+            if (entry.Closed is { } closed) writer.WriteString("closed", OpinionViews.Moment(closed));
+            if (entry.Why is not null) writer.WriteString("why", entry.Why);
             writer.WriteEndObject();
         }
 
-        // LF on every platform, as every file under the home is written.
-        return Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n";
+        writer.WriteEndArray();
+        writer.WriteEndObject();
     }
 
     private static OpinionDue? DueOf(JsonElement element) =>
@@ -115,70 +106,64 @@ internal static class OpinionGateFiles
             }
             : null;
 
-    private static string GatesJson(string chain, IReadOnlyDictionary<string, OpinionGateKept> all)
+    private static void ComposeGates(Utf8JsonWriter writer, string chain, IReadOnlyDictionary<string, OpinionGateKept> all)
     {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        writer.WriteStartObject();
+        writer.WriteString("chain", chain);
+        writer.WriteStartObject("repositories");
+        foreach (var (repository, kept) in all.OrderBy(pair => pair.Key, StringComparer.Ordinal))
         {
-            writer.WriteStartObject();
-            writer.WriteString("chain", chain);
-            writer.WriteStartObject("repositories");
-            foreach (var (repository, kept) in all.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+            writer.WriteStartObject(repository);
+            writer.WriteStartArray("asks");
+            foreach (var ask in kept.Asks)
             {
-                writer.WriteStartObject(repository);
-                writer.WriteStartArray("asks");
-                foreach (var ask in kept.Asks)
-                {
-                    writer.WriteStartObject();
-                    writer.WriteString("at", OpinionViews.Moment(ask.At));
-                    writer.WriteString("occasion", ask.Occasion);
-                    writer.WriteString("working", ask.Working);
-                    writer.WriteString("tip", ask.Tip);
-                    writer.WriteString("by", ask.By);
-                    if (ask.Opinion is not null) writer.WriteString("opinion", ask.Opinion);
-                    if (ask.Code is not null) writer.WriteString("code", ask.Code);
-                    if (ask.Until is { } until) writer.WriteString("until", OpinionViews.Moment(until));
-                    if (ask.Reviewer is not null) writer.WriteString("reviewer", ask.Reviewer);
-                    if (ask.Label is not null) writer.WriteString("label", ask.Label);
-                    writer.WriteEndObject();
-                }
-
-                writer.WriteEndArray();
-                writer.WriteStartArray("requests");
-                foreach (var request in kept.Requests)
-                {
-                    writer.WriteStartObject();
-                    writer.WriteString("at", OpinionViews.Moment(request.At));
-                    writer.WriteString("session", request.Session);
-                    writer.WriteString("occasion", request.Occasion);
-                    if (request.Reviewer is not null) writer.WriteString("reviewer", request.Reviewer);
-                    if (request.SameAgent) writer.WriteBoolean("sameAgent", true);
-                    if (request.Words is not null) writer.WriteString("words", request.Words);
-                    writer.WriteEndObject();
-                }
-
-                writer.WriteEndArray();
-                writer.WriteStartArray("person");
-                foreach (var word in kept.Person)
-                {
-                    writer.WriteStartObject();
-                    writer.WriteString("said", word.Said);
-                    writer.WriteString("tip", word.Tip);
-                    writer.WriteString("at", OpinionViews.Moment(word.At));
-                    if (word.Words is not null) writer.WriteString("words", word.Words);
-                    if (word.Door is not null) writer.WriteString("door", word.Door);
-                    writer.WriteEndObject();
-                }
-
-                writer.WriteEndArray();
+                writer.WriteStartObject();
+                writer.WriteString("at", OpinionViews.Moment(ask.At));
+                writer.WriteString("occasion", ask.Occasion);
+                writer.WriteString("working", ask.Working);
+                writer.WriteString("tip", ask.Tip);
+                writer.WriteString("by", ask.By);
+                if (ask.Opinion is not null) writer.WriteString("opinion", ask.Opinion);
+                if (ask.Code is not null) writer.WriteString("code", ask.Code);
+                if (ask.Until is { } until) writer.WriteString("until", OpinionViews.Moment(until));
+                if (ask.Reviewer is not null) writer.WriteString("reviewer", ask.Reviewer);
+                if (ask.Label is not null) writer.WriteString("label", ask.Label);
                 writer.WriteEndObject();
             }
 
-            writer.WriteEndObject();
+            writer.WriteEndArray();
+            writer.WriteStartArray("requests");
+            foreach (var request in kept.Requests)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("at", OpinionViews.Moment(request.At));
+                writer.WriteString("session", request.Session);
+                writer.WriteString("occasion", request.Occasion);
+                if (request.Reviewer is not null) writer.WriteString("reviewer", request.Reviewer);
+                if (request.SameAgent) writer.WriteBoolean("sameAgent", true);
+                if (request.Words is not null) writer.WriteString("words", request.Words);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            writer.WriteStartArray("person");
+            foreach (var word in kept.Person)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("said", word.Said);
+                writer.WriteString("tip", word.Tip);
+                writer.WriteString("at", OpinionViews.Moment(word.At));
+                if (word.Words is not null) writer.WriteString("words", word.Words);
+                if (word.Door is not null) writer.WriteString("door", word.Door);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
             writer.WriteEndObject();
         }
 
-        return Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n";
+        writer.WriteEndObject();
+        writer.WriteEndObject();
     }
 
     private static OpinionAskKept? AskOf(JsonElement element) =>

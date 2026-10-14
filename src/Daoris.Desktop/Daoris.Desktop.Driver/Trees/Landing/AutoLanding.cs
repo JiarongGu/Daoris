@@ -308,38 +308,31 @@ public sealed class AutoLandings(string home)
     }
 
     /// <summary>Written by hand, as the driver's other files are, for the AOT reason <see cref="DriverConfig"/> gives.</summary>
-    private static string ToJson(IReadOnlyList<AutoLanding> entries)
+    private static string ToJson(IReadOnlyList<AutoLanding> entries) => JsonFile.Serialize(writer =>
     {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        writer.WriteStartObject();
+        writer.WriteStartArray("due");
+        foreach (var entry in entries)
         {
             writer.WriteStartObject();
-            writer.WriteStartArray("due");
-            foreach (var entry in entries)
+            writer.WriteString("session", entry.Session);
+            writer.WriteString("quest", entry.Quest);
+            writer.WriteString("repository", entry.Repository);
+            writer.WriteString("workspace", entry.Workspace);
+            writer.WriteString("tree", entry.Tree);
+            writer.WriteString("dueAt", Stamp(entry.DueAt));
+            if (entry.Closed is { } closed) writer.WriteString("closed", Stamp(closed));
+            writer.WriteStartArray("tries");
+            foreach (var tried in entry.Tries)
             {
                 writer.WriteStartObject();
-                writer.WriteString("session", entry.Session);
-                writer.WriteString("quest", entry.Quest);
-                writer.WriteString("repository", entry.Repository);
-                writer.WriteString("workspace", entry.Workspace);
-                writer.WriteString("tree", entry.Tree);
-                writer.WriteString("dueAt", Stamp(entry.DueAt));
-                if (entry.Closed is { } closed) writer.WriteString("closed", Stamp(closed));
-                writer.WriteStartArray("tries");
-                foreach (var tried in entry.Tries)
-                {
-                    writer.WriteStartObject();
-                    writer.WriteString("at", Stamp(tried.At));
-                    writer.WriteString("code", tried.Code);
-                    if (tried.Tip is not null) writer.WriteString("tip", tried.Tip);
-                    if (tried.Status is not null) writer.WriteString("status", tried.Status);
-                    if (tried.Uncommitted is { } uncommitted) writer.WriteNumber("uncommitted", uncommitted);
-                    if (tried.Branch is not null) writer.WriteString("branch", tried.Branch);
-                    if (tried.Commits is { } commits) writer.WriteNumber("commits", commits);
-                    writer.WriteEndObject();
-                }
-
-                writer.WriteEndArray();
+                writer.WriteString("at", Stamp(tried.At));
+                writer.WriteString("code", tried.Code);
+                if (tried.Tip is not null) writer.WriteString("tip", tried.Tip);
+                if (tried.Status is not null) writer.WriteString("status", tried.Status);
+                if (tried.Uncommitted is { } uncommitted) writer.WriteNumber("uncommitted", uncommitted);
+                if (tried.Branch is not null) writer.WriteString("branch", tried.Branch);
+                if (tried.Commits is { } commits) writer.WriteNumber("commits", commits);
                 writer.WriteEndObject();
             }
 
@@ -347,8 +340,9 @@ public sealed class AutoLandings(string home)
             writer.WriteEndObject();
         }
 
-        return Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n";
-    }
+        writer.WriteEndArray();
+        writer.WriteEndObject();
+    });
 
     /// <summary>One entry, or null where it lacks what makes it one: a session, a quest, a repository, a tree and when it became due.</summary>
     private static AutoLanding? Read(JsonElement element)

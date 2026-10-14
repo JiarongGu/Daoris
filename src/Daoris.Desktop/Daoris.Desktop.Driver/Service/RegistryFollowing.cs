@@ -48,7 +48,7 @@ public static class RegistryFollowing
                     ["moved"] = new JsonObject(moved.OrderBy(pair => pair.Key, StringComparer.Ordinal)
                         .Select(pair => KeyValuePair.Create(pair.Key, (JsonNode?)Stamp(pair.Value)))),
                 };
-                WriteIn(home, MovedFile, file.ToJsonString(Indented) + "\n");
+                JsonFile.Write(Path.Combine(home, MovedFile), file);
             }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -92,7 +92,7 @@ public static class RegistryFollowing
                     };
                 }
 
-                WriteIn(home, FollowedFile, new JsonObject { ["repositories"] = repositories }.ToJsonString(Indented) + "\n");
+                JsonFile.Write(Path.Combine(home, FollowedFile), new JsonObject { ["repositories"] = repositories });
             }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -125,16 +125,6 @@ public static class RegistryFollowing
         }
 
         return moved;
-    }
-
-    // LF on every platform, as every Daoris write is: the default new line is the platform's.
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true, NewLine = "\n" };
-
-    /// <summary>A file of <paramref name="folder"/>'s written whole, atomically, the folder made first.</summary>
-    private static void WriteIn(string folder, string name, string text)
-    {
-        Directory.CreateDirectory(folder);
-        AtomicFile.WriteText(Path.Combine(folder, name), text);
     }
 
     private static string? TextIfThere(string path) => File.Exists(path) ? File.ReadAllText(path) : null;

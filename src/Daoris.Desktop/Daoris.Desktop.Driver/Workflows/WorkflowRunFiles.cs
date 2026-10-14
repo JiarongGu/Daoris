@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.Encodings.Web;
 using System.Text.Json;
 using static Daoris.Driver.Json;
 
@@ -13,13 +12,6 @@ namespace Daoris.Driver;
 /// </summary>
 public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
 {
-    private static readonly JsonWriterOptions Indented = new()
-    {
-        Indented = true,
-        NewLine = "\n",
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-    };
-
     /// <summary>Whether a run is bound here.</summary>
     public bool Bound(string run) => WorkflowRunBindings.IsRunId(run) && File.Exists(WorkflowRunBindings.PathOf(home, run));
 
@@ -150,51 +142,45 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
     }
 
     /// <summary>A binding as its file holds it: what every binding says first, then what this one has, LF, with a last newline.</summary>
-    public static string ToJson(WorkflowRunBinding binding)
+    public static string ToJson(WorkflowRunBinding binding) => JsonFile.Serialize(writer =>
     {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, Indented))
+        writer.WriteStartObject();
+        writer.WriteString("run", binding.Run);
+        writer.WriteString("repository", binding.Repository);
+        writer.WriteString("workspace", binding.Workspace);
+        if (binding.Ask is { } ask) writer.WriteString("ask", ask);
+        writer.WriteString("at", binding.At.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture));
+        writer.WriteString("workflow", binding.Workflow);
+        if (binding.Version is { } version) writer.WriteNumber("version", version);
+        if (binding.Digest is { } digest) writer.WriteString("digest", digest);
+        writer.WriteString("level", binding.Level);
+        if (binding.Kind is { } kind) writer.WriteString("kind", kind);
+        if (binding.Label is { } label) writer.WriteString("label", label);
+        if (binding.Paths.Count > 0)
         {
-            writer.WriteStartObject();
-            writer.WriteString("run", binding.Run);
-            writer.WriteString("repository", binding.Repository);
-            writer.WriteString("workspace", binding.Workspace);
-            if (binding.Ask is { } ask) writer.WriteString("ask", ask);
-            writer.WriteString("at", binding.At.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture));
-            writer.WriteString("workflow", binding.Workflow);
-            if (binding.Version is { } version) writer.WriteNumber("version", version);
-            if (binding.Digest is { } digest) writer.WriteString("digest", digest);
-            writer.WriteString("level", binding.Level);
-            if (binding.Kind is { } kind) writer.WriteString("kind", kind);
-            if (binding.Label is { } label) writer.WriteString("label", label);
-            if (binding.Paths.Count > 0)
-            {
-                writer.WriteStartArray("paths");
-                foreach (var path in binding.Paths) writer.WriteStringValue(path);
-                writer.WriteEndArray();
-            }
+            writer.WriteStartArray("paths");
+            foreach (var path in binding.Paths) writer.WriteStringValue(path);
+            writer.WriteEndArray();
+        }
 
-            if (binding.Undeclared is { } undeclared) writer.WriteString("undeclared", undeclared);
-            if (binding.Problem is { } problem) writer.WriteString("problem", problem);
-            if (binding.CurrentSteps.Count > 0)
-            {
-                writer.WriteStartArray("current");
-                foreach (var step in binding.CurrentSteps) writer.WriteRawValue(step);
-                writer.WriteEndArray();
-            }
+        if (binding.Undeclared is { } undeclared) writer.WriteString("undeclared", undeclared);
+        if (binding.Problem is { } problem) writer.WriteString("problem", problem);
+        if (binding.CurrentSteps.Count > 0)
+        {
+            writer.WriteStartArray("current");
+            foreach (var step in binding.CurrentSteps) writer.WriteRawValue(step);
+            writer.WriteEndArray();
+        }
 
-            if (binding.Kept is { } kept)
-            {
-                writer.WriteStartObject("kept");
-                writer.WriteString("at", kept.At.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture));
-                writer.WriteString("door", kept.Door);
-                if (kept.Words is { } words) writer.WriteString("words", words);
-                writer.WriteEndObject();
-            }
-
+        if (binding.Kept is { } kept)
+        {
+            writer.WriteStartObject("kept");
+            writer.WriteString("at", kept.At.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture));
+            writer.WriteString("door", kept.Door);
+            if (kept.Words is { } words) writer.WriteString("words", words);
             writer.WriteEndObject();
         }
 
-        return System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n";
-    }
+        writer.WriteEndObject();
+    });
 }

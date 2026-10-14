@@ -54,7 +54,6 @@ public sealed record BrowserSettingsRead(string Extensions, string Browser, stri
 /// </remarks>
 public static class BrowserSettings
 {
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
     public static string FilePath(string home) => Path.Combine(home, "browser", "settings.json");
 
@@ -116,9 +115,7 @@ public static class BrowserSettings
 
         file ??= [];
         file[field] = value;
-        var path = FilePath(home);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        AtomicFile.WriteText(path, file.ToJsonString(Indented).ReplaceLineEndings("\n") + "\n");
+        JsonFile.Write(FilePath(home), file);
     }
 
     private static (JsonObject? File, string? Problem) Load(string home)

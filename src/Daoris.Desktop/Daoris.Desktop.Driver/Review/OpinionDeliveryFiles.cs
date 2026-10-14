@@ -38,9 +38,7 @@ internal static class OpinionDeliveryFiles
     {
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            // LF on every platform, as every file under the home is written.
-            AtomicFile.WriteText(path, Json(delivered).Replace("\r\n", "\n") + "\n");
+            JsonFile.Write(path, writer => Compose(writer, delivered));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -48,48 +46,42 @@ internal static class OpinionDeliveryFiles
         }
     }
 
-    private static string Json(OpinionDelivered delivered)
+    private static void Compose(Utf8JsonWriter writer, OpinionDelivered delivered)
     {
-        using var buffer = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Indented = true }))
+        writer.WriteStartObject();
+        if (delivered.Person is { } person)
         {
-            writer.WriteStartObject();
-            if (delivered.Person is { } person)
-            {
-                writer.WriteString("person", person);
-                if (delivered.PersonAt is { } at) writer.WriteString("personAt", OpinionViews.Moment(at));
-            }
+            writer.WriteString("person", person);
+            if (delivered.PersonAt is { } at) writer.WriteString("personAt", OpinionViews.Moment(at));
+        }
 
-            if (delivered.Answered is { } reading)
+        if (delivered.Answered is { } reading)
+        {
+            writer.WriteStartObject("answered");
+            writer.WriteString("session", reading.Session);
+            if (reading.Tip is not null) writer.WriteString("tip", reading.Tip);
+            writer.WriteString("at", OpinionViews.Moment(reading.At));
+            writer.WriteStartArray("findings");
+            foreach (var finding in reading.Findings)
             {
-                writer.WriteStartObject("answered");
-                writer.WriteString("session", reading.Session);
-                if (reading.Tip is not null) writer.WriteString("tip", reading.Tip);
-                writer.WriteString("at", OpinionViews.Moment(reading.At));
-                writer.WriteStartArray("findings");
-                foreach (var finding in reading.Findings)
-                {
-                    writer.WriteStartObject();
-                    writer.WriteNumber("finding", finding.Finding);
-                    writer.WriteString("weight", finding.Weight);
-                    writer.WriteString("counts", finding.Counts);
-                    if (finding.Said is not null) writer.WriteString("said", finding.Said);
-                    if (finding.Commit is not null) writer.WriteString("commit", finding.Commit);
-                    if (finding.Fix is not null) writer.WriteString("fix", finding.Fix);
-                    if (finding.Why is not null) writer.WriteString("why", finding.Why);
-                    writer.WriteEndObject();
-                }
-
-                writer.WriteEndArray();
+                writer.WriteStartObject();
+                writer.WriteNumber("finding", finding.Finding);
+                writer.WriteString("weight", finding.Weight);
+                writer.WriteString("counts", finding.Counts);
+                if (finding.Said is not null) writer.WriteString("said", finding.Said);
+                if (finding.Commit is not null) writer.WriteString("commit", finding.Commit);
+                if (finding.Fix is not null) writer.WriteString("fix", finding.Fix);
+                if (finding.Why is not null) writer.WriteString("why", finding.Why);
                 writer.WriteEndObject();
             }
 
-            if (delivered.Recheck is not null) writer.WriteString("recheck", delivered.Recheck);
-            if (delivered.RecheckWhy is not null) writer.WriteString("recheckWhy", delivered.RecheckWhy);
+            writer.WriteEndArray();
             writer.WriteEndObject();
         }
 
-        return Encoding.UTF8.GetString(buffer.ToArray());
+        if (delivered.Recheck is not null) writer.WriteString("recheck", delivered.Recheck);
+        if (delivered.RecheckWhy is not null) writer.WriteString("recheckWhy", delivered.RecheckWhy);
+        writer.WriteEndObject();
     }
 
     private static OpinionReading? Reading(JsonElement root)

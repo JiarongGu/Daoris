@@ -345,105 +345,99 @@ public sealed class LandedBranches(string home)
     private static bool Standing(LandedBranch entry, string repository, string branch) => entry.GoneAt is null && Same(entry, repository, branch);
 
     /// <summary>Written by hand, as the driver's other files are, for the AOT reason <see cref="DriverConfig"/> gives.</summary>
-    private static string ToJson(IReadOnlyList<LandedBranch> entries)
+    private static string ToJson(IReadOnlyList<LandedBranch> entries) => JsonFile.Serialize(writer =>
     {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        writer.WriteStartObject();
+        writer.WriteStartArray("branches");
+        foreach (var entry in entries)
         {
             writer.WriteStartObject();
-            writer.WriteStartArray("branches");
-            foreach (var entry in entries)
+            writer.WriteString("repository", entry.Repository);
+            writer.WriteString("workspace", entry.Workspace);
+            writer.WriteString("branch", entry.Branch);
+            if (entry.Line is not null) writer.WriteString("line", entry.Line);
+            writer.WriteString("tip", entry.Tip);
+            // Written only where the landing squashed (PROCESS1b-ii): absent is the session's own commits on the branch.
+            if (entry.Squashed is not null) writer.WriteString("squashed", entry.Squashed);
+            writer.WriteString("session", entry.Session);
+            if (entry.Quest is not null) writer.WriteString("quest", entry.Quest);
+            if (entry.Title is not null) writer.WriteString("title", entry.Title);
+            writer.WriteString("landedAt", Moments.Write(entry.LandedAt));
+            if (entry.Plugin is not null) writer.WriteString("plugin", entry.Plugin);
+            if (entry.Pushed) writer.WriteBoolean("pushed", true);
+            if (entry.PullRequest is not null) writer.WriteString("pullRequest", entry.PullRequest);
+            if (entry.PushedTip is not null) writer.WriteString("pushedTip", entry.PushedTip);
+            if (entry.From is not null) writer.WriteString("from", entry.From);
+            if (entry.GoneAt is { } gone) writer.WriteString("goneAt", Moments.Write(gone));
+            if (entry.RemovedAs is not null) writer.WriteString("removedAs", entry.RemovedAs);
+            if (entry.RemovedOn is not null) writer.WriteString("removedOn", entry.RemovedOn);
+            if (entry.AcceptedBy is not null) writer.WriteString("acceptedBy", entry.AcceptedBy);
+            if (entry.Rule is { } rule)
             {
-                writer.WriteStartObject();
-                writer.WriteString("repository", entry.Repository);
-                writer.WriteString("workspace", entry.Workspace);
-                writer.WriteString("branch", entry.Branch);
-                if (entry.Line is not null) writer.WriteString("line", entry.Line);
-                writer.WriteString("tip", entry.Tip);
-                // Written only where the landing squashed (PROCESS1b-ii): absent is the session's own commits on the branch.
-                if (entry.Squashed is not null) writer.WriteString("squashed", entry.Squashed);
-                writer.WriteString("session", entry.Session);
-                if (entry.Quest is not null) writer.WriteString("quest", entry.Quest);
-                if (entry.Title is not null) writer.WriteString("title", entry.Title);
-                writer.WriteString("landedAt", Moments.Write(entry.LandedAt));
-                if (entry.Plugin is not null) writer.WriteString("plugin", entry.Plugin);
-                if (entry.Pushed) writer.WriteBoolean("pushed", true);
-                if (entry.PullRequest is not null) writer.WriteString("pullRequest", entry.PullRequest);
-                if (entry.PushedTip is not null) writer.WriteString("pushedTip", entry.PushedTip);
-                if (entry.From is not null) writer.WriteString("from", entry.From);
-                if (entry.GoneAt is { } gone) writer.WriteString("goneAt", Moments.Write(gone));
-                if (entry.RemovedAs is not null) writer.WriteString("removedAs", entry.RemovedAs);
-                if (entry.RemovedOn is not null) writer.WriteString("removedOn", entry.RemovedOn);
-                if (entry.AcceptedBy is not null) writer.WriteString("acceptedBy", entry.AcceptedBy);
-                if (entry.Rule is { } rule)
-                {
-                    writer.WriteStartObject("rule");
-                    if (rule.Plugin is not null) writer.WriteString("plugin", rule.Plugin);
-                    writer.WriteBoolean("autoAccept", rule.AutoAccept);
-                    writer.WriteString("source", rule.Source);
-                    writer.WriteEndObject();
-                }
-
-                if (entry.Review is { } review) WriteReview(writer, review);
-                if (entry.Opinion is { } opinion) WriteOpinion(writer, opinion);
-                if (entry.Workflow is { } workflow) WriteWorkflow(writer, workflow);
-
-                if (entry.Advances.Count > 0)
-                {
-                    writer.WriteStartArray("advances");
-                    foreach (var advance in entry.Advances)
-                    {
-                        writer.WriteStartObject();
-                        writer.WriteString("from", advance.From);
-                        writer.WriteString("to", advance.To);
-                        writer.WriteString("at", Moments.Write(advance.At));
-                        writer.WriteString("session", advance.Session);
-                        if (advance.AcceptedBy is not null) writer.WriteString("acceptedBy", advance.AcceptedBy);
-                        if (advance.Review is { } advanced) WriteReview(writer, advanced);
-                        if (advance.Opinion is { } read) WriteOpinion(writer, read);
-                        if (advance.Workflow is { } went) WriteWorkflow(writer, went);
-                        if (advance.Squashed is not null) writer.WriteString("squashed", advance.Squashed);
-                        writer.WriteEndObject();
-                    }
-
-                    writer.WriteEndArray();
-                }
-
-                if (entry.PullRequestState is { } state) WriteState(writer, state);
-                if (entry.PullRequestAskFailed is { } failed)
-                {
-                    writer.WriteStartObject("pullRequestAskFailed");
-                    writer.WriteString("code", failed.Code);
-                    writer.WriteString("plugin", failed.Plugin);
-                    writer.WriteString("at", Moments.Write(failed.At));
-                    writer.WriteEndObject();
-                }
-
-                if (entry.Carried.Count > 0)
-                {
-                    writer.WriteStartArray("carried");
-                    foreach (var carried in entry.Carried)
-                    {
-                        writer.WriteStartObject();
-                        writer.WriteString("branch", carried.Branch);
-                        writer.WriteString("tip", carried.Tip);
-                        writer.WriteString("at", Moments.Write(carried.At));
-                        writer.WriteString("by", carried.By);
-                        writer.WriteEndObject();
-                    }
-
-                    writer.WriteEndArray();
-                }
-
+                writer.WriteStartObject("rule");
+                if (rule.Plugin is not null) writer.WriteString("plugin", rule.Plugin);
+                writer.WriteBoolean("autoAccept", rule.AutoAccept);
+                writer.WriteString("source", rule.Source);
                 writer.WriteEndObject();
             }
 
-            writer.WriteEndArray();
+            if (entry.Review is { } review) WriteReview(writer, review);
+            if (entry.Opinion is { } opinion) WriteOpinion(writer, opinion);
+            if (entry.Workflow is { } workflow) WriteWorkflow(writer, workflow);
+
+            if (entry.Advances.Count > 0)
+            {
+                writer.WriteStartArray("advances");
+                foreach (var advance in entry.Advances)
+                {
+                    writer.WriteStartObject();
+                    writer.WriteString("from", advance.From);
+                    writer.WriteString("to", advance.To);
+                    writer.WriteString("at", Moments.Write(advance.At));
+                    writer.WriteString("session", advance.Session);
+                    if (advance.AcceptedBy is not null) writer.WriteString("acceptedBy", advance.AcceptedBy);
+                    if (advance.Review is { } advanced) WriteReview(writer, advanced);
+                    if (advance.Opinion is { } read) WriteOpinion(writer, read);
+                    if (advance.Workflow is { } went) WriteWorkflow(writer, went);
+                    if (advance.Squashed is not null) writer.WriteString("squashed", advance.Squashed);
+                    writer.WriteEndObject();
+                }
+
+                writer.WriteEndArray();
+            }
+
+            if (entry.PullRequestState is { } state) WriteState(writer, state);
+            if (entry.PullRequestAskFailed is { } failed)
+            {
+                writer.WriteStartObject("pullRequestAskFailed");
+                writer.WriteString("code", failed.Code);
+                writer.WriteString("plugin", failed.Plugin);
+                writer.WriteString("at", Moments.Write(failed.At));
+                writer.WriteEndObject();
+            }
+
+            if (entry.Carried.Count > 0)
+            {
+                writer.WriteStartArray("carried");
+                foreach (var carried in entry.Carried)
+                {
+                    writer.WriteStartObject();
+                    writer.WriteString("branch", carried.Branch);
+                    writer.WriteString("tip", carried.Tip);
+                    writer.WriteString("at", Moments.Write(carried.At));
+                    writer.WriteString("by", carried.By);
+                    writer.WriteEndObject();
+                }
+
+                writer.WriteEndArray();
+            }
+
             writer.WriteEndObject();
         }
 
-        return System.Text.Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n";
-    }
+        writer.WriteEndArray();
+        writer.WriteEndObject();
+    });
 
     /// <summary>The review that let a landing go (REVIEWENV1c), each field only where it is known.</summary>
     private static void WriteReview(Utf8JsonWriter writer, LandingReview review)

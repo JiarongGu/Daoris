@@ -116,8 +116,8 @@ public sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) :
         }
 
         using var document = JsonDocument.Parse(File.ReadAllText(manifest));
-        using var buffer = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Indented = true }))
+        // The driver's one JSON file writer (DEDUP3b): atomic, LF, a name of its own beside the file (REV3).
+        JsonFile.Write(manifest, writer =>
         {
             writer.WriteStartObject();
 
@@ -157,10 +157,7 @@ public sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) :
             writer.WriteEndObject();
 
             writer.WriteEndObject();
-        }
-
-        // The driver's one atomic writer (REV3): a name of its own beside the file, not a fixed `.tmp`.
-        AtomicFile.WriteText(manifest, System.Text.Encoding.UTF8.GetString(buffer.ToArray()).ReplaceLineEndings("\n") + "\n");
+        });
     }
 
     /// <summary>An object with no properties — what every reader below treats as "nothing was sent".</summary>

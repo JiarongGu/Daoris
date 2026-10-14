@@ -104,25 +104,19 @@ public sealed record RemoteTarget(string Url, string Key)
     }
 
     /// <summary>The map's file as <c>Save</c> writes it: by workspace in order, indented, ending with a new line.</summary>
-    public static string Json(IReadOnlyDictionary<string, RemoteTarget> remotes)
+    public static string Json(IReadOnlyDictionary<string, RemoteTarget> remotes) => JsonFile.Serialize(writer =>
     {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        writer.WriteStartObject();
+        foreach (var (workspace, target) in remotes.OrderBy(entry => entry.Key, StringComparer.Ordinal))
         {
-            writer.WriteStartObject();
-            foreach (var (workspace, target) in remotes.OrderBy(entry => entry.Key, StringComparer.Ordinal))
-            {
-                writer.WriteStartObject(workspace);
-                writer.WriteString("url", target.Url);
-                writer.WriteString("key", target.Key);
-                writer.WriteEndObject();
-            }
-
+            writer.WriteStartObject(workspace);
+            writer.WriteString("url", target.Url);
+            writer.WriteString("key", target.Key);
             writer.WriteEndObject();
         }
 
-        return System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n";
-    }
+        writer.WriteEndObject();
+    });
 
     /// <summary>
     /// A key as it may be SHOWN: the audit prefix a deployment's own `keys list` prints, and nothing
