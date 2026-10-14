@@ -544,15 +544,7 @@ public static class WorkflowNamed
     /// A moment as ISO 8601 writes it, and only so — the CLI's <c>isoMoment</c>, as <c>AccountCooling</c> reads one: a lenient
     /// parse reads <i>Oct 9</i> as this year's, and a day that does not exist is none.
     /// </summary>
-    private static bool IsMoment(string? text) =>
-        text is not null && DateTimeOffset.TryParseExact(
-            text, IsoMoments, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out _);
-
-    private static readonly string[] IsoMoments =
-    [
-        "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm:ss.FFFFFFF'Z'", "yyyy-MM-dd'T'HH:mm:sszzz",
-        "yyyy-MM-dd'T'HH:mm:ss.FFFFFFFzzz",
-    ];
+    private static bool IsMoment(string? text) => Moments.ReadStrict(text) is not null;
 
     private const string AskDoorPrefix = "ask-daoris:";
 

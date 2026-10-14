@@ -301,8 +301,7 @@ public static class GitFormats
     private static IReadOnlyList<string> Parents(string field) =>
         [.. field.Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(GitReads.IsWholeId)];
 
-    private static DateTimeOffset? Time(string field) =>
-        DateTimeOffset.TryParse(field, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var when) ? when : null;
+    private static DateTimeOffset? Time(string field) => Moments.Read(field);
 
     private static string? SideOf(string mark) => mark switch
     {

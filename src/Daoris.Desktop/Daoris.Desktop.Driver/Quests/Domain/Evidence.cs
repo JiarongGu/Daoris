@@ -181,9 +181,7 @@ public sealed record EvidenceVerdict(string Commit, string How, IReadOnlyList<Ev
         return new EvidenceVerdict(commit.ToLowerInvariant(), how, read)
         {
             Session = Text(verdict, "session"),
-            At = DateTimeOffset.TryParse(Text(verdict, "at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at)
-                ? at
-                : null,
+            At = Moments.Read(Text(verdict, "at")),
             Machine = Text(verdict, "machine"),
         };
     }

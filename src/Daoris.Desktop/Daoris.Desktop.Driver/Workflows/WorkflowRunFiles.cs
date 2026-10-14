@@ -115,7 +115,7 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
             if (root.ValueKind != JsonValueKind.Object) return null;
             if (Text(root, "run") is not { } run || Text(root, "repository") is not { } repository || Text(root, "workspace") is not { } workspace
                 || Text(root, "workflow") is not { } workflow || Text(root, "level") is not { } level
-                || !DateTimeOffset.TryParse(Text(root, "at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at))
+                || Moments.Read(Text(root, "at")) is not { } at)
             {
                 return null;
             }
@@ -138,7 +138,7 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
                     : [],
                 // WORKFLOW1f: the person's Keep, whole or none; a binding from before has none.
                 Kept = root.TryGetProperty("kept", out var kept) && kept.ValueKind == JsonValueKind.Object && Text(kept, "door") is { } door
-                       && DateTimeOffset.TryParse(Text(kept, "at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var keptAt)
+                       && Moments.Read(Text(kept, "at")) is { } keptAt
                     ? new WorkflowKept(keptAt, door) { Words = Text(kept, "words") }
                     : null,
             };

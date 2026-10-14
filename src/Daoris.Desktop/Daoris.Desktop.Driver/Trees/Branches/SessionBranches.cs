@@ -103,7 +103,7 @@ public sealed class SessionBranches(string home)
                 if (entry.Line is not null) writer.WriteString("line", entry.Line);
                 writer.WriteString("from", entry.From);
                 if (entry.GrewFrom is not null) writer.WriteString("grewFrom", entry.GrewFrom);
-                writer.WriteString("at", entry.At.ToString("O", CultureInfo.InvariantCulture));
+                writer.WriteString("at", Moments.Write(entry.At));
                 if (entry.Now is not null) writer.WriteString("now", entry.Now);
                 writer.WriteEndObject();
             }
@@ -123,9 +123,7 @@ public sealed class SessionBranches(string home)
         var branch = Text(element, "branch");
         var from = Text(element, "from");
         if (repository is null || branch is null || from is null) return null;
-        var at = DateTimeOffset.TryParse(Text(element, "at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var when)
-            ? when
-            : DateTimeOffset.MinValue;
+        var at = Moments.Read(Text(element, "at")) ?? DateTimeOffset.MinValue;
         return new GrownBranch(repository, Text(element, "workspace") ?? "default", branch, Text(element, "line"), from,
             Text(element, "grewFrom"), at, Text(element, "now"));
     }

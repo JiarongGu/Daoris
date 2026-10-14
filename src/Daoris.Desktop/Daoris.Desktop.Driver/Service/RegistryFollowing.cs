@@ -151,10 +151,7 @@ public static class RegistryFollowing
         }
     }
 
-    private static string Stamp(DateTimeOffset at) => at.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
+    private static string Stamp(DateTimeOffset at) => Moments.Write(at.ToUniversalTime());
 
-    private static DateTimeOffset? When(JsonNode? node) =>
-        Text(node) is { } text && DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at)
-            ? at
-            : null;
+    private static DateTimeOffset? When(JsonNode? node) => Moments.Read(node);
 }

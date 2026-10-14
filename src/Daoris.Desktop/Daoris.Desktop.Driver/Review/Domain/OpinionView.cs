@@ -195,5 +195,5 @@ public static class OpinionViews
     private static IReadOnlyList<string> Strings(JsonElement element, string name) => Json.Strings(element, name, keepEmpty: true);
 
     /// <summary>A moment as the store writes it: ISO 8601, round trip.</summary>
-    internal static string Moment(DateTimeOffset at) => at.ToString("O", CultureInfo.InvariantCulture);
+    internal static string Moment(DateTimeOffset at) => Moments.Write(at);
 }

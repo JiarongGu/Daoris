@@ -141,9 +141,7 @@ public static class SessionRecords
     }
 
     private static DateTimeOffset Time(JsonElement element, string name) =>
-        DateTimeOffset.TryParse(Text(element, name), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at)
-            ? at
-            : DateTimeOffset.MinValue;
+        Moments.Read(element, name) ?? DateTimeOffset.MinValue;
 }
 
 /// <summary>

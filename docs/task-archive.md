@@ -14362,3 +14362,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PART10c — `KnowledgeTools`: a tool class per Help kind, and the type gone** (service, driver; after 10b and PART7b). `Help<Kind>Tool` in a file each, the driver's file-name test re-pointed, `KnowledgeTools` deleted and cut from the gate's list. Survey "The large five, as scouted".
 
 **Outcome** 2026-10-14: each Help kind's propose tool is a `Help<Kind>Tool` built from the intake and the help box, listed in `KnowledgeServer.ToolTypes`; `KnowledgeTools` is deleted and off the gate's list (four large types left); the driver's kinds test reads `Help<Kind>Tool.cs`. The 33 tool names unchanged. On Sonnet: 73 tool calls. Detail: D166's PART10c note.
+
+## DEDUP2b — the moments, their second half (2026-10-14, D166)
+
+> - [ ] **DEDUP2b — the moments, their second half** (driver, modules; after 2a). Quests, Review, Service, Sessions, Setup, Trees, Workflows and the Modules bridge. Survey §2.
+
+**Outcome** 2026-10-14: every moment written and read in Quests, Review, Service, Sessions, Setup, Trees and Workflows goes through `Moments`, the private stamps keeping their bytes; three reads in the machine's culture (the client's session time, the commit date, the remote sync's standing) now read invariant, and the sync's reader answers null for text that is no moment where it threw. The bridge's sites, in files PART10d was moving, are DEDUP2c's. On Sonnet: 77 tool calls. Detail: D166's DEDUP2b note.

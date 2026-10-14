@@ -317,9 +317,7 @@ public sealed partial class SessionRequests(string home)
                 root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
             if (Text("session") is not { Length: > 0 } session || Text("move") is not { } move || !SessionMove.Known(move)) return null;
-            var at = DateTimeOffset.TryParse(Text("at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var when)
-                ? when
-                : DateTimeOffset.MinValue;
+            var at = Moments.Read(Text("at")) ?? DateTimeOffset.MinValue;
             return new SessionRequest(session, move, at)
             {
                 Note = Text("note"),
@@ -377,7 +375,7 @@ public sealed partial class SessionRequests(string home)
 
         writer.WriteBoolean("parked", request.Parked);
         writer.WriteString("by", request.By);
-        writer.WriteString("at", request.At.ToString("O", CultureInfo.InvariantCulture));
+        writer.WriteString("at", Moments.Write(request.At));
         if (request.Text is not null) writer.WriteString("text", request.Text);
         if (request.Files.Count > 0)
         {

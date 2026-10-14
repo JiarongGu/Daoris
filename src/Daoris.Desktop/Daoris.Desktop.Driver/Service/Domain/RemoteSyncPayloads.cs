@@ -216,7 +216,7 @@ public static class RemoteSyncPayloads
         if (provenance is null) return;
 
         writer.WriteString("commit", provenance.Commit);
-        writer.WriteString("committedAt", provenance.CommittedAt.ToString("O"));
+        writer.WriteString("committedAt", Moments.Write(provenance.CommittedAt));
         writer.WriteString("branch", provenance.Branch);
         if (!string.IsNullOrWhiteSpace(onBase)) writer.WriteString("base", onBase);
     }
@@ -409,8 +409,7 @@ public static class RemoteSyncPayloads
             throw new DriverException($"a host answered a workspace's standing with something that is not one: {Clip(root.GetRawText())}");
         }
 
-        DateTimeOffset? At(string name) =>
-            Text(root, name) is { } text ? DateTimeOffset.Parse(text, null, System.Globalization.DateTimeStyles.RoundtripKind) : null;
+        DateTimeOffset? At(string name) => Moments.Read(Text(root, name));
 
         return new SyncStanding(
             Text(root, "workspace") ?? "default",

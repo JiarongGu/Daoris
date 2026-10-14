@@ -283,7 +283,7 @@ public static class GitBranchesCommand
                 if (repository.Fetch is { } fetch)
                 {
                     writer.WriteStartObject("fetch");
-                    writer.WriteString("at", fetch.At.ToString("O", CultureInfo.InvariantCulture));
+                    writer.WriteString("at", Moments.Write(fetch.At));
                     writer.WriteBoolean("heard", fetch.Heard);
                     writer.WriteEndObject();
                 }
@@ -317,7 +317,7 @@ public static class GitBranchesCommand
         writer.WriteString("name", branch.Name);
         writer.WriteString("kind", branch.Kind);
         writer.WriteString("commit", branch.Commit);
-        writer.WriteString("at", branch.At?.ToString("O", CultureInfo.InvariantCulture));
+        writer.WriteString("at", Moments.Write(branch.At));
         writer.WriteString("subject", branch.Subject);
         writer.WriteString("worktree", branch.Worktree);
         Number(writer, "ahead", branch.Ahead);
@@ -341,7 +341,7 @@ public static class GitBranchesCommand
         {
             writer.WriteStartObject("landed");
             writer.WriteString("session", landed.Session);
-            writer.WriteString("landedAt", landed.LandedAt.ToString("O", CultureInfo.InvariantCulture));
+            writer.WriteString("landedAt", Moments.Write(landed.LandedAt));
             writer.WriteString("origin", landed.Origin);
             writer.WriteString("quest", landed.Quest);
             writer.WriteString("title", landed.Title);
@@ -362,10 +362,10 @@ public static class GitBranchesCommand
                 writer.WriteString("sourceCommit", kept.SourceCommit);
                 writer.WriteString("target", kept.Target);
                 writer.WriteString("how", kept.How);
-                writer.WriteString("at", kept.At?.ToString("O", CultureInfo.InvariantCulture));
+                writer.WriteString("at", Moments.Write(kept.At));
                 writer.WriteString("message", kept.Message);
                 writer.WriteString("plugin", kept.Plugin);
-                writer.WriteString("askedAt", kept.AskedAt == DateTimeOffset.MinValue ? null : kept.AskedAt.ToString("O", CultureInfo.InvariantCulture));
+                writer.WriteString("askedAt", kept.AskedAt == DateTimeOffset.MinValue ? null : Moments.Write(kept.AskedAt));
                 writer.WriteEndObject();
             }
             else
@@ -378,7 +378,7 @@ public static class GitBranchesCommand
                 writer.WriteStartObject("pullRequestAskFailed");
                 writer.WriteString("code", failed.Code);
                 writer.WriteString("plugin", failed.Plugin);
-                writer.WriteString("at", failed.At.ToString("O", CultureInfo.InvariantCulture));
+                writer.WriteString("at", Moments.Write(failed.At));
                 writer.WriteEndObject();
             }
             else
