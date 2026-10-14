@@ -111,6 +111,12 @@ judgement as every other door, with refusals shown verbatim. A shared deployment
 at all — the remote is an API until person-auth exists, and the person's window stays the desktop over
 its local host; locally — the default — the full surface works.
 
+**An ask's channel is the desktop's** (SESSONE2c, D167): where an ask's sessions and the person talk is read, posted to and marked
+read through the driver's `CHANNEL_READ`, `CHANNEL_POST` and `CHANNEL_MARK` (`bridge/asks.ts`), so a browser draws no *Channel*, no
+unread count and no composer. The ask's page, each session's panel under its head and the unread counts on the ask's row and in
+*Group by ask* are molecules over those answers (`asks/ChannelSection.tsx`, `work/channel.ts`), with Daoris's lines worded from
+their codes in the reader's language and the messages shown as written.
+
 **Knowledge results identify the active tier** — a reader looking at results has no way to
 know the semantic half was absent, and would read them as complete rather than as
 complete-for-word-overlap (D24).
