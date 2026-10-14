@@ -96,6 +96,8 @@ const ORGANISMS = new Set<string>([
   // none; and its drawers, which add, import and manage a repository with the service's and the shell's hooks.
   './projects/ProjectsView.tsx',
   './projects/ProjectManage.tsx',
+  // Settings' frame (AGT6, MOD4): the driver's state and the harness runs, around whichever domain is chosen.
+  './settings/SettingsView.tsx',
 ]);
 
 /**

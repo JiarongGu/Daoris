@@ -37,7 +37,7 @@ import { useProjectsView } from './projects/ProjectsView';
 import {
   type ProjectTab, readProjectTab, readWorkspaceTab, storeProjectTab, storeWorkspaceTab, type WorkspaceSection, type WorkspaceTab,
 } from './projects/tabs';
-import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from './SettingsView';
+import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from './settings/SettingsView';
 import { ShellSignals } from './ShellSignals';
 import {
   logEvent, useConsidered, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,

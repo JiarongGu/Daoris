@@ -20,7 +20,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import './i18n';
-import { SettingsView } from './SettingsView';
+import { SettingsView } from './settings/SettingsView';
 import { AT_START, useSetupAtStart } from './setupGuide';
 
 type World = {

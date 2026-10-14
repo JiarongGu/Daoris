@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import frame from '../SettingsView.tsx?raw';
+import frame from './SettingsView.tsx?raw';
 import registry from './domains.ts?raw';
-import { SETTINGS_SECTIONS } from '../SettingsView';
+import { SETTINGS_SECTIONS } from './SettingsView';
 import { en, zh } from '../locales';
 import { LIST_BOUNDS } from '../work/layout';
 import { rememberedDomain, SETTINGS_DOMAINS } from './domains';
@@ -86,7 +86,8 @@ describe('the Settings registry', () => {
    * domain itself.
    */
   it('is the frame\'s only way to a domain: it imports only the list and its rows from Settings\', and declares only the frame', () => {
-    const reached = new Set([...frame.matchAll(/from\s+'\.\/settings\/([\w./-]+)'/g)].map((match) => match[1]));
+    // The frame sits in `settings/` beside the domains since STRUCT5c (D166), so what it takes from Settings is `./…`.
+    const reached = new Set([...frame.matchAll(/from\s+'\.\/([\w./-]+)'/g)].map((match) => match[1]));
     expect([...reached].sort()).toEqual(['DomainList', 'domains']);
     const declared = [...frame.matchAll(/^(?:export\s+)?function\s+(\w+)/gm)].map((match) => match[1]);
     expect(declared.sort()).toEqual(['SettingsMain', 'SettingsView', 'useSettingsLayout']);

@@ -3,7 +3,7 @@ import type { View } from '../commands';
 import type { KnowledgeMode } from '../knowledge/modes';
 import type { Compose, OpenGroup } from '../opener';
 import type { ProjectTab, WorkspaceSection, WorkspaceTab } from '../projects/tabs';
-import type { SettingsAnchor, SettingsSection } from '../SettingsView';
+import type { SettingsAnchor, SettingsSection } from '../settings/SettingsView';
 import type { Machine } from './machine';
 
 /**

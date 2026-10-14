@@ -21,7 +21,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import { SettingsView } from '../SettingsView';
+import { SettingsView } from './SettingsView';
 import { moment } from '../format';
 import i18n from '../i18n';
 import { code } from '../test/code';

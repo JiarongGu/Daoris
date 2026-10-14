@@ -95,11 +95,6 @@
     "setupGuide.tsx": "help",
     "setupGuide.test.tsx": "help",
 
-    "SettingsView.tsx": "settings",
-    "SettingsView.test.tsx": "settings",
-    "SettingsView.doors.test.tsx": "settings",
-    "SettingsView.shell.test.tsx": "settings",
-
     "SessionConsole.tsx": "work",
     "console.test.tsx": "work"
   }

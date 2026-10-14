@@ -1,20 +1,20 @@
 import { type ComponentType, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { WithHarnessRuns } from './harnessRuns';
-import { useDriver } from './shell';
-import type { Notify } from './ui';
-import type { StarterDoor } from './help/starters';
-import type { SetupStepId } from './help/setup';
-import type { BrowserDriver } from './work/browserDrivers';
-import { useListPanes } from './work/listPanes';
-import { ViewFrame, type ViewLayout } from './work/ViewFrame';
-import { ViewMain } from './work/ViewMain';
+import { WithHarnessRuns } from '../harnessRuns';
+import { useDriver } from '../shell';
+import type { Notify } from '../ui';
+import type { StarterDoor } from '../help/starters';
+import type { SetupStepId } from '../help/setup';
+import type { BrowserDriver } from '../work/browserDrivers';
+import { useListPanes } from '../work/listPanes';
+import { ViewFrame, type ViewLayout } from '../work/ViewFrame';
+import { ViewMain } from '../work/ViewMain';
 // The frame reaches a domain only through the list (MOD4): each domain is `settings/<Name>Domain.tsx`,
 // and the list in `settings/domains.ts` is the one place one is added. `DomainList` draws the list's rows.
-import { SETTINGS_DOMAINS, type SettingsDomainProps, type SettingsSection } from './settings/domains';
-import { DomainList } from './settings/DomainList';
+import { SETTINGS_DOMAINS, type SettingsDomainProps, type SettingsSection } from './domains';
+import { DomainList } from './DomainList';
 
-export type { SettingsSection } from './settings/domains';
+export type { SettingsSection } from './domains';
 
 /**
  * Settings (D66): the application's own — how it looks, which language it speaks — and, on the

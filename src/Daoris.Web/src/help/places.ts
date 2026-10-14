@@ -3,7 +3,7 @@ import type { View } from '../commands';
 import type { KnowledgeMode } from '../knowledge/modes';
 import { askItem, questsItem, type OpenGroup } from '../opener';
 import { offerItem } from '../plugins/catalog';
-import type { SettingsAnchor, SettingsSection } from '../SettingsView';
+import type { SettingsAnchor, SettingsSection } from '../settings/SettingsView';
 import type { StarterDoor } from './starters';
 
 /**
