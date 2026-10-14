@@ -66,6 +66,7 @@
     "BranchTidyingProcessTests.cs": "Trees",
     "BranchTidyingTests.cs": "Trees",
     "CanonicalLineTests.cs": "Platform",
+    "ChannelCommandTests.cs": "Quests",
     "ChatAttachmentTests.cs": "Conversations",
     "ChatGoOnTests.cs": "Conversations",
     "ChatGoesOnProcessTests.cs": "Conversations",

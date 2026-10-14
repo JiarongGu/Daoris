@@ -11,6 +11,9 @@ import {
 import { useScope } from '../scope';
 import { namer } from '../settings/namer';
 import { askLines } from '../work/entries';
+import {
+  useChannel, useChannelUnreads, useMarkChannel, usePostChannel,
+} from '../shell';
 import { useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useSessionEntries, useWorkflowRun, useWorkPlan } from '../shell';
 import { workspaceOf, workspacesOf } from '../workspaces';
 import { failure, type Notify, useErrorNotify } from '../ui';
@@ -26,7 +29,9 @@ import { useWorkActs } from '../work/workActs';
 import { questName } from '../work/identity';
 import { AskComposer, type AskDraft } from './AskComposer';
 import { AskPage } from './AskPage';
-import { asksInOrder } from './AskRow';
+import { askEnded, asksInOrder } from './AskRow';
+import { type ChannelAnswered } from './ChannelSection';
+import type { ChannelPost } from '../work/channel';
 
 const EMPTY_DRAFT: AskDraft = { circle: '', sentence: '', to: '', review: '', reviewWords: '', short: '', ...NO_CARRY };
 
@@ -134,6 +139,12 @@ export function useAsksPart({
   const runs = useWorkflowRun(chosen ? { ask: chosen } : null, { enabled: active && onOpenRun !== undefined });
   const wiring = useRemotes().data;
   const workActs = useWorkActs({ notify });
+  // The chosen ask's channel (SESSONE2c, D167 points 6 to 8) and what is unread on each live ask's, the same reads under one key.
+  // Shell-only: a browser has no driver, so none is asked and no section or count is drawn.
+  const channel = useChannel(chosen, { enabled: active });
+  const unreads = useChannelUnreads((asks.data ?? []).filter((item) => !askEnded(item)).map((item) => item.id), { enabled: active });
+  const postChannel = usePostChannel();
+  const markChannel = useMarkChannel();
   // The driver's last look at each quest, which says why one of the chosen ask's work sits (PAUSE1h).
   const considered = useConsidered().data ?? [];
   // The last abandon's answer, for the ask it was of, said on its page before the record catches up.
@@ -274,6 +285,22 @@ export function useAsksPart({
     };
   };
 
+  // What the page is handed of its channel: nothing in a browser, and nothing from a shell that answers none. A refusal is the
+  // service's code, said in the composer; a post that could not be sent at all is said as the shell said it, in the composer too.
+  const channelDoor = (item: Ask) => (channel.available && (channel.loading || channel.channel)
+    ? {
+        channel: channel.channel,
+        onPost: (post: ChannelPost, answered: ChannelAnswered) => postChannel.mutate({ ask: item.id, post }, {
+          onSuccess: (posted) => {
+            if (posted.posted) answered.done();
+            else answered.refused(posted.code ?? 'other');
+          },
+          onError: (error) => answered.refused(sentence(error)),
+        }),
+        onRead: (through: string) => markChannel.mutate({ ask: item.id, through }),
+      }
+    : undefined);
+
   const page = !chosen
     ? null
     : shown
@@ -285,6 +312,7 @@ export function useAsksPart({
           questTitles={questTitles}
           intake={intakeOf(shown)}
           lines={askLines(entries, shown.id)}
+          channel={channelDoor(shown)}
           onAttend={onAttend}
           busy={busy}
           onPublish={(to) => onPublish(shown.id, to)}
@@ -316,7 +344,7 @@ export function useAsksPart({
       : <QuestsMainNotice state={every.data === undefined && !every.error ? 'loading' : 'gone'} gone="ask" />;
 
   return {
-    rows: asksInOrder(asks.data ?? []).map((item) => ({ ask: item, intake: intakeOf(item)?.state ?? null })),
+    rows: asksInOrder(asks.data ?? []).map((item) => ({ ask: item, intake: intakeOf(item)?.state ?? null, unread: unreads[item.id] })),
     loading: asks.isPending,
     page,
     standing: chosen ? askStanding(shown, every.data !== undefined) : undefined,

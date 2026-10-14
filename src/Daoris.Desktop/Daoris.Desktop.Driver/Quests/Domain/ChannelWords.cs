@@ -43,6 +43,9 @@ public sealed record ChannelItemView(string Kind, DateTimeOffset At)
     /// <summary>Whether its poster marked it a question.</summary>
     public bool Question { get; init; }
 
+    /// <summary>Whether it is a question no message answers yet (SESSONE2c): the page marks it, as the terminal does.</summary>
+    public bool Open { get; init; }
+
     /// <summary>A message's words as written.</summary>
     public string? Text { get; init; }
 
@@ -95,41 +98,45 @@ public sealed record ChannelView(string Ask, string Entry, IReadOnlyList<Channel
         var items = new List<ChannelItemView>();
         if (root.TryGetProperty("items", out var listed) && listed.ValueKind == JsonValueKind.Array)
         {
-            foreach (var item in listed.EnumerateArray())
-            {
-                if (item.ValueKind != JsonValueKind.Object || Json.Text(item, "kind") is not { Length: > 0 } kind
-                    || Moments.Read(item, "at") is not { } at)
-                {
-                    continue;
-                }
-
-                items.Add(new ChannelItemView(kind, at)
-                {
-                    Id = Json.Text(item, "id"),
-                    Person = Flag(item, "person"),
-                    Session = Json.Text(item, "session"),
-                    Repository = Json.Text(item, "repository"),
-                    Agent = Json.Text(item, "agent"),
-                    Entry = Json.Text(item, "entry"),
-                    To = Json.Text(item, "to"),
-                    Re = Json.Text(item, "re"),
-                    Question = Flag(item, "question"),
-                    Text = Json.Text(item, "text"),
-                    Code = Json.Text(item, "code"),
-                    Quest = Json.Text(item, "quest"),
-                    Name = Json.Text(item, "name"),
-                    From = Json.Text(item, "from"),
-                });
-            }
+            items.AddRange(listed.EnumerateArray().Select(ReadItem).OfType<ChannelItemView>());
         }
 
         var unread = root.TryGetProperty("unread", out var count) && count.ValueKind == JsonValueKind.Number ? count.GetInt32() : 0;
         return new ChannelView(ask, Json.Text(root, "entry") ?? "", items, unread, Moments.Read(root, "mark"));
     }
 
+    /// <summary>One item as the service answers it; null for one without its kind or a moment that reads (passed over).</summary>
+    internal static ChannelItemView? ReadItem(JsonElement item) =>
+        item.ValueKind != JsonValueKind.Object || Json.Text(item, "kind") is not { Length: > 0 } kind || Moments.Read(item, "at") is not { } at
+            ? null
+            : new ChannelItemView(kind, at)
+            {
+                Id = Json.Text(item, "id"),
+                Person = Flag(item, "person"),
+                Session = Json.Text(item, "session"),
+                Repository = Json.Text(item, "repository"),
+                Agent = Json.Text(item, "agent"),
+                Entry = Json.Text(item, "entry"),
+                To = Json.Text(item, "to"),
+                Re = Json.Text(item, "re"),
+                Question = Flag(item, "question"),
+                Open = Flag(item, "open"),
+                Text = Json.Text(item, "text"),
+                Code = Json.Text(item, "code"),
+                Quest = Json.Text(item, "quest"),
+                Name = Json.Text(item, "name"),
+                From = Json.Text(item, "from"),
+            };
+
     private static bool Flag(JsonElement element, string name) =>
         element.TryGetProperty(name, out var flag) && flag.ValueKind == JsonValueKind.True;
 }
+
+/// <summary>
+/// The person's post as the service answered it (SESSONE2c): the message kept, or the code that refused it (<c>empty</c>,
+/// <c>too-long</c>, <c>bad-to</c>, <c>bad-re</c>, <c>not-found</c>), a word each door says in the reader's language.
+/// </summary>
+public sealed record ChannelPosted(bool Ok, ChannelItemView? Message, string? Code);
 
 /// <summary>
 /// An entry's key read for the channel (D167 point 2): <c>ask:&lt;id&gt;/&lt;repository&gt;</c> is a line of work on an ask, which has

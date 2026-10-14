@@ -4,7 +4,7 @@ import { HELP_REPOSITORY, type Quest, type Session } from '../api';
 import { useAsks, useOpinions, useQuests, useRegistry, useSessions } from '../queries';
 import { searchable } from '../searchable';
 import {
-  type SessionHit, useDriver, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionSearch, useSessionWhere,
+  type SessionHit, useChannelUnreads, useDriver, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionSearch, useSessionWhere,
 } from '../shell';
 import { askOfEntry, entryFacts, listedSessions, nameOfEntry, type SessionEntry } from './entries';
 import { sentence } from '../format';
@@ -131,6 +131,12 @@ export function SessionRail({
   const asked = (entries ?? []).some((entry) => askOfEntry(entry) !== null);
   const asks = useAsks(true, asked);
   const askNames = Object.fromEntries((asks.data ?? []).map((ask): [string, string] => [ask.id, askName(ask)]));
+  // What is unread on each such ask's channel (SESSONE2c, D167), said in the headings of the list *by ask*: asked only there, the
+  // same reads the ask's page and its row hold under one key. None in a browser, which has no driver.
+  const unreads = useChannelUnreads(
+    [...new Set((entries ?? []).map(askOfEntry).filter((ask): ask is string => ask !== null))],
+    { enabled: arrangement === 'ask' && !live },
+  );
   // Where each row's work is now (LOOK2b): its tree, or where its landing put the work — asked once, for the rows listed.
   const where = useSessionWhere(listed);
   // Searching (RAIL1): by name at once, and by what was said once the typing settles.
@@ -353,6 +359,7 @@ export function SessionRail({
           repositoryFacts={repositoryFacts}
           entries={entries}
           askNames={askNames}
+          unread={unreads}
           {...acts}
         />
       )}

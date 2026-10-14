@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- An ask's page has a *Channel* (频道), where its sessions and you talk: their messages and Daoris's lines about its quests
+  (published, taken, done, declined, waiting on your yes) in your language, an open question marked, and a box to write to
+  everyone on the ask or one of its repositories, answering a message if you choose. A session on an ask has the same channel
+  kept to its own repository, folded under its head. The ask's row and *Group by ask* say how many items are unread, and
+  `daoris-driver ask channel <id> [--to <repository>] ["…"]` reads the channel or posts to it from a terminal.
 - Sessions working on an ask can post to and read the ask's channel (`channel_post`, `channel_read`), and Daoris hands them
   what was written there: a running session reads a message at its next step where its agent takes words during a turn,
   another session's always marked as that agent's claim and never as yours; your message reaches it as your words, and one

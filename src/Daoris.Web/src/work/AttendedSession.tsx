@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { type ComponentProps, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GoAhead, Quest, Session } from '../api';
+import { ChannelPanel } from '../asks/ChannelSection';
 import type { GoAheadAnswer } from '../asks/GoAheadList';
 import { answeredPark, Button, EmptyState } from '../ui';
 import type { ChainStep } from '../map/chain';
@@ -52,7 +53,7 @@ export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onName, discards, onDiscardTree, review,
-  opinion, continues, helps, parts,
+  opinion, continues, helps, parts, channel,
 }: {
   /**
    * Its entry's parts (SESSONE1c, D167 point 5): under the head, a strip of every record of the line of work it belongs to, the
@@ -114,6 +115,11 @@ export function AttendedSession({
   onReview?: () => void;
   /** Who it worked with beyond its chain (SESS1): the session that asked, and what it asked of others. */
   relations?: Relations;
+  /**
+   * Its ask's channel kept to its line of work (SESSONE2c, D167 points 6 to 8): as the shell answers it, the person's post and the
+   * doors a line and the whole channel open. Absent for a conversation, an intake, a line rooted in a quest alone and a browser.
+   */
+  channel?: ComponentProps<typeof ChannelPanel>;
   /** Open a quest's record — a stop on the chain, or one it asked. Absent where there is nowhere to open it. */
   onQuest?: (quest: Quest) => void;
   /** The branch its own tree left, as the clean-up judged it (SESS1 S10) — the head's. */
@@ -217,6 +223,8 @@ export function AttendedSession({
         )
         : <ChainLine chain={chain} onQuest={onQuest} onExpand={() => showChain(true)} />)}
       {relations && <SessionRelations relations={relations} onQuest={onQuest} onSession={onSession} />}
+      {/* Its ask's channel kept to this line of work, folded to a line (SESSONE2c, D167 points 6 to 8). */}
+      {channel && <ChannelPanel {...channel} />}
       {/* Folded, a line above the conversation: nothing is read until the person opens it (TRACE1b). */}
       {trace && <HowItCameToBe kind="session" id={session.id} {...trace} nameOf={nameOf} />}
       {/* The timeline lives in the right dock since SURF6 gave the dock its second occupant. It stayed

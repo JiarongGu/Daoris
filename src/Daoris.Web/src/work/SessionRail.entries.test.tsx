@@ -26,7 +26,14 @@ import { SessionRail } from './SessionRail';
 let ENTRIES: unknown = EVIDENCE_ENTRIES;
 let SESSIONS: unknown[] = EVIDENCE_SESSIONS;
 
-const drive = async (_module: string, type: string) => {
+/** What is unread on each ask's channel (SESSONE2c), by the ask's id; an ask not named reads as an empty channel. */
+let UNREAD: Record<string, number> = {};
+
+const drive = async (_module: string, type: string, options?: { payload?: { ask?: string } }) => {
+  if (type === 'CHANNEL_READ') {
+    const ask = options?.payload?.ask ?? '';
+    return { ask, entry: 'person', items: [], unread: UNREAD[ask] ?? 0, mark: null };
+  }
   if (type === 'SESSION_GROUPS') return { sessions: EVIDENCE_GROUPINGS, ...(ENTRIES === undefined ? {} : { entries: ENTRIES }) };
   return { drivable: ['app'], holds: [], trees: [], running: [] };
 };
@@ -54,6 +61,7 @@ const rowsOf = (region: HTMLElement) => within(region).getAllByRole('button')
 
 describe('the session rail over entries (SESSONE1c)', () => {
   beforeEach(() => {
+    UNREAD = {};
     ENTRIES = EVIDENCE_ENTRIES;
     SESSIONS = EVIDENCE_SESSIONS;
     bridge.available = true;
@@ -129,6 +137,15 @@ describe('the session rail over entries (SESSONE1c)', () => {
       expect(inFirst[1]).toHaveTextContent('db');
       expect(rowsOf(second)).toHaveLength(1);
       expect(second).toHaveTextContent('app');
+    });
+
+    /** SESSONE2c (D167): an ask's heading says what is unread on its channel, the person's count, and says nothing where none is. */
+    it('says what is unread on an ask’s channel in its heading', async () => {
+      UNREAD = { c98a7e: 2 };
+      show({ arrangement: 'ask' });
+
+      expect(await screen.findByRole('heading', { level: 3, name: 'Add the export feed to the app, backed by the database · 2 unread' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 3, name: 'Tidy the settings page' })).toBeInTheDocument();
     });
 
     it('puts a conversation under Not on an ask', async () => {

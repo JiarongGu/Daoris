@@ -10,6 +10,7 @@
     "DriverModuleAcrossTests.cs": "Bridge",
     "DriverModuleAddedTests.cs": "Bridge",
     "DriverModuleAgentsTests.cs": "Bridge",
+    "DriverModuleChannelTests.cs": "Bridge",
     "DriverModuleCommitsTests.cs": "Bridge",
     "DriverModuleConsoleTests.cs": "Bridge",
     "DriverModuleConversationProcessTests.cs": "Bridge",

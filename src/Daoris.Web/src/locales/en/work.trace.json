@@ -46,6 +46,7 @@
   "work.trace.word.answered": "answered session {{session}}",
   "work.trace.word.added": "added while session {{session}} ran",
   "work.trace.word.reopened": "said to session {{session}} after it ended",
+  "work.trace.word.channel": "wrote on the ask's channel",
   "work.trace.word.said": "{{kind}}, to session {{session}}",
   "work.trace.word.onQuest": "on quest #{{quest}}",
   "work.trace.goAhead.approved": "approved {{at}}",

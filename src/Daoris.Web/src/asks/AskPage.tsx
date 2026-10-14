@@ -9,6 +9,8 @@ import { Button, Icon, type IconName, Inline, Menu, Pill, Prose, SelectField, SE
 import { ClearAsk } from '../work/ClearAsk';
 import type { AskLine } from '../work/entries';
 import { AskLines } from './AskLines';
+import { type ChannelAnswered, ChannelSection } from './ChannelSection';
+import type { Channel, ChannelPost } from '../work/channel';
 import { clearOffered, type HistoryDoor } from '../work/history';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { askName } from '../work/identity';
@@ -98,8 +100,17 @@ const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 
  */
 export function AskPage({
   ask, receivers, questTitles, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest, onAnswerGoAhead,
-  work, history, considered = [], nameOf, environments, onChooseReview, onChooseKind, workflow, lines = [],
+  work, history, considered = [], nameOf, environments, onChooseReview, onChooseKind, workflow, lines = [], channel,
 }: {
+  /**
+   * Its channel (SESSONE2c, D167 points 6 to 8): as the shell answers it (null while it is read), the person's post and the
+   * move of their mark. Absent where no driver answers one, a browser, and then no section is drawn.
+   */
+  channel?: {
+    channel: Channel | null;
+    onPost: (post: ChannelPost, answered: ChannelAnswered) => void;
+    onRead: (through: string) => void;
+  };
   /**
    * Its sessions by entry (SESSONE1c, D167 point 5): the lines of work it began, one per repository, from the driver's reader
    * (`askLines`); none where no host answers entries, and then the section is not drawn.
@@ -505,6 +516,20 @@ export function AskPage({
       {lines.length > 0 && (
         <PageSection title={t('asks.record.sessions')}>
           <AskLines lines={lines} onAttend={onAttend} />
+        </PageSection>
+      )}
+
+      {/* Where its sessions and the person talk (SESSONE2c, D167 points 6 to 8): shell-only, so a browser draws none. */}
+      {channel && (
+        <PageSection title={t('asks.channel.title')}>
+          <ChannelSection
+            channel={channel.channel}
+            repositories={lines.map((line) => line.repository)}
+            onPost={channel.onPost}
+            onRead={channel.onRead}
+            onOpenQuest={onOpenQuest}
+          />
+          <p className="m-0 mt-2 text-small text-ink-faint"><Inline text={t('asks.channel.twin', { id: ask.id })} /></p>
         </PageSection>
       )}
 

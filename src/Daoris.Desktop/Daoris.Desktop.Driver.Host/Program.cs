@@ -285,6 +285,13 @@ try
         return await Daoris.Driver.Host.ChatConsole.RunAsync(chatArgs);
     }
 
+    // An ask's channel from a terminal (SESSONE2c, D167, D50): read it, or post the person's words to it; the ask page's *Channel* is
+    // the other door. Asked for before the ask's other words, which would take `channel` as the first word of a new ask.
+    if (args is ["ask", .. var channelArgs] && ChannelCommand.Asks(channelArgs))
+    {
+        return await Daoris.Driver.Host.ChannelConsole.RunAsync(channelArgs[1..]);
+    }
+
     // Pausing, resuming and abandoning an ask's work from a terminal (PAUSE1b, PAUSE1d, D132 §7.2, D50): the ask's page is the
     // other door. Asked for before the ask's other words, which would take `--pause` as the words of a new ask.
     if (args is ["ask", .. var workArgs] && WorkCommand.Asks(WorkScope.Ask, workArgs))
