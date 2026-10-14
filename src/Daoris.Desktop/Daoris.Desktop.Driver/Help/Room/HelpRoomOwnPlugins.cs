@@ -63,9 +63,3 @@ public sealed record HelpOffer(string Id, string Name, string Version, IReadOnly
 
     public IReadOnlyList<string> Servers { get; init; } = [];
 }
-
-public sealed partial record HelpMachine
-{
-    /// <summary>The install's own plugins not installed here and sound, which an add may name by id (PLUG9 d).</summary>
-    public IReadOnlyList<HelpOffer> Offers { get; init; } = [];
-}

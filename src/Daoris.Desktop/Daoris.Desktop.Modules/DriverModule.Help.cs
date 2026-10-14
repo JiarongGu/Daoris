@@ -719,7 +719,7 @@ public sealed partial class DriverModule
 
         if (JudgedAgainstRecords(proposals))
         {
-            var (quests, asks) = await HelpProposals.RecordsAsync(service, ct).ConfigureAwait(false);
+            var (quests, asks) = await HelpDeleteProposals.RecordsAsync(service, ct).ConfigureAwait(false);
             facts = facts with { Quests = quests, Asks = asks };
         }
 

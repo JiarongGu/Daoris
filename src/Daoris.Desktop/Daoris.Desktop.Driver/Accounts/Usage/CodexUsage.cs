@@ -295,7 +295,7 @@ public static class CodexUsage
 
         try
         {
-            if (!process.HasExited) process.Kill(entireProcessTree: true);
+            if (!process.HasExited) ChildProcess.KillTree(process);
             process.WaitForExit(TimeSpan.FromSeconds(5));
         }
         catch (Exception error) when (error is InvalidOperationException or Win32Exception or NotSupportedException)

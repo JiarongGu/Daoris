@@ -256,7 +256,7 @@ public sealed class AskStore
                 .ConfigureAwait(false);
             await using var mark = _db.Command();
             mark.CommandText = "UPDATE asks SET words_kept_from = $now WHERE words_kept_from IS NULL";
-            mark.Parameters.AddWithValue("$now", DateTimeOffset.UtcNow.ToString("O"));
+            mark.Parameters.AddWithValue("$now", Moments.Write(DateTimeOffset.UtcNow));
             await mark.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
@@ -297,7 +297,7 @@ public sealed class AskStore
         {
             writer.WriteStartObject();
             writer.WriteString("choice", choice.Choice);
-            writer.WriteString("at", choice.At.ToString("O"));
+            writer.WriteString("at", Moments.Write(choice.At));
             if (choice.Words is { } words) writer.WriteString("words", words);
             writer.WriteEndObject();
         }), now, ct);
@@ -315,7 +315,7 @@ public sealed class AskStore
         writer.WriteStartObject();
         if (choice.Kind is { } kind) writer.WriteString("kind", kind);
         if (choice.Workflow is { } workflow) writer.WriteString("workflow", workflow);
-        writer.WriteString("at", choice.At.ToString("O"));
+        writer.WriteString("at", Moments.Write(choice.At));
         if (choice.Words is { } words) writer.WriteString("words", words);
         writer.WriteEndObject();
     }
@@ -327,7 +327,7 @@ public sealed class AskStore
             writer.WriteStartObject();
             writer.WriteString("choice", proposal.Choice);
             writer.WriteString("reason", proposal.Reason);
-            writer.WriteString("at", proposal.At.ToString("O"));
+            writer.WriteString("at", Moments.Write(proposal.At));
             if (proposal.Session is { } session) writer.WriteString("session", session);
             if (proposal.Quest is { } quest) writer.WriteString("quest", quest);
             writer.WriteEndObject();
@@ -340,7 +340,7 @@ public sealed class AskStore
             writer.WriteStartObject();
             writer.WriteString("kind", proposal.Kind);
             writer.WriteString("reason", proposal.Reason);
-            writer.WriteString("at", proposal.At.ToString("O"));
+            writer.WriteString("at", Moments.Write(proposal.At));
             if (proposal.Session is { } session) writer.WriteString("session", session);
             if (proposal.Quest is { } quest) writer.WriteString("quest", quest);
             writer.WriteEndObject();
@@ -353,7 +353,7 @@ public sealed class AskStore
         command.CommandText = $"UPDATE asks SET {column} = json_insert({column}, '$[#]', json($item)), updated = $updated WHERE id = $id";
         command.Parameters.AddWithValue("$id", id.TrimStart('#'));
         command.Parameters.AddWithValue("$item", item);
-        command.Parameters.AddWithValue("$updated", now.ToString("O"));
+        command.Parameters.AddWithValue("$updated", Moments.Write(now));
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
     }, ct);
 
@@ -386,7 +386,7 @@ public sealed class AskStore
         {
             w.WriteStartObject();
             w.WriteString("choice", choice.Choice);
-            w.WriteString("at", choice.At.ToString("O"));
+            w.WriteString("at", Moments.Write(choice.At));
             if (choice.Words is { } words) w.WriteString("words", words);
             w.WriteEndObject();
         }));
@@ -398,8 +398,8 @@ public sealed class AskStore
         command.Parameters.AddWithValue("$sentence", ask.Sentence);
         command.Parameters.AddWithValue("$state", ask.State.ToString());
         command.Parameters.AddWithValue("$tier", ask.Tier);
-        command.Parameters.AddWithValue("$asked", ask.Asked.ToString("O"));
-        command.Parameters.AddWithValue("$updated", ask.Updated.ToString("O"));
+        command.Parameters.AddWithValue("$asked", Moments.Write(ask.Asked));
+        command.Parameters.AddWithValue("$updated", Moments.Write(ask.Updated));
         command.Parameters.AddWithValue("$asker", (object?)ask.Asker ?? DBNull.Value);
         command.Parameters.AddWithValue("$note", (object?)ask.Note ?? DBNull.Value);
         command.Parameters.AddWithValue("$links", Json(ask.Links, (w, link) => w.WriteStringValue(link)));
@@ -444,7 +444,7 @@ public sealed class AskStore
         command.Parameters.AddWithValue("$id", id.TrimStart('#'));
         command.Parameters.AddWithValue("$quest", quest);
         command.Parameters.AddWithValue("$tier", (object?)tier ?? DBNull.Value);
-        command.Parameters.AddWithValue("$updated", now.ToString("O"));
+        command.Parameters.AddWithValue("$updated", Moments.Write(now));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }, ct);
 
@@ -458,7 +458,7 @@ public sealed class AskStore
         command.CommandText = "UPDATE asks SET state = 'Closed', note = $note, updated = $updated WHERE id = $id";
         command.Parameters.AddWithValue("$id", id.TrimStart('#'));
         command.Parameters.AddWithValue("$note", note);
-        command.Parameters.AddWithValue("$updated", now.ToString("O"));
+        command.Parameters.AddWithValue("$updated", Moments.Write(now));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }, ct);
 
@@ -478,7 +478,7 @@ public sealed class AskStore
         command.CommandText = "UPDATE asks SET intake = $intake, updated = $updated WHERE id = $id";
         command.Parameters.AddWithValue("$id", id.TrimStart('#'));
         command.Parameters.AddWithValue("$intake", session);
-        command.Parameters.AddWithValue("$updated", now.ToString("O"));
+        command.Parameters.AddWithValue("$updated", Moments.Write(now));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }, ct);
 
@@ -500,12 +500,12 @@ public sealed class AskStore
             writer.WriteStartObject();
             writer.WriteString("kind", AskWord.Spell(word.Kind));
             writer.WriteString("text", word.Text);
-            writer.WriteString("at", word.At.ToString("O"));
+            writer.WriteString("at", Moments.Write(word.At));
             if (word.Session is { } session) writer.WriteString("session", session);
             if (word.Quest is { } quest) writer.WriteString("quest", quest);
             writer.WriteEndObject();
         }));
-        command.Parameters.AddWithValue("$updated", now.ToString("O"));
+        command.Parameters.AddWithValue("$updated", Moments.Write(now));
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
     }, ct);
 
@@ -542,7 +542,7 @@ public sealed class AskStore
                 write.CommandText = "UPDATE asks SET go_aheads = $goAheads, updated = $updated WHERE id = $id";
                 write.Parameters.AddWithValue("$id", id.TrimStart('#'));
                 write.Parameters.AddWithValue("$goAheads", GoAheads.Written(next));
-                write.Parameters.AddWithValue("$updated", now.ToString("O"));
+                write.Parameters.AddWithValue("$updated", Moments.Write(now));
                 await write.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
             }
 
@@ -585,7 +585,7 @@ public sealed class AskStore
 
         return new Ask(
             Text("id"), Text("workspace"), Text("sentence"), Enum.Parse<AskState>(Text("state")), Text("tier"),
-            DateTimeOffset.Parse(Text("asked")), DateTimeOffset.Parse(Text("updated")), Maybe("asker"), Maybe("note"))
+            Moments.ReadRequired(Text("asked")), Moments.ReadRequired(Text("updated")), Maybe("asker"), Maybe("note"))
         {
             Links = Items(Text("links"), e => e.GetString() ?? ""),
             Attachments = Items(Text("attachments"), QuestAttachment.Stored),
@@ -596,7 +596,7 @@ public sealed class AskStore
             Intake = Maybe("intake"),
             Short = Maybe("short_title"),
             Later = LaterWords(Text("words")),
-            WordsKeptFrom = Maybe("words_kept_from") is { } from ? DateTimeOffset.Parse(from) : null,
+            WordsKeptFrom = Maybe("words_kept_from") is { } from ? Moments.ReadRequired(from) : null,
             GoAheads = GoAheads.Read(Text("go_aheads")),
             ReviewChoices = ReviewChoicesOf(Text("review_choices")),
             ReviewProposals = ReviewProposalsOf(Text("review_proposals")),
@@ -613,7 +613,7 @@ public sealed class AskStore
         foreach (var element in document.RootElement.EnumerateArray())
         {
             if (JsonFields.Text(element, "kind") is not { } kind || !WorkflowChoices.IsKind(kind)) continue;
-            if (JsonFields.Text(element, "reason") is not { } reason || Moment(element, "at") is not { } at) continue;
+            if (JsonFields.Text(element, "reason") is not { } reason || Moments.Read(element, "at") is not { } at) continue;
             proposals.Add(new AskWorkflowProposal(kind, reason, at, JsonFields.Text(element, "session"), JsonFields.Text(element, "quest")));
         }
 
@@ -630,7 +630,7 @@ public sealed class AskStore
         var choices = new List<AskWorkflowChoice>();
         foreach (var element in document.RootElement.EnumerateArray())
         {
-            if (element.ValueKind != JsonValueKind.Object || Moment(element, "at") is not { } at) continue;
+            if (element.ValueKind != JsonValueKind.Object || Moments.Read(element, "at") is not { } at) continue;
             var kind = JsonFields.Text(element, "kind");
             var workflow = JsonFields.Text(element, "workflow");
             if (WorkflowChoices.Judge(kind, workflow) is not null) continue;
@@ -651,7 +651,7 @@ public sealed class AskStore
         foreach (var element in document.RootElement.EnumerateArray())
         {
             if (JsonFields.Text(element, "choice") is not { } choice || Reviews.JudgeChoice(choice) is not null) continue;
-            if (Moment(element, "at") is not { } at) continue;
+            if (Moments.Read(element, "at") is not { } at) continue;
             choices.Add(new AskReviewChoice(choice, at, JsonFields.Text(element, "words")));
         }
 
@@ -666,19 +666,12 @@ public sealed class AskStore
         foreach (var element in document.RootElement.EnumerateArray())
         {
             if (JsonFields.Text(element, "choice") is not { } choice || Reviews.JudgeChoice(choice) is not null) continue;
-            if (JsonFields.Text(element, "reason") is not { } reason || Moment(element, "at") is not { } at) continue;
+            if (JsonFields.Text(element, "reason") is not { } reason || Moments.Read(element, "at") is not { } at) continue;
             proposals.Add(new AskReviewProposal(choice, reason, at, JsonFields.Text(element, "session"), JsonFields.Text(element, "quest")));
         }
 
         return proposals;
     }
-
-    private static DateTimeOffset? Moment(JsonElement element, string name) =>
-        DateTimeOffset.TryParse(
-            JsonFields.Text(element, name), System.Globalization.CultureInfo.InvariantCulture,
-            System.Globalization.DateTimeStyles.RoundtripKind, out var at)
-            ? at
-            : null;
 
     /// <summary>
     /// The words kept after the ask, oldest first. A word whose kind this build does not know — a newer
@@ -693,12 +686,7 @@ public sealed class AskStore
             // Only a session's words are kept here: the ask's own sentence is its record's.
             if (AskWord.Parse(JsonFields.Text(element, "kind")) is not { } kind || kind == AskWordKind.Asked) continue;
             if (JsonFields.Text(element, "text") is not { } text) continue;
-            if (!DateTimeOffset.TryParse(
-                    JsonFields.Text(element, "at"), System.Globalization.CultureInfo.InvariantCulture,
-                    System.Globalization.DateTimeStyles.None, out var at))
-            {
-                continue;
-            }
+            if (Moments.Read(element, "at") is not { } at) continue;
 
             words.Add(new AskWord(kind, text, at, JsonFields.Text(element, "session"), JsonFields.Text(element, "quest")));
         }
@@ -880,7 +868,7 @@ public sealed record AskOutcome(AskRefusal Refusal, string Message, Ask? Ask, Qu
 /// for a repository, it names the record a reader can follow back to the person's words, and the
 /// exchange places it in the ask's own circle, because an ask has no registry row to say it (D48 §4).
 /// </remarks>
-public sealed partial class AskDesk(KnowledgeService service, AskStore asks, QuestExchange exchange, QuestFiles? files)
+public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchange exchange, QuestFiles? files)
 {
     /// <summary>The folder under the home an ask keeps its files in, until it becomes quests.</summary>
     public const string Folder = "asks";
@@ -1291,5 +1279,199 @@ public sealed partial class AskDesk(KnowledgeService service, AskStore asks, Que
     {
         var quoted = string.Join("\n", ask.Sentence.Split('\n').Select(line => $"> {line.TrimEnd('\r')}"));
         return $"{words.Trim()}\n\n— asked at workspace `{ask.Workspace}` (ask `#{ask.Id}`), in the asker's words:\n\n{quoted}";
+    }
+
+    /// <summary>
+    /// Keep the person's answer to go-ahead <paramref name="number"/> on ask <paramref name="id"/>: yes or no, with their
+    /// words where they gave any. A later answer replaces an earlier one, since the latest is what they now say; every
+    /// session on the ask is handed it at its next start (KNOWUSE1a, D135 §2).
+    /// </summary>
+    /// <remarks>
+    /// <b>The person's alone</b>: the production acts stay theirs (D37, D52), so no connector tool answers a go-ahead, and a
+    /// local host's door is the only one, as the ask routes are.
+    /// </remarks>
+    public async Task<GoAheadAnswerOutcome> AnswerGoAheadAsync(
+        string id, int number, bool approved, string? words, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var said = string.IsNullOrWhiteSpace(words) ? null : words.Trim();
+        if (said is { Length: > GoAheads.WordsLimit })
+        {
+            return new(GoAheadAnswerRefusal.TooLong,
+                $"An answer's words are at most {GoAheads.WordsLimit} characters; these are {said.Length}. Nothing was kept.",
+                await FindAsync(id, ct).ConfigureAwait(false));
+        }
+
+        var answer = new GoAheadAnswer(approved, said, now);
+        var (found, decided) = await asks.DecideGoAheadsAsync<(GoAhead? Answered, bool WasWaiting, IReadOnlyList<int> Numbers)>(id, entries =>
+        {
+            var held = entries.Select(entry => entry.Read).OfType<GoAhead>().FirstOrDefault(goAhead => goAhead.Number == number);
+            if (held is null) return (null, (null, false, [.. entries.Select(entry => entry.Read?.Number).OfType<int>()]));
+            GoAhead? answered = held with { Answer = answer };
+            IReadOnlyList<(System.Text.Json.JsonElement Raw, GoAhead? Read)> next =
+                [.. entries.Select(entry => entry.Read?.Number == number ? (entry.Raw, answered) : entry)];
+            // Read as it was stored, in the same transaction: whether this is the person's first answer to it (GOAHEAD2).
+            return (next, (answered, held.Answer is null, []));
+        }, now, ct).ConfigureAwait(false);
+
+        var ask = found ? await FindAsync(id, ct).ConfigureAwait(false) : null;
+        if (!found || ask is null) return new(GoAheadAnswerRefusal.NotFound, $"No ask `#{id.TrimStart('#')}`.", Ask: null);
+
+        if (decided.Answered is not { } kept)
+        {
+            return new(GoAheadAnswerRefusal.NoGoAhead,
+                decided.Numbers.Count == 0
+                    ? $"Ask `#{ask.Id}` holds no go-ahead {number}: no session has asked for one on it."
+                    : $"Ask `#{ask.Id}` holds no go-ahead {number}: it holds {string.Join(", ", decided.Numbers)}.",
+                ask);
+        }
+
+        return new(GoAheadAnswerRefusal.None,
+            $"Go-ahead {kept.Number} on ask `#{ask.Id}` {(approved ? "approved" : "refused")}: {kept.Named}. Every session on the "
+            + "ask is handed your answer at its next start" + (said is null ? "." : ", with your words."),
+            ask)
+        {
+            GoAhead = kept,
+            WasWaiting = decided.WasWaiting,
+        };
+    }
+
+    /// <summary>
+    /// The person sets the ask's review choice (REVIEWENV1b, D154 point 3; design §1.5): <c>off</c>, <c>on</c> or an environment's
+    /// name, with any words they give, kept with when; the latest stands, as a go-ahead's answer does. Applying the intake's
+    /// proposal is this same press, with the proposal's choice.
+    /// </summary>
+    /// <remarks>
+    /// <b>The person's door</b>, a local host's as every ask route is. Whether the repositories the ask reaches declare an
+    /// environment is the door's to say, which reads the review rule; the service holds no rule.
+    /// </remarks>
+    public async Task<AskOutcome> ChooseReviewAsync(string id, string? choice, string? words, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var ask = await asks.FindAsync(id, ct).ConfigureAwait(false);
+        if (ask is null) return new(AskRefusal.NotFound, $"No ask `#{id.TrimStart('#')}`.", Ask: null);
+        if (ask.State == AskState.Closed)
+        {
+            return new(AskRefusal.Closed, $"Ask `#{ask.Id}` is closed ({ask.Note}): nothing it publishes waits for a review.", ask);
+        }
+
+        var (chosen, unfit) = JudgeChoice(choice, words, now);
+        if (unfit is not null) return new(AskRefusal.BadReview, unfit, ask);
+
+        await asks.RecordReviewChoiceAsync(ask.Id, chosen!, now, ct).ConfigureAwait(false);
+        var stands = await FindAsync(ask.Id, ct).ConfigureAwait(false) ?? ask;
+        return new(AskRefusal.None, chosen!.Choice switch
+        {
+            Reviews.Off => $"Ask `#{ask.Id}`: no review for the chains it publishes that choose none.",
+            Reviews.On => $"Ask `#{ask.Id}`: the chains it publishes that choose none are reviewed in each repository's default environment.",
+            var environment => $"Ask `#{ask.Id}`: the chains it publishes that choose none are reviewed in `{environment}`.",
+        } + (chosen.Words is null ? "" : " Your words are kept with it."), stands);
+    }
+
+    /// <summary>A choice as the ask keeps it, or why not: its shape, and the person's words trimmed and bounded.</summary>
+    private static (AskReviewChoice? Choice, string? Refusal) JudgeChoice(string? choice, string? words, DateTimeOffset now)
+    {
+        var chosen = choice?.Trim() ?? "";
+        if (Reviews.JudgeChoice(chosen) is { } unfit) return (null, $"The ask's {unfit}. Nothing was kept.");
+        var said = string.IsNullOrWhiteSpace(words) ? null : words.Trim();
+        return said is { Length: > Reviews.WordsLimit }
+            ? (null, $"Your words with a review choice are at most {Reviews.WordsLimit} characters; these are {said.Length}. Nothing was kept.")
+            : (new AskReviewChoice(chosen, now, said), null);
+    }
+
+    /// <summary>
+    /// An intake's proposal as the ask keeps it, or why not (design §1.5–§1.6): from an agent, with a reason of at most
+    /// <see cref="Reviews.ReasonLimit"/> characters, and never beside a choice it sets on the person's words. Null for none.
+    /// The session that made it is kept where the agent named one; an agent that named none is still an agent (REVIEWENV1b3).
+    /// </summary>
+    private static (AskReviewProposal? Proposal, string? Refusal) JudgeProposal(AskDraft? draft, string? session, bool agent, DateTimeOffset now)
+    {
+        if (draft?.ReviewProposal is not { } proposed) return (null, null);
+
+        var choice = proposed.Choice?.Trim() ?? "";
+        var reason = proposed.Reason?.Trim() ?? "";
+        string? unfit =
+            !agent ? "A review proposal is an intake's reading, kept for the person's press: the person sets their own choice instead"
+            : draft.Review is not null ? "A chain takes a review choice on the person's words, or a proposal with your reason, never both"
+            : Reviews.JudgeChoice(choice) is { } shape ? $"The proposal's {shape}"
+            : reason.Length == 0 ? "A review proposal says why, in a sentence: the person decides on it"
+            : reason.Length > Reviews.ReasonLimit ? $"A review proposal's reason is at most {Reviews.ReasonLimit} characters; this is {reason.Length}"
+            : null;
+        return unfit is not null
+            ? (null, unfit + ". Nothing was published.")
+            : (new AskReviewProposal(choice, reason, now, string.IsNullOrWhiteSpace(session) ? null : session.Trim()), null);
+    }
+
+    /// <summary>
+    /// The person sets the ask's kind and workflow (WORKFLOW1e, D157 point 10; design §4.3): a kind, a workflow, both, or neither to
+    /// clear them, with any words they give, kept with when; the latest stands, as a review choice does. It reaches each chain the
+    /// ask publishes whose work has not started: a run is bound at its first start (§4.5).
+    /// </summary>
+    /// <remarks>
+    /// <b>The person's door</b> (D156 §3.2), a local host's as every ask route is: an agent proposes a kind, the intake's (WORKFLOW1i),
+    /// and never sets one. Whether the ask's workspace declares the kind and the workflow reads here is the driving machine's to
+    /// say; the service holds neither.
+    /// </remarks>
+    public async Task<AskOutcome> ChooseWorkflowAsync(
+        string id, string? kind, string? workflow, string? words, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var ask = await asks.FindAsync(id, ct).ConfigureAwait(false);
+        if (ask is null) return new(AskRefusal.NotFound, $"No ask `#{id.TrimStart('#')}`.", Ask: null);
+        if (ask.State == AskState.Closed)
+        {
+            return new(AskRefusal.Closed, $"Ask `#{ask.Id}` is closed ({ask.Note}): nothing it publishes waits for a workflow.", ask);
+        }
+
+        var (chosen, unfit) = JudgeWorkflowChoice(kind, workflow, words, now);
+        if (unfit is not null) return new(AskRefusal.BadWorkflow, unfit, ask);
+
+        await asks.RecordWorkflowChoiceAsync(ask.Id, chosen!, now, ct).ConfigureAwait(false);
+        var stands = await FindAsync(ask.Id, ct).ConfigureAwait(false) ?? ask;
+        return new(AskRefusal.None, WorkflowSaid(ask.Id, chosen!) + (chosen!.Words is null ? "" : " Your words are kept with it."), stands);
+    }
+
+    /// <summary>A choice as the ask keeps it, or why not: each blank one none, its shape, and the person's words trimmed and bounded.</summary>
+    private static (AskWorkflowChoice? Choice, string? Refusal) JudgeWorkflowChoice(string? kind, string? workflow, string? words, DateTimeOffset now)
+    {
+        var namedKind = string.IsNullOrWhiteSpace(kind) ? null : kind.Trim();
+        var named = string.IsNullOrWhiteSpace(workflow) ? null : workflow.Trim();
+        if (WorkflowChoices.Judge(namedKind, named) is { } unfit) return (null, $"The ask's {unfit}. Nothing was kept.");
+        var said = string.IsNullOrWhiteSpace(words) ? null : words.Trim();
+        return said is { Length: > WorkflowChoices.WordsLimit }
+            ? (null, $"Your words with a kind or a workflow are at most {WorkflowChoices.WordsLimit} characters; these are {said.Length}. Nothing was kept.")
+            : (new AskWorkflowChoice(namedKind, named, now, said), null);
+    }
+
+    /// <summary>
+    /// An intake's kind proposal as the ask keeps it, or why not (WORKFLOW1i, design §4.3): from an agent only, a kind's shape, a
+    /// reason of at most <see cref="WorkflowChoices.ReasonLimit"/> characters. Null for none. Whether the reason quotes the person is
+    /// the exchange's, which holds the ask's words; the session that made it is kept where the agent named one.
+    /// </summary>
+    private static (AskWorkflowProposal? Proposal, string? Refusal) JudgeWorkflowProposal(AskDraft? draft, string? session, bool agent, DateTimeOffset now)
+    {
+        if (draft?.WorkflowProposal is not { } proposed) return (null, null);
+
+        var unfit = !agent
+            ? "A kind proposal is an intake's reading, kept for the person's press: the person sets their own kind instead"
+            : WorkflowChoices.JudgeProposal(proposed.Kind, proposed.Reason);
+        return unfit is not null
+            ? (null, unfit + ". Nothing was published.")
+            : (new AskWorkflowProposal(proposed.Kind!.Trim(), proposed.Reason!.Trim(), now, string.IsNullOrWhiteSpace(session) ? null : session.Trim()), null);
+    }
+
+    /// <summary>What a choice kept says: the kind, the workflow, both, or neither, for the chains the ask publishes.</summary>
+    private static string WorkflowSaid(string id, AskWorkflowChoice chosen)
+    {
+        var follows = chosen.Workflow switch
+        {
+            null => null,
+            "current" => "follow Current, each repository's rules as they stand,",
+            var workflow => $"follow `{workflow}`",
+        };
+        return (chosen.Kind, follows) switch
+        {
+            (null, null) => $"Ask `#{id}`: no kind and no workflow; each repository's choice decides the workflow the chains it publishes follow.",
+            ({ } kind, null) => $"Ask `#{id}`: the chains it publishes are of kind `{kind}`; each repository's choice for it decides their workflow.",
+            (null, { } named) => $"Ask `#{id}`: the chains it publishes {named} in every repository they reach.",
+            ({ } kind, { } named) => $"Ask `#{id}`: the chains it publishes are of kind `{kind}`, and {named} in every repository they reach.",
+        } + " Work already started keeps the workflow it bound.";
     }
 }

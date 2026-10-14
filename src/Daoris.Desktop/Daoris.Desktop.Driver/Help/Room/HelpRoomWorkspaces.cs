@@ -237,11 +237,3 @@ public sealed record HelpWorkflowFollowed(string Workflow, string Level)
 
 /// <summary>A kind of work a workspace declares (WORKFLOW1e, design §4.2), its label, paths and the workflow it maps to, null for none.</summary>
 public sealed record HelpWorkflowKind(string Workspace, string Kind, string? Label, IReadOnlyList<string> Paths, string? Workflow);
-
-public sealed partial record HelpMachine
-{
-    public IReadOnlyList<HelpRepository> Repositories { get; init; } = [];
-
-    /// <summary>The kinds of work each workspace declares (WORKFLOW1h-b, the workflow design §8.4), by workspace.</summary>
-    public IReadOnlyList<HelpWorkflowKind> WorkflowKinds { get; init; } = [];
-}

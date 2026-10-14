@@ -54,7 +54,7 @@ public sealed class PullRequestOccasionTests
             .Order()
             .ToList();
 
-        Assert.Equal([("LandingPlugins.cs", "AskOneAsync"), ("PluginTrial.cs", "AskAsync")], speakers);
+        Assert.Equal([("LandingPlugins.cs", "AskOneAsync"), ("PluginTrials.cs", "AskAsync")], speakers);
     }
 
     /// <summary>The clean-up's look, which asks, is started by a person's door alone: the page's list and `trees clean`.</summary>

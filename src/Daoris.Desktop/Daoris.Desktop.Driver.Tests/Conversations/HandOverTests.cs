@@ -250,7 +250,7 @@ public sealed class HandOverTests : IDisposable
         Assert.Contains("> Make the port configurable.\n> And log it.", message.Briefing);
         Assert.Equal(["chat.taken-over"], NoteAssert.Codes(message.TakenOver!.Parts));
         Assert.Equal(("claude-code", "c0nv0001", "limit"), (message.TakenOver.Parts[0].Value("agent"), message.TakenOver.Parts[0].Value("session"), message.TakenOver.Parts[0].Value("why")));
-        var old = Assert.Single(events.Page("c0nv0001", limit: SessionEvents.MaxPage).Events, e => e.Kind == SessionEventKind.Note);
+        var old = Assert.Single(events.Page("c0nv0001", limit: SessionEventText.MaxPage).Events, e => e.Kind == SessionEventKind.Note);
         Assert.Equal(["chat.handed-over"], NoteAssert.Codes(old.Parts!));
         Assert.Equal(("codex-acp", "n3w00001"), (old.Parts![0].Value("agent"), old.Parts[0].Value("session")));
         Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
@@ -302,7 +302,7 @@ public sealed class HandOverTests : IDisposable
         Assert.Equal(
             ("account-1", "weekly", 62, 45),
             (came.Parts[0].Value("from"), came.Parts[0].Value("window"), came.Parts[0].Value("used"), came.Parts[0].Value("curve")));
-        var went = Assert.Single(events.Page("c0nv0001", limit: SessionEvents.MaxPage).Events, e => e.Kind == SessionEventKind.Note);
+        var went = Assert.Single(events.Page("c0nv0001", limit: SessionEventText.MaxPage).Events, e => e.Kind == SessionEventKind.Note);
         Assert.Equal(["chat.moved"], NoteAssert.Codes(went.Parts!));
         Assert.Equal(("account-3", "account-1"), (went.Parts![0].Value("to"), went.Parts[0].Value("from")));
         Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
@@ -350,9 +350,9 @@ public sealed class HandOverTests : IDisposable
             "conversation `n3w00001` opened with codex-acp, but what Daoris kept of `c0nv0001` did not reach it: tell it where you were.",
             handed.Message);
         // Said in the new conversation's record, by a code, and the old one still names the new one.
-        var unsaid = Assert.Single(Events.Page("n3w00001", limit: SessionEvents.MaxPage).Events, e => e.Kind == SessionEventKind.Note);
+        var unsaid = Assert.Single(Events.Page("n3w00001", limit: SessionEventText.MaxPage).Events, e => e.Kind == SessionEventKind.Note);
         Assert.Equal(["chat.briefing-unsaid"], NoteAssert.Codes(unsaid.Parts!));
-        Assert.Contains(Events.Page("c0nv0001", limit: SessionEvents.MaxPage).Events, e => e.Parts?.Any(part => part.Code == "chat.handed-over") == true);
+        Assert.Contains(Events.Page("c0nv0001", limit: SessionEventText.MaxPage).Events, e => e.Parts?.Any(part => part.Code == "chat.handed-over") == true);
     }
 
     /// <summary>The request is the person's first message, whole; a driven session's composed target is none.</summary>

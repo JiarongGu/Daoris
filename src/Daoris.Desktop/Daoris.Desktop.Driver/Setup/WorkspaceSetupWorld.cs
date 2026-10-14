@@ -47,7 +47,7 @@ public sealed class WorkspaceSetupWorld(ServiceClient service, string home) : IW
     public Task<IReadOnlyList<SessionRun>> RunsAsync(CancellationToken ct) => service.SessionRunsAsync(ct);
 
     public IReadOnlyList<ToolTouch> Touched(string session) =>
-        SessionEvents.IsId(session) ? ReadTouches(_records.PathOf(session)) : [];
+        SessionEventText.IsId(session) ? ReadTouches(_records.PathOf(session)) : [];
 
     public void Said(SetupLine line) => service.SetupSaid(line);
 

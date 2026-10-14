@@ -314,43 +314,7 @@ public sealed record HelpPluginView(
 /// <summary>A harness a plugin declares, or a server it hands every session: its name, and the command that runs it.</summary>
 public sealed record HelpPluginPart(string Name, IReadOnlyList<string> Command);
 
-public sealed partial record HelpProposal
-{
-    /// <summary>A plugin's folder to add from: from that checkout's root, or a whole path (PLUG9).</summary>
-    public string? Folder { get; init; }
-
-    /// <summary>One of the install's own plugins to add, by its id (PLUG9 d) — never a path on this machine.</summary>
-    public string? Offer { get; init; }
-}
-
-public sealed partial record HelpMachineFacts
-{
-    /// <summary>The Daoris home, which a plugin is never added from (PLUG9); null where none was named.</summary>
-    public string? Home { get; init; }
-
-    /// <summary>Each registered repository's checkout on this machine, or null where it has none (PLUG9).</summary>
-    public IReadOnlyDictionary<string, string?> Checkouts { get; init; } = new Dictionary<string, string?>();
-
-    /// <summary>The harness names this build carries, which a plugin may not declare (PLUG9, D64 §5).</summary>
-    public IReadOnlyCollection<string> Reserved { get; init; } = [];
-
-    /// <summary>The install's offers folder (PLUG9 d), where an offer is found and an offer's update reads; null is none.</summary>
-    public string? OffersFolder { get; init; }
-
-    /// <summary>The install's offers, as the Plugins place lists them under Daoris's own plugins (PLUG9 d).</summary>
-    public IReadOnlyList<PluginOffer> Offers { get; init; } = [];
-}
-
-public sealed partial record HelpPlan
-{
-    /// <summary>What a plugin proposal's plugin runs, as its manifest writes it (PLUG9); null for every other kind.</summary>
-    public HelpPluginView? Plugin { get; init; }
-
-    /// <summary>The folder a plugin is added from, resolved on this machine (PLUG9); null for every other plan.</summary>
-    public string? Source { get; init; }
-}
-
-public partial interface IHelpDoors
+public interface IHelpPluginDoors
 {
     /// <summary>
     /// <c>daoris plugin add</c>'s copy, the driver's twin (<see cref="PluginInstall.Add"/>, PLUG9): the

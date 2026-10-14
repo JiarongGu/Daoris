@@ -17,7 +17,7 @@ import { captureError, makeFixture } from './_fixture.ts';
  * `rotationUse` and `workspaceRotationUse` in `harnesses.json`, beside the lists — *use accounts* (`use`: `goal` or
  * `order`), *keep for conversations* (`keep`), and when to switch (`switch`: `smart`, `curve` or `off`; and `curve`, the
  * person's own points per window), read on from the old names `early` and `near` — and the rule binding a scope's default
- * and kept account to its list. The CLI's half of a TWIN with the driver's `Harnesses.Use.cs`: 🔴 both hold the table in
+ * and kept account to its list. The CLI's half of a TWIN with the driver's `RotationUse.cs`:🔴 both hold the table in
  * `fixtures/rotation-use.json`, row for row, the driver's `RotationUseTwinTests` reading it as this file does.
  *
  * Nothing here counts accounts (§2 rule 6): a row with one account and a row with six are read by the same rules, and no

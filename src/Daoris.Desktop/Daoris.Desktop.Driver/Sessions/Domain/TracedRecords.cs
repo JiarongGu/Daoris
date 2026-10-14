@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The words a commit is named by, apart from <see cref="Trace"/> so the records below read them without the trace's reads
-/// (STRUCT3g-i): <see cref="Trace.IsCommit"/> forwards here.
+/// (STRUCT3g-i); the callers name it here (FLAT1b-iii-b).
 /// </summary>
 public static class CommitNames
 {

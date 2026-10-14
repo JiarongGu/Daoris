@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A tool that ends just as Daoris stops waiting for it no longer breaks the check: setup says the tool did not answer in
+  time, where it said the tool "would not start", and an account's probe no longer fails outright. A run Daoris stops early
+  now ends the tool's own child processes too, where they were left running.
 - The same file attached to a quest twice at once no longer collides in the service on one shared temporary name: the
   service writes its attachments, helper answers, proposals and rule proposals through one atomic write, each beside its
   target under a name of its own and moved into place.

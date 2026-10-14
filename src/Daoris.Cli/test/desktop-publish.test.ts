@@ -836,7 +836,7 @@ test('the doctrine tool lands where the CLI reads the canon it ships, as npm lay
  */
 test('the launchers are where the tools’ environment puts them first on every child’s PATH', () => {
   assert.deepEqual([...CLI_BIN], [...INSTALL_BIN]);
-  const driver = readFileSync(driverFile('Tools.Children.cs'), 'utf8');
+  const driver = readFileSync(driverFile('Tools.cs'), 'utf8');
   assert.ok(driver.includes(`InstallBinLayout = [${CLI_BIN.map((part: string) => `"${part}"`).join(', ')}]`), 'Tools.InstallBinLayout');
 
   const install = folder();

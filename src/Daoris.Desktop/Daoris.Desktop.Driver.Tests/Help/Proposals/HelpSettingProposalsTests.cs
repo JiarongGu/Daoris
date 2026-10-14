@@ -783,14 +783,3 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.Contains("engine", doors.Config.Drivable);
     }
 }
-
-public sealed partial class HelpStandInDoors
-{
-    public DriverConfig Config { get; private set; } = DriverConfig.Empty;
-
-    public void Change(Func<DriverConfig, DriverConfig> edit)
-    {
-        Config = edit(Config);
-        Calls.Add("change");
-    }
-}

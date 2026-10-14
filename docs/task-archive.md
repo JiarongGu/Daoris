@@ -14200,3 +14200,75 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SCOPE1a — Trees by scope** (driver). Renames alone: `SessionTrees/` (the partial and its 16 parts), `Landing/`, `Branches/`, `GitReads/`; WorkingTree, TreeLock, PullRequestStates, PullRequestWords, LandedBranches, SessionGroups, Orphans, TreeGuard and TreesCommand stay at the top with `hooks/`. README :41's path. D166's scope note.
 
 **Outcome** 2026-10-14: 34 renames: `SessionTrees/` (the partial and its 17 parts), `Landing/`, `Branches/` and `GitReads/`; the nine helpers several scopes name stay at the top with `hooks/` and `Domain/`. A scope calling another scope's main type is allowed; only shared helpers stay up. On Sonnet, scouted: 31 tool calls. Detail: D166's SCOPE1a note.
+
+## SCOPE1c — Conversations and Plugins by scope (2026-10-14, D166)
+
+> - [ ] **SCOPE1c — Conversations and Plugins by scope** (driver; after FLAT1b-i). Conversations into `Chat/`, `GoOn/`, `HandOver/`, `Helpers/`; Plugins into `Hooks/`, `Kit/`, `Package/`, `Catalogue/`, `Page/`, `plugin-kit/` where it is. Counted again after FLAT1b-i. D166's scope note.
+
+**Outcome** 2026-10-14: Conversations' 24 files went into `Chat/`, `GoOn/`, `HandOver/` and `Helpers/`, with `ConversationTrees` (the go-on and the hand-over both call it), `DrivenInbox` and `TranscriptFile` at its top. Plugins, counted at 21 files after FLAT1b-i, stays flat by the twenty-file rule, the README naming the groups to cut along if it grows. On Sonnet, scouted: 38 tool calls. Detail: D166's SCOPE1c note.
+
+## PART1 — the gate (2026-10-14, D166)
+
+> - [ ] **PART1 — the gate** (tools). `tools/partials.mjs` over `src/**/*.cs` refuses a type declared `partial` in more than one hand-written file; the 34 offenders on `tools/partials.json`, a list that may only shrink; a universal gate in `daoris.gates.json`. Each PART row cuts its entries.
+
+**Outcome** 2026-10-14: `tools/partials.mjs` blanks comments and strings, then refuses a type partial in more than one file, a file beyond a listed type's, and a listed type no longer split; its list, generated, holds the 34. It runs inside `npm run verify` with the other universal checks rather than as a merge-tool gate, whose lists a test pins. Ten tests. On Sonnet: 25 tool calls. Detail: D166's PART1 note.
+
+## DEDUP9b — the service core's moments (2026-10-14, D166)
+
+> - [ ] **DEDUP9b — the service core's moments** (service; after 9a). A Core `Moments` for six private readers, about 35 parses (in the machine's culture or turned local) and 48 writers without the invariant culture; a test under another culture. Survey "Across projects".
+
+**Outcome** 2026-10-14: `Daoris.Service.Core/Moments.cs` writes and reads a moment in the invariant culture with its offset kept; the seven private readers, every bare parse (those for a store's own columns as `ReadRequired`, which still throws) and the 57 writers go through it, no parse or `"O"` writer left outside it. Bytes unchanged under the invariant culture; eleven tests under `ar-SA`, `th-TH` and `de-DE`. On Sonnet, scouted: 105 tool calls.
+
+## FLAT1b-iii-b — Sessions: the layering's ceremony folded back (2026-10-14, D166)
+
+> - [ ] **FLAT1b-iii-b — Sessions: the layering's ceremony folded back** (driver, modules; after iii-a). `HarnessEnding` and `HistoryBytes` out to files of their own with their reads; the forwards to `CommitNames`, `PauseKept`, `AbandonKeys` and `SessionEventText` retire, about 51 callers naming it. D166's STRUCT3g-i note.
+
+**Outcome** 2026-10-14: `HarnessEnding` and `HistoryBytes` are top files holding their own reads; the trace's, pausing's, abandoning's and the session events' forwards retired, about fifty callers across eight modules naming `CommitNames`, `PauseKept`, `AbandonKeys` and `SessionEventText`, and the files the CLI's and the page's tests read keep their texts. The fold-back is complete in all six modules and Sessions. On Sonnet: 113 tool calls. Detail: D166's FLAT1b-iii-b note.
+
+## DEDUP4a — one child-process runner (2026-10-14, D166)
+
+> - [ ] **DEDUP4a — one child-process runner** (driver, modules). A public `ChildProcess` in `Platform/` (a run to its end with patience, its error carried, the tree killed on time-out or cancellation, guarded) for the probe, the setup's version, the tool questions and the plugin tool runs; it fixes the unguarded kills at `Harnesses.cs:1480` and `SetupWorld.cs:107`. Survey §4.
+
+**Outcome** 2026-10-14: `Platform/ChildProcess.cs` runs a child to its end within a patience, carries a start's error, and kills the tree on time-out or cancellation behind a guarded `KillTree`; the four runs use it with their own words. The race at the two kills is gone (setup now says the tool did not answer, not that it would not start), and a cancelled run no longer leaves its child running. Six Process cases and one fast; the probe's, race's and Modules' Process classes passed 54 of 54 on the merge. On Sonnet, scouted: 31 tool calls. Detail: D166's DEDUP4a note.
+
+## PART2 — the driver's small merges (2026-10-14, D166)
+
+> - [ ] **PART2 — the driver's small merges** (driver). `AcpSession`, `WorkflowNamed`, `PluginKit` (a `PluginTrials` class), `Tools` with `Tools.Children`, `ToolInstall` (`ToolArchives`). Survey "Merge".
+
+**Outcome** 2026-10-14: `Tools` and `AcpSession` are one file each (the resume used the session's private state, so it merged rather than split), `ToolArchives` and `PluginTrials` are classes of their own, and `WorkflowNamed` keeps `partial` in its one file for its patterns, its version records in a file of their own; `ToolInstall.Actions.cs` was never a part and is `ToolActions.cs`. At the merge the gate's list lost the five (29 left). On Sonnet: 80 tool calls. Detail: D166's PART2 note.
+
+## PART4 — Help's records (2026-10-14, D166)
+
+> - [ ] **PART4 — Help's records** (driver). `HelpProposal`, `HelpMachineFacts`, `HelpPlan`, `HelpApplied`, `HelpMachine` and `HelpProposals` each one declaration holding its kinds' members. Survey "Records".
+
+**Outcome** 2026-10-14: the four proposal records sit whole in `Help/HelpProposals.cs` and `HelpMachine` in `Help/HelpRoom.cs`, each kind's or section's members under its comment, the goldens unchanged; `HelpProposals.RecordsAsync` moved into `HelpDeleteProposals`, now public for the bridge. The gate's list lost six (23 left). On Sonnet: 84 tool calls. Detail: D166's PART4 note.
+
+## SCOPE1d — Sessions and Review by scope (2026-10-14, D166)
+
+> - [ ] **SCOPE1d — Sessions and Review by scope** (driver; after FLAT1b-ii and iii-b). Sessions into `Work/`, `Requests/`, `History/`, `Trace/`, `Events/`; Review into `Opinion/` and `ReviewEnvironment/` only if still above about 22 files at its top. D166's scope note.
+
+**Outcome** 2026-10-14: 21 renames put Sessions into `Work/`, `Requests/`, `History/`, `Trace/` and `Events/`, its top down from 24 files to 4 (`RunningSessions`, `SessionProcesses`, `SessionsCommand`, and `HarnessEnding`, which the loop and the observation both use); Review, at 15 files, stays flat. The gate's list follows `HistoryClearing`'s new paths. On Sonnet: 25 tool calls. Detail: D166's SCOPE1d note.
+
+## PART3 — the client's views and the harness types (2026-10-14, D166)
+
+> - [ ] **PART3 — the client's views and the harness types** (driver). `QuestView`, `QuestStepView` and `AskView` each one declaration; `HarnessSettings` and `HarnessRoster` each a file of its own. Survey "Records".
+
+**Outcome** 2026-10-14: the three views hold the review's and the workflow's properties in their one declaration in Quests' Domain, the element records staying in Service's; the 3,776-line `Harnesses.cs` and its three parts became `HarnessSettings.cs`, `HarnessRoster.cs`, `Harnesses.cs`, `HarnessSelection.cs`, `HarnessActions.cs`, `RotationUse.cs` and `AccountJoin.cs`. The worker split the file with `csplit` and `mv` after a concatenation was refused, which the brief forbids; the build and every test prove the content whole (D160's batch note). At the merge the twin comments in the CLI and the knowledge followed the new names, and the gate's list was regenerated (18 left). On Sonnet: 85 tool calls. Detail: D166's PART3 note.
+
+## PART6 — the service core's short parts and test classes (2026-10-14, D166)
+
+> - [ ] **PART6 — the service core's short parts and test classes** (service). The six short parts merged, and four test classes merged or split. Survey "Merge".
+
+**Outcome** 2026-10-14: `AskDesk`'s three parts merged into `Asks.cs` (`WorkflowChoices` in a file of its own, partial for its pattern); the exchange's review family became `QuestReviews`, the ledger's go-ahead and set-up families `SessionGoAheads` and `SessionReviews`, with one-line calls kept where many callers use them; the store's review queries merged, its stored shape in `SessionReviewJson`; the four test classes split over fixture bases or merged. Service tests 1967 of 1967. The gate's list was regenerated at the merge (10 left). On Sonnet: 104 tool calls. Detail: D166's PART6 note.
+
+## PART5 — Help's doors (2026-10-14, D166)
+
+> - [ ] **PART5 — Help's doors** (driver; after PART4). `IHelpDoors` inheriting a per-kind interface each kind file declares, its stand-in likewise; callers and `ScreenDoors` unchanged. Survey "Records".
+
+**Outcome** 2026-10-14: each of fourteen kind files declares its own door interface (`IHelpGoDoors` and the rest have none to add), and `IHelpDoors`, declared once, inherits them, so a new kind is one file and one name in that list; callers and `ScreenDoors` unchanged. The stand-in is one fixture class, its members grouped by interface, since about 35 tests set a kind's answer in an initializer. The gate's list holds 8. On Sonnet: 63 tool calls. Detail: D166's PART5 note.
+
+## DEDUP4b — the git bodies and the long-lived peers take the guarded kill (2026-10-14, D166)
+
+> - [ ] **DEDUP4b — the git bodies and the long-lived peers take the guarded kill** (driver; after 4a). `WorkingTree`'s three spawn bodies, `HookProcess` and `CodexUsage.Stop` kill through `ChildProcess.KillTree`; `GitAsync` runs through it where it has a time-out. Survey §4.
+
+**Outcome** 2026-10-14: `GitAsync` runs every call through `ChildProcess.RunAsync` (no time-out given is no patience), keeping its tuple and its words; the two streaming reads, the hook peer and Codex's usage server kill through `KillTree`. A git call its caller cancels now ends git's tree, where git was left to finish. The Trees, hooks, kit and Codex Process classes passed 168 of 168 on the merge. On Sonnet: 20 tool calls. Detail: D166's DEDUP4b note.

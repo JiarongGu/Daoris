@@ -294,8 +294,7 @@ public sealed record EventPage(IReadOnlyList<SessionEvent> Events, bool Earlier,
 
 /// <summary>
 /// The rules a session's record keeps apart from the file it is kept in (D76 §2, STRUCT3g-i): its bounds, how it is spelled,
-/// what an id may be and how a text is cut or searched. <see cref="SessionEvents"/> keeps the file and forwards each of these,
-/// so a caller names either.
+/// what an id may be and how a text is cut or searched. <see cref="SessionEvents"/> keeps the file; a caller names these here.
 /// </summary>
 public static class SessionEventText
 {

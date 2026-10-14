@@ -540,7 +540,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
     private static partial System.Text.RegularExpressions.Regex ExactRelease();
 }
 
-public partial interface IHelpDoors
+public interface IHelpAgentDoors
 {
     /// <summary>
     /// <c>HARNESS_ACTION</c>'s own start of an update or a pin: answered once the process has started,
@@ -577,25 +577,4 @@ public partial interface IHelpDoors
 /// <summary>The <c>order</c> door's fields (TOOL4l-b): the list in walk order, or a workspace's list cleared.</summary>
 public sealed record AccountOrder(IReadOnlyList<string> Accounts, bool Clear);
 
-/// <summary>The machine's wiring a proposal is judged against (TOOL4g): <c>harnesses.json</c> as the screen reads it.</summary>
-public sealed partial record HelpMachineFacts
-{
-    /// <summary>The lists, defaults and settings, for a default's scope and a use's; null where nothing was read.</summary>
-    public HarnessSettings? Wiring { get; init; }
 
-    /// <summary>The accounts cooling now, for a <c>ready</c>'s judge (TOOL4l-b); none where nothing was read.</summary>
-    public IReadOnlyList<CoolingEntry> Cooling { get; init; } = [];
-}
-
-/// <summary>The <c>use</c> door's fields (TOOL4g), as <see cref="HelpAgentProposals.Read"/> reads them from a file.</summary>
-public sealed partial record HelpProposal
-{
-    /// <summary>How a scope's list is used, as the proposal names it; null where it names nothing of it.</summary>
-    public UseChange? AccountUse { get; init; }
-
-    /// <summary>The <c>order</c> door's list or clear, as the file names them; null for any other door (TOOL4l-b).</summary>
-    public AccountOrder? AccountOrder { get; init; }
-
-    /// <summary>The <c>ready</c> door's account: an id, or <c>own</c> for the tool's own sign-in; null for any other door (TOOL4l-b).</summary>
-    public string? ReadyAccount { get; init; }
-}

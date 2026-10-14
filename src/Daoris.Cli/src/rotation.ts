@@ -4,7 +4,7 @@
 //   { "rotation": { "claude-code": ["account-1", "account-2"] },
 //     "workspaceRotation": { "work": { "claude-code": ["account-2", "account-3"] } } }
 //
-// It is the CLI's twin of the driver's `HarnessSettings` (`Harnesses.cs`: `ResolveRotationFrom`, `WithRotation`,
+// It is the CLI's twin of the driver's `HarnessSettings` (`HarnessSettings.cs`: `ResolveRotationFrom`, `WithRotation`,
 // `OrderProblem`, `WithoutAccount`), and `rotation.test.ts` holds the tables `RotationTwinTests.cs` holds, cell for cell.
 // The rules both keep:
 //
@@ -31,8 +31,8 @@
 //   { "rotationUse": { "claude-code": { "switch": "curve", "curve": { "weekly": [[0, 30], [50, 70], [100, 100]] } } },
 //     "workspaceRotationUse": { "work": { "claude-code": { "use": "order", "switch": "off" } } } }
 //
-// The driver's twin is `Harnesses.Use.cs` (`RotationUse`, `UseCurve`, `UseEntry`, `ResolveScope`, `WithUse`,
-// `ScopeProblem`), and both hold the table in `test/fixtures/rotation-use.json`, row for row. The rules both keep:
+// The driver's twin is `RotationUse.cs` (`RotationUse`, `UseCurve`, `UseEntry`, `ScopeProblem`) with `HarnessSettings.cs`
+// (`ResolveScope`, `WithUse`), and both hold the table in `test/fixtures/rotation-use.json`, row for row. The rules both keep:
 //
 //   5. Read: an entry is an object, kept whole but for `prefer` and `parallel`, which §16.6 retired and nothing released
 //      wrote: skipped, and gone at the next write. Each other field is a value this build knows — `use` one of
@@ -201,7 +201,7 @@ export function withoutAccount(settings: HarnessSettings, agent: string, profile
 }
 
 // ——— An account put into a scope's list, and where each account runs (ACCT1, D125's ACCT1 note; D130 §3.1). The driver's
-// twin is `Harnesses.Accounts.cs` (`JoinProblemOf`, `WithJoined`, `PlacesOf`), and `account-join.test.ts` holds the tables
+// twin is `HarnessSettings.cs` (`JoinProblemOf`, `WithJoined`, `PlacesOf`), and `account-join.test.ts` holds the tables
 // `AccountJoinTwinTests.cs` holds, cell for cell. Accounts compare exactly, as the wiring compares a name with a folder.
 
 /** One scope an account runs in: a workspace, or null for this machine; whether its own list holds it, and its own default names it. */

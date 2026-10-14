@@ -11,51 +11,8 @@ namespace Daoris.Service.Tests;
 /// what only the door does is turn a PATH into bytes (D65 §2) and take a chain as a list of steps
 /// (D65 §4), and a schema the agent cannot read is a parameter that does not exist.
 /// </summary>
-public sealed partial class McpToolsTests : IAsyncLifetime
+public sealed class McpToolsTests : McpToolsFixture
 {
-    private readonly string _root = Path.Combine(
-        Path.GetTempPath(), "daoris-mcp-" + Guid.NewGuid().ToString("N")[..8]);
-
-    private SqliteConnection _connection = null!;
-    private QuestStore _quests = null!;
-    private QuestFiles _files = null!;
-    private KnowledgeService _service = null!;
-    private KnowledgeTools _tools = null!;
-
-    public async Task InitializeAsync()
-    {
-        foreach (var name in new[] { "Asker", "Owner", "Checker" })
-        {
-            var dir = Path.Combine(_root, "family", name);
-            Directory.CreateDirectory(dir);
-            File.WriteAllText(Path.Combine(dir, "daoris.json"), """
-                { "source": "s", "packs": [], "domain": { "summary": "s", "owns": ["o"], "accepts": ["a"] } }
-                """);
-        }
-
-        _connection = new SqliteConnection("Data Source=:memory:");
-        await _connection.OpenAsync();
-        _quests = await QuestStore.OpenAsync(_connection);
-
-        var store = new InMemoryKnowledgeStore();
-        var service = new KnowledgeService(
-            store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(),
-            DisclosurePolicy.LocalOnly, registry: new Registry());
-        await service.ImportAsync(Path.Combine(_root, "family"), DateTimeOffset.UtcNow);
-        _service = service;
-
-        _files = new QuestFiles(Path.Combine(_root, "home"));
-        _tools = new KnowledgeTools(
-            service, _quests, new QuestExchange(service, _quests, files: _files),
-            new AmbientWorkspace(Path.Combine(_root, "family", "Asker")));
-    }
-
-    public async Task DisposeAsync()
-    {
-        await _connection.DisposeAsync();
-        if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
-    }
-
     private sealed class Entries(params KnowledgeEntry[] entries) : IKnowledgeSource
     {
         public string Name => "fixture";

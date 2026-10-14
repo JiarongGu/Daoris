@@ -133,7 +133,7 @@ public sealed class HelpDeleteProposalsTests : HelpProposalsFixture
     {
         using var client = new ServiceClient("http://stand-in", null, new HttpClient(new Records()));
 
-        var (quests, asks) = await HelpProposals.RecordsAsync(client, CancellationToken.None);
+        var (quests, asks) = await HelpDeleteProposals.RecordsAsync(client, CancellationToken.None);
 
         Assert.Equal(
             [new HelpQuestFacts("q1", "Cap it", "engine", "Open", true), new HelpQuestFacts("q2", "Old", "engine", "Done", false)],
@@ -163,28 +163,5 @@ public sealed class HelpDeleteProposalsTests : HelpProposalsFixture
                 ? new HttpResponseMessage(System.Net.HttpStatusCode.NotFound)
                 : new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json") });
         }
-    }
-}
-
-public sealed partial class HelpStandInDoors
-{
-    public (bool Ok, string Message) Deleted { get; set; } = (true, "Deleted it.");
-
-    public Task<(bool Ok, string Message)> DeleteQuestAsync(string id, CancellationToken ct)
-    {
-        Calls.Add($"DELETE /api/quests/{id}");
-        return Task.FromResult(Deleted);
-    }
-
-    public Task<(bool Ok, string Message)> DeleteAskAsync(string id, CancellationToken ct)
-    {
-        Calls.Add($"DELETE /api/asks/{id}");
-        return Task.FromResult(Deleted);
-    }
-
-    public Task<(bool Ok, string Message)> DeleteSessionAsync(string id, CancellationToken ct)
-    {
-        Calls.Add($"SESSION_DELETE {id}");
-        return Task.FromResult(Deleted);
     }
 }
