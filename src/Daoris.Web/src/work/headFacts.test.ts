@@ -34,6 +34,17 @@ describe('a session’s facts line', () => {
       .toEqual(['engine', '2m']);
   });
 
+  /** WAITSHOWN1: a working session whose agent has not answered says so, with when it was asked, after its age and attempt. */
+  it('says a working session has no answer yet, and when it was asked', () => {
+    const since = '2026-10-05T09:49:00Z';
+    const [repository, age, waiting] = sessionFacts(t, { session: session(), shown: 'working', waitingSince: since });
+    expect([repository, age]).toEqual(['engine', '2m']);
+    expect(waiting).toMatch(/^no answer yet, asked .+/);
+    // Not said of a session that is not working, nor where no wait is told.
+    expect(sessionFacts(t, { session: session(), shown: 'working' })).toEqual(['engine', '2m']);
+    expect(sessionFacts(t, { session: session({ state: 'completed' }), shown: 'completed', waitingSince: since }).join()).not.toMatch(/no answer/);
+  });
+
   /** The install's fourth try, three failed before it, was the fourth line of a strip in mono; the head says it. */
   it('says a working session is another try, and how many failed before it', () => {
     expect(sessionFacts(t, { session: session({ profile: 'account-1' }), shown: 'working', grouping: grouping({ strikes: 3 }) }))

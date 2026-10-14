@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { Quest, Session } from '../api';
-import { ago, elapsed } from '../format';
+import { ago, elapsed, moment } from '../format';
 import type { Consideration } from '../signals';
 import type { SweepBranch } from '../settings/Sweep';
 import type { AccountNamer } from '../tools';
@@ -35,6 +35,8 @@ export type SessionFactsOf = {
   continuesAgent?: string | null;
   /** The title of the session a helper helps (`serves`, MIXAGENT3a-i), where the frame holds it; absent, another session. */
   helping?: string | null;
+  /** When the turn its agent is on was asked, while it has answered nothing (`firstAnswerWait`, WAITSHOWN1); absent otherwise. */
+  waitingSince?: string | null;
 };
 
 /**
@@ -89,6 +91,8 @@ export function sessionFacts(t: TFunction, of: SessionFactsOf): string[] {
     // UX7c (D152): the fact that matters most on a retried quest, another try and how many failed before it.
     const failed = typeof grouping?.strikes === 'number' && grouping.strikes > 0 ? grouping.strikes : null;
     if (failed !== null && session.kind !== 'chat') facts.push(t('work.facts.attempt', { count: failed, attempt: failed + 1 }));
+    // WAITSHOWN1: its agent has said nothing since it was asked; a resumed long conversation can wait many minutes.
+    if (of.waitingSince && session.state === 'working') facts.push(t('work.facts.firstAnswer', { time: moment(of.waitingSince) }));
     return facts.filter((fact): fact is string => Boolean(fact));
   }
 

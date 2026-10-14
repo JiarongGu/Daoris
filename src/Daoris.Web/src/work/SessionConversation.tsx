@@ -6,7 +6,7 @@ import { searchable } from '../searchable';
 import { useHarnesses, useSessionEvents, useSessionSearch } from '../shell';
 import { Icon } from '../ui';
 import { accountNames } from './accountNames';
-import { settle, toTurns, type Turn, type Usage } from './conversation';
+import { firstAnswerWait, settle, toTurns, type Turn, type Usage } from './conversation';
 import { ConversationFind } from './ConversationFind';
 import { type Cooling, ConversationView } from './ConversationView';
 import type { ReasonValues } from './say';
@@ -55,7 +55,7 @@ export function BackToBottom({ onPress, className }: { onPress: () => void; clas
  * Desktop-only for the console's reason (D47 §4): the record arrives over the bridge.
  */
 export function SessionConversation({
-  session, adapter, chat = false, tree, live, turnRunning, scroller, onUsage, onSession, onStartFrom, reasons, cooling, onTail,
+  session, adapter, chat = false, tree, live, turnRunning, scroller, onUsage, onWaiting, onSession, onStartFrom, reasons, cooling, onTail,
 }: {
   /**
    * Told whether the reader is at the tail and how to go there (ASKHIST1c), where the host draws *Back to bottom* in a strip
@@ -87,6 +87,8 @@ export function SessionConversation({
    * reads this record rather than holding a second one: the stream has one home.
    */
   onUsage?: (session: string, usage?: Usage) => void;
+  /** Told when the turn its agent is on was asked, while the agent has answered nothing (WAITSHOWN1); undefined once it has. */
+  onWaiting?: (session: string, since?: string) => void;
 }) {
   const { events, opening, firstFailure, earlier, loaded, loadEarlier } = useSessionEvents(session);
   // The door's own word on what an empty record means — undefined until the roster answers, which reads
@@ -108,6 +110,11 @@ export function SessionConversation({
   const report = useRef(onUsage);
   report.current = onUsage;
   useEffect(() => { report.current?.(session, usage); }, [session, usage]);
+  // The wait for the first answer goes up the same way (WAITSHOWN1), for the head's facts; only while the session is live.
+  const waitingSince = live ? firstAnswerWait(turns) : undefined;
+  const reportWait = useRef(onWaiting);
+  reportWait.current = onWaiting;
+  useEffect(() => { reportWait.current?.(session, waitingSince); }, [session, waitingSince]);
 
   // What changes when the conversation grows: the last event, and its text as chunks join it.
   const last = events[events.length - 1];
