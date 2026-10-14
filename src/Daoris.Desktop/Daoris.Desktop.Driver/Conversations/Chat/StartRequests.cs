@@ -90,9 +90,7 @@ public sealed class StartRequests(string home)
         try
         {
             var folder = Path.Combine(home, "starts");
-            Directory.CreateDirectory(folder);
-            using var buffer = new MemoryStream();
-            using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Indented = true }))
+            JsonFile.Write(PathOf(id), writer =>
             {
                 writer.WriteStartObject();
                 writer.WriteString("sessionId", result.SessionId);
@@ -101,9 +99,7 @@ public sealed class StartRequests(string home)
                 writer.WriteString("message", result.Message);
                 writer.WriteString("at", Moments.Write(at));
                 writer.WriteEndObject();
-            }
-
-            AtomicFile.WriteText(PathOf(id), Encoding.UTF8.GetString(buffer.ToArray()).Replace("\r\n", "\n") + "\n");
+            });
             Prune(folder);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
