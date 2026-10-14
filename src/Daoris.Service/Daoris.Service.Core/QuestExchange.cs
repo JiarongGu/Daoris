@@ -1128,8 +1128,6 @@ public sealed class QuestExchange(
 
     private static string Megabytes(long bytes) => $"{bytes / (1024.0 * 1024.0):0.#} MB";
 
-    internal static string Clip(string text) => text.Length <= 120 ? text : text[..120] + "…";
-
     /// <summary>
     /// Answer a quest: take, done, or decline. Declining without a reason is refused — a bare refusal
     /// gives the asker nothing to act on.

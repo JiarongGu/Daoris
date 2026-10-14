@@ -427,5 +427,4 @@ public static class Reviews
         return JudgeVerdict(verdict) is null ? verdict : null;
     }
 
-    private static string Clip(string text) => text.Length <= 120 ? text : text[..120] + "…";
 }

@@ -290,7 +290,6 @@ folder.
 - [ ] **DEDUP6 — path and id rules decided once** (driver, modules). A `SafeNames` in `Platform/` with the rules D166's DEDUP6 note decided (a repository path joined to the disk, an id under the home, the plain and kebab ids), each caller keeping its sentence; after FLAT1a, whose moves it would cross. Survey §6.
 - [ ] **DEDUP7 — text clipped, one-lined and quoted once** (driver, modules). `TextBounds` in `Platform/` for about 44 copies, each call keeping its own limit. Survey §7.
 - [ ] **DEDUP8 — the driver's HTTP verbs and downloads** (driver). `DriverHttp`'s three verbs as one send; one download wrapper and hash for `ToolInstall` and `ClaudeReleaseDownloads`. Survey §8.
-- [ ] **DEDUP9c — the service core's clipped text** (service; after 9b). One `Clip(text, limit)` for five copies and 46 calls; the word-boundary cuts (`TitleOf`, `Truncate`) stay theirs. Survey §7.
 
 ## Development and agent layout
 

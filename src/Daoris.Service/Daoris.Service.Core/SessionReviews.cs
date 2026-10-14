@@ -171,6 +171,4 @@ public sealed class SessionReviews(QuestStore quests, SessionStore sessions)
 
         return null;
     }
-
-    private static string Clip(string text) => text.Length <= 120 ? text : text[..120] + "…";
 }

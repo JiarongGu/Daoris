@@ -156,13 +156,11 @@ public sealed class HttpRemote(RemoteConfig config) : IRemote
                    && document.RootElement.TryGetProperty("error", out var error)
                    && error.ValueKind == System.Text.Json.JsonValueKind.String
                 ? error.GetString() ?? ""
-                : Clip(payload);
+                : Clip(payload, 200);
         }
         catch (System.Text.Json.JsonException)
         {
-            return Clip(payload);
+            return Clip(payload, 200);
         }
     }
-
-    private static string Clip(string text) => text.Length <= 200 ? text : text[..200] + "…";
 }
