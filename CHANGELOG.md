@@ -5,6 +5,13 @@ with the version and date at release.
 
 ## Unreleased
 
+- Accepting a session's work lands only what its line lacks. Where the line already holds some of its commits (a pull request
+  squash-merged, a cherry-pick), the review and the session's *Accept…* name the commits left out and why, and the press replays
+  only the rest onto the line in a tree of Daoris's own, so the next pull request carries no second copy; the session's tree then
+  moves to what landed. Where that replay conflicts, nothing is made: the review names the files and offers *Ask it to rebase*,
+  which sends the session the words to replay its own commits onto the line. The press fetches the line first, and a fetch that
+  fails is said, with when origin was last fetched, without stopping the landing. `daoris-driver trees land <session> --plan`
+  says the same.
 - An ask's page has a *Channel* (频道), where its sessions and you talk: their messages and Daoris's lines about its quests
   (published, taken, done, declined, waiting on your yes) in your language, an open question marked, and a box to write to
   everyone on the ask or one of its repositories, answering a message if you choose. A session on an ask has the same channel
