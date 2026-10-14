@@ -38,14 +38,14 @@ public sealed class SweepTests : IDisposable
 
         var merged = await TreeWithWorkAsync(trees, root);
         await GitAsync(root, "merge", "--no-ff", "--no-edit", merged.Branch);
-        Assert.Equal(0, await SessionTrees.UnlandedAsync(root, merged.Branch));
+        Assert.Equal(0, await TreeFollows.UnlandedAsync(root, merged.Branch));
 
         var featured = await TreeWithWorkAsync(trees, root);
         await GitAsync(root, "branch", "feature/x", featured.Branch);
-        Assert.Equal(0, await SessionTrees.UnlandedAsync(root, featured.Branch));
+        Assert.Equal(0, await TreeFollows.UnlandedAsync(root, featured.Branch));
 
         var alone = await TreeWithWorkAsync(trees, root);
-        Assert.Equal(1, await SessionTrees.UnlandedAsync(root, alone.Branch));
+        Assert.Equal(1, await TreeFollows.UnlandedAsync(root, alone.Branch));
     }
 
     /// <summary>A chain's next step grows from the step before's branch, which is Daoris's too — so that work is not landed either.</summary>
@@ -57,7 +57,7 @@ public sealed class SweepTests : IDisposable
         var parent = await TreeWithWorkAsync(trees, root);
         var child = await trees.OpenAsync(root, "engine", "aurora", from: parent.Branch);
 
-        Assert.Equal(1, await SessionTrees.UnlandedAsync(root, child.Branch));
+        Assert.Equal(1, await TreeFollows.UnlandedAsync(root, child.Branch));
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public sealed class SweepTests : IDisposable
         await GitAsync(root, "push", "--quiet", "origin", $"{pushed.Branch}:refs/heads/review/x");
         await GitAsync(root, "fetch", "--quiet", "origin");
 
-        Assert.Equal(0, await SessionTrees.UnlandedAsync(root, pushed.Branch));
+        Assert.Equal(0, await TreeFollows.UnlandedAsync(root, pushed.Branch));
     }
 
     /// <summary>The branch form's work is landed, so its tree goes without --force now — where the line alone kept it forever.</summary>

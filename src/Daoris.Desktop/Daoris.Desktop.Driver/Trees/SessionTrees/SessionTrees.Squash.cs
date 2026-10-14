@@ -139,12 +139,12 @@ public sealed partial class SessionTrees
             .Select(parts => new LandingCommit(parts[0], parts.Length > 1 ? parts[1] : ""))];
 
     /// <summary>
-    /// <see cref="UnlandedInTreeAsync"/>, with the record's squash among the proofs (point 3): a tree whose commits a squashing
+    /// <see cref="TreeFollows.UnlandedInTreeAsync"/>, with the record's squash among the proofs (point 3): a tree whose commits a squashing
     /// landing holds counts none. What the automatic landing asks before it lands a done.
     /// </summary>
     public async Task<int?> UnlandedHereAsync(string tree, CancellationToken ct = default)
     {
-        var unlanded = await UnlandedInTreeAsync(tree, "HEAD", ct).ConfigureAwait(false);
+        var unlanded = await TreeFollows.UnlandedInTreeAsync(tree, "HEAD", ct).ConfigureAwait(false);
         if (unlanded is not > 0 || !Holds(tree)) return unlanded;
         var (code, tip, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct).ConfigureAwait(false);
         return code == 0 && await SquashedHolderAsync(tree, Owner(tree).Repository, tip.Trim(), ct).ConfigureAwait(false) is not null

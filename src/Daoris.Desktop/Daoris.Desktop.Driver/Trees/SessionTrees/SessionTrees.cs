@@ -388,7 +388,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             // Who pushes it, said before the press, and what would refuse the press where something would (D100).
             var plugin = landing.Rule.Plugin;
             // TREEFOLLOW1: a tree its agent moved onto a branch of its own lands as that branch stands, the one the pull request is from.
-            if (Directory.Exists(full) && Holds(full) && await OwnBranchOfAsync(full, ct).ConfigureAwait(false) is { } own)
+            if (Directory.Exists(full) && Holds(full) && await TreeFollows.OwnBranchOfAsync(full, ct).ConfigureAwait(false) is { } own)
             {
                 return new(LandingForm.Branch, own, landing.Source, plugin, subject.EnteredName is not null ? EnteredOwn(own) : plugin is null ? null : _context.Plugins.Problem(plugin),
                     landing.Rule.AutoAccept)
@@ -632,17 +632,6 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     }
 
     /// <summary>
-    /// How many commits on <paramref name="revision"/> no branch of the person's holds (D88) — a local
-    /// branch outside <c>daoris/</c>, or a remote-tracking one. Zero is landed; null is git unable to say.
-    /// </summary>
-    /// <param name="except">A local branch not counted as holding them (TREEFOLLOW1): the tree's own branch, which holds its own commits.</param>
-    public static async Task<int?> UnlandedAsync(string cwd, string revision, CancellationToken ct = default, string? except = null)
-    {
-        var (code, log, _) = await UnlandedLogAsync(cwd, revision, ct, except).ConfigureAwait(false);
-        return code != 0 ? null : log.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length;
-    }
-
-    /// <summary>
     /// How many commits a session tree's HEAD holds beyond its repository's line (LAND2b): zero is a done that made no commits,
     /// which lands nothing; null is git unable to say, or no line it can name, and the landing then decides.
     /// </summary>
@@ -664,14 +653,6 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
 
     /// <summary>A tree's workspace and repository, read from the layout this home chose (<c>trees/&lt;workspace&gt;/&lt;repository&gt;/&lt;name&gt;</c>).</summary>
     public (string Workspace, string Repository) Owner(string tree) => _context.OwnerOf(Path.GetFullPath(tree));
-
-    private static Task<(int Code, string Stdout, string Stderr)> UnlandedLogAsync(
-        string cwd, string revision, CancellationToken ct, string? except = null) =>
-        WorkingTree.GitAsync(cwd,
-            except is null
-                ? ["log", "--oneline", revision, "--not", "--exclude=daoris/*", "--branches", "--exclude=*/daoris/*", "--remotes"]
-                : ["log", "--oneline", revision, "--not", "--exclude=daoris/*", $"--exclude={except}", "--branches", "--exclude=*/daoris/*", "--remotes"],
-            ct);
 
     /// <summary>
     /// Every session branch in these repositories, with what it holds (D88) — the list a person reads
@@ -714,7 +695,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             {
                 items.Add((await JudgeAsync(
                     root, repository, RemoteTarget.Workspace(workspace), branch, worktrees.GetValueOrDefault(branch), line, busy, carriers, ct,
-                    MovedOnTo(listed, RemoteTarget.Workspace(workspace), repository, branch))
+                    Follows.MovedOnTo(listed, RemoteTarget.Workspace(workspace), repository, branch))
                     .ConfigureAwait(false)).Item);
             }
         }
@@ -779,7 +760,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             // removed, for the record of it (PLUGHOOK1a, design §2.5).
             var (now, judged) = await JudgeAsync(
                     root, item.Repository, item.Workspace, item.Branch, worktrees.GetValueOrDefault(item.Branch), line, busy, carriers, ct,
-                    MovedOnTo(listed, item.Workspace, item.Repository, item.Branch))
+                    Follows.MovedOnTo(listed, item.Workspace, item.Repository, item.Branch))
                 .ConfigureAwait(false);
             if (!goes(now) || judged is null)
             {
@@ -916,7 +897,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         if (tipCode != 0) return (Item(SweepKind.Unlanded, detail: $"git could not tell: {FirstLine(tipErr)}") with { Unread = true }, null);
         var tip = tipOut.Trim();
 
-        var (code, log, err) = await UnlandedLogAsync(root, tip, ct).ConfigureAwait(false);
+        var (code, log, err) = await TreeFollows.UnlandedLogAsync(root, tip, ct).ConfigureAwait(false);
         if (code != 0) return (Item(SweepKind.Unlanded, detail: $"git could not tell: {FirstLine(err)}") with { Unread = true }, null);
         var unlanded = log.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (unlanded.Length > 0)
@@ -1289,7 +1270,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         // The name a recovery ref is kept under: the branch, or for a detached tree the one its layout names.
         var named = detached ? BranchOfTree(full)?.Branch ?? "HEAD" : branch;
         // The branch the session's agent made where the tree is on one (TREEFOLLOW1): it goes with no tree, whatever force says.
-        var madeBy = detached ? null : await OwnBranchOfAsync(full, ct).ConfigureAwait(false);
+        var madeBy = detached ? null : await TreeFollows.OwnBranchOfAsync(full, ct).ConfigureAwait(false);
         ContentHold? held = null;
         LandedBranch? squashedOn = null;
         string? judged = null;
@@ -1345,7 +1326,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 // Landed (D88): a branch of the person's holds every commit — the line, a branch the branch form
                 // made, one they pushed. Asked of the tree's own HEAD, so a detached tree is judged by what it
                 // holds. 🔴 A comparison git could not make keeps the tree: an empty answer is not "landed".
-                var (logCode, unmerged, logErr) = await UnlandedLogAsync(full, judged, ct).ConfigureAwait(false);
+                var (logCode, unmerged, logErr) = await TreeFollows.UnlandedLogAsync(full, judged, ct).ConfigureAwait(false);
                 if (logCode != 0)
                 {
                     return new(false,

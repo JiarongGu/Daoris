@@ -90,7 +90,7 @@ public sealed class SessionTreeOnlyHereTests : IDisposable
 
         Assert.Equal(OnlyHereKind.Elsewhere, judged.Kind);
         Assert.Equal($"origin/{tree.Branch}", judged.Where);
-        Assert.Equal(1, await SessionTrees.UnlandedAsync(root, tree.Branch));
+        Assert.Equal(1, await TreeFollows.UnlandedAsync(root, tree.Branch));
     }
 
     /// <summary>Another session branch holding the same commits (a chain's next step) is still Daoris's own: only here.</summary>

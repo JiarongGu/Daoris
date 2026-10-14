@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 internal sealed class TreeWorkReads(TreeContext context, SessionTrees trees)
 {
     /// <summary>
-    /// The tree's uncommitted paths and the commits on it no branch of the person's holds (<see cref="SessionTrees.UnlandedAsync"/>);
+    /// The tree's uncommitted paths and the commits on it no branch of the person's holds (<see cref="TreeFollows.UnlandedAsync"/>);
     /// null where there is no tree of this home's to ask. Where there are such commits, whether the line or a person's branch
     /// holds them by content (SQUASHTIDY1b), and what an unforced discard would do then.
     /// </summary>
@@ -40,8 +40,8 @@ internal sealed class TreeWorkReads(TreeContext context, SessionTrees trees)
             .ConfigureAwait(false);
         var judged = tipCode == 0 ? tipOut.Trim() : null;
         // TREEFOLLOW1: a tree its agent moved onto a branch of its own is judged by what that branch holds beyond every other.
-        var own = await SessionTrees.OwnBranchOfAsync(tree, ct).ConfigureAwait(false);
-        var work = new TreeWork(await SessionTrees.UnlandedAsync(tree, judged ?? "HEAD", ct, own).ConfigureAwait(false), uncommitted) { Branch = own };
+        var own = await TreeFollows.OwnBranchOfAsync(tree, ct).ConfigureAwait(false);
+        var work = new TreeWork(await TreeFollows.UnlandedAsync(tree, judged ?? "HEAD", ct, own).ConfigureAwait(false), uncommitted) { Branch = own };
         // PROCESS1b-ii (point 3): a squashing landing's record holds them, as the branch a landing made holds its commits by ancestry.
         if (work.Commits is > 0 && judged is not null
             && await trees.SquashedHolderAsync(tree, context.OwnerOf(Path.GetFullPath(tree)).Repository, judged, ct).ConfigureAwait(false) is not null)
@@ -120,7 +120,7 @@ internal sealed class TreeWorkReads(TreeContext context, SessionTrees trees)
             var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
             // TREEFOLLOW1: the branch its agent moved the tree onto holds its commits because it is where they are, not a copy.
             var notHolders = trees.LandedHere(repository);
-            if (await SessionTrees.OwnBranchOfAsync(full, ct).ConfigureAwait(false) is { } ownBranch)
+            if (await TreeFollows.OwnBranchOfAsync(full, ct).ConfigureAwait(false) is { } ownBranch)
             {
                 notHolders = new HashSet<string>(notHolders, StringComparer.Ordinal) { ownBranch };
             }

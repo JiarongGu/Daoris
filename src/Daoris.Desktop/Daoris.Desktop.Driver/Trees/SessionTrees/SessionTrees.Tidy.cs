@@ -219,26 +219,6 @@ public sealed partial class SessionTrees
         !named.StartsWith(SessionPrefix, StringComparison.Ordinal)
         && (Path.IsPathRooted(named) || named.Contains('/') || named.Contains('\\'));
 
-    /// <summary>The session branches the record holds by that name, its whole name (<c>daoris/s-…</c>) or its tree's (<c>s-…</c>).</summary>
-    public IReadOnlyList<GrownBranch> FindBranches(string named, string? repository) =>
-        [.. Grown.All()
-            .Where(entry => string.Equals(entry.Branch, named, StringComparison.Ordinal)
-                            || string.Equals(entry.Branch, SessionPrefix + named, StringComparison.Ordinal))
-            .Where(entry => repository is null || string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))];
-
-    /// <summary>
-    /// The session branch a tree this home opened was on, from the layout Daoris chose: the tree's name under its repository
-    /// is the branch's after <c>daoris/</c>. What finds a session's branch once its tree is gone; null for a path that is no
-    /// tree of this home's.
-    /// </summary>
-    public (string Workspace, string Repository, string Branch)? BranchOfTree(string tree)
-    {
-        var full = Path.GetFullPath(tree);
-        if (!Holds(full)) return null;
-        var (workspace, repository) = _context.OwnerOf(full);
-        return repository.Length == 0 ? null : (workspace, repository, SessionPrefix + Path.GetFileName(full.TrimEnd(Path.DirectorySeparatorChar)));
-    }
-
     /// <summary>
     /// A session branch removed by the person's door (LAND3): a failed or superseded attempt's, whose commits no branch of
     /// theirs holds, so no landing's tidy or clean-up takes it. With its tree where it still has one, through
@@ -301,7 +281,7 @@ public sealed partial class SessionTrees
             var (tipCode, tipOut, tipErr) = await WorkingTree.GitAsync(
                 root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}^{{commit}}"], ct).ConfigureAwait(false);
             var judged = tipOut.Trim();
-            var (logCode, unlanded, logErr) = tipCode != 0 ? (tipCode, "", tipErr) : await UnlandedLogAsync(root, judged, ct).ConfigureAwait(false);
+            var (logCode, unlanded, logErr) = tipCode != 0 ? (tipCode, "", tipErr) : await TreeFollows.UnlandedLogAsync(root, judged, ct).ConfigureAwait(false);
             if (logCode != 0)
             {
                 return new(false, $"Daoris cannot tell whether the work on `{branch}` is landed: {FirstLine(logErr)} "

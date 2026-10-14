@@ -177,7 +177,7 @@ public sealed partial class SessionTrees
         var tips = new List<string>();
         foreach (var branch in await SessionBranchesAsync(root, ct).ConfigureAwait(false))
         {
-            var (code, log, _) = await UnlandedLogAsync(root, branch, ct).ConfigureAwait(false);
+            var (code, log, _) = await TreeFollows.UnlandedLogAsync(root, branch, ct).ConfigureAwait(false);
             if (code == 0 && !string.IsNullOrWhiteSpace(log)) tips.Add($"refs/heads/{branch}");
         }
 

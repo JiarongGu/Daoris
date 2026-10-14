@@ -71,6 +71,6 @@ public static class OpinionLook
             return OpinionDueClosed.Past;
         }
 
-        return await SessionTrees.UnlandedInTreeAsync(due.Tree, "HEAD", ct).ConfigureAwait(false) == 0 ? OpinionDueClosed.Landed : null;
+        return await TreeFollows.UnlandedInTreeAsync(due.Tree, "HEAD", ct).ConfigureAwait(false) == 0 ? OpinionDueClosed.Landed : null;
     }
 }
