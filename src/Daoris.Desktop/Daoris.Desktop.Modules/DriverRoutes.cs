@@ -10,8 +10,11 @@ namespace Daoris.Desktop;
 /// a retry; the intake's and Ask Daoris's agents; a folder's trust; a nudge; and *Sync now*. Each standing
 /// choice is an edit to `driver.json` and a nudge, the file the terminal's `daoris driver` edits (D50).
 /// </summary>
-public sealed partial class DriverModule
+public sealed class DriverRoutes(DriverContext context)
 {
+    private readonly DriverContext _context = context;
+    private readonly DriverLoop _loop = context.Loop;
+
     [DriverRoute("STATE")]
     private object? GetState(IpcRequest request) => State(_loop);
 
@@ -315,24 +318,24 @@ public sealed partial class DriverModule
             LanguageTable = SessionLanguages.Table.Select(row => new { row.Code, row.Name }).ToArray(),
             // The review rules as set (REVIEWENV1a), as rows for the same reason: a repository's may be none here.
             Reviews = config.Reviews.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Repository = p.Key, Rule = ReviewWire(p.Value) }).ToArray(),
+                .Select(p => new { Repository = p.Key, Rule = LinesRoutes.ReviewWire(p.Value) }).ToArray(),
             WorkspaceReviews = config.WorkspaceReviews.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Workspace = p.Key, Rule = ReviewWire(p.Value) }).ToArray(),
+                .Select(p => new { Workspace = p.Key, Rule = LinesRoutes.ReviewWire(p.Value) }).ToArray(),
             // The second-opinion rules as set (XAGENT1a), as rows for the same reason, each naming the working agent's family
             // over the loop's agents, a plugin's among them (XAGENT1b3).
             Opinions = config.Opinions.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Repository = p.Key, Rule = OpinionWire(p.Value, config.Adapter, loop.Harnesses.Adapters) }).ToArray(),
+                .Select(p => new { Repository = p.Key, Rule = LinesRoutes.OpinionWire(p.Value, config.Adapter, loop.Harnesses.Adapters) }).ToArray(),
             WorkspaceOpinions = config.WorkspaceOpinions.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Workspace = p.Key, Rule = OpinionWire(p.Value, config.Adapter, loop.Harnesses.Adapters) }).ToArray(),
+                .Select(p => new { Workspace = p.Key, Rule = LinesRoutes.OpinionWire(p.Value, config.Adapter, loop.Harnesses.Adapters) }).ToArray(),
             // The helpers and commit rules as set (DOORS1b), as rows for the same reason: a workspace's Defaults reads its own here.
             Helpers = config.Helpers.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Repository = p.Key, Rule = HelperWire(p.Value) }).ToArray(),
+                .Select(p => new { Repository = p.Key, Rule = LinesRoutes.HelperWire(p.Value) }).ToArray(),
             WorkspaceHelpers = config.WorkspaceHelpers.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Workspace = p.Key, Rule = HelperWire(p.Value) }).ToArray(),
+                .Select(p => new { Workspace = p.Key, Rule = LinesRoutes.HelperWire(p.Value) }).ToArray(),
             Commits = config.Commits.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Repository = p.Key, Rule = CommitWire(p.Value) }).ToArray(),
+                .Select(p => new { Repository = p.Key, Rule = LinesRoutes.CommitWire(p.Value) }).ToArray(),
             WorkspaceCommits = config.WorkspaceCommits.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Workspace = p.Key, Rule = CommitWire(p.Value) }).ToArray(),
+                .Select(p => new { Workspace = p.Key, Rule = LinesRoutes.CommitWire(p.Value) }).ToArray(),
             Running = loop.Processes.Running,
             // Who is driving Daoris's browser (BRW8): the running sessions handed a server that drives it.
             DrivingBrowser = loop.Processes.DrivingBrowser,

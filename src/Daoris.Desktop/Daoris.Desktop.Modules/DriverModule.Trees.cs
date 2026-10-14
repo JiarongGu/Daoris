@@ -481,7 +481,7 @@ public sealed partial class DriverModule
         gate = await new OpinionPresses(_loop.Home, service).PressedAsync(id, gate, Optional(request, "answers"), tree, questId, cancellationToken);
 
         // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds (LAND3).
-        var landed = await trees.LandAsync(tree, subject, cancellationToken, async token => await InUseAsync(service, token), gate: gate);
+        var landed = await trees.LandAsync(tree, subject, cancellationToken, async token => await LinesRoutes.InUseAsync(service, token), gate: gate);
         // Kept where the conversation is kept, so the landing and the plugin's word outlast the press (D100).
         if (landed.Landed) _loop.Events.Keep(id, LandingRules.Note(landed), line => _loop.Output.Append(id, line));
         if (_loop.Log is { } log && LandingGateWords.Held(id, trees.Owner(tree), gate, landed, ReviewDoors.Screen) is { } held)

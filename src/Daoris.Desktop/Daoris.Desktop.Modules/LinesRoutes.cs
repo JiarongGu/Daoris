@@ -11,8 +11,11 @@ namespace Daoris.Desktop;
 /// landing rules as set and as they resolve (WSR1, WSR2), the clean-up of the branches sessions and
 /// landings left (WSR3), and bringing each repository up to date after a pull request merged (WSR6).
 /// </summary>
-public sealed partial class DriverModule
+public sealed class LinesRoutes(DriverContext context)
 {
+    private readonly DriverContext _context = context;
+    private readonly DriverLoop _loop = context.Loop;
+
     // A repository's line, or a workspace's (WSR2), or either cleared with no branch — the same
     // file `daoris driver line` edits: one truth, two doors (D50).
     [DriverRoute("SET_LINE")]
@@ -29,7 +32,7 @@ public sealed partial class DriverModule
         _context.Change(config => workspace is not null
             ? config.WithWorkspaceLine(workspace, branch)
             : config.WithLine(repository!, branch));
-        return State(_loop);
+        return DriverRoutes.State(_loop);
     }
 
     // A repository's session language, or a workspace's (LANG1c, D142 point 7), or either cleared with no language — the
@@ -49,7 +52,7 @@ public sealed partial class DriverModule
         _context.Change(config => workspace is not null
             ? config.WithWorkspaceLanguage(workspace, language)
             : config.WithLanguage(repository!, language));
-        return State(_loop);
+        return DriverRoutes.State(_loop);
     }
 
     // Every repository's line here and what said so (WSR2), for the screen. The checkouts are
@@ -169,7 +172,7 @@ public sealed partial class DriverModule
         _context.Change(config => workspace is not null
             ? config.WithWorkspaceLanding(workspace, rule)
             : config.WithLanding(repository!, rule));
-        return State(_loop);
+        return DriverRoutes.State(_loop);
     }
 
     /// <summary>
@@ -216,7 +219,7 @@ public sealed partial class DriverModule
     [DriverRoute("SWEEP")]
     private async Task<object?> SweepAsync(IpcRequest request, CancellationToken cancellationToken)
     {
-        var (repositories, inUse) = await CheckoutsAndSessionsAsync(null, cancellationToken);
+        var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, null, cancellationToken);
         var trees = new SessionTrees(_loop.Home);
 
         if (request.Type == "SWEEP_PLAN")
@@ -296,7 +299,7 @@ public sealed partial class DriverModule
     private async Task<object?> TreesSyncAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var named = Optional(request, "repository");
-        var (repositories, inUse) = await CheckoutsAndSessionsAsync(named, cancellationToken, Optional(request, "workspace"));
+        var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, named, cancellationToken, Optional(request, "workspace"));
         var trees = new SessionTrees(_loop.Home);
         // Which repositories it takes (D112): those holding Daoris's branches, and the ones the person included — every
         // one (`all`), the ones ticked (`also`), or the one named. The press takes each a listed row names besides.
@@ -359,7 +362,7 @@ public sealed partial class DriverModule
     [DriverRoute("TREES_SYNC_SCOPE")]
     private async Task<object?> TreesSyncScopeAsync(IpcRequest request, CancellationToken cancellationToken)
     {
-        var (repositories, _) = await CheckoutsAndSessionsAsync(null, cancellationToken);
+        var (repositories, _) = await CheckoutsAndSessionsAsync(_loop, null, cancellationToken);
         var known = await new SessionTrees(_loop.Home).SyncScopeAsync(repositories, cancellationToken);
         return new { Repositories = known.Select(each => new { each.Repository, each.Workspace, each.Holds }).ToArray() };
     }
@@ -401,10 +404,10 @@ public sealed partial class DriverModule
     /// Every repository with a checkout here — or the one named, or one workspace's — and the trees sessions still running
     /// or waiting name: what the clean-up and bringing up to date both judge by, from the service, so they wait for the driver.
     /// </summary>
-    private async Task<(List<(string Repository, string? Workspace, string? Root)> Repositories, HashSet<string> InUse)> CheckoutsAndSessionsAsync(
-        string? repository, CancellationToken cancellationToken, string? workspace = null)
+    internal static async Task<(List<(string Repository, string? Workspace, string? Root)> Repositories, HashSet<string> InUse)> CheckoutsAndSessionsAsync(
+        DriverLoop loop, string? repository, CancellationToken cancellationToken, string? workspace = null)
     {
-        var service = _loop.Service ?? throw NotReady();
+        var service = loop.Service ?? throw NotReady();
         var registry = await service.RegistryAsync(cancellationToken);
         var inUse = await InUseAsync(service, cancellationToken);
         return (Checkouts(registry, repository, workspace), inUse);
@@ -427,7 +430,7 @@ public sealed partial class DriverModule
             .ToList();
 
     /// <summary>The trees sessions still running or waiting name, as the service's ledger says now.</summary>
-    private static async Task<HashSet<string>> InUseAsync(ServiceClient service, CancellationToken cancellationToken) =>
+    internal static async Task<HashSet<string>> InUseAsync(ServiceClient service, CancellationToken cancellationToken) =>
         (await service.ActiveSessionsAsync(cancellationToken))
             .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -475,7 +478,7 @@ public sealed partial class DriverModule
 
         _context.Change(config => ReviewRules.Apply(config, edit));
         // Only a put looked for anything, so only a put says what the look found.
-        return State(_loop, reviewed: edit.Put is null ? null : new { Lacking = lacking, Unchecked = unchecked_ });
+        return DriverRoutes.State(_loop, reviewed: edit.Put is null ? null : new { Lacking = lacking, Unchecked = unchecked_ });
     }
 
     /// <summary>The page's edit, read as the shared table's: a field of another type is absent, <c>none</c> and <c>clear</c> only when true.</summary>
@@ -528,7 +531,7 @@ public sealed partial class DriverModule
         // The twin's refusals come first, in its words, before anything is written.
         OpinionRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
         _context.Change(config => OpinionRules.Apply(config, edit));
-        return State(_loop);
+        return DriverRoutes.State(_loop);
     }
 
     /// <summary>
@@ -568,7 +571,7 @@ public sealed partial class DriverModule
         // The twin's refusals come first, in its words, before anything is written.
         HelperRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
         _context.Change(config => HelperRules.Apply(config, edit));
-        return State(_loop);
+        return DriverRoutes.State(_loop);
     }
 
     /// <summary>
@@ -582,7 +585,7 @@ public sealed partial class DriverModule
         var edit = CommitRules.EditOf(request.Payload ?? default);
         CommitRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
         _context.Change(config => CommitRules.Apply(config, edit));
-        return State(_loop);
+        return DriverRoutes.State(_loop);
     }
 
     /// <summary>A helpers rule as the bridge carries it (DOORS1b): its mode, and the agents in the order they are tried.</summary>

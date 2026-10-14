@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Each repository's line, its landing rule and the clean-up over the bridge (`DriverModule.Lines.cs`, MOD5).
+/// Each repository's line, its landing rule and the clean-up over the bridge (`LinesRoutes.cs`, MOD5).
 /// </summary>
 public sealed class DriverModuleLinesTests : DriverModuleBridge
 {
@@ -243,7 +243,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
             new("engine", "aurora", "daoris/s-7a8b9c0d", "tree", SweepKind.InUse, 0, null, null),
         ];
 
-        var offered = items.Select(item => JsonSerializer.SerializeToElement(DriverModule.SweepRow(item), camel).GetProperty("discardable").GetBoolean()).ToArray();
+        var offered = items.Select(item => JsonSerializer.SerializeToElement(LinesRoutes.SweepRow(item), camel).GetProperty("discardable").GetBoolean()).ToArray();
 
         Assert.Equal([true, true, false, false, false, false, false], offered);
         Assert.Equal(items.Select(item => SessionTrees.RemovalOffered(item) is not null), offered);
@@ -263,9 +263,9 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         var here = new SweepItem("engine", "aurora", "daoris/s-4e6837ed", "tree", SweepKind.Unlanded, 1, null, "a1b2c3d the work");
         var gone = here with { Tree = null };
 
-        var row = JsonSerializer.SerializeToElement(DriverModule.SweepRow(here, failed), camel);
-        var treeless = JsonSerializer.SerializeToElement(DriverModule.SweepRow(gone, null), camel);
-        var unnamed = JsonSerializer.SerializeToElement(DriverModule.SweepRow(here), camel);
+        var row = JsonSerializer.SerializeToElement(LinesRoutes.SweepRow(here, failed), camel);
+        var treeless = JsonSerializer.SerializeToElement(LinesRoutes.SweepRow(gone, null), camel);
+        var unnamed = JsonSerializer.SerializeToElement(LinesRoutes.SweepRow(here), camel);
 
         Assert.Equal(("4e6837ed", "failed"), (row.GetProperty("session").GetProperty("id").GetString(), row.GetProperty("session").GetProperty("state").GetString()));
         Assert.True(row.GetProperty("landable").GetBoolean());
@@ -364,7 +364,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         var sources = Directory.EnumerateFiles(modules, "DriverModule*.cs").Concat(Directory.EnumerateFiles(modules, "*Routes.cs"))
             .Select(path => (File: Path.GetFileName(path), Text: File.ReadAllText(path))).ToList();
 
-        Assert.Contains(sources, source => source.File == "DriverModule.Lines.cs" && source.Text.Contains(".DiscardAsync(service, repository, branch, force,", StringComparison.Ordinal));
+        Assert.Contains(sources, source => source.File == "LinesRoutes.cs" && source.Text.Contains(".DiscardAsync(service, repository, branch, force,", StringComparison.Ordinal));
         Assert.All(sources, source =>
         {
             Assert.DoesNotContain("RemoveBranchAsync(", source.Text);
@@ -445,7 +445,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         {
             var (repository, workspace) = (Text(ask, "repository"), Text(ask, "workspace"));
             string[] takes = [.. ask.GetProperty("takes").EnumerateArray().Select(name => name.GetString()!)];
-            string[] took = [.. DriverModule.Checkouts(registry, repository, workspace).Select(each => each.Repository)];
+            string[] took = [.. LinesRoutes.Checkouts(registry, repository, workspace).Select(each => each.Repository)];
             Assert.True(takes.SequenceEqual(took),
                 $"repository `{repository}`, workspace `{workspace}`: the table takes [{string.Join(", ", takes)}], the modules [{string.Join(", ", took)}]");
         }
@@ -469,7 +469,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
             })
             .ToList();
 
-        Assert.Contains(presses, press => press.File == "DriverModule.Lines.cs");
+        Assert.Contains(presses, press => press.File == "LinesRoutes.cs");
         Assert.Contains(presses, press => press.File == "DriverModule.Help.cs");
         Assert.All(presses, press => Assert.True(press.Call.Contains("inUseNow:", StringComparison.Ordinal),
             $"{press.File} presses bringing up to date without asking the sessions in use again: {press.Call}"));

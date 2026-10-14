@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// KNOWUSE1a2 and GOAHEAD2b (D135 §2, D131, D137): a go-ahead a parked session asked, answered on the session's own page
-/// (<c>SESSION_GO_AHEAD</c>, <c>DriverModule.Conversation.cs</c>), goes through the ask's own door with <c>goesOn</c>, so
+/// (<c>SESSION_GO_AHEAD</c>, <c>ConversationRoutes.cs</c>), goes through the ask's own door with <c>goesOn</c>, so
 /// the park is answered only where none of the go-aheads the session asked is still open: the service's decision, the same
 /// as the ask's page and the terminal's door, read here off the record and never judged again.
 /// </summary>
