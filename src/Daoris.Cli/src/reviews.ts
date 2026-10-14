@@ -14,6 +14,7 @@ import { join } from 'node:path';
 import { DaorisError } from './errors.ts';
 import { atName, findName, sameName } from './casefold.ts';
 import { normalizeWorkspace } from './remotemap.ts';
+import { isKebabId } from './workflowid.ts';
 
 /** One review environment, as kept: its name, kind and procedure, a local one's address, and a local one's command. */
 export interface ReviewEnvironment {
@@ -77,7 +78,6 @@ const ONE_AT_A_TIME = 'one change at a time: add an environment (and whether it 
 const NONE_WORKSPACE = '`none` is a repository\'s: a workspace with no review environment sets none, and `--clear` takes its rule away.';
 const NONE_HERE = 'No review environment here, whatever its workspace says: work is offered to land once its quest is done.';
 
-const NAME_SHAPE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const ADDRESS_SHAPE = /^https?:\/\/(?:\[[0-9A-Fa-f:.]+\]|[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)*)(?::([0-9]{1,5}))?\/?$/;
 
 /** An environment as an entry spells it, before it is judged: a field that is not text is absent. */
@@ -124,7 +124,7 @@ export function reviewRuleOf(value: unknown): { rule: ReviewSetting | null; prob
 function environmentProblem(environment: Spelled, earlier: readonly ReviewEnvironment[]): string | null {
   const { name, kind, procedure, address, run } = environment;
   if (name === undefined || name.trim().length === 0) return `an environment is named: ${NAME_RULE}`;
-  if (!NAME_SHAPE.test(name) || name.length > 32) return `\`${name}\` is not an environment's name — ${NAME_RULE}`;
+  if (!isKebabId(name) || name.length > 32) return `\`${name}\` is not an environment's name — ${NAME_RULE}`;
   if (name === 'none') return '`none` says a repository has no review environment, so no environment is named it.';
   if (readsAsProduction(name)) {
     return `\`${name}\` reads as production, and production is never a review environment — name where work is looked at `

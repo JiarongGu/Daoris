@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { atName, findName } from './casefold.ts';
 import { readText } from './fsx.ts';
 import { normalizeWorkspace } from './remotemap.ts';
-import { ID_SHAPE, isWorkflowId } from './workflowid.ts';
+import { isKebabId, isWorkflowId } from './workflowid.ts';
 
 /** The workflow drawn from the rules as they stand (design §2.7). */
 export const CURRENT = 'current';
@@ -103,7 +103,7 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 /** A kind's id: lower-case letters, digits and dashes, at most 24 — the driver's `WorkflowSelection.IsKindId`. */
 export function isKindId(value: unknown): value is string {
-  return typeof value === 'string' && value.length >= 1 && value.length <= 24 && ID_SHAPE.test(value);
+  return typeof value === 'string' && value.length >= 1 && value.length <= 24 && isKebabId(value);
 }
 
 /** A kind's label: the person's words, not blank, at most 60 characters, kept as written. */

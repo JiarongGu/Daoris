@@ -14332,3 +14332,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DEDUP1b — the JSON field reader, its second half** (driver, modules; after 1a). The copies in Quests, Review, Service, Sessions, Trees, Workflows and the Modules bridge. Survey §1.
 
 **Outcome** 2026-10-14: the private readers in Quests, Review, Service, Sessions, Setup, Trees, Workflows and the Modules bridge read through `Json`, each keeping its empty-string and number rule (four keep a one-line `Strings` wrapper for empties); `ServiceClient.Text` went, the door classes reading `Json` themselves. Kept apart: `OpinionRules.EditOf`'s tri-state flag, `LandedBranches`' number that answers 0, `WorkspaceSetupFile.Count`, `WorkflowNamed.WholeOf`. On Sonnet: 137 tool calls. Detail: D166's DEDUP1b note.
+
+## DEDUP6b — the CLI's id twins refuse a device name (2026-10-14, D166)
+
+> - [ ] **DEDUP6b — the CLI's id twins refuse a device name** (cli). `workflowid.ts`, `reviews.ts`'s name shape and `namedworkflows.ts` refuse a Windows device name (`con`, `lpt9`) as the driver's `SafeNames` now does, a twin row each. D166's DEDUP6 build note.
+
+**Outcome** 2026-10-14: `workflowid.ts`'s `isKebabId` holds the kebab shape and no device name, used by the workflow, step and kind ids and the review name; `namedworkflows.ts` refuses one in an environment id and an Ask Daoris door; the shared fixtures `review-rules.json` and `workflow-named.json` hold the device rows both twins read. On Sonnet: 36 tool calls.

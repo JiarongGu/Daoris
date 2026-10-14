@@ -16,7 +16,7 @@ import { sameName } from './casefold.ts';
 import { isoMoment } from './cooling.ts';
 import { landingProblem } from './driverconfig.ts';
 import { isPluginId } from './plugins.ts';
-import { ID_SHAPE, isWorkflowId } from './workflowid.ts';
+import { ID_SHAPE, isDeviceName, isWorkflowId } from './workflowid.ts';
 
 // The id is `workflowid.ts`'s, which `workflowchoice.ts` reads too; read here as it always was.
 export { isWorkflowId };
@@ -213,7 +213,7 @@ export function readVersion(value: Record<string, unknown>, number: number, prio
   if (isoMoment(value['at']) === null) {
     return unread(`v${number}: its \`at\` is a moment as ISO 8601 writes it, such as \`2026-10-09T09:12:00Z\`.`);
   }
-  if (door === null || !(door === 'screen' || door === 'terminal' || DOOR_SHAPE.test(door))) {
+  if (door === null || !(door === 'screen' || door === 'terminal' || (DOOR_SHAPE.test(door) && !isDeviceName(door.slice('ask-daoris:'.length))))) {
     return unread(`v${number}: its \`door\` is \`screen\`, \`terminal\` or \`ask-daoris:<proposal>\`.`);
   }
 
@@ -327,7 +327,7 @@ function readField(each: KindField, raw: unknown): { value: StepValue; problem: 
     case 'choice':
       return typeof raw === 'string' && each.choices!.includes(raw) ? { value: raw, problem: null } : wrong;
     case 'environment':
-      return typeof raw === 'string' && raw.length <= 32 && ENVIRONMENT_SHAPE.test(raw) ? { value: raw, problem: null } : wrong;
+      return typeof raw === 'string' && raw.length <= 32 && ENVIRONMENT_SHAPE.test(raw) && !isDeviceName(raw) ? { value: raw, problem: null } : wrong;
     case 'id':
       return isWorkflowId(raw) ? { value: raw, problem: null } : wrong;
     case 'text':
