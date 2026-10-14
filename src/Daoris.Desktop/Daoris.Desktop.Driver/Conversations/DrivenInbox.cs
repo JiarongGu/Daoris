@@ -39,6 +39,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     private Func<ChatMessage, Task<string>>? _deliver;
     private Action<ChatMessage, DrivenReach>? _told;
     private Action? _closing;
+    private Action<ChatMessage>? _withdrawn;
 
     /// <summary>Where it stands: a turn is running while it is open, and what is held waits for its end.</summary>
     public ChatQueue State
@@ -112,6 +113,59 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     public void OnSaid(Action<ChatMessage, DrivenReach> said)
     {
         lock (_gate) _told = said;
+    }
+
+    /// <summary>
+    /// Told each held word the person took back or reworded (QUEUEEDIT1a), after it was told as said: the record settles it
+    /// as withdrawn. Called under the inbox's lock, in order; a listener's failure is its own.
+    /// </summary>
+    public void OnWithdrawn(Action<ChatMessage> withdrawn)
+    {
+        lock (_gate) _withdrawn = withdrawn;
+    }
+
+    /// <summary>
+    /// Take back or reword one held word (QUEUEEDIT1a): with no <paramref name="text"/> it is removed, with some its words are
+    /// replaced where it is held, its place and its files kept, under a new id the record is told as said. Only a word still held
+    /// (<see cref="QueueEdit.Taken"/> otherwise): one sent to the turn on the wire, or taken for the next, is the session's. The
+    /// record, which showed it waiting once the door was known, settles the old id as withdrawn.
+    /// </summary>
+    public QueueEdit Edit(string id, string? text)
+    {
+        lock (_gate)
+        {
+            var at = _closed ? -1 : _held.FindIndex(message => message.Id == id);
+            if (at < 0) return QueueEdit.Taken;
+
+            var old = _held[at];
+            // A word said before the door was known was never told: the record has nothing of it to settle.
+            var told = _reach is not null;
+            if (text is null)
+            {
+                _held.RemoveAt(at);
+            }
+            else
+            {
+                _held[at] = old with { Text = text, Id = $"said-{++_said}" };
+            }
+
+            if (told)
+            {
+                try
+                {
+                    _withdrawn?.Invoke(old);
+                }
+                catch (Exception error) when (error is not OperationCanceledException)
+                {
+                    // The record misses it; the queue has moved either way.
+                }
+
+                if (text is not null && _reach is { } reach) Tell(_held[at], reach);
+            }
+
+            Publish();
+            return QueueEdit.Done;
+        }
     }
 
     /// <summary>Called once, when it closes — how the registry forgets it.</summary>

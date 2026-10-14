@@ -57,8 +57,14 @@ public static class SessionEventCodes
     /// </summary>
     public const string Lost = "lost";
 
+    /// <summary>
+    /// A word the person took back, or reworded, while it still waited (QUEUEEDIT1a): the record showed it waiting under its
+    /// id, and this settles it as never taken.
+    /// </summary>
+    public const string Withdrawn = "withdrawn";
+
     /// <summary>Every code, which both catalogues word.</summary>
-    public static IReadOnlyList<string> All { get; } = [Lost];
+    public static IReadOnlyList<string> All { get; } = [Lost, Withdrawn];
 }
 
 /// <summary>What a tool call carries: text, a diff, or a terminal, in ACP's own three shapes.</summary>

@@ -2023,6 +2023,12 @@ public sealed class Driver(
                 output?.Append(sessionId, $"— the person added, which reaches the session when its turn ends: {message.Text}");
                 Context.Events.Keep(sessionId, ChatMessage.Words(message) with { Reaches = "turn-end" }, say: null);
             });
+            // A word the person took back or reworded while it waited is settled, by its id (QUEUEEDIT1a).
+            held.OnWithdrawn(message =>
+            {
+                output?.Append(sessionId, $"— the person took back what they added: {message.Text}");
+                Context.Events.Keep(sessionId, ChatTurns.Withdrawn(message.Id!), say: null);
+            });
             held.Attach(interrupt: null);
         }
         var acp = adapter.Wire == SessionWire.Acp
@@ -2333,6 +2339,12 @@ public sealed class Driver(
                     ? $"— the person added, which reaches the session at its next step: {message.Text}"
                     : $"— the person added, which reaches the session when its turn ends: {message.Text}");
                 Event(ChatMessage.Words(message) with { Reaches = reach == DrivenReach.NextStep ? "next-step" : "turn-end" });
+            });
+            // A word the person took back or reworded while it waited is settled, by its id (QUEUEEDIT1a).
+            inbox?.OnWithdrawn(message =>
+            {
+                Line($"— the person took back what they added: {message.Text}");
+                Event(ChatTurns.Withdrawn(message.Id!));
             });
             var outcome = await session
                 .RunAsync(

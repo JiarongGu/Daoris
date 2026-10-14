@@ -688,7 +688,8 @@ public sealed class DriverLoop(
             _ = eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", new
             {
                 Session = session,
-                Queued = queue.Queued.Select(message => new { message.Text, Files = Array.Empty<string>() }).ToArray(),
+                // Each with the id it is taken back or reworded by (QUEUEEDIT1a).
+                Queued = queue.Queued.Select(ConversationRoutes.Said).ToArray(),
                 queue.Taking,
                 // An open inbox always has a turn in hand; a closed one tells Idle.
                 Listening = queue.Taking,
@@ -708,8 +709,8 @@ public sealed class DriverLoop(
                 _ = eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", new
                 {
                     Session = session,
-                    // The words and the names of their files — never where the files are kept.
-                    Queued = queue.Queued.Select(message => new { message.Text, Files = message.Files.Select(file => file.Name).ToArray() }).ToArray(),
+                    // The words, the names of their files — never where the files are kept — and each one's id (QUEUEEDIT1a).
+                    Queued = queue.Queued.Select(ConversationRoutes.Said).ToArray(),
                     queue.Taking,
                     // Whether what waits, waits for the door to open rather than for a turn (HELP4).
                     queue.Opening,

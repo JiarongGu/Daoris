@@ -27,6 +27,66 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
+    /// QUEUEEDIT1a: a held word is removed by its id, and the record, which showed it waiting, is told it was withdrawn; the
+    /// rest keep their order, and the word is never taken.
+    /// </summary>
+    [Fact]
+    public void A_held_word_is_removed_by_its_id_and_the_record_is_told_it_was_withdrawn()
+    {
+        var inbox = new DrivenInbox(_ => { });
+        var withdrawn = new List<string?>();
+        inbox.OnWithdrawn(message => withdrawn.Add(message.Id));
+        inbox.Attach(interrupt: null);
+        inbox.Hold(Said("one"));
+        inbox.Hold(Said("two"));
+        var first = inbox.State.Queued[0];
+
+        Assert.Equal(QueueEdit.Done, inbox.Edit(first.Id!, text: null));
+
+        Assert.Equal([first.Id], withdrawn);
+        Assert.Equal(["two"], inbox.State.Queued.Select(message => message.Text));
+        Assert.Equal("two", inbox.TakeOrClose()?.Text);
+    }
+
+    /// <summary>QUEUEEDIT1a: an edit replaces the words where they are held, under a new id, which the record is told with the old one withdrawn.</summary>
+    [Fact]
+    public void A_held_word_is_replaced_in_place_under_a_new_id_and_the_record_is_told_both()
+    {
+        var inbox = new DrivenInbox(_ => { });
+        var told = new List<(string? Id, string Text, DrivenReach Reach)>();
+        var withdrawn = new List<string?>();
+        inbox.OnSaid((message, reach) => told.Add((message.Id, message.Text, reach)));
+        inbox.OnWithdrawn(message => withdrawn.Add(message.Id));
+        inbox.Attach(interrupt: null);
+        inbox.Hold(new ChatMessage("one", [new KeptFile("a.txt", "kept/a.txt")]));
+        inbox.Hold(Said("two"));
+        var first = inbox.State.Queued[0];
+
+        Assert.Equal(QueueEdit.Done, inbox.Edit(first.Id!, "one, said better"));
+
+        var now = inbox.State.Queued;
+        Assert.Equal(["one, said better", "two"], now.Select(message => message.Text));
+        Assert.Equal(["a.txt"], now[0].Files.Select(file => file.Name));
+        Assert.NotEqual(first.Id, now[0].Id);
+        Assert.Equal([first.Id], withdrawn);
+        Assert.Equal((now[0].Id, "one, said better", DrivenReach.TurnEnd), told[^1]);
+    }
+
+    /// <summary>QUEUEEDIT1a: a word already sent, or taken, is the session's: answered taken, never an error, and untouched.</summary>
+    [Fact]
+    public void A_word_the_session_took_is_answered_taken_and_left_alone()
+    {
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(interrupt: null);
+        inbox.Hold(Said("one"));
+        var id = inbox.State.Queued[0].Id!;
+        Assert.Equal("one", inbox.TakeOrClose()?.Text);
+
+        Assert.Equal(QueueEdit.Taken, inbox.Edit(id, text: null));
+        Assert.Equal(QueueEdit.Taken, inbox.Edit("said-nothing", "words"));
+    }
+
+    /// <summary>
     /// 🔴 Taking and closing are one step: a word said between "nothing held" and "closed" would otherwise
     /// be kept by an inbox nobody reads again, and the person would be told it was sent.
     /// </summary>

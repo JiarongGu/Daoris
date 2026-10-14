@@ -918,6 +918,13 @@ public sealed class ChatRunner : IDisposable
         _context.Turned.TryGetValue(sessionId, out var chat) ? chat.Turns.State : ChatQueue.Idle;
 
     /// <summary>
+    /// Take back or reword one word a conversation holds for its turn (QUEUEEDIT1a); <see cref="QueueEdit.Taken"/> where a turn
+    /// took it already, or nothing here holds the conversation.
+    /// </summary>
+    public QueueEdit EditQueued(string sessionId, string id, string? text) =>
+        _context.Turned.TryGetValue(sessionId, out var chat) ? chat.Turns.EditQueued(id, text) : QueueEdit.Taken;
+
+    /// <summary>
     /// Stop the turn a conversation is taking and keep the conversation (CONV4a): what was waiting is
     /// withdrawn and handed back, and the turn in flight ends on the harness's own word.
     /// </summary>
