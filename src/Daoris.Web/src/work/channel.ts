@@ -30,6 +30,13 @@ export type ChannelItem = {
   from?: string | null;
 };
 
+/**
+ * How Daoris's words around another session's claim begin when the driver hands one to a running session (SESSONE2b,
+ * `ChannelText.Claim`): the record keeps them as the driver's own words (`target`), so this is how the page tells a claim from the
+ * target Daoris composed. A twin of the driver's fixed opening, held by a test on the driver's side.
+ */
+export const CHANNEL_CLAIM_OPENING = "Another session says, on the ask's channel";
+
 /** An ask's channel as the person reads it: their own mark, and how many items are past it, lines included. */
 export type Channel = { ask: string; entry: string; items: ChannelItem[]; unread: number; mark?: string | null };
 

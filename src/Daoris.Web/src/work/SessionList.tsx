@@ -78,8 +78,10 @@ type RowActs = {
  */
 export function SessionList({
   arrangement, rows, groupings, selected = null, archived = false, live = false, repositoryFacts, onSelect, actsFor, onAct,
-  entries, askNames = {},
+  entries, askNames = {}, unread = {},
 }: RowActs & {
+  /** What is unread on each ask's channel, by its id (SESSONE2c, D167), said in the heading *by ask* draws; none where no driver says. */
+  unread?: Readonly<Record<string, number>>;
   arrangement: SessionArrangement;
   /** The reader's entries (SESSONE1c, D167): what *by ask* groups by. Absent, the list by ask is the list by state. */
   entries?: readonly SessionEntry[];
@@ -162,7 +164,13 @@ export function SessionList({
     return (
       <>
         {asks.map(({ ask, sessions: members }) => (
-          <ListGroup key={ask ?? 'none'} title={ask === null ? t('work.group.noAsk') : askNames[ask] ?? `#${ask}`}>
+          // What is unread on the ask's channel is said in its heading (SESSONE2c, D167): the person's count, not any session's.
+          <ListGroup
+            key={ask ?? 'none'}
+            title={ask === null
+              ? t('work.group.noAsk')
+              : `${askNames[ask] ?? `#${ask}`}${unread[ask] ? ` · ${t('asks.channel.unread', { count: unread[ask] })}` : ''}`}
+          >
             {members.map((session) => row(session, true, false, true))}
           </ListGroup>
         ))}

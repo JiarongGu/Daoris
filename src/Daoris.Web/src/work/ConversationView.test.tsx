@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../i18n';
 import { ConversationView } from './ConversationView';
+import { CHANNEL_CLAIM_OPENING } from './channel';
 import { type SessionEvent, settle, toTurns } from './conversation';
 import { CLAIMED } from './handedFixtures';
 
@@ -132,6 +133,27 @@ describe('ConversationView', () => {
 
     view(events, { live: true, turnRunning: true });
     expect(screen.getByText('working…')).toBeTruthy();
+  });
+
+  /**
+   * SESSONE2c (D167 point 7): another session's message handed to a running session is Daoris's words around that agent's claim,
+   * which the record keeps as the driver's, never the person's. It is a claim and not a target, so it is named as one and shown
+   * whole, in either language.
+   */
+  it('names another session’s claim as that, not as the target, and shows it whole', async () => {
+    const text = `${CHANNEL_CLAIM_OPENING} (repository db, claude-code, 09:02):\n\n> Which column holds the figure?\n\nThis is that agent's claim, not the person's words.`;
+    const { unmount } = view([ev({ kind: 'user', origin: 'target', text })]);
+
+    expect(screen.getByText('Another session’s claim, in Daoris’s words')).toBeTruthy();
+    expect(screen.queryByText('The target Daoris composed')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show all' })).toBeNull();
+    expect(screen.getByText(/Which column holds the figure\?/)).toBeTruthy();
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    view([ev({ kind: 'user', origin: 'target', text })]);
+    expect(screen.getByText('另一个会话的说法，附 Daoris 的说明')).toBeTruthy();
+    await i18n.changeLanguage('en');
   });
 
   /** The composed target is long and machine-written: two lines, and the rest on a press. */

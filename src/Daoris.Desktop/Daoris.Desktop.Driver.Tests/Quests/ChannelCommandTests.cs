@@ -138,6 +138,24 @@ public sealed class ChannelCommandTests
         Assert.Equal(DateTimeOffset.Parse("2026-10-14T09:00:00Z"), read.Mark);
     }
 
+    /// <summary>
+    /// The page names another session's claim by the opening of Daoris's words around it (<c>CHANNEL_CLAIM_OPENING</c> in
+    /// <c>work/channel.ts</c>), since the record keeps them as the driver's own, so the two are one string: a twin read as text.
+    /// </summary>
+    [Fact]
+    public void The_claim_opens_with_the_words_the_page_names_it_by()
+    {
+        var claim = ChannelText.Claim(new ChannelItemView(ChannelItemView.Message, DateTimeOffset.Parse("2026-10-14T09:02:00Z"))
+        {
+            Id = "m1", Repository = "db", Agent = "claude-code", Text = "Which column holds the figure?",
+        });
+        var page = File.ReadAllText(Path.Combine(
+            Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Web", "src", "work", "channel.ts"));
+
+        Assert.StartsWith("Another session says, on the ask's channel (", claim);
+        Assert.Contains("CHANNEL_CLAIM_OPENING = \"Another session says, on the ask's channel\"", page);
+    }
+
     /// <summary>The usage the host prints, and the one the bare invocation prints, spell the verb.</summary>
     [Fact]
     public void The_usage_spells_the_verb()

@@ -1,6 +1,6 @@
 {
   "asks.channel.title": "Channel",
-  "asks.channel.lead": "Where this ask's sessions and you talk. Work, and a change in another repository, stay quests.",
+  "asks.channel.lead": "Where this ask's sessions and you talk. Anything that needs work, or a change in another repository, stays a quest.",
   "asks.channel.empty": "Nothing on the channel yet.",
   "asks.channel.loading": "Reading the channel…",
   "asks.channel.unread": "{{count}} unread",

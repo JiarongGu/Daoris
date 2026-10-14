@@ -52,7 +52,8 @@ import { dockOpensOn, type DockTab, followed, NothingFollowed, RightDock } from 
 import { SessionTimeline } from './SessionTimeline';
 import { SessionRail } from './SessionRail';
 import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } from './acts';
-import { entryOfSession } from './entries';
+import { askOfEntry, entryOfSession, isIntakeEntry } from './entries';
+import { useChannel, usePostChannel } from '../shell';
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
 import { sessionFacts } from './headFacts';
 import type { Answered } from './InlineConfirm';
@@ -386,6 +387,12 @@ export function WorkFrame({
   useErrorNotify(sessions.error, notify);
 
   const attended = (sessions.data ?? []).find((session) => session.id === selected) ?? null;
+  // Its ask's channel (SESSONE2c, D167 points 6 to 8): the attended line of work's panel, where an ask began it. The same read the
+  // ask's page holds, under one key; a conversation, an intake and a line rooted in a quest alone have none.
+  const attendedEntry = attended ? entryOfSession(entries, attended.id) : null;
+  const channelAsk = attendedEntry && !isIntakeEntry(attendedEntry) ? askOfEntry(attendedEntry) : null;
+  const channel = useChannel(channelAsk);
+  const postChannel = usePostChannel();
   const editQueued = useEditQueued(attended?.id ?? null);
   const quest = attended?.quest
     ? (quests.data ?? []).find((row) => row.id === attended.quest) ?? null
@@ -1633,6 +1640,17 @@ export function WorkFrame({
                 session: row, root: rootOf(row.repository), where: where[row.id],
               }])),
               onShow: (id: string) => attend(id),
+            } : undefined}
+            // Its ask's channel, kept to this line of work (SESSONE2c): a post is the person's words, and a refusal is the service's code.
+            channel={attended && attendedEntry && channelAsk && channel.available && (channel.loading || channel.channel) ? {
+              channel: channel.channel,
+              only: { entry: attendedEntry.entry, repository: attendedEntry.repository },
+              onPost: (post, answered) => postChannel.mutate({ ask: channelAsk, post }, {
+                onSuccess: (posted) => (posted.posted ? answered.done() : answered.refused(posted.code ?? 'other')),
+                onError: (error) => answered.refused(sentence(error)),
+              }),
+              onOpenQuest,
+              onOpenAsk: onAnswerAsk ? () => onAnswerAsk(channelAsk) : undefined,
             } : undefined}
             resolving={resolve.isPending || answer.isPending || parkGoAhead.isPending || personDone.isPending}
             onResolve={here ? onResolve : undefined}

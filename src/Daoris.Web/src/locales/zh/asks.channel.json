@@ -1,6 +1,6 @@
 {
   "asks.channel.title": "频道",
-  "asks.channel.lead": "本需求的会话与你在这里交流。工作，以及对其他仓库的修改，仍然是委托。",
+  "asks.channel.lead": "本需求的会话与你在这里交流。需要做的工作，以及对其他仓库的修改，仍然是委托。",
   "asks.channel.empty": "频道里还没有内容。",
   "asks.channel.loading": "正在读取频道…",
   "asks.channel.unread": "{{count}} 条未读",

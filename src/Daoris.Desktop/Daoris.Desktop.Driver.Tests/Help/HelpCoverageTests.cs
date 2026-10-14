@@ -179,6 +179,16 @@ public sealed partial class HelpCoverageTests
         + "where the box is and names `daoris-driver sessions say` (D137 §5.4).");
 
     /// <summary>
+    /// SESSONE2c's <c>daoris-driver ask channel</c> post and the page's <c>CHANNEL_POST</c> (D167 points 6 to 8): exempt, since the
+    /// words posted are the person's own, which every session on the ask then reads as theirs (D133 §1). <c>CHANNEL_READ</c> is
+    /// no press: a read of the records that changes nothing.
+    /// </summary>
+    private static readonly Exempt ChannelPostDoor = new(
+        "the words posted on an ask's channel are the person's own and every session on the ask reads them as theirs (D133 §1, "
+        + "D167 point 7), so Ask Daoris composes none in their name; `daoris-driver ask channel` and the ask page's composer are "
+        + "the doors.");
+
+    /// <summary>
     /// MSG1g's <c>daoris-driver sessions go-on-new</c> (D137 §2.2), a verb of the headless host: exempt, since it moves the
     /// person's words and trades their conversation's context for time, both the person's to choose (D133 §1, D143 point 4).
     /// </summary>
@@ -510,6 +520,12 @@ public sealed partial class HelpCoverageTests
         ("work", "useGoOnNew", null, GoOnNewDoor),
         ("work", "useStartFrom", null, StartFromDoor),
         ("work", "useHandOver", null, HandOverDoor),
+        // SESSONE2c (D167 points 6 to 8): the ask's channel, posted to from the ask's page and a session's panel, and its mark.
+        ("asks", "usePostChannel", null, ChannelPostDoor),
+        ("work", "usePostChannel", null, ChannelPostDoor),
+        ("asks", "useMarkChannel", null, new Exempt(
+            "it moves the person's own read mark on an ask's channel to what the page showed them, and changes nothing of the work "
+            + "or the machine's settings, as reading is exempt, so there is nothing to propose (D167 point 7).")),
         ("work", "useDiscardSessionTree", null, new Exempt(
             "it discards a session's tree and its work for good, a discard, which stays the person's own press (D89), as the "
             + "clean-up and a failed attempt's branch do.")),
@@ -828,6 +844,7 @@ public sealed partial class HelpCoverageTests
             .Append(SessionsStopVerb)
             .Append(AbandonDoor)
             .Append(SayDoor)
+            .Append(ChannelPostDoor)
             .Append(GoOnNewDoor)
             .Append(StartFromDoor)
             .Append(HandOverDoor)

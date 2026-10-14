@@ -71,7 +71,7 @@ describe('an ask’s page and its channel', () => {
 
   it('is read while the channel is on its way, and absent where no door is handed, as in a browser', () => {
     const { unmount } = rtlRender(<Tooltip.Provider><AskPage
-      ask={ASK} receivers={[]} questTitles={{}} onPublish={vi.fn()} onClose={vi.fn()} onDelete={vi.fn()}
+      ask={ASK} receivers={[]} questTitles={{}} onPublish={vi.fn()} onClose={vi.fn()} onDelete={vi.fn()} onOpenQuest={vi.fn()}
       channel={{ channel: null, onPost: vi.fn(), onRead: vi.fn() }}
     /></Tooltip.Provider>);
     expect(within(screen.getByRole('region', { name: 'Channel' })).getByText('Reading the channel…')).toBeInTheDocument();

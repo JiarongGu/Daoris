@@ -4,6 +4,7 @@ import { compact, elapsed, moment, span } from '../format';
 import { cn } from '../lib/cn';
 import { Button, Dot, Icon, Inline, Tip } from '../ui';
 import type { NotePart } from '../api';
+import { CHANNEL_CLAIM_OPENING } from './channel';
 import { type Ask, type Block, CONVERSATION_CODES, type PlanEntry, runCount, segments, type Turn } from './conversation';
 import type { AccountNames } from './accountNames';
 import { HandedAccount } from './HandedAccount';
@@ -306,7 +307,10 @@ function TurnMeter({ turn }: { turn: Turn }) {
 function AskView({ ask }: { ask: Ask }) {
   const { t } = useTranslation();
   const findings = Boolean(ask.opinion);
-  const target = ask.origin === 'target';
+  // Another session's claim on the ask's channel (SESSONE2c): Daoris's words around it, kept as the driver's own, short enough to
+  // read whole and never the target Daoris composed.
+  const claim = ask.origin === 'target' && !findings && (ask.text ?? '').startsWith(CHANNEL_CLAIM_OPENING);
+  const target = ask.origin === 'target' && !claim;
   const [open, setOpen] = useState(!target || findings);
 
   return (
@@ -318,7 +322,7 @@ function AskView({ ask }: { ask: Ask }) {
     >
       <div className="flex items-center justify-between gap-2">
         <span className="text-meta text-ink-faint">
-          {findings ? t('work.conversation.opinion') : target ? t('work.conversation.target') : t('work.conversation.you')}
+          {findings ? t('work.conversation.opinion') : claim ? t('work.conversation.claim') : target ? t('work.conversation.target') : t('work.conversation.you')}
         </span>
         {target && (
           <button
