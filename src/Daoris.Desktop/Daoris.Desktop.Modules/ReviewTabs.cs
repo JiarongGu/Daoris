@@ -51,8 +51,9 @@ public static class ReviewRequests
         if (!path.StartsWith(serve.Base, StringComparison.Ordinal)) return new(ReviewAnswerKind.Pass);
 
         var rest = Uri.UnescapeDataString(path[serve.Base.Length..]);
-        if (rest.Contains('\\') || rest.Contains(':') || rest.Contains('\0')
-            || rest.Split('/').Any(segment => segment is "." or ".."))
+        // One trailing slash asks for a page (below); what is left is a path joined to the disk (DEDUP6's rule).
+        var named = rest.EndsWith('/') ? rest[..^1] : rest;
+        if (named.Length > 0 && !SafeNames.IsRepositoryPath(named))
         {
             return new(ReviewAnswerKind.Refused);
         }

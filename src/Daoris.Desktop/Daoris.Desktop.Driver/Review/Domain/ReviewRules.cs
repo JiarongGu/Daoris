@@ -214,12 +214,7 @@ public static class ReviewRules
     /// A path a procedure may be (design §1.1, as KNOWUSE1c names a router): from the repository's root, with forward slashes,
     /// no space around it, and no <c>..</c>, <c>.</c>, empty part, root, drive or control character.
     /// </summary>
-    internal static bool IsProcedurePath(string path)
-    {
-        if (path != path.Trim() || path.StartsWith('/') || path.Contains('\\') || path.Contains(':')) return false;
-        if (path.Any(c => c < 0x20 || c == '\u007f')) return false;
-        return path.Split('/').All(part => part.Length > 0 && part is not "." and not "..");
-    }
+    internal static bool IsProcedurePath(string path) => path == path.Trim() && SafeNames.IsRepositoryPath(path);
 
     /// <summary>An absolute <c>http</c> or <c>https</c> origin: a host or a bracketed IPv6 address, a port from 1 to 65535, nothing after but one <c>/</c>.</summary>
     private static bool IsAddress(string address)
