@@ -54,7 +54,7 @@ public sealed partial class HelpProposalKindsTests
     [Fact]
     public void The_workflow_writer_writes_its_name()
     {
-        var writer = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core", "HelpWorkflowProposalWriter.cs"));
+        var writer = File.ReadAllText(CoreFile("HelpWorkflowProposalWriter.cs"));
 
         Assert.Contains("""WriteString("name",""", writer);
     }
@@ -65,6 +65,12 @@ public sealed partial class HelpProposalKindsTests
         while (at is not null && !File.Exists(Path.Combine(at.FullName, "daoris.json"))) at = at.Parent;
         return at?.FullName ?? throw new InvalidOperationException("no workspace root above the test binary");
     }
+
+    /// <summary>The service core's source folder: its files sit in module folders (STRUCT5b), so a reader finds one by name.</summary>
+    internal static string CoreFolder() => Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core");
+
+    internal static string CoreFile(string name) =>
+        Directory.EnumerateFiles(CoreFolder(), name, SearchOption.AllDirectories).Single();
 
     private static string Pascal(string kind) => char.ToUpperInvariant(kind[0]) + kind[1..];
 
@@ -99,7 +105,7 @@ public sealed partial class HelpProposalKindsTests
     public void Every_kind_has_its_twins_writer_and_its_connectors_tool()
     {
         var service = Path.Combine(RepositoryRoot(), "src", "Daoris.Service");
-        var written = Directory.GetFiles(Path.Combine(service, "Daoris.Service.Core"), "Help*ProposalWriter.cs")
+        var written = Directory.GetFiles(CoreFolder(), "Help*ProposalWriter.cs", SearchOption.AllDirectories)
             .SelectMany(path => WritesKind().Matches(File.ReadAllText(path)).Select(match => (Kind: match.Groups[1].Value, File: Path.GetFileName(path))))
             .ToList();
 
@@ -122,18 +128,17 @@ public sealed partial class HelpProposalKindsTests
     [Fact]
     public void Every_kinds_doors_are_the_ones_its_twin_writes()
     {
-        var core = Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core");
         foreach (var kind in HelpProposalKinds.All)
         {
             Assert.NotEmpty(kind.Doors);
-            var writer = File.ReadAllText(Path.Combine(core, $"Help{Pascal(kind.Kind)}ProposalWriter.cs"));
+            var writer = File.ReadAllText(CoreFile($"Help{Pascal(kind.Kind)}ProposalWriter.cs"));
             foreach (var door in kind.Doors)
             {
                 Assert.Contains(kind.Kind == "workflow" ? WorkflowDoorsWritten[door] : $"\"{door}\"", writer);
             }
         }
 
-        var listed = ServiceSettingDoors().Match(File.ReadAllText(Path.Combine(core, "HelpSettingProposalWriter.cs")));
+        var listed = ServiceSettingDoors().Match(File.ReadAllText(CoreFile("HelpSettingProposalWriter.cs")));
         Assert.True(listed.Success, "the service's setting doors are a list, `Doors`.");
         Assert.Equal(
             new HelpSettingProposals().Doors,

@@ -98,8 +98,11 @@ test('every machine-local override the desktop reads is redirected, cleared, or 
 
 /** The two the service reads by constant rather than beside a `.daoris` literal. */
 test('the index root and the store are redirected', () => {
-  const factory = readText(join(
-    repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Core', 'ServiceFactory.cs'));
+  // The core's files sit in module folders (STRUCT5b): the factory is found by name under it.
+  const core = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Core');
+  const found = listFiles(core).filter((file) => file.replaceAll('\\', '/').split('/').pop() === 'ServiceFactory.cs');
+  assert.equal(found.length, 1, 'ServiceFactory.cs is expected once under the service core');
+  const factory = readText(join(core, found[0]!));
   for (const match of factory.matchAll(/(?:RootVariable|DatabaseVariable)\s*=\s*"(DAORIS_[A-Z_]+)"/g)) {
     assert.ok(REDIRECTED.includes(match[1]!), `${match[1]} is not redirected by a scratch run`);
   }

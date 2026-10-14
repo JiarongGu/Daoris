@@ -267,7 +267,7 @@ public sealed class CodeMapProducerTests : IDisposable
     [Fact]
     public void Its_rules_are_the_readers()
     {
-        var reader = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core", "CodeMap.cs"));
+        var reader = File.ReadAllText(Directory.EnumerateFiles(Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core"), "CodeMap.cs", SearchOption.AllDirectories).Single());
 
         Assert.Contains($"Candidates = [{string.Join(", ", CodeMapProducer.Candidates.Select(c => $"\"{c}\""))}]", reader);
         Assert.Contains($"MaxModules = {CodeMapProducer.MaxModules};", reader);
