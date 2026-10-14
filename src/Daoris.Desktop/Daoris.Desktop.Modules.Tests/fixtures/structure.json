@@ -2,14 +2,6 @@
   "modules": ["Bridge", "Browser", "Windows", "Update", "Loop", "Platform"],
   "loose": ["Bridge.cs", "DriverModuleBridge.cs", "LoopbackHost.cs", "Category.cs", "GlobalUsings.cs", "Parallelism.cs", "EveryModuleChildIsHandedTheToolsTests.cs", "SourceFiles.cs", "StructureCheck.cs", "StructureTests.cs"],
   "root": {
-    "Refusals.cs": "Platform",
-    "RefusalLog.cs": "Platform",
-    "LogModule.cs": "Platform",
-    "MachineLogProvider.cs": "Platform",
-    "HelpRoomLookLog.cs": "Platform",
-    "RegistryModule.cs": "Platform",
-    "RemotesModule.cs": "Platform",
-    "ToolQuestions.cs": "Platform"
   },
   "tests": {
     "AgentSettingsModuleTests.cs": "Bridge",
@@ -101,6 +93,13 @@
     "SessionWordsTerminalTests.cs": "Loop",
     "TickConsiderationTests.cs": "Loop",
     "TickErrorsTests.cs": "Loop",
-    "TickWaitTests.cs": "Loop"
+    "TickWaitTests.cs": "Loop",
+    "HelpRoomLookLogTests.cs": "Platform",
+    "LogModuleTests.cs": "Platform",
+    "MachineLogProviderTests.cs": "Platform",
+    "RefusalCatalogueTests.cs": "Platform",
+    "RefusalLogTests.cs": "Platform",
+    "RegistryModuleTests.cs": "Platform",
+    "RemotesModuleTests.cs": "Platform"
   }
 }
