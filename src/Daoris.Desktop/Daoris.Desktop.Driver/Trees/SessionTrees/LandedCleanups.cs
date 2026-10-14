@@ -109,14 +109,11 @@ public static class LandedWords
 /// <summary>
 /// The clean-up of the branches landings made (D88, WSR5; PART10l, out of <c>SessionTrees.Landed.cs</c>): the list, the press, and
 /// each recorded branch judged over the whole set. Over the trees' context, the pull request's asks (the look's one occasion), the
-/// content proof's keep and delete, and the replay's record tidying.
+/// content proof's keep and delete, the replay's record tidying, and the session branches' half of the clean-up
+/// (<see cref="TreeSweeps"/>).
 /// </summary>
-/// <remarks>
-/// It holds the front for the session branches' half of the clean-up (<c>SweepPlanAsync</c>, <c>SweepAsync</c>): interim, until
-/// PART10l-ii makes the sweep a class.
-/// </remarks>
 internal sealed class LandedCleanups(
-    TreeContext context, PullRequestAsks asks, ContentHolds content, BranchReplays replays, SessionTrees trees)
+    TreeContext context, PullRequestAsks asks, ContentHolds content, BranchReplays replays, TreeSweeps sweeps)
 {
     /// <summary>
     /// The clean-up's list (D88, WSR5): every session branch with what it holds, then every branch a landing
@@ -134,7 +131,7 @@ internal sealed class LandedCleanups(
                 .Select(each => (each.Root!, each.Repository, RemoteTarget.Workspace(each.Workspace))),
             landedMayGo: true, ct).ConfigureAwait(false);
 
-        var sessions = await trees.SweepPlanAsync(known, inUse, ct).ConfigureAwait(false);
+        var sessions = await sweeps.SweepPlanAsync(known, inUse, ct).ConfigureAwait(false);
         var record = context.Recorded.All();
         var config = context.Config();
         var landed = new List<LandedItem>();
@@ -189,7 +186,7 @@ internal sealed class LandedCleanups(
         IReadOnlySet<string>? only = null, CancellationToken ct = default)
     {
         var known = repositories.ToList();
-        var sessions = await trees.SweepAsync(known, inUse, only, ct).ConfigureAwait(false);
+        var sessions = await sweeps.SweepAsync(known, inUse, only, ct).ConfigureAwait(false);
         // The record of where session branches grew from drops what is gone (LAND3), this press's removals among them.
         foreach (var (repository, _, root) in known)
         {

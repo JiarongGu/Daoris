@@ -48,7 +48,7 @@ public sealed class SessionBranchDiscard(SessionTrees trees)
     public async Task<TreeRemoval> DiscardNamedAsync(
         ServiceClient service, string named, string? repository, bool force, CancellationToken ct = default)
     {
-        if (named.StartsWith(SessionTrees.SessionPrefix, StringComparison.Ordinal) || named.StartsWith("s-", StringComparison.Ordinal))
+        if (named.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal) || named.StartsWith("s-", StringComparison.Ordinal))
         {
             var found = trees.FindBranches(named, repository);
             var owners = found.Select(entry => entry.Repository).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
@@ -66,7 +66,7 @@ public sealed class SessionBranchDiscard(SessionTrees trees)
             }
 
             var branch = found.FirstOrDefault()?.Branch
-                         ?? (named.StartsWith(SessionTrees.SessionPrefix, StringComparison.Ordinal) ? named : SessionTrees.SessionPrefix + named);
+                         ?? (named.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal) ? named : TreeFollows.SessionPrefix + named);
             return await DiscardAsync(service, owner, branch, force, ct).ConfigureAwait(false);
         }
 

@@ -149,7 +149,7 @@ internal sealed class PullRequestAsks(TreeContext context)
     /// <summary>A landing's own branch in this repository: a session branch's name is D88's to judge.</summary>
     private static bool Ours(LandedBranch entry, string repository) =>
         string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
-        && !entry.Branch.StartsWith(SessionTrees.SessionPrefix, StringComparison.Ordinal);
+        && !entry.Branch.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal);
 
     /// <summary>
     /// Whether an entry's answer could remove something now (design §2.1): it stands, this occasion may remove a landed branch,

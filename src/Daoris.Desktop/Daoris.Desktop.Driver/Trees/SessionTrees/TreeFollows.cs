@@ -13,6 +13,12 @@ namespace Daoris.Driver;
 internal sealed class TreeFollows(TreeContext context)
 {
     /// <summary>
+    /// The prefix every session branch Daoris makes carries (<see cref="SessionTrees.OpenAsync"/>): the layout's name for a tree's
+    /// branch, which this class answers, and the only kind a removal takes.
+    /// </summary>
+    internal const string SessionPrefix = "daoris/";
+
+    /// <summary>
     /// The branch a session tree is on where it is one the session made: any branch but a session branch (<c>daoris/…</c>), the
     /// layout's name for it. Null where the tree is on a session branch, detached, or git cannot say, which is the layout's
     /// answer then (<see cref="BranchOfTree"/>). The caller has a tree of its own: git walks up from a folder that is none.
@@ -24,7 +30,7 @@ internal sealed class TreeFollows(TreeContext context)
             // 🔴 git walks up from a folder that is no repository of its own, and would name the branch of the one above it.
             if (!await WorkingTree.IsTopLevelAsync(tree, ct).ConfigureAwait(false)) return null;
             return await WorkingTree.BranchAsync(tree, ct).ConfigureAwait(false) is { } branch
-                   && !branch.StartsWith(SessionTrees.SessionPrefix, StringComparison.Ordinal)
+                   && !branch.StartsWith(SessionPrefix, StringComparison.Ordinal)
                 ? branch
                 : null;
         }
@@ -91,7 +97,7 @@ internal sealed class TreeFollows(TreeContext context)
             {
                 // A linked tree's `.git` is a file; a folder with none is a leftover, which git would answer for the repository above.
                 if (!File.Exists(Path.Combine(tree, ".git"))) continue;
-                var layout = SessionTrees.SessionPrefix + Path.GetFileName(tree);
+                var layout = SessionPrefix + Path.GetFileName(tree);
                 if (context.Grown.Of(repository, layout) is not { } entry) continue;
                 string? now;
                 try
@@ -121,8 +127,8 @@ internal sealed class TreeFollows(TreeContext context)
     /// </summary>
     internal string? MovedOnTo(IReadOnlyList<WorktreeEntry> entries, string workspace, string repository, string branch)
     {
-        if (!branch.StartsWith(SessionTrees.SessionPrefix, StringComparison.Ordinal)) return null;
-        var folder = Path.Combine(context.TreesRoot, workspace, repository, branch[SessionTrees.SessionPrefix.Length..]);
+        if (!branch.StartsWith(SessionPrefix, StringComparison.Ordinal)) return null;
+        var folder = Path.Combine(context.TreesRoot, workspace, repository, branch[SessionPrefix.Length..]);
         return entries.FirstOrDefault(entry => SamePath(entry.Path, folder)) is { Branch: { } on } && !string.Equals(on, branch, StringComparison.Ordinal)
             ? on
             : null;
@@ -132,7 +138,7 @@ internal sealed class TreeFollows(TreeContext context)
     internal IReadOnlyList<GrownBranch> FindBranches(string named, string? repository) =>
         [.. context.Grown.All()
             .Where(entry => string.Equals(entry.Branch, named, StringComparison.Ordinal)
-                            || string.Equals(entry.Branch, SessionTrees.SessionPrefix + named, StringComparison.Ordinal))
+                            || string.Equals(entry.Branch, SessionPrefix + named, StringComparison.Ordinal))
             .Where(entry => repository is null || string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))];
 
     /// <summary>
@@ -147,6 +153,6 @@ internal sealed class TreeFollows(TreeContext context)
         var (workspace, repository) = context.OwnerOf(full);
         return repository.Length == 0
             ? null
-            : (workspace, repository, SessionTrees.SessionPrefix + Path.GetFileName(full.TrimEnd(Path.DirectorySeparatorChar)));
+            : (workspace, repository, SessionPrefix + Path.GetFileName(full.TrimEnd(Path.DirectorySeparatorChar)));
     }
 }

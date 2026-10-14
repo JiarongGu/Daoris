@@ -186,8 +186,6 @@ EVID1a → b → c; corresponding EVID1 precedes EVID2; EVID1d also needs DEV5/7
 Contracts: session-management (D126 §9), session-messages (D137), answer-continues (D131),
 pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
 
-- [ ] **WAITSHOWN1b — the monitor's tile reads awaiting** (driver/web). The monitor asks no groups (SESSUX1c), so a session whose quest awaits another repository reads *completed* there: a cheap awaiting read for its tile. `MonitorWindow` test.
-- [ ] **TURNFAIL4 — the second-failure bound on the native door** (driver). A native resume's own words are judged by the protocol door's `turnFailed` alone, so `GoOnMarks.FailedTwice` never marks them: judge `FailedTurnWords` from `own.Ended(...).Failure` too. D137's TURNFAIL2 note.
 
 Co-working (D167, `docs/2026-10-14-co-working-design.md`; the owner's two tasks are the canary):
 
@@ -282,11 +280,7 @@ into priority since that will make the code better to develop"*; D166's note). N
 folder.
 
 - [ ] **STRUCT3OPLOOP — Review's opinion logic out of the loop** (driver; optional). `Loop/DriverOpinions.cs`, `OpinionDeliverer.cs` and `OpinionGateLook.cs` hold the pass, the delivery and the gate's look: what needs none of the loop's state moves into `Review/`, with no new ports. D166's STRUCT2g note. After PART10m these are classes in `Loop/` holding the front for its run machinery; the structure gate's `loop` rule lets nothing outside `Loop/` name them, so moving them needs that machinery out of the front first.
-- [ ] **STRUCT5 — the other projects' folders** (modules/service/web/cli). Folders by domain, no layers (D166's note of 2026-10-14): `Modules` (the bridge per domain, browser, window, update), the service's core, the page's top folder and the CLI's `src/`, each with its gate; a row each when due. Design §7.
-
-**No partial type split by hand** (the owner: *"also I think we better not use partial class if we don't have auto-generated code"*; D166's note). Evidence: `docs/2026-10-14-partial-types-survey.md`. A class per domain or kind keeps one new door in one new file.
-
-- [ ] **PART10l-ii — `SessionTrees`: tidying, removal, the sweep and the core's land, and the type whole** (driver; Opus; after 10l-i). Removal, tidy (with `TidyCarriedAsync`), set-aside, the sweep and the auto tidy split leaf from pass, the core's plan, land, branch and advance; the stubs folded into the front, `partial` gone and the entry cut from `tools/partials.json`.
+- [ ] **STRUCT5 — the other projects' folders** (web/cli). Folders by domain, no layers (D166's note of 2026-10-14), each with its gate, as STRUCT5a (Modules) and 5b (the service's core) did: the page's top folder (5c) and the CLI's `src/` (5d), a row each when due. Design §7.
 
 **Duplication** (the owner: *"we more focus on modularize the code to reduce duplication and easier to manage"*). Evidence: `docs/2026-10-14-duplication-survey.md`, by section. After FLAT1; DEDUP1 to 3 touch the same files, so one at a time.
 

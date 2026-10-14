@@ -158,8 +158,8 @@ public sealed class ContentHeldTests : LandedFixture
         var differsRow = plan.Single(item => item.Branch == differs.Branch);
         Assert.Equal((SweepKind.Unlanded, 1), (differsRow.Kind, differsRow.Commits));
         Assert.Null(differsRow.HeldBy);
-        Assert.NotNull(SessionTrees.RemovalOffered(differsRow));
-        Assert.Null(SessionTrees.RemovalOffered(squashedRow));
+        Assert.NotNull(SessionBranchDoors.RemovalOffered(differsRow));
+        Assert.Null(SessionBranchDoors.RemovalOffered(squashedRow));
 
         var swept = await trees.SweepAsync(Engine(root), new HashSet<string>());
 
