@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using static Daoris.Driver.AccountFileNodes;
 
 namespace Daoris.Driver;
 
@@ -83,7 +84,7 @@ public static class AccountCooling
     /// </summary>
     public static void Cool(string home, CoolingEntry entry, DateTimeOffset now) => Edit(home, now, root =>
     {
-        var agent = Child(root, entry.Agent) ?? (JsonObject)(root[entry.Agent] = new JsonObject());
+        var agent = Made(root, entry.Agent);
         if (Key(agent, entry.Account ?? "") is { } held) agent.Remove(held);
         agent[entry.Account ?? ""] = Written(entry);
         return true;
@@ -141,19 +142,7 @@ public static class AccountCooling
         && string.Equals(entry.Account ?? "", account ?? "", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>The file's root, or an empty one when it is missing or does not read: no account cooling.</summary>
-    private static JsonObject Load(string home)
-    {
-        try
-        {
-            return File.Exists(PathOf(home)) && JsonNode.Parse(File.ReadAllText(PathOf(home))) is JsonObject root
-                ? root
-                : new JsonObject();
-        }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
-        {
-            return new JsonObject();
-        }
-    }
+    private static JsonObject Load(string home) => AccountFileNodes.Load(PathOf(home));
 
     /// <summary>Every entry that reads, whatever its <c>until</c>; one that does not read is none.</summary>
     private static IEnumerable<CoolingEntry> Entries(JsonObject root)
@@ -212,18 +201,6 @@ public static class AccountCooling
     internal static string Stamp(DateTimeOffset moment) =>
         moment.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
 
-    /// <summary>A name in an object, compared without case, as the wiring compares names.</summary>
-    private static string? Key(JsonObject held, string name) =>
-        held.Select(pair => pair.Key).FirstOrDefault(key => string.Equals(key, name, StringComparison.OrdinalIgnoreCase));
-
-    private static JsonObject? Child(JsonObject root, string name) =>
-        Key(root, name) is { } key ? root[key] as JsonObject : null;
-
-    /// <summary>
-    /// A moment as ISO 8601 writes it, and only so: a lenient parse reads <i>Oct 3</i> as this year's, which would make a
-    /// hand-mangled entry an account cooling.
-    /// </summary>
-    private static DateTimeOffset? Moment(JsonObject entry, string name) => Moments.ReadStrict(Json.Text(entry, name));
 }
 
 /// <summary>
