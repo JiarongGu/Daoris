@@ -122,20 +122,28 @@ public sealed record PluginSource(string? Folder, string? Offer, PluginPackageOr
     }
 
     /// <summary>The record's file as written: indented JSON, LF, a final newline.</summary>
-    internal string Json()
+    // A hash's `+` and `/` are written as they are, as the CLI's `JSON.stringify` writes them (JsonFile's encoder).
+    internal string Json() => JsonFile.Serialize(writer =>
     {
-        var json = this switch
+        writer.WriteStartObject();
+        switch (this)
         {
-            { Package: { } package } => JsonSerializer.Serialize(
-                new { package = package.Package, version = package.Version, sha512 = package.Sha512, source = package.Source }, Indented),
-            { Offer: { } offer } => JsonSerializer.Serialize(new { offer }, Indented),
-            _ => JsonSerializer.Serialize(new { folder = Folder }, Indented),
-        };
-        return json.Replace("\r\n", "\n") + "\n";
-    }
+            case { Package: { } package }:
+                writer.WriteString("package", package.Package);
+                writer.WriteString("version", package.Version);
+                writer.WriteString("sha512", package.Sha512);
+                writer.WriteString("source", package.Source);
+                break;
+            case { Offer: { } offer }:
+                writer.WriteString("offer", offer);
+                break;
+            default:
+                writer.WriteString("folder", Folder);
+                break;
+        }
 
-    // A hash's `+` and `/` are written as they are, as the CLI's `JSON.stringify` writes them.
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+        writer.WriteEndObject();
+    });
 }
 
 /// <summary>One thing an update changes (PLUG9 c): `version`, `command`, `points`, `harnesses` or `servers`, each side as its manifest writes it; empty is none.</summary>

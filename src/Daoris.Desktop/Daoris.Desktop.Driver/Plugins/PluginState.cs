@@ -67,8 +67,13 @@ public sealed record PluginState(IReadOnlyList<string> Disabled)
     /// <summary>Written beside and renamed over, like every file Daoris owns.</summary>
     private static void Save(string home, IReadOnlyList<string> disabled)
     {
-        var json = JsonSerializer.Serialize(new { disabled = disabled.OrderBy(d => d, StringComparer.Ordinal) },
-            new JsonSerializerOptions { WriteIndented = true });
-        PluginFolders.WriteText(home, PathIn(home), json.Replace("\r\n", "\n") + "\n");
+        JsonFile.Write(PathIn(home), writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteStartArray("disabled");
+            foreach (var id in disabled.OrderBy(d => d, StringComparer.Ordinal)) writer.WriteStringValue(id);
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        });
     }
 }
