@@ -21,12 +21,16 @@ public static partial class SessionNote
     /// <summary>What stands in for a machine-local fact that was cut.</summary>
     public const string Elided = "…";
 
-    public static string? ForAnotherMachine(string? note, Session session)
+    /// <summary>
+    /// <paramref name="session"/> is the record the words belong to, whose own tree, transcript and profile go by name; null (a channel
+    /// message of the person's, SESSONE2d) has none, and every absolute path still goes by shape.
+    /// </summary>
+    public static string? ForAnotherMachine(string? note, Session? session)
     {
         if (string.IsNullOrEmpty(note)) return note;
 
         var text = note;
-        foreach (var local in new[] { session.Tree, session.Transcript })
+        foreach (var local in new[] { session?.Tree, session?.Transcript })
         {
             if (string.IsNullOrWhiteSpace(local)) continue;
             foreach (var spelling in Spellings(local))
@@ -35,7 +39,7 @@ public static partial class SessionNote
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(session.Profile))
+        if (!string.IsNullOrWhiteSpace(session?.Profile))
         {
             text = Regex.Replace(
                 text, $@"(?<![\w.-]){Regex.Escape(session.Profile)}(?![\w.-])", "a named account",

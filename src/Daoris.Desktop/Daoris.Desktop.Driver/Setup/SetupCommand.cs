@@ -87,7 +87,7 @@ public static class SetupCommand
         output.WriteLine($"setup: `{setup.Repository}`" + (setup.Workspace is { } workspace ? $", in workspace `{workspace}`" : ""));
         if (setup.Facts is { } facts)
         {
-            output.WriteLine($"  line     `{facts.Line}` at `{(facts.Commit.Length > 12 ? facts.Commit[..12] : facts.Commit)}`");
+            output.WriteLine($"  line     `{facts.Line}` at `{TextBounds.ShortCommit(facts.Commit, 12)}`");
             output.WriteLine($"  layout   {facts.Layout} · adopted {(facts.Adopted ? "yes" : "no")} · declares {(facts.Declares ? "yes" : "no")}"
                 + (setup.Case is { } kind and not SetupCase.Done ? $" · {Asks(kind)}" : ""));
         }

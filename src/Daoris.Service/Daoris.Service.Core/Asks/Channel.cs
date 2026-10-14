@@ -161,6 +161,12 @@ public sealed class ChannelStore
               read_at TEXT NOT NULL,
               PRIMARY KEY (ask, entry)
             );
+            -- SESSONE2d: how far this machine has pushed its own messages (by `seq`) and fetched the team's, per workspace.
+            CREATE TABLE IF NOT EXISTS channel_cursor (
+              workspace TEXT NOT NULL PRIMARY KEY,
+              pushed    INTEGER NOT NULL DEFAULT 0,
+              fetched   INTEGER NOT NULL DEFAULT 0
+            );
             """;
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         return this;
@@ -210,6 +216,105 @@ public sealed class ChannelStore
 
         var answered = read.Where(m => m.Re is not null).Select(m => m.Re!).ToHashSet(StringComparer.Ordinal);
         return [.. read.Select(m => m with { Open = m.Question && !answered.Contains(m.Id) })];
+    }, ct);
+
+    /// <summary>
+    /// This machine's OWN messages in a workspace after <paramref name="seq"/>, in arrival order, each with its number: what a push sends
+    /// (SESSONE2d). A message fed down from a teammate is never in it. A message is never changed once kept, so the arrival number is
+    /// a cursor with nothing to re-send.
+    /// </summary>
+    public Task<IReadOnlyList<(ChannelMessage Message, long Seq)>> OwnChangedSinceAsync(
+        long seq, string workspace, CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<(ChannelMessage Message, long Seq)>>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = """
+            SELECT * FROM channel
+            WHERE origin IS NULL AND seq > $seq AND workspace = $workspace COLLATE NOCASE
+            ORDER BY seq
+            """;
+        command.Parameters.AddWithValue("$seq", seq);
+        command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
+        var read = new List<(ChannelMessage, long)>();
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false)) read.Add((Read(reader), reader.GetInt64(reader.GetOrdinal("seq"))));
+        return read;
+    }, ct);
+
+    /// <summary>
+    /// Keep a teammate's message, which carries its <see cref="ChannelMessage.Origin"/>, once: the same <c>(origin, id)</c> is the same
+    /// message, so a feed or a page seen again changes nothing. No cap applies, and no read mark moves.
+    /// </summary>
+    public Task MirrorAsync(ChannelMessage message, CancellationToken ct = default) => _db.RunAsync(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = """
+            INSERT OR IGNORE INTO channel (id, ask, workspace, at, session, repository, agent, entry, to_repo, re, question, text, origin)
+            VALUES ($id, $ask, $workspace, $at, $session, $repository, $agent, $entry, $to, $re, $question, $text, $origin)
+            """;
+        command.Parameters.AddWithValue("$id", message.Id);
+        command.Parameters.AddWithValue("$ask", message.Ask);
+        command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(message.Workspace));
+        command.Parameters.AddWithValue("$at", Moments.Write(message.At));
+        command.Parameters.AddWithValue("$session", (object?)message.Session ?? DBNull.Value);
+        command.Parameters.AddWithValue("$repository", (object?)message.Repository ?? DBNull.Value);
+        command.Parameters.AddWithValue("$agent", (object?)message.Agent ?? DBNull.Value);
+        command.Parameters.AddWithValue("$entry", (object?)message.Entry ?? DBNull.Value);
+        command.Parameters.AddWithValue("$to", (object?)message.To ?? DBNull.Value);
+        command.Parameters.AddWithValue("$re", (object?)message.Re ?? DBNull.Value);
+        command.Parameters.AddWithValue("$question", message.Question ? 1 : 0);
+        command.Parameters.AddWithValue("$text", message.Text);
+        command.Parameters.AddWithValue("$origin", message.Origin ?? throw new ArgumentException("a mirrored message names its origin", nameof(message)));
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }, ct);
+
+    /// <summary>
+    /// A remote's side: the team's messages it holds after <paramref name="since"/>, in arrival order, one page at a time, leaving out
+    /// <paramref name="caller"/>'s own, which it already has, while still moving the page past them (as the session records do).
+    /// </summary>
+    public Task<ChannelFetch> TeamSinceAsync(long since, string? caller, int limit = 500, CancellationToken ct = default) =>
+        _db.RunAsync<ChannelFetch>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "SELECT * FROM channel WHERE origin IS NOT NULL AND seq > $since ORDER BY seq LIMIT $take";
+        command.Parameters.AddWithValue("$since", since);
+        command.Parameters.AddWithValue("$take", limit + 1);
+        var scanned = new List<(ChannelMessage Message, long Seq)>();
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false)) scanned.Add((Read(reader), reader.GetInt64(reader.GetOrdinal("seq"))));
+
+        var more = scanned.Count > limit;
+        var page = more ? scanned[..limit] : scanned;
+        return new ChannelFetch(
+            [.. page.Where(m => !string.Equals(m.Message.Origin, caller, StringComparison.OrdinalIgnoreCase)).Select(m => m.Message)],
+            page.Count == 0 ? since : page[^1].Seq,
+            more);
+    }, ct);
+
+    /// <summary>How far this machine has pushed its own messages to a workspace's remote, and fetched the team's.</summary>
+    public Task<(long Pushed, long Fetched)> CursorAsync(string workspace, CancellationToken ct = default) =>
+        _db.RunAsync<(long Pushed, long Fetched)>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "SELECT pushed, fetched FROM channel_cursor WHERE workspace = $workspace";
+        command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        return await reader.ReadAsync(ct).ConfigureAwait(false) ? (reader.GetInt64(0), reader.GetInt64(1)) : (0, 0);
+    }, ct);
+
+    /// <summary>Move a workspace's cursors forward, never back, so a late answer cannot re-send the past.</summary>
+    public Task AdvanceCursorAsync(string workspace, long? pushed = null, long? fetched = null, CancellationToken ct = default) =>
+        _db.RunAsync(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = """
+            INSERT INTO channel_cursor (workspace, pushed, fetched) VALUES ($workspace, $pushed, $fetched)
+            ON CONFLICT (workspace) DO UPDATE SET
+              pushed = MAX(pushed, excluded.pushed), fetched = MAX(fetched, excluded.fetched)
+            """;
+        command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
+        command.Parameters.AddWithValue("$pushed", pushed ?? 0);
+        command.Parameters.AddWithValue("$fetched", fetched ?? 0);
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }, ct);
 
     private static ChannelMessage Read(SqliteDataReader reader)

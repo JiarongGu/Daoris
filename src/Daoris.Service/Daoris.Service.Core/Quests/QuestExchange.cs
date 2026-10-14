@@ -1651,7 +1651,7 @@ public sealed class QuestExchange(
     }
 
     /// <summary>A commit as a sentence names it: its first seven characters.</summary>
-    internal static string Short(string commit) => commit.Length > 7 ? commit[..7] : commit;
+    internal static string Short(string commit) => Clipped.ShortCommit(commit, 7);
 
     /// <summary>
     /// The answers a done gives, judged against the quest's requirements (DRIFT1d, D133 §4): one for each, by its

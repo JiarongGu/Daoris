@@ -203,5 +203,5 @@ public static class OpinionCommand
 
     private static bool Id(string word) => word.TrimStart('#').Length > 0 && !word.StartsWith('-');
 
-    private static string Short(string commit) => commit.Length > 8 ? commit[..8] : commit;
+    private static string Short(string commit) => TextBounds.ShortCommit(commit, 8);
 }

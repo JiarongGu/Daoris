@@ -190,8 +190,7 @@ pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build 
 Co-working (D167, `docs/2026-10-14-co-working-design.md`; the owner's two tasks are the canary):
 
 - [ ] **SESSONE1c-look — co-working on the installed window** (parent). Seen 2026-10-14 (中文): three sessions with parts and the strip. Left: acts on a part, archive per entry, *Group by ask*, the ask page, English; WAITSHOWN1, QUEUEEDIT1b, USERSHOWN1 on live turns; the ask's *Channel* on a live ask (post, *To*, *Reply to*, unread, a session's panel, a claim turn), republished 2026-10-15 on 3be8d382b.
-- [ ] **SESSONE2f — next-step delivery proved by a real tick** (driver, Process). A queueing ACP stand-in takes another session's message at its next step as a Daoris turn, and a turn-end one is never extended (D155).
-- [ ] **SESSONE2d — the channel travels** (service/tools; after 2a). `ChannelSync` beside `SessionSync`, `origin/id`, words cleaned of paths; history's clear forgets channels. Design §2.5.
+- [ ] **SESSONE2g — a teammate's ask's channel, read here** (service/web). The sync mirrors every message of the workspace, but `GET /api/asks/{id}/channel` answers only an ask held on this machine: a channel of an ask held elsewhere, readable by its id. D167's SESSONE2d note.
 - [ ] **QUESTREBASE1 — pure rebase planner** (service; consider). Preserve operation identity, accepted-before-pending order and transaction. D69/D79; unchanged sync suite and loss tests.
 - [ ] **MSG1d2 — queued chat survives restart** (driver/web; with MSG1c). Record ids/reach/withdrawals; take by id. Messages §3.1.
 - [ ] **MSG1h — Codex next-step words** (driver; after measured STEER3). Messages §8.
@@ -279,11 +278,10 @@ folder.
 
 - [ ] **STRUCT3OPLOOP — Review's opinion logic out of the loop** (driver; optional). `Loop/DriverOpinions.cs`, `OpinionDeliverer.cs` and `OpinionGateLook.cs` hold the pass, the delivery and the gate's look: what needs none of the loop's state moves into `Review/`, with no new ports. D166's STRUCT2g note. After PART10m these are classes in `Loop/` holding the front for its run machinery; the structure gate's `loop` rule lets nothing outside `Loop/` name them, so moving them needs that machinery out of the front first.
 - [ ] **STRUCT5c — the page's top folder in folders** (web). As STRUCT5a, 5b and 5d did, with its gate in vitest; STRUCT5d's import-rewriting script (asserted counts, read back) is a candidate tracked tool. Design §7.
-- [ ] **STRUCT5d-ii — the CLI's tests mirrored, `platform/types.ts` split, four service comments** (cli, service). About 95 flat tests into their modules' folders (the gate's `tests` map); the doctrine's records out of the shared `types.ts`; `Registry/RepositoryLinks.cs:15`, `RepositoryLayout.cs:43`, `RepositoryDocuments.cs:16`, `DaorisLock.cs:18` cite the CLI's old paths. D166's STRUCT5d note.
 
 **Duplication** (the owner: *"we more focus on modularize the code to reduce duplication and easier to manage"*). Evidence: `docs/2026-10-14-duplication-survey.md`, by section. After FLAT1; DEDUP1 to 3 touch the same files, so one at a time.
 
-- [ ] **DEDUP7b — a commit's short id once, and the service's text bounds** (driver, service). About 15 `Short(commit)` copies; the service core's own clip and quote copies, surveyed first. D166's DEDUP7 note.
+- [ ] **DEDUP7c — the short ids left** (service, driver). The Mcp host's three `Math.Min(7, …)` cuts cannot see the core's internal `Clipped.ShortCommit`; four unguarded `[..7]`/`[..8]` cuts (`NoteCodes.cs:942`, `LayoutGit.cs:36`, `RegistrationWorld.cs:84`, `PluginTrials.cs:290`) throw on a short id: decide what a short id should do, then one helper each side. D166's DEDUP7b note.
 
 ## Development and agent layout
 

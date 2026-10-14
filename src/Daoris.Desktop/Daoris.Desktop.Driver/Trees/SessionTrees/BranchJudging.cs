@@ -90,7 +90,7 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
         bool pushedOnRecord, string? line, string? onto, HashSet<string> busy, CancellationToken ct)
     {
         RebaseJudged Item(string kind, string? tip = null, string? cut = null, string? cutBy = null, int commits = 0, string? detail = null) =>
-            new(new RebaseItem(repository, workspace, branch, landed, kind, line, cut is null ? null : cut[..Math.Min(8, cut.Length)], cutBy,
+            new(new RebaseItem(repository, workspace, branch, landed, kind, line, cut is null ? null : TextBounds.ShortCommit(cut, 8), cutBy,
                 grewFrom, commits, detail), tip, tree, cut);
 
         var tip = await CommitOfAsync(root, $"refs/heads/{branch}", ct).ConfigureAwait(false);

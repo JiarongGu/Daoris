@@ -10,7 +10,7 @@
 // behind, and `sync` renews it. A mirror of the repository's own skill is still Daoris's file — D5 is
 // about what Daoris writes, and Daoris wrote the mirror.
 
-import type { Harness, LockEntry, MirrorEntry, MirrorPlan } from '../platform/types.ts';
+import type { Harness, LockEntry, MirrorEntry, MirrorPlan } from '../doctrine/records.ts';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { digestBytes, listFiles, normalize, sha256 } from '../platform/fsx.ts';

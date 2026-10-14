@@ -1765,6 +1765,42 @@ if (mode == ServiceMode.Shared)
         return Results.Text(SessionWire.Page(await s.Sessions.TeamSinceAsync(since ?? 0, caller, ct: ct)), "application/json");
     });
 
+    // An ask's channel messages, up and down (SESSONE2d, D167 point 8), the session records' two doors in their shape: fed by a keyed
+    // caller and kept by that key, and the team's served after a number, every origin but the caller's own. No UI, and no path: the
+    // words arrive cleaned and are cleaned again on arrival (ChannelFeed).
+    app.MapPost("/api/feed/channel", async (ComposedService s, HttpContext http, CancellationToken ct) =>
+    {
+        var origin = http.Items["daoris.principal"] as string;
+        if (string.IsNullOrWhiteSpace(origin))
+        {
+            return Results.BadRequest(new ErrorResponse("the feed carries its key's identity — this door answers only keyed callers"));
+        }
+
+        using var body = new StreamReader(http.Request.Body);
+        if (ChannelWire.ReadFeed(await body.ReadToEndAsync(ct)) is not { } messages)
+        {
+            return Results.BadRequest(new ErrorResponse("a channel feed is `messages`, each with its id, ask, time and words"));
+        }
+
+        var outcome = await new ChannelFeed(s.Service, s.Messages).FeedAsync(origin, messages, ct);
+        return outcome.Refusal switch
+        {
+            SessionFeedRefusal.None => Results.Ok(new FeedResponse(outcome.Records, outcome.Message)),
+            SessionFeedRefusal.NotJoined => Results.Conflict(new ErrorResponse(outcome.Message)),
+            _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
+        };
+    });
+
+    app.MapGet("/api/channel/since", async (ComposedService s, HttpContext http, long? since, CancellationToken ct) =>
+    {
+        if (http.Items["daoris.principal"] is not string caller || string.IsNullOrWhiteSpace(caller))
+        {
+            return Results.BadRequest(new ErrorResponse("the team's messages are read by a keyed caller — its key says which are its own"));
+        }
+
+        return Results.Text(ChannelWire.Page(await s.Messages.TeamSinceAsync(since ?? 0, caller, ct: ct)), "application/json");
+    });
+
     // Knowledge content — never vectors (D47 §4): each deployment embeds with its own provider, and
     // this one still serves lexical search with none. The disclosure judgement and the provenance
     // judgement are both the service's own (FeedAsync), so any future door shares them.
@@ -1867,6 +1903,8 @@ else
 
         var quests = await QuestSync.RunAsync(s.Quests, s.Service, remote, circle, ct);
         var sessions = await SessionSync.RunAsync(s.Sessions, s.Quests, s.Service, remote, circle, ct);
+        // An ask's channel travels on the same pass (SESSONE2d); a remote from before it is told once and the channel stays here.
+        var channel = await ChannelSync.RunAsync(s.Messages, s.Sessions, s.Service, remote, circle, ct);
         // The team's code maps come down on the same pass (MAP3e): pulling one needs no git, so it is
         // the host's to do, and the host is what answers the page for a repository with no checkout here.
         var maps = await CodeMapSync.RunAsync(s.Service, remote, circle, ct);
@@ -1877,7 +1915,7 @@ else
             quests.Behind,
             sessions.Pushed,
             sessions.Fetched,
-            quests.Problem ?? sessions.Problem ?? maps.Problem,
+            quests.Problem ?? sessions.Problem ?? maps.Problem ?? channel.Problem,
             maps.Fetched));
     });
 

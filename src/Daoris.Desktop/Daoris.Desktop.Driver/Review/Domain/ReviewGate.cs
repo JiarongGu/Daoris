@@ -433,7 +433,7 @@ public static class ReviewGate
 
     private static bool Same(string? left, string? right) => string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
 
-    private static string Short(string commit) => commit.Length > 8 ? commit[..8] : commit;
+    private static string Short(string commit) => TextBounds.ShortCommit(commit, 8);
 
     /// <summary>
     /// The gate for a session's tree (design §3.1): the chain its quest is a step of, read from the service, the rule standing for

@@ -244,5 +244,5 @@ public static class RegistrationFollow
 
     private static JsonArray Strings(IEnumerable<string> values) => [.. values.Select(value => (JsonNode)JsonValue.Create(value))];
 
-    private static string Short(string commit) => commit.Length > 7 ? commit[..7] : commit;
+    private static string Short(string commit) => TextBounds.ShortCommit(commit, 7);
 }

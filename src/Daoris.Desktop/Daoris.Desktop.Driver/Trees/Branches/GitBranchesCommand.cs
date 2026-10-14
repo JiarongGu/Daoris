@@ -254,7 +254,7 @@ public static class GitBranchesCommand
         _ => null,
     };
 
-    private static string Short(string commit) => commit.Length > 8 ? commit[..8] : commit;
+    private static string Short(string commit) => TextBounds.ShortCommit(commit, 8);
 
     /// <summary>
     /// The list whole, as <c>--json</c> writes it: every repository listed with every field the reader answers, origin's

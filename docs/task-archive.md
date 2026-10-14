@@ -14620,3 +14620,27 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > From STRUCT5's row: folders by domain, no layers, each project with its gate (design §7); the CLI's `src/`.
 
 **Outcome** 2026-10-15: 66 of the CLI's 85 sources sit in eleven module folders (`platform`, `doctrine`, `layout`, `accounts`, `agents`, `tools`, `service`, `driver`, `workflows`, `plugins`, `browser`), `cli.ts` the entry and the command rows in `cli/`, one commit of renames per folder; `test/structure.test.ts` and its map hold `top`, `module`, `name` (no two sources share a name outside `cli/`), `entry`, `mirror` and `map`. Readers find a CLI source by name (`test/_sources.ts`, the driver's `SourceFiles.Cli`); the imports were rewritten by a scratch script asserting each folder's edits and that every import resolves, read back by diff. The pack and its `bin/daoris.mjs` were run from a real tarball. Mirroring the tests, splitting `platform/types.ts` and four service comments are STRUCT5d-ii; the page is STRUCT5c. Nine gates passed on the merge. On Opus: 233 tool calls. Detail: D166's STRUCT5d note.
+
+## SESSONE2f — next-step delivery proved by a real tick (2026-10-15, D167)
+
+> - [ ] **SESSONE2f — next-step delivery proved by a real tick** (driver, Process). A queueing ACP stand-in takes another session's message at its next step as a Daoris turn, and a turn-end one is never extended (D155).
+
+**Outcome** 2026-10-15: `Loop/ChannelNextStepTickTests` drives the loop's real `TickAsync` over an ACP stand-in and a channel-aware stand-in service: a part on the next-step door takes another session's message as `ChannelText.Claim` in a second prompt, the record holding it as `target` (said, then taken under one id), the mark moved; a turn-end part is sent one prompt only across two looks, the message waiting for the next part and never in the record. Green at first, since SESSONE2b built it. The race of a claim sent as a turn ends is still unmeasured. Gates passed on the merge, the class 2 of 2. On Sonnet: 33 tool calls. Detail: D167's SESSONE2f note.
+
+## DEDUP7b — a commit's short id once, and the service's text bounds (2026-10-15, D166)
+
+> - [ ] **DEDUP7b — a commit's short id once, and the service's text bounds** (driver, service). About 15 `Short(commit)` copies; the service core's own clip and quote copies, surveyed first. D166's DEDUP7 note.
+
+**Outcome** 2026-10-15: `TextBounds.ShortCommit` in the driver and `Clipped.ShortCommit` in the service core (twins by shape, no shared code) cut a commit's id to each caller's length, leaving a shorter id whole: seventeen private helpers now delegate and fourteen inline cuts call them, in the driver, one bridge route and the service core; the service's clips were already one since DEDUP9c. No output changed. The Mcp host's cuts and four unguarded cuts are DEDUP7c. Ten gates passed on the merge. On Sonnet: 79 tool calls. Detail: D166's DEDUP7b note.
+
+## SESSONE2d — the channel travels (2026-10-15, D167)
+
+> - [ ] **SESSONE2d — the channel travels** (service/tools; after 2a). `ChannelSync` beside `SessionSync`, `origin/id`, words cleaned of paths; history's clear forgets channels. Design §2.5.
+
+**Outcome** 2026-10-15: `Remote/ChannelSync.cs` runs after `SessionSync` on the sync: this machine's own messages of a joined repository go up past a cursor, the team's come down and are mirrored under `(origin, id)`, never sent back; the shared host's `POST /api/feed/channel` and `GET /api/channel/since` (shared-class doors), `ChannelWire` written only where set so a feed from before reads, one judgement (`ChannelFeed`). Words leave cleaned by `SessionNote.ForAnotherMachine` (the posting session's own paths by name, any home- or drive-rooted path by shape); the machine's own copy keeps what it wrote. A remote from before answers 404 and is said once. History's clear forgets an ask's channel in its transaction. At the merge the test's example home paths were spelled in pieces, as `SessionSyncTests` does, and `docs/development.md` now says why a worktree's scan cannot catch them. A channel read for an ask held elsewhere is SESSONE2g. Nine gates passed on the merge. On Sonnet: 67 tool calls. Detail: D167's SESSONE2d note.
+
+## STRUCT5d-ii — the CLI's tests mirrored, `platform/types.ts` split, four service comments (2026-10-15, D166)
+
+> - [ ] **STRUCT5d-ii — the CLI's tests mirrored, `platform/types.ts` split, four service comments** (cli, service). About 95 flat tests into their modules' folders (the gate's `tests` map); the doctrine's records out of the shared `types.ts`; `Registry/RepositoryLinks.cs:15`, `RepositoryLayout.cs:43`, `RepositoryDocuments.cs:16`, `DaorisLock.cs:18` cite the CLI's old paths. D166's STRUCT5d note.
+
+**Outcome** 2026-10-15: 76 of the CLI's 95 tests sit in their modules' folders under `test/`, the gate's `tests` map holding them; 19 stay at the top, each reading the tools, the desktop, the docs or several modules. `doctrine/records.ts` holds the doctrine's records and `platform/types.ts` the command shapes alone; the four service comments cite `layout/`. The suite stays 1542 of 1542. Ten gates passed on the merge. On Sonnet: 58 tool calls. Detail: D166's STRUCT5d-ii note.

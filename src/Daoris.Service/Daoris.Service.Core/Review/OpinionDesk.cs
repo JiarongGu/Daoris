@@ -505,7 +505,7 @@ public sealed class OpinionDesk(OpinionStore opinions, SessionStore sessions, bo
 
     private static string Count(int count, string noun) => count == 1 ? $"1 {noun}" : $"{count} {noun}s";
 
-    private static string Short(string commit) => commit.Length > 7 ? commit[..7] : commit;
+    private static string Short(string commit) => Clipped.ShortCommit(commit, 7);
 
     private static string Moment(DateTimeOffset at) => at.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture);
 

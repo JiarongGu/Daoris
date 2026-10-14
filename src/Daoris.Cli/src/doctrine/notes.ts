@@ -1,4 +1,4 @@
-import type { CanonNote } from '../platform/types.ts';
+import type { CanonNote } from './records.ts';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { readText } from '../platform/fsx.ts';

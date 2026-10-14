@@ -5,7 +5,7 @@ import { DaorisError } from '../platform/errors.ts';
 import { DEFAULT_HARNESS, resolveHarness } from '../layout/harness.ts';
 import { checkRooms, checkTarget } from '../layout/layout.ts';
 import { checkDocuments } from '../layout/documents.ts';
-import type { Lock, Manifest } from '../platform/types.ts';
+import type { Lock, Manifest } from './records.ts';
 
 export const MANIFEST_FILE = 'daoris.json';
 const LOCK_FILE = 'daoris.lock';

@@ -97,6 +97,12 @@ builds it, each defined in `.claude/agents/` with its own model (D160), and
 `tools/subagent-usage.mjs` measures what a batch cost. Documentation work does not implicitly
 authorize dispatch.
 
+A worker's fresh worktree has no `local/sensitive-patterns.txt`, so its scan and universal gate run
+with `--allow-builtins-only`; the merge's universal gate runs the full set and is the first to read
+the private patterns. A test that needs an example machine path spells it in pieces
+(`string.Concat("D:", @"\", "Users", …)`, as `SessionSyncTests` does) so the scan does not read the
+fixture as a leak; a literal home path in a test fails the merge, not the worker.
+
 Record plans and findings while working, in the backlog or the matching review/design record. A
 load-bearing decision belongs under `docs/decisions/`, with its rejected alternatives and limits.
 A non-trivial defect needs the `fix-log` entry. Run `post-feature` over the actual diff, then move

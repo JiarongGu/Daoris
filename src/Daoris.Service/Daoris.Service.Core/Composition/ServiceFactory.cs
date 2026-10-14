@@ -184,6 +184,9 @@ public sealed record ComposedService(
     /// <summary>An ask's channel (SESSONE2a, D167 point 8): the messages beside the asks they are on. Composed on every host; only a local host maps its doors.</summary>
     public ChannelDesk Channel { get; init; } = null!;
 
+    /// <summary>The channel's messages themselves (SESSONE2d): what the sync and a shared host's two channel doors read and keep.</summary>
+    public ChannelStore Messages { get; init; } = null!;
+
     public ValueTask DisposeAsync() => Store?.DisposeAsync() ?? ValueTask.CompletedTask;
 }
 
@@ -374,8 +377,9 @@ public static class ServiceFactory
             Remotes = remotes,
             // An ask's quests go through the same exchange every other door uses (D65 §1a).
             Asks = askDesk,
-            Channel = new ChannelDesk(channel, askDesk, asks, ledger, quests, new StoreEntryFacts(quests, sessions)),
-            History = new HistoryDesk(quests, sessions, asks, service, remotes, files, proposals),
+            Messages = channel,
+            Channel = new ChannelDesk(channel,askDesk, asks, ledger, quests, new StoreEntryFacts(quests, sessions)),
+            History = new HistoryDesk(quests, sessions, asks, service, remotes, files, proposals, channel),
             Opinions = new OpinionDesk(opinions, sessions, local: mode == ServiceMode.Local),
             Helpers = new HelperDesk(sessions, local: mode == ServiceMode.Local),
         };

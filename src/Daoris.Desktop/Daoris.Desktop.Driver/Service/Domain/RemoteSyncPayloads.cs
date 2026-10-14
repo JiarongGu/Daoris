@@ -329,7 +329,7 @@ public static class RemoteSyncPayloads
         if (held is null) return new FeedPlan(true, null, null);
         if (string.Equals(held, here.Commit, StringComparison.OrdinalIgnoreCase)) return new FeedPlan(true, held, null);
 
-        var shortHeld = held.Length <= 8 ? held : held[..8];
+        var shortHeld = TextBounds.ShortCommit(held, 8);
         var are = what.Contains(" and ", StringComparison.Ordinal) ? "are" : "is";
         return relation switch
         {

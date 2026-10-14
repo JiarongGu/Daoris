@@ -4,7 +4,7 @@
 // deleting each other's scratch.
 
 import type { Fixture } from './_fixture.ts';
-import type { Lock, SyncPlan } from '../src/platform/types.ts';
+import type { Lock, SyncPlan } from '../src/doctrine/records.ts';
 import { makeFixture } from './_fixture.ts';
 import { readCanon } from '../src/doctrine/canon.ts';
 import { readLock, readManifest } from '../src/doctrine/config.ts';
