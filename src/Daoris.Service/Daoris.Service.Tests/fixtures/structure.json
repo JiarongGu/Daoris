@@ -2,11 +2,6 @@
   "modules": ["Platform", "Composition", "Remote", "Registry", "Quests", "Asks", "Sessions", "Review", "Help", "Knowledge"],
   "testFolders": ["Mcp"],
   "root": {
-    "Remote.cs": "Remote",
-    "RemoteConfig.cs": "Remote",
-    "QuestSync.cs": "Remote",
-    "SessionSync.cs": "Remote",
-    "CodeMapSync.cs": "Remote",
     "Registry.cs": "Registry",
     "RegistrationStore.cs": "Registry",
     "RegistryImport.cs": "Registry",
@@ -98,6 +93,12 @@
     "CodeMapWire.cs": "Knowledge"
   },
   "tests": {
+    "HttpRemoteTests.cs": "Remote",
+    "RemoteConfigTests.cs": "Remote",
+    "RemoteFakes.cs": "Remote",
+    "QuestSyncTests.cs": "Remote",
+    "SessionSyncTests.cs": "Remote",
+    "CodeMapSyncTests.cs": "Remote",
     "AccessTests.cs": "Platform",
     "ApiKeyStoreTests.cs": "Platform",
     "AtomicFileTests.cs": "Platform",
