@@ -30,7 +30,7 @@ public sealed class GoOnMarks(string home)
     public void Mark(string session, IEnumerable<string> said, ContinueReason why, DateTimeOffset at)
     {
         var ids = said.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.Ordinal).ToList();
-        if (!SessionEventText.IsId(session) || ids.Count == 0) return;
+        if (!SessionEventText.IsLocalId(session) || ids.Count == 0) return;
 
         try
         {
@@ -43,13 +43,13 @@ public sealed class GoOnMarks(string home)
     }
 
     /// <summary>The mark kept for this session, or null for none, a file that does not read, or an id that is not one.</summary>
-    public GoOnMark? Read(string session) => SessionEventText.IsId(session) ? GoOnFiles.ReadMark(PathOf(session)) : null;
+    public GoOnMark? Read(string session) => SessionEventText.IsLocalId(session) ? GoOnFiles.ReadMark(PathOf(session)) : null;
 
     /// <summary>Take a session's mark away: its words went on, or were taken. Nothing to take is no failure.</summary>
     public void Clear(string session)
     {
         // A mark left behind judges only the words it names; a word said since is tried again all the same.
-        if (SessionEventText.IsId(session)) GoOnFiles.Delete(PathOf(session));
+        if (SessionEventText.IsLocalId(session)) GoOnFiles.Delete(PathOf(session));
     }
 
     /// <summary>The marks a look plans by: one per record the person's words wait on that has one, by session.</summary>

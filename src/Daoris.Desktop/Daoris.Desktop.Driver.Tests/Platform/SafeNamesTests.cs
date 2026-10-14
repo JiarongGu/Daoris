@@ -61,6 +61,21 @@ public sealed class SafeNamesTests
     public void A_folder_id_named_under_the_home(string id, bool expected) =>
         Assert.Equal(expected, SafeNames.IsFolderId(id));
 
+    /// <summary>A session id keeps <c>:</c> for a remote's <c>machine:id</c>; a local file name does not.</summary>
+    [Theory]
+    [InlineData("abc-123", true, true)]
+    [InlineData("host:abc", true, false)]
+    [InlineData("abc\n", false, false)]
+    [InlineData("abc.", false, false)]
+    [InlineData("a..b", false, false)]
+    [InlineData("con", false, false)]
+    [InlineData("host:con", false, false)]
+    public void A_session_id_and_a_local_one(string id, bool session, bool local)
+    {
+        Assert.Equal(session, SessionEventText.IsId(id));
+        Assert.Equal(local, SessionEventText.IsLocalId(id));
+    }
+
     [Theory]
     [InlineData("a", true)]
     [InlineData("Run_1-b", true)]
