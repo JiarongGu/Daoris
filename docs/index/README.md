@@ -117,7 +117,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Asks.cs` | 81 | 1477 |
 | `src/Daoris.Service/Daoris.Service.Core/History.cs` | 40 | 824 |
 | `src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs` | 53 | 1055 |
-| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 105 | 1955 |
+| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 105 | 1953 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 149 | 2685 |
 | `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 73 | 1364 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 72 | 1276 |

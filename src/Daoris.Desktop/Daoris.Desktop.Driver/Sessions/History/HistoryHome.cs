@@ -1,21 +1,23 @@
+using static Daoris.Driver.HistoryClearing;
+
 namespace Daoris.Driver;
 
 /// <summary>
 /// What the home keeps of finished work, read and tidied (HIST1c; the history-clearing design §2.2–§2.4, §5 step 4): the
 /// kept files' sizes, a workspace's reading, the left-over files of records no store has any more, and the files that name a
-/// cleared record.
+/// cleared record. <see cref="HistoryClearing"/> plans and clears; this reads the home's folders for it (PART9).
 /// </summary>
-public static partial class HistoryClearing
+internal static class HistoryHome
 {
     /// <summary>The service's folders of kept files under the home, a quest's and an ask's (D65 §1a), each <c>&lt;id&gt;/</c>.</summary>
-    private const string QuestFolder = "quests";
-    private const string AskFolder = "asks";
+    internal const string QuestFolder = "quests";
+    internal const string AskFolder = "asks";
 
     /// <summary>The folder under <c>sessions/</c> where a terminal's requests wait (<see cref="SessionRequests"/>): never a session's.</summary>
     private const string RequestsFolder = "requests";
 
     /// <summary>The kept files of these quests and asks, in bytes.</summary>
-    private static HistoryBytes KeptFiles(SessionHomeFiles files, IEnumerable<string> quests, IEnumerable<string> asks)
+    internal static HistoryBytes KeptFiles(SessionHomeFiles files, IEnumerable<string> quests, IEnumerable<string> asks)
     {
         var home = files.Home;
         var kept = quests.Where(Plain).Sum(quest => HistoryBytes.Of(Path.Combine(home, QuestFolder, quest)))
@@ -25,7 +27,7 @@ public static partial class HistoryClearing
     }
 
     /// <summary>The runs among these quests that are bound here: a run's id is its chain's first quest, and its binding goes with that quest (WORKFLOW1e3).</summary>
-    private static IReadOnlyList<string> BoundRuns(string home, IEnumerable<string> quests) =>
+    internal static IReadOnlyList<string> BoundRuns(string home, IEnumerable<string> quests) =>
         [.. quests.Where(quest => WorkflowRunBindings.Bound(home, quest)).Distinct(StringComparer.Ordinal)];
 
     /// <summary>An id that names one folder under its parent and nothing else.</summary>
@@ -44,7 +46,7 @@ public static partial class HistoryClearing
     /// would take now, what is kept and why, its conversations that served no quest, and the whole home's left-over files and
     /// log. Counts and bytes, never a path or a title.
     /// </summary>
-    private static HistoryReading Read(HistoryWorld world, string workspace, IReadOnlyList<HistoryUnitPlan> units, Facts facts, Machine machine)
+    internal static HistoryReading Read(HistoryWorld world, string workspace, IReadOnlyList<HistoryUnitPlan> units, Facts facts, Machine machine)
     {
         var quests = facts.Quests.Where(quest => Here(quest.Workspace, workspace) && Closed(quest)).Select(quest => quest.Id)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -208,7 +210,7 @@ public static partial class HistoryClearing
     /// A workspace's clear takes the home's left-over files (§2.3, §5 step 4): how many went and the bytes that went, through the
     /// helper that measures as it removes (HIST1j), so one the disk keeps is failed and counts only what it let go of.
     /// </summary>
-    private static (int Count, long Bytes) RemoveLeftOver(HistoryWorld world, Facts after, Machine machine, List<string> failed)
+    internal static (int Count, long Bytes) RemoveLeftOver(HistoryWorld world, Facts after, Machine machine, List<string> failed)
     {
         var count = 0;
         var bytes = 0L;
@@ -226,7 +228,7 @@ public static partial class HistoryClearing
     /// A workspace's clear that leaves it no ask takes its intake's room (§2.2): one room per workspace, rendered again at the
     /// next intake's open. A workspace that keeps an ask keeps its room. Only the bytes that went are counted (HIST1j).
     /// </summary>
-    private static (bool Went, long Bytes) RemoveRoom(HistoryWorld world, string workspace, Facts after, SessionHomeFiles files, List<string> failed) =>
+    internal static (bool Went, long Bytes) RemoveRoom(HistoryWorld world, string workspace, Facts after, SessionHomeFiles files, List<string> failed) =>
         after.Asks.Any(ask => Here(ask.Workspace, workspace))
             ? (false, 0)
             : files.Take(IntakeRoom.PathOf(world.Home, workspace), folder: true, failed);
@@ -237,7 +239,7 @@ public static partial class HistoryClearing
     /// also takes the traces and entries that name records no store has any more, as it takes their files. Never a standing
     /// landing, a tree with anything in it, or a setting.
     /// </summary>
-    private static void Tidy(
+    internal static void Tidy(
         HistoryWorld world, HistoryScope scope, string workspace, IReadOnlyList<HistoryUnitPlan> cleared, Facts before, Facts? after,
         List<string> failed)
     {

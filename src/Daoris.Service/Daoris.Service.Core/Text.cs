@@ -384,7 +384,7 @@ public static partial class Text
     private static partial System.Text.RegularExpressions.Regex Headings();
 
     /// <summary>One line: an excerpt is shown inline, and embedded newlines break every caller's layout.</summary>
-    private static string Flatten(string text) => text.Replace('\n', ' ').Replace('\r', ' ').Trim();
+    private static string Flatten(string text) => OneLine(text);
 
     /// <summary>
     /// A document's text, BOM-less and LF, exactly as the CLI's <c>readText</c> reads it.

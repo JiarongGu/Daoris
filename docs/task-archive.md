@@ -14272,3 +14272,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DEDUP4b — the git bodies and the long-lived peers take the guarded kill** (driver; after 4a). `WorkingTree`'s three spawn bodies, `HookProcess` and `CodexUsage.Stop` kill through `ChildProcess.KillTree`; `GitAsync` runs through it where it has a time-out. Survey §4.
 
 **Outcome** 2026-10-14: `GitAsync` runs every call through `ChildProcess.RunAsync` (no time-out given is no patience), keeping its tuple and its words; the two streaming reads, the hook peer and Codex's usage server kill through `KillTree`. A git call its caller cancels now ends git's tree, where git was left to finish. The Trees, hooks, kit and Codex Process classes passed 168 of 168 on the merge. On Sonnet: 20 tool calls. Detail: D166's DEDUP4b note.
+
+## PART9 — the home's history reading as a class (2026-10-14, D166)
+
+> - [ ] **PART9 — the home's history reading as a class** (driver; after FLAT1b-iii-b). `HistoryClearing.Home.cs` as a class of its own. Survey "Merge".
+
+**Outcome** 2026-10-14: `HistoryClearing.Home.cs` became `HistoryHome.cs`, an internal static class, and `HistoryClearing` a plain static class; the members the halves shared are internal, each file reaching the other's by `using static`, so no call outside the pair changed. The gate's list holds 7 after the merge. On Sonnet: 27 tool calls. Detail: D166's PART9 note.
+
+## DEDUP9c — the service core's clipped text (2026-10-14, D166)
+
+> - [ ] **DEDUP9c — the service core's clipped text** (service; after 9b). One `Clip(text, limit)` for five copies and 46 calls; the word-boundary cuts (`TitleOf`, `Truncate`) stay theirs. Survey §7.
+
+**Outcome** 2026-10-14: `Daoris.Service.Core/Clipped.cs` holds `Clip(text, limit = 120)` and `OneLine`, reached by a global `using static`, so the 46 calls read as before; the five copies went, the remote's two calls naming their 200. The branch began before PART6 and DEDUP9b: at the merge the exchange's and the review's last copies were taken out by hand. Six tests. On Sonnet: 29 tool calls.
