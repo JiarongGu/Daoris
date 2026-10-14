@@ -89,6 +89,8 @@ internal sealed class TreeSweeps(
         IReadOnlySet<string>? only, bool byItself, CancellationToken ct)
     {
         var known = repositories.ToList();
+        // One look at each checkout's line for the list and every item after it, the look's own tidy's as the person's (UIFREEZE1).
+        using var look = context.OneLook();
         var busy = new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);
         Func<SweepItem, bool> goes = byItself ? setAside.GoesByItself : item => item.Removable;
         var results = new List<SweepResult>();
