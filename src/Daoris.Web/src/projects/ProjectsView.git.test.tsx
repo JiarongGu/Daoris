@@ -16,12 +16,12 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => undefined,
 }));
 
-import type { GitBranchList, GitGraphPage } from './bridge/git';
+import type { GitBranchList, GitGraphPage } from '../bridge/git';
 import {
   GIT_BRANCH_PARTED, GIT_BRANCH_PARTED_PAGES, GIT_BRANCHES_ENGINE, GIT_BRANCHES_GAME, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES,
-} from './projects/fixtures';
-import { DRIVER_STATE, respond, show, WIRING } from './test/shellHarness';
-import { chooseRepository, chooseWorkspace, ProjectsView, repositoryMain } from './test/projectsView';
+} from './fixtures';
+import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
+import { chooseRepository, chooseWorkspace, ProjectsView, repositoryMain } from '../test/projectsView';
 
 // The engine has a checkout here; the game is a teammate's, with none.
 const REGISTRY = [

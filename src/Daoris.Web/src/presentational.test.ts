@@ -92,6 +92,10 @@ const ORGANISMS = new Set<string>([
   './map/MapView.tsx',
   // Quests' view (FRAME1d): the queries, so the list, a quest's page and its composer hold none.
   './quests/QuestsView.tsx',
+  // Repositories' view (INT3c, FRAME1e): the registry and the driver, so the list, a repository's page and its rows hold
+  // none; and its drawers, which add, import and manage a repository with the service's and the shell's hooks.
+  './projects/ProjectsView.tsx',
+  './projects/ProjectManage.tsx',
 ]);
 
 /**

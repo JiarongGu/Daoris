@@ -83,13 +83,6 @@
     "menuBar.test.tsx": "menus",
     "contextMenus.test.tsx": "menus",
 
-    "ProjectsView.tsx": "projects",
-    "ProjectsView.test.tsx": "projects",
-    "ProjectsView.git.test.tsx": "projects",
-    "ProjectsView.history.test.tsx": "projects",
-    "ProjectsView.workflow.test.tsx": "projects",
-    "ProjectManage.tsx": "projects",
-
     "tools.ts": "agents",
     "tools.test.ts": "agents",
     "harnessRuns.tsx": "agents",

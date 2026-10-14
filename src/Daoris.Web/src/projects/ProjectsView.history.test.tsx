@@ -16,9 +16,9 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => undefined,
 }));
 
-import { DRIVER_STATE, respond, show, WIRING } from './test/shellHarness';
-import { chooseWorkspace, ProjectsView, repositoryMain } from './test/projectsView';
-import { WORKSPACE_ALL_KEPT, WORKSPACE_CLEARED, WORKSPACE_EMPTY, WORKSPACE_PLAN } from './work/historyFixtures';
+import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
+import { chooseWorkspace, ProjectsView, repositoryMain } from '../test/projectsView';
+import { WORKSPACE_ALL_KEPT, WORKSPACE_CLEARED, WORKSPACE_EMPTY, WORKSPACE_PLAN } from '../work/historyFixtures';
 
 const REGISTRY = [
   { repository: 'engine', adopted: true, registered: true, summary: 'the engine', owns: [], accepts: [], packs: [], entries: 1, workspace: 'aurora' },

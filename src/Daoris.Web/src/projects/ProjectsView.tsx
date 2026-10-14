@@ -1,34 +1,34 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { canBeAsked, type Registration } from './api';
-import { sentence } from './format';
+import { canBeAsked, type Registration } from '../api';
+import { sentence } from '../format';
 import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
-import { projectsItem, workspaceItem } from './opener';
-import type { WorkflowTabProps } from './workflow/WorkflowTab';
-import { ProjectList, type RepositoryRowFacts, type WorkspaceGroup } from './projects/ProjectList';
-import { ProjectPage, ProjectsMainNotice } from './projects/ProjectPage';
-import { RepositoryBranch, RepositoryBranches, RepositoryHistory } from './projects/RepositoryGitView';
-import type { Driving, RepositorySetupProps } from './projects/RepositorySetup';
-import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './projects/tabs';
-import { WorkspaceView } from './projects/WorkspaceView';
-import { useRegistry, useRepositories } from './queries';
-import { useScope } from './scope';
-import { type CommitEdit, commitToast } from './settings/Commits';
-import { type HelperEdit, helperToast } from './settings/Helpers';
-import type { LandingRule } from './settings/Landings';
-import { type OpinionEdit, opinionToast } from './settings/Opinions';
-import { type ReviewEdit, reviewToast } from './settings/Reviews';
+import { projectsItem, workspaceItem } from '../opener';
+import type { WorkflowTabProps } from '../workflow/WorkflowTab';
+import { ProjectList, type RepositoryRowFacts, type WorkspaceGroup } from './ProjectList';
+import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
+import { RepositoryBranch, RepositoryBranches, RepositoryHistory } from './RepositoryGitView';
+import type { Driving, RepositorySetupProps } from './RepositorySetup';
+import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './tabs';
+import { WorkspaceView } from './WorkspaceView';
+import { useRegistry, useRepositories } from '../queries';
+import { useScope } from '../scope';
+import { type CommitEdit, commitToast } from '../settings/Commits';
+import { type HelperEdit, helperToast } from '../settings/Helpers';
+import type { LandingRule } from '../settings/Landings';
+import { type OpinionEdit, opinionToast } from '../settings/Opinions';
+import { type ReviewEdit, reviewToast } from '../settings/Reviews';
 import {
   useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetCommits, useSetDrivable, useSetHelpers,
   useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees,
   useSetWriteAcross, useSweepPlan, useWorkflowCurrent,
-} from './shell';
-import { doorOf } from './tools';
-import { failure, type Notify, useErrorNotify } from './ui';
-import { ListMore } from './work/ListPane';
-import type { ViewLayout } from './work/ViewFrame';
-import { workspaceOf, workspacesOf } from './workspaces';
-import { buttonNamed, returnFocus } from './returnFocus';
+} from '../shell';
+import { doorOf } from '../tools';
+import { failure, type Notify, useErrorNotify } from '../ui';
+import { ListMore } from '../work/ListPane';
+import type { ViewLayout } from '../work/ViewFrame';
+import { workspaceOf, workspacesOf } from '../workspaces';
+import { buttonNamed, returnFocus } from '../returnFocus';
 
 const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] : []);
 

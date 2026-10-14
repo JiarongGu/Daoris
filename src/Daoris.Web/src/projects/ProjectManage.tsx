@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { api, Registration } from './api';
-import { sentence } from './format';
-import { InlineConfirm } from './work/InlineConfirm';
-import { workspaceOf } from './workspaces';
-import { useImportFolder, useRegisterRepository, useRetireRepository, useWireRepository } from './queries';
-import { type FolderInspection, usePickFolder, useWriteDeclaration } from './shell';
-import { Button, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTitle, Tip } from './ui';
+import type { api, Registration } from '../api';
+import { sentence } from '../format';
+import { InlineConfirm } from '../work/InlineConfirm';
+import { workspaceOf } from '../workspaces';
+import { useImportFolder, useRegisterRepository, useRetireRepository, useWireRepository } from '../queries';
+import { type FolderInspection, usePickFolder, useWriteDeclaration } from '../shell';
+import { Button, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTitle, Tip } from '../ui';
 
 /**
  * Managing the machine's repositories (D48 §7) — the surfaces that exist only where a shell is

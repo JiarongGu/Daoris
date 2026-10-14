@@ -25,11 +25,11 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import { code } from './test/code';
-import { DRIVER_STATE, REGISTRY, REPOSITORIES, respond, serviceCalls, show, WIRING } from './test/shellHarness';
+import { code } from '../test/code';
+import { DRIVER_STATE, REGISTRY, REPOSITORIES, respond, serviceCalls, show, WIRING } from '../test/shellHarness';
 import {
   chooseRepository, chooseWorkspace, openSetup, ProjectsView, repositoryList, repositoryMain, repositoryRow,
-} from './test/projectsView';
+} from '../test/projectsView';
 
 const CHOSEN = 'daoris.list.projects.chosen';
 const TAB = 'daoris.list.projects.tab';
