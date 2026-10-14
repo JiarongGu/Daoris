@@ -1,5 +1,6 @@
 using Daoris.Driver;
 using Shenora.Core.Ipc;
+using static Daoris.Desktop.DriverArguments;
 
 namespace Daoris.Desktop;
 
@@ -8,8 +9,10 @@ namespace Daoris.Desktop;
 /// <c>daoris-driver register --repository &lt;name&gt;</c>. The row and its button are WSSETUP7's; the page's bridge file for
 /// this domain, <c>bridge/registry.ts</c>, comes with them.
 /// </summary>
-public sealed partial class DriverModule
+public sealed class RegistryRoutes(DriverLoop loop)
 {
+    private readonly DriverLoop _loop = loop;
+
     // One repository registered from what its line declares, as `connect` would send it, through the loop's own client, so
     // its outcome reaches this machine's log as every follow's does. A refusal is an answer, as a landing's is: what the
     // row says, and why nothing was registered.

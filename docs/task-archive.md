@@ -14368,3 +14368,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DEDUP2b — the moments, their second half** (driver, modules; after 2a). Quests, Review, Service, Sessions, Setup, Trees, Workflows and the Modules bridge. Survey §2.
 
 **Outcome** 2026-10-14: every moment written and read in Quests, Review, Service, Sessions, Setup, Trees and Workflows goes through `Moments`, the private stamps keeping their bytes; three reads in the machine's culture (the client's session time, the commit date, the remote sync's standing) now read invariant, and the sync's reader answers null for text that is no moment where it threw. The bridge's sites, in files PART10d was moving, are DEDUP2c's. On Sonnet: 77 tool calls. Detail: D166's DEDUP2b note.
+
+## PART10d — `DriverModule`: the context, the table from handler classes, the small domains (2026-10-14, D166)
+
+> - [ ] **PART10d — `DriverModule`: the context, the table from handler classes, the small domains** (modules, tools; Opus). A context object, the shared arguments' helper, a table built from an explicit handler list, the routes test and `orient-index`'s handler files for `*Routes.cs`; the nine smallest domains moved. Survey "The large five, as scouted".
+
+**Outcome** 2026-10-14: `DriverModule.Domains` lists one line per domain, the table built from each handler class's `[DriverRoute]` marks; `DriverContext` holds the bus, the loop, the opener, the picker, `Change` and `Door`, and `DriverArguments` the shared readers. Accounts, Across, Console, History, Registry, Rules, Trace, Work and Workflow are `<Domain>Routes` classes; a member another domain reaches became static over what it reads, and the driver's state a static read of the loop. All 127 routes unchanged; the routes test, the index's handler files and the README rule read `*Routes.cs`. The moved domains' Process classes passed 71 of 71 on the merge. On Opus: 261 tool calls. Detail: D166's PART10d note.

@@ -21,25 +21,16 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs"
   ],
   "DriverModule": [
-    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Accounts.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Across.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Console.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Conversation.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Driver.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Git.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Help.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.History.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Lines.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Plugins.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Registry.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Rules.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Sessions.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Tools.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Trace.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Trees.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Work.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Workflow.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs"
   ],
   "SessionTrees": [

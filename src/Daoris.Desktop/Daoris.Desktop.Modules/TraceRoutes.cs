@@ -1,5 +1,6 @@
 using Daoris.Driver;
 using Shenora.Core.Ipc;
+using static Daoris.Desktop.DriverArguments;
 
 namespace Daoris.Desktop;
 
@@ -7,8 +8,10 @@ namespace Daoris.Desktop;
 /// How a change came to be, the page's `bridge/trace.ts` (TRACE1b, D143, D50): the screen's door to `daoris-driver trace`,
 /// one read from a session or a quest back to its ask through the stores that keep each link.
 /// </summary>
-public sealed partial class DriverModule
+public sealed class TraceRoutes(DriverLoop loop)
 {
+    private readonly DriverLoop _loop = loop;
+
     // The driver's own read, over the stores the terminal reads (the service, the home, `driver.json`): the chain as data,
     // each link with its store and a missing one with why. It writes nothing. What a failed read said, and a tree's path,
     // are the terminal's alone (D47 §4): the chain's records keep them off the wire.

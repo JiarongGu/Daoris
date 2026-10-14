@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Reading and writing across repositories over the bridge (`DriverModule.Across.cs`, READ1, D107): the
+/// Reading and writing across repositories over the bridge (`AcrossRoutes.cs`, READ1, D107): the
 /// screen's half of `daoris driver across`, over the same `driver.json`.
 /// </summary>
 public sealed class DriverModuleAcrossTests : DriverModuleBridge

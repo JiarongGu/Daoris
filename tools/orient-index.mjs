@@ -769,13 +769,14 @@ function pageCalls(ctx) {
 
 /**
  * Every route a module answers: the driver module's `[DriverRoute]` marks, each with the method under it, and every
- * other module's `case "ROUTE":` or `"ROUTE" =>` arms, in the class that names its module.
+ * other module's `case "ROUTE":` or `"ROUTE" =>` arms, in the class that names its module. The driver's marks are in its
+ * domains' handler classes, `<Domain>Routes.cs`, and in the partials not yet moved, `DriverModule.<Domain>.cs` (PART10d).
  */
 function moduleHandlers(ctx) {
   const handlers = [];
   for (const file of ctx.files.filter((path) => path.startsWith(MODULES) && /^[^/]+\.cs$/.test(path.slice(MODULES.length)))) {
     const lines = ctx.lines(file);
-    if (/^DriverModule(\.[A-Za-z]+)?\.cs$/.test(file.slice(MODULES.length))) {
+    if (/^(DriverModule(\.[A-Za-z]+)?|[A-Z][A-Za-z]*Routes)\.cs$/.test(file.slice(MODULES.length))) {
       lines.forEach((line, i) => {
         const mark = /\[DriverRoute\("([A-Z][A-Z_]*)"\)\]/.exec(line);
         if (!mark) return;

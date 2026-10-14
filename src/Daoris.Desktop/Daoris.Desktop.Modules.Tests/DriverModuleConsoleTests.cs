@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A session's live console over the bridge (`DriverModule.Console.cs`, MOD5): its backlog, its streams,
+/// A session's live console over the bridge (`ConsoleRoutes.cs`, MOD5): its backlog, its streams,
 /// and a task's stop.
 /// </summary>
 public sealed class DriverModuleConsoleTests : DriverModuleBridge

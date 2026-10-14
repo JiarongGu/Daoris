@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// What an agent may do, over the bridge (`DriverModule.Rules.cs`, MOD5): the rules, a change to them, and
+/// What an agent may do, over the bridge (`RulesRoutes.cs`, MOD5): the rules, a change to them, and
 /// the answer to an agent's proposal.
 /// </summary>
 public sealed class DriverModuleRulesTests : DriverModuleBridge

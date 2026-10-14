@@ -1,5 +1,6 @@
 using Daoris.Driver;
 using Shenora.Core.Ipc;
+using static Daoris.Desktop.DriverArguments;
 
 namespace Daoris.Desktop;
 
@@ -7,8 +8,10 @@ namespace Daoris.Desktop;
 /// What an agent Daoris starts may do, the page's `bridge/rules.ts` (MOD5): the rules (PERM1, D72), a
 /// change to them, and the person's answer to an agent's proposal (PERM2, D74).
 /// </summary>
-public sealed partial class DriverModule
+public sealed class RulesRoutes(DriverLoop loop)
 {
+    private readonly DriverLoop _loop = loop;
+
     // What an agent Daoris starts may do (PERM1, D72): the defaults with their reasons, and
     // every scope the machine's file holds — the file `daoris agent rules` edits. A path
     // under the home rides this bridge like every path here.

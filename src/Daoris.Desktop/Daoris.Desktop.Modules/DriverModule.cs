@@ -1,6 +1,5 @@
 using System.Collections.Frozen;
 using System.Reflection;
-using System.Text.Json;
 using Daoris.Driver;
 using Shenora.Core.Events;
 using Shenora.Core.Ipc;
@@ -17,11 +16,12 @@ namespace Daoris.Desktop;
 /// edit to `driver.json`", written when that was true.)
 /// </summary>
 /// <remarks>
-/// <b>A partial per domain, and a route table they add to</b> (MOD5). Every route was a case of one switch
-/// here, so every feature that added a driver door edited this file. A domain's routes now live in the
-/// partial named as the page's own bridge file is (`DriverModule.Plugins.cs` beside `bridge/plugins.ts`),
-/// each handler marked <see cref="DriverRouteAttribute"/>, and <see cref="RouteAsync"/> looks a request up
-/// in the table the marks make. This file keeps the dispatch and what every domain shares.
+/// <b>A handler class per domain, and a table built from their list</b> (MOD5, PART10d). Every route was a case of one
+/// switch here, so every feature that added a driver door edited this file. A domain's routes live in its handler class,
+/// named as the page's own bridge file is (`RulesRoutes.cs` beside `bridge/rules.ts`), each handler marked
+/// <see cref="DriverRouteAttribute"/>; the class is one line in <see cref="Domains"/>, and <see cref="RouteAsync"/> looks a
+/// request up in the table the marks make. The domains not yet moved are this class's partials, `DriverModule.<Domain>.cs`,
+/// and this class is their line in the list until PART10f. This file keeps the dispatch.
 /// </remarks>
 public sealed partial class DriverModule : ModuleBase
 {
@@ -29,6 +29,10 @@ public sealed partial class DriverModule : ModuleBase
     private readonly DriverLoop _loop;
     private readonly OpenFolder? _openFolder;
     private readonly PickFile? _pickFile;
+    private readonly DriverContext _context;
+
+    // Each domain's handler, built over this module, in the order of Domains: a route's entry names its domain's place.
+    private readonly object[] _handlers;
 
     /// <remarks>
     /// The bus is held as well as handed to the base: this module both ANSWERS requests and, since
@@ -49,6 +53,8 @@ public sealed partial class DriverModule : ModuleBase
         _loop = loop;
         _openFolder = openFolder;
         _pickFile = pickFile;
+        _context = new DriverContext(events, loop, openFolder, pickFile);
+        _handlers = [.. Domains.Select(domain => domain.Build(this))];
         // Ask Daoris's room as START_HELP writes it, for a conversation going on in it (ASKHIST1).
         _loop.DescribeHelp = HelpMachineNowAsync;
     }
@@ -87,92 +93,94 @@ public sealed partial class DriverModule : ModuleBase
     /// </remarks>
     private Task<object?> RouteAsync(IpcRequest request, CancellationToken cancellationToken) =>
         request.Type is { } type && Table.TryGetValue(type, out var route)
-            ? route(this, request, cancellationToken)
+            ? route.Answer(_handlers[route.Domain], request, cancellationToken)
             : throw UnknownType(request);
 
     /// <summary>Every route this module answers, by name: what the page's bridge may call (MOD5).</summary>
     public static IReadOnlyCollection<string> Routes => Table.Keys;
 
-    // The handlers, read once off their marks. A route marked twice fails here, on the first request, as a
-    // switch with two equal labels would not have compiled; a handler of neither shape fails here too.
-    private static readonly FrozenDictionary<string, Func<DriverModule, IpcRequest, CancellationToken, Task<object?>>> Table =
-        ReadTable();
-
     /// <summary>
-    /// The table the partials add to: each <see cref="DriverRouteAttribute"/> on a handler of this class, by
-    /// its route. A handler answers at once, <c>object? M(IpcRequest)</c>, or later,
-    /// <c>Task&lt;object?&gt; M(IpcRequest, CancellationToken)</c>.
+    /// The domains this module answers for, one line each (PART10d, D166): a domain's handler class and how it is built over
+    /// this module, each taking only what it uses: the loop, or the <see cref="DriverContext"/> where it uses more. A new
+    /// domain is its <c>&lt;Domain&gt;Routes.cs</c> and its line here, and a new door in a domain is a marked handler in its
+    /// class: nothing is found by scanning. This class is the line of the domains still its partials, until PART10f.
     /// </summary>
-    private static FrozenDictionary<string, Func<DriverModule, IpcRequest, CancellationToken, Task<object?>>> ReadTable()
+    private static readonly Domain[] Domains =
+    [
+        Domain.Of(module => module),
+        Domain.Of(module => new AccountsRoutes(module._loop)),
+        Domain.Of(module => new AcrossRoutes(module._context)),
+        Domain.Of(module => new ConsoleRoutes(module._loop)),
+        Domain.Of(module => new HistoryRoutes(module._loop)),
+        Domain.Of(module => new RegistryRoutes(module._loop)),
+        Domain.Of(module => new RulesRoutes(module._loop)),
+        Domain.Of(module => new TraceRoutes(module._loop)),
+        Domain.Of(module => new WorkRoutes(module._context)),
+        Domain.Of(module => new WorkflowRoutes(module._loop)),
+    ];
+
+    // The handlers, read once off their marks. A route marked twice fails here, at the module's first use, as a switch with
+    // two equal labels would not have compiled; a handler of neither shape fails here too. Declared after Domains, which it reads.
+    private static readonly FrozenDictionary<string, Handler> Table = ReadTable();
+
+    /// <summary>The table the domains' marks make: each route, the place of its domain in <see cref="Domains"/>, and its handler.</summary>
+    private static FrozenDictionary<string, Handler> ReadTable()
     {
-        var table = new Dictionary<string, Func<DriverModule, IpcRequest, CancellationToken, Task<object?>>>(StringComparer.Ordinal);
-        foreach (var method in typeof(DriverModule).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic))
+        var table = new Dictionary<string, Handler>(StringComparer.Ordinal);
+        for (var place = 0; place < Domains.Length; place++)
         {
-            foreach (var route in method.GetCustomAttributes<DriverRouteAttribute>())
-            {
-                table.Add(route.Type, method.GetParameters().Length == 1
-                    ? Now(method.CreateDelegate<Func<DriverModule, IpcRequest, object?>>())
-                    : method.CreateDelegate<Func<DriverModule, IpcRequest, CancellationToken, Task<object?>>>());
-            }
+            foreach (var (route, answer) in Domains[place].Routes) table.Add(route, new Handler(place, answer));
         }
 
         return table.ToFrozenDictionary(StringComparer.Ordinal);
-
-        // A handler that answers at once throws at once, which the router awaits the same way as a fault.
-        static Func<DriverModule, IpcRequest, CancellationToken, Task<object?>> Now(Func<DriverModule, IpcRequest, object?> answer) =>
-            (module, request, _) => Task.FromResult(answer(module, request));
     }
 
-    // What the page may leave out, read one way (REV3 CLEAN1). The routes read optional values by hand,
-    // and differently: one took an empty `adapter` as a name where this takes it as absent.
+    /// <summary>A route's entry in the table: its domain's place in <see cref="Domains"/>, and the handler over that domain's instance.</summary>
+    private readonly record struct Handler(int Domain, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer);
 
-    /// <summary>A string the page may send, or null — blank is absent.</summary>
-    private static string? Optional(IpcRequest request, string name) =>
-        request.Payload is { } payload
-        && payload.TryGetProperty(name, out var value)
-        && value.ValueKind == JsonValueKind.String
-        && value.GetString() is { Length: > 0 } text
-            ? text
-            : null;
-
-    /// <summary>A flag the page may send: true only when it says true.</summary>
-    private static bool Flag(IpcRequest request, string name) =>
-        request.Payload is { } payload
-        && payload.TryGetProperty(name, out var value)
-        && value.ValueKind == JsonValueKind.True;
-
-    /// <summary>
-    /// A conversation's tree choice (D51, NEW1a): absent is the driver's own, true a tree of its own, false the checkout.
-    /// <see cref="Flag"/> cannot tell absent from false.
-    /// </summary>
-    public static bool? TreeChoice(IpcRequest request) =>
-        request.Payload is { } payload && payload.TryGetProperty("ownTree", out var value)
-            ? value.ValueKind switch { JsonValueKind.True => true, JsonValueKind.False => false, _ => null }
-            : null;
-
-    /// <summary>A whole number the page may send, or null.</summary>
-    private static long? Number(IpcRequest request, string name) =>
-        request.Payload is { } payload
-        && payload.TryGetProperty(name, out var value)
-        && value.ValueKind == JsonValueKind.Number
-        && value.TryGetInt64(out var number)
-            ? number
-            : null;
-
-    /// <summary>What every route that needs the loop's service says before it answers (REV3 CLEAN1: five wrote it).</summary>
-    private static Exception NotReady() => Refusals.Because(
-        Refusals.DriverNotReady, "the driver is still coming up — its service is not answering yet. A moment.");
-
-    private void Change(Func<DriverConfig, DriverConfig> change)
+    /// <summary>One line of <see cref="Domains"/>: how the module builds a domain's handler class, and the routes that class marks.</summary>
+    private sealed class Domain(
+        Func<DriverModule, object> build,
+        IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer)> routes)
     {
-        change(DriverConfig.Load(_loop.ConfigPath)).Save(_loop.ConfigPath);
-        _loop.Nudge();
+        public IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer)> Routes => routes;
+
+        public object Build(DriverModule module) => build(module);
+
+        /// <summary>
+        /// A domain whose handler class is <typeparamref name="T"/>: each <see cref="DriverRouteAttribute"/> on one of its
+        /// non-public instance methods, by its route. A handler answers at once, <c>object? M(IpcRequest)</c>, or later,
+        /// <c>Task&lt;object?&gt; M(IpcRequest, CancellationToken)</c>.
+        /// </summary>
+        public static Domain Of<T>(Func<DriverModule, T> build) where T : class
+        {
+            var routes = new List<(string, Func<object, IpcRequest, CancellationToken, Task<object?>>)>();
+            foreach (var method in typeof(T).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic))
+            {
+                foreach (var route in method.GetCustomAttributes<DriverRouteAttribute>())
+                {
+                    routes.Add((route.Type, method.GetParameters().Length == 1
+                        ? Now(method.CreateDelegate<Func<T, IpcRequest, object?>>())
+                        : Later(method.CreateDelegate<Func<T, IpcRequest, CancellationToken, Task<object?>>>())));
+                }
+            }
+
+            return new Domain(build, routes);
+
+            // A handler that answers at once throws at once, which the router awaits the same way as a fault.
+            static Func<object, IpcRequest, CancellationToken, Task<object?>> Now(Func<T, IpcRequest, object?> answer) =>
+                (handler, request, _) => Task.FromResult(answer((T)handler, request));
+
+            static Func<object, IpcRequest, CancellationToken, Task<object?>> Later(
+                Func<T, IpcRequest, CancellationToken, Task<object?>> answer) =>
+                (handler, request, cancellationToken) => answer((T)handler, request, cancellationToken);
+        }
     }
 }
 
 /// <summary>
-/// Marks a method of <see cref="DriverModule"/> as the handler of one of its routes (MOD5). A route is added
-/// in its domain's partial by marking its handler, so no central switch is edited per route.
+/// Marks a method of a domain's handler class as the handler of one of <see cref="DriverModule"/>'s routes (MOD5, PART10d).
+/// A route is added in its domain's class by marking its handler, so no central switch is edited per route.
 /// </summary>
 /// <param name="type">The route's name, as the page's bridge sends it.</param>
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]

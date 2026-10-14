@@ -121,7 +121,7 @@ conversations, the continuation judge, the say), `HandOver/` and `Helpers/`; `Co
 
 | Module | What it carries |
 |---|---|
-| `DAORIS.DRIVER` | The driver, a partial per domain (MOD5): `DriverModule.<Domain>.cs`, named as the page's `bridge/<domain>.ts` is, each route a handler marked `[DriverRoute]` in it. Its domains' rows follow this table; `DriverModuleRoutesTests` holds that every route the page sends is answered, every route answered is asked by the page or a test, and each is marked in its domain's partial and named in its domain's row |
+| `DAORIS.DRIVER` | The driver, a handler class per domain (MOD5, PART10d): `<Domain>Routes.cs`, named as the page's `bridge/<domain>.ts` is, each route a handler marked `[DriverRoute]` in it, and the class one line in `DriverModule`'s list of domains, built over the loop or the shared `DriverContext`. The domains not yet moved are still the module's partials, `DriverModule.<Domain>.cs`, until PART10f. Its domains' rows follow this table; `DriverModuleRoutesTests` holds that every route the page sends is answered, every route answered is asked by the page or a test, and each is marked in its domain's class and named in its domain's row |
 | `DAORIS.REGISTRY` | A folder picked and inspected; an existing manifest's declaration written, uncommitted, for that repository's review |
 | `DAORIS.REMOTES` | The machine's `remotes.json`, the file `daoris remote` edits: a key goes in, and only its audit prefix comes back |
 | `DAORIS.BROWSER` | Daoris's browser's two files under the home, as Settings → Browser: `favorites.json` (`ADD_FAVORITE`, `REMOVE_FAVORITE`), shown in a Daoris folder on its bookmarks bar, and `settings.json` (`SET_EXTENSIONS`: other software's Chrome extensions offered or refused; `SET_BROWSER`: Daoris's own or the person's Edge; `SET_LINKS`: whether the page's links open in the system's browser or Daoris's, BRW7). The same files `daoris browser` edits, read by `daoris-browser` at each start, and `links` by the page |
@@ -130,8 +130,8 @@ conversations, the continuation judge, the say), `HandOver/` and `Helpers/`; `Co
 | `DAORIS.UPDATE` | The install's update (UPDATE1, D139), held by `InstallUpdater`: `STATE` (none, waiting, draining, applying or refused; the staged build by id, version and commit; the mode that holds for it; what still runs; a refusal's code; the last swap's outcome, said once), `SET` {mode: when-idle, now, not-now}, written to `$DAORIS_HOME/update.json` as `daoris-driver update --when-idle\|--now\|--cancel` writes it (`UPDATE_NOTHING_STAGED`, `UPDATE_MODE_UNKNOWN`), and `DISMISS`. Each change reaches the page as `UPDATE_STATE`; no path is named |
 | `DAORIS.LOG` | The page's report into the machine log (LOG1b, D94): `EVENT` with `{ event, data }`, kept only as the catalogue names it (a view opened, a command run, a view moved, a message's length and file count, a proposal settled, a caught error), each field in its kind, everything else dropped. Every refusal any module answers is logged beside it by its code (`RefusalLog`, a middleware in the dispatcher). And Settings → Logs reading it back (LOG1c): `LINES` {since?, source?, event?, level?, limit?} answers the newest lines first (200, at most 1000) with the folder, how many matched, a count per level, the period's events and the lines skipped, filtered here by the reader `daoris-driver logs` uses (`MachineLogReader`); `OPEN_FOLDER` opens the home's `logs/` in the file manager, a folder the page never names |
 
-**`DAORIS.DRIVER` by domain.** A new door is a marked handler in its domain's partial and its name in
-that domain's row here.
+**`DAORIS.DRIVER` by domain.** A new door is a marked handler in its domain's class and its name in
+that domain's row here; a new domain is its `<Domain>Routes.cs`, its line in `DriverModule`'s list and its row.
 
 | Domain | What it carries |
 |---|---|

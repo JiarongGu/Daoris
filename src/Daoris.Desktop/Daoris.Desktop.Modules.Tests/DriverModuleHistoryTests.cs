@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// HIST1c (D153; the history-clearing design §6.3): clearing finished history over the bridge, the driver's door
-/// (<c>DriverModule.History.cs</c>). The first press lists each unit with what it takes and why it would stay, by the
+/// (<c>HistoryRoutes.cs</c>). The first press lists each unit with what it takes and why it would stay, by the
 /// catalogue's codes, and a workspace's reading; the second sends exactly the units the list held. Nothing machine-local
 /// comes back: ids, counts and bytes, never a path or a title.
 /// </summary>

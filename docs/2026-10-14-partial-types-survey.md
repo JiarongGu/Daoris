@@ -89,3 +89,31 @@ calls to `DriverModule.X` statics in 21 test files re-spell to their owning clas
 taking only what it uses; a small context for the loop, the bus, the opener, the picker and `Change`; one static helper for the
 shared arguments; `DriverModule` building its table from an explicit list of handler instances (one new door is one new file
 and one line in that list, where nothing is found by scanning); `partial` kept on `DriverModule` until the last domain moves.
+
+**`ChatRunner`** (`Conversations/Chat/`, the front and seven parts): its state is the nine constructor fields (the service, the
+home, the processes, the output, the browser, the usage, the plugins, the harnesses, the events) and two stores it makes
+(`_conversations`, `_marks`), and, the real coupling, the live maps the parts share: `_talking`, `_watching`, `_turned`
+(`ITurnedChat`), `_toldProcess` on the front, `_goingOn` and `_closing` (GoOn), `_rooms`, `_handing`, `_browsers` (Help),
+`_helperSaying` (HelperWords), `_curveMoves` (Curve; HandOver reads it too), `_starts` (StartWith). Private nested types the
+parts touch: `ITurnedChat`, `ProtocolChat`, `NativeChat`, `Watched`, `ChatPlace`, `GoingOn`, `Handing`. `StartFrom` and
+`StartWith` are already static classes over delegates: only their thin partial fronts remain. About 28 files call the parts'
+entries through the front (`TakeUpAsync`, `GoOnAsync`, `HandOverAsync`, `StartHelpFromAsync`, `StartFromAsync`,
+`StartWithAsync`, `MoveByCurveAsync`): the front keeps one-line calls. Texts read by name: `ClosedNote` in `ChatRunner.cs`
+(`deployment-rehearsal.test.ts`), `StartFrom`'s constants in `ChatRunner.StartFrom.cs` (`say.test.ts`, `merge-branch.mjs`).
+`SayHandedOver` and `SayHelperWord` are near twins (a message put on a live chat), a later dedup. The shape: a `ChatContext`
+holding the fields and the live maps, `ChatHandOver` and `CurveMove` (they share the curve's moves), `ChatGoOn`, a help chat
+class and `HelperWords`, each over it, the front keeping its users' calls.
+
+**`SessionTrees`** (`Trees/SessionTrees/`, the front and seventeen parts, about 5,700 lines): stateless over `(home,
+plugins)` except two test seams (`BeforeDeleting`, `ListFails`) and four derived reads (`Recorded`, `Grown`, `TreesRoot`,
+`Config()`); 245 test and 31 source constructions keep the constructor. `IWorkTrees` (OnlyHere) is implemented by it and a test
+stand-in. The coupling: the worktree reads (seven parts), the content holds and branch deletion (`HeldByContentAsync`,
+`KeepDiscardedAsync`, `DeleteJudgedAsync`, `HoldsAsync`: five), the landing's proof (`ProveAsync`: seven), and grab-bag git
+words (`LineAsync` in twelve parts, `ComparableAsync`, `FirstLine`, `Failure`, `Normal`, `SamePath`, `OwnerOf`, `Said`). The
+sync (1,234 lines) holds about 308 lines of records and words (`SyncWords`, `SyncBounds`, read by `SyncBoundsTests` and
+named in `twins.md`) and, by concern, the plan and fetch, the press, the review range (not sync work), the line pulls, the
+branch judging and the replay. Texts read by name: `SessionTrees.cs`'s `s-{Guid}` id (`orient-report.test.ts`), and
+`PullRequestOccasionTests` reading `SessionTrees.Sync.cs`'s `SyncPlanAsync` body and the doors' file names (a delegating front
+must not count as a door). The shape: a shared base (the git words, the worktrees, the scratch walk, the leftovers), the sync
+in three classes and its types in files, review and work classes, tidying classes, landing classes, the front keeping its
+callers' calls; extension methods and callers building new classes rejected, as in PART8.

@@ -10,7 +10,9 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <remarks>
 /// <para>Read from the sources, as <see cref="RefusalCatalogueTests"/> reads the throw sites: the page's calls
 /// from <c>src/Daoris.Web/src/bridge/*.ts</c> (and <c>shell.ts</c>, which held them all before the bridge was
-/// split by domain, MOD3), and each route's partial from the <c>[DriverRoute]</c> marks.</para>
+/// split by domain, MOD3), and each route's domain from the <c>[DriverRoute]</c> marks: in its handler class,
+/// <c>&lt;Domain&gt;Routes.cs</c>, or in the module's partial <c>DriverModule.&lt;Domain&gt;.cs</c> where its domain has not
+/// moved yet (PART10d; the partials end in PART10f).</para>
 ///
 /// <para>A route the page sends is a literal in one of three places: the first argument of <c>call</c>, the
 /// bridge's one call onto this module; the argument of a helper that forwards its own to <c>call</c>
@@ -113,19 +115,25 @@ public sealed partial class DriverModuleRoutesTests
         return null;
     }
 
-    /// <summary>Each route's mark, and the partial it is in, read off the module's sources.</summary>
+    /// <summary>Each route's mark, and the file it is in, read off the module's sources: its domain's class or partial, or the core.</summary>
     private static List<(string Route, string File)> Marks()
     {
         var modules = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Modules");
         return Directory.EnumerateFiles(modules, "DriverModule*.cs")
+            .Concat(Directory.EnumerateFiles(modules, "*Routes.cs"))
             .SelectMany(path => Mark().Matches(File.ReadAllText(path))
                 .Select(mark => (mark.Groups["route"].Value, Path.GetFileName(path))))
             .ToList();
     }
 
-    /// <summary>The domain a partial is named for — `Trees` for `DriverModule.Trees.cs` — or null for the core.</summary>
+    /// <summary>
+    /// The domain a file is named for — `Rules` for `RulesRoutes.cs`, and `Trees` for the partial `DriverModule.Trees.cs`
+    /// while it is one — or null for the core.
+    /// </summary>
     private static string? DomainOf(string file) =>
-        Partial().Match(file) is { Success: true } named ? named.Groups["domain"].Value : null;
+        (HandlerClass().Match(file) is { Success: true } handlers ? handlers : Partial().Match(file)) is { Success: true } named
+            ? named.Groups["domain"].Value
+            : null;
 
     [Fact]
     public void Every_route_the_page_calls_has_a_handler_in_the_table()
@@ -162,29 +170,31 @@ public sealed partial class DriverModuleRoutesTests
     }
 
     /// <summary>
-    /// A feature's C# door and its page bridge carry one domain name: a route is marked in the partial named as
-    /// the bridge file that sends it (`DriverModule.Trees.cs` for `bridge/trees.ts`), never in the core.
+    /// A feature's C# door and its page bridge carry one domain name: a route is marked in the handler class named as
+    /// the bridge file that sends it (`RulesRoutes.cs` for `bridge/rules.ts`, or a partial not yet moved,
+    /// `DriverModule.Trees.cs` for `bridge/trees.ts`), never in the core.
     /// </summary>
     [Fact]
-    public void Each_route_is_marked_in_the_partial_named_as_the_bridge_file_that_sends_it()
+    public void Each_route_is_marked_in_the_domain_named_as_the_bridge_file_that_sends_it()
     {
         var marks = Marks();
-        // The source scan is the table: a mark it missed, or one the table does not hold, fails here first.
+        // The source scan is the table: a mark it missed, or one the table does not hold (a class with no line in the
+        // module's list of domains), fails here first.
         Assert.Equal(DriverModule.Routes.Order(StringComparer.Ordinal), marks.Select(mark => mark.Route).Order(StringComparer.Ordinal));
         Assert.Empty(marks.Where(mark => DomainOf(mark.File) is null).Select(mark => $"`{mark.Route}` is marked in {mark.File}, the core"));
 
-        var partialOf = marks.ToDictionary(mark => mark.Route, mark => DomainOf(mark.File)!, StringComparer.Ordinal);
+        var fileOf = marks.ToDictionary(mark => mark.Route, mark => mark.File, StringComparer.Ordinal);
         var astray = PageCalls().Calls
             .Where(call => call.File != "shell.ts")
-            .Where(call => partialOf.TryGetValue(call.Route, out var domain)
-                && !string.Equals($"{domain}.ts", call.File, StringComparison.OrdinalIgnoreCase))
-            .Select(call => $"bridge/{call.File} sends `{call.Route}`, answered in DriverModule.{partialOf[call.Route]}.cs");
+            .Where(call => fileOf.TryGetValue(call.Route, out var file)
+                && !string.Equals($"{DomainOf(file)}.ts", call.File, StringComparison.OrdinalIgnoreCase))
+            .Select(call => $"bridge/{call.File} sends `{call.Route}`, answered in {fileOf[call.Route]}");
         Assert.Empty(astray);
     }
 
     /// <summary>
     /// The desktop README carries a row per domain, and a new door edits its own domain's row: each route is
-    /// named in the row of the partial that answers it.
+    /// named in the row of the domain that answers it.
     /// </summary>
     [Fact]
     public void The_readme_names_each_route_in_its_domains_row()
@@ -221,4 +231,7 @@ public sealed partial class DriverModuleRoutesTests
 
     [GeneratedRegex(@"^DriverModule\.(?<domain>[A-Za-z]+)\.cs$")]
     private static partial Regex Partial();
+
+    [GeneratedRegex(@"^(?<domain>[A-Z][A-Za-z]*)Routes\.cs$")]
+    private static partial Regex HandlerClass();
 }

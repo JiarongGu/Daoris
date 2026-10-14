@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Daoris.Driver;
 using Shenora.Core.Ipc;
+using static Daoris.Desktop.DriverArguments;
 
 namespace Daoris.Desktop;
 
@@ -265,7 +266,7 @@ public sealed partial class DriverModule
     {
         var service = _loop.Service ?? throw NotReady();
         var config = DriverConfig.Load(_loop.ConfigPath);
-        var look = await SessionGroups.LookAsync(service, config, Door(config), _loop.Look.Latest, _loop.Home, only, cancellationToken)
+        var look = await SessionGroups.LookAsync(service, config, _context.Door(config), _loop.Look.Latest, _loop.Home, only, cancellationToken)
             .ConfigureAwait(false);
         // The cool-offs the loop's last look held starts on (MSG1f2): what a record whose words one holds says, its reset.
         look = look with { Waits = _loop.Look.Waits };
@@ -319,19 +320,6 @@ public sealed partial class DriverModule
             DeleteVerdict.TreeHere => Refusals.Because(Refusals.SessionTreeHere, outcome.Message, session),
             _ => Refusals.Because(Refusals.SessionOnRemote, outcome.Message, session, ("workspace", outcome.Workspace ?? "")),
         };
-    }
-
-    /// <summary>The configured adapter's wire, as the loop plans by it (D70); the pipe, the stricter door, when it names none this build has.</summary>
-    private SessionWire Door(DriverConfig config)
-    {
-        try
-        {
-            return _loop.Harnesses.Adapters.Resolve(config.Adapter).Wire;
-        }
-        catch (DriverException)
-        {
-            return SessionWire.Pipe;
-        }
     }
 
     /// <summary>The session ids the page sent, or null where it sent none.</summary>

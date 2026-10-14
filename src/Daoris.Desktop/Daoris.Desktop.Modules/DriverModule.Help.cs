@@ -1,5 +1,6 @@
 using Daoris.Driver;
 using Shenora.Core.Ipc;
+using static Daoris.Desktop.DriverArguments;
 
 namespace Daoris.Desktop;
 
@@ -66,7 +67,7 @@ public sealed partial class DriverModule
         var looking = System.Diagnostics.Stopwatch.StartNew();
         try
         {
-            sessions = await SessionGroups.LookAsync(service, config, Door(config), _loop.Look.Latest, _loop.Home, null, cancellationToken).ConfigureAwait(false);
+            sessions = await SessionGroups.LookAsync(service, config, _context.Door(config), _loop.Look.Latest, _loop.Home, null, cancellationToken).ConfigureAwait(false);
             sessions = sessions with { Waits = _loop.Look.Waits };
         }
         catch (DriverException)
@@ -84,7 +85,7 @@ public sealed partial class DriverModule
             var records = await service.SessionRecordsAsync(cancellationToken).ConfigureAwait(false);
             var quests = await service.EveryQuestAsync(cancellationToken).ConfigureAwait(false);
             var everyAsk = await service.EveryAskAsync(cancellationToken).ConfigureAwait(false);
-            var world = HistoryWorldOf();
+            var world = HistoryRoutes.WorldOf(_loop);
             var readings = new List<HistoryReading>();
             foreach (var workspace in records.Select(record => record.Workspace)
                          .Concat(quests.Select(quest => quest.Workspace))
@@ -294,7 +295,7 @@ public sealed partial class DriverModule
     private sealed class ScreenDoors(DriverModule module, ServiceClient? service) : IHelpDoors
     {
         // SET_DRIVABLE, SET_LINE, SET_LANDING…: an edit to the driver's file, then a nudge.
-        public void Change(Func<DriverConfig, DriverConfig> edit) => module.Change(edit);
+        public void Change(Func<DriverConfig, DriverConfig> edit) => module._context.Change(edit);
 
         // The ask composer's door, the local host's `POST /api/asks`, with its review choice and words (ENTRY1c). A named
         // environment the workspace does not declare is refused before anything is sent, as `daoris-driver ask --review` refuses
@@ -340,7 +341,7 @@ public sealed partial class DriverModule
 
             var asked = service ?? throw NotReady();
             var config = DriverConfig.Load(module._loop.ConfigPath);
-            var look = await SessionGroups.LookAsync(asked, config, module.Door(config), module._loop.Look.Latest, module._loop.Home, ids, ct)
+            var look = await SessionGroups.LookAsync(asked, config, module._context.Door(config), module._loop.Look.Latest, module._loop.Home, ids, ct)
                 .ConfigureAwait(false);
             look = look with { Waits = module._loop.Look.Waits };
             var answer = marks.Archive(ids, SessionGroups.Read(look, ids), [.. look.Records.Select(record => record.Id)], DateTimeOffset.UtcNow);
@@ -357,7 +358,7 @@ public sealed partial class DriverModule
         // have is not applied; a pause that finds nothing to hold is said, as the route says it (D48 §6).
         public async Task<(bool Ok, string Message)> PauseWorkAsync(WorkScope scope, string id, CancellationToken ct)
         {
-            var outcome = await WorkPausing.PauseAsync(module.WorkWorldOf(), scope, id, PluginEvents.Screen, ct).ConfigureAwait(false);
+            var outcome = await WorkPausing.PauseAsync(WorkRoutes.WorldOf(module._context), scope, id, PluginEvents.Screen, ct).ConfigureAwait(false);
             if (outcome.Verdict == PauseVerdict.Unknown) return (false, WorkPausing.Unknown(scope, id));
 
             module._loop.Nudge();
@@ -367,7 +368,7 @@ public sealed partial class DriverModule
         // WORK_RESUME's own resume, the same way.
         public async Task<(bool Ok, string Message)> ResumeWorkAsync(WorkScope scope, string id, CancellationToken ct)
         {
-            var outcome = await WorkPausing.ResumeAsync(module.WorkWorldOf(), scope, id, PluginEvents.Screen, ct).ConfigureAwait(false);
+            var outcome = await WorkPausing.ResumeAsync(WorkRoutes.WorldOf(module._context), scope, id, PluginEvents.Screen, ct).ConfigureAwait(false);
             if (outcome.Verdict == ResumeVerdict.Unknown) return (false, WorkPausing.Unknown(scope, id));
 
             module._loop.Nudge();
@@ -377,7 +378,7 @@ public sealed partial class DriverModule
         // HISTORY_CLEAR's own clear of exactly the units the card listed (HIST1f-c): the driver library's one owner, each unit judged
         // again as it goes; the outcome comes back whole, and a service that did not answer throws before anything was removed.
         public Task<HistoryOutcome> ClearHistoryAsync(HistoryScope scope, string id, IReadOnlyList<HistoryUnitName> units, CancellationToken ct) =>
-            HistoryClearing.ClearAsync(module.HistoryWorldOf(), scope, id, units, PluginEvents.Screen, ct);
+            HistoryClearing.ClearAsync(HistoryRoutes.WorldOf(module._loop), scope, id, units, PluginEvents.Screen, ct);
 
         // SESSION_DELETE's own delete: the driver library's one owner, then the loop asked to look (SESSUX1h2c).
         public async Task<(bool Ok, string Message)> DeleteSessionAsync(string id, CancellationToken ct)
@@ -430,10 +431,10 @@ public sealed partial class DriverModule
         // ACCOUNT_USE's own `use` (TOOL4g): the same refusals and the same write, then the loop asked to look.
         public Task SetAccountUseAsync(string harness, UseChange change, string? workspace, CancellationToken ct)
         {
-            var owner = module.OwnerOf(harness);
+            var owner = AccountsRoutes.OwnerOf(module._loop.Harnesses, harness);
             try
             {
-                UseEdited(module._loop.Harnesses.Settings, owner, change, workspace).Save(module._loop.Harnesses.SettingsPath);
+                AccountsRoutes.UseEdited(module._loop.Harnesses.Settings, owner, change, workspace).Save(module._loop.Harnesses.SettingsPath);
             }
             catch (ShenoraException refused)
             {
@@ -448,7 +449,7 @@ public sealed partial class DriverModule
         // returned to the machine's accounts with its default and list cleared at once (D130 §3.2), then the loop asked to look.
         public Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, string? workspace, CancellationToken ct)
         {
-            var owner = module.OwnerOf(harness);
+            var owner = AccountsRoutes.OwnerOf(module._loop.Harnesses, harness);
             var settings = module._loop.Harnesses.Settings;
             try
             {
@@ -459,7 +460,7 @@ public sealed partial class DriverModule
                 }
                 else
                 {
-                    OrderEdited(settings, HarnessSettings.Profiles(module._loop.Harnesses.Home, owner), owner, accounts, workspace)
+                    AccountsRoutes.OrderEdited(settings, HarnessSettings.Profiles(module._loop.Harnesses.Home, owner), owner, accounts, workspace)
                         .Save(module._loop.Harnesses.SettingsPath);
                 }
             }
@@ -733,7 +734,7 @@ public sealed partial class DriverModule
         // ledger's own answer (SESSUX1h2c, D126 §5.2, §5.4): the one look the Sessions screen takes, read only for those.
         if (proposals.Any(SessionKind))
         {
-            var look = await SessionGroups.LookAsync(service, config, Door(config), _loop.Look.Latest, _loop.Home, null, ct).ConfigureAwait(false);
+            var look = await SessionGroups.LookAsync(service, config, _context.Door(config), _loop.Look.Latest, _loop.Home, null, ct).ConfigureAwait(false);
             look = look with { Waits = _loop.Look.Waits };
             var judged = new Dictionary<string, SessionDeleteAnswer>(StringComparer.Ordinal);
             foreach (var proposal in proposals.Where(each => each.Kind == "delete" && each.Door == "session"))
@@ -759,7 +760,7 @@ public sealed partial class DriverModule
         // the id as an ask's and as a quest's, and by which workspaces sync with a remote (PAUSE1f-c, D132 §7.4, §5.1).
         if (JudgedAgainstWork(proposals))
         {
-            var world = WorkWorldOf();
+            var world = WorkRoutes.WorldOf(_context);
             var plans = new List<WorkPlan>();
             foreach (var proposal in proposals.Where(each => each.Kind == "pause"))
             {
@@ -785,7 +786,7 @@ public sealed partial class DriverModule
         // §6.4). A service that cannot be read throws, and the proposal stays unsettled.
         if (JudgedAgainstHistory(proposals))
         {
-            var world = HistoryWorldOf();
+            var world = HistoryRoutes.WorldOf(_loop);
             var plans = new List<HistoryPlan>();
             foreach (var proposal in proposals.Where(each => each.Kind == "clear"))
             {

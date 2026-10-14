@@ -406,6 +406,27 @@ test('the bridge routes name each route, the handler that answers it and the bri
   fx.cleanup();
 });
 
+test("a domain's handler class, `<Domain>Routes.cs`, is read for the driver's routes as its partial was (PART10d)", () => {
+  const fx = fixtureRepository('orient-index-routes-class');
+  const file = 'src/Daoris.Desktop/Daoris.Desktop.Modules/ConsoleRoutes.cs';
+  fx.write(file, [
+    'namespace Daoris.Desktop;',
+    '',
+    'public sealed class ConsoleRoutes(DriverLoop loop)',
+    '{',
+    '    // The console\'s backlog.',
+    '    [DriverRoute("TAIL_SESSION")]',
+    '    private object? TailSession(IpcRequest request) => null;',
+    '}',
+    '',
+  ].join('\n'));
+  const routes = tool.planIndex(fx.root, [...FIXTURE_FILES, file].sort()).get('docs/index/routes.md')!;
+  assert.ok(routes.includes('| `TAIL_SESSION` | `ConsoleRoutes.cs:7` TailSession | — |'), routes);
+  assert.ok(routes.includes('| `SESSION_DIFF` | `DriverModule.Trees.cs:6` DiffAsync | `bridge/trees.ts:4` useDiff |'), routes);
+  assert.match(routes, /## DAORIS\.DRIVER \(5\)/);
+  fx.cleanup();
+});
+
 test("the bridge's first argument is read past its type arguments", () => {
   const text = "call<{ a: Map<string, number> }>(flag ? 'A' : 'B', { x: (1, 2) })";
   const argument = tool.firstArgument(text, 'call'.length)!;
