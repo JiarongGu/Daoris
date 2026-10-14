@@ -106,9 +106,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleSessionsTests.cs` | 47 | 781 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs` | 51 | 921 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 65 | 1189 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Help.cs` | 55 | 949 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Trees.cs` | 44 | 785 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 64 | 1181 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Help.cs` | 55 | 950 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Trees.cs` | 44 | 786 |
 
 ### Service (`service`)
 
@@ -160,7 +160,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/family-rehearsal.mjs` | 339 | 5982 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
 | `tools/merge-branch.mjs` | 131 | 2394 |
-| `tools/orient-index.mjs` | 65 | 1420 |
+| `tools/orient-index.mjs` | 65 | 1421 |
 | `tools/rehearsal-kit.mjs` | 42 | 812 |
 | `tools/usage-report.mjs` | 57 | 1254 |
 
