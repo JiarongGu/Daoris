@@ -1215,6 +1215,42 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// SESSONE2e (D167): words the channel carried, said with the channel message's id, are kept on the ask by the channel as
+    /// `channel` (SESSONE2a), so the say door keeps no `answered` for a park nor, once taken, `reopened` for an ended one.
+    /// Words said with no id behave as before.
+    /// </summary>
+    [Fact]
+    public async Task Words_said_with_a_channel_id_are_not_kept_on_the_ask_a_second_time()
+    {
+        var asked = await host.PostAsync("/api/asks", new
+        {
+            workspace = "default", sentence = "Build the quarterly summary through the v4 bridge.", to = "Keeper",
+        });
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        var quest = asked.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        var id = await RunningAsync(quest, "sessone2e-ask");
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state = "awaiting-person", note = "Which report?" })).Status);
+
+        var answer = await host.PostAsync($"/api/sessions/{id}/say", new { text = "use the common-report", channel = "m1" });
+        Assert.Equal(200, answer.Status);
+
+        foreach (var state in new[] { "working", "completed" })
+        {
+            Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state })).Status);
+        }
+
+        var later = await host.PostAsync($"/api/sessions/{id}/say", new { text = "and add the changelog line", channel = "m2" });
+        var taken = await host.PostAsync($"/api/sessions/{id}/taken", new
+        {
+            said = new[] { answer.Json.GetProperty("said").GetProperty("id").GetString(), later.Json.GetProperty("said").GetProperty("id").GetString() },
+        });
+
+        Assert.Equal(200, taken.Status);
+        var words = (await host.GetAsync($"/api/asks/{ask}")).Json.GetProperty("words").EnumerateArray().ToList();
+        Assert.Equal(["asked"], words.Select(w => w.GetProperty("kind").GetString()));
+    }
+
+    /// <summary>
     /// TOOL4c (D125 §5.2): the driver says a failure was an account's limit through the state door, and the
     /// record answers it back to every caller, off this machine too: the flag names no account, so it
     /// travels where the account's name does not. Asked of any other move, it is refused, 409.

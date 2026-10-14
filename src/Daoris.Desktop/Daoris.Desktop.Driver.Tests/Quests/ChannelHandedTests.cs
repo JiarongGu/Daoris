@@ -141,7 +141,7 @@ public sealed class ChannelHandedTests
             return Task.CompletedTask;
         }
 
-        public Task<SayAnswer> SayAsync(string session, string text, CancellationToken ct) => throw new InvalidOperationException("no say");
+        public Task<SayAnswer> SayAsync(string session, string text, string channel, CancellationToken ct) => throw new InvalidOperationException("no say");
     }
 
     /// <summary>

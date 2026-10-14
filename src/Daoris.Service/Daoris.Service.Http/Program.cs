@@ -1171,12 +1171,14 @@ if (mode == ServiceMode.Local)
         ComposedService s, HttpContext http, string id, SayRequest body, CancellationToken ct) =>
     {
         var now = DateTimeOffset.UtcNow;
-        var outcome = await s.Ledger.SayAsync(id, body.Text, body.Files, now, ct);
+        var channel = string.IsNullOrWhiteSpace(body.Channel) ? null : body.Channel.Trim();
+        var outcome = await s.Ledger.SayAsync(id, body.Text, body.Files, now, ct, channel);
         if (outcome.Refusal == SessionSayRefusal.None)
         {
             // Words to a park are its answer, kept on its ask at once as the answer door keeps one (DRIFT1a); words to an
-            // ended session are kept there once a session took them (the taken door, D137 §2.4).
-            if (!outcome.Word!.Reopens)
+            // ended session are kept there once a session took them (the taken door, D137 §2.4). Words that are a channel
+            // message are on the ask already, as `channel` (SESSONE2e), so neither door keeps them again.
+            if (!outcome.Word!.Reopens && outcome.Word.Channel is null)
             {
                 await s.Ledger.KeepOnAskAsync(id, AskWordKind.Answered, outcome.Word.Text, now, ct);
             }
@@ -1207,7 +1209,7 @@ if (mode == ServiceMode.Local)
         var outcome = await s.Ledger.TakeSaidAsync(id, ids, string.IsNullOrWhiteSpace(body.By) ? null : body.By, ct);
         if (outcome.Refusal == SessionSayRefusal.None)
         {
-            foreach (var word in outcome.Taken.Where(word => word.Reopens && word.Persons))
+            foreach (var word in outcome.Taken.Where(word => word.Reopens && word.Persons && word.Channel is null))
             {
                 await s.Ledger.KeepOnAskAsync(
                     string.IsNullOrWhiteSpace(body.By) ? id : body.By, AskWordKind.Reopened, word.Text, word.At, ct);
