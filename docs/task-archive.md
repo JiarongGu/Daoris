@@ -14350,3 +14350,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DEDUP2a — one way to write and read a moment, its first half** (driver). A public `Moments` in `Platform/` (round-trip write, invariant read, strict read) for the writers and readers in Accounts, Agents, Conversations, Help, Platform and Plugins, those read in the machine's culture among them. Survey §2.
 
 **Outcome** 2026-10-14: `Platform/Moments.cs` writes in the invariant round trip, reads keeping the offset as written (a text, a JSON field or a node), and holds the one strict read of the four formats four copies had; the helper files', rule proposals' and driver lock's reads and writes in the machine's culture are fixed, each fallback kept. Kept as formats of their own: the cooling's seconds-only stamp (the CLI's twin writes it) and the workflow proposal's moment. Twenty-one tests under three cultures. On Sonnet: 61 tool calls. Detail: D166's DEDUP2a note.
+
+## PLATEXC1 — `DriverException` is Platform's (2026-10-14, D166)
+
+> - [ ] **PLATEXC1 — `DriverException` is Platform's** (driver). Platform's `DriverHttp` and `DriverLock` throw a type declared in `Agents/Adapters/Adapters.cs`, so the shared kernel depends on Agents: move it to Platform. Proof: the build and the driver's tests. D166's LOOPOUT1 note.
+
+**Outcome** 2026-10-14: `DriverException` moved whole to `Platform/DriverException.cs`, its remarks saying why it sits there; one namespace, so no caller changed. The kernel no longer depends on Agents. On Sonnet: 7 tool calls.
