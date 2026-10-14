@@ -23,9 +23,9 @@
 
 import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
-import { findName, foldName, sameName } from './platform/casefold.ts';
-import { DaorisError } from './platform/errors.ts';
-import { readJsonObject, writeTextAtomic } from './platform/fsx.ts';
+import { findName, foldName, sameName } from '../platform/casefold.ts';
+import { DaorisError } from '../platform/errors.ts';
+import { readJsonObject, writeTextAtomic } from '../platform/fsx.ts';
 
 export const ACCOUNTS_FILE = 'accounts.json';
 

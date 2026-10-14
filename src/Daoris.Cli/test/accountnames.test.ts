@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import {
   ACCOUNTS_FILE, AccountNameError, accountNames, forgetName, nameOf, newAccountId, renameAccount, resolveAccount, shownAs,
   signInTarget,
-} from '../src/accountnames.ts';
+} from '../src/accounts/accountnames.ts';
 import { readHarnessSettings } from '../src/toolchain.ts';
 import { driverRows as csharpRows, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';

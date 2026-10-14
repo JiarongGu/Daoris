@@ -106,8 +106,8 @@ function either(choices: readonly string[]): string {
   return choices.length > 1 ? `${choices.slice(0, -1).join(', ')} or ${choices.at(-1)}` : choices.join('');
 }
 import { DaorisError } from './platform/errors.ts';
-import { AGENT_SETTINGS_FILE, readAgentSettings, writeAgentSettings } from './agentsettings.ts';
-import type { AgentSettingsEdit } from './agentsettings.ts';
+import { AGENT_SETTINGS_FILE, readAgentSettings, writeAgentSettings } from './accounts/agentsettings.ts';
+import type { AgentSettingsEdit } from './accounts/agentsettings.ts';
 import { onPath, readJsonObject, writeJsonAtomic } from './platform/fsx.ts';
 import { normalizeWorkspace } from './remotemap.ts';
 // A cycle with `plugins.ts`, harmless because both sides read the other only inside functions:
@@ -122,21 +122,21 @@ import {
   joinRefusal, placesOf, readOrderCircles, readOrders, readUse, readUseCircles, readUses, resolveRotation, resolveScope,
   rotationProblem, rotationRefusal, scopeProblem, withJoined, withRotation, withUse, withoutAccount, writtenOrderCircles,
   writtenOrders, writtenUseCircles, writtenUses,
-} from './rotation.ts';
+} from './accounts/rotation.ts';
 import type {
   AccountPlace, Curve, CurvePoint, Orders, RotationUse, Scope, ScopeProblem, Switch, UseChange, UseMode, Uses,
-} from './rotation.ts';
+} from './accounts/rotation.ts';
 import {
   accountNames, accountsPath, forgetName, nameFor, nameProblem, newAccountId, renameAccount, resolveAccount, shownAs,
   signInRefusal, signInTarget, AccountNameError,
-} from './accountnames.ts';
-import { forgetRead, keepRead } from './accountreads.ts';
-import type { Login } from './accountreads.ts';
+} from './accounts/accountnames.ts';
+import { forgetRead, keepRead } from './accounts/accountreads.ts';
+import type { Login } from './accounts/accountreads.ts';
 import { atName, byName, findName, sameName } from './platform/casefold.ts';
-import { coolingLine, coolingOf, coolingWhen, endCooling, machineZone, readCooling } from './cooling.ts';
+import { coolingLine, coolingOf, coolingWhen, endCooling, machineZone, readCooling } from './accounts/cooling.ts';
 import { shellWord, shellWords } from './platform/shellword.ts';
-import { OWN_WINDOWS, saidLine, saidOf } from './windows.ts';
-import { markSignedIn, probeLockPath, takeProbeLock } from './probelock.ts';
+import { OWN_WINDOWS, saidLine, saidOf } from './accounts/windows.ts';
+import { markSignedIn, probeLockPath, takeProbeLock } from './accounts/probelock.ts';
 import type { Channel, Fetcher } from './channels.ts';
 import type { CommandArgs } from './platform/types.ts';
 import type { ExitCode } from './platform/errors.ts';

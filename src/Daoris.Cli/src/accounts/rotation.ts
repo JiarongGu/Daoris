@@ -61,9 +61,9 @@
 // `UsageCurves`' twin, which `profile use`'s said line reads (SWITCH1b-iii). `early` and `near` stay derived, as the
 // driver's `RotationUse` keeps them for the doors that still speak them, and nothing here reads them.
 
-import { atName, byName, findName, foldName } from './platform/casefold.ts';
-import { shellWord } from './platform/shellword.ts';
-import type { HarnessSettings } from './toolchain.ts';
+import { atName, byName, findName, foldName } from '../platform/casefold.ts';
+import { shellWord } from '../platform/shellword.ts';
+import type { HarnessSettings } from '../toolchain.ts';
 
 /** Agent → the accounts rotation may use, in order. */
 export type Orders = Record<string, string[]>;

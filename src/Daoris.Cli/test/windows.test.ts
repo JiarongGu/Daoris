@@ -4,9 +4,9 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { TOOLCHAINS, accountLines } from '../src/toolchain.ts';
 import type { HarnessReport, HarnessSettings } from '../src/toolchain.ts';
-import { OWN_WINDOWS, WINDOWS_FILE, age, saidLine, saidOf } from '../src/windows.ts';
-import type { WindowSaid } from '../src/windows.ts';
-import type { CurveScope } from '../src/usagecurves.ts';
+import { OWN_WINDOWS, WINDOWS_FILE, age, saidLine, saidOf } from '../src/accounts/windows.ts';
+import type { WindowSaid } from '../src/accounts/windows.ts';
+import type { CurveScope } from '../src/accounts/usagecurves.ts';
 import { driverRows as csharpRows, driverFile, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 

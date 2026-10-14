@@ -12,10 +12,10 @@ import {
 import type { HarnessSettings, Toolchain } from '../src/toolchain.ts';
 import { CLAUDE_LATEST, CODEX_LATEST, CODEX_RELEASES, codexTarget } from '../src/channels.ts';
 import type { Fetcher } from '../src/channels.ts';
-import { COOLING_FILE, coolingOf, coolingWhen, machineZone } from '../src/cooling.ts';
-import { keepRead, readOf, readsOf } from '../src/accountreads.ts';
-import { accountNames } from '../src/accountnames.ts';
-import { WINDOWS_FILE } from '../src/windows.ts';
+import { COOLING_FILE, coolingOf, coolingWhen, machineZone } from '../src/accounts/cooling.ts';
+import { keepRead, readOf, readsOf } from '../src/accounts/accountreads.ts';
+import { accountNames } from '../src/accounts/accountnames.ts';
+import { WINDOWS_FILE } from '../src/accounts/windows.ts';
 import { makeFixture } from './_fixture.ts';
 import { captureError } from './_fixture.ts';
 import { TAR_END, tarEntry } from './_tar.ts';

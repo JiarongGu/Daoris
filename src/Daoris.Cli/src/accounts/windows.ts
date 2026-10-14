@@ -27,9 +27,9 @@
 // socket and spawns nothing.
 
 import { join } from 'node:path';
-import { findName } from './platform/casefold.ts';
+import { findName } from '../platform/casefold.ts';
 import { coolingWhen, isoMoment } from './cooling.ts';
-import { readJsonObject } from './platform/fsx.ts';
+import { readJsonObject } from '../platform/fsx.ts';
 import { tightestSaid, wholePoints } from './usagecurves.ts';
 import type { CurveScope } from './usagecurves.ts';
 

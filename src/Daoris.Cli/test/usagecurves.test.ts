@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { curveNow, tightestSaid } from '../src/usagecurves.ts';
-import type { Curve, Switch } from '../src/rotation.ts';
-import { saidLine } from '../src/windows.ts';
-import type { WindowSaid } from '../src/windows.ts';
+import { curveNow, tightestSaid } from '../src/accounts/usagecurves.ts';
+import type { Curve, Switch } from '../src/accounts/rotation.ts';
+import { saidLine } from '../src/accounts/windows.ts';
+import type { WindowSaid } from '../src/accounts/windows.ts';
 import { driverFile, driverTestFile } from './_csharp.ts';
 import { cliSource, SOURCES } from './_sources.ts';
 
