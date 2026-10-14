@@ -1,6 +1,6 @@
 // The agents descriptor, the manifest's new fields and the lock's (LAYOUT3; D117 §2, §5.1).
 //
-// A second implementation beside `claude-code` in `src/harness.ts`, selected by the manifest's
+// A second implementation beside `claude-code` in `src/layout/harness.ts`, selected by the manifest's
 // existing `harness` field. The lock grows additively, as D71 grew `switchedOff`: a lock that uses
 // nothing new is byte for byte what it was.
 
