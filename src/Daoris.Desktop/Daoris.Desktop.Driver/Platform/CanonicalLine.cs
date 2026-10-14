@@ -69,12 +69,21 @@ public static class CanonicalLine
     }
 
     /// <summary>The line, with the checkout asked only when nothing is set.</summary>
-    public static async Task<Line> ResolveAsync(
-        string root, string repository, string? workspace, DriverConfig config, CancellationToken ct = default)
+    public static Task<Line> ResolveAsync(
+        string root, string repository, string? workspace, DriverConfig config, CancellationToken ct = default) =>
+        ResolveAsync(root, repository, workspace, config, WorkingTree.DefaultBranchAsync, ct);
+
+    /// <summary>
+    /// The same, with the checkout's guess asked of <paramref name="guess"/>: a look that asks git once per checkout
+    /// (UIFREEZE1, <c>TreeContext.OneLook</c>).
+    /// </summary>
+    internal static async Task<Line> ResolveAsync(
+        string root, string repository, string? workspace, DriverConfig config, Func<string, CancellationToken, Task<string?>> guess,
+        CancellationToken ct)
     {
         var chosen = Choose(config, repository, workspace, guess: null);
         if (chosen.Branch is not null) return chosen;
-        return Choose(config, repository, workspace, await WorkingTree.DefaultBranchAsync(root, ct).ConfigureAwait(false));
+        return Choose(config, repository, workspace, await guess(root, ct).ConfigureAwait(false));
     }
 
     /// <summary>The line, spelled for a person: the branch and what said so.</summary>

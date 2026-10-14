@@ -124,6 +124,8 @@ internal sealed class LandedCleanups(
         CancellationToken ct = default)
     {
         var known = repositories.ToList();
+        // One look: git is asked each checkout's line once, not by each of the three readers below (UIFREEZE1).
+        using var look = context.OneLook();
         // The look may remove, so it asks first where git cannot tell, as one occasion over every repository (PLUGHOOK1a, design
         // §2.1 occasion 2); the press asks nothing.
         var asked = await asks.AskStatesAsync(
@@ -186,6 +188,8 @@ internal sealed class LandedCleanups(
         IReadOnlySet<string>? only = null, CancellationToken ct = default)
     {
         var known = repositories.ToList();
+        // One press, one look at each checkout's line (UIFREEZE1): the proofs are still judged again before each removal.
+        using var look = context.OneLook();
         var sessions = await sweeps.SweepAsync(known, inUse, only, ct).ConfigureAwait(false);
         // The record of where session branches grew from drops what is gone (LAND3), this press's removals among them.
         foreach (var (repository, _, root) in known)

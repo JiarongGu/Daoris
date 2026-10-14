@@ -166,6 +166,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     /// <summary>The test seam (AUTOTIDY1): true for a checkout whose working trees git could not list. Production sets none.</summary>
     internal Func<string, bool>? ListFails { get => _context.ListFails; init => _context.ListFails = value; }
 
+    /// <summary>The test seam (UIFREEZE1): git's guess at a checkout's line, which a test counts. Production asks git.</summary>
+    internal Func<string, CancellationToken, Task<string?>> CheckoutLine { get => _context.CheckoutLine; init => _context.CheckoutLine = value; }
+
     /// <summary>The branches this machine's landings made (WSR5) — the only ones the clean-up and the hand-off act on.</summary>
     public LandedBranches Recorded => _context.Recorded;
 
