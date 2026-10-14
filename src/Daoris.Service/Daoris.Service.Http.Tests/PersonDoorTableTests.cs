@@ -35,6 +35,7 @@ public sealed class PersonDoorTableTests
         ("GET", "/api/quests/{id}/claim", Open),
         ("GET", "/api/asks", Open),
         ("GET", "/api/asks/{id}", Open),
+        ("GET", "/api/asks/{id}/channel", Open),
         ("GET", "/api/sessions", Open),
         ("GET", "/api/sessions/{id}/deletable", Open),
         ("GET", "/api/history", Open),
@@ -74,6 +75,8 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/asks", Person),
         ("POST", "/api/asks/{id}/review", Person),
         ("POST", "/api/asks/{id}/workflow", Person),
+        ("POST", "/api/asks/{id}/channel", Person),
+        ("POST", "/api/asks/{id}/channel/read", Person),
         ("POST", "/api/quests/{id}/accept", Person),
         ("POST", "/api/quests/{id}/done", Person),
         ("POST", "/api/asks/{id}/go-aheads/{number}", Person),
@@ -113,11 +116,12 @@ public sealed class PersonDoorTableTests
         // The design's counts (§3.2), with XAGENT1c's two reads and two driver's posts (and MIXAGENT2a-ii's two: a helper's record
         // and its answer's return), the set-up door, which is the
         // driver's naming a session and the person's own with where to look, and the confirmation's two reads, its ask and
-        // the person's two answers (PERSONDOOR1b), and an ask's kind and workflow, the person's (WORKFLOW1e).
-        Assert.Equal(22, Routes.Count(route => route.Class == Open));
+        // the person's two answers (PERSONDOOR1b), an ask's kind and workflow, the person's (WORKFLOW1e), and an ask's channel: a read, the
+        // person's post (which an agent makes through the connector's tool instead) and an entry's read mark (SESSONE2a).
+        Assert.Equal(23, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
         Assert.Equal(16, Routes.Count(route => route.Class == Driver));
-        Assert.Equal(22, Routes.Count(route => route.Class == Person));
+        Assert.Equal(24, Routes.Count(route => route.Class == Person));
         Assert.Equal(7, Routes.Count(route => route.Class == Shared));
     }
 

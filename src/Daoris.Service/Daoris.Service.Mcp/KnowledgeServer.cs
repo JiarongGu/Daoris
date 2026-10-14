@@ -31,6 +31,7 @@ public static class KnowledgeServer
         typeof(ReviewTools),
         typeof(GoAheadTools),
         typeof(HelperTools),
+        typeof(ChannelTools),
         typeof(OpinionTools),
         // Ask Daoris's proposals, a class for each kind of proposal the box writes (PART10c).
         typeof(HelpAcceptTool),
