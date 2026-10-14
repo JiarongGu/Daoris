@@ -1,7 +1,7 @@
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { commandRetire, commandImport, commandWire } from '../src/manage.ts';
-import { DaorisError } from '../src/errors.ts';
+import { commandRetire, commandImport, commandWire } from '../src/service/manage.ts';
+import { DaorisError } from '../src/platform/errors.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**

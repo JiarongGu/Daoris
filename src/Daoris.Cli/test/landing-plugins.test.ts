@@ -6,7 +6,7 @@ import { delimiter, dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import { makeFixture, type Fixture } from './_fixture.ts';
-import { readManifest, readNeeds } from '../src/plugins.ts';
+import { readManifest, readNeeds } from '../src/plugins/plugins.ts';
 
 /**
  * WSR4 (D100): the two example plugins that land work — one for GitHub, one for Azure DevOps — driven

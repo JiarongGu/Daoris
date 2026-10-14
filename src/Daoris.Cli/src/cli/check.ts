@@ -1,5 +1,5 @@
-import type { CliCommand } from '../types.ts';
-import { commandCheck } from '../drift.ts';
+import type { CliCommand } from '../platform/types.ts';
+import { commandCheck } from '../doctrine/drift.ts';
 
 export const command: CliCommand = {
   name: 'check',

@@ -33,7 +33,7 @@ Read from the code at `2c6fcf0`.
 - **The routes** are `DAORIS.DRIVER`'s `PLUGINS`, `PLUGIN_ACTION`, `PLUGIN_UPDATE`, `PLUGIN_INSTALL`,
   `PLUGIN_NEW` and `PLUGIN_TRY` (`DriverModule.Plugins.cs`), and `DAORIS.REGISTRY`'s `PICK_FOLDER`.
 - **The terminal** has two homes. The CLI's `daoris plugin list|add|add --offer|update|remove|enable|disable`
-  edits the catalogue (`src/Daoris.Cli/src/plugins.ts`, the twin of `PluginInstall.cs`). The driver's
+  edits the catalogue (`src/Daoris.Cli/src/plugins/plugins.ts`, the twin of `PluginInstall.cs`). The driver's
   `daoris-driver plugins new|try` makes and tries plugins (D101).
 - **Ask Daoris** proposes `plugin_propose`: add a landed folder or an offer, switch on, switch off, update. Its
   room says how a plugin is made (PLUG9) and names Daoris's own plugins.

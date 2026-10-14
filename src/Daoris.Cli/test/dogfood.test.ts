@@ -4,12 +4,13 @@ import { join, dirname, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync, readdirSync } from 'node:fs';
 import { COMMANDS } from '../src/cli.ts';
-import { readCanon } from '../src/canon.ts';
-import { frontmatterEnd, parseFrontmatter, SKILL_FIELDS } from '../src/document.ts';
-import { listFiles, readText } from '../src/fsx.ts';
-import { readManifest, readLock } from '../src/config.ts';
-import { inspect, commandCheck } from '../src/drift.ts';
-import { ROLES } from '../src/documents.ts';
+import { readCanon } from '../src/doctrine/canon.ts';
+import { frontmatterEnd, parseFrontmatter, SKILL_FIELDS } from '../src/doctrine/document.ts';
+import { listFiles, readText } from '../src/platform/fsx.ts';
+import { readManifest, readLock } from '../src/doctrine/config.ts';
+import { inspect, commandCheck } from '../src/doctrine/drift.ts';
+import { ROLES } from '../src/layout/documents.ts';
+import { cliSource } from './_sources.ts';
 
 // This package is src/Daoris.Cli; the canon and daoris's own doctrine live at
 // the workspace root, because they are the project's data rather than the CLI's.
@@ -558,8 +559,11 @@ const NETWORK = new RegExp([
 /** The spawning primitive, in any spelling — held to one module the way the network is. */
 const SPAWNING = importing('child_process');
 
-/** The one module permitted a network primitive. Every management command speaks through it. */
-const SERVICE_CLIENT = 'service.ts';
+/**
+ * The one module permitted a network primitive. Every management command speaks through it. Modules here are named by
+ * their path under `src/`, found by name (STRUCT5d): the sources sit in module folders.
+ */
+const SERVICE_CLIENT = cliSource('service.ts');
 
 /**
  * A check you have not watched fail proves nothing — and a pattern is only as good as the spellings it
@@ -585,7 +589,7 @@ test('the guards recognise every spelling of the primitives they hold', () => {
 });
 
 /** The one module permitted to spawn. Doctrine commands must not reach it either (below). */
-const SPAWNS = 'toolchain.ts';
+const SPAWNS = cliSource('toolchain.ts');
 
 test('only the toolchain may spawn a process', () => {
   for (const dir of ['src', 'bin']) {
@@ -613,7 +617,7 @@ test('every child the toolchain starts is started in one place, with the tools�
   assert.ok(start >= 0 && start < calls[0]!.index!, 'the one spawnSync is inside startChild');
   const body = source.slice(start, calls[0]!.index!).replace(/\/\/[^\n]*/g, '');
   assert.match(body, /\bhandTools\(/, 'startChild hands the child the tools’ environment');
-  assert.match(source, /import \{[^}]*\bhandTools\b[^}]*\} from '\.\/tools\.ts';/);
+  assert.match(source, /import \{[^}]*\bhandTools\b[^}]*\} from '(?:\.\.?\/)+(?:[\w-]+\/)*tools\.ts';/);
 });
 
 test('only the service client may touch the network', () => {
@@ -640,7 +644,7 @@ test('only the service client may touch the network', () => {
  */
 const DOCTRINE_ROWS = COMMANDS.filter((command) => command.kind === 'doctrine').map((command) => `cli/${command.name}.ts`);
 const DOCTRINE = [
-  'drift.ts', 'materialize.ts', 'indexgen.ts', 'upstream.ts', 'commands.ts', 'twins.ts', 'analyze.ts',
+  ...['drift.ts', 'materialize.ts', 'indexgen.ts', 'upstream.ts', 'commands.ts', 'twins.ts', 'analyze.ts'].map((name) => cliSource(name)),
   ...DOCTRINE_ROWS,
 ];
 
@@ -683,7 +687,7 @@ test('nothing a doctrine command reaches can spawn a harness', () => {
 
 /**
  * Every module an entry point pulls in, transitively — both import spellings. Modules are named by
- * their path under `src/`, so a row under `cli/` importing `../drift.ts` reaches `drift.ts`.
+ * their path under `src/`, so a row under `cli/` importing `../doctrine/drift.ts` reaches `doctrine/drift.ts`.
  */
 function reachableFrom(entry: string): Set<string> {
   const seen = new Set<string>();
@@ -715,7 +719,7 @@ function reachableFrom(entry: string): Set<string> {
  * append to without thinking.
  */
 test('the file-local management verbs reach no network module either', () => {
-  for (const entry of ['remotes.ts', 'remotemap.ts', 'toolchain.ts', 'driverconfig.ts', 'plugins.ts', 'tools.ts']) {
+  for (const entry of ['remotes.ts', 'remotemap.ts', 'toolchain.ts', 'driverconfig.ts', 'plugins.ts', 'tools.ts'].map((name) => cliSource(name))) {
     const seen = reachableFrom(entry);
 
     assert.equal(
@@ -734,13 +738,13 @@ test('the file-local management verbs reach no network module either', () => {
 test('the tools file reaches neither the toolchain nor the service client', () => {
   // TOOLS3: the resource lists are read and merged beside it, as pure. TOOLS4: the download, the archive readers and
   // the verb are pure too; only the dispatcher's row, below, hands them a fetcher.
-  for (const entry of ['tools.ts', 'resources.ts', 'toolinstall.ts', 'zipfile.ts']) {
+  for (const entry of ['tools.ts', 'resources.ts', 'toolinstall.ts', 'zipfile.ts'].map((name) => cliSource(name))) {
     const seen = reachableFrom(entry);
     assert.equal(seen.has(SPAWNS), false, `${entry} reaches the harness toolchain through: ${[...seen].sort().join(', ')}`);
     assert.equal(seen.has(SERVICE_CLIENT), false, `${entry} reaches the service client through: ${[...seen].sort().join(', ')}`);
     assert.ok(seen.size > 1, `the walk from ${entry} found nothing, so it proved nothing`);
   }
-  assert.ok(reachableFrom('toolinstall.ts').has('zipfile.ts'), 'the walk from the download no longer reaches the zip reader');
+  assert.ok(reachableFrom(cliSource('toolinstall.ts')).has(cliSource('zipfile.ts')), 'the walk from the download no longer reaches the zip reader');
 });
 
 /**
@@ -753,14 +757,14 @@ test('the tools file reaches neither the toolchain nor the service client', () =
  * since MOD7.
  */
 test('agent pin reaches a release channel only through the fetcher the dispatcher hands in', () => {
-  for (const entry of ['channels.ts', 'openpgp.ts', 'tarball.ts']) {
+  for (const entry of ['channels.ts', 'openpgp.ts', 'tarball.ts'].map((name) => cliSource(name))) {
     const seen = reachableFrom(entry);
     assert.equal(seen.has(SERVICE_CLIENT), false, `${entry} reaches the service client through: ${[...seen].sort().join(', ')}`);
     assert.equal(seen.has(SPAWNS), false, `${entry} reaches the harness toolchain through: ${[...seen].sort().join(', ')}`);
   }
 
   const row = readText(join(cliRoot, 'src', 'cli', 'agent.ts'));
-  assert.match(row, /import \{ releaseFetcher \} from '\.\.\/service\.ts';/);
+  assert.match(row, /import \{ releaseFetcher \} from '\.\.\/(?:[\w-]+\/)*service\.ts';/);
   assert.match(row, /run: \(args\) => commandHarness\(args, releaseFetcher\(\)\)/);
 });
 
@@ -772,8 +776,8 @@ test('agent pin reaches a release channel only through the fetcher the dispatche
  */
 test('tool download reaches a host only through the fetcher the dispatcher hands in, every hop held to the address rule', () => {
   const row = readText(join(cliRoot, 'src', 'cli', 'tool.ts'));
-  assert.match(row, /import \{ releaseFetcher \} from '\.\.\/service\.ts';/);
-  assert.match(row, /import \{ isAddress \} from '\.\.\/tools\.ts';/);
+  assert.match(row, /import \{ releaseFetcher \} from '\.\.\/(?:[\w-]+\/)*service\.ts';/);
+  assert.match(row, /import \{ isAddress \} from '\.\.\/(?:[\w-]+\/)*tools\.ts';/);
   assert.match(row, /run: \(args\) => commandTool\(args, releaseFetcher\(\{ hop: isAddress, redirects: REDIRECTS, bound: LOOK_BOUND_MS \}\)\)/);
 
   // The only rows that reach the service client are the ones that say so: a new row reaching it is a decision.
@@ -791,7 +795,7 @@ test('tool download reaches a host only through the fetcher the dispatcher hands
  */
 test('driver retry and review read the service only through the readers the dispatcher hands in', () => {
   const row = readText(join(cliRoot, 'src', 'cli', 'driver.ts'));
-  assert.match(row, /import \{ registryCheckouts, sessionRecords \} from '\.\.\/service\.ts';/);
+  assert.match(row, /import \{ registryCheckouts, sessionRecords \} from '\.\.\/(?:[\w-]+\/)*service\.ts';/);
   // WORKFLOW1d hands the `workflow` verbs in after them, which read the registry through the same reader.
   assert.match(row, /run: \(args\) => commandDriver\(args, \(\) => sessionRecords\(\), \(\) => registryCheckouts\(\), \(each, context\) => commandWorkflow\(each, context\)\)/);
 });

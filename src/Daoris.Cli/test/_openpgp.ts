@@ -1,5 +1,5 @@
 import { createHash, generateKeyPairSync, sign, type JsonWebKey } from 'node:crypto';
-import { dearmor, readPublicKeys } from '../src/openpgp.ts';
+import { dearmor, readPublicKeys } from '../src/agents/openpgp.ts';
 
 /**
  * A key and a signature made HERE, in the vendor's format (AGT2b) — so a test can say "signed by

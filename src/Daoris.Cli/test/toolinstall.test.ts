@@ -3,17 +3,17 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import type { Fetcher } from '../src/channels.ts';
-import { DaorisError, RefusalError } from '../src/errors.ts';
+import type { Fetcher } from '../src/agents/channels.ts';
+import { DaorisError, RefusalError } from '../src/platform/errors.ts';
 import {
   BUILT_IN, currentPlatform, locationCopy, mergeResources, parseResources, type ArchiveKind, type MergedResources, type OfferedVersion,
-} from '../src/resources.ts';
-import { releaseFetcher } from '../src/service.ts';
+} from '../src/tools/resources.ts';
+import { releaseFetcher } from '../src/service/service.ts';
 import {
   LOOK_BOUND_MS, RECORD_KEYS, REDIRECTS, STAGING, commandTool, deleteVersion, downloadVersion, downloadedVersions, lookLocations,
   planTool, unpackPackage, versionFolder, type ToolAction,
-} from '../src/toolinstall.ts';
-import { TOOLS_FILE, TOOLS_FOLDER, TOOL_PACKAGE, TOOL_RECORD, isAddress, readTools } from '../src/tools.ts';
+} from '../src/tools/toolinstall.ts';
+import { TOOLS_FILE, TOOLS_FOLDER, TOOL_PACKAGE, TOOL_RECORD, isAddress, readTools } from '../src/tools/tools.ts';
 import { buildArchive } from './_archives.ts';
 import { driverRows as csharpRows, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';

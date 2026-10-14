@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { MANIFEST, commandPlugin, pluginsRoot, readIcon, readManifest, readPlugins } from '../src/plugins.ts';
+import { MANIFEST, commandPlugin, pluginsRoot, readIcon, readManifest, readPlugins } from '../src/plugins/plugins.ts';
 import { driverRows, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 

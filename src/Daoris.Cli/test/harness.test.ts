@@ -4,10 +4,10 @@ import { makeFixture } from './_fixture.ts';
 import {
   detectHarnesses, verifyHarnessContract, harnessVerdict,
   resolveHarness, HARNESSES, DEFAULT_HARNESS, alwaysLoadedTiers, tierNames,
-} from '../src/harness.ts';
-import { readManifest } from '../src/config.ts';
+} from '../src/layout/harness.ts';
+import { readManifest } from '../src/doctrine/config.ts';
 import { captureError } from './_fixture.ts';
-import { DaorisError } from '../src/errors.ts';
+import { DaorisError } from '../src/platform/errors.ts';
 
 test('the supported harness is recognised by its own layout', () => {
   const fx = makeFixture('harness-claude');

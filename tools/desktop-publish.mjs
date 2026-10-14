@@ -59,7 +59,7 @@ import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync,
 import { dirname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // The tar reader the CLI carries (AGT2b): what unpacks the doctrine tool's package (D124 §1.2).
-import { extractTarGz } from '../src/Daoris.Cli/src/tarball.ts';
+import { extractTarGz } from '../src/Daoris.Cli/src/platform/tarball.ts';
 import { copyTree, isMain, renameHeld, writeAtomic } from './fsx.mjs';
 import { running } from './processes.mjs';
 // The service hosts' one build recipe (CONNECTOR1): what `--service` lays under `app/`, built as the service publish builds it.
@@ -283,7 +283,7 @@ export function layResources(source, install) {
  * release publishes, unpacked the way npm lays a package out under a prefix, `<prefix>/node_modules/daoris`.
  *
  * 🔴 The `node_modules` folder is load-bearing. The CLI reads the canon it ships only when its own folder sits
- * under one (`resolveCanonRoot`, `src/Daoris.Cli/src/canon.ts`); anywhere else it takes itself for a development
+ * under one (`resolveCanonRoot`, `src/Daoris.Cli/src/doctrine/canon.ts`); anywhere else it takes itself for a development
  * checkout and reads `../../canon`, which in an install is `<install>/canon`: a folder nothing publishes, or a
  * neighbour's under `--beside`. Laid out as npm would, the package finds its canon by the same rule wherever
  * it is installed, and that rule needs no second case. `desktop-publish.test.ts` holds the two together.

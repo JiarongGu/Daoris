@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { ACCOUNTS_OWN, failuresOf } from '../src/strikes.ts';
-import { sessionRecords } from '../src/service.ts';
+import { ACCOUNTS_OWN, failuresOf } from '../src/driver/strikes.ts';
+import { sessionRecords } from '../src/service/service.ts';
 import { driverRows as csharpRows, driverFile, driverTestFile } from './_csharp.ts';
 
 /**

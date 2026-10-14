@@ -1,6 +1,6 @@
 // The agents descriptor, the manifest's new fields and the lock's (LAYOUT3; D117 §2, §5.1).
 //
-// A second implementation beside `claude-code` in `src/harness.ts`, selected by the manifest's
+// A second implementation beside `claude-code` in `src/layout/harness.ts`, selected by the manifest's
 // existing `harness` field. The lock grows additively, as D71 grew `switchedOff`: a lock that uses
 // nothing new is byte for byte what it was.
 
@@ -8,11 +8,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { captureError, makeFixture } from './_fixture.ts';
 import { layoutFixture, skill } from './_layout.ts';
-import { readManifest, readLock, writeLock } from '../src/config.ts';
-import { HARNESSES, resolveHarness, verifyHarnessContract } from '../src/harness.ts';
-import { lockLayout } from '../src/layout.ts';
-import { digestBytes } from '../src/fsx.ts';
-import { DaorisError } from '../src/errors.ts';
+import { readManifest, readLock, writeLock } from '../src/doctrine/config.ts';
+import { HARNESSES, resolveHarness, verifyHarnessContract } from '../src/layout/harness.ts';
+import { lockLayout } from '../src/layout/layout.ts';
+import { digestBytes } from '../src/platform/fsx.ts';
+import { DaorisError } from '../src/platform/errors.ts';
 
 test('the agents descriptor keeps the tiers under .agents, the region in AGENTS.md, and mirrors skills for Claude Code', () => {
   const agents = resolveHarness('agents');

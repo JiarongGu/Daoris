@@ -38,7 +38,7 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { managedBinary, harnessHome, harnessesPath, readHarnessSettings, resolveVersion } from '../src/Daoris.Cli/src/toolchain.ts';
+import { managedBinary, harnessHome, harnessesPath, readHarnessSettings, resolveVersion } from '../src/Daoris.Cli/src/agents/toolchain.ts';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const scratch = join(repoRoot, '_fixtures', 'acp-trust-probe');

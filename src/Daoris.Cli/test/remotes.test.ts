@@ -2,11 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { commandRemote } from '../src/remotes.ts';
-import { readRemotes, redactKey, remotesPath } from '../src/remotemap.ts';
-import { commandStatus } from '../src/commands.ts';
+import { commandRemote } from '../src/service/remotes.ts';
+import { readRemotes, redactKey, remotesPath } from '../src/service/remotemap.ts';
+import { commandStatus } from '../src/doctrine/commands.ts';
 import { makeFixture } from './_fixture.ts';
-import { DaorisError } from '../src/errors.ts';
+import { DaorisError } from '../src/platform/errors.ts';
 
 /**
  * `daoris remote` — management parity for the machine's wiring (D50, workspace design §2b).

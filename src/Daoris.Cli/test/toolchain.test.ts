@@ -8,14 +8,14 @@ import {
   TOOLCHAINS, accountLines, addKeyAccount, commandHarness, harnessesPath, joinsOf, keyOf, managedBinary, managedHome,
   nextAccount, profileHome, profiles, probe, readHarnessSettings, removeProfile, replaceKeyAccount, resolveProfile,
   resolveVersion, signInNew, signInTo, versionFromNpm, withDefault, writeHarnessSettings,
-} from '../src/toolchain.ts';
-import type { HarnessSettings, Toolchain } from '../src/toolchain.ts';
-import { CLAUDE_LATEST, CODEX_LATEST, CODEX_RELEASES, codexTarget } from '../src/channels.ts';
-import type { Fetcher } from '../src/channels.ts';
-import { COOLING_FILE, coolingOf, coolingWhen, machineZone } from '../src/cooling.ts';
-import { keepRead, readOf, readsOf } from '../src/accountreads.ts';
-import { accountNames } from '../src/accountnames.ts';
-import { WINDOWS_FILE } from '../src/windows.ts';
+} from '../src/agents/toolchain.ts';
+import type { HarnessSettings, Toolchain } from '../src/agents/toolchain.ts';
+import { CLAUDE_LATEST, CODEX_LATEST, CODEX_RELEASES, codexTarget } from '../src/agents/channels.ts';
+import type { Fetcher } from '../src/agents/channels.ts';
+import { COOLING_FILE, coolingOf, coolingWhen, machineZone } from '../src/accounts/cooling.ts';
+import { keepRead, readOf, readsOf } from '../src/accounts/accountreads.ts';
+import { accountNames } from '../src/accounts/accountnames.ts';
+import { WINDOWS_FILE } from '../src/accounts/windows.ts';
 import { makeFixture } from './_fixture.ts';
 import { captureError } from './_fixture.ts';
 import { TAR_END, tarEntry } from './_tar.ts';

@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import type { Fixture } from './_fixture.ts';
 import { makeFixture, captureError } from './_fixture.ts';
-import { commandSync } from '../src/materialize.ts';
-import { commandUpstream } from '../src/upstream.ts';
-import { commandStatus } from '../src/commands.ts';
-import { readText } from '../src/fsx.ts';
-import { DaorisError } from '../src/errors.ts';
+import { commandSync } from '../src/doctrine/materialize.ts';
+import { commandUpstream } from '../src/doctrine/upstream.ts';
+import { commandStatus } from '../src/doctrine/commands.ts';
+import { readText } from '../src/platform/fsx.ts';
+import { DaorisError } from '../src/platform/errors.ts';
 
 /**
  * WSSETUP4 (D124 §1.4): an older doctrine tool never rewrites a newer lock. `sync` measures against the lock

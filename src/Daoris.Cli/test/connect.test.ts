@@ -2,12 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { commandConnect, registration, usesOf } from '../src/connect.ts';
-import { isLocalService } from '../src/service.ts';
-import { readManifest } from '../src/config.ts';
-import { DaorisError } from '../src/errors.ts';
+import { commandConnect, registration, usesOf } from '../src/service/connect.ts';
+import { isLocalService } from '../src/service/service.ts';
+import { readManifest } from '../src/doctrine/config.ts';
+import { DaorisError } from '../src/platform/errors.ts';
 import { makeFixture } from './_fixture.ts';
-import type { Manifest } from '../src/types.ts';
+import type { Manifest } from '../src/platform/types.ts';
 
 const manifest = {
   source: 'github:Owner/Daoris#v0.0.1',

@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { layoutFixture } from './_layout.ts';
-import { applyLineEndings, LINE_ENDINGS_RULE, pinsLineEndings, planLineEndings } from '../src/lineendings.ts';
+import { applyLineEndings, LINE_ENDINGS_RULE, pinsLineEndings, planLineEndings } from '../src/doctrine/lineendings.ts';
 
 /** A repository about to adopt: the layout fixture, before its manifest is written. */
 function adopting(tag: string) {

@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { READS_FILE, forgetRead, keepRead, readOf, readsOf } from '../src/accountreads.ts';
-import type { Login } from '../src/accountreads.ts';
+import { READS_FILE, forgetRead, keepRead, readOf, readsOf } from '../src/accounts/accountreads.ts';
+import type { Login } from '../src/accounts/accountreads.ts';
 import {
   TOOLCHAINS, commandHarness, managedHome, profileHome, removeProfile, signInNew, signInTo,
-} from '../src/toolchain.ts';
-import type { Toolchain } from '../src/toolchain.ts';
+} from '../src/agents/toolchain.ts';
+import type { Toolchain } from '../src/agents/toolchain.ts';
 import { driverFile, driverRows, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 

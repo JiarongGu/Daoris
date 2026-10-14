@@ -2,12 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { COOLING_FILE, coolingLine, coolingOf, coolingWhen, coolingWhy, endCooling, readCooling } from '../src/cooling.ts';
-import type { CoolingEntry } from '../src/cooling.ts';
+import { COOLING_FILE, coolingLine, coolingOf, coolingWhen, coolingWhy, endCooling, readCooling } from '../src/accounts/cooling.ts';
+import type { CoolingEntry } from '../src/accounts/cooling.ts';
 import {
   TOOLCHAINS, accountLines, addKeyAccount, commandHarness, profileHome, removeProfile, signInNew, signInTo,
-} from '../src/toolchain.ts';
-import type { HarnessReport, HarnessSettings } from '../src/toolchain.ts';
+} from '../src/agents/toolchain.ts';
+import type { HarnessReport, HarnessSettings } from '../src/agents/toolchain.ts';
 import { driverRows as csharpRows, driverTestFile } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 

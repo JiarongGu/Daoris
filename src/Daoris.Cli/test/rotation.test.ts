@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { commandHarness, profileHome, readHarnessSettings, withDefault, writeHarnessSettings } from '../src/toolchain.ts';
-import { resolveRotation, rotationProblem, withRotation, withoutAccount } from '../src/rotation.ts';
+import { commandHarness, profileHome, readHarnessSettings, withDefault, writeHarnessSettings } from '../src/agents/toolchain.ts';
+import { resolveRotation, rotationProblem, withRotation, withoutAccount } from '../src/accounts/rotation.ts';
 import { driverRows as csharpRows, driverTestFile } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 

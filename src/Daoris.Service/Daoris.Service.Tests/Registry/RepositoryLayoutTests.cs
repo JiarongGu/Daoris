@@ -9,7 +9,7 @@ namespace Daoris.Service.Tests;
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>A twin</b> (<c>.claude/knowledge/twins.md</c>, *the layout*): the CLI's <c>lockLayout</c>
-/// (<c>src/Daoris.Cli/src/layout.ts</c>) answers where a lock's files are, and its <c>heldAsText</c>
+/// (<c>src/Daoris.Cli/src/layout/layout.ts</c>) answers where a lock's files are, and its <c>heldAsText</c>
 /// (<c>links.ts</c>) what a link checked out as text is. The two sides share no code, so each carries
 /// the table: <see cref="The_layout_a_lock_was_written_under"/> holds the CLI's
 /// <c>layout-descriptor.test.ts</c> rows, and <see cref="What_a_link_held_as_text_is"/> its

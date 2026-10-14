@@ -1,5 +1,5 @@
-import type { CliCommand } from '../types.ts';
-import { commandRemote } from '../remotes.ts';
+import type { CliCommand } from '../platform/types.ts';
+import { commandRemote } from '../service/remotes.ts';
 
 export const command: CliCommand = {
   name: 'remote',

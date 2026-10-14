@@ -2,13 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Fixture } from './_fixture.ts';
 import { makeFixture, captureError } from './_fixture.ts';
-import { readCanon, resolveSelection } from '../src/canon.ts';
-import { readLock, readManifest } from '../src/config.ts';
-import { planChanges, planSync, applySync, commandSync } from '../src/materialize.ts';
-import { commandCheck } from '../src/drift.ts';
-import { commandInit, commandStatus } from '../src/commands.ts';
-import { analyze } from '../src/analyze.ts';
-import { DaorisError } from '../src/errors.ts';
+import { readCanon, resolveSelection } from '../src/doctrine/canon.ts';
+import { readLock, readManifest } from '../src/doctrine/config.ts';
+import { planChanges, planSync, applySync, commandSync } from '../src/doctrine/materialize.ts';
+import { commandCheck } from '../src/doctrine/drift.ts';
+import { commandInit, commandStatus } from '../src/doctrine/commands.ts';
+import { analyze } from '../src/doctrine/analyze.ts';
+import { DaorisError } from '../src/platform/errors.ts';
 
 /**
  * 🔴 **A pack may switch a core row off, the repository confirms it, and it is never silent** (D71).

@@ -1,5 +1,5 @@
 import { deflateRawSync, gzipSync } from 'node:zlib';
-import { crc32 } from '../src/zipfile.ts';
+import { crc32 } from '../src/platform/zipfile.ts';
 import { TAR_END, pax, tarEntry } from './_tar.ts';
 
 /**

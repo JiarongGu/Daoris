@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { grantTrust, isTrusted, trustKey } from '../src/trust.ts';
-import { commandHarness } from '../src/toolchain.ts';
+import { grantTrust, isTrusted, trustKey } from '../src/agents/trust.ts';
+import { commandHarness } from '../src/agents/toolchain.ts';
 import { makeFixture, captureError } from './_fixture.ts';
 
 /**

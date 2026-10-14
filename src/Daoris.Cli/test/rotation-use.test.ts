@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { commandHarness, profileHome, readHarnessSettings, writeHarnessSettings } from '../src/toolchain.ts';
+import { commandHarness, profileHome, readHarnessSettings, writeHarnessSettings } from '../src/agents/toolchain.ts';
 import {
   CURVE_MOST_POINTS, CURVE_WINDOWS, SWITCHES, USE_DEFAULTS, USE_MODES, curveProblem, resolveScope, scopeProblem, withRotation, withUse,
-} from '../src/rotation.ts';
-import type { RotationUse, UseChange } from '../src/rotation.ts';
-import { COOLING_FILE } from '../src/cooling.ts';
-import { WINDOWS_FILE } from '../src/windows.ts';
+} from '../src/accounts/rotation.ts';
+import type { RotationUse, UseChange } from '../src/accounts/rotation.ts';
+import { COOLING_FILE } from '../src/accounts/cooling.ts';
+import { WINDOWS_FILE } from '../src/accounts/windows.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**

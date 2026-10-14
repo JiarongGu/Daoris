@@ -49,4 +49,16 @@ public sealed class SourceFilesTests
         Assert.DoesNotContain(all, path => Path.GetRelativePath(driver, path).Split(Path.DirectorySeparatorChar)[0] is "bin" or "obj");
         Assert.Equal(all.Order(StringComparer.Ordinal), all);
     }
+
+    [Fact]
+    public void The_CLI_s_sources_are_found_in_their_module_folders_and_a_command_row_is_not_its_handler()
+    {
+        var cli = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "src");
+
+        Assert.Equal(Path.Combine(cli, "agents", "toolchain.ts"), SourceFiles.Cli("toolchain.ts"));
+        // `cli/analyze.ts` is the verb's row, which shares its name with the module that handles it (STRUCT5d).
+        Assert.Equal(Path.Combine(cli, "doctrine", "analyze.ts"), SourceFiles.Cli("analyze.ts"));
+        var refused = Assert.Throws<InvalidOperationException>(() => SourceFiles.Cli("gone.ts"));
+        Assert.Equal("no gone.ts under Daoris.Cli: a source read by name must be there, at any depth", refused.Message);
+    }
 }

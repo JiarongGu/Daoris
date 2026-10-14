@@ -5,8 +5,8 @@ import { join } from 'node:path';
 import {
   DEFAULTS, PERMISSIONS_FILE, addRule, commandRules, composeRules, permissionsPath, readPermissions,
   removeRule, ruleRefusal, switchDefault, writePermissions,
-} from '../src/permissions.ts';
-import { commandHarness } from '../src/toolchain.ts';
+} from '../src/agents/permissions.ts';
+import { commandHarness } from '../src/agents/toolchain.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**

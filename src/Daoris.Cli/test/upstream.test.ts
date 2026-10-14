@@ -4,12 +4,12 @@ import { join } from 'node:path';
 import { existsSync } from 'node:fs';
 import type { Fixture } from './_fixture.ts';
 import { makeFixture, captureError } from './_fixture.ts';
-import { readCanon } from '../src/canon.ts';
-import { readManifest, readLock } from '../src/config.ts';
-import { planSync, applySync } from '../src/materialize.ts';
-import { upstreamFile, upstreamAll } from '../src/upstream.ts';
-import { readText } from '../src/fsx.ts';
-import { DaorisError } from '../src/errors.ts';
+import { readCanon } from '../src/doctrine/canon.ts';
+import { readManifest, readLock } from '../src/doctrine/config.ts';
+import { planSync, applySync } from '../src/doctrine/materialize.ts';
+import { upstreamFile, upstreamAll } from '../src/doctrine/upstream.ts';
+import { readText } from '../src/platform/fsx.ts';
+import { DaorisError } from '../src/platform/errors.ts';
 
 const doc = (name: string) => `---\nname: ${name}\napplies_when: w\nenforces: e\n---\n\nBody of ${name}.\n`;
 

@@ -6,7 +6,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { createServer, type Server } from 'node:net';
-import { readText, listFiles } from '../src/fsx.ts';
+import { readText, listFiles } from '../src/platform/fsx.ts';
 import { desktopFile } from './_csharp.ts';
 // The workspace's own tooling is plain `.mjs` and ships no declarations, so this import is untyped
 // by construction. Suppressed at the one site rather than given a hand-written `.d.mts`, which would

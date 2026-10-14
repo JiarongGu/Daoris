@@ -5,7 +5,7 @@ import { dirname } from 'node:path';
 import {
   addFavorite, commandBrowser, favoriteAddress, favoritesFile, readBrowserSettings, readFavorites,
   removeFavorite, setExtensions, setLinks, settingsFile,
-} from '../src/browser.ts';
+} from '../src/browser/browser.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**

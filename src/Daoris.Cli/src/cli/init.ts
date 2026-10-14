@@ -1,5 +1,5 @@
-import type { CliCommand } from '../types.ts';
-import { commandInit } from '../commands.ts';
+import type { CliCommand } from '../platform/types.ts';
+import { commandInit } from '../doctrine/commands.ts';
 
 export const command: CliCommand = {
   name: 'init',

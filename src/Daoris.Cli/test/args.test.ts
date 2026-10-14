@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { flagValue, operands } from '../src/args.ts';
-import { DaorisError } from '../src/errors.ts';
+import { flagValue, operands } from '../src/platform/args.ts';
+import { DaorisError } from '../src/platform/errors.ts';
 
 /**
  * The CLI's one argument parser (REV3 CLI C2). Five commands each scanned `argv` their own way, and

@@ -1,5 +1,5 @@
-import type { CliCommand } from '../types.ts';
-import { commandWire } from '../manage.ts';
+import type { CliCommand } from '../platform/types.ts';
+import { commandWire } from '../service/manage.ts';
 
 export const command: CliCommand = {
   name: 'wire',

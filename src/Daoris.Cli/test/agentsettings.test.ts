@@ -4,8 +4,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   AGENT_EFFORTS, AGENT_MODELS, AGENT_SETTINGS_FILE, readAgentSettings, writeAgentSettings,
-} from '../src/agentsettings.ts';
-import { TOOLCHAINS, commandHarness, profileHome, writeHarnessSettings } from '../src/toolchain.ts';
+} from '../src/accounts/agentsettings.ts';
+import { TOOLCHAINS, commandHarness, profileHome, writeHarnessSettings } from '../src/agents/toolchain.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**

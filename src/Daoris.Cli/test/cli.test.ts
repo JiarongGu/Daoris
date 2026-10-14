@@ -4,7 +4,7 @@ import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { COMMANDS, runCli } from '../src/cli.ts';
-import type { CliCommand } from '../src/types.ts';
+import type { CliCommand } from '../src/platform/types.ts';
 import { makeFixture } from './_fixture.ts';
 
 test('--help prints usage and exits 0', () => {

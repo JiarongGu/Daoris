@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { commandDriver, readDriverChoices } from '../src/driverconfig.ts';
-import { OPINION_DECLARED_ONLY } from '../src/opinions.ts';
-import { MANIFEST, pluginsRoot } from '../src/plugins.ts';
-import type { CheckoutsReader } from '../src/reviews.ts';
-import { WORKFLOW_LIMITS, currentWorkflow, workflowCanonical, type WorkflowPlugin, type WorkflowStep } from '../src/workflows.ts';
-import { commandWorkflow } from '../src/workflowdoor.ts';
+import { commandDriver, readDriverChoices } from '../src/driver/driverconfig.ts';
+import { OPINION_DECLARED_ONLY } from '../src/driver/opinions.ts';
+import { MANIFEST, pluginsRoot } from '../src/plugins/plugins.ts';
+import type { CheckoutsReader } from '../src/driver/reviews.ts';
+import { WORKFLOW_LIMITS, currentWorkflow, workflowCanonical, type WorkflowPlugin, type WorkflowStep } from '../src/workflows/workflows.ts';
+import { commandWorkflow } from '../src/workflows/workflowdoor.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**

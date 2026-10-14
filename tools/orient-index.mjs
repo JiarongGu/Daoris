@@ -859,7 +859,8 @@ function cliVerbs(ctx) {
     const run = /\brun:\s*(?:(?:async\s*)?\([^)]*\)\s*=>\s*)?([A-Za-z_$][\w$]*)/.exec(source)?.[1];
     let handler = '';
     if (run) {
-      const from = new RegExp(`import \\{[^}]*\\b${run}\\b[^}]*\\} from '\\.\\./([\\w-]+)\\.ts'`).exec(source)?.[1];
+      // The handler's module, at the sources' top or in a module folder (STRUCT5d): `../drift.ts`, `../doctrine/drift.ts`.
+      const from = new RegExp(`import \\{[^}]*\\b${run}\\b[^}]*\\} from '\\.\\./([\\w/-]+)\\.ts'`).exec(source)?.[1];
       const target = from ? `src/Daoris.Cli/src/${from}.ts` : file;
       const line = ctx.has(target) ? ctx.lines(target).findIndex((text) => new RegExp(`^export\\s+(?:async\\s+)?(?:function\\s+|const\\s+)${run}\\b`).test(text)) : -1;
       if (line >= 0) handler = `\`${target.slice('src/Daoris.Cli/src/'.length)}:${line + 1}\` ${run}`;

@@ -11,8 +11,8 @@ import { join } from 'node:path';
 import type { LayoutFixture } from './_layout.ts';
 import { captureError } from './_fixture.ts';
 import { layoutFixture } from './_layout.ts';
-import { CLOSE, IMPORT, OPEN } from '../src/region.ts';
-import { DaorisError } from '../src/errors.ts';
+import { CLOSE, IMPORT, OPEN } from '../src/doctrine/region.ts';
+import { DaorisError } from '../src/platform/errors.ts';
 
 const ROOM = 'src/cli';
 const ROOM_AGENTS = 'src/cli/AGENTS.md';

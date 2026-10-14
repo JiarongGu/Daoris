@@ -708,7 +708,7 @@ public sealed class PermissionRulesTests : IDisposable
     [Fact]
     public void The_defaults_are_the_clis_defaults()
     {
-        var source = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Cli", "src", "permissions.ts"));
+        var source = File.ReadAllText(SourceFiles.Cli("permissions.ts"));
 
         foreach (var shipped in PermissionRules.Defaults)
         {
@@ -722,12 +722,5 @@ public sealed class PermissionRulesTests : IDisposable
 
             if (shipped.Hook is { } hook) Assert.Contains($"hook: '{hook}'", source);
         }
-    }
-
-    private static string RepositoryRoot()
-    {
-        var at = new DirectoryInfo(AppContext.BaseDirectory);
-        while (at is not null && !File.Exists(Path.Combine(at.FullName, "daoris.json"))) at = at.Parent;
-        return at?.FullName ?? throw new InvalidOperationException("no workspace root above the test binary");
     }
 }

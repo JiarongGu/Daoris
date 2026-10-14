@@ -38,6 +38,18 @@ internal static class SourceFiles
             .Order(StringComparer.Ordinal);
     }
 
+    /// <summary>
+    /// The one CLI source of this name, at any depth of <c>src/Daoris.Cli/src/</c> but its command rows' <c>cli/</c>, whose
+    /// files share their verbs' names: the CLI's sources sit in module folders too (STRUCT5d, D166).
+    /// </summary>
+    /// <exception cref="InvalidOperationException">No source has the name, or two do.</exception>
+    public static string Cli(string name)
+    {
+        var folder = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "src");
+        return Single("Daoris.Cli", name, Directory.EnumerateFiles(folder, name, SearchOption.AllDirectories)
+            .Where(path => Path.GetRelativePath(folder, path).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)[0] != "cli"));
+    }
+
     /// <summary>The one file found by a name, or the refusal that says why the name names none.</summary>
     internal static string Single(string project, string name, IEnumerable<string> found)
     {

@@ -1,5 +1,5 @@
-import type { CliCommand } from '../types.ts';
-import { commandDoctor } from '../twins.ts';
+import type { CliCommand } from '../platform/types.ts';
+import { commandDoctor } from '../doctrine/twins.ts';
 
 export const command: CliCommand = {
   name: 'doctor',

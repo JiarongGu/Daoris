@@ -8,8 +8,8 @@ import {
   ARCHIVES, BUILT_IN, BUILT_IN_LAYOUT, LOCATIONS_FOLDER, PLATFORMS, RESOURCES_FILE, SCHEMA, builtInList, compareVersions,
   currentPlatform, integrityOf, locationCopy, mergeResources, parseResources, platformFor, readLists, readResourceFile,
   type MergedResources, type ResourceList,
-} from '../src/resources.ts';
-import { TOOLS, TOOLS_FILE, TOOLS_FOLDER } from '../src/tools.ts';
+} from '../src/tools/resources.ts';
+import { TOOLS, TOOLS_FILE, TOOLS_FOLDER } from '../src/tools/tools.ts';
 import { driverRows as csharpRows, driverFile, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 

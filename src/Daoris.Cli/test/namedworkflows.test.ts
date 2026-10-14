@@ -6,8 +6,8 @@ import { fileURLToPath } from 'node:url';
 import {
   KEPT_VERSIONS, MAX_STEPS, WORKFLOW_KINDS, WORKFLOW_PRESETS, planAddVersion, readSteps, readVersion, readWorkflowFile,
   versionCanonical, withGates, workflowDiff, workflowIdProblem, workflowLine, type NamedStep, type SavedStep, type VersionAdded,
-} from '../src/namedworkflows.ts';
-import { WORKFLOW_LIMITS } from '../src/workflows.ts';
+} from '../src/workflows/namedworkflows.ts';
+import { WORKFLOW_LIMITS } from '../src/workflows/workflows.ts';
 
 /**
  * WORKFLOW1d (D157 points 5, 6 and 8; the workflow design §2.4–§2.6, §3.2, §3.3, §3.9): named workflows and their versions.

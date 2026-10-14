@@ -6,7 +6,7 @@ import { writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
-import { readText } from '../src/fsx.ts';
+import { readText } from '../src/platform/fsx.ts';
 import { driverFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 import {

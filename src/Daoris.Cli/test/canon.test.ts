@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeFixture, captureError } from './_fixture.ts';
-import { readCanon, resolveSelection, resolveCanonRoot } from '../src/canon.ts';
-import { DaorisError } from '../src/errors.ts';
+import { readCanon, resolveSelection, resolveCanonRoot } from '../src/doctrine/canon.ts';
+import { DaorisError } from '../src/platform/errors.ts';
 
 function seedCanon() {
   const fx = makeFixture('canon');

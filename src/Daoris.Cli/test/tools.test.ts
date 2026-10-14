@@ -5,8 +5,8 @@ import { join } from 'node:path';
 import {
   GIT_SETTINGS, TOOLS, TOOLS_FILE, TOOLS_FOLDER, TOOL_PACKAGE, TOOL_RECORD, addLocation, gitKeyProblem,
   isWholePath, locationProblem, readTools, removeLocation, resolveTool, useFile, useManaged, useSystem,
-} from '../src/tools.ts';
-import { commandTool } from '../src/toolinstall.ts';
+} from '../src/tools/tools.ts';
+import { commandTool } from '../src/tools/toolinstall.ts';
 import { driverRows as csharpRows, driverTestFile } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 

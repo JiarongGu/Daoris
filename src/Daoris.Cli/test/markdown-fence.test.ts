@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { firstHeading, markdownFence } from '../src/document.ts';
+import { firstHeading, markdownFence } from '../src/doctrine/document.ts';
 import { driverTestFile } from './_csharp.ts';
 
 // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents

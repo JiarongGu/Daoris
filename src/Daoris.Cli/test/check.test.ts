@@ -4,10 +4,10 @@ import { rmSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Fixture } from './_fixture.ts';
 import { makeFixture } from './_fixture.ts';
-import { readCanon } from '../src/canon.ts';
-import { readManifest, readLock } from '../src/config.ts';
-import { planSync, applySync } from '../src/materialize.ts';
-import { inspect, commandCheck } from '../src/drift.ts';
+import { readCanon } from '../src/doctrine/canon.ts';
+import { readManifest, readLock } from '../src/doctrine/config.ts';
+import { planSync, applySync } from '../src/doctrine/materialize.ts';
+import { inspect, commandCheck } from '../src/doctrine/drift.ts';
 
 const doc = (name: string) => `---\nname: ${name}\napplies_when: w\nenforces: e\n---\n\nBody of ${name}.\n`;
 

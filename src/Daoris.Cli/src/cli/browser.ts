@@ -1,5 +1,5 @@
-import type { CliCommand } from '../types.ts';
-import { commandBrowser } from '../browser.ts';
+import type { CliCommand } from '../platform/types.ts';
+import { commandBrowser } from '../browser/browser.ts';
 
 export const command: CliCommand = {
   name: 'browser',

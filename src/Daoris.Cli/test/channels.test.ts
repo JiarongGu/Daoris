@@ -8,9 +8,9 @@ import { gzipSync } from 'node:zlib';
 import {
   CLAUDE_LATEST, CLAUDE_RELEASE_FINGERPRINT, CLAUDE_RELEASE_KEY, CLAUDE_RELEASES, CODEX_GITHUB, CODEX_LATEST,
   CODEX_RELEASES, claudePlatform, codexTarget, installFromChannel, latestVersion, refuseVersion,
-} from '../src/channels.ts';
-import type { Fetcher } from '../src/channels.ts';
-import { dearmor, readPublicKeys } from '../src/openpgp.ts';
+} from '../src/agents/channels.ts';
+import type { Fetcher } from '../src/agents/channels.ts';
+import { dearmor, readPublicKeys } from '../src/agents/openpgp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 import { signDetached, strangerKey } from './_openpgp.ts';
 import { TAR_END, tarEntry } from './_tar.ts';
