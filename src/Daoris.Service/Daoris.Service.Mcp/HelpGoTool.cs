@@ -4,7 +4,8 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>Ask Daoris's <c>go_propose</c> (HELP6): the <c>go</c> kind's tool, written by <see cref="HelpProposalBox.ProposeGo"/>.</summary>
-public sealed partial class KnowledgeTools
+[McpServerToolType]
+public sealed class HelpGoTool(IntakeScope? intake = null, HelpProposalBox? help = null)
 {
     [McpServerTool(Name = "go_propose")]
     [Description(

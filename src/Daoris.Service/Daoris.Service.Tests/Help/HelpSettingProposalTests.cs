@@ -65,7 +65,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [Fact]
     public void The_tool_says_a_branch_rule_may_accept_automatically_and_only_when_the_person_asks()
     {
-        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeSetting))!;
+        var method = typeof(Daoris.Knowledge.Mcp.HelpSettingTool).GetMethod(nameof(Daoris.Knowledge.Mcp.HelpSettingTool.ProposeSetting))!;
         var value = method.GetParameters().Single(parameter => parameter.Name == "value")
             .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
             .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
@@ -148,7 +148,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [Fact]
     public void The_tool_names_every_door()
     {
-        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeSetting))!;
+        var method = typeof(Daoris.Knowledge.Mcp.HelpSettingTool).GetMethod(nameof(Daoris.Knowledge.Mcp.HelpSettingTool.ProposeSetting))!;
         var door = method.GetParameters().Single(parameter => parameter.Name == "door")
             .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
             .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
@@ -169,7 +169,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [Fact]
     public void The_tool_says_retry_takes_a_held_quest_as_well_as_a_parked_one()
     {
-        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeSetting))!;
+        var method = typeof(Daoris.Knowledge.Mcp.HelpSettingTool).GetMethod(nameof(Daoris.Knowledge.Mcp.HelpSettingTool.ProposeSetting))!;
         var target = method.GetParameters().Single(parameter => parameter.Name == "target")
             .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
             .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
@@ -187,7 +187,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [Fact]
     public void The_tool_says_a_language_takes_a_code_of_the_table_or_a_clear_and_is_not_the_windows()
     {
-        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeSetting))!;
+        var method = typeof(Daoris.Knowledge.Mcp.HelpSettingTool).GetMethod(nameof(Daoris.Knowledge.Mcp.HelpSettingTool.ProposeSetting))!;
         string Described(string name) => method.GetParameters().Single(parameter => parameter.Name == name)
             .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
             .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
@@ -250,7 +250,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [Fact]
     public void The_tool_says_what_a_review_takes_that_production_is_never_one_and_what_the_gate_does()
     {
-        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeSetting))!;
+        var method = typeof(Daoris.Knowledge.Mcp.HelpSettingTool).GetMethod(nameof(Daoris.Knowledge.Mcp.HelpSettingTool.ProposeSetting))!;
         string Described(string name) => method.GetParameters().Single(parameter => parameter.Name == name)
             .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
             .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
@@ -281,7 +281,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [Fact]
     public void The_tool_says_what_an_opinion_takes_that_its_reviewers_are_the_persons_and_what_the_gate_does()
     {
-        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeSetting))!;
+        var method = typeof(Daoris.Knowledge.Mcp.HelpSettingTool).GetMethod(nameof(Daoris.Knowledge.Mcp.HelpSettingTool.ProposeSetting))!;
         string Described(string name) => method.GetParameters().Single(parameter => parameter.Name == name)
             .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
             .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
@@ -312,7 +312,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [Fact]
     public void The_tool_says_what_the_helpers_and_commit_rules_take_and_that_a_repositorys_text_only_seeds_them()
     {
-        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeSetting))!;
+        var method = typeof(Daoris.Knowledge.Mcp.HelpSettingTool).GetMethod(nameof(Daoris.Knowledge.Mcp.HelpSettingTool.ProposeSetting))!;
         string Described(string name) => method.GetParameters().Single(parameter => parameter.Name == name)
             .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
             .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;

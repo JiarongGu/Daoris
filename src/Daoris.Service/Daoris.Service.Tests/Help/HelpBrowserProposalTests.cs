@@ -31,7 +31,7 @@ public sealed class HelpBrowserProposalTests : HelpProposalBoxFixture
     [Fact]
     public void The_tool_names_every_door()
     {
-        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeBrowser))!;
+        var method = typeof(Daoris.Knowledge.Mcp.HelpBrowserTool).GetMethod(nameof(Daoris.Knowledge.Mcp.HelpBrowserTool.ProposeBrowser))!;
         var door = method.GetParameters().Single(parameter => parameter.Name == "door")
             .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
             .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;

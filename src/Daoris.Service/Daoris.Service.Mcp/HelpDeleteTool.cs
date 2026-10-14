@@ -4,7 +4,8 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>Ask Daoris's <c>delete_propose</c> (HELP6): the <c>delete</c> kind's tool, written by <see cref="HelpProposalBox.ProposeDelete"/>.</summary>
-public sealed partial class KnowledgeTools
+[McpServerToolType]
+public sealed class HelpDeleteTool(IntakeScope? intake = null, HelpProposalBox? help = null)
 {
     [McpServerTool(Name = "delete_propose")]
     [Description(

@@ -4,7 +4,8 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>Ask Daoris's <c>plugin_propose</c> (PLUG9): the <c>plugin</c> kind's tool, written by <see cref="HelpProposalBox.ProposePlugin"/>.</summary>
-public sealed partial class KnowledgeTools
+[McpServerToolType]
+public sealed class HelpPluginTool(IntakeScope? intake = null, HelpProposalBox? help = null)
 {
     [McpServerTool(Name = "plugin_propose")]
     [Description(

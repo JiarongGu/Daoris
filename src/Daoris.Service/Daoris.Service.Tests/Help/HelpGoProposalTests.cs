@@ -90,7 +90,7 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
     [Fact]
     public void The_texts_name_the_places_the_window_has()
     {
-        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeGo))!;
+        var method = typeof(Daoris.Knowledge.Mcp.HelpGoTool).GetMethod(nameof(Daoris.Knowledge.Mcp.HelpGoTool.ProposeGo))!;
         string Of(string name) => method.GetParameters().Single(parameter => parameter.Name == name)
             .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
             .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;

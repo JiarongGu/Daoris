@@ -14,7 +14,7 @@ public sealed class HelpPluginProposalTests : HelpProposalBoxFixture
     [Fact]
     public void The_tool_names_the_Plugins_place_not_a_Settings_domain()
     {
-        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposePlugin))!;
+        var method = typeof(Daoris.Knowledge.Mcp.HelpPluginTool).GetMethod(nameof(Daoris.Knowledge.Mcp.HelpPluginTool.ProposePlugin))!;
         var tool = method.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
             .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
 

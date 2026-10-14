@@ -4,7 +4,8 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>Ask Daoris's <c>setting_propose</c> (HELP1c): the <c>setting</c> kind's tool, written by <see cref="HelpProposalBox.ProposeSetting"/>.</summary>
-public sealed partial class KnowledgeTools
+[McpServerToolType]
+public sealed class HelpSettingTool(IntakeScope? intake = null, HelpProposalBox? help = null)
 {
     /// <summary>
     /// What the landing's gate does with work that waits for the person's review, the sentence every other door says after a

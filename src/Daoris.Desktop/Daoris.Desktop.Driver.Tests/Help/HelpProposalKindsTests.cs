@@ -93,7 +93,7 @@ public sealed partial class HelpProposalKindsTests
 
     /// <summary>
     /// The service writes each kind in a file of its own (<c>Help&lt;Kind&gt;ProposalWriter.cs</c>), no kind this
-    /// side does not judge, and the connector carries each kind's tool once, in a file of its own.
+    /// side does not judge, and the connector carries each kind's tool once, in a class and file of its own (<c>Help&lt;Kind&gt;Tool.cs</c>).
     /// </summary>
     [Fact]
     public void Every_kind_has_its_twins_writer_and_its_connectors_tool()
@@ -111,7 +111,7 @@ public sealed partial class HelpProposalKindsTests
                 .Where(path => File.ReadAllText(path).Contains($"[McpServerTool(Name = \"{tool}\")]", StringComparison.Ordinal))
                 .Select(Path.GetFileName)
                 .ToList();
-            Assert.Equal($"KnowledgeTools.Help.{Pascal(kind)}.cs", Assert.Single(tools));
+            Assert.Equal($"Help{Pascal(kind)}Tool.cs", Assert.Single(tools));
         }
     }
 
