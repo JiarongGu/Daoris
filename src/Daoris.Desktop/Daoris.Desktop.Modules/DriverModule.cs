@@ -31,6 +31,20 @@ public sealed partial class DriverModule : ModuleBase
     private readonly PickFile? _pickFile;
     private readonly DriverContext _context;
 
+    /// <summary>
+    /// The folder holding the install's offers — Daoris's own example plugins, none installed until a press
+    /// (PLUG9 d, D103). Null finds them beside the running application, else beside the home; a test names
+    /// its own, since every test's home shares one parent. Held by the context, which Plugins reads at each request.
+    /// </summary>
+    public string? Offers
+    {
+        get => _context.Offers;
+        init => _context.Offers = value;
+    }
+
+    // The offers' folder as it stands now, for Help's plugin doors until PART10f moves them.
+    private string OffersFolder => _context.OffersFolder;
+
     // Each domain's handler, built over this module, in the order of Domains: a route's entry names its domain's place.
     private readonly object[] _handlers;
 
@@ -111,9 +125,16 @@ public sealed partial class DriverModule : ModuleBase
         Domain.Of(module => new AccountsRoutes(module._loop)),
         Domain.Of(module => new AcrossRoutes(module._context)),
         Domain.Of(module => new ConsoleRoutes(module._loop)),
+        Domain.Of(module => new ConversationRoutes(module._context)),
+        Domain.Of(module => new DriverRoutes(module._context)),
+        Domain.Of(module => new GitRoutes(module._loop)),
         Domain.Of(module => new HistoryRoutes(module._loop)),
+        Domain.Of(module => new LinesRoutes(module._context)),
+        Domain.Of(module => new PluginsRoutes(module._context)),
         Domain.Of(module => new RegistryRoutes(module._loop)),
         Domain.Of(module => new RulesRoutes(module._loop)),
+        Domain.Of(module => new SessionsRoutes(module._context)),
+        Domain.Of(module => new ToolsRoutes(module._context)),
         Domain.Of(module => new TraceRoutes(module._loop)),
         Domain.Of(module => new WorkRoutes(module._context)),
         Domain.Of(module => new WorkflowRoutes(module._loop)),

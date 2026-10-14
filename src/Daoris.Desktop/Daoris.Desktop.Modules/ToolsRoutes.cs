@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
+using Shenora.Core.Events;
 using Shenora.Core.Ipc;
 using static Daoris.Desktop.DriverArguments;
 
@@ -19,8 +20,12 @@ namespace Daoris.Desktop;
 /// its end is the <c>TOOLS_ENDED</c> news. The bridge gives up after thirty seconds, and a download outlives that.</para>
 /// <para>The SSH command Daoris's git carries (§2.5) is TOOLS6's, and joins <c>TOOLS_GIT</c> with it.</para>
 /// </remarks>
-public sealed partial class DriverModule
+public sealed class ToolsRoutes(DriverContext context)
 {
+    private readonly DriverLoop _loop = context.Loop;
+    private readonly IEventBus _events = context.Events;
+    private readonly PickFile? _pickFile = context.PickFile;
+
     // One download, use or update at a time for each tool (§3.6), shared by every route that starts or stops one, so a
     // second press is refused by the driver's own claim and a stop reaches the action the first press started.
     private ToolActions? _toolActions;

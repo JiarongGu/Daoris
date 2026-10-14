@@ -171,7 +171,7 @@ public sealed partial class DriverModule
                         plugin.Copied, plugin.Problem,
                         // An offer's requirement lines (PLUG9 d), and an update's changes (PLUG9 c).
                         plugin.Needs, plugin.Replaced,
-                        Changes = ChangesOf(plugin.Changes),
+                        Changes = PluginsRoutes.ChangesOf(plugin.Changes),
                     }
                     : null,
                 Sync = SyncShown(plan.Sync),
@@ -487,7 +487,7 @@ public sealed partial class DriverModule
         // It takes what the screen's look takes (D112): the repositories holding Daoris's branches, and the one a card names.
         public async Task<SyncPlan> SyncPlanAsync(string? repository, string? workspace, CancellationToken ct)
         {
-            var (repositories, inUse) = await module.CheckoutsAndSessionsAsync(repository, ct, workspace).ConfigureAwait(false);
+            var (repositories, inUse) = await LinesRoutes.CheckoutsAndSessionsAsync(module._loop, repository, ct, workspace).ConfigureAwait(false);
             return await new SessionTrees(module._loop.Home).SyncPlanAsync(repositories, inUse, fetch: true, ct, Named(repository))
                 .ConfigureAwait(false);
         }
@@ -496,10 +496,10 @@ public sealed partial class DriverModule
         // sessions in use are asked again inside each repository's hold, as the screen's press asks them (LEFT2, WSR7).
         public async Task<SyncDone> SyncAsync(string? repository, string? workspace, IReadOnlySet<string> only, CancellationToken ct)
         {
-            var (repositories, inUse) = await module.CheckoutsAndSessionsAsync(repository, ct, workspace).ConfigureAwait(false);
+            var (repositories, inUse) = await LinesRoutes.CheckoutsAndSessionsAsync(module._loop, repository, ct, workspace).ConfigureAwait(false);
             var ledger = module._loop.Service ?? throw NotReady();
             var done = await new SessionTrees(module._loop.Home).SyncAsync(repositories, inUse, only, fetch: false, ct,
-                inUseNow: async token => await InUseAsync(ledger, token).ConfigureAwait(false), scope: Named(repository)).ConfigureAwait(false);
+                inUseNow: async token => await LinesRoutes.InUseAsync(ledger, token).ConfigureAwait(false), scope: Named(repository)).ConfigureAwait(false);
             module._loop.Nudge();
             return done;
         }
@@ -545,7 +545,7 @@ public sealed partial class DriverModule
         // PLUGIN_ACTION's own enable|disable: the same lookup, the same row, the same nudge.
         public void SwitchPlugin(string id, bool on)
         {
-            module.SwitchPlugin(module.InstalledPlugin(id), on);
+            PluginsRoutes.SwitchPlugin(module._loop, PluginsRoutes.InstalledPlugin(module._loop, id), on);
             module._loop.Nudge();
         }
 
@@ -571,7 +571,7 @@ public sealed partial class DriverModule
 
         // PLUGIN_UPDATE's own apply (PLUG9 c): the hook stopped, the folder swapped, the loop asked to look.
         public async Task UpdatePluginAsync(string id, CancellationToken ct) =>
-            await module.UpdatePluginAsync(id).ConfigureAwait(false);
+            await PluginsRoutes.UpdatePluginAsync(module._context, id).ConfigureAwait(false);
     }
 
     /// <summary>

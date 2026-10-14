@@ -11,16 +11,15 @@ namespace Daoris.Desktop;
 /// (PLUG8). Since PLUGUI1e (D119 §4.1), what the Plugins view reads besides: a plugin's page and its activity,
 /// a folder read and installed from, and a folder opened.
 /// </summary>
-public sealed partial class DriverModule
+public sealed class PluginsRoutes(DriverContext context)
 {
-    /// <summary>
-    /// The folder holding the install's offers — Daoris's own example plugins, none installed until a press
-    /// (PLUG9 d, D103). Null finds them beside the running application, else beside the home; a test names
-    /// its own, since every test's home shares one parent.
-    /// </summary>
-    public string? Offers { get; init; }
+    private readonly DriverContext _context = context;
+    private readonly DriverLoop _loop = context.Loop;
+    private readonly OpenFolder? _openFolder = context.OpenFolder;
 
-    private string OffersFolder => Offers ?? PluginOffers.FolderFor(_loop.Home, AppContext.BaseDirectory);
+    // The offers' folder is read through the context at each request: a test names its own by an initializer on the module,
+    // which runs after the constructor built this class (PART10e).
+    private string OffersFolder => _context.OffersFolder;
 
     // This machine's plugins (D64): the catalogue as the driver reads it, each with what it
     // declares, what it speaks on, whether it is running, and why it contributes nothing when
@@ -103,7 +102,7 @@ public sealed partial class DriverModule
     [DriverRoute("PLUGIN")]
     private async Task<object?> PluginAsync(IpcRequest request, CancellationToken cancellationToken)
     {
-        var entry = InstalledPlugin(PayloadHelper.GetRequiredValue<string>(request.Payload, "id"));
+        var entry = InstalledPlugin(_loop, PayloadHelper.GetRequiredValue<string>(request.Payload, "id"));
         // Off the caller's thread: the data folder is counted for up to two seconds (PluginPage.CountTime).
         return await Task.Run(
             () => PluginPage.Read(_loop.Home, entry.Manifest.Id, _loop.Health, OffersFolder), cancellationToken).ConfigureAwait(false);
@@ -124,7 +123,7 @@ public sealed partial class DriverModule
                 ("filter", "since"), ("value", since));
         }
 
-        var entry = InstalledPlugin(PayloadHelper.GetRequiredValue<string>(request.Payload, "id"));
+        var entry = InstalledPlugin(_loop, PayloadHelper.GetRequiredValue<string>(request.Payload, "id"));
         // Off the caller's thread: a month of the log's files may be read.
         return await Task.Run(
             () => PluginActivity.Read(_loop.Home, entry.Manifest.Id, DateTimeOffset.UtcNow - period), cancellationToken).ConfigureAwait(false);
@@ -191,7 +190,7 @@ public sealed partial class DriverModule
                 break;
             case "install" or "data":
             {
-                var entry = InstalledPlugin(
+                var entry = InstalledPlugin(_loop,
                     Optional(request, "id") ?? throw new DriverException($"opening a plugin's {which} folder needs its id."));
                 folder = which == "install" ? entry.Folder : entry.Data;
                 if (which == "data" && !Directory.Exists(folder))
@@ -235,7 +234,7 @@ public sealed partial class DriverModule
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
         if (request.Payload is { } payload && payload.TryGetProperty("apply", out var apply) && apply.ValueKind == JsonValueKind.True)
         {
-            var updated = await UpdatePluginAsync(id).ConfigureAwait(false);
+            var updated = await UpdatePluginAsync(_context, id).ConfigureAwait(false);
             return new { updated.Id, Applied = true, Refusal = (string?)null, Source = updated.Source.Said, updated.From, Changes = ChangesOf(updated.Changes) };
         }
 
@@ -271,12 +270,12 @@ public sealed partial class DriverModule
         await Task.CompletedTask;
         var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-        var entry = InstalledPlugin(id);
+        var entry = InstalledPlugin(_loop, id);
 
         switch (action)
         {
             case "enable" or "disable":
-                SwitchPlugin(entry, action == "enable");
+                SwitchPlugin(_loop, entry, action == "enable");
                 break;
             case "remove":
             {
@@ -392,7 +391,7 @@ public sealed partial class DriverModule
         };
     }
 
-    private static object[] ChangesOf(IReadOnlyList<PluginChange> changes) =>
+    internal static object[] ChangesOf(IReadOnlyList<PluginChange> changes) =>
         [.. changes.Select(change => (object)new { change.What, change.Was, change.Now })];
 
     /// <summary>
@@ -450,20 +449,21 @@ public sealed partial class DriverModule
     /// hook stopped first (on Windows a running process holds its folder), the install folder swapped, and
     /// the loop asked to look, which starts the new one as it does any plugin.
     /// </summary>
-    private async Task<PluginUpdatePlan> UpdatePluginAsync(string id)
+    internal static async Task<PluginUpdatePlan> UpdatePluginAsync(DriverContext context, string id)
     {
+        var loop = context.Loop;
         var reserved = AdapterSet.Built().Names;
-        var (plan, refusal) = PluginInstall.PlanUpdate(_loop.Home, id, reserved, OffersFolder);
+        var (plan, refusal) = PluginInstall.PlanUpdate(loop.Home, id, reserved, context.OffersFolder);
         if (plan is null) throw new DriverException($"{refusal} Nothing was replaced.");
-        await _loop.StopPluginAsync(plan.Id).ConfigureAwait(false);
-        var updated = PluginInstall.Update(_loop.Home, plan.Id, reserved, OffersFolder);
-        _loop.Nudge();
+        await loop.StopPluginAsync(plan.Id).ConfigureAwait(false);
+        var updated = PluginInstall.Update(loop.Home, plan.Id, reserved, context.OffersFolder);
+        loop.Nudge();
         return updated;
     }
 
     /// <summary>An installed plugin by its id, or the Plugins screen's refusal (<c>PLUGIN_ACTION</c>, PLUG9's door).</summary>
-    private PluginEntry InstalledPlugin(string id) =>
-        PluginCatalog.Load(_loop.Home).Plugins
+    internal static PluginEntry InstalledPlugin(DriverLoop loop, string id) =>
+        PluginCatalog.Load(loop.Home).Plugins
             .FirstOrDefault(p => string.Equals(p.Manifest.Id, id, StringComparison.OrdinalIgnoreCase))
         ?? throw Refusals.Because(Refusals.PluginUnknown, $"no plugin `{id}` on this machine.", ("id", id));
 
@@ -471,9 +471,9 @@ public sealed partial class DriverModule
     /// A plugin switched on or off: a row in <c>plugins.json</c>. <c>PLUGIN_ACTION</c> and Ask Daoris's plugin
     /// door (PLUG9) both call this, so the screen and the card cannot drift.
     /// </summary>
-    private void SwitchPlugin(PluginEntry entry, bool on)
+    internal static void SwitchPlugin(DriverLoop loop, PluginEntry entry, bool on)
     {
-        if (on) PluginState.Enable(_loop.Home, entry.Manifest.Id);
-        else PluginState.Disable(_loop.Home, entry.Manifest.Id);
+        if (on) PluginState.Enable(loop.Home, entry.Manifest.Id);
+        else PluginState.Disable(loop.Home, entry.Manifest.Id);
     }
 }

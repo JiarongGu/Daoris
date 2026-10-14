@@ -68,7 +68,7 @@ public sealed class PullRequestOccasionTests
             .Order(StringComparer.Ordinal)
             .ToList();
 
-        Assert.Equal(["DriverModule.Lines.cs", "TreesConsole.cs"], doors);
+        Assert.Equal(["LinesRoutes.cs", "TreesConsole.cs"], doors);
     }
 
     /// <summary>
@@ -86,7 +86,7 @@ public sealed class PullRequestOccasionTests
             .Order(StringComparer.Ordinal)
             .ToList();
 
-        Assert.Equal(["DriverModule.Lines.cs", "HelpSyncProposals.cs", "TreesConsole.cs"], doors);
+        Assert.Equal(["HelpSyncProposals.cs", "LinesRoutes.cs", "TreesConsole.cs"], doors);
         var sync = File.ReadAllText(SourceFiles.Driver("SessionTrees.Sync.cs"));
         var look = Body(sync, "SyncPlanAsync");
         var fetched = look.IndexOf("FetchedAsync(", StringComparison.Ordinal);

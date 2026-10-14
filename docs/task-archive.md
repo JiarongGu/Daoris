@@ -14380,3 +14380,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DEDUP3a — one way to write a JSON file, its first half** (driver). A public `JsonFile` in `Platform/` (LF text with a trailing newline, one options object, its folder made, an atomic write) for the sites in Accounts, Agents, Conversations, Help, Platform and Plugins, the CRLF writes and the plain writes past `AtomicFile` among them. Survey §3, §9.
 
 **Outcome** 2026-10-14: `Platform/JsonFile.cs` serializes indented text with LF and one trailing newline under one relaxed-escaping options object, and writes it atomically with its folder made; the six modules' writers use it. The settings, usage, config and lock files written with CRLF on Windows now write LF; three writes past `AtomicFile` go through it; two reflection serializations write by hand in the same shape. Chinese text and marks are now kept as written where they were escaped, matching the CLI's twins (CHANGELOG). On Sonnet: 109 tool calls. Detail: D166's DEDUP3a note.
+
+## PART10e — `DriverModule`: the middle domains (2026-10-14, D166)
+
+> - [ ] **PART10e — `DriverModule`: the middle domains** (modules; after 10d). Git, Conversation, Sessions, Driver, Lines, Plugins and Tools as handler classes, their tests' statics re-spelled. Survey "The large five, as scouted".
+
+**Outcome** 2026-10-14: Git, Conversation, Sessions, Driver, Lines, Plugins and Tools are `<Domain>Routes` classes, each with only what it uses, their state moved in; what Help and Trees still reach is static over the loop or the context, and `Offers` reads through the context at request time. Routes unchanged; the moved domains' Process classes passed 52 of 52 on the merge. On Sonnet: 129 tool calls. Detail: D166's PART10e note.

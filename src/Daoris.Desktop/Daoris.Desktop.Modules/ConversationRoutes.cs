@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Daoris.Driver;
+using Shenora.Core.Events;
 using Shenora.Core.Ipc;
 using static Daoris.Desktop.DriverArguments;
 
@@ -10,8 +11,11 @@ namespace Daoris.Desktop;
 /// start (D49 §3), the person's messages with their files, finishing it, stopping a turn, its options and
 /// its queue (CONV4, AGT6b).
 /// </summary>
-public sealed partial class DriverModule
+public sealed class ConversationRoutes(DriverContext context)
 {
+    private readonly DriverLoop _loop = context.Loop;
+    private readonly IEventBus _events = context.Events;
+
     // A session's conversation (D76 §2): the newest page, an earlier one (`before`), or only
     // what is newer (`after`) — how a page opens a session after a restart, loads earlier
     // turns, and closes a gap in the live events. From the record under the home, so it

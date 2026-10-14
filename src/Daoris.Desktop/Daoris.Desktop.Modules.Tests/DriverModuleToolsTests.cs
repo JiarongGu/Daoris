@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Settings → Tools over the bridge (TOOLS7, D121 §4.1; <c>DriverModule.Tools.cs</c>): each tool's way, what is
+/// Settings → Tools over the bridge (TOOLS7, D121 §4.1; <c>ToolsRoutes.cs</c>): each tool's way, what is
 /// downloaded and what the lists offer, a download started as an action the page follows and the person stops, a
 /// delete, the resource locations listed, added, removed and looked at, and what a switch of git changes.
 /// </summary>

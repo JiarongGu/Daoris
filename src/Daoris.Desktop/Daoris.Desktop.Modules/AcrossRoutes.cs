@@ -63,7 +63,7 @@ public sealed class AcrossRoutes(DriverContext context)
         _context.Change(config => workspace is not null
             ? config.WithWorkspaceReadAcross(workspace, read)
             : config.WithReadAcross(repository!, read));
-        return DriverModule.State(_loop);
+        return DriverRoutes.State(_loop);
     }
 
     // A relationship declared, or taken back — the same file `daoris driver across <repo> write-to <other>`
@@ -75,6 +75,6 @@ public sealed class AcrossRoutes(DriverContext context)
         var to = Optional(request, "to") ?? "";
         var allow = Flag(request, "allow");
         _context.Change(config => config.WithWriteAcross(repository, to, allow));
-        return DriverModule.State(_loop);
+        return DriverRoutes.State(_loop);
     }
 }

@@ -470,7 +470,7 @@ public sealed class DriverLoop(
         // A conversation's model and effort each time they change (AGT6b, D98), in the shape `SESSION_OPTIONS`
         // answers with, so a page that asked once follows them. Machine-local, like the queue.
         chat.OptionsChanged += (session, options) =>
-            _ = eventBus.EmitAsync("DAORIS", "SESSION_OPTIONS_CHANGED", DriverModule.OptionsAnswer(session, options));
+            _ = eventBus.EmitAsync("DAORIS", "SESSION_OPTIONS_CHANGED", ConversationRoutes.OptionsAnswer(session, options));
         await ComeUpAsync(service, chat).ConfigureAwait(false);
 
         // Every loop on the home watches the requests a terminal's `sessions stop|finish|decline` writes (SESSUX1g, D126
@@ -677,7 +677,7 @@ public sealed class DriverLoop(
         service.Moved += Words.OnMoved;
         service.Opened += Words.OnOpened;
         Words.Reached += (session, reach) =>
-            _ = eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", DriverModule.QueueAnswer(this, session, reach));
+            _ = eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", ConversationRoutes.QueueAnswer(this, session, reach));
 
         // What a person told a driven session, waiting for its turn to end (SESS3), told as the queue is — and `Listening`
         // false once it stops taking any, so the page takes its box away. An open door's reach rides it (MSG1f2); one that
@@ -692,7 +692,7 @@ public sealed class DriverLoop(
                 queue.Taking,
                 // An open inbox always has a turn in hand; a closed one tells Idle.
                 Listening = queue.Taking,
-                Reach = DriverModule.ReachOf(reach),
+                Reach = ConversationRoutes.ReachOf(reach),
             });
             if (reach is null) Words.Tell(session);
         };
@@ -716,7 +716,7 @@ public sealed class DriverLoop(
                     // When its last turn ended here (RAIL2): the chat's last move, which its record never
                     // says. Machine-local, like everything this event carries.
                     LastTurn = queue.LastTurnEnded,
-                    Reach = DriverModule.ReachOf(reach),
+                    Reach = ConversationRoutes.ReachOf(reach),
                 });
                 if (reach is null) Words.Tell(session);
             };
