@@ -530,7 +530,7 @@ public sealed partial class ChatRunner : IDisposable
                 if (goOn is null && InAppBrowserServers.Told(drivers) is { } line) _context.Browsers[sessionId] = line;
                 if (browserNotice is not null)
                 {
-                    _context.Record(sessionId,new SessionEvent { Kind = SessionEventKind.Note, Text = browserNotice.Note, Parts = browserNotice.Parts });
+                    _context.Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = browserNotice.Note, Parts = browserNotice.Parts });
                 }
             }
 
@@ -617,7 +617,7 @@ public sealed partial class ChatRunner : IDisposable
             // 🔴 Turns are only visible where the wire says where one ends (CONV4a). A text-only pipe
             // takes each line at once, as it always did.
             native = new NativeChat(
-                sessionId, resolved, _processes, e => _context.Record(sessionId,e), Changed, tracked?.Task,
+                sessionId, resolved, _processes, e => _context.Record(sessionId, e), Changed, tracked?.Task,
                 // On this door the words went once their line is on stdin and the harness has opened the conversation.
                 wentOn: goOn is null ? null : () =>
                 {
@@ -879,7 +879,7 @@ public sealed partial class ChatRunner : IDisposable
         var set = Noted.Of(
             NoteCodes.ChatOptionSet, $"the person set {option.Name} to {chosen} for this conversation.",
             ("option", option.Name), ("chosen", chosen));
-        _context.Record(sessionId,new SessionEvent { Kind = SessionEventKind.Note, Text = set.Note, Parts = set.Parts });
+        _context.Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = set.Note, Parts = set.Parts });
         return ThePersons(after);
     }
 
