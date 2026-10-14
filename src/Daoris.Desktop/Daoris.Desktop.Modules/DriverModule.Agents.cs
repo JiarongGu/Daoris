@@ -1112,7 +1112,7 @@ public sealed partial class DriverModule
     private int ProfileDefault(string harness, string? profile, string? workspace)
     {
         var settings = _loop.Harnesses.Settings;
-        DefaultAllowed(settings, harness, profile, workspace);
+        AccountsRoutes.DefaultAllowed(settings, harness, profile, workspace);
         DefaultEdited(settings, harness, profile, workspace).Save(_loop.Harnesses.SettingsPath);
         return 0;
     }
@@ -1152,15 +1152,6 @@ public sealed partial class DriverModule
             _ => DefaultFrom.Own,
         });
     }
-
-    /// <summary>The profile a profile verb is about. Absent is a refusal, never a guess.</summary>
-    private static string Named(IpcRequest request) =>
-        Optional(request, "profile") is { Length: > 0 } profile
-            ? profile
-            : throw Refusals.Because(
-                Refusals.HarnessProfileNeeded,
-                "that action needs an account name.",
-                ("action", "profile"));
 
     /// <summary>Back to `PATH`. Nothing is deleted — re-pinning that version needs no download.</summary>
     private int Unpin(string harness)

@@ -108,6 +108,7 @@ public sealed partial class DriverModule : ModuleBase
     private static readonly Domain[] Domains =
     [
         Domain.Of(module => module),
+        Domain.Of(module => new AccountsRoutes(module._loop)),
         Domain.Of(module => new AcrossRoutes(module._context)),
         Domain.Of(module => new ConsoleRoutes(module._loop)),
         Domain.Of(module => new HistoryRoutes(module._loop)),

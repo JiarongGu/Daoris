@@ -431,10 +431,10 @@ public sealed partial class DriverModule
         // ACCOUNT_USE's own `use` (TOOL4g): the same refusals and the same write, then the loop asked to look.
         public Task SetAccountUseAsync(string harness, UseChange change, string? workspace, CancellationToken ct)
         {
-            var owner = module.OwnerOf(harness);
+            var owner = AccountsRoutes.OwnerOf(module._loop.Harnesses, harness);
             try
             {
-                UseEdited(module._loop.Harnesses.Settings, owner, change, workspace).Save(module._loop.Harnesses.SettingsPath);
+                AccountsRoutes.UseEdited(module._loop.Harnesses.Settings, owner, change, workspace).Save(module._loop.Harnesses.SettingsPath);
             }
             catch (ShenoraException refused)
             {
@@ -449,7 +449,7 @@ public sealed partial class DriverModule
         // returned to the machine's accounts with its default and list cleared at once (D130 §3.2), then the loop asked to look.
         public Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, string? workspace, CancellationToken ct)
         {
-            var owner = module.OwnerOf(harness);
+            var owner = AccountsRoutes.OwnerOf(module._loop.Harnesses, harness);
             var settings = module._loop.Harnesses.Settings;
             try
             {
@@ -460,7 +460,7 @@ public sealed partial class DriverModule
                 }
                 else
                 {
-                    OrderEdited(settings, HarnessSettings.Profiles(module._loop.Harnesses.Home, owner), owner, accounts, workspace)
+                    AccountsRoutes.OrderEdited(settings, HarnessSettings.Profiles(module._loop.Harnesses.Home, owner), owner, accounts, workspace)
                         .Save(module._loop.Harnesses.SettingsPath);
                 }
             }

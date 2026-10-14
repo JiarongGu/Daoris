@@ -82,11 +82,11 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
         await AnswerAsync(Module(), "HARNESS_ACTION",
             new { harness = "claude-code", action = "profile-rename", profile = "account-1", name = "seat" });
         var loop = Loop();
-        var running = DriverModule.RunningOn(
+        var running = AccountsRoutes.RunningOn(
             """[{"id":"s1a2b3c4","adapter":"claude-code-acp","profile":"account-1","state":"running"}]""",
             adapter => loop.Harnesses.Toolchain(adapter)?.Owner(adapter) ?? adapter);
 
-        var answer = JsonSerializer.SerializeToElement(DriverModule.AccountsAnswer(loop.Harnesses, running, DateTimeOffset.UtcNow));
+        var answer = JsonSerializer.SerializeToElement(AccountsRoutes.AccountsAnswer(loop.Harnesses, running, DateTimeOffset.UtcNow));
 
         var account = answer.GetProperty("Agents").EnumerateArray().Single(each => each.GetProperty("Agent").GetString() == "claude-code")
             .GetProperty("Accounts").EnumerateArray().Single();

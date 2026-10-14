@@ -47,6 +47,18 @@ public static class DriverArguments
             ? number
             : null;
 
+    /// <summary>
+    /// The profile a profile verb is about: Agents' account actions and Accounts' <i>Try now</i>. Absent is a refusal, never
+    /// a guess.
+    /// </summary>
+    internal static string Named(IpcRequest request) =>
+        Optional(request, "profile") is { Length: > 0 } profile
+            ? profile
+            : throw Refusals.Because(
+                Refusals.HarnessProfileNeeded,
+                "that action needs an account name.",
+                ("action", "profile"));
+
     /// <summary>What every route that needs the loop's service says before it answers (REV3 CLEAN1: five wrote it).</summary>
     internal static Exception NotReady() => Refusals.Because(
         Refusals.DriverNotReady, "the driver is still coming up — its service is not answering yet. A moment.");

@@ -20,8 +20,10 @@ namespace Daoris.Desktop;
 /// <para><b>Read, never probed</b>: no answer here starts a process, so the page may ask at every tick. Nothing reaches
 /// an HTTP route (D47 §4): profile names ride this bridge only.</para>
 /// </remarks>
-public sealed partial class DriverModule
+public sealed class AccountsRoutes(DriverLoop loop)
 {
+    private readonly DriverLoop _loop = loop;
+
     [DriverRoute("ACCOUNTS")]
     private async Task<object?> AccountsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -275,7 +277,7 @@ public sealed partial class DriverModule
         var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
         var harness = PayloadHelper.GetRequiredValue<string>(request.Payload, "harness");
         var workspace = Optional(request, "workspace");
-        var owner = OwnerOf(harness);
+        var owner = OwnerOf(_loop.Harnesses, harness);
 
         switch (action)
         {
@@ -311,9 +313,12 @@ public sealed partial class DriverModule
         return new { Harness = harness, Action = action, Workspace = workspace };
     }
 
-    /// <summary>A door's accounts are its owner's (AGT7); a door with no toolchain has no accounts to edit.</summary>
-    private string OwnerOf(string harness) =>
-        (_loop.Harnesses.Toolchain(harness)
+    /// <summary>
+    /// A door's accounts are its owner's (AGT7); a door with no toolchain has no accounts to edit. Ask Daoris's account cards
+    /// ask it too, as the screen's own door.
+    /// </summary>
+    internal static string OwnerOf(HarnessRoster harnesses, string harness) =>
+        (harnesses.Toolchain(harness)
             ?? throw new DriverException($"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's."))
         .Owner(harness);
 

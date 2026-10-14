@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// How an agent's accounts are used, over the bridge (`DriverModule.Accounts.cs`, TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2,
+/// How an agent's accounts are used, over the bridge (`AccountsRoutes.cs`, TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2,
 /// §9, §16.6): each scope's list and settings, each account's cool-off, what its agent last said and its learned week, and
 /// the edits the Agents place makes — the list, how it is used, *Try now*, and a workspace back on this machine's accounts.
 /// </summary>
@@ -592,7 +592,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
             },
         };
 
-        var problem = Record.Exception(() => DriverModule.DefaultAllowed(settings, "claude-code", profile, workspace));
+        var problem = Record.Exception(() => AccountsRoutes.DefaultAllowed(settings, "claude-code", profile, workspace));
 
         Assert.Equal(refused, problem is not null);
     }
