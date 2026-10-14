@@ -23,8 +23,11 @@ public sealed class SessionGroupsTests
     private static JsonObject Record(
         string id, string state, string? quest = null, string? tree = null, int at = 0, string repository = "engine",
         string kind = "driven", bool interrupted = false, string? ask = null, int? updated = null, string? answer = null,
-        bool deletable = false, string[]? said = null) => new()
+        bool deletable = false, string[]? said = null, string? entry = null, string? from = null) => new()
         {
+            // SESSONE1b: the line of work the service answers, and the session a hand-over continues.
+            ["entry"] = entry,
+            ["from"] = from,
             // The person's words waiting on it (MSG1a), each by its id, as the service answers this machine.
             ["said"] = new JsonArray([.. (said ?? []).Select(word => (JsonNode)new JsonObject
             {
@@ -892,5 +895,197 @@ public sealed class SessionGroupsTests
                 Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json"),
             });
         }
+    }
+
+    // ——— SESSONE1b (D167, the co-working design §1.6, §3): the reader groups by the entry the service answers. An entry's group is
+    // the first of D126's groups any of its parts qualifies for, its leading part is the one that put it there, its parts go
+    // newest last each with how it began, and an ended intake whose ask became quests leaves the list.
+
+    private const string AppKey = "ask:c98a7e/app";
+    private const string DbKey = "ask:c98a7e/db";
+
+    private static QuestView AskQuest(string id, string from, string to, string status = "Taken", string? publishedBy = null) =>
+        new(id, from, to, $"The work of #{id}", "A body.", status) { PublishedBy = publishedBy };
+
+    /// <summary>The design's §3 replay, with neutral names: ask #c98a7e over an app and its database.</summary>
+    private static SessionLook Evidence() => Look(
+        [
+            Record("a1b2c3d4", "failed", repository: "ask #c98a7e", kind: "chat", ask: "c98a7e", entry: "ask:c98a7e/intake", at: 0),
+            Record("ce81a888", "failed", "28b052ac", repository: "app", entry: AppKey, at: 5),
+            Record("62c005bc", "completed", "28b052ac", repository: "app", entry: AppKey, at: 10),
+            Record("283ef343", "completed", "3068f747", repository: "db", entry: DbKey, at: 12),
+            Record("8eba4af2", "completed", "711d2524", repository: "app", entry: AppKey, at: 30),
+            Record("e2ddbfc4", "completed", "01ba2c71", repository: "db", entry: DbKey, at: 40),
+            Record("53416cea", "completed", "63df101b", repository: "db", entry: DbKey, at: 50),
+            Record("2487c69d", "completed", "3068f747", repository: "db", entry: DbKey, at: 60),
+            Record("486d9ca0", "working", "3068f747", repository: "db", entry: DbKey, at: 70),
+            Record("cf8faff5", "working", "711d2524", repository: "app", entry: AppKey, at: 80),
+        ],
+        quests:
+        [
+            AskQuest("28b052ac", "ask #c98a7e", "app"),
+            AskQuest("3068f747", "ask #c98a7e", "db"),
+            AskQuest("711d2524", "db", "app", publishedBy: "283ef343"),
+            AskQuest("01ba2c71", "app", "db", publishedBy: "8eba4af2"),
+            AskQuest("63df101b", "app", "db", publishedBy: "8eba4af2"),
+        ]);
+
+    [Fact]
+    public void The_records_carry_the_entry_the_service_answers_and_the_session_they_continue()
+    {
+        var json = new JsonArray(
+            Record("s1", "completed", "q1", entry: "ask:a/app"),
+            Record("s2", "completed", "q1", entry: "", from: "s1"),
+            Record("s3", "completed", "q1")).ToJsonString();
+
+        var records = SessionRecords.Parse(json);
+
+        Assert.Equal<string?>(["ask:a/app", null, null], records.Select(record => record.Entry));
+        Assert.Equal<string?>([null, "s1", null], records.Select(record => record.From));
+        // A host from before the key answers none: the record is its own line of work, as the service derives it where a fact is gone.
+        Assert.Equal(["ask:a/app", "session:s2/engine", "session:s3/engine"], records.Select(record => record.EntryKey));
+    }
+
+    [Fact]
+    public void The_evidences_ask_reads_as_two_entries_and_its_intake_is_off_the_list()
+    {
+        var entries = SessionGroups.ReadEntries(Evidence());
+
+        Assert.Equal([AppKey, DbKey], entries.Select(entry => entry.Key).Order(StringComparer.Ordinal));
+        var app = entries.Single(entry => entry.Key == AppKey);
+        var db = entries.Single(entry => entry.Key == DbKey);
+        Assert.Equal(("ask:c98a7e", "app", "db"), (app.Origin, app.Repository, db.Repository));
+
+        Assert.Equal(["ce81a888", "62c005bc", "8eba4af2", "cf8faff5"], app.Parts.Select(part => part.Session));
+        Assert.Equal(
+            [PartBegan.Opened, PartBegan.Retried, PartBegan.Asked, PartBegan.Resumed], app.Parts.Select(part => part.Began));
+        Assert.Equal(("db", null), (app.Parts[2].AskedBy, app.Parts[3].AskedBy));
+        Assert.Equal(("ce81a888", "8eba4af2"), (app.Parts[1].After, app.Parts[3].After));
+
+        Assert.Equal(["283ef343", "e2ddbfc4", "53416cea", "2487c69d", "486d9ca0"], db.Parts.Select(part => part.Session));
+        Assert.Equal(
+            [PartBegan.Opened, PartBegan.Asked, PartBegan.Asked, PartBegan.Resumed, PartBegan.Resumed], db.Parts.Select(part => part.Began));
+
+        // The live part leads, and the rows the page still reads are untouched, the intake's among them.
+        Assert.Equal((SessionGroup.Working, "cf8faff5"), (app.Group, app.Leading));
+        Assert.Equal((SessionGroup.Working, "486d9ca0"), (db.Group, db.Leading));
+        Assert.Contains("a1b2c3d4", SessionGroups.Read(Evidence()).Select(row => row.Session));
+        Assert.DoesNotContain(entries, entry => entry.Key.EndsWith("/intake", StringComparison.Ordinal));
+    }
+
+    /// <summary>The second ask of the evidence: an intake and one driven session resumed many times, which is one entry.</summary>
+    [Fact]
+    public void An_intake_and_one_session_resumed_many_times_are_one_entry()
+    {
+        var look = Look(
+            [
+                Record("1n7a8e00", "completed", repository: "ask #841c38", kind: "chat", ask: "841c38", entry: "ask:841c38/intake", at: 0),
+                Record("5e55a000", "completed", "q9", repository: "engine", entry: "ask:841c38/engine", at: 10),
+            ],
+            quests: [AskQuest("q9", "ask #841c38", "engine", "Done")]);
+
+        var entry = Assert.Single(SessionGroups.ReadEntries(look));
+
+        Assert.Equal(("ask:841c38/engine", SessionGroup.Ended, "5e55a000"), (entry.Key, entry.Group, entry.Leading));
+        Assert.Equal(["5e55a000"], entry.Parts.Select(part => part.Session));
+    }
+
+    [Fact]
+    public void An_intake_stays_listed_while_it_runs_or_when_its_ask_never_became_quests()
+    {
+        var running = Look(
+            [Record("1n7a8e00", "awaiting-person", repository: "ask #a1", kind: "chat", ask: "a1", entry: "ask:a1/intake")],
+            quests: [AskQuest("q1", "ask #a1", "engine")]);
+        var unpublished = Look(
+            [Record("1n7a8e01", "completed", repository: "ask #a2", kind: "chat", ask: "a2", entry: "ask:a2/intake")]);
+
+        Assert.Equal(SessionGroup.You, Assert.Single(SessionGroups.ReadEntries(running)).Group);
+        Assert.Equal(SessionGroup.Ended, Assert.Single(SessionGroups.ReadEntries(unpublished)).Group);
+    }
+
+    /// <summary>An ask's quests are known by the sessions that worked them where the quest itself was cleared.</summary>
+    [Fact]
+    public void An_ended_intake_is_off_the_list_where_a_session_of_its_ask_remains()
+    {
+        var look = Look(
+            [
+                Record("1n7a8e02", "completed", repository: "ask #a3", kind: "chat", ask: "a3", entry: "ask:a3/intake"),
+                Record("5e55a001", "completed", "q1", repository: "engine", entry: "ask:a3/engine", at: 5),
+            ]);
+
+        Assert.Equal(["ask:a3/engine"], SessionGroups.ReadEntries(look).Select(entry => entry.Key));
+    }
+
+    /// <summary>The first of D126's groups any part qualifies for, and the part that put it there leads: the newest of its group.</summary>
+    [Fact]
+    public void An_entry_is_in_the_first_group_any_part_qualifies_for_and_its_leading_part_put_it_there()
+    {
+        var look = Look(
+        [
+            Record("e1d00001", "awaiting-person", "q1", entry: "quest:q1/engine", at: 0),
+            Record("e1d00002", "working", "q2", entry: "quest:q1/engine", at: 10),
+            Record("e1d00003", "working", "q3", entry: "quest:q1/engine", at: 20),
+            Record("e1d00004", "completed", "q4", repository: "game", entry: "quest:q4/game", at: 5),
+            Record("e1d00005", "working", "q5", repository: "game", entry: "quest:q4/game", at: 6),
+            Record("e1d00006", "working", "q6", repository: "game", entry: "quest:q4/game", at: 7),
+        ]);
+
+        var entries = SessionGroups.ReadEntries(look);
+
+        Assert.Equal([("quest:q1/engine", SessionGroup.You, "e1d00001"), ("quest:q4/game", SessionGroup.Working, "e1d00006")],
+            entries.Select(entry => (entry.Key, entry.Group, entry.Leading)));
+    }
+
+    [Fact]
+    public void A_cut_off_part_is_carried_on_and_a_handed_over_part_says_whose_it_continues()
+    {
+        var look = Look(
+            [
+                Record("c0d00001", "stopped", "q1", entry: "quest:q1/engine", at: 0),
+                Record("c0d00002", "completed", "q1", entry: "quest:q1/engine", at: 10),
+                Record("c0d00003", "working", "q1", entry: "quest:q1/engine", at: 20, from: "c0d00002"),
+                Record("c0d00004", "completed", "q2", entry: "quest:q1/engine", at: 30),
+            ],
+            quests: [AskQuest("q1", "game", "engine"), AskQuest("q2", "game", "engine") with { Parent = "q1" }]);
+
+        var parts = Assert.Single(SessionGroups.ReadEntries(look)).Parts;
+
+        Assert.Equal(
+            [(PartBegan.Opened, null), (PartBegan.CarriedOn, "c0d00001"), (PartBegan.HandedOver, "c0d00002"), (PartBegan.CarriedOn, null)],
+            parts.Select(part => (part.Began, part.After)));
+    }
+
+    /// <summary>A record with no key (a host from before) is its own line of work; the entry's place is read from the part alone.</summary>
+    [Fact]
+    public void A_record_with_no_entry_is_its_own_line_of_work()
+    {
+        var look = Look([Record("0ld00001", "completed", "q1", at: 0), Record("0ld00002", "completed", "q1", at: 5)]);
+
+        Assert.Equal(["session:0ld00001/engine", "session:0ld00002/engine"], SessionGroups.ReadEntries(look).Select(entry => entry.Key).Order(StringComparer.Ordinal));
+    }
+
+    /// <summary>Asked of some sessions, an entry holding one is answered whole: its other parts decide its group.</summary>
+    [Fact]
+    public void Asked_for_some_sessions_it_answers_each_entry_they_are_parts_of_whole()
+    {
+        var entries = SessionGroups.ReadEntries(Evidence(), ["62c005bc"]);
+
+        var app = Assert.Single(entries);
+        Assert.Equal((AppKey, 4), (app.Key, app.Parts.Count));
+    }
+
+    /// <summary>The groups in the order a list shows them, each group's entries by its leading part as the rows are.</summary>
+    [Fact]
+    public void The_entries_go_in_the_groups_order()
+    {
+        var look = Look(
+        [
+            Record("0a000001", "completed", "q1", entry: "quest:q1/engine", at: 0),
+            Record("0a000002", "awaiting-person", "q2", entry: "quest:q2/engine", at: 5),
+            Record("0a000003", "working", "q3", entry: "quest:q3/engine", at: 6),
+        ]);
+
+        Assert.Equal(
+            [SessionGroup.You, SessionGroup.Working, SessionGroup.Ended], SessionGroups.ReadEntries(look).Select(entry => entry.Group));
     }
 }

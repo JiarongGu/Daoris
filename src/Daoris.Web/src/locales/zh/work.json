@@ -22,6 +22,8 @@
   "work.list.groupBy": "分组方式",
   "work.list.byState": "状态",
   "work.list.byRepository": "仓库",
+  "work.list.byAsk": "需求",
+  "work.group.noAsk": "不属于任何需求",
   "work.list.showMore": "再显示 {{count}} 个",
   "work.list.showArchived": "显示已归档",
   "work.list.archiveEnded": "归档已结束的会话…",

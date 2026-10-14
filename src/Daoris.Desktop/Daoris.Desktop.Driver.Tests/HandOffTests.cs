@@ -133,7 +133,7 @@ public sealed class HandOffTests : LandedFixture
         Assert.Contains("not the branch the landing made", (await trees.HandAsync(root, Entry())).Message);
 
         Assert.Equal(0, asked);
-        Assert.Contains("no branch a landing made", SessionTrees.NotLanded("feature/mine"));
+        Assert.Contains("no branch a landing made", TreeHand.NotLanded("feature/mine"));
     }
 
     /// <summary>

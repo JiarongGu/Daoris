@@ -65,6 +65,13 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     internal Action? Delivered { get; init; }
 
     /// <summary>
+    /// The message on the ask's channel these words carry to a running part (SESSONE2b, D167 point 7): the person's, as their
+    /// words; another session's, in Daoris's words around that agent's claim, which the record keeps as Daoris's, never the
+    /// person's (<see cref="Words"/>). Null for every other message.
+    /// </summary>
+    public ChannelItemView? Channel { get; init; }
+
+    /// <summary>
     /// Whether the record already shows this message waiting, so the queue a page is told never lists it and a stop never hands
     /// it back to the person's composer: the words a conversation goes on with, and a helper's answer.
     /// </summary>
@@ -81,12 +88,13 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     /// <summary>
     /// What the person told a driven session, as its record keeps it (SESS3, STEER1): theirs, under the id that pairs the
     /// words shown while they wait with the same words where the session took them, and the names of what they attached.
-    /// The message's own, so a conversation records it as the loop does without naming the loop (LOOPOUT1).
+    /// The message's own, so a conversation records it as the loop does without naming the loop (LOOPOUT1). Another session's
+    /// message on the ask's channel is Daoris's words around that agent's claim (SESSONE2b), never the person's.
     /// </summary>
     internal static SessionEvent Words(ChatMessage message) => new()
     {
         Kind = SessionEventKind.User,
-        Origin = "person",
+        Origin = message.Channel is { Person: false } ? "target" : "person",
         Id = message.Id,
         Text = message.Text,
         Files = message.Files.Count > 0 ? [.. message.Files.Select(kept => kept.Name)] : null,

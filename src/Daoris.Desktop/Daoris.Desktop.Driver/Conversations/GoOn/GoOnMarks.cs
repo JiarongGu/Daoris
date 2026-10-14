@@ -27,14 +27,23 @@ public sealed class GoOnMarks(string home)
     /// Mark these words as judged unable to go on, replacing any mark before. An id that is not a session's keeps nothing,
     /// and a write that fails is lost, which costs one more try at the next look.
     /// </summary>
-    public void Mark(string session, IEnumerable<string> said, ContinueReason why, DateTimeOffset at)
+    public void Mark(string session, IEnumerable<string> said, ContinueReason why, DateTimeOffset at) => Mark(session, said, why.Code, at);
+
+    /// <summary>
+    /// The mark's code for words whose turn failed twice running (TURNFAIL1, <see cref="FailedTurnWords"/>): they could go on,
+    /// and the driver stops trying them by itself until the person says more. No reason <see cref="ContinueWhy"/> names.
+    /// </summary>
+    public const string FailedTwice = "failed-twice";
+
+    /// <summary><see cref="Mark(string, IEnumerable{string}, ContinueReason, DateTimeOffset)"/> by a code of its own.</summary>
+    public void Mark(string session, IEnumerable<string> said, string code, DateTimeOffset at)
     {
         var ids = said.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.Ordinal).ToList();
         if (!SessionEventText.IsLocalId(session) || ids.Count == 0) return;
 
         try
         {
-            GoOnFiles.WriteMark(PathOf(session), ids, why.Code, at);
+            GoOnFiles.WriteMark(PathOf(session), ids, code, at);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

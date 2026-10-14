@@ -26,6 +26,12 @@ internal sealed class LoopContext(
     /// <summary>The words a record could not go on with (MSG1b), beside the conversations, so a later look leaves them waiting.</summary>
     public GoOnMarks Marks { get; } = new(home);
 
+    /// <summary>
+    /// What reached each part from its ask's channel (SESSONE2b), shared across the per-tick instances, so a message reaches a running
+    /// part once whichever look reads it.
+    /// </summary>
+    public ChannelReach Channel { get; } = new();
+
     /// <summary>The person's choices to go on in a new session rather than wait for a cooling account (MSG1g), beside the marks.</summary>
     public NewSessionChoices NewSessions { get; } = new(home);
 

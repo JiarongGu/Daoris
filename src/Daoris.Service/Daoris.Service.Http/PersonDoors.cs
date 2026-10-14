@@ -145,6 +145,8 @@ public static class PersonDoors
         new("GET", "/api/quests/{id}/claim", DoorClass.Open),
         new("GET", "/api/asks", DoorClass.Open),
         new("GET", "/api/asks/{id}", DoorClass.Open),
+        // An ask's channel (SESSONE2a): a read that moves no mark, so a driver and a page may both look.
+        new("GET", "/api/asks/{id}/channel", DoorClass.Open),
         new("GET", "/api/sessions", DoorClass.Open),
         new("GET", "/api/sessions/{id}/deletable", DoorClass.Open),
         // A plan, which deletes nothing.
@@ -196,6 +198,10 @@ public static class PersonDoors
         // WORKFLOW1e (the workflow design §4.3): what kind of task an ask is and which workflow it follows is the person's, as what
         // a review is set to is; an agent proposes a kind (WORKFLOW1i) and never sets one.
         new("POST", "/api/asks/{id}/workflow", DoorClass.Person, "an ask's kind and workflow"),
+        // SESSONE2a (D167 point 7): the person's message on the ask's channel is their words, with every reach D137 gives them; an agent
+        // posts through the connector's tool, which is marked as its claim. Their read mark is theirs to move, and a driver's, for a part.
+        new("POST", "/api/asks/{id}/channel", DoorClass.Person, "a message on an ask's channel"),
+        new("POST", "/api/asks/{id}/channel/read", DoorClass.Person, "an entry's read mark on an ask's channel"),
         new("POST", "/api/quests/{id}/accept", DoorClass.Person, "the yes to a departure"),
         new("POST", "/api/quests/{id}/done", DoorClass.Person, "a quest's done of their own"),
         new("POST", "/api/asks/{id}/go-aheads/{number}", DoorClass.Person, "a go-ahead's answer"),

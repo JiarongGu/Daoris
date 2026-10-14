@@ -13,17 +13,25 @@ public sealed record HandPlan(string Repository, string Branch, string? Plugin, 
 
 /// <summary>What came of a hand-off (WSR5b). A refusal is an answer, as a landing's is, and names what the person would do.</summary>
 /// <param name="Plugin">What the plugin answered — null where it was never spoken to.</param>
-public sealed record TreeHand(bool Handed, string Message, string? Branch = null, PluginLanding? Plugin = null);
-
-public sealed partial class SessionTrees
+public sealed record TreeHand(bool Handed, string Message, string? Branch = null, PluginLanding? Plugin = null)
 {
-    /// <summary>The sentence for a name the record holds no landed branch under — the hand-off's first refusal.</summary>
+    /// <summary>
+    /// The sentence for a name the record holds no landed branch under — the hand-off's first refusal. On the public answer
+    /// (PART10l), since the terminal and the Modules bridge say it too and <see cref="TreeHandOffs"/> is internal over the context.
+    /// </summary>
     public static string NotLanded(string named) =>
         $"`{named}` names no branch a landing made on this machine. Daoris hands on only a branch its own landing made "
         + "and recorded; a branch of your own is yours to push.";
+}
 
+/// <summary>
+/// A branch a landing made, handed to a landing plugin (WSR5b, D100; PART10l, out of <c>SessionTrees.Hand.cs</c>): every question
+/// the hand-off asks before it speaks, and the one push it keeps. Over the trees' context for the plugin wire, the record and the line.
+/// </summary>
+internal sealed class TreeHandOffs(TreeContext context)
+{
     /// <summary>What a press on the hand-off would do (WSR5b) — every refusal it would give, and nothing spoken.</summary>
-    public async Task<HandPlan> HandPlanAsync(string root, LandedBranch entry, string? plugin = null, CancellationToken ct = default) =>
+    internal async Task<HandPlan> HandPlanAsync(string root, LandedBranch entry, string? plugin = null, CancellationToken ct = default) =>
         (await PrepareHandAsync(root, entry, plugin, ct).ConfigureAwait(false)).Plan;
 
     /// <summary>
@@ -39,7 +47,7 @@ public sealed partial class SessionTrees
     /// fails, or answers that it did not push, leaves the branch, the record and the remote as they were, and
     /// the sentence says how to push by hand. Only a push is kept on the record.</para>
     /// </remarks>
-    public async Task<TreeHand> HandAsync(string root, LandedBranch entry, string? plugin = null, CancellationToken ct = default)
+    internal async Task<TreeHand> HandAsync(string root, LandedBranch entry, string? plugin = null, CancellationToken ct = default)
     {
         var (plan, frame, tip) = await PrepareHandAsync(root, entry, plugin, ct).ConfigureAwait(false);
         if (plan.Problem is not null || frame is null || plan.Plugin is null)
@@ -48,7 +56,7 @@ public sealed partial class SessionTrees
         }
 
         // The landing's own frame, said in the machine log as a hand-off (PLUGUI1d).
-        var said = await _context.Plugins.HandAsync(plan.Plugin, frame, ct).ConfigureAwait(false);
+        var said = await context.Plugins.HandAsync(plan.Plugin, frame, ct).ConfigureAwait(false);
         var handed = said is { Pushed: true, Failed: false };
         var message = handed
             ? $"handed `{entry.Branch}` to plugin `{said.Plugin}`. {Said(said, entry.Branch)}"
@@ -58,7 +66,7 @@ public sealed partial class SessionTrees
 
         try
         {
-            Recorded.Pushed(entry.Repository, entry.Branch, said, tip!);
+            context.Recorded.Pushed(entry.Repository, entry.Branch, said, tip!);
             return result;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -74,7 +82,7 @@ public sealed partial class SessionTrees
         var repository = entry.Repository;
         var branch = entry.Branch;
         var workspace = RemoteTarget.Workspace(entry.Workspace);
-        var rule = LandingRules.Choose(_context.Config(), repository, workspace).Rule;
+        var rule = LandingRules.Choose(context.Config(), repository, workspace).Rule;
         var plugin = named is { Length: > 0 } ? named : rule.Form == LandingForm.Branch ? rule.Plugin : null;
         (HandPlan, LandingFrame?, string?) Refused(string why, int commits = 0) =>
             (new HandPlan(repository, branch, plugin, why, entry.PullRequest, commits), null, null);
@@ -92,7 +100,7 @@ public sealed partial class SessionTrees
                 + "the landing made, and Daoris does not hand on a branch it did not make.");
         }
 
-        var line = (await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         var against = line is null ? "HEAD" : await ComparableAsync(root, line, ct).ConfigureAwait(false) ?? line;
         // Oldest first, each commit's id and subject: what the landing told its plugin (D100).
         var (logCode, ahead, logErr) = await WorkingTree.GitAsync(
@@ -115,13 +123,13 @@ public sealed partial class SessionTrees
         }
 
         // D100's refusals, in its words: not installed, off, unsound, or speaking on no `work/land` point.
-        if (_context.Plugins.Problem(plugin) is { } unready) return Refused($"{unready} Nothing was handed on.", commits.Count);
+        if (context.Plugins.Problem(plugin) is { } unready) return Refused($"{unready} Nothing was handed on.", commits.Count);
 
         if (commits.Count == 0) return Refused($"`{branch}` holds nothing `{line ?? "HEAD"}` does not — nothing to hand on.");
 
         // A pull request that was merged by a squash leaves the branch's commits off the line and its files on it.
-        var forms = await LineFormsAsync(root, line, ct).ConfigureAwait(false);
-        var proof = await ProveAsync(root, tip, line, forms, ct).ConfigureAwait(false);
+        var forms = await LandedProofs.LineFormsAsync(root, line, ct).ConfigureAwait(false);
+        var proof = await LandedProofs.ProveAsync(root, tip, line, forms, ct).ConfigureAwait(false);
         if (proof.Kind is LandedKind.OnLine or LandedKind.Merged)
         {
             return Refused($"`{branch}`'s work already reads on the line — its pull request was merged. Nothing to hand on: the "
@@ -130,7 +138,7 @@ public sealed partial class SessionTrees
 
         // PLUGHOOK1a (D148, amending D102): the same refusal where the platform's kept word clears it and git confirms it.
         if (entry.PullRequestState is { State: PullRequestStates.Completed } kept
-            && await VerdictAsync(root, line, forms, kept, tip, ct).ConfigureAwait(false) is { Clears: true } verdict)
+            && await PullRequestAsks.VerdictAsync(root, line, forms, kept, tip, ct).ConfigureAwait(false) is { Clears: true } verdict)
         {
             return Refused($"`{branch}`'s work already reads on the line — its pull request completed"
                 + (kept.Plugin is { } answered ? $", as `{answered}` answered," : "") + $" and its merge commit is on `{verdict.Form}`. "

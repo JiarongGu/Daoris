@@ -369,6 +369,12 @@ public sealed class Driver(
         snapshot = await HandOversAsync(snapshot, events, ct).ConfigureAwait(false);
         Context.Harnesses.Look(snapshot.Started, mark);
 
+        // The ask's channel (SESSONE2b, D167 point 7; the co-working design §2.3): what is new for each line of work on an ask reaches
+        // its newest part here where it can take it now, and otherwise waits for the entry's next part. One read per such line of work.
+        events.AddRange(await Context.Channel
+            .LookAsync(new ServiceChannelDoors(service), ChannelReach.Parts(snapshot, Context.Processes), ct)
+            .ConfigureAwait(false));
+
         // The set-ups waiting for the person here, and each set-up step's tab let go once they answered it (REVIEWENV1d, design
         // §2.3): kept served from look to look until then. A miss is said and tried again at the next look.
         if (Reviews is { } showing)
@@ -408,7 +414,10 @@ public sealed class Driver(
         // The holds that are the harness's trust (D73), as facts: the screen offers exactly these.
         var untrusted = new List<TrustHold>();
 
-        var starts = plan.Where(c => c.Verdict == StartVerdict.Start).ToList();
+        // Each start's line of work on an ask, whose channel its instruction is handed what waited on (SESSONE2b).
+        var starts = plan.Where(c => c.Verdict == StartVerdict.Start)
+            .Select(c => c with { Channel = ChannelEntry.ForQuest(c.Quest, snapshot) })
+            .ToList();
 
         // The plugins' say, BEFORE a start costs anything (D64 §4): the first hold in catalogue order
         // is the quest's reason for sitting, exactly as a dirty tree or a missing binary would be —
@@ -1067,6 +1076,10 @@ public sealed class Driver(
             ? priorTree
             : null;
         var carryingOn = start.Resumes is not null && quest.Awaits is null or "";
+        // A further part of a session (SESSONE1d, D167 point 4 as amended) goes into the tree the planner found free, where it still
+        // stands; one the tidy took at its landing grows again below, from the branch that work landed on (D82), else from the line.
+        var entryTree = isolated && start.Entry?.Into is { Tree: { Length: > 0 } partTree } ? partTree : null;
+        var joinedIn = entryTree is not null && Directory.Exists(entryTree) ? entryTree : null;
 
         // What the question came back with, which is the whole point of resuming: the session is handed
         // it. Read before the record opens, like every hold above — a question the service no longer
@@ -1090,7 +1103,7 @@ public sealed class Driver(
         if (isolated && starting is null) return Hold(TreeLock.Replaying(quest.To));
 
         TreeOpened? opened = null;
-        if (isolated && resumedIn is null)
+        if (isolated && resumedIn is null && joinedIn is null)
         {
             try
             {
@@ -1109,7 +1122,8 @@ public sealed class Driver(
                                 && Context.Trees.Recorded.Landing(stepBefore.Session) is { GoneAt: null } chain
                                 && string.Equals(chain.Repository, quest.To, StringComparison.OrdinalIgnoreCase)
                             ? chain.Branch
-                            : null)
+                            : entryTree is not null ? EntryLanded(start.Entry!, quest.To) : null,
+                        partOf: entryTree is not null ? start.Entry!.Into!.Session : null)
                     .ConfigureAwait(false);
             }
             catch (DriverException error)
@@ -1118,7 +1132,7 @@ public sealed class Driver(
             }
         }
 
-        var workTree = opened?.Path ?? resumedIn ?? root;
+        var workTree = opened?.Path ?? resumedIn ?? joinedIn ?? root;
 
         // A set-up step follows its repository's own procedure, which its tree must hold (REVIEWENV1c, design §2.1): checked
         // here, once the tree exists, and held before any record, a fresh tree going as a refused open's does.
@@ -1283,6 +1297,10 @@ public sealed class Driver(
             var (servers, browserNoted, drivesBrowser, browserDrivers) =
                 await InAppBrowserServers.HandNotedAsync(Context.Servers, Context.Browser, ct).ConfigureAwait(false);
             var browserNotice = browserNoted?.Note;
+            // What waited on the ask's channel for this part's line of work (SESSONE2b, D167 point 7): read for its instruction, never
+            // holding the start, and its entry's mark moved once the record works, not before, so a start that fails hands it on.
+            var channelDoors = new ServiceChannelDoors(service);
+            var channelHeld = start.Channel is { } line ? await ChannelReach.HandAsync(channelDoors, line, ct).ConfigureAwait(false) : null;
             var target = WithLanguage(WithStanding(
                 await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false),
                 config), config, start.Workspace) with
@@ -1297,8 +1315,13 @@ public sealed class Driver(
                 // driver, because the session may not run `git status` itself. An open quest's start, handed the words its
                 // session could not go on with (MSG1b), takes it as any first start does: it is not yet anyone's.
                 CutOff = carryingOn && quest.Status != "Open" ? start.Resumes!.Note ?? "it ended before closing the quest." : null,
-                InFlight = carryingOn ? await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) : [],
+                // A further part gone into its session's tree is told what the part before it left uncommitted there (SESSONE1d).
+                InFlight = carryingOn || joinedIn is not null ? await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) : [],
                 GrewFrom = opened?.GrewFrom,
+                // The parts before it on its session's line, and how its tree stands to theirs (SESSONE1d).
+                Parts = start.Entry is { } entry ? await PartsAsync(entry, joinedIn, entryTree, opened, quest.To, ct).ConfigureAwait(false) : null,
+                // What waited on the ask's channel for its line of work (SESSONE2b, design §2.3), its mark moved once it works.
+                Channel = channelHeld,
                 // How its work will land (WSR1, D87), for a session in a tree of its own — the only kind
                 // the review's press reaches. A chain's step is told its chain's branch, which its done moves on (LAND2c). Under a
                 // named workflow its run's bound version's landing step says it (WORKFLOW1f); a run's first start is bound after it
@@ -1335,7 +1358,8 @@ public sealed class Driver(
             // tree does not hold. The conclusion's note replaces it — by then the record's Tree field and the evidence say the rest.
             var startingNote = StartingNote(
                 opened, quest, answered, resumedIn, carryingOn, start.Resumes, written, elsewhere, fellBack,
-                handedOver: carryingOn && handedFrom, walked: carryingOn && handedFrom && passedAccount is not null);
+                handedOver: carryingOn && handedFrom, walked: carryingOn && handedFrom && passedAccount is not null,
+                joinedSession: joinedIn is not null ? start.Entry?.Into?.Session : null);
             await service.AdvanceAsync(sessionId, "starting", note: startingNote?.Note, ct: ct, parts: startingNote?.Parts).ConfigureAwait(false);
 
             // The answer beneath the question it answers (STANDDOWN2): the session that asked ends with
@@ -1376,6 +1400,8 @@ public sealed class Driver(
                 // A native run holds what the person says while it works, and goes on with it in its own conversation (MSG1b).
                 goOn: GoOns.GoOnWith(adapter, target, selection, rules.File, handed),
                 stopMade: stop => stoppedFirst = stop,
+                // The part works: what it was handed from the ask's channel is read, so its entry's mark moves (SESSONE2b).
+                working: channelHeld is null ? null : () => _ = ChannelReach.HandedAsync(channelDoors, channelHeld, CancellationToken.None),
                 // BGWAIT1: a turn that ends on the session's own background work, holding its quest as a park would, is not
                 // a question. Read from the quest as the conclusion reads it, by the conclusion's own rule.
                 waitsOnBackground: WaitsOnBackground(service, quest, sessionId, resumed: start.Resumes is not null),
@@ -1828,6 +1854,58 @@ public sealed class Driver(
     }
 
     /// <summary>
+    /// The branch a session's work last landed on here (SESSONE1d; D82 by entry rather than by chain): the newest of its parts'
+    /// landings in the repository whose record stands, or null where none of them landed on a branch.
+    /// </summary>
+    private string? EntryLanded(EntryParts entry, string repository) =>
+        entry.Parts
+            .Select(part => Context.Trees.Recorded.Landing(part.Session))
+            .FirstOrDefault(landing => landing is { GoneAt: null }
+                                       && string.Equals(landing.Repository, repository, StringComparison.OrdinalIgnoreCase))
+            ?.Branch;
+
+    /// <summary>
+    /// What a further part of a session is handed of the parts before it (SESSONE1d): each one's record, its tree's name where the
+    /// tree stands and its branch now, or the branch its work landed on where the tree is gone; and how its own tree stands to
+    /// theirs. Only the newest the instruction names are read from git; a running part's note is its opening, so none is said.
+    /// </summary>
+    /// <param name="joinedIn">The tree it went into, standing; null where it did not.</param>
+    /// <param name="entryTree">The tree the planner found free, gone or not; null where it found none.</param>
+    private async Task<SessionParts> PartsAsync(
+        EntryParts entry, string? joinedIn, string? entryTree, TreeOpened? opened, string repository, CancellationToken ct)
+    {
+        var earlier = new List<EarlierPart>();
+        foreach (var part in entry.Parts)
+        {
+            var named = earlier.Count < TargetPrompt.PartsShown;
+            var tree = named && part.Tree is { Length: > 0 } path && Directory.Exists(path) ? path : null;
+            var branch = tree is not null
+                ? await Context.Trees.BranchNowAsync(tree, ct).ConfigureAwait(false) ?? $"daoris/{TreeName(tree)}"
+                : named && Context.Trees.Recorded.Landing(part.Session) is { GoneAt: null } landing
+                        && string.Equals(landing.Repository, repository, StringComparison.OrdinalIgnoreCase)
+                    ? landing.Branch
+                    : null;
+            earlier.Add(new EarlierPart(part.Session, part.Quest, part.State)
+            {
+                Note = part.Running ? null : part.Note,
+                Tree = tree is null ? null : TreeName(tree),
+                Branch = branch,
+            });
+        }
+
+        var regrown = entryTree is not null && joinedIn is null;
+        return new SessionParts(earlier)
+        {
+            Into = joinedIn is not null ? entry.Into?.Session : null,
+            HeldBy = entry.HeldBy,
+            Gone = regrown ? entry.Into?.Session : null,
+            GrewFrom = regrown ? opened?.GrewFrom : null,
+        };
+
+        static string TreeName(string tree) => Path.GetFileName(tree.TrimEnd('/', '\\'));
+    }
+
+    /// <summary>
     /// The creating sentence a start's record carries while it runs (D51 rule 4), each line with its code (LANG1a, the language
     /// design §4 rows 25–36): its tree's opening; a resume once its question closed, and in which tree; or a carry-on, why,
     /// whether on another account, in which tree, and why the person's words did not go on in their own session. Null where
@@ -1838,9 +1916,11 @@ public sealed class Driver(
     /// <param name="elsewhere">Whether it runs on another account than the record it carries on.</param>
     /// <param name="handedOver">The quest was handed over from <paramref name="resumes"/> (MIXAGENT1a-ii): said by the agent it came from.</param>
     /// <param name="walked">The account the hand-over named could not run it, and another account of the named agent did.</param>
+    /// <param name="joinedSession">The earlier part's session whose free tree this start went into (SESSONE1g), or null.</param>
     internal static Noted? StartingNote(
         TreeOpened? opened, QuestView quest, QuestView? answered, string? resumedIn, bool carryingOn,
-        PriorSession? resumes, PriorSession? written, bool elsewhere, ContinueReason? fellBack, bool handedOver = false, bool walked = false)
+        PriorSession? resumes, PriorSession? written, bool elsewhere, ContinueReason? fellBack, bool handedOver = false, bool walked = false,
+        string? joinedSession = null)
     {
         if (opened is not null) return opened.Opening ?? Noted.From(opened.Sentence, null);
 
@@ -1855,7 +1935,17 @@ public sealed class Driver(
                     NoteCodes.StartedInAskingTree, $"in the tree session `{resumes!.Session}` asked from.", ("session", resumes.Session)));
         }
 
-        if (!carryingOn) return null;
+        // A further part gone into a free tree of its entry (SESSONE1g, D167): said, as a start in the root is not. A part whose
+        // tree was removed grows again, and its opening (`started.tree`) already says whose tree went.
+        if (!carryingOn)
+        {
+            return joinedSession is null
+                ? null
+                : Noted.Of(
+                    NoteCodes.StartedJoined,
+                    $"goes into the tree of session `{joinedSession}`, which holds the earlier part of this work.",
+                    ("session", joinedSession));
+        }
 
         var session = resumes!.Session;
         (string Name, object? Value)[] facts = [("quest", quest.Id), ("session", session)];
@@ -2063,7 +2153,8 @@ public sealed class Driver(
 
         // What it consumed, where the door reported it (TOOL3/D57 §4). A pipe with only text reports
         // nothing, and a surface then says "not measured" rather than zero.
-        var (outcome, turnFailed) = acp is not null ? await acp.ConfigureAwait(false) : (null, null);
+        var (outcome, turnFailed, acpLeft) = acp is not null ? await acp.ConfigureAwait(false) : (null, null, []);
+        List<ChatMessage> left = [.. acpLeft];
         var used = acp is not null ? outcome?.Usage
             : structured is not null ? await structured.ConfigureAwait(false)
             : null;
@@ -2073,12 +2164,18 @@ public sealed class Driver(
         if (held is not null)
         {
             (exitCode, used) = await GoOns.GoOnAsync(
-                held, goOn!, adapter, sessionId, transcript, refusesInput, drivesBrowser, exitCode, used, resume, said, wentOn, ct, own)
+                held, goOn!, adapter, sessionId, transcript, refusesInput, drivesBrowser, exitCode, used, resume, said, wentOn, left, ct, own)
                 .ConfigureAwait(false);
         }
 
-        return await conclude(exitCode, used, turnFailed, Ending(acp is not null, structured is not null, exitCode, turnFailed, own, transcript))
+        var concluded = await conclude(exitCode, used, turnFailed, Ending(acp is not null, structured is not null, exitCode, turnFailed, own, transcript))
             .ConfigureAwait(false);
+
+        // The words its failed door never delivered wait on its ended record to go again (TURNFAIL1, USERSHOWN1): kept once the
+        // conclusion moved it, since the say door refuses a running record.
+        if (left.Count > 0) await WordsLeft.KeepAsync(service, Context.Events, sessionId, left, CancellationToken.None).ConfigureAwait(false);
+
+        return concluded;
     }
 
     /// <summary>Where a run's capture failed once the run was ended before awaiting it (ANSWER2): the machine log's <c>where</c>.</summary>
@@ -2248,7 +2345,7 @@ public sealed class Driver(
     /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event; null for a resume.</param>
     /// <param name="waitsOnBackground">Whether a turn that ended on its own background work waits for it (BGWAIT1); null never.</param>
     /// <param name="noConnector">What is said where there is no connector, when it is neither a quest's nor an intake's sentence.</param>
-    private async Task<(AcpOutcome? Outcome, string? Failure)> CaptureAcpAsync(
+    private async Task<(AcpOutcome? Outcome, string? Failure, IReadOnlyList<ChatMessage> Left)> CaptureAcpAsync(
         Process process, string transcript, string sessionId, string cwd, string prompt,
         string? posture, string? harnessNotice, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, object? meta = null,
@@ -2282,6 +2379,7 @@ public sealed class Driver(
         }
 
         var errors = HarnessCapture.PumpAsync(process.StandardError, file, sessionId, output, ct);
+        AcpSession? session = null;
 
         try
         {
@@ -2324,7 +2422,7 @@ public sealed class Driver(
 
             // What it runs beside itself, each its own console stream (CONSOLE2) — kept wherever the
             // session's own console is — and stoppable from its tab while the session runs (CONSOLE3a).
-            var session = new AcpSession(
+            session = new AcpSession(
                 process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture, meta, Event,
                 streams: output is null ? null : new SessionStreams(output, sessionId),
                 onConversation: keepAs is null ? null : conversation => Context.Conversations.Keep(sessionId, keepAs, conversation));
@@ -2335,7 +2433,10 @@ public sealed class Driver(
             // the page shows them waiting in the turn they were said in, rather than nothing until they are handed over.
             inbox?.OnSaid((message, reach) =>
             {
-                Line(reach == DrivenReach.NextStep
+                // Another session's message on the ask's channel is that agent's claim, never the person's (SESSONE2b).
+                Line(message.Channel is { Person: false } claim
+                    ? $"— another session's message `{claim.Id}` on the ask's channel, which reaches the session at its next step"
+                    : reach == DrivenReach.NextStep
                     ? $"— the person added, which reaches the session at its next step: {message.Text}"
                     : $"— the person added, which reaches the session when its turn ends: {message.Text}");
                 Event(ChatMessage.Words(message) with { Reaches = reach == DrivenReach.NextStep ? "next-step" : "turn-end" });
@@ -2353,7 +2454,9 @@ public sealed class Driver(
                     // anything the agent did with them, so the answer never sits above the question.
                     asked: message =>
                     {
-                        Line($"— the session took what the person added: {message.Text}");
+                        Line(message.Channel is { Person: false } claim
+                            ? $"— the session took another session's message `{claim.Id}` on the ask's channel"
+                            : $"— the session took what the person added: {message.Text}");
                         Event(ChatMessage.Words(message));
                     },
                     resume: resume?.Conversation,
@@ -2368,7 +2471,7 @@ public sealed class Driver(
             Line($"— the turn ended: {outcome.StopReason}, after {outcome.Updates} update(s). The "
                  + "session record is concluded from the exit code and the quest's own state, not "
                  + "from this line (D46 §4).");
-            return (outcome, null);
+            return (outcome, null, []);
         }
         catch (AcpResumeRefused refused) when (resume is not null)
         {
@@ -2378,7 +2481,7 @@ public sealed class Driver(
             // Its reason by code, the agent's words its own (CONVNOTE2e). A resume keeps its conversation under the adapter it
             // runs on, which is the one it ran on, so that is the agent `elsewhere` names.
             SaidByCode(DoorNotes.AnswerCarriedOn(refused, keepAs));
-            return (null, null);
+            return (null, null, []);
         }
         catch (DriverException error)
         {
@@ -2389,7 +2492,10 @@ public sealed class Driver(
             // quest as a stand-down. A failed call is not the session describing its work, which is
             // the self-report D46 §4 keeps out; it is the door saying the work was cut off.
             SaidByCode(DoorNotes.Failed(error.Message));
-            return (null, error.Message);
+            // 🔴 The person's words it never took (TURNFAIL1, USERSHOWN1): sent behind the failed turn, or held for its end. They
+            // go back to the run, which keeps them on the record once it ended, to go again (WordsLeft); closed here, so the
+            // finally below says nothing of them.
+            return (null, error.Message, [.. session?.Unreached ?? [], .. inbox?.Close() ?? []]);
         }
         finally
         {

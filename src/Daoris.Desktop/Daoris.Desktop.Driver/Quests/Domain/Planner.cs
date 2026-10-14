@@ -295,6 +295,15 @@ public sealed record PriorSession(
 
     /// <summary>The workspace the record belongs to, as it names it: where a rule is resolved for it.</summary>
     public string? Workspace { get; init; }
+
+    /// <summary>
+    /// The session entry it is a part of (SESSONE1a, D167 point 2), <c>&lt;origin&gt;/&lt;repository&gt;</c>, as the service answers
+    /// it: what a later quest of the same line goes into its tree by (SESSONE1d). Null from a host before the key.
+    /// </summary>
+    public string? Entry { get; init; }
+
+    /// <summary>The quest it served, as its record names it; null for a conversation's. What a later part is told it worked on.</summary>
+    public string? Quest { get; init; }
 }
 
 /// <summary>
@@ -555,6 +564,13 @@ public sealed record Snapshot(
     /// </summary>
     public IReadOnlyDictionary<string, HandedQuest> Handed { get; init; } =
         new Dictionary<string, HandedQuest>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Every record's entry key by its id (SESSONE1d), this machine's and the teammates' mirrors (<c>origin/id</c>), as the service
+    /// answered it: a quest's publisher names the line its sessions join (<see cref="EntryParts.KeyOf"/>). Absent is none answered.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Entries { get; init; } =
+        new Dictionary<string, string>(StringComparer.Ordinal);
 }
 
 public enum StartVerdict
@@ -660,6 +676,19 @@ public sealed record Consideration(
     /// branch this step's tree grows from, so it sees the unmerged work it builds on or checks.
     /// </summary>
     public PriorSession? BuildsOn { get; init; }
+
+    /// <summary>
+    /// For a first start that is a further part of a session (SESSONE1d, D167 point 4 as amended): its entry, the parts it already
+    /// has here, and whether the start goes into the entry's tree or runs alongside. Null where no part of its entry is here, where
+    /// no record names its entry, where the repository's sessions run in its checkout, and for a chain's step <see cref="BuildsOn"/>.
+    /// </summary>
+    public EntryParts? Entry { get; init; }
+
+    /// <summary>
+    /// The line of work on an ask a start is a part of (SESSONE2b, D167 point 7), whose channel its instruction is handed what
+    /// waited on: set by the look for a start (<see cref="ChannelEntry.ForQuest"/>). Null for a quest on no ask.
+    /// </summary>
+    public ChannelEntry? Channel { get; init; }
 
     /// <summary>
     /// For a quest the person's stop holds (<see cref="StartVerdict.Stopped"/>): the session they stopped, which *Try
@@ -778,6 +807,9 @@ public static class Planner
             .GroupBy(s => s.Repository, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(group => group.Key, group => group.First().Id, StringComparer.OrdinalIgnoreCase);
         var startedThisTick = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        // The trees a start planned at this look goes into, each with its quest (SESSONE1d): a tree takes one session (D51), and a
+        // further part of a session may now go into a tree a resume or a carry-on goes back into, so each holds it for the other.
+        var treesThisTick = new List<(string Tree, string Quest)>();
         var slots = config.Cap - snapshot.Active.Count;
 
         // The service already orders open-oldest-first; keeping its order is what makes "oldest starts
@@ -825,13 +857,14 @@ public static class Planner
             if (quest.Status == "Open")
             {
                 var considered = Consider(quest);
-                // A chain's next step in the repository its parent ran in builds on that run (CHAIN2).
-                considerations.Add(considered.Verdict == StartVerdict.Start
-                                   && quest.Parent is { } parent
-                                   && snapshot.LastRun.TryGetValue(parent, out var before)
-                                   && string.Equals(before.Repository, quest.To, StringComparison.OrdinalIgnoreCase)
-                    ? considered with { BuildsOn = before }
-                    : considered);
+                // A chain's next step in the repository its parent ran in builds on that run (CHAIN2); any other first start may be
+                // a further part of a session, which goes into its tree or runs alongside (SESSONE1d).
+                considerations.Add(considered.Verdict != StartVerdict.Start ? considered
+                    : quest.Parent is { } parent
+                      && snapshot.LastRun.TryGetValue(parent, out var before)
+                      && string.Equals(before.Repository, quest.To, StringComparison.OrdinalIgnoreCase)
+                        ? considered with { BuildsOn = before }
+                        : Joining(considered));
             }
             else if (quest is { Status: "Taken", Awaits: { Length: > 0 } awaits }
                      && snapshot.LastRun.TryGetValue(quest.Id, out var prior))
@@ -974,6 +1007,49 @@ public static class Planner
                     TakenBy = new TakenBy(cutOff.Session, Here: true),
                 }
                 : null;
+        }
+
+        // 🔴 A further part of a session (SESSONE1d, D167 point 4 as amended): a new quest of an entry with a part here goes into the
+        // tree its newest part held when nothing live holds it (D51), and otherwise starts at once alongside, in a tree of its own, as
+        // a further part; nothing waits (EntryBusy is not built). Its entry is read from the records (EntryParts.KeyOf), never
+        // re-derived. Different entries in one repository stay side by side (PAR1), and a repository whose sessions run in its
+        // checkout keeps one at a time (D51): the entry changes only its grouping there.
+        Consideration Joining(Consideration start)
+        {
+            var quest = start.Quest;
+            if (!config.OpensOwnTree(quest.To) || EntryParts.KeyOf(quest, snapshot) is not { } key) return start;
+            var parts = EntryParts.Earlier(key, quest, snapshot);
+            if (parts.Count == 0) return start;
+
+            var entry = new EntryParts(key, parts);
+            if (parts[0] is not { Tree: { Length: > 0 } tree } newest) return start with { Entry = entry };
+
+            if (snapshot.Active.FirstOrDefault(s => SameTree(s.Tree, tree)) is { } holder)
+            {
+                return start with
+                {
+                    Entry = entry with { HeldBy = holder.Id },
+                    Reason = $"starting in `{quest.To}`, alongside session `{holder.Id}`, which is at work in its session's tree — "
+                             + "a further part, in a tree of its own.",
+                };
+            }
+
+            if (treesThisTick.FirstOrDefault(claim => SameTree(claim.Tree, tree)) is { Quest: { } ahead })
+            {
+                return start with
+                {
+                    Entry = entry,
+                    Reason = $"starting in `{quest.To}`, alongside quest `#{ahead}`, which goes into its session's tree at this look — "
+                             + "a further part, in a tree of its own.",
+                };
+            }
+
+            treesThisTick.Add((tree, quest.Id));
+            return start with
+            {
+                Entry = entry with { Into = newest },
+                Reason = $"starting in `{quest.To}`, in the tree session `{newest.Session}` worked in — a further part of its session.",
+            };
         }
 
         // A waiting quest (D79): the open list holds open and taken quests only, so a question still in
@@ -1145,6 +1221,13 @@ public static class Planner
                     return new(quest, StartVerdict.RepositoryBusy,
                         $"session `{holder.Id}` is active in the tree `#{quest.Id}` goes back into — one session per tree.");
                 }
+
+                // A further part planned into that tree at this look holds it as a live session would (SESSONE1d).
+                if (into is { Tree: { Length: > 0 } claimed } && treesThisTick.FirstOrDefault(claim => SameTree(claim.Tree, claimed)) is { Quest: { } ahead })
+                {
+                    return new(quest, StartVerdict.RepositoryBusy,
+                        $"queued behind quest `#{ahead}`, which goes into the tree `#{quest.Id}` goes back into at this look — one session per tree.");
+                }
             }
             else if ((continuing
                          ? snapshot.Active.FirstOrDefault(s =>
@@ -1175,6 +1258,7 @@ public static class Planner
             }
 
             startedThisTick[quest.To] = quest.Id;
+            if (config.OpensOwnTree(quest.To) && into is { Tree: { Length: > 0 } back }) treesThisTick.Add((back, quest.Id));
             return new(quest, StartVerdict.Start, $"starting in `{quest.To}`.", repo.Root, repo.Workspace);
         }
     }

@@ -8,6 +8,9 @@ public interface ISessionEntryFacts
 
     /// <summary>The session record with this id, this machine's or a teammate's mirror; null when none is held.</summary>
     Task<Session?> SessionAsync(string id, CancellationToken ct = default);
+
+    /// <summary>The conversation that took this quest (CHATTAKE1), or null when none recorded it — every chat from before the field.</summary>
+    Task<Session?> ChatTookAsync(string questId, CancellationToken ct = default);
 }
 
 /// <summary>The rule's facts as the stores hold them. A quest's <c>PublishedBy</c> names a session by the id its own machine knew it by, so a teammate's mirror, keyed <c>origin/id</c>, answers that id too.</summary>
@@ -16,6 +19,8 @@ public sealed class StoreEntryFacts(QuestStore quests, SessionStore sessions) : 
     public Task<Quest?> QuestAsync(string id, CancellationToken ct = default) => quests.FindAsync(id, ct);
 
     public Task<Session?> SessionAsync(string id, CancellationToken ct = default) => sessions.FindOrMirrorAsync(id, ct);
+
+    public Task<Session?> ChatTookAsync(string questId, CancellationToken ct = default) => sessions.FindChatTookAsync(questId, ct);
 }
 
 /// <summary>
@@ -27,7 +32,7 @@ public sealed class StoreEntryFacts(QuestStore quests, SessionStore sessions) : 
 /// <remarks>
 /// <para><b>The origin of a quest</b>, the first that applies: the ask that asked it (its sender is <c>ask #id</c>, a chain step's too);
 /// else the origin of the session that published it, read from that session's record; else its chain parent's; else the quest itself,
-/// <c>quest:&lt;id&gt;</c>. <b>Of a session</b>: an intake is the ask's, <c>ask:&lt;id&gt;/intake</c>; a helper or a reviewer is its own;
+/// <c>quest:&lt;id&gt;</c>. A conversation that took the quest (rule 2, CHATTAKE1) comes right after the ask. <b>Of a session</b>: an intake is the ask's, <c>ask:&lt;id&gt;/intake</c>; a helper or a reviewer is its own;
 /// a session on a quest takes the quest's; a conversation handed over, or started from another's words, takes the one it continues; and
 /// any other conversation is its own, <c>session:&lt;id&gt;</c>.</para>
 ///
@@ -93,6 +98,12 @@ public static class SessionEntries
         // The quest is its own line where the rule below it finds none, and where it comes round to itself (a cycle of publishers).
         var itself = $"quest:{quest.Id}";
         if (!seen.Add($"q:{quest.Id}")) return itself;
+
+        // Rule 2 (CHATTAKE1): a quest a conversation took joins that conversation's line, so its later parts stay in it.
+        if (await facts.ChatTookAsync(quest.Id, ct).ConfigureAwait(false) is { } chat && !seen.Contains($"s:{chat.Id}"))
+        {
+            return await OriginAsync(chat, facts, seen, ct).ConfigureAwait(false);
+        }
 
         if (quest.PublishedBy is { } publisher
             && await facts.SessionAsync(publisher, ct).ConfigureAwait(false) is { } published

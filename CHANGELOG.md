@@ -5,6 +5,26 @@ with the version and date at release.
 
 ## Unreleased
 
+- Sessions working on an ask can post to and read the ask's channel (`channel_post`, `channel_read`), and Daoris hands them
+  what was written there: a running session reads a message at its next step where its agent takes words during a turn,
+  another session's always marked as that agent's claim and never as yours; your message reaches it as your words, and one
+  addressed to a repository whose session has ended goes on in that session. What a session could not take yet is handed to
+  the next session of that line of work. Another agent's message never starts or extends a session.
+- Sessions lists one row per line of work in a repository: a request's retries, resumes, carry-ons, hand-overs and the
+  requests the ask's other repositories sent it are its *parts*, shown with *N parts* and a parts strip on its page, where
+  each part can be opened and acted on. An ask's finished intake leaves the list for its ask's page, which now lists the
+  ask's sessions; *Group by ask* in the list's ⋯ arranges sessions under their asks; archiving a session archives all its
+  parts. A new request of the same ask goes into its line's tree when that tree is free, and runs alongside when it is not.
+- A session that goes on with your words and whose agent's connection fails no longer ends as *completed*: it ends failed,
+  saying why, and your words wait to go again at the next look (after a second failure in a row, with the next words you
+  say). Words you add while a turn hangs are no longer shown as taken when the turn fails; they wait to go again too. The
+  conversation no longer shows an empty *waiting* turn above each resumed turn, and the agent's `API Error: …` line reads
+  as part of the failure.
+- A turn still waiting for its agent's first answer says since when, in the conversation and in the session's head, rather
+  than showing nothing for minutes. A working session no longer shows its last ending's note, and a session whose quest
+  waits on another repository's answer reads *awaiting reply* on the quest page, not *completed*.
+- A message waiting behind a running turn can be edited or removed on its own, in a chat, a driven session's box and Ask
+  Daoris; before, only *Stop turn* took waiting messages back, all at once.
 - The desktop's own settings and record files, and a repository's `daoris.json` when the desktop edits it, are written with
   plain line ends on Windows too, and keep Chinese text and marks such as `<` as written rather than as `\u` escapes; Ask
   Daoris's JSON answers show them as written as well.

@@ -1,0 +1,271 @@
+using Daoris.Knowledge;
+using Microsoft.Data.Sqlite;
+
+namespace Daoris.Service.Tests;
+
+/// <summary>
+/// SESSONE2a (D167 points 6 to 8; the co-working design §2.1, §2.2, §2.5 and §2.6): an ask's channel is service records, one row per
+/// message, with a read mark per entry; Daoris's lines are read from the ask's quests and never stored; a refusal is a code.
+/// </summary>
+public sealed class ChannelTests : IAsyncLifetime
+{
+    private readonly string _root = Path.Combine(Path.GetTempPath(), "daoris-channel-" + Guid.NewGuid().ToString("N")[..8]);
+
+    private SqliteConnection _connection = null!;
+    private QuestStore _quests = null!;
+    private QuestExchange _exchange = null!;
+    private AskDesk _asks = null!;
+    private SessionStore _sessions = null!;
+    private SessionLedger _ledger = null!;
+    private ChannelDesk _channel = null!;
+    private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-10-14T09:00:00Z");
+
+    private const string Sentence = "the report needs the v3 bridge, and the bridge needs a column";
+
+    public async Task InitializeAsync()
+    {
+        Repo("reports", """{ "summary": "The reports.", "owns": ["report pages", "the v3 bridge"], "accepts": ["a report"] }""");
+        Repo("checker", """{ "summary": "Checks things.", "owns": ["verification"], "accepts": ["a check"] }""");
+
+        _connection = new SqliteConnection("Data Source=:memory:");
+        await _connection.OpenAsync();
+        _quests = await QuestStore.OpenAsync(_connection);
+        var askStore = await AskStore.OpenAsync(_connection);
+        _sessions = await SessionStore.OpenAsync(_connection);
+
+        var store = new InMemoryKnowledgeStore();
+        var service = new KnowledgeService(
+            store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(),
+            DisclosurePolicy.LocalOnly, registry: new Registry());
+        await service.ImportAsync(Path.Combine(_root, "family"), Now);
+        foreach (var row in await service.RegistryAsync()) await service.RegisterAsync(row with { Workspace = "work" }, Now);
+
+        var files = new QuestFiles(Path.Combine(_root, "home"));
+        _exchange = new QuestExchange(service, _quests, files: files);
+        _asks = new AskDesk(service, askStore, _exchange, files);
+        _ledger = new SessionLedger(_quests, _sessions, service, askStore);
+        _channel = new ChannelDesk(
+            await ChannelStore.OpenAsync(_connection), _asks, askStore, _ledger, _quests, new StoreEntryFacts(_quests, _sessions));
+    }
+
+    public async Task DisposeAsync()
+    {
+        await _connection.DisposeAsync();
+        if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
+    }
+
+    private void Repo(string name, string domain)
+    {
+        var dir = Path.Combine(_root, "family", name);
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(Path.Combine(dir, "daoris.json"), $$"""{ "source": "s", "packs": [], "domain": {{domain}} }""");
+    }
+
+    /// <summary>An ask published to <c>reports</c> at once, and a session running its quest: that session's entry is the ask's.</summary>
+    private async Task<(Ask Ask, Quest Quest, Session Session)> AskedAsync(string sentence = Sentence)
+    {
+        var outcome = await _asks.AskAsync(new AskRequest("work", sentence) { To = "reports" }, Now);
+        var session = (await _ledger.OpenAsync(outcome.Quest!.Id, "stub", Now, tree: Path.Combine(_root, "trees", sentence.Length.ToString()))).Session!;
+        return (outcome.Ask!, outcome.Quest, session);
+    }
+
+    /// <summary>🔴 A session's post is read back with who posted it, its entry and its words as written; with no <c>to</c> it is to everyone.</summary>
+    [Fact]
+    public async Task A_sessions_post_is_kept_with_its_poster_and_read_back()
+    {
+        var (ask, _, session) = await AskedAsync();
+
+        var posted = await _channel.PostAsSessionAsync(session.Id, "  the bridge wants a `region` column  ", null, null, false, Now.AddMinutes(1));
+
+        Assert.Equal(ChannelRefusal.None, posted.Refusal);
+        var message = posted.Message!;
+        Assert.Equal(ask.Id, message.Ask);
+        Assert.Equal(session.Id, message.Session);
+        Assert.Equal("reports", message.Repository);
+        Assert.Equal("stub", message.Agent);
+        Assert.Equal($"ask:{ask.Id}/reports", message.Entry);
+        Assert.Null(message.To);
+        Assert.False(message.ByPerson);
+        Assert.Equal("the bridge wants a `region` column", message.Text);
+        var read = (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, since: null, moveMark: false))!;
+        Assert.Equal([message.Id], read.Messages.Select(m => m.Id));
+    }
+
+    /// <summary>🔴 The person's post is kept on the channel, by no session, and on the ask as a word of the <c>channel</c> kind.</summary>
+    [Fact]
+    public async Task The_persons_post_is_kept_on_the_ask_as_a_channel_word()
+    {
+        var (ask, _, _) = await AskedAsync();
+
+        var posted = await _channel.PostAsPersonAsync(ask.Id, "use the older bridge", "reports", null, Now.AddMinutes(2));
+
+        Assert.Equal(ChannelRefusal.None, posted.Refusal);
+        Assert.True(posted.Message!.ByPerson);
+        Assert.Equal("reports", posted.Message.To);
+        var word = Assert.Single((await _asks.FindAsync(ask.Id))!.Later);
+        Assert.Equal(new AskWord(AskWordKind.Channel, "use the older bridge", Now.AddMinutes(2)), word);
+        Assert.Equal("channel", AskWord.Spell(AskWordKind.Channel));
+    }
+
+    /// <summary>🔴 Each refusal is a code: no words, words past the bound, no ask, a helper, an unknown ask, a repository the ask does not reach, an answer to nothing.</summary>
+    [Fact]
+    public async Task A_refusal_is_a_code()
+    {
+        var (ask, _, session) = await AskedAsync();
+        var chat =(await _ledger.OpenChatAsync("reports", "stub", Now, tree: Path.Combine(_root, "trees", "chat"))).Session!;
+        var helper = await _sessions.CreateAsync(
+            null, "reports", "stub", Now, kind: SessionKind.Chat, serves: session.Id, ownEntry: true);
+
+        Assert.Equal(ChannelRefusal.Empty, (await _channel.PostAsSessionAsync(session.Id, "  \n ", null, null, false, Now)).Refusal);
+        Assert.Equal(ChannelRefusal.Empty, (await _channel.PostAsSessionAsync(session.Id, null, null, null, false, Now)).Refusal);
+        Assert.Equal(ChannelRefusal.TooLong, (await _channel.PostAsSessionAsync(session.Id, new string('x', ChannelBounds.MaxText + 1), null, null, false, Now)).Refusal);
+        Assert.Equal(ChannelRefusal.None, (await _channel.PostAsSessionAsync(session.Id, new string('x', ChannelBounds.MaxText), null, null, false, Now)).Refusal);
+        Assert.Equal(ChannelRefusal.NoSession, (await _channel.PostAsSessionAsync(null, "hello", null, null, false, Now)).Refusal);
+        Assert.Equal(ChannelRefusal.NoSession, (await _channel.PostAsSessionAsync("nosuch1", "hello", null, null, false, Now)).Refusal);
+        Assert.Equal(ChannelRefusal.NoAsk, (await _channel.PostAsSessionAsync(chat.Id, "hello", null, null, false, Now)).Refusal);
+        Assert.Equal(ChannelRefusal.Helper, (await _channel.PostAsSessionAsync(helper.Id, "hello", null, null, false, Now)).Refusal);
+        Assert.Equal(ChannelRefusal.BadTo, (await _channel.PostAsSessionAsync(session.Id, "hello", "nowhere", null, false, Now)).Refusal);
+        Assert.Equal(ChannelRefusal.BadRe, (await _channel.PostAsSessionAsync(session.Id, "hello", null, "nosuchid", false, Now)).Refusal);
+        Assert.Equal(ChannelRefusal.NotFound, (await _channel.PostAsPersonAsync("ffffff", "hello", null, null, Now)).Refusal);
+        Assert.Equal(ChannelRefusal.Empty, (await _channel.PostAsPersonAsync(ask.Id, " ", null, null, Now)).Refusal);
+        Assert.Equal(ChannelRefusal.BadTo, (await _channel.PostAsPersonAsync(ask.Id, "hello", "checker", null, Now)).Refusal);
+    }
+
+    /// <summary>A message may be addressed to one repository the ask reaches, by the name the registry gives it, however it is cased.</summary>
+    [Fact]
+    public async Task A_message_may_be_addressed_to_one_of_the_asks_repositories()
+    {
+        var (ask, _, session) = await AskedAsync();
+        // A quest the session published reaches `checker` on the ask (design §1.2 rule 4).
+        await _exchange.PublishAsync(new QuestAsk("reports", "checker", "Check the bridge", "Please.") { PublishedBy = session.Id }, Now);
+
+        var to = await _channel.PostAsSessionAsync(session.Id, "for you", "CHECKER", null, false, Now.AddMinutes(1));
+
+        Assert.Equal(ChannelRefusal.None, to.Refusal);
+        Assert.Equal("checker", to.Message!.To);
+        Assert.Equal(ChannelRefusal.None, (await _channel.PostAsPersonAsync(ask.Id, "for all", "everyone", null, Now.AddMinutes(2))).Refusal);
+    }
+
+    /// <summary>A question is open until a message answers it by <c>re</c>.</summary>
+    [Fact]
+    public async Task A_question_is_open_until_a_message_answers_it()
+    {
+        var (ask, _, session) = await AskedAsync();
+        var question = (await _channel.PostAsSessionAsync(session.Id, "which column?", null, null, true, Now.AddMinutes(1))).Message!;
+
+        Assert.True(Assert.Single((await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, false))!.Messages).Open);
+
+        var answer = await _channel.PostAsPersonAsync(ask.Id, "region", null, question.Id, Now.AddMinutes(2));
+
+        Assert.Equal(question.Id, answer.Message!.Re);
+        var read = (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, false))!.Messages;
+        Assert.False(read.Single(m => m.Id == question.Id).Open);
+        Assert.False(read.Single(m => m.Id == answer.Message.Id).Open);
+    }
+
+    /// <summary>A part posts at most <see cref="ChannelBounds.MaxPerPart"/> messages; another part still posts.</summary>
+    [Fact]
+    public async Task A_part_posts_at_most_ten_messages()
+    {
+        var (ask, _, session) = await AskedAsync();
+        for (var n = 0; n < ChannelBounds.MaxPerPart; n++)
+        {
+            Assert.Equal(ChannelRefusal.None, (await _channel.PostAsSessionAsync(session.Id, $"note {n}", null, null, false, Now.AddMinutes(n))).Refusal);
+        }
+
+        Assert.Equal(ChannelRefusal.TooMany, (await _channel.PostAsSessionAsync(session.Id, "one more", null, null, false, Now.AddHours(1))).Refusal);
+
+        // The cap is the part's, and the person has none.
+        Assert.Equal(ChannelRefusal.None, (await _channel.PostAsPersonAsync(ask.Id, "and me", null, null, Now.AddHours(1))).Refusal);
+    }
+
+    /// <summary>
+    /// 🔴 A read moves the entry's mark, so the next read holds only what is new; a second entry has its own mark; the person's entry
+    /// is read without moving one unless asked; and <c>since</c> reads from a moment instead.
+    /// </summary>
+    [Fact]
+    public async Task A_read_moves_the_entrys_mark_and_each_entry_has_its_own()
+    {
+        var (ask, _, session) = await AskedAsync();
+        await _exchange.PublishAsync(new QuestAsk("reports", "checker", "Check the bridge", "Please.") { PublishedBy = session.Id }, Now);
+        var checker = (await _ledger.OpenAsync(
+            (await _quests.ListAsync(receiver: "checker")).Single().Id, "stub", Now, tree: Path.Combine(_root, "trees", "checker"))).Session!;
+        var first = (await _channel.PostAsSessionAsync(session.Id, "first", null, null, false, Now.AddMinutes(1))).Message!;
+
+        var one = (await _channel.ReadAsSessionAsync(session.Id, null))!;
+        Assert.Equal(ChannelRefusal.None, one.Refusal);
+        Assert.Equal([first.Id], one.Read!.Messages.Select(m => m.Id));
+
+        Assert.Empty((await _channel.ReadAsSessionAsync(session.Id, null))!.Read!.Messages);
+        var second = (await _channel.PostAsPersonAsync(ask.Id, "second", null, null, Now.AddMinutes(4))).Message!;
+        Assert.Equal([second.Id], (await _channel.ReadAsSessionAsync(session.Id, null))!.Read!.Messages.Select(m => m.Id));
+
+        // The checker's entry has read nothing yet.
+        Assert.Equal([first.Id, second.Id], (await _channel.ReadAsSessionAsync(checker.Id, null))!.Read!.Messages.Select(m => m.Id));
+
+        // A `since` reads from that moment, whatever the mark says.
+        Assert.Equal([second.Id], (await _channel.ReadAsSessionAsync(session.Id, Now.AddMinutes(2)))!.Read!.Messages.Select(m => m.Id));
+
+        // The person's read counts without moving a mark (the two quests' lines and the two messages), and moves it only when asked to.
+        Assert.Equal(4, (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, moveMark: false))!.Unread);
+        Assert.Equal(4, (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, moveMark: true))!.Unread);
+        Assert.Equal(0, (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, moveMark: false))!.Unread);
+    }
+
+    /// <summary>
+    /// 🔴 Daoris's lines are read from the ask's quests, by code: published, taken, awaiting and closed done or declined; the quests of
+    /// another ask are not on it, and nothing is stored.
+    /// </summary>
+    [Fact]
+    public async Task Daoriss_lines_are_read_from_the_asks_quests_and_never_stored()
+    {
+        var (ask, quest, session) = await AskedAsync();
+        var published = (await _exchange.PublishAsync(
+            new QuestAsk("reports", "checker", "Check the bridge", "Please.") { PublishedBy = session.Id }, Now.AddMinutes(1))).Quest!;
+        var (other, _, _) = await AskedAsync("a different ask entirely, about the checker pages");
+
+        var open = (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, false))!.Lines;
+
+        Assert.Equal(
+            [("published", quest.Id, "ask #" + ask.Id, "reports"), ("published", published.Id, "reports", "checker")],
+            open.Select(line => (line.Code, line.Quest, line.From, line.To)));
+        Assert.Equal("Check the bridge", open[1].Name);
+
+        await _exchange.RespondAsync(published.Id, "take", null, Now.AddMinutes(2));
+        await _exchange.RespondAsync(quest.Id, "decline", "not ours", Now.AddMinutes(3));
+        var later = (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, false))!.Lines;
+        Assert.Equal(
+            [("published", quest.Id, "declined"), ("published", published.Id, "taken")],
+            later.GroupBy(line => line.Quest).Select(g => ("published", g.Key, g.Last().Code)).OrderBy(x => x.Item3));
+        Assert.DoesNotContain(later, line => line.Quest == (_quests.ListAsync(receiver: "reports").Result.Single(q => q.From == "ask #" + other.Id)).Id);
+
+        // Read in time order, the lines come before a message posted after them and after one posted before.
+        var message = (await _channel.PostAsPersonAsync(ask.Id, "between", null, null, Now.AddMinutes(2).AddSeconds(30))).Message!;
+        var items = (await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, false))!.Items;
+        Assert.Equal(message.Id, items.OfType<ChannelMessage>().Single().Id);
+        Assert.Equal(items.Select(i => i.At).Order(), items.Select(i => i.At));
+    }
+
+    /// <summary>Forgetting an ask's channel removes its messages and its marks, and no other ask's.</summary>
+    [Fact]
+    public async Task An_asks_channel_is_forgotten_with_the_ask()
+    {
+        var (ask, _, session) = await AskedAsync();
+        var (other, _, otherSession) = await AskedAsync("a different ask entirely, about the checker pages");
+        await _channel.PostAsSessionAsync(session.Id, "mine", null, null, false, Now);
+        await _channel.PostAsSessionAsync(otherSession.Id, "theirs", null, null, false, Now);
+        await _channel.ReadAsSessionAsync(session.Id, null);
+
+        await _channel.ForgetAsync(ask.Id);
+
+        Assert.Empty((await _channel.ReadAsync(ask.Id, ChannelDesk.PersonEntry, null, false))!.Messages);
+        Assert.Single((await _channel.ReadAsync(other.Id, ChannelDesk.PersonEntry, null, false))!.Messages);
+    }
+
+    /// <summary>A read of an ask this machine does not hold is null, not an empty channel.</summary>
+    [Fact]
+    public async Task A_read_of_an_unknown_ask_is_null()
+    {
+        Assert.Null(await _channel.ReadAsync("ffffff", ChannelDesk.PersonEntry, null, false));
+    }
+}

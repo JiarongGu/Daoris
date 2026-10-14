@@ -187,7 +187,7 @@ public static class Observation
         string? turnFailed = null, bool took = false, string? lastWords = null) =>
         startedOn is "Open" or "Taken"
             ? Conclude(exitCode, questStatus, awaitsBefore, awaitsAfter, turnFailed, resumed: true, took, lastWords)
-            : WentOn(exitCode, before);
+            : WentOn(exitCode, before, turnFailed);
 
     /// <summary>
     /// How a session whose quest had closed ends after going on with the person's words (MSG1b, D137 §2.3): in the state it
@@ -195,11 +195,20 @@ public static class Observation
     /// nothing of it; and it cannot park, since it holds no quest (D83).
     /// </summary>
     /// <remarks>
-    /// A record live when it went on (a park whose quest closed under it) ends <c>completed</c> on a clean exit: a live
-    /// record would hold its tree and a slot for ever.
+    /// <para>A record live when it went on (a park whose quest closed under it) ends <c>completed</c> on a clean exit: a live
+    /// record would hold its tree and a slot for ever.</para>
+    ///
+    /// <para>🔴 <b>A turn the door said failed is a failed run</b> (TURNFAIL1, as ACPEND1 has it for a first run): on the
+    /// protocol door the agent exits 0 once stdin closes whatever happened, so a connection that dropped 27 minutes into the
+    /// turn ended the install's record <c>completed</c>, "it went on with your words and ended", its words unanswered.</para>
     /// </remarks>
     /// <param name="before">The state it went on from, in the record's spelling.</param>
-    public static SessionConclusion WentOn(int exitCode, string before) => exitCode == 0
+    /// <param name="turnFailed">What the protocol door said refusing the turn (ACPEND1), or null.</param>
+    public static SessionConclusion WentOn(int exitCode, string before, string? turnFailed = null) =>
+        turnFailed is { Length: > 0 } failed
+            ? SessionConclusion.Of("failed", Noted.Of(NoteCodes.EndedWentOnFailed, "it went on with your words, and its turn failed:")
+                .Then(" ", Noted.Said(failed, NoteBy.Agent)))
+            : exitCode == 0
         ? SessionConclusion.Of(
             before is "completed" or "declined" or "failed" or "stopped" ? before : "completed",
             Noted.Of(NoteCodes.EndedWentOn, "it went on with your words and ended; its quest stays as it closed."))
@@ -246,6 +255,58 @@ public static class Observation
         bool Says(string? text) => text?.Contains(pattern, StringComparison.OrdinalIgnoreCase) == true;
         return Says(ended.Failure) || ended.Lines.Any(Says);
     }
+}
+
+/// <summary>What becomes of the person's words a run carried, judged as it concludes (TURNFAIL1).</summary>
+public enum WordsAfter
+{
+    /// <summary>The run took them: they leave the record by their ids (MSG1b).</summary>
+    Taken,
+
+    /// <summary>Its turn failed before answering them: they stay waiting, unmarked, and the next look takes them again.</summary>
+    Wait,
+
+    /// <summary>They failed a second time running: they stay waiting, marked, until the person says more (MSG1b's marks).</summary>
+    Held,
+}
+
+/// <summary>
+/// The person's words a run carried when its door failed (TURNFAIL1, D137's note): never answered, so they stay waiting on its
+/// record as a cooling account's do (D137 §2.2), and its note says why.
+/// </summary>
+/// <remarks>
+/// <b>Bounded, by the record's own note.</b> Words waiting on an ended record are taken up at the next look, every fifteen
+/// seconds, and a door that fails at once (a conversation too long to send) would fail at every one. So the words go again by
+/// themselves once: where the record they went on from had ended saying its words wait after such a failure, they are marked,
+/// and go again with the next words the person says (<see cref="GoOnMarks"/>).
+/// </remarks>
+public static class FailedTurnWords
+{
+    /// <param name="conclusion">How the run concluded, every account's line added.</param>
+    /// <param name="turnFailed">What the protocol door said refusing the turn (ACPEND1), or null.</param>
+    /// <param name="before">The record as the look planned the run: its note says how it ended before it went on.</param>
+    public static WordsAfter Judge(SessionConclusion conclusion, string? turnFailed, PriorSession before) =>
+        turnFailed is not { Length: > 0 } || conclusion.State != "failed" ? WordsAfter.Taken
+        : before.NoteParts?.Any(part => part.Code == NoteCodes.EndedWordsWait.Code || part.Code == NoteCodes.EndedWordsWaitYou.Code) == true
+            ? WordsAfter.Held
+            : WordsAfter.Wait;
+
+    /// <summary>
+    /// As above, a failed turn read from either door (TURNFAIL4): the protocol door's refused turn, or the native door's failed
+    /// <c>result</c> its harness ended with (<see cref="HarnessEnding.Failure"/>, which TURNFAIL2's words left read), so the bound
+    /// marks a native run's words as it marks a protocol run's.
+    /// </summary>
+    public static WordsAfter Judge(SessionConclusion conclusion, string? turnFailed, HarnessEnding ended, PriorSession before) =>
+        Judge(conclusion, turnFailed is { Length: > 0 } ? turnFailed : ended.Failure, before);
+
+    /// <summary>The line the record's note and its conversation say why the words wait by; null for words taken.</summary>
+    public static Noted? Line(WordsAfter after) => after switch
+    {
+        WordsAfter.Wait => Noted.Of(NoteCodes.EndedWordsWait, "Your words wait to go again at the next look."),
+        WordsAfter.Held => Noted.Of(
+            NoteCodes.EndedWordsWaitYou, "Your words failed twice and wait for you: they go again with the next words you say."),
+        _ => null,
+    };
 }
 
 /// <summary>

@@ -198,6 +198,44 @@ public sealed class SessionMessagesTickTests : IDisposable
     }
 
     /// <summary>
+    /// TURNFAIL3, the failed door end to end (D137's TURNFAIL1 note): a first run's turn fails (<c>door.failed</c>) while the
+    /// person's word, said mid-turn, is held. The record ends `failed` with the word waiting on <c>said</c>, kept through the say
+    /// door, and the next look resumes the same conversation carrying it, which takes it off the record.
+    /// </summary>
+    [Fact]
+    public async Task A_word_said_mid_turn_to_a_door_that_fails_waits_on_the_failed_record_and_the_next_tick_carries_it()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        var processes = new SessionProcesses();
+        var driver = Protocol(service, "fails", processes);
+
+        var tick = driver.RunOnceAsync();
+        await Poll.Until(
+            () => service.Status("q1") == "Taken" && processes.InboxOf("s1") is not null,
+            () => "the first run never took its quest", TimeSpan.FromSeconds(60));
+        Assert.True(processes.InboxOf("s1")!.Hold(new ChatMessage("Also log the port.", [])));
+        File.WriteAllText(Path.Combine(_home, "go.flag"), "");
+        await tick.WaitAsync(TimeSpan.FromSeconds(90));
+
+        var first = $"record: {service.Record("s1")}";
+        Assert.True(service.State("s1") == "failed", first);
+        Assert.True(service.Said("s1").Count == 1, first);
+        Assert.Contains("ECONNRESET", service.Note("s1"));
+        Assert.Contains(Events("s1"), e => e.Parts?.Any(part => part.Code == NoteCodes.EndedWordsWait.Code) == true);
+
+        var look = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\nheard: {string.Join(" | ", Heard().Select(h => h.ToJsonString()))}";
+        Assert.True(service.SessionCount == 1, seen);
+        Assert.True(service.Said("s1").Count == 0, seen);
+        // The resumed turn ends with its quest still taken, so the record parks asking the person.
+        Assert.True(service.State("s1") == "awaiting-person", seen);
+        var prompt = Heard().Last(line => line["method"]!.GetValue<string>() == "session/prompt");
+        Assert.True(prompt["resumed"]!.GetValue<bool>(), seen);
+        Assert.Equal(["Also log the port."], prompt["blocks"]!.AsArray().Select(block => block!.GetValue<string>()));
+    }
+
+    /// <summary>
     /// The protocol door's stand-in: it names its conversation <c>conv-&lt;session&gt;</c>, and on its first prompt takes and
     /// closes the quest. The mode is how it resumes: <c>resumes</c> honours <c>session/resume</c>, and a resumed prompt is
     /// logged with its blocks; <c>elsewhere</c> refuses it as <c>codex-acp</c> does a thread another client holds.
@@ -207,7 +245,7 @@ public sealed class SessionMessagesTickTests : IDisposable
         var script = Path.Combine(_home, "acp-agent.mjs");
         File.WriteAllText(script, """
             import { createInterface } from 'node:readline';
-            import { appendFileSync } from 'node:fs';
+            import { appendFileSync, existsSync } from 'node:fs';
             const [log, mode] = process.argv.slice(2);
             const url = process.env.DAORIS_SERVICE_URL;
             const session = process.env.DAORIS_SESSION_ID;
@@ -246,7 +284,15 @@ public sealed class SessionMessagesTickTests : IDisposable
                   say('Logged the port, as you said.');
                 } else {
                   await respond({ action: 'take' });
-                  await respond({ action: 'done', reason: 'served the report' });
+                  if (mode !== 'fails') await respond({ action: 'done', reason: 'served the report' });
+                  if (mode === 'fails') {
+                    // TURNFAIL3: the door fails the first turn, the quest still taken (a closed quest's run ends completed whatever
+                    // the door said), once the test has said its word mid-turn.
+                    const go = log.replace(/agent\.log$/, 'go.flag');
+                    for (let waited = 0; !existsSync(go) && waited < 30000; waited += 50) await new Promise((r) => setTimeout(r, 50));
+                    send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'API Error: Connection dropped (ECONNRESET)' } });
+                    return;
+                  }
                   say('Served.');
                 }
                 send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });

@@ -3,11 +3,13 @@ using static Daoris.Driver.TreeGit;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The squash a landing rule asks for (PROCESS1b-ii, D164's amendment point 2 and its PROCESS1b-ii note): the pull request's branch
-/// made as one commit from the session's work, the first commit Daoris itself makes, and the landing record's word of what it
-/// squashed, which is what proves the session landed once its commits are on no branch of the person's.
+/// The squash a landing rule asks for (PROCESS1b-ii, D164's amendment point 2 and its PROCESS1b-ii note; PART10l, out of
+/// <c>SessionTrees.Squash.cs</c>): the pull request's branch made as one commit from the session's work, the first commit Daoris
+/// itself makes, and the landing record's word of what it squashed, which is what proves the session landed once its commits are
+/// on no branch of the person's. Over the trees' context for that record; the commit's making is static, for the landing's branch
+/// form.
 /// </summary>
-public sealed partial class SessionTrees
+internal sealed class TreeSquashes(TreeContext context)
 {
     /// <summary>
     /// The one commit (point 1): the tree of <paramref name="tip"/>, its parent <paramref name="parent"/>, its message
@@ -15,7 +17,7 @@ public sealed partial class SessionTrees
     /// own identity in the repository, which <see cref="IdentityProblemAsync"/> asked first.
     /// </summary>
     /// <returns>The commit made, or null with git's reason.</returns>
-    private static async Task<(string? Commit, string? Why)> SquashAsync(
+    internal static async Task<(string? Commit, string? Why)> SquashAsync(
         string root, string tip, string parent, string message, CancellationToken ct)
     {
         var (code, made, err) = await WorkingTree.GitAsync(root, ["commit-tree", $"{tip}^{{tree}}", "-p", parent, "-m", message], ct)
@@ -28,7 +30,7 @@ public sealed partial class SessionTrees
     /// its <c>user.name</c> and <c>user.email</c> are both set there. Daoris names nobody of its own: a commit it makes is made as
     /// the person's git makes theirs, and one with no name would carry whatever git guessed from the machine.
     /// </summary>
-    private static async Task<string?> IdentityProblemAsync(string root, string repository, CancellationToken ct)
+    internal static async Task<string?> IdentityProblemAsync(string root, string repository, CancellationToken ct)
     {
         var (_, name, _) = await WorkingTree.GitAsync(root, ["config", "--get", "user.name"], ct).ConfigureAwait(false);
         var (_, email, _) = await WorkingTree.GitAsync(root, ["config", "--get", "user.email"], ct).ConfigureAwait(false);
@@ -56,7 +58,7 @@ public sealed partial class SessionTrees
     /// <param name="tip">The session branch's commit, read once by the caller.</param>
     internal async Task<LandedBranch?> SquashedHolderAsync(string cwd, string repository, string tip, CancellationToken ct)
     {
-        var squashed = Recorded.All()
+        var squashed = context.Recorded.All()
             .Where(entry => entry.Squashed is not null && string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))
             .Reverse()
             .ToList();
@@ -71,14 +73,14 @@ public sealed partial class SessionTrees
         foreach (var entry in squashed)
         {
             var (under, _, _) = await WorkingTree.GitAsync(cwd, ["merge-base", "--is-ancestor", tip, entry.Squashed!], ct).ConfigureAwait(false);
-            if (under == 0 && await StandingTipAsync(cwd, entry, ct).ConfigureAwait(false) is not null) return entry;
+            if (under == 0 && await LandedProofs.StandingTipAsync(cwd, entry, ct).ConfigureAwait(false) is not null) return entry;
         }
 
         return null;
     }
 
     /// <summary>
-    /// A chain's later landing under a squash (point 4), once <see cref="AdvanceAsync"/> judged the branch may move on: one more
+    /// A chain's later landing under a squash (point 4), once the landing's advance (<see cref="TreeLands"/>) judged the branch may move on: one more
     /// commit on the pull request's branch, its tree the session's tip's, its parent the branch's tip, its message only what the
     /// session added since the recorded tip; then the branch moved to it by compare-and-swap from the tip judged, as a
     /// fast-forward is. Like the rest of the branch form, it writes one ref and touches no checkout.
@@ -87,7 +89,7 @@ public sealed partial class SessionTrees
     /// <param name="head">The session's tip, judged to grow from <paramref name="grewFrom"/> with something new.</param>
     /// <param name="grewFrom">The session tip the record says was squashed last, or the branch's own tip where it says none.</param>
     /// <param name="against">The line's form, from which a plugin is told every commit the branch holds now (D100).</param>
-    private static async Task<Branched> AdvanceSquashedAsync(
+    internal static async Task<Branched> AdvanceSquashedAsync(
         string root, string name, string standsAt, string branch, string? line, string head, string grewFrom, bool handedOn,
         string? against, LandingSubject squash, CancellationToken ct)
     {
@@ -125,7 +127,7 @@ public sealed partial class SessionTrees
         return new Branched(
             new TreeLanding(true,
                 $"moved `{name}` on from {standsAt[..Math.Min(8, standsAt.Length)]} to this session's work — {adds.Count} more commit(s), "
-                + $"squashed into one.{pushIt} Nothing was merged and the checkout was not touched.{TreeStays}",
+                + $"squashed into one.{pushIt} Nothing was merged and the checkout was not touched.{TreeLands.TreeStays}",
                 name)
             { AdvancedFrom = standsAt },
             root, line, carried, branch)
@@ -139,19 +141,20 @@ public sealed partial class SessionTrees
             .Select(parts => new LandingCommit(parts[0], parts.Length > 1 ? parts[1] : ""))];
 
     /// <summary>
-    /// <see cref="UnlandedInTreeAsync"/>, with the record's squash among the proofs (point 3): a tree whose commits a squashing
-    /// landing holds counts none. What the automatic landing asks before it lands a done.
+    /// <see cref="TreeFollows.UnlandedInTreeAsync"/>, with the record's squash among the proofs (point 3): a tree whose commits a
+    /// squashing landing holds counts none. What the automatic landing asks before it lands a done.
     /// </summary>
-    public async Task<int?> UnlandedHereAsync(string tree, CancellationToken ct = default)
+    internal async Task<int?> UnlandedHereAsync(string tree, CancellationToken ct = default)
     {
-        var unlanded = await UnlandedInTreeAsync(tree, "HEAD", ct).ConfigureAwait(false);
-        if (unlanded is not > 0 || !Holds(tree)) return unlanded;
+        var unlanded = await TreeFollows.UnlandedInTreeAsync(tree, "HEAD", ct).ConfigureAwait(false);
+        if (unlanded is not > 0 || !context.Holds(tree)) return unlanded;
         var (code, tip, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct).ConfigureAwait(false);
-        return code == 0 && await SquashedHolderAsync(tree, Owner(tree).Repository, tip.Trim(), ct).ConfigureAwait(false) is not null
+        return code == 0
+               && await SquashedHolderAsync(tree, context.OwnerOf(Path.GetFullPath(tree)).Repository, tip.Trim(), ct).ConfigureAwait(false) is not null
             ? 0
             : unlanded;
     }
 
     /// <summary>How a removal says the record's squash held the work (point 3), in the clause <see cref="ContentHold.Said"/> takes elsewhere.</summary>
-    private static string SquashedSaid(LandedBranch entry) => $"its work is on `{entry.Branch}`, squashed into one commit by its landing";
+    internal static string SquashedSaid(LandedBranch entry) => $"its work is on `{entry.Branch}`, squashed into one commit by its landing";
 }

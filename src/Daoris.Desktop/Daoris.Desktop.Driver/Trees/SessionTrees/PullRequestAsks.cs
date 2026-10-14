@@ -1,6 +1,3 @@
-using static Daoris.Driver.TreeGit;
-using static Daoris.Driver.TreeWorktrees;
-
 namespace Daoris.Driver;
 
 /// <summary>
@@ -10,7 +7,16 @@ namespace Daoris.Driver;
 /// </summary>
 public sealed record PullRequestCarrier(LandedBranch Entry, string Source, string? ClearedTip);
 
-public sealed partial class SessionTrees
+/// <summary>
+/// A landed branch's pull request, asked about and judged (PLUGHOOK1a, PLUGHOOK1c, D148; PART10l, out of
+/// <c>SessionTrees.PullRequests.cs</c>): one occasion's asks over the plugin wire, <i>Ask again</i>, what a kept answer proves
+/// here, and the completed pull requests that carried work. Over the trees' context for the wire, the record and the line.
+/// </summary>
+/// <remarks>
+/// The occasions that ask are the clean-up's look, bringing up to date's look, LAND3's tidy and <i>Ask again</i>, each by its
+/// method's name (<c>PullRequestOccasionTests</c>): <see cref="AskStatesAsync"/> is called from those alone.
+/// </remarks>
+internal sealed class PullRequestAsks(TreeContext context)
 {
     /// <summary>
     /// One occasion's asks (PLUGHOOK1a, D148 point 2, design §2.1), over every repository it looks at: each entry, standing or a
@@ -31,25 +37,25 @@ public sealed partial class SessionTrees
         IEnumerable<(string Root, string Repository, string Workspace)> repositories, bool landedMayGo, CancellationToken ct,
         LandedBranch? again = null)
     {
-        var now = _context.Plugins.Now;
+        var now = context.Plugins.Now;
         var asks = new List<StateAsk>();
         foreach (var (root, repository, workspace) in repositories)
         {
             asks.AddRange(await DueAsksAsync(root, repository, workspace, now, landedMayGo, again, ct).ConfigureAwait(false));
         }
 
-        var answers = await _context.Plugins.AskStatesAsync(asks, ct).ConfigureAwait(false);
+        var answers = await context.Plugins.AskStatesAsync(asks, ct).ConfigureAwait(false);
         foreach (var answer in answers)
         {
             try
             {
                 if (answer.Answer is { } said)
                 {
-                    Recorded.Answered(answer.Ask.Entry, said with { AskedAt = now });
+                    context.Recorded.Answered(answer.Ask.Entry, said with { AskedAt = now });
                 }
                 else if (answer.Failure is { } code && code is not (PullRequestCodes.NotAsked or PullRequestCodes.Unready))
                 {
-                    Recorded.AskFailed(answer.Ask.Entry, new PullRequestAskFailed(code, answer.Ask.Plugin, now));
+                    context.Recorded.AskFailed(answer.Ask.Entry, new PullRequestAskFailed(code, answer.Ask.Plugin, now));
                 }
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -68,13 +74,13 @@ public sealed partial class SessionTrees
     private async Task<IReadOnlyList<StateAsk>> DueAsksAsync(
         string root, string repository, string workspace, DateTimeOffset now, bool landedMayGo, LandedBranch? again, CancellationToken ct)
     {
-        var rule = LandingRules.Choose(_context.Config(), repository, workspace).Rule;
-        var line = (await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
-        var forms = await LineFormsAsync(root, line, ct).ConfigureAwait(false);
+        var rule = LandingRules.Choose(context.Config(), repository, workspace).Rule;
+        var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        var forms = await LandedProofs.LineFormsAsync(root, line, ct).ConfigureAwait(false);
         IReadOnlyList<string>? unlanded = null;
 
         var asks = new List<StateAsk>();
-        foreach (var entry in Recorded.Entries().Where(entry => Ours(entry, repository) && (again is null || SameLanding(entry, again))))
+        foreach (var entry in context.Recorded.Entries().Where(entry => Ours(entry, repository) && (again is null || SameLanding(entry, again))))
         {
             if (!PullRequestAsking.Due(entry, now, again is not null)) continue;
             if (PullRequestAsking.PluginFor(entry, rule) is not { } plugin) continue;
@@ -107,7 +113,7 @@ public sealed partial class SessionTrees
     /// </summary>
     /// <param name="root">The repository's checkout here, where the plugin runs its platform's tool and git judges the answer.</param>
     /// <param name="entry">The landing, standing or a trace.</param>
-    public async Task<PullRequestAskedAgain> AskAgainAsync(string root, LandedBranch entry, CancellationToken ct = default)
+    internal async Task<PullRequestAskedAgain> AskAgainAsync(string root, LandedBranch entry, CancellationToken ct = default)
     {
         var workspace = RemoteTarget.Workspace(entry.Workspace);
         var asked = new PullRequestAskedAgain(entry);
@@ -115,7 +121,7 @@ public sealed partial class SessionTrees
         {
             asked = asked with { Final = true };
         }
-        else if (PullRequestAsking.PluginFor(entry, LandingRules.Choose(_context.Config(), entry.Repository, workspace).Rule) is null)
+        else if (PullRequestAsking.PluginFor(entry, LandingRules.Choose(context.Config(), entry.Repository, workspace).Rule) is null)
         {
             asked = asked with { Code = PullRequestCodes.NoPlugin, Why = PullRequestWords.NoPlugin };
         }
@@ -132,30 +138,31 @@ public sealed partial class SessionTrees
                 };
         }
 
-        var now = Recorded.Entries().LastOrDefault(each => SameLanding(each, entry)) ?? entry;
+        var now = context.Recorded.Entries().LastOrDefault(each => SameLanding(each, entry)) ?? entry;
         if (now.PullRequestState is not { } kept) return asked with { Entry = now };
-        var line = (await _context.LineAsync(root, now.Repository, workspace, ct).ConfigureAwait(false)).Branch;
-        var forms = await LineFormsAsync(root, line, ct).ConfigureAwait(false);
-        var tip = now.GoneAt is null ? await StandingTipAsync(root, now, ct).ConfigureAwait(false) : null;
+        var line = (await context.LineAsync(root, now.Repository, workspace, ct).ConfigureAwait(false)).Branch;
+        var forms = await LandedProofs.LineFormsAsync(root, line, ct).ConfigureAwait(false);
+        var tip = now.GoneAt is null ? await LandedProofs.StandingTipAsync(root, now, ct).ConfigureAwait(false) : null;
         return asked with { Entry = now, Verdict = await VerdictAsync(root, line, forms, kept, tip, ct).ConfigureAwait(false) };
     }
 
     /// <summary>A landing's own branch in this repository: a session branch's name is D88's to judge.</summary>
     private static bool Ours(LandedBranch entry, string repository) =>
-        string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase) && !entry.Branch.StartsWith(SessionPrefix, StringComparison.Ordinal);
+        string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
+        && !entry.Branch.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal);
 
     /// <summary>
     /// Whether an entry's answer could remove something now (design §2.1): it stands, this occasion may remove a landed branch,
     /// and D102's proof did not clear it; or its recorded tip, where git still holds that commit, contains the tip of a session
     /// branch that stands and that D88 does not clear.
     /// </summary>
-    private async Task<bool> CouldRemoveAsync(
-        string root, LandedBranch entry, string? line, IReadOnlyList<LineForm> forms, IReadOnlyList<string> unlanded, bool landedMayGo,
-        CancellationToken ct)
+    private static async Task<bool> CouldRemoveAsync(
+        string root, LandedBranch entry, string? line, IReadOnlyList<LandedProofs.LineForm> forms, IReadOnlyList<string> unlanded,
+        bool landedMayGo, CancellationToken ct)
     {
-        if (entry.GoneAt is null && landedMayGo && await StandingTipAsync(root, entry, ct).ConfigureAwait(false) is { } tip)
+        if (entry.GoneAt is null && landedMayGo && await LandedProofs.StandingTipAsync(root, entry, ct).ConfigureAwait(false) is { } tip)
         {
-            var proof = await ProveAsync(root, tip, line, forms, ct).ConfigureAwait(false);
+            var proof = await LandedProofs.ProveAsync(root, tip, line, forms, ct).ConfigureAwait(false);
             if (proof.Kind is not (LandedKind.OnLine or LandedKind.Merged)) return true;
         }
 
@@ -175,23 +182,13 @@ public sealed partial class SessionTrees
     private static async Task<IReadOnlyList<string>> UnlandedSessionTipsAsync(string root, CancellationToken ct)
     {
         var tips = new List<string>();
-        foreach (var branch in await SessionBranchesAsync(root, ct).ConfigureAwait(false))
+        foreach (var branch in await LandedProofs.SessionBranchesAsync(root, ct).ConfigureAwait(false))
         {
-            var (code, log, _) = await UnlandedLogAsync(root, branch, ct).ConfigureAwait(false);
+            var (code, log, _) = await TreeFollows.UnlandedLogAsync(root, branch, ct).ConfigureAwait(false);
             if (code == 0 && !string.IsNullOrWhiteSpace(log)) tips.Add($"refs/heads/{branch}");
         }
 
         return tips;
-    }
-
-    /// <summary>The landed branch's tip where it stands holding the commit the landing recorded (D102's rule), else null.</summary>
-    private static async Task<string?> StandingTipAsync(string root, LandedBranch entry, CancellationToken ct)
-    {
-        var (code, tip, _) = await WorkingTree.GitAsync(
-            root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{entry.Branch}^{{commit}}"], ct).ConfigureAwait(false);
-        if (code != 0) return null;
-        var (ours, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", entry.Tip, tip.Trim()], ct).ConfigureAwait(false);
-        return ours == 0 ? tip.Trim() : null;
     }
 
     /// <summary>
@@ -199,8 +196,8 @@ public sealed partial class SessionTrees
     /// table (<see cref="PullRequestProof"/>) says the rest.
     /// </summary>
     /// <param name="standingTip">The landed branch's tip where it stands as the landing's, else null.</param>
-    private static async Task<PullRequestVerdict> VerdictAsync(
-        string root, string? line, IReadOnlyList<LineForm> forms, PullRequestState kept, string? standingTip, CancellationToken ct)
+    internal static async Task<PullRequestVerdict> VerdictAsync(
+        string root, string? line, IReadOnlyList<LandedProofs.LineForm> forms, PullRequestState kept, string? standingTip, CancellationToken ct)
     {
         if (kept.State != PullRequestStates.Completed || kept.MergeCommit is not { } merge || kept.SourceCommit is not { } source)
         {
@@ -234,12 +231,13 @@ public sealed partial class SessionTrees
     internal async Task<IReadOnlyList<PullRequestCarrier>> CarriersAsync(string root, string repository, string? line, CancellationToken ct)
     {
         var carriers = new List<PullRequestCarrier>();
-        var entries = Recorded.Entries().Where(entry => Ours(entry, repository) && entry.PullRequestState?.State == PullRequestStates.Completed).ToList();
+        var entries = context.Recorded.Entries()
+            .Where(entry => Ours(entry, repository) && entry.PullRequestState?.State == PullRequestStates.Completed).ToList();
         if (entries.Count == 0) return carriers;
-        var forms = await LineFormsAsync(root, line, ct).ConfigureAwait(false);
+        var forms = await LandedProofs.LineFormsAsync(root, line, ct).ConfigureAwait(false);
         foreach (var entry in entries)
         {
-            var tip = entry.GoneAt is null ? await StandingTipAsync(root, entry, ct).ConfigureAwait(false) : null;
+            var tip = entry.GoneAt is null ? await LandedProofs.StandingTipAsync(root, entry, ct).ConfigureAwait(false) : null;
             var verdict = await VerdictAsync(root, line, forms, entry.PullRequestState!, tip, ct).ConfigureAwait(false);
             if (verdict.Carries) carriers.Add(new PullRequestCarrier(entry, entry.PullRequestState!.SourceCommit!, verdict.Clears ? tip : null));
         }
@@ -248,7 +246,7 @@ public sealed partial class SessionTrees
     }
 
     /// <summary>The carrier whose pull request carried <paramref name="revision"/>: at or under its source commit, or under a tip it cleared.</summary>
-    private static async Task<PullRequestCarrier?> CarrierOfAsync(
+    internal static async Task<PullRequestCarrier?> CarrierOfAsync(
         string root, string revision, IReadOnlyList<PullRequestCarrier> carriers, CancellationToken ct)
     {
         foreach (var carrier in carriers)
@@ -262,68 +260,5 @@ public sealed partial class SessionTrees
         }
 
         return null;
-    }
-
-    /// <summary>
-    /// LAND3's tidy on a pull request's word (PLUGHOOK1a, design §2.1 occasion 1): after the containment pass, the repository's
-    /// entries are asked about, and each recorded session branch a completed pull request carried goes too, with the tidy's
-    /// keeps. Each removal is kept on the entry whose answer allowed it.
-    /// </summary>
-    private async Task<IReadOnlyList<TidiedBranch>> TidyCarriedAsync(
-        string root, string repository, string workspace, IReadOnlyCollection<string> handled, string? pressed,
-        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse, CancellationToken ct)
-    {
-        await AskStatesAsync([(root, repository, workspace)], landedMayGo: false, ct).ConfigureAwait(false);
-        var line = (await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
-        var carriers = await CarriersAsync(root, repository, line, ct).ConfigureAwait(false);
-        if (carriers.Count == 0) return [];
-
-        var carried = new List<(string Branch, string Tip, PullRequestCarrier Carrier)>();
-        foreach (var branch in Grown.All()
-                     .Where(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))
-                     .Select(entry => entry.Branch)
-                     .Where(branch => branch.StartsWith(SessionPrefix, StringComparison.Ordinal)
-                                      && !string.Equals(branch, pressed, StringComparison.Ordinal) && !handled.Contains(branch))
-                     .Distinct(StringComparer.Ordinal))
-        {
-            var (code, tip, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct)
-                .ConfigureAwait(false);
-            if (code != 0) continue;
-            if (await CarrierOfAsync(root, $"refs/heads/{branch}", carriers, ct).ConfigureAwait(false) is { } carrier)
-            {
-                carried.Add((branch, tip.Trim(), carrier));
-            }
-        }
-
-        if (carried.Count == 0) return [];
-        var results = new List<TidiedBranch>();
-        // A list git could not give is never "no tree here" (AUTOTIDY1): each branch is kept, saying why.
-        var worktrees = await _context.Worktrees.ReadAsync(root, ct).ConfigureAwait(false);
-        using var hold = TreeLock.TryReplaying(home, workspace, repository);
-        var busy = hold is not null && inUse is not null
-            ? new HashSet<string>((await inUse(ct).ConfigureAwait(false)).Select(Normal), StringComparer.OrdinalIgnoreCase)
-            : null;
-        var unasked = inUse is null
-            ? "whether a session still holds its tree was not asked here"
-            : "a session was starting in one of the repository's trees";
-        foreach (var (branch, tip, carrier) in carried)
-        {
-            var tidied = (worktrees is null
-                    ? new TidiedBranch(branch, false, false, ListUnread)
-                    : await TidyOneAsync(root, branch, tip, worktrees.GetValueOrDefault(branch), busy, unasked, ct).ConfigureAwait(false))
-                with { CarriedBy = carrier.Entry.Branch };
-            results.Add(tidied);
-            if (!tidied.Removed) continue;
-            try
-            {
-                Recorded.Carried(carrier.Entry, new CarriedBranch(branch, tip, _context.Plugins.Now, CarriedBy.Tidy));
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-            {
-                // The branch went on a confirmed answer; only the note of it on the record is lost.
-            }
-        }
-
-        return results;
     }
 }

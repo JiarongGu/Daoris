@@ -26,7 +26,13 @@ public sealed record ContentHold(string Where, bool Squash)
         $"Its commits stay at `{reference}` until you delete that ref; `git branch {branch} {reference}` brings the branch back.";
 }
 
-public sealed partial class SessionTrees
+/// <summary>
+/// The content proof and what a removal keeps and deletes by it (SQUASHTIDY1, SQUASHTIDY1c; PART10l, out of
+/// <c>SessionTrees.Content.cs</c>): where a branch's work is held by content, what a tree holds that no commit does, the
+/// recovery ref a content-held removal keeps, and the delete at the commit judged. Over the trees' context for the record of
+/// what landings made, the delete's test seam and the working trees git lists; the rest is static.
+/// </summary>
+internal sealed class ContentHolds(TreeContext context)
 {
     /// <summary>
     /// Where a content-held removal keeps what it deleted (SQUASHTIDY1c): one ref per deletion, under the branch's own name, out
@@ -73,7 +79,7 @@ public sealed partial class SessionTrees
         string cwd, string tip, string? line, IReadOnlySet<string> notHolders, CancellationToken ct)
     {
         var forms = new List<(string Name, string Id)>();
-        foreach (var form in await LineFormsAsync(cwd, line, ct).ConfigureAwait(false))
+        foreach (var form in await LandedProofs.LineFormsAsync(cwd, line, ct).ConfigureAwait(false))
         {
             var (formCode, formId, _) = await WorkingTree.GitAsync(cwd, ["rev-parse", "--verify", "--quiet", $"{form.Ref}^{{commit}}"], ct)
                 .ConfigureAwait(false);
@@ -90,7 +96,7 @@ public sealed partial class SessionTrees
         {
             var (baseCode, mergeBase, _) = await WorkingTree.GitAsync(cwd, ["merge-base", tip, formId], ct).ConfigureAwait(false);
             if (baseCode != 0) continue;
-            var paths = await NamesAsync(cwd, mergeBase.Trim(), tip, ct).ConfigureAwait(false);
+            var paths = await LandedProofs.NamesAsync(cwd, mergeBase.Trim(), tip, ct).ConfigureAwait(false);
             if (paths is null || paths.Count == 0) continue;
             changed ??= paths;
 
@@ -114,7 +120,7 @@ public sealed partial class SessionTrees
             var space = row.IndexOf(' ');
             if (space <= 0) continue;
             var (id, branch) = (row[..space], row[(space + 1)..]["refs/heads/".Length..]);
-            if (branch.StartsWith(SessionPrefix, StringComparison.Ordinal) || forms.Any(form => form.Name == branch)
+            if (branch.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal) || forms.Any(form => form.Name == branch)
                 || notHolders.Contains(branch))
             {
                 continue;
@@ -129,7 +135,7 @@ public sealed partial class SessionTrees
     /// <summary>Whether every one of <paramref name="paths"/> reads on <paramref name="holder"/> as on <paramref name="tip"/>; false where git could not say.</summary>
     private static async Task<bool> SameFilesAsync(string cwd, string tip, string holder, IReadOnlyList<string> paths, CancellationToken ct)
     {
-        var differing = await NamesAsync(cwd, tip, holder, ct).ConfigureAwait(false);
+        var differing = await LandedProofs.NamesAsync(cwd, tip, holder, ct).ConfigureAwait(false);
         if (differing is null) return false;
         var differs = new HashSet<string>(differing, StringComparer.Ordinal);
         return !paths.Any(differs.Contains);
@@ -137,7 +143,7 @@ public sealed partial class SessionTrees
 
     /// <summary>The branches a landing made and recorded in <paramref name="repository"/>: never a holder by content (SQUASHTIDY1c).</summary>
     internal IReadOnlySet<string> LandedHere(string repository) =>
-        Recorded.All()
+        context.Recorded.All()
             .Where(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))
             .Select(entry => entry.Branch)
             .ToHashSet(StringComparer.Ordinal);
@@ -148,7 +154,7 @@ public sealed partial class SessionTrees
     /// else. One ref per deletion, under the branch's name, a number after it where that name holds another commit already.
     /// </summary>
     /// <returns>The ref, or null with git's reason; then nothing may be removed.</returns>
-    private static async Task<(string? Reference, string? Why)> KeepDiscardedAsync(
+    internal static async Task<(string? Reference, string? Why)> KeepDiscardedAsync(
         string root, string branch, string judged, CancellationToken ct)
     {
         string? why = null;
@@ -171,7 +177,7 @@ public sealed partial class SessionTrees
     /// A recovery ref made for a delete that did not happen (SQUASHTIDY1c) goes again, while the branch still holds its commit:
     /// the ref is one per deletion. Where the branch moved off it, the ref stays, since then it alone holds that commit.
     /// </summary>
-    private static async Task DropKeptAsync(string root, string branch, string? reference, string judged, CancellationToken ct)
+    internal static async Task DropKeptAsync(string root, string branch, string? reference, string judged, CancellationToken ct)
     {
         if (reference is null) return;
         var (held, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", judged, $"refs/heads/{branch}"], ct)
@@ -185,12 +191,12 @@ public sealed partial class SessionTrees
     /// branch is gone already, nothing is left to delete.
     /// </summary>
     /// <returns>Null where it is deleted; otherwise why it is kept, in a clause.</returns>
-    private async Task<string?> DeleteJudgedAsync(string root, string branch, string judged, CancellationToken ct)
+    internal async Task<string?> DeleteJudgedAsync(string root, string branch, string judged, CancellationToken ct)
     {
-        if (BeforeDeleting is { } seam) await seam(branch).ConfigureAwait(false);
+        if (context.BeforeDeleting is { } seam) await seam(branch).ConfigureAwait(false);
         // git branch -D refuses a branch a working tree has checked out; update-ref does not ask, so this does. A list git could
         // not give is no answer to that (AUTOTIDY1).
-        if (await _context.Worktrees.ReadAsync(root, ct).ConfigureAwait(false) is not { } worktrees)
+        if (await context.Worktrees.ReadAsync(root, ct).ConfigureAwait(false) is not { } worktrees)
         {
             return $"{ListUnread}, so whether a tree has it checked out is not known";
         }
@@ -224,7 +230,7 @@ public sealed partial class SessionTrees
     /// checkout it is built in (installed dependencies, a build's output), and the checkout keeps its own. One only the session's
     /// tree holds (a local database, an export) was made there alone, and nothing says it can be made again, so it keeps the
     /// tree, named. Null is git unable to say, which keeps the tree too. 🔴 <b>Except a session's own scratch in such a folder</b>
-    /// (TREEKEEP1): under a build folder (<see cref="BuildFolders"/>) the path goes as ever; under any other, each file the tree
+    /// (TREEKEEP1): under a build folder (<see cref="TreeScratch.BuildFolders"/>) the path goes as ever; under any other, each file the tree
     /// wrote after it opened that the checkout does not hold as written (absent, or different bytes) is the tree's own, as an ignored path only it holds is.
     /// </remarks>
     internal static async Task<TreeHolds?> HoldsAsync(string tree, string root, CancellationToken ct)

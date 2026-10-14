@@ -201,6 +201,22 @@ public sealed record AskReviewProposalResponse(string Choice, string Reason, Dat
 // One word (DRIFT1a): `kind` is `asked`, `answered`, `added` or `reopened` (MSG1a: said after its session ended, which
 // went on with it), or a review's `reviewed`, `not-yet` or `skipped` (REVIEWENV1b); the ask's own sentence names no session.
 public sealed record AskWordResponse(string Kind, string Text, DateTimeOffset At, string? Session, string? Quest);
+// An ask's channel (SESSONE2a, D167 points 6 to 8). The person's post: `to` is one of the ask's repositories or `everyone`, `re` the id
+// of a message it answers.
+public sealed record ChannelPostRequest(string? Text, string? To = null, string? Re = null);
+// Moves an entry's read mark (the person's, `person`, when `entry` is left out) to `through`, else to the newest item.
+public sealed record ChannelReadRequest(string? Entry = null, DateTimeOffset? Through = null);
+// One item of the channel, in time order. `kind` is `message` (id, person, session, repository, agent, entry, to, re, question, open,
+// text, origin) or `line` (Daoris's, read from the ask's quests and never stored: code, quest, name, from, to). A message's `to` absent
+// is everyone; `person` true is the person's own words, and a session's are that agent's claim. `code` is `published`, `taken`, `done`,
+// `declined` or `awaiting`, which the page words in the reader's language.
+public sealed record ChannelItemResponse(
+    string Kind, DateTimeOffset At, string? Id = null, bool? Person = null, string? Session = null, string? Repository = null,
+    string? Agent = null, string? Entry = null, string? From = null, string? To = null, string? Re = null, bool? Question = null,
+    bool? Open = null, string? Text = null, string? Origin = null, string? Code = null, string? Quest = null, string? Name = null);
+// The channel as one entry reads it: every item (or those after `since`), `unread` against the entry's `mark` (absent for none).
+public sealed record ChannelResponse(string Ask, string Entry, IReadOnlyList<ChannelItemResponse> Items, int Unread, DateTimeOffset? Mark);
+public sealed record ChannelPostResponse(ChannelItemResponse Message);
 // One go-ahead (KNOWUSE1a): the act by its `kind` (write, release, push, sign-in, run), where it lands (`on`) and what it
 // touches (`act`); `state` is `asked`, `approved` or `refused`; `asked` is each session's request, oldest first; `answer`
 // the person's, absent while it waits; `near` the go-ahead whose words it shared where they could not tell.
@@ -539,6 +555,10 @@ public sealed record ConfirmationActionResponse(ConfirmationResponse Confirmatio
 [JsonSerializable(typeof(AskResponse))]
 [JsonSerializable(typeof(IEnumerable<AskResponse>))]
 [JsonSerializable(typeof(GoAheadAnswerRequest))]
+[JsonSerializable(typeof(ChannelPostRequest))]
+[JsonSerializable(typeof(ChannelReadRequest))]
+[JsonSerializable(typeof(ChannelResponse))]
+[JsonSerializable(typeof(ChannelPostResponse))]
 [JsonSerializable(typeof(AddedRequest))]
 [JsonSerializable(typeof(AddedResponse))]
 [JsonSerializable(typeof(QuestActionResponse))]

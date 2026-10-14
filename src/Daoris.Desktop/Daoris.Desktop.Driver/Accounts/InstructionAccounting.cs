@@ -93,7 +93,11 @@ internal static class InstructionAccounting
                 Chars = chars,
                 From = target.Answered.Id,
             },
-            HandedSections.CarryOn => CarryOn(target, chars, size),
+            // A first start's is the parts before it on its session's line (SESSONE1d); a carry-on's, the session it carries on; and
+            // either's, what waited on the ask's channel (SESSONE2b), which alone is a start's on a line with no part before it here.
+            HandedSections.CarryOn => target.CutOff is not null ? CarryOn(target, chars, size)
+                : target.Parts is not null ? Parts(target, chars, size)
+                : Channel(target, chars, size),
             HandedSections.Close => Own(target.Answered is null && target.CutOff is null
                 ? "how to take it and close it"
                 : "how to carry it on and close it"),
@@ -331,6 +335,62 @@ internal static class InstructionAccounting
         };
     }
 
+    /// <summary>
+    /// A further part's account of the parts before it (SESSONE1d): how many, and where its tree stands to theirs, from their
+    /// records and this machine's trees. Named by the session it went into, ran beside, or whose tree it grew again for.
+    /// </summary>
+    private static HandedSection Parts(SessionTarget target, int chars, string size)
+    {
+        var parts = target.Parts!;
+        var count = parts.Earlier.Count;
+        var stance = parts switch
+        {
+            { Into: { } into } => $"in session `{into}`'s tree"
+                                  + (target.InFlight.Count == 0 ? "" : $", {Plural(target.InFlight.Count, "uncommitted change")}"),
+            { Gone: { } gone, GrewFrom: { } branch } => $"session `{gone}`'s tree gone, grown from `{branch}`",
+            { Gone: { } gone } => $"session `{gone}`'s tree gone, grown from the line",
+            { HeldBy: { } held } => $"beside session `{held}`, in a tree of its own",
+            _ => "in a tree of its own",
+        };
+
+        return new HandedSection(
+            HandedSections.CarryOn, HandedSources.Record,
+            $"the sessions before it on its line of work: {size}: {Plural(count, "session")}, {stance}{ChannelFact(target)}")
+        {
+            Chars = chars,
+            From = parts.Into ?? parts.Gone ?? parts.HeldBy,
+            Shown = count > TargetPrompt.PartsShown ? TargetPrompt.PartsShown : null,
+            Of = count > TargetPrompt.PartsShown ? count : null,
+        };
+    }
+
+    /// <summary>
+    /// What waited on the ask's channel (SESSONE2b), where it is all the carry-on section holds: a start on a line of work with no
+    /// part before it here. Counted by the bound the instruction quotes by (<see cref="ChannelText.Bounded"/>).
+    /// </summary>
+    private static HandedSection Channel(SessionTarget target, int chars, string size)
+    {
+        var held = target.Channel!;
+        var (shown, left) = ChannelText.Bounded(held.Messages);
+        return new HandedSection(
+            HandedSections.CarryOn, HandedSources.Ask,
+            $"the ask's channel since its line of work last read it: {size}: {Plural(shown.Count, "message")} from ask #{held.Ask}")
+        {
+            Chars = chars,
+            From = held.Ask,
+            Shown = left.Count > 0 ? shown.Count : null,
+            Of = left.Count > 0 ? held.Messages.Count : null,
+        };
+    }
+
+    /// <summary>The channel's messages beside the parts before it or the session it carries on, as a fact; null for none.</summary>
+    private static string? ChannelShown(SessionTarget target) =>
+        target.Channel is { Messages.Count: > 0 } held
+            ? $"{Plural(ChannelText.Bounded(held.Messages).Shown.Count, "message")} from ask #{held.Ask}'s channel"
+            : null;
+
+    private static string ChannelFact(SessionTarget target) => ChannelShown(target) is { } shown ? $", and {shown}" : "";
+
     private static HandedSection CarryOn(SessionTarget target, int chars, string size)
     {
         var facts = new List<string> { "its record's end" };
@@ -342,6 +402,7 @@ internal static class InstructionAccounting
         if (plan > 0) facts.Add($"its plan of {Plural(plan, "step")}");
         if (target.LastWords is { Length: > 0 }) facts.Add("its last words");
         if (target.AccountChanged) facts.Add("that it ran on another account");
+        if (ChannelShown(target) is { } channel) facts.Add(channel);
 
         return new HandedSection(
             HandedSections.CarryOn, HandedSources.Record, $"what the session before left: {size}: {Joined(facts)}")

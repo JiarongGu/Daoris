@@ -151,7 +151,7 @@ public sealed class OpinionPacketTests : IDisposable
         foreach (var tool in new[]
                  {
                      "quest_respond", "quest_publish", "go_ahead_ask", "permission_propose", "review_serve", "review_ready",
-                     "opinion_answer", "helper_ask", "helper_answer",
+                     "opinion_answer", "helper_ask", "helper_answer", "channel_post", "channel_read",
                  })
         {
             Assert.False(PermissionRules.AllowsConnector(handed, tool), tool);
@@ -170,7 +170,11 @@ public sealed class OpinionPacketTests : IDisposable
 
         Assert.True(PermissionRules.AllowsConnector(handed, "helper_answer"));
         Assert.True(PermissionRules.AllowsConnector(handed, "knowledge_search"));
-        foreach (var tool in new[] { "helper_ask", "opinion_give", "opinion_answer", "quest_respond", "quest_publish", "permission_propose" })
+        foreach (var tool in new[]
+                 {
+                     "helper_ask", "opinion_give", "opinion_answer", "quest_respond", "quest_publish", "permission_propose", "channel_post",
+                     "channel_read",
+                 })
         {
             Assert.False(PermissionRules.AllowsConnector(handed, tool), tool);
             Assert.Contains(Connector + tool, handed.Deny);

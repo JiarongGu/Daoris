@@ -406,6 +406,11 @@ public static class NoteCodes
     public static readonly NoteCode EndedUntouchedExit = new("ended.untouched-exit", ["exit"]);
     public static readonly NoteCode EndedWentOn = new("ended.went-on", []);
     public static readonly NoteCode EndedWentOnExit = new("ended.went-on-exit", ["exit"]);
+    // A closed quest's session whose turn failed going on (TURNFAIL1): the door's reason follows, in the agent's words.
+    public static readonly NoteCode EndedWentOnFailed = new("ended.went-on-failed", []);
+    // The person's words a failed turn carried wait to go again (TURNFAIL1), or, failing twice, wait for the person.
+    public static readonly NoteCode EndedWordsWait = new("ended.words-wait", []);
+    public static readonly NoteCode EndedWordsWaitYou = new("ended.words-wait-you", []);
     public static readonly NoteCode EndedTimeout = new("ended.timeout", ["minutes"]);
     public static readonly NoteCode EndedStopped = new("ended.stopped", []);
     public static readonly NoteCode EndedLostClaim = new("ended.lost-claim", []);
@@ -445,6 +450,7 @@ public static class NoteCodes
     // ——— While it starts and works, replaced by its end (D51 rule 4).
     public static readonly NoteCode StartedTree = new("started.tree", ["branch", "basedOn"]);
     public static readonly NoteCode StartedTreeUnrecorded = new("started.tree-unrecorded", []);
+    public static readonly NoteCode StartedJoined = new("started.joined", ["session"]);
     public static readonly NoteCode StartedResumesAnswered = new("started.resumes-answered", ["quest", "answered"]);
     public static readonly NoteCode StartedInAskingTree = new("started.in-asking-tree", ["session"]);
     public static readonly NoteCode StartedWordsOpen = new("started.words-open", ["quest", "session"]);

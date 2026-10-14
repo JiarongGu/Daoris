@@ -47,6 +47,8 @@ public sealed class PermissionRulesTests : IDisposable
         "mcp__daoris-knowledge__opinion_answer",
         "mcp__daoris-knowledge__helper_ask",
         "mcp__daoris-knowledge__helper_answer",
+        "mcp__daoris-knowledge__channel_post",
+        "mcp__daoris-knowledge__channel_read",
     ];
 
     /// <summary>What the `commit` default allows (PERM4), a rename among it (UNBLOCK4, D122 §3.6).</summary>
@@ -178,6 +180,9 @@ public sealed class PermissionRulesTests : IDisposable
     // MIXAGENT2a-i (D163 point 2): a working session's ask for a helper and a helper's answer, each a file under the home.
     [InlineData("helper_ask")]
     [InlineData("helper_answer")]
+    // SESSONE2b (D167 point 7): a session on an ask posts to and reads its channel; the service answers each for its own ask only.
+    [InlineData("channel_post")]
+    [InlineData("channel_read")]
     public void The_opinion_tools_reach_a_session_by_default(string tool)
     {
         var rules = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");

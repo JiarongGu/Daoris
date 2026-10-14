@@ -24,7 +24,7 @@ public sealed class ContentHeldTests : LandedFixture
         await CommitAsync(tree.Path, "shared.txt", "one\ntwo\n", "more of the work");
         await SquashAsync(root, tree.Branch);
         // The squash leaves no ancestry: D88 alone would refuse it.
-        Assert.Equal(2, await SessionTrees.UnlandedAsync(root, tree.Branch));
+        Assert.Equal(2, await TreeFollows.UnlandedAsync(root, tree.Branch));
 
         var removal = await trees.RemoveAsync(tree.Path);
 
@@ -60,7 +60,7 @@ public sealed class ContentHeldTests : LandedFixture
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
         await CherryPickOntoAsync(root, tree.Branch, "feature/x");
-        Assert.Equal(1, await SessionTrees.UnlandedAsync(root, tree.Branch));
+        Assert.Equal(1, await TreeFollows.UnlandedAsync(root, tree.Branch));
 
         var removal = await trees.RemoveAsync(tree.Path);
 
@@ -158,8 +158,8 @@ public sealed class ContentHeldTests : LandedFixture
         var differsRow = plan.Single(item => item.Branch == differs.Branch);
         Assert.Equal((SweepKind.Unlanded, 1), (differsRow.Kind, differsRow.Commits));
         Assert.Null(differsRow.HeldBy);
-        Assert.NotNull(SessionTrees.RemovalOffered(differsRow));
-        Assert.Null(SessionTrees.RemovalOffered(squashedRow));
+        Assert.NotNull(SessionBranchDoors.RemovalOffered(differsRow));
+        Assert.Null(SessionBranchDoors.RemovalOffered(squashedRow));
 
         var swept = await trees.SweepAsync(Engine(root), new HashSet<string>());
 

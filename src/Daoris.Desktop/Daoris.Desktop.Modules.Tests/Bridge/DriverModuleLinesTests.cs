@@ -225,7 +225,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
 
     /// <summary>
     /// LAND3b (D102's LAND3 note): a clean-up row says whether its discard is offered beside it, by the driver's own rule
-    /// (<see cref="SessionTrees.RemovalOffered"/>, the line `trees clean` prints beside such a row), so the page and the
+    /// (<see cref="SessionBranchDoors.RemovalOffered"/>, the line `trees clean` prints beside such a row), so the page and the
     /// terminal offer it beside the same rows: a failed or superseded attempt's commits, which no clean-up takes.
     /// </summary>
     [Fact]
@@ -246,12 +246,12 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         var offered = items.Select(item => JsonSerializer.SerializeToElement(LinesRoutes.SweepRow(item), camel).GetProperty("discardable").GetBoolean()).ToArray();
 
         Assert.Equal([true, true, false, false, false, false, false], offered);
-        Assert.Equal(items.Select(item => SessionTrees.RemovalOffered(item) is not null), offered);
+        Assert.Equal(items.Select(item => SessionBranchDoors.RemovalOffered(item) is not null), offered);
     }
 
     /// <summary>
     /// LAND4: a clean-up row names the session its tree is, by id and how it ended, and says whether its landing is offered,
-    /// by the driver's own rule (<see cref="SessionTrees.LandingOffered"/>, the line `trees clean` prints beside it): a tree
+    /// by the driver's own rule (<see cref="SessionBranchDoors.LandingOffered"/>, the line `trees clean` prints beside it): a tree
     /// still here holding commits no branch of the person's holds, whatever that session's ending. The page's Branches tab says
     /// the same words; a row whose tree is gone, or with no session named, offers none.
     /// </summary>

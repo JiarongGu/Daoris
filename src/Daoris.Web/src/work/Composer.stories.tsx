@@ -52,6 +52,24 @@ export const TurnRunning: Story = {
   },
 };
 
+/** QUEUEEDIT1b: each waiting message that has an id can be taken back out or reworded; one without shows no controls. */
+export const WaitingWithControls: Story = {
+  args: {
+    taking: true, stoppable: true, onStopTurn: () => {},
+    onRemove: async () => ({ done: true }), onEdit: async () => ({ done: true }),
+    queued: [
+      { id: 'a1', text: 'and then run the streaming tests', files: [] },
+      { id: 'b2', text: 'if they pass, commit it — do not push', files: ['release-notes.md'] },
+      { text: 'a word with no id', files: [] },
+    ],
+  },
+};
+
+/** One taken already: the sentence says so, as a note and not an error. */
+export const WaitingAlreadySent: Story = {
+  args: { ...WaitingWithControls.args, onRemove: async () => ({ done: false }) },
+};
+
 /** The stop was asked for; the button holds until the driver answers. */
 export const StoppingTheTurn: Story = { args: { taking: true, stoppable: true, stopping: true, onStopTurn: () => {} } };
 

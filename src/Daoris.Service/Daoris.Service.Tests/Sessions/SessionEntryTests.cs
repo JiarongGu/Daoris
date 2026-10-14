@@ -45,6 +45,9 @@ public sealed class SessionEntryTests : IAsyncLifetime
 
         public Task<Session?> SessionAsync(string id, CancellationToken ct = default) => Task.FromResult(Sessions.GetValueOrDefault(id));
 
+        public Task<Session?> ChatTookAsync(string questId, CancellationToken ct = default) =>
+            Task.FromResult(Sessions.Values.FirstOrDefault(s => string.Equals(s.TookQuest, questId, StringComparison.OrdinalIgnoreCase)));
+
         public Facts Quest(string id, string from, string to = "app", string? publishedBy = null, string? parent = null)
         {
             Quests[id] = new Quest(id, from, to, "t", "b", QuestStatus.Open, null, Now, Now) { PublishedBy = publishedBy, Parent = parent };
@@ -312,6 +315,50 @@ public sealed class SessionEntryTests : IAsyncLifetime
         var record = await _sessions.CreateAsync(request.Id, "app", "stub", Now);
 
         Assert.Equal("ask:c98a7e/app", (await _ledger.WithEntryAsync(record)).Entry);
+    }
+
+    // ——— A quest a conversation took joins that conversation's line (CHATTAKE1, design §1.2 rule 2).
+
+    /// <summary>🔴 The chat's take records the quest's id, and a later part on that quest opens under the chat's entry.</summary>
+    [Fact]
+    public async Task A_quest_a_chat_took_joins_the_chats_line_for_a_later_part()
+    {
+        var chat = (await _ledger.OpenChatAsync("app", "stub", Now)).Session!;
+        var quest = await _quests.PublishAsync("someone", "app", "Do it", "Why.", Now);
+        Assert.True(await _ledger.MarkTookAsync(chat.Id, $"#{quest.Id}"));
+        await _sessions.SetStateAsync(chat.Id, SessionState.Completed, null, null, null, Now);
+
+        Assert.Equal(quest.Id, (await _sessions.FindAsync(chat.Id))!.TookQuest);
+        var part = (await _ledger.OpenAsync(quest.Id, "stub", Now)).Session!;
+        Assert.Equal($"session:{chat.Id}/app", part.Entry);
+    }
+
+    /// <summary>The rule's place: after the ask that asked the quest, before the session that published it and the chain parent.</summary>
+    [Fact]
+    public async Task The_chat_that_took_is_read_after_the_ask_and_before_the_publisher()
+    {
+        var facts = new Facts().Quest("viaAsk", "ask #one").Quest("viaChat", "someone", publishedBy: "sp").Quest("pb", "someone");
+        facts.Session("sp", quest: "pb");
+        var chat = facts.Session("chat1", kind: SessionKind.Chat);
+        facts.Sessions["chat1"] = chat with { TookQuest = "viaChat" };
+        facts.Sessions["chat2"] = chat with { Id = "chat2", TookQuest = "viaAsk" };
+
+        Assert.Equal("session:chat1/app", await KeyOf(facts, facts.Session("s1", quest: "viaChat")));
+        Assert.Equal("ask:one/app", await KeyOf(facts, facts.Session("s2", quest: "viaAsk")));
+    }
+
+    /// <summary>An older chat record marked a take without the quest: nothing says which, so the quest keys as it did.</summary>
+    [Fact]
+    public async Task A_chat_record_from_before_the_field_leaves_the_quest_keyed_as_before()
+    {
+        var chat = (await _ledger.OpenChatAsync("app", "stub", Now)).Session!;
+        Assert.True(await _sessions.MarkTookAsync(chat.Id));
+        Assert.Null((await _sessions.FindAsync(chat.Id))!.TookQuest);
+        await _sessions.SetStateAsync(chat.Id, SessionState.Completed, null, null, null, Now);
+        var quest = await _quests.PublishAsync("someone", "app", "Do it", "Why.", Now);
+
+        var part = (await _ledger.OpenAsync(quest.Id, "stub", Now)).Session!;
+        Assert.Equal($"quest:{quest.Id}/app", part.Entry);
     }
 
     private static string Root()

@@ -45,6 +45,7 @@
     "AskDeskTests.cs": "Asks",
     "AskTierCatalogueTests.cs": "Asks",
     "AskWordsTests.cs": "Asks",
+    "ChannelTests.cs": "Asks",
     "AskWorkflowTests.cs": "Asks",
     "HistoryDeskTests.cs": "Asks",
     "HistorySyncTests.cs": "Asks",

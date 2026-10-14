@@ -119,6 +119,13 @@ public sealed record SessionTarget(
     public AskWords? Words { get; init; }
 
     /// <summary>
+    /// What waited on the ask's channel for this part's line of work (SESSONE2b, D167 point 7), read for this start: the person's
+    /// messages and the ask's other sessions', since the entry last read it, beneath the quest. Null for a quest on no ask, a
+    /// channel that could not be read, or nothing waiting, and the instruction reads as it did.
+    /// </summary>
+    public ChannelHeld? Channel { get; init; }
+
+    /// <summary>
     /// What the person has told this machine holds for every quest in this repository (KNOWUSE1b, D135 §3), read from
     /// <c>driver.json</c> for this start and handed beneath the quest: a claim, a resume, a carry-on and a follow-up alike.
     /// Null where the repository keeps none, and the instruction reads as it did.
@@ -168,6 +175,12 @@ public sealed record SessionTarget(
     /// repository (CHAIN2) — the parent's unmerged work is in the tree. Null for the canonical line.
     /// </summary>
     public string? GrewFrom { get; init; }
+
+    /// <summary>
+    /// For a first start that is a further part of a session (SESSONE1d, D167 point 4 as amended): the parts before it here, and
+    /// how its tree stands to theirs. Null for every other start, and the instruction reads as it did.
+    /// </summary>
+    public SessionParts? Parts { get; init; }
 
     /// <summary>
     /// How this session's work will land, when it runs in a tree of its own (WSR1, D87) — so a session
@@ -289,6 +302,9 @@ public static class TargetPrompt
         new(HandedSections.Words, Words(target)),
         new(HandedSections.GoAheads, GoAheads(target)),
         new(HandedSections.Standing, Standing(target)),
+        // What waited on the ask's channel for this line of work (SESSONE2b), counted with what the sessions before it left, as the
+        // parts before it are (SESSONE1d), so no page catalogue changed.
+        new(HandedSections.CarryOn, ChannelText.Beneath(target.Channel)),
     ];
 
     /// <summary>
@@ -319,6 +335,8 @@ public static class TargetPrompt
         Head(target, $"Your target is quest `#{target.QuestId}`, asked by `{target.Asker}`:"),
         .. Beneath(target),
         new(HandedSections.WrittenTo, WrittenTo(target)),
+        // A further part of a session is told the parts before it (SESSONE1d), counted as what the sessions before it left.
+        new(HandedSections.CarryOn, SessionPartsText.Of(target)),
         .. Tail(target,
             $"\nFirst take the quest (respond to `#{target.QuestId}` with `take`), then do the work inside this\n"
             + "repository under its own doctrine and gates, then close it: `done` when it has landed, or\n"
@@ -582,6 +600,9 @@ public static class TargetPrompt
 
     /// <summary>The most of a cut-off session's plan a carry-on is handed: its to-do list, not a log.</summary>
     internal const int PlanLimit = 50;
+
+    /// <summary>The most earlier parts a further part of a session is told of by name (SESSONE1d): the newest, the rest counted.</summary>
+    internal const int PartsShown = 3;
 
     /// <summary>
     /// The cut-off session's plan as its record last kept it (TOOL4f, D125 §3.5), each step with its status in the wire's

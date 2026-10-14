@@ -144,6 +144,8 @@ public sealed class ServiceClient : IDisposable
             Closed = closed,
             // Whose the take is on each taken quest a look would carry on (CARRY2b), the claim asked of the host for those alone.
             Takes = ReadTakes(records, await CarryOnClaimsAsync(quests, lastRun, ct).ConfigureAwait(false)),
+            // Each record's entry, which a quest's publisher names its line by (SESSONE1d).
+            Entries = ReadEntries(records),
         };
     }
 
@@ -661,6 +663,47 @@ public sealed class ServiceClient : IDisposable
 
         using var document = JsonDocument.Parse(answer.Payload);
         return ReadAsk(document.RootElement);
+    }
+
+    /// <summary>
+    /// An ask's channel as one entry reads it (SESSONE2a's <c>GET /api/asks/{id}/channel?entry=</c>), which moves no mark: what the
+    /// look hands a running part, and a starting part's instruction carries (SESSONE2b). Null where the host holds no such ask, or
+    /// is one from before the channel, which answers the route not found as well.
+    /// </summary>
+    /// <exception cref="DriverException">The host answered something other than the channel.</exception>
+    public async Task<ChannelView?> ChannelAsync(string ask, string entry, CancellationToken ct = default)
+    {
+        var answer = await _doors.SendAsync(
+            ServiceVerb.Get, $"/api/asks/{Uri.EscapeDataString(ask.TrimStart('#'))}/channel?entry={Uri.EscapeDataString(entry)}", null, ct)
+            .ConfigureAwait(false);
+        if (answer.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
+        if (!answer.Ok) throw new DriverException($"the service would not read ask `#{ask}`'s channel: {answer.Payload}");
+
+        return ChannelView.Read(answer.Payload)
+               ?? throw new DriverException($"the service answered something other than ask `#{ask}`'s channel: {answer.Payload}");
+    }
+
+    /// <summary>
+    /// Move an entry's read mark on an ask's channel to <paramref name="through"/> (SESSONE2a's <c>POST …/channel/read</c>): what
+    /// reached a running part, or what a starting part was handed (SESSONE2b). A mark never moves back; a host without the door, or
+    /// without the ask, moves none, and the next read hands the same messages again.
+    /// </summary>
+    /// <exception cref="DriverException">The host refused the move.</exception>
+    public async Task ChannelReadAsync(string ask, string entry, DateTimeOffset through, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("entry", entry);
+            writer.WriteString("through", Moments.Write(through));
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, _) = await PostJsonAsync(
+            $"/api/asks/{Uri.EscapeDataString(ask.TrimStart('#'))}/channel/read", body, ct).ConfigureAwait(false);
+        if (!ok && status != (int)System.Net.HttpStatusCode.NotFound)
+        {
+            throw new DriverException($"the service would not move `{entry}`'s mark on ask `#{ask}`'s channel: {payload}");
+        }
     }
 
     /// <summary>
@@ -1501,7 +1544,30 @@ public sealed class ServiceClient : IDisposable
             Updated = Moment(session, "updated"),
             // When it was made, which a curve move's hold is counted from (SWITCH1c-ii).
             Created = Moment(session, "created"),
+            // Its session entry and its quest (SESSONE1a): what a later quest of the same line goes into its tree by (SESSONE1d).
+            Entry = Text(session, "entry") is { Length: > 0 } entry ? entry : null,
+            Quest = Text(session, "quest") is { Length: > 0 } quest ? quest : null,
         };
+
+    /// <summary>
+    /// Every record's entry key by its id (SESSONE1d), as the service answered it: this machine's and a teammate's mirror, keyed
+    /// <c>origin/id</c>, since a quest's publisher may be either. A record from a host before the key answers none, and is absent.
+    /// </summary>
+    internal static IReadOnlyDictionary<string, string> ReadEntries(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var entries = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (document.RootElement.ValueKind != JsonValueKind.Array) return entries;
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            if (session.ValueKind == JsonValueKind.Object && Text(session, "id") is { Length: > 0 } id && Text(session, "entry") is { Length: > 0 } entry)
+            {
+                entries[id] = entry;
+            }
+        }
+
+        return entries;
+    }
 
     /// <summary>
     /// The words waiting on a record (MSG1a, D137 §2.4), one by one, read without trusting the shape: a word without its id,

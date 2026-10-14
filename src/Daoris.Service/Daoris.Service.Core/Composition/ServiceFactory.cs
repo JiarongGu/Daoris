@@ -181,6 +181,9 @@ public sealed record ComposedService(
     /// <summary>A helper's record and its answer's return (MIXAGENT2a-ii, D163 point 2): a local host's two doors; a shared host's refuse.</summary>
     public HelperDesk Helpers { get; init; } = null!;
 
+    /// <summary>An ask's channel (SESSONE2a, D167 point 8): the messages beside the asks they are on. Composed on every host; only a local host maps its doors.</summary>
+    public ChannelDesk Channel { get; init; } = null!;
+
     public ValueTask DisposeAsync() => Store?.DisposeAsync() ?? ValueTask.CompletedTask;
 }
 
@@ -283,6 +286,7 @@ public static class ServiceFactory
         var registrations = await RegistrationStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var keys = await ApiKeyStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var asks = await AskStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
+        var channel = await ChannelStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
 
         // 🔴 A rebuilt index holds nothing, so nothing may claim it holds a commit (REV3). Otherwise the
         // re-feed that restores a shared deployment is judged already held, and it stays empty until
@@ -356,18 +360,21 @@ public static class ServiceFactory
         // quest someone wants to delete (D95). The asks for one too: what the person said on the ask a
         // quest is asked by, which a requirement must quote (DRIFT1c).
         var exchange = new QuestExchange(service, quests, remotes, files, sessions, asks);
+        var ledger = new SessionLedger(quests, sessions, service, asks);
+        var askDesk = new AskDesk(service, asks, exchange, files);
         return new ComposedService(
             service, quests, exchange,
             // The ledger reads the registry for the one thing a chat cannot inherit from a quest: which
             // repository it runs in, and therefore which circle its record belongs to (D49 §3) — and
             // the asks, for the one thing an intake cannot inherit from either (D65 §1b).
-            sessions, new SessionLedger(quests, sessions, service, asks), keys, service.SemanticEnabled)
+            sessions, ledger, keys, service.SemanticEnabled)
         {
             Store = store,
             Files = files,
             Remotes = remotes,
             // An ask's quests go through the same exchange every other door uses (D65 §1a).
-            Asks = new AskDesk(service, asks, exchange, files),
+            Asks = askDesk,
+            Channel = new ChannelDesk(channel, askDesk, asks, ledger, quests, new StoreEntryFacts(quests, sessions)),
             History = new HistoryDesk(quests, sessions, asks, service, remotes, files, proposals),
             Opinions = new OpinionDesk(opinions, sessions, local: mode == ServiceMode.Local),
             Helpers = new HelperDesk(sessions, local: mode == ServiceMode.Local),

@@ -12,11 +12,10 @@ internal sealed record RebaseJudged(RebaseItem Item, string? Tip = null, string?
 /// session branches and the landed ones recorded, what keeps each as it is, and where its own commits start.
 /// </summary>
 /// <remarks>
-/// It holds the front for the landing's judgement it reads (<c>JudgeLandedAsync</c>, <c>NotAskedOf</c>), and names the landing's
-/// statics by the front (<c>SessionTrees.ProveAsync</c>, <c>EntriesOf</c>, <c>SessionBranchesAsync</c>): interim, until PART10l
-/// makes the landing a class.
+/// It takes the clean-up for the landing's judgement it reads (<c>JudgeLandedAsync</c>, <c>NotAskedOf</c>; PART10l), and names the
+/// proof's statics by their class (<see cref="LandedProofs"/>).
 /// </remarks>
-internal sealed class BranchJudging(TreeContext context, SessionTrees trees)
+internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups)
 {
     /// <summary>
     /// Every session branch and every recorded landed branch of one repository, judged for the replay onto
@@ -29,7 +28,7 @@ internal sealed class BranchJudging(TreeContext context, SessionTrees trees)
     {
         var worktrees = await WorktreesAsync(root, ct).ConfigureAwait(false);
         var judged = new List<RebaseJudged>();
-        foreach (var branch in await SessionTrees.SessionBranchesAsync(root, ct).ConfigureAwait(false))
+        foreach (var branch in await LandedProofs.SessionBranchesAsync(root, ct).ConfigureAwait(false))
         {
             var grown = context.Grown.Of(repository, branch);
             judged.Add(await JudgeReplayAsync(
@@ -38,16 +37,16 @@ internal sealed class BranchJudging(TreeContext context, SessionTrees trees)
         }
 
         var deletes = new List<LandedItem>();
-        var entries = SessionTrees.EntriesOf(context.Recorded.All(), repository);
+        var entries = LandedProofs.EntriesOf(context.Recorded.All(), repository);
         if (entries.Count == 0) return (judged, deletes);
 
         // The session branches that stay as they are after the press: a replayed one shares only the line's commits.
         var staying = judged.Where(each => !each.Item.Replays).Select(each => each.Item.Branch).ToList();
         var config = asked is null ? null : context.Config();
-        foreach (var landed in await trees.JudgeLandedAsync(root, repository, workspace, entries, staying, stale: null, ct).ConfigureAwait(false))
+        foreach (var landed in await cleanups.JudgeLandedAsync(root, repository, workspace, entries, staying, stale: null, ct).ConfigureAwait(false))
         {
             // What its pull request's answer was, and why the look did not ask where it would have (PLUGHOOK1c, design §2.5).
-            var item = asked is null ? landed.Item : landed.Item with { NotAsked = trees.NotAskedOf(landed.Item, asked, config!) };
+            var item = asked is null ? landed.Item : landed.Item with { NotAsked = cleanups.NotAskedOf(landed.Item, asked, config!) };
             if (item.Removable || item.Kind == LandedKind.LeanedOn)
             {
                 deletes.Add(item);
@@ -125,7 +124,7 @@ internal sealed class BranchJudging(TreeContext context, SessionTrees trees)
             }
             else
             {
-                var proof = await SessionTrees.ProveAsync(root, grow, line, [new SessionTrees.LineForm(onto, onto)], ct).ConfigureAwait(false);
+                var proof = await LandedProofs.ProveAsync(root, grow, line, [new LandedProofs.LineForm(onto, onto)], ct).ConfigureAwait(false);
                 if (proof.Kind is not (LandedKind.OnLine or LandedKind.Merged)) return Item(RebaseKind.Waits, tip);
                 (cut, cutBy) = (grow, CutBy.Record);
             }
@@ -153,7 +152,7 @@ internal sealed class BranchJudging(TreeContext context, SessionTrees trees)
         if (code != 0) return (leaves, CutBy.Line);
         foreach (var commit in list.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
-            var proof = await SessionTrees.ProveAsync(root, commit, line, [new SessionTrees.LineForm(onto, onto)], ct).ConfigureAwait(false);
+            var proof = await LandedProofs.ProveAsync(root, commit, line, [new LandedProofs.LineForm(onto, onto)], ct).ConfigureAwait(false);
             if (proof.Kind is LandedKind.OnLine or LandedKind.Merged) return (commit, CutBy.Content);
         }
 

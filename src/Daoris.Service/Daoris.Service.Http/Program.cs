@@ -937,6 +937,41 @@ if (mode == ServiceMode.Local)
             ? Results.Ok(ToAsk(ask, s.Files, MachineLocal(http)))
             : Results.NotFound(new ErrorResponse($"No ask `#{id.TrimStart('#')}`.")));
 
+    // An ask's channel (SESSONE2a, D167 points 6 to 8): what the ask's sessions and the person said, and Daoris's own coded lines read
+    // from the ask's quests, in time order. A read moves no mark: `entry` (the person's by default) says whose unread count it carries,
+    // and the mark moves at the POST below. Local like every ask route, since asks are this machine's; no machine path is in it.
+    app.MapGet("/api/asks/{id}/channel", async (
+        ComposedService s, string id, string? entry, DateTimeOffset? since, CancellationToken ct) =>
+    {
+        var reader = string.IsNullOrWhiteSpace(entry) ? ChannelDesk.PersonEntry : entry.Trim();
+        return await s.Channel.ReadAsync(id, reader, since, moveMark: false, ct) is { } read
+            ? Results.Ok(ToChannel(id, reader, read))
+            : Results.NotFound(new ErrorResponse($"No ask `#{id.TrimStart('#')}`.", ChannelDesk.Spell(ChannelRefusal.NotFound)));
+    });
+
+    // The person's message on the channel (D167 point 7): their words, kept on the ask as a `channel` word. A refusal is a code.
+    app.MapPost("/api/asks/{id}/channel", async (
+        ComposedService s, string id, ChannelPostRequest body, CancellationToken ct) =>
+    {
+        var posted = await s.Channel.PostAsPersonAsync(id, body.Text, body.To, body.Re, DateTimeOffset.UtcNow, ct);
+        if (posted.Refusal == ChannelRefusal.None) return Results.Ok(new ChannelPostResponse(ToChannelItem(posted.Message!)));
+
+        var code = ChannelDesk.Spell(posted.Refusal);
+        return posted.Refusal == ChannelRefusal.NotFound
+            ? Results.NotFound(new ErrorResponse(code, code))
+            : Results.BadRequest(new ErrorResponse(code, code));
+    });
+
+    // An entry's read mark, moved: the person's, or a part's that a driver handed the channel to (SESSONE2b). Answers the channel as it then reads.
+    app.MapPost("/api/asks/{id}/channel/read", async (
+        ComposedService s, string id, ChannelReadRequest body, CancellationToken ct) =>
+    {
+        var reader = string.IsNullOrWhiteSpace(body.Entry) ? ChannelDesk.PersonEntry : body.Entry.Trim();
+        return await s.Channel.MarkReadAsync(id, reader, body.Through, ct) is { } read
+            ? Results.Ok(ToChannel(id, reader, read))
+            : Results.NotFound(new ErrorResponse($"No ask `#{id.TrimStart('#')}`.", ChannelDesk.Spell(ChannelRefusal.NotFound)));
+    });
+
     app.MapPost("/api/asks/{id}/publish", async (
         ComposedService s, HttpContext http, string id, AskPublishRequest body, CancellationToken ct) =>
     {
@@ -1025,7 +1060,8 @@ if (mode == ServiceMode.Local)
         var outcome = await s.Asks.DeleteAsync(id, DateTimeOffset.UtcNow, ct);
         return outcome.Refusal switch
         {
-            AskRefusal.None => Results.Ok(new DeletedResponse(id.TrimStart('#'), outcome.Message)),
+            // The ask's channel goes with it: the same words asked again are the same ask, and must not find the old channel (SESSONE2a).
+            AskRefusal.None => await DeletedWithChannelAsync(s, id, outcome.Message, ct),
             AskRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
             _ => Results.Conflict(new ErrorResponse(outcome.Message)),
         };
@@ -2034,6 +2070,26 @@ IResult AskAnswer(AskOutcome outcome, ComposedService s, HttpContext http) => ou
 };
 
 // The ask's record — its kept files' paths answered to this machine only, the quest files' rule.
+static async Task<IResult> DeletedWithChannelAsync(ComposedService s, string id, string message, CancellationToken ct)
+{
+    await s.Channel.ForgetAsync(id, ct);
+    return Results.Ok(new DeletedResponse(id.TrimStart('#'), message));
+}
+
+// One message or line of an ask's channel as the page and the driver read it (SESSONE2a): a message's poster is named by its session,
+// repository and agent, and the person's by `person`; Daoris's lines are coded and carry no sentence.
+static ChannelItemResponse ToChannelItem(IChannelItem item) => item switch
+{
+    ChannelMessage m => new ChannelItemResponse(
+        "message", m.At, Id: m.Id, Person: m.ByPerson, Session: m.Session, Repository: m.Repository, Agent: m.Agent, Entry: m.Entry,
+        To: m.To, Re: m.Re, Question: m.Question, Open: m.Open, Text: m.Text, Origin: m.Origin),
+    ChannelLine l => new ChannelItemResponse("line", l.At, From: l.From, To: l.To, Code: l.Code, Quest: l.Quest, Name: l.Name),
+    _ => throw new InvalidOperationException("an item of the channel is a message or a line"),
+};
+
+static ChannelResponse ToChannel(string ask, string entry, ChannelRead read) =>
+    new(ask.TrimStart('#'), entry, [.. read.Items.Select(ToChannelItem)], read.Unread, read.Mark);
+
 static AskResponse ToAsk(Ask a, QuestFiles? files, bool machineLocal)
 {
     var kept = files?.For(AskDesk.Folder);

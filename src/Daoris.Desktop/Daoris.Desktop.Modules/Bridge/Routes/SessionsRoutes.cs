@@ -220,9 +220,26 @@ public sealed class SessionsRoutes(DriverContext context)
     [DriverRoute("SESSION_GROUPS")]
     private async Task<object?> SessionGroupsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
-        var (_, grouped) = await GroupsAsync(Ids(request), cancellationToken).ConfigureAwait(false);
-        return new { Sessions = grouped.Select(Grouped).ToArray() };
+        var ids = Ids(request);
+        var (look, grouped) = await GroupsAsync(ids, cancellationToken).ConfigureAwait(false);
+        // SESSONE1b (D167): the entries beside the rows, which the page reads until SESSONE1c draws entries.
+        return new { Sessions = grouped.Select(Grouped).ToArray(), Entries = SessionGroups.ReadEntries(look, ids).Select(Entry).ToArray() };
     }
+
+    /// <summary>
+    /// One entry of <c>SESSION_GROUPS</c>, field for field what <c>daoris-driver sessions --json</c> prints in <c>entries</c>
+    /// (SESSONE1b): its key and the key's halves, the group its leading part put it in, and its parts, oldest first, each with
+    /// how it began. Ids, words and counts only.
+    /// </summary>
+    public static object Entry(SessionEntry entry) => new
+    {
+        Entry = entry.Key,
+        entry.Origin,
+        entry.Repository,
+        entry.Group,
+        entry.Leading,
+        Parts = entry.Parts.Select(part => new { part.Session, part.Quest, part.Shown, part.Group, part.Began, part.After, part.AskedBy }).ToArray(),
+    };
 
     /// <summary>
     /// Archive these sessions on this machine, or bring them back (SESSUX1a, D126 §5.2): the marks as they now stand.

@@ -7,6 +7,8 @@ import type { Consideration } from '../signals';
 import type { AccountNamer } from '../tools';
 import { Button, Icon, type IconName, Inline, Menu, Pill, Prose, SelectField, SESSION_TONE } from '../ui';
 import { ClearAsk } from '../work/ClearAsk';
+import type { AskLine } from '../work/entries';
+import { AskLines } from './AskLines';
 import { clearOffered, type HistoryDoor } from '../work/history';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { askName } from '../work/identity';
@@ -96,8 +98,13 @@ const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 
  */
 export function AskPage({
   ask, receivers, questTitles, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest, onAnswerGoAhead,
-  work, history, considered = [], nameOf, environments, onChooseReview, onChooseKind, workflow,
+  work, history, considered = [], nameOf, environments, onChooseReview, onChooseKind, workflow, lines = [],
 }: {
+  /**
+   * Its sessions by entry (SESSONE1c, D167 point 5): the lines of work it began, one per repository, from the driver's reader
+   * (`askLines`); none where no host answers entries, and then the section is not drawn.
+   */
+  lines?: readonly AskLine[];
   /**
    * An intake's kind proposal applied on the person's press (WORKFLOW1i-c, design §4.3), with the workflow the latest choice
    * already has. Absent where there is no door to set it through.
@@ -491,6 +498,13 @@ export function AskPage({
               </li>
             ))}
           </ul>
+        </PageSection>
+      )}
+
+      {/* Its sessions by entry (SESSONE1c, D167): the lines of work it began, one per repository, however many records. */}
+      {lines.length > 0 && (
+        <PageSection title={t('asks.record.sessions')}>
+          <AskLines lines={lines} onAttend={onAttend} />
         </PageSection>
       )}
 

@@ -193,6 +193,19 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     }
 
     /// <summary>
+    /// Take another agent's words only where they reach the running turn (SESSONE2b, D155): on the door that takes words during
+    /// a turn (STEER1), as <see cref="Hold"/> takes them. False on a door that holds words for the turn's end, where they would be
+    /// prompted after it and extend the run, before the door is known, and once the session has stopped taking any.
+    /// </summary>
+    public bool HoldDuringTurn(ChatMessage message)
+    {
+        lock (_gate)
+        {
+            return !_closed && _reach == DrivenReach.NextStep && Hold(message);
+        }
+    }
+
+    /// <summary>
     /// What the run does next (STEER1): wait for a word already sent, oldest first; else prompt a word held; else, with
     /// nothing held and nothing on its way, null, and the inbox closed in the same step.
     /// </summary>

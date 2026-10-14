@@ -262,7 +262,12 @@ export type Ask = {
  * A message as the driver tells the page of one it has not sent yet, or handed back (CONV4a/c): the
  * words, and the names of its files — never where they are kept.
  */
-export type ChatMessage = { text: string; files: string[] };
+export type ChatMessage = {
+  /** What a waiting word is named by, to remove or reword it (QUEUEEDIT1b); absent for one that has none. */
+  id?: string;
+  text: string;
+  files: string[];
+};
 
 /**
  * One turn: what was asked, what the agent did about it, and how it ended. A turn with no `ended`
@@ -326,7 +331,12 @@ export type Usage = { used: number; size: number; most: number };
  * - **Words to a session that parked or ended wait at its foot** (MSG1f, D137 §3.1): `resume` words open
  *   a turn of their own after the run that ended, holding nothing of the agent's, since that run was
  *   over before they were said. A waiting turn the resumed run took every word from, and that holds
- *   nothing else, goes.
+ *   nothing else but the driver's notes about them, goes, its notes at the head of the turn that took
+ *   its first word (USERSHOWN1): the resume's opening line otherwise left a ghost above every resume.
+ * - **A word the door's failure took was never read** (USERSHOWN1): a next-step word taken by the
+ *   answer that was the door's failure, its turn holding nothing before the failure, waits where it
+ *   was said again. And the harness's error streamed as its agent's words just before (`API Error: …`)
+ *   is the failure the note says whole, so it reads as that (TURNFAIL1).
  * - **A driver's note about the words is their line** (MSG1f): a note naming their ids, that they went
  *   to a new session or cannot go on here, settles the words it names, which stay as written and wait
  *   no longer, and carries what they said where the page holds every one. So does the note that a stop
@@ -372,9 +382,15 @@ export function toTurns(
   // The note that hands over what each word said (MSG1f), by the word's id: a later note saying the word went elsewhere
   // takes it back (MSG1f2), so no second conversation is offered with words already gone.
   const handing = new Map<string, Block>();
+  // The turn that first took words from each waiting turn (USERSHOWN1): where the notes left there go once it holds no words.
+  const takers = new Map<Turn, Turn>();
+  // A word said at a next step, taken by the event just before this one (USERSHOWN1): the door's failure right after undoes it.
+  let taken: { turn: Turn; word: string; seq: number; at: number; was: { turn: Turn; key: string; seq: number; block: Block } } | null = null;
 
   for (const event of events) {
     const key = `e${event.seq}`;
+    const justTaken = taken;
+    taken = null;
     switch (event.kind) {
       case 'user': {
         if (event.reaches) {
@@ -391,16 +407,25 @@ export function toTurns(
           break;
         }
 
-        open(key, asked(event, key));
+        const opened = open(key, asked(event, key));
         where[event.seq] = key;
         // Taken: the words are this turn's ask now, and wait no longer where they were said.
         const was = event.id ? waiting.get(event.id) : undefined;
         if (was) {
+          const at = was.turn.items.findIndex((item) => item.key === was.key);
           was.turn.items = was.turn.items.filter((item) => item.key !== was.key);
           where[was.seq] = key;
           waiting.delete(event.id!);
-          // A turn that only waited, with nothing left in it, was the words' alone.
-          if (was.turn.waiting && was.turn.items.length === 0) turns.splice(turns.indexOf(was.turn), 1);
+          if (was.block.reaches === 'next-step') taken = { turn: opened, word: event.id!, seq: event.seq, at, was };
+          if (was.turn.waiting) {
+            if (!takers.has(was.turn)) takers.set(was.turn, opened);
+            // A turn that only waited, with nothing left in it but the driver's notes about its words (the resume's opening
+            // line, a cool-off's), was the words' alone: its notes go with the turn that took them (USERSHOWN1).
+            if (was.turn.items.every((item) => item.kind === 'note')) {
+              takers.get(was.turn)!.items.unshift(...was.turn.items);
+              turns.splice(turns.indexOf(was.turn), 1);
+            }
+          }
         }
         break;
       }
@@ -476,6 +501,28 @@ export function toTurns(
         }
         break;
       case 'note': {
+        if (doorFailed(event)) {
+          // 🔴 USERSHOWN1: a word taken at a next step by the very answer that was the door's failure was never read. The
+          // install's record kept "stuck?" as the ask of a turn holding only the failure; it waits where it was said again,
+          // never reached once the session is over.
+          if (justTaken && current === justTaken.turn && justTaken.turn.items.length === 0) {
+            turns.splice(turns.indexOf(justTaken.turn), 1);
+            const { was } = justTaken;
+            was.turn.items.splice(Math.max(0, justTaken.at), 0, was.block);
+            waiting.set(justTaken.word, was);
+            where[was.seq] = was.key;
+            where[justTaken.seq] = was.key;
+            current = was.turn;
+          }
+          // The harness's own error, streamed as its agent's words just before its door failed (`API Error: …`), is the
+          // failure the note says whole: it reads as that, never as the agent answering (TURNFAIL1).
+          const turn = here(key);
+          const said = lastAgent(turn);
+          if (said?.kind === 'message' && said.text?.trim() && (event.text ?? '').includes(said.text.trim())) {
+            turn.items = turn.items.filter((item) => item !== said);
+            for (const [seq, block] of Object.entries(where)) if (block === said.key) where[Number(seq)] = key;
+          }
+        }
         // A note about the person's words (MSG1f) names them: they went elsewhere or cannot go on here, so they wait no
         // longer, and the note carries what they said where every one of them is held.
         const named = event.words ?? [];
@@ -527,6 +574,16 @@ export function toTurns(
 
 /** What counts as the agent answering (WAITSHOWN1): its words, its thinking, its calls and its plan. */
 const AGENT = (item: Block) => item.kind === 'message' || item.kind === 'thought' || item.kind === 'tool' || item.kind === 'plan';
+
+/** The last thing the agent did in a turn, past the driver's notes and the person's waiting words; undefined for none. */
+const lastAgent = (turn: Turn): Block | undefined => [...turn.items].reverse().find(AGENT);
+
+/**
+ * The protocol door's failure (`door.failed`, ACPEND1): by its code, or by the driver's English on a record kept before its
+ * parts.
+ */
+const doorFailed = (event: SessionEvent): boolean =>
+  event.parts?.[0]?.code === 'door.failed' || (!event.parts?.length && (event.text ?? '').startsWith('— the ACP session failed:'));
 
 /** When the turn the agent is on was asked, while it has not answered yet (WAITSHOWN1); undefined once it has, or when none is open. */
 export const firstAnswerWait = (turns: readonly Turn[]): string | undefined => turns[turns.length - 1]?.waitingSince;

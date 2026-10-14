@@ -207,7 +207,10 @@ public sealed class StrikeTests
             """);
 
         Assert.Equal(
-            new PriorSession("s1", "D:/trees/s1", "stopped", "nothing ran it.", Interrupted: true) { Created = new(2026, 9, 30, 10, 0, 0, TimeSpan.Zero) },
+            new PriorSession("s1", "D:/trees/s1", "stopped", "nothing ran it.", Interrupted: true)
+            {
+                Created = new(2026, 9, 30, 10, 0, 0, TimeSpan.Zero), Quest = "q1",
+            },
             last["q1"]);
         Assert.False(last["q2"].Interrupted);
     }
@@ -246,7 +249,7 @@ public sealed class StrikeTests
              { "id": "c1", "repository": "Game", "state": "stopped", "created": "2026-09-27T11:00:00Z" }]
             """);
 
-        Assert.Equal(new PriorSession("s2", "D:/trees/s2", "completed") { Created = new(2026, 9, 27, 10, 0, 0, TimeSpan.Zero) }, last["q1"]);
+        Assert.Equal(new PriorSession("s2", "D:/trees/s2", "completed") { Created = new(2026, 9, 27, 10, 0, 0, TimeSpan.Zero), Quest = "q1" }, last["q1"]);
         Assert.Single(last);
     }
 
@@ -260,7 +263,10 @@ public sealed class StrikeTests
             """);
 
         Assert.Equal(
-            new PriorSession("s1", "D:/trees/s1", "failed", "timed out after 30 minutes and was killed.") { Created = new(2026, 9, 27, 10, 0, 0, TimeSpan.Zero) },
+            new PriorSession("s1", "D:/trees/s1", "failed", "timed out after 30 minutes and was killed.")
+            {
+                Created = new(2026, 9, 27, 10, 0, 0, TimeSpan.Zero), Quest = "q1",
+            },
             last["q1"]);
     }
 

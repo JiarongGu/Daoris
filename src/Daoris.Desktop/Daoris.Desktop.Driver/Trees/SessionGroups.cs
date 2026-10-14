@@ -69,6 +69,21 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     /// </summary>
     public string? Evidence { get; init; }
 
+    /// <summary>
+    /// The line of work the service answers for it (SESSONE1a, D167): <c>&lt;origin&gt;/&lt;repository&gt;</c>, an opaque key the
+    /// parts of one session share. Null from a host before the key.
+    /// </summary>
+    public string? Entry { get; init; }
+
+    /// <summary>The session it continues (D163's <c>from</c>: a hand-over, or a conversation started from another's words), or null.</summary>
+    public string? From { get; init; }
+
+    /// <summary>
+    /// The key it is grouped by: the service's, else the record its own line of work, as the service derives a record whose
+    /// facts are gone (<c>session:&lt;id&gt;/&lt;repository&gt;</c>, SESSONE1b), so a host from before still lists every record.
+    /// </summary>
+    public string EntryKey => Entry ?? $"session:{Id}/{Repository}";
+
     /// <summary>A record that came down from the team (SYNC4): its process is on another machine, and nothing here reaches it.</summary>
     public bool Teammate => Id.Contains('/');
 
@@ -117,6 +132,9 @@ public static class SessionRecords
                 Workspace = RemoteTarget.Workspace(Text(session, "workspace")),
                 // Its commits and what was read of its done's evidence (D46 §4, EVID1b): the done's commit a check reads from.
                 Evidence = Text(session, "evidence") is { Length: > 0 } evidence ? evidence : null,
+                // SESSONE1b: the key's group, and what a part continues; absent from a host before them.
+                Entry = Text(session, "entry") is { Length: > 0 } entry ? entry : null,
+                From = Text(session, "from") is { Length: > 0 } from ? from : null,
             });
         }
 
@@ -202,7 +220,7 @@ public sealed record LandOffer(string Branch, string Tree, int Commits, int? Unc
     {
         if (work.Commits is not > 0 || work.Held is not null || SessionGroups.Normal(tree).Split('/')[^1] is not { Length: > 0 } name) return null;
         // The tree's own branch where it moved onto one (TREEFOLLOW1), else the layout's name for it.
-        return new LandOffer(work.Branch ?? SessionTrees.SessionPrefix + name, name, work.Commits.Value, work.Uncommitted);
+        return new LandOffer(work.Branch ?? TreeFollows.SessionPrefix + name, name, work.Commits.Value, work.Uncommitted);
     }
 }
 
@@ -250,7 +268,7 @@ public sealed record DiscardOffer(string Branch, string Tree, HeldWork Work)
     public static DiscardOffer? Of(string tree, TreeWork work)
     {
         if (work.Commits is not > 0 || work.Held is not { } held || SessionGroups.Normal(tree).Split('/')[^1] is not { Length: > 0 } name) return null;
-        return new DiscardOffer(work.Branch ?? SessionTrees.SessionPrefix + name, name, held);
+        return new DiscardOffer(work.Branch ?? TreeFollows.SessionPrefix + name, name, held);
     }
 }
 
@@ -563,6 +581,10 @@ public sealed record SessionLook(
 /// </remarks>
 public static class SessionGroups
 {
+    /// <summary>The entries over the rows <see cref="Read"/> answers (SESSONE1b): <see cref="SessionEntries.Read"/>.</summary>
+    public static IReadOnlyList<SessionEntry> ReadEntries(SessionLook look, IReadOnlyCollection<string>? only = null) =>
+        SessionEntries.Read(look, only);
+
     /// <summary>
     /// Whether a live record waits on the person, the list's <i>Waiting on you</i>: a park nobody answered, since an
     /// answered one goes on at the driver's next look (ANSWER1c, D131), and not a teammate's, whose park waits on them (D47

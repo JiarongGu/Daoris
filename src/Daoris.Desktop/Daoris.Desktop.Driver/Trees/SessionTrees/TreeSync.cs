@@ -8,11 +8,12 @@ namespace Daoris.Driver;
 /// press takes, the fetch, the look, and the press over each line's pull, each branch's replay and the landed branches that go.
 /// </summary>
 /// <remarks>
-/// It holds the front for the two landing steps it reads (<c>AskStatesAsync</c>, the look's one occasion to ask, and
-/// <c>CleanLandedAsync</c>, the press's deletions), and names the landing's <c>SessionTrees.EntriesOf</c>: interim, until
-/// PART10l makes the landing a class.
+/// It takes the two landing steps it reads through its constructor (PART10l): the pull request's asks (<c>AskStatesAsync</c>, the
+/// look's one occasion to ask) and the clean-up (<c>CleanLandedAsync</c>, the press's deletions), and names the landing's
+/// <see cref="LandedProofs.EntriesOf"/> by its class.
 /// </remarks>
-internal sealed class TreeSync(TreeContext context, SessionTrees trees, BranchJudging judging, BranchReplays replays)
+internal sealed class TreeSync(
+    TreeContext context, PullRequestAsks asks, LandedCleanups cleanups, BranchJudging judging, BranchReplays replays)
 {
     /// <summary>What the press says of a row that is no longer what the person saw listed.</summary>
     internal const string LeftSince = "it changed since the list, and is left as it was";
@@ -42,7 +43,7 @@ internal sealed class TreeSync(TreeContext context, SessionTrees trees, BranchJu
         // as one occasion over every repository it took (PLUGHOOK1c, design §2.1 occasion 3). The press asks nothing, and a look
         // that fetched nothing has nothing new to ask about.
         IReadOnlyList<StateAnswer> asked = fetch
-            ? await trees.AskStatesAsync(looked.Select(each => (each.Root, each.Repository, RemoteTarget.Workspace(each.Space))), landedMayGo: true, ct)
+            ? await asks.AskStatesAsync(looked.Select(each => (each.Root, each.Repository, RemoteTarget.Workspace(each.Space))), landedMayGo: true, ct)
                 .ConfigureAwait(false)
             : [];
         foreach (var ((repository, space, root, _), fetched) in looked.Zip(fetches))
@@ -133,7 +134,7 @@ internal sealed class TreeSync(TreeContext context, SessionTrees trees, BranchJu
             .Select(name => name["refs/heads/".Length..])
             .ToHashSet(StringComparer.Ordinal);
         return branches.Any(branch => branch.StartsWith("daoris/", StringComparison.Ordinal))
-               || SessionTrees.EntriesOf(record, repository).Any(entry => branches.Contains(entry.Branch));
+               || LandedProofs.EntriesOf(record, repository).Any(entry => branches.Contains(entry.Branch));
     }
 
     /// <summary>
@@ -241,7 +242,7 @@ internal sealed class TreeSync(TreeContext context, SessionTrees trees, BranchJu
             // (b) Delete what merged: the landed half of the clean-up, after the replays, and never a branch just replayed.
             var replayedNow = judged.Where(each => each.Item.Replays).Select(each => $"{repository}:{each.Item.Branch}").ToHashSet(StringComparer.Ordinal);
             var deleteOnly = only is null ? null : only.Where(key => !replayedNow.Contains(key)).ToHashSet(StringComparer.Ordinal);
-            var cleaned = await trees.CleanLandedAsync([(repository, space, root)], deleteOnly, ct).ConfigureAwait(false);
+            var cleaned = await cleanups.CleanLandedAsync([(repository, space, root)], deleteOnly, ct).ConfigureAwait(false);
             deletes.AddRange(cleaned.Where(result => result.Removed || result.Message != "kept"
                 || result.Item.Kind is LandedKind.OnLine or LandedKind.Merged or LandedKind.Inside or LandedKind.LeanedOn));
 

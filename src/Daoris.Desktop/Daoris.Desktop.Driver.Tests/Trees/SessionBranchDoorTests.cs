@@ -32,7 +32,7 @@ public sealed class SessionBranchDoorTests : IDisposable
     {
         var item = new SweepItem("engine", "aurora", "daoris/s-1a2b3c4d", null, kind, commits, null, null);
 
-        var offer = SessionTrees.RemovalOffered(item);
+        var offer = SessionBranchDoors.RemovalOffered(item);
 
         if (!offered) Assert.Null(offer);
         else Assert.Contains("`daoris-driver trees remove daoris/s-1a2b3c4d --repository engine --force`", offer);
@@ -67,8 +67,8 @@ public sealed class SessionBranchDoorTests : IDisposable
                 new SessionRecord("laptop/s9", "engine", "failed") { Tree = here, Created = DateTimeOffset.UnixEpoch.AddHours(2) },
             ];
 
-        var session = SessionTrees.SessionOfTree(records, item.Tree);
-        var offer = SessionTrees.LandingOffered(item, session);
+        var session = SessionBranchDoors.SessionOfTree(records, item.Tree);
+        var offer = SessionBranchDoors.LandingOffered(item, session);
 
         Assert.Equal(tree && state is not null ? "4e6837ed" : null, session?.Id);
         if (!offered) Assert.Null(offer);
@@ -81,7 +81,7 @@ public sealed class SessionBranchDoorTests : IDisposable
     {
         using var service = new ServiceClient("http://127.0.0.1:9", null);
 
-        Assert.Empty(await SessionTrees.RecordsOrNoneAsync(service));
+        Assert.Empty(await SessionBranchDoors.RecordsOrNoneAsync(service));
     }
 
     [Theory]
@@ -92,7 +92,7 @@ public sealed class SessionBranchDoorTests : IDisposable
     [InlineData("C:\\daoris\\trees\\aurora\\engine\\s-1a2b3c4d", true)]
     [InlineData("/srv/daoris/trees/aurora/engine/s-1a2b3c4d", true)]
     public void A_removal_tells_a_path_from_a_session_or_its_branch(string named, bool path) =>
-        Assert.Equal(path, SessionTrees.NamesAPath(named));
+        Assert.Equal(path, SessionBranchDoors.NamesAPath(named));
 
     /// <summary>The record finds a branch by its whole name or its tree's, narrowed to a repository where one is said.</summary>
     [Fact]

@@ -86,8 +86,11 @@ export type LandOffer = { branch: string; tree: string; commits: number; uncommi
  */
 export type DiscardOffer = { branch: string; tree: string; says: string; keeps: string | null; keptAt: string | null };
 
-/** How the list is arranged (D126 §4.1): by state, the default, or by repository, the arrangement it had before. */
-export type SessionArrangement = 'state' | 'repository';
+/**
+ * How the list is arranged (D126 §4.1): by state, the default, by repository, the arrangement it had before, or by ask, each
+ * ask's entries under its name (D167 point 5, SESSONE1c).
+ */
+export type SessionArrangement = 'state' | 'repository' | 'ask';
 
 /** What Sessions' list remembers of its own ⋯ (D126 §4.1, D118 §3f): its arrangement, and whether archived is shown. */
 export type SessionFilters = { group: SessionArrangement; archived: boolean };
@@ -97,13 +100,16 @@ export type SessionFilters = { group: SessionArrangement; archived: boolean };
  * the default, by state with archived hidden, so a first open with nothing remembered is by state.
  */
 export function sessionFilters(kept: Record<string, unknown>): SessionFilters {
-  return { group: kept.group === 'repository' ? 'repository' : 'state', archived: kept.archived === true };
+  return {
+    group: kept.group === 'repository' ? 'repository' : kept.group === 'ask' ? 'ask' : 'state',
+    archived: kept.archived === true,
+  };
 }
 
 /** The filters as they are kept: the defaults are nothing kept at all, as Quests' are. */
 export function keptSessionFilters(filters: SessionFilters): Record<string, unknown> | null {
   if (filters.group === 'state' && !filters.archived) return null;
-  return { ...(filters.group === 'repository' ? { group: 'repository' } : {}), ...(filters.archived ? { archived: true } : {}) };
+  return { ...(filters.group !== 'state' ? { group: filters.group } : {}), ...(filters.archived ? { archived: true } : {}) };
 }
 
 /** The words the reader derives that the page shows as its own (D126 §2.2, ANSWER1c, MSG1f). */

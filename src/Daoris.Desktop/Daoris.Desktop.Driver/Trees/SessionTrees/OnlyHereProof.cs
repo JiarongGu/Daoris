@@ -13,16 +13,16 @@ namespace Daoris.Driver;
 /// <para><b>The commits judged</b> are those after the session's base up to the branch's tip; with no base, the merge-base
 /// with the repository's line (D86) stands in. <b>Anywhere else</b> is any branch but this machine's local
 /// <c>refs/heads/daoris/*</c>, any remote-tracking branch (a pushed <c>daoris/*</c> included: pushed means somebody may have
-/// it), and any tag. D88's <see cref="SessionTrees.UnlandedAsync"/> leaves <c>*/daoris/*</c> out, rightly for a clean-up, since a pushed
+/// it), and any tag. D88's <see cref="TreeFollows.UnlandedAsync"/> leaves <c>*/daoris/*</c> out, rightly for a clean-up, since a pushed
 /// session branch has not landed.</para>
 ///
 /// <para><b>Partly elsewhere is kept whole</b>, as the clean-up keeps it: which half the person meant is its review's to
 /// decide. A count git cannot give keeps it. 🔴 git walks UP: a tree is asked only when it is a repository of its own, and a
 /// checkout only when it is the top of one (FIX-LOG).</para>
 ///
-/// <para>It holds the front for the discard's removal (<c>RemoveAsync</c>): interim, until PART10l makes the removal a class.</para>
+/// <para>Its discard removes a tree through the removal (<see cref="TreeRemovals"/>).</para>
 /// </remarks>
-internal sealed class OnlyHereProof(TreeContext context, SessionTrees trees)
+internal sealed class OnlyHereProof(TreeContext context, TreeRemovals removals)
 {
     /// <summary>How many uncommitted paths the first press names (design §3.2).</summary>
     internal const int FilesNamed = 5;
@@ -104,13 +104,13 @@ internal sealed class OnlyHereProof(TreeContext context, SessionTrees trees)
 
     /// <summary>
     /// Discard what <see cref="OnlyHereAsync"/> cleared (design §3.3): the tree and its branch, the person saying it again and
-    /// meaning it (<see cref="SessionTrees.RemoveAsync"/> with force), or the branch alone where the tree is gone. Reached only behind the
+    /// meaning it (<see cref="TreeRemovals.RemoveAsync"/> with force), or the branch alone where the tree is gone. Reached only behind the
     /// proof, which the caller made a moment ago; anything it did not clear is refused here.
     /// </summary>
     internal async Task<TreeRemoval> DiscardAsync(string tree, string branch, TreeOnlyHere judged, CancellationToken ct = default)
     {
         if (!judged.Discards) return new(false, $"`{branch}` is not proven to be held nowhere else, so it stays.");
-        if (judged.TreeHere) return await trees.RemoveAsync(tree, force: true, ct).ConfigureAwait(false);
+        if (judged.TreeHere) return await removals.RemoveAsync(tree, force: true, ct).ConfigureAwait(false);
         if (!branch.StartsWith("daoris/", StringComparison.Ordinal) || judged.Root is not { } root)
         {
             return new(false, $"`{branch}` is not a session branch of Daoris's, so it stays.");

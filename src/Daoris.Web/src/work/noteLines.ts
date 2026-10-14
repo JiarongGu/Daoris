@@ -48,6 +48,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ended.untouched-exit': { values: ['exit'] },
   'ended.went-on': { values: [] },
   'ended.went-on-exit': { values: ['exit'] },
+  'ended.went-on-failed': { values: [] },
+  'ended.words-wait': { values: [] },
+  'ended.words-wait-you': { values: [] },
   'ended.timeout': { values: ['minutes'] },
   'ended.stopped': { values: [] },
   'ended.lost-claim': { values: [] },
@@ -72,6 +75,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // While it starts and works.
   'started.tree': { values: ['branch', 'basedOn'] },
   'started.tree-unrecorded': { values: [] },
+  'started.joined': { values: ['session'] },
   'started.resumes-answered': { values: ['quest', 'answered'] },
   'started.in-asking-tree': { values: ['session'] },
   'started.words-open': { values: ['quest', 'session'] },

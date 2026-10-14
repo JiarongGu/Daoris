@@ -189,6 +189,12 @@ public enum AskWordKind
 
     /// <summary>Their words with a skip of a review (REVIEWENV1b, design §3.6).</summary>
     Skipped,
+
+    /// <summary>
+    /// Their message on the ask's channel (SESSONE2a, D167 point 7): kept on the ask as every word they give is, beside the channel's own
+    /// record of it. A build from before passes a kind it does not know over, so no older reader fails on it.
+    /// </summary>
+    Channel,
 }
 
 /// <summary>One thing the person said on an ask, verbatim (DRIFT1a, D133 §1).</summary>

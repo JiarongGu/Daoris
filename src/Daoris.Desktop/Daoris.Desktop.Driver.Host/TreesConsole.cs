@@ -29,10 +29,10 @@ internal static class TreesConsole
     };
 
     /// <summary>The door offered beside a kept branch a failed or superseded attempt left (LAND3), or null.</summary>
-    internal static string? Offered(SweepItem item) => SessionTrees.RemovalOffered(item);
+    internal static string? Offered(SweepItem item) => SessionBranchDoors.RemovalOffered(item);
 
     /// <summary>A tree named by its path, as `remove` always took one, rather than a session or its branch (LAND3).</summary>
-    internal static bool LooksLikePath(string named) => SessionTrees.NamesAPath(named);
+    internal static bool LooksLikePath(string named) => SessionBranchDoors.NamesAPath(named);
 
     /// <summary>
     /// A session branch the person removes by its door (LAND3): named by the branch (<c>daoris/s-…</c> or <c>s-…</c>) or by the
@@ -178,12 +178,12 @@ internal static class TreesConsole
 
                     // LAND4: the session each kept branch's tree is, so its landing is offered beside the discard, as on its page.
                     var records = plan.Sessions.Any(item => item.Kind == SweepKind.Unlanded && item.Tree is not null)
-                        ? await SessionTrees.RecordsOrNoneAsync(service).ConfigureAwait(false)
+                        ? await SessionBranchDoors.RecordsOrNoneAsync(service).ConfigureAwait(false)
                         : [];
                     foreach (var item in plan.Sessions)
                     {
                         Console.WriteLine($"  {(item.Removable ? "goes " : "kept ")} {Describe(item)}");
-                        if (SessionTrees.LandingOffered(item, SessionTrees.SessionOfTree(records, item.Tree)) is { } landing)
+                        if (SessionBranchDoors.LandingOffered(item, SessionBranchDoors.SessionOfTree(records, item.Tree)) is { } landing)
                         {
                             Console.WriteLine($"         {landing}");
                         }
@@ -393,7 +393,7 @@ internal static class TreesConsole
                 var found = trees.Recorded.Find(named, repository);
                 if (found.Count == 0)
                 {
-                    Console.Error.WriteLine($"trees: {SessionTrees.NotLanded(named)}");
+                    Console.Error.WriteLine($"trees: {TreeHand.NotLanded(named)}");
                     return 1;
                 }
 

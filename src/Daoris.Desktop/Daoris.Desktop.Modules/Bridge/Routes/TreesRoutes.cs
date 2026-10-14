@@ -738,7 +738,7 @@ public sealed class TreesRoutes(DriverLoop loop)
         {
             return request.Type == "HANDOFF_PLAN"
                 ? new { Session = id, Branch = (string?)null }
-                : (object)new { Session = id, Done = false, Message = SessionTrees.NotLanded(id), Branch = (string?)null };
+                : (object)new { Session = id, Done = false, Message = TreeHand.NotLanded(id), Branch = (string?)null };
         }
 
         var root = await CheckoutOfAsync(service, entry.Repository, cancellationToken);
