@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import '../i18n';
+import '../locales/i18n';
 import { code } from '../test/code';
 import { type HelpProposal, ProposalCard } from './ProposalCard';
 
@@ -271,7 +271,7 @@ describe('the kinds that reach every door', () => {
   });
 
   it('speaks 中文 in the headings and leaves the driver\'s lines as sent', async () => {
-    const { default: i18n } = await import('../i18n');
+    const { default: i18n } = await import('../locales/i18n');
     await i18n.changeLanguage('zh');
     try {
       render(<ul><ProposalCard proposal={WORKFLOW} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
@@ -469,7 +469,7 @@ describe('the kinds that reach every door', () => {
   });
 
   it('speaks 中文 for every kind, the driver\'s sentence left as it said it', async () => {
-    const { default: i18n } = await import('../i18n');
+    const { default: i18n } = await import('../locales/i18n');
     await i18n.changeLanguage('zh');
     try {
       render(<ul><ProposalCard proposal={DELETE} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={GO} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={PLUGIN_ADD} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
@@ -543,7 +543,7 @@ describe('a yes to a departure', () => {
   });
 
   it('speaks 中文, the person’s words and the done’s as they were written', async () => {
-    const { default: i18n } = await import('../i18n');
+    const { default: i18n } = await import('../locales/i18n');
     await i18n.changeLanguage('zh');
     try {
       render(<ul><ProposalCard proposal={ACCEPT} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);

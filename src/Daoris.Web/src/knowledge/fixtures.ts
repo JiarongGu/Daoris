@@ -1,4 +1,4 @@
-import type { Convergence, Entry, Hit } from '../api';
+import type { Convergence, Entry, Hit } from '../data/api';
 
 // Search's and Convergence's fixtures (FRAME1f): hits, entries and findings shaped as the service answers them, for the
 // stories and the molecules' suites. Every name is the example family's or invented; none is a person's repository.

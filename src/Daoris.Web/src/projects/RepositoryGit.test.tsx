@@ -3,7 +3,7 @@ import { render as renderPlain, screen, within, type RenderOptions } from '@test
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { ReactElement, ReactNode } from 'react';
 import userEvent from '@testing-library/user-event';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES } from './fixtures';
 import { BranchesTab, HistoryTab, type HistoryRead } from './RepositoryGit';
 

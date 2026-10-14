@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { chinese } from '../storyLanguage';
+import { chinese } from '../design/storyLanguage';
 import { USE_DEFAULTS } from './accounts';
 import {
   AHEAD, CHOICES, MACHINE_NEAR, OFFERED_AGAIN, OWN_COOLING, scopeOf, SILENT, SIX_AGENT, SIX_CHOICES, THREE,

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { type Carry, CarryFields, useCarry } from '../compose/carry';
 import { SHORT_TITLE_MAX } from '../quests/QuestComposer';
-import { Button, Drawer, EmptyState, Inline, SelectField } from '../ui';
+import { Button, Drawer, EmptyState, Inline, SelectField } from '../design/ui';
 
 /** An ask being written: its circle, its words, a receiver if the person names one, and what it carries. */
 export type AskDraft = Carry & {

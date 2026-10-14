@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { SelectField } from '../ui';
+import { SelectField } from '../design/ui';
 
 /**
  * One row of the driver's closed table of session languages (LANG1c): its code, and the name a session's line gives it. The

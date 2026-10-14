@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { CodeDependency, CodeModule } from '../api';
+import type { CodeDependency, CodeModule } from '../data/api';
 import { CodeMapCanvas, CodeMapDetail, codeEdge, codeWidth } from './CodeMap';
 
 // MAP3a: a repository's own code map, drawn — modules as buttons, arrows to what each depends on.

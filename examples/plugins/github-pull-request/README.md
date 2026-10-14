@@ -85,6 +85,6 @@ branch yourself, and once the cause is fixed the review's *hand it to* or `daori
 quotes become single ones and a percent sign is spelled out.
 
 No remote, organisation or repository is named here: `gh` takes them from the checkout's `origin`.
-`land.mjs` is the whole of it; `src/Daoris.Cli/test/landing-plugins.test.ts` drives it against a bare
+`land.mjs` is the whole of it; `src/Daoris.Cli/test/plugins/landing-plugins.test.ts` drives it against a bare
 repository and a fake `gh`, never a network. It has not been run against a real GitHub repository: the
 arguments are `gh pr create`'s and `gh pr view`'s documented ones.

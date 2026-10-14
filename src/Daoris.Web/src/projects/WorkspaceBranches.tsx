@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, CheckField, Prose } from '../ui';
+import { Button, CheckField, Prose } from '../design/ui';
 import { type GitRead, Nothing, Waiting } from './RepositoryGit';
 
 /** Groups drawn before the rest are one press away, as a list's *Yours* are (the built-in Git design §2.2). */

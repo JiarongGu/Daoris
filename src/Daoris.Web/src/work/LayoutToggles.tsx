@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { keysOf } from '../commands';
-import { Button, Icon, type IconName, Tip } from '../ui';
+import { keysOf } from '../menus/commands';
+import { Button, Icon, type IconName, Tip } from '../design/ui';
 import { LIST_DOOR } from './listKeys';
 
 /** A region the strip toggles: the view's list, the output panel, the right side bar. */

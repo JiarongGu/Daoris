@@ -1,4 +1,4 @@
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import type { RuleProposal } from './AgentRules';
 
 // An agent's proposal to change the rules (PERM2, D74), said in the person's language. Pure, so the

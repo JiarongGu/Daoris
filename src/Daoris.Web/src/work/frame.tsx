@@ -1,9 +1,9 @@
 import { type PointerEvent as ReactPointerEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, CountBadge, Dot, DotMark, Icon, type IconName, Tip } from '../ui';
+import { Button, CountBadge, Dot, DotMark, Icon, type IconName, Tip } from '../design/ui';
 import { CAPTION_ATTRIBUTE, CAPTION_SLOTS } from './caption';
 import { cn } from '../lib/cn';
-import { Mark } from '../Mark';
+import { Mark } from '../design/Mark';
 import type { Place, ViewId } from './placements';
 import { DropMark, viewEntries, ViewsMenu } from './ViewsMenu';
 import { dragProps, useViewDrop } from './viewDrag';

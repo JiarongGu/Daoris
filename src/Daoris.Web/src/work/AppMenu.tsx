@@ -1,5 +1,5 @@
 import { type FocusEvent, type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from 'react';
-import { Icon, type IconName, Menu, Tip } from '../ui';
+import { Icon, type IconName, Menu, Tip } from '../design/ui';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 

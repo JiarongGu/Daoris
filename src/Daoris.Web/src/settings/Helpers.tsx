@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Segmented } from '../ui';
+import { Button, Segmented } from '../design/ui';
 
 /**
  * A helpers rule as the driver answers it (MIXAGENT2a-i, D163 point 3): what a helper a session's agent asks for does, `ask`

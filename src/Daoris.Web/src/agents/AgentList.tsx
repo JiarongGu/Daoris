@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { type ContextOffer, contextOffer } from '../menus/press';
-import { Button, DotMark, Pill, StripMark } from '../ui';
+import { Button, DotMark, Pill, StripMark } from '../design/ui';
 import type { AgentRow } from './agents';
 
 /**

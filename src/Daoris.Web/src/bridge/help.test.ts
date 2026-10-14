@@ -11,7 +11,7 @@ vi.mock('@shenora/react', async (importOriginal) => ({
 }));
 
 import type { HelpProposal } from '../help/ProposalCard';
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 import { settleBound, useSettleHelp, type HelpSettled } from './help';
 
 /**

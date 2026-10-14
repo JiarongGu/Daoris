@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { CodeBlock, WRAP_BELOW } from './CodeBlock';
 import { Markdown } from './Markdown';
 

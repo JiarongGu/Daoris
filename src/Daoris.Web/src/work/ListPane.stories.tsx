@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { StripMark } from '../ui';
+import { StripMark } from '../design/ui';
 import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from './layout';
 import { LIST_ROW } from './listKeys';
 import { ListMore, ListPane } from './ListPane';

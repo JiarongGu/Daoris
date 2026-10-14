@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
 import type { StarterDoor } from '../help/starters';
-import { GetStartedDomain } from '../setupGuide';
-import type { Notify } from '../ui';
+import { GetStartedDomain } from '../help/setupGuide';
+import type { Notify } from '../design/ui';
 import type { BrowserDriver } from '../work/browserDrivers';
 import { AiDomain } from './AiDomain';
 import { AppearanceDomain } from './AppearanceDomain';

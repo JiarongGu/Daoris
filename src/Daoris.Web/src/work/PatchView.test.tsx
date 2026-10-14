@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
-import '../i18n';
+import '../locales/i18n';
 import { PatchView } from './PatchView';
 
 // A file's patch drawn (REVIEW2): numbered, highlighted in its language, unified or side by side. A

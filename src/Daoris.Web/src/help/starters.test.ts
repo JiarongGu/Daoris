@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { starters } from './starters';
-import type { Tool } from '../tools';
+import type { Tool } from '../agents/tools';
 
 // HELP1d (D89): Ask Daoris's no-agent tier — what this machine lacks, each with the screen that fixes
 // it and the terminal command that does the same. Pure: every machine is an argument.

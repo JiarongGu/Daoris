@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import '../i18n';
+import '../locales/i18n';
 import { code } from '../test/code';
 import type { DiffFile } from './diff';
 import { DiffFileRow } from './DiffFileRow';

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import '../i18n';
+import '../locales/i18n';
 import { KnowledgeModes, KnowledgeStrip } from './KnowledgeModes';
 import type { KnowledgeMode } from './modes';
 
@@ -64,7 +64,7 @@ describe("Knowledge's list head", () => {
   });
 
   it('says both modes in 中文 by the names their places had', async () => {
-    const { default: i18n } = await import('../i18n');
+    const { default: i18n } = await import('../locales/i18n');
     await i18n.changeLanguage('zh');
     try {
       render(<KnowledgeModes mode="search" onMode={vi.fn()} />);

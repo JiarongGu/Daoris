@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Entry } from '../api';
+import type { Entry } from '../data/api';
 import {
   answeredBy, atFloor, convergenceFilters, findingId, findingTitle, lower, readingOf, SIMILARITY, searchFilters,
 } from './records';

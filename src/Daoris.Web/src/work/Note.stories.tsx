@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { NotePart } from '../api';
-import { chinese } from '../storyLanguage';
+import type { NotePart } from '../data/api';
+import { chinese } from '../design/storyLanguage';
 import { Note } from './Note';
 
 // A session's note in every shape a record brings it (LANG1b, D142; the language design §2, §5, §6): Daoris's lines worded

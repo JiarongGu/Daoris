@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { ExternalLink } from '../links';
+import { ExternalLink } from '../design/links';
 import { CodeBlock } from './CodeBlock';
 
 /**

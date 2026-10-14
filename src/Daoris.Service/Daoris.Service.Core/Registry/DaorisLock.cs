@@ -15,7 +15,7 @@ namespace Daoris.Knowledge;
 ///
 /// 🔴 <b>The lock, not the manifest, says where the files are</b> (D117 §5.1, LAYOUT4). Since the agents
 /// layout the lock carries the descriptor and root its entries were written under, and the mirrors it
-/// wrote. A twin of the CLI's <c>lockLayout</c> (<c>src/Daoris.Cli/src/layout.ts</c>), which shares no
+/// wrote. A twin of the CLI's <c>lockLayout</c> (<c>src/Daoris.Cli/src/layout/layout.ts</c>), which shares no
 /// code with this; <see cref="RepositoryLayout"/> names the rest of the twin and its test table.
 /// </remarks>
 public sealed class DaorisLock

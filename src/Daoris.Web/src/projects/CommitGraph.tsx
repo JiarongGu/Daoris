@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ago } from '../format';
+import { ago } from '../locales/format';
 import { type GraphCommit, graphLanes } from './graphLanes';
 
 /**

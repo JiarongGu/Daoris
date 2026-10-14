@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { chinese } from '../storyLanguage';
+import { chinese } from '../design/storyLanguage';
 import type { Channel, ChannelItem } from '../work/channel';
 import { ChannelPanel, ChannelSection } from './ChannelSection';
 

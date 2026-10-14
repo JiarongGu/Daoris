@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Consideration } from '../signals';
+import type { Consideration } from '../data/signals';
 import type { WorkPlan, WorkPlanQuest } from '../work/pausing';
 import { LISTED_ASK, LISTED_CONSIDERED, PAUSABLE_ASK, PAUSED_LISTED_ASK } from '../work/pausingFixtures';
 import { whyItSits, type WorkItem, workTree } from './workTree';

@@ -40,7 +40,7 @@ public sealed partial class RepositoryLayout
 
     /// <summary>
     /// The layouts the CLI writes, by the manifest's <c>harness</c>: a copy of <c>HARNESSES</c> in
-    /// <c>src/Daoris.Cli/src/harness.ts</c> (its <c>defaultTarget</c>, <c>formerly</c> and
+    /// <c>src/Daoris.Cli/src/layout/harness.ts</c> (its <c>defaultTarget</c>, <c>formerly</c> and
     /// <c>mirror.root</c>), kept in step by hand, since the two artefacts share no code.
     /// </summary>
     internal static readonly IReadOnlyDictionary<string, Descriptor> Descriptors =

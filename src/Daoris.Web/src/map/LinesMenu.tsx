@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { store, stored } from '../lib/stored';
-import { Menu, Tip } from '../ui';
+import { Menu, Tip } from '../design/ui';
 import { ASKS_DASH, CHAIN_DASH, DEPENDS_DASH } from './MapCanvas';
 import { LINE_KINDS, type LineKind, type Topology, type When, WHENS } from './topology';
 

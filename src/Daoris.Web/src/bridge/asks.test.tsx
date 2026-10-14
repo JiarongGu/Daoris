@@ -15,7 +15,7 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => undefined,
 }));
 
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 import { channelKey, useChannel, useChannelUnreads, useMarkChannel, usePostChannel } from './asks';
 
 const wrapper = (client: QueryClient) => ({ children }: { children: ReactNode }) => (

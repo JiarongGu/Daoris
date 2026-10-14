@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, CheckField, Chip, Icon, Segmented } from '../ui';
+import { Button, CheckField, Chip, Icon, Segmented } from '../design/ui';
 
 /**
  * One review environment (REVIEWENV1a, D154 point 1): where a repository's work runs for the person to look at before it

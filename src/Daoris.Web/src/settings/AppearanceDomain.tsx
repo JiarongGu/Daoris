@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { useThemeChoice } from '../theme';
-import { Card, Segmented, SettingRow } from '../ui';
+import { useThemeChoice } from '../design/theme';
+import { Card, Segmented, SettingRow } from '../design/ui';
 
 /**
  * How this window looks and speaks — per viewer, remembered by this window's profile like the scope,

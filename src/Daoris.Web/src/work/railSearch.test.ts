@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 import { byName, marked, readable } from './railSearch';
 
 // Searching the rail (RAIL1): by name at once, on the page — the derived title, the repository and the

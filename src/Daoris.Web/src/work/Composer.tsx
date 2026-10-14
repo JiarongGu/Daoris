@@ -1,11 +1,11 @@
 import { type KeyboardEvent, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MAX_FILE_BYTES, MAX_FILES } from '../attachments';
+import { MAX_FILE_BYTES, MAX_FILES } from '../compose/attachments';
 import { type Carry, NO_CARRY, useCarry, useFileChooser } from '../compose/carry';
-import { size } from '../format';
+import { size } from '../locales/format';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
-import { Button, Icon, Tip } from '../ui';
+import { Button, Icon, Tip } from '../design/ui';
 import { ContextRing } from './ContextRing';
 import type { ChatMessage, Usage } from './conversation';
 import { MentionList } from './MentionList';

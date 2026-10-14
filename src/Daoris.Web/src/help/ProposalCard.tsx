@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { ago } from '../format';
+import { ago } from '../locales/format';
 import { RequirementItem } from '../quests/Requirements';
-import { Button, Inline } from '../ui';
+import { Button, Inline } from '../design/ui';
 
 /**
  * What a plugin proposal's plugin runs (PLUG9), each command as its manifest writes it, `${plugin}`

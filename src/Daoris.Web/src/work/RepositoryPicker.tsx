@@ -2,7 +2,7 @@ import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef, useState 
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
-import { Icon } from '../ui';
+import { Icon } from '../design/ui';
 
 /** A repository a conversation may be started in, as the composer lists it: its workspace, and whether it has a checkout here. */
 export type StartRepository = { name: string; workspace: string; checkout: boolean };

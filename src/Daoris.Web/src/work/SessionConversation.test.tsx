@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRef } from 'react';
-import '../i18n';
+import '../locales/i18n';
 
 // SESS1 S9, the organism: a jump lands on an event, and where the page does not hold it, the pages
 // before are loaded until it does. The bridge is mocked; the driver's answers are the test's.

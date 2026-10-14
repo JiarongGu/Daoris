@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { I18nextProvider } from 'react-i18next';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import {
   WORKSPACE_EMPTY, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER, WORKSPACE_PLAN, WORKSPACE_RECORDS_EMPTY_FILES, WORKSPACE_RECORDS_ONLY,
 } from '../work/historyFixtures';

@@ -770,7 +770,11 @@ test('a viewer on System is put back to System when the page had to be set', asy
  * write to it, and `shot --theme` sets it for a capture and puts it back. Spelled twice, held here.
  */
 test('the tool and the page spell the theme’s key the same, and the page hears a write to it', () => {
-  const theme = readText(join(repoRoot, 'src', 'Daoris.Web', 'src', 'theme.ts'));
+  // Found by its name under the page's source (STRUCT5c, D166), wherever the page's folders put it.
+  const page = join(repoRoot, 'src', 'Daoris.Web', 'src');
+  const named = listFiles(page, (name) => name === 'theme.ts');
+  assert.equal(named.length, 1, `theme.ts is under the page's source ${named.length} times: a file read by name is there once`);
+  const theme = readText(join(page, named[0]!));
   assert.ok(theme.includes(`export const THEME_KEY = '${THEME_KEY}';`),
     `the tool writes ${THEME_KEY} and the page remembers its choice under another key`);
   assert.ok(theme.includes("window.addEventListener('storage', followStoredTheme)"),

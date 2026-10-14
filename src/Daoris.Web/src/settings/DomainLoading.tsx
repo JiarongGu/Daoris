@@ -1,4 +1,4 @@
-import { Card, SkeletonRows } from '../ui';
+import { Card, SkeletonRows } from '../design/ui';
 
 /**
  * **A machine domain's card on its first load** (D118 §3h; FRAME1g, audit ST11 and PL11): skeleton rows in

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { NothingToLand, REVIEW_REFUSALS, ReviewFailed, ReviewHead, ReviewReading, SLOW_MS } from './ReviewFrame';
 
 // REVIEW4: the review says what it is doing while it loads. Its frame (what the page knows from the record), the

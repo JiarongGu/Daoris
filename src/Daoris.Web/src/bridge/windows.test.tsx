@@ -19,7 +19,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import { setThemeChoice } from '../theme';
+import { setThemeChoice } from '../design/theme';
 import { useSecondaryWindowTheme } from './windows';
 
 /**

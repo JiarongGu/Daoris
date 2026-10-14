@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { OpinionField, type OpinionRule, opinionGate, opinionRowSays, opinionSays, opinionSummary, opinionToast } from './Opinions';
 
 // XAGENT1a (D155 point 3, the second-agent design §2.5–§2.6): which other agent reads a repository's work before it lands,

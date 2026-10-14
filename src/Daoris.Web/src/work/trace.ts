@@ -1,4 +1,4 @@
-import type { NotePart } from '../api';
+import type { NotePart } from '../data/api';
 import type { InstructionAccount } from './conversation';
 
 /**

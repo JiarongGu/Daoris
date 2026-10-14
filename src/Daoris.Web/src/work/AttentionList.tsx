@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SectionTitle, Tip } from '../ui';
+import { SectionTitle, Tip } from '../design/ui';
 import { type Attention, type AttentionActs, AttentionRow } from './AttentionRow';
 import { attentionGroups } from './attention';
 

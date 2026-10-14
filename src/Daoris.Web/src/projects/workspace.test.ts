@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { THREE } from '../settings/accountsFixtures';
-import type { Tool } from '../tools';
+import type { Tool } from '../agents/tools';
 import { accountsHere, hostOf } from './workspace';
 
 // What a workspace's page works out from answers it already holds (UX6g, D150 §4.3).

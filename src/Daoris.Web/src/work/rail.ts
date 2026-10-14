@@ -1,4 +1,4 @@
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 
 // What the rail and the monitor share of a session's row. The list's groups, by state and by repository, and its
 // Ended cut are `groups.ts` (SESSUX1c), which took over `partition` and its cap.

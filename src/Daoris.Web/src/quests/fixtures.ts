@@ -1,5 +1,5 @@
-import type { Quest, Session } from '../api';
-import type { Consideration, TrustHold } from '../signals';
+import type { Quest, Session } from '../data/api';
+import type { Consideration, TrustHold } from '../data/signals';
 
 // Quests in each state a real machine reaches (FRAME1d), for the stories and the molecule tests alike — one set, so
 // what a reviewer designs against is what the tests assert against.

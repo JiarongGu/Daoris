@@ -8,15 +8,15 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 
 | Verb | Class | Row | Handler | Usage |
 |---|---|---|---|---|
-| `analyze` | doctrine | `cli/analyze.ts:5` | `doctrine/analyze.ts:268` commandAnalyze | [packs...] what adopting would do here: collisions, duplicates… |
-| `init` | doctrine | `cli/init.ts:5` | `doctrine/commands.ts:55` commandInit | detect what this repo has, write daoris.json |
-| `sync` | doctrine | `cli/sync.ts:5` | `doctrine/materialize.ts:811` commandSync | materialize the manifest's packs; write daoris.lock |
-| `check` | doctrine | `cli/check.ts:5` | `doctrine/drift.ts:292` commandCheck | drift, staleness, index freshness (offline); the core budget is… |
-| `upstream` | doctrine | `cli/upstream.ts:5` | `doctrine/upstream.ts:171` commandUpstream | <file> promote a locally-edited canonical file back to the canon |
-| `index` | doctrine | `cli/index.ts:6` | `doctrine/indexgen.ts:148` commandIndex | say where the roster is: the rules in AGENTS.md, the |
-| `status` | doctrine | `cli/status.ts:5` | `doctrine/commands.ts:142` commandStatus | summary of packs, drift, local files, and any pending |
-| `doctor` | doctrine | `cli/doctor.ts:5` | `doctrine/twins.ts:142` commandDoctor | report local documents that look like canonical ones |
-| `connect` | management | `cli/connect.ts:5` | `service/connect.ts:154` commandConnect | register this repo with a knowledge service: what it owns |
+| `analyze` | doctrine | `cli/analyze.ts:5` | `doctrine/analyze.ts:267` commandAnalyze | [packs...] what adopting would do here: collisions, duplicates… |
+| `init` | doctrine | `cli/init.ts:5` | `doctrine/commands.ts:56` commandInit | detect what this repo has, write daoris.json |
+| `sync` | doctrine | `cli/sync.ts:5` | `doctrine/materialize.ts:810` commandSync | materialize the manifest's packs; write daoris.lock |
+| `check` | doctrine | `cli/check.ts:5` | `doctrine/drift.ts:293` commandCheck | drift, staleness, index freshness (offline); the core budget is… |
+| `upstream` | doctrine | `cli/upstream.ts:5` | `doctrine/upstream.ts:172` commandUpstream | <file> promote a locally-edited canonical file back to the canon |
+| `index` | doctrine | `cli/index.ts:6` | `doctrine/indexgen.ts:149` commandIndex | say where the roster is: the rules in AGENTS.md, the |
+| `status` | doctrine | `cli/status.ts:5` | `doctrine/commands.ts:143` commandStatus | summary of packs, drift, local files, and any pending |
+| `doctor` | doctrine | `cli/doctor.ts:5` | `doctrine/twins.ts:143` commandDoctor | report local documents that look like canonical ones |
+| `connect` | management | `cli/connect.ts:5` | `service/connect.ts:155` commandConnect | register this repo with a knowledge service: what it owns |
 | `retire` | management | `cli/retire.ts:5` | `service/manage.ts:31` commandRetire | [name] take a repository off this machine's registry. Ends the |
 | `wire` | management | `cli/wire.ts:5` | `service/manage.ts:58` commandWire | <repo> --workspace W |
 | `import` | management | `cli/import.ts:5` | `service/manage.ts:87` commandImport | [folder] register a folder's subdirectories in one go; safe to |

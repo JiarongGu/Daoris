@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Icon, Segmented, StripMark } from '../ui';
+import { Icon, Segmented, StripMark } from '../design/ui';
 import { KNOWLEDGE_MODES, type KnowledgeMode } from './modes';
 
 /** Each mode's glyph, the one its place wore on the activity bar before the two were one place. */

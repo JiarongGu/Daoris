@@ -1,4 +1,4 @@
-import { HELP_REPOSITORY, type Session } from '../api';
+import { HELP_REPOSITORY, type Session } from '../data/api';
 import { store, stored } from '../lib/stored';
 import { sessionOrigin } from './identity';
 

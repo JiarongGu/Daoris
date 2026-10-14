@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import i18n from '../i18n';
-import type { Session } from '../api';
+import i18n from '../locales/i18n';
+import type { Session } from '../data/api';
 import { SessionHead } from './SessionHead';
 
 // LANDNAME1b (D145's LANDNAME1a note): the head's land ask takes a branch name that replaces the rule's whole name, where the

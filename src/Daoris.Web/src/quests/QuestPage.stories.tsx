@@ -1,7 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { buildChain } from '../map/chain';
 import { InTheme } from '../plugins/storyIcons';
-import { chinese } from '../storyLanguage';
+import { chinese } from '../design/storyLanguage';
 import type { HistoryDoor } from '../work/history';
 import { FAILED_PLAN, QUEST_ASKED, QUEST_PLAN } from '../work/historyFixtures';
 import type { WorkDoor } from '../work/pausing';

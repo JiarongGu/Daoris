@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import '../i18n';
+import '../locales/i18n';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
 import { type OfferShown, pluginGroups, type PluginShown } from './catalog';
@@ -51,7 +51,7 @@ describe('the plugin list', () => {
    * plugin is 启用 and 停用 in Chinese, wherever its state is said.
    */
   it('names the sections and the off word in 中文 by the switch, never by close; a plugin\'s words stay as declared', async () => {
-    const { default: i18n } = await import('../i18n');
+    const { default: i18n } = await import('../locales/i18n');
     await i18n.changeLanguage('zh');
     try {
       render(<PluginList groups={pluginGroups([

@@ -2,7 +2,7 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InTheme } from '../plugins/storyIcons';
-import { chinese } from '../storyLanguage';
+import { chinese } from '../design/storyLanguage';
 import { HandedAccount } from './HandedAccount';
 import { BARE, CLAIMED, CUT, NEWER, SET_UP, UNREAD } from './handedFixtures';
 

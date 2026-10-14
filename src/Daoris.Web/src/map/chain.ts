@@ -1,4 +1,4 @@
-import type { Quest, QuestStep, Session } from '../api';
+import type { Quest, QuestStep, Session } from '../data/api';
 
 /**
  * One step of how a piece of work was carried (MAP1): the ask it began as, a quest and every

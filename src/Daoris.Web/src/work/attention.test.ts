@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import i18n from '../i18n';
-import type { Ask, GoAhead, Quest, Registration, Session } from '../api';
+import i18n from '../locales/i18n';
+import type { Ask, GoAhead, Quest, Registration, Session } from '../data/api';
 import type { RuleProposal } from '../settings/AgentRules';
-import type { Consideration } from '../signals';
-import { byTool } from '../tools';
+import type { Consideration } from '../data/signals';
+import { byTool } from '../agents/tools';
 import type { AccountRowFacts, NamedAccount } from './accountAttention';
 import type { Attention } from './AttentionRow';
 import type { SessionGrouping } from './groups';

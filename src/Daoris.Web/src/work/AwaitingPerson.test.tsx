@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { AwaitingPerson } from './AwaitingPerson';
 
 /** How the ask hears its end (UXFIX2's contract). */

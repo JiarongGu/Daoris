@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import type { SyncStanding } from '../api';
-import { ago } from '../format';
+import type { SyncStanding } from '../data/api';
+import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
-import { Icon, Menu, Tip } from '../ui';
+import { Icon, Menu, Tip } from '../design/ui';
 import { STATUS_PRESSABLE } from './frame';
 
 /** A quest in conflict, with its title where this page already holds it — the id alone otherwise. */

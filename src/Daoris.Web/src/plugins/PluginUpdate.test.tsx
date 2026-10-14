@@ -2,7 +2,7 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
-import '../i18n';
+import '../locales/i18n';
 import { PluginSourceLine, PluginUpdatePlan, type PluginUpdatePlanShown } from './PluginUpdate';
 
 // PLUG9 (c), D103: where an installed plugin came from and what an update changes (`PluginUpdate`), as a plugin's page
@@ -90,7 +90,7 @@ describe('what an update changes', () => {
 
 describe('in 中文', () => {
   it('translates the chrome and leaves the driver\'s words as they are', async () => {
-    const { default: i18n } = await import('../i18n');
+    const { default: i18n } = await import('../locales/i18n');
     await i18n.changeLanguage('zh');
     try {
       render(

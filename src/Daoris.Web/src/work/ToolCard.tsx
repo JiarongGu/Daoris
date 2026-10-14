@@ -1,8 +1,8 @@
 import { useContext, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { span } from '../format';
+import { span } from '../locales/format';
 import { cn } from '../lib/cn';
-import { Dot, Icon, type IconName } from '../ui';
+import { Dot, Icon, type IconName } from '../design/ui';
 import type { Block, ToolContent } from './conversation';
 import { languageOf } from './codeLines';
 import { inTree } from './identity';

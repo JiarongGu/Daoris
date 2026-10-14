@@ -1,4 +1,4 @@
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 import type { SessionGroupName } from './groups';
 
 // The session list by entry (SESSONE1c, D167 point 5, the co-working design §1.6): one row per line of work in one

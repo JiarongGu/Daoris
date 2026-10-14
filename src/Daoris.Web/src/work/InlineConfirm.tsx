@@ -2,7 +2,7 @@ import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef, useState 
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
-import { Button, Inline } from '../ui';
+import { Button, Inline } from '../design/ui';
 
 /**
  * How an act pressed in a question hears how it ended (ACCTEDIT1, D152): `done` once it landed, and `refused` with the

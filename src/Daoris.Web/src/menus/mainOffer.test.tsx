@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import '../i18n';
+import '../locales/i18n';
 import { ViewMain } from '../work/ViewMain';
 import { QuestPage } from '../quests/QuestPage';
 import { OPEN, TAKEN } from '../quests/fixtures';

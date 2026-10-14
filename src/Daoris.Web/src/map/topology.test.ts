@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Convergence, Quest, Registration, Session } from '../api';
+import type { Convergence, Quest, Registration, Session } from '../data/api';
 import { fitRadius, frameMap, placeLabel, ringAt } from './MapCanvas';
 import { textWidth } from './measure';
 import { ASKS, buildTopology, keepQuests, LINE_KINDS, type LineKind, layoutRing, showLines } from './topology';

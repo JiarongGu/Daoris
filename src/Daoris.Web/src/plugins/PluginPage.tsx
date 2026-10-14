@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
-import { Button, Inline, PathText, Pill, Prose } from '../ui';
+import { Button, Inline, PathText, Pill, Prose } from '../design/ui';
 import { type KitPoint, type PluginTrialResult, TrialReport } from './PluginKit';
 import { PluginSourceLine, PluginUpdatePlan, type PluginUpdatePlanShown, updatable } from './PluginUpdate';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';

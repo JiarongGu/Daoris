@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, CheckField, Inline, MonoWell, Pill, Prose } from '../ui';
+import { Button, Card, CheckField, Inline, MonoWell, Pill, Prose } from '../design/ui';
 
 /** A point a new plugin may speak on (PLUG8): the driver's, with what kind of question it is. */
 export type KitPoint = { name: string; kind: string };

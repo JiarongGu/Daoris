@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, CheckField } from '../ui';
+import { Button, CheckField } from '../design/ui';
 
 /**
  * A second-opinion rule as the driver answers it (XAGENT1a, D155 point 3): none here, or its occasions (`landing`, `steps`),

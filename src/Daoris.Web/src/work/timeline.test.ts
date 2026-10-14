@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Quest, Session } from '../api';
+import type { Quest, Session } from '../data/api';
 import { readEvidence, sessionTimeline } from './timeline';
 
 const session = (over: Partial<Session> = {}): Session => ({

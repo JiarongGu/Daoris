@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readMachine } from './machine';
 import { opensAtStart, setupProgress, setupSteps } from './setup';
 import { starters } from './starters';
-import type { ToolDoor } from '../tools';
+import type { ToolDoor } from '../agents/tools';
 
 // SETUP1a (D97): one pure reading of the machine serves the setup guide and Ask Daoris's starters, so a
 // step and a starter never disagree. Every machine is an argument: fresh, an agent signed in with nothing

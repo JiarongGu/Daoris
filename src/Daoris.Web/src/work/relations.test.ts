@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Quest, Session } from '../api';
+import type { Quest, Session } from '../data/api';
 import { relationsOf } from './relations';
 
 // SESS1: where a session's work came from and what it caused, beyond the chain — from what the

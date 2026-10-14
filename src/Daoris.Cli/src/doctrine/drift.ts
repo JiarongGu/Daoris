@@ -1,4 +1,5 @@
-import type { CommandArgs, DriftReport, Lock, Manifest } from '../platform/types.ts';
+import type { CommandArgs } from '../platform/types.ts';
+import type { DriftReport, Lock, Manifest } from './records.ts';
 import type { ExitCode } from '../platform/errors.ts';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';

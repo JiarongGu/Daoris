@@ -1,5 +1,5 @@
 import { Fragment, type KeyboardEvent, type ReactNode, useEffect, useRef } from 'react';
-import { Button, EmptyState, Icon, Menu, SkeletonRows, Tip } from '../ui';
+import { Button, EmptyState, Icon, Menu, SkeletonRows, Tip } from '../design/ui';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { Splitter } from './frame';

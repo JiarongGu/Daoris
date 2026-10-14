@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { moment } from '../format';
-import { Button } from '../ui';
+import { moment } from '../locales/format';
+import { Button } from '../design/ui';
 import { Refused } from './InlineConfirm';
 import type { HandOverOffer } from './handOverOffer';
 import type { HandOverTold } from './sessionActs';

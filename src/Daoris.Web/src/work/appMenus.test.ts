@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import '../i18n';
-import i18n from '../i18n';
-import { type CommandState, commandTable, MENUS } from '../commands';
+import '../locales/i18n';
+import i18n from '../locales/i18n';
+import { type CommandState, commandTable, MENUS } from '../menus/commands';
 import { load, measure } from '../../scripts/names-check.mjs';
 import { menuRows } from './appMenus';
 

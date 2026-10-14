@@ -1,6 +1,6 @@
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 import type { CommitChange, RepositoryCommits } from '../settings/Commits';
 import type { HelperChange, RepositoryHelpers } from '../settings/Helpers';
 import type { LineChange, RepositoryLine } from '../settings/Lines';

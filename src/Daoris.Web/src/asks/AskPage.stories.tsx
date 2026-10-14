@@ -1,6 +1,6 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { InTheme } from '../plugins/storyIcons';
-import { chinese } from '../storyLanguage';
+import { chinese } from '../design/storyLanguage';
 import { ASK_PLAN } from '../work/historyFixtures';
 import type { WorkDoor } from '../work/pausing';
 import {

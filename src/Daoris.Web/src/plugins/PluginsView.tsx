@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   usePickFolder, usePluginAction, usePluginInstall, usePluginNew, usePlugins, usePluginTry, usePluginUpdate,
-} from '../shell';
-import { sentence } from '../format';
-import { Drawer, failure, type Notify, useErrorNotify } from '../ui';
+} from '../bridge/shell';
+import { sentence } from '../locales/format';
+import { Drawer, failure, type Notify, useErrorNotify } from '../design/ui';
 import { type KitPoint, PluginKitCard, type PluginTrialResult } from './PluginKit';
 import type { PluginUpdatePlanShown } from './PluginUpdate';
 import type { Answered } from '../work/InlineConfirm';

@@ -2,7 +2,7 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { ComponentProps, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InTheme } from '../plugins/storyIcons';
-import { chinese } from '../storyLanguage';
+import { chinese } from '../design/storyLanguage';
 import { ClearAsk, type KeptDoors } from './ClearAsk';
 import { clearRefusal } from './history';
 import {

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Pill, SESSION_TONE, type ShownState } from '../ui';
+import { Pill, SESSION_TONE, type ShownState } from '../design/ui';
 import type { AskLine } from '../work/entries';
 
 /** A door into Sessions, in the accent, as the ask's other doors are. */

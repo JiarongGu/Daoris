@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { InTheme } from '../plugins/storyIcons';
-import { chinese } from '../storyLanguage';
+import { chinese } from '../design/storyLanguage';
 import { WorkflowHold } from './WorkflowHold';
 
 const meta: Meta<typeof WorkflowHold> = {

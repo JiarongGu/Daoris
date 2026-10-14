@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Icon, Menu, Tip } from '../ui';
+import { Icon, Menu, Tip } from '../design/ui';
 import { cn } from '../lib/cn';
 
 /** One terminal as its tab shows it. */

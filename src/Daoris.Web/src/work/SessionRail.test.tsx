@@ -22,7 +22,7 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => {},
 }));
 
-import type { OpenGroup } from '../opener';
+import type { OpenGroup } from '../app/opener';
 import { SessionRail } from './SessionRail';
 
 const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();

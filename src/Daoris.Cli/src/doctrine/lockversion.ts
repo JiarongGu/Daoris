@@ -1,4 +1,4 @@
-import type { Lock } from '../platform/types.ts';
+import type { Lock } from './records.ts';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { readText } from '../platform/fsx.ts';

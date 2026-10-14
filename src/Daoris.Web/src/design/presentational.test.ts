@@ -1,0 +1,224 @@
+import { describe, expect, it } from 'vitest';
+import { rooted } from '../test/sources';
+
+/**
+ * **A molecule imports no hook** (D52 as amended) — the rule that makes every state of the working
+ * surface reachable by passing props, and therefore designable in Storybook and testable without a
+ * bridge. A component that fetches its own data has states only a running system can produce, and
+ * those are exactly the states nobody reviews.
+ *
+ * The rule is held here rather than by review because it breaks silently and one import at a time.
+ * `src/work/` is covered by default and an organism is exempted by NAME: a list of what may reach
+ * the data is a list someone must justify appending to, where a list of what may not is one someone
+ * forgets to append to.
+ */
+
+/** Modules that reach the service or the shell — every other presentational file must not. */
+const FORBIDDEN: { what: string; pattern: RegExp }[] = [
+  // `data/queries` since STRUCT5c (D166) moved it from the sources' top.
+  { what: "the query layer ('./queries')", pattern: /\bfrom\s+'(?:\.\.?\/)+(?:data\/)?queries'/ },
+  { what: "the shell bridge ('./shell')", pattern: /\bfrom\s+'(?:\.\.?\/)+shell'/ },
+  // Its domains, which `./shell` only re-exports since MOD3: without this row the rule is side-stepped
+  // by importing the file the barrel names.
+  { what: "a bridge domain ('./bridge/…')", pattern: /\bfrom\s+'(?:\.\.?\/)+bridge\// },
+  { what: 'react-query directly', pattern: /\bfrom\s+'@tanstack\/react-query'/ },
+  // The bridge ITSELF, not just this repository's wrapper around it (SURF7). Without this row the
+  // rule is trivially side-stepped by importing the library `./shell` is built on.
+  { what: "the bridge library ('@shenora/react')", pattern: /\bfrom\s+'@shenora\/react'/ },
+  // The window's chrome hook — the other shell-layer module, and the one that caught this gap out.
+  // The app strip briefly imported it for two constants and every check here stayed green, because
+  // **this check is per-file, not transitive**: it reads each source for a forbidden import and
+  // knows nothing about what that import's own module reaches. So the list has to name every
+  // shell-layer module by hand, and adding one is part of writing one.
+  { what: "the window chrome ('./windowChrome')", pattern: /\bfrom\s+'(?:\.\.?\/)+(?:app\/)?windowChrome'/ },
+];
+
+/**
+ * Organisms — allowed to hold a hook, because holding one for the molecules below them is their job.
+ * Adding a name here is the deliberate act; it is meant to be noticed in review.
+ */
+const ORGANISMS = new Set<string>([
+  './work/SessionConsole.tsx',
+  // The asks' organism (INT4c; FRAME1d): it holds the queries so the row, the page and the composer do not.
+  './asks/AsksPart.tsx',
+  './work/AttentionBand.tsx',
+  // The conversation's organism (D76, CONV2): it holds the record and the scroll, so the view,
+  // the tool card and the Markdown below it hold neither.
+  './work/SessionConversation.tsx',
+  './work/DetachedSession.tsx',
+  './work/DiffPane.tsx',
+  './work/MonitorWindow.tsx',
+  './work/SessionRail.tsx',
+  // The one owner of each act on a session (SESSUX1d, D126 §3.1): it holds the bridge's hooks, so the row, the list and
+  // the page header, which each press it, hold none.
+  './work/sessionActs.ts',
+  // The one owner of a pause, a resume and an abandon (PAUSE1e, D132 §7.1): it holds the bridge's hooks, so the ask's page,
+  // the quest's page and a session's header, which each press them, hold none.
+  './work/workActs.ts',
+  // The one owner of a clear (HIST1e, D153 §6.1): it holds the bridge's hook, so the quest's page, the ask's page and a
+  // workspace's Details, which each press it, hold none.
+  './work/historyActs.ts',
+  // The one owner of a review's presses (REVIEWENV1g, D154 point 8): it holds the service's and the bridge's hooks, so the
+  // gate, the quest's page and What needs you, which each press them, hold none.
+  './work/reviewActs.ts',
+  // The one owner of the second opinion's presses (XAGENT1g, D155 point 10): it holds the bridge's hooks, so the gate and What
+  // needs you, which each press them, hold none.
+  './work/opinionActs.ts',
+  './work/WorkFrame.tsx',
+  // Ask Daoris's organism (HELP1): it reads the machine, so the panel and the starters do not.
+  './help/AskDaoris.tsx',
+  // Ask Daoris's conversation (HELP1a): the newest help session's record and its composer.
+  './help/AskConversation.tsx',
+  // The machine as the queries answer it (SETUP1a, D97): one reading for the starters and the setup
+  // guide, so the panel, the guide and the steps below them hold no query.
+  './help/useMachine.ts',
+  // The Plugins view's organism (PLUGUI1b, D119): it holds the catalogue and the plugin's acts, so the list, the
+  // strip, the page and the offer's page below it hold none.
+  './plugins/PluginsView.tsx',
+  // The Agents place's organism (UX6e, D150 §5): it holds the roster, the accounts and every act on an agent, so the
+  // list, the strip, the page and an account's row below it hold none.
+  './agents/AgentsView.tsx',
+  // A workspace's page's organism (UX6g, D150 §4.3): it holds the driver's answers and every act on a workspace, so the
+  // page, its Details and its Setup below it hold none.
+  './projects/WorkspaceView.tsx',
+  // A repository's Branches and History parts (UX6h1, D150 §4.4), and a workspace's branch groups (UX6h2b2): they hold Git's
+  // reads, each drawn only while its tab shows, so the page, the tabs, the groups and the graph below them hold none.
+  './projects/RepositoryGitView.tsx',
+  // The views a place's activity opens, organisms since FRAME1f by standing at the sources' top above their folder's
+  // molecules, named here since STRUCT5c (D166) moved each into its folder: Search's and Convergence's queries, and
+  // Knowledge's view over the two.
+  './knowledge/SearchView.tsx',
+  './knowledge/ConvergenceView.tsx',
+  './knowledge/KnowledgeView.tsx',
+  // The map's view (MAP2): the workspace's wiring, so the drawing and the detail below it hold none.
+  './map/MapView.tsx',
+  // Quests' view (FRAME1d): the queries, so the list, a quest's page and its composer hold none.
+  './quests/QuestsView.tsx',
+  // Repositories' view (INT3c, FRAME1e): the registry and the driver, so the list, a repository's page and its rows hold
+  // none; and its drawers, which add, import and manage a repository with the service's and the shell's hooks.
+  './projects/ProjectsView.tsx',
+  './projects/ProjectManage.tsx',
+  // Settings' frame (AGT6, MOD4): the driver's state and the harness runs, around whichever domain is chosen.
+  './settings/SettingsView.tsx',
+  // A tool's runs, an install, an update or a sign-in (UX7b), and the sign-in on the row that asked for it: the shell's
+  // hooks, so the Agents place's rows and What needs you, which draw them, hold none.
+  './agents/harnessRuns.tsx',
+  './agents/SignIn.tsx',
+  // Settings → Get started (SETUP1a, D97): the organism over the guide, which reads the machine through `useMachine`.
+  './help/setupGuide.tsx',
+]);
+
+/**
+ * An organism, imported by a molecule, is the data reached one step removed (REV3): the output panel
+ * rendered the console organism itself, and every check above stayed green. A TYPE from an organism
+ * is only a shape, and is allowed.
+ */
+const organismRules = [...ORGANISMS].map((path) => {
+  const name = path.replace(/^.*\//, '').replace(/\.tsx?$/, '');
+  return {
+    what: `the organism ${name}`,
+    pattern: new RegExp(`^import\\s+(?!type\\s)[^;]*?from\\s+'(?:\\.\\.?\\/)+(?:[\\w-]+\\/)*${name}'`, 'm'),
+  };
+}).concat([
+  // Settings' domains, organisms by their name (below), and the list that imports every one of them.
+  { what: 'a Settings domain', pattern: /^import\s+(?!type\s)[^;]*?from\s+'(?:\.\.?\/)+(?:[\w-]+\/)*\w+Domain'/m },
+  { what: "the Settings domains' list", pattern: /^import\s+(?!type\s)[^;]*?from\s+'(?:\.\.?\/)+(?:settings\/)?domains'/m },
+]);
+
+/**
+ * **A Settings domain is an organism by its name** (MOD4): `settings/<Name>Domain.tsx` holds its
+ * domain's queries, as SettingsView did before each domain had a file, so the molecules beside it hold
+ * none; and `settings/domains.ts`, the list, imports every one. By name rather than listed here, so a new
+ * domain is added in the list alone — and `settings/domains.test.ts` holds that every file so named IS a
+ * registered domain, so the name cannot carry a molecule past this boundary.
+ */
+const SETTINGS_ORGANISM = /^\.\/settings\/(?:\w+Domain\.tsx|domains\.ts)$/;
+
+export function offenders(files: [path: string, source: string][]): string[] {
+  return files.flatMap(([path, source]) =>
+    [...FORBIDDEN, ...organismRules]
+      .filter((rule) => rule.pattern.test(source))
+      .map((rule) => `${path} imports ${rule.what}`));
+}
+
+// `map/` since MAP2: the map's drawing and detail are molecules, and MapView above them is the view.
+// `asks/` and `compose/` since INT4c: the ask's molecules, and the carry fields both composers share.
+// `settings/` since AGT6: Daoris's own AI, drawn from props — SettingsView above it holds the queries,
+// and since MOD4 each domain's own `<Name>Domain.tsx` does.
+// `projects/` since INT3c: the driver's row, drawn from props — ProjectsView above it holds the driver; since FRAME1e
+// the list and a repository's page too.
+// `help/` since HELP1: Ask Daoris's panel and its starters, drawn from props — AskDaoris holds the machine.
+// `links.tsx` since BRW7: the one place a link opens, told where by a context the application provides.
+// `plugins/` since PLUGUI1b: the Plugins view's list, strip and pages, drawn from props — PluginsView holds the catalogue.
+// `quests/` since FRAME1d: Quests' list, a quest's page and its composer, drawn from props — QuestsView holds the queries.
+// `knowledge/` since FRAME1f: Search's and Convergence's lists and pages, drawn from props — SearchView and
+// ConvergenceView hold the queries; since UX6i Knowledge's head and strip too, and KnowledgeView holds the two.
+// `update/` since UPDATE1: the update's banner, drawn from props — the application holds the update's hooks.
+// `menus/` since CTX1: the right-click menu and its one handler, handed the frame's doors — App and the secondary
+// window's root hold the bridge, so a surface that offers its acts reaches no data through it.
+// `agents/` since UX6e: the Agents place's list, strip, page and account rows, drawn from props — AgentsView holds the data.
+// `workflow/` since WORKFLOW1b: the Workflow tab and its chart, drawn from props — the Repositories view and a workspace's
+// page hold the answer.
+const sources = rooted(import.meta.glob('/src/{design/ui.tsx,design/links.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx},asks/**/*.{ts,tsx},compose/**/*.{ts,tsx},settings/**/*.{ts,tsx},projects/**/*.{ts,tsx},help/**/*.{ts,tsx},plugins/**/*.{ts,tsx},quests/**/*.{ts,tsx},knowledge/**/*.{ts,tsx},update/**/*.{ts,tsx},menus/**/*.{ts,tsx},agents/**/*.{ts,tsx},workflow/**/*.{ts,tsx}}', {
+  eager: true, query: '?raw', import: 'default',
+}) as Record<string, string>);
+
+const presentational = Object.entries(sources)
+  .filter(([path]) => !ORGANISMS.has(path) && !SETTINGS_ORGANISM.test(path) && !/\.(test|stories)\.tsx?$/.test(path));
+
+describe('the presentational boundary', () => {
+  it('catches an import it is meant to catch — the check itself, sabotaged', () => {
+    expect(offenders([['./work/SessionRow.tsx', "import { useSessions } from '../queries';\n"]]))
+      .toEqual(["./work/SessionRow.tsx imports the query layer ('./queries')"]);
+    expect(offenders([['./work/SessionRow.tsx', "import { useSessions } from '../data/queries';\n"]]))
+      .toEqual(["./work/SessionRow.tsx imports the query layer ('./queries')"]);
+    expect(offenders([['./work/AppStrip.tsx', "import { STRIP_HEIGHT } from '../app/windowChrome';\n"]]))
+      .toEqual(["./work/AppStrip.tsx imports the window chrome ('./windowChrome')"]);
+    expect(offenders([['./work/SessionRow.tsx', "import { useDriver } from '../shell';\n"]]))
+      .toHaveLength(1);
+    // The road around the barrel: the domain file it re-exports.
+    expect(offenders([['./work/SessionRow.tsx', "import { useDriver } from '../bridge/driver';\n"]]))
+      .toEqual(["./work/SessionRow.tsx imports a bridge domain ('./bridge/…')"]);
+    // The road around the wrapper: the library `./shell` is itself built on.
+    expect(offenders([['./work/SessionRow.tsx', "import { useShenora } from '@shenora/react';\n"]]))
+      .toEqual(["./work/SessionRow.tsx imports the bridge library ('@shenora/react')"]);
+    expect(offenders([['./work/SessionRow.tsx', "import type { Session } from '../api';\n"]]))
+      .toEqual([]);
+    // One step removed: an organism holds the hook, and importing it reaches the data all the same.
+    expect(offenders([['./work/frame.tsx', "import { SessionConsole } from '../SessionConsole';\n"]]))
+      .toEqual(['./work/frame.tsx imports the organism SessionConsole']);
+    expect(offenders([['./work/Row.tsx', "import type { AttentionDoors } from './AttentionBand';\n"]]))
+      .toEqual([]);
+    // A Settings domain is an organism by its name, and so is the list of them.
+    expect(offenders([['./settings/Lines.tsx', "import { DriverDomain } from './DriverDomain';\n"]]))
+      .toEqual(['./settings/Lines.tsx imports a Settings domain']);
+    expect(offenders([['./settings/Lines.tsx', "import { SETTINGS_DOMAINS } from './domains';\n"]]))
+      .toEqual(["./settings/Lines.tsx imports the Settings domains' list"]);
+    expect(offenders([['./settings/Lines.tsx', "import type { SettingsDomainProps } from './domains';\n"]]))
+      .toEqual([]);
+    expect(SETTINGS_ORGANISM.test('./settings/DriverDomain.tsx')).toBe(true);
+    expect(SETTINGS_ORGANISM.test('./settings/Lines.tsx')).toBe(false);
+  });
+
+  it('is looking at files at all — a vacuous boundary is a boundary that has stopped working', () => {
+    expect(presentational.length).toBeGreaterThan(0);
+  });
+
+  // WORKFLOW1b: the Workflow tab and its chart are molecules, so every state is a story's props (the workflow design §6.4).
+  it('holds the Workflow tab and its chart to it', () => {
+    const paths = presentational.map(([path]) => path);
+    expect(paths).toEqual(expect.arrayContaining(['./workflow/WorkflowTab.tsx', './workflow/WorkflowChart.tsx', './workflow/said.ts']));
+  });
+
+  // WORKFLOW1c: the run's view and its one line are molecules too, so every stage of a run is a story's props (design §7).
+  it("holds a run's view and its one line to it", () => {
+    const paths = presentational.map(([path]) => path);
+    expect(paths).toEqual(expect.arrayContaining([
+      './workflow/WorkflowRunView.tsx', './workflow/WorkflowLine.tsx', './workflow/runSaid.ts', './workflow/run.ts',
+    ]));
+  });
+
+  it('holds: no presentational component reaches the service or the shell', () => {
+    expect(offenders(presentational)).toEqual([]);
+  });
+});

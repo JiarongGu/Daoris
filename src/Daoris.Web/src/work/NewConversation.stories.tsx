@@ -2,9 +2,9 @@ import { type ReactNode, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AddProjectDrawer } from '../ProjectManage';
+import { AddProjectDrawer } from '../projects/ProjectManage';
 import { InTheme } from '../plugins/storyIcons';
-import { chinese } from '../storyLanguage';
+import { chinese } from '../design/storyLanguage';
 import { type CheckoutReader, NewConversation, type StartRepository } from './NewConversation';
 
 // *New conversation* (NEW1b, D162 point 1, the entry design §1): Sessions' main area while nothing is attended. Drawn in the

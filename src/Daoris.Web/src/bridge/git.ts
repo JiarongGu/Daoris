@@ -1,6 +1,6 @@
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 import { call } from './call';
 
 // Git's reads (GIT1d-b, D147 §2, D150): the screen's door to `daoris-driver git`, the same reads over the same checkouts, for

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import '../i18n';
+import '../locales/i18n';
 import { QuickAsk } from './QuickAsk';
 
 // DOCK1d: Ask Daoris's conversation in a box at the palette's place — VS Code's Quick Chat.

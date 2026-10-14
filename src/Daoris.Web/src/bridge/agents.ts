@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
-import { keys } from '../queries';
-import type { AccountPlace, AccountSettings, AccountSettingsChange, ToolDoor } from '../tools';
+import { keys } from '../data/queries';
+import type { AccountPlace, AccountSettings, AccountSettingsChange, ToolDoor } from '../agents/tools';
 import type { WiringAnswer } from '../map/wiring';
 import { call } from './call';
 

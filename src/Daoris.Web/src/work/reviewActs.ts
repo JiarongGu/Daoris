@@ -1,10 +1,10 @@
 import { useShenora } from '@shenora/react';
 import { useTranslation } from 'react-i18next';
-import type { Quest, QuestAction, SetUpRef } from '../api';
-import { sentence } from '../format';
-import { usePublishSetUpStep, useReviewVerdict } from '../queries';
-import { useNudge, useSay, useShowReviewAgain } from '../shell';
-import { failure, type Notify } from '../ui';
+import type { Quest, QuestAction, SetUpRef } from '../data/api';
+import { sentence } from '../locales/format';
+import { usePublishSetUpStep, useReviewVerdict } from '../data/queries';
+import { useNudge, useSay, useShowReviewAgain } from '../bridge/shell';
+import { failure, type Notify } from '../design/ui';
 import type { Answered } from './InlineConfirm';
 import { type ReviewState, skipOn } from './review';
 import type { ReviewGateActs } from './ReviewGate';

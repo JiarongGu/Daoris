@@ -18,7 +18,7 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => {},
 }));
 
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { DiffPane } from './DiffPane';
 import type { Answered } from './InlineConfirm';
 import type { DiscardOffer } from './groups';

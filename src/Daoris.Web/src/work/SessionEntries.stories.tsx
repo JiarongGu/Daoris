@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { chinese } from '../storyLanguage';
+import { chinese } from '../design/storyLanguage';
 import { entryFacts, listedSessions } from './entries';
 import { EVIDENCE_ASKS, EVIDENCE_ENTRIES, EVIDENCE_GROUPINGS, EVIDENCE_QUESTS, EVIDENCE_SESSIONS } from './entries.fixtures';
 import { PartsStrip } from './PartsStrip';

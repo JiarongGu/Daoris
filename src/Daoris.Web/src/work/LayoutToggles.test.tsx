@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render as rtlRender, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import '../i18n';
+import '../locales/i18n';
 import { LayoutToggles } from './LayoutToggles';
 
 // DOCK1c (SURF11): the region toggles on the strip, beside the window controls, as VS Code's are. D118

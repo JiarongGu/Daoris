@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Quest } from '../api';
-import { Button } from '../ui';
+import type { Quest } from '../data/api';
+import { Button } from '../design/ui';
 import { cn } from '../lib/cn';
 import { questName } from '../work/identity';
 import type { ChainStep } from './chain';

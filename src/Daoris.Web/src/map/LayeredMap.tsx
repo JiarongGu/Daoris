@@ -4,7 +4,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
-import { Icon, Menu, Tip } from '../ui';
+import { Icon, Menu, Tip } from '../design/ui';
 import { CARD_H, type Card, layoutLayers, lineKey, type Point, ROUND } from './layers';
 import {
   ASKS_DASH, AsksMark, CHAIN_DASH, chainOpen, Count, DependsLine, howMany, lineLabel, type MapSelection, sameSelection,

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Button } from '../ui';
+import { Button } from '../design/ui';
 
 /** The person's word on a staged build (UPDATE1, D139 §3), as `DAORIS.UPDATE` · `SET` takes it. */
 export type UpdateMode = 'when-idle' | 'now' | 'not-now';

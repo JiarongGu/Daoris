@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { clockOf } from '../format';
-import i18n from '../i18n';
+import { clockOf } from '../locales/format';
+import i18n from '../locales/i18n';
 import { code } from '../test/code';
 import { type Attention, type AttentionActs, AttentionRow } from './AttentionRow';
 

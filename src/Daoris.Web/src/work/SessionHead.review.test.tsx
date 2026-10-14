@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import i18n from '../i18n';
-import type { Session } from '../api';
+import i18n from '../locales/i18n';
+import type { Session } from '../data/api';
 import { STEP_REVIEWED, STEP_SHOWN } from './reviewFixtures';
 import { SessionHead } from './SessionHead';
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Quest, QuestStep, Session } from '../api';
+import type { Quest, QuestStep, Session } from '../data/api';
 import { buildChain } from './chain';
 
 // MAP1 (D67 §3, `docs/2026-09-23-map-design.md` §2): how the higher loop carried one piece of work —

@@ -1,4 +1,4 @@
-import type { EditAct } from '../commands';
+import type { EditAct } from './commands';
 import { isTextField } from './press';
 
 // The menu bar's Edit and Find (UX7a, D152 §3.2), as the window carries them out: a field's own acts on the field the

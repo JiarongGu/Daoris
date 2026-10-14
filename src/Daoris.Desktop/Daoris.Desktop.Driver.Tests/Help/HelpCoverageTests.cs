@@ -411,35 +411,35 @@ public sealed partial class HelpCoverageTests
     /// </remarks>
     private static readonly (string Where, string Hook, string? Action, Answer Answer)[] Starts =
     [
-        // The application's frame: the strip's opens, the index's refresh and Sync now.
-        ("App", "useOpenBrowser", null, OpensTheBrowser),
-        ("App", "useOpenWindow", null, OpensAWindow),
-        ("App", "useRefreshIndex", null, new Exempt(
+        // The application's frame, in `app/` (STRUCT5c): the strip's opens, the index's refresh and Sync now. The browser is
+        // opened from the main window's `App` and from the secondary window's root alike, one start by where it is pressed.
+        ("app", "useOpenBrowser", null, OpensTheBrowser),
+        ("app", "useOpenWindow", null, OpensAWindow),
+        ("app", "useRefreshIndex", null, new Exempt(
             "it reads the repositories again into the index and changes nothing of the work or the machine's settings, as reading "
             + "the roster again is exempt, so there is nothing to propose.")),
-        ("App", "useSyncNow", null, new Exempt(
+        ("app", "useSyncNow", null, new Exempt(
             "it runs now the pass with the workspace's remote that the loop's next tick runs anyway (SYNC6b), and changes nothing "
             + "the person has not set; whether a workspace syncs is its remote's wiring, the person's own (D89). It is not the "
             + "`sync` kind's door, which brings branches up to date (D109).")),
-        ("SecondaryWindowRoot", "useOpenBrowser", null, OpensTheBrowser),
 
-        // Quests: a quest's own page, and the list's presses.
-        ("QuestsView", "usePublishQuest", null, Own("quests",
+        // Quests: a quest's own page, and the list's presses, in `quests/QuestsView` (STRUCT5c).
+        ("quests", "usePublishQuest", null, Own("quests",
             "publishing a quest by hand is the person's own request to a repository, made on Quests beside the intake that "
             + "publishes from an ask (D65)")),
-        ("QuestsView", "useRespondQuest", "take", Own("quests",
+        ("quests", "useRespondQuest", "take", Own("quests",
             "taking a quest is its receiver's answer to it, given on the quest's own page")),
-        ("QuestsView", "useRespondQuest", "done", Own("quests",
+        ("quests", "useRespondQuest", "done", Own("quests",
             "saying a quest is done answers it with its work, on the quest's own page where that work is read")),
-        ("QuestsView", "useRespondQuest", "decline", new Exempt(
+        ("quests", "useRespondQuest", "decline", new Exempt(
             "declining a quest is the person's answer with their reason (D37), as *Decline…* is exempt (D126 §7.3); Ask Daoris "
             + "takes the person to the quest and never writes the reason.")),
-        ("QuestsView", "useAcceptQuest", null, new Door("accept", "accept")),
-        ("QuestsView", "useDeleteQuest", null, new Door("delete", "quest")),
-        ("QuestsView", "useRetryQuest", null, new Door("setting", "retry")),
-        ("QuestsView", "usePersonDone", null, PersonDone),
-        ("QuestsView", "useTrustFolder", null, TrustFolder),
-        ("QuestsView", "useDismissConflict", null, new Exempt(
+        ("quests", "useAcceptQuest", null, new Door("accept", "accept")),
+        ("quests", "useDeleteQuest", null, new Door("delete", "quest")),
+        ("quests", "useRetryQuest", null, new Door("setting", "retry")),
+        ("quests", "usePersonDone", null, PersonDone),
+        ("quests", "useTrustFolder", null, TrustFolder),
+        ("quests", "useDismissConflict", null, new Exempt(
             "it puts away a conflict the person has read, an operation that travels and changes no status of the quest or its "
             + "work (SYNC6c), as the banner's *Dismiss* is exempt, so there is nothing to propose.")),
 
@@ -773,6 +773,20 @@ public sealed partial class HelpCoverageTests
     ];
 
     private static string Page => Path.Combine(HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Web", "src");
+
+    /// <summary>
+    /// A page source read by its name wherever it lies under the page's folder (STRUCT5c, D166), as a driver source is read
+    /// (STRUCT1): the page's files moved into module folders, so a reader names the file and never its folder.
+    /// </summary>
+    private static string PageFile(string name)
+    {
+        // Matched by case too: Windows' search answers `test/projectsView.tsx` for `ProjectsView.tsx`.
+        var found = Directory.GetFiles(Page, name, SearchOption.AllDirectories)
+            .Where(file => string.Equals(Path.GetFileName(file), name, StringComparison.Ordinal))
+            .ToArray();
+        Assert.True(found.Length == 1, $"{name} is under the page's source {found.Length} times: a page file read by name is there once.");
+        return found[0];
+    }
 
     [Fact]
     public void Every_driver_verb_is_a_door_owed_or_exempt_with_its_reason()
@@ -1176,7 +1190,7 @@ public sealed partial class HelpCoverageTests
 
         Assert.Contains(ai, file => Path.GetFileName(file) == "queries.ts");
         Assert.DoesNotContain("useDeleteQuest", ai.SelectMany(Pressed));
-        Assert.Empty(Pressed(Path.Combine(Page, "queries.ts")));
+        Assert.Empty(Pressed(PageFile("queries.ts")));
         Assert.Contains(Presses(), press => press.Hook == "useRespondQuest");
     }
 
@@ -1503,7 +1517,7 @@ public sealed partial class HelpCoverageTests
     {
         var hooks = new Dictionary<string, (bool, IReadOnlyList<string>)>(StringComparer.Ordinal);
         foreach (var file in Directory.GetFiles(Path.Combine(Page, "bridge"), "*.ts").Where(file => !file.Contains(".test.", StringComparison.Ordinal))
-            .Append(Path.Combine(Page, "queries.ts")))
+            .Append(PageFile("queries.ts")))
         {
             var parts = TopLevel().Split(File.ReadAllText(file).Replace("\r\n", "\n"));
             // ENTRY1a: a hook that calls a helper of its own file that changes something changes something too: `useDeleteQuest`
@@ -1547,7 +1561,7 @@ public sealed partial class HelpCoverageTests
     /// <summary>
     /// ENTRY1a: every hook pressed on the page, by where: each source file but the tests, the stories, the test set-up and the
     /// files that define the hooks (<see cref="Pressed"/>), named by its folder under the page's source, or by its own name
-    /// at the root (`App`, `QuestsView`), so a start added anywhere is read, a Settings domain's files among them.
+    /// at the root (`main`), so a start added anywhere is read, a Settings domain's files among them.
     /// </summary>
     private static IReadOnlyList<(string Where, string Hook)> Presses()
     {
@@ -1582,10 +1596,10 @@ public sealed partial class HelpCoverageTests
     /// </summary>
     private static readonly (string Id, string File)[] Places =
     [
-        ("agents", Path.Combine("agents", "AgentsView")),
-        ("projects", "ProjectsView"),
+        ("agents", "AgentsView.tsx"),
+        ("projects", "ProjectsView.tsx"),
         // UX6j (D150 §2.3): Settings → Plugins retired into the Plugins place, whose view presses the same eight hooks.
-        ("plugins", Path.Combine("plugins", "PluginsView")),
+        ("plugins", "PluginsView.tsx"),
     ];
 
     /// <summary>
@@ -1606,7 +1620,7 @@ public sealed partial class HelpCoverageTests
 
         foreach (var (id, file) in Places)
         {
-            domains[id] = Closure(Path.GetFullPath(Path.Combine(Page, file)));
+            domains[id] = Closure(Path.GetFullPath(PageFile(file)));
         }
 
         // The registry was read: a domain it still lists (UX6g took Workspace and Permissions out of it).

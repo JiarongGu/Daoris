@@ -1,13 +1,13 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { ago } from '../format';
+import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
 import {
   type Channel, type ChannelItem, type ChannelPost, forEntry, lineWords, newestAt, repliesTo, repositoriesOf, sinceMark,
 } from '../work/channel';
 import { Refused } from '../work/InlineConfirm';
-import { Button, Icon, Pill, SelectField } from '../ui';
+import { Button, Icon, Pill, SelectField } from '../design/ui';
 
 /** How a post ended, as the composer hears it: `done` once the service kept it, `refused` with the service's code, which this page words. */
 export type ChannelAnswered = { done: () => void; refused: (code: string) => void };

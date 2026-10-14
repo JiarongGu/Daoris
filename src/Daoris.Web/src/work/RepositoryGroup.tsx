@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pill } from '../ui';
+import { Pill } from '../design/ui';
 
 /**
  * The rail's group header — one repository, and the sessions running in it.

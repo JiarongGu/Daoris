@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { Registration } from '../api';
+import type { Registration } from '../data/api';
 import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from '../work/layout';
 import { ListMore, ListPane } from '../work/ListPane';
 import { CJK, ELSEWHERE, ENGINE, GAME, MIRRORED, NEWBIE, UNDECLARED } from './fixtures';
