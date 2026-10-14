@@ -13,8 +13,8 @@ namespace Daoris.Driver;
 internal sealed class TreeFollows(TreeContext context)
 {
     /// <summary>
-    /// The prefix every session branch Daoris makes carries (<see cref="SessionTrees.OpenAsync"/>), the layout's name for a tree's
-    /// branch, and the only kind a removal takes. Here since PART10l-ii, the layout's answer being this class's.
+    /// The prefix every session branch Daoris makes carries (<see cref="SessionTrees.OpenAsync"/>): the layout's name for a tree's
+    /// branch, which this class answers, and the only kind a removal takes.
     /// </summary>
     internal const string SessionPrefix = "daoris/";
 

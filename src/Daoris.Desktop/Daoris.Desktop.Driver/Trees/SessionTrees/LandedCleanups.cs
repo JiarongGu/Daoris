@@ -110,7 +110,7 @@ public static class LandedWords
 /// The clean-up of the branches landings made (D88, WSR5; PART10l, out of <c>SessionTrees.Landed.cs</c>): the list, the press, and
 /// each recorded branch judged over the whole set. Over the trees' context, the pull request's asks (the look's one occasion), the
 /// content proof's keep and delete, the replay's record tidying, and the session branches' half of the clean-up
-/// (<see cref="TreeSweeps"/>, the front's until PART10l-ii).
+/// (<see cref="TreeSweeps"/>).
 /// </summary>
 internal sealed class LandedCleanups(
     TreeContext context, PullRequestAsks asks, ContentHolds content, BranchReplays replays, TreeSweeps sweeps)

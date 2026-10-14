@@ -20,7 +20,7 @@ namespace Daoris.Driver;
 /// decide. A count git cannot give keeps it. 🔴 git walks UP: a tree is asked only when it is a repository of its own, and a
 /// checkout only when it is the top of one (FIX-LOG).</para>
 ///
-/// <para>Its discard removes a tree through the removal (<see cref="TreeRemovals"/>), the front's until PART10l-ii.</para>
+/// <para>Its discard removes a tree through the removal (<see cref="TreeRemovals"/>).</para>
 /// </remarks>
 internal sealed class OnlyHereProof(TreeContext context, TreeRemovals removals)
 {
