@@ -82,6 +82,8 @@ public sealed class IntakeTests : IAsyncLifetime
         Assert.Equal($"ask #{ask.Id}", session.Repository);
         Assert.Equal("work", session.Workspace);
         Assert.Equal(ask.Id, session.Ask);
+        // SESSONE1a: the intake is the ask's own entry, read apart from its repositories' (D167 point 2).
+        Assert.Equal($"ask:{ask.Id}/intake", session.Entry);
         Assert.Equal(Trees.Normalize(Room()), session.Tree);
         Assert.Null(session.BaseCommit);
         Assert.Equal(ask.Id, (await _sessions.FindAsync(session.Id))!.Ask);

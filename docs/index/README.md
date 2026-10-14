@@ -117,12 +117,12 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Knowledge/KnowledgeService.cs` | 53 | 1055 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 105 | 1953 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 149 | 2685 |
-| `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 73 | 1364 |
-| `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 72 | 1276 |
+| `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 75 | 1392 |
+| `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 76 | 1319 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 100 | 1754 |
-| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 48 | 587 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 127 | 2208 |
+| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 48 | 591 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 128 | 2215 |
 | `src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs` | 44 | 839 |
 | `src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs` | 51 | 983 |
 | `src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs` | 47 | 817 |

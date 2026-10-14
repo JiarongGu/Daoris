@@ -1,0 +1,31 @@
+{
+  "about": "One ask over an app and its database, as the co-working design's section 3 replays it (SESSONE1a): two quests the ask asked, the requests the two repositories made of each other, the sessions that worked them. Repositories are neutral names.",
+  "ask": "c98a7e",
+  "quests": [
+    { "id": "28b052ac", "from": "ask #c98a7e", "to": "app" },
+    { "id": "3068f747", "from": "ask #c98a7e", "to": "db" },
+    { "id": "711d2524", "from": "db", "to": "app", "publishedBy": "283ef343" },
+    { "id": "01ba2c71", "from": "app", "to": "db", "publishedBy": "8eba4af2" },
+    { "id": "63df101b", "from": "db", "to": "app", "publishedBy": "e2ddbfc4" }
+  ],
+  "sessions": [
+    { "id": "a1b2c3d4", "repository": "ask #c98a7e", "ask": "c98a7e", "kind": "chat", "why": "the intake" },
+    { "id": "ce81a888", "repository": "app", "quest": "28b052ac", "why": "the first start, failed before its take" },
+    { "id": "62c005bc", "repository": "app", "quest": "28b052ac", "why": "the retry" },
+    { "id": "283ef343", "repository": "db", "quest": "3068f747", "why": "the database's session" },
+    { "id": "8eba4af2", "repository": "app", "quest": "711d2524", "why": "the app, for the database's request" },
+    { "id": "e2ddbfc4", "repository": "db", "quest": "01ba2c71", "why": "the database, for the app's request" },
+    { "id": "53416cea", "repository": "db", "quest": "3068f747", "why": "the database's resume once 711d2524 closed" },
+    { "id": "cf8faff5", "repository": "app", "quest": "63df101b", "why": "the app, for a later request of the database" }
+  ],
+  "entries": {
+    "a1b2c3d4": "ask:c98a7e/intake",
+    "ce81a888": "ask:c98a7e/app",
+    "62c005bc": "ask:c98a7e/app",
+    "283ef343": "ask:c98a7e/db",
+    "8eba4af2": "ask:c98a7e/app",
+    "e2ddbfc4": "ask:c98a7e/db",
+    "53416cea": "ask:c98a7e/db",
+    "cf8faff5": "ask:c98a7e/app"
+  }
+}

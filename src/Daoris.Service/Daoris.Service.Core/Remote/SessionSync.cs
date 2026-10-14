@@ -41,9 +41,13 @@ public static class SessionSync
         try
         {
             var changed = await store.OwnChangedSinceAsync(pushedThrough, circle, ct).ConfigureAwait(false);
-            var feed = changed
-                .Where(c => joined.Contains(c.Session.Repository))
-                .Select(c => new FedSessionRecord(
+            // SESSONE1a: the entry's key goes up with each record — the stored one, else the rule's for a record from before, which the
+            // team then groups as this machine does. Nothing is written back here.
+            var facts = new StoreEntryFacts(quests, store);
+            var feed = new List<FedSessionRecord>();
+            foreach (var c in changed.Where(c => joined.Contains(c.Session.Repository)))
+            {
+                feed.Add(new FedSessionRecord(
                     c.Session.Id, c.Session.Quest, c.Session.Repository, c.Session.Adapter, c.Session.StateName,
                     // Free text the driver wrote, cleaned of what is machine-local in it (REV3).
                     SessionNote.ForAnotherMachine(c.Session.Note, c.Session), c.Session.Evidence,
@@ -52,8 +56,10 @@ public static class SessionSync
                     // A limit names no account, so it goes up with the record (TOOL4c).
                     c.Session.Limit,
                     // The note's parts with it, every string cleaned as the note is (LANG1a).
-                    NoteParts.ForAnotherMachine(c.Session.NoteParts, c.Session)))
-                .ToList();
+                    NoteParts.ForAnotherMachine(c.Session.NoteParts, c.Session),
+                    await SessionEntries.KeyAsync(c.Session, facts, ct).ConfigureAwait(false)));
+            }
+
             if (feed.Count > 0)
             {
                 await remote.PushSessionsAsync(feed, ct).ConfigureAwait(false);
