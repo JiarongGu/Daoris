@@ -2,7 +2,6 @@
   "modules": ["Platform", "Composition", "Remote", "Registry", "Quests", "Asks", "Sessions", "Review", "Help", "Knowledge"],
   "testFolders": ["Mcp"],
   "root": {
-    "ServiceFactory.cs": "Composition",
     "Remote.cs": "Remote",
     "RemoteConfig.cs": "Remote",
     "QuestSync.cs": "Remote",
