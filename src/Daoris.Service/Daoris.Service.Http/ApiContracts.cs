@@ -344,7 +344,9 @@ public sealed record SaidWordResponse(
     string Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens, string? By = null, string? Helper = null);
 // MSG1a (D137 §5.3): what the person says to a parked or ended session. `Files` are the names of what they gave with it;
 // a path is cut to its name before it is kept.
-public sealed record SayRequest(string? Text, IReadOnlyList<string>? Files = null);
+// `Channel` (SESSONE2e, D167) is the id of the channel message the words are, which the channel already keeps on the ask:
+// absent, the door keeps them as before.
+public sealed record SayRequest(string? Text, IReadOnlyList<string>? Files = null, string? Channel = null);
 // The session as it stands, the ledger's sentence, and the word as kept (to this machine only).
 public sealed record SaidResponse(SessionResponse Session, string Message, SaidWordResponse? Said);
 // A say refused: the sentence as `error`, beside its word (`refusal`: `no-words`, `not-found`, `not-ours`, `intake`,

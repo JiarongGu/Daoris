@@ -299,8 +299,12 @@ public sealed record Session(
 /// and never the person's. Its own field, because every reader takes <paramref name="By"/> as an opinion's id; a record from
 /// before reads as it did.
 /// </param>
+/// <param name="Channel">
+/// The channel message these words came from (SESSONE2e, D167), or null: the channel keeps that message on the ask as its
+/// word kind <c>channel</c>, so the ask is not told of these words a second time. A record from before reads as null.
+/// </param>
 public sealed record SaidWord(
-    string Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens = false, string? By = null, string? Helper = null)
+    string Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens = false, string? By = null, string? Helper = null, string? Channel = null)
 {
     /// <summary>Whether the person said it: every word but another agent's, a reviewer's or a helper's.</summary>
     public bool Persons => By is null && Helper is null;
@@ -1254,7 +1258,8 @@ public sealed class SessionStore
                 var by = JsonFields.Text(element, "by") is { Length: > 0 } opinion ? opinion : null;
                 // MIXAGENT2a-i: the helper whose answer this is, its own field; absent is not a helper's.
                 var helper = JsonFields.Text(element, "helper") is { Length: > 0 } helped ? helped : null;
-                words.Add(new SaidWord(wordId, text, at, files, reopens, by, helper));
+                var channel = JsonFields.Text(element, "channel") is { Length: > 0 } carried ? carried : null;
+                words.Add(new SaidWord(wordId, text, at, files, reopens, by, helper, channel));
             }
 
             return words;
@@ -1287,6 +1292,7 @@ public sealed class SessionStore
         if (word.Reopens) writer.WriteBoolean("reopens", true);
         if (word.By is not null) writer.WriteString("by", word.By);
         if (word.Helper is not null) writer.WriteString("helper", word.Helper);
+        if (word.Channel is not null) writer.WriteString("channel", word.Channel);
         writer.WriteEndObject();
     }
 

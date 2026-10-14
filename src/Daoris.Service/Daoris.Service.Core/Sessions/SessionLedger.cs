@@ -571,8 +571,9 @@ public sealed class SessionLedger(
     /// once, words to an ended record once the session took them (<see cref="TakeSaidAsync"/>).</para>
     /// </remarks>
     /// <param name="files">What the person gave with the words: only each one's name is kept, never where it is.</param>
+    /// <param name="channel">The channel message the words are (SESSONE2e): kept on the word, so its door tells the ask nothing more.</param>
     public async Task<SessionSayOutcome> SayAsync(
-        string id, string? text, IReadOnlyList<string>? files, DateTimeOffset now, CancellationToken ct = default)
+        string id, string? text, IReadOnlyList<string>? files, DateTimeOffset now, CancellationToken ct = default, string? channel = null)
     {
         var words = text?.Trim() ?? "";
         if (words.Length == 0)
@@ -641,7 +642,7 @@ public sealed class SessionLedger(
                     Session: null);
             }
 
-            var word = new SaidWord(NewWordId(), words, now, Names(files), Reopens: !parked);
+            var word = new SaidWord(NewWordId(), words, now, Names(files), Reopens: !parked, Channel: channel);
             var (note, parts) = parked ? AnsweredNote(session, words) : (null, null);
             var kept = await sessions
                 .KeepSaidAsync(id, word, note, inside, noteParts: parts)
