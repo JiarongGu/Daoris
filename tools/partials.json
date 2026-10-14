@@ -61,10 +61,6 @@
     "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Workflow.cs",
     "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.cs"
   ],
-  "HistoryClearing": [
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/History/HistoryClearing.Home.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/History/HistoryClearing.cs"
-  ],
   "KnowledgeTools": [
     "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.GoAhead.cs",
     "src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.Help.Accept.cs",
