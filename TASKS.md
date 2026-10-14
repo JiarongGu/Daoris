@@ -285,7 +285,8 @@ folder.
 **Duplication** (the owner: *"we more focus on modularize the code to reduce duplication and easier to manage"*). Evidence: `docs/2026-10-14-duplication-survey.md`, by section. After FLAT1; DEDUP1 to 3 touch the same files, so one at a time.
 
 - [ ] **DEDUP2b — the moments, their second half** (driver, modules; after 2a). Quests, Review, Service, Sessions, Setup, Trees, Workflows and the Modules bridge. Survey §2.
-- [ ] **DEDUP3 — one way to write a JSON file** (driver, modules). A public `JsonFile` in `Platform/` (LF text with a trailing newline, one options object, its folder made, an atomic write) for about 65 sites: it fixes the seven written with CRLF on Windows and the plain writes past `AtomicFile`. Survey §3, §9.
+- [ ] **DEDUP3a — one way to write a JSON file, its first half** (driver). A public `JsonFile` in `Platform/` (LF text with a trailing newline, one options object, its folder made, an atomic write) for the sites in Accounts, Agents, Conversations, Help, Platform and Plugins, the CRLF writes and the plain writes past `AtomicFile` among them. Survey §3, §9.
+- [ ] **DEDUP3b — the JSON file writer, its second half** (driver, modules; after 3a and PART10f). Quests, Review, Service, Sessions, Setup, Trees, Workflows and the Modules project. Survey §3.
 - [ ] **DEDUP5 — the accounts' files share their helpers** (driver). One helper for the `Load`, `Key`, `Child`, `Text`, `Flag` and `Moment` that `AccountCooling`, `AccountNames`, `AccountReads` and `AccountWindows` copy; a small store for the eight gate-and-edit stores only where each one fits. Survey §5.
 - [ ] **DEDUP7 — text clipped, one-lined and quoted once** (driver, modules). `TextBounds` in `Platform/` for about 44 copies, each call keeping its own limit. Survey §7.
 
