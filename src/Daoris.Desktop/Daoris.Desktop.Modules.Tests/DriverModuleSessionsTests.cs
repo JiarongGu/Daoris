@@ -653,9 +653,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     [Fact]
     public void The_shells_loop_watches_the_requests_with_its_own_registry()
     {
-        var root = new DirectoryInfo(AppContext.BaseDirectory);
-        while (root is not null && !File.Exists(Path.Combine(root.FullName, "daoris.json"))) root = root.Parent;
-        var loop = File.ReadAllText(Path.Combine(root!.FullName, "src", "Daoris.Desktop", "Daoris.Desktop.Modules", "DriverLoop.cs"));
+        var loop = File.ReadAllText(SourceFiles.Module("DriverLoop.cs"));
 
         Assert.Contains("new SessionRequestWatch(homeDirectory, Processes, () => Service)", loop);
         Assert.True(

@@ -61,6 +61,7 @@ const SCANNERS = new Set([
 /** Each way a reader reads a desktop source by name, and the project it looks in when the call does not name one. */
 const BY_NAME: readonly { call: RegExp; project?: string }[] = [
   { call: /\bSourceFiles\.Driver\(\s*"([^"\\]+)"\s*\)/g, project: DRIVER },
+  { call: /\bSourceFiles\.Module\(\s*"([^"\\]+)"\s*\)/g, project: 'Daoris.Desktop.Modules' },
   { call: /\bSourceFiles\.Find\(\s*"([^"\\]+)"\s*,\s*"([^"\\]+)"\s*\)/g },
   { call: /\bdriverFile\(\s*'([^'\\]+)'\s*\)/g, project: DRIVER },
   { call: /\bdriverTestFile\(\s*'([^'\\]+)'\s*\)/g, project: DRIVER_TESTS },

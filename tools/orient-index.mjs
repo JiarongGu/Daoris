@@ -774,9 +774,10 @@ function pageCalls(ctx) {
  */
 function moduleHandlers(ctx) {
   const handlers = [];
-  for (const file of ctx.files.filter((path) => path.startsWith(MODULES) && /^[^/]+\.cs$/.test(path.slice(MODULES.length)))) {
+  // The library keeps its sources in module folders (STRUCT5a): a handler class is found at any depth, by its file name.
+  for (const file of ctx.files.filter((path) => path.startsWith(MODULES) && path.endsWith('.cs'))) {
     const lines = ctx.lines(file);
-    if (/^[A-Z][A-Za-z]*Routes\.cs$/.test(file.slice(MODULES.length))) {
+    if (/^[A-Z][A-Za-z]*Routes\.cs$/.test(file.slice(file.lastIndexOf('/') + 1))) {
       lines.forEach((line, i) => {
         const mark = /\[DriverRoute\("([A-Z][A-Z_]*)"\)\]/.exec(line);
         if (!mark) return;

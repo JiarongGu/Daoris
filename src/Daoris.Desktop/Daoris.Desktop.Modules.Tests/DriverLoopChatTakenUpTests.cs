@@ -74,20 +74,12 @@ public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
     [Fact]
     public void A_conversations_end_has_one_writer()
     {
-        var modules = Path.Combine(WorkspaceRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Modules");
-        var spelled = Directory.EnumerateFiles(modules, "*.cs")
+        var spelled = SourceFiles.All(SourceFiles.ModulesProject, "*.cs")
             .Where(path => File.ReadAllText(path).Contains("\"SESSION_ENDED\"", StringComparison.Ordinal))
             .Select(Path.GetFileName)
             .ToList();
 
         Assert.Equal(["DriverLoop.cs"], spelled);
-    }
-
-    private static string WorkspaceRoot()
-    {
-        var at = new DirectoryInfo(AppContext.BaseDirectory);
-        while (at is not null && !File.Exists(Path.Combine(at.FullName, "daoris.json"))) at = at.Parent;
-        return at?.FullName ?? throw new InvalidOperationException("no workspace root above the test binary");
     }
 
     /// <summary>
