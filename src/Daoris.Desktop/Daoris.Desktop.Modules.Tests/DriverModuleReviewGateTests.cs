@@ -21,7 +21,7 @@ public sealed class DriverModuleReviewGateTests
         var held = new ReviewGateState(ReviewStates.BeingSetUp,
             new ReviewDecision(ReviewLevels.SetUpStep, "local") { Repository = "web-app", Work = "q1", SetUpStep = step });
 
-        var answer = JsonSerializer.SerializeToElement(DriverModule.Waits(held), Camel);
+        var answer = JsonSerializer.SerializeToElement(TreesRoutes.Waits(held), Camel);
 
         Assert.Equal("being-set-up", answer.GetProperty("state").GetString());
         Assert.Equal("local", answer.GetProperty("environment").GetString());
@@ -35,7 +35,7 @@ public sealed class DriverModuleReviewGateTests
     [Fact]
     public void A_gate_that_lets_the_work_go_answers_nothing()
     {
-        Assert.Null(DriverModule.Waits(new ReviewGateState(ReviewStates.None, new ReviewDecision(ReviewLevels.Nothing, null))));
-        Assert.Null(DriverModule.Waits(new ReviewGateState(ReviewStates.Skipped, new ReviewDecision(ReviewLevels.Skip, null))));
+        Assert.Null(TreesRoutes.Waits(new ReviewGateState(ReviewStates.None, new ReviewDecision(ReviewLevels.Nothing, null))));
+        Assert.Null(TreesRoutes.Waits(new ReviewGateState(ReviewStates.Skipped, new ReviewDecision(ReviewLevels.Skip, null))));
     }
 }

@@ -361,7 +361,7 @@ public sealed class DriverLoop(
     /// </summary>
     public static string JudgedSignature(IEnumerable<OpinionJudged> judged) =>
         string.Join("\n", judged
-            .Where(each => DriverModule.WaitsOnPerson(each.Gate, each.Auto))
+            .Where(each => TreesRoutes.WaitsOnPerson(each.Gate, each.Auto))
             .Select(each => string.Join("\t", each.Session, each.Quest, each.Auto, each.Gate.State, each.Gate.Says))
             .OrderBy(line => line, StringComparer.Ordinal));
 

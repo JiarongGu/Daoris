@@ -20,7 +20,7 @@ public sealed class HelpSessionDoorTests : DriverModuleBridge
     {
         var proposal = new HelpProposal("p1", kind, door, "done1", null, null, null, "why", "h1", "proposed");
 
-        Assert.Equal(read, DriverModule.JudgedAgainstSessions([proposal]));
+        Assert.Equal(read, HelpRoutes.JudgedAgainstSessions([proposal]));
     }
 
     [Fact]

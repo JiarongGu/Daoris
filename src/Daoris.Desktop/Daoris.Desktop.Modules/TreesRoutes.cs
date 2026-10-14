@@ -9,8 +9,10 @@ namespace Daoris.Desktop;
 /// diff (SURF6), the files a composer offers (CONV4d), a file's preview (D111), discard (D51), landing
 /// (WSR1) and the hand-off (WSR5b).
 /// </summary>
-public sealed partial class DriverModule
+public sealed class TreesRoutes(DriverLoop loop)
 {
+    private readonly DriverLoop _loop = loop;
+
     // What a session actually did (SURF6, design §5). The evidence string says that work
     // happened; this says what it was. Desktop-only by construction, like the console: it is
     // read off a checkout, and only the machine holding one can answer at all.
@@ -754,7 +756,7 @@ public sealed partial class DriverModule
             return new { Session = id, Branch = (string?)plan.Branch, plan.Repository, plan.Plugin, plan.Problem, plan.PullRequest, plan.Commits };
         }
 
-        var handed = await HandAsync(trees, root, entry, named, cancellationToken);
+        var handed = await HandAsync(_loop, trees, root, entry, named, cancellationToken);
         return new
         {
             Session = id, Done = handed.Handed, handed.Message, Branch = (string?)handed.Branch,
@@ -765,7 +767,7 @@ public sealed partial class DriverModule
     }
 
     /// <summary>A repository's checkout here, from the registry — or null where it has none on this machine.</summary>
-    private static async Task<string?> CheckoutOfAsync(ServiceClient service, string repository, CancellationToken cancellationToken)
+    internal static async Task<string?> CheckoutOfAsync(ServiceClient service, string repository, CancellationToken cancellationToken)
     {
         var root = (await service.RegistryAsync(cancellationToken))
             .FirstOrDefault(row => string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase))?.Root;
@@ -774,13 +776,15 @@ public sealed partial class DriverModule
 
     /// <summary>
     /// The hand-off's press, which the review's button and Ask Daoris's card share (WSR5b): the plugin spoken
-    /// to, its word kept where the landing's own note is (D100), and the loop told to look again.
+    /// to, its word kept where the landing's own note is (D100), and the loop told to look again. A static over the loop,
+    /// which Help's doors reach by this class's name (PART10f).
     /// </summary>
-    private async Task<TreeHand> HandAsync(SessionTrees trees, string root, LandedBranch entry, string? plugin, CancellationToken cancellationToken)
+    internal static async Task<TreeHand> HandAsync(
+        DriverLoop loop, SessionTrees trees, string root, LandedBranch entry, string? plugin, CancellationToken cancellationToken)
     {
         var handed = await trees.HandAsync(root, entry, plugin, cancellationToken);
-        if (handed.Plugin is not null) _loop.Events.Keep(entry.Session, LandingRules.HandNote(handed), line => _loop.Output.Append(entry.Session, line));
-        _loop.Nudge();
+        if (handed.Plugin is not null) loop.Events.Keep(entry.Session, LandingRules.HandNote(handed), line => loop.Output.Append(entry.Session, line));
+        loop.Nudge();
         return handed;
     }
 }

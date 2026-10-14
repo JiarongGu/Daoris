@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Ask Daoris's history over the bridge (ASKHIST1, `DriverModule.Help.cs`): its conversations listed and searched, named,
+/// Ask Daoris's history over the bridge (ASKHIST1, `HelpRoutes.cs`): its conversations listed and searched, named,
 /// pinned, deleted through the one delete the window uses, and gone on in with the person's words through the one box's door.
 /// Kept on this machine only: the records the local host already keeps, the words this machine's own record, and what the
 /// person keeps of each a file beside them under the home. A local host stands in; nothing is spawned.
@@ -70,7 +70,7 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
         var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
         var listing = new HelpListing([new HelpConversation("h1", "completed") { Opening = "what is a workspace?" }], Total: 1, Next: null);
 
-        var answer = JsonSerializer.SerializeToElement(DriverModule.HistoryAnswer(listing), camel);
+        var answer = JsonSerializer.SerializeToElement(HelpRoutes.HistoryAnswer(listing), camel);
 
         Assert.Equal(HelpCommand.JsonFields, answer.GetProperty("conversations")[0].EnumerateObject().Select(field => field.Name));
         Assert.Equal(["conversations", "cut", "total", "next"], answer.EnumerateObject().Select(field => field.Name));

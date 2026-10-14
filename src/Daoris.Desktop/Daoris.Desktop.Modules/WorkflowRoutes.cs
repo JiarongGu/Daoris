@@ -144,7 +144,7 @@ public sealed class WorkflowRoutes(DriverLoop loop)
             run.At,
             run.Problem,
             // The workflow's wait, in the shape the Trees domain's landing gate answers it.
-            WorkflowGate = DriverModule.WorkflowWaits(run.WorkflowGate),
+            WorkflowGate = TreesRoutes.WorkflowWaits(run.WorkflowGate),
             Workflow = new { run.Current.Version, run.Current.StartHolds, Limits = limits,
                 Id = run.Process?.Named == true ? run.Process.Binding!.Workflow : null,
                 BoundVersion = run.Process?.Named == true ? run.Process.Binding!.Version : null },

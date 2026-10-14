@@ -104,10 +104,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleSessionsTests.cs` | 47 | 781 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/AgentsRoutes.cs` | 43 | 786 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs` | 51 | 921 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 64 | 1181 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Help.cs` | 55 | 950 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Trees.cs` | 44 | 786 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/HelpRoutes.cs` | 55 | 966 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/TreesRoutes.cs` | 44 | 790 |
 
 ### Service (`service`)
 

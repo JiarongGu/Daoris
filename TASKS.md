@@ -271,20 +271,20 @@ into priority since that will make the code better to develop"*; D166's note). N
 `docs/2026-10-12-code-structure-design.md` as amended. Moves are behaviour-preserving; new driver files go into their module's
 folder.
 
-- [ ] **STRUCT3OPLOOP — Review's opinion logic out of the loop** (driver; optional). `Loop/Driver.Opinion.cs`, `Driver.OpinionDelivery.cs` and `Driver.OpinionGate.cs` hold the pass, the delivery and the gate's look: what needs none of the loop's state moves into `Review/`, with no new ports. D166's STRUCT2g note.
+- [ ] **STRUCT3OPLOOP — Review's opinion logic out of the loop** (driver; optional). `Loop/Driver.Opinion.cs`, `Driver.OpinionDelivery.cs` and `Driver.OpinionGate.cs` hold the pass, the delivery and the gate's look: what needs none of the loop's state moves into `Review/`, with no new ports. D166's STRUCT2g note. After PART10m these are classes in `Loop/` holding the front for its run machinery; the structure gate's `loop` rule lets nothing outside `Loop/` name them, so moving them needs that machinery out of the front first.
 - [ ] **STRUCT5 — the other projects' folders** (modules/service/web/cli). Folders by domain, no layers (D166's note of 2026-10-14): `Modules` (the bridge per domain, browser, window, update), the service's core, the page's top folder and the CLI's `src/`, each with its gate; a row each when due. Design §7.
 
 **No partial type split by hand** (the owner: *"also I think we better not use partial class if we don't have auto-generated code"*; D166's note). Evidence: `docs/2026-10-14-partial-types-survey.md`. A class per domain or kind keeps one new door in one new file.
 
-- [ ] **PART10f — `DriverModule`: Trees, Agents and Help, and the type whole** (modules, driver; after 10e). The three largest, Help's doors onto the context, `partial` gone and cut from the gate's list. Survey "The large five, as scouted".
 - [ ] **PART10j — `SessionTrees`: the sync and the review ranges** (driver; Opus; after 10i). The 1,234-line sync as the line's sync, the branch replays and the review ranges, `PullRequestOccasionTests`' file read moved with it. Survey "The large five, as scouted".
 - [ ] **PART10k — `SessionTrees`: update, review, opinion, only-here and work** (driver; after 10j, since the update calls ten of the sync's privates). As classes over the shared context; who implements `IWorkTrees`. Survey "The large five, as scouted".
 - [ ] **PART10l — `SessionTrees`: tidying and landing, and the type whole** (driver; Opus; after 10j, 10k). Content holds, tidy, auto, removal; landed, squash, pull requests, hand and the core's land; the front's delegations, `partial` gone. Survey "The large five, as scouted".
-- [ ] **PART10m — the loop's `Driver`, scouted** (driver; last). Its parts that D166 places in Conversations, Quests and Review as classes over a loop context. Survey "Large".
+- [ ] **PART10m — the loop's `Driver`: a loop context, and the opinion and workflow parts as classes** (driver). `Driver.Opinion.cs`, `.OpinionDelivery.cs`, `.OpinionGate.cs` (with `OpinionLook`) and `.Workflow.cs` as classes in `Loop/` over a context of the front's per-look and settable state, each holding the front where it runs through the front's shared run machinery, as `ChatHandOver` holds the runner; no port. Survey "The loop's `Driver`, as scouted".
+- [ ] **PART10n — the loop's `Driver`: the go-on, hand-over, helper and intake parts, and the type whole** (driver; after 10m). `Driver.Continue.cs` (with `NativeWords`), `.HandOver.cs`, `.Helper.cs` and `.Intake.cs` as classes in `Loop/` over the same context; `partial` gone and the `Driver` entry cut from `tools/partials.json`. Survey "The loop's `Driver`, as scouted".
 
 **Duplication** (the owner: *"we more focus on modularize the code to reduce duplication and easier to manage"*). Evidence: `docs/2026-10-14-duplication-survey.md`, by section. After FLAT1; DEDUP1 to 3 touch the same files, so one at a time.
 
-- [ ] **DEDUP2c — the bridge's moments** (modules; after PART10f). `RulesRoutes`' two writes without the culture (~:110, 111) and `DriverModule.Trees.cs`'s five invariant ones (~:163, 177, 533, 620, 681) through `Moments`, left by DEDUP2b while the bridge moved. D166's DEDUP2b note.
+- [ ] **DEDUP2c — the bridge's moments** (modules; after PART10f). `RulesRoutes`' two writes without the culture (~:113, 114) and `TreesRoutes`' five invariant ones (~:166, 180, 536, 623, 684) through `Moments`, left by DEDUP2b while the bridge moved. D166's DEDUP2b note.
 - [ ] **DEDUP3b — the JSON file writer, its second half** (driver, modules; after 3a and PART10f). Quests, Review, Service, Sessions, Setup, Trees, Workflows and the Modules project. Survey §3.
 - [ ] **DEDUP7 — text clipped, one-lined and quoted once** (driver, modules). `TextBounds` in `Platform/` for about 44 copies, each call keeping its own limit. Survey §7.
 

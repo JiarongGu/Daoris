@@ -32,6 +32,12 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     public PickFile? PickFile { get; } = pickFile;
 
     /// <summary>
+    /// The one harness action running on this machine and the path that starts it (PART10f): Agents' routes and Ask Daoris's
+    /// doors share this instance, so they share its one slot.
+    /// </summary>
+    public AgentActions Actions { get; } = new(events, loop);
+
+    /// <summary>
     /// The folder holding the install's offers — Daoris's own example plugins, none installed until a press (PLUG9 d, D103).
     /// Null finds them beside the running application, else beside the home; a test names its own, since every test's home
     /// shares one parent. Set by <see cref="DriverModule"/>'s initializer after the handlers are built (PART10e), so a domain

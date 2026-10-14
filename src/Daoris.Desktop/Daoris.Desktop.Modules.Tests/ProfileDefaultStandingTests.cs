@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// LOOK2c: what sessions run as where a default was just set or cleared, which the Agents screen says after its press
-/// (<see cref="DriverModule.DefaultStanding"/>). The terminal's <c>daoris agent profile default … [--clear]</c> prints the
+/// (<see cref="AgentsRoutes.DefaultStanding"/>). The terminal's <c>daoris agent profile default … [--clear]</c> prints the
 /// same fact from the same resolution: an account, the machine's default a workspace falls back to, or the agent's own
 /// configuration home. Found by LEFT3: the tool's own row's *use for a workspace* clears that workspace's entry, and with
 /// a machine default set its sessions run as that default, not in the tool's own home.
@@ -38,7 +38,7 @@ public sealed class ProfileDefaultStandingTests
                 : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["claude-code"] = "work" },
             new(StringComparer.OrdinalIgnoreCase) { ["aurora"] = new(StringComparer.OrdinalIgnoreCase) { ["claude-code"] = "lab" } });
 
-        var standing = DriverModule.DefaultStanding(DriverModule.DefaultEdited(before, "claude-code", profile, workspace), "claude-code", workspace);
+        var standing = AgentsRoutes.DefaultStanding(AgentsRoutes.DefaultEdited(before, "claude-code", profile, workspace), "claude-code", workspace);
 
         Assert.True(standing.Account == account, $"{why}: {standing.Account}");
         Assert.True(standing.From == from, $"{why}: {standing.From}");

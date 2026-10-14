@@ -24,8 +24,8 @@ public sealed class HelpWorkflowDoorTests : DriverModuleBridge
     {
         var proposal = new HelpProposal("p1", kind, door, "q1", null, null, null, "why", "h1", "proposed");
 
-        Assert.Equal(read, DriverModule.JudgedAgainstWorkflows([proposal]));
-        Assert.False(DriverModule.JudgedAgainstWorkflows([]));
+        Assert.Equal(read, HelpRoutes.JudgedAgainstWorkflows([proposal]));
+        Assert.False(HelpRoutes.JudgedAgainstWorkflows([]));
     }
 
     [Fact]
@@ -36,8 +36,8 @@ public sealed class HelpWorkflowDoorTests : DriverModuleBridge
         Assert.True(WorkflowRunBindings.Bind(Home, binding));
         File.WriteAllText(Path.Combine(WorkflowRunBindings.FolderOf(Home), "q2.json"), "{broken");
 
-        Assert.Equal(["q1"], DriverModule.BoundRuns(Home).Select(run => run.Run));
-        Assert.Empty(DriverModule.BoundRuns(Path.Combine(Home, "nowhere")));
+        Assert.Equal(["q1"], HelpRoutes.BoundRuns(Home).Select(run => run.Run));
+        Assert.Empty(HelpRoutes.BoundRuns(Path.Combine(Home, "nowhere")));
     }
 
     [Fact]

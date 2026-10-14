@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Ask Daoris over the bridge (`DriverModule.Help.cs`, MOD5): its start and its proposals. The doors an
+/// Ask Daoris over the bridge (`HelpRoutes.cs`, MOD5): its start and its proposals. The doors an
 /// Apply goes through are `HelpDoorsTests`'.
 /// </summary>
 public sealed class DriverModuleHelpTests : DriverModuleBridge
@@ -63,7 +63,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
             Besides = new HelpSyncBesides([new HelpSyncUnfetched("engine", "fatal: Could not read from remote repository.", then, "ssh")], ["docs"]),
         };
 
-        var shown = JsonSerializer.SerializeToElement(DriverModule.SyncShown(looked), camel);
+        var shown = JsonSerializer.SerializeToElement(HelpRoutes.SyncShown(looked), camel);
 
         Assert.True(shown.GetProperty("looked").GetBoolean());
         Assert.Equal("engine:main", shown.GetProperty("rows")[0].GetProperty("key").GetString());
@@ -74,10 +74,10 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
                 line.GetProperty("reach").GetString()));
         Assert.Equal(["docs"], shown.GetProperty("apart").EnumerateArray().Select(name => name.GetString()));
 
-        var before = JsonSerializer.SerializeToElement(DriverModule.SyncShown(new HelpSyncPlan(false, [])), camel);
+        var before = JsonSerializer.SerializeToElement(HelpRoutes.SyncShown(new HelpSyncPlan(false, [])), camel);
         Assert.Empty(before.GetProperty("notFetched").EnumerateArray());
         Assert.Empty(before.GetProperty("apart").EnumerateArray());
-        Assert.Null(DriverModule.SyncShown(null));
+        Assert.Null(HelpRoutes.SyncShown(null));
     }
 
     /// <summary>
@@ -91,7 +91,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
         var plan = new HelpAcceptPlan("q3done00", "Stream the tiles", [new HelpDeparture(2, "keep it under", "it is under", "it cannot", "keep it under")]);
 
-        var shown = JsonSerializer.SerializeToElement(DriverModule.AcceptShown(plan), camel);
+        var shown = JsonSerializer.SerializeToElement(HelpRoutes.AcceptShown(plan), camel);
 
         Assert.Equal(("q3done00", "Stream the tiles"), (shown.GetProperty("quest").GetString(), shown.GetProperty("title").GetString()));
         var departure = Assert.Single(shown.GetProperty("departures").EnumerateArray());
@@ -99,7 +99,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
             (2, "keep it under", "it is under", "it cannot", "keep it under"),
             (departure.GetProperty("requirement").GetInt32(), departure.GetProperty("quote").GetString(), departure.GetProperty("check").GetString(),
                 departure.GetProperty("departed").GetString(), departure.GetProperty("words").GetString()));
-        Assert.Null(DriverModule.AcceptShown(null));
+        Assert.Null(HelpRoutes.AcceptShown(null));
     }
 
     /// <summary>
@@ -117,7 +117,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         var proposal = new HelpProposal("p1", "agent", door, " claude-code ", null, "work", null, "why", "h1", "proposed");
 
         var answer = JsonSerializer.SerializeToElement(
-            DriverModule.ApplyAnswer(proposal, new HelpApplied(applied, "told")),
+            HelpRoutes.ApplyAnswer(proposal, new HelpApplied(applied, "told")),
             new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
         var action = answer.GetProperty("harnessAction");
@@ -139,7 +139,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         var proposal = new HelpProposal("g1", "go", "go", "quests", null, null, null, "why", "h1", "proposed") { Item = item };
 
         var answer = JsonSerializer.SerializeToElement(
-            DriverModule.ApplyAnswer(proposal, new HelpApplied(true, "told") { Go = new HelpPlace("quests", null, null) { Item = item } }),
+            HelpRoutes.ApplyAnswer(proposal, new HelpApplied(true, "told") { Go = new HelpPlace("quests", null, null) { Item = item } }),
             new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
         var go = answer.GetProperty("go");
@@ -162,7 +162,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         var proposal = new HelpProposal("g2", "go", "go", "projects", workspace, null, null, "why", "h1", "proposed") { Part = part };
 
         var answer = JsonSerializer.SerializeToElement(
-            DriverModule.ApplyAnswer(proposal, new HelpApplied(true, "told") { Go = new HelpPlace("projects", null, part) { Workspace = workspace } }),
+            HelpRoutes.ApplyAnswer(proposal, new HelpApplied(true, "told") { Go = new HelpPlace("projects", null, part) { Workspace = workspace } }),
             new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
         var go = answer.GetProperty("go");
@@ -185,7 +185,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         var proposal = new HelpProposal("g3", "go", "go", "sessions", null, null, sentence, "why", "h1", "proposed") { Part = "new", Repository = repository };
 
         var answer = JsonSerializer.SerializeToElement(
-            DriverModule.ApplyAnswer(proposal, new HelpApplied(true, "told") { Go = new HelpPlace("sessions", null, "new") { Repository = repository, Sentence = sentence } }),
+            HelpRoutes.ApplyAnswer(proposal, new HelpApplied(true, "told") { Go = new HelpPlace("sessions", null, "new") { Repository = repository, Sentence = sentence } }),
             new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
         var go = answer.GetProperty("go");
@@ -197,7 +197,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
 
         // Any other go answers neither.
         var other = JsonSerializer.SerializeToElement(
-            DriverModule.ApplyAnswer(proposal, new HelpApplied(true, "told") { Go = new HelpPlace("quests", null, null) }),
+            HelpRoutes.ApplyAnswer(proposal, new HelpApplied(true, "told") { Go = new HelpPlace("quests", null, null) }),
             new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }).GetProperty("go");
         Assert.Equal(JsonValueKind.Null, other.GetProperty("repository").ValueKind);
         Assert.Equal(JsonValueKind.Null, other.GetProperty("sentence").ValueKind);
@@ -226,10 +226,10 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     {
         var proposal = new HelpProposal("p1", kind, kind, view, workspace, null, null, "why", "h1", "proposed") { Item = item };
 
-        Assert.Equal(records, DriverModule.JudgedAgainstRecords([proposal]));
-        Assert.Equal(sessions, DriverModule.JudgedAgainstSessions([proposal]));
-        Assert.False(DriverModule.JudgedAgainstRecords([]));
-        Assert.False(DriverModule.JudgedAgainstSessions([]));
+        Assert.Equal(records, HelpRoutes.JudgedAgainstRecords([proposal]));
+        Assert.Equal(sessions, HelpRoutes.JudgedAgainstSessions([proposal]));
+        Assert.False(HelpRoutes.JudgedAgainstRecords([]));
+        Assert.False(HelpRoutes.JudgedAgainstSessions([]));
     }
 
     /// <summary>
@@ -244,7 +244,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         var proposal = new HelpProposal("p11", "sync", "sync", null, null, null, null, "why", "h1", "proposed");
 
         var answer = JsonSerializer.SerializeToElement(
-            DriverModule.ApplyAnswer(proposal, new HelpApplied(false, "looked") { Stands = stands }),
+            HelpRoutes.ApplyAnswer(proposal, new HelpApplied(false, "looked") { Stands = stands }),
             new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
         Assert.Equal(stands, answer.GetProperty("stands").GetBoolean());

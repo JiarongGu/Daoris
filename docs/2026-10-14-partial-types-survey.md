@@ -117,3 +117,25 @@ branch judging and the replay. Texts read by name: `SessionTrees.cs`'s `s-{Guid}
 must not count as a door). The shape: a shared base (the git words, the worktrees, the scratch walk, the leftovers), the sync
 in three classes and its types in files, review and work classes, tidying classes, landing classes, the front keeping its
 callers' calls; extension methods and callers building new classes rejected, as in PART8.
+
+## The loop's `Driver`, as scouted (2026-10-14)
+
+`Loop/Driver.cs` (about 2,340 lines, a primary constructor of thirteen arguments built in `DriverWatch` and the host, and by
+about fifty tests) and eight parts, about 2,550 lines: `Workflow` (25), `HandOver` (111), `Continue` (639, with the
+top-level `NativeWords`), `Helper` (491), `Intake` (342), `Opinion` (251), `OpinionDelivery` (345, with the record
+`OpinionDelivery`) and `OpinionGate` (348, with the public static `OpinionLook`). Every part reads the per-look `_adapters`,
+`_servers` and `_catalog` the front sets at the top of `LookAsync`; Continue's three stores (`_conversations`, `_marks`,
+`_newSessions`) are read by the front too; tests set the init properties `Passes`, `OpinionGit`, `HelperPasses`,
+`HelperTrees` and `HelperChoices` after construction, so a part reads them at each use, never as a copy made at build. The
+real coupling is the front's run machinery, which Continue, Helper, Intake and Opinion each call (`Prepare`, `Connector`,
+`HandRules`, `HandedConnector`, `HoldAsync`, `Said`, the three `Account*` sayings): their four read-in-a-copy runs are near
+twins, a later deduplication. The parts call each other one way (the gate delivers, the delivery passes, the go-on reads
+the delivery's answers), with no cycle but through the front.
+
+The structure gate's `loop` rule lets nothing outside `Loop/` name a type declared in it, so a part placed in Conversations,
+Quests or Review could reach the front only through a port, which D166's narrowed note rejects for a layer's sake. The
+shape is therefore classes in `Loop/` over a loop context, each holding the front where it runs through the machinery, as
+`ChatHandOver` holds the runner; moving the opinion trio to `Review/` stays STRUCT3OPLOOP's, after the machinery leaves the
+front. Readers: `PullRequestOccasionTests` globs `Driver*.cs` in the project (~:117-131) and should be given the new files by
+name; `tools/partials.json`; comments in `WorkflowRunStart.cs` and `ChatGoOn.cs`. The parts call `SessionTrees` in the gate
+and the helper, which PART10k re-spells where it moves a static.
