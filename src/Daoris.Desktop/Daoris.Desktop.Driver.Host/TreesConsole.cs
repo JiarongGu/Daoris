@@ -309,7 +309,7 @@ internal static class TreesConsole
                 // is said as the review says it, and lands nothing again: the review offers no Accept there at all.
                 var landedBefore = trees.Recorded.Landing(session);
                 LandedReview? before = null;
-                var gone = SessionTrees.TreeGone(tree);
+                var gone = TreeFolders.TreeGone(tree);
                 if (landedBefore is not null)
                 {
                     var checkout = (await service.RegistryAsync().ConfigureAwait(false))

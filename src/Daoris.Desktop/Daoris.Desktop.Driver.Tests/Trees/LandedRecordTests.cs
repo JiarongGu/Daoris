@@ -409,11 +409,11 @@ public sealed class LandedRecordTests : IDisposable
     public void A_tree_is_gone_where_nothing_or_only_an_empty_folder_is_left()
     {
         var tree = Path.Combine(_home, "trees", "aurora", "engine", "s-1");
-        Assert.True(SessionTrees.TreeGone(null));
-        Assert.True(SessionTrees.TreeGone(tree));
+        Assert.True(TreeFolders.TreeGone(null));
+        Assert.True(TreeFolders.TreeGone(tree));
         Directory.CreateDirectory(tree);
-        Assert.True(SessionTrees.TreeGone(tree));
+        Assert.True(TreeFolders.TreeGone(tree));
         File.WriteAllText(Path.Combine(tree, ".git"), "gitdir: elsewhere\n");
-        Assert.False(SessionTrees.TreeGone(tree));
+        Assert.False(TreeFolders.TreeGone(tree));
     }
 }

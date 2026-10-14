@@ -63,7 +63,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
                     continue;
                 }
 
-                var key = SessionTrees.OpinionChain(chain, due.Quest);
+                var key = TreeGates.OpinionChain(chain, due.Quest);
                 var claim = $"{key}/{due.Repository}/{due.Occasion}";
                 // The landing's gate reads D154's review beside it, as every landing door does (XAGENT1g3): a review that answered what
                 // the opinion showed settles it. It moves no ask below, which read states the review never changes.
@@ -204,7 +204,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         }
 
         var tip = await ReviewGit.HeadAsync(due.Tree, ct).ConfigureAwait(false);
-        var root = await SessionTrees.CheckoutOfTreeAsync(due.Tree, ct).ConfigureAwait(false);
+        var root = await TreeGates.CheckoutOfTreeAsync(due.Tree, ct).ConfigureAwait(false);
         if (tip is null || root is null) return $"held  second opinion on {named}: git could not read its tree, and the next look tries again.";
 
         var start = occasion == OpinionRules.Steps
@@ -269,7 +269,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
             return $"opinion  second opinion {first.Id} is not delivered: no rule here names a reviewer for `{due.Repository}` any more.";
         }
 
-        var root = await SessionTrees.CheckoutOfTreeAsync(due.Tree, ct).ConfigureAwait(false) ?? "";
+        var root = await TreeGates.CheckoutOfTreeAsync(due.Tree, ct).ConfigureAwait(false) ?? "";
         var ask = new OpinionPassAsk(first.Occasion, first.Working, due.Repository, root, first.Base, first.Tip, rule)
         {
             Workspace = due.Workspace,

@@ -49,7 +49,7 @@ public sealed class TreesRoutes(DriverLoop loop)
         var trees = new SessionTrees(_loop.Home);
         // This machine's landing of the session, standing or a trace (D113): where its work went.
         var landing = trees.Recorded.Landing(id);
-        var gone = SessionTrees.TreeGone(tree);
+        var gone = TreeFolders.TreeGone(tree);
 
         // What the session's OWN tree holds that no commit does, read apart (REVIEWDIRTY1-a, D164 point 4); never for a conversation in
         // the person's checkout, whose uncommitted work is not knowably the session's (D49 §3).
@@ -197,7 +197,7 @@ public sealed class TreesRoutes(DriverLoop loop)
                 ("session", session));
         }
 
-        if (SessionTrees.TreeGone(tree))
+        if (TreeFolders.TreeGone(tree))
         {
             return Refusals.Because(
                 Refusals.SessionTreeGone,
@@ -284,7 +284,7 @@ public sealed class TreesRoutes(DriverLoop loop)
         var service = _loop.Service ?? throw NotReady();
 
         var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
-        if (!SessionTrees.TreeGone(tree) || new SessionTrees(_loop.Home).Recorded.Landing(id) is not { } landing)
+        if (!TreeFolders.TreeGone(tree) || new SessionTrees(_loop.Home).Recorded.Landing(id) is not { } landing)
         {
             return await PreviewAsync(id, tree, path, cancellationToken, _loop.Log);
         }

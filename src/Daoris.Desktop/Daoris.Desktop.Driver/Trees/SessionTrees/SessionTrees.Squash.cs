@@ -54,7 +54,7 @@ public sealed partial class SessionTrees
     /// </summary>
     /// <param name="cwd">A working tree of the repository: the session's own, or the registered root.</param>
     /// <param name="tip">The session branch's commit, read once by the caller.</param>
-    private async Task<LandedBranch?> SquashedHolderAsync(string cwd, string repository, string tip, CancellationToken ct)
+    internal async Task<LandedBranch?> SquashedHolderAsync(string cwd, string repository, string tip, CancellationToken ct)
     {
         var squashed = Recorded.All()
             .Where(entry => entry.Squashed is not null && string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))

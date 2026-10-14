@@ -176,7 +176,7 @@ public sealed class LandedReviewTests : LandedFixture
         await GitAsync(tree.Path, "add", "-A");
         await GitAsync(tree.Path, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "-m", "work");
         Assert.True((await trees.LandAsync(tree.Path, Subject)).Landed);
-        Assert.True(SessionTrees.TreeGone(tree.Path));
+        Assert.True(TreeFolders.TreeGone(tree.Path));
         // The person's checkout holds something else under that name now: the branch's copy is what is shown.
         await File.WriteAllTextAsync(Path.Combine(root, "shared.txt"), "the person's own\n");
         var status = await GitAsync(root, "status", "--porcelain");
