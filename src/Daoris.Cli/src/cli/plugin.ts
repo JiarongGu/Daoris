@@ -1,5 +1,5 @@
 import type { CliCommand } from '../platform/types.ts';
-import { commandPlugin } from '../plugins.ts';
+import { commandPlugin } from '../plugins/plugins.ts';
 
 export const command: CliCommand = {
   name: 'plugin',

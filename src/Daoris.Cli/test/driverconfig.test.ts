@@ -15,7 +15,7 @@ import {
 } from '../src/driver/opinions.ts';
 import { applyCommitEdit, commitFor, commitListed, commitRuleOf } from '../src/driver/commits.ts';
 import { applyHelperEdit, helperFor, helperListed, helperRuleOf } from '../src/driver/helpers.ts';
-import { MANIFEST, pluginsRoot, readPlugins } from '../src/plugins.ts';
+import { MANIFEST, pluginsRoot, readPlugins } from '../src/plugins/plugins.ts';
 import {
   applyWorkflowEdit, keptVersions, resolveWorkflow, workflowChoiceOf, type WorkflowChoiceEdit, type WorkflowTaskChoice,
 } from '../src/workflows/workflowchoice.ts';

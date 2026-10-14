@@ -8,7 +8,7 @@ import { readRemotes } from '../src/service/remotemap.ts';
 import {
   addKeyAccount, keyOf, profileHome, readHarnessSettings, writeHarnessSettings,
 } from '../src/agents/toolchain.ts';
-import { STATE_FILE, disablePlugin, readPluginState } from '../src/plugins.ts';
+import { STATE_FILE, disablePlugin, readPluginState } from '../src/plugins/plugins.ts';
 import { readDriverChoices, writeDriverChoices } from '../src/driver/driverconfig.ts';
 import { TOOLS_FILE, readTools, useSystem } from '../src/tools/tools.ts';
 import { captureError, makeFixture } from './_fixture.ts';

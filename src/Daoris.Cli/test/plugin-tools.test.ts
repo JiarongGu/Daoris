@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { DAORIS_OWN_TOOLS, MANIFEST, commandPlugin, pluginsRoot, readManifest, readPlugins } from '../src/plugins.ts';
+import { DAORIS_OWN_TOOLS, MANIFEST, commandPlugin, pluginsRoot, readManifest, readPlugins } from '../src/plugins/plugins.ts';
 import { TOOLS } from '../src/tools/tools.ts';
 import { driverRows, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';

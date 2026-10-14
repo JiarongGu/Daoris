@@ -14,7 +14,7 @@ import { createHash } from 'node:crypto';
 import { atName, findName, sameName } from '../platform/casefold.ts';
 import type { DriverChoices, LandingRule } from '../driver/driverconfig.ts';
 import { opinionFor } from '../driver/opinions.ts';
-import type { PluginCatalog } from '../plugins.ts';
+import type { PluginCatalog } from '../plugins/plugins.ts';
 import { normalizeWorkspace } from '../service/remotemap.ts';
 import { reviewFor } from '../driver/reviews.ts';
 

@@ -6,8 +6,8 @@ import { join } from 'node:path';
 import {
   MANIFEST, OFFERS_DIR, SOURCE_FILE, applyUpdate, commandPlugin, dataFolder, offersFolder, planUpdate, pluginsRoot,
   readNeeds, readOffers, readPluginSource,
-} from '../src/plugins.ts';
-import type { PluginSource } from '../src/plugins.ts';
+} from '../src/plugins/plugins.ts';
+import type { PluginSource } from '../src/plugins/plugins.ts';
 import { driverRows, driverTestFile } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 

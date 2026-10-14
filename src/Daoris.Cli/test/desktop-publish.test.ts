@@ -23,7 +23,7 @@ import { HOSTS, publishCommand } from '../../../tools/service-publish.mjs';
 // @ts-expect-error — untyped workspace tooling; see above
 import { renameHeld } from '../../../tools/fsx.mjs';
 import { resolveCanonRoot } from '../src/doctrine/canon.ts';
-import { OFFERS_DIR, readManifest } from '../src/plugins.ts';
+import { OFFERS_DIR, readManifest } from '../src/plugins/plugins.ts';
 import { BUILT_IN, BUILT_IN_LAYOUT, parseResources } from '../src/tools/resources.ts';
 import { INSTALL_BIN, installBin } from '../src/tools/tools.ts';
 import { makeFixture } from './_fixture.ts';

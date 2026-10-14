@@ -13,7 +13,7 @@
 
 import { DaorisError } from '../platform/errors.ts';
 import { atName, findName, sameName } from '../platform/casefold.ts';
-import type { PluginCatalog } from '../plugins.ts';
+import type { PluginCatalog } from '../plugins/plugins.ts';
 import { normalizeWorkspace } from '../service/remotemap.ts';
 import { TOOLCHAINS } from '../agents/toolchain.ts';
 

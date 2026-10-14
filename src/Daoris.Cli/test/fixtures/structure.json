@@ -2,7 +2,6 @@
   "modules": ["cli", "platform", "doctrine", "layout", "accounts", "agents", "tools", "service", "driver", "workflows", "plugins", "browser"],
   "entry": ["cli.ts"],
   "root": {
-    "plugins.ts": "plugins",
     "browser.ts": "browser"
   },
   "tests": {

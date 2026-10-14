@@ -22,7 +22,7 @@ import { flagValue } from '../platform/args.ts';
 import { atName } from '../platform/casefold.ts';
 import { DaorisError, type ExitCode } from '../platform/errors.ts';
 import { readText, writeTextAtomic } from '../platform/fsx.ts';
-import { readPlugins } from '../plugins.ts';
+import { readPlugins } from '../plugins/plugins.ts';
 import { normalizeWorkspace } from '../service/remotemap.ts';
 import { inScope, type CheckoutsReader } from '../driver/reviews.ts';
 import { writeDriverChoices, type DriverChoices } from '../driver/driverconfig.ts';

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import {
   API_VERSION, KNOWLEDGE_SERVER, MANIFEST, STATE_FILE, commandPlugin, dataFolder, disablePlugin,
   enablePlugin, isPluginId, pluginsRoot, readPluginState, readPlugins, reservedHarnesses, resolvable,
-} from '../src/plugins.ts';
+} from '../src/plugins/plugins.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 import { cliSource, SOURCES, sourcePaths } from './_sources.ts';
 
