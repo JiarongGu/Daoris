@@ -2,13 +2,6 @@
   "modules": ["Platform", "Composition", "Remote", "Registry", "Quests", "Asks", "Sessions", "Review", "Help", "Knowledge"],
   "testFolders": ["Mcp"],
   "root": {
-    "QuestReview.cs": "Review",
-    "QuestReviews.cs": "Review",
-    "SessionReview.cs": "Review",
-    "SessionReviews.cs": "Review",
-    "Opinions.cs": "Review",
-    "OpinionDesk.cs": "Review",
-    "OpinionStore.cs": "Review",
     "HelpAcceptProposalWriter.cs": "Help",
     "HelpAccountProposalWriter.cs": "Help",
     "HelpAgentProposalWriter.cs": "Help",
@@ -58,6 +51,10 @@
     "CodeMapWire.cs": "Knowledge"
   },
   "tests": {
+    "OpinionStoreTests.cs": "Review",
+    "ReviewStepFixture.cs": "Review",
+    "ReviewStepGuardTests.cs": "Review",
+    "ReviewStepTests.cs": "Review",
     "GoAheadFixture.cs": "Sessions",
     "GoAheadGoesOnTests.cs": "Sessions",
     "GoAheadTests.cs": "Sessions",
