@@ -95,4 +95,34 @@ internal sealed class ChatContext(
 
     /// <summary>One event into a conversation's record. Sent is what the person asked for; the record's failure is its own.</summary>
     public void Record(string sessionId, SessionEvent e) => Events.Keep(sessionId, e, say: null);
+
+    /// <summary>Whether this runner holds the conversation open, with its process or its turns.</summary>
+    public bool Holds(string sessionId) => Turned.ContainsKey(sessionId) || Talking.ContainsKey(sessionId);
+
+    /// <summary>The record read again, or null where the service did not answer: the first read's words then stand.</summary>
+    public async Task<PriorSession?> ReadAgainAsync(string sessionId, CancellationToken ct)
+    {
+        try
+        {
+            return await Service.RecordAsync(sessionId, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
+        {
+            return null;
+        }
+    }
+
+    /// <summary>A driver's line in a conversation: its console and its record.</summary>
+    public void Note(string sessionId, string text) => Note(sessionId, new Noted(text, []));
+
+    /// <summary>A driver's line in a conversation with its parts, where its writer coded it (CONVNOTE2g).</summary>
+    public void Note(string sessionId, Noted line)
+    {
+        Output?.Append(sessionId, line.Note);
+        Events.Keep(
+            sessionId,
+            new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts.Count > 0 ? line.Parts : null },
+            say: null);
+    }
 }
