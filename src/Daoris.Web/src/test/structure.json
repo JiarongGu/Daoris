@@ -97,15 +97,6 @@
     "ProjectsView.workflow.test.tsx": "projects",
     "ProjectManage.tsx": "projects",
 
-    "KnowledgeView.tsx": "knowledge",
-    "KnowledgeView.test.tsx": "knowledge",
-    "SearchView.tsx": "knowledge",
-    "SearchView.test.tsx": "knowledge",
-    "ConvergenceView.tsx": "knowledge",
-    "ConvergenceView.test.tsx": "knowledge",
-    "highlight.ts": "knowledge",
-    "highlight.test.ts": "knowledge",
-
     "MapView.tsx": "map",
     "MapView.test.tsx": "map",
 

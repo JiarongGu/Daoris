@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sentence } from './format';
-import { FindingList, type FindingsAnswer } from './knowledge/FindingList';
-import { FindingMainNotice, FindingPage } from './knowledge/FindingPage';
-import { convergenceFilters, type EntryReading, findingId, readingOf } from './knowledge/records';
-import { useConvergence, useEntries } from './queries';
-import { page } from './results';
-import { type Notify, useErrorNotify } from './ui';
-import { useDebounced } from './lib/useDebounced';
-import type { ViewLayout } from './work/ViewFrame';
+import { sentence } from '../format';
+import { FindingList, type FindingsAnswer } from './FindingList';
+import { FindingMainNotice, FindingPage } from './FindingPage';
+import { convergenceFilters, type EntryReading, findingId, readingOf } from './records';
+import { useConvergence, useEntries } from '../queries';
+import { page } from '../results';
+import { type Notify, useErrorNotify } from '../ui';
+import { useDebounced } from '../lib/useDebounced';
+import type { ViewLayout } from '../work/ViewFrame';
 
 /**
  * **The Convergence view** (D30; FRAME1f, D118 §2): what it hands the frame (D118 §5), its list pane and its main area.

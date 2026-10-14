@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { findingId } from './knowledge/records';
-import { code } from './test/code';
-import { chooseRow, knowledgeList, mainArea, modeChoice, pageTitled, showConvergence, switchTo } from './test/knowledgeViews';
+import { findingId } from './records';
+import { code } from '../test/code';
+import { chooseRow, knowledgeList, mainArea, modeChoice, pageTitled, showConvergence, switchTo } from '../test/knowledgeViews';
 
 // The view over a stubbed service, like SearchView's: the shapes the endpoint returns, no host. Since FRAME1f the view
 // is a list pane and a page (D118 §2): the similarity and the findings are the list, and the finding chosen is read in

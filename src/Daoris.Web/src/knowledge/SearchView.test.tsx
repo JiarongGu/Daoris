@@ -3,7 +3,7 @@ import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   chooseRow, knowledgeList, mainArea, modeChoice, pageTitled, showKnowledge, showSearch, switchTo,
-} from './test/knowledgeViews';
+} from '../test/knowledgeViews';
 
 // The view over a stubbed service, like QuestsView's: the shapes the endpoint returns, no host. Since FRAME1f the view
 // is a list pane and a page (D118 §2): the box, *local only* and the hits are the list, and the entry a hit names is

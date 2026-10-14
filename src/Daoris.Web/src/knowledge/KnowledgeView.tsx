@@ -1,12 +1,12 @@
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useConvergenceView } from './ConvergenceView';
-import { KnowledgeModes, KnowledgeStrip } from './knowledge/KnowledgeModes';
-import { type KnowledgeMode, readKnowledgeMode, storeKnowledgeMode } from './knowledge/modes';
+import { KnowledgeModes, KnowledgeStrip } from './KnowledgeModes';
+import { type KnowledgeMode, readKnowledgeMode, storeKnowledgeMode } from './modes';
 import { useSearchView } from './SearchView';
-import type { Notify } from './ui';
-import type { ListPanes } from './work/listPanes';
-import type { ViewLayout } from './work/ViewFrame';
+import type { Notify } from '../ui';
+import type { ListPanes } from '../work/listPanes';
+import type { ViewLayout } from '../work/ViewFrame';
 
 /**
  * Knowledge's mode as the application holds it (UX6i, D150 §2.2): the one it was left in, remembered for the place, and

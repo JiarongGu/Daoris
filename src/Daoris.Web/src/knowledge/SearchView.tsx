@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sentence } from './format';
-import { EntryMainNotice, EntryPage } from './knowledge/EntryPage';
-import { HitList, type HitsAnswer } from './knowledge/HitList';
-import { answeredBy, readingOf, searchFilters } from './knowledge/records';
-import { useEntry, useSearch } from './queries';
-import { page } from './results';
-import { type Notify, useErrorNotify } from './ui';
-import { useDebounced } from './lib/useDebounced';
-import type { ViewLayout } from './work/ViewFrame';
+import { sentence } from '../format';
+import { EntryMainNotice, EntryPage } from './EntryPage';
+import { HitList, type HitsAnswer } from './HitList';
+import { answeredBy, readingOf, searchFilters } from './records';
+import { useEntry, useSearch } from '../queries';
+import { page } from '../results';
+import { type Notify, useErrorNotify } from '../ui';
+import { useDebounced } from '../lib/useDebounced';
+import type { ViewLayout } from '../work/ViewFrame';
 
 /**
  * **The Search view** (FRAME1f, D118 §2): what it hands the frame (D118 §5), its list pane and its main area. The list
