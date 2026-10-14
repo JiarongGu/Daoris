@@ -168,7 +168,7 @@ public sealed class SyncRecordsTests : IDisposable
     [InlineData("", null)]
     public void How_origin_is_reached_is_read_from_its_address(string url, string? reach)
     {
-        Assert.Equal(reach, SessionTrees.ReachOf(url));
+        Assert.Equal(reach, TreeRefs.ReachOf(url));
     }
 
     [Fact]

@@ -362,8 +362,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     }
 
     /// <summary>Whether <paramref name="path"/> is a tree this home opened — the only kind a landing rule reaches.</summary>
-    public bool Holds(string path) =>
-        Path.GetFullPath(path).StartsWith(Path.GetFullPath(TreesRoot) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+    public bool Holds(string path) => _context.Holds(path);
 
     /// <summary>
     /// What a press on this tree would do under its repository's landing rule (WSR1, D87): merge into

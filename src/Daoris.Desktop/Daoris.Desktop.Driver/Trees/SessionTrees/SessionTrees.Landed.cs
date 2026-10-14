@@ -150,7 +150,7 @@ public sealed partial class SessionTrees
     /// occasion said of its entry (the plugin not ready, or its bound reached first); else, on a row kept for want of D102's proof
     /// with nothing final kept, that no plugin pushed it and the rule names none. A row asked about, or not due, says nothing.
     /// </summary>
-    private PullRequestNotAsked? NotAskedOf(LandedItem item, IReadOnlyList<StateAnswer> asked, DriverConfig config)
+    internal PullRequestNotAsked? NotAskedOf(LandedItem item, IReadOnlyList<StateAnswer> asked, DriverConfig config)
     {
         var said = asked.LastOrDefault(answer => answer.Answer is null && answer.Failure is PullRequestCodes.Unready or PullRequestCodes.NotAsked
             && answer.Ask.Entry.GoneAt is null && string.Equals(answer.Ask.Entry.Branch, item.Branch, StringComparison.Ordinal)
@@ -183,7 +183,7 @@ public sealed partial class SessionTrees
         // The record of where session branches grew from drops what is gone (LAND3), this press's removals among them.
         foreach (var (repository, _, root) in known)
         {
-            if (!string.IsNullOrWhiteSpace(root) && Directory.Exists(root)) await ForgetGoneAsync(root, repository, ct).ConfigureAwait(false);
+            if (!string.IsNullOrWhiteSpace(root) && Directory.Exists(root)) await Replays.ForgetGoneAsync(root, repository, ct).ConfigureAwait(false);
         }
 
         var landed = await CleanLandedAsync(known, only, ct).ConfigureAwait(false);
@@ -196,7 +196,7 @@ public sealed partial class SessionTrees
     /// judged over the whole set and again right before it goes. Bringing a repository up to date presses this
     /// half alone (WSR6), after its rebases.
     /// </summary>
-    private async Task<List<LandedResult>> CleanLandedAsync(
+    internal async Task<List<LandedResult>> CleanLandedAsync(
         IReadOnlyList<(string Repository, string? Workspace, string? Root)> known, IReadOnlySet<string>? only, CancellationToken ct)
     {
         var results = new List<LandedResult>();
@@ -280,14 +280,16 @@ public sealed partial class SessionTrees
     private const string ChangedSince = "it changed since the list, and is kept";
 
     /// <summary>A landed branch as judged, and the commit it was judged at — the one a removal must still find.</summary>
-    private sealed record Judged(LandedItem Item, string Tip);
+    internal sealed record Judged(LandedItem Item, string Tip);
 
-    private static List<LandedBranch> EntriesOf(IReadOnlyList<LandedBranch> record, string repository) =>
+    // Internal for the sync's classes (PART10j), as are `NotAskedOf`, `CleanLandedAsync`, `JudgeLandedAsync`, the proof and its
+    // forms: interim, until PART10l makes the landing a class of its own.
+    internal static List<LandedBranch> EntriesOf(IReadOnlyList<LandedBranch> record, string repository) =>
         // A pattern under `daoris/` would make a session branch's name, which D88 already judges.
         [.. record.Where(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
                                   && !entry.Branch.StartsWith("daoris/", StringComparison.Ordinal))];
 
-    private static async Task<IReadOnlyList<string>> SessionBranchesAsync(string root, CancellationToken ct)
+    internal static async Task<IReadOnlyList<string>> SessionBranchesAsync(string root, CancellationToken ct)
     {
         var (code, refs, _) = await WorkingTree.GitAsync(
             root, ["for-each-ref", "--format=%(refname:short)", "refs/heads/daoris/"], ct).ConfigureAwait(false);
@@ -300,7 +302,7 @@ public sealed partial class SessionTrees
     /// </summary>
     /// <param name="staying">The session branches that stay: a landed branch one of them leans on stays too.</param>
     /// <param name="stale">Where a branch that is gone, or no longer the landing's, is named for the record to forget; null to only look.</param>
-    private async Task<List<Judged>> JudgeLandedAsync(
+    internal async Task<List<Judged>> JudgeLandedAsync(
         string root, string repository, string workspace, IReadOnlyList<LandedBranch> entries, IReadOnlyCollection<string> staying,
         List<string>? stale, CancellationToken ct)
     {
@@ -407,7 +409,7 @@ public sealed partial class SessionTrees
     /// One form of the line (D86) this checkout has: its name as a person reads it (<c>main</c>, <c>origin/main</c>), and the
     /// reference git is asked by. Never the short name to git (AUTOTIDY1): git reads a tag of that name before the branch.
     /// </summary>
-    private sealed record LineForm(string Name, string Ref)
+    internal sealed record LineForm(string Name, string Ref)
     {
         /// <summary>Its name, as every sentence says it.</summary>
         public override string ToString() => Name;
@@ -432,14 +434,14 @@ public sealed partial class SessionTrees
 
     /// <summary>What the proof found, before anything that keeps a branch is asked.</summary>
     /// <param name="Judgeable">Whether the branch may still be inside another: its line was read and its files compared.</param>
-    private sealed record Proof(string Kind, string? Where, IReadOnlyList<string> Files, string? Detail, int Commits, bool Judgeable);
+    internal sealed record Proof(string Kind, string? Where, IReadOnlyList<string> Files, string? Detail, int Commits, bool Judgeable);
 
     /// <summary>
     /// The proof by content (WSR5): the files the branch changed since it left the line — both paths of a
     /// rename, and a deletion as a path the line must not hold — compared as blobs with the line, in each of
     /// its forms. A commit of it the line holds already is merged, which needs no content.
     /// </summary>
-    private static async Task<Proof> ProveAsync(string root, string tip, string? line, IReadOnlyList<LineForm> forms, CancellationToken ct)
+    internal static async Task<Proof> ProveAsync(string root, string tip, string? line, IReadOnlyList<LineForm> forms, CancellationToken ct)
     {
         if (forms.Count == 0)
         {
@@ -500,7 +502,7 @@ public sealed partial class SessionTrees
     /// <c>--ignore-submodules=none</c> (SQUASHTIDY1c): <c>diff.ignoreSubmodules</c>, or a submodule's own <c>ignore</c> in its
     /// configuration, hides a gitlink's change from porcelain <c>git diff</c>, and a proof that cannot see a path calls it the same.
     /// </remarks>
-    private static async Task<IReadOnlyList<string>?> NamesAsync(string root, string from, string to, CancellationToken ct)
+    internal static async Task<IReadOnlyList<string>?> NamesAsync(string root, string from, string to, CancellationToken ct)
     {
         var (code, output, _) = await WorkingTree.GitAsync(
             root, ["diff", "--no-ext-diff", "--no-renames", "--ignore-submodules=none", "--name-only", "-z", from, to], ct).ConfigureAwait(false);

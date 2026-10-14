@@ -244,7 +244,7 @@ public static class GitBranches
         var landings = new LandedBranches(home).All();
         var grown = new SessionBranches(home).All();
         var present = repositories.Where(each => !string.IsNullOrWhiteSpace(each.Root) && Directory.Exists(each.Root)).ToList();
-        var read = await SessionTrees.AtMostAsync(present, ReadsAtOnce, async (each, token) =>
+        var read = await TreeRefs.AtMostAsync(present, ReadsAtOnce, async (each, token) =>
         {
             var workspace = RemoteTarget.Workspace(each.Workspace);
             var root = each.Root!;
