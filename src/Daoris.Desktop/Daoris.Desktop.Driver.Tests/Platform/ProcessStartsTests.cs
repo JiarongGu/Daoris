@@ -24,7 +24,9 @@ public sealed class ProcessStartsTests
     public void The_shared_gate_lets_four_start_at_once()
     {
         Assert.Equal(4, ProcessStarts.Bound);
-        Assert.Equal(ProcessStarts.Bound, ProcessStarts.Shared.Free);
+        // Its places, not its free ones: the suite's other classes start git through the shared gate in parallel, so how many
+        // are free at this moment is theirs to change (the merge's driver gate saw 3).
+        Assert.Equal(ProcessStarts.Bound, ProcessStarts.Shared.Places);
     }
 
     [Fact]

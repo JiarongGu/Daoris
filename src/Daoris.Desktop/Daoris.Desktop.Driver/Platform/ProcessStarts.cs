@@ -29,6 +29,9 @@ internal sealed class ProcessStarts(int bound, Func<ProcessStartInfo, Process?> 
 
     private readonly SemaphoreSlim _places = new(bound, bound);
 
+    /// <summary>How many places the gate has, free or taken.</summary>
+    internal int Places => bound;
+
     /// <summary>How many places are free now: the tests' window on the gate.</summary>
     internal int Free => _places.CurrentCount;
 
