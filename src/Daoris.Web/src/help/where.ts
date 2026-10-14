@@ -2,7 +2,7 @@ import type { Session } from '../data/api';
 import type { View } from '../menus/commands';
 import type { KnowledgeMode } from '../knowledge/modes';
 import type { SettingsSection } from '../settings/SettingsView';
-import { projectsItem, questsItem } from '../opener';
+import { projectsItem, questsItem } from '../app/opener';
 import { offerItem } from '../plugins/catalog';
 import { answeredPark } from '../design/ui';
 import type { ChoiceStanding } from '../work/listPanes';

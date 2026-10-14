@@ -1,10 +1,10 @@
-import type { AgentPart } from './agents/agents';
-import type { View } from './menus/commands';
-import type { StarterDoor } from './help/starters';
-import type { KnowledgeMode } from './knowledge/modes';
-import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './projects/tabs';
-import type { SettingsAnchor } from './settings/SettingsView';
-import { LIST_BOUNDS, type ListView } from './work/layout';
+import type { AgentPart } from '../agents/agents';
+import type { View } from '../menus/commands';
+import type { StarterDoor } from '../help/starters';
+import type { KnowledgeMode } from '../knowledge/modes';
+import type { ProjectTab, WorkspaceSection, WorkspaceTab } from '../projects/tabs';
+import type { SettingsAnchor } from '../settings/SettingsView';
+import { LIST_BOUNDS, type ListView } from '../work/layout';
 
 // The application's one opener (D118 §3i): every door into a view says what it opens — the palette, a
 // status item, a row of *What needs you*, a map's detail, a notification, Ask Daoris's go — and the view's

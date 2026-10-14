@@ -24,10 +24,10 @@ vi.mock('@shenora/react', async () => {
   };
 });
 
-import './locales/i18n';
+import '../locales/i18n';
 import { App } from './App';
-import { AT_START } from './help/setupGuide';
-import { WorkspaceScopeProvider } from './data/scope';
+import { AT_START } from '../help/setupGuide';
+import { WorkspaceScopeProvider } from '../data/scope';
 
 const TICKET = 'https://tickets.example/browse/T-1';
 

@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { CaptionButtonRect } from '@shenora/react';
 import { WindowCommands, useShenora, useWindowMaximized } from '@shenora/react';
-import { CAPTION_ATTRIBUTE, CAPTION_SLOTS } from './work/caption';
-import { effectiveDark, subscribeTheme } from './design/theme';
+import { CAPTION_ATTRIBUTE, CAPTION_SLOTS } from '../work/caption';
+import { effectiveDark, subscribeTheme } from '../design/theme';
 
-export { CAPTION_ATTRIBUTE, CAPTION_SLOTS, type CaptionSlot } from './work/caption';
+export { CAPTION_ATTRIBUTE, CAPTION_SLOTS, type CaptionSlot } from '../work/caption';
 
 // The window's own chrome, page side (SURF7 / D56). The strip that D56 built as a region becomes the
 // title bar: a drag on it moves the window, a still click does nothing, double-click maximizes it

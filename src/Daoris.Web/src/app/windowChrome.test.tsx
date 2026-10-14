@@ -48,9 +48,9 @@ vi.mock('@shenora/react', async () => {
   };
 });
 
-import './locales/i18n';
+import '../locales/i18n';
 import { CAPTION_ATTRIBUTE, CAPTION_SLOTS, captionRects, useWindowChrome } from './windowChrome';
-import { AppStrip, DRAG_DISTANCE, STRIP_SPACE } from './work/frame';
+import { AppStrip, DRAG_DISTANCE, STRIP_SPACE } from '../work/frame';
 
 /** A strip with three laid-out slots, as the real one has once the browser has measured it. */
 function strip(sizes: Partial<Record<string, DOMRect>> = {}): HTMLElement {

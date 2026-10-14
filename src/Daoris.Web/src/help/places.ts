@@ -1,7 +1,7 @@
 import type { AgentPart } from '../agents/agents';
 import type { View } from '../menus/commands';
 import type { KnowledgeMode } from '../knowledge/modes';
-import { askItem, questsItem, type OpenGroup } from '../opener';
+import { askItem, questsItem, type OpenGroup } from '../app/opener';
 import { offerItem } from '../plugins/catalog';
 import type { SettingsAnchor, SettingsSection } from '../settings/SettingsView';
 import type { StarterDoor } from './starters';

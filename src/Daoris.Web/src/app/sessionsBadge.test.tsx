@@ -26,13 +26,13 @@ vi.mock('@shenora/react', async () => {
   };
 });
 
-import './locales/i18n';
+import '../locales/i18n';
 import { App } from './App';
-import { keys } from './data/queries';
-import { AT_START } from './help/setupGuide';
-import { WorkspaceScopeProvider } from './data/scope';
-import type { RuleProposal } from './settings/AgentRules';
-import type { Consideration } from './data/signals';
+import { keys } from '../data/queries';
+import { AT_START } from '../help/setupGuide';
+import { WorkspaceScopeProvider } from '../data/scope';
+import type { RuleProposal } from '../settings/AgentRules';
+import type { Consideration } from '../data/signals';
 
 const base = { adapter: 'claude-code', created: '2026-10-01T09:00:00Z', updated: '2026-10-01T09:30:00Z', workspace: 'default' };
 

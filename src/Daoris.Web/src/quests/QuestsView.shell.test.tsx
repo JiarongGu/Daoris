@@ -24,7 +24,7 @@ vi.mock('@shenora/react', () => ({
 
 import { OverviewView } from '../overview/OverviewView';
 import { chooseRow, QuestsView } from '../test/questsView';
-import { ShellSignals } from '../ShellSignals';
+import { ShellSignals } from '../app/ShellSignals';
 import { keys } from '../data/queries';
 import { DRIVER_STATE, respond, show } from '../test/shellHarness';
 

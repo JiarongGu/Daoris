@@ -13,7 +13,7 @@ import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { useDebounced } from '../lib/useDebounced';
 import { offeredActs, type SessionActId } from './acts';
-import type { OpenGroup } from '../opener';
+import type { OpenGroup } from '../app/opener';
 import { endedToArchive, type SessionArrangement } from './groups';
 import { groupHeading, useBringGroup } from './ListPane';
 import { SessionRow } from './SessionRow';

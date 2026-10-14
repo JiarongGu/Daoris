@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { SessionConsole } from './SessionConsole';
 import { sentence } from '../locales/format';
 import { buildChain } from '../map/chain';
-import type { Compose, OpenGroup } from '../opener';
+import type { Compose, OpenGroup } from '../app/opener';
 import { useAnswerSession, useAsks, usePersonDone, useQuests, useRegistry, useSessions } from '../data/queries';
 import {
   type TurnStop, useCancelTurn, useEditQueued, useEndChat, useHarnesses, useResolveSession, useSendMessage,

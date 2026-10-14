@@ -4,7 +4,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../locales/i18n';
-import type { OpenGroup } from '../opener';
+import type { OpenGroup } from '../app/opener';
 import type { ListMode } from './layout';
 import { groupHeading, useBringGroup } from './ListPane';
 import { type ChoiceStanding, useListPanes } from './listPanes';

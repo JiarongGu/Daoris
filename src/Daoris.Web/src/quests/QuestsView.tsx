@@ -5,7 +5,7 @@ import { linksOf, toUpload } from '../compose/attachments';
 import { useAsksPart } from '../asks/AsksPart';
 import { sentence } from '../locales/format';
 import { buildChain } from '../map/chain';
-import { askItem, type OpenGroup, questsItem } from '../opener';
+import { askItem, type OpenGroup, questsItem } from '../app/opener';
 import {
   useAcceptQuest, useDeleteQuest, useDismissConflict, usePersonDone, usePublishQuest, useQuests, useRegistry, useRespondQuest,
   useSessions,

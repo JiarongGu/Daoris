@@ -4,9 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { App } from './App';
-import i18n from './locales/i18n';
-import { keys, useRefreshIndex, useRegistry } from './data/queries';
-import { WorkspaceScopeProvider } from './data/scope';
+import i18n from '../locales/i18n';
+import { keys, useRefreshIndex, useRegistry } from '../data/queries';
+import { WorkspaceScopeProvider } from '../data/scope';
 
 // The shell in BROWSER mode — no bridge, so nothing shell-only renders — over a stubbed service that
 // holds two circles. The switcher is global chrome (platform language §2: global state lives in

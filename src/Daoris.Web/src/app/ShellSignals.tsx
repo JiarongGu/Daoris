@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
-import { sentence } from './locales/format';
-import { keys } from './data/queries';
-import { useDriverReady } from './bridge/shell';
-import { type AccountWaitTick, type Consideration, type TrustHold, newsFrom } from './data/signals';
-import type { Notify } from './design/ui';
+import { sentence } from '../locales/format';
+import { keys } from '../data/queries';
+import { useDriverReady } from '../bridge/shell';
+import { type AccountWaitTick, type Consideration, type TrustHold, newsFrom } from '../data/signals';
+import type { Notify } from '../design/ui';
 
 type Tick = { events?: string[]; considered?: Consideration[]; untrusted?: TrustHold[]; waits?: AccountWaitTick[] };
 

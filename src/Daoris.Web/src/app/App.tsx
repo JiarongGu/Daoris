@@ -3,82 +3,82 @@ import { useTranslation } from 'react-i18next';
 import {
   useAsks, useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions,
   useStatus, useSyncStanding, useWorkspaceHoldings, useWorkspaces,
-} from './data/queries';
-import { useScope } from './data/scope';
-import { AskDaoris } from './help/AskDaoris';
-import type { AskOpening } from './help/AskConversation';
-import { QuickAsk } from './help/QuickAsk';
-import { ContextMenus } from './menus/ContextMenu';
-import { clipped, type ContextDoors, isTextField } from './menus/press';
-import { MainOffer, offerStore, useMainOffer } from './menus/mainOffer';
-import { fieldTracker, findTarget, runEdit } from './menus/editing';
-import { opensAtStart, setupProgress, setupSteps } from './help/setup';
-import { useMachine } from './help/useMachine';
-import { itemOf } from './help/where';
-import { useSetupAtStart } from './help/setupGuide';
-import { useFrameClosings } from './work/closings';
-import { type ListMode, type ListView, listToggled } from './work/layout';
-import { useListPanes } from './work/listPanes';
-import { usePlacements, viewsIn } from './work/placements';
-import { type LayoutRegion, LayoutToggles } from './work/LayoutToggles';
-import { commandForKey } from './menus/shortcuts';
-import { focusRegion } from './work/regions';
-import type { StarterDoor } from './help/starters';
+} from '../data/queries';
+import { useScope } from '../data/scope';
+import { AskDaoris } from '../help/AskDaoris';
+import type { AskOpening } from '../help/AskConversation';
+import { QuickAsk } from '../help/QuickAsk';
+import { ContextMenus } from '../menus/ContextMenu';
+import { clipped, type ContextDoors, isTextField } from '../menus/press';
+import { MainOffer, offerStore, useMainOffer } from '../menus/mainOffer';
+import { fieldTracker, findTarget, runEdit } from '../menus/editing';
+import { opensAtStart, setupProgress, setupSteps } from '../help/setup';
+import { useMachine } from '../help/useMachine';
+import { itemOf } from '../help/where';
+import { useSetupAtStart } from '../help/setupGuide';
+import { useFrameClosings } from '../work/closings';
+import { type ListMode, type ListView, listToggled } from '../work/layout';
+import { useListPanes } from '../work/listPanes';
+import { usePlacements, viewsIn } from '../work/placements';
+import { type LayoutRegion, LayoutToggles } from '../work/LayoutToggles';
+import { commandForKey } from '../menus/shortcuts';
+import { focusRegion } from '../work/regions';
+import type { StarterDoor } from '../help/starters';
 import {
   askItem, type Compose, doorOpening, type OpenGroup, type Opening, type OpenPart, opening as plannedOpening, questsItem, workspaceItem,
 } from './opener';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
-import { Drawer, failure, Prose, SESSION_ACTIVE, Toasts, useToasts } from './design/ui';
-import { OverviewView } from './overview/OverviewView';
-import { useKnowledgeMode, useKnowledgeView } from './knowledge/KnowledgeView';
-import { MapView } from './map/MapView';
-import { useQuestsView } from './quests/QuestsView';
-import { useProjectsView } from './projects/ProjectsView';
+import { Drawer, failure, Prose, SESSION_ACTIVE, Toasts, useToasts } from '../design/ui';
+import { OverviewView } from '../overview/OverviewView';
+import { useKnowledgeMode, useKnowledgeView } from '../knowledge/KnowledgeView';
+import { MapView } from '../map/MapView';
+import { useQuestsView } from '../quests/QuestsView';
+import { useProjectsView } from '../projects/ProjectsView';
 import {
   type ProjectTab, readProjectTab, readWorkspaceTab, storeProjectTab, storeWorkspaceTab, type WorkspaceSection, type WorkspaceTab,
-} from './projects/tabs';
-import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from './settings/SettingsView';
+} from '../projects/tabs';
+import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from '../settings/SettingsView';
 import { ShellSignals } from './ShellSignals';
 import {
   logEvent, useConsidered, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
   useRules, useSayUpdate, useSessionGroups, useShowReviewAgain, useSyncNow, useUntrusted, useUpdateState,
-} from './bridge/shell';
-import { byTool } from './agents/tools';
-import { UpdateBanner } from './update/UpdateBanner';
-import { LinkOpener } from './design/links';
-import { BrowserDoor } from './work/BrowserDoor';
-import { browserDrivers } from './work/browserDrivers';
-import { ReviewChip } from './work/ReviewChip';
-import { newestSetUp, setUpRef } from './work/review';
-import { useReviewActs } from './work/reviewActs';
-import { menuRows } from './work/appMenus';
-import { KeyboardShortcuts } from './work/KeyboardShortcuts';
-import { offeredActs } from './work/acts';
-import { SyncStatus } from './work/SyncStatus';
-import { MONITOR_WINDOW } from './work/window';
-import { WorkFrame } from './work/WorkFrame';
-import { ViewFrame, type ViewLayout } from './work/ViewFrame';
-import { ViewMain } from './work/ViewMain';
-import { type AttentionDoors, useAccountsKnown } from './work/AttentionBand';
-import type { Attention } from './work/AttentionRow';
-import { needsAPerson, waitingInSessions } from './work/attention';
-import { ActivityBar, AppStrip, type DriverPresence, StatusBar } from './work/frame';
+} from '../bridge/shell';
+import { byTool } from '../agents/tools';
+import { UpdateBanner } from '../update/UpdateBanner';
+import { LinkOpener } from '../design/links';
+import { BrowserDoor } from '../work/BrowserDoor';
+import { browserDrivers } from '../work/browserDrivers';
+import { ReviewChip } from '../work/ReviewChip';
+import { newestSetUp, setUpRef } from '../work/review';
+import { useReviewActs } from '../work/reviewActs';
+import { menuRows } from '../work/appMenus';
+import { KeyboardShortcuts } from '../work/KeyboardShortcuts';
+import { offeredActs } from '../work/acts';
+import { SyncStatus } from '../work/SyncStatus';
+import { MONITOR_WINDOW } from '../work/window';
+import { WorkFrame } from '../work/WorkFrame';
+import { ViewFrame, type ViewLayout } from '../work/ViewFrame';
+import { ViewMain } from '../work/ViewMain';
+import { type AttentionDoors, useAccountsKnown } from '../work/AttentionBand';
+import type { Attention } from '../work/AttentionRow';
+import { needsAPerson, waitingInSessions } from '../work/attention';
+import { ActivityBar, AppStrip, type DriverPresence, StatusBar } from '../work/frame';
 import { useWindowChrome } from './windowChrome';
 import {
   type Command, type CommandDoors, type CommandState, commandTable, type FrameIntent, listOf, MENUS, paletteCommands, shortcutGroups,
   type View, VIEWS,
-} from './menus/commands';
-import { CommandPalette } from './work/CommandPalette';
-import { CommandCenter } from './work/CommandCenter';
-import { AppMenuBar, type BarMenu, focusMenuBar, useMenuFold } from './work/AppMenu';
-import { useThemeChoice } from './design/theme';
-import { rememberedDomain, SETTINGS_DOMAINS } from './settings/domains';
-import { store, stored } from './lib/stored';
-import { figure } from './locales/format';
-import { HarnessRuns } from './agents/harnessRuns';
-import { usePluginsView } from './plugins/PluginsView';
-import { useAgentsView, useAgentsWaiting } from './agents/AgentsView';
-import type { AgentPart } from './agents/agents';
+} from '../menus/commands';
+import { CommandPalette } from '../work/CommandPalette';
+import { CommandCenter } from '../work/CommandCenter';
+import { AppMenuBar, type BarMenu, focusMenuBar, useMenuFold } from '../work/AppMenu';
+import { useThemeChoice } from '../design/theme';
+import { rememberedDomain, SETTINGS_DOMAINS } from '../settings/domains';
+import { store, stored } from '../lib/stored';
+import { figure } from '../locales/format';
+import { HarnessRuns } from '../agents/harnessRuns';
+import { usePluginsView } from '../plugins/PluginsView';
+import { useAgentsView, useAgentsWaiting } from '../agents/AgentsView';
+import type { AgentPart } from '../agents/agents';
 
 /** The views are `commands.ts`'s one list (D66); the activity bar and the palette read the same. */
 type Tab = View;

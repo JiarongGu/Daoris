@@ -4,7 +4,7 @@ import { type Ask, canBeAsked, type Quest } from '../data/api';
 import { linksOf, toUpload } from '../compose/attachments';
 import { NO_CARRY } from '../compose/carry';
 import { sentence } from '../locales/format';
-import { askItem } from '../opener';
+import { askItem } from '../app/opener';
 import {
   useAnswerGoAhead, useAsk, useAsks, useChooseAskReview, useChooseAskWorkflow, useCloseAsk, useDeleteAsk, usePublishAsk, useRegistry, useSessions,
 } from '../data/queries';

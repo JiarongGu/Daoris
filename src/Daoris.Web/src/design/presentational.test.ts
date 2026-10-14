@@ -30,7 +30,7 @@ const FORBIDDEN: { what: string; pattern: RegExp }[] = [
   // **this check is per-file, not transitive**: it reads each source for a forbidden import and
   // knows nothing about what that import's own module reaches. So the list has to name every
   // shell-layer module by hand, and adding one is part of writing one.
-  { what: "the window chrome ('./windowChrome')", pattern: /\bfrom\s+'(?:\.\.?\/)+windowChrome'/ },
+  { what: "the window chrome ('./windowChrome')", pattern: /\bfrom\s+'(?:\.\.?\/)+(?:app\/)?windowChrome'/ },
 ];
 
 /**
@@ -172,6 +172,8 @@ describe('the presentational boundary', () => {
       .toEqual(["./work/SessionRow.tsx imports the query layer ('./queries')"]);
     expect(offenders([['./work/SessionRow.tsx', "import { useSessions } from '../data/queries';\n"]]))
       .toEqual(["./work/SessionRow.tsx imports the query layer ('./queries')"]);
+    expect(offenders([['./work/AppStrip.tsx', "import { STRIP_HEIGHT } from '../app/windowChrome';\n"]]))
+      .toEqual(["./work/AppStrip.tsx imports the window chrome ('./windowChrome')"]);
     expect(offenders([['./work/SessionRow.tsx', "import { useDriver } from '../shell';\n"]]))
       .toHaveLength(1);
     // The road around the barrel: the domain file it re-exports.

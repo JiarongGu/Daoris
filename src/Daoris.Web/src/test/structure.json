@@ -8,23 +8,5 @@
     "locales/say.test.ts": "the say refusals' codes as the catalogues word them, a twin of the driver's, not work/say.ts's"
   },
   "root": {
-    "App.tsx": "app",
-    "App.test.tsx": "app",
-    "SecondaryWindowRoot.tsx": "app",
-    "ShellSignals.tsx": "app",
-    "ShellSignals.test.tsx": "app",
-    "WorkspaceSwitcher.tsx": "app",
-    "WorkspaceSwitcher.test.tsx": "app",
-    "WorkspaceSwitcher.stories.tsx": "app",
-    "windowChrome.ts": "app",
-    "windowChrome.test.tsx": "app",
-    "opener.ts": "app",
-    "opener.test.ts": "app",
-    "browserDoor.test.tsx": "app",
-    "listDoors.test.tsx": "app",
-    "rememberedChoice.test.tsx": "app",
-    "sessionsBadge.test.tsx": "app",
-    "setupStart.test.tsx": "app",
-    "syncDoor.test.tsx": "app"
   }
 }

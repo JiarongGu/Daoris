@@ -21,10 +21,10 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import { OverviewView } from './overview/OverviewView';
+import { OverviewView } from '../overview/OverviewView';
 import { ShellSignals } from './ShellSignals';
-import { keys } from './data/queries';
-import { respond, show } from './test/shellHarness';
+import { keys } from '../data/queries';
+import { respond, show } from '../test/shellHarness';
 
 describe('the shell push channel (ShellSignals)', () => {
   beforeEach(() => {

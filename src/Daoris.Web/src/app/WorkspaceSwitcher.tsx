@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { SelectField, Tip } from './design/ui';
+import { SelectField, Tip } from '../design/ui';
 
 /** Radix Select cannot carry an empty value, so "every workspace" travels as a sentinel (QuestsView's precedent). */
 const EVERY = '*';

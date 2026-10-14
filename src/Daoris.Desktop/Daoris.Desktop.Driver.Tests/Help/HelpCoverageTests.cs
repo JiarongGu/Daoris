@@ -411,17 +411,17 @@ public sealed partial class HelpCoverageTests
     /// </remarks>
     private static readonly (string Where, string Hook, string? Action, Answer Answer)[] Starts =
     [
-        // The application's frame: the strip's opens, the index's refresh and Sync now.
-        ("App", "useOpenBrowser", null, OpensTheBrowser),
-        ("App", "useOpenWindow", null, OpensAWindow),
-        ("App", "useRefreshIndex", null, new Exempt(
+        // The application's frame, in `app/` (STRUCT5c): the strip's opens, the index's refresh and Sync now. The browser is
+        // opened from the main window's `App` and from the secondary window's root alike, one start by where it is pressed.
+        ("app", "useOpenBrowser", null, OpensTheBrowser),
+        ("app", "useOpenWindow", null, OpensAWindow),
+        ("app", "useRefreshIndex", null, new Exempt(
             "it reads the repositories again into the index and changes nothing of the work or the machine's settings, as reading "
             + "the roster again is exempt, so there is nothing to propose.")),
-        ("App", "useSyncNow", null, new Exempt(
+        ("app", "useSyncNow", null, new Exempt(
             "it runs now the pass with the workspace's remote that the loop's next tick runs anyway (SYNC6b), and changes nothing "
             + "the person has not set; whether a workspace syncs is its remote's wiring, the person's own (D89). It is not the "
             + "`sync` kind's door, which brings branches up to date (D109).")),
-        ("SecondaryWindowRoot", "useOpenBrowser", null, OpensTheBrowser),
 
         // Quests: a quest's own page, and the list's presses, in `quests/QuestsView` (STRUCT5c).
         ("quests", "usePublishQuest", null, Own("quests",
@@ -1561,7 +1561,7 @@ public sealed partial class HelpCoverageTests
     /// <summary>
     /// ENTRY1a: every hook pressed on the page, by where: each source file but the tests, the stories, the test set-up and the
     /// files that define the hooks (<see cref="Pressed"/>), named by its folder under the page's source, or by its own name
-    /// at the root (`App`, `QuestsView`), so a start added anywhere is read, a Settings domain's files among them.
+    /// at the root (`main`), so a start added anywhere is read, a Settings domain's files among them.
     /// </summary>
     private static IReadOnlyList<(string Where, string Hook)> Presses()
     {
