@@ -774,6 +774,20 @@ public sealed partial class HelpCoverageTests
 
     private static string Page => Path.Combine(HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Web", "src");
 
+    /// <summary>
+    /// A page source read by its name wherever it lies under the page's folder (STRUCT5c, D166), as a driver source is read
+    /// (STRUCT1): the page's files moved into module folders, so a reader names the file and never its folder.
+    /// </summary>
+    private static string PageFile(string name)
+    {
+        // Matched by case too: Windows' search answers `test/projectsView.tsx` for `ProjectsView.tsx`.
+        var found = Directory.GetFiles(Page, name, SearchOption.AllDirectories)
+            .Where(file => string.Equals(Path.GetFileName(file), name, StringComparison.Ordinal))
+            .ToArray();
+        Assert.True(found.Length == 1, $"{name} is under the page's source {found.Length} times: a page file read by name is there once.");
+        return found[0];
+    }
+
     [Fact]
     public void Every_driver_verb_is_a_door_owed_or_exempt_with_its_reason()
     {
@@ -1176,7 +1190,7 @@ public sealed partial class HelpCoverageTests
 
         Assert.Contains(ai, file => Path.GetFileName(file) == "queries.ts");
         Assert.DoesNotContain("useDeleteQuest", ai.SelectMany(Pressed));
-        Assert.Empty(Pressed(Path.Combine(Page, "queries.ts")));
+        Assert.Empty(Pressed(PageFile("queries.ts")));
         Assert.Contains(Presses(), press => press.Hook == "useRespondQuest");
     }
 
@@ -1503,7 +1517,7 @@ public sealed partial class HelpCoverageTests
     {
         var hooks = new Dictionary<string, (bool, IReadOnlyList<string>)>(StringComparer.Ordinal);
         foreach (var file in Directory.GetFiles(Path.Combine(Page, "bridge"), "*.ts").Where(file => !file.Contains(".test.", StringComparison.Ordinal))
-            .Append(Path.Combine(Page, "queries.ts")))
+            .Append(PageFile("queries.ts")))
         {
             var parts = TopLevel().Split(File.ReadAllText(file).Replace("\r\n", "\n"));
             // ENTRY1a: a hook that calls a helper of its own file that changes something changes something too: `useDeleteQuest`
@@ -1582,10 +1596,10 @@ public sealed partial class HelpCoverageTests
     /// </summary>
     private static readonly (string Id, string File)[] Places =
     [
-        ("agents", Path.Combine("agents", "AgentsView")),
-        ("projects", "ProjectsView"),
+        ("agents", "AgentsView.tsx"),
+        ("projects", "ProjectsView.tsx"),
         // UX6j (D150 §2.3): Settings → Plugins retired into the Plugins place, whose view presses the same eight hooks.
-        ("plugins", Path.Combine("plugins", "PluginsView")),
+        ("plugins", "PluginsView.tsx"),
     ];
 
     /// <summary>
@@ -1606,7 +1620,7 @@ public sealed partial class HelpCoverageTests
 
         foreach (var (id, file) in Places)
         {
-            domains[id] = Closure(Path.GetFullPath(Path.Combine(Page, file)));
+            domains[id] = Closure(Path.GetFullPath(PageFile(file)));
         }
 
         // The registry was read: a domain it still lists (UX6g took Workspace and Permissions out of it).
