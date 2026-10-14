@@ -2,10 +2,6 @@
   "modules": ["Platform", "Composition", "Remote", "Registry", "Quests", "Asks", "Sessions", "Review", "Help", "Knowledge"],
   "testFolders": ["Mcp"],
   "root": {
-    "Asks.cs": "Asks",
-    "History.cs": "Asks",
-    "IntakeScope.cs": "Asks",
-    "WorkflowChoices.cs": "Asks",
     "Sessions.cs": "Sessions",
     "SessionLedger.cs": "Sessions",
     "SessionNote.cs": "Sessions",
@@ -73,6 +69,15 @@
     "CodeMapWire.cs": "Knowledge"
   },
   "tests": {
+    "AskDeskTests.cs": "Asks",
+    "AskTierCatalogueTests.cs": "Asks",
+    "AskWordsTests.cs": "Asks",
+    "AskWorkflowTests.cs": "Asks",
+    "HistoryDeskTests.cs": "Asks",
+    "HistorySyncTests.cs": "Asks",
+    "HistoryWordsTwinTests.cs": "Asks",
+    "WorkflowProposalTests.cs": "Asks",
+    "IntakeTests.cs": "Asks",
     "QuestAnswerTests.cs": "Quests",
     "QuestDeleteTests.cs": "Quests",
     "QuestEvidenceTests.cs": "Quests",
