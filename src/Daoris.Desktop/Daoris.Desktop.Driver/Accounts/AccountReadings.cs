@@ -108,8 +108,8 @@ public static class AccountReadings
     {
         if (info.ValueKind != JsonValueKind.Object) return [];
 
-        var standing = Text(info, "status") is { } status ? StandingOf(status, words) : null;
-        var named = Text(info, "rateLimitType") is { } type && words.Windows.TryGetValue(type, out var mapped) ? mapped : null;
+        var standing = Json.Text(info, "status") is { } status ? StandingOf(status, words) : null;
+        var named = Json.Text(info, "rateLimitType") is { } type && words.Windows.TryGetValue(type, out var mapped) ? mapped : null;
         var credits = info.TryGetProperty(words.Credits, out var drawing) && drawing.ValueKind == JsonValueKind.True;
 
         var readings = new List<WindowReading>();
@@ -233,9 +233,6 @@ public static class AccountReadings
             return null;
         }
     }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 }
 
 /// <summary>

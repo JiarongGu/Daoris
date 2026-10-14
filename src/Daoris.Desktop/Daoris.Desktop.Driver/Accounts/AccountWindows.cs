@@ -128,7 +128,7 @@ public static class AccountWindows
             {
                 if (Key(held, reading.Window) is { } existing && held[existing] is JsonObject kept
                     && Moment(kept, "seen") is { } keptSeen
-                    && (keptSeen > seen || (keptSeen == seen && Text(kept, "source") == SourceRead && source != SourceRead)))
+                    && (keptSeen > seen || (keptSeen == seen && Json.NonEmpty(kept, "source") == SourceRead && source != SourceRead)))
                 {
                     continue;
                 }
@@ -171,20 +171,15 @@ public static class AccountWindows
             var used = entry["used"] is JsonValue value && value.TryGetValue<double>(out var number) && double.IsFinite(number) && number >= 0
                 ? number : (double?)null;
             // A `near` written before USAGEREAD3a was only ever the agent's pace warning, so it reads as `warned`.
-            var standing = Text(entry, "standing") is var word && word == AccountReadings.NearWord ? AccountReadings.WarnedWord : word;
-            if (used is null && standing is null && !Flag(entry, "credits")) continue;
-            var source = Text(entry, "source") == SourceRead ? SourceRead : SourceSaid;
-            windows.Add(new WindowSaid(name, used, reset, standing, Flag(entry, "credits"), seen, Text(entry, "session"), source));
+            var standing = Json.NonEmpty(entry, "standing") is var word && word == AccountReadings.NearWord ? AccountReadings.WarnedWord : word;
+            if (used is null && standing is null && !Json.Flag(entry, "credits")) continue;
+            var source = Json.NonEmpty(entry, "source") == SourceRead ? SourceRead : SourceSaid;
+            windows.Add(new WindowSaid(
+                name, used, reset, standing, Json.Flag(entry, "credits"), seen, Json.NonEmpty(entry, "session"), source));
         }
 
         return windows.Count == 0 ? null : new AccountSaid(windows);
     }
-
-    private static string? Text(JsonObject entry, string name) =>
-        entry[name] is JsonValue value && value.TryGetValue<string>(out var text) && text.Length > 0 ? text : null;
-
-    private static bool Flag(JsonObject entry, string name) =>
-        entry[name] is JsonValue value && value.TryGetValue<bool>(out var flag) && flag;
 
     /// <summary>The file's root, or an empty one when it is missing or does not read.</summary>
     private static JsonObject Load(string home)

@@ -167,8 +167,9 @@ public static class AccountCooling
             {
                 if (node is not JsonObject entry || Moment(entry, "until") is not { } until) continue;
                 yield return new CoolingEntry(
-                    agent, account.Length == 0 ? null : account, until, Flag(entry, "stated"), Text(entry, "window"),
-                    Moment(entry, "seen") ?? until, Text(entry, "session"), Flag(entry, "assumedZone"), Flag(entry, "notBelieved"));
+                    agent, account.Length == 0 ? null : account, until, Json.Flag(entry, "stated"), Json.NonEmpty(entry, "window"),
+                    Moment(entry, "seen") ?? until, Json.NonEmpty(entry, "session"), Json.Flag(entry, "assumedZone"),
+                    Json.Flag(entry, "notBelieved"));
             }
         }
     }
@@ -226,7 +227,7 @@ public static class AccountCooling
     /// hand-mangled entry an account cooling.
     /// </summary>
     private static DateTimeOffset? Moment(JsonObject entry, string name) =>
-        Text(entry, name) is { } text
+        Json.NonEmpty(entry, name) is { } text
         && DateTimeOffset.TryParseExact(
             text, IsoMoments, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
             out var moment)
@@ -238,12 +239,6 @@ public static class AccountCooling
         "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm:ss.FFFFFFF'Z'", "yyyy-MM-dd'T'HH:mm:sszzz",
         "yyyy-MM-dd'T'HH:mm:ss.FFFFFFFzzz",
     ];
-
-    private static string? Text(JsonObject entry, string name) =>
-        entry[name] is JsonValue value && value.TryGetValue<string>(out var text) && text.Length > 0 ? text : null;
-
-    private static bool Flag(JsonObject entry, string name) =>
-        entry[name] is JsonValue value && value.TryGetValue<bool>(out var flag) && flag;
 }
 
 /// <summary>
