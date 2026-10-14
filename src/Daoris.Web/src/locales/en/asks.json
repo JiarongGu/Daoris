@@ -59,6 +59,7 @@
   "asks.record.notPublished": "Not published",
   "asks.record.closedBecause": "Closed because",
   "asks.record.quests": "Became",
+  "asks.record.sessions": "Sessions",
   "asks.record.proposal": "Where it belongs",
   "asks.record.noProposal": "No repository's declarations share its words. Name the receiver below.",
   "asks.record.matched": "shares {{words}}",

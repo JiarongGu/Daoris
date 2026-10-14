@@ -89,6 +89,26 @@ export function entryFacts(entries: readonly SessionEntry[] | undefined): Map<st
   ]));
 }
 
+/** One line of an ask's page (design §1.6): a repository's line of work for the ask, its parts counted, its leading part's word. */
+export type AskLine = { entry: string; repository: string; parts: number; leading: string; shown: string };
+
+/**
+ * An ask's work by entry, in the reader's order: each repository's line of work that began with this ask, each a door to its
+ * leading part. The intake is not one of them: it has a section of its own on the page, and once its ask became quests it is
+ * out of the entries altogether.
+ */
+export function askLines(entries: readonly SessionEntry[] | undefined, ask: string): AskLine[] {
+  return (entries ?? [])
+    .filter((entry) => askOfEntry(entry) === ask && !isIntakeEntry(entry))
+    .map((entry) => ({
+      entry: entry.entry,
+      repository: entry.repository,
+      parts: entry.parts.length,
+      leading: entry.leading,
+      shown: entry.parts.find((part) => part.session === entry.leading)?.shown ?? entry.parts.at(-1)!.shown,
+    }));
+}
+
 /** One group of the list by ask: its ask's id, or null for what no ask began; its entries' leading records in the reader's order. */
 export type AskGroup = { ask: string | null; sessions: Session[] };
 

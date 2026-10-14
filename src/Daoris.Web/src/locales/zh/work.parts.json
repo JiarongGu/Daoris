@@ -7,7 +7,7 @@
   "work.parts.began.resumed": "接{{after}}继续",
   "work.parts.began.carriedOn": "承接{{after}}",
   "work.parts.began.carriedOnAlone": "承接上一段",
-  "work.parts.began.handedOver": "由{{after}}交接而来",
+  "work.parts.began.handedOver": "由{{after}}转交而来",
   "work.parts.began.asked": "由 {{repository}} 委托",
   "work.parts.began.askedUnnamed": "由另一会话委托"
 }
