@@ -198,6 +198,41 @@ public sealed class ConversationRoutes(DriverContext context)
         return new { stop.Cancelled, Withdrawn = stop.Withdrawn.Select(Said).ToArray() };
     }
 
+    // Taking back or rewording one word that waits behind a running turn (QUEUEEDIT1a, D76): `{ session, id, text? }`, where
+    // `id` is the one SESSION_QUEUE and SESSION_QUEUED name it by. With no text it removes the word; with some it replaces its
+    // words where it waits, order and files kept, under a new id. A turn that took it already is the answer `{ done: false,
+    // why: "taken" }`, as a stop with nothing to stop is: the page asking a moment late deserves no error. Refused for a
+    // session that takes no input, as CANCEL_TURN is. The queue tells every list as it moves (SESSION_QUEUED).
+    [DriverRoute("SESSION_QUEUE_EDIT")]
+    private object? SessionQueueEdit(IpcRequest request)
+    {
+        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        string? text = null;
+        if (request.Payload is { } payload && payload.TryGetProperty("text", out var said) && said.ValueKind == JsonValueKind.String)
+        {
+            text = said.GetString();
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                throw new DriverException("Say what it should say instead, or take it back: words reworded to nothing are not kept.");
+            }
+        }
+
+        // A driven session's held words; a conversation's turns otherwise. The one that holds the word answers.
+        QueueEdit edit;
+        if (_loop.Processes.InboxOf(session) is { } inbox)
+        {
+            edit = inbox.Edit(id, text);
+        }
+        else
+        {
+            if (_loop.Processes.RefusesInput(session) is { } why) throw new DriverException(why);
+            edit = _loop.Chat?.EditQueued(session, id, text) ?? QueueEdit.Taken;
+        }
+
+        return edit == QueueEdit.Done ? new { Done = true } : new { Done = false, Why = "taken" };
+    }
+
     // A conversation's model and effort, as its agent offers them on the protocol door (AGT6b, D98):
     // the page asks once, and takes every change after that as `SESSION_OPTIONS_CHANGED`. Nothing here
     // holding it, or a door that carries none, is an empty list — never a refusal, since a composer
@@ -316,7 +351,10 @@ public sealed class ConversationRoutes(DriverContext context)
         return uploads;
     }
 
-    /// <summary>A message as the page is told it: the words, and the names of its files — never where they are kept.</summary>
-    private static object Said(ChatMessage message) =>
-        new { message.Text, Files = message.Files.Select(file => file.Name).ToArray() };
+    /// <summary>
+    /// A message as the page is told it: the words, the names of its files — never where they are kept — and the id a queued
+    /// word is taken back or reworded by (QUEUEEDIT1a), null where it has none.
+    /// </summary>
+    public static object Said(ChatMessage message) =>
+        new { message.Id, message.Text, Files = message.Files.Select(file => file.Name).ToArray() };
 }

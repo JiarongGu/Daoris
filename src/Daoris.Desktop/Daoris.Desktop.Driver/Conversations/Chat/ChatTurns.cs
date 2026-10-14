@@ -48,6 +48,10 @@ internal sealed class ChatTurns(
     // The words handed to the turn in flight at its next step (MSG1c), each until the agent answered it: the turn lasts as long.
     private readonly List<Task> _steered = [];
     private ChatMessage? _holding;
+    // The ids this queue gave the words that wait (QUEUEEDIT1a): the page's handle on one, never carried into the turn it
+    // becomes, which a conversation's record has always shown without.
+    private readonly HashSet<string> _stamped = [];
+    private int _said;
     private bool _pumping;
     private bool _opening;
     private bool _inFlight;
@@ -110,6 +114,50 @@ internal sealed class ChatTurns(
     /// <summary>The driver's English for <see cref="Lost"/>: what its console says and a page that does not know the code shows.</summary>
     public const string LostLine = "— it may have read what you added; its answer was not kept.";
 
+    /// <summary>
+    /// The line a driven session's record keeps of a held word the person took back or reworded (QUEUEEDIT1a): its code, which
+    /// the page words as <c>work.conversation.withdrawn</c>, and the word's id, so the page settles the word it showed waiting.
+    /// </summary>
+    public static SessionEvent Withdrawn(string word) =>
+        new() { Kind = SessionEventKind.Note, Text = WithdrawnLine, Words = [word], Code = SessionEventCodes.Withdrawn };
+
+    /// <summary>The driver's English for <see cref="Withdrawn"/>.</summary>
+    public const string WithdrawnLine = "— taken back before it was sent.";
+
+    /// <summary>
+    /// Take back or reword one word that still waits (QUEUEEDIT1a): with no <paramref name="text"/> it is removed, with some its
+    /// words are replaced where it waits, its place and its files kept, under a new id. The word taken while the door opens is
+    /// still the queue's. <see cref="QueueEdit.Taken"/> where a turn took it already. A conversation's queued words are in no
+    /// record until taken (D76), so nothing is written.
+    /// </summary>
+    public QueueEdit EditQueued(string id, string? text)
+    {
+        lock (_gate)
+        {
+            if (_holding is { OnRecord: false } holding && holding.Id == id)
+            {
+                _holding = text is null ? null : Reworded(holding, text);
+            }
+            else
+            {
+                var at = _waiting.FindIndex(message => !message.OnRecord && message.Id == id);
+                if (at < 0) return QueueEdit.Taken;
+                if (text is null) _waiting.RemoveAt(at);
+                else _waiting[at] = Reworded(_waiting[at], text);
+            }
+
+            Publish();
+            return QueueEdit.Done;
+        }
+    }
+
+    private ChatMessage Reworded(ChatMessage message, string text)
+    {
+        var id = $"said-{++_said}";
+        _stamped.Add(id);
+        return message with { Text = text, Id = id };
+    }
+
     /// <summary>Queue a turn. False once the conversation is finishing, held or gone: nothing more will be heard.</summary>
     public bool Say(ChatMessage message) => Take(message) is not null;
 
@@ -159,6 +207,13 @@ internal sealed class ChatTurns(
             {
                 _steered.Add(answered);
                 return TurnReach.NextStep;
+            }
+
+            if (message.Id is null && !message.OnRecord)
+            {
+                var id = $"said-{++_said}";
+                _stamped.Add(id);
+                message = message with { Id = id };
             }
 
             _waiting.Add(message);
@@ -292,6 +347,9 @@ internal sealed class ChatTurns(
 
                 // Withdrawn by a stop while the door opened: never sent.
                 if (_holding is null) continue;
+                // As it stands now: reworded while the door opened (QUEUEEDIT1a), and without the queue's id.
+                message = _holding;
+                if (message.Id is { } stamped && _stamped.Remove(stamped)) message = message with { Id = null };
                 _holding = null;
                 _inFlight = true;
                 _sent = false;

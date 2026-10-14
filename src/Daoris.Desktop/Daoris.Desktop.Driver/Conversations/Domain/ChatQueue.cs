@@ -15,6 +15,16 @@ public sealed record TurnStop(bool Cancelled, IReadOnlyList<ChatMessage> Withdra
     public static readonly TurnStop Nothing = new(false, []);
 }
 
+/// <summary>What taking back or rewording one queued word did (QUEUEEDIT1a): a normal answer either way, never an error.</summary>
+public enum QueueEdit
+{
+    /// <summary>The word was still waiting, and is removed or reworded.</summary>
+    Done,
+
+    /// <summary>A turn already took it (or it is no word of this queue): nothing changed.</summary>
+    Taken,
+}
+
 /// <summary>Where a conversation's turns stand, as the page is told it (CONV4a, CONV4b).</summary>
 /// <param name="Taking">A turn is on its way to the harness or running there — what a stop would act on.</param>
 /// <param name="Queued">What the person sent that has not reached the harness, in the order sent.</param>

@@ -475,7 +475,7 @@ describe('a conversation note’s codes, held to the driver', () => {
 
   it('maps exactly the codes the driver declares, each to its key', () => {
     // A scan that matched nothing would pass on a moved or renamed class: it has to see them.
-    expect(declared).toEqual(['lost']);
+    expect(declared).toEqual(['lost', 'withdrawn']);
     expect(Object.keys(CONVERSATION_CODES).sort()).toEqual([...declared].sort());
     for (const code of declared) expect(CONVERSATION_CODES[code]).toBe(`work.conversation.${code}`);
   });
