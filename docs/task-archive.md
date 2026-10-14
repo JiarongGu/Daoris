@@ -14314,3 +14314,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DEDUP1a — one JSON field reader, its first half** (driver). A public `Json` reader in `Platform/` on `C/JsonFields.cs`'s model (the object guard always, each caller's empty-string rule kept) for the copies in Accounts, Agents, Conversations, Help, Platform and Plugins. Survey §1.
 
 **Outcome** 2026-10-14: `Platform/Json.cs` reads a field's text, non-empty text, integer, long, finite number, flag, strings and objects, and a node's text, trimmed text and trimmed strings, answering absent for an element that is not an object; the copies in six modules read through it, each keeping its empty and trimming rule. Kept apart on purpose: `Acp.Field` (raw text), `DriverConfig.Int` (throws, as the config's validation needs), `DriverConfig.Bool`, `PluginTools.Filled`. Forty tests. On Sonnet: 207 tool calls. Detail: D166's DEDUP1a note.
+
+## PART7b — the proposal writers' files take their classes' names (2026-10-14, D166)
+
+> - [ ] **PART7b — the proposal writers' files take their classes' names** (service, driver; after PART7). `git mv` each `HelpProposalBox.<Kind>.cs` to `Help<Kind>ProposalWriter.cs`, with the driver tests that read them by path (`HelpProposalKindsTests.cs` :57, :102, :109, :129, :136; `HelpSettingProposalsTests.cs` :464) and `HelpSettingProposals.cs:27`'s comment in the same branch. D166's PART7 note.
+
+**Outcome** 2026-10-14: the sixteen writer files carry their classes' names, the service's kinds test holding the writer-name pattern and that no `HelpProposalBox.*.cs` remains; the driver's two tests and one comment followed in the same branch. On Sonnet: 30 tool calls.
