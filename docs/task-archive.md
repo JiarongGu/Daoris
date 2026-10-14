@@ -14650,3 +14650,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT5c — the page's top folder in folders** (web). As STRUCT5a, 5b and 5d did, with its gate in vitest; STRUCT5d's import-rewriting script (asserted counts, read back) is a candidate tracked tool. Design §7.
 
 **Outcome** 2026-10-15: the page's top holds only its three entries; 109 files moved into domain folders with `git mv`, held by `src/test/structure.test.ts`, and `daoris.lanes.json` lost two `SettingsView*` globs the move made empty. The work, settings, bridge and projects folders still hold over twenty sources at their top and sit on the gate's `wide` list (STRUCT5c-ii); the move script stayed in scratch (MOVETOOL1). Eleven gates passed on the merge, merged with main's closed-quest fix. On Opus: 308 tool calls. Detail: D166's STRUCT5c note and the `refactor(web): STRUCT5c` commits.
+
+## MOVETOOL1 — a tracked move tool (2026-10-15, D166)
+
+> - [ ] **MOVETOOL1 — a tracked move tool** (tools). A `tools/` script that moves files with `git mv`, respells relative imports, and checks its counts and that every import still resolves; the CLI's and the page's moves each built one in scratch. Contract: `file-tool-discipline`; proof: its own test on a fixture tree.
+
+**Outcome** 2026-10-15: `tools/move-files.mjs` moves files or folders with `git mv` (`from=to` or a JSON file), respells every relative import of them and in them in the form it had, asserts `--expect-moved`, `--expect-rewritten` and `--expect-files` before any change, and checks from disk that each import still reaches its file; `--plan` changes nothing. Its test, `tools/move-files.test.mjs`, is in `verify`. Detail: D166's MOVETOOL1 note.

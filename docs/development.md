@@ -155,6 +155,9 @@ node tools/partials.mjs --write
 dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map
 ```
 
+Moving files: `node tools/move-files.mjs [--plan] from=to ... --expect-moved N --expect-rewritten N` (or `--moves file.json`)
+runs `git mv`, respells every relative import of the moved files and in them, and checks that each still resolves.
+
 Only run `map` when project metadata changed; `map --check` verifies freshness. `sync` preserves the
 local brief outside the doctrine region. Canon edits also require syncing both example adopters.
 `docs/index/` is checked with `--check`; a conflict in generated output is resolved by regeneration.
