@@ -2,17 +2,6 @@
   "modules": ["Bridge", "Browser", "Windows", "Update", "Loop", "Platform"],
   "loose": ["Bridge.cs", "DriverModuleBridge.cs", "LoopbackHost.cs", "Category.cs", "GlobalUsings.cs", "Parallelism.cs", "EveryModuleChildIsHandedTheToolsTests.cs", "SourceFiles.cs", "StructureCheck.cs", "StructureTests.cs"],
   "root": {
-    "BrowserModule.cs": "Browser",
-    "BrowserFavorites.cs": "Browser",
-    "BrowserSessionCookies.cs": "Browser",
-    "BrowserSettings.cs": "Browser",
-    "CdpChannel.cs": "Browser",
-    "CdpCookies.cs": "Browser",
-    "EdgeBrowser.cs": "Browser",
-    "EngineBrowser.cs": "Browser",
-    "EngineProfile.cs": "Browser",
-    "InAppBrowser.cs": "Browser",
-    "ReviewTabs.cs": "Browser",
     "WindowsModule.cs": "Windows",
     "SecondaryWindow.cs": "Windows",
     "TaskbarIdentity.cs": "Windows",
@@ -98,6 +87,17 @@
     "ProfileDefaultStandingTests.cs": "Bridge",
     "ProfileDefaultTwinTests.cs": "Bridge",
     "SessionOptionsModuleTests.cs": "Bridge",
-    "StartWiringRouteTests.cs": "Bridge"
+    "StartWiringRouteTests.cs": "Bridge",
+    "BrowserFavoritesTests.cs": "Browser",
+    "BrowserModuleTests.cs": "Browser",
+    "BrowserSessionCookiesTests.cs": "Browser",
+    "BrowserSettingsTests.cs": "Browser",
+    "CdpCookiesTests.cs": "Browser",
+    "EdgeBrowserTests.cs": "Browser",
+    "EngineBrowserTests.cs": "Browser",
+    "EngineProfileTests.cs": "Browser",
+    "InAppBrowserTests.cs": "Browser",
+    "ReviewServingTests.cs": "Browser",
+    "StandInChromium.cs": "Browser"
   }
 }
