@@ -87,7 +87,7 @@ public static partial class ReviewServed
     /// slashes, and no <c>.</c> or <c>..</c>.
     /// </summary>
     internal static bool IsFolderName(string folder) =>
-        FolderShape().IsMatch(folder) && !folder.Split('/').Any(segment => segment is "." or "..");
+        SafeNames.IsRepositoryPath(folder) && FolderShape().IsMatch(folder);
 
     /// <summary>
     /// The path a build is served at under <paramref name="address"/>: its <c>index.html</c>'s own <c>&lt;base href&gt;</c> where it

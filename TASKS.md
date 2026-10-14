@@ -293,7 +293,7 @@ folder.
 - [ ] **DEDUP2 — one way to write and read a moment** (driver, modules). A public `Moments` in `Platform/` (round-trip write, invariant read, strict read) for about 45 writers and 40 readers, a dozen of which read in the machine's culture, five `IsoMoments` and four `Stamp()`s. Survey §2.
 - [ ] **DEDUP3 — one way to write a JSON file** (driver, modules). A public `JsonFile` in `Platform/` (LF text with a trailing newline, one options object, its folder made, an atomic write) for about 65 sites: it fixes the seven written with CRLF on Windows and the plain writes past `AtomicFile`. Survey §3, §9.
 - [ ] **DEDUP5 — the accounts' files share their helpers** (driver). One helper for the `Load`, `Key`, `Child`, `Text`, `Flag` and `Moment` that `AccountCooling`, `AccountNames`, `AccountReads` and `AccountWindows` copy; a small store for the eight gate-and-edit stores only where each one fits. Survey §5.
-- [ ] **DEDUP6 — path and id rules decided once** (driver, modules). A `SafeNames` in `Platform/` with the rules D166's DEDUP6 note decided (a repository path joined to the disk, an id under the home, the plain and kebab ids), each caller keeping its sentence; after FLAT1a, whose moves it would cross. Survey §6.
+- [ ] **DEDUP6b — the CLI's id twins refuse a device name** (cli). `workflowid.ts`, `reviews.ts`'s name shape and `namedworkflows.ts` refuse a Windows device name (`con`, `lpt9`) as the driver's `SafeNames` now does, a twin row each. D166's DEDUP6 build note.
 - [ ] **DEDUP7 — text clipped, one-lined and quoted once** (driver, modules). `TextBounds` in `Platform/` for about 44 copies, each call keeping its own limit. Survey §7.
 
 ## Development and agent layout

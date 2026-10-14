@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 ///
 /// <para>What is kept is this store's; the files and their format are <see cref="HandOverFiles"/>' (STRUCT3h, D166's note).</para>
 /// </remarks>
-public sealed partial class HandedQuests(string home)
+public sealed class HandedQuests(string home)
 {
     /// <summary>Where a quest's file is kept, or null for an id that is no quest's name (never a path out of the folder).</summary>
     public string? PathOf(string quest) => Named(quest) ? Path.Combine(home, "handed", quest + ".json") : null;
@@ -51,10 +51,7 @@ public sealed partial class HandedQuests(string home)
         if (PathOf(quest) is { } path) HandOverFiles.Delete(path);
     }
 
-    private static bool Named(string quest) => NamePattern().IsMatch(quest ?? "");
-
-    [GeneratedRegex("^[A-Za-z0-9_-]{1,64}$")]
-    private static partial Regex NamePattern();
+    private static bool Named(string quest) => SafeNames.IsPlainId(quest ?? "");
 }
 
 /// <summary>

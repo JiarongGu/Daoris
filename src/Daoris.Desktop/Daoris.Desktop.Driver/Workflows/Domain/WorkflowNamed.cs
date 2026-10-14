@@ -124,7 +124,7 @@ public sealed record NamedWorkflowRead(string? Id, string? Name, IReadOnlyList<N
 /// A TWIN with the CLI's <c>namedworkflows.ts</c>: both hold one table, this suite's tests' <c>fixtures/workflow-named.json</c>,
 /// cell for cell, every sentence and every digest included (<c>WorkflowNamedTests</c> and <c>namedworkflows.test.ts</c>).
 /// </remarks>
-public static partial class WorkflowNamed
+public static class WorkflowNamed
 {
     private const string IdRule = "lower-case letters, digits and dashes, at most 40";
     private const string KindList = "`work`, `opinion`, `look`, `landing`, `pull-request`, `go-ahead`, `check`, `stage` or `all`";
@@ -137,7 +137,7 @@ public static partial class WorkflowNamed
     private const string VersionNumber = "each version's `version` is a whole number from 1, each greater than the one before it.";
 
     /// <summary>A workflow's or a step's id: lower-case letters, digits and dashes, at most 40.</summary>
-    public static bool IsId(string? value) => value is { Length: > 0 and <= 40 } && IdShape().IsMatch(value);
+    public static bool IsId(string? value) => value is { Length: > 0 and <= 40 } && SafeNames.IsKebabId(value);
 
     /// <summary>What is wrong with a workflow's id, or null. <c>current</c> is Current's (design §2.5).</summary>
     public static string? IdProblem(string? value)
@@ -195,7 +195,7 @@ public static partial class WorkflowNamed
         var door = TextOf(version, "door");
         NamedVersion Unread(string problem) => new(number, at, door, null, problem, null);
         if (!IsMoment(at)) return Unread($"v{number}: its `at` is a moment as ISO 8601 writes it, such as `2026-10-09T09:12:00Z`.");
-        if (door is null || !(door is "screen" or "terminal" || DoorShape().IsMatch(door)))
+        if (door is null || !(door is "screen" or "terminal" || IsAskDoor(door)))
         {
             return Unread($"v{number}: its `door` is `screen`, `terminal` or `ask-daoris:<proposal>`.");
         }
@@ -349,7 +349,7 @@ public static partial class WorkflowNamed
             case WorkflowFieldTypes.Choice:
                 return text is not null && field.Choices!.Contains(text, StringComparer.Ordinal) ? (text, null) : wrong;
             case WorkflowFieldTypes.Environment:
-                return text is { Length: > 0 and <= 32 } && IdShape().IsMatch(text) ? (text, null) : wrong;
+                return text is { Length: > 0 and <= 32 } && SafeNames.IsKebabId(text) ? (text, null) : wrong;
             case WorkflowFieldTypes.Id:
                 return IsId(text) ? (text, null) : wrong;
             case WorkflowFieldTypes.Text:
@@ -560,11 +560,11 @@ public static partial class WorkflowNamed
         "yyyy-MM-dd'T'HH:mm:ss.FFFFFFFzzz",
     ];
 
-    [GeneratedRegex(@"^[a-z0-9]+(?:-[a-z0-9]+)*\z", RegexOptions.CultureInvariant)]
-    private static partial Regex IdShape();
+    private const string AskDoorPrefix = "ask-daoris:";
 
-    [GeneratedRegex(@"^ask-daoris:[A-Za-z0-9_-]{1,64}\z", RegexOptions.CultureInvariant)]
-    private static partial Regex DoorShape();
+    /// <summary>The Ask Daoris door: its prefix and a plain id (DEDUP6).</summary>
+    private static bool IsAskDoor(string door) =>
+        door.StartsWith(AskDoorPrefix, StringComparison.Ordinal) && SafeNames.IsPlainId(door[AskDoorPrefix.Length..]);
 
     // ---- Adding a version (WORKFLOW1d, D157 point 5, the workflow design §2.4–§2.6) ----
     // Planned and not written: the store's use case (WorkflowStore's Add) writes the plan through its port. A version is

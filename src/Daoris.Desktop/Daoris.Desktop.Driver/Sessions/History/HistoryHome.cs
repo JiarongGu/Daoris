@@ -31,8 +31,7 @@ internal static class HistoryHome
         [.. quests.Where(quest => WorkflowRunBindings.Bound(home, quest)).Distinct(StringComparer.Ordinal)];
 
     /// <summary>An id that names one folder under its parent and nothing else.</summary>
-    private static bool Plain(string id) =>
-        id.Length > 0 && id.IndexOfAny(['/', '\\', ':']) < 0 && !id.Contains("..", StringComparison.Ordinal);
+    private static bool Plain(string id) => SafeNames.IsFolderId(id);
 
     private static bool Here(string? workspace, string named) =>
         string.Equals(RemoteTarget.Workspace(workspace), named, StringComparison.OrdinalIgnoreCase);
