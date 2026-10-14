@@ -1,16 +1,17 @@
 using System.Globalization;
+using static Daoris.Knowledge.HelpProposalFile;
 
 namespace Daoris.Knowledge;
 
 /// <summary>A setting Ask Daoris proposes (HELP1c, D89): one of the driver's doors, spelled as the CLI's verbs are.</summary>
-/// <param name="Door">One of <see cref="HelpProposalBox.Doors"/>: `drive`, `undrive`, `hold`, `resume`, `trees`, `line`, `landing`, `across`, `standing`, `language`, `review`, `opinion`, `helpers`, `commits`, `intake`, `helper`, `strikes`, `retry`, `timeout`, `notify`, `cap`, `adapter` or `cooloff`.</param>
+/// <param name="Door">One of <see cref="HelpSettingProposalWriter.Doors"/>: `drive`, `undrive`, `hold`, `resume`, `trees`, `line`, `landing`, `across`, `standing`, `language`, `review`, `opinion`, `helpers`, `commits`, `intake`, `helper`, `strikes`, `retry`, `timeout`, `notify`, `cap`, `adapter` or `cooloff`.</param>
 /// <param name="Target">The repository, for the doors that take one; for `retry`, the quest its failed sessions parked or the person's stop holds.</param>
 /// <param name="Workspace">The workspace, for a line, a landing, a session language, a review rule, a second-opinion rule, a helpers rule, a commit rule or reading across set for a whole workspace.</param>
 /// <param name="Value">What it is set to, as the CLI takes it: `on`, a branch, `branch &lt;pattern&gt; --tidy`, `read off`, `write-to &lt;other&gt;`, `zh`, `--mode ask`, an agent…</param>
 public sealed record SettingChange(string Door, string? Target, string? Workspace, string? Value);
 
 /// <summary>The <c>setting</c> kind's writer (HELP1c): one of the driver's doors, shape-checked as the CLI's verbs take it.</summary>
-public sealed partial class HelpProposalBox
+internal sealed class HelpSettingProposalWriter(HelpProposalFile file)
 {
     /// <summary>
     /// The doors a setting may name, as the CLI's verbs spell them, in the order the driver's <c>HelpSettingProposals</c>
@@ -187,12 +188,12 @@ public sealed partial class HelpProposalBox
     }
 
     /// <summary>Write one setting proposal, or refuse it — answered as the sentence the agent reads.</summary>
-    public (string? Id, string Message) ProposeSetting(SettingChange change, string why, string? session, DateTimeOffset at)
+    public (string? Id, string Message) Propose(SettingChange change, string why, string? session, DateTimeOffset at)
     {
         var normal = change with { Door = change.Door.Trim().ToLowerInvariant(), Value = change.Value?.Trim() };
         if (string.IsNullOrWhiteSpace(why)) return (null, "A proposal needs its reason: what the person asked, and what the change would do. Nothing was proposed.");
         if (Refusal(normal) is { } refused) return (null, $"{Capital(refused)} Nothing was proposed.");
-        return Write(writer =>
+        return file.Write(writer =>
         {
             writer.WriteString("kind", "setting");
             writer.WriteString("door", normal.Door);

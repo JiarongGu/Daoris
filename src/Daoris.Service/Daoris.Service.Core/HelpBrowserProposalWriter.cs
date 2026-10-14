@@ -1,10 +1,12 @@
+using static Daoris.Knowledge.HelpProposalFile;
+
 namespace Daoris.Knowledge;
 
 /// <summary>
 /// The <c>browser</c> kind's writer (HELP10): Daoris's browser's settings, each a <c>daoris browser</c> verb, and a
 /// favorite with its address (the proposal's target) and its own <c>title</c>.
 /// </summary>
-public sealed partial class HelpProposalBox
+internal sealed class HelpBrowserProposalWriter(HelpProposalFile file)
 {
     /// <summary>
     /// Write one proposal to change Daoris's browser's settings (HELP10): Settings → Browser, and <c>daoris browser</c>.
@@ -14,7 +16,7 @@ public sealed partial class HelpProposalBox
     /// <param name="value">`daoris`|`edge`, `system`|`daoris`, `offer`|`refuse`, or for a favorite `add`|`remove`.</param>
     /// <param name="address">A favorite's address; null for every other door.</param>
     /// <param name="title">A favorite added's title; null for its page's host.</param>
-    public (string? Id, string Message) ProposeBrowser(
+    public (string? Id, string Message) Propose(
         string door, string? value, string? address, string? title, string why, string? session, DateTimeOffset at)
     {
         var setting = door.Trim().ToLowerInvariant();
@@ -37,7 +39,7 @@ public sealed partial class HelpProposalBox
         };
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
 
-        return Write(writer =>
+        return file.Write(writer =>
         {
             writer.WriteString("kind", "browser");
             writer.WriteString("door", setting);

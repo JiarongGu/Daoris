@@ -1,3 +1,5 @@
+using static Daoris.Knowledge.HelpProposalFile;
+
 namespace Daoris.Knowledge;
 
 /// <summary>
@@ -5,7 +7,7 @@ namespace Daoris.Knowledge;
 /// common <c>workspace</c> for Repositories' Add and Import (ENTRY1d2a), and the common <c>repository</c> and <c>sentence</c>
 /// for Sessions' New conversation (NEW1d-a).
 /// </summary>
-public sealed partial class HelpProposalBox
+internal sealed class HelpGoProposalWriter(HelpProposalFile file)
 {
     /// <summary>
     /// Write one proposal to take the person to a screen (HELP6): a view, a domain of Settings, and a part
@@ -26,7 +28,7 @@ public sealed partial class HelpProposalBox
     /// NEW1d-a: for Sessions' New conversation, the words the composer opens with, trimmed and otherwise as given, written to
     /// the common <c>sentence</c> field. No bound is held here: an ask's words are bounded nowhere before the driver either.
     /// </param>
-    public (string? Id, string Message) ProposeGo(
+    public (string? Id, string Message) Propose(
         string view, string? domain, string? part, string? item, string why, string? session, DateTimeOffset at, string? workspace = null,
         string? repository = null, string? sentence = null)
     {
@@ -53,7 +55,7 @@ public sealed partial class HelpProposalBox
                     : null);
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
 
-        return Write(writer =>
+        return file.Write(writer =>
         {
             writer.WriteString("kind", "go");
             writer.WriteString("door", "go");

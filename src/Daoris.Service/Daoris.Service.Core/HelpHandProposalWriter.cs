@@ -1,7 +1,9 @@
+using static Daoris.Knowledge.HelpProposalFile;
+
 namespace Daoris.Knowledge;
 
 /// <summary>The <c>hand</c> kind's writer (WSR5b): a branch a landing made, handed to a landing plugin afterwards, with the proposal's <c>repository</c>.</summary>
-public sealed partial class HelpProposalBox
+internal sealed class HelpHandProposalWriter(HelpProposalFile file)
 {
     /// <summary>
     /// Write one hand-off proposal (WSR5b): a branch a landing made, handed to a landing plugin afterwards —
@@ -11,7 +13,7 @@ public sealed partial class HelpProposalBox
     /// <param name="target">The session that landed the branch, or the branch.</param>
     /// <param name="repository">The repository it is in, where a branch's name alone is in several; null otherwise.</param>
     /// <param name="plugin">The plugin to hand it to, where the repository's landing rule names none; null for the rule's.</param>
-    public (string? Id, string Message) ProposeHand(string target, string? repository, string? plugin, string why, string? session, DateTimeOffset at)
+    public (string? Id, string Message) Propose(string target, string? repository, string? plugin, string why, string? session, DateTimeOffset at)
     {
         var named = Blank(target);
         var holder = Blank(repository);
@@ -23,7 +25,7 @@ public sealed partial class HelpProposalBox
                   : $"`{to}` is not a plugin id — one is lowercase letters, digits, dots and dashes, as the room lists the plugins installed here.");
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
 
-        return Write(writer =>
+        return file.Write(writer =>
         {
             writer.WriteString("kind", "hand");
             writer.WriteString("door", "hand");

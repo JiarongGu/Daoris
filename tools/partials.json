@@ -42,25 +42,6 @@
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Workflow.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs"
   ],
-  "HelpProposalBox": [
-    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Accept.cs",
-    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Account.cs",
-    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Agent.cs",
-    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Ask.cs",
-    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Browser.cs",
-    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Clear.cs",
-    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Delete.cs",
-    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Go.cs",
-    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Hand.cs",
-    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Pause.cs",
-    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Plugin.cs",
-    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Repository.cs",
-    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Session.cs",
-    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Setting.cs",
-    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Sync.cs",
-    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.Workflow.cs",
-    "src/Daoris.Service/Daoris.Service.Core/HelpProposalBox.cs"
-  ],
   "HistoryClearing": [
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/History/HistoryClearing.Home.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/History/HistoryClearing.cs"

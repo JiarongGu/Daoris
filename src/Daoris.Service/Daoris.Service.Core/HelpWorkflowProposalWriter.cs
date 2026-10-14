@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using static Daoris.Knowledge.HelpProposalFile;
 
 namespace Daoris.Knowledge;
 
@@ -9,7 +10,8 @@ namespace Daoris.Knowledge;
 /// JSON, the first kind to carry any. Only the shape is judged here; the editor's validation, the base's staleness and what
 /// the steps need are the driver's to judge. Changes, a kind and an import are WORKFLOW1h2's, so they are refused by name.
 /// </summary>
-public sealed partial class HelpProposalBox
+/// <remarks><c>partial</c> for its generated <see cref="WorkflowIdShape"/> alone (PART7), and declared in this one file.</remarks>
+internal sealed partial class HelpWorkflowProposalWriter(HelpProposalFile file)
 {
     /// <summary>A workflow's id as the workflow store takes it: lower-case letters, digits and dashes, at most 40.</summary>
     [GeneratedRegex(@"^[a-z0-9]+(?:-[a-z0-9]+)*\z", RegexOptions.CultureInvariant)]
@@ -22,7 +24,7 @@ public sealed partial class HelpProposalBox
     /// trimmed and written only when given; the workflow store keeps a name to 60 characters (the driver's
     /// <c>WorkflowNamed.NameProblem</c>), and an edit keeps its workflow's name, so a name beside a base is refused.
     /// </summary>
-    public (string? Id, string Message) ProposeWorkflow(
+    public (string? Id, string Message) Propose(
         string? scope, string? workflow, int? baseVersion, string? steps, bool choose,
         string? changes, string? kind, string? import, string why, string? session, DateTimeOffset at, string? name = null)
     {
@@ -48,7 +50,7 @@ public sealed partial class HelpProposalBox
                  : Steps(steps, out stepList));
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
 
-        return Write(writer =>
+        return file.Write(writer =>
         {
             writer.WriteString("kind", "workflow");
             writer.WriteString("scope", scopeName);

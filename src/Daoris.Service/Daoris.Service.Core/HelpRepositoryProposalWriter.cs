@@ -1,10 +1,12 @@
+using static Daoris.Knowledge.HelpProposalFile;
+
 namespace Daoris.Knowledge;
 
 /// <summary>
 /// The <c>repository</c> kind's writer (ENTRY1d1, D161's ENTRY1d note): a registered repository moved to a workspace on this
 /// machine, by the registry's name and the workspace's.
 /// </summary>
-public sealed partial class HelpProposalBox
+internal sealed class HelpRepositoryProposalWriter(HelpProposalFile file)
 {
     /// <summary>
     /// Write one proposal to move a repository to a workspace (ENTRY1d1): the repository as the registry names it, its
@@ -14,7 +16,7 @@ public sealed partial class HelpProposalBox
     /// it is already in that workspace, is the driver's to judge against the registry.
     /// </summary>
     /// <param name="workspace">The workspace to move it to: one this machine has, or a new name, as the drawer's free text takes.</param>
-    public (string? Id, string Message) ProposeRepository(string repository, string workspace, string why, string? session, DateTimeOffset at)
+    public (string? Id, string Message) Propose(string repository, string workspace, string why, string? session, DateTimeOffset at)
     {
         var named = Blank(repository);
         var circle = Blank(workspace);
@@ -26,7 +28,7 @@ public sealed partial class HelpProposalBox
               ?? (circle is null ? $"a move names the workspace to move `{named}` to." : null);
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
 
-        return Write(writer =>
+        return file.Write(writer =>
         {
             writer.WriteString("kind", "repository");
             writer.WriteString("door", "wire");

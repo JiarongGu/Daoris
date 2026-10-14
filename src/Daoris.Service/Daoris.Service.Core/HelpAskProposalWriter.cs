@@ -1,10 +1,12 @@
+using static Daoris.Knowledge.HelpProposalFile;
+
 namespace Daoris.Knowledge;
 
 /// <summary>
 /// The <c>ask</c> kind's writer (HELP1c): something to start, which becomes an ask when the person applies it, with the review
 /// choice the person said for its work and their words with it (ENTRY1c), as the composer sends them.
 /// </summary>
-public sealed partial class HelpProposalBox
+internal sealed class HelpAskProposalWriter(HelpProposalFile file)
 {
     /// <summary>The composer's default, <i>As each repository's rule says</i>: no choice is written, as none is sent.</summary>
     private const string ReviewByRule = "rule";
@@ -21,7 +23,7 @@ public sealed partial class HelpProposalBox
     /// one word. Whether a name is an environment's, and one the ask's workspace declares, is the driver's, with the rule's own
     /// judgement. No kind or workflow is carried (D161's ENTRY1c note).
     /// </remarks>
-    public (string? Id, string Message) ProposeAsk(
+    public (string? Id, string Message) Propose(
         string sentence, string workspace, string why, string? session, DateTimeOffset at,
         string? review = null, string? reviewWords = null, string? shortTitle = null)
     {
@@ -44,7 +46,7 @@ public sealed partial class HelpProposalBox
             return (null, $"A review choice is `on`, an environment's name or `off`: one word, and `{choice}` is not. Nothing was proposed.");
         }
 
-        return Write(writer =>
+        return file.Write(writer =>
         {
             writer.WriteString("kind", "ask");
             writer.WriteString("door", "ask");

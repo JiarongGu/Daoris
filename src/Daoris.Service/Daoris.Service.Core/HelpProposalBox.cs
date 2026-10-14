@@ -1,6 +1,3 @@
-using System.Text;
-using System.Text.Json;
-
 namespace Daoris.Knowledge;
 
 /// <summary>
@@ -8,11 +5,15 @@ namespace Daoris.Knowledge;
 /// the person to apply or not.
 /// </summary>
 /// <remarks>
-/// <para><b>One writer per kind (MOD6)</b>, each a door a screen or a terminal already has, each in a file of
-/// its own (<c>HelpProposalBox.&lt;Kind&gt;.cs</c>) and listed in <see cref="Kinds"/>: its <c>Propose…</c>
-/// method, which the connector's tool calls, checks the kind's shape and hands its fields to <see cref="Write"/>,
-/// which writes every file's head and tail. Every file carries <c>target</c>, <c>workspace</c>, <c>value</c> and
-/// <c>sentence</c>, null where the kind has none; a kind's own fields follow them.</para>
+/// <para><b>One writer per kind (MOD6)</b>, each a door a screen or a terminal already has, each a class in a file of
+/// its own (<c>Help&lt;Kind&gt;ProposalWriter.cs</c>) and listed in <see cref="Kinds"/>. The box's <c>Propose…</c>
+/// method, which the connector's tool calls, is one call to the kind's writer, which checks the kind's shape and hands
+/// its fields to <see cref="HelpProposalFile.Write"/>, which writes every file's head and tail. Every file carries
+/// <c>target</c>, <c>workspace</c>, <c>value</c> and <c>sentence</c>, null where the kind has none; a kind's own fields
+/// follow them.</para>
+///
+/// <para><b>Not a partial type (PART7, D166's note on partial types)</b>: a new kind is a writer's file, a line in
+/// <see cref="Kinds"/> and a one-line <c>Propose…</c> here, so the connector's tools and the tests keep calling the box.</para>
 ///
 /// <para><b>PERM2's shape</b> (<see cref="RuleProposalBox"/>): a file under the home, never a row in the
 /// store, since what it would change is machine-local; one file per proposal, so two never collide.</para>
@@ -27,12 +28,12 @@ namespace Daoris.Knowledge;
 /// <para><b>THE FILE is the contract</b>: the driver's <c>HelpProposals</c> reads and settles it, shares no
 /// code with this, and each side's tests hold the same shape — and the same table of kinds.</para>
 /// </remarks>
-public sealed partial class HelpProposalBox(string? home)
+public sealed class HelpProposalBox(string? home)
 {
     /// <summary>
     /// The kinds this box writes, each with the connector's tool that proposes it, in the order the room allows
-    /// them (MOD6). A new kind is a file <c>HelpProposalBox.&lt;Kind&gt;.cs</c> and a line here; the driver's
-    /// <c>HelpProposalKinds</c> lists the same.
+    /// them (MOD6). A new kind is a file <c>Help&lt;Kind&gt;ProposalWriter.cs</c>, a line here and its <c>Propose…</c>;
+    /// the driver's <c>HelpProposalKinds</c> lists the same.
     /// </summary>
     public static readonly IReadOnlyList<(string Kind, string Tool)> Kinds =
     [
@@ -54,7 +55,9 @@ public sealed partial class HelpProposalBox(string? home)
         ("workflow", "workflow_propose"),
     ];
 
-    public string? Home { get; } = home;
+    private readonly HelpProposalFile file = new(home);
+
+    public string? Home => file.Home;
 
     /// <summary>The folder a proposal is written in, under the home.</summary>
     public static string FolderOf(string home) => Path.Combine(home, "help", "proposals");
@@ -63,56 +66,84 @@ public sealed partial class HelpProposalBox(string? home)
     public static HelpProposalBox FromEnvironment() =>
         new(RuleProposalBox.FromEnvironment().Home);
 
-    private static readonly (string? Id, string Message) NoReason =
-        (null, "A proposal needs its reason: what the person asked, and what the change would do. Nothing was proposed.");
+    /// <inheritdoc cref="HelpSettingProposalWriter.Propose"/>
+    public (string? Id, string Message) ProposeSetting(SettingChange change, string why, string? session, DateTimeOffset at) =>
+        new HelpSettingProposalWriter(file).Propose(change, why, session, at);
 
-    /// <summary>Why a name is not one word, or null when it is: every name a proposal carries is.</summary>
-    private static string? Word(string value, string what) =>
-        value.Any(c => char.IsWhiteSpace(c) || char.IsControl(c)) ? $"{what} is one word — `{value}` is not." : null;
+    /// <inheritdoc cref="HelpAskProposalWriter.Propose"/>
+    public (string? Id, string Message) ProposeAsk(
+        string sentence, string workspace, string why, string? session, DateTimeOffset at,
+        string? review = null, string? reviewWords = null, string? shortTitle = null) =>
+        new HelpAskProposalWriter(file).Propose(sentence, workspace, why, session, at, review, reviewWords, shortTitle);
 
-    /// <summary>One proposal's file: its id, when and by whom, the kind's own fields, its reason and its state.</summary>
-    private (string? Id, string Message) Write(Action<Utf8JsonWriter> body, string why, string? session, DateTimeOffset at)
-    {
-        if (Home is null) return (null, $"{Capital(DaorisHome.Sentence)} Nothing was proposed.");
+    /// <inheritdoc cref="HelpAgentProposalWriter.Propose"/>
+    public (string? Id, string Message) ProposeAgent(
+        string action, string agent, string? version, string why, string? session, DateTimeOffset at,
+        string? account = null, string? workspace = null,
+        string? use = null, string? keep = null, bool noKeep = false, bool? early = null, int? near = null,
+        IReadOnlyList<string>? accounts = null, bool clear = false) =>
+        new HelpAgentProposalWriter(file).Propose(
+            action, agent, version, why, session, at, account, workspace, use, keep, noKeep, early, near, accounts, clear);
 
-        var id = Guid.NewGuid().ToString("N")[..8];
-        var directory = FolderOf(Home);
-        Directory.CreateDirectory(directory);
-        var path = Path.Combine(directory, $"{id}.json");
+    /// <inheritdoc cref="HelpDeleteProposalWriter.Propose"/>
+    public (string? Id, string Message) ProposeDelete(string? quest, string? ask, string? deleteSession, string why, string? session, DateTimeOffset at) =>
+        new HelpDeleteProposalWriter(file).Propose(quest, ask, deleteSession, why, session, at);
 
-        // Hand-rolled, for the reason every store here is: nothing may stop working under AOT.
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
-        {
-            writer.WriteStartObject();
-            writer.WriteString("id", id);
-            writer.WriteString("proposed", Moments.Write(at));
-            writer.WriteStartObject("by");
-            Nullable(writer, "session", session);
-            writer.WriteEndObject();
-            body(writer);
-            writer.WriteString("why", why.Trim());
-            writer.WriteString("state", "proposed");
-            writer.WriteNull("note");
-            writer.WriteEndObject();
-        }
+    /// <inheritdoc cref="HelpAccountProposalWriter.Propose"/>
+    public (string? Id, string Message) ProposeAgentSettings(
+        string agent, string account, string? model, string? effort, string why, string? session, DateTimeOffset at) =>
+        new HelpAccountProposalWriter(file).Propose(agent, account, model, effort, why, session, at);
 
-        AtomicFile.WriteText(path, Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n");
+    /// <inheritdoc cref="HelpGoProposalWriter.Propose"/>
+    public (string? Id, string Message) ProposeGo(
+        string view, string? domain, string? part, string? item, string why, string? session, DateTimeOffset at, string? workspace = null,
+        string? repository = null, string? sentence = null) =>
+        new HelpGoProposalWriter(file).Propose(view, domain, part, item, why, session, at, workspace, repository, sentence);
 
-        return (id,
-            $"Proposed `#{id}`. The person sees it as a card saying what it changes and the command that does the "
-            + "same, with Apply and Not now; nothing changes until they press Apply, and their answer comes back to "
-            + "you as their next message. If the driver finds the route would refuse it, you are told why instead.");
-    }
+    /// <inheritdoc cref="HelpPluginProposalWriter.Propose"/>
+    public (string? Id, string Message) ProposePlugin(
+        string action, string? id, string? folder, string? repository, string why, string? session, DateTimeOffset at,
+        string? offer = null) =>
+        new HelpPluginProposalWriter(file).Propose(action, id, folder, repository, why, session, at, offer);
 
-    private static string? Blank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    /// <inheritdoc cref="HelpHandProposalWriter.Propose"/>
+    public (string? Id, string Message) ProposeHand(string target, string? repository, string? plugin, string why, string? session, DateTimeOffset at) =>
+        new HelpHandProposalWriter(file).Propose(target, repository, plugin, why, session, at);
 
-    private static void Nullable(Utf8JsonWriter writer, string name, string? value)
-    {
-        if (value is null) writer.WriteNull(name);
-        else writer.WriteString(name, value);
-    }
+    /// <inheritdoc cref="HelpBrowserProposalWriter.Propose"/>
+    public (string? Id, string Message) ProposeBrowser(
+        string door, string? value, string? address, string? title, string why, string? session, DateTimeOffset at) =>
+        new HelpBrowserProposalWriter(file).Propose(door, value, address, title, why, session, at);
 
-    private static string Capital(string sentence) =>
-        sentence.Length == 0 ? sentence : char.ToUpperInvariant(sentence[0]) + sentence[1..];
+    /// <inheritdoc cref="HelpSyncProposalWriter.Propose"/>
+    public (string? Id, string Message) ProposeSync(
+        string? repository, string why, string? session, DateTimeOffset at, string? workspace = null) =>
+        new HelpSyncProposalWriter(file).Propose(repository, why, session, at, workspace);
+
+    /// <inheritdoc cref="HelpAcceptProposalWriter.Propose"/>
+    public (string? Id, string Message) ProposeAccept(string quest, string why, string? session, DateTimeOffset at) =>
+        new HelpAcceptProposalWriter(file).Propose(quest, why, session, at);
+
+    /// <inheritdoc cref="HelpRepositoryProposalWriter.Propose"/>
+    public (string? Id, string Message) ProposeRepository(string repository, string workspace, string why, string? session, DateTimeOffset at) =>
+        new HelpRepositoryProposalWriter(file).Propose(repository, workspace, why, session, at);
+
+    /// <inheritdoc cref="HelpSessionProposalWriter.Propose"/>
+    public (string? Id, string Message) ProposeSession(string door, string? sessions, bool ended, string why, string? session, DateTimeOffset at) =>
+        new HelpSessionProposalWriter(file).Propose(door, sessions, ended, why, session, at);
+
+    /// <inheritdoc cref="HelpPauseProposalWriter.Propose"/>
+    public (string? Id, string Message) ProposePause(string door, string? quest, string? ask, string why, string? session, DateTimeOffset at) =>
+        new HelpPauseProposalWriter(file).Propose(door, quest, ask, why, session, at);
+
+    /// <inheritdoc cref="HelpClearProposalWriter.Propose"/>
+    public (string? Id, string Message) ProposeClear(
+        string door, string? quest, string? ask, string? workspace, string why, string? session, DateTimeOffset at) =>
+        new HelpClearProposalWriter(file).Propose(door, quest, ask, workspace, why, session, at);
+
+    /// <inheritdoc cref="HelpWorkflowProposalWriter.Propose"/>
+    public (string? Id, string Message) ProposeWorkflow(
+        string? scope, string? workflow, int? baseVersion, string? steps, bool choose,
+        string? changes, string? kind, string? import, string why, string? session, DateTimeOffset at, string? name = null) =>
+        new HelpWorkflowProposalWriter(file).Propose(scope, workflow, baseVersion, steps, choose, changes, kind, import, why, session, at, name);
 }

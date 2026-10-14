@@ -48,19 +48,29 @@ public sealed class HelpProposalBoxKindsTests
         Assert.Equal(Table, HelpProposalBox.Kinds);
     }
 
+    /// <summary>
+    /// PART7 (D166's note, no partial type without generated code): each kind is a writer class of its own,
+    /// <c>Help&lt;Kind&gt;ProposalWriter</c>, in a file of that name, writing exactly that kind; the box is one file.
+    /// </summary>
     [Fact]
-    public void Every_kind_is_written_by_a_file_of_its_own()
+    public void Every_kind_is_written_by_a_class_in_a_file_of_its_own()
     {
         var core = Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core");
 
         Assert.Equal(
-            Table.Select(row => $"HelpProposalBox.{Pascal(row.Kind)}.cs").Append("HelpProposalBox.cs").Order(StringComparer.Ordinal),
-            Directory.GetFiles(core, "HelpProposalBox*.cs").Select(Path.GetFileName).Order(StringComparer.Ordinal));
+            Table.Select(row => $"{Writer(row.Kind)}.cs").Order(StringComparer.Ordinal),
+            Directory.GetFiles(core, "Help*ProposalWriter.cs").Select(Path.GetFileName).Order(StringComparer.Ordinal));
+        Assert.Equal("HelpProposalBox.cs", Path.GetFileName(Assert.Single(Directory.GetFiles(core, "HelpProposalBox*.cs"))));
         foreach (var (kind, _) in Table)
         {
-            Assert.Contains($"writer.WriteString(\"kind\", \"{kind}\");", File.ReadAllText(Path.Combine(core, $"HelpProposalBox.{Pascal(kind)}.cs")));
+            var writer = File.ReadAllText(Path.Combine(core, $"{Writer(kind)}.cs"));
+            Assert.Matches($@"\bclass {Writer(kind)}\b", writer);
+            Assert.DoesNotContain("class HelpProposalBox", writer);
+            Assert.Contains($"writer.WriteString(\"kind\", \"{kind}\");", writer);
         }
     }
+
+    private static string Writer(string kind) => $"Help{Pascal(kind)}ProposalWriter";
 
     [Fact]
     public void Every_kind_has_its_connectors_tool()

@@ -1,3 +1,5 @@
+using static Daoris.Knowledge.HelpProposalFile;
+
 namespace Daoris.Knowledge;
 
 /// <summary>
@@ -5,7 +7,7 @@ namespace Daoris.Knowledge;
 /// Repositories → the workspace's page → Branches → <i>Bring up to date</i>, and <c>daoris-driver trees sync</c> — for one
 /// repository, or every one with a checkout on the machine.
 /// </summary>
-public sealed partial class HelpProposalBox
+internal sealed class HelpSyncProposalWriter(HelpProposalFile file)
 {
     /// <summary>
     /// Write one proposal to bring repositories up to date (HELP10). What the look lists, which fetches and so waits for
@@ -13,7 +15,7 @@ public sealed partial class HelpProposalBox
     /// </summary>
     /// <param name="repository">The one repository to bring up to date; null for every one with a checkout here.</param>
     /// <param name="workspace">BRSCOPE1b: the one workspace the look and the press are scoped to; null for the whole machine.</param>
-    public (string? Id, string Message) ProposeSync(
+    public (string? Id, string Message) Propose(
         string? repository, string why, string? session, DateTimeOffset at, string? workspace = null)
     {
         var named = Blank(repository);
@@ -23,7 +25,7 @@ public sealed partial class HelpProposalBox
         if (circle is not null && Word(circle, "a workspace") is { } refusedWorkspace)
             return (null, $"{Capital(refusedWorkspace)} Nothing was proposed.");
 
-        return Write(writer =>
+        return file.Write(writer =>
         {
             writer.WriteString("kind", "sync");
             writer.WriteString("door", "sync");
