@@ -61,7 +61,7 @@ makes it. Paths are under `src/Daoris.Service/`.
 These are other lanes' files, so a service branch names them in its hand-back and leaves them alone:
 
 - the driver, which reads the quest answer field by field (`src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs`);
-- the page's quest type (`src/Daoris.Web/src/api.ts`);
+- the page's quest type (`src/Daoris.Web/src/data/api.ts`);
 - the family rehearsal, which compares some answers whole (`tools/family-rehearsal.mjs`). A new field fails checks a
   service branch cannot run, as EVID1a's `evidence: []` did;
 - the records: the decision that adds a kind amends D68. The sync design's list of kinds (§2) is history and is not

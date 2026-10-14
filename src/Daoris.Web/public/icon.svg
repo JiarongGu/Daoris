@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="64" height="64">
-  <!-- The seal, identical in construction to `src/Mark.tsx` - a 印章 is designed to read at the size
+  <!-- The seal, identical in construction to `src/design/Mark.tsx` - a 印章 is designed to read at the size
        of a thumbprint, which is the constraint a 16px taskbar icon has. The figure is knocked out of
        the field rather than painted on it, so exactly one thing paints the colour. -->
   <rect width="24" height="24" rx="5.5" fill="#7a5c2e" mask="url(#m)"/>

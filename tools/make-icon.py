@@ -7,7 +7,7 @@ Run rarely — when the mark changes — and **commit the result**, because the 
 the build embeds and no consumer should need this script to build the app. It is here rather than in
 somebody's head so the next change to the mark is a one-line edit and a re-run.
 
-🔴 **The geometry is duplicated from `src/Daoris.Web/src/Mark.tsx`, deliberately and visibly.** They
+🔴 **The geometry is duplicated from `src/Daoris.Web/src/design/Mark.tsx`, deliberately and visibly.** They
 are twins: one is SVG in a page, one is rasterised into a Windows resource, and they share no code
 because nothing sensible spans a React component and an ICO encoder. The FILE is the contract — the
 same construction in both, and they move together. It is the same twin rule the remotes map carries.
