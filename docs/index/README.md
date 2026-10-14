@@ -117,8 +117,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Knowledge/KnowledgeService.cs` | 53 | 1055 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 105 | 1953 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 149 | 2685 |
-| `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 75 | 1392 |
-| `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 76 | 1319 |
+| `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 75 | 1394 |
+| `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 78 | 1354 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 100 | 1754 |
 | `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 48 | 591 |

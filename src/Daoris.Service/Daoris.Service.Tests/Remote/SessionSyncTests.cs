@@ -437,6 +437,32 @@ public sealed class SessionSyncTests : IAsyncLifetime
         Assert.Null((await _a.FindAsync(old.Id))!.Entry);
     }
 
+    /// <summary>🔴 CHATTAKE1: the quest a chat took goes up with its record and comes down to a teammate; a record without it reads as before.</summary>
+    [Fact]
+    public async Task The_quest_a_chat_took_goes_up_and_comes_down_to_a_teammate()
+    {
+        var chat = await _a.CreateAsync(null, "Shared", "stub", Now, kind: SessionKind.Chat);
+        Assert.True(await _a.MarkTookAsync(chat.Id, "q9"));
+
+        await SyncAsync(_a, "a@one");
+        await SyncAsync(_b, "b@two");
+
+        Assert.Equal("q9", (await _remote.FindAsync($"a@one/{chat.Id}"))!.TookQuest);
+        Assert.Equal("q9", (await _b.FindAsync($"a@one/{chat.Id}"))!.TookQuest);
+
+        var feed = SessionWire.Feed([
+            new FedSessionRecord("abcd1234", null, "Shared", "stub", "completed", null, null, Now, Now, TookQuest: "q9"),
+            new FedSessionRecord("ef567890", null, "Shared", "stub", "completed", null, null, Now, Now),
+        ]);
+        var read = SessionWire.ReadFeed(feed)!;
+        Assert.Equal("q9", read[0].TookQuest);
+        Assert.Null(read[1].TookQuest);
+        var page = SessionWire.Page(new SessionFetch(
+            [new Session("a@one/abcd1234", null, "Shared", "stub", SessionState.Completed, null, null, null, Now, Now) { Origin = "a@one", TookQuest = "q9" }],
+            1, More: false));
+        Assert.Equal("q9", SessionWire.ReadPage(page)!.Records.Single().TookQuest);
+    }
+
     /// <summary>A record the key was written for goes up as stored, and the wire's reader hands it back with the record.</summary>
     [Fact]
     public void The_wires_feed_and_page_carry_the_entry_and_a_feed_without_it_reads_as_before()

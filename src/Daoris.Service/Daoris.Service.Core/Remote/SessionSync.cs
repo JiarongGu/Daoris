@@ -57,7 +57,9 @@ public static class SessionSync
                     c.Session.Limit,
                     // The note's parts with it, every string cleaned as the note is (LANG1a).
                     NoteParts.ForAnotherMachine(c.Session.NoteParts, c.Session),
-                    await SessionEntries.KeyAsync(c.Session, facts, ct).ConfigureAwait(false)));
+                    await SessionEntries.KeyAsync(c.Session, facts, ct).ConfigureAwait(false),
+                    // CHATTAKE1: the quest a chat took, which names no path and no account.
+                    c.Session.TookQuest));
             }
 
             if (feed.Count > 0)
