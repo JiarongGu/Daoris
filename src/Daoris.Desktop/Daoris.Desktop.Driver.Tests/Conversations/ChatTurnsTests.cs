@@ -235,6 +235,146 @@ public sealed class ChatTurnsTests
         Assert.Null(ChatTurns.Lost("said-1", stoppedUnder: false, stopReason: "cancelled"));
     }
 
+    /// <summary>QUEUEEDIT1a: a word the person took back is settled on the record by its id and its code, the page's words.</summary>
+    [Fact]
+    public void A_word_taken_back_is_said_withdrawn_by_its_code()
+    {
+        var withdrawn = ChatTurns.Withdrawn("said-1");
+
+        Assert.Equal((SessionEventKind.Note, (string?)SessionEventCodes.Withdrawn), (withdrawn.Kind, withdrawn.Code));
+        Assert.Equal(["said-1"], withdrawn.Words!);
+        Assert.Equal("withdrawn", SessionEventCodes.Withdrawn);
+    }
+
+    /// <summary>QUEUEEDIT1a: each word that waits has an id, and taking one back leaves the rest in the order said (D76 CONV4a).</summary>
+    [Fact]
+    public async Task A_queued_word_has_an_id_and_is_removed_by_it_leaving_the_rest_in_order()
+    {
+        var door = new Door { TakesWordsMidTurn = false };
+        var turns = door.Turns();
+        turns.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+        turns.Take(new ChatMessage("and the sixth", []));
+        turns.Take(new ChatMessage("and the seventh", []));
+
+        var queued = turns.State.Queued;
+        Assert.All(queued, message => Assert.False(string.IsNullOrEmpty(message.Id)));
+        Assert.NotEqual(queued[0].Id, queued[1].Id);
+
+        Assert.Equal(QueueEdit.Done, turns.EditQueued(queued[0].Id!, text: null));
+
+        Assert.Equal(["and the seventh"], turns.State.Queued.Select(message => message.Text));
+        Assert.Equal(["and the seventh"], door.Told[^1].Queued.Select(message => message.Text));
+        door.EndTurn(0);
+        await Poll.Until(() => door.Took.Count == 2, () => "the word left in the queue never became its turn");
+        Assert.Equal("and the seventh", door.Took[1]);
+    }
+
+    /// <summary>QUEUEEDIT1a: an edit replaces the words where they wait, keeping the order and the files.</summary>
+    [Fact]
+    public async Task A_queued_word_is_replaced_in_place_keeping_its_place_and_its_files()
+    {
+        var door = new Door { TakesWordsMidTurn = false };
+        var turns = door.Turns();
+        turns.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+        turns.Take(new ChatMessage("and the sixth", [new KeptFile("six.txt", "kept/six.txt")]));
+        turns.Take(new ChatMessage("and the seventh", []));
+        var first = turns.State.Queued[0];
+
+        Assert.Equal(QueueEdit.Done, turns.EditQueued(first.Id!, "and the eighth instead"));
+
+        var now = turns.State.Queued;
+        Assert.Equal(["and the eighth instead", "and the seventh"], now.Select(message => message.Text));
+        Assert.Equal(["six.txt"], now[0].Files.Select(file => file.Name));
+        Assert.NotEqual(first.Id, now[0].Id);
+        door.EndTurn(0);
+        await Poll.Until(() => door.Took.Count == 2, () => "the edited word never became its turn");
+        Assert.Equal("and the eighth instead", door.Took[1]);
+    }
+
+    /// <summary>QUEUEEDIT1a: a word a turn already took is no longer the queue's: a normal answer, never an error.</summary>
+    [Fact]
+    public async Task A_word_a_turn_already_took_is_answered_taken()
+    {
+        var door = new Door { TakesWordsMidTurn = false };
+        var turns = door.Turns();
+        turns.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+        turns.Take(new ChatMessage("and the sixth", []));
+        var sixth = turns.State.Queued[0].Id!;
+        door.EndTurn(0);
+        await Poll.Until(() => door.Took.Count == 2, () => "the waiting word never became its own turn");
+
+        Assert.Equal(QueueEdit.Taken, turns.EditQueued(sixth, text: null));
+        Assert.Equal(QueueEdit.Taken, turns.EditQueued("said-nothing", "words"));
+        Assert.Equal("and the sixth", door.Took[1]);
+    }
+
+    /// <summary>
+    /// QUEUEEDIT1a: the word taken while the door opens is still the queue's (a stop withdraws it the same way): removed, it is
+    /// never sent; edited, the edited words are.
+    /// </summary>
+    [Fact]
+    public async Task A_word_taken_while_the_door_opens_is_removed_or_edited_before_it_is_sent()
+    {
+        var opening = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var took = new List<string>();
+        var turns = new ChatTurns(
+            ready: () => opening.Task,
+            take: (message, sent) =>
+            {
+                lock (took) took.Add(message.Text);
+                sent();
+                return Task.CompletedTask;
+            },
+            interrupt: () => Task.CompletedTask,
+            changed: _ => { });
+        turns.Take(new ChatMessage("first", []));
+        turns.Take(new ChatMessage("second", []));
+        await Poll.Until(() => turns.State.Opening, () => "the door never said it was opening");
+        var holding = turns.State.Queued[0];
+        Assert.Equal("first", holding.Text);
+
+        Assert.Equal(QueueEdit.Done, turns.EditQueued(holding.Id!, "first, said better"));
+        Assert.Equal(["first, said better", "second"], turns.State.Queued.Select(message => message.Text));
+        var edited = turns.State.Queued[0].Id!;
+        Assert.Equal(QueueEdit.Done, turns.EditQueued(turns.State.Queued[1].Id!, text: null));
+        Assert.Equal(["first, said better"], turns.State.Queued.Select(message => message.Text));
+
+        opening.SetResult(true);
+        await Poll.Until(() => { lock (took) return took.Count == 1; }, () => "the edited word never reached the door");
+        lock (took) Assert.Equal(["first, said better"], took);
+        Assert.Equal(QueueEdit.Taken, turns.EditQueued(edited, text: null));
+    }
+
+    /// <summary>
+    /// QUEUEEDIT1a: the id is the queue's view alone: the word a turn takes carries none, so a conversation's record is
+    /// shaped as it was (D76: its queued words are not in the record until taken).
+    /// </summary>
+    [Fact]
+    public async Task The_id_is_not_carried_into_the_turn_the_word_becomes()
+    {
+        var ids = new List<string?>();
+        var ended = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var turns = new ChatTurns(
+            ready: () => Task.FromResult(true),
+            take: (message, sent) =>
+            {
+                lock (ids) ids.Add(message.Id);
+                sent();
+                return ended.Task;
+            },
+            interrupt: () => Task.CompletedTask,
+            changed: _ => { });
+        turns.Take(new ChatMessage("first", []));
+        turns.Take(new ChatMessage("second", []));
+        ended.SetResult();
+        await Poll.Until(() => { lock (ids) return ids.Count == 2; }, () => "the turns never both ran");
+
+        Assert.All(ids, id => Assert.Null(id));
+    }
+
     /// <summary>
     /// 🔴 A move at a turn's end is never mid-turn (SWITCH1c-ii, the switch design §4): the turns are held only where nothing runs
     /// or waits, and while held a word takes nothing, so no turn starts that the move's end would cut. Released, they take words
@@ -291,7 +431,7 @@ public sealed class ChatTurnsTests
     {
         var catalogue = NoteCodesTests.Catalogue(language);
 
-        Assert.Equal([SessionEventCodes.Lost], SessionEventCodes.All);
+        Assert.Equal([SessionEventCodes.Lost, SessionEventCodes.Withdrawn], SessionEventCodes.All);
         foreach (var code in SessionEventCodes.All)
         {
             Assert.Matches("^[a-z]+(-[a-z]+)*$", code);

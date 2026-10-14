@@ -21,6 +21,7 @@ public sealed class DriverModuleConversationProcessTests : DriverModuleBridge
     [InlineData("SESSION_INPUT")]
     [InlineData("END_CHAT")]
     [InlineData("CANCEL_TURN")]
+    [InlineData("SESSION_QUEUE_EDIT")]
     public async Task A_session_that_takes_no_input_is_refused_in_the_drivers_words(string type)
     {
         var loop = Loop();
@@ -37,7 +38,7 @@ public sealed class DriverModuleConversationProcessTests : DriverModuleBridge
 
         try
         {
-            var refusal = await RefusalAsync(new DriverModule(Bus, loop), type, new { id = "i1", text = "hello" });
+            var refusal = await RefusalAsync(new DriverModule(Bus, loop), type, new { id = "i1", session = "i1", text = "hello" });
 
             Assert.Contains(Refusals.DriverRefused, refusal);
             Assert.Contains("ask #a1b2c3's intake takes no messages.", refusal);

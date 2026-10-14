@@ -261,6 +261,57 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// QUEUEEDIT1a (D76): the queue names each held word by its id, and <c>SESSION_QUEUE_EDIT</c> takes one back or rewords it:
+    /// with no text it removes, with some it replaces the words in place, and either is told to every list as the queue moved.
+    /// A word a turn took is a normal answer, <c>done: false</c> and <c>why: taken</c>, never an error.
+    /// </summary>
+    [Fact]
+    public async Task A_held_word_is_removed_or_reworded_by_its_id_and_a_taken_one_answers_taken()
+    {
+        var ledger = new Ledger { Records = Records(Record("s1", "completed")) };
+        var (loop, module) = await UpAsync(ledger);
+        var inbox = loop.Processes.OpenInbox("d2");
+        inbox.Attach(interrupt: null);
+        inbox.Hold(new ChatMessage("one", []));
+        inbox.Hold(new ChatMessage("two", []));
+
+        var queue = await AnswerAsync(module, "SESSION_QUEUE", new { id = "d2" });
+        var ids = queue.GetProperty("queued").EnumerateArray().Select(said => said.GetProperty("id").GetString()!).ToArray();
+        Assert.Equal(2, ids.Distinct().Count());
+
+        var reworded = await AnswerAsync(module, "SESSION_QUEUE_EDIT", new { session = "d2", id = ids[0], text = "one, said better" });
+        var removed = await AnswerAsync(module, "SESSION_QUEUE_EDIT", new { session = "d2", id = ids[1] });
+        var again = await AnswerAsync(module, "SESSION_QUEUE_EDIT", new { session = "d2", id = ids[1] });
+        var unknown = await AnswerAsync(module, "SESSION_QUEUE_EDIT", new { session = "nothing-here", id = "said-1", text = "words" });
+
+        Assert.True(reworded.GetProperty("done").GetBoolean());
+        Assert.True(removed.GetProperty("done").GetBoolean());
+        Assert.False(again.GetProperty("done").GetBoolean());
+        Assert.Equal("taken", again.GetProperty("why").GetString());
+        Assert.Equal("taken", unknown.GetProperty("why").GetString());
+        var after = await AnswerAsync(module, "SESSION_QUEUE", new { id = "d2" });
+        var now = after.GetProperty("queued").EnumerateArray().ToArray();
+        Assert.Equal(["one, said better"], now.Select(said => said.GetProperty("text").GetString()));
+        Assert.NotEqual(ids[0], now[0].GetProperty("id").GetString());
+    }
+
+    /// <summary>QUEUEEDIT1a: words reworded to nothing are refused in a sentence: removing is the verb with no text.</summary>
+    [Fact]
+    public async Task Rewording_a_held_word_to_nothing_is_refused()
+    {
+        var (loop, module) = await UpAsync(new Ledger { Records = Records(Record("s1", "completed")) });
+        var inbox = loop.Processes.OpenInbox("d2");
+        inbox.Attach(interrupt: null);
+        inbox.Hold(new ChatMessage("one", []));
+        var id = inbox.State.Queued[0].Id!;
+
+        var refusal = await RefusalAsync(module, "SESSION_QUEUE_EDIT", new { session = "d2", id, text = "  " });
+
+        Assert.Contains(Refusals.DriverRefused, refusal);
+        Assert.Equal(["one"], inbox.State.Queued.Select(message => message.Text));
+    }
+
+    /// <summary>
     /// MSG1d (D136, D137 §5.3): a word to a driven session whose inbox is open is held there as before, and the answer says
     /// when it reaches the session: at its next step where the door sends words during a turn.
     /// </summary>

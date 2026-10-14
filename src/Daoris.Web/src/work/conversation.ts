@@ -21,6 +21,8 @@ import type { NotePart } from '../api';
 export const CONVERSATION_CODES: Readonly<Record<string, string>> = {
   /** A word the person's stop cut off on its way (MSG1c, STEER1 §3): it may have been read, its answer not kept. */
   lost: 'work.conversation.lost',
+  /** A word the person took back, or reworded, while it still waited (QUEUEEDIT1a): never taken by a turn. */
+  withdrawn: 'work.conversation.withdrawn',
 };
 
 /** Daoris's event kinds — `SessionEventKind` in the driver. */
