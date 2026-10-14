@@ -17,7 +17,7 @@ public sealed class McpToolGuardTests : McpToolsFixture
     [Fact]
     public async Task A_connector_that_names_no_session_publishes_as_an_agent()
     {
-        var refused = await _tools.PublishQuestAsync("Asker", "Owner", "Turn the review off", "b", review: new ReviewChoice(Reviews.Off, null));
+        var refused = await _questTools.PublishQuestAsync("Asker", "Owner", "Turn the review off", "b", review: new ReviewChoice(Reviews.Off, null));
 
         Assert.Contains("only on the person's own words", refused);
         Assert.Empty(await _quests.ListAsync(receiver: "Owner"));
@@ -27,8 +27,7 @@ public sealed class McpToolGuardTests : McpToolsFixture
         var desk = new AskDesk(_service, asks, exchange, _files);
         var ask = (await desk.AskAsync(new AskRequest("default", "fix the typo in the report"), DateTimeOffset.UtcNow)).Ask!;
         var room = Path.Combine(_root, "home", "intake", "default");
-        var unbound = new KnowledgeTools(
-            _service, _quests, exchange, new AmbientWorkspace(room, ask.Workspace), desk, new IntakeScope(ask.Id, Session: null));
+        var unbound = new QuestTools(_quests, exchange, Circle(room, ask.Workspace), desk, new IntakeScope(ask.Id, Session: null));
 
         var off = await unbound.PublishQuestAsync("intake", "Owner", "Fix the typo", "b", review: new ReviewChoice(Reviews.Off, null));
 
@@ -40,8 +39,8 @@ public sealed class McpToolGuardTests : McpToolsFixture
     [Fact]
     public async Task A_null_step_or_requirement_is_refused_naming_which()
     {
-        var step = await _tools.PublishQuestAsync("Asker", "Owner", "A null step", "b", then: [null!]);
-        var requirement = await _tools.PublishQuestAsync("Asker", "Owner", "A null requirement", "b", requirements: [null!]);
+        var step = await _questTools.PublishQuestAsync("Asker", "Owner", "A null step", "b", then: [null!]);
+        var requirement = await _questTools.PublishQuestAsync("Asker", "Owner", "A null requirement", "b", requirements: [null!]);
 
         Assert.Contains("Step 1 of the chain needs whom to ask", step);
         Assert.Contains("Requirement 1", requirement);

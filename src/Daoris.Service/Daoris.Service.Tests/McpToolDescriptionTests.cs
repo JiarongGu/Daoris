@@ -13,8 +13,15 @@ namespace Daoris.Service.Tests;
 /// </summary>
 public sealed partial class McpToolDescriptionTests
 {
+    /// <summary>Every method of every tool class the host registers (PART10a), tool or not.</summary>
+    private static IEnumerable<MethodInfo> Methods() => KnowledgeServer.ToolTypes.SelectMany(type => type.GetMethods());
+
+    /// <summary>The name of every tool the host offers.</summary>
+    private static List<string> ToolNames() =>
+        Methods().Select(method => method.GetCustomAttribute<McpServerToolAttribute>()?.Name).OfType<string>().ToList();
+
     private static IEnumerable<(string Tool, string Text)> Descriptions() =>
-        typeof(KnowledgeTools).GetMethods()
+        Methods()
             .Select(method => (Tool: method.GetCustomAttribute<McpServerToolAttribute>()?.Name,
                 Method: method))
             .Where(tool => tool.Tool is not null)
@@ -78,7 +85,7 @@ public sealed partial class McpToolDescriptionTests
     {
         var text = string.Join(" ", Descriptions().Where(d => d.Tool == "quest_publish").Select(d => d.Text));
 
-        Assert.Contains(typeof(KnowledgeTools).GetMethod("PublishQuestAsync")!.GetParameters(), p => p.Name == "workflowProposal");
+        Assert.Contains(typeof(QuestTools).GetMethod("PublishQuestAsync")!.GetParameters(), p => p.Name == "workflowProposal");
         Assert.Contains("only their press applies it", text);
         Assert.Contains("the person's own words", text);
         Assert.Contains("at most 300", text);
@@ -94,8 +101,8 @@ public sealed partial class McpToolDescriptionTests
         var checkout = Path.Combine(Path.GetTempPath(), "atlas");
         var options = new Daoris.Knowledge.ServiceOptions("root", "db", Repository: checkout, Documents: "docs", Index: "docs/index");
 
-        var lexical = KnowledgeTools.Instructions(options, semantic: false);
-        var semantic = KnowledgeTools.Instructions(options, semantic: true);
+        var lexical = KnowledgeServer.Instructions(options, semantic: false);
+        var semantic = KnowledgeServer.Instructions(options, semantic: true);
 
         Assert.NotNull(lexical);
         Assert.Contains("`atlas`", lexical);
@@ -114,10 +121,7 @@ public sealed partial class McpToolDescriptionTests
     [Fact]
     public void No_tool_clears_history_or_is_handed_what_would()
     {
-        var tools = typeof(KnowledgeTools).GetMethods()
-            .Select(method => method.GetCustomAttribute<McpServerToolAttribute>()?.Name)
-            .OfType<string>()
-            .ToList();
+        var tools = ToolNames();
 
         Assert.Contains("quest_publish", tools);
         // HIST1f-a: `clear_propose` only writes a proposal the person applies, as `delete_propose` does.
@@ -126,7 +130,7 @@ public sealed partial class McpToolDescriptionTests
             name => name.Contains("clear") || name.Contains("history") || name.Contains("forget"));
         Assert.Contains("clear_propose", tools);
         Assert.DoesNotContain(
-            typeof(KnowledgeTools).GetConstructors().SelectMany(constructor => constructor.GetParameters()),
+            KnowledgeServer.ToolTypes.SelectMany(type => type.GetConstructors()).SelectMany(constructor => constructor.GetParameters()),
             parameter => parameter.ParameterType == typeof(Daoris.Knowledge.HistoryDesk)
                          || parameter.ParameterType == typeof(Daoris.Knowledge.ComposedService));
     }
@@ -139,10 +143,7 @@ public sealed partial class McpToolDescriptionTests
     [Fact]
     public void No_tool_settles_a_second_opinion_and_both_say_its_findings_are_claims()
     {
-        var tools = typeof(KnowledgeTools).GetMethods()
-            .Select(method => method.GetCustomAttribute<McpServerToolAttribute>()?.Name)
-            .OfType<string>()
-            .ToList();
+        var tools = ToolNames();
 
         Assert.Equal(["opinion_answer", "opinion_give"], tools.Where(name => name.Contains("opinion")).Order());
         Assert.DoesNotContain(tools, name => name.Contains("anyway") || name.Contains("myself") || name.Contains("settle")
@@ -163,10 +164,7 @@ public sealed partial class McpToolDescriptionTests
     [Fact]
     public void No_tool_records_evidence_and_the_tools_say_what_is_read()
     {
-        var tools = typeof(KnowledgeTools).GetMethods()
-            .Select(method => method.GetCustomAttribute<McpServerToolAttribute>()?.Name)
-            .OfType<string>()
-            .ToList();
+        var tools = ToolNames();
         var respond = string.Join(" ", Descriptions().Where(d => d.Tool == "quest_respond").Select(d => d.Text));
         var publish = string.Join(" ", Descriptions().Where(d => d.Tool == "quest_publish").Select(d => d.Text));
 
@@ -191,7 +189,7 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains(search, text => text.Contains("lines"));
         Assert.Contains(get, text => text.Contains("lines") && text.Contains("12-30"));
         Assert.Contains(
-            typeof(KnowledgeTools).GetMethod(nameof(KnowledgeTools.GetAsync))!.GetParameters(),
+            typeof(KnowledgeSearchTools).GetMethod(nameof(KnowledgeSearchTools.GetAsync))!.GetParameters(),
             parameter => parameter.Name == "lines" && parameter.HasDefaultValue);
     }
 
@@ -201,14 +199,14 @@ public sealed partial class McpToolDescriptionTests
     {
         var options = new Daoris.Knowledge.ServiceOptions("root", "db", Repository: Path.Combine(Path.GetTempPath(), "atlas"));
 
-        Assert.Contains("the lines a hit names", KnowledgeTools.Instructions(options, semantic: false));
+        Assert.Contains("the lines a hit names", KnowledgeServer.Instructions(options, semantic: false));
     }
 
     /// <summary>A server over a family of repositories says nothing more than its tools do, as before.</summary>
     [Fact]
     public void A_server_over_a_family_gives_no_instructions()
     {
-        Assert.Null(KnowledgeTools.Instructions(new Daoris.Knowledge.ServiceOptions("root", "db"), semantic: false));
+        Assert.Null(KnowledgeServer.Instructions(new Daoris.Knowledge.ServiceOptions("root", "db"), semantic: false));
     }
 
     /// <summary>MIXAGENT2a-i: what a session reads of the helper tools says what each does and what it leaves to the person's rule.</summary>

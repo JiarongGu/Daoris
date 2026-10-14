@@ -20,9 +20,7 @@ public sealed class McpHelperToolTests : McpToolsFixture
         var asks = await AskStore.OpenAsync(_connection);
         var ledger = new SessionLedger(_quests, sessions, _service, asks);
         var named = await session(sessions);
-        var tools = new KnowledgeTools(
-            _service, _quests, new QuestExchange(_service, _quests, files: _files), new AmbientWorkspace(Path.Combine(_root, "family", "Owner")),
-            intake: new IntakeScope(null, named), ledger: ledger, helpers: new HelperBox(HelpersHome));
+        var tools = new KnowledgeTools(intake: new IntakeScope(null, named), ledger: ledger, helpers: new HelperBox(HelpersHome));
         return (tools, sessions);
     }
 
@@ -76,7 +74,6 @@ public sealed class McpHelperToolTests : McpToolsFixture
         });
         async Task<string> AskAs(string? id, string question = "What does this do?") =>
             await new KnowledgeTools(
-                _service, _quests, new QuestExchange(_service, _quests, files: _files), new AmbientWorkspace(Path.Combine(_root, "family", "Owner")),
                 intake: new IntakeScope(null, id), ledger: new SessionLedger(_quests, sessions, _service, await AskStore.OpenAsync(_connection)),
                 helpers: new HelperBox(HelpersHome)).AskHelperAsync(question);
 
@@ -105,7 +102,6 @@ public sealed class McpHelperToolTests : McpToolsFixture
             return null;
         });
         KnowledgeTools As(string? id) => new(
-            _service, _quests, new QuestExchange(_service, _quests, files: _files), new AmbientWorkspace(Path.Combine(_root, "family", "Owner")),
             intake: new IntakeScope(null, id), ledger: new SessionLedger(_quests, sessions, _service, AskStore.OpenAsync(_connection).GetAwaiter().GetResult()),
             helpers: new HelperBox(HelpersHome));
         await As(asker).AskHelperAsync("Where is the cap read?");
@@ -139,7 +135,6 @@ public sealed class McpHelperToolTests : McpToolsFixture
         string asker = null!;
         var (_, sessions) = await HelperConnectorAsync(async store => asker = (await WorkingAsync(store)).Id);
         var tools = new KnowledgeTools(
-            _service, _quests, new QuestExchange(_service, _quests, files: _files), new AmbientWorkspace(Path.Combine(_root, "family", "Owner")),
             intake: new IntakeScope(null, asker), ledger: new SessionLedger(_quests, sessions, _service, await AskStore.OpenAsync(_connection)),
             helpers: new HelperBox(null));
 

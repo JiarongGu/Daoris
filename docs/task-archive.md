@@ -14320,3 +14320,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PART7b — the proposal writers' files take their classes' names** (service, driver; after PART7). `git mv` each `HelpProposalBox.<Kind>.cs` to `Help<Kind>ProposalWriter.cs`, with the driver tests that read them by path (`HelpProposalKindsTests.cs` :57, :102, :109, :129, :136; `HelpSettingProposalsTests.cs` :464) and `HelpSettingProposals.cs:27`'s comment in the same branch. D166's PART7 note.
 
 **Outcome** 2026-10-14: the sixteen writer files carry their classes' names, the service's kinds test holding the writer-name pattern and that no `HelpProposalBox.*.cs` remains; the driver's two tests and one comment followed in the same branch. On Sonnet: 30 tool calls.
+
+## PART10a — `KnowledgeTools`: the search, quest and rule tools, and the registration (2026-10-14, D166)
+
+> - [ ] **PART10a — `KnowledgeTools`: the search, quest and rule tools, and the registration** (service; Opus). A shared workspace scope, `KnowledgeSearchTools`, `QuestTools` and `RuleProposalTools`, one list of tool types the host registers and the tests enumerate, the fixture reworked; the type stays listed until 10c. Survey "The large five, as scouted".
+
+**Outcome** 2026-10-14: `WorkspaceScope`, `KnowledgeSearchTools`, `QuestTools` and `RuleProposalTools` are classes each built with only its services; `KnowledgeServer` holds the one list of tool types (and the instructions) that the host registers and the tests enumerate; a test pins the 33 names on the wire. The pin caught `WithTools(ToolTypes)` binding the SDK's generic overload and advertising nothing, fixed by naming the argument. The family rehearsal and the connector's Process classes passed on the merge. On Opus: 183 tool calls. Detail: D166's PART10a note.

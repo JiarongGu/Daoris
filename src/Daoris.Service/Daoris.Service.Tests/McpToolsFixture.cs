@@ -1,13 +1,13 @@
 using Daoris.Knowledge;
 using Daoris.Knowledge.Mcp;
 using Microsoft.Data.Sqlite;
-using ModelContextProtocol.Server;
 
 namespace Daoris.Service.Tests;
 
 /// <summary>
 /// What every MCP door test class stands on (PART6): a family of three repositories, an in-memory quest store and a connector
-/// for the Asker. xunit builds one per test, so a class that derives from it shares the setup and none of the state.
+/// for the Asker, as its tool classes (PART10a). xunit builds one per test, so a class that derives from it shares the setup
+/// and none of the state.
 /// </summary>
 public abstract class McpToolsFixture : IAsyncLifetime
 {
@@ -18,7 +18,21 @@ public abstract class McpToolsFixture : IAsyncLifetime
     protected QuestStore _quests = null!;
     protected QuestFiles _files = null!;
     protected KnowledgeService _service = null!;
+
+    /// <summary>The Asker's search tools.</summary>
+    protected KnowledgeSearchTools _search = null!;
+
+    /// <summary>The Asker's quest tools, over an exchange of their own.</summary>
+    protected QuestTools _questTools = null!;
+
+    /// <summary>The tools not yet a class of their own, as a connector that speaks for no session holds them.</summary>
     protected KnowledgeTools _tools = null!;
+
+    /// <summary>The workspace a session running in <paramref name="room"/> answers from, or its ask's circle.</summary>
+    protected WorkspaceScope Circle(string room, string? circle = null) => new(_service, new AmbientWorkspace(room, circle));
+
+    /// <summary>The workspace a session in one of the family's repositories answers from.</summary>
+    protected WorkspaceScope In(string repository) => Circle(Path.Combine(_root, "family", repository));
 
     public async Task InitializeAsync()
     {
@@ -43,9 +57,9 @@ public abstract class McpToolsFixture : IAsyncLifetime
         _service = service;
 
         _files = new QuestFiles(Path.Combine(_root, "home"));
-        _tools = new KnowledgeTools(
-            service, _quests, new QuestExchange(service, _quests, files: _files),
-            new AmbientWorkspace(Path.Combine(_root, "family", "Asker")));
+        _search = new KnowledgeSearchTools(service, In("Asker"));
+        _questTools = new QuestTools(_quests, new QuestExchange(service, _quests, files: _files), In("Asker"));
+        _tools = new KnowledgeTools();
     }
 
     public async Task DisposeAsync()

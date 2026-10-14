@@ -188,8 +188,7 @@ public sealed class NewerIndexTests : IDisposable
         Stamp(Database, Ahead);
 
         await using var refused = await ServiceFactory.CreateAsync(options, source: new EmptyKnowledgeSource());
-        var tools = new KnowledgeTools(
-            refused.Service, refused.Quests, refused.Exchange, new AmbientWorkspace(_root), refused.Asks);
+        var tools = new KnowledgeSearchTools(refused.Service, new WorkspaceScope(refused.Service, new AmbientWorkspace(_root)));
         var sentence = refused.IndexRefusal!.Message;
 
         Assert.Equal(sentence, await tools.SearchAsync("lesson"));

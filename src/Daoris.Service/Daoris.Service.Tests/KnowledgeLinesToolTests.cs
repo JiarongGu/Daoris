@@ -1,7 +1,6 @@
 using System.Text.RegularExpressions;
 using Daoris.Knowledge;
 using Daoris.Knowledge.Mcp;
-using Microsoft.Data.Sqlite;
 
 namespace Daoris.Service.Tests;
 
@@ -15,8 +14,7 @@ public sealed partial class KnowledgeLinesToolTests : IAsyncLifetime
     private readonly string _root = Path.Combine(
         Path.GetTempPath(), "daoris-lines-tool-" + Guid.NewGuid().ToString("N")[..8]);
 
-    private SqliteConnection _connection = null!;
-    private KnowledgeTools _tools = null!;
+    private KnowledgeSearchTools _tools = null!;
 
     private const string Routes =
         "# Bridge routes\n"                                     // 1
@@ -59,21 +57,18 @@ public sealed partial class KnowledgeLinesToolTests : IAsyncLifetime
         Write("docs/DECISIONS.md", "# Decisions\n\n## D1 — Why the handler is one\n\nOne handler per route, so a route is found once.\n");
         for (var n = 1; n <= 4; n++) Write($"docs/index/outlines/route{n}.md", $"# Outline of route {n}\n\n- 1-9 the handler of route {n}\n");
 
-        _connection = new SqliteConnection("Data Source=:memory:");
-        await _connection.OpenAsync();
-        var quests = await QuestStore.OpenAsync(_connection);
         var store = new InMemoryKnowledgeStore();
         var service = new KnowledgeService(
             store, new LexicalKnowledgeSearch(store),
             new FileSystemKnowledgeSource([Path.Combine(_root, "atlas")]), DisclosurePolicy.LocalOnly);
         await service.RefreshAsync();
-        _tools = new KnowledgeTools(service, quests, new QuestExchange(service, quests), new AmbientWorkspace(Path.GetTempPath()));
+        _tools = new KnowledgeSearchTools(service, new WorkspaceScope(service, new AmbientWorkspace(Path.GetTempPath())));
     }
 
-    public async Task DisposeAsync()
+    public Task DisposeAsync()
     {
-        await _connection.DisposeAsync();
         if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
+        return Task.CompletedTask;
     }
 
     /// <summary>
