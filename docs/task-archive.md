@@ -14266,3 +14266,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PART5 — Help's doors** (driver; after PART4). `IHelpDoors` inheriting a per-kind interface each kind file declares, its stand-in likewise; callers and `ScreenDoors` unchanged. Survey "Records".
 
 **Outcome** 2026-10-14: each of fourteen kind files declares its own door interface (`IHelpGoDoors` and the rest have none to add), and `IHelpDoors`, declared once, inherits them, so a new kind is one file and one name in that list; callers and `ScreenDoors` unchanged. The stand-in is one fixture class, its members grouped by interface, since about 35 tests set a kind's answer in an initializer. The gate's list holds 8. On Sonnet: 63 tool calls. Detail: D166's PART5 note.
+
+## DEDUP4b — the git bodies and the long-lived peers take the guarded kill (2026-10-14, D166)
+
+> - [ ] **DEDUP4b — the git bodies and the long-lived peers take the guarded kill** (driver; after 4a). `WorkingTree`'s three spawn bodies, `HookProcess` and `CodexUsage.Stop` kill through `ChildProcess.KillTree`; `GitAsync` runs through it where it has a time-out. Survey §4.
+
+**Outcome** 2026-10-14: `GitAsync` runs every call through `ChildProcess.RunAsync` (no time-out given is no patience), keeping its tuple and its words; the two streaming reads, the hook peer and Codex's usage server kill through `KillTree`. A git call its caller cancels now ends git's tree, where git was left to finish. The Trees, hooks, kit and Codex Process classes passed 168 of 168 on the merge. On Sonnet: 20 tool calls. Detail: D166's DEDUP4b note.
