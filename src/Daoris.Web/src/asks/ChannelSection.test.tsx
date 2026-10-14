@@ -56,6 +56,18 @@ describe('an ask’s channel', () => {
     expect(within(row('Read the figure published to db')).getByText('Daoris')).toBeInTheDocument();
   });
 
+  /** SESSONE2h: a teammate's ask's channel is read here and posted elsewhere, so it has no composer and no Reply, and says why. */
+  it('read-only, draws the messages and the unread count with no composer, no reply and a sentence saying whose ask it is', () => {
+    render(<ChannelSection channel={CHANNEL({ unread: 2 })} readOnly onPost={() => {}} />);
+
+    expect(within(list()).getAllByRole('listitem')).toHaveLength(ITEMS.length);
+    expect(screen.getByText('2 unread')).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Reply' })).toBeNull();
+    expect(screen.getByText(/teammate’s ask, held on their machine/)).toBeInTheDocument();
+  });
+
   it('words every code Daoris writes, in either language, and a code it has no words for as it was written', async () => {
     const lines = [LINE('declined', 0), LINE('awaiting', 1), LINE('strangled', 2)];
     const { rerender } = render(<ChannelSection channel={CHANNEL({ items: lines })} onPost={() => {}} />);

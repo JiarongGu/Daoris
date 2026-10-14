@@ -54,7 +54,7 @@ export function SessionBox({
   if (box.kind === 'line') {
     return (
       <div className="border-t border-line px-4 py-3">
-        <p className="m-0 text-small text-ink-soft">{neverSentence(t, box.why, { quest })}</p>
+        <p className="m-0 text-small text-ink-soft">{neverSentence(t, box.why, { quest, to: box.to })}</p>
       </div>
     );
   }

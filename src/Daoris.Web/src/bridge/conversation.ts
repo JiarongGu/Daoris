@@ -368,25 +368,33 @@ export const useStartChat = () => {
  * they are held or taken, when they reach the session (`next-step`, `turn-end` or `resume`), and why nothing takes them,
  * by a code, where nothing does.
  */
-export type WordsAnswer = { sent: boolean; reaches: string | null; why: string | null };
+export type WordsAnswer = {
+  sent: boolean; reaches: string | null; why: string | null;
+  /** The conversation a `continued` one went on in (HANDWORDS1); present only then. */
+  to?: string;
+};
 
 /**
  * An answer read defensively. The bridge leaves a null out, so an absent `reaches` or `why` is null, and an answer that is
  * not one sent nothing.
  */
 const wordsOf = (answer: unknown): WordsAnswer => {
-  const said = answer as { sent?: unknown; reaches?: unknown; why?: unknown } | null | undefined;
+  const said = answer as { sent?: unknown; reaches?: unknown; why?: unknown; to?: unknown } | null | undefined;
   return {
     sent: said?.sent === true,
     reaches: typeof said?.reaches === 'string' && said.reaches ? said.reaches : null,
     why: typeof said?.why === 'string' && said.why ? said.why : null,
+    ...(typeof said?.to === 'string' && said.to ? { to: said.to } : {}),
   };
 };
 
-/** What a word said now would do, read from `SESSION_QUEUE`'s answer (MSG1d): its `reaches` and `why`, each null where absent. */
+/**
+ * What a word said now would do, read from `SESSION_QUEUE`'s answer (MSG1d): its `reaches` and `why`, each null where absent,
+ * and the conversation a `continued` one went on in where the module names one (HANDWORDS1).
+ */
 const reachOf = (answer: unknown): Reach => {
-  const { reaches, why } = wordsOf(answer);
-  return { reaches, why };
+  const { reaches, why, to } = wordsOf(answer);
+  return { reaches, why, ...(to ? { to } : {}) };
 };
 
 /**

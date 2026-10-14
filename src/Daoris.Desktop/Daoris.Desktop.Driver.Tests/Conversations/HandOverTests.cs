@@ -35,11 +35,13 @@ public sealed class HandOverTests : IDisposable
         _ => null,
     };
 
-    private JsonObject Chat(string id, string state = "completed", string? quest = null, string kind = "chat", string? ask = null, string? tree = null) => new()
+    private JsonObject Chat(
+        string id, string state = "completed", string? quest = null, string kind = "chat", string? ask = null, string? tree = null,
+        string? from = null) => new()
     {
         ["id"] = id, ["repository"] = "engine", ["state"] = state, ["kind"] = kind, ["quest"] = quest, ["ask"] = ask,
         ["adapter"] = "claude-code", ["profile"] = "account-1", ["tree"] = tree ?? Path.Combine(_home, "tree"),
-        ["created"] = T0.ToString("O"), ["updated"] = T0.AddMinutes(5).ToString("O"), ["said"] = new JsonArray(),
+        ["created"] = T0.ToString("O"), ["updated"] = T0.AddMinutes(5).ToString("O"), ["said"] = new JsonArray(), ["from"] = from,
     };
 
     private Task<HandOverAnswer> AskAsync(Room room, string id, string agent = "codex-acp", string? account = null) =>
@@ -69,6 +71,8 @@ public sealed class HandOverTests : IDisposable
         { "c0nv0001", "codex-acp", "other", HandOver.NotItsAccount, "other is not an account of codex-acp." },
         { "c0nv0001", "claude-code", "account-1", HandOver.SameAgent, "c0nv0001 already runs on claude-code as account-1." },
         { "tr33g0n3", "codex-acp", null, HandOver.TreeGone, "the tree tr33g0n3 ran in is gone, so there is nothing to go on in." },
+        // HANDWORDS1: a conversation that went on in another is not handed over a second time from its tree.
+        { "h4nd3d00", "codex-acp", null, WordsNever.Continued, "h4nd3d00 went on in conversation m0v3d000; hand that one over instead." },
     };
 
     [Theory]
@@ -79,6 +83,7 @@ public sealed class HandOverTests : IDisposable
         [
             Chat("c0nv0001"), Chat("laptop/s9"), Chat("1ntake00", state: "awaiting-person", ask: "a1"),
             Chat("qu3st000", kind: "driven", quest: "q1"), Chat("tr33g0n3", tree: Path.Combine(_home, "gone")),
+            Chat("h4nd3d00"), Chat("m0v3d000", state: "working", from: "h4nd3d00"),
         ]);
 
         var answer = await AskAsync(room, id, agent, account);

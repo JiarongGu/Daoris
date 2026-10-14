@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  type ChannelItem, channelOf, forEntry, lineWords, newestAt, postedOf, repliesTo, repositoriesOf, sinceMark, unreadSum,
+  type ChannelItem, channelOf, elsewhereOf, forEntry, lineWords, newestAt, postedOf, repliesTo, repositoriesOf, sinceMark, unreadSum,
 } from './channel';
 
 // An ask's channel as the shell answers it (SESSONE2c, D167 points 6 to 8): the pure side of the page's Channel, so every
@@ -72,6 +72,17 @@ describe('an ask’s channel', () => {
     expect(postedOf({ posted: false, code: 'bad-to' })).toEqual({ posted: false, code: 'bad-to', message: null });
     expect(postedOf({ posted: true, message: ITEMS[1] })).toEqual({ posted: true, code: null, message: ITEMS[1] });
     expect(postedOf('no')).toEqual({ posted: false, code: 'other', message: null });
+  });
+
+  /** SESSONE2h: the asks the mirrored messages name that this machine does not hold; a shell before the route answers something else. */
+  it('reads the asks held elsewhere, and an answer of another shape as no list', () => {
+    const held = { id: '7e6f51', workspace: 'default', origins: ['key-a'], latest: '2026-10-15T09:00:00Z', messages: 2, unread: 1 };
+    expect(elsewhereOf({ asks: [held] })).toEqual([held]);
+    // A row without its id or its moment is passed over; a count that is not a number is none; origins that are not names are dropped.
+    expect(elsewhereOf({ asks: [{ workspace: 'default' }, { ...held, id: 'b2', messages: 'x', unread: null, origins: ['k', 3] }, 'junk'] }))
+      .toEqual([{ ...held, id: 'b2', messages: 0, unread: 0, origins: ['k'] }]);
+    expect(elsewhereOf({ drivable: [] })).toBeNull();
+    expect(elsewhereOf(null)).toBeNull();
   });
 
   it('adds the unread each ask answers', () => {

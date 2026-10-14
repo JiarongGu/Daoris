@@ -190,9 +190,12 @@ internal static class Program
         builder.Services.AddSingleton(sp => new UiStallWatch(log, bus: sp.GetRequiredService<Shenora.Core.Events.IEventBus>()));
         // And every refusal the bridge answers, by its code: a middleware in the kit's application slot,
         // so every module's answer passes it. Registered before Build, whose own call is a TryAdd.
+        // Then a Daoris route leaves the window's thread at its first wait (UIFREEZE1): after the stall watch, which still
+        // times and names the part before it, so the window is never where a route's git fan-out goes on.
         builder.Services.UseMessageDispatcher((sp, dispatcher) => dispatcher
             .Use(RefusalLog.Middleware(log))
-            .Use(sp.GetRequiredService<UiStallWatch>().Middleware));
+            .Use(sp.GetRequiredService<UiStallWatch>().Middleware)
+            .Use(OffTheWindow.Middleware));
 
         // The loop starts with the app, not with the window: the driver watches whether or not the
         // person is looking, which is the whole point of a driver.

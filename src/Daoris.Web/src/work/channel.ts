@@ -19,6 +19,8 @@ export type ChannelItem = {
   /** The poster's line of work (D167 point 2), for a session's message. */
   entry?: string | null;
   to?: string | null;
+  /** The machine that posted it, where it was not this one (SESSONE2d); absent for this machine's own. */
+  origin?: string | null;
   re?: string | null;
   question?: boolean;
   /** A question no message answers yet. */
@@ -66,6 +68,33 @@ export function channelOf(raw: unknown): Channel | null {
     unread: typeof unread === 'number' ? unread : 0,
     mark: typeof mark === 'string' ? mark : null,
   };
+}
+
+/**
+ * An ask the mirrored messages name and this machine does not hold (SESSONE2h): all this machine knows of a teammate's ask. There
+ * is no record, so no title; `origins` are the machines its messages came from, and `unread` is against the person's local mark.
+ */
+export type ElsewhereAsk = { id: string; workspace: string; origins: string[]; latest: string; messages: number; unread: number };
+
+/**
+ * The shell's list of the asks held elsewhere, or null where the answer is not one (a shell from before the route answers
+ * something else, and then no group is drawn). A row without its id or its moment is passed over.
+ */
+export function elsewhereOf(raw: unknown): ElsewhereAsk[] | null {
+  if (typeof raw !== 'object' || raw === null || !Array.isArray((raw as { asks?: unknown }).asks)) return null;
+  return (raw as { asks: unknown[] }).asks.flatMap((row): ElsewhereAsk[] => {
+    if (typeof row !== 'object' || row === null) return [];
+    const { id, workspace, origins, latest, messages, unread } = row as Record<string, unknown>;
+    if (typeof id !== 'string' || typeof latest !== 'string') return [];
+    return [{
+      id,
+      workspace: typeof workspace === 'string' ? workspace : '',
+      origins: Array.isArray(origins) ? origins.filter((origin): origin is string => typeof origin === 'string') : [],
+      latest,
+      messages: typeof messages === 'number' ? messages : 0,
+      unread: typeof unread === 'number' ? unread : 0,
+    }];
+  });
 }
 
 /** The person's post as the shell answered it; an answer of another shape is a refusal with a code this page has no words for. */

@@ -28,9 +28,12 @@ public class SearchTests : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
-        foreach (var (store, _) in _sqlite) await store.DisposeAsync();
-        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
-        foreach (var (_, file) in _sqlite) File.Delete(file);
+        foreach (var (store, file) in _sqlite)
+        {
+            await store.DisposeAsync();
+            SqlitePools.Release(file);
+            File.Delete(file);
+        }
     }
 
     private async Task<IKnowledgeSearch> Over(bool sqlite, params KnowledgeEntry[] entries)

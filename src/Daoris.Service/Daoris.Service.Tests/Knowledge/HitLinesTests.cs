@@ -120,7 +120,7 @@ public sealed class HitLinesTests
         }
         finally
         {
-            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            SqlitePools.Release(file);
             if (File.Exists(file)) File.Delete(file);
         }
     }
@@ -136,15 +136,14 @@ public sealed class HitLinesTests
             {
                 await store.ReplaceRepositoryAsync("alpha", [Renewal()]);
             }
-            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
-            await using (var older = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={file}"))
+            SqlitePools.Release(file);
+            await using (var older = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={file};Pooling=False"))
             {
                 await older.OpenAsync();
                 await using var command = older.CreateCommand();
                 command.CommandText = "PRAGMA user_version = 4;";
                 await command.ExecuteNonQueryAsync();
             }
-            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
 
             await using var reopened = await SqliteKnowledgeStore.OpenAsync(file);
 
@@ -153,7 +152,7 @@ public sealed class HitLinesTests
         }
         finally
         {
-            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            SqlitePools.Release(file);
             if (File.Exists(file)) File.Delete(file);
         }
     }

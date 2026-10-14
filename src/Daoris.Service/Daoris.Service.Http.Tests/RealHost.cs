@@ -97,6 +97,9 @@ public sealed class RealHost(Process process, string url, string scratch) : IDis
             ["DAORIS_WEB_ORIGIN"] = null,
             ["ASPNETCORE_ENVIRONMENT"] = "Production",
             ["ASPNETCORE_URLS"] = url,
+            // The host's own lifetime says when its stop began and ended ("Hosting stopping", "Hosting stopped"), so a stop
+            // that misses its bound names the step it sat in (FLAKE2).
+            ["Logging__LogLevel__Microsoft.Extensions.Hosting"] = "Debug",
         };
         foreach (var (name, value) in environment) variables[name] = value;
         foreach (var (name, value) in variables)
@@ -107,11 +110,15 @@ public sealed class RealHost(Process process, string url, string scratch) : IDis
 
         var host = new RealHost(Process.Start(start)!, url, scratch);
         // Drained, so a host that writes more than a pipe holds is never blocked on its own output.
-        host.Process.OutputDataReceived += (_, _) => { };
+        host.Process.OutputDataReceived += (_, line) =>
+        {
+            if (line.Data is not null) host.Hear("out", line.Data);
+        };
         host.Process.ErrorDataReceived += (_, line) =>
         {
             if (line.Data is null) return;
             lock (host._said) host._said.AppendLine(line.Data);
+            host.Hear("err", line.Data);
         };
         host.Process.BeginOutputReadLine();
         host.Process.BeginErrorReadLine();
@@ -119,6 +126,39 @@ public sealed class RealHost(Process process, string url, string scratch) : IDis
     }
 
     private readonly System.Text.StringBuilder _said = new();
+
+    private readonly Stopwatch _clock = Stopwatch.StartNew();
+
+    private readonly Queue<string> _heard = new();
+
+    /// <summary>A line the host printed, kept with when it arrived; the last <c>200</c> are kept.</summary>
+    private void Hear(string stream, string line)
+    {
+        lock (_heard)
+        {
+            _heard.Enqueue($"{_clock.ElapsedMilliseconds,7} ms {stream} {line}");
+            if (_heard.Count > 200) _heard.Dequeue();
+        }
+    }
+
+    /// <summary>
+    /// Stop the host as the shell does (LOG2a), by closing its input, and wait <paramref name="within"/> for it to exit. Null
+    /// when it did; otherwise what a reader of the failure needs to tell where it sat (FLAKE2): whether its lifetime began
+    /// to stop (the log's <c>app.stopped</c>), and the last lines it printed, its own lifetime's among them, with their times.
+    /// </summary>
+    public string? StopByInput(TimeSpan within)
+    {
+        Hear("test", "input closed");
+        Process.StandardInput.Close();
+        if (Process.WaitForExit(within)) return null;
+
+        var stopping = LogLines().Any(line => line.Contains("\"event\":\"app.stopped\"", StringComparison.Ordinal));
+        string[] heard;
+        lock (_heard) heard = [.. _heard];
+        return $"the host did not stop within {within.TotalSeconds:0} s of its input closing; its log "
+            + (stopping ? "has app.stopped, so its lifetime began to stop" : "has no app.stopped, so its stop was never asked")
+            + ". What it printed last:\n" + string.Join('\n', heard.TakeLast(40));
+    }
 
     /// <summary>What the host printed on its standard error so far.</summary>
     public string Said

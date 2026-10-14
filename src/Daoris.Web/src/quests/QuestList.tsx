@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import type { Ask, Quest, Session } from '../data/api';
 import { AskRow } from '../asks/AskRow';
+import { TeammateAskRow } from '../asks/TeammateAskRow';
+import type { ElsewhereAsk } from '../work/channel';
 import { CarriedCount } from '../compose/carry';
 import { ago, sittingDays } from '../locales/format';
 import { askItem } from '../app/opener';
@@ -48,9 +50,11 @@ export type AskRowFacts = {
  *   quests reads as a family that owes less.
  */
 export function QuestList({
-  asks, quests, closed, filteredTo = null, empty, unanswered = null, chosen, resuming = false, onChoose, onResume,
+  asks, teammates = [], quests, closed, filteredTo = null, empty, unanswered = null, chosen, resuming = false, onChoose, onResume,
 }: {
   asks: AskRowFacts[];
+  /** The asks the mirrored channel messages name that this machine does not hold (SESSONE2h), a group of their own after the asks. */
+  teammates?: readonly ElsewhereAsk[];
   quests: QuestRowFacts[];
   /** Closed quests are shown, in their own group. */
   closed: boolean;
@@ -87,6 +91,14 @@ export function QuestList({
         <ListGroup id={groupHeading('quests', 'asks')} title={t('asks.group', { count: asks.length })}>
           {asks.map(({ ask, intake, unread }) => (
             <AskRow key={ask.id} ask={ask} intake={intake ?? null} unread={unread} chosen={chosen === askItem(ask.id)} onOpen={() => onChoose(askItem(ask.id))} />
+          ))}
+        </ListGroup>
+      )}
+      {teammates.length > 0 && (
+        /* The asks other machines hold, which the sync mirrored the channel of (SESSONE2h): after this machine's own asks. */
+        <ListGroup id={groupHeading('quests', 'teammates')} title={t('asks.elsewhere.group', { count: teammates.length })}>
+          {teammates.map((ask) => (
+            <TeammateAskRow key={ask.id} ask={ask} chosen={chosen === askItem(ask.id)} onOpen={() => onChoose(askItem(ask.id))} />
           ))}
         </ListGroup>
       )}

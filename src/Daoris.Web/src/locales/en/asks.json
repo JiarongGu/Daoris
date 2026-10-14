@@ -137,5 +137,13 @@
   "asks.goAhead.refuse": "Refuse",
   "asks.goAhead.change": "Change answer",
   "asks.head.quests": "{{count}} quest",
-  "asks.head.quests_other": "{{count}} quests"
+  "asks.head.quests_other": "{{count}} quests",
+  "asks.elsewhere.group": "Teammates’ asks ({{count}})",
+  "asks.elsewhere.pill": "Teammate’s",
+  "asks.elsewhere.title": "A teammate’s ask #{{id}}",
+  "asks.elsewhere.latest": "last message {{ago}}",
+  "asks.elsewhere.note": "This ask belongs to a teammate, so only the channel their machine shared is here. Its request, its quests and its work are theirs to show.",
+  "asks.elsewhere.from": "From",
+  "asks.elsewhere.last": "Last message",
+  "asks.elsewhere.readOnly": "This is a teammate’s ask, held on their machine: you can read its channel here and cannot write to it."
 }

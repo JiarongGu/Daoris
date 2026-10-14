@@ -12,6 +12,8 @@ with the version and date at release.
   which sends the session the words to replay its own commits onto the line. The press fetches the line first, and a fetch that
   fails is said, with when origin was last fetched, without stopping the landing. `daoris-driver trees land <session> --plan`
   says the same.
+- The window no longer freezes for minutes while the Sessions page's clean-up list is read: its git work goes on away from
+  the window's thread, at most four programs start at once, and each repository's line is asked of git once per list.
 - An ask's page has a *Channel* (频道), where its sessions and you talk: their messages and Daoris's lines about its quests
   (published, taken, done, declined, waiting on your yes) in your language, an open question marked, and a box to write to
   everyone on the ask or one of its repositories, answering a message if you choose. A session on an ask has the same channel
@@ -51,6 +53,10 @@ with the version and date at release.
   where it is. It goes on in a new conversation in the same tree, told what Daoris kept of the old one, and both conversations
   say which accounts it moved between and how far over its curve the one it left was, in both languages. It does not move again
   within thirty minutes, and where no account has room it stays, with the offer to go on with another agent as before.
+- Words said to a conversation that was handed to another agent or moved to another account go to the conversation that
+  continues it: said while it moves, they wait and reach the new one after what Daoris told it; said afterwards, the old one
+  takes none and says which conversation to write to (`daoris-driver sessions say` names it too). An old conversation no longer
+  starts again in the tree its successor holds.
 - Review measures a session's work from the newest commit it shares with its line, so work merged on the line since the
   session began is no longer shown as the session's, and a tree that holds nothing beyond the line says so; where the line
   has commits the work does not, the review's head says it is not based on the latest line, in both languages. Where a tree

@@ -32,12 +32,21 @@ public static class ChildProcess
     /// </summary>
     /// <param name="closeInput">Close the child's input at once, so a program that waits for input reads its end; the
     /// info must redirect it.</param>
-    public static async Task<ChildRun> RunAsync(ProcessStartInfo info, TimeSpan patience, CancellationToken ct, bool closeInput)
+    /// <remarks>
+    /// The start passes the process-wide gate (<see cref="ProcessStarts"/>, UIFREEZE1): a few at a time, on the thread pool,
+    /// so no caller's thread waits on the runtime's process-start lock. Cancelling while it waits for its place throws.
+    /// </remarks>
+    public static Task<ChildRun> RunAsync(ProcessStartInfo info, TimeSpan patience, CancellationToken ct, bool closeInput) =>
+        RunAsync(info, patience, ct, closeInput, ProcessStarts.Shared);
+
+    /// <summary>The same, through a gate a test hands in.</summary>
+    internal static async Task<ChildRun> RunAsync(
+        ProcessStartInfo info, TimeSpan patience, CancellationToken ct, bool closeInput, ProcessStarts starts)
     {
         Process? process;
         try
         {
-            process = Process.Start(info);
+            process = await starts.StartAsync(info, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is Win32Exception or IOException or InvalidOperationException)
         {

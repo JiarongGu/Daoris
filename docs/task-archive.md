@@ -14723,3 +14723,43 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NAMEZH1 — 本机 in a helper's note** (web). `note.helper.why.asker-gone` says 这台机器 where the glossary's name is 本机; correct it and drop its entry from `names.test.ts`'s list. D163's MIXAGENT3a-i note.
 
 **Outcome** 2026-10-15: `note.helper.why.asker-gone` (zh) now says 提问的会话不在本机上, and its entry left the names test's list of strays. Built with KEYPARITY2 (its count). Detail: D163's NAMEZH1 note.
+
+## UIFREEZE1 — the window frozen behind a sweep's process starts (2026-10-15, D56)
+
+> - [ ] **UIFREEZE1 — the window frozen behind a sweep's process starts** (modules/driver). The owner's window stopped answering for minutes (`ui.stalled` ongoing, 406 s, no route named): a stack report found its thread in .NET's process-start lock, inside a sweep's git fan-out resumed there by the kit's context-keeping pipeline, with 51 threads queued on the lock. Keep Daoris routes off the window after their first wait, gate process starts off the caller's thread, and ask each checkout's line once per sweep. D56/log §4; a red test for each part.
+
+**Outcome** 2026-10-15: `OffTheWindow` runs a `DAORIS.*` route's call with no synchronization context (its synchronous part still on the window, timed by the stall watch); `ProcessStarts` lets four starts through at once, each on the thread pool, for `ChildProcess` and `WorkingTree`'s streaming readers; `TreeContext.OneLook` asks git a checkout's line once per clean-up list, press and sweep. FREEZE1b stays open for the next capture. Detail: the fix log's 2026-10-15 UIFREEZE1 entry, D56's UIFREEZE1 note.
+## FLAKE2 — the person-door host's stop under load (2026-10-15)
+
+> - [ ] **FLAKE2 — the person-door host's stop under load** (service tests). `PersonDoorProcessTests`' host missed its 15 s stop once under load (2026-10-14); find what the stop waits on.
+
+**Outcome** 2026-10-15: not reproduced: the test's stop took 42–647 ms in 50 timed runs beside heavy load, and the class passed 20 of 20 under load and 20 of 20 plain. Read from the code, the stop's one long wait is Kestrel's drain of requests in flight (the framework's 30 s, past the shell's 5 s kill); with nothing in flight in this test, none of its steps waits long. A host the shell started now drains for 3 s (`InputEndStop.Drain`), and `RealHost.StopByInput` makes a missed stop say whether it was asked and what the host printed last. The load generator used to reproduce it froze the owner's window: plain runs only. On Opus: 307 tool calls, with FLAKE3. Detail: FIX-LOG 2026-10-15 (FLAKE2); commit e8498d33.
+
+## FLAKE3 — a SQLite handle disposed under parallel tests (2026-10-15)
+
+> - [ ] **FLAKE3 — a SQLite handle disposed under parallel tests** (service tests). `SearchTests` threw `ObjectDisposedException` once (2026-10-14) while ten classes call `ClearAllPools()`; prove the race, then isolate pool clearing.
+
+**Outcome** 2026-10-15: proved: Microsoft.Data.Sqlite marks a pooled connection active before it records its owner, and every pool's clear disposes such a connection as leaked, so one class's `ClearAllPools` disposed another's just-opened connection (a scratch probe: 88 `ObjectDisposedException`s in two 10 s runs clearing every pool, none clearing each thread's own). Fourteen classes now release their own database (`SqlitePools.Release`, over `SqliteKnowledgeStore.ConnectionString`), their raw connections open unpooled, and a source scan keeps `ClearAllPools(` out; per database rather than a serializing collection, since any class opening a file is a victim. Built with FLAKE2 (its count). Detail: FIX-LOG 2026-10-15 (FLAKE3); commit ef852e2c.
+## SESSFIELD1 — the session record's field chain, written down (2026-10-15, D163)
+
+> - [ ] **SESSFIELD1 — the session record's field chain, written down** (docs). A field answered on this machine only is added in a fixed set of places that no document lists: the record's property, `EnsureAsync`, `CreateAsync` with its INSERT and reader, the ledger's opens, the request and response records, `ToSession` on loopback, the driver's `ServiceClient` write, `Prior` and `PriorSession`, and the three stand-ins (`StandInLedger`, `ChatGoOnTests`' `ChatLedger`, `AskAndWaitTickTests.StandIn`). A knowledge row the next such field cites. D163's MIXAGENT1a-iii note.
+
+**Outcome** 2026-10-15: `.claude/knowledge/session-record-fields.md`, walked from MIXAGENT1a-iii's two commits to today's paths: thirteen places for a machine-only field (the row's list, plus the routes, the web's `Session` type and the records), the sync wire as the place a machine-only field is kept out of by having no member, and five more for a field that travels (`entry`, `tookQuest`). Documents only. On Sonnet: 50 tool calls. Detail: the knowledge note; D163's SESSFIELD1 note.
+
+## SWITCH1c-iii — a quest's carry-on says the curve moved it (2026-10-15, D165)
+
+> - [ ] **SWITCH1c-iii — a quest's carry-on says the curve moved it** (driver; after 1c-i). A quest's next session already starts on the account the curve ranks first (SWITCH1b-ii); where that moves it from the last session's account by the curve, its record's `from` says `curve`, by `daoris`, and its opening line says why. Design §4.
+
+**Outcome** 2026-10-15: `Driver.ContinuesFrom` takes the walk's first reason; a carry-on moved to another account by `over-curve` or `most-room` names the last session with `curve`, by `daoris` (a hand-over's and a limit's links first, as before). The opening line already carried the curve's step by code, so no catalogue changed. On Sonnet: 48 tool calls. Detail: D165's SWITCH1c-iii note; `HandOverLookTests`.
+
+## SESSONE2h — a page door to a teammate's ask (2026-10-15, D167)
+
+> - [ ] **SESSONE2h — a page door to a teammate's ask** (service/web). SESSONE2g reads a teammate's ask's channel by id, but the page lists and opens only this machine's asks: list the asks the mirrored messages name, and an ask page that renders without a local ask record. D167's SESSONE2g note.
+
+**Outcome** 2026-10-15: `GET /api/channel/elsewhere` lists the asks the mirrored messages name that this machine does not hold (circle, origins, latest, unread against the local mark; no title), and the Asks list gains a *Teammates' asks* group whose row opens a read-only page of the ask's channel with none of an ask's sections. The driver's `ASKS_ELSEWHERE` (modules route over `ServiceClient.ElsewhereAsksAsync`) carries it between them. On Sonnet: 152 tool calls. Detail: D167's SESSONE2h note.
+
+## HANDWORDS1-i — words said to a conversation handed over or moved go to the one that continues it (2026-10-15, D165)
+
+> - [ ] **HANDWORDS1 — words said to a conversation handed over or moved go to the one that continues it** (driver/modules/web). Today the person's words to the old conversation are kept on its record and can restart it (go on) in the tree its successor holds, and a word said during a take lands there too. Words held while a take is in flight go to the latest successor once it opens; after the take, words to the old id are refused with a new never code `continued` naming the successor ("went on in conversation {to}; say it to that one"), mirroring `superseded`; the old page draws "This conversation went on in {title}" with *Open session*; GoOn and come-up never restart a record that has a successor. Split: (i) driver and modules with the code's table entry and catalogue lines, (ii) the page's line and door. D163 point 1; D165 point 3; design §4 ("the person's next words go to it"); the scout's pack in the SWITCH1c-ii merge's notes.
+
+**Outcome** 2026-10-15: split (i). `WordsNever.ContinuedIn` reads the latest conversation down the `from` chain; the never code `continued` refuses the old id naming it as `to` (the say doors, start-from, go-on-new, the hand-over judge; `work.say.continued` en/zh). The shell's judge holds a word while the take's box stands and says it to the successor once `ChatRunner.TakeEnded` tells the take over; the go-on and the come-up never restart a record with a successor. The page reads `to` into its existing line; the title and *Open session* are HANDWORDS1-ii. On Opus: 247 tool calls. Detail: D165's HANDWORDS1-i note; the fix log's HANDWORDS1-i entry.

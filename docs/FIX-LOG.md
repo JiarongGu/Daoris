@@ -5,6 +5,111 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-15 — The window froze for minutes behind a sweep's git starts (UIFREEZE1)
+
+- **Symptom:** the owner's, on the install: *"I think the local daoris is stuck"*. The window did not answer for minutes; the
+  machine log's `ui.stalled` was ongoing, 406 s at worst, with no route in `during`, and every route's synchronous part was
+  under 20 ms. The Sessions page asks for the clean-up's list routinely, so it came back in daily use.
+- **Root cause:** a stack report of the frozen install (`dotnet-stack`) held the window's thread in `Monitor.Enter` inside
+  `Process.StartWithCreateProcess`, .NET's one process-start lock, reached from `LinesRoutes.SweepAsync` →
+  `LandedCleanups.CleanPlanAsync` → `PullRequestAsks.DueAsksAsync` → `CanonicalLine.ResolveAsync` →
+  `WorkingTree.DefaultBranchAsync` → `ChildProcess.RunAsync` → `Process.Start`, resumed there through
+  `Control.InvokeMarshaledCallbacks`. Three things met: the bridge dispatches on the window's thread and the kit's pipeline
+  keeps the caller's context, so every await in a route came back to the window (the stall watch's own remark, "a route runs
+  there until its first wait", was untrue after the wait); `ChildProcess.RunAsync` started each process synchronously on its
+  caller's thread; and the clean-up's list asked git for each checkout's line three times (the pull requests' asks, the
+  session branches' list, the landed branches' judgement), up to three git processes each. 51 of 76 threads waited on the
+  lock behind one slow `CreateProcess` (an antivirus hooks process creation on that machine), and the window waited with them.
+  The stall named no route because the route's part on the thread was its continuation, which the middleware never sees.
+- **Fix:** `OffTheWindow`, a middleware after `UiStallWatch`, runs a `DAORIS.*` route's call with no synchronization context
+  and puts it back before returning, so its awaits go on on the thread pool while its synchronous part is still timed and
+  named; the kit's own window modules keep the window's thread. `ProcessStarts` gates every start through `ChildProcess` (and
+  `WorkingTree`'s two streaming git readers): four at once, waiting asynchronously, each on the thread pool, so a fan-out
+  queues as tasks rather than as parked threads. `TreeContext.OneLook` asks git each checkout's line once per look (the
+  list, the press and the sweeps' one path), still reading the person's set line at every call.
+- **Verify:** `OffTheWindowTests` (a Daoris route's continuation timed out waiting for the window's pump before the fix, and
+  goes on off it after; the kit's own route still resumes on it), `ProcessStartsTests` (forty starts against a held start:
+  never more than four inside, none on the calling thread; red with the gate unbounded), `TreeLineLookTests` and
+  `SweepLineProcessTests` (the list asked the line 3 times a repository before, once after; the press once; the next look
+  asks again). Reasoned from the stack, not reproduced on the owner's machine; the install's `ui.stalled` lines after the
+  republish are the field proof.
+## 2026-10-15 — The person-door host missed its 15-second stop once under load: not reproduced, its one long wait bounded (FLAKE2)
+
+- **Symptom:** `PersonDoorProcessTests.The_real_host_reads_its_key_from_its_input_gates_by_it_and_still_stops_when_the_input_ends`
+  failed once in a merge's service gate under load (2026-10-14, QUEUEEDIT1a's merge): *the host did not stop when its input
+  closed* within 15 s. It passed on the rerun, whose log replaced the first, so nothing else of it was kept.
+- **What the stop waits on, read from the code:** the input's end, read on a background thread the host starts once it is up
+  (`InputEndStop.Watch`), which then asks its lifetime to stop; the lifetime's stop, where Kestrel stops listening and waits
+  for the requests in flight up to `HostOptions.ShutdownTimeout`, never set, so the framework's 30 s; the composed service's
+  disposal (the index closes once its gate's work in flight ends); the exit. `Process.WaitForExit(int)` waits on the process
+  alone, not on its redirected output (.NET 10.0.13, read decompiled), and the test is the only writer of the host's input
+  (`Process.Start` duplicates the parent's end uninheritable, under its lock), so the close always reaches the host. In this
+  test every request is answered before the input closes, so nothing is in flight and no step waits long. The drain is the one
+  wait in the stop that runs past 15 s by design, and past the 5 s the shell waits before it kills the host
+  (`HostSupervisor.StopWithin`).
+- **Not reproduced:** the test's steps timed in a scratch harness, the host from the tests' own build: input closed to exit in
+  42–126 ms over 20 runs beside a CPU load, and 60–647 ms (median 148) over 30 beside that load, two looping builds and the
+  service gate. A host whose port another took between `FreePort` and its bind exits by itself within 3 s (E0434352), which
+  fails the test at its exit code, not its stop. The class 20 of 20 beside the CPU load before, 20 of 20 with no load after.
+- **Fix:** the one long wait bounded, and a missed stop made to say where it sat. A host the shell started
+  (`DAORIS_STOP_ON_INPUT_END=1`) waits 3 s for its requests in flight (`InputEndStop.Drain`, `BoundDrain`), under the shell's
+  5 s, so the shell's stop ends as a stop rather than a kill; a host started from a terminal keeps the framework's.
+  `RealHost.StopByInput` closes the input and, on a miss, says whether the log has `app.stopped` (the stop was asked, or never)
+  and the host's last 40 printed lines with their times, its lifetime's `Hosting stopping` and `Hosting stopped` among them
+  (the real hosts the tests start log `Microsoft.Extensions.Hosting` at Debug); both real stop tests read it.
+- **Verify:** `InputEndStopTests.A_host_the_shell_started_waits_for_requests_in_flight_less_than_the_shell_waits_for_it` was red
+  before `BoundDrain` (it did not compile) and green after; `The_real_host_not_asked_keeps_serving_when_its_input_closes` holds a
+  miss's sentence (*never asked*, the input's close, *Application started*). Merged with main, the HTTP host's suite 266 of 266
+  and the service suite 2043 of 2043.
+- **The trap:** the load beside the runs (a scratch spinner on every core) froze the owner's installed window, and the parent
+  stopped it. Reproduce a flake with plain repeated runs of its one class, never with a load generator.
+- **Commit:** `e8498d33`.
+
+## 2026-10-15 — A service test's SQLite connection was disposed just after it opened, by another class's pool clearing (FLAKE3)
+
+- **Symptom:** `SearchTests` threw `ObjectDisposedException` once in a merge's service gate under load (2026-10-14, WAITSHOWN1's
+  merge), and passed on the rerun.
+- **Root cause:** fourteen of the service tests' classes let go of their database files with `SqliteConnection.ClearAllPools()`,
+  which clears every pool in the process, and xUnit runs the project's classes in parallel. Microsoft.Data.Sqlite (10.0.12, read
+  decompiled) hands a pooled connection out and only then activates it, outside the pool's lock, setting it active before it
+  records its owner (`SqliteConnectionInternal.Activate`); in between it reads as leaked (active, owner gone), and every pool's
+  `Clear` reclaims leaked connections, disposing their handle. So one class's clear could dispose the connection another class
+  had just opened on its own file, and that class's next command met the disposed handle
+  (`SafeHandle.DangerousAddRef` under `SqliteCommand.PrepareAndEnumerateStatements`). A probe in scratch, 22 threads each
+  opening, writing and closing its own file and then clearing: clearing every pool, 40 and 48 `ObjectDisposedException`s in two
+  10-second runs (about one round in 120), each that stack; clearing only its own pool, none in two.
+- **Fix:** a test releases its own database alone: `SqlitePools.Release(file)` (the service tests' `Platform`) clears the pool of
+  the connection string a store at that path opens with, which `SqliteKnowledgeStore.ConnectionString` now gives both, and the
+  tests' raw connections to such files open with `Pooling=False`, as the suite's other raw connections already did, so they
+  need no clearing. No other class opens a test's file, so no release reaches a connection being opened. Per database rather
+  than a collection serializing the classes that clear: the victim is any class opening a pooled file connection while a clear
+  runs, not only a clearing class, so a collection would have had to hold every such class too, and would have run them one at
+  a time. `SqlitePoolsTests.No_test_here_clears_every_pool_in_the_process` holds the class by a source scan. The HTTP host's
+  tests keep `ClearAllPools`: that assembly runs one test at a time (`DisableTestParallelization`).
+- **Verify:** `SqlitePoolsTests`' two release cases were red before `SqlitePools` existed (they did not compile) and green after;
+  its source scan failed naming the fourteen files and passed once each released its own database. The service suite: 20 of
+  20 before with no load and 20 of 20 before beside a CPU load, 20 of 20 after beside the same load (2037, then 2040 tests):
+  the window is too narrow for the suite to show in 40 runs, which is why the probe is the proof. Merged with main, 2043 of
+  2043, and the HTTP host's suite 266 of 266.
+- **Commit:** `ef852e2c`.
+## 2026-10-15 — Words to a conversation handed over or moved stayed on its record and could restart it (HANDWORDS1-i)
+
+- **Symptom:** none seen on the install; named by SWITCH1c-ii's note as a later row. A word said while a conversation was handed
+  over or moved by the curve was held as a winding-up session's is, then kept on the old record once it ended; a word said to the
+  old one after the take was kept there too. Either woke its go-on (or the next come-up), which restarted the old conversation in
+  the tree its successor held, and the successor never heard the words.
+- **Root cause:** nothing read a record's successor. A take links the new record to the old by `from` (MIXAGENT1a-iii), but the say
+  doors, the go-on and the come-up judged the old record alone, as an ended conversation with words waiting.
+- **Fix:** `WordsNever.ContinuedIn` reads the latest conversation down the `from` chain, and the never table refuses the old id
+  `continued`, naming it (the say doors, start-from, go-on-new, the hand-over judge). The shell's judge holds a word while the
+  conversation's box stands and passes it to that conversation once the take is told over (`ChatRunner.TakeEnded`); the go-on and
+  the come-up leave a record with a successor as it ended. D165's HANDWORDS1-i note.
+- **Verify:** red then green: `DriverModuleConversationTests.Words_said_while_a_conversation_is_handed_over_go_to_the_one_that_continues_it`
+  and `…Words_to_a_conversation_that_went_on_are_refused_naming_the_one_that_continues_it`,
+  `ChatGoOnTests.A_conversation_that_went_on_in_another_never_goes_on_itself`, `HandOverRunnerTests.A_takes_end_is_told_once_its_box_is_gone`
+  and the refusal rows in `SessionsSayCommandTests`, `StartFromTests`, `GoOnNewTests` and `HandOverTests`; the driver's fast half
+  (7563) and the modules' (929). A real take with a word said during it is the Process half's and the window's to show.
+
 ## 2026-10-15 — The person's words to a session whose closed quest had once waited on a question never went on
 
 - **Symptom:** the owner's, on the install: words said to the reporting app's session cf8faff5 (asking it to rebase a branch whose

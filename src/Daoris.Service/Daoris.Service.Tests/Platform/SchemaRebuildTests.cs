@@ -15,7 +15,7 @@ public sealed class SchemaRebuildTests : IDisposable
 
     public void Dispose()
     {
-        SqliteConnection.ClearAllPools();
+        SqlitePools.Release(Path.Combine(_root, "knowledge.db"));
         if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
     }
 
@@ -44,15 +44,14 @@ public sealed class SchemaRebuildTests : IDisposable
         }
 
         // What the next start finds after a build whose schema moved on.
-        SqliteConnection.ClearAllPools();
-        await using (var older = new SqliteConnection($"Data Source={options.DatabasePath}"))
+        SqlitePools.Release(options.DatabasePath);
+        await using (var older = new SqliteConnection($"Data Source={options.DatabasePath};Pooling=False"))
         {
             await older.OpenAsync();
             await using var command = older.CreateCommand();
             command.CommandText = "PRAGMA user_version = 2;";
             await command.ExecuteNonQueryAsync();
         }
-        SqliteConnection.ClearAllPools();
 
         await using var restarted = await ServiceFactory.CreateAsync(options, source: new EmptyKnowledgeSource());
         Assert.True((await restarted.Service.FeedAsync("Open", [entry], from)).Accepted);

@@ -46,15 +46,21 @@ const firstWords = (text: string | null | undefined, limit = 60) => {
  * heading, and the mark moves through the newest once (`onRead`), so the count falls in the rows and the list. The marks stay
  * until the page is left, so what was new is seen. A panel reads a part of the channel and moves no mark.
  *
+ * **A teammate's ask's channel is read-only** (SESSONE2h): `readOnly` draws the messages and the unread count and no composer, no
+ * *Reply*, and a sentence saying the ask is a teammate's, held on their machine. The unread count is drawn as the heading's, but no
+ * mark moves: the host holds no record to mark it on.
+ *
  * **A refusal is the service's code** (`empty`, `too-long`, `bad-to`, `bad-re`, `not-found`), said in the composer in the
  * reader's language, the words kept.
  */
 export function ChannelSection({
-  channel, onPost, onRead, onOpenQuest, repositories = [], only,
+  channel, onPost, onRead, onOpenQuest, repositories = [], only, readOnly = false,
 }: {
   /** Null while it is being read. */
   channel: Channel | null;
   onPost: (post: ChannelPost, answered: ChannelAnswered) => void;
+  /** A teammate's ask's channel (SESSONE2h): read here and posted nowhere from here, so no composer and no *Reply*. */
+  readOnly?: boolean;
   /** The person's mark moved through the newest item shown, once what was unread is on the page. Absent in a panel. */
   onRead?: (through: string) => void;
   /** A line opens its quest. Absent where there is nowhere to open it. */
@@ -66,10 +72,15 @@ export function ChannelSection({
 }) {
   const { t } = useTranslation();
   if (!channel) return <p className="m-0 text-small text-ink-faint">{t('asks.channel.loading')}</p>;
-  return <ChannelBody channel={channel} onPost={onPost} onRead={onRead} onOpenQuest={onOpenQuest} repositories={repositories} only={only} />;
+  return (
+    <ChannelBody
+      channel={channel} onPost={onPost} onRead={onRead} onOpenQuest={onOpenQuest} repositories={repositories} only={only} readOnly={readOnly}
+    />
+  );
 }
 
-function ChannelBody({ channel, onPost, onRead, onOpenQuest, repositories, only }: {
+function ChannelBody({ channel, onPost, onRead, onOpenQuest, repositories, only, readOnly }: {
+  readOnly: boolean;
   channel: Channel;
   onPost: (post: ChannelPost, answered: ChannelAnswered) => void;
   onRead?: (through: string) => void;
@@ -83,7 +94,9 @@ function ChannelBody({ channel, onPost, onRead, onOpenQuest, repositories, only 
   const newest = newestAt(channel.items);
   // What was unread when the page opened, held until it is left: the mark moves at once, and what was new is still seen.
   const [opened] = useState(() => ({ mark: channel.mark ?? null, unread: channel.unread }));
-  const fresh = onRead ? sinceMark(items, opened.mark) : [];
+  // A read-only channel counts and marks what is new as the ask's page does, though no mark moves from it.
+  const counted = onRead !== undefined || readOnly;
+  const fresh = counted ? sinceMark(items, opened.mark) : [];
   const [to, setTo] = useState(only?.repository ?? NONE);
   const [reply, setReply] = useState(NONE);
   const [words, setWords] = useState('');
@@ -106,7 +119,7 @@ function ChannelBody({ channel, onPost, onRead, onOpenQuest, repositories, only 
 
   const recipients = repositoriesOf(channel.items, [...(only ? [only.repository] : []), ...repositories]);
   const messages = items.filter((item) => item.kind === 'message' && item.id);
-  const unread = onRead ? opened.unread : 0;
+  const unread = counted ? opened.unread : 0;
 
   const answer = (item: ChannelItem) => {
     setReply(item.id!);
@@ -158,14 +171,14 @@ function ChannelBody({ channel, onPost, onRead, onOpenQuest, repositories, only 
                     quoted={item.re ? repliesTo(channel.items, item.re) : null}
                     anchorOf={(id) => `${place}-${id}`}
                     isNew={isNew}
-                    onReply={() => answer(item)}
+                    onReply={readOnly ? undefined : () => answer(item)}
                   />
                 );
             })}
           </ol>
         )}
 
-      <div className="grid gap-2">
+      {readOnly ? <p className="m-0 text-small text-ink-faint">{t('asks.elsewhere.readOnly')}</p> : <div className="grid gap-2">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <label className="flex items-center gap-2 text-small text-ink-soft">
             {t('asks.channel.compose.to')}
@@ -207,7 +220,7 @@ function ChannelBody({ channel, onPost, onRead, onOpenQuest, repositories, only 
           </span>
         </div>
         {refusalWords && <Refused sentence={refusalWords} />}
-      </div>
+      </div>}
     </div>
   );
 }
@@ -235,7 +248,8 @@ function MessageRow({ item, anchor, anchorOf, quoted, isNew, onReply }: {
   anchorOf: (id: string) => string;
   quoted: ChannelItem | null;
   isNew: boolean;
-  onReply: () => void;
+  /** Absent in a read-only channel (SESSONE2h): there is nothing to answer from here. */
+  onReply?: () => void;
 }) {
   const { t } = useTranslation();
   const toWords = item.to ? t('asks.channel.to', { to: item.to }) : t('asks.channel.toEveryone');
@@ -270,9 +284,11 @@ function MessageRow({ item, anchor, anchorOf, quoted, isNew, onReply }: {
         : <p className="m-0 text-small text-ink-faint">{t('asks.channel.inReplyGone')}</p>)}
       {/* A word wider than the column, a pasted URL, breaks inside it rather than scrolling the region sideways. */}
       <p className="m-0 whitespace-pre-wrap wrap-anywhere text-body text-ink">{item.text}</p>
-      <div>
-        <Button variant="ghost" className="px-1.5 py-0 text-small" onClick={onReply}>{t('asks.channel.reply')}</Button>
-      </div>
+      {onReply && (
+        <div>
+          <Button variant="ghost" className="px-1.5 py-0 text-small" onClick={onReply}>{t('asks.channel.reply')}</Button>
+        </div>
+      )}
     </li>
   );
 }
