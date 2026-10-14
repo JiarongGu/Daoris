@@ -47,7 +47,7 @@ was read from the route, not tried.
 | Caller | How | As whom |
 |---|---|---|
 | The page in Daoris's window | `fetch` from the engine's app origin to the loopback address the shell writes into its URL (`api.ts`, `host.ts`, D92) | the person's presses |
-| The shell's modules and its driver loop | one `ServiceClient` (`DriverLoop.cs:403`) | the person's presses a module carries (Ask Daoris's apply, an abandon, a chat), and the driver's own facts |
+| The shell's modules and its driver loop | one `ServiceClient` (`Loop/DriverLoop.cs:403`) | the person's presses a module carries (Ask Daoris's apply, an abandon, a chat), and the driver's own facts |
 | `daoris-driver` | `ServiceClient.FromEnvironment()`: `DAORIS_SERVICE_URL`, `DAORIS_SERVICE_KEY` | the person at a terminal, and a headless driver |
 | `daoris connect`, `retire`, `import` | `service.ts` | the person at a terminal (D50) |
 | Rehearsals and `test:web` | their own requests | the person, the driver and stub sessions, as each phase plays them |

@@ -74,7 +74,7 @@ Help tests' `GetMethod(nameof(ProposeX))`): one list of tool types serves the ho
 `HelpProposalKindsTests.cs` (~:110-114) reads the MCP host's files for each `[McpServerTool(Name = …)]` and expects
 `KnowledgeTools.Help.<Kind>.cs`: the Help row changes it in the same branch. `quest-operations.md` names the file.
 
-**`DriverModule`** (the page bridge, `src/Daoris.Desktop/Daoris.Desktop.Modules/`): `DriverModule.cs` and eighteen domain
+**`DriverModule`** (the page bridge, `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/`, its handler classes in `Bridge/Routes/`): `DriverModule.cs` and eighteen domain
 parts, about 7,400 lines and 127 `[DriverRoute]` handlers. Shared state: the loop (every part), the event bus (Agents,
 Conversation, Help, Tools), the folder opener (Plugins, Sessions), the file picker (Tools), `Change(…)` over the config
 (Across, Driver, Help, Lines, Rules, and `ScreenDoors`), and `Offers` (Plugins, set by seven tests); per-part fields (Agents'

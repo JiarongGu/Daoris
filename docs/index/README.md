@@ -102,11 +102,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleSessionsTests.cs` | 47 | 781 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/AgentsRoutes.cs` | 43 | 786 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs` | 51 | 921 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/HelpRoutes.cs` | 55 | 966 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/TreesRoutes.cs` | 44 | 790 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleSessionsTests.cs` | 46 | 779 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/AgentsRoutes.cs` | 43 | 786 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 55 | 966 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs` | 44 | 790 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 51 | 921 |
 
 ### Service (`service`)
 
@@ -140,7 +140,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/src/toolchain.ts` | 149 | 2884 |
 | `src/Daoris.Cli/src/workflowdoor.ts` | 46 | 836 |
 | `src/Daoris.Cli/test/desktop-publish.test.ts` | 55 | 1007 |
-| `src/Daoris.Cli/test/desktop-tool.test.ts` | 43 | 829 |
+| `src/Daoris.Cli/test/desktop-tool.test.ts` | 43 | 830 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 46 | 821 |
 | `src/Daoris.Cli/test/driverconfig.test.ts` | 132 | 2432 |
 | `src/Daoris.Cli/test/merge-branch.test.ts` | 186 | 2885 |
@@ -158,7 +158,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/family-rehearsal.mjs` | 339 | 5982 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
 | `tools/merge-branch.mjs` | 131 | 2394 |
-| `tools/orient-index.mjs` | 65 | 1421 |
+| `tools/orient-index.mjs` | 65 | 1422 |
 | `tools/rehearsal-kit.mjs` | 42 | 812 |
 | `tools/usage-report.mjs` | 57 | 1254 |
 
