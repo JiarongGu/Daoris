@@ -1,7 +1,7 @@
 import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, type Quest, type Session } from '../api';
-import { isImage } from '../attachments';
+import { isImage } from '../compose/attachments';
 import { ago, sessionTool, size, stamp } from '../format';
 import { ExternalLink } from '../links';
 import type { ChainStep } from '../map/chain';

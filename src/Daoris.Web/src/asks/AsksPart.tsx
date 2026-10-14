@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type Ask, canBeAsked, type Quest } from '../api';
-import { linksOf, toUpload } from '../attachments';
+import { linksOf, toUpload } from '../compose/attachments';
 import { NO_CARRY } from '../compose/carry';
 import { sentence } from '../format';
 import { askItem } from '../opener';

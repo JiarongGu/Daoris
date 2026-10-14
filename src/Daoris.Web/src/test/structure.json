@@ -83,9 +83,6 @@
     "menuBar.test.tsx": "menus",
     "contextMenus.test.tsx": "menus",
 
-    "attachments.ts": "compose",
-    "attachments.test.ts": "compose",
-
     "setupGuide.tsx": "help",
     "setupGuide.test.tsx": "help"
   }

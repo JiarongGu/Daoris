@@ -1,6 +1,6 @@
 import { type ClipboardEvent, type DragEvent, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { admit, MAX_FILE_BYTES, MAX_FILES } from '../attachments';
+import { admit, MAX_FILE_BYTES, MAX_FILES } from './attachments';
 import { size } from '../format';
 import { cn } from '../lib/cn';
 import { Button, Icon } from '../ui';

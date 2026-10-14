@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { canBeAsked, type Quest } from '../api';
-import { linksOf, toUpload } from '../attachments';
+import { linksOf, toUpload } from '../compose/attachments';
 import { useAsksPart } from '../asks/AsksPart';
 import { sentence } from '../format';
 import { buildChain } from '../map/chain';
