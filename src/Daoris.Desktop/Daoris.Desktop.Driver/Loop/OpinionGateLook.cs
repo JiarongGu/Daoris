@@ -4,82 +4,24 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The second opinions owed by themselves (XAGENT1f, D155 point 2; the second-agent design §2.1): what a driven record's conclusion
-/// makes owed, and why the look closes one.
+/// The second opinions owed on this machine, looked at beside the look (XAGENT1f, PART10m, D166): what <see cref="OpinionLook"/>
+/// made owed is closed, asked, delivered and sat here, over the loop's context. The gate delivers, so it holds the delivery, and
+/// the delivery passes.
 /// </summary>
-public static class OpinionLook
+internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinions, OpinionDeliverer deliverer)
 {
-    /// <summary>
-    /// A driven record that just concluded, read against the opinion rule standing for its repository (§2.1): a done in a tree of
-    /// its own, under a rule whose occasions read it, is owed one at each occasion the rule names. Never throws: the record has
-    /// concluded, and an opinion not owed leaves the person's <i>Ask now</i>.
-    /// </summary>
-    /// <param name="process">
-    /// Its run's process (WORKFLOW1f): under a named workflow, its version's opinion step says the occasions, one that cannot start
-    /// among them, so it sits where it is owed. Null reads the rule live, as before.
-    /// </param>
-    /// <returns>The occasions it is owed at; empty where none.</returns>
-    public static IReadOnlyList<string> Concluded(
-        string home, DriverConfig config, string session, QuestView quest, string? status, string state, string tree, DateTimeOffset? at = null,
-        WorkflowProcess? process = null)
-    {
-        try
-        {
-            if (status != "Done" || SessionStates.IsParked(state)) return [];
-            var trees = new SessionTrees(home);
-            if (!trees.Holds(tree)) return [];
-            var (workspace, repository) = trees.Owner(tree);
-            var resolved = process is null ? OpinionRules.Resolve(config, repository, workspace) : process.Opinion;
-            if (resolved is null || (resolved.Rule.IsNone && process?.OpinionCannot is null)) return [];
-            var rule = resolved.Rule;
+    private readonly LoopContext _context = context;
 
-            var dues = new OpinionDues(home);
-            foreach (var occasion in rule.On)
-            {
-                dues.Due(new OpinionDue(session, quest.Id, repository, workspace, tree, occasion, at ?? DateTimeOffset.UtcNow));
-            }
+    private readonly DriverOpinions _opinions = opinions;
 
-            return rule.On;
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException)
-        {
-            return [];
-        }
-    }
+    private readonly OpinionDeliverer _deliverer = deliverer;
 
-    /// <summary>
-    /// Why an opinion owed is closed now, or null where it is still owed: its quest no longer done, its rule no longer reading at
-    /// its occasion, its tree gone, its work landed (a landing recorded for it, or nothing in its tree that no branch of the
-    /// person's holds), or, under <c>steps</c>, no next step of its chain left to hold.
-    /// </summary>
-    /// <param name="process">
-    /// Its run's process (WORKFLOW1f): under a named workflow, whether its version still reads at the occasion. One that cannot be
-    /// read here closes nothing, since it may read once it can. Null reads the rule live, as before.
-    /// </param>
-    public static async Task<string?> ClosesAsync(
-        OpinionDue due, QuestView? quest, IReadOnlyList<QuestView> chain, DriverConfig config, LandedBranches landed, CancellationToken ct,
-        WorkflowProcess? process = null)
-    {
-        if (quest is not { Status: "Done" }) return OpinionDueClosed.Undone;
-        var reads = process is null
-            ? OpinionRules.Resolve(config, due.Repository, due.Workspace) is { Rule: { IsNone: false } rule } && rule.On.Contains(due.Occasion)
-            : process.Problem is not null || process.Unread is not null || OpinionGate.Reads(process.Opinion, process.OpinionCannot, due.Occasion);
-        if (!reads) return OpinionDueClosed.Off;
+    private ServiceClient Service => _context.Service;
 
-        if (SessionTrees.TreeGone(due.Tree)) return OpinionDueClosed.Gone;
-        if (landed.Landing(due.Session) is { } landing && landing.Names(due.Session)) return OpinionDueClosed.Landed;
-        if (due.Occasion == OpinionRules.Steps
-            && !chain.Any(step => string.Equals(step.Parent, due.Quest, StringComparison.OrdinalIgnoreCase) && step.Status == "Open"))
-        {
-            return OpinionDueClosed.Past;
-        }
+    private string Home => _context.Home;
 
-        return await SessionTrees.UnlandedInTreeAsync(due.Tree, "HEAD", ct).ConfigureAwait(false) == 0 ? OpinionDueClosed.Landed : null;
-    }
-}
+    private DriverConfig Config => _context.Config;
 
-public sealed partial class Driver
-{
     /// <summary>
     /// The second opinions owed on this machine, at a look (XAGENT1f; the second-agent design §2.1, §7, §8.1): each closed once
     /// past, each asked where nothing was yet and the chain's last step here is done and not held, asked again once a cool-off
@@ -96,16 +38,16 @@ public sealed partial class Driver
         Snapshot snapshot, List<string> events, CancellationToken ct, List<OpinionJudged>? judged = null)
     {
         var sits = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var dues = new OpinionDues(home);
+        var dues = new OpinionDues(Home);
         var open = dues.Open();
         if (open.Count == 0) return (sits, 0);
 
         var passes = 0;
         try
         {
-            var world = new ServiceReviewWorld(service);
+            var world = new ServiceReviewWorld(Service);
             var quests = await world.QuestsAsync(ct).ConfigureAwait(false);
-            var gates = new OpinionGates(home);
+            var gates = new OpinionGates(Home);
             foreach (var due in open)
             {
                 var now = DateTimeOffset.UtcNow;
@@ -113,9 +55,9 @@ public sealed partial class Driver
                 var quest = chain.FirstOrDefault(each => Same(each.Id, due.Quest));
                 // WORKFLOW1f: the run's process, read once for this due and handed to each part below, so a named workflow's opinion
                 // step decides whether it is owed, who reads it and what holds.
-                var process = WorkflowProcesses.Read(home, config, due.Repository, due.Workspace,
+                var process = WorkflowProcesses.Read(Home, Config, due.Repository, due.Workspace,
                     WorkflowRunBindings.RunOf(chain, due.Repository) ?? due.Quest);
-                if (await OpinionLook.ClosesAsync(due, quest, chain, config, _trees.Recorded, ct, process).ConfigureAwait(false) is { } closed)
+                if (await OpinionLook.ClosesAsync(due, quest, chain, Config, _context.Trees.Recorded, ct, process).ConfigureAwait(false) is { } closed)
                 {
                     dues.Close(due.Session, due.Occasion, closed, now);
                     continue;
@@ -126,22 +68,22 @@ public sealed partial class Driver
                 // The landing's gate reads D154's review beside it, as every landing door does (XAGENT1g3): a review that answered what
                 // the opinion showed settles it. It moves no ask below, which read states the review never changes.
                 var review = judged is not null && due.Occasion == OpinionRules.Landing
-                    ? await ReviewGate.ReadAsync(world, config, Path.GetFullPath(due.Tree), due.Repository, due.Workspace, due.Quest, ct, process)
+                    ? await ReviewGate.ReadAsync(world, Config, Path.GetFullPath(due.Tree), due.Repository, due.Workspace, due.Quest, ct, process)
                         .ConfigureAwait(false)
                     : null;
-                var gate = await _trees.OpinionAsync(due.Tree, due.Repository, due.Workspace, due.Quest, due.Session, world, review, due.Occasion, ct, process)
+                var gate = await _context.Trees.OpinionAsync(due.Tree, due.Repository, due.Workspace, due.Quest, due.Session, world, review, due.Occasion, ct, process)
                     .ConfigureAwait(false);
                 if (review is not null)
                 {
                     judged!.Add(new OpinionJudged(due.Session, due.Quest, due.Repository, due.Workspace, due.At,
-                        (process.Landing ?? LandingRules.Choose(config, due.Repository, due.Workspace)).Rule.AutoAccept, gate));
+                        (process.Landing ?? LandingRules.Choose(Config, due.Repository, due.Workspace)).Rule.AutoAccept, gate));
                 }
 
                 // The person's asks first (§8.5): Ask now, Try again, Ask again, Ask the same agent, fresh. Not capped (§8.3).
                 var asked = gates.Read(key, due.Repository).Requests.Where(request => Same(request.Session, due.Session)).ToList();
                 if (asked.Count > 0)
                 {
-                    if (_runs.TryOpinion(claim))
+                    if (_context.Runs.TryOpinion(claim))
                     {
                         var request = gates.Take(key, due.Repository, due.Session)[^1];
                         passes++;
@@ -153,13 +95,13 @@ public sealed partial class Driver
                          // One opinion reads a chain's whole work here (§8.1): an earlier step's is its last step's to ask.
                          && (due.Occasion == OpinionRules.Steps || !OpinionGate.HasLaterWork(chain, due.Quest, due.Repository)))
                 {
-                    if (_runs.TryOpinion(claim))
+                    if (_context.Runs.TryOpinion(claim))
                     {
                         passes++;
                         OpinionBeside(claim, token => AskPassAsync(due, key, chain, due.Occasion, null, snapshot, process, token), ct);
                     }
                 }
-                else if (gate is { State: OpinionGateStates.WithSession or OpinionGateStates.ReadAgain, Opinion: { } first } && _runs.TryOpinion(claim))
+                else if (gate is { State: OpinionGateStates.WithSession or OpinionGateStates.ReadAgain, Opinion: { } first } && _context.Runs.TryOpinion(claim))
                 {
                     OpinionBeside(claim, token => DeliverBesideAsync(due, chain, first, process, token), ct);
                 }
@@ -216,7 +158,7 @@ public sealed partial class Driver
     /// line joining a later look's report, and the chain's claim let go however it ended.
     /// </summary>
     private void OpinionBeside(string claim, Func<CancellationToken, Task<string>> work, CancellationToken ct) =>
-        _ = _runs.StartAsync(async opened =>
+        _ = _context.Runs.StartAsync(async opened =>
         {
             opened();
             try
@@ -231,7 +173,7 @@ public sealed partial class Driver
             }
             finally
             {
-                _runs.OpinionDone(claim);
+                _context.Runs.OpinionDone(claim);
             }
         });
 
@@ -246,7 +188,7 @@ public sealed partial class Driver
         OpinionDue due, string key, IReadOnlyList<QuestView> chain, string occasion, OpinionRequest? request, Snapshot snapshot,
         WorkflowProcess process, CancellationToken ct)
     {
-        var gates = new OpinionGates(home);
+        var gates = new OpinionGates(Home);
         var named = $"`{due.Repository}` for session {due.Session}";
         var at = DateTimeOffset.UtcNow;
         var by = request is null ? OpinionAskers.Look : OpinionAskers.Person;
@@ -266,9 +208,9 @@ public sealed partial class Driver
         if (tip is null || root is null) return $"held  second opinion on {named}: git could not read its tree, and the next look tries again.";
 
         var start = occasion == OpinionRules.Steps
-            ? (await service.SessionGroundAsync(due.Session, ct).ConfigureAwait(false)).BaseCommit
-            : await _trees.ForkPointAsync(due.Tree, ct).ConfigureAwait(false);
-        var record = await service.RecordAsync(due.Session, ct).ConfigureAwait(false);
+            ? (await Service.SessionGroundAsync(due.Session, ct).ConfigureAwait(false)).BaseCommit
+            : await _context.Trees.ForkPointAsync(due.Tree, ct).ConfigureAwait(false);
+        var record = await Service.RecordAsync(due.Session, ct).ConfigureAwait(false);
         var part = chain.Where(quest => Same(quest.To, due.Repository)).ToList();
 
         // The families that wrote the work (§3.1): the agents of this machine's last run on each of the chain's quests here.
@@ -276,11 +218,11 @@ public sealed partial class Driver
             .Append(record?.Adapter).OfType<string>().Where(adapter => adapter.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase)];
         IReadOnlyList<string> reviewers = request switch
         {
-            { SameAgent: true } => [record?.Adapter ?? config.Adapter],
+            { SameAgent: true } => [record?.Adapter ?? Config.Adapter],
             { Reviewer: { } one } => [one],
             _ => rule.Reviewers,
         };
-        var choice = await ReviewerChoice.ChooseAsync(_harnesses, rule with { Reviewers = reviewers }, wrote, config, due.Workspace, ct)
+        var choice = await ReviewerChoice.ChooseAsync(_context.Harnesses, rule with { Reviewers = reviewers }, wrote, Config, due.Workspace, ct)
             .ConfigureAwait(false);
 
         var watch = Stopwatch.StartNew();
@@ -288,35 +230,35 @@ public sealed partial class Driver
         {
             Workspace = due.Workspace,
             Quests = part,
-            Words = await AskWords.ReadAsync(service, chain.FirstOrDefault()?.From, ct).ConfigureAwait(false),
+            Words = await AskWords.ReadAsync(Service, chain.FirstOrDefault()?.From, ct).ConfigureAwait(false),
             Opened = (opinion, _) =>
             {
                 gates.Asked(key, due.Repository, new OpinionAskKept(at, occasion, due.Session, tip)
                 {
                     Opinion = opinion, By = by, Reviewer = choice.Reviewer, Label = choice.Label,
                 });
-                service.LandingSaid(OpinionLines.Asked(opinion, due.Session, occasion, choice.Label, choice.Reviewer, OpinionViews.FirstPass));
+                Service.LandingSaid(OpinionLines.Asked(opinion, due.Session, occasion, choice.Label, choice.Reviewer, OpinionViews.FirstPass));
             },
         };
-        var run = await (Passes ?? PassAsync)(ask, choice, ct).ConfigureAwait(false);
+        var run = await (_context.Passes ?? _opinions.PassAsync)(ask, choice, ct).ConfigureAwait(false);
 
         if (run.Opinion is null)
         {
             // No reviewer could read it, or its pass did not open (§3.3, §8.4): said, never downgraded silently.
             var code = run.Code ?? choice.Code ?? ReviewerUnavailable.Refused;
             gates.Asked(key, due.Repository, new OpinionAskKept(at, occasion, due.Session, tip) { Code = code, Until = choice.Cooling?.Until, By = by });
-            service.LandingSaid(OpinionLines.Unavailable(due.Session, occasion, code));
+            Service.LandingSaid(OpinionLines.Unavailable(due.Session, occasion, code));
             return $"opinion  {run.Line}";
         }
 
-        var view = await service.Opinions.ReadAsync(run.Opinion, ct).ConfigureAwait(false);
-        if (view is { Given: true }) service.LandingSaid(OpinionLines.Given(view, (long)watch.Elapsed.TotalSeconds));
-        else if (view is { State: OpinionViews.Failed }) service.LandingSaid(OpinionLines.Unavailable(due.Session, occasion, view.Why ?? "ended"));
+        var view = await Service.Opinions.ReadAsync(run.Opinion, ct).ConfigureAwait(false);
+        if (view is { Given: true }) Service.LandingSaid(OpinionLines.Given(view, (long)watch.Elapsed.TotalSeconds));
+        else if (view is { State: OpinionViews.Failed }) Service.LandingSaid(OpinionLines.Unavailable(due.Session, occasion, view.Why ?? "ended"));
         return $"opinion  {run.Line}";
     }
 
     /// <summary>
-    /// Deliver an owed opinion as far as the facts let it go (XAGENT1e's <see cref="DeliverAsync"/>): its findings handed to the
+    /// Deliver an owed opinion as far as the facts let it go (XAGENT1e's <see cref="OpinionDeliverer.DeliverAsync"/>): its findings handed to the
     /// working session at its turn's end, its answers read, its one recheck asked; asked with what the first pass read.
     /// </summary>
     private async Task<string> DeliverBesideAsync(
@@ -332,13 +274,13 @@ public sealed partial class Driver
         {
             Workspace = due.Workspace,
             Quests = [.. chain.Where(quest => Same(quest.To, due.Repository))],
-            Words = await AskWords.ReadAsync(service, chain.FirstOrDefault()?.From, ct).ConfigureAwait(false),
+            Words = await AskWords.ReadAsync(Service, chain.FirstOrDefault()?.From, ct).ConfigureAwait(false),
         };
-        var delivered = await DeliverAsync(first.Id, ask, ct).ConfigureAwait(false);
+        var delivered = await _deliverer.DeliverAsync(first.Id, ask, ct).ConfigureAwait(false);
         if (delivered.Recheck is { Opinion: { } recheck })
         {
-            service.LandingSaid(OpinionLines.Asked(recheck, first.Working, first.Occasion, first.Label, first.Adapter, OpinionViews.RecheckPass));
-            if (await service.Opinions.ReadAsync(recheck, ct).ConfigureAwait(false) is { Given: true } given) service.LandingSaid(OpinionLines.Given(given, null));
+            Service.LandingSaid(OpinionLines.Asked(recheck, first.Working, first.Occasion, first.Label, first.Adapter, OpinionViews.RecheckPass));
+            if (await Service.Opinions.ReadAsync(recheck, ct).ConfigureAwait(false) is { Given: true } given) Service.LandingSaid(OpinionLines.Given(given, null));
         }
 
         return $"opinion  {delivered.Line}";

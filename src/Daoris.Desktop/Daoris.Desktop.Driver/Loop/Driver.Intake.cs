@@ -105,7 +105,7 @@ public sealed partial class Driver
         HarnessSelection selection;
         try
         {
-            adapter = _adapters.Resolve(adapterName);
+            adapter = Context.Adapters.Resolve(adapterName);
             // An intake is driven work (D130 §4.6): it never starts on an account kept for conversations.
             selection = await _harnesses.SelectAsync(adapterName, config, ask.Workspace, chosen: null, StartKind.Driven, ct)
                 .ConfigureAwait(false);
@@ -172,7 +172,7 @@ public sealed partial class Driver
             // that drives it (D78), or that server left out and the transcript told why. Handed before the instruction is
             // composed, which tells the intake the browser it was handed (BRWHINT1b).
             var (servers, browserNoted, drivesBrowser, browserDrivers) =
-                await InAppBrowserServers.HandNotedAsync(_servers, browser, ct).ConfigureAwait(false);
+                await InAppBrowserServers.HandNotedAsync(Context.Servers, browser, ct).ConfigureAwait(false);
             var browserNotice = browserNoted?.Note;
             var target = new SessionTarget(
                 QuestId: "", ask.Sentence.Split('\n', 2)[0].Trim(), ask.Sentence, ask.Asker ?? "the person",
@@ -199,7 +199,7 @@ public sealed partial class Driver
             // this session in its environment so what it publishes is asked by the ask.
             string? handed = null;
             string? preamble = null;
-            hooks?.Log.Served(_catalog, sessionId, servers);
+            hooks?.Log.Served(Context.Catalog, sessionId, servers);
             if (adapter.Wire == SessionWire.Pipe)
             {
                 var connector = Connector(sessionId, scope);
