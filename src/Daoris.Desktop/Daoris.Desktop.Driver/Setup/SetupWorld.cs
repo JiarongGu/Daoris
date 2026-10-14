@@ -90,34 +90,19 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
         // Asked as a child is started (TOOLS5): the launcher runs on the node a child's PATH finds.
         Tools.Hand(info, read, home);
 
-        try
+        var run = await ChildProcess.RunAsync(info, Patience, ct, closeInput: false).ConfigureAwait(false);
+        if (!run.Started)
         {
-            using var process = Process.Start(info);
-            if (process is null) return (null, $"`{Path.GetFileName(file)}` did not start");
-            using var patience = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            patience.CancelAfter(Patience);
-            var stdout = process.StandardOutput.ReadToEndAsync(patience.Token);
-            var stderr = process.StandardError.ReadToEndAsync(patience.Token);
-            try
-            {
-                await process.WaitForExitAsync(patience.Token).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
-            {
-                process.Kill(entireProcessTree: true);
-                await Task.WhenAll(stdout, stderr).ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
-                return (null, $"`{Path.GetFileName(file)}` did not answer within {Patience.TotalSeconds:0}s");
-            }
+            return (null, run.Error is null
+                ? $"`{Path.GetFileName(file)}` did not start"
+                : $"`{Path.GetFileName(file)}` would not start: {run.Error.Message}");
+        }
 
-            var said = (await stdout.ConfigureAwait(false)).Trim();
-            var first = said.Split('\n')[0].Trim();
-            return process.ExitCode == 0 && first.Length > 0
-                ? (first, null)
-                : (null, first.Length > 0 ? first : (await stderr.ConfigureAwait(false)).Trim().Split('\n')[0].Trim());
-        }
-        catch (Exception error) when (error is System.ComponentModel.Win32Exception or InvalidOperationException)
-        {
-            return (null, $"`{Path.GetFileName(file)}` would not start: {error.Message}");
-        }
+        if (run.TimedOut) return (null, $"`{Path.GetFileName(file)}` did not answer within {Patience.TotalSeconds:0}s");
+
+        var first = run.Stdout.Trim().Split('\n')[0].Trim();
+        return run.ExitCode == 0 && first.Length > 0
+            ? (first, null)
+            : (null, first.Length > 0 ? first : run.Stderr.Trim().Split('\n')[0].Trim());
     }
 }

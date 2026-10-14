@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -196,7 +197,4 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
 
         return System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n";
     }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 }

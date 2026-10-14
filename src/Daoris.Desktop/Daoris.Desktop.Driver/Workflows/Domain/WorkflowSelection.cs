@@ -97,7 +97,7 @@ public sealed record WorkflowDrop(string Kind, string Workspace) : WorkflowChoic
 /// <para><b>Additive</b>: two keys <c>driver.json</c> never had, written only when set, and nothing else in the file is read
 /// again. With neither, every repository's work follows Current, which is today's behaviour.</para>
 /// </remarks>
-public static partial class WorkflowSelection
+public static class WorkflowSelection
 {
     /// <summary>The workflow drawn from the rules as they stand (design §2.7), which no saved workflow's id may take.</summary>
     public const string Current = "current";
@@ -157,7 +157,7 @@ public static partial class WorkflowSelection
         $"workspace `{workspace}` declares no kind `{kind}`, so there is none to drop.";
 
     /// <summary>A kind's id: lower-case letters, digits and dashes, at most 24.</summary>
-    public static bool IsKindId(string? value) => value is { Length: > 0 and <= KindIdLimit } && KindShape().IsMatch(value);
+    public static bool IsKindId(string? value) => value is { Length: > 0 and <= KindIdLimit } && SafeNames.IsKebabId(value);
 
     /// <summary>What a choice may name: a saved workflow's id, or <c>current</c>, which has an id's shape.</summary>
     public static bool IsWorkflow(string? value) => WorkflowNamed.IsId(value);
@@ -453,7 +453,4 @@ public static partial class WorkflowSelection
         else next[key] = choice;
         return next;
     }
-
-    [GeneratedRegex("^[a-z0-9]+(?:-[a-z0-9]+)*$")]
-    private static partial Regex KindShape();
 }

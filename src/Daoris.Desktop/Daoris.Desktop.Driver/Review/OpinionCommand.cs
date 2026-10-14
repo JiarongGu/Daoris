@@ -128,7 +128,7 @@ public static class OpinionCommand
             case "show":
             {
                 // An opinion's id shows that opinion and the gate of the work it read; a session's shows its work's gate.
-                var named = await service.ReadOpinionAsync(ask.Id, ct).ConfigureAwait(false);
+                var named = await service.Opinions.ReadAsync(ask.Id, ct).ConfigureAwait(false);
                 pressed = await presses.GateAsync(named?.Working ?? ask.Id, ct).ConfigureAwait(false);
                 if (pressed.Gate is not { } gate)
                 {

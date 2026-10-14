@@ -1,5 +1,6 @@
 using System.Text.Json;
 using static Daoris.Driver.HelpProposals;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -98,19 +99,7 @@ internal sealed class HelpAccountProposals : IHelpProposalKind
     private const string Unset = "unset";
 }
 
-public sealed partial record HelpProposal
-{
-    /// <summary>An account's name, for an account's settings (HELP6).</summary>
-    public string? Account { get; init; }
-
-    /// <summary>The model an account's settings would set — `unset` for the tool's own default — or null to leave it.</summary>
-    public string? Model { get; init; }
-
-    /// <summary>The effort an account's settings would set — `unset` for the tool's own default — or null to leave it.</summary>
-    public string? Effort { get; init; }
-}
-
-public partial interface IHelpDoors
+public interface IHelpAccountDoors
 {
     /// <summary><c>SET_AGENT_SETTINGS</c>'s own write to an account's settings file.</summary>
     AgentSettingsRead SetAgentSettings(string harness, string account, AgentSettingEdit? model, AgentSettingEdit? effort);

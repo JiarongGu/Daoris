@@ -1,4 +1,5 @@
 using System.Text.Json;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Desktop;
 
@@ -45,10 +46,4 @@ public static class CdpCookies
             : new { name = cookie.Name, value = cookie.Value, domain = cookie.Domain, path = cookie.Path, secure = cookie.Secure, httpOnly = cookie.HttpOnly })
             .ToList(),
     };
-
-    private static string? Text(JsonElement cookie, string name) =>
-        cookie.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
-
-    private static bool Flag(JsonElement cookie, string name) =>
-        cookie.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.True;
 }

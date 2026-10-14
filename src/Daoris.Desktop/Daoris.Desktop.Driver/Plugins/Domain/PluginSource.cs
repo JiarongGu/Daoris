@@ -1,5 +1,6 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using static Daoris.Driver.Json;
 using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
@@ -135,9 +136,6 @@ public sealed record PluginSource(string? Folder, string? Offer, PluginPackageOr
 
     // A hash's `+` and `/` are written as they are, as the CLI's `JSON.stringify` writes them.
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 }
 
 /// <summary>One thing an update changes (PLUG9 c): `version`, `command`, `points`, `harnesses` or `servers`, each side as its manifest writes it; empty is none.</summary>

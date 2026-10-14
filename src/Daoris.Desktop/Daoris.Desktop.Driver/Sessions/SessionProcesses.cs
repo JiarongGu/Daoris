@@ -384,7 +384,7 @@ public sealed class SessionProcesses(string? markers = null)
 
     /// <summary>The marker's path, or null where this registry keeps none or the id could not be a file name.</summary>
     private string? MarkerOf(string sessionId) =>
-        markers is null || sessionId.Length == 0 || sessionId.IndexOfAny(['/', '\\', ':']) >= 0 || sessionId.Contains("..")
+        markers is null || !SafeNames.IsFolderId(sessionId)
             ? null
             : Path.Combine(markers, sessionId + ".pid");
 

@@ -137,15 +137,3 @@ public sealed class HelpBrowserProposalsTests : HelpProposalsFixture
         Assert.Null(HelpProposals.Find(_home, File("p10", "setting", "drive", "engine"))!.Title);
     }
 }
-
-public sealed partial class HelpStandInDoors
-{
-    /// <summary>What the browser's door refuses with, as the Browser screen's route would; null to make the change.</summary>
-    public string? BrowserRefusal { get; init; }
-
-    public void ChangeBrowser(string setting, string value, string? address, string? title)
-    {
-        if (BrowserRefusal is { } refused) throw new DriverException(refused);
-        Calls.Add($"BROWSER {setting} {value} {address} {title}".TrimEnd());
-    }
-}

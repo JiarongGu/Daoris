@@ -24,7 +24,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     // It proposes, and the person applies (HELP1c, D89).
     public string Tool => "setting_propose";
 
-    /// <summary>The `daoris driver` verbs it takes, in the order the service's twin lists them (<c>HelpProposalBox.Doors</c>).</summary>
+    /// <summary>The `daoris driver` verbs it takes, in the order the service's twin lists them (<c>HelpSettingProposalWriter.Doors</c>).</summary>
     /// <remarks>
     /// HELP9 added <c>across</c> (D107), and <c>cap</c> and <c>adapter</c>, which only a terminal set before; HELP10
     /// <c>retry</c>, once the facts carried the parked quests; LANG1c2 <c>language</c>, once the service's writer listed it;
@@ -916,29 +916,9 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     }
 }
 
-public partial interface IHelpDoors
+public interface IHelpSettingDoors
 {
     /// <summary>An edit to the driver's file, as the `SET_*` routes and `RETRY_QUEST` make it.</summary>
     void Change(Func<DriverConfig, DriverConfig> edit);
 }
 
-public sealed partial record HelpMachineFacts
-{
-    /// <summary>
-    /// The quests the loop's last tick parked by their failed sessions (HELP10), which a retry must name: the verdict
-    /// the quest drawer shows its Retry by. Empty before any tick, and while another loop holds the home (D104).
-    /// </summary>
-    public IReadOnlyList<ParkedQuest> Parked { get; init; } = [];
-
-    /// <summary>
-    /// The quests the loop's last look held by the person's stop (SESSUX1b), each with the session they stopped: a retry of
-    /// one releases that stop. Empty before any look, and while another loop holds the home (D104).
-    /// </summary>
-    public IReadOnlyList<HeldQuest> Held { get; init; } = [];
-
-    /// <summary>
-    /// Each registered repository with its workspace and its checkout here, or none (REVIEWENV1a): what a <c>review</c>'s
-    /// procedure is looked for in, the one repository it names or each of the workspace's. Empty where it was not asked.
-    /// </summary>
-    public IReadOnlyList<(string Repository, string? Workspace, string? Root)> Registered { get; init; } = [];
-}

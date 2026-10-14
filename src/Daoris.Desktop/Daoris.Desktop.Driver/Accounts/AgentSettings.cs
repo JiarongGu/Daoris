@@ -75,12 +75,12 @@ public static class AgentSettings
         {
             foreach (var (model, entry) in models)
             {
-                if (entry is JsonObject held && Text(held["effortLevel"]) is { } effort) perModel.Add(new ModelEffort(model, effort));
+                if (entry is JsonObject held && Json.Text(held["effortLevel"]) is { } effort) perModel.Add(new ModelEffort(model, effort));
             }
         }
 
         // The tool ignores a model that is not text, so it is not set as far as anyone can tell.
-        return new AgentSettingsRead(Text(root["model"]), Text(root["effortLevel"]), perModel, null);
+        return new AgentSettingsRead(Json.Text(root["model"]), Json.Text(root["effortLevel"]), perModel, null);
     }
 
     /// <summary>
@@ -215,9 +215,6 @@ public static class AgentSettings
             return (null, text, $"`{path}` could not be read ({error.Message})");
         }
     }
-
-    private static string? Text(JsonNode? node) =>
-        node is JsonValue value && value.GetValueKind() == JsonValueKind.String ? value.GetValue<string>() : null;
 
     private static DriverException Unwritable(string problem) =>
         new($"{problem}, so nothing was written to it — fix it, or change the setting with the tool itself.");

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -69,7 +70,7 @@ internal sealed class ClaudeStreams(SessionStreams streams, Action<string> say, 
 
         if (root.ValueKind != JsonValueKind.Object) return false;
 
-        if (Str(root, "parent_tool_use_id") is { Length: > 0 } parent)
+        if (Text(root, "parent_tool_use_id") is { Length: > 0 } parent)
         {
             Child? child;
             lock (_gate) child = _children.GetValueOrDefault(parent);
@@ -79,7 +80,7 @@ internal sealed class ClaudeStreams(SessionStreams streams, Action<string> say, 
             return true;
         }
 
-        switch (Str(root, "type"))
+        switch (Text(root, "type"))
         {
             case "system":
                 return System(root);
@@ -93,15 +94,15 @@ internal sealed class ClaudeStreams(SessionStreams streams, Action<string> say, 
 
     private bool System(JsonElement root)
     {
-        switch (Str(root, "subtype"))
+        switch (Text(root, "subtype"))
         {
             case "task_started":
             {
-                if (Str(root, "task_id") is not { Length: > 0 } id) return false;
-                var name = Str(root, "description") is { Length: > 0 } described ? described : id;
-                if (Str(root, "task_type") == "local_agent")
+                if (Text(root, "task_id") is not { Length: > 0 } id) return false;
+                var name = Text(root, "description") is { Length: > 0 } described ? described : id;
+                if (Text(root, "task_type") == "local_agent")
                 {
-                    if (Str(root, "tool_use_id") is not { Length: > 0 } call) return false;
+                    if (Text(root, "tool_use_id") is not { Length: > 0 } call) return false;
                     lock (_gate) _subagentOfTask[id] = call;
                     Open(call, $"subagent/{id}", name);
                     return true;
@@ -122,7 +123,7 @@ internal sealed class ClaudeStreams(SessionStreams streams, Action<string> say, 
             case "task_updated":
             {
                 // The ending's first word; the notification that follows is the one said.
-                if (Str(root, "task_id") is { } id && root.TryGetProperty("patch", out var patch) && Str(patch, "status") is { } status)
+                if (Text(root, "task_id") is { } id && root.TryGetProperty("patch", out var patch) && Text(patch, "status") is { } status)
                 {
                     lock (_gate)
                     {
@@ -135,8 +136,8 @@ internal sealed class ClaudeStreams(SessionStreams streams, Action<string> say, 
 
             case "task_notification":
             {
-                if (Str(root, "task_id") is not { } id) return false;
-                var status = Str(root, "status");
+                if (Text(root, "task_id") is not { } id) return false;
+                var status = Text(root, "status");
 
                 string? call;
                 lock (_gate) call = _subagentOfTask.GetValueOrDefault(id);
@@ -151,7 +152,7 @@ internal sealed class ClaudeStreams(SessionStreams streams, Action<string> say, 
                 Work? work;
                 lock (_gate) work = _work.GetValueOrDefault(id);
                 if (work is null) return false;
-                Watch(work, Str(root, "output_file"));
+                Watch(work, Text(root, "output_file"));
                 EndWork(work, status ?? work.State ?? "ended");
                 return true;
             }
@@ -169,7 +170,7 @@ internal sealed class ClaudeStreams(SessionStreams streams, Action<string> say, 
     private void Watch(JsonElement root)
     {
         if (!root.TryGetProperty("tool_use_result", out var result) || result.ValueKind != JsonValueKind.Object) return;
-        if (Str(result, "backgroundTaskId") is not { } id) return;
+        if (Text(result, "backgroundTaskId") is not { } id) return;
 
         Work? work;
         lock (_gate) work = _work.GetValueOrDefault(id);
@@ -290,14 +291,9 @@ internal sealed class ClaudeStreams(SessionStreams streams, Action<string> say, 
             {
                 foreach (var part in inner.EnumerateArray())
                 {
-                    if (Str(part, "text") is { } text) yield return text;
+                    if (Text(part, "text") is { } text) yield return text;
                 }
             }
         }
     }
-
-    private static string? Str(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
 }

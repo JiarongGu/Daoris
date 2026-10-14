@@ -1,5 +1,6 @@
 using System.Text.Json;
 using static Daoris.Driver.HelpProposals;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -157,19 +158,7 @@ public sealed record HelpBrowserFacts(string Browser, string Links, string Exten
     public Func<string, string?> Page { get; init; } = _ => null;
 }
 
-public sealed partial record HelpMachineFacts
-{
-    /// <summary>What Daoris's browser's files hold (HELP10), read by the desktop for a browser proposal; null where none was read.</summary>
-    public HelpBrowserFacts? Browser { get; init; }
-}
-
-public sealed partial record HelpProposal
-{
-    /// <summary>A favorite's title, for a browser proposal that keeps one (HELP10), or null for the page's host.</summary>
-    public string? Title { get; init; }
-}
-
-public partial interface IHelpDoors
+public interface IHelpBrowserDoors
 {
     /// <summary>
     /// The Browser screen's own edit of Daoris's browser's files (HELP10, <c>BrowserModule</c>): which browser, where the

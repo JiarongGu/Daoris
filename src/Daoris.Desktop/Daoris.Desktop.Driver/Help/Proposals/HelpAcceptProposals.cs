@@ -137,22 +137,7 @@ public sealed record HelpAcceptPlan(string Quest, string Title, IReadOnlyList<He
 /// </summary>
 public sealed record HelpDeparture(int Requirement, string Required, string Check, string Reason, string Words);
 
-public sealed partial record HelpPlan
-{
-    /// <summary>For an accept the route takes (DRIFT1d2): the quest and its departures, for the card; null for every other kind.</summary>
-    public HelpAcceptPlan? Accept { get; init; }
-}
-
-public sealed partial record HelpMachineFacts
-{
-    /// <summary>
-    /// Every quest as the service answers it, closed ones included, with what the person required, how each done answered
-    /// and whether a departure holds it (DRIFT1d2): what an accept is judged against, read only when one is pending.
-    /// </summary>
-    public IReadOnlyList<QuestView> QuestRecords { get; init; } = [];
-}
-
-public partial interface IHelpDoors
+public interface IHelpAcceptDoors
 {
     /// <summary>The local host's <c>POST /api/quests/{id}/accept</c>, the quest page's yes and the terminal's.</summary>
     Task<(bool Ok, string Message)> AcceptDepartureAsync(string id, CancellationToken ct);

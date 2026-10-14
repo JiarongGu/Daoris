@@ -203,9 +203,10 @@ public static class OpinionPackets
     /// </summary>
     private static string? Inside(string tree, string? path)
     {
-        if (path is not { Length: > 0 } given || Path.IsPathRooted(given) || given.Contains(':')) return null;
+        if (path is not { Length: > 0 } given || Path.IsPathRooted(given)) return null;
         var relative = given.Replace('\\', '/').Trim().TrimEnd('/');
-        if (relative.Length == 0 || relative.Split('/').Any(segment => segment is ".." or "")) return null;
+        while (relative.StartsWith("./", StringComparison.Ordinal)) relative = relative[2..];
+        if (!SafeNames.IsRepositoryPath(relative)) return null;
 
         var full = Path.GetFullPath(Path.Combine(tree, relative));
         var within = Path.GetFullPath(tree).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;

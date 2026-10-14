@@ -1682,6 +1682,9 @@ box still held the move) and passed alone. *A kind found and fixed:* `HandOverTa
 after the new conversation is briefed and the old one's last line kept, while the test asserted it empty as soon as the
 second record stood. It now polls for the box's clearing, and so does `HandOverProcessTests`' press-made hand-over, which
 asserted after the old one's last line; both classes passed 3 runs of 3 alone, the curve's test 5 of 5 before that.
+**And merging DEDUP9c** (2026-10-14), with one branch building beside it: `tools/fsx.test.mjs`'s *with a merge open the
+snapshot is the commit-to-be* failed with `spawnSync git EPERM` on its scratch repository and passed in the gate's rerun:
+the git-held-files kind of 2026-10-07's sightings again.
 
 ## TEST1 (open): a Node process on Windows aborts with 0xC0000409 (since 2026-09-21)
 

@@ -36,7 +36,7 @@ public sealed class ServiceAutoLandingWorld(ServiceClient service) : IAutoLandin
 
     public Task<AskView?> AskAsync(string id, CancellationToken ct) => service.FindAskAsync(id, ct);
 
-    public Task<OpinionView?> OpinionAsync(string id, CancellationToken ct) => service.ReadOpinionAsync(id, ct);
+    public Task<OpinionView?> OpinionAsync(string id, CancellationToken ct) => service.Opinions.ReadAsync(id, ct);
 
     public Task<IReadOnlyList<SessionRecord>> RecordsAsync(CancellationToken ct) => service.SessionRecordsAsync(ct);
 

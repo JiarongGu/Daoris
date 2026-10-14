@@ -76,11 +76,7 @@ public static class ClaudeReleaseDownloads
         var binary = platform.StartsWith("win32", StringComparison.Ordinal) ? "claude.exe" : "claude";
         var (key, pinned) = trust ?? (ClaudeReleases.ReleaseKey, ClaudeReleases.Fingerprint);
 
-        // A 200 MB download outlives any fixed timeout; the person's stop is the token.
-        using var http = transport is null
-            ? new HttpClient { Timeout = Timeout.InfiniteTimeSpan }
-            : new HttpClient(transport, disposeHandler: false) { Timeout = Timeout.InfiniteTimeSpan };
-        http.DefaultRequestHeaders.UserAgent.ParseAdd("daoris");
+        using var http = Downloads.Client(transport);
 
         var staging = where + ".part";
         if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
@@ -157,52 +153,12 @@ public static class ClaudeReleaseDownloads
     /// <summary>Stream a download to disk, hashing on the way — never held whole.</summary>
     private static async Task<(string Sha256, long Size)?> SaveAsync(HttpClient http, string url, string to, CancellationToken ct)
     {
-        using var response = await GetAsync(http, url, ct).ConfigureAwait(false);
-        if (response is null) return null;
-
-        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-        long size = 0;
-        await using (var source = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false))
-        await using (var target = File.Create(to))
-        {
-            var buffer = new byte[81920];
-            int read;
-            while ((read = await source.ReadAsync(buffer, ct).ConfigureAwait(false)) > 0)
-            {
-                hash.AppendData(buffer, 0, read);
-                size += read;
-                await target.WriteAsync(buffer.AsMemory(0, read), ct).ConfigureAwait(false);
-            }
-        }
-
-        return (Convert.ToHexStringLower(hash.GetHashAndReset()), size);
+        return await Downloads.SaveAsync(http, url, to, ct, Refuse).ConfigureAwait(false);
     }
 
     /// <summary>The response, or null for a 404 — "that version is not there" is an answer the caller words.</summary>
-    private static async Task<HttpResponseMessage?> GetAsync(HttpClient http, string url, CancellationToken ct)
-    {
-        HttpResponseMessage response;
-        try
-        {
-            response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
-        }
-        catch (HttpRequestException error)
-        {
-            throw new DriverException($"could not reach {new Uri(url).Host} — {error.Message}. Nothing was installed.");
-        }
+    private static Task<HttpResponseMessage?> GetAsync(HttpClient http, string url, CancellationToken ct) =>
+        Downloads.GetAsync(http, url, ct, Refuse);
 
-        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
-            response.Dispose();
-            return null;
-        }
-        if (!response.IsSuccessStatusCode)
-        {
-            var status = (int)response.StatusCode;
-            response.Dispose();
-            throw new DriverException($"{url} answered {status} — nothing was installed.");
-        }
-
-        return response;
-    }
+    private static Exception Refuse(string said) => new DriverException(said);
 }

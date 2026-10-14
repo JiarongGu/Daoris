@@ -506,7 +506,7 @@ export function wayWords(way: ToolWay): string {
 
 // ——— One answer for Daoris and every child (TOOLS5, D121 §2.4) ———————————————————————————————————————
 //
-// 🔴 A TWIN of the driver's `Tools.Children.cs` (`Folders`, `ChildPath`, `ChildEnvironment`, `Hand`,
+// 🔴 A TWIN of the driver's `Tools.cs` (`Folders`, `ChildPath`, `ChildEnvironment`, `Hand`,
 // `ResolveCommand`), held by `tools-children.test.ts` and `ToolsChildrenTests`, row for row:
 //   - a child's PATH is the folders of each tool that is managed or a named file, in the declared order, then the
 //     PATH it inherited; a managed version's are its record's `paths` inside the package (`.` is the package), or

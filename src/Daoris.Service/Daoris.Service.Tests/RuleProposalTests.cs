@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Daoris.Knowledge;
 using Daoris.Knowledge.Mcp;
-using Microsoft.Data.Sqlite;
 
 namespace Daoris.Service.Tests;
 
@@ -15,45 +14,21 @@ namespace Daoris.Service.Tests;
 /// depends on what that file holds. It checks the proposal is well formed, records who made it, and
 /// says what happens next. The driver's tick applies a narrowing; a widening waits for the person.
 /// </remarks>
-public sealed class RuleProposalTests : IAsyncLifetime
+public sealed class RuleProposalTests : IDisposable
 {
     private readonly string _root = Path.Combine(
         Path.GetTempPath(), "daoris-proposals-" + Guid.NewGuid().ToString("N")[..8]);
 
-    private SqliteConnection _connection = null!;
-    private KnowledgeService _service = null!;
-    private QuestStore _quests = null!;
-
     private string Home => Path.Combine(_root, "home");
 
-    public async Task InitializeAsync()
+    public void Dispose()
     {
-        var dir = Path.Combine(_root, "family", "engine");
-        Directory.CreateDirectory(dir);
-        File.WriteAllText(Path.Combine(dir, "daoris.json"), """
-            { "source": "s", "packs": [], "domain": { "summary": "s", "owns": ["o"], "accepts": ["a"] } }
-            """);
-
-        _connection = new SqliteConnection("Data Source=:memory:");
-        await _connection.OpenAsync();
-        _quests = await QuestStore.OpenAsync(_connection);
-        var store = new InMemoryKnowledgeStore();
-        _service = new KnowledgeService(
-            store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(),
-            DisclosurePolicy.LocalOnly, registry: new Registry());
-        await _service.ImportAsync(Path.Combine(_root, "family"), DateTimeOffset.UtcNow);
-    }
-
-    public async Task DisposeAsync()
-    {
-        await _connection.DisposeAsync();
         if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
     }
 
-    private KnowledgeTools Tools(RuleProposalBox box, string? session = "s1a2b3c4", string? ask = null) => new(
-        _service, _quests, new QuestExchange(_service, _quests),
-        new AmbientWorkspace(Path.Combine(_root, "family", "engine")),
-        intake: new IntakeScope(ask, session), proposals: box);
+    /// <summary>The rule tool alone, which needs only the box and the session it speaks for (PART10a).</summary>
+    private static RuleProposalTools Tools(RuleProposalBox box, string? session = "s1a2b3c4", string? ask = null) =>
+        new(box, new IntakeScope(ask, session));
 
     private string[] Written() =>
         Directory.Exists(Path.Combine(Home, RuleProposalBox.Folder))

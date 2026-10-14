@@ -302,7 +302,7 @@ public sealed record SaidWord(
 /// and judgement lives in <see cref="SessionLedger"/> — one implementation for every door, for the same
 /// reason <see cref="QuestExchange"/> exists.</para>
 /// </remarks>
-public sealed partial class SessionStore
+public sealed class SessionStore
 {
     /// <summary>The connection's gate: every command here runs inside it (SQLITETX1).</summary>
     private readonly ConnectionGate _db;
@@ -630,8 +630,8 @@ public sealed partial class SessionStore
         command.Parameters.AddWithValue("$repository", session.Repository);
         command.Parameters.AddWithValue("$adapter", session.Adapter);
         command.Parameters.AddWithValue("$state", session.State.ToString());
-        command.Parameters.AddWithValue("$created", session.Created.ToString("O"));
-        command.Parameters.AddWithValue("$updated", session.Updated.ToString("O"));
+        command.Parameters.AddWithValue("$created", Moments.Write(session.Created));
+        command.Parameters.AddWithValue("$updated", Moments.Write(session.Updated));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
 
         return session;
@@ -689,7 +689,7 @@ public sealed partial class SessionStore
         command.Parameters.AddWithValue("$note", (object?)moved.Note ?? DBNull.Value);
         command.Parameters.AddWithValue("$evidence", (object?)moved.Evidence ?? DBNull.Value);
         command.Parameters.AddWithValue("$transcript", (object?)moved.Transcript ?? DBNull.Value);
-        command.Parameters.AddWithValue("$updated", moved.Updated.ToString("O"));
+        command.Parameters.AddWithValue("$updated", Moments.Write(moved.Updated));
         command.Parameters.AddWithValue("$id", id);
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
 
@@ -734,8 +734,8 @@ public sealed partial class SessionStore
         command.Parameters.AddWithValue("$state", record.State.ToString());
         command.Parameters.AddWithValue("$note", (object?)record.Note ?? DBNull.Value);
         command.Parameters.AddWithValue("$evidence", (object?)record.Evidence ?? DBNull.Value);
-        command.Parameters.AddWithValue("$created", record.Created.ToString("O"));
-        command.Parameters.AddWithValue("$updated", record.Updated.ToString("O"));
+        command.Parameters.AddWithValue("$created", Moments.Write(record.Created));
+        command.Parameters.AddWithValue("$updated", Moments.Write(record.Updated));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }, ct);
 
@@ -1003,8 +1003,8 @@ public sealed partial class SessionStore
         reader.IsDBNull(reader.GetOrdinal("note")) ? null : reader.GetString(reader.GetOrdinal("note")),
         reader.IsDBNull(reader.GetOrdinal("evidence")) ? null : reader.GetString(reader.GetOrdinal("evidence")),
         reader.IsDBNull(reader.GetOrdinal("transcript")) ? null : reader.GetString(reader.GetOrdinal("transcript")),
-        DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("created"))),
-        DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("updated"))),
+        Moments.ReadRequired(reader.GetString(reader.GetOrdinal("created"))),
+        Moments.ReadRequired(reader.GetString(reader.GetOrdinal("updated"))),
         Workspaces.Normalize(reader.GetString(reader.GetOrdinal("workspace"))),
         Enum.TryParse<SessionKind>(reader.GetString(reader.GetOrdinal("kind")), out var kind)
             ? kind
@@ -1103,7 +1103,7 @@ public sealed partial class SessionStore
             {
                 command.Parameters.AddWithValue("$note", note);
                 command.Parameters.AddWithValue("$noteParts", (object?)noteParts ?? DBNull.Value);
-                command.Parameters.AddWithValue("$updated", word.At.ToString("O"));
+                command.Parameters.AddWithValue("$updated", Moments.Write(word.At));
             }
 
             if (await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) == 0) return null;
@@ -1147,7 +1147,7 @@ public sealed partial class SessionStore
         var answer = reader.GetOrdinal("answer");
         return reader.IsDBNull(answer)
             ? []
-            : [new SaidWord(AnswerWordId, reader.GetString(answer), DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("updated"))), [])];
+            : [new SaidWord(AnswerWordId, reader.GetString(answer), Moments.ReadRequired(reader.GetString(reader.GetOrdinal("updated"))), [])];
     }
 
     /// <summary>
@@ -1167,9 +1167,7 @@ public sealed partial class SessionStore
                 if (element.ValueKind != JsonValueKind.Object
                     || JsonFields.Text(element, "id") is not { Length: > 0 } wordId
                     || JsonFields.Text(element, "text") is not { } text
-                    || !DateTimeOffset.TryParse(
-                        JsonFields.Text(element, "at"), System.Globalization.CultureInfo.InvariantCulture,
-                        System.Globalization.DateTimeStyles.None, out var at))
+                    || Moments.Read(element, "at") is not { } at)
                 {
                     continue;
                 }
@@ -1209,7 +1207,7 @@ public sealed partial class SessionStore
         writer.WriteStartObject();
         writer.WriteString("id", word.Id);
         writer.WriteString("text", word.Text);
-        writer.WriteString("at", word.At.ToString("O"));
+        writer.WriteString("at", Moments.Write(word.At));
         writer.WriteStartArray("files");
         foreach (var file in word.Files) writer.WriteStringValue(file);
         writer.WriteEndArray();
@@ -1234,4 +1232,45 @@ public sealed partial class SessionStore
     /// <summary>Whitespace is nothing said, not a value: an empty version reads as a version of "".</summary>
     private static string? Blank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    // ——— A session's review on its record (REVIEWENV1b): blind, like every write here; the ledger and the exchange judge.
+
+    /// <summary>What this machine's record <paramref name="id"/> keeps of its review; <see cref="SessionReview.None"/> for none.</summary>
+    public Task<SessionReview> ReviewOfAsync(string id, CancellationToken ct = default) => _db.RunAsync<SessionReview>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "SELECT review FROM sessions WHERE id = $id AND origin IS NULL";
+        command.Parameters.AddWithValue("$id", id);
+        return await command.ExecuteScalarAsync(ct).ConfigureAwait(false) is string json
+            ? SessionReviewJson.ReviewOf(json)
+            : SessionReview.None;
+    }, ct);
+
+    /// <summary>
+    /// How many set-ups this machine's sessions on <paramref name="quest"/> said, posted or not: what a set-up step's done is
+    /// judged by, before its driver has read any commit (design §2.6).
+    /// </summary>
+    public Task<int> SetUpsSaidForAsync(string quest, CancellationToken ct = default) => _db.RunAsync<int>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "SELECT review FROM sessions WHERE quest = $quest AND origin IS NULL AND review IS NOT NULL";
+        command.Parameters.AddWithValue("$quest", quest);
+        var said = 0;
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false)) said += SessionReviewJson.ReviewOf(reader.GetString(0)).Said.Count;
+        return said;
+    }, ct);
+
+    /// <summary>
+    /// Write this machine's record's review whole. A read, then the write it decides: the ledger and the exchange call it inside
+    /// <see cref="ExclusiveAsync{T}"/> (REV3). No revision, since nothing that travels changed. False when there is no such record.
+    /// </summary>
+    public Task<bool> KeepReviewAsync(string id, SessionReview review, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = "UPDATE sessions SET review = $review WHERE id = $id AND origin IS NULL";
+        command.Parameters.AddWithValue("$id", id);
+        command.Parameters.AddWithValue("$review", SessionReviewJson.ReviewJson(review));
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+    }, ct);
 }

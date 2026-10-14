@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using static Daoris.Driver.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop;
@@ -137,7 +138,4 @@ public static class BrowserSettings
 
         return file is JsonObject top ? (top, null) : (null, $"{path} is not a JSON object");
     }
-
-    private static string? Text(JsonObject row, string name) =>
-        row.TryGetPropertyValue(name, out var value) && value is JsonValue text && text.TryGetValue<string>(out var s) ? s : null;
 }

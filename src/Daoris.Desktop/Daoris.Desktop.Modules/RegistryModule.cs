@@ -1,4 +1,5 @@
 using System.Text.Json;
+using static Daoris.Driver.Json;
 using Daoris.Driver;
 using Shenora.Core.Events;
 using Shenora.Core.Ipc;
@@ -132,7 +133,7 @@ public sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) :
             // was worth removing rather than trusting: nothing would have caught it changing.
             var sent = payload is { ValueKind: JsonValueKind.Object } given ? given : EmptyObject;
             writer.WriteStartObject("domain");
-            writer.WriteString("summary", String(sent, "summary") ?? "");
+            writer.WriteString("summary", NonEmpty(sent, "summary") ?? "");
             WriteStrings(writer, "owns", Strings(sent, "owns"));
             WriteStrings(writer, "accepts", Strings(sent, "accepts"));
             // 🔴 What the form has no field for stays as it was: `uses` (D91), and anything a later
@@ -148,11 +149,11 @@ public sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) :
             }
             writer.WriteEndObject();
 
-            var join = Bool(sent, "join");
+            var join = Flag(sent, "join");
             writer.WriteStartObject("remote");
             writer.WriteBoolean("join", join);
             // Knowledge without join is a manifest the CLI refuses; a form must not be able to write one.
-            writer.WriteBoolean("knowledge", join && Bool(sent, "shareKnowledge"));
+            writer.WriteBoolean("knowledge", join && Flag(sent, "shareKnowledge"));
             writer.WriteEndObject();
 
             writer.WriteEndObject();
@@ -188,17 +189,17 @@ public sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) :
             var remote = root.TryGetProperty("remote", out var m) && m.ValueKind == JsonValueKind.Object
                 ? m
                 : (JsonElement?)null;
-            var join = remote is not null && Bool(remote.Value, "join");
+            var join = remote is not null && Flag(remote.Value, "join");
 
             return new Declaration(
-                domain is null ? null : String(domain.Value, "summary"),
+                domain is null ? null : NonEmpty(domain.Value, "summary"),
                 domain is null ? [] : Strings(domain.Value, "owns"),
                 domain is null ? [] : Strings(domain.Value, "accepts"),
                 Strings(root, "packs"),
                 join,
                 // Knowledge feeds only from a joined repository (D47 §4), narrowed wherever a manifest
                 // is read — this one was written by hand as often as by the CLI.
-                join && remote is not null && Bool(remote.Value, "knowledge"),
+                join && remote is not null && Flag(remote.Value, "knowledge"),
                 domain is null ? [] : Strings(domain.Value, "uses"));
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
@@ -210,26 +211,5 @@ public sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) :
             // locked file is not an answer of "no", nor a reason to take the folder picker down.
             return new Declaration(null, [], [], [], false, false, []);
         }
-    }
-
-    private static bool Bool(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.True;
-
-    private static string? String(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString() is { Length: > 0 } text ? text : null
-            : null;
-
-    private static IReadOnlyList<string> Strings(JsonElement element, string name)
-    {
-        if (!element.TryGetProperty(name, out var value) || value.ValueKind != JsonValueKind.Array) return [];
-
-        var items = new List<string>();
-        foreach (var item in value.EnumerateArray())
-        {
-            if (item.ValueKind == JsonValueKind.String && item.GetString() is { Length: > 0 } text) items.Add(text);
-        }
-
-        return items;
     }
 }

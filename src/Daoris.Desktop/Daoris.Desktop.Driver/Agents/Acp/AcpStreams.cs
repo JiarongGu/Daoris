@@ -86,7 +86,7 @@ internal sealed class AcpStreams(
                 return TaskSpawned(update);
             case "async_task_progress":
                 // Known, and not the conversation: the file it names is the stream.
-                if (TaskOf(update) is { } progressed) Watch(progressed, Str(update, "outputFilePath"));
+                if (TaskOf(update) is { } progressed) Watch(progressed, Json.Text(update, "outputFilePath"));
                 return true;
             case "async_task_state_update":
                 return TaskState(update);
@@ -152,8 +152,8 @@ internal sealed class AcpStreams(
     private bool Spawned(string? from, string? rootId, JsonElement update)
     {
         // An announcement this build cannot read is kept raw by the session, never dropped.
-        if (Str(update, "subagentSessionId") is not { Length: > 0 } id) return false;
-        var name = Str(update, "name") is { Length: > 0 } called ? called : id;
+        if (Json.Text(update, "subagentSessionId") is not { Length: > 0 } id) return false;
+        var name = Json.Text(update, "name") is { Length: > 0 } called ? called : id;
         var streamId = $"subagent/{id}";
         var onRoot = from is null || from == rootId;
 
@@ -176,7 +176,7 @@ internal sealed class AcpStreams(
                 Title = name,
                 ToolKind = SubagentToolKind,
                 Status = "in_progress",
-                Content = Str(update, "task") is { Length: > 0 } task ? [new ToolContent("text", Text: task)] : null,
+                Content = Json.Text(update, "task") is { Length: > 0 } task ? [new ToolContent("text", Text: task)] : null,
             });
         }
 
@@ -185,8 +185,8 @@ internal sealed class AcpStreams(
 
     private bool SubagentEnded(JsonElement update)
     {
-        if (Str(update, "subagentSessionId") is not { } id) return false;
-        var state = Str(update, "state") ?? "ended";
+        if (Json.Text(update, "subagentSessionId") is not { } id) return false;
+        var state = Json.Text(update, "state") ?? "ended";
 
         Child? child;
         lock (_gate)
@@ -205,8 +205,8 @@ internal sealed class AcpStreams(
 
     private bool TaskSpawned(JsonElement update)
     {
-        if (Str(update, "asyncTaskId") is not { Length: > 0 } id) return false;
-        var name = Str(update, "name") is { Length: > 0 } called ? called : id;
+        if (Json.Text(update, "asyncTaskId") is not { Length: > 0 } id) return false;
+        var name = Json.Text(update, "name") is { Length: > 0 } called ? called : id;
         var streamId = $"task/{id}";
 
         Background task;
@@ -220,16 +220,16 @@ internal sealed class AcpStreams(
         var canStop = update.TryGetProperty("canStop", out var stoppable) && stoppable.ValueKind == JsonValueKind.True;
         streams.Open(new SessionStream(streamId, SessionStreamKind.Task, name, canStop));
         Say($"→ background: {AcpSession.OneLine(name)}");
-        Watch(task, Str(update, "outputFilePath"));
+        Watch(task, Json.Text(update, "outputFilePath"));
         return true;
     }
 
     private bool TaskState(JsonElement update)
     {
         if (TaskOf(update) is not { } task) return true;
-        Watch(task, Str(update, "outputFilePath"));
+        Watch(task, Json.Text(update, "outputFilePath"));
 
-        var state = Str(update, "state");
+        var state = Json.Text(update, "state");
         if (state is null or "running" or "paused") return true;
 
         bool start;
@@ -302,7 +302,7 @@ internal sealed class AcpStreams(
 
     private Background? TaskOf(JsonElement update)
     {
-        if (Str(update, "asyncTaskId") is not { } id) return null;
+        if (Json.Text(update, "asyncTaskId") is not { } id) return null;
         lock (_gate) return _tasks.GetValueOrDefault(id);
     }
 
@@ -327,7 +327,4 @@ internal sealed class AcpStreams(
         emit(new SessionEvent { Kind = SessionEventKind.Tool, Id = id, Stream = streamId, Status = state });
 
     private void Say(string line) => root.Line(line);
-
-    private static string? Str(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 }

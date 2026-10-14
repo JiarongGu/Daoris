@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Desktop;
 
@@ -118,7 +119,7 @@ public static class EngineProfile
     {
         if (Preferences(preferences) is not { } prefs) return null;
         var list = UninstallList(prefs);
-        var held = list.Select(AsString).OfType<string>().ToHashSet(StringComparer.Ordinal);
+        var held = list.Select(Text).OfType<string>().ToHashSet(StringComparer.Ordinal);
 
         var refused = new SortedSet<string>(refusedBefore.Where(held.Contains), StringComparer.Ordinal);
         foreach (var id in registered.Where(IsExtensionId).Distinct(StringComparer.Ordinal))
@@ -138,7 +139,7 @@ public static class EngineProfile
     {
         if (Preferences(preferences) is not { } prefs) return null;
         var list = UninstallList(prefs);
-        foreach (var item in list.Where(item => AsString(item) is { } id && refusedByDaoris.Contains(id)).ToList())
+        foreach (var item in list.Where(item => Text(item) is { } id && refusedByDaoris.Contains(id)).ToList())
         {
             list.Remove(item);
         }
@@ -167,7 +168,7 @@ public static class EngineProfile
             if (json is not null && JsonNode.Parse(json) is JsonObject record)
             {
                 var refused = record["refused"] is JsonArray ids
-                    ? ids.Select(AsString).OfType<string>().Where(IsExtensionId).ToList()
+                    ? ids.Select(Text).OfType<string>().Where(IsExtensionId).ToList()
                     : [];
                 var shown = record["barShown"] is JsonValue flag && flag.TryGetValue<bool>(out var b) && b;
                 return new EngineRecord(refused, shown);
@@ -271,8 +272,4 @@ public static class EngineProfile
 
     private static string Save(JsonObject file) => file.ToJsonString(Indented).ReplaceLineEndings("\n") + "\n";
 
-    private static string? AsString(JsonNode? node) => node is JsonValue value && value.TryGetValue<string>(out var s) ? s : null;
-
-    private static string? Text(JsonObject node, string name) =>
-        node.TryGetPropertyValue(name, out var value) && value is JsonValue text && text.TryGetValue<string>(out var s) ? s : null;
 }

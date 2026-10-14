@@ -93,9 +93,9 @@ public sealed record AcpConfigOption(
         foreach (var option in list.EnumerateArray())
         {
             if (option.ValueKind != JsonValueKind.Object
-                || Text(option, "type") != "select"
-                || Text(option, "id") is not { Length: > 0 } id
-                || Text(option, "currentValue") is not { } current
+                || Json.Text(option, "type") != "select"
+                || Json.Text(option, "id") is not { Length: > 0 } id
+                || Json.Text(option, "currentValue") is not { } current
                 || !option.TryGetProperty("options", out var values) || values.ValueKind != JsonValueKind.Array)
             {
                 continue;
@@ -116,7 +116,8 @@ public sealed record AcpConfigOption(
             }
 
             read.Add(new AcpConfigOption(
-                id, Text(option, "name") ?? id, Text(option, "category"), current, choices, Text(option, "description")));
+                id, Json.Text(option, "name") ?? id, Json.Text(option, "category"), current, choices,
+                Json.Text(option, "description")));
         }
 
         return read;
@@ -124,14 +125,11 @@ public sealed record AcpConfigOption(
 
     private static void Choice(JsonElement entry, List<AcpConfigChoice> into)
     {
-        if (entry.ValueKind == JsonValueKind.Object && Text(entry, "value") is { Length: > 0 } value)
+        if (entry.ValueKind == JsonValueKind.Object && Json.Text(entry, "value") is { Length: > 0 } value)
         {
-            into.Add(new AcpConfigChoice(value, Text(entry, "name") ?? value, Text(entry, "description")));
+            into.Add(new AcpConfigChoice(value, Json.Text(entry, "name") ?? value, Json.Text(entry, "description")));
         }
     }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 }
 
 /// <param name="Usage">
@@ -190,22 +188,18 @@ public sealed class AcpRefusal(
     /// </summary>
     internal static AcpRefusal Of(JsonElement error)
     {
-        var message = Text(error, "message") ?? error.GetRawText();
+        var message = Json.Text(error, "message") ?? error.GetRawText();
         var data = error.ValueKind == JsonValueKind.Object && error.TryGetProperty("data", out var d) ? d : default;
-        var said = Text(data, "message") is { } words && !string.IsNullOrWhiteSpace(words) ? words.Trim() : null;
+        var said = Json.Text(data, "message") is { } words && !string.IsNullOrWhiteSpace(words) ? words.Trim() : null;
         var sentence = said is null || message.Contains(said, StringComparison.Ordinal) ? message : $"{message}: {said}";
         var code = error.ValueKind == JsonValueKind.Object && error.TryGetProperty("code", out var c)
                    && c.ValueKind == JsonValueKind.Number && c.TryGetInt32(out var number)
             ? number
             : (int?)null;
         return new AcpRefusal(
-            $"the ACP agent refused the call: {sentence}", said, Text(data, "errorKind"), code, sentence, Text(data, "reason"));
+            $"the ACP agent refused the call: {sentence}", said, Json.Text(data, "errorKind"), code, sentence,
+            Json.Text(data, "reason"));
     }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
 }
 
 /// <summary>
@@ -269,7 +263,7 @@ public sealed class AcpRefusal(
 /// Told the id <c>session/new</c>'s answer names, the moment it arrives (ANSWER1a, D131 §1): what an answer
 /// to a park resumes, kept before the first turn can fail or park. Null where nobody keeps it.
 /// </param>
-public sealed partial class AcpSession(
+public sealed class AcpSession(
     TextReader incoming,
     TextWriter outgoing,
     Action<string> onLine,
@@ -1365,20 +1359,13 @@ public sealed partial class AcpSession(
             }
         }
 
-        if (Number(update, "used") is not { } used || Number(update, "size") is not { } size) return;
+        if (Json.Long(update, "used") is not { } used || Json.Long(update, "size") is not { } size) return;
 
         lock (_measured)
         {
             if (_usage is null || used > _usage.Used) _usage = new AcpUsage(used, size);
         }
     }
-
-    private static long? Number(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value)
-            && value.ValueKind == JsonValueKind.Number
-            && value.TryGetInt64(out var number)
-            ? number
-            : null;
 
     /// <summary>
     /// One update as a console line — the structured source rendered for a transcript a person reads.
@@ -1488,7 +1475,7 @@ public sealed partial class AcpSession(
             "plan" => new SessionEvent { Kind = SessionEventKind.Plan, Entries = Entries(update) },
             "usage_update" => new SessionEvent
             {
-                Kind = SessionEventKind.Usage, Used = Number(update, "used"), Size = Number(update, "size"),
+                Kind = SessionEventKind.Usage, Used = Json.Long(update, "used"), Size = Json.Long(update, "size"),
             },
             // Known, and deliberately not the conversation: the session's own settings — the commands it
             // offers, its mode, its config options. The options are kept by the session itself (AGT6b), and
@@ -1592,12 +1579,7 @@ public sealed partial class AcpSession(
     /// the first real run (ACP2, 2026-09-24).
     /// </remarks>
     private static string? Text(JsonElement update) =>
-        update.TryGetProperty("content", out var content)
-            && content.ValueKind == JsonValueKind.Object
-            && content.TryGetProperty("text", out var t)
-            && t.ValueKind == JsonValueKind.String
-                ? t.GetString()
-                : null;
+        update.TryGetProperty("content", out var content) ? Json.Text(content, "text") : null;
 
     /// <summary>Which update this is, or null when the wire did not say in a string.</summary>
     internal static string? Kind(JsonElement update) =>
@@ -1706,6 +1688,116 @@ public sealed partial class AcpSession(
         foreach (var key in _pending.Keys)
         {
             if (_pending.TryRemove(key, out var waiting)) waiting.TrySetException(error);
+        }
+    }
+
+    // ---- Resuming a conversation (ANSWER1a, D131) ----
+
+    /// <summary>JSON-RPC's <c>resource_not_found</c>, which the adapter answers for a conversation it no longer has.</summary>
+    internal const int ResourceNotFound = -32002;
+
+    /// <summary>
+    /// <c>codex-acp</c>'s <c>data.reason</c> for a thread another Codex client holds (MSG1b, D137 §1.1), read from
+    /// <c>@agentclientprotocol/codex-acp</c> 2.1.1's <c>dist/index.js</c>.
+    /// </summary>
+    internal const string ActiveWriter = "thread_active_writer";
+
+    /// <summary>The conversation whose replay is arriving while a <c>session/load</c> is answered, or null.</summary>
+    private volatile string? _replaying;
+
+    /// <summary>
+    /// Resume a conversation instead of opening one (ANSWER1a, D131 §1): the reader started, the handshake, then
+    /// <c>session/resume</c> where the agent advertises it, else <c>session/load</c> where it advertises that, on the same
+    /// tree, with the servers and the rules a new session would be handed, and the posture set on its answer.
+    /// </summary>
+    /// <remarks>
+    /// <para><b><c>session/resume</c> first</b>: it resumes without replaying, and the record already holds the
+    /// conversation. A load replays every message as an update before it answers; those are dropped here, so nothing is
+    /// kept twice, and what the agent says after the answer is the conversation going on.</para>
+    ///
+    /// <para><b>Read from the adapter's own source</b> (<c>claude-agent-acp</c> 0.84.0): <c>initialize</c> answers
+    /// <c>agentCapabilities.loadSession</c> and <c>agentCapabilities.sessionCapabilities.resume</c>; both requests answer
+    /// <c>modes</c> and <c>configOptions</c> and no id, the id being the one asked for; a conversation not in the
+    /// account's home is refused <c>resource_not_found</c>.</para>
+    /// </remarks>
+    /// <exception cref="AcpResumeRefused">The agent offers neither, or refused this one.</exception>
+    public async Task ResumeAsync(string cwd, string conversation, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null)
+    {
+        var initialized = await HandshakeAsync(ct).ConfigureAwait(false);
+        var method = ResumeMethod(initialized)
+            ?? throw new AcpResumeRefused(ContinueWhy.Of(ContinueWhy.Offered), words: null);
+
+        var offered = Offer(servers);
+        object parameters = meta is null
+            ? new { sessionId = conversation, cwd, mcpServers = offered }
+            : new { sessionId = conversation, cwd, mcpServers = offered, _meta = meta };
+
+        JsonElement resumed;
+        _replaying = method == "session/load" ? conversation : null;
+        try
+        {
+            resumed = await RequestAsync(method, parameters, ct).ConfigureAwait(false);
+        }
+        catch (AcpRefusal refused)
+        {
+            // By the error's structure, never its words: another client holding the thread is its data's reason (MSG1b).
+            var why = refused.Code == ResourceNotFound ? ContinueWhy.Gone
+                : string.Equals(refused.Reason, ActiveWriter, StringComparison.Ordinal) ? ContinueWhy.Elsewhere
+                : ContinueWhy.Refused;
+            throw new AcpResumeRefused(ContinueWhy.Of(why), refused.Words);
+        }
+        finally
+        {
+            _replaying = null;
+        }
+
+        _sessionId = conversation;
+        KeepOptions(resumed.ValueKind == JsonValueKind.Object && resumed.TryGetProperty("configOptions", out var options)
+            ? AcpConfigOption.Read(options)
+            : []);
+        if (resumed.ValueKind == JsonValueKind.Object) await SetPostureAsync(resumed, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// How this agent resumes, as its <c>initialize</c> answered: <c>session/resume</c>, <c>session/load</c>, or null for
+    /// neither. Read without trusting the shape: a capability of the wrong kind is no capability.
+    /// </summary>
+    internal static string? ResumeMethod(JsonElement initialized)
+    {
+        if (initialized.ValueKind != JsonValueKind.Object
+            || !initialized.TryGetProperty("agentCapabilities", out var capabilities)
+            || capabilities.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        if (capabilities.TryGetProperty("sessionCapabilities", out var session) && session.ValueKind == JsonValueKind.Object
+            && session.TryGetProperty("resume", out var resume) && resume.ValueKind == JsonValueKind.Object)
+        {
+            return "session/resume";
+        }
+
+        return capabilities.TryGetProperty("loadSession", out var load) && load.ValueKind == JsonValueKind.True
+            ? "session/load"
+            : null;
+    }
+
+    /// <summary>Whether an update is a load's replay of the conversation being resumed.</summary>
+    private bool Replayed(JsonElement parameters) =>
+        _replaying is { } replaying
+        && parameters.TryGetProperty("sessionId", out var id) && id.ValueKind == JsonValueKind.String
+        && string.Equals(id.GetString(), replaying, StringComparison.Ordinal);
+
+    /// <summary>Tell whoever keeps it the id the agent named (ANSWER1a); a listener's failure costs a console line, never the session.</summary>
+    private void Told(string conversation)
+    {
+        try
+        {
+            onConversation?.Invoke(conversation);
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            onLine($"[the session's conversation id could not be kept: {error.Message}]");
         }
     }
 }

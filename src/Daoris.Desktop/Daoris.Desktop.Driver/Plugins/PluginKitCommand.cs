@@ -99,7 +99,7 @@ public static class PluginKitCommand
         if (PluginFolders.There(positional))
         {
             // A trial keeps its scratch under the home (D63): with none named, it refuses, as every writer does.
-            result = await PluginKit.TryFolderAsync(
+            result = await PluginTrials.TryFolderAsync(
                 home ?? throw new DriverException(
                     $"no Daoris home: a trial keeps what the plugin keeps under it. Set {DaorisHome.Variable}, or run "
                     + "`node --test` in the folder, which needs no Daoris."),
@@ -108,7 +108,7 @@ public static class PluginKitCommand
         else if (PluginCatalog.IsId(positional) && home is not null)
         {
             var took = System.Diagnostics.Stopwatch.StartNew();
-            result = await PluginKit.TryInstalledAsync(home, positional, trial, ct).ConfigureAwait(false);
+            result = await PluginTrials.TryInstalledAsync(home, positional, trial, ct).ConfigureAwait(false);
             // An installed plugin's trial is part of its history (D119 §4.2). A folder's is printed and never kept: its id
             // may name an installed plugin it is not.
             new PluginLog(log).Tried(result, took.ElapsedMilliseconds, PluginEvents.Terminal);

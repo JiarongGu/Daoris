@@ -289,7 +289,7 @@ public sealed partial class Driver
             : files.ReadAnswer(ask.Id)?.Answer ?? "";
         var agent = state.Agent ?? "another agent";
         var composed = HelperWords.Compose(agent, state.Helper!, ask.Question, text, state.LastWords);
-        var (handed, message, word) = await service.HandHelperAsync(state.Helper!, composed, ct).ConfigureAwait(false);
+        var (handed, message, word) = await service.Helpers.HandAsync(state.Helper!, composed, ct).ConfigureAwait(false);
         if (!handed) return $"helper  ask `{ask.Id}` is answered, and waits to be handed to session {ask.Asker}: {message}";
 
         files.WriteState(state with { Handed = word ?? "handed" });
@@ -362,7 +362,7 @@ public sealed partial class Driver
         HelperPassAsk ask, ISessionAdapter adapter, HarnessSelection selection, string agent, OpinionTreeOpened copy, CancellationToken ct)
     {
         var named = $"ask `{ask.Ask.Id}`";
-        var opened = await service.OpenHelperAsync(ask.Ask.Asker, agent, copy.Path, selection.Profile, selection.Version, ask.Tip, ct).ConfigureAwait(false);
+        var opened = await service.Helpers.OpenAsync(ask.Ask.Asker, agent, copy.Path, selection.Profile, selection.Version, ask.Tip, ct).ConfigureAwait(false);
         if (!opened.Opened)
         {
             return new HelperPassRun(null, $"refused  helper for {named}: {opened.Message}") { Code = HelperWhy.NotStarted };

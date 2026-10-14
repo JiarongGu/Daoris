@@ -54,7 +54,7 @@ public sealed partial class HelpProposalKindsTests
     [Fact]
     public void The_workflow_writer_writes_its_name()
     {
-        var writer = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core", "HelpProposalBox.Workflow.cs"));
+        var writer = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core", "HelpWorkflowProposalWriter.cs"));
 
         Assert.Contains("""WriteString("name",""", writer);
     }
@@ -92,21 +92,21 @@ public sealed partial class HelpProposalKindsTests
     }
 
     /// <summary>
-    /// The service writes each kind in a file of its own (<c>HelpProposalBox.&lt;Kind&gt;.cs</c>), no kind this
+    /// The service writes each kind in a file of its own (<c>Help&lt;Kind&gt;ProposalWriter.cs</c>), no kind this
     /// side does not judge, and the connector carries each kind's tool once, in a file of its own.
     /// </summary>
     [Fact]
     public void Every_kind_has_its_twins_writer_and_its_connectors_tool()
     {
         var service = Path.Combine(RepositoryRoot(), "src", "Daoris.Service");
-        var written = Directory.GetFiles(Path.Combine(service, "Daoris.Service.Core"), "HelpProposalBox*.cs")
+        var written = Directory.GetFiles(Path.Combine(service, "Daoris.Service.Core"), "Help*ProposalWriter.cs")
             .SelectMany(path => WritesKind().Matches(File.ReadAllText(path)).Select(match => (Kind: match.Groups[1].Value, File: Path.GetFileName(path))))
             .ToList();
 
         Assert.Equal(Table.Select(row => row.Kind).Order(StringComparer.Ordinal), written.Select(each => each.Kind).Order(StringComparer.Ordinal));
         foreach (var (kind, tool) in Table)
         {
-            Assert.Equal($"HelpProposalBox.{Pascal(kind)}.cs", Assert.Single(written, each => each.Kind == kind).File);
+            Assert.Equal($"Help{Pascal(kind)}ProposalWriter.cs", Assert.Single(written, each => each.Kind == kind).File);
             var tools = Directory.GetFiles(Path.Combine(service, "Daoris.Service.Mcp"), "*.cs")
                 .Where(path => File.ReadAllText(path).Contains($"[McpServerTool(Name = \"{tool}\")]", StringComparison.Ordinal))
                 .Select(Path.GetFileName)
@@ -126,14 +126,14 @@ public sealed partial class HelpProposalKindsTests
         foreach (var kind in HelpProposalKinds.All)
         {
             Assert.NotEmpty(kind.Doors);
-            var writer = File.ReadAllText(Path.Combine(core, $"HelpProposalBox.{Pascal(kind.Kind)}.cs"));
+            var writer = File.ReadAllText(Path.Combine(core, $"Help{Pascal(kind.Kind)}ProposalWriter.cs"));
             foreach (var door in kind.Doors)
             {
                 Assert.Contains(kind.Kind == "workflow" ? WorkflowDoorsWritten[door] : $"\"{door}\"", writer);
             }
         }
 
-        var listed = ServiceSettingDoors().Match(File.ReadAllText(Path.Combine(core, "HelpProposalBox.Setting.cs")));
+        var listed = ServiceSettingDoors().Match(File.ReadAllText(Path.Combine(core, "HelpSettingProposalWriter.cs")));
         Assert.True(listed.Success, "the service's setting doors are a list, `Doors`.");
         Assert.Equal(
             new HelpSettingProposals().Doors,

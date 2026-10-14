@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using static Daoris.Driver.HelpProposals;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -316,31 +317,7 @@ public sealed record HelpClearPlan(HistoryScope Scope, string Id, IReadOnlyList<
     public bool Held { get; init; }
 }
 
-public sealed partial record HelpMachineFacts
-{
-    /// <summary>
-    /// What this machine keeps of each quest, ask and workspace a clear proposal names, as <c>HISTORY_PLAN</c> answers it
-    /// (<see cref="HistoryClearing.PlanAsync"/>, HIST1f-b): what a clear proposal is judged by. Read only for one.
-    /// </summary>
-    public IReadOnlyList<HistoryPlan> History { get; init; } = [];
-}
-
-public sealed partial record HelpProposal
-{
-    /// <summary>
-    /// The units a clear proposal's card listed, held in its file from its first draw (HIST1f-b, design §5): what its Apply sends.
-    /// Null before the card listed anything.
-    /// </summary>
-    public IReadOnlyList<HistoryUnitName>? Units { get; init; }
-}
-
-public sealed partial record HelpPlan
-{
-    /// <summary>What a clear proposal's Apply sends (HIST1f-b); null where the card changes nothing, and for every other kind.</summary>
-    public HelpClearPlan? Clear { get; init; }
-}
-
-public partial interface IHelpDoors
+public interface IHelpClearDoors
 {
     /// <summary>
     /// The screen's second press of a clear (<c>HISTORY_CLEAR</c>, HIST1c, D153; design §5): <see cref="HistoryClearing.ClearAsync"/>

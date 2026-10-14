@@ -74,7 +74,7 @@ public sealed class HelperBox(string? home)
             if (chosen is null) writer.WriteNull("agent");
             else writer.WriteString("agent", chosen);
             writer.WriteString("askedBy", "agent");
-            writer.WriteString("at", at.ToString("O"));
+            writer.WriteString("at", Moments.Write(at));
         });
 
         return (id,
@@ -111,7 +111,7 @@ public sealed class HelperBox(string? home)
             writer.WriteString("id", ask.Id);
             writer.WriteString("helper", helper.Id);
             writer.WriteString("answer", text);
-            writer.WriteString("at", at.ToString("O"));
+            writer.WriteString("at", Moments.Write(at));
         });
         return (true, $"Your answer is kept for question `#{ask.Id}`; it goes back to the session that asked, marked as yours. You can end now.");
     }

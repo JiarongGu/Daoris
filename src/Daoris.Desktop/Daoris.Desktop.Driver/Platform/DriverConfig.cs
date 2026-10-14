@@ -728,7 +728,7 @@ public sealed record DriverConfig(
         foreach (var property in element.EnumerateObject())
         {
             if (property.Value.ValueKind != JsonValueKind.Object || property.Name.Length == 0 || pauses.ContainsKey(property.Name)) continue;
-            pauses[property.Name] = new WorkPause(Moment(String(property.Value, "at")), SessionMap(property.Value, "stopped"));
+            pauses[property.Name] = new WorkPause(Moment(Json.NonEmpty(property.Value,"at")), SessionMap(property.Value, "stopped"));
         }
 
         return pauses;
@@ -770,7 +770,7 @@ public sealed record DriverConfig(
                 continue;
             }
 
-            standing[property.Name] = new StandingAnswer(words, Moment(String(property.Value, "at")));
+            standing[property.Name] = new StandingAnswer(words, Moment(Json.NonEmpty(property.Value,"at")));
         }
 
         return standing;
@@ -891,11 +891,11 @@ public sealed record DriverConfig(
                 // Only JSON `true` switches the tidy or the automatic acceptance on (LAND2a): `"true"` or 1 is not the
                 // person's say-so for a push with no press.
                 var rule = new LandingRule(
-                    String(property.Value, "form") ?? "", String(property.Value, "pattern"),
+                    Json.NonEmpty(property.Value,"form") ?? "", Json.NonEmpty(property.Value,"pattern"),
                     property.Value.TryGetProperty("tidy", out var tidy) && tidy.ValueKind == JsonValueKind.True,
-                    String(property.Value, "plugin"),
+                    Json.NonEmpty(property.Value,"plugin"),
                     property.Value.TryGetProperty("autoAccept", out var auto) && auto.ValueKind == JsonValueKind.True,
-                    String(property.Value, "key"),
+                    Json.NonEmpty(property.Value,"key"),
                     // Only JSON `true` squashes (PROCESS1b-ii), as only it accepts automatically.
                     property.Value.TryGetProperty("squash", out var squash) && squash.ValueKind == JsonValueKind.True);
                 // A key refused here is ignored and the rest of the rule stands (PROCESS1b-i): a key another reader took never
@@ -987,14 +987,14 @@ public sealed record DriverConfig(
         if (root.ValueKind != JsonValueKind.Object) throw new JsonException("it holds no JSON object");
 
         return new DriverConfig(
-            Drivable: Strings(root, "drivable"),
-            Holds: Strings(root, "holds"),
+            Drivable: Json.Strings(root,"drivable"),
+            Holds: Json.Strings(root,"holds"),
             Cap: Math.Max(1, Int(root, "cap") ?? Empty.Cap),
-            Adapter: String(root, "adapter") ?? Empty.Adapter,
+            Adapter: Json.NonEmpty(root,"adapter") ?? Empty.Adapter,
             TimeoutMinutes: Math.Max(1, Int(root, "timeoutMinutes") ?? Empty.TimeoutMinutes),
             PollSeconds: Math.Max(1, Int(root, "pollSeconds") ?? Empty.PollSeconds),
             Commands: CommandMap(root),
-            Trees: Strings(root, "trees"),
+            Trees: Json.Strings(root,"trees"),
             // Absent means ON (SURF5b): every machine that already has a driver.json predates this
             // field, and reading silence as "off" would ship the feature switched off everywhere it
             // matters most — a machine that has been driving for a while.
@@ -1007,9 +1007,9 @@ public sealed record DriverConfig(
             Forgiven: ForgivenMap(root))
         {
             // 🔴 Absent means OFF — see IntakeAdapter for why this is the opposite of `notify`.
-            IntakeAdapter = String(root, "intakeAdapter")?.Trim() is { Length: > 0 } intake ? intake : null,
+            IntakeAdapter = Json.NonEmpty(root,"intakeAdapter")?.Trim() is { Length: > 0 } intake ? intake : null,
             // Absent means OFF, as the intake's does (D89).
-            HelperAdapter = String(root, "helperAdapter")?.Trim() is { Length: > 0 } helper ? helper : null,
+            HelperAdapter = Json.NonEmpty(root,"helperAdapter")?.Trim() is { Length: > 0 } helper ? helper : null,
             // Absent, or less than a minute, or not a whole number, is the default hour (TOOL4e): never a spin.
             CoolOffMinutes = root.TryGetProperty("cooloff", out var coolOff) && coolOff.ValueKind == JsonValueKind.Number
                 && coolOff.TryGetInt32(out var minutes) && minutes >= 1 ? minutes : null,
@@ -1111,11 +1111,6 @@ public sealed record DriverConfig(
         return commands;
     }
 
-    private static string? String(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString() is { Length: > 0 } text ? text : null
-            : null;
-
     private static bool? Bool(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value)
             && value.ValueKind is JsonValueKind.True or JsonValueKind.False
@@ -1128,19 +1123,6 @@ public sealed record DriverConfig(
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number
             ? value.TryGetInt32(out var number) ? number : throw new JsonException($"`{name}` is not a whole number")
             : null;
-
-    private static IReadOnlyList<string> Strings(JsonElement element, string name)
-    {
-        if (!element.TryGetProperty(name, out var value) || value.ValueKind != JsonValueKind.Array) return [];
-
-        var items = new List<string>();
-        foreach (var item in value.EnumerateArray())
-        {
-            if (item.ValueKind == JsonValueKind.String && item.GetString() is { Length: > 0 } text) items.Add(text);
-        }
-
-        return items;
-    }
 }
 
 /// <summary>

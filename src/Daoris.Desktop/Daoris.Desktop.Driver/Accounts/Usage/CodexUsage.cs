@@ -121,7 +121,7 @@ public static class CodexUsage
         {
             if (!limits.TryGetProperty(name, out var window) || window.ValueKind != JsonValueKind.Object) continue;
             if (Whole(window, "windowDurationMins") is not { } minutes || minutes <= 0) continue;
-            if (Number(window, "usedPercent") is not { } percent || percent < 0) continue;
+            if (Json.Number(window, "usedPercent") is not { } percent || percent < 0) continue;
             if (Moment(window, "resetsAt") is not { } reset) continue;
 
             var reading = new WindowReading(WindowOf(minutes), percent / 100, reset);
@@ -295,7 +295,7 @@ public static class CodexUsage
 
         try
         {
-            if (!process.HasExited) process.Kill(entireProcessTree: true);
+            if (!process.HasExited) ChildProcess.KillTree(process);
             process.WaitForExit(TimeSpan.FromSeconds(5));
         }
         catch (Exception error) when (error is InvalidOperationException or Win32Exception or NotSupportedException)
@@ -310,17 +310,10 @@ public static class CodexUsage
             ? whole
             : null;
 
-    /// <summary>A finite number; null where it is not one.</summary>
-    private static double? Number(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetDouble(out var number)
-        && double.IsFinite(number)
-            ? number
-            : null;
-
     /// <summary>A moment written as Unix seconds; null where it is not one a calendar holds.</summary>
     private static DateTimeOffset? Moment(JsonElement element, string name)
     {
-        if (Number(element, name) is not { } seconds) return null;
+        if (Json.Number(element, name) is not { } seconds) return null;
         try
         {
             return DateTimeOffset.FromUnixTimeMilliseconds((long)Math.Round(seconds * 1000));

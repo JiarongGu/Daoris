@@ -294,10 +294,58 @@ public sealed record QuestDeleteOutcome(QuestDeleteRefusal Refusal, string Messa
 /// The asks — whose words a requirement's quote is checked against (DRIFT1c, D133 §3). Null where none
 /// are kept, where a requirement has no words to quote and is refused rather than kept unchecked.
 /// </param>
-public sealed partial class QuestExchange(
+public sealed class QuestExchange(
     KnowledgeService service, QuestStore quests, IRemotes? remotes = null, QuestFiles? files = null,
     SessionStore? sessions = null, AskStore? asks = null)
 {
+    /// <summary>The review family over the exchange's stores: set-ups, the person's verdict and the review choice (PART6).</summary>
+    private readonly QuestReviews reviews = new(quests, sessions, asks);
+
+    /// <summary>Post a set-up on a set-up step; the doors are <see cref="QuestReviews.PostSetUpAsync"/>'s (REVIEWENV1b).</summary>
+    public Task<QuestRespondOutcome> PostSetUpAsync(string id, QuestSetUpPost post, DateTimeOffset now, CancellationToken ct = default) =>
+        reviews.PostSetUpAsync(id, post, now, ct);
+
+    /// <summary>The person's verdict on a set-up step; see <see cref="QuestReviews.ReviewAsync"/>.</summary>
+    public Task<QuestRespondOutcome> ReviewAsync(
+        string id, string? verdict, string? words, QuestOperationRef? setUp, DateTimeOffset now, CancellationToken ct = default) =>
+        reviews.ReviewAsync(id, verdict, words, setUp, now, ct);
+
+    /// <summary>The person's "Set it up in an environment"; see <see cref="QuestReviews.PublishSetUpStepAsync"/>.</summary>
+    public Task<QuestRespondOutcome> PublishSetUpStepAsync(
+        string follows, string? environment, DateTimeOffset now, CancellationToken ct = default) =>
+        reviews.PublishSetUpStepAsync(follows, environment, now, ct);
+
+    /// <summary>
+    /// Why an intake's kind proposal at publish is refused, or null where there is none or it stands (WORKFLOW1i, D157; the workflow
+    /// design §4.3): a kind that is not a kind's id, a reason that is missing or past its bound, one on no ask held here, or a reason
+    /// that is not the person's words, verbatim, as a review choice's words are (REVIEWENV1b3). The exchange only judges; the ask's
+    /// desk keeps the proposal and the person's press applies it. Version 1 only proposes: whether a kind lowers the person's part
+    /// is the driving machine's table (WORKFLOW1i2), which the service does not hold.
+    /// </summary>
+    private async Task<(QuestPublishRefusal Refusal, string Message)?> JudgeWorkflowProposalAsync(string from, QuestAsk ask, CancellationToken ct)
+    {
+        if (ask.WorkflowProposal is not { } proposed) return null;
+
+        var reason = proposed.Reason?.Trim() ?? "";
+        if (WorkflowChoices.JudgeProposal(proposed.Kind?.Trim(), reason) is { } unfit)
+        {
+            return (QuestPublishRefusal.BadWorkflow, $"{unfit}. Nothing was published.");
+        }
+
+        if (AskDesk.AskOf(from) is not { } askId || asks is null || await asks.FindAsync(askId, ct).ConfigureAwait(false) is not { } held)
+        {
+            return (QuestPublishRefusal.BadWorkflow,
+                $"A kind proposal quotes the person's words on the ask a quest is asked by, and this quest is asked by `{from}`, "
+                + "on no ask held here — so there are no words of theirs to quote. Nothing was published.");
+        }
+
+        return held.Words.Any(word => QuestRequirement.QuotedIn(reason, word.Text))
+            ? null
+            : (QuestPublishRefusal.NotQuoted,
+                $"The kind `{proposed.Kind?.Trim()}` is proposed on words the person never said on ask `#{held.Id}`: \"{Clip(reason)}\". "
+                + "The reason is their own words, verbatim (whitespace and case aside); the person decides on a proposal. Nothing was published.");
+    }
+
     /// <summary>How many requirements a quest carries — what the work is measured by, not everything said.</summary>
     public const int MaxRequirements = 20;
 
@@ -442,7 +490,7 @@ public sealed partial class QuestExchange(
 
         // The chain's review choice (REVIEWENV1b, D154 point 3): its shape, then, from an agent, the person's words it quotes; an
         // agent's `off` is a proposal for the person's press, never the chain's choice (REVIEWENV1b3).
-        var (review, proposedOff, unfitReview) = await JudgeReviewAsync(from, ask, now, ct).ConfigureAwait(false);
+        var (review, proposedOff, unfitReview) = await reviews.JudgeReviewAsync(from, ask, now, ct).ConfigureAwait(false);
         if (unfitReview is { } refusedReview)
         {
             return new(refusedReview.Refusal, refusedReview.Message, Quest: null, addressable);
@@ -1080,8 +1128,6 @@ public sealed partial class QuestExchange(
 
     private static string Megabytes(long bytes) => $"{bytes / (1024.0 * 1024.0):0.#} MB";
 
-    private static string Clip(string text) => text.Length <= 120 ? text : text[..120] + "…";
-
     /// <summary>
     /// Answer a quest: take, done, or decline. Declining without a reason is refused — a bare refusal
     /// gives the asker nothing to act on.
@@ -1154,7 +1200,7 @@ public sealed partial class QuestExchange(
         {
             // A set-up step closes done once it has said what it showed (REVIEWENV1b, design §2.6), so a done always has a
             // set-up for the person to look at.
-            if (await NotShownAsync(live, ct).ConfigureAwait(false) is { } unshown) return new(QuestRespondRefusal.NotShown, unshown, Quest: null);
+            if (await reviews.NotShownAsync(live, ct).ConfigureAwait(false) is { } unshown) return new(QuestRespondRefusal.NotShown, unshown, Quest: null);
 
             var judged = await JudgeAnswersAsync(live, answers ?? [], ct).ConfigureAwait(false);
             if (judged.Refusal is { } refusal) return new(refusal, judged.Message!, Quest: null);
@@ -1297,7 +1343,7 @@ public sealed partial class QuestExchange(
         + $"{what} Stand down rather than doubling the work.";
 
     /// <summary>The chain's next step a close or a yes published (D65 §4), said so whoever moved it knows whose it now is.</summary>
-    private static string Then(Quest? followUp) => followUp is { } next
+    internal static string Then(Quest? followUp) => followUp is { } next
         ? $"\n\nThen: published `#{next.Id}` to `{next.To}` on behalf of `{next.From}` — {next.Status}."
           + (next.Then.Count > 0 ? $" {next.Then.Count} more step(s) follow it." : "")
         : "";
@@ -1353,7 +1399,7 @@ public sealed partial class QuestExchange(
         // A set-up step's review still holds it once a yes accepts the rest (REVIEWENV1b), and what follows waits on that.
         if (move.Quest.Hold == QuestHold.Unreviewed)
         {
-            return new(QuestRespondRefusal.None, $"{accepted}.{await ReviewWaitsAsync(move.Quest, ct).ConfigureAwait(false)}", move.Quest);
+            return new(QuestRespondRefusal.None, $"{accepted}.{await reviews.ReviewWaitsAsync(move.Quest, ct).ConfigureAwait(false)}", move.Quest);
         }
 
         return new(QuestRespondRefusal.None, $"{accepted}: what it held goes on.{resumes}{Then(move.FollowUp)}", move.Quest);
@@ -1397,7 +1443,7 @@ public sealed partial class QuestExchange(
 
         // A set-up step's done has a set-up, the person's own included (REVIEWENV1b, design §3.3: *I set it up myself…*).
         if (await quests.FindAsync(quest, ct).ConfigureAwait(false) is { Status: QuestStatus.Open or QuestStatus.Taken } live
-            && await NotShownAsync(live, ct).ConfigureAwait(false) is { } unshown)
+            && await reviews.NotShownAsync(live, ct).ConfigureAwait(false) is { } unshown)
         {
             return new(QuestRespondRefusal.NotShown, unshown, Quest: null);
         }
@@ -1432,7 +1478,7 @@ public sealed partial class QuestExchange(
               + "at the driver's next look.";
         return new(
             QuestRespondRefusal.None,
-            $"Quest `#{move.Quest.Id}` is now Done: you marked it done.{await ReviewWaitsAsync(move.Quest, ct).ConfigureAwait(false)}"
+            $"Quest `#{move.Quest.Id}` is now Done: you marked it done.{await reviews.ReviewWaitsAsync(move.Quest, ct).ConfigureAwait(false)}"
             + $"{resumes}{Then(move.FollowUp)}",
             move.Quest);
     }
@@ -1584,7 +1630,7 @@ public sealed partial class QuestExchange(
             if (quest.Hold == QuestHold.Unreviewed)
             {
                 return $"{at}: each of its {Count(verdict.Items.Count, "item")} is there."
-                       + await ReviewWaitsAsync(quest, ct).ConfigureAwait(false);
+                       + await reviews.ReviewWaitsAsync(quest, ct).ConfigureAwait(false);
             }
 
             var waiting = await quests.WaitingOnAsync(quest.Id, ct).ConfigureAwait(false);
@@ -1605,7 +1651,7 @@ public sealed partial class QuestExchange(
     }
 
     /// <summary>A commit as a sentence names it: its first seven characters.</summary>
-    private static string Short(string commit) => commit.Length > 7 ? commit[..7] : commit;
+    internal static string Short(string commit) => commit.Length > 7 ? commit[..7] : commit;
 
     /// <summary>
     /// The answers a done gives, judged against the quest's requirements (DRIFT1d, D133 §4): one for each, by its
@@ -1744,7 +1790,7 @@ public sealed partial class QuestExchange(
     /// holds — the next step, a quest waiting on it, or the ask — until the person accepts it. Nothing for a quest with none.
     /// </summary>
     private async Task<string> AnsweredAsync(Quest closed, CancellationToken ct) =>
-        await RequirementsAnsweredAsync(closed, ct).ConfigureAwait(false) + await ReviewWaitsAsync(closed, ct).ConfigureAwait(false);
+        await RequirementsAnsweredAsync(closed, ct).ConfigureAwait(false) + await reviews.ReviewWaitsAsync(closed, ct).ConfigureAwait(false);
 
     /// <summary>What a done said of its requirements (DRIFT1d, EVID1a): each met, or what a departure or its evidence holds.</summary>
     private async Task<string> RequirementsAnsweredAsync(Quest closed, CancellationToken ct)
@@ -1762,39 +1808,17 @@ public sealed partial class QuestExchange(
         if (departed == 0)
         {
             return $"{met} It is held until Daoris reads its evidence: {read}. Until it is found, "
-                   + $"{string.Join("; and ", await HoldsAsync(closed, "it is found", ct).ConfigureAwait(false))}.";
+                   + $"{string.Join("; and ", await reviews.HoldsAsync(closed, "it is found", ct).ConfigureAwait(false))}.";
         }
 
         return $" It departed from {departed} of its {Count(closed.Answers.Count, "requirement")}, so it is held for the "
-               + $"person's yes: {string.Join("; and ", await HoldsAsync(closed, "they accept it", ct).ConfigureAwait(false))}. "
+               + $"person's yes: {string.Join("; and ", await reviews.HoldsAsync(closed, "they accept it", ct).ConfigureAwait(false))}. "
                + $"The departure is kept on the quest, and the person accepts it with `daoris-driver quest accept {closed.Id}`."
                + (closed.AwaitsEvidence ? $" Its evidence is read too: {read}." : "");
     }
 
-    /// <summary>What a held done holds, each said as waiting <paramref name="until"/>: its next step, a quest waiting on it, or its ask.</summary>
-    private async Task<IReadOnlyList<string>> HoldsAsync(Quest closed, string until, CancellationToken ct)
-    {
-        var holds = new List<string>();
-        if (closed.Then.Count > 0)
-        {
-            var next = closed.Then[0];
-            holds.Add($"the next step, \"{next.Title.Replace("{parent}", $"#{closed.Id}", StringComparison.Ordinal)}\" to "
-                      + $"`{next.To}`, is published only once {until}");
-        }
-
-        var waiting = await quests.WaitingOnAsync(closed.Id, ct).ConfigureAwait(false);
-        if (waiting.Count > 0)
-        {
-            holds.Add($"{Listed(waiting)}, which {(waiting.Count == 1 ? "waits" : "wait")} on it, "
-                      + $"{(waiting.Count == 1 ? "resumes" : "resume")} only then");
-        }
-
-        if (holds.Count == 0) holds.Add($"nothing follows it, and what it was asked for stays open until {until}");
-        return holds;
-    }
-
     /// <summary>Quests by id and receiver, as an answer names them.</summary>
-    private static string Listed(IReadOnlyList<Quest> quests) =>
+    internal static string Listed(IReadOnlyList<Quest> quests) =>
         string.Join(", ", quests.Select(quest => $"`#{quest.Id}` (`{quest.To}`)"));
 
     private static string Count(int count, string what) => count == 1 ? $"1 {what}" : $"{count} {what}s";

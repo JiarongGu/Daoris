@@ -21,7 +21,7 @@ public sealed class WorkflowRunRecords(string home) : IWorkflowRunRecords
     {
         var accepted = new Dictionary<string, DateTimeOffset>(StringComparer.OrdinalIgnoreCase);
         var events = new SessionEvents(Path.Combine(home, "sessions"));
-        foreach (var session in sessions.Where(session => !session.Teammate && SessionEvents.IsId(session.Id)))
+        foreach (var session in sessions.Where(session => !session.Teammate && SessionEventText.IsId(session.Id)))
         {
             try
             {

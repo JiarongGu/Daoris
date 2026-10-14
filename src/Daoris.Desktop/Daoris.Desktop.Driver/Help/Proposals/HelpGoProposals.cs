@@ -1,5 +1,6 @@
 using System.Text.Json;
 using static Daoris.Driver.HelpProposals;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -373,37 +374,4 @@ public static class HelpPlaces
     /// deliberately, as a twin's constant is, never imported across.
     /// </summary>
     public const string AskItem = "ask:";
-}
-
-public sealed partial record HelpProposal
-{
-    /// <summary>A go's Settings domain, or null.</summary>
-    public string? Domain { get; init; }
-
-    /// <summary>A go's part of its domain or view — a card, a setup step, a drawer — or null.</summary>
-    public string? Part { get; init; }
-
-    /// <summary>A go's one quest or ask (ENTRY1f1) or session (ENTRY1f2), as the service's box wrote it, or null.</summary>
-    public string? Item { get; init; }
-}
-
-public sealed partial record HelpMachineFacts
-{
-    /// <summary>
-    /// This machine's own session records, closed ones included, as the Sessions list reads them: what a go naming a session
-    /// is judged against (ENTRY1f2), and since SESSUX1h2b a session proposal and a session's delete; read only for those.
-    /// </summary>
-    public IReadOnlyList<SessionRecord> Sessions { get; init; } = [];
-}
-
-public sealed partial record HelpPlan
-{
-    /// <summary>Where a go takes the person, for one the window has; null for every other kind.</summary>
-    public HelpPlace? Go { get; init; }
-}
-
-public sealed partial record HelpApplied
-{
-    /// <summary>Where a go takes the person: the page navigates there, as its starters' doors do.</summary>
-    public HelpPlace? Go { get; init; }
 }

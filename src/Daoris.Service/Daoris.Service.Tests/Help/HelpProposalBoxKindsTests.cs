@@ -48,24 +48,34 @@ public sealed class HelpProposalBoxKindsTests
         Assert.Equal(Table, HelpProposalBox.Kinds);
     }
 
+    /// <summary>
+    /// Each kind's file, <c>Help&lt;Kind&gt;ProposalWriter.cs</c> (the name the driver's twin tests read), holds that kind's
+    /// writer class of the same name, writing exactly that kind, and no part of the box: since PART7
+    /// (D166's note, no partial type without generated code) the box is the one class of <c>HelpProposalBox.cs</c>.
+    /// </summary>
     [Fact]
-    public void Every_kind_is_written_by_a_file_of_its_own()
+    public void Every_kind_is_written_by_a_class_in_a_file_of_its_own()
     {
         var core = Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core");
 
         Assert.Equal(
-            Table.Select(row => $"HelpProposalBox.{Pascal(row.Kind)}.cs").Append("HelpProposalBox.cs").Order(StringComparer.Ordinal),
-            Directory.GetFiles(core, "HelpProposalBox*.cs").Select(Path.GetFileName).Order(StringComparer.Ordinal));
+            Table.Select(row => $"Help{Pascal(row.Kind)}ProposalWriter.cs").Order(StringComparer.Ordinal),
+            Directory.GetFiles(core, "Help*ProposalWriter.cs").Select(Path.GetFileName).Order(StringComparer.Ordinal));
+        Assert.Empty(Directory.GetFiles(core, "HelpProposalBox.*.cs"));
         foreach (var (kind, _) in Table)
         {
-            Assert.Contains($"writer.WriteString(\"kind\", \"{kind}\");", File.ReadAllText(Path.Combine(core, $"HelpProposalBox.{Pascal(kind)}.cs")));
+            var writer = File.ReadAllText(Path.Combine(core, $"Help{Pascal(kind)}ProposalWriter.cs"));
+            Assert.Matches($@"\bclass Help{Pascal(kind)}ProposalWriter\b", writer);
+            Assert.DoesNotContain("class HelpProposalBox", writer);
+            Assert.Contains($"writer.WriteString(\"kind\", \"{kind}\");", writer);
         }
     }
 
     [Fact]
     public void Every_kind_has_its_connectors_tool()
     {
-        var tools = typeof(KnowledgeTools).GetMethods()
+        // Every class the host registers (PART10a), so a kind's tool is found whichever class holds it.
+        var tools = KnowledgeServer.ToolTypes.SelectMany(type => type.GetMethods())
             .Select(method => method.GetCustomAttribute<McpServerToolAttribute>()?.Name)
             .OfType<string>()
             .ToList();

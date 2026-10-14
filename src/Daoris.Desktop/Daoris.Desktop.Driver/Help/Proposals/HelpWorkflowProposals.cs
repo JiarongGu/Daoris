@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using static Daoris.Driver.HelpProposals;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -357,46 +358,4 @@ public sealed record HelpWorkflowCard(
 
     /// <summary>Whether Apply saves a version.</summary>
     public bool Saves => Steps is not null;
-}
-
-public sealed partial record HelpProposal
-{
-    /// <summary>A workflow proposal's repository or workspace, one word (WORKFLOW1h-a's box), which its judge finds which of.</summary>
-    public string? Scope { get; init; }
-
-    /// <summary>A workflow proposal's workflow, by its id.</summary>
-    public string? Workflow { get; init; }
-
-    /// <summary>The version a workflow proposal's edit is made on; null for a new workflow.</summary>
-    public int? Base { get; init; }
-
-    /// <summary>Whether a workflow proposal also chooses the workflow for its scope (the <c>use</c> door).</summary>
-    public bool Choose { get; init; }
-
-    /// <summary>A workflow proposal's whole steps, the design's JSON list (§2.5), as the box wrote them; null where none are.</summary>
-    public JsonElement? Steps { get; init; }
-
-    /// <summary>A new workflow's name, the person's words (WORKFLOW1h-name); null where the box wrote none, and the id names it.</summary>
-    public string? Name { get; init; }
-}
-
-public sealed partial record HelpMachineFacts
-{
-    /// <summary>
-    /// The named workflows saved under the home, each as found (<see cref="WorkflowStore.List"/>): what a workflow proposal's base
-    /// is held to (WORKFLOW1h-b). Read only for one.
-    /// </summary>
-    public IReadOnlyList<WorkflowFileFound> Workflows { get; init; } = [];
-
-    /// <summary>
-    /// The runs bound on this machine (<see cref="WorkflowRunBindings"/>): how many keep the version they started on, which a
-    /// workflow card says (design §8.2). Read only for a workflow proposal.
-    /// </summary>
-    public IReadOnlyList<WorkflowRunBinding> WorkflowRuns { get; init; } = [];
-}
-
-public sealed partial record HelpPlan
-{
-    /// <summary>A workflow proposal's card data (WORKFLOW1h-b), what its Apply saves and chooses; null for every other kind.</summary>
-    public HelpWorkflowCard? Workflow { get; init; }
 }

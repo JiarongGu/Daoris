@@ -306,7 +306,7 @@ public sealed class OpinionDeliveryTests : IDisposable
         host.Answer("op1", 4, "rejected", evidence: "the twin test holds the table");
         host.Answer("op1", 5, "unresolved", why: "cannot reproduce here");
         host.Answer("op1", 7, "fixed", commit: "abcdef0123");
-        var view = (await host.Client().ReadOpinionAsync("op1"))!;
+        var view = (await host.Client().Opinions.ReadAsync("op1"))!;
 
         var reading = await OpinionAnswers.ReadAsync(view, "s1", tree, git.Read, DateTimeOffset.UnixEpoch, CancellationToken.None);
 
@@ -336,7 +336,7 @@ public sealed class OpinionDeliveryTests : IDisposable
     {
         var host = new OpinionStandIn().Opinion("op1", "s1", weights: ["must"]);
         host.Answer("op1", 1, "fixed", commit: "abcdef0123");
-        var view = (await host.Client().ReadOpinionAsync("op1"))!;
+        var view = (await host.Client().Opinions.ReadAsync("op1"))!;
 
         var reading = await OpinionAnswers.ReadAsync(
             view, "s1", Path.Combine(_home, "gone"), new StandInGit(_home).Read, DateTimeOffset.UnixEpoch, CancellationToken.None);
@@ -411,7 +411,7 @@ public sealed class OpinionDeliveryTests : IDisposable
         host.Rechecked("op1", 2, "withdrawn");
         await Deliver(host);
 
-        var view = (await host.Client().ReadOpinionAsync("op1"))!;
+        var view = (await host.Client().Opinions.ReadAsync("op1"))!;
 
         Assert.Equal(("op1", "landing", "s1", "r-op1", OpinionStandIn.Tip, "codex-acp", "Codex (OpenAI)"),
             (view.Id, view.Occasion, view.Working, view.Session, view.Tip, view.Adapter, view.Who));

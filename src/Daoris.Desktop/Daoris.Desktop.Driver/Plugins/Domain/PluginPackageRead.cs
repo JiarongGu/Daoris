@@ -129,15 +129,16 @@ internal static class PluginPackageRules
             if (inside.Length == 0) continue;
             var folder = inside.EndsWith('/');
             var path = folder ? inside.TrimEnd('/') : inside;
-            if (!Tools.IsInside(path))
-            {
-                throw new PluginPackageRefusal($"{said} holds `{name}`, which would land outside its plugin's folder — the whole package is refused.");
-            }
-
-            // An escape can spell any character, NUL among them, which no path holds.
+            // An escape can spell any character, NUL among them, which no path holds. Said before the shared rule, which
+            // refuses a control character too but with the sentence for a path that leaves the folder.
             if (path.Any(char.IsControl))
             {
                 throw new PluginPackageRefusal($"{said} holds `{name}`, a name with a control character, which no folder holds — the whole package is refused.");
+            }
+
+            if (!Tools.IsInside(path))
+            {
+                throw new PluginPackageRefusal($"{said} holds `{name}`, which would land outside its plugin's folder — the whole package is refused.");
             }
 
             if (!folder && !seen.Add(path))

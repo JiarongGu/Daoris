@@ -56,7 +56,7 @@ public sealed class HelpHandProposalTests : HelpProposalBoxFixture
     [InlineData("acme.gate\n\n", false)]
     [InlineData("\nacme.gate", false)]
     public void A_plugin_id_s_shape_ends_where_the_driver_s_does(string plugin, bool id) =>
-        Assert.Equal(id, HelpProposalBox.IsPluginId(plugin));
+        Assert.Equal(id, HelpHandProposalWriter.IsPluginId(plugin));
 
     /// <summary>
     /// CASEFOLD1f: the door trims a field before its shape is checked, as it trims every field, so a line break after an

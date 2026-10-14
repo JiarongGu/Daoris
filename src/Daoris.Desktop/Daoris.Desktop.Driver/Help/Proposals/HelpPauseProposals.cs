@@ -233,33 +233,7 @@ internal sealed class HelpPauseProposals : IHelpProposalKind
     private static string Quests(IEnumerable<string> quests) => string.Join(", ", quests.Select(quest => $"`#{quest}`"));
 }
 
-public sealed partial record HelpMachineFacts
-{
-    /// <summary>
-    /// The work of each ask and quest a pause proposal names, with what a pause would do with each piece (PAUSE1f-b, D132 §7.4):
-    /// <see cref="WorkPausing.PlanAsync"/>'s answer for the id read as an ask's and as a quest's, each that this machine has.
-    /// What a pause proposal is judged by, beside the pauses <c>driver.json</c> keeps. Read only for one.
-    /// </summary>
-    public IReadOnlyList<WorkPlan> Work { get; init; } = [];
-
-    /// <summary>
-    /// The workspaces whose quests this machine syncs with a remote (D48 §5), every one where the environment names the remote
-    /// whole: where another machine may still take an open quest a pause holds here (design §2.6, §5.1), as the page's
-    /// <c>wiredFor</c> reads the wiring. Read only for a pause proposal.
-    /// </summary>
-    public IReadOnlyCollection<string> Wired { get; init; } = [];
-}
-
-public sealed partial record HelpPlan
-{
-    /// <summary>
-    /// The pause a pause proposal's Apply makes or lifts (PAUSE1f-b): its scope and id as this machine spells them. Null where the
-    /// card changes nothing, and for every other kind.
-    /// </summary>
-    public PausedBy? Pause { get; init; }
-}
-
-public partial interface IHelpDoors
+public interface IHelpPauseDoors
 {
     /// <summary>
     /// The pause the pages' *Pause…* and a session's *Pause ask…* and *Pause quest…* press (<c>WORK_PAUSE</c>, PAUSE1b, D132

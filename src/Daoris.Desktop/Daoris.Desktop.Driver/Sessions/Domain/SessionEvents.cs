@@ -294,8 +294,7 @@ public sealed record EventPage(IReadOnlyList<SessionEvent> Events, bool Earlier,
 
 /// <summary>
 /// The rules a session's record keeps apart from the file it is kept in (D76 §2, STRUCT3g-i): its bounds, how it is spelled,
-/// what an id may be and how a text is cut or searched. <see cref="SessionEvents"/> keeps the file and forwards each of these,
-/// so a caller names either.
+/// what an id may be and how a text is cut or searched. <see cref="SessionEvents"/> keeps the file; a caller names these here.
 /// </summary>
 public static class SessionEventText
 {
@@ -324,14 +323,22 @@ public static class SessionEventText
     };
 
     /// <summary>What a session id may be, since one arrives from a page: a name, never a path.</summary>
-    private static readonly Regex Id = new("^[A-Za-z0-9][A-Za-z0-9_.:-]*$", RegexOptions.CultureInvariant);
+    private static readonly Regex Id = new(@"^[A-Za-z0-9][A-Za-z0-9_.:-]*\z", RegexOptions.CultureInvariant);
 
     /// <summary>
     /// Whether this is a session id — the one check for everything named by one under the home (the
-    /// record here, a conversation's kept files), so an id that arrives from a page never names a path.
+    /// record here, a conversation's kept files), so an id that arrives from a page never names a path. It keeps <c>:</c>
+    /// for a remote's <c>machine:id</c> form (DEDUP6): each side of one is held to the folder rule, so a trailing newline,
+    /// a trailing dot or a device name is no id either.
     /// </summary>
     public static bool IsId(string? sessionId) =>
-        !string.IsNullOrEmpty(sessionId) && Id.IsMatch(sessionId) && !sessionId.Contains("..");
+        !string.IsNullOrEmpty(sessionId) && Id.IsMatch(sessionId) && sessionId.Split(':').All(SafeNames.IsFolderId);
+
+    /// <summary>
+    /// Whether this is an id of this machine's, which names a file under the home: <see cref="IsId"/> and the folder rule whole,
+    /// so a remote's <c>machine:id</c> (on Windows <c>a:b</c> names a stream of <c>a</c>) never becomes a local file.
+    /// </summary>
+    public static bool IsLocalId(string? sessionId) => IsId(sessionId) && SafeNames.IsFolderId(sessionId!);
 
     /// <summary>
     /// Whether these words are enough to search with (ASKHIST1d): two characters, or one Han character, which is a word on its

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using static Daoris.Driver.Json;
 using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
@@ -29,7 +30,7 @@ namespace Daoris.Driver;
 /// <see cref="IWorkflowStore"/>; the file and its format are behind them. A caller that holds only the home reaches
 /// them by it, as every module did before.</para>
 /// </remarks>
-public static partial class WorkflowRunBindings
+public static class WorkflowRunBindings
 {
     /// <summary>The folder under the home's workflows that holds the runs.</summary>
     public const string Folder = "runs";
@@ -38,7 +39,7 @@ public static partial class WorkflowRunBindings
     public static string FolderOf(string home) => Path.Combine(WorkflowStore.FolderOf(home), Folder);
 
     /// <summary>A run's id as a file may be named by it: a quest's id, letters, digits, dashes and underscores, at most 64.</summary>
-    public static bool IsRunId(string? run) => run is { Length: > 0 and <= 64 } && RunShape().IsMatch(run);
+    public static bool IsRunId(string? run) => run is not null && SafeNames.IsPlainId(run);
 
     /// <summary>A run's file, its id passed by <see cref="IsRunId"/>, so it names no path.</summary>
     public static string PathOf(string home, string run) =>
@@ -173,15 +174,9 @@ public static partial class WorkflowRunBindings
             : $"{where}: its run follows {follows}, {WorkflowRunBinding.Why(binding)}.";
     }
 
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
-
     private static DateTimeOffset ToTheSecond(DateTimeOffset at)
     {
         var utc = at.ToUniversalTime();
         return new DateTimeOffset(utc.Year, utc.Month, utc.Day, utc.Hour, utc.Minute, utc.Second, TimeSpan.Zero);
     }
-
-    [GeneratedRegex("^[A-Za-z0-9_-]+$")]
-    private static partial Regex RunShape();
 }

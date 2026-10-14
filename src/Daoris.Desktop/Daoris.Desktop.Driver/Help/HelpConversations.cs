@@ -124,7 +124,7 @@ public sealed class HelpConversations(string home)
     /// <summary>What the person keeps of a conversation; <see cref="HelpKept.None"/> for nothing, or a file that does not read.</summary>
     public HelpKept Read(string session)
     {
-        if (!SessionEvents.IsId(session)) return HelpKept.None;
+        if (!SessionEventText.IsId(session)) return HelpKept.None;
         try
         {
             var path = PathOf(session);
@@ -132,7 +132,8 @@ public sealed class HelpConversations(string home)
             using var document = JsonDocument.Parse(File.ReadAllText(path));
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object) return HelpKept.None;
-            return new HelpKept(Text(root, "name"), Time(root, "pinned"), Text(root, "from"), Text(root, "handed"));
+            return new HelpKept(
+                Json.NonEmpty(root, "name"), Time(root, "pinned"), Json.NonEmpty(root, "from"), Json.NonEmpty(root, "handed"));
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
         {
@@ -183,7 +184,7 @@ public sealed class HelpConversations(string home)
     /// neither until the list is asked again from its start.</para>
     /// </remarks>
     /// <param name="resumes">Whether an adapter's door resumes a conversation by its id, by the adapter's name.</param>
-    /// <param name="search">Words to find; too few to search with (<see cref="SessionEvents.Searchable"/>), nothing is found.</param>
+    /// <param name="search">Words to find; too few to search with (<see cref="SessionEventText.Searchable"/>), nothing is found.</param>
     /// <param name="offset">Where the page starts in the whole list; below 0 is 0.</param>
     /// <param name="limit">The most the page holds; below 1, or above <see cref="PageLimit"/>, is <see cref="PageLimit"/>.</param>
     public HelpListing List(
@@ -191,12 +192,12 @@ public sealed class HelpConversations(string home)
         int offset = 0, int limit = PageLimit)
     {
         var wanted = search?.Trim();
-        if (wanted is not null && !SessionEvents.Searchable(wanted)) return new([], 0, null);
+        if (wanted is not null && !SessionEventText.Searchable(wanted)) return new([], 0, null);
         offset = Math.Max(0, offset);
         limit = limit is < 1 or > PageLimit ? PageLimit : limit;
 
         var help = records
-            .Where(record => record.Repository == HelpRoom.Repository && !record.Teammate && SessionEvents.IsId(record.Id))
+            .Where(record => record.Repository == HelpRoom.Repository && !record.Teammate && SessionEventText.IsId(record.Id))
             .ToList();
         var openings = events.Openings(help.Select(record => record.Id));
 
@@ -305,7 +306,7 @@ public sealed class HelpConversations(string home)
 
     /// <summary>An id that names a session, or the refusal: nothing under the home is reached through any other.</summary>
     private static string Checked(string session) =>
-        SessionEvents.IsId(session) ? session : throw new DriverException($"`{session}` is not a session id, so it names no conversation.");
+        SessionEventText.IsId(session) ? session : throw new DriverException($"`{session}` is not a session id, so it names no conversation.");
 
     /// <summary>Written by hand, as the driver's other files are, for the AOT reason <see cref="DriverConfig"/> gives.</summary>
     private static string ToJson(HelpKept kept)
@@ -324,13 +325,8 @@ public sealed class HelpConversations(string home)
         return Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n";
     }
 
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String && value.GetString() is { Length: > 0 } text
-            ? text
-            : null;
-
     private static DateTimeOffset? Time(JsonElement element, string name) =>
-        DateTimeOffset.TryParse(Text(element, name), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at) ? at : null;
+        DateTimeOffset.TryParse(Json.NonEmpty(element, name), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at) ? at : null;
 }
 
 /// <summary>

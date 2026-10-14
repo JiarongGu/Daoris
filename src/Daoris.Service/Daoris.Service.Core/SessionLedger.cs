@@ -233,9 +233,15 @@ public sealed record SessionDeleteOutcome(SessionDeleteRefusal Refusal, string M
 /// sessions in one tree collide by construction rather than by string comparison, and what keeps
 /// behaviour identical for every caller that has not learned about trees yet.</para>
 /// </remarks>
-public sealed partial class SessionLedger(
+public sealed class SessionLedger(
     QuestStore quests, SessionStore sessions, KnowledgeService? registry = null, AskStore? asks = null)
 {
+    /// <summary>The go-ahead family over the ledger's stores (PART6).</summary>
+    private readonly SessionGoAheads goAheads = new(quests, sessions, asks);
+
+    /// <summary>The set-up step's serve and say family over the ledger's stores (PART6).</summary>
+    private readonly SessionReviews reviews = new(quests, sessions);
+
     /// <summary>
     /// Open an INTAKE for an ask (D65 §1b) — a conversation Daoris opens in a room it owns, which
     /// decides from the circle's declarations, publishes the quests itself, and asks the person where
@@ -1289,4 +1295,70 @@ public sealed partial class SessionLedger(
     /// </summary>
     private static SessionState? Parse(string state) =>
         Session.TryParse(state, out var parsed) ? parsed : null;
+
+    /// <summary>
+    /// The person's answers to the go-aheads a parked session asked are its answer (GOAHEAD2): the answer that leaves none of
+    /// them waiting keeps the park's blank answer, as the answer door keeps one given no words (ANSWER1b), so the driver's
+    /// next look goes on with that same session, its own conversation resumed and handed the go-aheads' answers after it
+    /// (ANSWER1a, KNOWUSE1a's resumed prompt). One of its go-aheads still waiting keeps it parked, and is named.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Only the sessions that asked this go-ahead</b>, and of those only this machine's driven parks: a session still
+    /// working, or one that ended, is handed the answer at its next start as before, and an intake is answered through its
+    /// ask.</para>
+    ///
+    /// <para><b>Once.</b> Only the person's first answer to a go-ahead can be the last a park waited on, so a changed answer
+    /// wakes nothing. A park that already holds words goes on with them and is handed these answers beside them, so nothing
+    /// is kept twice. Judged and kept under the store's lock, as an answer is (REV3), so the driver taking the park up and
+    /// a second door never both read it waiting.</para>
+    ///
+    /// <para><b>The answers are not written as the person's words</b> (KNOWUSE1a2): the record keeps what the answer door
+    /// keeps for none, and the go-aheads' answers reach the session beneath it, quoted as the person gave them.</para>
+    /// </remarks>
+    /// <param name="answered">What the ask's go-ahead door kept: the go-ahead as it now stands, and the ask with every other.</param>
+    public async Task<GoAheadParks> GoOnWithGoAheadsAsync(GoAheadAnswerOutcome answered, DateTimeOffset now, CancellationToken ct = default)
+    {
+        if (answered is not { Refusal: GoAheadAnswerRefusal.None, WasWaiting: true, GoAhead: { } goAhead, Ask: { } ask })
+        {
+            return GoAheadParks.None;
+        }
+
+        var goesOn = new List<string>();
+        var waits = new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal);
+        foreach (var asker in goAhead.Asked.Select(request => request.Session).Distinct(StringComparer.Ordinal))
+        {
+            var open = ask.GoAheads
+                .Where(held => held.Answer is null && held.Asked.Any(request => request.Session == asker))
+                .Select(held => held.Number)
+                .ToList();
+            var parked = await sessions.ExclusiveAsync(async inside =>
+            {
+                var session = await sessions.FindAsync(asker, inside).ConfigureAwait(false);
+                if (session is not { State: SessionState.AwaitingPerson, Origin: null, Quest: not null, Ask: null }) return false;
+                if (open.Count == 0 && session.Said.Count == 0) await KeepAnswerAsync(session, CarryOn, now, inside).ConfigureAwait(false);
+                return true;
+            }, ct).ConfigureAwait(false);
+
+            if (!parked) continue;
+            if (open.Count > 0) waits[asker] = open;
+            else goesOn.Add(asker);
+        }
+
+        return new(goesOn, waits);
+    }
+
+    /// <summary>Ask the person for a go-ahead for a session; see <see cref="SessionGoAheads.AskGoAheadAsync"/> (KNOWUSE1a).</summary>
+    public Task<GoAheadOutcome> AskGoAheadAsync(
+        string sessionId, string? kind, string? on, string? act, string? why, DateTimeOffset now, CancellationToken ct = default) =>
+        goAheads.AskGoAheadAsync(sessionId, kind, on, act, why, now, ct);
+
+    /// <summary>Keep the folder a set-up step's session asks to serve; see <see cref="SessionReviews.ServeAsync"/> (REVIEWENV1b).</summary>
+    public Task<ReviewSayOutcome> ServeAsync(
+        string? sessionId, string? folder, string? address, DateTimeOffset now, CancellationToken ct = default) =>
+        reviews.ServeAsync(sessionId, folder, address, now, ct);
+
+    /// <summary>Keep a set-up a set-up step's session says; see <see cref="SessionReviews.ReadyAsync"/> (REVIEWENV1b).</summary>
+    public Task<ReviewSayOutcome> ReadyAsync(
+        string? sessionId, string? look, string? shows, string? again, string? run, DateTimeOffset now, CancellationToken ct = default) =>
+        reviews.ReadyAsync(sessionId, look, shows, again, run, now, ct);
 }

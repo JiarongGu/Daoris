@@ -1,7 +1,9 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
@@ -122,7 +124,7 @@ public sealed record NamedWorkflowRead(string? Id, string? Name, IReadOnlyList<N
 /// A TWIN with the CLI's <c>namedworkflows.ts</c>: both hold one table, this suite's tests' <c>fixtures/workflow-named.json</c>,
 /// cell for cell, every sentence and every digest included (<c>WorkflowNamedTests</c> and <c>namedworkflows.test.ts</c>).
 /// </remarks>
-public static partial class WorkflowNamed
+public static class WorkflowNamed
 {
     private const string IdRule = "lower-case letters, digits and dashes, at most 40";
     private const string KindList = "`work`, `opinion`, `look`, `landing`, `pull-request`, `go-ahead`, `check`, `stage` or `all`";
@@ -135,7 +137,7 @@ public static partial class WorkflowNamed
     private const string VersionNumber = "each version's `version` is a whole number from 1, each greater than the one before it.";
 
     /// <summary>A workflow's or a step's id: lower-case letters, digits and dashes, at most 40.</summary>
-    public static bool IsId(string? value) => value is { Length: > 0 and <= 40 } && IdShape().IsMatch(value);
+    public static bool IsId(string? value) => value is { Length: > 0 and <= 40 } && SafeNames.IsKebabId(value);
 
     /// <summary>What is wrong with a workflow's id, or null. <c>current</c> is Current's (design §2.5).</summary>
     public static string? IdProblem(string? value)
@@ -159,9 +161,9 @@ public static partial class WorkflowNamed
     {
         static NamedWorkflowRead Unread(string problem) => new(null, null, [], problem);
         if (file.ValueKind != JsonValueKind.Object) return Unread(FileShape);
-        var id = TextOf(file, "id");
+        var id = Json.Text(file, "id");
         if (IdProblem(id) is { } idProblem) return Unread(idProblem);
-        var name = TextOf(file, "name");
+        var name = Json.Text(file, "name");
         if (NameProblem(name) is { } nameProblem) return Unread(nameProblem);
         if (!file.TryGetProperty("versions", out var versions) || versions.ValueKind != JsonValueKind.Array || versions.GetArrayLength() == 0)
         {
@@ -189,11 +191,11 @@ public static partial class WorkflowNamed
     /// <param name="prior">The versions before it that read, which a step's id is held to: an id is never used for another kind.</param>
     public static NamedVersion ReadVersion(JsonElement version, int number, IReadOnlyList<NamedVersion> prior)
     {
-        var at = TextOf(version, "at");
-        var door = TextOf(version, "door");
+        var at = Json.Text(version, "at");
+        var door = Json.Text(version, "door");
         NamedVersion Unread(string problem) => new(number, at, door, null, problem, null);
         if (!IsMoment(at)) return Unread($"v{number}: its `at` is a moment as ISO 8601 writes it, such as `2026-10-09T09:12:00Z`.");
-        if (door is null || !(door is "screen" or "terminal" || DoorShape().IsMatch(door)))
+        if (door is null || !(door is "screen" or "terminal" || IsAskDoor(door)))
         {
             return Unread($"v{number}: its `door` is `screen`, `terminal` or `ask-daoris:<proposal>`.");
         }
@@ -230,7 +232,7 @@ public static partial class WorkflowNamed
         var v = $"v{number}";
         if (value is not { ValueKind: JsonValueKind.Array } list || list.GetArrayLength() == 0) return (null, $"{v}: its `steps` is a list of at least one.");
         var count = list.GetArrayLength() + list.EnumerateArray().Sum(each =>
-            each.ValueKind == JsonValueKind.Object && TextOf(each, "kind") == WorkflowKinds.All
+            each.ValueKind == JsonValueKind.Object && Json.Text(each, "kind") == WorkflowKinds.All
             && each.TryGetProperty("steps", out var members) && members.ValueKind == JsonValueKind.Array
                 ? members.GetArrayLength()
                 : 0);
@@ -258,12 +260,12 @@ public static partial class WorkflowNamed
     {
         var at = group is null ? $"{v}, step {position}: " : $"{v}, step {position} in `{group}`: ";
         if (raw.ValueKind != JsonValueKind.Object) return (null, $"{at}a step is a JSON object with its `id` and `kind`.");
-        var id = TextOf(raw, "id");
+        var id = Json.Text(raw, "id");
         if (!IsId(id)) return (null, $"{at}its `id` is {IdRule}, such as `land`.");
         if (!seen.Add(id!)) return (null, $"{at}`{id}` is an earlier step's id too; each step's id is its own.");
 
         var p = group is null ? $"{v}, step `{id}`: " : $"{v}, step `{id}` in `{group}`: ";
-        if (TextOf(raw, "kind") is not { } kind) return (null, $"{p}its `kind` is one of {KindList}.");
+        if (Json.Text(raw, "kind") is not { } kind) return (null, $"{p}its `kind` is one of {KindList}.");
         if (WorkflowKindTable.Of(kind) is not { } row) return (null, $"{p}`{kind}` is no kind of step — one of {KindList}.");
         if (group is not null && kind == WorkflowKinds.All) return (null, $"{p}a group holds no group: one level of grouping.");
         if (group is not null && kind is not (WorkflowKinds.Check or WorkflowKinds.Stage))
@@ -347,7 +349,7 @@ public static partial class WorkflowNamed
             case WorkflowFieldTypes.Choice:
                 return text is not null && field.Choices!.Contains(text, StringComparer.Ordinal) ? (text, null) : wrong;
             case WorkflowFieldTypes.Environment:
-                return text is { Length: > 0 and <= 32 } && IdShape().IsMatch(text) ? (text, null) : wrong;
+                return text is { Length: > 0 and <= 32 } && SafeNames.IsKebabId(text) ? (text, null) : wrong;
             case WorkflowFieldTypes.Id:
                 return IsId(text) ? (text, null) : wrong;
             case WorkflowFieldTypes.Text:
@@ -531,12 +533,6 @@ public static partial class WorkflowNamed
         _ => throw new ArgumentException($"a field is text, a switch or a list of names, not {value.GetType().Name}."),
     };
 
-    /// <summary>Text where the property is text, else null.</summary>
-    internal static string? TextOf(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
-
     /// <summary>A whole number from 1, as JSON writes one: a fraction, text or anything past the largest int is none.</summary>
     private static int? WholeOf(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetDouble(out var number)
@@ -558,9 +554,76 @@ public static partial class WorkflowNamed
         "yyyy-MM-dd'T'HH:mm:ss.FFFFFFFzzz",
     ];
 
-    [GeneratedRegex(@"^[a-z0-9]+(?:-[a-z0-9]+)*\z", RegexOptions.CultureInvariant)]
-    private static partial Regex IdShape();
+    private const string AskDoorPrefix = "ask-daoris:";
 
-    [GeneratedRegex(@"^ask-daoris:[A-Za-z0-9_-]{1,64}\z", RegexOptions.CultureInvariant)]
-    private static partial Regex DoorShape();
+    /// <summary>The Ask Daoris door: its prefix and a plain id (DEDUP6).</summary>
+    private static bool IsAskDoor(string door) =>
+        door.StartsWith(AskDoorPrefix, StringComparison.Ordinal) && SafeNames.IsPlainId(door[AskDoorPrefix.Length..]);
+
+    // ---- Adding a version (WORKFLOW1d, D157 point 5, the workflow design §2.4–§2.6) ----
+    // Planned and not written: the store's use case (WorkflowStore's Add) writes the plan through its port. A version is
+    // whole and never edited: saving adds the next number, keeping the file's other fields and every version as written,
+    // then the newest 20 and every version a kept run names. A TWIN with the CLI's planAddVersion (namedworkflows.ts): the
+    // plan is held to the driver suite's fixtures/workflow-named.json `store`, cell for cell.
+
+    private static readonly JsonSerializerOptions Indented = new()
+    {
+        WriteIndented = true,
+        NewLine = "\n",
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
+
+    /// <summary>
+    /// A version added to a workflow's file, planned and not written (design §2.6): the next number after the last, the file's
+    /// other fields and every version kept as written, a version that does not read here included, then the newest 20 kept with
+    /// every version a kept run names. A file that does not read is never written over, and steps that do not read write nothing.
+    /// </summary>
+    /// <param name="file">The file as it stands, or null for a new workflow.</param>
+    /// <param name="kept">The versions a kept run names.</param>
+    public static WorkflowAddPlan PlanAdd(JsonNode? file, WorkflowVersionAdded add, IReadOnlyCollection<int> kept)
+    {
+        static WorkflowAddPlan Refused(string problem) => new(null, null, problem);
+        var version = new JsonObject { ["version"] = 0, ["at"] = add.At, ["door"] = add.Door, ["steps"] = add.Steps?.DeepClone() };
+        if (file is null)
+        {
+            if ((IdProblem(add.Id) ?? NameProblem(add.Name)) is { } problem) return Refused(problem);
+            version["version"] = 1;
+            var first = ReadVersion(ElementOf(version), 1, []);
+            return first.Problem is not null
+                ? Refused(first.Problem)
+                : new WorkflowAddPlan(new JsonObject { ["id"] = add.Id, ["name"] = add.Name, ["versions"] = new JsonArray(version) }, 1, null);
+        }
+
+        var read = Read(ElementOf(file));
+        if (read.Problem is not null) return Refused($"nothing was written: the workflow's file cannot be read — {read.Problem}");
+        if (read.Id != add.Id) return Refused($"nothing was written: the file holds the workflow `{read.Id}`, not `{add.Id}`.");
+        var number = read.Versions[^1].Version + 1;
+        version["version"] = number;
+        var candidate = ReadVersion(ElementOf(version), number, [.. read.Versions.Where(each => each.Steps is not null)]);
+        if (candidate.Problem is not null) return Refused(candidate.Problem);
+
+        var result = file.DeepClone().AsObject();
+        var versions = result["versions"]!.AsArray();
+        versions.Add(version);
+        var numbers = read.Versions.Select(each => each.Version).Append(number).ToList();
+        while (versions.Count > WorkflowKindTable.KeptVersions)
+        {
+            var oldest = numbers.FindIndex(each => each != number && !kept.Contains(each));
+            if (oldest == -1) break;
+            versions.RemoveAt(oldest);
+            numbers.RemoveAt(oldest);
+        }
+
+        return new WorkflowAddPlan(result, number, null);
+    }
+
+    /// <summary>A workflow's file as written: indented by two, LF, with a last newline, its words as written.</summary>
+    public static string Text(JsonNode file) => file.ToJsonString(Indented) + "\n";
+
+    /// <summary>A file's node as the readers read it, an element of its own.</summary>
+    internal static JsonElement ElementOf(JsonNode node)
+    {
+        using var document = JsonDocument.Parse(node.ToJsonString());
+        return document.RootElement.Clone();
+    }
 }

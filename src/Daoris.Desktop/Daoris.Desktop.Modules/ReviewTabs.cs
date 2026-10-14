@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.WebSockets;
 using System.Text.Json;
+using static Daoris.Driver.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop;
@@ -51,8 +52,9 @@ public static class ReviewRequests
         if (!path.StartsWith(serve.Base, StringComparison.Ordinal)) return new(ReviewAnswerKind.Pass);
 
         var rest = Uri.UnescapeDataString(path[serve.Base.Length..]);
-        if (rest.Contains('\\') || rest.Contains(':') || rest.Contains('\0')
-            || rest.Split('/').Any(segment => segment is "." or ".."))
+        // One trailing slash asks for a page (below); what is left is a path joined to the disk (DEDUP6's rule).
+        var named = rest.EndsWith('/') ? rest[..^1] : rest;
+        if (named.Length > 0 && !SafeNames.IsRepositoryPath(named))
         {
             return new(ReviewAnswerKind.Refused);
         }
@@ -383,9 +385,4 @@ public sealed class ReviewTabs(IInAppBrowser browser) : IReviewTabs, IDisposable
             // The tab or the browser went while it was answered.
         }
     }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
 }

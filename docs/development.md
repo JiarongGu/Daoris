@@ -145,6 +145,7 @@ Regenerate owned output with its producer:
 ```sh
 node src/Daoris.Cli/bin/daoris.mjs sync
 node tools/orient-index.mjs
+node tools/partials.mjs --write
 dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map
 ```
 

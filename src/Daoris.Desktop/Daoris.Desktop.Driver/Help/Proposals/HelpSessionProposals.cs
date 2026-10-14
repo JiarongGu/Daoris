@@ -162,25 +162,7 @@ internal sealed class HelpSessionProposals : IHelpProposalKind
     private static string Listed(IEnumerable<SessionRecord> records) => string.Join(", ", records.Select(record => $"`{record.Id}`"));
 }
 
-public sealed partial record HelpMachineFacts
-{
-    /// <summary>
-    /// Where Sessions' list places each of this machine's sessions, with its archive mark (SESSUX1h2b, D126 §2.4, §5.2): what a
-    /// session proposal is judged by, as <see cref="SessionArchive"/> judges an archive. Read only for one.
-    /// </summary>
-    public IReadOnlyList<SessionGrouping> Placed { get; init; } = [];
-}
-
-public sealed partial record HelpPlan
-{
-    /// <summary>
-    /// The sessions a session proposal's Apply archives or unarchives, or a delete's one session (SESSUX1h2b), as this machine's
-    /// records spell them; empty where the card changes nothing, null for every other kind.
-    /// </summary>
-    public IReadOnlyList<string>? Sessions { get; init; }
-}
-
-public partial interface IHelpDoors
+public interface IHelpSessionDoors
 {
     /// <summary>
     /// Sessions' own archive (SESSUX1a, D126 §5.2), the door its *Archive*, *Archive what ended…* and *Unarchive* press: each

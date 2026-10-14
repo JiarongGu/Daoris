@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 
@@ -51,46 +50,9 @@ internal static class PluginToolRuns
     /// </summary>
     public static async Task<CheckRun> RunAsync(ProcessStartInfo info, TimeSpan patience, CancellationToken ct)
     {
-        Process? process;
-        try
-        {
-            process = Process.Start(info);
-        }
-        catch (Exception error) when (error is Win32Exception or IOException or InvalidOperationException)
-        {
-            // Said in Daoris's words by the caller: the system's message names the working directory.
-            return new(false, null, "", "");
-        }
-
-        if (process is null) return new(false, null, "", "");
-        using (process)
-        {
-            // Nothing is typed to it: a program that waits for input reads its end at once.
-            process.StandardInput.Close();
-            using var bound = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            bound.CancelAfter(patience);
-            var stdout = process.StandardOutput.ReadToEndAsync(bound.Token);
-            var stderr = process.StandardError.ReadToEndAsync(bound.Token);
-            try
-            {
-                await process.WaitForExitAsync(bound.Token).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
-            {
-                try
-                {
-                    process.Kill(entireProcessTree: true);
-                }
-                catch (InvalidOperationException)
-                {
-                    // It ended as it was stopped.
-                }
-
-                await Task.WhenAll(stdout, stderr).ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
-                return new(true, null, "", "");
-            }
-
-            return new(true, process.ExitCode, await stdout.ConfigureAwait(false), await stderr.ConfigureAwait(false));
-        }
+        // Nothing is typed to it: a program that waits for input reads its end at once. A start failure is said in Daoris's
+        // words by the caller: the system's message names the working directory.
+        var run = await ChildProcess.RunAsync(info, patience, ct, closeInput: true).ConfigureAwait(false);
+        return new(run.Started, run.ExitCode, run.Stdout, run.Stderr);
     }
 }

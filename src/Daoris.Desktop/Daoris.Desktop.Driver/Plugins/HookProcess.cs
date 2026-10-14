@@ -168,7 +168,7 @@ public sealed class HookProcess : IHookChannel
                 }
                 catch (OperationCanceledException)
                 {
-                    _process.Kill(entireProcessTree: true);
+                    ChildProcess.KillTree(_process);
                 }
             }
         }

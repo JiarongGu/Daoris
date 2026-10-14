@@ -237,7 +237,7 @@ public sealed class RegistrationStore
         command.Parameters.AddWithValue("$uses", ToJson(registration.DependsOn));
         command.Parameters.AddWithValue(
             "$lanes", registration.Lanes is null ? DBNull.Value : LanesJson(registration.DeclaredLanes));
-        command.Parameters.AddWithValue("$updated", now.ToString("O"));
+        command.Parameters.AddWithValue("$updated", Moments.Write(now));
         command.Parameters.AddWithValue("$root", (object?)registration.Root ?? DBNull.Value);
         command.Parameters.AddWithValue("$joined", registration.Joined ? 1 : 0);
         command.Parameters.AddWithValue("$shares", registration.SharesKnowledge ? 1 : 0);
@@ -319,7 +319,7 @@ public sealed class RegistrationStore
         command.Parameters.AddWithValue("$file", (object?)file ?? DBNull.Value);
         command.Parameters.AddWithValue("$body", (object?)body ?? DBNull.Value);
         command.Parameters.AddWithValue("$commit", provenance.Commit);
-        command.Parameters.AddWithValue("$committed_at", provenance.CommittedAt.ToString("O"));
+        command.Parameters.AddWithValue("$committed_at", Moments.Write(provenance.CommittedAt));
         command.Parameters.AddWithValue("$branch", provenance.Branch);
         command.Parameters.AddWithValue("$origin", (object?)provenance.Origin ?? DBNull.Value);
         command.Parameters.AddWithValue("$digest", provenance.Digest ?? "");
@@ -377,7 +377,7 @@ public sealed class RegistrationStore
         {
             all[reader.GetString(0)] = new(
                 reader.GetString(1),
-                DateTimeOffset.Parse(reader.GetString(2), null, System.Globalization.DateTimeStyles.RoundtripKind),
+                Moments.ReadRequired(reader.GetString(2)),
                 reader.GetString(3),
                 reader.IsDBNull(4) ? null : reader.GetString(4));
         }
@@ -399,7 +399,7 @@ public sealed class RegistrationStore
             """;
         command.Parameters.AddWithValue("$repository", repository);
         command.Parameters.AddWithValue("$commit", provenance.Commit);
-        command.Parameters.AddWithValue("$committed_at", provenance.CommittedAt.ToString("O"));
+        command.Parameters.AddWithValue("$committed_at", Moments.Write(provenance.CommittedAt));
         command.Parameters.AddWithValue("$branch", provenance.Branch);
         command.Parameters.AddWithValue("$origin", (object?)provenance.Origin ?? DBNull.Value);
         command.Parameters.AddWithValue("$digest", (object?)provenance.Digest ?? DBNull.Value);
@@ -433,7 +433,7 @@ public sealed class RegistrationStore
             """;
         command.Parameters.AddWithValue("$repository", repository);
         command.Parameters.AddWithValue("$commit", provenance.Commit);
-        command.Parameters.AddWithValue("$committed_at", provenance.CommittedAt.ToString("O"));
+        command.Parameters.AddWithValue("$committed_at", Moments.Write(provenance.CommittedAt));
         command.Parameters.AddWithValue("$branch", provenance.Branch);
         command.Parameters.AddWithValue("$origin", (object?)provenance.Origin ?? DBNull.Value);
         command.Parameters.AddWithValue("$digest", (object?)provenance.Digest ?? DBNull.Value);
@@ -469,7 +469,7 @@ public sealed class RegistrationStore
     /// <summary>A held commit, read as (commit, committed_at, branch, origin, digest).</summary>
     private static FeedProvenance Read(SqliteDataReader reader) => new(
         reader.GetString(0),
-        DateTimeOffset.Parse(reader.GetString(1), null, System.Globalization.DateTimeStyles.RoundtripKind),
+        Moments.ReadRequired(reader.GetString(1)),
         reader.GetString(2),
         reader.IsDBNull(3) ? null : reader.GetString(3))
     {

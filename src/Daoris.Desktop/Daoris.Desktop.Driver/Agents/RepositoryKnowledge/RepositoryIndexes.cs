@@ -108,7 +108,7 @@ public static class RepositoryIndexes
         if (declared is null) return null;
         var path = declared.Replace('\\', '/');
         while (path.StartsWith("./", StringComparison.Ordinal)) path = path[2..];
-        if (path.Length == 0 || path.StartsWith('/') || path.Contains(':') || path.Split('/').Contains("..")) return null;
+        if (!SafeNames.IsRepositoryPath(path)) return null;
         return File.Exists(Path.Combine(root, path)) ? path : null;
     }
 

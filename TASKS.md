@@ -271,25 +271,26 @@ into priority since that will make the code better to develop"*; D166's note). N
 `docs/2026-10-12-code-structure-design.md` as amended. Moves are behaviour-preserving; new driver files go into their module's
 folder.
 
-- [ ] **FLAT1b-iii-b — Sessions: the layering's ceremony folded back** (driver, modules; after iii-a). `HarnessEnding` and `HistoryBytes` out to files of their own with their reads; the forwards to `CommitNames`, `PauseKept`, `AbandonKeys` and `SessionEventText` retire, about 51 callers naming it. D166's STRUCT3g-i note.
-- [ ] **SCOPE1c — Conversations and Plugins by scope** (driver; after FLAT1b-i). Conversations into `Chat/`, `GoOn/`, `HandOver/`, `Helpers/`; Plugins into `Hooks/`, `Kit/`, `Package/`, `Catalogue/`, `Page/`, `plugin-kit/` where it is. Counted again after FLAT1b-i. D166's scope note.
-- [ ] **SCOPE1d — Sessions and Review by scope** (driver; after FLAT1b-ii and iii-b). Sessions into `Work/`, `Requests/`, `History/`, `Trace/`, `Events/`; Review into `Opinion/` and `ReviewEnvironment/` only if still above about 22 files at its top. D166's scope note.
 - [ ] **PLATEXC1 — `DriverException` is Platform's** (driver). Platform's `DriverHttp` and `DriverLock` throw a type declared in `Agents/Adapters/Adapters.cs`, so the shared kernel depends on Agents: move it to Platform. Proof: the build and the driver's tests. D166's LOOPOUT1 note.
 - [ ] **STRUCT3OPLOOP — Review's opinion logic out of the loop** (driver; optional). `Loop/Driver.Opinion.cs`, `Driver.OpinionDelivery.cs` and `Driver.OpinionGate.cs` hold the pass, the delivery and the gate's look: what needs none of the loop's state moves into `Review/`, with no new ports. D166's STRUCT2g note.
 - [ ] **STRUCT5 — the other projects' folders** (modules/service/web/cli). Folders by domain, no layers (D166's note of 2026-10-14): `Modules` (the bridge per domain, browser, window, update), the service's core, the page's top folder and the CLI's `src/`, each with its gate; a row each when due. Design §7.
 
+**No partial type split by hand** (the owner: *"also I think we better not use partial class if we don't have auto-generated code"*; D166's note). Evidence: `docs/2026-10-14-partial-types-survey.md`. A class per domain or kind keeps one new door in one new file.
+
+- [ ] **PART10b — `KnowledgeTools`: the review, go-ahead, helper and opinion tools** (service; after 10a). Each its class with only its services, added to `KnowledgeServer.ToolTypes`; `quest_publish`'s records `ReviewChoice` and `ReviewProposal` beside `QuestTools`' own. Survey "The large five, as scouted".
+- [ ] **PART10c — `KnowledgeTools`: a tool class per Help kind, and the type gone** (service, driver; after 10b and PART7b). `Help<Kind>Tool` in a file each, the driver's file-name test re-pointed, `KnowledgeTools` deleted and cut from the gate's list. Survey "The large five, as scouted".
+- [ ] **PART10d — `DriverModule`: the context, the table from handler classes, the small domains** (modules, tools; Opus). A context object, the shared arguments' helper, a table built from an explicit handler list, the routes test and `orient-index`'s handler files for `*Routes.cs`; the nine smallest domains moved. Survey "The large five, as scouted".
+- [ ] **PART10e — `DriverModule`: the middle domains** (modules; after 10d). Git, Conversation, Sessions, Driver, Lines, Plugins and Tools as handler classes, their tests' statics re-spelled. Survey "The large five, as scouted".
+- [ ] **PART10f — `DriverModule`: Trees, Agents and Help, and the type whole** (modules, driver; after 10e). The three largest, Help's doors onto the context, `partial` gone and cut from the gate's list. Survey "The large five, as scouted".
+- [ ] **PART10g — `ChatRunner`, `SessionTrees` and the loop's `Driver`, each scouted alone** (driver). Into named classes over a shared context or by concern behind a front, the loop's last. Survey "Large".
+
 **Duplication** (the owner: *"we more focus on modularize the code to reduce duplication and easier to manage"*). Evidence: `docs/2026-10-14-duplication-survey.md`, by section. After FLAT1; DEDUP1 to 3 touch the same files, so one at a time.
 
-- [ ] **DEDUP1 — one JSON field reader** (driver, modules). A public `Json` reader in `Platform/` on `C/JsonFields.cs`'s model (the object guard always, the empty-string rule chosen per caller) for about 44 private `Text`/`Number`/`Strings`/`Items` copies, about 25 of which throw on a non-object. Survey §1.
-- [ ] **DEDUP2 — one way to write and read a moment** (driver, modules). A public `Moments` in `Platform/` (round-trip write, invariant read, strict read) for about 45 writers and 40 readers, a dozen of which read in the machine's culture, five `IsoMoments` and four `Stamp()`s. Survey §2.
+- [ ] **DEDUP2a — one way to write and read a moment, its first half** (driver). A public `Moments` in `Platform/` (round-trip write, invariant read, strict read) for the writers and readers in Accounts, Agents, Conversations, Help, Platform and Plugins, those read in the machine's culture among them. Survey §2.
+- [ ] **DEDUP2b — the moments, their second half** (driver, modules; after 2a). Quests, Review, Service, Sessions, Setup, Trees, Workflows and the Modules bridge. Survey §2.
 - [ ] **DEDUP3 — one way to write a JSON file** (driver, modules). A public `JsonFile` in `Platform/` (LF text with a trailing newline, one options object, its folder made, an atomic write) for about 65 sites: it fixes the seven written with CRLF on Windows and the plain writes past `AtomicFile`. Survey §3, §9.
-- [ ] **DEDUP4 — one child-process runner** (driver, modules). `ChildProcess.RunAsync` in `Platform/` for the seven hand-rolled runs with patience and capture, each keeping its words; it fixes the unguarded kills at `Harnesses.cs:1480` and `SetupWorld.cs:107`. Survey §4.
 - [ ] **DEDUP5 — the accounts' files share their helpers** (driver). One helper for the `Load`, `Key`, `Child`, `Text`, `Flag` and `Moment` that `AccountCooling`, `AccountNames`, `AccountReads` and `AccountWindows` copy; a small store for the eight gate-and-edit stores only where each one fits. Survey §5.
-- [ ] **DEDUP6 — path and id rules decided once** (driver, modules). A `SafeNames` in `Platform/` with the rules D166's DEDUP6 note decided (a repository path joined to the disk, an id under the home, the plain and kebab ids), each caller keeping its sentence; after FLAT1a, whose moves it would cross. Survey §6.
 - [ ] **DEDUP7 — text clipped, one-lined and quoted once** (driver, modules). `TextBounds` in `Platform/` for about 44 copies, each call keeping its own limit. Survey §7.
-- [ ] **DEDUP8 — the driver's HTTP verbs and downloads** (driver). `DriverHttp`'s three verbs as one send; one download wrapper and hash for `ToolInstall` and `ClaudeReleaseDownloads`. Survey §8.
-- [ ] **DEDUP9b — the service core's moments** (service; after 9a). A Core `Moments` for six private readers, about 35 parses (in the machine's culture or turned local) and 48 writers without the invariant culture; a test under another culture. Survey "Across projects".
-- [ ] **DEDUP9c — the service core's clipped text** (service; after 9b). One `Clip(text, limit)` for five copies and 46 calls; the word-boundary cuts (`TitleOf`, `Truncate`) stay theirs. Survey §7.
 
 ## Development and agent layout
 

@@ -86,9 +86,3 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
 
 /// <summary>A checkout Ask Daoris may read (D107): its repository, its workspace, and where it is.</summary>
 public sealed record HelpRead(string Name, string Workspace, string Path);
-
-public sealed partial record HelpMachine
-{
-    /// <summary>The checkouts it may read, by name; a path here is one reading across allows, and no other.</summary>
-    public IReadOnlyList<HelpRead> Reads { get; init; } = [];
-}

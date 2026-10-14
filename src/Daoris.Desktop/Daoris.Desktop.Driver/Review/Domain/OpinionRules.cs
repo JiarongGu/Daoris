@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -452,8 +453,6 @@ public static class OpinionRules
     public static OpinionEdit EditOf(JsonElement root)
     {
         if (root.ValueKind != JsonValueKind.Object) return new OpinionEdit();
-        static string? Text(JsonElement element, string name) =>
-            element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
         static bool? Flag(JsonElement element, string name) =>
             element.TryGetProperty(name, out var value) && value.ValueKind is JsonValueKind.True or JsonValueKind.False ? value.GetBoolean() : null;
 

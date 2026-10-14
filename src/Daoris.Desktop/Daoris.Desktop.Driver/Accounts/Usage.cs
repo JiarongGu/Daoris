@@ -142,16 +142,16 @@ public sealed class SessionUsage(string home)
     {
         if (row.ValueKind != JsonValueKind.Object) return null;
 
-        var session = Text(row, "session");
+        var session = Json.Text(row, "session");
         if (string.IsNullOrWhiteSpace(session)) return null;
 
         return new UsageEntry(
             session,
-            Text(row, "repository") ?? "",
-            Text(row, "harness") ?? "",
-            Text(row, "profile"),
-            Number(row, "used") ?? 0,
-            Number(row, "size") ?? 0,
+            Json.Text(row, "repository") ?? "",
+            Json.Text(row, "harness") ?? "",
+            Json.Text(row, "profile"),
+            Json.Long(row, "used") ?? 0,
+            Json.Long(row, "size") ?? 0,
             row.TryGetProperty("when", out var when) && when.TryGetDateTimeOffset(out var at)
                 ? at
                 : DateTimeOffset.MinValue);
@@ -184,16 +184,4 @@ public sealed class SessionUsage(string home)
 
         AtomicFile.WriteText(_path, System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n");
     }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
-
-    private static long? Number(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value)
-            && value.ValueKind == JsonValueKind.Number
-            && value.TryGetInt64(out var number)
-            ? number
-            : null;
 }

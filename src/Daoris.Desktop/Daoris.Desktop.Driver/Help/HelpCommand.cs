@@ -85,21 +85,21 @@ public static class HelpCommand
                 return ReadList([.. args.Skip(1)], out problem);
             case ["resume", ..]:
                 return ReadResume(args, out problem);
-            case ["rename", var id, "--clear"] when SessionEvents.IsId(id):
+            case ["rename", var id, "--clear"] when SessionEventText.IsId(id):
                 return new HelpVerbAsk("rename") { Id = id, Clear = true };
-            case ["rename", var id, _, ..] when SessionEvents.IsId(id) && words.Length > 0 && !args.Skip(2).Contains("--clear"):
+            case ["rename", var id, _, ..] when SessionEventText.IsId(id) && words.Length > 0 && !args.Skip(2).Contains("--clear"):
                 return new HelpVerbAsk("rename") { Id = id, Text = words };
             case ["rename", ..]:
                 problem = "`rename` takes one conversation's id, then its name, or `--clear`.";
                 return null;
-            case ["pin" or "unpin", var id] when SessionEvents.IsId(id):
+            case ["pin" or "unpin", var id] when SessionEventText.IsId(id):
                 return new HelpVerbAsk(args[0]) { Id = id };
             case ["pin" or "unpin", ..]:
                 problem = $"`{args[0]}` takes one conversation's id.";
                 return null;
-            case ["delete", var id] when SessionEvents.IsId(id):
+            case ["delete", var id] when SessionEventText.IsId(id):
                 return new HelpVerbAsk("delete") { Id = id };
-            case ["delete", var id, "--yes"] when SessionEvents.IsId(id):
+            case ["delete", var id, "--yes"] when SessionEventText.IsId(id):
                 return new HelpVerbAsk("delete") { Id = id, Yes = true };
             case ["delete", ..]:
                 problem = "`delete` takes one conversation's id, and `--yes` once you have read what it takes.";

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -136,15 +137,15 @@ public sealed class ClaudeStreamJson : IStreamMapper
 
         if (frame.ValueKind != JsonValueKind.Object) return new([line], []) { Outside = true };
 
-        return Str(frame, "type") switch
+        return Text(frame, "type") switch
         {
             "stream_event" => Stream(frame),
             "assistant" => Assistant(frame),
             "user" => User(frame),
             "result" => Result(frame),
             "control_response" => Control(frame),
-            "system" when Str(frame, "subtype") == "permission_denied" => Denied(frame),
-            "system" when Str(frame, "subtype") == "init" => Init(frame),
+            "system" when Text(frame, "subtype") == "permission_denied" => Denied(frame),
+            "system" when Text(frame, "subtype") == "init" => Init(frame),
             // The account's windows (TOOL6c, limit-signals evidence §1): handed on for the agent's table, and still not the
             // conversation, so neither a line nor an event.
             "rate_limit_event" => frame.TryGetProperty("rate_limit_info", out var info) && info.ValueKind == JsonValueKind.Object
@@ -154,7 +155,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
             "system" => StreamMapped.Nothing,
             var kind => new([], [new SessionEvent
             {
-                Kind = SessionEventKind.Raw, Title = kind ?? "frame", Raw = SessionEvents.Cut(line, SessionEvents.RawLimit),
+                Kind = SessionEventKind.Raw, Title = kind ?? "frame", Raw = SessionEventText.Cut(line, SessionEventText.RawLimit),
             }]),
         };
     }
@@ -162,7 +163,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
     /// <summary>The session's setup (ANSWER1a): its conversation's id kept, the first said, and nothing rendered, as before.</summary>
     private StreamMapped Init(JsonElement frame)
     {
-        if (Conversation is null && Str(frame, "session_id") is { Length: > 0 } id) Conversation = id;
+        if (Conversation is null && Text(frame, "session_id") is { Length: > 0 } id) Conversation = id;
         return StreamMapped.Nothing;
     }
 
@@ -170,16 +171,16 @@ public sealed class ClaudeStreamJson : IStreamMapper
     {
         if (!frame.TryGetProperty("event", out var e) || e.ValueKind != JsonValueKind.Object) return StreamMapped.Nothing;
 
-        switch (Str(e, "type"))
+        switch (Text(e, "type"))
         {
             case "message_start":
-                _message = e.TryGetProperty("message", out var m) && m.ValueKind == JsonValueKind.Object ? Str(m, "id") : null;
+                _message = e.TryGetProperty("message", out var m) && m.ValueKind == JsonValueKind.Object ? Text(m, "id") : null;
                 return StreamMapped.Nothing;
             case "content_block_delta" when e.TryGetProperty("delta", out var d) && d.ValueKind == JsonValueKind.Object:
-                var (kind, text) = Str(d, "type") switch
+                var (kind, text) = Text(d, "type") switch
                 {
-                    "text_delta" => (SessionEventKind.Message, Str(d, "text")),
-                    "thinking_delta" => (SessionEventKind.Thought, Str(d, "thinking")),
+                    "text_delta" => (SessionEventKind.Message, Text(d, "text")),
+                    "thinking_delta" => (SessionEventKind.Thought, Text(d, "thinking")),
                     _ => (null, null),
                 };
                 if (kind is null || string.IsNullOrEmpty(text)) return StreamMapped.Nothing;
@@ -197,22 +198,22 @@ public sealed class ClaudeStreamJson : IStreamMapper
             return StreamMapped.Nothing;
         }
 
-        var streamed = Str(message, "id") is { } id && _streamed.Contains(id);
+        var streamed = Text(message, "id") is { } id && _streamed.Contains(id);
         Measure(message);
 
         var lines = new List<string>();
         var events = new List<SessionEvent>();
         foreach (var block in Blocks(message))
         {
-            switch (Str(block, "type"))
+            switch (Text(block, "type"))
             {
-                case "text" when Str(block, "text") is { Length: > 0 } text:
+                case "text" when Text(block, "text") is { Length: > 0 } text:
                     lines.AddRange(text.Split('\n'));
-                    if (!streamed) events.Add(new SessionEvent { Kind = SessionEventKind.Message, Id = Str(message, "id"), Text = text });
+                    if (!streamed) events.Add(new SessionEvent { Kind = SessionEventKind.Message, Id = Text(message, "id"), Text = text });
                     break;
-                case "thinking" when Str(block, "thinking") is { Length: > 0 } thought:
+                case "thinking" when Text(block, "thinking") is { Length: > 0 } thought:
                     lines.Add($"· {FirstLine(thought)}");
-                    if (!streamed) events.Add(new SessionEvent { Kind = SessionEventKind.Thought, Id = Str(message, "id"), Text = thought });
+                    if (!streamed) events.Add(new SessionEvent { Kind = SessionEventKind.Thought, Id = Text(message, "id"), Text = thought });
                     break;
                 case "tool_use":
                     var call = ToolCall(block);
@@ -221,7 +222,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
                     if (call.Id is { } callId)
                     {
                         _titles[callId] = named;
-                        if (Str(block, "name") is { } tool) _names[callId] = tool;
+                        if (Text(block, "name") is { } tool) _names[callId] = tool;
                     }
 
                     lines.Add($"→ {named}");
@@ -234,7 +235,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
                     events.Add(new SessionEvent
                     {
                         Kind = SessionEventKind.Raw, Title = other,
-                        Raw = SessionEvents.Cut(block.GetRawText(), SessionEvents.RawLimit),
+                        Raw = SessionEventText.Cut(block.GetRawText(), SessionEventText.RawLimit),
                     });
                     break;
             }
@@ -254,9 +255,9 @@ public sealed class ClaudeStreamJson : IStreamMapper
         var events = new List<SessionEvent>();
         foreach (var block in Blocks(message))
         {
-            if (Str(block, "type") != "tool_result") continue;
+            if (Text(block, "type") != "tool_result") continue;
             var failed = block.TryGetProperty("is_error", out var error) && error.ValueKind == JsonValueKind.True;
-            var id = Str(block, "tool_use_id");
+            var id = Text(block, "tool_use_id");
             // A call the harness denied fails on the wire; the record says what happened to it (HELP4's twin),
             // and the console, the raw view, keeps the wire's word.
             var status = !failed ? "completed" : id is not null && _refused.Contains(id) ? "refused" : "failed";
@@ -278,10 +279,10 @@ public sealed class ClaudeStreamJson : IStreamMapper
     private StreamMapped Result(JsonElement frame)
     {
         var failed = frame.TryGetProperty("is_error", out var error) && error.ValueKind == JsonValueKind.True;
-        var subtype = Str(frame, "subtype") ?? "unknown";
+        var subtype = Text(frame, "subtype") ?? "unknown";
         // 🔴 A turn the person stopped is `error_during_execution` on this wire, and only its terminal
         // reason says it was stopped rather than broken — the two the probe measured (CONV4a).
-        var stopped = Str(frame, "terminal_reason") is "aborted_streaming" or "aborted_tools";
+        var stopped = Text(frame, "terminal_reason") is "aborted_streaming" or "aborted_tools";
         var lines = new List<string>();
         var events = new List<SessionEvent>();
 
@@ -304,7 +305,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
 
         // A failure's words reach the transcript for the person, and the capture as the harness's own (AGT3c): a refused
         // credential is read from them there, never from the transcript, whose last lines may be the agent's words.
-        var failure = !stopped && failed && Str(frame, "result") is { Length: > 0 } why ? why : null;
+        var failure = !stopped && failed && Text(frame, "result") is { Length: > 0 } why ? why : null;
         lines.Add(stopped
             ? "— the turn was stopped"
             : failure is not null
@@ -331,7 +332,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
     {
         var lines = new List<string>();
         var events = new List<SessionEvent>();
-        Refuse(frame, Str(frame, "decision_reason_type"), lines, events);
+        Refuse(frame, Text(frame, "decision_reason_type"), lines, events);
         return new(lines, events);
     }
 
@@ -346,9 +347,9 @@ public sealed class ClaudeStreamJson : IStreamMapper
     /// </remarks>
     private void Refuse(JsonElement denial, string? by, List<string> lines, List<SessionEvent> events)
     {
-        if (Str(denial, "tool_use_id") is not { } id || !_refused.Add(id)) return;
+        if (Text(denial, "tool_use_id") is not { } id || !_refused.Add(id)) return;
 
-        var tool = Str(denial, "tool_name") ?? _names.GetValueOrDefault(id);
+        var tool = Text(denial, "tool_name") ?? _names.GetValueOrDefault(id);
         var known = _titles.TryGetValue(id, out var title);
         lines.Add($"  permission refused: {(known ? title : AcpSession.OneLine(tool ?? "a tool"))}{(by is null ? "" : $" ({by})")}");
         if (!known) return;
@@ -372,12 +373,12 @@ public sealed class ClaudeStreamJson : IStreamMapper
     private static StreamMapped Control(JsonElement frame)
     {
         if (!frame.TryGetProperty("response", out var response) || response.ValueKind != JsonValueKind.Object
-            || Str(response, "subtype") != "error")
+            || Text(response, "subtype") != "error")
         {
             return StreamMapped.Nothing;
         }
 
-        return new([$"— the agent refused a control request: {Str(response, "error") ?? "it gave no reason"}"], []);
+        return new([$"— the agent refused a control request: {Text(response, "error") ?? "it gave no reason"}"], []);
     }
 
     /// <summary>The last assistant message's context: its input, cache-creation and cache-read tokens.</summary>
@@ -403,29 +404,29 @@ public sealed class ClaudeStreamJson : IStreamMapper
 
     private static SessionEvent ToolCall(JsonElement block)
     {
-        var name = Str(block, "name") ?? "tool";
+        var name = Text(block, "name") ?? "tool";
         var input = block.TryGetProperty("input", out var i) && i.ValueKind == JsonValueKind.Object ? i : default;
         var path = input.ValueKind == JsonValueKind.Object
-            ? Str(input, "file_path") ?? Str(input, "notebook_path") ?? Str(input, "path")
+            ? Text(input, "file_path") ?? Text(input, "notebook_path") ?? Text(input, "path")
             : null;
 
         return new SessionEvent
         {
             Kind = SessionEventKind.Tool,
-            Id = Str(block, "id"),
+            Id = Text(block, "id"),
             Title = Title(name, input, path),
             ToolKind = KindOf(name),
             Status = "in_progress",
             Locations = path is null ? null : [path],
             Content = Diffs(name, input, path),
-            Input = input.ValueKind == JsonValueKind.Object ? SessionEvents.Cut(input.GetRawText(), SessionEvents.RawLimit) : null,
+            Input = input.ValueKind == JsonValueKind.Object ? SessionEventText.Cut(input.GetRawText(), SessionEventText.RawLimit) : null,
         };
     }
 
     /// <summary>A tool's title from its own input — what it acted on, in the tool's own terms.</summary>
     private static string Title(string name, JsonElement input, string? path)
     {
-        string? Field(string field) => input.ValueKind == JsonValueKind.Object ? Str(input, field) : null;
+        string? Field(string field) => input.ValueKind == JsonValueKind.Object ? Text(input, field) : null;
         var said = name switch
         {
             "Read" or "Edit" or "MultiEdit" or "Write" or "NotebookEdit" when path is not null =>
@@ -463,13 +464,13 @@ public sealed class ClaudeStreamJson : IStreamMapper
         switch (name)
         {
             case "Edit":
-                return [new ToolContent("diff", Path: path, OldText: Str(input, "old_string"), NewText: Str(input, "new_string"))];
+                return [new ToolContent("diff", Path: path, OldText: Text(input, "old_string"), NewText: Text(input, "new_string"))];
             case "Write":
-                return [new ToolContent("diff", Path: path, NewText: Str(input, "content"))];
+                return [new ToolContent("diff", Path: path, NewText: Text(input, "content"))];
             case "MultiEdit" when input.TryGetProperty("edits", out var edits) && edits.ValueKind == JsonValueKind.Array:
                 return [.. edits.EnumerateArray()
                     .Where(edit => edit.ValueKind == JsonValueKind.Object)
-                    .Select(edit => new ToolContent("diff", Path: path, OldText: Str(edit, "old_string"), NewText: Str(edit, "new_string")))];
+                    .Select(edit => new ToolContent("diff", Path: path, OldText: Text(edit, "old_string"), NewText: Text(edit, "new_string")))];
             default:
                 return null;
         }
@@ -478,7 +479,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
     /// <summary>The harness's to-do list as the plan: it is the one it keeps.</summary>
     private static SessionEvent? Plan(JsonElement block)
     {
-        if (Str(block, "name") != "TodoWrite"
+        if (Text(block, "name") != "TodoWrite"
             || !block.TryGetProperty("input", out var input) || input.ValueKind != JsonValueKind.Object
             || !input.TryGetProperty("todos", out var todos) || todos.ValueKind != JsonValueKind.Array)
         {
@@ -489,8 +490,8 @@ public sealed class ClaudeStreamJson : IStreamMapper
         {
             Kind = SessionEventKind.Plan,
             Entries = [.. todos.EnumerateArray()
-                .Where(todo => todo.ValueKind == JsonValueKind.Object && Str(todo, "content") is not null)
-                .Select(todo => new PlanEntry(Str(todo, "content")!, Str(todo, "status")))],
+                .Where(todo => todo.ValueKind == JsonValueKind.Object && Text(todo, "content") is not null)
+                .Select(todo => new PlanEntry(Text(todo, "content")!, Text(todo, "status")))],
         };
     }
 
@@ -502,8 +503,8 @@ public sealed class ClaudeStreamJson : IStreamMapper
         {
             JsonValueKind.String => content.GetString(),
             JsonValueKind.Array => string.Join("\n", content.EnumerateArray()
-                .Where(part => part.ValueKind == JsonValueKind.Object && Str(part, "type") == "text")
-                .Select(part => Str(part, "text"))
+                .Where(part => part.ValueKind == JsonValueKind.Object && Text(part, "type") == "text")
+                .Select(part => Text(part, "text"))
                 .OfType<string>()),
             _ => null,
         };
@@ -515,12 +516,4 @@ public sealed class ClaudeStreamJson : IStreamMapper
             : [];
 
     private static string FirstLine(string text) => text.Trim().Split('\n', 2)[0];
-
-    private static string? Str(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
-
-    private static long? Long(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var n)
-            ? n
-            : null;
 }

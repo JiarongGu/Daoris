@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -69,9 +71,9 @@ public sealed record ToolResolution(string Tool, ToolWay? Way, string? Version, 
 /// <para>Then the resolution: the way set decides which file starts. A managed version nobody downloaded, or
 /// a named file that is gone, refuses and <b>never</b> falls back to <c>PATH</c> (D57's pin rule, read for a
 /// tool). It reads and writes files and answers "which program"; handing that answer to every start is
-/// <c>Tools.Children.cs</c>'s (TOOLS5).</para>
+/// the Children section's at the end of this file (TOOLS5).</para>
 /// </remarks>
-public static partial class Tools
+public static class Tools
 {
     /// <summary>The file under the home. The CLI's <c>TOOLS_FILE</c>.</summary>
     public const string FileName = "tools.json";
@@ -257,8 +259,7 @@ public static partial class Tools
     /// <c>..</c> part, and no <c>\</c> or drive. A record's <c>exe</c> (§3.6) and a list's <c>exe</c> and
     /// <c>paths</c> (§3.2). The CLI's <c>isInsidePath</c>.
     /// </summary>
-    public static bool IsInside(string path) =>
-        path.Length > 0 && path.IndexOfAny(['\\', ':']) < 0 && path.Split('/').All(part => part is not ("" or "." or ".."));
+    public static bool IsInside(string path) => SafeNames.IsRepositoryPath(path);
 
     /// <summary>An exact version: one to four numbers (§3.2), in <c>tools.json</c> and in a resource list alike.</summary>
     public static bool IsExactVersion(string version) => ExactVersion.IsMatch(version);
@@ -544,9 +545,6 @@ public static partial class Tools
         return parsed is JsonObject root ? (root, null) : (null, $"{path} is not a JSON object");
     }
 
-    private static string? Text(JsonNode? node) =>
-        node is JsonValue value && value.GetValueKind() == JsonValueKind.String ? value.GetValue<string>() : null;
-
     /// <summary>Two-space indent, LF, and text left as text: the CLI's <c>JSON.stringify(value, null, 2)</c>.</summary>
     private static readonly JsonSerializerOptions Written = new()
     {
@@ -554,4 +552,166 @@ public static partial class Tools
         NewLine = "\n",
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
+
+    // ---- Children (TOOLS5, D121; docs/2026-10-01-tools-design.md §2.4) ----
+    // One answer for Daoris and every child: the file a command's first word starts, and the environment every process
+    // the driver and the modules start is handed. A TWIN of the CLI's tools.ts (toolFolders, childPath, childEnvironment,
+    // resolveCommand): ToolsChildrenTests here and tools-children.test.ts there hold the same tables, row for row.
+    // - A child's PATH is the folders of each tool that is managed or a named file, in the declared order, then the PATH
+    //   it inherited. With every tool the system's the environment is the inherited one exactly: no variable is set.
+    // - A command's first word that a tool answers for is that tool's: its own name is the resolved file; another it
+    //   answers for (npm, npx) is found beside it, by PATHEXT, and never on PATH when the tool is managed or a file.
+    // - Read from the file at each start, and never written onto this process's own environment: a variable rewritten
+    //   while sessions start is the trap the modules' serialized tests already know (§2.4).
+    // - An install's app/bin/ beside the home comes first of all (WSSETUP3, D124 §1.3): the doctrine tool's launchers,
+    //   so every child finds daoris by its bare name. A home with no install beside it builds what it built before.
+    // GIT_CONFIG_GLOBAL, the other variable §2.4 names, is TOOLS6's: it joins ChildEnvironment with the git file it names.
+
+    /// <summary>The variable a child's <c>PATH</c> is. Windows reads it in any case, and a start's environment there is case-blind.</summary>
+    public const string PathVariable = "PATH";
+
+    /// <summary>
+    /// Where an install carries the doctrine tool's launchers, from its root (D124 §1.2, WSSETUP2): beside the
+    /// application, in <c>app/</c>. Twins: the CLI's <c>INSTALL_BIN</c>, the publish's <c>CLI_BIN</c>, which lays them
+    /// out; <c>desktop-publish.test.ts</c> reads all three.
+    /// </summary>
+    public static readonly IReadOnlyList<string> InstallBinLayout = ["app", "bin"];
+
+    /// <summary>
+    /// The install's launchers' folder beside the home, where it is a folder: in an install the home is <c>data/</c>,
+    /// its sibling <c>app/bin/</c>. Null for a home with no install beside it, and for an <c>app/bin</c> that is not a
+    /// folder.
+    /// </summary>
+    public static string? InstallBin(string home)
+    {
+        var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(home));
+        var bin = Path.Combine([Path.GetDirectoryName(full) ?? full, .. InstallBinLayout]);
+        return Directory.Exists(bin) ? bin : null;
+    }
+
+    /// <summary>
+    /// The folders one tool puts first on a child's <c>PATH</c> (§2.4): a managed version's, or a named file's; none
+    /// for the system's, and none for a way that refuses.
+    /// </summary>
+    /// <exception cref="DriverException">A tool this build does not declare.</exception>
+    public static IReadOnlyList<string> Folders(ToolsRead read, string home, string tool)
+    {
+        var declared = Find(tool) ?? throw new DriverException(Undeclared(tool));
+        var entry = read.Entries[tool];
+        if (entry.Problem is not null) return [];
+
+        if (entry.Way == ToolWay.File) return File.Exists(entry.File) ? [Path.GetDirectoryName(entry.File)!] : [];
+        if (entry.Way != ToolWay.Managed) return [];
+
+        var (file, _) = ManagedFile(home, declared, entry.Version!);
+        if (file is null) return [];
+
+        var version = Path.Combine(home, Folder, tool, entry.Version!);
+        var package = Path.Combine(version, Package);
+        return [.. RecordPaths(Path.Combine(version, Record)).Select(path => path == "." ? package : Path.Combine([package, .. path.Split('/')]))];
+    }
+
+    /// <summary>
+    /// The <c>PATH</c> a child of Daoris starts with (§2.4): the install's launchers beside the home where there is one
+    /// (<see cref="InstallBin"/>), then every managed or named tool's folders, in the declared order, then
+    /// <paramref name="inherited"/>. Null when nothing puts a folder there, so the child's is the inherited one exactly.
+    /// An empty inherited <c>PATH</c> adds no empty folder.
+    /// </summary>
+    public static string? ChildPath(ToolsRead read, string home, string? inherited)
+    {
+        List<string> folders = [.. InstallBin(home) is { } bin ? [bin] : Array.Empty<string>(), .. Declared.SelectMany(tool => Folders(read, home, tool.Id))];
+        if (folders.Count == 0) return null;
+        if (!string.IsNullOrEmpty(inherited)) folders.Add(inherited);
+        return string.Join(Path.PathSeparator, folders);
+    }
+
+    /// <summary>
+    /// What a child's environment takes over the one it inherited (§2.4): <see cref="PathVariable"/> when the install or
+    /// a tool puts a folder first, and nothing when there is no install beside the home and every tool is the system's.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> ChildEnvironment(ToolsRead read, string home, string? inheritedPath)
+    {
+        var variables = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (ChildPath(read, home, inheritedPath) is { } path) variables[PathVariable] = path;
+        return variables;
+    }
+
+    /// <summary>
+    /// Hand a start the tools' environment, read now from <c>$DAORIS_HOME</c>'s file (D63's one seam), over the
+    /// <c>PATH</c> the start holds. A process with no home changes nothing.
+    /// </summary>
+    public static void Hand(ProcessStartInfo info) => Hand(info, DaorisHome.Resolve());
+
+    /// <summary>Hand a start the tools' environment, read now from <paramref name="home"/>'s file; null changes nothing.</summary>
+    public static void Hand(ProcessStartInfo info, string? home)
+    {
+        if (home is null) return;
+        Hand(info, Read(home), home);
+    }
+
+    /// <summary>Hand a start the tools' environment from a read the caller already holds.</summary>
+    public static void Hand(ProcessStartInfo info, ToolsRead read, string home)
+    {
+        var inherited = info.Environment.TryGetValue(PathVariable, out var path) ? path : null;
+        foreach (var (name, value) in ChildEnvironment(read, home, inherited)) info.Environment[name] = value;
+    }
+
+    /// <summary>
+    /// Which file starts for a command's first word (§2.4), or null when no tool answers for it and the caller's own
+    /// resolver decides. The tool's own name is <see cref="Resolve(ToolsRead, string, string, string?)"/>'s answer;
+    /// another name it answers for is found beside the tool's file, by PATHEXT, and a managed or named tool never
+    /// lends <c>PATH</c>'s.
+    /// </summary>
+    /// <param name="path">The <c>PATH</c> the system's tool is found on; null for this process's own.</param>
+    public static ToolResolution? ResolveCommand(ToolsRead read, string home, string name, string? path = null)
+    {
+        var declared = Declared.FirstOrDefault(tool => tool.Answers.Contains(name, StringComparer.Ordinal));
+        if (declared is null) return null;
+
+        var resolution = Resolve(read, home, declared.Id, path);
+        if (name == declared.Answers[0] || resolution.Refused) return resolution;
+
+        if (resolution.Way == ToolWay.System)
+        {
+            var found = CommandPresence.Resolve(name, path, startable: true);
+            return found is not null
+                ? resolution with { File = found, Problem = null }
+                : resolution with
+                {
+                    File = null,
+                    Problem = $"`{name}` is not on this machine's PATH. {declared.Name} is run as the system's, managed, or from a "
+                        + $"file you name: `daoris tool use {declared.Id} file <path>` names one",
+                };
+        }
+
+        var folders = Folders(read, home, declared.Id);
+        var beside = CommandPresence.Resolve(name, string.Join(Path.PathSeparator, folders), startable: true);
+        return beside is not null
+            ? resolution with { File = beside }
+            : resolution with
+            {
+                File = null,
+                Refused = true,
+                Problem = $"`{name}` is not beside {declared.Name}'s own file ({resolution.File}) — {Never}. "
+                    + $"`daoris tool use {declared.Id} system` runs the one on PATH",
+            };
+    }
+
+    /// <summary>
+    /// A downloaded version's folders for <c>PATH</c>, from its record: its <c>paths</c> when they are a list of
+    /// folders inside the package, else the folder its <c>exe</c> is in (§3.2's default, which TOOLS4 writes out).
+    /// </summary>
+    private static IReadOnlyList<string> RecordPaths(string record)
+    {
+        var (value, _) = Load(record);
+        if (value?["paths"] is JsonArray named && named.Count > 0
+            && named.Select(Text).All(path => path is not null && (path == "." || IsInside(path))))
+        {
+            return [.. named.Select(path => Text(path)!)];
+        }
+
+        var exe = Text(value?["exe"]) ?? "";
+        var at = exe.LastIndexOf('/');
+        return [at < 0 ? "." : exe[..at]];
+    }
 }

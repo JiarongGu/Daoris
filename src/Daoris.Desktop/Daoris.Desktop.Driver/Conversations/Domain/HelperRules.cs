@@ -203,8 +203,6 @@ public static class HelperRules
     public static HelperEdit EditOf(JsonElement root)
     {
         if (root.ValueKind != JsonValueKind.Object) return new HelperEdit();
-        static string? Text(JsonElement element, string name) =>
-            element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
         HelperSet? set = null;
         if (root.TryGetProperty("set", out var given) && given.ValueKind == JsonValueKind.Object)
@@ -221,8 +219,8 @@ public static class HelperRules
 
         return new HelperEdit
         {
-            Repository = Text(root, "repository"),
-            Workspace = Text(root, "workspace"),
+            Repository = Json.Text(root, "repository"),
+            Workspace = Json.Text(root, "workspace"),
             Set = set,
             Clear = root.TryGetProperty("clear", out var clear) && clear.ValueKind == JsonValueKind.True,
         };

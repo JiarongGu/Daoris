@@ -46,7 +46,7 @@ Beside it, `Accounts/Domain/SwitchDecision.cs` (SWITCH1c-i) says whether a runni
 (`off`, no number, room, held thirty minutes after a curve move, or no account with room), reads the others first, or moves
 to the ready account with the most room, at least ten points under its curve on every window. The hand-over box takes
 `curve`, and `HandOverNotes.Moved` and `MovedFrom` (`chat.moved`, `chat.moved-from`) say a move at both ends, naming the
-accounts. The chat runner asks it (SWITCH1c-ii, `Conversations/ChatRunner.Curve.cs`): at a conversation's turn's end, judged
+accounts. The chat runner asks it (SWITCH1c-ii, `Conversations/Chat/ChatRunner.Curve.cs`): at a conversation's turn's end, judged
 once with nothing running, opening or queued and no hand-over waiting, from its record's account, agent and workspace (the
 hold counted from its `created` where it continues another by the curve); the others are read where it says so, through the
 roster's `ReadUsageAsync` (the walk's floor, cooling, signed-out, key and busy skips), and asked again; a move asks the
@@ -99,18 +99,23 @@ which reads the service in `ReadAsync`) and the intake's records, prompt and obs
 check, the intake's kinds, the park reader, the git read of a done's evidence (which names `WorkingTree`'s git read directly) and
 `IntakeRoom`, which makes the room's folder and writes its files, sit at the module's top.
 
-The comments in these six modules that still say Application or Infrastructure, and the extension blocks, forwards and ports
-the layering needed, are FLAT1b's to fold back.
+The extension blocks, forwards and ports the layering needed are folded back in all six modules and in Sessions (FLAT1b).
 
 `Sessions/` keeps the onion for its model and rules alone (STRUCT3g-i, D166's STRUCT3g-i note); its `Domain/` holds the session events' records
 and rules (`SessionEvents.cs`, with `SessionEventText`'s bounds, id rule and cuts), the trace's records and chain (`Trace.Chain.cs`,
 which reads its stores through `TraceHere`'s values), the pause, abandon, delete, archive and history plans and words, and the
-observation rules. Its stores and use cases sit at the module's top.
+observation rules. Its stores and use cases sit in scope folders (SCOPE1d): `Work/` (pause, abandon and their records), `Requests/`
+(the session requests, their watch and the moves), `History/` (clearing, its bytes and home files, archive and deletion), `Trace/`
+(the trace, its command and reads) and `Events/` (the event log, the session log and last words); `RunningSessions`,
+`SessionProcesses`, `SessionsCommand` and `HarnessEnding` (the loop's too) stay at the top. Review, with fifteen files at its top, stays flat.
 
 `Conversations/` keeps the onion for its model and rules alone (STRUCT3h, D166's STRUCT3h note): `Domain/` holds a
 conversation's pure records, rules and words (the message, the resume's judgement and its reasons, the hand-over's codes,
 briefing and notes, the helpers' asks, rules, words and judge, the turns' and the inbox's records, the go-on records); the chat
-runner, the use cases, the stores and their files sit at the module's top.
+runner, the use cases, the stores and their files sit in scope folders (SCOPE1c): `Chat/` (the chat runner and its parts, the
+turns, the chat files, the start requests), `GoOn/` (going on: marks, files, the new-session choice, the harness's own
+conversations, the continuation judge, the say), `HandOver/` and `Helpers/`; `ConversationTrees`, `DrivenInbox` and
+`TranscriptFile` stay at the top, named by several scopes.
 
 ## What the page can ask this machine
 
@@ -255,7 +260,8 @@ asks, the landing's start (`HookChannels`), the log writer and the terminal's co
 `CheckRunner`. `PluginCatalog.Load`, `PluginIcon.Read` and `PluginSource.Read` are ordinary static members of their types (FLAT1b-i folded
 the extension blocks back): each calls `PluginFolders` for the I/O, so the type stays in `Domain/` and names no I/O token itself.
 Callers name a health state or a reading of the log through `PluginHealthRules`, and a package's type, root and extension
-through `PluginPackageRules`, where they are declared.
+through `PluginPackageRules`, where they are declared. With about twenty files at its top the module stays flat (SCOPE1c: no
+scope folders); the hooks, the kit, the package and the page are the groups to cut along if it grows.
 
 **The kit a plugin is made with** (PLUG8, D101, the plugin design's §9) is the driver library's
 `PluginKit`: `daoris-driver plugins new <id> --point <p>… [--in <folder>]` writes a plugin's folder

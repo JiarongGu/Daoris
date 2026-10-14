@@ -292,40 +292,42 @@ public static class RuleProposals
         try
         {
             if (JsonNode.Parse(File.ReadAllText(path)) is not JsonObject root) return null;
-            if (Text(root["id"]) is not { } id || root["change"] is not JsonObject change) return null;
+            if (Json.Trimmed(root["id"]) is not { } id || root["change"] is not JsonObject change) return null;
 
             var by = root["by"] as JsonObject;
             var settled = root["settled"] as JsonObject;
             return new RuleProposal(
                 id,
-                DateTimeOffset.TryParse(Text(root["proposed"]), out var proposed) ? proposed : File.GetLastWriteTimeUtc(path),
-                Text(by?["session"]),
-                Text(by?["ask"]),
+                DateTimeOffset.TryParse(Json.Trimmed(root["proposed"]), out var proposed) ? proposed : File.GetLastWriteTimeUtc(path),
+                Json.Trimmed(by?["session"]),
+                Json.Trimmed(by?["ask"]),
                 new ProposedChange(
-                    Text(change["action"]) ?? "",
-                    Text(change["scope"]) switch
+                    Json.Trimmed(change["action"]) ?? "",
+                    Json.Trimmed(change["scope"]) switch
                     {
                         "workspace" => RuleScope.Workspace,
                         "repository" => RuleScope.Repository,
                         _ => RuleScope.Machine,
                     },
-                    Text(change["name"]),
-                    Text(change["list"]) switch
+                    Json.Trimmed(change["name"]),
+                    Json.Trimmed(change["list"]) switch
                     {
                         "allow" => RuleList.Allow,
                         "ask" => RuleList.Ask,
                         "deny" => RuleList.Deny,
                         _ => null,
                     },
-                    Text(change["rule"]),
-                    Text(change["default"]),
+                    Json.Trimmed(change["rule"]),
+                    Json.Trimmed(change["default"]),
                     change["on"] is JsonValue on && on.TryGetValue<bool>(out var value) ? value : null),
-                Text(root["why"]) ?? "",
-                Enum.TryParse<ProposalState>(Text(root["state"]), ignoreCase: true, out var state) ? state : ProposalState.Proposed)
+                Json.Trimmed(root["why"]) ?? "",
+                Enum.TryParse<ProposalState>(Json.Trimmed(root["state"]), ignoreCase: true, out var state)
+                    ? state
+                    : ProposalState.Proposed)
             {
-                Settled = DateTimeOffset.TryParse(Text(settled?["at"]), out var at) ? at : null,
-                SettledBy = Text(settled?["by"]),
-                Note = Text(settled?["note"]),
+                Settled = DateTimeOffset.TryParse(Json.Trimmed(settled?["at"]), out var at) ? at : null,
+                SettledBy = Json.Trimmed(settled?["by"]),
+                Note = Json.Trimmed(settled?["note"]),
             };
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
@@ -343,9 +345,4 @@ public static class RuleProposals
 
         AtomicFile.WriteText(path, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n");
     }
-
-    private static string? Text(JsonNode? node) =>
-        node is JsonValue value && value.TryGetValue<string>(out var text) && !string.IsNullOrWhiteSpace(text)
-            ? text.Trim()
-            : null;
 }

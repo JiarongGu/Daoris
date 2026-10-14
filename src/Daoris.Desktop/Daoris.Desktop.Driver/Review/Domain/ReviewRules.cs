@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using static Daoris.Driver.Json;
 using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
@@ -114,7 +115,6 @@ public static class ReviewRules
     private const string NoneWorkspace = "`none` is a repository's: a workspace with no review environment sets none, and `--clear` takes its rule away.";
     private const string NoneHere = "No review environment here, whatever its workspace says: work is offered to land once its quest is done.";
 
-    private static readonly Regex NameShape = new(@"^[a-z0-9]+(?:-[a-z0-9]+)*\z", RegexOptions.CultureInvariant);
 
     private static readonly Regex AddressShape = new(
         @"^https?://(?:\[[0-9A-Fa-f:.]+\]|[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)*)(?::([0-9]{1,5}))?/?\z",
@@ -199,7 +199,7 @@ public static class ReviewRules
     public static string? NameProblem(string? name)
     {
         if (name is null || name.Trim().Length == 0) return $"an environment is named: {NameRule}";
-        if (!NameShape.IsMatch(name) || name.Length > 32) return $"`{name}` is not an environment's name — {NameRule}";
+        if (!SafeNames.IsKebabId(name) || name.Length > 32) return $"`{name}` is not an environment's name — {NameRule}";
         if (name == "none") return "`none` says a repository has no review environment, so no environment is named it.";
         return ReadsAsProduction(name)
             ? $"`{name}` reads as production, and production is never a review environment — name where work is looked at "
@@ -214,12 +214,7 @@ public static class ReviewRules
     /// A path a procedure may be (design §1.1, as KNOWUSE1c names a router): from the repository's root, with forward slashes,
     /// no space around it, and no <c>..</c>, <c>.</c>, empty part, root, drive or control character.
     /// </summary>
-    internal static bool IsProcedurePath(string path)
-    {
-        if (path != path.Trim() || path.StartsWith('/') || path.Contains('\\') || path.Contains(':')) return false;
-        if (path.Any(c => c < 0x20 || c == '\u007f')) return false;
-        return path.Split('/').All(part => part.Length > 0 && part is not "." and not "..");
-    }
+    internal static bool IsProcedurePath(string path) => path == path.Trim() && SafeNames.IsRepositoryPath(path);
 
     /// <summary>An absolute <c>http</c> or <c>https</c> origin: a host or a bracketed IPv6 address, a port from 1 to 65535, nothing after but one <c>/</c>.</summary>
     private static bool IsAddress(string address)
@@ -234,9 +229,6 @@ public static class ReviewRules
         environment.Name!, environment.Kind!, environment.Procedure!,
         environment.Address is { } address && address.EndsWith('/') ? address[..^1] : environment.Address,
         environment.Run);
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
     /// <summary>
     /// A map of review rules as <c>driver.json</c> holds it: each name trimmed, a blank one not read; a rule with a problem,
