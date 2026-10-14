@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { VIEWS } from '../commands';
-import { askItem } from '../opener';
+import { VIEWS } from '../menus/commands';
+import { askItem } from '../app/opener';
 import { offerItem } from '../plugins/catalog';
-import { SETTINGS_SECTIONS } from '../SettingsView';
+import { SETTINGS_SECTIONS } from '../settings/SettingsView';
 import { PLACE_DOMAINS, PLACE_ITEM_VIEWS, PLACE_KEPT, PLACE_PARTS, PLACE_VIEWS, placeDoor, type HelpPlace } from './places';
 
 // HELP6: the places Ask Daoris's go may name. A twin (`.claude/knowledge/twins.md`) of the driver's

@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
-import { keys } from '../queries';
-import type { AccountWaitTick, Consideration, TrustHold } from '../signals';
+import { keys } from '../data/queries';
+import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
 import type { CommitRule } from '../settings/Commits';
 import type { HelperRule } from '../settings/Helpers';
 import type { LandingRule } from '../settings/Landings';

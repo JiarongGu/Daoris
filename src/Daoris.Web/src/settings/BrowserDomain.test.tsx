@@ -20,7 +20,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import { SettingsView } from '../SettingsView';
+import { SettingsView } from './SettingsView';
 import { code } from '../test/code';
 import { DRIVER_STATE, respond, serviceCalls, show } from '../test/shellHarness';
 

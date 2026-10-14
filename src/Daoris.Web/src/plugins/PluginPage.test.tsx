@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { act, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import '../i18n';
+import '../locales/i18n';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
 import { code } from '../test/code';
@@ -158,7 +158,7 @@ describe("a plugin's page", () => {
    * acts are 停用 and 启用, and its off state 已停用; the English pair stays *Turn off* and *Turn on*.
    */
   it('names its switch in 中文 by what it does to the plugin, never by close', async () => {
-    const { default: i18n } = await import('../i18n');
+    const { default: i18n } = await import('../locales/i18n');
     await i18n.changeLanguage('zh');
     try {
       const { unmount } = page();

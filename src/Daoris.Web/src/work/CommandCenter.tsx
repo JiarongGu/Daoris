@@ -1,4 +1,4 @@
-import { Icon } from '../ui';
+import { Icon } from '../design/ui';
 import { cn } from '../lib/cn';
 
 /**

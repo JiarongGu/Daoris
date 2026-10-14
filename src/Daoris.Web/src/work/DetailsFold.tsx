@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Icon } from '../ui';
+import { Icon } from '../design/ui';
 import { cn } from '../lib/cn';
 
 /** One fact a record's *Details* holds: its name, its value (absent values are left out), and whether it is copied. */

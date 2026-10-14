@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getBridge, useShenora } from '@shenora/react';
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 
 // Which deployment serves each workspace here (MOD3): the machine's wiring, over `remotes.json`.
 

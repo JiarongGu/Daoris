@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { getBridge, useShenora } from '@shenora/react';
-import { effectiveDark, subscribeTheme } from '../theme';
+import { effectiveDark, subscribeTheme } from '../design/theme';
 
 // This build's secondary windows (MOD3): opening one, and telling its frame the theme.
 

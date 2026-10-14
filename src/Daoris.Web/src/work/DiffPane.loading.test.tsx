@@ -3,7 +3,7 @@ import { act, render, renderHook, screen, waitFor } from '@testing-library/react
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 
 // REVIEW4: the review while git reads, over a slow mocked bridge. Its frame and skeleton stand at once and the words
 // say for how long after a moment; each refusal is worded with the person's next move; an ended session's second open
@@ -19,9 +19,9 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => {},
 }));
 
-import '../i18n';
-import { keys } from '../queries';
-import { useDiscardSessionBranch, useSweep, useTreesSync } from '../shell';
+import '../locales/i18n';
+import { keys } from '../data/queries';
+import { useDiscardSessionBranch, useSweep, useTreesSync } from '../bridge/shell';
 import { DiffPane } from './DiffPane';
 
 const ENDED: Session = {

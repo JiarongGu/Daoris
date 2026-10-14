@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { Session } from '../api';
-import { VIEWS } from '../commands';
+import type { Session } from '../data/api';
+import { VIEWS } from '../menus/commands';
 import type { KnowledgeMode } from '../knowledge/modes';
 import { en } from '../locales';
 import { PLACE_DOMAINS, PLACE_PARTS } from './places';

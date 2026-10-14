@@ -1,4 +1,4 @@
-import type { CommandEntry, MenuId } from '../commands';
+import type { CommandEntry, MenuId } from '../menus/commands';
 import type { MenuItem } from './AppMenu';
 
 /**

@@ -1,6 +1,6 @@
 import type { useTranslation } from 'react-i18next';
 import { accountName } from '../agents/agents';
-import { type AccountNamer, byTool, type ToolDoor } from '../tools';
+import { type AccountNamer, byTool, type ToolDoor } from '../agents/tools';
 
 /**
  * What a person calls an account, looked up on the TOOL, because a door's accounts are its owner's (AGT7). One copy, for

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { Quest, Session } from '../api';
-import { MonoWell } from '../ui';
+import type { Quest, Session } from '../data/api';
+import { MonoWell } from '../design/ui';
 import { StreamTile } from './StreamTile';
 
 // The monitor's unit, in every state it has (SURF8). A tile is a molecule, so each of these is

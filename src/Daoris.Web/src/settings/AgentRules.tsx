@@ -2,7 +2,7 @@ import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Button, Card, CheckField, Icon, Inline, PathText, Pill, Prose, SectionTitle, SelectField, SettingRow,
-} from '../ui';
+} from '../design/ui';
 import { OPEN_STATES, proposalAuthor, proposalChange } from './proposals';
 
 export type RuleListName = 'allow' | 'ask' | 'deny';

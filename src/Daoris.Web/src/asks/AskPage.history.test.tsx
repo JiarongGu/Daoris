@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { act, render as rtlRender, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import type { Ask } from '../api';
+import type { Ask } from '../data/api';
 import type { HistoryDoor, HistoryPlan } from '../work/history';
 import type { Answered } from '../work/InlineConfirm';
 import { ASK_OPEN, ASK_PLAN } from '../work/historyFixtures';

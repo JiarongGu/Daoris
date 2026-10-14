@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import i18n from '../i18n';
-import { ago, clockOf, moment } from '../format';
-import { byTool, type ToolDoor } from '../tools';
+import i18n from '../locales/i18n';
+import { ago, clockOf, moment } from '../locales/format';
+import { byTool, type ToolDoor } from './tools';
 import { scopeOf, THREE } from '../settings/accountsFixtures';
 import type { AgentAccounts } from '../settings/accounts';
 import {

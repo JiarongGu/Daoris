@@ -11,7 +11,7 @@ import { LanguageChoice, type LanguageOption, type RepositoryLanguage } from '..
 import { LineField, type RepositoryLine } from '../settings/Lines';
 import { type OpinionEdit, OpinionField, opinionRowSays, opinionSummary, type RepositoryOpinion } from '../settings/Opinions';
 import { type RepositoryReview, type ReviewEdit, ReviewField, reviewRowSays, reviewSummary } from '../settings/Reviews';
-import { Button, CheckField, Chip, Icon, Segmented, SelectField, SettingRow } from '../ui';
+import { Button, CheckField, Chip, Icon, Segmented, SelectField, SettingRow } from '../design/ui';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
 import { Inheritable, landingRowSays, landingSays, SetupSection } from './SetupParts';
 import { StandingAnswer } from './StandingAnswer';

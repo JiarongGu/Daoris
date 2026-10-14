@@ -1,4 +1,4 @@
-import type { Ask, Quest, Session } from '../api';
+import type { Ask, Quest, Session } from '../data/api';
 import type { SessionGrouping } from './groups';
 import type { EntryPart, SessionEntry } from './entries';
 

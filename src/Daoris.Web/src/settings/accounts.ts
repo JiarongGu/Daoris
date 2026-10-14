@@ -1,5 +1,5 @@
-import i18n from '../i18n';
-import { ago, elapsed, moment } from '../format';
+import i18n from '../locales/i18n';
+import { ago, elapsed, moment } from '../locales/format';
 
 // How each agent's accounts are used, as the page reads it (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6): the shape
 // `bridge/accounts.ts` answers, and the words each account's row and each scope say, in the reader's language. Pure: the

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AccountScope, AccountsAnswer, AgentAccounts, NextStart } from '../settings/accounts';
-import type { ToolDoor } from '../tools';
+import type { ToolDoor } from '../agents/tools';
 import { handOverOffer } from './handOverOffer';
 
 // MIXAGENT1b-ii (D163 point 3, the mixed-agents design §5): when Daoris offers to hand a conversation over, as one pure

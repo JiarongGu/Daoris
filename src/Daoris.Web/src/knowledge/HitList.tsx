@@ -1,8 +1,8 @@
 import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Hit } from '../api';
-import { mark } from '../highlight';
-import { Button, CheckField, EmptyState, Icon, Inline, PathText, SkeletonRows } from '../ui';
+import type { Hit } from '../data/api';
+import { mark } from './highlight';
+import { Button, CheckField, EmptyState, Icon, Inline, PathText, SkeletonRows } from '../design/ui';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { contextOffer } from '../menus/press';

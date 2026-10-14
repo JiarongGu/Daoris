@@ -1,4 +1,4 @@
-import type { Consideration } from '../signals';
+import type { Consideration } from '../data/signals';
 import type { AbandonAnswer, AbandonEntry, WorkPlan } from './pausing';
 
 // The work of an ask and of a quest as `WORK_PLAN` answers them (PAUSE1e, D132): the stories' and the tests' one copy, every

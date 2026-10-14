@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import barrel from '../shell.ts?raw';
-import * as shell from '../shell';
+import barrel from './shell.ts?raw';
+import * as shell from './shell';
 
 /**
  * The bridge by domain (MOD3): each domain's types and calls live in `bridge/<domain>.ts`, and `shell.ts`
@@ -11,8 +11,9 @@ import * as shell from '../shell';
  * "for now" is how the god file comes back. A new domain is a new file and one line in the barrel.
  */
 
-const sources = import.meta.glob('./*.ts', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>;
-const modules = import.meta.glob(['./*.ts', '!./*.test.ts'], { eager: true }) as Record<string, Record<string, unknown>>;
+// The barrel sits beside its domains since STRUCT5c (D166), and is none of them.
+const sources = import.meta.glob(['./*.ts', '!./shell.ts'], { eager: true, query: '?raw', import: 'default' }) as Record<string, string>;
+const modules = import.meta.glob(['./*.ts', '!./*.test.ts', '!./shell.ts'], { eager: true }) as Record<string, Record<string, unknown>>;
 
 /** The domains' own helper — a call onto a route by name — shared by the domains and re-exported by none. */
 const INTERNAL = new Set(['call']);
@@ -27,7 +28,7 @@ export function barrelProblems(source: string, names: readonly string[]): string
   for (const line of source.split('\n')) {
     const text = line.trim();
     if (text === '' || text.startsWith('//')) continue;
-    const reexport = /^export \* from '\.\/bridge\/([\w-]+)';$/.exec(text);
+    const reexport = /^export \* from '\.\/([\w-]+)';$/.exec(text);
     if (!reexport) {
       problems.push(`shell.ts holds more than re-exports: ${text}`);
       continue;
@@ -45,13 +46,13 @@ export function barrelProblems(source: string, names: readonly string[]): string
 describe('the bridge by domain', () => {
   it('catches what it is meant to catch — the check itself, sabotaged', () => {
     const names = ['call', 'driver', 'plugins'];
-    const sound = "// the barrel\nexport * from './bridge/driver';\nexport * from './bridge/plugins';\n";
+    const sound = "// the barrel\nexport * from './driver';\nexport * from './plugins';\n";
     expect(barrelProblems(sound, names)).toEqual([]);
     // A hook written into the barrel "for now".
     expect(barrelProblems(`${sound}export const useThing = () => null;\n`, names))
       .toEqual(['shell.ts holds more than re-exports: export const useThing = () => null;']);
     // A new domain nobody re-exported, and the helper exported by mistake.
-    expect(barrelProblems("export * from './bridge/driver';\nexport * from './bridge/call';\n", names))
+    expect(barrelProblems("export * from './driver';\nexport * from './call';\n", names))
       .toEqual(["shell.ts re-exports bridge/call.ts, which is the domains' own", 'shell.ts leaves out bridge/plugins.ts']);
   });
 
@@ -86,7 +87,7 @@ describe('the bridge by domain', () => {
 
   it('never imports the barrel from a domain, which would make every domain load every other', () => {
     const circular = Object.entries(sources)
-      .filter(([path, source]) => !/\.test\.ts$/.test(path) && /from\s+'\.\.\/shell'/.test(source))
+      .filter(([path, source]) => !/\.test\.ts$/.test(path) && /from\s+'\.\/shell'/.test(source))
       .map(([path]) => path);
     expect(circular).toEqual([]);
   });

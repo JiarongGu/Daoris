@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 import type { AgentRulesState, RuleListName, RuleScopeName } from '../settings/AgentRules';
 import { call } from './call';
 

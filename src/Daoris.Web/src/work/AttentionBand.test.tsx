@@ -25,18 +25,18 @@ vi.mock('@shenora/react', async () => {
   };
 });
 
-import '../i18n';
-import { keys } from '../queries';
-import { WorkspaceScopeProvider } from '../scope';
+import '../locales/i18n';
+import { keys } from '../data/queries';
+import { WorkspaceScopeProvider } from '../data/scope';
 import type { RuleProposal } from '../settings/AgentRules';
 import { type AccountScope, type AccountsAnswer, USE_DEFAULTS } from '../settings/accounts';
-import type { HarnessRoster } from '../shell';
-import type { AccountWaitTick, Consideration, TrustHold } from '../signals';
+import type { HarnessRoster } from '../bridge/shell';
+import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
 import { AttentionBand, type AttentionDoors } from './AttentionBand';
 import type { SessionGrouping } from './groups';
 import { sessionTitle } from './identity';
 import type { OpinionWait } from './opinion';
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 
 const base = { adapter: 'claude-code', created: '2026-10-01T09:00:00Z', workspace: 'default' };
 

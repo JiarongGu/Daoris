@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
-import { Button, Icon, Menu, Tip } from '../ui';
+import { Button, Icon, Menu, Tip } from '../design/ui';
 import type { BrowserDriver } from './browserDrivers';
 
 /**

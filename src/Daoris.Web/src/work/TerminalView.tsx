@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sentence } from '../format';
-import { Button } from '../ui';
-import { effectiveDark, subscribeTheme } from '../theme';
+import { sentence } from '../locales/format';
+import { Button } from '../design/ui';
+import { effectiveDark, subscribeTheme } from '../design/theme';
 import { createScreen, type Screen, type ScreenLook } from './terminalScreen';
 import { readToken, terminalTheme } from './terminalTheme';
 import { folderName, type OpenTerminal, terminalNames, type Terminals } from './terminals';

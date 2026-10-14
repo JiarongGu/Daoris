@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { figure, moment } from '../format';
+import { figure, moment } from '../locales/format';
 import type { HandedCut, HandedSection, InstructionAccount } from './conversation';
 
 /**

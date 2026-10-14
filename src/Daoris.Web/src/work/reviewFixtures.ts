@@ -1,4 +1,4 @@
-import type { Quest, QuestSetUp } from '../api';
+import type { Quest, QuestSetUp } from '../data/api';
 
 // A review's records as the host answers them (REVIEWENV1g): a chain's work quest and its set-up step in each state the gate
 // reads, for the stories and the tests. Neutral names only.

@@ -2,14 +2,14 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import { App } from './App';
-import { SecondaryWindowRoot } from './SecondaryWindowRoot';
-import { WorkspaceScopeProvider } from './scope';
+import { App } from './app/App';
+import { SecondaryWindowRoot } from './app/SecondaryWindowRoot';
+import { WorkspaceScopeProvider } from './data/scope';
 import { secondaryWindow } from './work/window';
-import { applyTheme } from './theme';
-import { installPageErrors } from './shell';
+import { applyTheme } from './design/theme';
+import { installPageErrors } from './bridge/shell';
 import './tokens.css';
-import './i18n';
+import './locales/i18n';
 
 // The viewer's theme (D66), on the document BEFORE the first paint — applied after React mounted,
 // every launch with a chosen theme would flash the OS's one first. A secondary window runs this

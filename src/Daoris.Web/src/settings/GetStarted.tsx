@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type SetupState, type SetupStep, setupProgress } from '../help/setup';
 import type { StarterDoor } from '../help/starters';
-import { Button, Card, CheckField, CodeText, Icon, Pill, Prose } from '../ui';
+import { Button, Card, CheckField, CodeText, Icon, Pill, Prose } from '../design/ui';
 
 const TONE: Record<Exclude<SetupState, 'desktop'>, 'done' | 'open' | 'neutral'> = {
   done: 'done',

@@ -15,7 +15,7 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => undefined,
 }));
 
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 import type { WorkPlan } from '../work/pausing';
 import { useAbandonWork, usePauseWork, useResumeWork, useWorkPlan, workKey } from './work';
 

@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Quest, Session } from '../api';
-import { Button, EmptyState } from '../ui';
+import type { Quest, Session } from '../data/api';
+import { Button, EmptyState } from '../design/ui';
 import type { SessionActId } from './acts';
 import {
   cutEnded, ENDED_SHOWN, type SessionArrangement, type SessionGrouping, sessionsByRepository, sessionsByState, stripSessions,

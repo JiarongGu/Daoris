@@ -1,10 +1,10 @@
-import i18n from '../i18n';
-import { type Ask, canBeAsked, type GoAhead, type Quest, type Registration, type Session } from '../api';
+import i18n from '../locales/i18n';
+import { type Ask, canBeAsked, type GoAhead, type Quest, type Registration, type Session } from '../data/api';
 import type { RuleProposal } from '../settings/AgentRules';
 import { proposalAuthor, proposalChange } from '../settings/proposals';
-import { type Consideration, type TrustHold, sittingSentence } from '../signals';
-import { answeredPark } from '../ui';
-import { workspaceOf } from '../workspaces';
+import { type Consideration, type TrustHold, sittingSentence } from '../data/signals';
+import { answeredPark } from '../design/ui';
+import { workspaceOf } from '../data/workspaces';
 import { accountAttention, type AccountsKnown } from './accountAttention';
 import type { SessionGrouping } from './groups';
 import { askName, questName, sessionOrigin, sessionTitle } from './identity';

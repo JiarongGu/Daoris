@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import i18n from '../i18n';
+import i18n from '../locales/i18n';
 import { HELD, OPEN, REFILED, REFILED_NAMED, REFILED_UNNAMED, STARTING, WORKING } from './fixtures';
 import { bodyUnderHead, QuestPage } from './QuestPage';
 

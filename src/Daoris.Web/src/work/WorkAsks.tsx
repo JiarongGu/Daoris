@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Inline, Prose } from '../ui';
+import { Inline, Prose } from '../design/ui';
 import { InlineConfirm, type Answered } from './InlineConfirm';
 import {
   abandonList, type AbandonOutcome, type GoingRow, type Line, say, type StayingRow, type WorkPlan, type WorkTarget,

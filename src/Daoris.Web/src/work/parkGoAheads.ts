@@ -1,5 +1,5 @@
-import type { Ask, GoAhead } from '../api';
-import { list } from '../format';
+import type { Ask, GoAhead } from '../data/api';
+import { list } from '../locales/format';
 import { neverSentence } from './say';
 
 // A park's go-aheads (KNOWUSE1a2, D135 §2): which go-aheads a parked session asked, read from its quest's ask, and what one

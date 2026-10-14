@@ -1,19 +1,19 @@
 import { Fragment, type ReactNode, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { HELP_REPOSITORY, type Quest, type Session } from '../api';
-import { useAsks, useOpinions, useQuests, useRegistry, useSessions } from '../queries';
-import { searchable } from '../searchable';
+import { HELP_REPOSITORY, type Quest, type Session } from '../data/api';
+import { useAsks, useOpinions, useQuests, useRegistry, useSessions } from '../data/queries';
+import { searchable } from '../lib/searchable';
 import {
   type SessionHit, useChannelUnreads, useDriver, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionSearch, useSessionWhere,
-} from '../shell';
+} from '../bridge/shell';
 import { askOfEntry, entryFacts, listedSessions, nameOfEntry, type SessionEntry } from './entries';
-import { sentence } from '../format';
-import { Button, Icon, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
+import { sentence } from '../locales/format';
+import { Button, Icon, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../design/ui';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { useDebounced } from '../lib/useDebounced';
 import { offeredActs, type SessionActId } from './acts';
-import type { OpenGroup } from '../opener';
+import type { OpenGroup } from '../app/opener';
 import { endedToArchive, type SessionArrangement } from './groups';
 import { groupHeading, useBringGroup } from './ListPane';
 import { SessionRow } from './SessionRow';

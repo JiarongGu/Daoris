@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Icon, QuickPanel, Tip } from '../ui';
+import { Button, Icon, QuickPanel, Tip } from '../design/ui';
 
 /**
  * Quick Ask (DOCK1d): Ask Daoris's conversation in a box at the palette's place, for one question

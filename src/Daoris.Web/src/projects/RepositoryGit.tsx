@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Inline, Prose, SkeletonRows } from '../ui';
+import { Inline, Prose, SkeletonRows } from '../design/ui';
 import { BranchList, type BranchListValue } from './BranchList';
 import { CommitGraph, type GraphCommitRow } from './CommitGraph';
 import { ListMore } from '../work/ListPane';

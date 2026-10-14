@@ -27,7 +27,7 @@ vi.mock('@shenora/react', () => ({
 }));
 vi.mock('./terminalScreen', () => ({ createScreen }));
 
-import '../i18n';
+import '../locales/i18n';
 import { WorkFrame } from './WorkFrame';
 
 const REGISTRY = [

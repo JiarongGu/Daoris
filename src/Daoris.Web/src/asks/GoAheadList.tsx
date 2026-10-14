@@ -1,8 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { GoAhead } from '../api';
-import { ago } from '../format';
-import { Button, Pill } from '../ui';
+import type { GoAhead } from '../data/api';
+import { ago } from '../locales/format';
+import { Button, Pill } from '../design/ui';
 import { type Answered, Refused } from '../work/InlineConfirm';
 
 /** A yes or no to a go-ahead: its number, the answer, the person's words if any, and how the answer ended (UXFIX2b3b). */

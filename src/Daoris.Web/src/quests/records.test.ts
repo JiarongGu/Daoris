@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Ask, Quest, Session } from '../api';
+import type { Ask, Quest, Session } from '../data/api';
 import {
   answered, askStanding, freshest, keptFilters, latestSessions, questFilters, questGroups, questionOf, questStanding,
 } from './records';

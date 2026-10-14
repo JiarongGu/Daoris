@@ -1,9 +1,9 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Registration, Repository } from '../api';
-import { ago, figure } from '../format';
+import type { Registration, Repository } from '../data/api';
+import { ago, figure } from '../locales/format';
 import type { RepositoryLine } from '../settings/Lines';
-import { Button, Chip, Icon, Inline, Prose, Tip, WhyGlyph } from '../ui';
+import { Button, Chip, Icon, Inline, Prose, Tip, WhyGlyph } from '../design/ui';
 import { type MainNotice, PageHead, PageSection, PageTabs, ViewMain } from '../work/ViewMain';
 import { WorkflowTab, type WorkflowTabProps } from '../workflow/WorkflowTab';
 import { RepositoryMarks } from './ProjectList';

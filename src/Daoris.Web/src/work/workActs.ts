@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import { sentence } from '../format';
-import { useAbandonWork, usePauseWork, useResumeWork } from '../shell';
-import { sittingSentence } from '../signals';
-import { failure, type Notify } from '../ui';
+import { sentence } from '../locales/format';
+import { useAbandonWork, usePauseWork, useResumeWork } from '../bridge/shell';
+import { sittingSentence } from '../data/signals';
+import { failure, type Notify } from '../design/ui';
 import type { Answered } from './InlineConfirm';
 import {
   type AbandonAnswer, abandonNotice, type PauseAnswer, pauseNotices, type ResumeAnswer, resumeNotices, scopeName,

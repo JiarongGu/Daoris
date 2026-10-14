@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { AccountSettings } from '../tools';
+import type { AccountSettings } from '../agents/tools';
 import { AccountSettingsForm, AccountSettingsSummary } from './AccountSettings';
 
 // An account's own model and effort (AGT6, D98), in the shapes the driver's roster answers with: the

@@ -1,4 +1,4 @@
-import type { Quest, Session } from '../api';
+import type { Quest, Session } from '../data/api';
 
 /**
  * Who a session worked with, beyond its chain (SESS1): where its work came from and what it caused.

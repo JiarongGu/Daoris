@@ -19,7 +19,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 
 const NOW = new Date('2026-09-21T12:00:00Z');

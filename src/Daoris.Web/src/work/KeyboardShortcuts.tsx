@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Drawer, Prose, SectionTitle } from '../ui';
+import { Drawer, Prose, SectionTitle } from '../design/ui';
 
 /** One menu's keys, as the drawer prints them: the menu's name, then each item's name and its keys. */
 export type ShortcutGroup = { menu: string; rows: { label: string; keys: string[] }[] };

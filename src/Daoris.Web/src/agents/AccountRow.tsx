@@ -1,6 +1,6 @@
 import { Children, Fragment, type ReactNode, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Icon, Menu, type MenuAct, Pill, Tip, WhyGlyph } from '../ui';
+import { Button, Icon, Menu, type MenuAct, Pill, Tip, WhyGlyph } from '../design/ui';
 import { type AccountState, type AccountUsage, readLine, stateWhen, stateWord, type WindowCell } from './agents';
 
 /**

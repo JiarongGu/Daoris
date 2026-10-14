@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { size } from '../format';
+import { size } from '../locales/format';
 import { cn } from '../lib/cn';
-import { Button, Icon, Inline, Segmented, SkeletonRows, Tip } from '../ui';
+import { Button, Icon, Inline, Segmented, SkeletonRows, Tip } from '../design/ui';
 import { highlightLines, languageOf } from './codeLines';
 import { PatchView } from './PatchView';
 import { fileLines, fileName, type LineRange, type TreeFile } from './preview';

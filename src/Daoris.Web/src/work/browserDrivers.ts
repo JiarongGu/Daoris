@@ -1,5 +1,5 @@
-import i18n from '../i18n';
-import type { Quest, Session } from '../api';
+import i18n from '../locales/i18n';
+import type { Quest, Session } from '../data/api';
 import { sessionTitle } from './identity';
 
 /** A session with its hands on Daoris's browser, as a person reads it (BRW8). */

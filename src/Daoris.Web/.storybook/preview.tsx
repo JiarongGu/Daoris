@@ -3,7 +3,7 @@
 import type { Decorator } from '@storybook/react-vite';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../src/tokens.css';
-import '../src/i18n';
+import '../src/locales/i18n';
 
 /**
  * 🔴 The provider the application mounts once (`main.tsx`), mounted once here too.

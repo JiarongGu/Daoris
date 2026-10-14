@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getBridge, useShenora, useShenoraEvent } from '@shenora/react';
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 import { type ChatMessage, type EventPage, mergeEvents, type SessionEvent } from '../work/conversation';
 import type { SessionOption } from '../work/SessionOptions';
 import type { Reach } from '../work/say';
-import { toUpload } from '../attachments';
+import { toUpload } from '../compose/attachments';
 import { call } from './call';
 
 // A session's conversation (MOD3): its record read back and followed live, its turns, its options,

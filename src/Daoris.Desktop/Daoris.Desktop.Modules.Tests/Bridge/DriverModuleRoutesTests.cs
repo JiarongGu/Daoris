@@ -44,10 +44,13 @@ public sealed partial class DriverModuleRoutesTests
     {
         var web = Path.Combine(RepositoryRoot(), "src", "Daoris.Web", "src");
         var bridge = Path.Combine(web, "bridge");
+        // The barrel is found by its name wherever it lies under the page (STRUCT5c, D166), and read once.
         var files = (Directory.Exists(bridge)
                 ? Directory.EnumerateFiles(bridge, "*.ts").Where(path => !path.EndsWith(".test.ts", StringComparison.Ordinal))
                 : [])
-            .Append(Path.Combine(web, "shell.ts"))
+            .Append(Assert.Single(Directory.GetFiles(web, "shell.ts", SearchOption.AllDirectories),
+                path => string.Equals(Path.GetFileName(path), "shell.ts", StringComparison.Ordinal)))
+            .Distinct(StringComparer.Ordinal)
             .ToList();
 
         var calls = new List<PageCall>();

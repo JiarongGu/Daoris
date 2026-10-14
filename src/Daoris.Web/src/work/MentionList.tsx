@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
-import { Icon } from '../ui';
+import { Icon } from '../design/ui';
 
 /**
  * The files a mention could mean (CONV4d), floating over the conversation above the composer's box.

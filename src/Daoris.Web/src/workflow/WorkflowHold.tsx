@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Inline } from '../ui';
+import { Inline } from '../design/ui';
 import type { WorkflowGateState } from './gate';
 
 /** The workflow's refusal beside either landing door; the driver owns the explanation and available actions. */

@@ -133,15 +133,22 @@ test('the glossary is read as the names check reads it: each term without `use`,
 });
 
 test('the spellings the counter reads are the page’s own', () => {
-  const read = (path) => readFileSync(join(web, 'src', ...path.split('/')), 'utf8');
+  // A page source by its name wherever it lies under the page's source (STRUCT5c, D166), so a move into a folder edits no
+  // reader here; a name no file has, or two have, is refused.
+  const sources = readdirSync(join(web, 'src'), { recursive: true, encoding: 'utf8' }).map((path) => path.split('\\').join('/'));
+  const read = (name) => {
+    const found = sources.filter((path) => path.split('/').at(-1) === name);
+    assert.equal(found.length, 1, `${name} is under the page's source ${found.length} times: a file read by name is there once`);
+    return readFileSync(join(web, 'src', ...found[0].split('/')), 'utf8');
+  };
   assert.equal(REGION, 'data-region');
-  assert.match(read('work/regions.ts'), new RegExp(`export const REGION = '${REGION}';`));
-  assert.match(read('work/ListPane.tsx'), new RegExp(`${REGION}="list"`));
-  assert.match(read('work/ViewMain.tsx'), new RegExp(`${REGION}="main"`));
-  assert.match(read('work/frame.tsx'), new RegExp(`${REGION}="activity"`));
-  assert.match(read('work/frame.tsx'), /aria-current=\{active === tab \? 'page' : undefined\}/);
+  assert.match(read('regions.ts'), new RegExp(`export const REGION = '${REGION}';`));
+  assert.match(read('ListPane.tsx'), new RegExp(`${REGION}="list"`));
+  assert.match(read('ViewMain.tsx'), new RegExp(`${REGION}="main"`));
+  assert.match(read('frame.tsx'), new RegExp(`${REGION}="activity"`));
+  assert.match(read('frame.tsx'), /aria-current=\{active === tab \? 'page' : undefined\}/);
   assert.equal(LIST_ROW, 'data-list-row');
-  assert.match(read('work/listKeys.ts'), new RegExp(`export const LIST_ROW = '${LIST_ROW}';`));
+  assert.match(read('listKeys.ts'), new RegExp(`export const LIST_ROW = '${LIST_ROW}';`));
   assert.equal(LANGUAGE_KEY, 'daoris.language');
   assert.match(read('i18n.ts'), new RegExp(`lookupLocalStorage: '${LANGUAGE_KEY.replace('.', '\\.')}'`));
   assert.match(read('i18n.ts'), /document\.documentElement\.lang = i18n\.language;/);

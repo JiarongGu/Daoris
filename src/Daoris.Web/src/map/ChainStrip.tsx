@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import type { Quest, Session } from '../api';
-import { elapsed, sessionTool } from '../format';
-import type { AccountNamer } from '../tools';
-import { Pill, QUEST_TONE, SectionTitle, SESSION_TONE } from '../ui';
+import type { Quest, Session } from '../data/api';
+import { elapsed, sessionTool } from '../locales/format';
+import type { AccountNamer } from '../agents/tools';
+import { Pill, QUEST_TONE, SectionTitle, SESSION_TONE } from '../design/ui';
 import { cn } from '../lib/cn';
 import { questName } from '../work/identity';
 import type { ChainStep } from './chain';

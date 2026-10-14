@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Quest, Session } from '../api';
+import type { Quest, Session } from '../data/api';
 import type { SessionGrouping } from './groups';
 import { folderOf, handOverLabel, offeredActs, primaryAct, stopAsk, workTargetOf } from './acts';
 

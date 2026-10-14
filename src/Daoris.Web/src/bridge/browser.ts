@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getBridge, useShenora } from '@shenora/react';
-import { keys } from '../queries';
-import { sentence } from '../format';
+import { keys } from '../data/queries';
+import { sentence } from '../locales/format';
 
 // Daoris's browser (MOD3): its settings, where the page's links open, and the window itself.
 

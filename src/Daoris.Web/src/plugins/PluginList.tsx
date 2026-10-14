@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Inline, type MenuAct, Pill, StripMark } from '../ui';
+import { Button, Inline, type MenuAct, Pill, StripMark } from '../design/ui';
 import { cn } from '../lib/cn';
 import { type ContextOffer, contextOffer } from '../menus/press';
 import {

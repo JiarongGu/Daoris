@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import '../i18n';
+import '../locales/i18n';
 import type { LandedWork } from './diff';
 import { LandedNote } from './LandedNote';
 

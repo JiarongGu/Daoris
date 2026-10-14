@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type Command, matching } from '../commands';
-import { Icon, QuickPanel } from '../ui';
+import { type Command, matching } from '../menus/commands';
+import { Icon, QuickPanel } from '../design/ui';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 

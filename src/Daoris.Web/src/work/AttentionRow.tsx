@@ -1,11 +1,11 @@
 import { type ReactNode, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { SetUpRef } from '../api';
-import { clockOf, elapsed } from '../format';
+import type { SetUpRef } from '../data/api';
+import { clockOf, elapsed } from '../locales/format';
 import { cn } from '../lib/cn';
-import { shellWord } from '../shellWord';
-import type { TrustHold } from '../signals';
-import { Button, Dot, Icon, Inline, SelectField } from '../ui';
+import { shellWord } from '../lib/shellWord';
+import type { TrustHold } from '../data/signals';
+import { Button, Dot, Icon, Inline, SelectField } from '../design/ui';
 import type { AccountRowFacts } from './accountAttention';
 import { ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers } from './attention';
 import { Note } from './Note';

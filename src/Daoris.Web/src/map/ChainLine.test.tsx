@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { Quest } from '../api';
+import type { Quest } from '../data/api';
 import { ChainLine } from './ChainLine';
 import { buildChain } from './chain';
 

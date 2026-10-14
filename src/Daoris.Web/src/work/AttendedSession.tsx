@@ -1,14 +1,14 @@
 import { type ComponentProps, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { GoAhead, Quest, Session } from '../api';
+import type { GoAhead, Quest, Session } from '../data/api';
 import { ChannelPanel } from '../asks/ChannelSection';
 import type { GoAheadAnswer } from '../asks/GoAheadList';
-import { answeredPark, Button, EmptyState } from '../ui';
+import { answeredPark, Button, EmptyState } from '../design/ui';
 import type { ChainStep } from '../map/chain';
 import { ChainLine } from '../map/ChainLine';
 import { ChainStrip } from '../map/ChainStrip';
 import type { SweepBranch } from '../settings/Sweep';
-import type { AccountNamer } from '../tools';
+import type { AccountNamer } from '../agents/tools';
 import type { QuestClose, Resolution } from './AwaitingPerson';
 import { HowItCameToBe, type TraceDoor } from './HowItCameToBe';
 import type { Answered } from './InlineConfirm';

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import type { QuestStep } from '../api';
+import type { QuestStep } from '../data/api';
 import { type Carry, CarryFields, NO_CARRY, useCarry } from '../compose/carry';
-import { Button, Drawer, EmptyState, Icon, Inline, SelectField } from '../ui';
+import { Button, Drawer, EmptyState, Icon, Inline, SelectField } from '../design/ui';
 
 /**
  * A quest being written. `links` is the text as typed — read into addresses at publish — and `files` are the

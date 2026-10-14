@@ -2,7 +2,7 @@ import { type KeyboardEvent, type ReactNode, type RefObject, useEffect, useRef }
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
-import { Button, Icon, Inline, Prose, Tip } from '../ui';
+import { Button, Icon, Inline, Prose, Tip } from '../design/ui';
 import { Splitter } from '../work/frame';
 import type { Starter, StarterDoor } from './starters';
 

@@ -14644,3 +14644,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT5d-ii — the CLI's tests mirrored, `platform/types.ts` split, four service comments** (cli, service). About 95 flat tests into their modules' folders (the gate's `tests` map); the doctrine's records out of the shared `types.ts`; `Registry/RepositoryLinks.cs:15`, `RepositoryLayout.cs:43`, `RepositoryDocuments.cs:16`, `DaorisLock.cs:18` cite the CLI's old paths. D166's STRUCT5d note.
 
 **Outcome** 2026-10-15: 76 of the CLI's 95 tests sit in their modules' folders under `test/`, the gate's `tests` map holding them; 19 stay at the top, each reading the tools, the desktop, the docs or several modules. `doctrine/records.ts` holds the doctrine's records and `platform/types.ts` the command shapes alone; the four service comments cite `layout/`. The suite stays 1542 of 1542. Ten gates passed on the merge. On Sonnet: 58 tool calls. Detail: D166's STRUCT5d-ii note.
+
+## STRUCT5c — the page's top folder in folders (2026-10-15, D166)
+
+> - [ ] **STRUCT5c — the page's top folder in folders** (web). As STRUCT5a, 5b and 5d did, with its gate in vitest; STRUCT5d's import-rewriting script (asserted counts, read back) is a candidate tracked tool. Design §7.
+
+**Outcome** 2026-10-15: the page's top holds only its three entries; 109 files moved into domain folders with `git mv`, held by `src/test/structure.test.ts`, and `daoris.lanes.json` lost two `SettingsView*` globs the move made empty. The work, settings, bridge and projects folders still hold over twenty sources at their top and sit on the gate's `wide` list (STRUCT5c-ii); the move script stayed in scratch (MOVETOOL1). Eleven gates passed on the merge, merged with main's closed-quest fix. On Opus: 308 tool calls. Detail: D166's STRUCT5c note and the `refactor(web): STRUCT5c` commits.

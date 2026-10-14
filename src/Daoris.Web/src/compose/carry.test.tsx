@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, renderHook, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import '../i18n';
+import '../locales/i18n';
 import { CarryFields, NO_CARRY, useCarry, type Carry } from './carry';
 
 // What a composer carries beside its words (D65 §2), shared by the quest composer and the ask

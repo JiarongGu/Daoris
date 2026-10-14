@@ -1,7 +1,7 @@
 import { type ReactNode, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Session } from '../api';
-import { Button, Icon, Inline, Menu, Pill, SESSION_TONE, type ShownState, shownKey } from '../ui';
+import type { Session } from '../data/api';
+import { Button, Icon, Inline, Menu, Pill, SESSION_TONE, type ShownState, shownKey } from '../design/ui';
 import { ACT_LOOK, actMenu, headerActs, type SessionActId } from './acts';
 import { type Answered, InlineConfirm } from './InlineConfirm';
 import { PageHead } from './ViewMain';

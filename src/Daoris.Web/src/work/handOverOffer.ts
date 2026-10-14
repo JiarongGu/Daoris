@@ -1,6 +1,6 @@
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 import { type AccountsAnswer, type AccountScope, agentOf, machineScope, workspaceScope } from '../settings/accounts';
-import { toolOf, type ToolDoor } from '../tools';
+import { toolOf, type ToolDoor } from '../agents/tools';
 import { coolingFor } from './say';
 
 /** Daoris's offer to hand a conversation over (MIXAGENT1b-ii, D163): why, when it is offered again, and where it would go. */
