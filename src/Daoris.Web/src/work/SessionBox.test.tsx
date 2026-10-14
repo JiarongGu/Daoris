@@ -33,6 +33,20 @@ describe('SessionBox', () => {
     expect(onSendNow).toHaveBeenCalled();
   });
 
+  /** QUEUEEDIT1b: a held word with an id can be taken back out, or reworded, on the running door's box. */
+  it('lets a held word be removed or reworded by its id', async () => {
+    const onRemove = vi.fn().mockResolvedValue({ done: true });
+    const onEdit = vi.fn().mockResolvedValue({ done: true });
+    show({ box: { kind: 'steer' }, held: { queued: [{ id: 'a1', text: 'cap it', files: [] }], taking: true }, onRemove, onEdit });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Remove the waiting message: cap it' }));
+    expect(onRemove).toHaveBeenCalledWith('a1');
+    await userEvent.click(screen.getByRole('button', { name: 'Edit the waiting message: cap it' }));
+    await userEvent.type(screen.getByLabelText('Message'), ' hard');
+    await userEvent.click(screen.getByRole('button', { name: 'Queue' }));
+    expect(onEdit).toHaveBeenCalledWith('a1', 'cap it hard');
+  });
+
   /** D126 §3.1, D137 §5.1: on a parked session the box is the answer. */
   it('offers a parked session the answer', async () => {
     const onSend = vi.fn();

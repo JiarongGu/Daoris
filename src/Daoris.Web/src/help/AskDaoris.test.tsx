@@ -112,6 +112,22 @@ describe('Ask Daoris, with an agent named', () => {
     expect(asked.some((url) => url.includes('repository=daoris%3Ahelp') && !url.includes('workspace='))).toBe(true);
   });
 
+  /** QUEUEEDIT1b: words waiting behind Ask Daoris's turn can be taken back out by their id. */
+  it('removes a waiting message from the conversation by its id', async () => {
+    SESSIONS = [HELP];
+    bridge();
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      if (type === 'SESSION_QUEUE') return { session: HELP.id, queued: [{ id: 'q1', text: 'and the index', files: [] }], taking: true };
+      if (type === 'SESSION_QUEUE_EDIT') return { done: true };
+      return answered(module, type, ...rest);
+    });
+    show();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Remove the waiting message: and the index' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE_EDIT', { payload: { session: HELP.id, id: 'q1' } });
+  });
+
   /**
    * HELP4: with none running, a message first opens the conversation, which takes seconds (the room is
    * written, the agent spawned). The person's words showed nowhere meanwhile, and read as lost. They are

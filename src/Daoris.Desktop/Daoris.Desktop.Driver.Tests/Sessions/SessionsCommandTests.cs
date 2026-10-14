@@ -31,8 +31,9 @@ public sealed class SessionsCommandTests : IDisposable
     private static readonly DateTimeOffset T0 = DateTimeOffset.UtcNow.AddHours(-2);
 
     private static JsonObject Record(string id, string state, string? quest = null, string kind = "driven", string repository = "engine",
-        string? ask = null, bool deletable = false, int minutes = 0) => new()
+        string? ask = null, bool deletable = false, int minutes = 0, string? entry = null) => new()
         {
+            ["entry"] = entry,
             ["id"] = id, ["repository"] = repository, ["state"] = state, ["kind"] = kind, ["quest"] = quest, ["ask"] = ask,
             ["deletable"] = deletable, ["adapter"] = "claude-code",
             ["created"] = T0.AddMinutes(minutes).ToString("O"), ["updated"] = T0.AddMinutes(minutes + 5).ToString("O"),
@@ -326,6 +327,59 @@ public sealed class SessionsCommandTests : IDisposable
         var rows = answer.RootElement.GetProperty("sessions").EnumerateArray().ToList();
         Assert.Equal(["p4rk3d00", "1ntake00"], rows.Select(row => row.GetProperty("session").GetString()));
         Assert.Equal(SessionsCommand.JsonFields, rows[0].EnumerateObject().Select(field => field.Name));
+    }
+
+    private static Ledger Entries() => new(
+        [
+            Record("p4rt0001", "failed", "q1", entry: "ask:a1/engine", minutes: 0),
+            Record("p4rt0002", "completed", "q1", entry: "ask:a1/engine", minutes: 10),
+            Record("s0l0000", "completed", "q4", repository: "game", minutes: 20),
+            Record("1ntake01", "completed", kind: "chat", repository: "ask #a1", ask: "a1", entry: "ask:a1/intake", minutes: 30),
+        ],
+        [Quest("q1", "Cap the hydration per frame", "Done"), Quest("q4", "Draw the minimap", "Done", to: "game")]);
+
+    /// <summary>SESSONE1b (D167, the design §1.6): the listing is by entry, one line each with its parts, the parts indented under it.</summary>
+    [Fact]
+    public async Task The_listing_is_by_entry_with_its_parts_indented_under_it()
+    {
+        var (exit, said) = await RunAsync(Entries(), []);
+
+        Assert.Equal(0, exit);
+        var lines = said.Split('\n').Where(line => line.Length > 0).ToList();
+        Assert.Equal("Ended (2)", lines[0]);
+        // The newest entry first, as the rows were; its one part is a line of its own, no parts under it.
+        Assert.StartsWith("  s0l0000  completed  game — ", lines[1]);
+        Assert.DoesNotContain("part", lines[1]);
+        Assert.StartsWith("  p4rt0002  completed  engine — ", lines[2]);
+        Assert.Contains("2 parts", lines[2]);
+        Assert.StartsWith("      p4rt0001  failed  #q1 · opened", lines[3]);
+        Assert.StartsWith("      p4rt0002  completed  #q1 · retried", lines[4]);
+        // The intake's ask became quests: it is its ask's, off the list.
+        Assert.DoesNotContain("1ntake01", said);
+    }
+
+    /// <summary>With <c>--json</c> the rows stay as they were, the intake's among them, and <c>entries</c> is added beside them.</summary>
+    [Fact]
+    public async Task With_json_it_keeps_the_rows_and_adds_the_entries()
+    {
+        var (_, said) = await RunAsync(Entries(), ["--json"]);
+
+        using var answer = JsonDocument.Parse(said);
+        var rows = answer.RootElement.GetProperty("sessions").EnumerateArray().ToList();
+        Assert.Equal(4, rows.Count);
+        Assert.Equal(SessionsCommand.JsonFields, rows[0].EnumerateObject().Select(field => field.Name));
+        var entries = answer.RootElement.GetProperty("entries").EnumerateArray().ToList();
+        Assert.Equal(2, entries.Count);
+        var engine = entries.Single(entry => entry.GetProperty("entry").GetString() == "ask:a1/engine");
+        Assert.Equal(
+            ("ask:a1", "engine", "ended", "p4rt0002"),
+            (engine.GetProperty("origin").GetString(), engine.GetProperty("repository").GetString(), engine.GetProperty("group").GetString(),
+                engine.GetProperty("leading").GetString()));
+        var parts = engine.GetProperty("parts").EnumerateArray().ToList();
+        Assert.Equal(["p4rt0001", "p4rt0002"], parts.Select(part => part.GetProperty("session").GetString()));
+        Assert.Equal(["opened", "retried"], parts.Select(part => part.GetProperty("began").GetString()));
+        Assert.Equal(SessionsCommand.JsonEntryFields, engine.EnumerateObject().Select(field => field.Name));
+        Assert.Equal(SessionsCommand.JsonPartFields, parts[1].EnumerateObject().Select(field => field.Name));
     }
 
     /// <summary>

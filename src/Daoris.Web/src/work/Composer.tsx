@@ -72,8 +72,15 @@ export function Composer({
   live, sending = false, refusal, endings = true, draft, onDraft, carried, onCarry,
   queued = [], queuedLabel, taking = false, opening = false, stoppable = false, stopping = false, mentions, onMentioning, context, placeholder,
   attachments = true, sendLabel, stopTurnLabel, stopTurnTip, offered, optionsBusy = false, onOption, onSend, onFinish, onStop, onStopTurn,
-  focus = 0, accepts,
+  focus = 0, accepts, onRemove, onEdit,
 }: {
+  /**
+   * Take a waiting message back out, by its id (QUEUEEDIT1b). Answers whether it was still waiting: `done: false` is a
+   * turn having it already, said in words. Absent, no waiting message offers a control.
+   */
+  onRemove?: (id: string) => Promise<{ done: boolean } | void>;
+  /** Reword a waiting message in place (QUEUEEDIT1b), answering as `onRemove` does. */
+  onEdit?: (id: string, text: string) => Promise<{ done: boolean } | void>;
   /**
    * Whether these words may go (MSG1f, D137 §2.4): false keeps them in the box, unsent, and the caller says why — a door
    * that takes fewer characters at once than they hold. Absent, every message may go.
@@ -157,6 +164,42 @@ export function Composer({
   const chooser = useFileChooser(attach.attach, t('carry.choose'));
   const files = carry.files;
 
+  // A waiting message being reworded (QUEUEEDIT1b): its words are in the box, and what the box held is kept for after.
+  const [editing, setEditing] = useState<{ id: string; stash: string } | null>(null);
+  const [taken, setTaken] = useState(false);
+  // A list that moved on under the edit (the word went, or its id changed) ends the edit: its id would name nothing.
+  const stale = editing !== null && !queued.some((message) => message.id === editing.id);
+  useEffect(() => {
+    if (stale && editing) { setText(editing.stash); setEditing(null); }
+    // `setText` follows the draft's holder, which changes with every render of an uncontrolled box.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stale]);
+  useEffect(() => { if (queued.length === 0) setTaken(false); }, [queued.length]);
+
+  const startEdit = (message: ChatMessage) => {
+    if (!message.id) return;
+    setTaken(false);
+    setEditing({ id: message.id, stash: editing ? editing.stash : text });
+    setText(message.text);
+    field.current?.focus();
+  };
+  const cancelEdit = () => {
+    if (!editing) return;
+    setText(editing.stash);
+    setEditing(null);
+  };
+  // A driver refusal of the edit, word for word, like every driver sentence here.
+  const [refused, setRefused] = useState<string | null>(null);
+  const said = (error: unknown) => setRefused(error instanceof Error ? error.message : String(error));
+  const remove = async (id: string) => {
+    setTaken(false);
+    setRefused(null);
+    try {
+      const answer = await onRemove?.(id);
+      if (answer && !answer.done) setTaken(true);
+    } catch (error) { said(error); }
+  };
+
   // `@` a file (CONV4d): where the caret is decides whether a mention is being written.
   const field = useRef<HTMLTextAreaElement>(null);
   const listId = useId();
@@ -239,6 +282,12 @@ export function Composer({
       setDismissed(mention.start);
       return;
     }
+    if (editing && event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      cancelEdit();
+      return;
+    }
     // Enter sends, because this is a conversation; a newline needs the modifier, because a paste of
     // several lines is one message and should stay one.
     if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); say(); }
@@ -251,6 +300,19 @@ export function Composer({
 
   const say = () => {
     const message = text.trim();
+    if (editing && onEdit) {
+      // Rewording keeps the word's place and files, so the box's own files stay where they are. Blank is a removal, and
+      // that is what *Remove* is for.
+      if (!message || !live) return;
+      const { id, stash } = editing;
+      setRefused(null);
+      void onEdit(id, message).then((answer) => {
+        if (answer && !answer.done) { setTaken(true); setEditing(null); return; }
+        setText(stash);
+        setEditing(null);
+      }, said);
+      return;
+    }
     if ((!message && files.length === 0) || !live || sending) return;
     // Words the door could not take stay in the box, unsent; the caller says why (MSG1f, D137 §2.4).
     if (accepts && !accepts(message)) return;
@@ -269,7 +331,7 @@ export function Composer({
       onSubmit={(event) => { event.preventDefault(); say(); }}
       {...(live && attachments ? attach.handlers : {})}
     >
-      {refusal && <p role="alert" className="m-0 text-small text-ink-danger">{refusal}</p>}
+      {(refusal ?? refused) && <p role="alert" className="m-0 text-small text-ink-danger">{refusal ?? refused}</p>}
       {!live && writing && <p className="m-0 text-small text-ink-soft">{t('work.composer.over')}</p>}
 
       {live && queued.length > 0 && (
@@ -279,18 +341,45 @@ export function Composer({
             {queued.map((message, index) => (
               <li
                 key={`${index}:${message.text}`}
-                className="rounded-control border border-dashed border-line-strong px-2.5 py-1 text-small text-ink-soft"
+                className="flex items-start gap-2 rounded-control border border-dashed border-line-strong px-2.5 py-1 text-small text-ink-soft"
               >
-                <span className="line-clamp-2 whitespace-pre-wrap wrap-anywhere">{message.text}</span>
-                {message.files.length > 0 && (
-                  <span className="mt-0.5 flex min-w-0 items-center gap-1 text-meta text-ink-faint">
-                    <Icon name="attach" size={11} className="shrink-0" />
-                    <span className="truncate">{message.files.join(', ')}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="line-clamp-2 whitespace-pre-wrap wrap-anywhere">{message.text}</span>
+                  {message.files.length > 0 && (
+                    <span className="mt-0.5 flex min-w-0 items-center gap-1 text-meta text-ink-faint">
+                      <Icon name="attach" size={11} className="shrink-0" />
+                      <span className="truncate">{message.files.join(', ')}</span>
+                    </span>
+                  )}
+                </span>
+                {message.id && (onRemove || onEdit) && (
+                  <span className="flex shrink-0 items-center gap-1">
+                    {onEdit && (
+                      <Button
+                        type="button" variant="ghost"
+                        aria-label={t('work.composer.editItem', { text: message.text })}
+                        onClick={() => startEdit(message)}
+                        className="h-6 px-1.5 text-meta"
+                      >
+                        {t('work.composer.edit')}
+                      </Button>
+                    )}
+                    {onRemove && (
+                      <Button
+                        type="button" variant="ghost"
+                        aria-label={t('work.composer.removeItem', { text: message.text })}
+                        onClick={() => { void remove(message.id!); }}
+                        className="h-6 px-1.5 text-meta"
+                      >
+                        {t('work.composer.remove')}
+                      </Button>
+                    )}
                   </span>
                 )}
               </li>
             ))}
           </ol>
+          {taken && <p role="status" className="m-0 text-small text-ink-soft">{t('work.composer.taken')}</p>}
         </div>
       )}
 
@@ -322,6 +411,7 @@ export function Composer({
         </p>
       )}
 
+      {editing && <p role="status" className="m-0 text-small text-ink-soft">{t('work.composer.editing')}</p>}
       {writing && <div className="relative grid">
         {mention && open && mentions && (
           <MentionList
