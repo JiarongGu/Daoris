@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -128,7 +129,4 @@ public sealed class SessionBranches(string home)
         return new GrownBranch(repository, Text(element, "workspace") ?? "default", branch, Text(element, "line"), from,
             Text(element, "grewFrom"), at, Text(element, "now"));
     }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 }

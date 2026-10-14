@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using static Daoris.Driver.Json;
 using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
@@ -228,9 +229,6 @@ public static class ReviewRules
         environment.Name!, environment.Kind!, environment.Procedure!,
         environment.Address is { } address && address.EndsWith('/') ? address[..^1] : environment.Address,
         environment.Run);
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
     /// <summary>
     /// A map of review rules as <c>driver.json</c> holds it: each name trimmed, a blank one not read; a rule with a problem,

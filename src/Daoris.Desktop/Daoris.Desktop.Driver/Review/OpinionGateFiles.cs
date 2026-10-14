@@ -52,9 +52,9 @@ internal static class OpinionGateFiles
                 if (repository.Value.ValueKind != JsonValueKind.Object) continue;
                 all[repository.Name] = new OpinionGateKept
                 {
-                    Asks = [.. Kept.Items(repository.Value, "asks").Select(AskOf).OfType<OpinionAskKept>()],
-                    Requests = [.. Kept.Items(repository.Value, "requests").Select(RequestOf).OfType<OpinionRequest>()],
-                    Person = [.. Kept.Items(repository.Value, "person").Select(WordOf).OfType<OpinionPersonWord>()],
+                    Asks = [.. Json.Items(repository.Value, "asks").Select(AskOf).OfType<OpinionAskKept>()],
+                    Requests = [.. Json.Items(repository.Value, "requests").Select(RequestOf).OfType<OpinionRequest>()],
+                    Person = [.. Json.Items(repository.Value, "person").Select(WordOf).OfType<OpinionPersonWord>()],
                 };
             }
         }
@@ -105,13 +105,13 @@ internal static class OpinionGateFiles
 
     private static OpinionDue? DueOf(JsonElement element) =>
         element.ValueKind == JsonValueKind.Object
-        && Kept.Text(element, "session") is { } session && Kept.Text(element, "quest") is { } quest
-        && Kept.Text(element, "repository") is { } repository && Kept.Text(element, "tree") is { } tree
-        && Kept.Text(element, "occasion") is { } occasion && Kept.Moment(element, "at") is { } at
-            ? new OpinionDue(session, quest, repository, Kept.Text(element, "workspace") ?? RemoteTarget.DefaultWorkspace, tree, occasion, at)
+        && Json.Text(element, "session") is { } session && Json.Text(element, "quest") is { } quest
+        && Json.Text(element, "repository") is { } repository && Json.Text(element, "tree") is { } tree
+        && Json.Text(element, "occasion") is { } occasion && Kept.Moment(element, "at") is { } at
+            ? new OpinionDue(session, quest, repository, Json.Text(element, "workspace") ?? RemoteTarget.DefaultWorkspace, tree, occasion, at)
             {
                 Closed = Kept.Moment(element, "closed"),
-                Why = Kept.Text(element, "why"),
+                Why = Json.Text(element, "why"),
             }
             : null;
 
@@ -182,32 +182,32 @@ internal static class OpinionGateFiles
     }
 
     private static OpinionAskKept? AskOf(JsonElement element) =>
-        Kept.Moment(element, "at") is { } at && Kept.Text(element, "occasion") is { } occasion && Kept.Text(element, "working") is { } working
-        && Kept.Text(element, "tip") is { } tip
+        Kept.Moment(element, "at") is { } at && Json.Text(element, "occasion") is { } occasion && Json.Text(element, "working") is { } working
+        && Json.Text(element, "tip") is { } tip
             ? new OpinionAskKept(at, occasion, working, tip)
             {
-                Opinion = Kept.Text(element, "opinion"),
-                Code = Kept.Text(element, "code"),
+                Opinion = Json.Text(element, "opinion"),
+                Code = Json.Text(element, "code"),
                 Until = Kept.Moment(element, "until"),
-                By = Kept.Text(element, "by") ?? OpinionAskers.Look,
-                Reviewer = Kept.Text(element, "reviewer"),
-                Label = Kept.Text(element, "label"),
+                By = Json.Text(element, "by") ?? OpinionAskers.Look,
+                Reviewer = Json.Text(element, "reviewer"),
+                Label = Json.Text(element, "label"),
             }
             : null;
 
     private static OpinionRequest? RequestOf(JsonElement element) =>
-        Kept.Moment(element, "at") is { } at && Kept.Text(element, "session") is { } session && Kept.Text(element, "occasion") is { } occasion
+        Kept.Moment(element, "at") is { } at && Json.Text(element, "session") is { } session && Json.Text(element, "occasion") is { } occasion
             ? new OpinionRequest(at, session, occasion)
             {
-                Reviewer = Kept.Text(element, "reviewer"),
+                Reviewer = Json.Text(element, "reviewer"),
                 SameAgent = element.TryGetProperty("sameAgent", out var same) && same.ValueKind == JsonValueKind.True,
-                Words = Kept.Text(element, "words"),
+                Words = Json.Text(element, "words"),
             }
             : null;
 
     private static OpinionPersonWord? WordOf(JsonElement element) =>
-        Kept.Text(element, "said") is { } said && Kept.Text(element, "tip") is { } tip && Kept.Moment(element, "at") is { } at
-            ? new OpinionPersonWord(said, tip, at) { Words = Kept.Text(element, "words"), Door = Kept.Text(element, "door") }
+        Json.Text(element, "said") is { } said && Json.Text(element, "tip") is { } tip && Kept.Moment(element, "at") is { } at
+            ? new OpinionPersonWord(said, tip, at) { Words = Json.Text(element, "words"), Door = Json.Text(element, "door") }
             : null;
 
     /// <summary>
@@ -216,19 +216,9 @@ internal static class OpinionGateFiles
     /// </summary>
     private static class Kept
     {
-        public static string? Text(JsonElement element, string name) =>
-            element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-                ? value.GetString()
-                : null;
-
         public static DateTimeOffset? Moment(JsonElement element, string name) =>
-            Text(element, name) is { } when && DateTimeOffset.TryParse(when, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at)
+            Json.Text(element, name) is { } when && DateTimeOffset.TryParse(when, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at)
                 ? at
                 : null;
-
-        public static IEnumerable<JsonElement> Items(JsonElement element, string name) =>
-            element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var items) && items.ValueKind == JsonValueKind.Array
-                ? items.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.Object)
-                : [];
     }
 }

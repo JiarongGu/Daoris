@@ -161,9 +161,9 @@ public static class WorkflowNamed
     {
         static NamedWorkflowRead Unread(string problem) => new(null, null, [], problem);
         if (file.ValueKind != JsonValueKind.Object) return Unread(FileShape);
-        var id = TextOf(file, "id");
+        var id = Json.Text(file, "id");
         if (IdProblem(id) is { } idProblem) return Unread(idProblem);
-        var name = TextOf(file, "name");
+        var name = Json.Text(file, "name");
         if (NameProblem(name) is { } nameProblem) return Unread(nameProblem);
         if (!file.TryGetProperty("versions", out var versions) || versions.ValueKind != JsonValueKind.Array || versions.GetArrayLength() == 0)
         {
@@ -191,8 +191,8 @@ public static class WorkflowNamed
     /// <param name="prior">The versions before it that read, which a step's id is held to: an id is never used for another kind.</param>
     public static NamedVersion ReadVersion(JsonElement version, int number, IReadOnlyList<NamedVersion> prior)
     {
-        var at = TextOf(version, "at");
-        var door = TextOf(version, "door");
+        var at = Json.Text(version, "at");
+        var door = Json.Text(version, "door");
         NamedVersion Unread(string problem) => new(number, at, door, null, problem, null);
         if (!IsMoment(at)) return Unread($"v{number}: its `at` is a moment as ISO 8601 writes it, such as `2026-10-09T09:12:00Z`.");
         if (door is null || !(door is "screen" or "terminal" || IsAskDoor(door)))
@@ -232,7 +232,7 @@ public static class WorkflowNamed
         var v = $"v{number}";
         if (value is not { ValueKind: JsonValueKind.Array } list || list.GetArrayLength() == 0) return (null, $"{v}: its `steps` is a list of at least one.");
         var count = list.GetArrayLength() + list.EnumerateArray().Sum(each =>
-            each.ValueKind == JsonValueKind.Object && TextOf(each, "kind") == WorkflowKinds.All
+            each.ValueKind == JsonValueKind.Object && Json.Text(each, "kind") == WorkflowKinds.All
             && each.TryGetProperty("steps", out var members) && members.ValueKind == JsonValueKind.Array
                 ? members.GetArrayLength()
                 : 0);
@@ -260,12 +260,12 @@ public static class WorkflowNamed
     {
         var at = group is null ? $"{v}, step {position}: " : $"{v}, step {position} in `{group}`: ";
         if (raw.ValueKind != JsonValueKind.Object) return (null, $"{at}a step is a JSON object with its `id` and `kind`.");
-        var id = TextOf(raw, "id");
+        var id = Json.Text(raw, "id");
         if (!IsId(id)) return (null, $"{at}its `id` is {IdRule}, such as `land`.");
         if (!seen.Add(id!)) return (null, $"{at}`{id}` is an earlier step's id too; each step's id is its own.");
 
         var p = group is null ? $"{v}, step `{id}`: " : $"{v}, step `{id}` in `{group}`: ";
-        if (TextOf(raw, "kind") is not { } kind) return (null, $"{p}its `kind` is one of {KindList}.");
+        if (Json.Text(raw, "kind") is not { } kind) return (null, $"{p}its `kind` is one of {KindList}.");
         if (WorkflowKindTable.Of(kind) is not { } row) return (null, $"{p}`{kind}` is no kind of step — one of {KindList}.");
         if (group is not null && kind == WorkflowKinds.All) return (null, $"{p}a group holds no group: one level of grouping.");
         if (group is not null && kind is not (WorkflowKinds.Check or WorkflowKinds.Stage))
@@ -532,12 +532,6 @@ public static class WorkflowNamed
         IEnumerable<string> list => $"[{string.Join(',', list.Select(WorkflowCurrent.Quoted))}]",
         _ => throw new ArgumentException($"a field is text, a switch or a list of names, not {value.GetType().Name}."),
     };
-
-    /// <summary>Text where the property is text, else null.</summary>
-    internal static string? TextOf(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
 
     /// <summary>A whole number from 1, as JSON writes one: a fraction, text or anything past the largest int is none.</summary>
     private static int? WholeOf(JsonElement element, string name) =>

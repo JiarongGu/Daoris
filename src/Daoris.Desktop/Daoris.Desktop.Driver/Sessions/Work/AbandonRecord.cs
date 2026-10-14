@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -170,13 +171,13 @@ public sealed class AbandonRecord(string home)
         {
             Declined = Strings(element, "declined"),
             Closed = element.TryGetProperty("closed", out var closed) && closed.ValueKind == JsonValueKind.True,
-            Trees = [.. Objects(element, "trees").Select(tree => Text(tree, "repository") is { } repository && Text(tree, "branch") is { } branch
-                ? new AbandonedTree(repository, branch, Text(tree, "tip"), Number(tree, "commits"), Number(tree, "uncommitted"),
+            Trees = [.. Items(element, "trees").Select(tree => Text(tree, "repository") is { } repository && Text(tree, "branch") is { } branch
+                ? new AbandonedTree(repository, branch, Text(tree, "tip"), Int(tree, "commits"), Int(tree, "uncommitted"),
                     Strings(tree, "sessions"), tree.TryGetProperty("alone", out var alone) && alone.ValueKind == JsonValueKind.True)
                 : null).OfType<AbandonedTree>()],
             Stopped = Strings(element, "stopped"),
             Archived = Strings(element, "archived"),
-            Stayed = [.. Objects(element, "stayed").Select(keep => Text(keep, "piece") is { } piece && Text(keep, "why") is { } why
+            Stayed = [.. Items(element, "stayed").Select(keep => Text(keep, "piece") is { } piece && Text(keep, "why") is { } why
                 ? new AbandonKeep(piece, why)
                 {
                     Machine = Text(keep, "machine"),
@@ -186,25 +187,12 @@ public sealed class AbandonRecord(string home)
                         : null,
                 }
                 : null).OfType<AbandonKeep>()],
-            Declines = [.. Objects(element, "declines").Select(decline => Text(decline, "quest") is { } quest && Text(decline, "answer") is { } answer
+            Declines = [.. Items(element, "declines").Select(decline => Text(decline, "quest") is { } quest && Text(decline, "answer") is { } answer
                 ? new AbandonDecline(quest, answer)
                 : null).OfType<AbandonDecline>()],
         };
     }
 
-    private static IEnumerable<JsonElement> Objects(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var array) && array.ValueKind == JsonValueKind.Array
-            ? array.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.Object)
-            : [];
-
-    private static IReadOnlyList<string> Strings(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var array) && array.ValueKind == JsonValueKind.Array
-            ? [.. array.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!)]
-            : [];
-
-    private static int? Number(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var number) ? number : null;
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+    // Empty strings are kept here, as the copy this replaced kept them.
+    private static IReadOnlyList<string> Strings(JsonElement element, string name) => Json.Strings(element, name, keepEmpty: true);
 }

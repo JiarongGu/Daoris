@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -191,8 +192,6 @@ public static class CommitRules
     public static CommitEdit EditOf(JsonElement root)
     {
         if (root.ValueKind != JsonValueKind.Object) return new CommitEdit();
-        static string? Text(JsonElement element, string name) =>
-            element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
         CommitSet? set = null;
         if (root.TryGetProperty("set", out var given) && given.ValueKind == JsonValueKind.Object)

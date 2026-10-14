@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -194,6 +195,4 @@ public static class WorkspaceSetupFile
 
     private static int? Count(JsonNode? node) =>
         node?.GetValueKind() == JsonValueKind.Number && node.AsValue().TryGetValue<int>(out var count) && count >= 0 ? count : null;
-
-    private static string? Text(JsonNode? node) => node?.GetValueKind() == JsonValueKind.String ? node.GetValue<string>() : null;
 }

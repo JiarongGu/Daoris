@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
@@ -845,14 +846,8 @@ public sealed class ServiceClient : IDisposable
         return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
     }
 
-    /// <summary>A field that is true, or false when it is anything else or absent.</summary>
-    private static bool Flag(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.True;
-
-    private static IReadOnlyList<string> Strings(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array
-            ? [.. value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!)]
-            : [];
+    // Empty strings are kept here, as the copy this replaced kept them.
+    private static IReadOnlyList<string> Strings(JsonElement element, string name) => Json.Strings(element, name, keepEmpty: true);
 
     /// <summary>A person turns an ask into a quest for <paramref name="to"/>.</summary>
     public Task<AskAnswer> PublishAskAsync(string id, string to, CancellationToken ct = default) =>
@@ -1656,13 +1651,6 @@ public sealed class ServiceClient : IDisposable
         return (id, Text(answer, "message") ?? "");
     }
 
-    // An element that is not an object has no fields — asked as one, TryGetProperty would throw.
-    internal static string? Text(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object
-        && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
-
     private static string WriteJson(Action<Utf8JsonWriter> write)
     {
         using var stream = new MemoryStream();
@@ -1803,7 +1791,7 @@ public sealed class ServiceClient : IDisposable
                 Local = Flag(setUp, "local"),
                 At = Moment(setUp, "at"),
                 Machine = Text(setUp, "machine"),
-                Sequence = Whole(setUp, "sequence"),
+                Sequence = Long(setUp, "sequence"),
             }),
     ];
 
@@ -1818,7 +1806,7 @@ public sealed class ServiceClient : IDisposable
                 return new QuestReviewVerdictView(Text(verdict, "said")!)
                 {
                     SetUpMachine = Text(setUp, "machine"),
-                    SetUpSequence = Whole(setUp, "sequence"),
+                    SetUpSequence = Long(setUp, "sequence"),
                     Commit = Text(verdict, "commit"),
                     Words = Text(verdict, "words"),
                     At = Moment(verdict, "at"),
@@ -1932,19 +1920,6 @@ public sealed class ServiceClient : IDisposable
             writer.WriteString("choice", choice);
             if (!string.IsNullOrWhiteSpace(words)) writer.WriteString("words", words.Trim());
         }, ct);
-
-    /// <summary>The objects of an array field; none where the field is absent or no array, and an item that is no object is passed over.</summary>
-    private static IEnumerable<JsonElement> Items(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var items) && items.ValueKind == JsonValueKind.Array
-            ? items.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.Object)
-            : [];
-
-    /// <summary>A whole number a field holds, or null where it holds none.</summary>
-    private static long? Whole(JsonElement element, string name) =>
-        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value)
-        && value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var number)
-            ? number
-            : null;
 
     // What the review's showing reads of a session's record (REVIEWENV1d): the tree its set-up was built in.
 
