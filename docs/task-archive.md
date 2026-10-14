@@ -14671,3 +14671,8 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DEDUP7c — the short ids left** (service, driver). The Mcp host's three `Math.Min(7, …)` cuts cannot see the core's internal `Clipped.ShortCommit`; four unguarded `[..7]`/`[..8]` cuts (`NoteCodes.cs:942`, `LayoutGit.cs:36`, `RegistrationWorld.cs:84`, `PluginTrials.cs:290`) throw on a short id: decide what a short id should do, then one helper each side. D166's DEDUP7b note.
 
 **Outcome** 2026-10-15: a short id shows whole: the four unguarded cuts call `TextBounds.ShortCommit` (`PluginTrials.StateWords` extracted to test it; `LayoutGit` and `RegistrationWorld` could not throw, `IsCommitId` holds ids to seven or more); the Mcp host calls the core's `Clipped.ShortCommit` through an `InternalsVisibleTo` grant instead of a twin. Detail: D166's DEDUP7c note.
+## REVIEWBASE5 — the session head offers no *Accept…* where Review says nothing is beyond the line (2026-10-15, D164)
+
+> - [ ] **REVIEWBASE5 — the session head offers no *Accept…* where Review says nothing is beyond the line** (web). REVIEWBASE4 took Accept out of Review's panel for a tree that holds nothing beyond its line; the session head's own *Accept…* (SessionHead) reads the landing plan alone and may still offer it. Read the review's `behind.ahead` there too. Proof: a SessionHead test with `ahead` 0; the window. D164's REVIEWBASE4 note.
+
+**Outcome** 2026-10-15: `SessionHead` takes the review's `behind`; where `ahead` is 0 and its tree holds nothing uncommitted, *Accept…* is not offered (*Review* stays). `WorkFrame` reads it from the review's own `useSessionDiff` query, passed through `AttendedSession`. Detail: D164's REVIEWBASE5 note.
