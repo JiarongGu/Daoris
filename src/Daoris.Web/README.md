@@ -132,9 +132,10 @@ tree-wide gates), `lib/` (helpers no domain owns), `locales/` (the catalogues, i
 `projects/`, `knowledge/`, `map/`, `agents/`, `plugins/`, `settings/`, `help/`, `work/` for Sessions, `workflow/`,
 `compose/`, `update/`), and `test/` for the tests' support. A test or a story sits beside its source.
 `src/test/structure.test.ts` holds this with its map, `structure.json`: a new file at the top, a folder no module
-declares, a test apart from its source or a folder's top past twenty sources fails it, and the map names the four
-folders still past that (`work/`, `settings/`, `bridge/`, `projects/`) until each is cut into scopes. A gate that
-reads the whole tree globs from the project's root and names each path from the sources' top (`test/sources.ts`).
+declares, a test apart from its source or a folder's top past twenty sources fails it, unless the map's `wide` list
+names that folder until a row cuts it into scopes. A gate that reads the whole tree globs from the project's root and
+names each path from the sources' top (`test/sources.ts`). A view in a folder the presentational boundary covers is an
+organism by name in `design/presentational.test.ts`.
 
 ## One UI, two shells
 
