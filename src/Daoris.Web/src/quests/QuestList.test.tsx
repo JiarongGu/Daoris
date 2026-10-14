@@ -26,6 +26,24 @@ const list = (over: Partial<Parameters<typeof QuestList>[0]> = {}) => {
 };
 
 describe("Quests' list", () => {
+  /** SESSONE2h: the asks the mirrored messages name, in a group of their own after this machine's, each a row that opens its page. */
+  it('lists the asks held elsewhere in a group after this machine’s asks, with their unread, and opens one by its item', async () => {
+    const { onChoose } = list({
+      asks: [{ ask: PROPOSED }],
+      teammates: [
+        { id: '7e6f51', workspace: 'default', origins: ['key-a'], latest: '2026-10-15T09:05:00Z', messages: 3, unread: 2 },
+        { id: '7e6f50', workspace: 'default', origins: [], latest: '2026-10-15T08:00:00Z', messages: 1, unread: 0 },
+      ],
+    });
+
+    expect(screen.getByText('Teammates’ asks (2)')).toBeInTheDocument();
+    const row = screen.getByText('#7e6f51').closest('li')!;
+    expect(within(row).getByText('2 unread')).toBeInTheDocument();
+    expect(within(screen.getByText('#7e6f50').closest('li')!).queryByText(/unread/)).toBeNull();
+    await userEvent.click(within(row).getByRole('button'));
+    expect(onChoose).toHaveBeenCalledWith('ask:7e6f51');
+  });
+
   it('puts the asks first, then the quests by state, each group counted, each row a row of its list', () => {
     list({ asks: [{ ask: PROPOSED }] });
 

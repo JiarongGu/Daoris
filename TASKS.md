@@ -191,7 +191,6 @@ pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build 
 Co-working (D167, `docs/2026-10-14-co-working-design.md`; the owner's two tasks are the canary):
 
 - [ ] **SESSONE1c-look — co-working on the installed window** (parent). Seen 2026-10-14 (中文): three sessions with parts and the strip. Left: acts on a part, archive per entry, *Group by ask*, the ask page, English; WAITSHOWN1, QUEUEEDIT1b, USERSHOWN1 on live turns; the ask's *Channel* on a live ask (post, *To*, *Reply to*, unread, a session's panel, a claim turn), republished 2026-10-15 on 3be8d382b.
-- [ ] **SESSONE2h — a page door to a teammate's ask** (service/web). SESSONE2g reads a teammate's ask's channel by id, but the page lists and opens only this machine's asks: list the asks the mirrored messages name, and an ask page that renders without a local ask record. D167's SESSONE2g note.
 - [ ] **SESSONE2i — posting to a teammate's ask** (design first). A post to an ask held elsewhere is refused `held-elsewhere` today; say how its holder takes the message (the sync's direction, the holder's sessions reading it), then build. D167's SESSONE2g note.
 - [ ] **QUESTREBASE1 — pure rebase planner** (service; consider). Preserve operation identity, accepted-before-pending order and transaction. D69/D79; unchanged sync suite and loss tests.
 - [ ] **MSG1d2 — queued chat survives restart** (driver/web; with MSG1c). Record ids/reach/withdrawals; take by id. Messages §3.1.

@@ -12,8 +12,10 @@ import { useScope } from '../data/scope';
 import { namer } from '../settings/namer';
 import { askLines } from '../work/entries';
 import {
-  useChannel, useChannelUnreads, useMarkChannel, usePostChannel,
+  useChannel, useChannelUnreads, useElsewhereAsks, useMarkChannel, usePostChannel,
 } from '../bridge/shell';
+import type { ElsewhereAsk } from '../work/channel';
+import { TeammateAskPage } from './TeammateAskPage';
 import { useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useSessionEntries, useWorkflowRun, useWorkPlan } from '../bridge/shell';
 import { workspaceOf, workspacesOf } from '../data/workspaces';
 import { failure, type Notify, useErrorNotify } from '../design/ui';
@@ -38,6 +40,8 @@ const EMPTY_DRAFT: AskDraft = { circle: '', sentence: '', to: '', review: '', re
 /** What the asks hand Quests' view: their rows, the chosen ask's page, and the composer while it is open. */
 export type AsksPart = {
   rows: AskRowFacts[];
+  /** The asks other machines hold that the sync mirrored the channel of (SESSONE2h), listed after the rows. */
+  teammates: ElsewhereAsk[];
   /** The asks' first load. */
   loading: boolean;
   /** The chosen ask's page, or the main area's notice for one loading or gone; null where no ask is chosen. */
@@ -145,6 +149,12 @@ export function useAsksPart({
   const unreads = useChannelUnreads((asks.data ?? []).filter((item) => !askEnded(item)).map((item) => item.id), { enabled: active });
   const postChannel = usePostChannel();
   const markChannel = useMarkChannel();
+  // The asks other machines hold, which the sync mirrored the channel of (SESSONE2h): scoped like every cross-repository read, and
+  // none where no driver answers one (a browser). The chosen one, when this machine holds no such ask, is shown as its channel.
+  const elsewhere = useElsewhereAsks({ enabled: active });
+  const teammates = elsewhere.asks.filter((held) => !scope.workspace || held.workspace === scope.workspace)
+    .sort((a, b) => b.latest.localeCompare(a.latest));
+  const teammate = chosen ? teammates.find((held) => held.id === chosen) : undefined;
   // The driver's last look at each quest, which says why one of the chosen ask's work sits (PAUSE1h).
   const considered = useConsidered().data ?? [];
   // The last abandon's answer, for the ask it was of, said on its page before the record catches up.
@@ -341,13 +351,22 @@ export function useAsksPart({
             : undefined}
         />
       )
-      : <QuestsMainNotice state={every.data === undefined && !every.error ? 'loading' : 'gone'} gone="ask" />;
+      : teammate
+        // A teammate's ask has no record here (SESSONE2h): its page is its channel, read-only.
+        ? <TeammateAskPage key={teammate.id} ask={teammate} channel={channel.channel} />
+        : (
+          <QuestsMainNotice
+            state={(every.data === undefined && !every.error) || (elsewhere.loading && every.data !== undefined) ? 'loading' : 'gone'}
+            gone="ask"
+          />
+        );
 
   return {
+    teammates,
     rows: asksInOrder(asks.data ?? []).map((item) => ({ ask: item, intake: intakeOf(item)?.state ?? null, unread: unreads[item.id] })),
     loading: asks.isPending,
     page,
-    standing: chosen ? askStanding(shown, every.data !== undefined) : undefined,
+    standing: chosen ? (teammate ? 'live' : askStanding(shown, every.data !== undefined && !elsewhere.loading)) : undefined,
     composer: composing && (
       <AskComposer
         draft={draft}

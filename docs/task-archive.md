@@ -14716,3 +14716,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NAMEZH1 — 本机 in a helper's note** (web). `note.helper.why.asker-gone` says 这台机器 where the glossary's name is 本机; correct it and drop its entry from `names.test.ts`'s list. D163's MIXAGENT3a-i note.
 
 **Outcome** 2026-10-15: `note.helper.why.asker-gone` (zh) now says 提问的会话不在本机上, and its entry left the names test's list of strays. Built with KEYPARITY2 (its count). Detail: D163's NAMEZH1 note.
+
+## SESSONE2h — a page door to a teammate's ask (2026-10-15, D167)
+
+> - [ ] **SESSONE2h — a page door to a teammate's ask** (service/web). SESSONE2g reads a teammate's ask's channel by id, but the page lists and opens only this machine's asks: list the asks the mirrored messages name, and an ask page that renders without a local ask record. D167's SESSONE2g note.
+
+**Outcome** 2026-10-15: `GET /api/channel/elsewhere` lists the asks the mirrored messages name that this machine does not hold (circle, origins, latest, unread against the local mark; no title), and the Asks list gains a *Teammates' asks* group whose row opens a read-only page of the ask's channel with none of an ask's sections. The driver's `ASKS_ELSEWHERE` hop between them is not built (proposed in the hand-back). Detail: D167's SESSONE2h note.
