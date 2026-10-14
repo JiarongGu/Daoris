@@ -55,6 +55,12 @@ public sealed partial class ChatRunner : IDisposable
     // fields stay here too, the same objects, for the front and its parts until they are classes (PART10h).
     private readonly ChatContext _context;
 
+    // A conversation handed over, and one moved by its account's usage curve: classes over the context, the front keeping its
+    // users' calls (PART10g).
+    private readonly ChatHandOver _handOver;
+
+    private readonly CurveMove _curve;
+
     /// <param name="events">
     /// Where a conversation's structure is kept (D76): the shell's shared record, so its page hears each message live; the
     /// home's own where nobody passes one, which is the headless chat door's case.
@@ -95,6 +101,8 @@ public sealed partial class ChatRunner : IDisposable
         _context = new ChatContext(service, home, processes, output, _harnesses, _events);
         _conversations = _context.Conversations;
         _marks = _context.Marks;
+        _handOver = new ChatHandOver(_context, this);
+        _curve = new CurveMove(_context, _handOver);
 
         // The person's words to an ended chat are kept on its record and shown in its conversation by whichever door they
         // were said at (MSG1d); hearing them there is what takes them up at once (MSG1c, D137 §2.2).
@@ -105,6 +113,33 @@ public sealed partial class ChatRunner : IDisposable
     // its own, never the browser's, which a hand-over's briefing appends: a conversation handed over is told Daoris's record instead.
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ProcessBriefing> _toldProcess =
         new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// *Hand a conversation over* (MIXAGENT1a-i, D163): judged and kept in its box, then taken at once, or as its turn ends where
+    /// it is talking (<see cref="ChatHandOver.HandOverAsync"/>).
+    /// </summary>
+    /// <param name="why">One of <see cref="HandOverWhy"/>.</param>
+    /// <param name="askedBy">One of <see cref="HandOverBy"/>.</param>
+    /// <param name="onEnded">Told when the new conversation ends, as a start's is.</param>
+    public Task<HandedOver> HandOverAsync(
+        string sessionId, string agent, string? account, string why, string askedBy, DriverConfig config,
+        Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
+        _handOver.HandOverAsync(sessionId, agent, account, why, askedBy, config, onEnded, ct);
+
+    /// <summary>
+    /// Judge a conversation by its account's usage curve and, where the decision says so, move it (SWITCH1c-ii,
+    /// <see cref="CurveMove.MoveAsync"/>): null where nothing was judged.
+    /// </summary>
+    internal Task<SwitchChoice?> MoveByCurveAsync(
+        string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct = default) =>
+        _curve.MoveAsync(sessionId, config, onEnded, ct);
+
+    /// <summary>What each judged turn's end came to, by session: a test hears it; no person reads it.</summary>
+    internal event Action<string, SwitchChoice>? CurveJudged
+    {
+        add => _curve.Judged += value;
+        remove => _curve.Judged -= value;
+    }
 
     /// <summary>
     /// Where a conversation's turns stand — whether one is in flight, and what the person sent that is
@@ -551,12 +586,12 @@ public sealed partial class ChatRunner : IDisposable
         {
             QueueChanged?.Invoke(sessionId, queue);
             // A conversation asked to go on with another agent while it talked is handed over as its turn ends (MIXAGENT1a-i).
-            HandOverDue(sessionId, queue, config, onEnded);
+            _handOver.Due(sessionId, queue, config, onEnded);
             // One over its account's usage curve goes on with another account of its agent as its turn ends (SWITCH1c-ii), judged once.
-            if (TurnJustEnded(queue, judged))
+            if (CurveMove.TurnJustEnded(queue, judged))
             {
                 judged = queue.LastTurnEnded;
-                CurveDue(sessionId, config, onEnded);
+                _curve.Due(sessionId, config, onEnded);
             }
         }
         // A conversation going on hands its words to the native door only once its process is tracked, so a word the person

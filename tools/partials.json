@@ -1,8 +1,6 @@
 {
   "ChatRunner": [
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.Curve.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.GoOn.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.HandOver.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.Help.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.HelperWords.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.StartFrom.cs",

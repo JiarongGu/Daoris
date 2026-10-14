@@ -145,7 +145,7 @@ public sealed partial class ChatRunner
         }
 
         // Every hand-over asked while no runner heard it (MIXAGENT1a-i) is taken too.
-        taken.AddRange(await TakeHandOversAsync(ct).ConfigureAwait(false));
+        taken.AddRange(await _handOver.TakeAllAsync(Announce, ct).ConfigureAwait(false));
         return taken;
     }
 
