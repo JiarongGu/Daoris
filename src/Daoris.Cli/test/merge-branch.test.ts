@@ -480,6 +480,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['the fence table', ['src/Daoris.Cli/test/fixtures/fence-cases.json'], [...BASE, 'service', 'driver']],
     // SWITCH1a: the rotation-use table sits among the CLI's fixtures, and the driver's twin reads it too.
     ['the rotation-use table', ['src/Daoris.Cli/test/fixtures/rotation-use.json'], [...BASE, 'driver']],
+    // TWINWORDS1: the landing, helpers and commits sentences sit among the CLI's fixtures, and the driver's twin reads them too.
+    ['the landing-says table', ['src/Daoris.Cli/test/fixtures/landing-says.json'], [...BASE, 'driver']],
     // SWITCH1b-iii: the usage curve's table sits among the CLI's fixtures, and the driver's twin reads it too.
     ['the usage curve table', ['src/Daoris.Cli/test/fixtures/usage-curves.json'], [...BASE, 'driver']],
     ['release tooling', ['tools/release-rehearsal.mjs'], [...BASE, 'rehearse']],

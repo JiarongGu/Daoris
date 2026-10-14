@@ -14650,3 +14650,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT5c — the page's top folder in folders** (web). As STRUCT5a, 5b and 5d did, with its gate in vitest; STRUCT5d's import-rewriting script (asserted counts, read back) is a candidate tracked tool. Design §7.
 
 **Outcome** 2026-10-15: the page's top holds only its three entries; 109 files moved into domain folders with `git mv`, held by `src/test/structure.test.ts`, and `daoris.lanes.json` lost two `SettingsView*` globs the move made empty. The work, settings, bridge and projects folders still hold over twenty sources at their top and sit on the gate's `wide` list (STRUCT5c-ii); the move script stayed in scratch (MOVETOOL1). Eleven gates passed on the merge, merged with main's closed-quest fix. On Opus: 308 tool calls. Detail: D166's STRUCT5c note and the `refactor(web): STRUCT5c` commits.
+
+## TWINWORDS1 — the cards' copied sentences, held to the terminal's (2026-10-15, D164)
+
+> - [ ] **TWINWORDS1 — the cards' copied sentences, held to the terminal's** (driver/cli). Ask Daoris's landing, helpers and commits cards say the CLI's sentences by hand (`TicketSays`, the squash lines, the mode sentences in `HelpSettingProposals`); move them beside the rules' twins on a shared table both suites read. D164's DOORS1a note; `.claude/knowledge/twins.md`.
+
+**Outcome** 2026-10-15: the ticket, squash, helpers-mode and commits-mode sentences sit in one table, `src/Daoris.Cli/test/fixtures/landing-says.json`, which `landing-says.test.ts` (against `ticketSays`, `SQUASH_SAYS`, `helperModeSays`, `commitModeSays`, now exported and used by the verbs) and the driver's `LandingSaysTwinTests` (against the cards) both read; changing one side's words by hand fails the other's test, seen red on both. The merge tool's REACH row holds the table. Detail: D164's TWINWORDS1 note and the twins record.
