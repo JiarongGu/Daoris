@@ -137,7 +137,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Cli/src/agents/toolchain.ts` | 149 | 2884 |
 | `src/Daoris.Cli/src/doctrine/materialize.ts` | 47 | 935 |
-| `src/Daoris.Cli/src/driver/driverconfig.ts` | 115 | 2096 |
+| `src/Daoris.Cli/src/driver/driverconfig.ts` | 115 | 2114 |
 | `src/Daoris.Cli/src/plugins/plugins.ts` | 69 | 1383 |
 | `src/Daoris.Cli/src/workflows/workflowdoor.ts` | 46 | 836 |
 | `src/Daoris.Cli/test/agents/toolchain.test.ts` | 101 | 1936 |
@@ -145,7 +145,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 43 | 834 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 47 | 825 |
 | `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 132 | 2432 |
-| `src/Daoris.Cli/test/merge-branch.test.ts` | 188 | 2907 |
+| `src/Daoris.Cli/test/merge-branch.test.ts` | 188 | 2909 |
 | `src/Daoris.Cli/test/setup-kit.test.ts` | 52 | 955 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1226 |
 
@@ -158,7 +158,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 51 | 1052 |
 | `tools/family-rehearsal.mjs` | 340 | 5983 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 131 | 2395 |
+| `tools/merge-branch.mjs` | 131 | 2396 |
 | `tools/orient-index.mjs` | 66 | 1424 |
 | `tools/rehearsal-kit.mjs` | 42 | 812 |
 | `tools/usage-report.mjs` | 57 | 1254 |
