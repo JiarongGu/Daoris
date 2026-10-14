@@ -163,6 +163,8 @@ public sealed class QuestNameTests
     [InlineData("branch", "feature/{ticket}-{slug}", @"\x", "may escape only")]
     [InlineData("branch", "feature/{ticket}-{slug}", "[^]", "empty class")]
     [InlineData("branch", "feature/{ticket}-{slug}", "[]", "empty class")]
+    [InlineData("branch", "feature/{ticket}-{slug}", @"[a-z-[aeiou]]+-\d+", "subtract a class")]
+    [InlineData("branch", "feature/{ticket}-{slug}", @"[a-z\-[]+-\d+", null)]
     [InlineData("branch", "feature/{quest}-{slug}", @"[A-Z]+-\d+", "only for `{ticket}`")]
     [InlineData("merge", null, @"[A-Z]+-\d+", "only a branch rule reads a ticket's key")]
     [InlineData("branch", "feature/{ticket}-{slug}", "  ", "needs a shape")]
