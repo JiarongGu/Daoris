@@ -14650,3 +14650,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT5c — the page's top folder in folders** (web). As STRUCT5a, 5b and 5d did, with its gate in vitest; STRUCT5d's import-rewriting script (asserted counts, read back) is a candidate tracked tool. Design §7.
 
 **Outcome** 2026-10-15: the page's top holds only its three entries; 109 files moved into domain folders with `git mv`, held by `src/test/structure.test.ts`, and `daoris.lanes.json` lost two `SettingsView*` globs the move made empty. The work, settings, bridge and projects folders still hold over twenty sources at their top and sit on the gate's `wide` list (STRUCT5c-ii); the move script stayed in scratch (MOVETOOL1). Eleven gates passed on the merge, merged with main's closed-quest fix. On Opus: 308 tool calls. Detail: D166's STRUCT5c note and the `refactor(web): STRUCT5c` commits.
+
+## SWITCH1c-iii — a quest's carry-on says the curve moved it (2026-10-15, D165)
+
+> - [ ] **SWITCH1c-iii — a quest's carry-on says the curve moved it** (driver; after 1c-i). A quest's next session already starts on the account the curve ranks first (SWITCH1b-ii); where that moves it from the last session's account by the curve, its record's `from` says `curve`, by `daoris`, and its opening line says why. Design §4.
+
+**Outcome** 2026-10-15: `Driver.ContinuesFrom` takes the walk's first reason; a carry-on moved to another account by `over-curve` or `most-room` names the last session with `curve`, by `daoris` (a hand-over's and a limit's links first, as before). The opening line already carried the curve's step by code, so no catalogue changed. Detail: D165's SWITCH1c-iii note; `HandOverLookTests`.
