@@ -328,8 +328,6 @@ Decision/trigger rows stay held; diagnostic captures are not permission to chang
 - [ ] **SWAP2b — swap evidence** (tools). Marker distinguishes same-commit builds; retain longest holds from five loaded runs. D139/D60; failing marker proof.
 - [ ] **SWAP2d — rollback by phase** (web/driver). Busy/move/start sentences and shared code table. D139/D41; bilingual twin cases.
 - [ ] **FLAKE1 — diagnostic waits** (driver/modules tests). Instrument repeating failures; three loaded serial greens, named slow step. MOD8/PROC1/FIX-LOG.
-- [ ] **FLAKE2 — the person-door host's stop under load** (service tests). `PersonDoorProcessTests`' host missed its 15 s stop once under load (2026-10-14); find what the stop waits on.
-- [ ] **FLAKE3 — a SQLite handle disposed under parallel tests** (service tests). `SearchTests` threw `ObjectDisposedException` once (2026-10-14) while ten classes call `ClearAllPools()`; prove the race, then isolate pool clearing.
 - [ ] **WEBPORT1 — independent web hosts** (web). Allocate per-run port and pass base URL. REHEARSEPORT1; simultaneous-host test.
 - [ ] **DEPLOYCOUNT1 — rehearsal-owned hosts** (tools). Count processes under this run's scratch only. Outside-process stand-in test.
 - [ ] **TEST1 — capture Windows Node abort** (web/tools). Preserve reporter/exit at next 0xC0000409. FIX-LOG; no unsupported timeout tuning.

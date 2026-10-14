@@ -14716,3 +14716,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NAMEZH1 — 本机 in a helper's note** (web). `note.helper.why.asker-gone` says 这台机器 where the glossary's name is 本机; correct it and drop its entry from `names.test.ts`'s list. D163's MIXAGENT3a-i note.
 
 **Outcome** 2026-10-15: `note.helper.why.asker-gone` (zh) now says 提问的会话不在本机上, and its entry left the names test's list of strays. Built with KEYPARITY2 (its count). Detail: D163's NAMEZH1 note.
+
+## FLAKE2 — the person-door host's stop under load (2026-10-15)
+
+> - [ ] **FLAKE2 — the person-door host's stop under load** (service tests). `PersonDoorProcessTests`' host missed its 15 s stop once under load (2026-10-14); find what the stop waits on.
+
+**Outcome** 2026-10-15: not reproduced: the test's stop took 42–647 ms in 50 timed runs beside heavy load, and the class passed 20 of 20 under load and 20 of 20 plain. Read from the code, the stop's one long wait is Kestrel's drain of requests in flight (the framework's 30 s, past the shell's 5 s kill); with nothing in flight in this test, none of its steps waits long. A host the shell started now drains for 3 s (`InputEndStop.Drain`), and `RealHost.StopByInput` makes a missed stop say whether it was asked and what the host printed last. The load generator used to reproduce it froze the owner's window: plain runs only. Detail: FIX-LOG 2026-10-15 (FLAKE2); commit e8498d33.
+
+## FLAKE3 — a SQLite handle disposed under parallel tests (2026-10-15)
+
+> - [ ] **FLAKE3 — a SQLite handle disposed under parallel tests** (service tests). `SearchTests` threw `ObjectDisposedException` once (2026-10-14) while ten classes call `ClearAllPools()`; prove the race, then isolate pool clearing.
+
+**Outcome** 2026-10-15: proved: Microsoft.Data.Sqlite marks a pooled connection active before it records its owner, and every pool's clear disposes such a connection as leaked, so one class's `ClearAllPools` disposed another's just-opened connection (a scratch probe: 88 `ObjectDisposedException`s in two 10 s runs clearing every pool, none clearing each thread's own). Fourteen classes now release their own database (`SqlitePools.Release`, over `SqliteKnowledgeStore.ConnectionString`), their raw connections open unpooled, and a source scan keeps `ClearAllPools(` out; per database rather than a serializing collection, since any class opening a file is a victim. Detail: FIX-LOG 2026-10-15 (FLAKE3); commit ef852e2c.
