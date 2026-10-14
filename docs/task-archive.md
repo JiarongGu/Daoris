@@ -14650,3 +14650,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRUCT5c — the page's top folder in folders** (web). As STRUCT5a, 5b and 5d did, with its gate in vitest; STRUCT5d's import-rewriting script (asserted counts, read back) is a candidate tracked tool. Design §7.
 
 **Outcome** 2026-10-15: the page's top holds only its three entries; 109 files moved into domain folders with `git mv`, held by `src/test/structure.test.ts`, and `daoris.lanes.json` lost two `SettingsView*` globs the move made empty. The work, settings, bridge and projects folders still hold over twenty sources at their top and sit on the gate's `wide` list (STRUCT5c-ii); the move script stayed in scratch (MOVETOOL1). Eleven gates passed on the merge, merged with main's closed-quest fix. On Opus: 308 tool calls. Detail: D166's STRUCT5c note and the `refactor(web): STRUCT5c` commits.
+
+## HELPDOOR1 — adding a `setting` door, written down (2026-10-15, D110)
+
+> - [ ] **HELPDOOR1 — adding a `setting` door, written down** (docs). Driver `Doors` with its case and method; the service's `Doors` with its case and flags; every tool description; the coverage row; a room row placed with the workflow-after-opinion order; goldens rewritten by `DAORIS_GOLDEN_WRITE=1`; the index. A knowledge note and its index row. D110; D164's DOORS1a note.
+
+**Outcome** 2026-10-15: `.claude/knowledge/setting-doors.md` lists the ten places a `setting` door goes, walked from DOORS1a's two commits and TOOL4l-b's smallest one, with its row in `.claude/INDEX.md`. Documents only. Detail: D110's HELPDOOR1 note and the note itself.
