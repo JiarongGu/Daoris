@@ -136,17 +136,17 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `src/Daoris.Cli/src/agents/toolchain.ts` | 149 | 2884 |
-| `src/Daoris.Cli/src/doctrine/materialize.ts` | 47 | 936 |
+| `src/Daoris.Cli/src/doctrine/materialize.ts` | 47 | 935 |
 | `src/Daoris.Cli/src/driver/driverconfig.ts` | 115 | 2096 |
 | `src/Daoris.Cli/src/plugins/plugins.ts` | 69 | 1383 |
 | `src/Daoris.Cli/src/workflows/workflowdoor.ts` | 46 | 836 |
+| `src/Daoris.Cli/test/agents/toolchain.test.ts` | 101 | 1936 |
 | `src/Daoris.Cli/test/desktop-publish.test.ts` | 55 | 1007 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 43 | 830 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 47 | 825 |
-| `src/Daoris.Cli/test/driverconfig.test.ts` | 132 | 2432 |
+| `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 132 | 2432 |
 | `src/Daoris.Cli/test/merge-branch.test.ts` | 188 | 2907 |
 | `src/Daoris.Cli/test/setup-kit.test.ts` | 52 | 955 |
-| `src/Daoris.Cli/test/toolchain.test.ts` | 101 | 1936 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1226 |
 
 ### Tools (`tools`)

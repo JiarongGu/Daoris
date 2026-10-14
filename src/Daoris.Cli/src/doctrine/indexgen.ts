@@ -1,4 +1,5 @@
-import type { CommandArgs, DeclaredDocument, Harness, LockLike } from '../platform/types.ts';
+import type { CommandArgs } from '../platform/types.ts';
+import type { DeclaredDocument, Harness, LockLike } from './records.ts';
 import type { ExitCode } from '../platform/errors.ts';
 import type { IndexInput, TierDocument, TierInput } from './tierrender.ts';
 import { join } from 'node:path';

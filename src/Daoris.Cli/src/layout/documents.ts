@@ -13,7 +13,7 @@
 // (DOC5), and the declared index (ORIENT2e): the manifest-reading table in `documents-manifest.test.ts` is
 // the one its reader matches.
 
-import type { DeclaredDocument, DocumentLinkProblem, Harness } from '../platform/types.ts';
+import type { DeclaredDocument, DocumentLinkProblem, Harness } from '../doctrine/records.ts';
 import { readdirSync, statSync } from 'node:fs';
 import { join, posix } from 'node:path';
 import { declared, escapes, within } from './layout.ts';

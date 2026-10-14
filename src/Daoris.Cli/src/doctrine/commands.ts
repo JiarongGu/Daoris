@@ -1,4 +1,5 @@
-import type { CommandArgs, Harness } from '../platform/types.ts';
+import type { CommandArgs } from '../platform/types.ts';
+import type { Harness } from './records.ts';
 import type { ExitCode } from '../platform/errors.ts';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';

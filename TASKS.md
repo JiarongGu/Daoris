@@ -278,7 +278,6 @@ folder.
 
 - [ ] **STRUCT3OPLOOP — Review's opinion logic out of the loop** (driver; optional). `Loop/DriverOpinions.cs`, `OpinionDeliverer.cs` and `OpinionGateLook.cs` hold the pass, the delivery and the gate's look: what needs none of the loop's state moves into `Review/`, with no new ports. D166's STRUCT2g note. After PART10m these are classes in `Loop/` holding the front for its run machinery; the structure gate's `loop` rule lets nothing outside `Loop/` name them, so moving them needs that machinery out of the front first.
 - [ ] **STRUCT5c — the page's top folder in folders** (web). As STRUCT5a, 5b and 5d did, with its gate in vitest; STRUCT5d's import-rewriting script (asserted counts, read back) is a candidate tracked tool. Design §7.
-- [ ] **STRUCT5d-ii — the CLI's tests mirrored, `platform/types.ts` split, four service comments** (cli, service). About 95 flat tests into their modules' folders (the gate's `tests` map); the doctrine's records out of the shared `types.ts`; `Registry/RepositoryLinks.cs:15`, `RepositoryLayout.cs:43`, `RepositoryDocuments.cs:16`, `DaorisLock.cs:18` cite the CLI's old paths. D166's STRUCT5d note.
 
 **Duplication** (the owner: *"we more focus on modularize the code to reduce duplication and easier to manage"*). Evidence: `docs/2026-10-14-duplication-survey.md`, by section. After FLAT1; DEDUP1 to 3 touch the same files, so one at a time.
 

@@ -20,7 +20,8 @@ import { DaorisError } from '../platform/errors.ts';
 import { readLanes } from '../layout/lanes.ts';
 import type { LaneWords } from '../layout/lanes.ts';
 import { endpoint, isLocalService, refusal, request } from './service.ts';
-import type { CommandArgs, Domain, Manifest } from '../platform/types.ts';
+import type { CommandArgs } from '../platform/types.ts';
+import type { Domain, Manifest } from '../doctrine/records.ts';
 import type { ExitCode } from '../platform/errors.ts';
 
 const REGISTRY_PATH = '/api/registry';

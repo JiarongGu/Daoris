@@ -1,4 +1,5 @@
-import type { CommandArgs, Harness, Lock, Manifest, Twin } from '../platform/types.ts';
+import type { CommandArgs } from '../platform/types.ts';
+import type { Harness, Lock, Manifest, Twin } from './records.ts';
 import type { ExitCode } from '../platform/errors.ts';
 import { join } from 'node:path';
 import { listMarkdown, readText } from '../platform/fsx.ts';

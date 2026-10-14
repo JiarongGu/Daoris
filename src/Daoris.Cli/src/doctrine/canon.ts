@@ -2,7 +2,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { listFiles, listMarkdown, readText } from '../platform/fsx.ts';
 import { DaorisError } from '../platform/errors.ts';
-import type { Canon, CanonFile, CoreSwitch, Pack, Selection } from '../platform/types.ts';
+import type { Canon, CanonFile, CoreSwitch, Pack, Selection } from './records.ts';
 
 /**
  * The canon's own vocabulary for what a document IS: always-loaded, read-on-demand, or invoked by

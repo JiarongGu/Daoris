@@ -1,6 +1,5 @@
-import type {
-  Canon, CommandArgs, CoreSwitch, Harness, IndexPlan, Lock, Manifest, Move, PlannedWrite, Rename, SyncPlan,
-} from '../platform/types.ts';
+import type { CommandArgs } from '../platform/types.ts';
+import type { Canon, CoreSwitch, Harness, IndexPlan, Lock, Manifest, Move, PlannedWrite, Rename, SyncPlan } from './records.ts';
 import type { ExitCode } from '../platform/errors.ts';
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
