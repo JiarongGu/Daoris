@@ -360,8 +360,8 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     public void The_screens_discard_is_the_drivers_one_discard()
     {
         var modules = Path.Combine(WorkspaceRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Modules");
-        // The bridge's files: its domains' handler classes and the partials not yet moved (PART10d).
-        var sources = Directory.EnumerateFiles(modules, "DriverModule*.cs").Concat(Directory.EnumerateFiles(modules, "*Routes.cs"))
+        // The bridge's files: its domains' handler classes (PART10d, PART10f).
+        var sources = Directory.EnumerateFiles(modules, "*Routes.cs")
             .Select(path => (File: Path.GetFileName(path), Text: File.ReadAllText(path))).ToList();
 
         Assert.Contains(sources, source => source.File == "LinesRoutes.cs" && source.Text.Contains(".DiscardAsync(service, repository, branch, force,", StringComparison.Ordinal));
@@ -460,7 +460,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     public void Every_press_of_bringing_up_to_date_asks_the_sessions_in_use_again()
     {
         var modules = Path.Combine(WorkspaceRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Modules");
-        var presses = Directory.EnumerateFiles(modules, "DriverModule*.cs").Concat(Directory.EnumerateFiles(modules, "*Routes.cs"))
+        var presses = Directory.EnumerateFiles(modules, "*Routes.cs")
             .SelectMany(path =>
             {
                 var source = File.ReadAllText(path);
@@ -470,7 +470,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
             .ToList();
 
         Assert.Contains(presses, press => press.File == "LinesRoutes.cs");
-        Assert.Contains(presses, press => press.File == "DriverModule.Help.cs");
+        Assert.Contains(presses, press => press.File == "HelpRoutes.cs");
         Assert.All(presses, press => Assert.True(press.Call.Contains("inUseNow:", StringComparison.Ordinal),
             $"{press.File} presses bringing up to date without asking the sessions in use again: {press.Call}"));
     }

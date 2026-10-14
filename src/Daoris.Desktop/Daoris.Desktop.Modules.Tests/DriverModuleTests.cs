@@ -9,8 +9,8 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 /// <remarks>
 /// What stays here is the dispatcher's own contract (MOD5): a malformed call and an unknown route. Each
-/// domain's routes are tested beside it, in the class named for its partial (`DriverModuleTreesTests` for
-/// `DriverModule.Trees.cs`), and the table's shape in `DriverModuleRoutesTests`.
+/// domain's routes are tested beside it, in the class named for its handler class (`DriverModuleTreesTests` for
+/// `TreesRoutes.cs`), and the table's shape in `DriverModuleRoutesTests`.
 /// </remarks>
 public sealed class DriverModuleTests : DriverModuleBridge
 {

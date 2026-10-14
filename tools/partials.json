@@ -18,12 +18,6 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.Workflow.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs"
   ],
-  "DriverModule": [
-    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Help.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Trees.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs"
-  ],
   "SessionTrees": [
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Auto.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Content.cs",

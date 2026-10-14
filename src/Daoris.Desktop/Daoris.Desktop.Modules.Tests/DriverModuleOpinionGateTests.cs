@@ -30,7 +30,7 @@ public sealed class DriverModuleOpinionGateTests : DriverModuleBridge
             Rule = new ResolvedOpinion(new OpinionRule(["codex-acp"], [OpinionRules.Landing], Required: true), OpinionSource.Repository),
         };
 
-        var answer = JsonSerializer.SerializeToElement(DriverModule.Opinion(gate), Camel);
+        var answer = JsonSerializer.SerializeToElement(TreesRoutes.Opinion(gate), Camel);
 
         Assert.Equal("disputed", answer.GetProperty("state").GetString());
         Assert.True(answer.GetProperty("holds").GetBoolean());
@@ -46,9 +46,9 @@ public sealed class DriverModuleOpinionGateTests : DriverModuleBridge
     [Fact]
     public void A_level_that_asks_no_opinion_answers_nothing_and_a_state_no_press_answers_carries_no_token()
     {
-        Assert.Null(DriverModule.Opinion(new OpinionGateState(OpinionGateStates.None, "web-app")));
+        Assert.Null(TreesRoutes.Opinion(new OpinionGateState(OpinionGateStates.None, "web-app")));
 
-        var reading = JsonSerializer.SerializeToElement(DriverModule.Opinion(new OpinionGateState(OpinionGateStates.NotAsked, "web-app") { Session = "s1" }), Camel);
+        var reading = JsonSerializer.SerializeToElement(TreesRoutes.Opinion(new OpinionGateState(OpinionGateStates.NotAsked, "web-app") { Session = "s1" }), Camel);
         Assert.Equal(("not-asked", true), (reading.GetProperty("state").GetString(), reading.GetProperty("holds").GetBoolean()));
         Assert.True(!reading.TryGetProperty("answers", out var token) || token.ValueKind == JsonValueKind.Null);
     }
@@ -102,7 +102,7 @@ public sealed class DriverModuleOpinionGateTests : DriverModuleBridge
             ]),
         };
 
-        var detail = JsonSerializer.SerializeToElement(DriverModule.OpinionDetail(gate), Camel);
+        var detail = JsonSerializer.SerializeToElement(TreesRoutes.OpinionDetail(gate), Camel);
 
         Assert.Equal(("agent", true, 1), (detail.GetProperty("tier").GetString(), detail.GetProperty("covers").GetBoolean(), detail.GetProperty("passes").GetInt32()));
         var pass = detail.GetProperty("first");
@@ -139,7 +139,7 @@ public sealed class DriverModuleOpinionGateTests : DriverModuleBridge
         var gate = new OpinionGateState(OpinionGateStates.Disputed, "web-app") { Session = "s1", Tip = Read, Opinion = first, Since = 0 };
         var asked = new List<string>();
 
-        var measured = JsonSerializer.SerializeToElement(DriverModule.OpinionDetail(gate, session =>
+        var measured = JsonSerializer.SerializeToElement(TreesRoutes.OpinionDetail(gate, session =>
         {
             asked.Add(session);
             return session == "r-o1" ? new UsageEntry(session, "web-app", "codex-acp", null, 4200, 128000, DateTimeOffset.UnixEpoch) : null;
@@ -148,21 +148,21 @@ public sealed class DriverModuleOpinionGateTests : DriverModuleBridge
         Assert.Equal((4200L, 128000L), (usage.GetProperty("used").GetInt64(), usage.GetProperty("size").GetInt64()));
         Assert.Equal(["r-o1"], asked);
 
-        var none = JsonSerializer.SerializeToElement(DriverModule.OpinionDetail(gate, _ => null), Camel);
+        var none = JsonSerializer.SerializeToElement(TreesRoutes.OpinionDetail(gate, _ => null), Camel);
         Assert.Equal(JsonValueKind.Null, none.GetProperty("first").GetProperty("usage").ValueKind);
     }
 
     [Fact]
     public void The_detail_says_its_tier_none_where_no_agent_read_it_and_person_where_the_person_did_and_nothing_where_none_is_asked()
     {
-        Assert.Null(DriverModule.OpinionDetail(new OpinionGateState(OpinionGateStates.None, "web-app")));
+        Assert.Null(TreesRoutes.OpinionDetail(new OpinionGateState(OpinionGateStates.None, "web-app")));
 
-        var none = JsonSerializer.SerializeToElement(DriverModule.OpinionDetail(
+        var none = JsonSerializer.SerializeToElement(TreesRoutes.OpinionDetail(
             new OpinionGateState(OpinionGateStates.Unavailable, "web-app") { Code = ReviewerUnavailable.NoReviewer }), Camel);
         Assert.Equal("none", none.GetProperty("tier").GetString());
         Assert.Equal(JsonValueKind.Null, none.GetProperty("first").ValueKind);
 
-        var myself = JsonSerializer.SerializeToElement(DriverModule.OpinionDetail(new OpinionGateState(OpinionGateStates.Myself, "web-app")
+        var myself = JsonSerializer.SerializeToElement(TreesRoutes.OpinionDetail(new OpinionGateState(OpinionGateStates.Myself, "web-app")
         {
             Person = new OpinionPersonWord(OpinionPersonSaid.Myself, Read, DateTimeOffset.UnixEpoch) { Words = "read it all", Door = ReviewDoors.Screen },
         }), Camel);
@@ -192,7 +192,7 @@ public sealed class DriverModuleOpinionGateTests : DriverModuleBridge
             Rule = new ResolvedOpinion(new OpinionRule(["codex-acp"], [OpinionRules.Landing], Required: required), OpinionSource.Repository),
         };
 
-        Assert.Equal(waits, DriverModule.WaitsOnPerson(gate, auto));
+        Assert.Equal(waits, TreesRoutes.WaitsOnPerson(gate, auto));
     }
 
     /// <summary>

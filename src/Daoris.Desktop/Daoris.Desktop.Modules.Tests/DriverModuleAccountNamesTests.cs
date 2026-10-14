@@ -61,14 +61,14 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
     [Fact]
     public void The_sign_in_end_says_an_email_offered_as_the_name_once()
     {
-        var same = DriverModule.SignedInSentence("Seat@Work.example", "claude-code", "seat@work.example", "acct-1");
+        var same = AgentsRoutes.SignedInSentence("Seat@Work.example", "claude-code", "seat@work.example", "acct-1");
         Assert.Equal("signed in as Seat@Work.example — this machine lists it by that name.", same);
         Assert.Equal("signed in as seat@work.example — this machine lists it as `seat`.",
-            DriverModule.SignedInSentence("seat@work.example", "claude-code", "seat", "acct-1"));
+            AgentsRoutes.SignedInSentence("seat@work.example", "claude-code", "seat", "acct-1"));
         Assert.Equal("signed in as seat@work.example — this machine lists it as `acct-1`.",
-            DriverModule.SignedInSentence("seat@work.example", "claude-code", null, "acct-1"));
+            AgentsRoutes.SignedInSentence("seat@work.example", "claude-code", null, "acct-1"));
         Assert.Equal("signed in — `claude-code` did not say who, so this machine lists it as `seat`.",
-            DriverModule.SignedInSentence(null, "claude-code", "seat", "acct-1"));
+            AgentsRoutes.SignedInSentence(null, "claude-code", "seat", "acct-1"));
     }
 
     /// <summary>
@@ -202,10 +202,10 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
             .WithRotation("claude-code", ["account-1"])
             .WithDefault("claude-code", "account-1");
 
-        var placed = JsonSerializer.SerializeToElement(DriverModule.ProfileShown(
+        var placed = JsonSerializer.SerializeToElement(AgentsRoutes.ProfileShown(
             new ProfileReport("account-1", Path.Combine(Home, "a"), LoginState.In, DisplayName: "seat"),
             settings.PlacesOf("claude-code", "account-1"), settingsFile: null));
-        var nowhere = JsonSerializer.SerializeToElement(DriverModule.ProfileShown(
+        var nowhere = JsonSerializer.SerializeToElement(AgentsRoutes.ProfileShown(
             new ProfileReport("acct-3f9c2a71", Path.Combine(Home, "b"), LoginState.Unknown),
             settings.PlacesOf("claude-code", "acct-3f9c2a71"), settingsFile: null));
 

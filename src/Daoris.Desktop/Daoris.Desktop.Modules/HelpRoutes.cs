@@ -1,4 +1,5 @@
 using Daoris.Driver;
+using Shenora.Core.Events;
 using Shenora.Core.Ipc;
 using static Daoris.Desktop.DriverArguments;
 
@@ -8,8 +9,16 @@ namespace Daoris.Desktop;
 /// Ask Daoris, the page's `bridge/help.ts` (MOD5; HELP1, D89): its conversation in its room, its proposals
 /// and the person's Apply or Not now, and the doors an Apply goes through, each a screen's own route (HELP6).
 /// </summary>
-public sealed partial class DriverModule
+public sealed class HelpRoutes(DriverContext context)
 {
+    private readonly DriverContext _context = context;
+    private readonly DriverLoop _loop = context.Loop;
+    private readonly IEventBus _events = context.Events;
+
+    // The offers' folder as it stands now: the context's, read at each request since an initializer sets it after the handlers
+    // are built (PART10e).
+    private string OffersFolder => _context.OffersFolder;
+
     // Ask Daoris's conversation (HELP1a, D89): the one this machine is running, carried on — one
     // per machine — or a new one in its room, written from the machine as the driver holds it now.
     [DriverRoute("START_HELP")]
@@ -127,12 +136,17 @@ public sealed partial class DriverModule
     /// The room's reading for a conversation going on (ASKHIST1): the loop's service and this machine's file as they are now;
     /// null before the service answers, when the room as last written serves.
     /// </summary>
-    private async Task<HelpMachine?> HelpMachineNowAsync(CancellationToken cancellationToken)
+    /// <remarks>
+    /// A static over the context, which the module's constructor hands the loop as <c>DescribeHelp</c> (PART10f). The class
+    /// holds nothing of its own, so the instance it reads through is only the context's view.
+    /// </remarks>
+    internal static async Task<HelpMachine?> HelpMachineNowAsync(DriverContext context, CancellationToken cancellationToken)
     {
-        if (_loop.Service is not { } service) return null;
-        var config = DriverConfig.Load(_loop.ConfigPath);
+        var help = new HelpRoutes(context);
+        if (help._loop.Service is not { } service) return null;
+        var config = DriverConfig.Load(help._loop.ConfigPath);
         var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
-        return await HelpMachineAsync(service, config, snapshot, cancellationToken).ConfigureAwait(false);
+        return await help.HelpMachineAsync(service, config, snapshot, cancellationToken).ConfigureAwait(false);
     }
 
     // Ask Daoris's proposals (HELP1c, D89): what one conversation proposed that waits for the
@@ -239,7 +253,7 @@ public sealed partial class DriverModule
         }
 
         var applied = await HelpProposals.ApplyAsync(
-            _loop.Home, proposal, plan, HelpDoors(service), Say, cancellationToken).ConfigureAwait(false);
+            _loop.Home, proposal, plan, Doors(_context, service), Say, cancellationToken).ConfigureAwait(false);
         // An accept publishes the step a departure held and lets a quest waiting on it go on (DRIFT1d2), as a delete or an ask moves the work.
         if (proposal.Kind is "ask" or "delete" or "accept" or "session" or "pause" or "clear") _loop.Nudge();
 
@@ -290,12 +304,14 @@ public sealed partial class DriverModule
     /// Apply is what the screen would have done. <paramref name="service"/> is the loop's, or null before
     /// it is up — when an ask or a delete is the cold-start sentence.
     /// </summary>
-    public IHelpDoors HelpDoors(ServiceClient? service) => new ScreenDoors(this, service);
+    internal static IHelpDoors Doors(DriverContext context, ServiceClient? service) => new ScreenDoors(context, service);
 
-    private sealed class ScreenDoors(DriverModule module, ServiceClient? service) : IHelpDoors
+    private sealed class ScreenDoors(DriverContext context, ServiceClient? service) : IHelpDoors
     {
+        private readonly DriverLoop _loop = context.Loop;
+
         // SET_DRIVABLE, SET_LINE, SET_LANDING…: an edit to the driver's file, then a nudge.
-        public void Change(Func<DriverConfig, DriverConfig> edit) => module._context.Change(edit);
+        public void Change(Func<DriverConfig, DriverConfig> edit) => context.Change(edit);
 
         // The ask composer's door, the local host's `POST /api/asks`, with its review choice and words (ENTRY1c). A named
         // environment the workspace does not declare is refused before anything is sent, as `daoris-driver ask --review` refuses
@@ -304,7 +320,7 @@ public sealed partial class DriverModule
         {
             var asks = service ?? throw NotReady();
             if (review is not null
-                && await AskReviewCommand.UndeclaredAsync(review, workspace, new AskReviewWorld(asks, () => DriverConfig.Load(module._loop.ConfigPath)), ct)
+                && await AskReviewCommand.UndeclaredAsync(review, workspace, new AskReviewWorld(asks, () => DriverConfig.Load(_loop.ConfigPath)), ct)
                     .ConfigureAwait(false) is { } undeclared)
             {
                 return new AskAnswer(false, undeclared, null, null);
@@ -329,7 +345,7 @@ public sealed partial class DriverModule
         // machine log as the screen's. The service is the one this Apply was handed, as the other doors use it.
         public async Task<(bool Ok, string Message)> ArchiveSessionsAsync(IReadOnlyList<string> ids, bool archived, CancellationToken ct)
         {
-            var marks = new SessionArchive(module._loop.Home);
+            var marks = new SessionArchive(_loop.Home);
             static string Listed(IEnumerable<string> each) => string.Join(", ", each.Select(id => $"`{id}`"));
             static string Count(int n) => $"{n} session{(n == 1 ? "" : "s")}";
             if (!archived)
@@ -340,14 +356,14 @@ public sealed partial class DriverModule
             }
 
             var asked = service ?? throw NotReady();
-            var config = DriverConfig.Load(module._loop.ConfigPath);
-            var look = await SessionGroups.LookAsync(asked, config, module._context.Door(config), module._loop.Look.Latest, module._loop.Home, ids, ct)
+            var config = DriverConfig.Load(_loop.ConfigPath);
+            var look = await SessionGroups.LookAsync(asked, config, context.Door(config), _loop.Look.Latest, _loop.Home, ids, ct)
                 .ConfigureAwait(false);
-            look = look with { Waits = module._loop.Look.Waits };
+            look = look with { Waits = _loop.Look.Waits };
             var answer = marks.Archive(ids, SessionGroups.Read(look, ids), [.. look.Records.Select(record => record.Id)], DateTimeOffset.UtcNow);
             var done = answer.Outcomes.Where(outcome => outcome.Verdict == ArchiveVerdict.Archived).Select(outcome => outcome.Session).ToList();
             var kept = answer.Outcomes.Where(outcome => outcome.Verdict != ArchiveVerdict.Archived).Select(outcome => outcome.Session).ToList();
-            SessionArchive.Said(module._loop.Log, done.Count, PluginEvents.Screen);
+            SessionArchive.Said(_loop.Log, done.Count, PluginEvents.Screen);
             var left = kept.Count == 0 ? "" : $" Kept in the list, as archive never hides what needs you or stops what runs: {Listed(kept)}.";
             return done.Count == 0
                 ? (false, $"Nothing was archived.{left}")
@@ -358,37 +374,37 @@ public sealed partial class DriverModule
         // have is not applied; a pause that finds nothing to hold is said, as the route says it (D48 §6).
         public async Task<(bool Ok, string Message)> PauseWorkAsync(WorkScope scope, string id, CancellationToken ct)
         {
-            var outcome = await WorkPausing.PauseAsync(WorkRoutes.WorldOf(module._context), scope, id, PluginEvents.Screen, ct).ConfigureAwait(false);
+            var outcome = await WorkPausing.PauseAsync(WorkRoutes.WorldOf(context), scope, id, PluginEvents.Screen, ct).ConfigureAwait(false);
             if (outcome.Verdict == PauseVerdict.Unknown) return (false, WorkPausing.Unknown(scope, id));
 
-            module._loop.Nudge();
+            _loop.Nudge();
             return (true, string.Join(' ', WorkPausing.Lines(outcome).Select(line => line.Trim())));
         }
 
         // WORK_RESUME's own resume, the same way.
         public async Task<(bool Ok, string Message)> ResumeWorkAsync(WorkScope scope, string id, CancellationToken ct)
         {
-            var outcome = await WorkPausing.ResumeAsync(WorkRoutes.WorldOf(module._context), scope, id, PluginEvents.Screen, ct).ConfigureAwait(false);
+            var outcome = await WorkPausing.ResumeAsync(WorkRoutes.WorldOf(context), scope, id, PluginEvents.Screen, ct).ConfigureAwait(false);
             if (outcome.Verdict == ResumeVerdict.Unknown) return (false, WorkPausing.Unknown(scope, id));
 
-            module._loop.Nudge();
+            _loop.Nudge();
             return (true, string.Join(' ', WorkPausing.Lines(outcome).Select(line => line.Trim())));
         }
 
         // HISTORY_CLEAR's own clear of exactly the units the card listed (HIST1f-c): the driver library's one owner, each unit judged
         // again as it goes; the outcome comes back whole, and a service that did not answer throws before anything was removed.
         public Task<HistoryOutcome> ClearHistoryAsync(HistoryScope scope, string id, IReadOnlyList<HistoryUnitName> units, CancellationToken ct) =>
-            HistoryClearing.ClearAsync(HistoryRoutes.WorldOf(module._loop), scope, id, units, PluginEvents.Screen, ct);
+            HistoryClearing.ClearAsync(HistoryRoutes.WorldOf(_loop), scope, id, units, PluginEvents.Screen, ct);
 
         // SESSION_DELETE's own delete: the driver library's one owner, then the loop asked to look (SESSUX1h2c).
         public async Task<(bool Ok, string Message)> DeleteSessionAsync(string id, CancellationToken ct)
         {
-            var outcome = await new SessionDeletion(module._loop.Home)
-                .DeleteAsync(service ?? throw NotReady(), id, PluginEvents.Screen, module._loop.Log, module._loop.Events, ct)
+            var outcome = await new SessionDeletion(_loop.Home)
+                .DeleteAsync(service ?? throw NotReady(), id, PluginEvents.Screen, _loop.Log, _loop.Events, ct)
                 .ConfigureAwait(false);
             if (outcome.Verdict != DeleteVerdict.Deleted) return (false, outcome.Message);
 
-            module._loop.Nudge();
+            _loop.Nudge();
             return (true, outcome.Message);
         }
 
@@ -400,24 +416,24 @@ public sealed partial class DriverModule
         // HARNESS_ACTION's own start, streamed under the same key and ended with the same news.
         public Task StartAgentActionAsync(string harness, string action, string? version, Action<int, string?> ended, CancellationToken ct)
         {
-            var config = DriverConfig.Load(module._loop.ConfigPath);
-            var toolchain = module._loop.Harnesses.Toolchain(harness)
+            var config = DriverConfig.Load(_loop.ConfigPath);
+            var toolchain = _loop.Harnesses.Toolchain(harness)
                 ?? throw new DriverException($"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
-            return module.StartProcessActionAsync(
+            return context.Actions.StartProcessActionAsync(
                 harness, action, profile: null, version, toolchain, config.Commands.GetValueOrDefault(harness),
-                module.Relay(harness, action), config, ended);
+                context.Actions.Relay(harness, action), config, ended);
         }
 
         // HARNESS_ACTION's own profile-default (HELP10): the door's owner (AGT7), the same write, and a person looking again
         // as the route's edit is; the report reads the default fresh, so no account is asked (ROSTER1).
         public async Task SetDefaultAccountAsync(string harness, string account, string? workspace, CancellationToken ct)
         {
-            var config = DriverConfig.Load(module._loop.ConfigPath);
-            var toolchain = module._loop.Harnesses.Toolchain(harness)
+            var config = DriverConfig.Load(_loop.ConfigPath);
+            var toolchain = _loop.Harnesses.Toolchain(harness)
                 ?? throw new DriverException($"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
             try
             {
-                module.ProfileDefault(toolchain.Owner(harness), account, workspace);
+                AgentsRoutes.ProfileDefault(_loop, toolchain.Owner(harness), account, workspace);
             }
             catch (ShenoraException refused)
             {
@@ -425,23 +441,23 @@ public sealed partial class DriverModule
                 throw new DriverException(refused.Message);
             }
 
-            await module.ChangedAsync(harness, "profile-default", config, ct).ConfigureAwait(false);
+            await AgentsRoutes.ChangedAsync(_loop, harness, "profile-default", config, ct).ConfigureAwait(false);
         }
 
         // ACCOUNT_USE's own `use` (TOOL4g): the same refusals and the same write, then the loop asked to look.
         public Task SetAccountUseAsync(string harness, UseChange change, string? workspace, CancellationToken ct)
         {
-            var owner = AccountsRoutes.OwnerOf(module._loop.Harnesses, harness);
+            var owner = AccountsRoutes.OwnerOf(_loop.Harnesses, harness);
             try
             {
-                AccountsRoutes.UseEdited(module._loop.Harnesses.Settings, owner, change, workspace).Save(module._loop.Harnesses.SettingsPath);
+                AccountsRoutes.UseEdited(_loop.Harnesses.Settings, owner, change, workspace).Save(_loop.Harnesses.SettingsPath);
             }
             catch (ShenoraException refused)
             {
                 throw new DriverException(refused.Message);
             }
 
-            module._loop.Nudge();
+            _loop.Nudge();
             return Task.CompletedTask;
         }
 
@@ -449,19 +465,19 @@ public sealed partial class DriverModule
         // returned to the machine's accounts with its default and list cleared at once (D130 §3.2), then the loop asked to look.
         public Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, string? workspace, CancellationToken ct)
         {
-            var owner = AccountsRoutes.OwnerOf(module._loop.Harnesses, harness);
-            var settings = module._loop.Harnesses.Settings;
+            var owner = AccountsRoutes.OwnerOf(_loop.Harnesses, harness);
+            var settings = _loop.Harnesses.Settings;
             try
             {
                 if (clear)
                 {
                     var circle = workspace ?? throw new DriverException("returning to this machine's accounts names the workspace that returns.");
-                    settings.WithWorkspaceDefault(circle, owner, null).WithRotation(owner, null, circle).Save(module._loop.Harnesses.SettingsPath);
+                    settings.WithWorkspaceDefault(circle, owner, null).WithRotation(owner, null, circle).Save(_loop.Harnesses.SettingsPath);
                 }
                 else
                 {
-                    AccountsRoutes.OrderEdited(settings, HarnessSettings.Profiles(module._loop.Harnesses.Home, owner), owner, accounts, workspace)
-                        .Save(module._loop.Harnesses.SettingsPath);
+                    AccountsRoutes.OrderEdited(settings, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), owner, accounts, workspace)
+                        .Save(_loop.Harnesses.SettingsPath);
                 }
             }
             catch (ShenoraException refused)
@@ -469,7 +485,7 @@ public sealed partial class DriverModule
                 throw new DriverException(refused.Message);
             }
 
-            module._loop.Nudge();
+            _loop.Nudge();
             return Task.CompletedTask;
         }
 
@@ -477,8 +493,8 @@ public sealed partial class DriverModule
         // offered again takes a waiting start now, not at the next poll.
         public Task<bool> ReadyAccountAsync(string harness, string? account, CancellationToken ct)
         {
-            var ended = module._loop.Harnesses.Ready(harness, account);
-            module._loop.Nudge();
+            var ended = _loop.Harnesses.Ready(harness, account);
+            _loop.Nudge();
             return Task.FromResult(ended);
         }
 
@@ -487,8 +503,8 @@ public sealed partial class DriverModule
         // It takes what the screen's look takes (D112): the repositories holding Daoris's branches, and the one a card names.
         public async Task<SyncPlan> SyncPlanAsync(string? repository, string? workspace, CancellationToken ct)
         {
-            var (repositories, inUse) = await LinesRoutes.CheckoutsAndSessionsAsync(module._loop, repository, ct, workspace).ConfigureAwait(false);
-            return await new SessionTrees(module._loop.Home).SyncPlanAsync(repositories, inUse, fetch: true, ct, Named(repository))
+            var (repositories, inUse) = await LinesRoutes.CheckoutsAndSessionsAsync(_loop, repository, ct, workspace).ConfigureAwait(false);
+            return await new SessionTrees(_loop.Home).SyncPlanAsync(repositories, inUse, fetch: true, ct, Named(repository))
                 .ConfigureAwait(false);
         }
 
@@ -496,11 +512,11 @@ public sealed partial class DriverModule
         // sessions in use are asked again inside each repository's hold, as the screen's press asks them (LEFT2, WSR7).
         public async Task<SyncDone> SyncAsync(string? repository, string? workspace, IReadOnlySet<string> only, CancellationToken ct)
         {
-            var (repositories, inUse) = await LinesRoutes.CheckoutsAndSessionsAsync(module._loop, repository, ct, workspace).ConfigureAwait(false);
-            var ledger = module._loop.Service ?? throw NotReady();
-            var done = await new SessionTrees(module._loop.Home).SyncAsync(repositories, inUse, only, fetch: false, ct,
+            var (repositories, inUse) = await LinesRoutes.CheckoutsAndSessionsAsync(_loop, repository, ct, workspace).ConfigureAwait(false);
+            var ledger = _loop.Service ?? throw NotReady();
+            var done = await new SessionTrees(_loop.Home).SyncAsync(repositories, inUse, only, fetch: false, ct,
                 inUseNow: async token => await LinesRoutes.InUseAsync(ledger, token).ConfigureAwait(false), scope: Named(repository)).ConfigureAwait(false);
-            module._loop.Nudge();
+            _loop.Nudge();
             return done;
         }
 
@@ -532,46 +548,46 @@ public sealed partial class DriverModule
 
         // SET_AGENT_SETTINGS's own write.
         public AgentSettingsRead SetAgentSettings(string harness, string account, AgentSettingEdit? model, AgentSettingEdit? effort) =>
-            module.WriteAgentSettings(harness, account, () => (model, effort, null)).Read;
+            AgentsRoutes.WriteAgentSettings(_loop, harness, account, () => (model, effort, null)).Read;
 
         // `daoris plugin add`'s copy, the driver's twin (PLUG9); the loop is asked to look, and it starts
         // what the plugin runs at that look, as it does any plugin. Nothing runs here.
         public void AddPlugin(string folder)
         {
-            PluginInstall.Add(module._loop.Home, folder, AdapterSet.Built().Names);
-            module._loop.Nudge();
+            PluginInstall.Add(_loop.Home, folder, AdapterSet.Built().Names);
+            _loop.Nudge();
         }
 
         // PLUGIN_ACTION's own enable|disable: the same lookup, the same row, the same nudge.
         public void SwitchPlugin(string id, bool on)
         {
-            PluginsRoutes.SwitchPlugin(module._loop, PluginsRoutes.InstalledPlugin(module._loop, id), on);
-            module._loop.Nudge();
+            PluginsRoutes.SwitchPlugin(_loop, PluginsRoutes.InstalledPlugin(_loop, id), on);
+            _loop.Nudge();
         }
 
         // HANDOFF's own press (WSR5b): the recorded branch, its repository's checkout, the same note kept.
         public async Task<TreeHand> HandAsync(string repository, string branch, string? plugin, CancellationToken ct)
         {
-            var trees = new SessionTrees(module._loop.Home, new LandingPlugins(
-                module._loop.Home, say: (id, line) => module._loop.Output.Append($"plugin:{id}", line),
-                log: module._loop.Log, health: module._loop.Health));
+            var trees = new SessionTrees(_loop.Home, new LandingPlugins(
+                _loop.Home, say: (id, line) => _loop.Output.Append($"plugin:{id}", line),
+                log: _loop.Log, health: _loop.Health));
             if (trees.Recorded.Of(repository, branch) is not { } entry) return new TreeHand(false, SessionTrees.NotLanded(branch), branch);
-            var root = await CheckoutOfAsync(service ?? throw NotReady(), repository, ct).ConfigureAwait(false);
+            var root = await TreesRoutes.CheckoutOfAsync(service ?? throw NotReady(), repository, ct).ConfigureAwait(false);
             return root is null
                 ? new TreeHand(false, $"`{repository}` has no checkout on this machine, so there is no `{branch}` here to hand on.", branch)
-                : await module.HandAsync(trees, root, entry, plugin, ct).ConfigureAwait(false);
+                : await TreesRoutes.HandAsync(_loop, trees, root, entry, plugin, ct).ConfigureAwait(false);
         }
 
         // PLUGIN_INSTALL's own copy of one of the install's offers (PLUG9 d); nothing runs here.
         public void AddOffer(string id)
         {
-            PluginInstall.AddOffer(module._loop.Home, module.OffersFolder, id, AdapterSet.Built().Names);
-            module._loop.Nudge();
+            PluginInstall.AddOffer(_loop.Home, context.OffersFolder, id, AdapterSet.Built().Names);
+            _loop.Nudge();
         }
 
         // PLUGIN_UPDATE's own apply (PLUG9 c): the hook stopped, the folder swapped, the loop asked to look.
         public async Task UpdatePluginAsync(string id, CancellationToken ct) =>
-            await PluginsRoutes.UpdatePluginAsync(module._context, id).ConfigureAwait(false);
+            await PluginsRoutes.UpdatePluginAsync(context, id).ConfigureAwait(false);
     }
 
     /// <summary>

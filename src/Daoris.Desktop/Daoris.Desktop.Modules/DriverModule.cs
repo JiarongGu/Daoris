@@ -20,15 +20,11 @@ namespace Daoris.Desktop;
 /// switch here, so every feature that added a driver door edited this file. A domain's routes live in its handler class,
 /// named as the page's own bridge file is (`RulesRoutes.cs` beside `bridge/rules.ts`), each handler marked
 /// <see cref="DriverRouteAttribute"/>; the class is one line in <see cref="Domains"/>, and <see cref="RouteAsync"/> looks a
-/// request up in the table the marks make. The domains not yet moved are this class's partials, `DriverModule.<Domain>.cs`,
-/// and this class is their line in the list until PART10f. This file keeps the dispatch.
+/// request up in the table the marks make. Every domain has moved (PART10f), so this class holds the dispatch and nothing of a
+/// domain's, and is no longer partial.
 /// </remarks>
-public sealed partial class DriverModule : ModuleBase
+public sealed class DriverModule : ModuleBase
 {
-    private readonly IEventBus _events;
-    private readonly DriverLoop _loop;
-    private readonly OpenFolder? _openFolder;
-    private readonly PickFile? _pickFile;
     private readonly DriverContext _context;
 
     /// <summary>
@@ -42,10 +38,7 @@ public sealed partial class DriverModule : ModuleBase
         init => _context.Offers = value;
     }
 
-    // The offers' folder as it stands now, for Help's plugin doors until PART10f moves them.
-    private string OffersFolder => _context.OffersFolder;
-
-    // Each domain's handler, built over this module, in the order of Domains: a route's entry names its domain's place.
+    // Each domain's handler, built over the context, in the order of Domains: a route's entry names its domain's place.
     private readonly object[] _handlers;
 
     /// <remarks>
@@ -63,15 +56,17 @@ public sealed partial class DriverModule : ModuleBase
     public DriverModule(IEventBus events, DriverLoop loop, OpenFolder? openFolder = null, PickFile? pickFile = null)
         : base(events: events)
     {
-        _events = events;
-        _loop = loop;
-        _openFolder = openFolder;
-        _pickFile = pickFile;
         _context = new DriverContext(events, loop, openFolder, pickFile);
-        _handlers = [.. Domains.Select(domain => domain.Build(this))];
+        _handlers = [.. Domains.Select(domain => domain.Build(_context))];
         // Ask Daoris's room as START_HELP writes it, for a conversation going on in it (ASKHIST1).
-        _loop.DescribeHelp = HelpMachineNowAsync;
+        loop.DescribeHelp = cancellationToken => HelpRoutes.HelpMachineNowAsync(_context, cancellationToken);
     }
+
+    /// <summary>
+    /// The doors Ask Daoris's Apply goes through (HELP6): each the code a screen's own route runs. The module's one seam to
+    /// them, since the tests build doors through a module (<c>DriverModuleBridge.Module()</c>) rather than a context.
+    /// </summary>
+    public IHelpDoors HelpDoors(ServiceClient? service) => HelpRoutes.Doors(_context, service);
 
     public override string ModuleName => "DAORIS.DRIVER";
 
@@ -114,30 +109,32 @@ public sealed partial class DriverModule : ModuleBase
     public static IReadOnlyCollection<string> Routes => Table.Keys;
 
     /// <summary>
-    /// The domains this module answers for, one line each (PART10d, D166): a domain's handler class and how it is built over
-    /// this module, each taking only what it uses: the loop, or the <see cref="DriverContext"/> where it uses more. A new
-    /// domain is its <c>&lt;Domain&gt;Routes.cs</c> and its line here, and a new door in a domain is a marked handler in its
-    /// class: nothing is found by scanning. This class is the line of the domains still its partials, until PART10f.
+    /// The domains this module answers for, one line each, in alphabetical order (PART10d, D166): a domain's handler class and
+    /// how it is built over the context, each taking only what it uses: the loop, or the <see cref="DriverContext"/> where it
+    /// uses more. A new domain is its <c>&lt;Domain&gt;Routes.cs</c> and its line here, and a new door in a domain is a marked
+    /// handler in its class: nothing is found by scanning.
     /// </summary>
     private static readonly Domain[] Domains =
     [
-        Domain.Of(module => module),
-        Domain.Of(module => new AccountsRoutes(module._loop)),
-        Domain.Of(module => new AcrossRoutes(module._context)),
-        Domain.Of(module => new ConsoleRoutes(module._loop)),
-        Domain.Of(module => new ConversationRoutes(module._context)),
-        Domain.Of(module => new DriverRoutes(module._context)),
-        Domain.Of(module => new GitRoutes(module._loop)),
-        Domain.Of(module => new HistoryRoutes(module._loop)),
-        Domain.Of(module => new LinesRoutes(module._context)),
-        Domain.Of(module => new PluginsRoutes(module._context)),
-        Domain.Of(module => new RegistryRoutes(module._loop)),
-        Domain.Of(module => new RulesRoutes(module._loop)),
-        Domain.Of(module => new SessionsRoutes(module._context)),
-        Domain.Of(module => new ToolsRoutes(module._context)),
-        Domain.Of(module => new TraceRoutes(module._loop)),
-        Domain.Of(module => new WorkRoutes(module._context)),
-        Domain.Of(module => new WorkflowRoutes(module._loop)),
+        Domain.Of(context => new AccountsRoutes(context.Loop)),
+        Domain.Of(context => new AcrossRoutes(context)),
+        Domain.Of(context => new AgentsRoutes(context)),
+        Domain.Of(context => new ConsoleRoutes(context.Loop)),
+        Domain.Of(context => new ConversationRoutes(context)),
+        Domain.Of(context => new DriverRoutes(context)),
+        Domain.Of(context => new GitRoutes(context.Loop)),
+        Domain.Of(context => new HelpRoutes(context)),
+        Domain.Of(context => new HistoryRoutes(context.Loop)),
+        Domain.Of(context => new LinesRoutes(context)),
+        Domain.Of(context => new PluginsRoutes(context)),
+        Domain.Of(context => new RegistryRoutes(context.Loop)),
+        Domain.Of(context => new RulesRoutes(context.Loop)),
+        Domain.Of(context => new SessionsRoutes(context)),
+        Domain.Of(context => new ToolsRoutes(context)),
+        Domain.Of(context => new TraceRoutes(context.Loop)),
+        Domain.Of(context => new TreesRoutes(context.Loop)),
+        Domain.Of(context => new WorkRoutes(context)),
+        Domain.Of(context => new WorkflowRoutes(context.Loop)),
     ];
 
     // The handlers, read once off their marks. A route marked twice fails here, at the module's first use, as a switch with
@@ -159,21 +156,21 @@ public sealed partial class DriverModule : ModuleBase
     /// <summary>A route's entry in the table: its domain's place in <see cref="Domains"/>, and the handler over that domain's instance.</summary>
     private readonly record struct Handler(int Domain, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer);
 
-    /// <summary>One line of <see cref="Domains"/>: how the module builds a domain's handler class, and the routes that class marks.</summary>
+    /// <summary>One line of <see cref="Domains"/>: how a domain's handler class is built over the context, and the routes that class marks.</summary>
     private sealed class Domain(
-        Func<DriverModule, object> build,
+        Func<DriverContext, object> build,
         IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer)> routes)
     {
         public IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer)> Routes => routes;
 
-        public object Build(DriverModule module) => build(module);
+        public object Build(DriverContext context) => build(context);
 
         /// <summary>
         /// A domain whose handler class is <typeparamref name="T"/>: each <see cref="DriverRouteAttribute"/> on one of its
         /// non-public instance methods, by its route. A handler answers at once, <c>object? M(IpcRequest)</c>, or later,
         /// <c>Task&lt;object?&gt; M(IpcRequest, CancellationToken)</c>.
         /// </summary>
-        public static Domain Of<T>(Func<DriverModule, T> build) where T : class
+        public static Domain Of<T>(Func<DriverContext, T> build) where T : class
         {
             var routes = new List<(string, Func<object, IpcRequest, CancellationToken, Task<object?>>)>();
             foreach (var method in typeof(T).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic))

@@ -20,8 +20,8 @@ public sealed class HelpPauseDoorTests : DriverModuleBridge
     {
         var proposal = new HelpProposal("p1", kind, door, "a1", null, null, null, "why", "h1", "proposed");
 
-        Assert.Equal(read, DriverModule.JudgedAgainstWork([proposal]));
-        Assert.False(DriverModule.JudgedAgainstWork([]));
+        Assert.Equal(read, HelpRoutes.JudgedAgainstWork([proposal]));
+        Assert.False(HelpRoutes.JudgedAgainstWork([]));
     }
 
     [Fact]

@@ -281,16 +281,16 @@ function fixtureRepository(name: string) {
   ].join('\n'));
   fx.write('src/Daoris.Web/src/bridge/log.ts', "export const logEvent = (bridge) => bridge.invoke('DAORIS.LOG', 'EVENT', {});\n");
   fx.write('src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs', [
-    'public sealed partial class DriverModule',
+    'public sealed class DriverModule',
     '{',
     '    public override string ModuleName => "DAORIS.DRIVER";',
     '}',
     '',
   ].join('\n'));
-  fx.write('src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Trees.cs', [
+  fx.write('src/Daoris.Desktop/Daoris.Desktop.Modules/TreesRoutes.cs', [
     'namespace Daoris.Desktop.Modules;',
     '',
-    'public sealed partial class DriverModule',
+    'public sealed class TreesRoutes',
     '{',
     '    [DriverRoute("SESSION_DIFF")]',
     '    private async Task<object?> DiffAsync(IpcRequest request, CancellationToken cancellationToken)',
@@ -378,9 +378,9 @@ const FIXTURE_FILES = [
   'src/Daoris.Cli/test/_fixture.ts',
   'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/GitFixture.cs',
   'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/TickTests.cs',
-  'src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Trees.cs',
   'src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs',
   'src/Daoris.Desktop/Daoris.Desktop.Modules/LogModule.cs',
+  'src/Daoris.Desktop/Daoris.Desktop.Modules/TreesRoutes.cs',
   'src/Daoris.Web/src/bridge/call.ts',
   'src/Daoris.Web/src/bridge/log.ts',
   'src/Daoris.Web/src/bridge/trees.ts',
@@ -393,9 +393,9 @@ test('the bridge routes name each route, the handler that answers it and the bri
   const fx = fixtureRepository('orient-index-routes');
   const routes = tool.planIndex(fx.root, FIXTURE_FILES).get('docs/index/routes.md')!;
   for (const row of [
-    '| `SESSION_DIFF` | `DriverModule.Trees.cs:6` DiffAsync | `bridge/trees.ts:4` useDiff |',
-    '| `LAND` | `DriverModule.Trees.cs:13` LandAsync | `bridge/trees.ts:7` useEither |',
-    '| `HANDOFF` | `DriverModule.Trees.cs:13` LandAsync | `bridge/trees.ts:7` useEither |',
+    '| `SESSION_DIFF` | `TreesRoutes.cs:6` DiffAsync | `bridge/trees.ts:4` useDiff |',
+    '| `LAND` | `TreesRoutes.cs:13` LandAsync | `bridge/trees.ts:7` useEither |',
+    '| `HANDOFF` | `TreesRoutes.cs:13` LandAsync | `bridge/trees.ts:7` useEither |',
     // A route the page sends and no handler answers, and one answered and sent by nothing, each say so.
     '| `FORGET` | — | `bridge/trees.ts:10` useChange |',
     '| `EVENT` | `LogModule.cs:9` | `bridge/log.ts:1` logEvent |',
@@ -422,7 +422,7 @@ test("a domain's handler class, `<Domain>Routes.cs`, is read for the driver's ro
   ].join('\n'));
   const routes = tool.planIndex(fx.root, [...FIXTURE_FILES, file].sort()).get('docs/index/routes.md')!;
   assert.ok(routes.includes('| `TAIL_SESSION` | `ConsoleRoutes.cs:7` TailSession | — |'), routes);
-  assert.ok(routes.includes('| `SESSION_DIFF` | `DriverModule.Trees.cs:6` DiffAsync | `bridge/trees.ts:4` useDiff |'), routes);
+  assert.ok(routes.includes('| `SESSION_DIFF` | `TreesRoutes.cs:6` DiffAsync | `bridge/trees.ts:4` useDiff |'), routes);
   assert.match(routes, /## DAORIS\.DRIVER \(5\)/);
   fx.cleanup();
 });
@@ -568,7 +568,7 @@ test('the check names a missing, stale or stray file, and the write leaves nothi
   assert.deepEqual(tool.staleness(fx.root, tool.planIndex(fx.root, FIXTURE_FILES)), []);
 
   // A route moves two lines down: the routes file no longer says where it is. A file written by hand is not the tool's.
-  const trees = join(fx.root, 'src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Trees.cs');
+  const trees = join(fx.root, 'src/Daoris.Desktop/Daoris.Desktop.Modules/TreesRoutes.cs');
   writeFileSync(trees, readFileSync(trees, 'utf8').replace('{\n    [DriverRoute("SESSION_DIFF")]', '{\n    // one\n    // two\n    [DriverRoute("SESSION_DIFF")]'));
   fx.write('docs/index/notes.md', 'written by hand\n');
   assert.deepEqual(tool.staleness(fx.root, tool.planIndex(fx.root, FIXTURE_FILES)).map(({ path, fact }) => `${path}: ${fact}`),

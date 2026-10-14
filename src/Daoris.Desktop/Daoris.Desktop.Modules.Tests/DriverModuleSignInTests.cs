@@ -26,7 +26,7 @@ public sealed class DriverModuleSignInTests : DriverModuleBridge
     [InlineData("dsh", false, false)]
     public void Each_door_signs_in_and_takes_a_key_as_its_agent_does(string door, bool signsIn, bool takesKey)
     {
-        var acts = DriverModule.AccountActs(new HarnessRoster(AdapterSet.Built(), HarnessSettingsPath), door);
+        var acts = AgentsRoutes.AccountActs(new HarnessRoster(AdapterSet.Built(), HarnessSettingsPath), door);
 
         Assert.Equal((signsIn, takesKey), (acts.SignsIn, acts.TakesKey));
     }
