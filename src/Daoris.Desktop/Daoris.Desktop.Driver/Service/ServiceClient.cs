@@ -666,6 +666,47 @@ public sealed class ServiceClient : IDisposable
     }
 
     /// <summary>
+    /// An ask's channel as one entry reads it (SESSONE2a's <c>GET /api/asks/{id}/channel?entry=</c>), which moves no mark: what the
+    /// look hands a running part, and a starting part's instruction carries (SESSONE2b). Null where the host holds no such ask, or
+    /// is one from before the channel, which answers the route not found as well.
+    /// </summary>
+    /// <exception cref="DriverException">The host answered something other than the channel.</exception>
+    public async Task<ChannelView?> ChannelAsync(string ask, string entry, CancellationToken ct = default)
+    {
+        var answer = await _doors.SendAsync(
+            ServiceVerb.Get, $"/api/asks/{Uri.EscapeDataString(ask.TrimStart('#'))}/channel?entry={Uri.EscapeDataString(entry)}", null, ct)
+            .ConfigureAwait(false);
+        if (answer.Status == (int)System.Net.HttpStatusCode.NotFound) return null;
+        if (!answer.Ok) throw new DriverException($"the service would not read ask `#{ask}`'s channel: {answer.Payload}");
+
+        return ChannelView.Read(answer.Payload)
+               ?? throw new DriverException($"the service answered something other than ask `#{ask}`'s channel: {answer.Payload}");
+    }
+
+    /// <summary>
+    /// Move an entry's read mark on an ask's channel to <paramref name="through"/> (SESSONE2a's <c>POST …/channel/read</c>): what
+    /// reached a running part, or what a starting part was handed (SESSONE2b). A mark never moves back; a host without the door, or
+    /// without the ask, moves none, and the next read hands the same messages again.
+    /// </summary>
+    /// <exception cref="DriverException">The host refused the move.</exception>
+    public async Task ChannelReadAsync(string ask, string entry, DateTimeOffset through, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("entry", entry);
+            writer.WriteString("through", Moments.Write(through));
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, _) = await PostJsonAsync(
+            $"/api/asks/{Uri.EscapeDataString(ask.TrimStart('#'))}/channel/read", body, ct).ConfigureAwait(false);
+        if (!ok && status != (int)System.Net.HttpStatusCode.NotFound)
+        {
+            throw new DriverException($"the service would not move `{entry}`'s mark on ask `#{ask}`'s channel: {payload}");
+        }
+    }
+
+    /// <summary>
     /// A circle's declarations — what each repository owns and accepts, and where it is (D34). The
     /// intake's room is written from this, so it decides from the registry as it stands now.
     /// </summary>
