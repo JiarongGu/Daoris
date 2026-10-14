@@ -3,7 +3,7 @@ import type { Quest, Session } from '../api';
 import { ago, elapsed, moment } from '../format';
 import type { Consideration } from '../signals';
 import type { SweepBranch } from '../settings/Sweep';
-import type { AccountNamer } from '../tools';
+import type { AccountNamer } from '../agents/tools';
 import { SESSION_ACTIVE } from '../ui';
 import type { SessionGrouping } from './groups';
 import { isIntake } from './identity';

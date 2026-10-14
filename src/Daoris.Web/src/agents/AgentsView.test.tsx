@@ -25,7 +25,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import { HarnessRuns } from '../harnessRuns';
+import { HarnessRuns } from './harnessRuns';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
 import { WorkspaceScopeProvider } from '../scope';

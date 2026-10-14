@@ -23,7 +23,7 @@ import { useReviewActs } from './reviewActs';
 import type { Session } from '../api';
 import type { HeadLink, HeadOpinion, HeadReview } from './SessionHead';
 import { sayDiscard } from '../settings/Sweep';
-import { doorOf, toolOf } from '../tools';
+import { doorOf, toolOf } from '../agents/tools';
 import { agentOf, machineScope, workspaceScope } from '../settings/accounts';
 import { namer } from '../settings/namer';
 import {
@@ -43,7 +43,7 @@ import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';
 import type { Usage } from './conversation';
 import { isHelper, isIntake, isOpinion, linkedSessions, ownTree, sessionOrigin, sessionTitle } from './identity';
-import { doorLabel } from '../tools';
+import { doorLabel } from '../agents/tools';
 import type { QuestClose, Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
 import { DiffPane } from './DiffPane';

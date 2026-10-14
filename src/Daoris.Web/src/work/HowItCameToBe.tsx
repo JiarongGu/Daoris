@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { figure, list, moment } from '../format';
 import { cn } from '../lib/cn';
 import { ExternalLink } from '../links';
-import type { AccountNamer } from '../tools';
+import type { AccountNamer } from '../agents/tools';
 import { Icon, type IconName, Inline, Pill, QUEST_TONE, SESSION_TONE } from '../ui';
 import { HandedAccount } from './HandedAccount';
 import { Note } from './Note';

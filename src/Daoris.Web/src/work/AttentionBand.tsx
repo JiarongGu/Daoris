@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { runsForLine } from '../agents/agents';
-import { useHarnessRun, WithHarnessRuns } from '../harnessRuns';
+import { useHarnessRun, WithHarnessRuns } from '../agents/harnessRuns';
 import {
   useAcceptQuest, useAnswerGoAhead, useAsks, usePublishAsk, useQuests, useRegistry, useSessions,
 } from '../queries';
@@ -9,8 +9,8 @@ import {
   retryNotice, useAccounts, useConsidered, useHarnessAction, useHarnesses, useNudge, useOpinionWaits, useRefreshHarnesses,
   useRetryQuest, useRuleProposal, useRules, useSessionGroups, useTrustFolder, useUntrusted, useWaits,
 } from '../shell';
-import { SignIn } from '../SignIn';
-import { byTool } from '../tools';
+import { SignIn } from '../agents/SignIn';
+import { byTool } from '../agents/tools';
 import { failure, type Notify } from '../ui';
 import type { AccountsKnown } from './accountAttention';
 import { sentence } from '../format';

@@ -17,7 +17,7 @@ import {
   useSetReview, useStarts,
   useSweep, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
 } from '../shell';
-import { byTool } from '../tools';
+import { byTool } from '../agents/tools';
 import { failure, type Notify, useErrorNotify } from '../ui';
 import type { KeptDoors } from '../work/ClearAsk';
 import { useHistoryActs } from '../work/historyActs';

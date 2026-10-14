@@ -83,12 +83,6 @@
     "menuBar.test.tsx": "menus",
     "contextMenus.test.tsx": "menus",
 
-    "tools.ts": "agents",
-    "tools.test.ts": "agents",
-    "harnessRuns.tsx": "agents",
-    "SignIn.tsx": "agents",
-    "SignIn.test.tsx": "agents",
-
     "attachments.ts": "compose",
     "attachments.test.ts": "compose",
 

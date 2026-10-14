@@ -4,7 +4,7 @@ import type { Ask, DeclarationMatch, Session } from '../api';
 import { ago, sessionTool, size, stamp } from '../format';
 import { ExternalLink } from '../links';
 import type { Consideration } from '../signals';
-import type { AccountNamer } from '../tools';
+import type { AccountNamer } from '../agents/tools';
 import { Button, Icon, type IconName, Inline, Menu, Pill, Prose, SelectField, SESSION_TONE } from '../ui';
 import { ClearAsk } from '../work/ClearAsk';
 import type { AskLine } from '../work/entries';

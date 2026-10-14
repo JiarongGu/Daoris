@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { clockOf, figure } from '../format';
-import type { Account, AccountSettingsChange, Tool } from '../tools';
+import type { Account, AccountSettingsChange, Tool } from './tools';
 import {
   Button, Chip, Icon, Inline, Menu, type MenuAct, Pill, Prose, SectionTitle, Tip,
 } from '../ui';

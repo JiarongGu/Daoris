@@ -8,7 +8,7 @@ import type { ChainStep } from '../map/chain';
 import { ChainLine } from '../map/ChainLine';
 import { ChainStrip } from '../map/ChainStrip';
 import type { SweepBranch } from '../settings/Sweep';
-import type { AccountNamer } from '../tools';
+import type { AccountNamer } from '../agents/tools';
 import type { QuestClose, Resolution } from './AwaitingPerson';
 import { HowItCameToBe, type TraceDoor } from './HowItCameToBe';
 import type { Answered } from './InlineConfirm';

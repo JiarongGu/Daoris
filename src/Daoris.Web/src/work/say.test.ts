@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import type { Session } from '../api';
 import type { AccountsAnswer, AgentAccounts } from '../settings/accounts';
-import type { ToolDoor } from '../tools';
+import type { ToolDoor } from '../agents/tools';
 import {
   boxOf, coolingFor, NATIVE_WORDS_LIMIT, NEVER, neverSentence, NEW_SESSION_REFUSED, newSessionSaid, reasonOf, startFromRefusal,
   takesWords, tooLong,

@@ -1,5 +1,5 @@
 import i18n from './i18n';
-import type { AccountNamer } from './tools';
+import type { AccountNamer } from './agents/tools';
 
 // Formatting for the management surface. Small on purpose: a helper here is one the views share,
 // not a utility belt.

@@ -6,7 +6,7 @@ import { ago, sessionTool, size, stamp } from '../format';
 import { ExternalLink } from '../links';
 import type { ChainStep } from '../map/chain';
 import { ChainStrip } from '../map/ChainStrip';
-import type { AccountNamer } from '../tools';
+import type { AccountNamer } from '../agents/tools';
 import { type Consideration, sittingSentence, type TrustHold, waitsForAccount } from '../signals';
 import { Button, Icon, type IconName, Inline, Menu, Pill, Prose, QUEST_TONE, SectionTitle, SESSION_TONE, shownKey } from '../ui';
 import { type SessionGrouping, shownOf } from '../work/groups';

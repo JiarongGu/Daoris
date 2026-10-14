@@ -43,7 +43,7 @@ import {
   logEvent, useConsidered, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
   useRules, useSayUpdate, useSessionGroups, useShowReviewAgain, useSyncNow, useUntrusted, useUpdateState,
 } from './shell';
-import { byTool } from './tools';
+import { byTool } from './agents/tools';
 import { UpdateBanner } from './update/UpdateBanner';
 import { LinkOpener } from './links';
 import { BrowserDoor } from './work/BrowserDoor';
@@ -75,7 +75,7 @@ import { useThemeChoice } from './theme';
 import { rememberedDomain, SETTINGS_DOMAINS } from './settings/domains';
 import { store, stored } from './lib/stored';
 import { figure } from './format';
-import { HarnessRuns } from './harnessRuns';
+import { HarnessRuns } from './agents/harnessRuns';
 import { usePluginsView } from './plugins/PluginsView';
 import { useAgentsView, useAgentsWaiting } from './agents/AgentsView';
 import type { AgentPart } from './agents/agents';

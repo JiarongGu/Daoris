@@ -4,7 +4,7 @@ import type { Ask, Quest, Registration } from '../api';
 import { clockOf, moment } from '../format';
 import { type AccountScope, type AccountsAnswer, USE_DEFAULTS } from '../settings/accounts';
 import type { AccountWaitTick, Consideration } from '../signals';
-import { byTool, type ToolDoor } from '../tools';
+import { byTool, type ToolDoor } from '../agents/tools';
 import { accountAttention, type AccountsKnown } from './accountAttention';
 import { attentionOffers } from './attention';
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from '../format';
-import { useHarnessRun, WithHarnessRuns } from '../harnessRuns';
+import { useHarnessRun, WithHarnessRuns } from './harnessRuns';
 import { useRegistry } from '../queries';
 import { useScope } from '../scope';
 import { SessionConsole } from '../SessionConsole';
@@ -9,8 +9,8 @@ import {
   useAccountUse, useAccounts, useHarnessAction, useHarnesses, useRefreshHarnesses, useRuleAction, useRuleProposal, useRules,
   useSetAgentSettings, useUsage,
 } from '../shell';
-import { SignIn } from '../SignIn';
-import { byTool, type Tool } from '../tools';
+import { SignIn } from './SignIn';
+import { byTool, type Tool } from './tools';
 import { failure, type Notify, useErrorNotify } from '../ui';
 import type { ViewLayout } from '../work/ViewFrame';
 import { workspacesOf } from '../workspaces';

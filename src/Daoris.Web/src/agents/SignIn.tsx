@@ -1,8 +1,8 @@
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useHarnessCancel, useHarnessInput, useSessionConsole } from './shell';
-import { ExternalLink } from './links';
-import { Button, Dot, Icon, MonoWell } from './ui';
+import { useHarnessCancel, useHarnessInput, useSessionConsole } from '../shell';
+import { ExternalLink } from '../links';
+import { Button, Dot, Icon, MonoWell } from '../ui';
 
 /**
  * Signing an account in, on the row that asked for it (2026-09-23).

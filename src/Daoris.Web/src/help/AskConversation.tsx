@@ -10,7 +10,7 @@ import {
   useHelpConversations, useHelpProposals, useHelpReadied, useHelpStartFrom, usePinHelp, useRenameHelp, useSendMessage,
   useSettleHelp, useStartHelp, useStopSession,
 } from '../shell';
-import { useHeldHarnessRun } from '../harnessRuns';
+import { useHeldHarnessRun } from '../agents/harnessRuns';
 import { Button, Prose, SESSION_ACTIVE } from '../ui';
 import type { ChatMessage } from '../work/conversation';
 import { Composer } from '../work/Composer';

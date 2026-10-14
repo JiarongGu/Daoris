@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { accountName, accountWho } from '../agents/agents';
-import type { Account } from '../tools';
+import type { Account } from '../agents/tools';
 import { Icon, Menu } from '../ui';
 import { CHIP } from './RepositoryPicker';
 

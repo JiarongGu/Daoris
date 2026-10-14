@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { elapsed, sessionTool } from '../format';
-import type { AccountNamer } from '../tools';
+import type { AccountNamer } from '../agents/tools';
 import { Pill, QUEST_TONE, SectionTitle, SESSION_TONE } from '../ui';
 import { cn } from '../lib/cn';
 import { questName } from '../work/identity';

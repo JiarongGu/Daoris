@@ -1,13 +1,13 @@
 import { createContext, type ReactNode, useContext, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { sentence } from './format';
-import { type DefaultStanding, type HarnessRoster, useHarnessAction, useHarnessEnded } from './shell';
+import { sentence } from '../format';
+import { type DefaultStanding, type HarnessRoster, useHarnessAction, useHarnessEnded } from '../shell';
 import { byTool, type AccountPlace } from './tools';
-import { accountName } from './agents/agents';
-import { keys } from './queries';
-import type { Notify } from './ui';
-import type { Answered } from './work/InlineConfirm';
+import { accountName } from './agents';
+import { keys } from '../queries';
+import type { Notify } from '../ui';
+import type { Answered } from '../work/InlineConfirm';
 
 /** A process action a person started on a tool: an install, an update, a pin, or a sign-in. */
 export type HarnessRunAction = 'install' | 'update' | 'login' | 'login-new' | 'pin' | 'unpin' | 'profile-remove' | 'profile-default';

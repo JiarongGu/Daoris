@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
-import type { ToolDoor } from '../tools';
+import type { ToolDoor } from '../agents/tools';
 import { namer } from './namer';
 
 /**

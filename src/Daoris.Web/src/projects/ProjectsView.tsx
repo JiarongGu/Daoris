@@ -23,7 +23,7 @@ import {
   useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees,
   useSetWriteAcross, useSweepPlan, useWorkflowCurrent,
 } from '../shell';
-import { doorOf } from '../tools';
+import { doorOf } from '../agents/tools';
 import { failure, type Notify, useErrorNotify } from '../ui';
 import { ListMore } from '../work/ListPane';
 import type { ViewLayout } from '../work/ViewFrame';

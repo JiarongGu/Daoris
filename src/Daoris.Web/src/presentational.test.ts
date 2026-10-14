@@ -98,6 +98,10 @@ const ORGANISMS = new Set<string>([
   './projects/ProjectManage.tsx',
   // Settings' frame (AGT6, MOD4): the driver's state and the harness runs, around whichever domain is chosen.
   './settings/SettingsView.tsx',
+  // A tool's runs, an install, an update or a sign-in (UX7b), and the sign-in on the row that asked for it: the shell's
+  // hooks, so the Agents place's rows and What needs you, which draw them, hold none.
+  './agents/harnessRuns.tsx',
+  './agents/SignIn.tsx',
 ]);
 
 /**

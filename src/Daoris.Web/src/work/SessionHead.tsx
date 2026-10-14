@@ -8,7 +8,7 @@ import { workflowHolds } from '../workflow/gate';
 import { WorkflowHold } from '../workflow/WorkflowHold';
 import { DiscardBranchAsk, type SweepBranch } from '../settings/Sweep';
 import type { GoAhead, Quest, Session } from '../api';
-import type { AccountNamer } from '../tools';
+import type { AccountNamer } from '../agents/tools';
 import { type GoAheadAnswer, GoAheadList } from '../asks/GoAheadList';
 import { ago, elapsed, sessionTool, stamp } from '../format';
 import {

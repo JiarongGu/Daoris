@@ -3,7 +3,7 @@ import i18n from '../i18n';
 import type { Ask, GoAhead, Quest, Registration, Session } from '../api';
 import type { RuleProposal } from '../settings/AgentRules';
 import type { Consideration } from '../signals';
-import { byTool } from '../tools';
+import { byTool } from '../agents/tools';
 import type { AccountRowFacts, NamedAccount } from './accountAttention';
 import type { Attention } from './AttentionRow';
 import type { SessionGrouping } from './groups';

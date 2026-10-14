@@ -1,6 +1,6 @@
 import type { Session } from '../api';
 import { type AccountsAnswer, agentOf } from '../settings/accounts';
-import { toolOf, type ToolDoor } from '../tools';
+import { toolOf, type ToolDoor } from '../agents/tools';
 import { answeredPark, SESSION_ACTIVE } from '../ui';
 
 // The box on a session's page (MSG1f, D137 §5.1): which box a session is offered, by what its record says and what a word

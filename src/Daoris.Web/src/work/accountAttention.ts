@@ -6,7 +6,7 @@ import {
   type AccountCooling, type AccountScope, type AccountsAnswer, type AgentAccounts, agentOf, machineScope, workspaceScope,
 } from '../settings/accounts';
 import type { AccountWaitTick, Consideration } from '../signals';
-import type { Tool } from '../tools';
+import type { Tool } from '../agents/tools';
 import { workspaceOf } from '../workspaces';
 import type { Attention } from './AttentionRow';
 import { questName } from './identity';

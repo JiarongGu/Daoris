@@ -5,7 +5,7 @@ import { type Carry, NO_CARRY, useCarry, useFileChooser } from '../compose/carry
 import { size } from '../format';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
-import type { Account } from '../tools';
+import type { Account } from '../agents/tools';
 import { Button, Icon, Inline, Menu, Tip } from '../ui';
 import { type AgentChoice, AgentChip } from './AgentChip';
 import { CHIP, RepositoryPicker, type StartRepository } from './RepositoryPicker';

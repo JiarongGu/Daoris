@@ -5,7 +5,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../i18n';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
-import { byTool } from '../tools';
+import { byTool } from './tools';
 import { AgentList, AgentStrip } from './AgentList';
 import { agentRows } from './agents';
 import { CLAUDE_USE, CODEX_USE, TOOLS } from './agentsFixtures';

@@ -1,7 +1,7 @@
 import type { Session } from '../api';
 import type { RepositoryLanding } from '../settings/Landings';
 import type { RepositoryLine } from '../settings/Lines';
-import { byTool, type Tool, type ToolDoor } from '../tools';
+import { byTool, type Tool, type ToolDoor } from '../agents/tools';
 import { answeredPark } from '../ui';
 
 /**
