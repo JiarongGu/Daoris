@@ -102,6 +102,8 @@ const ORGANISMS = new Set<string>([
   // hooks, so the Agents place's rows and What needs you, which draw them, hold none.
   './agents/harnessRuns.tsx',
   './agents/SignIn.tsx',
+  // Settings → Get started (SETUP1a, D97): the organism over the guide, which reads the machine through `useMachine`.
+  './help/setupGuide.tsx',
 ]);
 
 /**

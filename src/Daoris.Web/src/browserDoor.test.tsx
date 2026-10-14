@@ -26,7 +26,7 @@ vi.mock('@shenora/react', async () => {
 
 import './i18n';
 import { App } from './App';
-import { AT_START } from './setupGuide';
+import { AT_START } from './help/setupGuide';
 import { WorkspaceScopeProvider } from './scope';
 
 const TICKET = 'https://tickets.example/browse/T-1';

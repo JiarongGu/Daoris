@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { setupSteps } from './help/setup';
-import type { StarterDoor } from './help/starters';
-import { useMachine } from './help/useMachine';
-import { store, stored } from './lib/stored';
-import { GetStarted } from './settings/GetStarted';
+import { setupSteps } from './setup';
+import type { StarterDoor } from './starters';
+import { useMachine } from './useMachine';
+import { store, stored } from '../lib/stored';
+import { GetStarted } from '../settings/GetStarted';
 
 /**
  * Whether this viewer turned off opening Get started at start (SETUP1b): `off`, or nothing. A per-viewer

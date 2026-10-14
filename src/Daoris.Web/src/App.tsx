@@ -15,7 +15,7 @@ import { fieldTracker, findTarget, runEdit } from './menus/editing';
 import { opensAtStart, setupProgress, setupSteps } from './help/setup';
 import { useMachine } from './help/useMachine';
 import { itemOf } from './help/where';
-import { useSetupAtStart } from './setupGuide';
+import { useSetupAtStart } from './help/setupGuide';
 import { useFrameClosings } from './work/closings';
 import { type ListMode, type ListView, listToggled } from './work/layout';
 import { useListPanes } from './work/listPanes';

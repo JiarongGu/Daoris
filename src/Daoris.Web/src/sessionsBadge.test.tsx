@@ -29,7 +29,7 @@ vi.mock('@shenora/react', async () => {
 import './i18n';
 import { App } from './App';
 import { keys } from './queries';
-import { AT_START } from './setupGuide';
+import { AT_START } from './help/setupGuide';
 import { WorkspaceScopeProvider } from './scope';
 import type { RuleProposal } from './settings/AgentRules';
 import type { Consideration } from './signals';

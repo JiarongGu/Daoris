@@ -26,7 +26,7 @@ vi.mock('@shenora/react', async () => {
 
 import '../i18n';
 import { App } from '../App';
-import { AT_START } from '../setupGuide';
+import { AT_START } from '../help/setupGuide';
 import { WorkspaceScopeProvider } from '../scope';
 
 /** A conversation working now: its header offers its stop and its own window. */
