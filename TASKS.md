@@ -186,6 +186,7 @@ EVID1a → b → c; corresponding EVID1 precedes EVID2; EVID1d also needs DEV5/7
 Contracts: session-management (D126 §9), session-messages (D137), answer-continues (D131),
 pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
 
+- [ ] **AWAITSTALE1 — a closed quest no longer names the question it waited on** (service, web). The service keeps a quest's `awaits` after it closes (the install's `711d252413bb` and `3068f74791db`, done, still naming theirs), which held the person's words (FIX-LOG 2026-10-15, fixed in the planner) and can read *awaiting reply* on the quest page: answer `awaits` only while taken, or clear it at the close, the history kept where it is read.
 
 Co-working (D167, `docs/2026-10-14-co-working-design.md`; the owner's two tasks are the canary):
 

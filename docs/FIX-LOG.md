@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-15 — The person's words to a session whose closed quest had once waited on a question never went on
+
+- **Symptom:** the owner's, on the install: words said to report-ui's session cf8faff5 (asking it to rebase a branch whose
+  pull request now conflicted) were kept on its record (`said`, `reopens`) and the terminal answered *held: the same session
+  goes on with this at the driver's next look*, but no look ever went on with them, and nothing said why. The same words to
+  another session (cbf2fe70) went on within a second.
+- **Root cause:** its quest (`711d252413bb`) had waited on another repository's answer (D79) and then closed done, and the
+  service keeps the question it waited on (`awaits`) after the quest closes. The planner's `WrittenTo` (MSG1b) holds the
+  person's words while a quest `Awaits` anything, which is right for a taken quest still waiting on its question (D79's resume
+  is its next start) and wrong for a closed one, so the words were never planned. cbf2fe70's quest had never waited.
+- **Fix:** `WrittenTo` reads a quest's `awaits` only while it is taken: a closed quest waits on nothing. The service's stale
+  `awaits` on a closed quest is AWAITSTALE1.
+- **Verify:** `SessionMessagesPlanTests.Words_to_a_session_whose_closed_quest_still_names_an_old_question_go_on`, red on the
+  unfixed planner and green after; the driver's fast half; the words going on at the install's next look after the republish.
+
 ## 2026-10-13 — A hand-over's take could cut a turn a word started as the take began (SWITCH1c-ii)
 
 - **Symptom:** none seen; found reading the turns while wiring the curve's automatic move, which makes the window likely: a word

@@ -49,6 +49,27 @@ public sealed class SessionMessagesPlanTests
         Assert.Equal("going on in `Game` — you wrote to session `s1`: Also log the port.", only.Reason);
     }
 
+    /// <summary>
+    /// 🔴 The owner's case of 2026-10-15: a quest that once waited on another repository's answer and then closed still names
+    /// the question it waited on (`awaits`), and the person's words to its last session sat unplanned. A closed quest waits on
+    /// nothing: the words go on in that session as any closed quest's do. A taken quest waiting on its question still waits.
+    /// </summary>
+    [Fact]
+    public void Words_to_a_session_whose_closed_quest_still_names_an_old_question_go_on()
+    {
+        var record = Written("completed");
+        var snapshot = new Snapshot([], [Repo], [])
+        {
+            Closed = [Quest("q1", "Done") with { Awaits = "q0" }],
+            LastRun = new Dictionary<string, PriorSession> { ["q1"] = record },
+        };
+
+        var only = Assert.Single(Planner.Plan(snapshot, Config()));
+
+        Assert.Equal((StartVerdict.Start, true), (only.Verdict, only.GoesOn));
+        Assert.Equal(record, only.Resumes);
+    }
+
     /// <summary>A failed record the person writes to goes on in itself, where without words it would be carried on in a new one.</summary>
     [Fact]
     public void Words_to_a_failed_session_go_on_in_it_rather_than_a_carry_on()

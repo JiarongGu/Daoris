@@ -902,10 +902,11 @@ public static class Planner
             snapshot.Handed.TryGetValue(quest.Id, out var handed) && string.Equals(handed.From, stop.Session, StringComparison.Ordinal);
 
         // Whether the person's words wait on this quest's last session here (MSG1b, D137 §2.2), parked or ended, and are not
-        // all words a reopen already found it could not take (MSG1a's open point). A quest waiting on a question waits with
-        // them: D79's resume is its next start, and the words stay on the record they were said to.
+        // all words a reopen already found it could not take (MSG1a's open point). A taken quest waiting on a question waits
+        // with them: D79's resume is its next start, and the words stay on the record they were said to. A closed quest waits
+        // on nothing, whatever question its record still names from before it closed (the owner's case of 2026-10-15).
         bool WrittenTo(QuestView quest) =>
-            quest.Awaits is null or ""
+            (quest.Awaits is null or "" || quest.Status != "Taken")
             && snapshot.LastRun.TryGetValue(quest.Id, out var written)
             && written.WordsWaiting
             && !GoOnMarks.Judged(written, snapshot.Unable.GetValueOrDefault(written.Session));
