@@ -1,7 +1,9 @@
+using static Daoris.Knowledge.HelpProposalFile;
+
 namespace Daoris.Knowledge;
 
 /// <summary>The <c>account</c> kind's writer (HELP6): an account's own model and effort, with its own <c>account</c>, <c>model</c> and <c>effort</c>.</summary>
-public sealed partial class HelpProposalBox
+internal sealed class HelpAccountProposalWriter(HelpProposalFile file)
 {
     /// <summary>
     /// Write one proposal to change an account's own model and effort (HELP6): the Agents screen's
@@ -9,7 +11,7 @@ public sealed partial class HelpProposalBox
     /// </summary>
     /// <param name="model">A model the tool reads, or <c>unset</c> for the tool's own default; null leaves it.</param>
     /// <param name="effort">An effort the tool's settings keep, or <c>unset</c>; null leaves it.</param>
-    public (string? Id, string Message) ProposeAgentSettings(
+    public (string? Id, string Message) Propose(
         string agent, string account, string? model, string? effort, string why, string? session, DateTimeOffset at)
     {
         var named = Blank(agent);
@@ -25,7 +27,7 @@ public sealed partial class HelpProposalBox
               ?? (chosenEffort is null ? null : Word(chosenEffort, "an effort"));
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
 
-        return Write(writer =>
+        return file.Write(writer =>
         {
             writer.WriteString("kind", "account");
             writer.WriteString("door", "settings");

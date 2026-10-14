@@ -1,10 +1,12 @@
+using static Daoris.Knowledge.HelpProposalFile;
+
 namespace Daoris.Knowledge;
 
 /// <summary>
 /// The <c>session</c> kind's writer (SESSUX1h2a, D161's SESSUX1h1 note): sessions archived or unarchived, by id, or every
 /// ended one archived, as the terminal's <c>sessions archive</c> does.
 /// </summary>
-public sealed partial class HelpProposalBox
+internal sealed class HelpSessionProposalWriter(HelpProposalFile file)
 {
     /// <summary>
     /// Write one proposal to archive or unarchive sessions: the door is <c>archive</c> or <c>unarchive</c>, the <c>target</c>
@@ -12,7 +14,7 @@ public sealed partial class HelpProposalBox
     /// with <c>archive</c>). Whether a session exists, and which have ended, is the driver's to judge.
     /// </summary>
     /// <param name="sessions">The session ids, comma-separated; exactly one of this or <paramref name="ended"/>.</param>
-    public (string? Id, string Message) ProposeSession(string door, string? sessions, bool ended, string why, string? session, DateTimeOffset at)
+    public (string? Id, string Message) Propose(string door, string? sessions, bool ended, string why, string? session, DateTimeOffset at)
     {
         var named = Blank(sessions);
         if (string.IsNullOrWhiteSpace(why)) return NoReason;
@@ -30,7 +32,7 @@ public sealed partial class HelpProposalBox
             : ids.Select(id => Word(id, "an id")).FirstOrDefault(said => said is not null);
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
 
-        return Write(writer =>
+        return file.Write(writer =>
         {
             writer.WriteString("kind", "session");
             writer.WriteString("door", door);

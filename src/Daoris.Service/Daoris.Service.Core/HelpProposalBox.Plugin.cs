@@ -1,10 +1,12 @@
+using static Daoris.Knowledge.HelpProposalFile;
+
 namespace Daoris.Knowledge;
 
 /// <summary>
 /// The <c>plugin</c> kind's writer (PLUG9): a plugin added from its folder or from the install's own offers by
 /// id, switched on or off, or updated, with the proposal's <c>repository</c> and its own <c>folder</c> and <c>offer</c>.
 /// </summary>
-public sealed partial class HelpProposalBox
+internal sealed class HelpPluginProposalWriter(HelpProposalFile file)
 {
     /// <summary>
     /// Write one plugin proposal (PLUG9): <c>add</c> a plugin that has landed, from its folder in the
@@ -21,7 +23,7 @@ public sealed partial class HelpProposalBox
     /// installed plugin from where it came from. Whether the install offers it, and whether the plugin recorded
     /// where it came from, is the driver's, which reads both with its own code.
     /// </remarks>
-    public (string? Id, string Message) ProposePlugin(
+    public (string? Id, string Message) Propose(
         string action, string? id, string? folder, string? repository, string why, string? session, DateTimeOffset at,
         string? offer = null)
     {
@@ -42,7 +44,7 @@ public sealed partial class HelpProposalBox
             : Word(named, "an id");
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
 
-        return Write(writer =>
+        return file.Write(writer =>
         {
             writer.WriteString("kind", "plugin");
             writer.WriteString("door", door);

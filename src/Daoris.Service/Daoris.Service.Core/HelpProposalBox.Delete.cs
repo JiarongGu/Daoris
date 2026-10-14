@@ -1,13 +1,15 @@
+using static Daoris.Knowledge.HelpProposalFile;
+
 namespace Daoris.Knowledge;
 
 /// <summary>The <c>delete</c> kind's writer (HELP6): a quest or an ask made by mistake, by its id.</summary>
-public sealed partial class HelpProposalBox
+internal sealed class HelpDeleteProposalWriter(HelpProposalFile file)
 {
     /// <summary>
     /// Write one delete proposal (HELP6): a quest or an ask made by mistake, by its id. Whether the record
     /// may go is the service's own reading, which the driver asks before the person sees the card.
     /// </summary>
-    public (string? Id, string Message) ProposeDelete(string? quest, string? ask, string? deleteSession, string why, string? session, DateTimeOffset at)
+    public (string? Id, string Message) Propose(string? quest, string? ask, string? deleteSession, string why, string? session, DateTimeOffset at)
     {
         var questId = Blank(quest)?.TrimStart('#');
         var askId = Blank(ask)?.TrimStart('#');
@@ -18,7 +20,7 @@ public sealed partial class HelpProposalBox
             : Word(questId ?? askId ?? sessionId!, "an id");
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
 
-        return Write(writer =>
+        return file.Write(writer =>
         {
             writer.WriteString("kind", "delete");
             writer.WriteString("door", questId is not null ? "quest" : askId is not null ? "ask" : "session");

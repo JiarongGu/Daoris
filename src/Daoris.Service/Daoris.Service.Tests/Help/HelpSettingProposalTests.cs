@@ -155,7 +155,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         var tool = method.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
             .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
 
-        foreach (var name in HelpProposalBox.Doors)
+        foreach (var name in HelpSettingProposalWriter.Doors)
         {
             Assert.Contains(name, door);
             Assert.Contains(name, tool);

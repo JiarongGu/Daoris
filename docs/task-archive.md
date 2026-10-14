@@ -14296,3 +14296,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DEDUP8 — the driver's HTTP verbs and downloads** (driver). `DriverHttp`'s three verbs as one send; one download wrapper and hash for `ToolInstall` and `ClaudeReleaseDownloads`. Survey §8.
 
 **Outcome** 2026-10-14: `DriverHttp`'s verbs and its informable post send through one private exchange, the refusal sentence thrown from one place; `Platform/Downloads.cs` holds the downloads' client, the fetch with its words (each caller choosing its exception) and the streaming hash, for the tool installer and the Claude release. Seven tests; the install and release classes passed on the merge. On Sonnet: 31 tool calls. Detail: D166's DEDUP8 note.
+
+## PART7 — `HelpProposalBox` as a writer per kind (2026-10-14, D166)
+
+> - [ ] **PART7 — `HelpProposalBox` as a writer per kind** (service). A proposal-file helper and a writer class per kind, `ProposeX` kept on the box; the workflow pattern with its writer. Survey "A family".
+
+**Outcome** 2026-10-14: `HelpProposalFile` holds what the kinds share (the write, through the atomic file and the moments, and the shared rules); each kind is an internal `Help<Kind>ProposalWriter` with one `Propose`, the workflow's partial in its one file for its pattern; the box keeps one-line `ProposeX`, so no call changed. The kind files keep their names because the driver's twin tests read them by path: PART7b renames them with those tests. Five types remain on the gate's list. On Opus: 160 tool calls. Detail: D166's PART7 note.

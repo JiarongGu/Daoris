@@ -1,10 +1,12 @@
+using static Daoris.Knowledge.HelpProposalFile;
+
 namespace Daoris.Knowledge;
 
 /// <summary>
 /// The <c>agent</c> kind's writer (HELP6): an agent's Update, or a pin to one exact version — and since HELP10 the
 /// account it runs as by default.
 /// </summary>
-public sealed partial class HelpProposalBox
+internal sealed class HelpAgentProposalWriter(HelpProposalFile file)
 {
     /// <summary>
     /// Write one agent proposal (HELP6): <c>update</c> to its newest release, or <c>pin</c> to one exact
@@ -20,7 +22,7 @@ public sealed partial class HelpProposalBox
     /// <param name="near">For <c>use</c>: the percent at which an account counts as near its limit.</param>
     /// <param name="accounts">For <c>order</c>: the walk's accounts, in order.</param>
     /// <param name="clear">For <c>order</c>: the workspace goes back to the machine's accounts.</param>
-    public (string? Id, string Message) ProposeAgent(
+    public (string? Id, string Message) Propose(
         string action, string agent, string? version, string why, string? session, DateTimeOffset at,
         string? account = null, string? workspace = null,
         string? use = null, string? keep = null, bool noKeep = false, bool? early = null, int? near = null,
@@ -63,7 +65,7 @@ public sealed partial class HelpProposalBox
               ?? list.Select(each => Word(each!, "an account")).FirstOrDefault(each => each is not null);
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
 
-        return Write(writer =>
+        return file.Write(writer =>
         {
             writer.WriteString("kind", "agent");
             writer.WriteString("door", door);

@@ -48,8 +48,13 @@ public sealed class HelpProposalBoxKindsTests
         Assert.Equal(Table, HelpProposalBox.Kinds);
     }
 
+    /// <summary>
+    /// Each kind's file, <c>HelpProposalBox.&lt;Kind&gt;.cs</c> (the name the driver's twin tests read), holds that kind's
+    /// writer class, <c>Help&lt;Kind&gt;ProposalWriter</c>, writing exactly that kind, and no part of the box: since PART7
+    /// (D166's note, no partial type without generated code) the box is the one class of <c>HelpProposalBox.cs</c>.
+    /// </summary>
     [Fact]
-    public void Every_kind_is_written_by_a_file_of_its_own()
+    public void Every_kind_is_written_by_a_class_in_a_file_of_its_own()
     {
         var core = Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core");
 
@@ -58,7 +63,10 @@ public sealed class HelpProposalBoxKindsTests
             Directory.GetFiles(core, "HelpProposalBox*.cs").Select(Path.GetFileName).Order(StringComparer.Ordinal));
         foreach (var (kind, _) in Table)
         {
-            Assert.Contains($"writer.WriteString(\"kind\", \"{kind}\");", File.ReadAllText(Path.Combine(core, $"HelpProposalBox.{Pascal(kind)}.cs")));
+            var writer = File.ReadAllText(Path.Combine(core, $"HelpProposalBox.{Pascal(kind)}.cs"));
+            Assert.Matches($@"\bclass Help{Pascal(kind)}ProposalWriter\b", writer);
+            Assert.DoesNotContain("class HelpProposalBox", writer);
+            Assert.Contains($"writer.WriteString(\"kind\", \"{kind}\");", writer);
         }
     }
 
