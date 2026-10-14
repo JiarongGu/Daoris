@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../i18n';
 import { en, zh } from '../locales';
-import { SessionConsole } from '../SessionConsole';
+import { SessionConsole } from './SessionConsole';
 import { layTabs } from '../test/tabRoom';
 import { SESSION_ACTIVE } from '../ui';
 import { ActivityBar, AppStrip, OutputPanel, type PanelTab, Splitter, StatusBar } from './frame';

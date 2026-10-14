@@ -5,7 +5,7 @@ import { useQuests, useSessions } from '../queries';
 import { useChatTurns, useDriver, useHarnesses, useOpenWindow, useSessionOpenings } from '../shell';
 import { frameShortcut } from '../shortcuts';
 import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
-import { SessionConsole } from '../SessionConsole';
+import { SessionConsole } from './SessionConsole';
 import { type ListMode, listToggled } from './layout';
 import { useListPanes } from './listPanes';
 import { SessionConversation } from './SessionConversation';

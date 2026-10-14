@@ -87,9 +87,6 @@
     "attachments.test.ts": "compose",
 
     "setupGuide.tsx": "help",
-    "setupGuide.test.tsx": "help",
-
-    "SessionConsole.tsx": "work",
-    "console.test.tsx": "work"
+    "setupGuide.test.tsx": "help"
   }
 }

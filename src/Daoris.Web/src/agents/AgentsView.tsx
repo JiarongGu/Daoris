@@ -4,7 +4,7 @@ import { sentence } from '../format';
 import { useHarnessRun, WithHarnessRuns } from './harnessRuns';
 import { useRegistry } from '../queries';
 import { useScope } from '../scope';
-import { SessionConsole } from '../SessionConsole';
+import { SessionConsole } from '../work/SessionConsole';
 import {
   useAccountUse, useAccounts, useHarnessAction, useHarnesses, useRefreshHarnesses, useRuleAction, useRuleProposal, useRules,
   useSetAgentSettings, useUsage,

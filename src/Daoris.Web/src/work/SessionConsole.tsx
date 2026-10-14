@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { useSessionConsole } from './shell';
-import { MonoWell } from './ui';
+import { useSessionConsole } from '../shell';
+import { MonoWell } from '../ui';
 
 /**
  * A session's console, live (D49 §2) — the transcript capture as it happens.

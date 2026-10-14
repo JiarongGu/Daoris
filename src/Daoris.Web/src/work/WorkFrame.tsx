@@ -1,6 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SessionConsole } from '../SessionConsole';
+import { SessionConsole } from './SessionConsole';
 import { sentence } from '../format';
 import { buildChain } from '../map/chain';
 import type { Compose, OpenGroup } from '../opener';

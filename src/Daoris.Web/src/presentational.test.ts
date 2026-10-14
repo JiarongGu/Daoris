@@ -36,7 +36,7 @@ const FORBIDDEN: { what: string; pattern: RegExp }[] = [
  * Adding a name here is the deliberate act; it is meant to be noticed in review.
  */
 const ORGANISMS = new Set<string>([
-  './SessionConsole.tsx',
+  './work/SessionConsole.tsx',
   // The asks' organism (INT4c; FRAME1d): it holds the queries so the row, the page and the composer do not.
   './asks/AsksPart.tsx',
   './work/AttentionBand.tsx',

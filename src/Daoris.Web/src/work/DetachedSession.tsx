@@ -5,7 +5,7 @@ import { namer } from '../settings/namer';
 import { useChatTurns, useHarnesses, useSessionOpenings, useSessionStreams } from '../shell';
 import { frameShortcut } from '../shortcuts';
 import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
-import { SessionConsole } from '../SessionConsole';
+import { SessionConsole } from './SessionConsole';
 import { AttendedSession } from './AttendedSession';
 import { useDetachedPanel } from './closings';
 import { OutputPanel, PANEL_MIN } from './frame';
