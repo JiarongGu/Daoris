@@ -15,7 +15,7 @@ namespace Daoris.Driver;
 /// <see cref="IServiceDoors"/>, whose real one, <see cref="ServiceHttp"/>, the constructors that take a URL compose. Every
 /// module names this client; none names the HTTP. A family of doors on a resource of its own that another module asks is a
 /// class over the client, reached through it (<see cref="Opinions"/>, <see cref="Helpers"/>; PART8): it reaches the HTTP, the
-/// JSON reading and <see cref="Opened"/> through the internal surface below, never through a part of this type.
+/// JSON reading and <see cref="Opened"/> through the internal surface below (D166's PART8 note).
 /// </remarks>
 public sealed class ServiceClient : IDisposable
 {
@@ -31,6 +31,12 @@ public sealed class ServiceClient : IDisposable
         Helpers = new HelperDoors(this);
     }
 
+    /// <summary>A client over HTTP to the host at <paramref name="baseUrl"/>, with its key; a test may hand its own HTTP client.</summary>
+    public ServiceClient(string baseUrl, string? key, HttpClient? http = null)
+        : this(new ServiceHttp(baseUrl, key, http))
+    {
+    }
+
     /// <summary>The local host's opinion doors (XAGENT1c–XAGENT1e), over this client.</summary>
     public OpinionDoors Opinions { get; }
 
@@ -43,12 +49,6 @@ public sealed class ServiceClient : IDisposable
 
     /// <summary>A record a door class opened, told to <see cref="Opened"/>'s watchers as this client's own doors tell them (LOG1b).</summary>
     internal void RecordOpened(SessionOpened opened) => Raise(Opened, opened);
-
-    /// <summary>A client over HTTP to the host at <paramref name="baseUrl"/>, with its key; a test may hand its own HTTP client.</summary>
-    public ServiceClient(string baseUrl, string? key, HttpClient? http = null)
-        : this(new ServiceHttp(baseUrl, key, http))
-    {
-    }
 
     public const string UrlVariable = "DAORIS_SERVICE_URL";
     public const string KeyVariable = "DAORIS_SERVICE_KEY";
@@ -1676,7 +1676,7 @@ public sealed class ServiceClient : IDisposable
 
     // The service's history doors, a local host's only (HIST1b, D153; the history-clearing design §6.3): what a clear of finished
     // history would take, and the clear itself. The driver's HistoryClearing calls them, judging this machine's half before and
-    // removing the home's files after. Merged from its own part (PART8).
+    // removing the home's files after.
 
     /// <summary>
     /// The units a scope holds, each judged by the service, deleting nothing: <paramref name="query"/> is the door's one scope,
@@ -1778,8 +1778,8 @@ public sealed class ServiceClient : IDisposable
 
     // The review on the record, read (REVIEWENV1b2): each field optional, so a quest or an ask no review touches, and one from a
     // host before them, reads as it did. A set-up, a verdict, a choice or a proposal that is not whole is passed over, as the
-    // service passes over what it cannot read: never a failed read of the quest or the ask. With the review's quest and ask
-    // doors. Merged from its own part (PART8): its doors are the quests' and the asks', and its readers fill their views.
+    // service passes over what it cannot read: never a failed read of the quest or the ask. Then the review's quest and ask
+    // doors.
 
     /// <summary>A quest's chain choice (<c>review</c>), or null where it answers none, or one that names no choice.</summary>
     private static QuestReviewChoiceView? ReadReviewChoice(JsonElement quest) =>
@@ -1946,8 +1946,7 @@ public sealed class ServiceClient : IDisposable
             ? number
             : null;
 
-    // What the review's showing reads of a session's record (REVIEWENV1d): the tree its set-up was built in. Merged from its
-    // own part (PART8).
+    // What the review's showing reads of a session's record (REVIEWENV1d): the tree its set-up was built in.
 
     /// <summary>
     /// The tree a session of this machine's held (D51), closed records included, as the records answer it on loopback; null where
@@ -1965,7 +1964,7 @@ public sealed class ServiceClient : IDisposable
     }
 
     // An ask's kind and workflow (WORKFLOW1e, WORKFLOW1i): the person's choices and its intake's proposals read, and the
-    // person's choice posted. Merged from its own part (PART8).
+    // person's choice posted.
 
     /// <summary>An ask's kind and workflow choices (<c>workflowChoices</c>), each with when it was made; one without a moment is half of one.</summary>
     private static IReadOnlyList<AskWorkflowChoiceView> ReadWorkflowChoices(JsonElement ask) =>

@@ -5,13 +5,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The local host's opinion doors, as the driver asks them (XAGENT1c–XAGENT1e): a pass's ask, an opinion's read and its findings'
-/// hand. Reached as the client's <see cref="ServiceClient.Opinions"/>.
+/// hand: a class over the service's client, reached as its <see cref="ServiceClient.Opinions"/> (PART8).
 /// </summary>
-/// <remarks>
-/// <b>A class over the client, not a part of it</b> (PART8; D166's note, no partial type without generated code): the doors are
-/// <c>/api/opinions</c>'s, which Review asks, and they reach the client's HTTP, its JSON reading and its
-/// <see cref="ServiceClient.Opened"/> through the client's internal surface, so a test's doors stand in for them as for the client.
-/// </remarks>
 public sealed class OpinionDoors
 {
     private readonly ServiceClient _service;

@@ -12,14 +12,9 @@ public sealed record HelperOpened(string? Session, string Message)
 }
 
 /// <summary>
-/// The local host's helper doors, as the driver asks them (MIXAGENT2a-ii; <c>POST /api/helpers</c> and <c>/hand</c>). Reached as
-/// the client's <see cref="ServiceClient.Helpers"/>.
+/// The local host's helper doors, as the driver asks them (MIXAGENT2a-ii; <c>POST /api/helpers</c> and <c>/hand</c>): a class over
+/// the service's client, reached as its <see cref="ServiceClient.Helpers"/> (PART8).
 /// </summary>
-/// <remarks>
-/// <b>A class over the client, not a part of it</b> (PART8; D166's note, no partial type without generated code): the doors are
-/// <c>/api/helpers</c>'s, which Conversations asks, and they reach the client's HTTP, its JSON reading and its
-/// <see cref="ServiceClient.Opened"/> through the client's internal surface.
-/// </remarks>
 public sealed class HelperDoors
 {
     private readonly ServiceClient _service;
