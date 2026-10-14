@@ -12,11 +12,11 @@
 
 import { createHash } from 'node:crypto';
 import { atName, findName, sameName } from './platform/casefold.ts';
-import type { DriverChoices, LandingRule } from './driverconfig.ts';
-import { opinionFor } from './opinions.ts';
+import type { DriverChoices, LandingRule } from './driver/driverconfig.ts';
+import { opinionFor } from './driver/opinions.ts';
 import type { PluginCatalog } from './plugins.ts';
 import { normalizeWorkspace } from './service/remotemap.ts';
-import { reviewFor } from './reviews.ts';
+import { reviewFor } from './driver/reviews.ts';
 
 /** One plugin switched on and sound, as the derivation reads it: its id and the points it speaks on, in catalogue order. */
 export interface WorkflowPlugin {

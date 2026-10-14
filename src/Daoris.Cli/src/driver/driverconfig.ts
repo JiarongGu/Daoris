@@ -17,15 +17,15 @@
 // an `i` with a dot above, which a lowered `İzmir` would have met.
 
 import { dirname } from 'node:path';
-import { requireHomeFile } from './platform/home.ts';
-import { DaorisError } from './platform/errors.ts';
-import { flagValue, operands } from './platform/args.ts';
-import { readJsonObject, writeJsonAtomic } from './platform/fsx.ts';
-import { findName, sameName } from './platform/casefold.ts';
-import { isoMoment } from './accounts/cooling.ts';
-import { isPluginId, readPlugins, type PluginCatalog } from './plugins.ts';
-import { normalizeWorkspace } from './service/remotemap.ts';
-import { TOOLCHAINS } from './agents/toolchain.ts';
+import { requireHomeFile } from '../platform/home.ts';
+import { DaorisError } from '../platform/errors.ts';
+import { flagValue, operands } from '../platform/args.ts';
+import { readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
+import { findName, sameName } from '../platform/casefold.ts';
+import { isoMoment } from '../accounts/cooling.ts';
+import { isPluginId, readPlugins, type PluginCatalog } from '../plugins.ts';
+import { normalizeWorkspace } from '../service/remotemap.ts';
+import { TOOLCHAINS } from '../agents/toolchain.ts';
 import { failuresOf, type RecordsReader } from './strikes.ts';
 import {
   applyReviewEdit, holdsProcedure, inScope, reviewGate, reviewListed, reviewSays, reviewsOf, type CheckoutsReader,
@@ -37,9 +37,9 @@ import {
 } from './opinions.ts';
 import { applyCommitEdit, commitListed, commitsOf, type CommitEdit, type CommitRule } from './commits.ts';
 import { applyHelperEdit, helperListed, helpersOf, type HelperEdit, type HelperRule } from './helpers.ts';
-import { workflowChoicesOf, writtenChoices, type WorkflowChoice } from './workflowchoice.ts';
-import type { CommandArgs } from './platform/types.ts';
-import type { ExitCode } from './platform/errors.ts';
+import { workflowChoicesOf, writtenChoices, type WorkflowChoice } from '../workflowchoice.ts';
+import type { CommandArgs } from '../platform/types.ts';
+import type { ExitCode } from '../platform/errors.ts';
 
 export const PATH_VARIABLE = 'DAORIS_DRIVER_CONFIG';
 

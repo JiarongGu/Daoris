@@ -24,8 +24,8 @@ import { DaorisError, type ExitCode } from './platform/errors.ts';
 import { readText, writeTextAtomic } from './platform/fsx.ts';
 import { readPlugins } from './plugins.ts';
 import { normalizeWorkspace } from './service/remotemap.ts';
-import { inScope, type CheckoutsReader } from './reviews.ts';
-import { writeDriverChoices, type DriverChoices } from './driverconfig.ts';
+import { inScope, type CheckoutsReader } from './driver/reviews.ts';
+import { writeDriverChoices, type DriverChoices } from './driver/driverconfig.ts';
 import {
   CURRENT, applyWorkflowEdit, readKeptVersions, resolveWorkflow, type WorkflowChoiceEdit, type WorkflowSelected,
 } from './workflowchoice.ts';

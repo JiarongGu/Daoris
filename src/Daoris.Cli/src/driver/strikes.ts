@@ -9,7 +9,7 @@
 // Pure: the records arrive from the service client (`service.ts`'s `sessionRecords`), which the dispatcher's row hands in,
 // so nothing here or in `driverconfig.ts` reaches a network.
 
-import { sameName } from './platform/casefold.ts';
+import { sameName } from '../platform/casefold.ts';
 
 /**
  * The note codes that say a failure was its account's (ROSTER1b): the agent or its provider refused the account's sign-in

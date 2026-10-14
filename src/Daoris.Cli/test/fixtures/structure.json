@@ -2,12 +2,6 @@
   "modules": ["cli", "platform", "doctrine", "layout", "accounts", "agents", "tools", "service", "driver", "workflows", "plugins", "browser"],
   "entry": ["cli.ts"],
   "root": {
-    "commits.ts": "driver",
-    "driverconfig.ts": "driver",
-    "helpers.ts": "driver",
-    "opinions.ts": "driver",
-    "reviews.ts": "driver",
-    "strikes.ts": "driver",
     "namedworkflows.ts": "workflows",
     "workflowchoice.ts": "workflows",
     "workflowdoor.ts": "workflows",

@@ -7,9 +7,9 @@
 //
 // Pure: it reads no file, reaches no network and spawns nothing.
 
-import { DaorisError } from './platform/errors.ts';
-import { atName, findName } from './platform/casefold.ts';
-import { normalizeWorkspace } from './service/remotemap.ts';
+import { DaorisError } from '../platform/errors.ts';
+import { atName, findName } from '../platform/casefold.ts';
+import { normalizeWorkspace } from '../service/remotemap.ts';
 
 /** How work is committed: each piece as it passes its checks, after the person's yes, or once at the end. */
 export const COMMIT_MODES = ['as-you-go', 'ask', 'at-end'] as const;

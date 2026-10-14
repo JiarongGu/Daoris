@@ -6,20 +6,20 @@ import { fileURLToPath } from 'node:url';
 import {
   DEFAULT_COOLOFF_MINUTES, SESSION_LANGUAGES, commandDriver, driverConfigPath, isBranchName, landingProblem, languageFor,
   pausedAsk, pausedQuest, readDriverChoices, releasedFor, standingFor, writeAcrossProblem, writeDriverChoices,
-} from '../src/driverconfig.ts';
+} from '../src/driver/driverconfig.ts';
 import {
   REVIEW_WAITING, applyReviewEdit, holdsProcedure, reviewFor, reviewGate, reviewRuleOf, reviewSays, type CheckoutsReader,
-} from '../src/reviews.ts';
+} from '../src/driver/reviews.ts';
 import {
   OPINION_DECLARED_ONLY, applyOpinionEdit, oneFamily, opinionFor, opinionGate, opinionRuleOf, opinionSays, sameAgentOf,
-} from '../src/opinions.ts';
-import { applyCommitEdit, commitFor, commitListed, commitRuleOf } from '../src/commits.ts';
-import { applyHelperEdit, helperFor, helperListed, helperRuleOf } from '../src/helpers.ts';
+} from '../src/driver/opinions.ts';
+import { applyCommitEdit, commitFor, commitListed, commitRuleOf } from '../src/driver/commits.ts';
+import { applyHelperEdit, helperFor, helperListed, helperRuleOf } from '../src/driver/helpers.ts';
 import { MANIFEST, pluginsRoot, readPlugins } from '../src/plugins.ts';
 import {
   applyWorkflowEdit, keptVersions, resolveWorkflow, workflowChoiceOf, type WorkflowChoiceEdit, type WorkflowTaskChoice,
 } from '../src/workflowchoice.ts';
-import type { RecordsReader } from '../src/strikes.ts';
+import type { RecordsReader } from '../src/driver/strikes.ts';
 import { driverRows as csharpRows, driverTestFile } from './_csharp.ts';
 import { makeFixture, captureError } from './_fixture.ts';
 
