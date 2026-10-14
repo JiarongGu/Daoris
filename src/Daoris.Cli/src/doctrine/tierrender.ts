@@ -20,7 +20,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { firstHeading, frontmatterEnd, makeHeader, parseFrontmatter, SKILL_FIELDS, stripFrontmatter } from './document.ts';
 import { readText } from '../platform/fsx.ts';
-import { DEFAULT_HARNESS, HARNESSES, regionIn } from '../harness.ts';
+import { DEFAULT_HARNESS, HARNESSES, regionIn } from '../layout/harness.ts';
 import { findRegion } from './region.ts';
 
 /** One document on its way into the region: where it came from, and what it says. */

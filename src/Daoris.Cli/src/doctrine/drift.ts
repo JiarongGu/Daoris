@@ -7,11 +7,11 @@ import { readLock, readManifest } from './config.ts';
 import { indexInput, rosterFromDisk } from './indexgen.ts';
 import { findRegion, hasImport, removeRegion } from './region.ts';
 import { indexPath, renderIndex, spanBody, WHERE_HEADING, withoutFrontmatter as bare } from './tierrender.ts';
-import { declaredPaths, documentLinks, present, RECORD_ROLES, shortDocumentLink, wordCount } from '../documents.ts';
-import { HARNESSES, DEFAULT_HARNESS, alwaysLoadedTiers } from '../harness.ts';
-import { folderTiers, INSTRUCTION_LIMIT, isFile, lockLayout, unlistedDocuments } from '../layout.ts';
-import { canonicalOnDisk, mirrorDigest, mirrorSources } from '../mirror.ts';
-import { linkProblems, shortLink } from '../links.ts';
+import { declaredPaths, documentLinks, present, RECORD_ROLES, shortDocumentLink, wordCount } from '../layout/documents.ts';
+import { HARNESSES, DEFAULT_HARNESS, alwaysLoadedTiers } from '../layout/harness.ts';
+import { folderTiers, INSTRUCTION_LIMIT, isFile, lockLayout, unlistedDocuments } from '../layout/layout.ts';
+import { canonicalOnDisk, mirrorDigest, mirrorSources } from '../layout/mirror.ts';
+import { linkProblems, shortLink } from '../layout/links.ts';
 
 /**
  * The roster's on-demand half — everything from the pointer to the index to the first rule.

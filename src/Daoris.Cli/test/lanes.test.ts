@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { LANES_FILE, laneWords, lanesProblems, readLanes } from '../src/lanes.ts';
+import { LANES_FILE, laneWords, lanesProblems, readLanes } from '../src/layout/lanes.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**

@@ -10,8 +10,8 @@
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { DaorisError } from './platform/errors.ts';
-import { readText } from './platform/fsx.ts';
+import { DaorisError } from '../platform/errors.ts';
+import { readText } from '../platform/fsx.ts';
 
 /** The repository's lanes, at its root beside `daoris.json` (D115 §2.1). */
 export const LANES_FILE = 'daoris.lanes.json';

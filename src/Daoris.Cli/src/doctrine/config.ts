@@ -2,9 +2,9 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { readText, writeTextAtomic } from '../platform/fsx.ts';
 import { DaorisError } from '../platform/errors.ts';
-import { DEFAULT_HARNESS, resolveHarness } from '../harness.ts';
-import { checkRooms, checkTarget } from '../layout.ts';
-import { checkDocuments } from '../documents.ts';
+import { DEFAULT_HARNESS, resolveHarness } from '../layout/harness.ts';
+import { checkRooms, checkTarget } from '../layout/layout.ts';
+import { checkDocuments } from '../layout/documents.ts';
 import type { Lock, Manifest } from '../platform/types.ts';
 
 export const MANIFEST_FILE = 'daoris.json';

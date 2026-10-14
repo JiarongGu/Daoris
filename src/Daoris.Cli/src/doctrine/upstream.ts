@@ -8,7 +8,7 @@ import { resolveCanonRoot } from './canon.ts';
 import { lockIndex, readLock, readManifest } from './config.ts';
 import { canonVersionAt, refuseNewerLock } from './lockversion.ts';
 import { spanBody } from './tierrender.ts';
-import { declared, lockLayout } from '../layout.ts';
+import { declared, lockLayout } from '../layout/layout.ts';
 import { DaorisError } from '../platform/errors.ts';
 
 /**

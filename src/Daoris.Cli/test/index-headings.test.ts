@@ -11,8 +11,8 @@ import assert from 'node:assert/strict';
 import { makeFixture } from './_fixture.ts';
 import { doc, layoutFixture, skill } from './_layout.ts';
 import { indexFromDisk } from '../src/doctrine/indexgen.ts';
-import { roomHeading } from '../src/rooms.ts';
-import { HARNESSES } from '../src/harness.ts';
+import { roomHeading } from '../src/layout/rooms.ts';
+import { HARNESSES } from '../src/layout/harness.ts';
 
 const INDEX = '.claude/INDEX.md';
 const WITHOUT = '## Knowledge without frontmatter';

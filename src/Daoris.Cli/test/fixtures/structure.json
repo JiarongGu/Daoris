@@ -2,13 +2,6 @@
   "modules": ["cli", "platform", "doctrine", "layout", "accounts", "agents", "tools", "service", "driver", "workflows", "plugins", "browser"],
   "entry": ["cli.ts"],
   "root": {
-    "documents.ts": "layout",
-    "harness.ts": "layout",
-    "lanes.ts": "layout",
-    "layout.ts": "layout",
-    "links.ts": "layout",
-    "mirror.ts": "layout",
-    "rooms.ts": "layout",
     "accountnames.ts": "accounts",
     "accountreads.ts": "accounts",
     "agentsettings.ts": "accounts",

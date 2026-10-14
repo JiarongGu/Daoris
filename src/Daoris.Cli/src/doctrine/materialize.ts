@@ -13,14 +13,14 @@ import { refuseNewerLock } from './lockversion.ts';
 import { indexInput, rosterExtras } from './indexgen.ts';
 import { indexPath, renderIndex, renderTier, spanBody, tierRuleBody } from './tierrender.ts';
 import { ensureImport, findRegion, writeRegion } from './region.ts';
-import { resolveHarness } from '../harness.ts';
+import { resolveHarness } from '../layout/harness.ts';
 import {
   contained, folderTiers, isFile, layoutFields, lockLayout, planLeftBehind, pruneEmpty,
-} from '../layout.ts';
-import { mirrorSources, planMirrors } from '../mirror.ts';
-import { planRooms } from '../rooms.ts';
-import { describeLink, linkProblems, shortLink } from '../links.ts';
-import { declaredPaths, describeDocumentLink, documentLinks, present, shortDocumentLink } from '../documents.ts';
+} from '../layout/layout.ts';
+import { mirrorSources, planMirrors } from '../layout/mirror.ts';
+import { planRooms } from '../layout/rooms.ts';
+import { describeLink, linkProblems, shortLink } from '../layout/links.ts';
+import { declaredPaths, describeDocumentLink, documentLinks, present, shortDocumentLink } from '../layout/documents.ts';
 import { DaorisError } from '../platform/errors.ts';
 
 /** Which directory name a tier answers to, for matching a canon target against it. */

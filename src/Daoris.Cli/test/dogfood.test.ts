@@ -9,7 +9,7 @@ import { frontmatterEnd, parseFrontmatter, SKILL_FIELDS } from '../src/doctrine/
 import { listFiles, readText } from '../src/platform/fsx.ts';
 import { readManifest, readLock } from '../src/doctrine/config.ts';
 import { inspect, commandCheck } from '../src/doctrine/drift.ts';
-import { ROLES } from '../src/documents.ts';
+import { ROLES } from '../src/layout/documents.ts';
 import { cliSource } from './_sources.ts';
 
 // This package is src/Daoris.Cli; the canon and daoris's own doctrine live at

@@ -5,8 +5,8 @@ import { listMarkdown, readText } from '../platform/fsx.ts';
 import { parseFrontmatter, stripHeader } from './document.ts';
 import { lockIndex, readLock, readManifest } from './config.ts';
 import { spanBody } from './tierrender.ts';
-import { DEFAULT_HARNESS, HARNESSES, tierNames } from '../harness.ts';
-import { lockLayout } from '../layout.ts';
+import { DEFAULT_HARNESS, HARNESSES, tierNames } from '../layout/harness.ts';
+import { lockLayout } from '../layout/layout.ts';
 
 // The pre-D59 generated roster. A repository that adopted before the tier moved still has one on
 // disk, and a generated file is never a twin of a canonical one.

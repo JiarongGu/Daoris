@@ -1,9 +1,9 @@
-import type { DetectedHarness, Harness } from './platform/types.ts';
+import type { DetectedHarness, Harness } from '../platform/types.ts';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { listFiles, listMarkdown, readText } from './platform/fsx.ts';
-import { parseFrontmatter, stripHeader, SKILL_FIELDS } from './doctrine/document.ts';
-import { DaorisError } from './platform/errors.ts';
+import { listFiles, listMarkdown, readText } from '../platform/fsx.ts';
+import { parseFrontmatter, stripHeader, SKILL_FIELDS } from '../doctrine/document.ts';
+import { DaorisError } from '../platform/errors.ts';
 
 /**
  * How a given agent harness expects doctrine to be laid out on disk.

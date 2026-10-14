@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { readManifest } from '../src/doctrine/config.ts';
 import { isDeclared, registration } from '../src/connect.ts';
-import { readLanes } from '../src/lanes.ts';
+import { readLanes } from '../src/layout/lanes.ts';
 import { driverRows as csharpRows, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 

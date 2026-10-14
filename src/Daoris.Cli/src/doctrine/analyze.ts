@@ -11,10 +11,10 @@ import { tierRuleBody } from './tierrender.ts';
 import { readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
 import { DEFAULT_CORE_BUDGET_BYTES, lockIndex, readLock, readManifest } from './config.ts';
 import { isEntry, significantTokens, containment } from './twins.ts';
-import { candidateDocuments, sayCandidates } from '../documents.ts';
+import { candidateDocuments, sayCandidates } from '../layout/documents.ts';
 import {
   DEFAULT_HARNESS, HARNESSES, harnessVerdict, tierNames, verifyHarnessContract,
-} from '../harness.ts';
+} from '../layout/harness.ts';
 
 // Pre-adoption there is no manifest to resolve a harness from, so this command reads the DEFAULT
 // harness's descriptor — one definition, not a constant quietly asserting one harness's conventions
