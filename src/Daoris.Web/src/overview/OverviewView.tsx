@@ -1,15 +1,15 @@
 import { useTranslation } from 'react-i18next';
-import { useQuests, useRegistry, useRepositories } from './queries';
-import { ago, compact, figure, sittingDays } from './format';
+import { useQuests, useRegistry, useRepositories } from '../queries';
+import { ago, compact, figure, sittingDays } from '../format';
 import { ranked, widest } from './overview';
-import { useConsidered } from './shell';
-import { sittingBecause, sittingSentence } from './signals';
+import { useConsidered } from '../shell';
+import { sittingBecause, sittingSentence } from '../signals';
 import {
   Card, CardHeader, Button, EmptyState, Icon, Inline, type Notify, PageHeader, Pill, QUEST_TONE,
   SkeletonRows, Tile, Tip, useErrorNotify,
-} from './ui';
-import { AttentionBand, type AttentionDoors } from './work/AttentionBand';
-import { questName } from './work/identity';
+} from '../ui';
+import { AttentionBand, type AttentionDoors } from '../work/AttentionBand';
+import { questName } from '../work/identity';
 
 /**
  * The management landing (D40). A person overseeing several projects' agents opens this window to

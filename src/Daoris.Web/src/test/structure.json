@@ -83,11 +83,6 @@
     "menuBar.test.tsx": "menus",
     "contextMenus.test.tsx": "menus",
 
-    "OverviewView.tsx": "overview",
-    "OverviewView.test.tsx": "overview",
-    "overview.ts": "overview",
-    "overview.test.ts": "overview",
-
     "QuestsView.tsx": "quests",
     "QuestsView.test.tsx": "quests",
     "QuestsView.held.test.tsx": "quests",

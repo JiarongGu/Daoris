@@ -29,7 +29,7 @@ import {
 } from './opener';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { Drawer, failure, Prose, SESSION_ACTIVE, Toasts, useToasts } from './ui';
-import { OverviewView } from './OverviewView';
+import { OverviewView } from './overview/OverviewView';
 import { useKnowledgeMode, useKnowledgeView } from './KnowledgeView';
 import { MapView } from './MapView';
 import { useQuestsView } from './QuestsView';

@@ -3,11 +3,11 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import './i18n';
+import '../i18n';
 import { OverviewView } from './OverviewView';
-import { WorkspaceScopeProvider } from './scope';
-import { columnsFollow } from './test/mainSplit';
-import type { Notify } from './ui';
+import { WorkspaceScopeProvider } from '../scope';
+import { columnsFollow } from '../test/mainSplit';
+import type { Notify } from '../ui';
 
 // Overview (D40), over a stubbed service, in a browser. Its page takes its final shape with FRAME1c: no
 // list (D118 §4), and its two cards laid out by the main area's own width (§3b). Since UX6c *What needs you* leads it,

@@ -22,7 +22,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import { OverviewView } from './OverviewView';
+import { OverviewView } from './overview/OverviewView';
 import { chooseRow, QuestsView } from './test/questsView';
 import { ShellSignals } from './ShellSignals';
 import { keys } from './queries';
