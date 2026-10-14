@@ -579,3 +579,76 @@ describe('a mention', () => {
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
   });
 });
+
+/** QUEUEEDIT1b: a waiting message can be taken back out, or reworded in place, while it still waits. */
+describe('the composer, waiting messages with an id', () => {
+  const WAITING = [{ id: 'a1', text: 'and test it', files: [] }, { id: 'b2', text: 'then commit', files: ['plan.md'] }];
+
+  it('removes one by its id, and shows controls only on a message that has one', async () => {
+    const remove = vi.fn().mockResolvedValue({ done: true });
+    show({
+      taking: true, onRemove: remove, onEdit: vi.fn(),
+      queued: [WAITING[0]!, { text: 'no id here', files: [] }],
+    });
+
+    expect(screen.getAllByRole('button', { name: /^Remove the waiting message/ })).toHaveLength(1);
+    await userEvent.click(screen.getByRole('button', { name: 'Remove the waiting message: and test it' }));
+    expect(remove).toHaveBeenCalledWith('a1');
+  });
+
+  it('puts its words back in the box, rewords it on send, and leaves the draft as it was', async () => {
+    const edit = vi.fn().mockResolvedValue({ done: true });
+    const send = vi.fn();
+    show({ taking: true, onRemove: vi.fn(), onEdit: edit, onSend: send, queued: WAITING });
+
+    await userEvent.type(box(), 'half a thought');
+    await userEvent.click(screen.getByRole('button', { name: 'Edit the waiting message: then commit' }));
+    expect(box()).toHaveValue('then commit');
+    expect(screen.getByText(/Editing a waiting message/)).toBeInTheDocument();
+
+    await userEvent.clear(box());
+    await userEvent.type(box(), 'then commit and push nothing');
+    await userEvent.click(screen.getByRole('button', { name: 'Queue' }));
+
+    expect(edit).toHaveBeenCalledWith('b2', 'then commit and push nothing');
+    expect(send).not.toHaveBeenCalled();
+    expect(screen.queryByText(/Editing a waiting message/)).not.toBeInTheDocument();
+    expect(box()).toHaveValue('half a thought');
+  });
+
+  it('leaves the message as it was when Escape cancels the edit', async () => {
+    const edit = vi.fn();
+    show({ taking: true, onRemove: vi.fn(), onEdit: edit, queued: WAITING });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Edit the waiting message: and test it' }));
+    await userEvent.type(box(), ' twice');
+    await userEvent.keyboard('{Escape}');
+
+    expect(edit).not.toHaveBeenCalled();
+    expect(box()).toHaveValue('');
+    expect(screen.queryByText(/Editing a waiting message/)).not.toBeInTheDocument();
+  });
+
+  it('says in words, not as an error, that a message was already sent', async () => {
+    show({
+      taking: true, onEdit: vi.fn(), queued: WAITING,
+      onRemove: vi.fn().mockResolvedValue({ done: false, why: 'taken' }),
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Remove the waiting message: and test it' }));
+    expect(await screen.findByText('Already sent: it went to the agent.')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('shows a driver refusal of a removal word for word', async () => {
+    show({ taking: true, onEdit: vi.fn(), queued: WAITING, onRemove: vi.fn().mockRejectedValue(new Error('That session takes no input.')) });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Remove the waiting message: and test it' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('That session takes no input.');
+  });
+
+  it('draws no controls where nothing handles them', () => {
+    show({ taking: true, queued: WAITING });
+    expect(screen.queryByRole('button', { name: /waiting message/ })).not.toBeInTheDocument();
+  });
+});

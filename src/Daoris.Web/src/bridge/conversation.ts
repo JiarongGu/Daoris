@@ -145,6 +145,7 @@ const messagesOf = (list: unknown): ChatMessage[] =>
     const message = item as Partial<ChatMessage> | null;
     if (typeof message?.text !== 'string') return [];
     return [{
+      ...(typeof message.id === 'string' && message.id ? { id: message.id } : {}),
       text: message.text,
       files: Array.isArray(message.files) ? message.files.filter((name): name is string => typeof name === 'string') : [],
     }];
@@ -293,6 +294,29 @@ export const useCancelTurn = () =>
       return { cancelled: answer?.cancelled === true, withdrawn: messagesOf(answer?.withdrawn) };
     },
   });
+
+/** What removing or rewording a waiting message did (QUEUEEDIT1b): `taken` is a turn having it already, or no such word. */
+export type QueueEdit = { done: boolean; why?: 'taken' };
+
+/**
+ * Remove or reword one message waiting behind the turn (QUEUEEDIT1b, D76), by its id. A reword keeps its place and
+ * files but takes a new id, so the list is read again from `SESSION_QUEUED`, never kept by the old one.
+ */
+export const useEditQueued = (session: string | null) => {
+  const edit = useMutation({
+    mutationFn: async (change: { id: string; text?: string }): Promise<QueueEdit> => {
+      if (session === null) return { done: false, why: 'taken' };
+      const answer = await call<{ done?: unknown; why?: unknown }>('SESSION_QUEUE_EDIT', {
+        session, id: change.id, ...(change.text === undefined ? {} : { text: change.text }),
+      });
+      return answer?.done === true ? { done: true } : { done: false, why: 'taken' };
+    },
+  });
+  return {
+    remove: (id: string) => edit.mutateAsync({ id }),
+    reword: (id: string, text: string) => edit.mutateAsync({ id, text }),
+  };
+};
 
 /**
  * A conversation with an agent in one repository (D49 §3).

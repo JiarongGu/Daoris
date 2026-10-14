@@ -6,7 +6,7 @@ import { buildChain } from '../map/chain';
 import type { Compose, OpenGroup } from '../opener';
 import { useAnswerSession, useAsks, usePersonDone, useQuests, useRegistry, useSessions } from '../queries';
 import {
-  type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
+  type TurnStop, useCancelTurn, useEditQueued, useEndChat, useHarnesses, useResolveSession, useSendMessage,
   NO_TURNS, useChatTurns, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionStreams, useSessionWhere,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
@@ -383,6 +383,7 @@ export function WorkFrame({
   useErrorNotify(sessions.error, notify);
 
   const attended = (sessions.data ?? []).find((session) => session.id === selected) ?? null;
+  const editQueued = useEditQueued(attended?.id ?? null);
   const quest = attended?.quest
     ? (quests.data ?? []).find((row) => row.id === attended.quest) ?? null
     : null;
@@ -1743,6 +1744,8 @@ export function WorkFrame({
             stoppable={roster.find((row) => row.harness === attended.adapter)?.structured === true}
             stopping={cancelTurn.isPending}
             onStopTurn={onStopTurn}
+            onRemove={editQueued.remove}
+            onEdit={editQueued.reword}
             mentions={{
               files: treeFiles.data?.files ?? null,
               unlisted: treeFiles.data?.unlisted ?? 0,
@@ -1784,6 +1787,8 @@ export function WorkFrame({
             accepts={accepts}
             onSend={onSay}
             onSendNow={onSteerNow}
+            onRemove={editQueued.remove}
+            onEdit={editQueued.reword}
           />
         )}
 
