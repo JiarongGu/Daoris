@@ -109,7 +109,7 @@ public sealed class NotePartsTests : IAsyncLifetime
     [Fact]
     public void Every_ledger_code_is_declared_once_in_the_form_the_page_s_test_parses()
     {
-        var source = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core", "NoteParts.cs"));
+        var source = File.ReadAllText(Directory.EnumerateFiles(Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core"), "NoteParts.cs", SearchOption.AllDirectories).Single());
         var parsed = Regex.Matches(source, @"new\(""(?<code>[a-z][a-z.-]*)"", \[(?<values>[^\]]*)\]\)").Select(match => match.Groups["code"].Value);
 
         Assert.Equal(LedgerNoteCodes.All.Select(code => code.Code).Order(StringComparer.Ordinal), parsed.Order(StringComparer.Ordinal));

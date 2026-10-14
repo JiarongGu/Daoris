@@ -64,7 +64,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ToolInstallTests.cs` | 41 | 726 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ToolResourcesTests.cs` | 40 | 559 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 103 | 1666 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs` | 53 | 785 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs` | 53 | 784 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/empty.md` | 43 | 311 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/full.md` | 48 | 362 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/sparse.md` | 43 | 310 |
@@ -112,23 +112,23 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Service/Daoris.Service.Core/Asks.cs` | 81 | 1477 |
-| `src/Daoris.Service/Daoris.Service.Core/History.cs` | 40 | 824 |
-| `src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs` | 53 | 1055 |
-| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 105 | 1953 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 149 | 2685 |
-| `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 73 | 1364 |
-| `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 72 | 1276 |
+| `src/Daoris.Service/Daoris.Service.Core/Asks/Asks.cs` | 81 | 1477 |
+| `src/Daoris.Service/Daoris.Service.Core/Asks/History.cs` | 40 | 824 |
+| `src/Daoris.Service/Daoris.Service.Core/Knowledge/KnowledgeService.cs` | 53 | 1055 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 105 | 1953 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 149 | 2685 |
+| `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 73 | 1364 |
+| `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 72 | 1276 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 100 | 1754 |
 | `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 48 | 587 |
 | `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 127 | 2208 |
-| `src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs` | 44 | 839 |
-| `src/Daoris.Service/Daoris.Service.Tests/IndexEntriesTests.cs` | 51 | 983 |
-| `src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.cs` | 47 | 817 |
-| `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 85 | 1745 |
-| `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 72 | 1464 |
-| `src/Daoris.Service/README.md` | 79 | 748 |
+| `src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs` | 44 | 839 |
+| `src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs` | 51 | 983 |
+| `src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs` | 47 | 817 |
+| `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestSyncTests.cs` | 85 | 1745 |
+| `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 72 | 1464 |
+| `src/Daoris.Service/README.md` | 80 | 754 |
 
 ### CLI (`cli`)
 
@@ -140,7 +140,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/src/toolchain.ts` | 149 | 2884 |
 | `src/Daoris.Cli/src/workflowdoor.ts` | 46 | 836 |
 | `src/Daoris.Cli/test/desktop-publish.test.ts` | 55 | 1007 |
-| `src/Daoris.Cli/test/desktop-tool.test.ts` | 43 | 826 |
+| `src/Daoris.Cli/test/desktop-tool.test.ts` | 43 | 829 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 46 | 821 |
 | `src/Daoris.Cli/test/driverconfig.test.ts` | 132 | 2432 |
 | `src/Daoris.Cli/test/merge-branch.test.ts` | 186 | 2885 |

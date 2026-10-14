@@ -60,11 +60,11 @@ public sealed class HelpProposalBoxKindsTests
 
         Assert.Equal(
             Table.Select(row => $"Help{Pascal(row.Kind)}ProposalWriter.cs").Order(StringComparer.Ordinal),
-            Directory.GetFiles(core, "Help*ProposalWriter.cs").Select(Path.GetFileName).Order(StringComparer.Ordinal));
-        Assert.Empty(Directory.GetFiles(core, "HelpProposalBox.*.cs"));
+            Directory.GetFiles(core, "Help*ProposalWriter.cs", SearchOption.AllDirectories).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+        Assert.Empty(Directory.GetFiles(core, "HelpProposalBox.*.cs", SearchOption.AllDirectories));
         foreach (var (kind, _) in Table)
         {
-            var writer = File.ReadAllText(Path.Combine(core, $"Help{Pascal(kind)}ProposalWriter.cs"));
+            var writer = File.ReadAllText(Directory.EnumerateFiles(core, $"Help{Pascal(kind)}ProposalWriter.cs", SearchOption.AllDirectories).Single());
             Assert.Matches($@"\bclass Help{Pascal(kind)}ProposalWriter\b", writer);
             Assert.DoesNotContain("class HelpProposalBox", writer);
             Assert.Contains($"writer.WriteString(\"kind\", \"{kind}\");", writer);

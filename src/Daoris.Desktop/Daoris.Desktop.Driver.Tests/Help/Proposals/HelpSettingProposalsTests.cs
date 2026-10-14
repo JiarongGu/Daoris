@@ -460,8 +460,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [Fact]
     public void The_service_box_takes_the_languages_the_table_holds()
     {
-        var writer = System.IO.File.ReadAllText(Path.Combine(
-            HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core", "HelpSettingProposalWriter.cs"));
+        var writer = System.IO.File.ReadAllText(HelpProposalKindsTests.CoreFile("HelpSettingProposalWriter.cs"));
         var listed = System.Text.RegularExpressions.Regex.Match(writer, @"IReadOnlyList<string> Languages\s*=\s*\[([^\]]*)\]");
 
         Assert.True(listed.Success, "the service's session languages are a list, `Languages`.");

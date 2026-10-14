@@ -16,7 +16,7 @@ re-reads them. Paths after a module's name are under that module's folder.
   launcher on the base library alone: their private helpers stay, by design.
 - **Declared twins stay.** `DaorisHome` (driver and core), the remotes map (`RemoteTarget` and `RemoteConfig`), the accounts'
   files and their TypeScript twins.
-- **Core consolidated its JSON reading once** (`C/JsonFields.cs`, REV3 CLEAN1); the driver has no equivalent.
+- **Core consolidated its JSON reading once** (`C/Platform/JsonFields.cs`, REV3 CLEAN1); the driver has no equivalent.
 
 ## The clusters, by payoff
 
@@ -39,7 +39,7 @@ answer null for an empty string, others `""`; `GoOnFiles` trims; `Acp.Field` ans
 `Number`/`Int`/`Long` (about 10: `DriverConfig.cs:1127` throws on a non-integer, `LandedBranches.cs:527` answers 0 for none),
 `Strings` (7, split on keeping empties), `Items` (4), and readers over `JsonNode` (7) and `JsonObject` (5, with `Flag`).
 
-**Home.** A public `Json` reader in `Platform/` on `C/JsonFields.cs`'s model, the object guard always, one empty-string rule
+**Home.** A public `Json` reader in `Platform/` on `C/Platform/JsonFields.cs`'s model, the object guard always, one empty-string rule
 chosen per call where callers differ. About 45 files.
 
 ### 2. Moments written and read: about 165 sites, drifting
@@ -130,7 +130,7 @@ fixed `.tmp` name, the collision `AtomicFile`'s header describes: a latent race,
 ## Across projects
 
 Character-identical or same-rule copies between the driver and Core: `SafeName` (`Conversations/ChatFiles.cs:117`,
-`C/QuestFiles.cs:149`), the evidence path rule (`Quests/Domain/Evidence.cs:262`, `C/QuestEvidence.cs:51`), the help proposals'
+`C/Quests/QuestFiles.cs:149`), the evidence path rule (`Quests/Domain/Evidence.cs:262`, `C/Quests/QuestEvidence.cs:51`), the help proposals'
 validators (the driver's `Help/Proposals/*` and Core's `HelpProposalBox.*`), `ErrorOf` (`Platform/DriverHttp.cs:114`,
-`C/Remote.cs:150`). Each stays duplicated unless a shared project is made; Core's own sprawl (six `Moment` readers, five
+`C/Remote/Remote.cs:150`). Each stays duplicated unless a shared project is made; Core's own sprawl (six `Moment` readers, five
 `Clip(120)`, about sixty `"O"` writers without the culture, four writes past an atomic file) is fixable inside Core.

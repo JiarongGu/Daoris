@@ -716,6 +716,12 @@ by diverging. The service indexes the second kind.
   name of its own, then renames it over the target, retrying a busy target and removing the beside file; an existing
   file is replaced. Quest attachments, helper asks and answers, and rule and help proposals all write through it. The
   driver keeps a helper of its own (D166): the two projects do not reference each other.
+- **The core is ten module folders** (STRUCT5, D166), under one namespace, `Daoris.Knowledge`: `Platform` (the
+  home, the atomic write, the machine log, the connection gate), `Composition` (`ServiceFactory`, the one place that
+  wires them; no module names it), `Remote`, `Registry`, `Quests`, `Asks`, `Sessions`, `Review`, `Help` and `Knowledge`
+  (its files in four scopes: `Search/`, `Store/`, `Ingest/`, `Feed/`). The tests mirror the modules, not the scopes, and the
+  MCP door's tests sit in `Mcp/`. `Daoris.Service.Tests`' `StructureTests` holds the layout to `fixtures/structure.json`;
+  find a core file by name under the core rather than by a flat path.
 - **Two clients, one UI** — see `Daoris.Web` and `Daoris.Desktop`.
 
 ## The design is written

@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { BACKGROUND_STATES, HANDED_REASONS, HELPER_REASONS, NOTE_CODES, NOTE_VALUES, OPENING_REASONS, RESUMED_REASONS, UNREACHED_REASONS } from '../work/noteLines';
@@ -49,7 +49,13 @@ function backgroundStates(): string[] {
 }
 
 const driver = declared('driver', driverSource('NoteCodes.cs'));
-const ledger = declared('service', source('src/Daoris.Service/Daoris.Service.Core/NoteParts.cs'));
+// The service core's files sit in module folders (STRUCT5b), so NoteParts.cs is found by name under the core.
+const coreFolder = 'src/Daoris.Service/Daoris.Service.Core';
+const noteParts = readdirSync(join(root, ...coreFolder.split('/')), { recursive: true, encoding: 'utf8' })
+  .map((entry) => entry.replaceAll('\\', '/'))
+  .filter((entry) => entry === 'NoteParts.cs' || entry.endsWith('/NoteParts.cs'));
+if (noteParts.length !== 1) throw new Error(`NoteParts.cs is expected once under ${coreFolder}, found ${noteParts.length}`);
+const ledger = declared('service', source(`${coreFolder}/${noteParts[0]}`));
 const codes = [...driver, ...ledger];
 
 const placeholders = (text: string): string[] =>

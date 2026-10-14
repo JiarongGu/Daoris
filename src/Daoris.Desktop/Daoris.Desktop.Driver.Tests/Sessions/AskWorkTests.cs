@@ -256,7 +256,7 @@ public sealed class AskWorkTests
     [Fact]
     public void An_ask_is_named_as_the_sender_the_service_spells()
     {
-        var service = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core", "Asks.cs"));
+        var service = File.ReadAllText(Daoris.Driver.Tests.HelpProposalKindsTests.CoreFile("Asks.cs"));
 
         Assert.Contains("SenderOf(string askId) => $\"ask #{askId}\";", service, StringComparison.Ordinal);
         Assert.Equal("ask #a1b2c3", AskWork.SenderOf("a1b2c3"));
