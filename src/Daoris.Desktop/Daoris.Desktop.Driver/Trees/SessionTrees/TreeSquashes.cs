@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// The squash a landing rule asks for (PROCESS1b-ii, D164's amendment point 2 and its PROCESS1b-ii note; PART10l, out of
 /// <c>SessionTrees.Squash.cs</c>): the pull request's branch made as one commit from the session's work, the first commit Daoris
 /// itself makes, and the landing record's word of what it squashed, which is what proves the session landed once its commits are
-/// on no branch of the person's. Over the trees' context for that record; the commit's making is static, for the front's branch
+/// on no branch of the person's. Over the trees' context for that record; the commit's making is static, for the landing's branch
 /// form.
 /// </summary>
 internal sealed class TreeSquashes(TreeContext context)
@@ -80,7 +80,7 @@ internal sealed class TreeSquashes(TreeContext context)
     }
 
     /// <summary>
-    /// A chain's later landing under a squash (point 4), once the front's advance judged the branch may move on: one more
+    /// A chain's later landing under a squash (point 4), once the landing's advance (<see cref="TreeLands"/>) judged the branch may move on: one more
     /// commit on the pull request's branch, its tree the session's tip's, its parent the branch's tip, its message only what the
     /// session added since the recorded tip; then the branch moved to it by compare-and-swap from the tip judged, as a
     /// fast-forward is. Like the rest of the branch form, it writes one ref and touches no checkout.
@@ -127,7 +127,7 @@ internal sealed class TreeSquashes(TreeContext context)
         return new Branched(
             new TreeLanding(true,
                 $"moved `{name}` on from {standsAt[..Math.Min(8, standsAt.Length)]} to this session's work — {adds.Count} more commit(s), "
-                + $"squashed into one.{pushIt} Nothing was merged and the checkout was not touched.{SessionTrees.TreeStays}",
+                + $"squashed into one.{pushIt} Nothing was merged and the checkout was not touched.{TreeLands.TreeStays}",
                 name)
             { AdvancedFrom = standsAt },
             root, line, carried, branch)

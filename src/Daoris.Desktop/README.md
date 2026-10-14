@@ -42,6 +42,10 @@ One session's tree is brought up to date by `TreeUpdates` in `Trees/SessionTrees
 fetched once as the person, then WSR6's replay of that tree alone, a detached one rebased in place and proved. Its answer, the
 refusals' order and their words are pure in `Trees/Domain/TreeUpdate.cs`.
 `Trees/` groups its files into scope folders (`SessionTrees/`, `Landing/`, `Branches/`, `GitReads/`, SCOPE1a, D166's note); a file two scopes share, such as `WorkingTree.cs`, stays at the top.
+`SessionTrees` is one type, a front over classes on a shared `TreeContext` (D166's PART10i–l notes): it opens and lists trees and
+keeps its callers' one-line calls, while the landing is `TreeLands`, the removal `TreeRemovals`, a landing's tidy `TreeTidies`, the
+clean-up `TreeSweeps` and `LandedCleanups`, and the look's own tidy `AutoTidies` over `TreeSetAside`. The words beside a clean-up
+row, which the terminal and the bridge say, are the public `SessionBranchDoors`.
 Beside it, `Accounts/Domain/SwitchDecision.cs` (SWITCH1c-i) says whether a running session moves at its turn's end: it stays
 (`off`, no number, room, held thirty minutes after a curve move, or no account with room), reads the others first, or moves
 to the ready account with the most room, at least ten points under its curve on every window. The hand-over box takes

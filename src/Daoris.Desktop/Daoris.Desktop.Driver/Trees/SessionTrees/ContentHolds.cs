@@ -120,7 +120,7 @@ internal sealed class ContentHolds(TreeContext context)
             var space = row.IndexOf(' ');
             if (space <= 0) continue;
             var (id, branch) = (row[..space], row[(space + 1)..]["refs/heads/".Length..]);
-            if (branch.StartsWith(SessionTrees.SessionPrefix, StringComparison.Ordinal) || forms.Any(form => form.Name == branch)
+            if (branch.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal) || forms.Any(form => form.Name == branch)
                 || notHolders.Contains(branch))
             {
                 continue;
