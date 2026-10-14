@@ -35,34 +35,3 @@ public static class StartWith
             : new StartedFrom(to, false, null, $"conversation `{to}` opened, but your words did not reach it.");
     }
 }
-
-public sealed partial class ChatRunner
-{
-    private StartRequests? _starts;
-
-    /// <summary>
-    /// Open a conversation on its first words (NEW1a): <see cref="StartAsync"/>, then <see cref="Say"/> with the words and
-    /// files. A request id makes a retry answer the first start (<see cref="StartRequests"/>).
-    /// </summary>
-    /// <param name="ownTree">Absent is the driver's choice; true a tree of its own; false the checkout.</param>
-    /// <exception cref="DriverException">The request id is malformed.</exception>
-    public Task<StartedFrom> StartWithAsync(
-        string repository, string adapter, DriverConfig config, string text, IReadOnlyList<ChatUpload> files, string? requestId,
-        bool? ownTree = null, string? profile = null, Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
-    {
-        Task<StartedFrom> Run() => _context.Closing
-            ? Task.FromResult(new StartedFrom(null, false, null, "the application is closing, so no conversation starts now."))
-            : StartWith.RunAsync(
-                token => StartAsync(repository, adapter, config, onEnded, profile, ownTree, token),
-                (id, words, attached, preface) => Say(id, words, attached, preface),
-                text, files, ct);
-
-        if (requestId is null) return Run();
-        _starts ??= new StartRequests(_home);
-        return _starts.RunAsync(requestId, Run);
-    }
-
-    /// <summary>Whether a conversation opens in a tree of its own: said, or else the repository's standing choice (D51).</summary>
-    public static bool Isolates(bool? ownTree, DriverConfig config, string repository) =>
-        ownTree ?? config.OpensOwnTree(repository);
-}
