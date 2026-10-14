@@ -108,7 +108,7 @@ public sealed class TreeScratchTests : IDisposable
     [Fact]
     public void The_refusal_names_up_to_three_written_files_and_says_where_they_are_not()
     {
-        var holds = new SessionTrees.TreeHolds([], [], [], ["a/1", "a/2", "a/3", "a/4"], []);
+        var holds = new ContentHolds.TreeHolds([], [], [], ["a/1", "a/2", "a/3", "a/4"], []);
 
         Assert.Equal(
             "4 file(s) written in the tree after it opened, which your checkout does not hold as written: a/1, a/2, a/3 and 1 more",
@@ -119,12 +119,12 @@ public sealed class TreeScratchTests : IDisposable
     [Fact]
     public void A_folder_too_large_to_look_through_says_so()
     {
-        var holds = new SessionTrees.TreeHolds([], [], [], [], ["big/"]);
+        var holds = new ContentHolds.TreeHolds([], [], [], [], ["big/"]);
 
         Assert.Equal("1 ignored folder(s) too large to look through, which count as the tree's own: big/", holds.WrittenSaid);
     }
 
     [Fact]
     public void A_tree_holding_neither_says_nothing() =>
-        Assert.Null(new SessionTrees.TreeHolds([], [], ["node_modules/"], [], []).OwnSaid);
+        Assert.Null(new ContentHolds.TreeHolds([], [], ["node_modules/"], [], []).OwnSaid);
 }

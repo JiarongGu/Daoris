@@ -9,7 +9,7 @@ public sealed partial class SessionTrees
     private TreeWorkReads? _work;
 
     /// <summary>What a tree holds that nobody has accepted (SESSUX1a, D126 §2.1).</summary>
-    private TreeWorkReads WorkReads => _work ??= new(_context, this);
+    private TreeWorkReads WorkReads => _work ??= new(_context, Squashes, Content, Follows);
 
     /// <inheritdoc cref="TreeWorkReads.WorkAsync"/>
     public Task<TreeWork?> WorkAsync(string tree, CancellationToken ct = default) => WorkReads.WorkAsync(tree, ct);

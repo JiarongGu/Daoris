@@ -9,11 +9,11 @@ namespace Daoris.Driver;
 /// tree is replayed onto it by WSR6's own replay (D109). PART10k, out of <c>SessionTrees.Update.cs</c>.
 /// </summary>
 /// <remarks>
-/// It takes the judging, the replay and the review's range as <see cref="TreeSync"/> does, and holds the front for the tidy's
-/// <c>BranchOfTree</c>: interim, until PART10l makes the tidy a class.
+/// It takes the judging, the replay and the review's range as <see cref="TreeSync"/> does, and the follow for the layout's
+/// <c>BranchOfTree</c> (PART10l).
 /// </remarks>
 internal sealed class TreeUpdates(
-    TreeContext context, SessionTrees trees, BranchJudging judging, BranchReplays replays, ReviewRanges ranges)
+    TreeContext context, TreeFollows follows, BranchJudging judging, BranchReplays replays, ReviewRanges ranges)
 {
     /// <summary>
     /// Bring <paramref name="tree"/> up to date with its repository's line, fetched now: a tree on a branch, the session's or one of
@@ -119,7 +119,7 @@ internal sealed class TreeUpdates(
         string tree, string root, string repository, string workspace, string line, string onto, string branch, TreeFacts facts,
         CancellationToken ct)
     {
-        var grown = context.Grown.Of(repository, branch) ?? (trees.BranchOfTree(tree) is { } layout ? context.Grown.Of(repository, layout.Branch) : null);
+        var grown = context.Grown.Of(repository, branch) ?? (follows.BranchOfTree(tree) is { } layout ? context.Grown.Of(repository, layout.Branch) : null);
         // Nothing is in use by WSR6's word here: what runs in the tree was asked of the caller, inside the hold.
         var judged = await judging.JudgeReplayAsync(
             root, repository, workspace, branch, landed: false, tree, grown?.From, grown?.GrewFrom, pushedOnRecord: false, line, onto,

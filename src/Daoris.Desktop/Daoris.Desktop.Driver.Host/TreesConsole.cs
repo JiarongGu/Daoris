@@ -393,7 +393,7 @@ internal static class TreesConsole
                 var found = trees.Recorded.Find(named, repository);
                 if (found.Count == 0)
                 {
-                    Console.Error.WriteLine($"trees: {SessionTrees.NotLanded(named)}");
+                    Console.Error.WriteLine($"trees: {TreeHand.NotLanded(named)}");
                     return 1;
                 }
 

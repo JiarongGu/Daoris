@@ -7,8 +7,7 @@ namespace Daoris.Driver;
 /// the repository's own checkout, and what it holds.
 /// </summary>
 /// <remarks>
-/// It names the landing's proof by the front's statics (<c>SessionTrees.ProveAsync</c>, <c>LineFormsAsync</c>), which are
-/// <c>internal</c> for it: interim, until PART10l makes the landing a class and this names that instead.
+/// It names the landing's proof by its class (<see cref="LandedProofs.ProveAsync"/>, <see cref="LandedProofs.LineFormsAsync"/>; PART10l).
 /// </remarks>
 internal sealed class LandedReviews(TreeContext context)
 {
@@ -97,7 +96,7 @@ internal sealed class LandedReviews(TreeContext context)
         if (held != 0) return new(LandedReads.CommitsGone, null, [], null);
 
         var line = (await context.LineAsync(root, entry.Repository, RemoteTarget.Workspace(entry.Workspace), ct).ConfigureAwait(false)).Branch ?? entry.Line;
-        var proof = await SessionTrees.ProveAsync(root, entry.Tip, line, await SessionTrees.LineFormsAsync(root, line, ct).ConfigureAwait(false), ct).ConfigureAwait(false);
+        var proof = await LandedProofs.ProveAsync(root, entry.Tip, line, await LandedProofs.LineFormsAsync(root, line, ct).ConfigureAwait(false), ct).ConfigureAwait(false);
         return new(proof.Kind, proof.Where, proof.Kind == LandedKind.Differs ? proof.Files : [], proof.Detail);
     }
 }

@@ -14,10 +14,10 @@ public sealed partial class SessionTrees
     private ReviewRanges? _ranges;
 
     /// <summary>The look, the press and the scope of bringing up to date (WSR6, WSR7).</summary>
-    private TreeSync Sync => _sync ??= new(_context, this, Judging, Replays);
+    private TreeSync Sync => _sync ??= new(_context, Asks, Cleanups, Judging, Replays);
 
     /// <summary>Each branch judged for the replay (WSR6).</summary>
-    private BranchJudging Judging => _judging ??= new(_context, this);
+    private BranchJudging Judging => _judging ??= new(_context, Cleanups);
 
     /// <summary>A judged branch replayed, and the grown record's tidying (WSR6).</summary>
     private BranchReplays Replays => _replays ??= new(_context);
