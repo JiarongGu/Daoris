@@ -14686,3 +14686,8 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HELPDOOR1 — adding a `setting` door, written down** (docs). Driver `Doors` with its case and method; the service's `Doors` with its case and flags; every tool description; the coverage row; a room row placed with the workflow-after-opinion order; goldens rewritten by `DAORIS_GOLDEN_WRITE=1`; the index. A knowledge note and its index row. D110; D164's DOORS1a note.
 
 **Outcome** 2026-10-15: `.claude/knowledge/setting-doors.md` lists the ten places a `setting` door goes, walked from DOORS1a's two commits and TOOL4l-b's smallest one, with its row in `.claude/INDEX.md`. Documents only. Detail: D110's HELPDOOR1 note and the note itself.
+## MOVETOOL1 — a tracked move tool (2026-10-15, D166)
+
+> - [ ] **MOVETOOL1 — a tracked move tool** (tools). A `tools/` script that moves files with `git mv`, respells relative imports, and checks its counts and that every import still resolves; the CLI's and the page's moves each built one in scratch. Contract: `file-tool-discipline`; proof: its own test on a fixture tree.
+
+**Outcome** 2026-10-15: `tools/move-files.mjs` moves files or folders with `git mv` (`from=to` or a JSON file), respells every relative import of them and in them in the form it had, asserts `--expect-moved`, `--expect-rewritten` and `--expect-files` before any change, and checks from disk that each import still reaches its file; `--plan` changes nothing. Its test, `tools/move-files.test.mjs`, is in `verify`. Detail: D166's MOVETOOL1 note.
