@@ -69,7 +69,7 @@ public static class WorkflowKeepCommand
     public static async Task<int> RunAsync(WorkflowKeepAsk ask, string home, ServiceClient service, TextWriter output, CancellationToken ct = default)
     {
         var (tree, _) = await service.SessionGroundAsync(ask.Session, ct).ConfigureAwait(false);
-        if (string.IsNullOrWhiteSpace(tree) || SessionTrees.TreeGone(tree) || !new SessionTrees(home).Holds(tree))
+        if (string.IsNullOrWhiteSpace(tree) || TreeFolders.TreeGone(tree) || !new SessionTrees(home).Holds(tree))
         {
             output.WriteLine($"workflow: session `{ask.Session}` names no working tree of its own on this machine, so nothing of its work is kept here.");
             return 1;

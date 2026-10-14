@@ -116,7 +116,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     private async Task<(string? Tip, string? Root)> ReadTreeAsync(string tree, CancellationToken ct) =>
         _context.HelperTrees is { } read
             ? await read(tree, ct).ConfigureAwait(false)
-            : (await ReviewGit.HeadAsync(tree, ct).ConfigureAwait(false), await SessionTrees.CheckoutOfTreeAsync(tree, ct).ConfigureAwait(false));
+            : (await ReviewGit.HeadAsync(tree, ct).ConfigureAwait(false), await TreeGates.CheckoutOfTreeAsync(tree, ct).ConfigureAwait(false));
 
     private static string HelperClaim(string ask) => $"helper:{ask}";
 

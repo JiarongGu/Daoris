@@ -408,7 +408,7 @@ public static class HistoryClearing
 
         /// <summary>Its own tree still here with anything in it, as D126's delete judges it: a checkout is no tree of its own.</summary>
         public bool TreeHere(SessionRecord? record) =>
-            record?.Tree is { } tree && Held(tree) && !SessionTrees.TreeGone(tree);
+            record?.Tree is { } tree && Held(tree) && !TreeFolders.TreeGone(tree);
 
         /// <summary>A landing's branch naming it, as the landing's own or among its advances, that still stands.</summary>
         public LandedBranch? Standing(string session) => _standing.LastOrDefault(entry => entry.Names(session));

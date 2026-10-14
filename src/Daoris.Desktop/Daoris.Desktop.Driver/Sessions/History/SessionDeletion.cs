@@ -126,7 +126,7 @@ public sealed class SessionDeletion(string home, Action<string, bool>? remover =
     /// </summary>
     private static DeleteOutcome? MachineHalf(SessionRecord record, SessionTrees trees)
     {
-        if (record.Tree is { } tree && Held(trees, tree) && !SessionTrees.TreeGone(tree))
+        if (record.Tree is { } tree && Held(trees, tree) && !TreeFolders.TreeGone(tree))
         {
             return new(record.Id, DeleteVerdict.TreeHere,
                 $"Session `{record.Id}`'s tree is still on this machine; discard the tree or clean it up first.");

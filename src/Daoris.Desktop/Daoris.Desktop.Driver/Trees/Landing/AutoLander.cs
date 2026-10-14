@@ -126,7 +126,7 @@ public sealed class AutoLander(
                 continue;
             }
 
-            if (SessionTrees.TreeGone(entry.Tree))
+            if (TreeFolders.TreeGone(entry.Tree))
             {
                 said.Add(Closed(entry, AutoLandingCode.Gone));
                 continue;

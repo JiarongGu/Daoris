@@ -35,7 +35,7 @@ public sealed partial class SessionTrees
     internal const string DiscardedPrefix = "refs/daoris/discarded/";
 
     /// <summary>How many names a branch's recovery refs take before a discard gives up (SQUASHTIDY1c), the offer naming them alike (SQUASHTIDY1b).</summary>
-    private const int DiscardedNames = 20;
+    internal const int DiscardedNames = 20;
 
     /// <summary>What a delete that found its branch moved since the judgement says (SQUASHTIDY1c).</summary>
     internal const string MovedSince = "it moved since it was judged";
@@ -69,7 +69,7 @@ public sealed partial class SessionTrees
     /// <param name="tip">The branch's tip as an object id, read once by the caller, which deletes only while the branch is still it.</param>
     /// <param name="line">The repository's line, or null where none is set and git names none.</param>
     /// <param name="notHolders">The branches that may not hold its work: those a landing made and recorded here.</param>
-    private static async Task<ContentHold?> HeldByContentAsync(
+    internal static async Task<ContentHold?> HeldByContentAsync(
         string cwd, string tip, string? line, IReadOnlySet<string> notHolders, CancellationToken ct)
     {
         var forms = new List<(string Name, string Id)>();
@@ -136,7 +136,7 @@ public sealed partial class SessionTrees
     }
 
     /// <summary>The branches a landing made and recorded in <paramref name="repository"/>: never a holder by content (SQUASHTIDY1c).</summary>
-    private IReadOnlySet<string> LandedHere(string repository) =>
+    internal IReadOnlySet<string> LandedHere(string repository) =>
         Recorded.All()
             .Where(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))
             .Select(entry => entry.Branch)
@@ -227,7 +227,7 @@ public sealed partial class SessionTrees
     /// (TREEKEEP1): under a build folder (<see cref="BuildFolders"/>) the path goes as ever; under any other, each file the tree
     /// wrote after it opened that the checkout does not hold as written (absent, or different bytes) is the tree's own, as an ignored path only it holds is.
     /// </remarks>
-    private static async Task<TreeHolds?> HoldsAsync(string tree, string root, CancellationToken ct)
+    internal static async Task<TreeHolds?> HoldsAsync(string tree, string root, CancellationToken ct)
     {
         var (code, porcelain, _) = await WorkingTree.GitAsync(
             tree, ["status", "--porcelain", "-z", "--untracked-files=all", "--ignored=matching", "--ignore-submodules=none"], ct).ConfigureAwait(false);

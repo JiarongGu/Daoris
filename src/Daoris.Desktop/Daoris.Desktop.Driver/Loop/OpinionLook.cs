@@ -63,7 +63,7 @@ public static class OpinionLook
             : process.Problem is not null || process.Unread is not null || OpinionGate.Reads(process.Opinion, process.OpinionCannot, due.Occasion);
         if (!reads) return OpinionDueClosed.Off;
 
-        if (SessionTrees.TreeGone(due.Tree)) return OpinionDueClosed.Gone;
+        if (TreeFolders.TreeGone(due.Tree)) return OpinionDueClosed.Gone;
         if (landed.Landing(due.Session) is { } landing && landing.Names(due.Session)) return OpinionDueClosed.Landed;
         if (due.Occasion == OpinionRules.Steps
             && !chain.Any(step => string.Equals(step.Parent, due.Quest, StringComparison.OrdinalIgnoreCase) && step.Status == "Open"))

@@ -419,7 +419,7 @@ public sealed partial class SessionTrees
     /// The line in both its forms (D86) that this checkout has: its own branch, and origin's copy — a
     /// platform's squash merge reaches the second before anyone pulls it into the first.
     /// </summary>
-    private static async Task<IReadOnlyList<LineForm>> LineFormsAsync(string root, string? line, CancellationToken ct)
+    internal static async Task<IReadOnlyList<LineForm>> LineFormsAsync(string root, string? line, CancellationToken ct)
     {
         var forms = new List<LineForm>();
         if (line is null) return forms;

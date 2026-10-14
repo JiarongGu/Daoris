@@ -162,7 +162,7 @@ public sealed class OpinionPresses(string home, ServiceClient service)
     private async Task<(Work? Work, string? Refused)> WorkAsync(string session, CancellationToken ct)
     {
         var (tree, _) = await service.SessionGroundAsync(session, ct).ConfigureAwait(false);
-        if (string.IsNullOrWhiteSpace(tree) || SessionTrees.TreeGone(tree) || !_trees.Holds(tree))
+        if (string.IsNullOrWhiteSpace(tree) || TreeFolders.TreeGone(tree) || !_trees.Holds(tree))
         {
             return (null, $"session `{session}` names no working tree of its own on this machine, so no second opinion is asked of its work here.");
         }
@@ -175,7 +175,7 @@ public sealed class OpinionPresses(string home, ServiceClient service)
         var world = new ServiceReviewWorld(service);
         var chain = ReviewGate.ChainOf(await world.QuestsAsync(ct).ConfigureAwait(false), quest);
         var (workspace, repository) = _trees.Owner(tree);
-        return (new Work(session, tree, quest, SessionTrees.OpinionChain(chain, quest), repository, workspace, world)
+        return (new Work(session, tree, quest, TreeGates.OpinionChain(chain, quest), repository, workspace, world)
         {
             Run = WorkflowRunBindings.RunOf(chain, repository) ?? quest.TrimStart('#'),
         }, null);

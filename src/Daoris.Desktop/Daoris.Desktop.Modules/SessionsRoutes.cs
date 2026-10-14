@@ -175,7 +175,7 @@ public sealed class SessionsRoutes(DriverContext context)
                 rows.Add(new
                 {
                     Session = id,
-                    TreeGone = SessionTrees.TreeGone(tree),
+                    TreeGone = TreeFolders.TreeGone(tree),
                     Landed = landing is null
                         ? null
                         : new
