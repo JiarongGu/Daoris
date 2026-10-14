@@ -58,8 +58,7 @@ public static class PluginIcon
         }
 
         var icon = value.GetString()!;
-        var names = icon.Split('/');
-        if (icon.Contains('\\') || icon.Contains(':') || names.Any(name => name is "" or "." or ".."))
+        if (!SafeNames.IsRepositoryPath(icon))
         {
             return (null, $"`icon` `{icon}` is not a path inside the plugin's folder: it is written from the folder, with `/` "
                 + "between names and no `.` or `..`.");

@@ -258,8 +258,7 @@ public static class Tools
     /// <c>..</c> part, and no <c>\</c> or drive. A record's <c>exe</c> (§3.6) and a list's <c>exe</c> and
     /// <c>paths</c> (§3.2). The CLI's <c>isInsidePath</c>.
     /// </summary>
-    public static bool IsInside(string path) =>
-        path.Length > 0 && path.IndexOfAny(['\\', ':']) < 0 && path.Split('/').All(part => part is not ("" or "." or ".."));
+    public static bool IsInside(string path) => SafeNames.IsRepositoryPath(path);
 
     /// <summary>An exact version: one to four numbers (§3.2), in <c>tools.json</c> and in a resource list alike.</summary>
     public static bool IsExactVersion(string version) => ExactVersion.IsMatch(version);

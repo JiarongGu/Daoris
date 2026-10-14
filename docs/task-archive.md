@@ -14302,3 +14302,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PART7 — `HelpProposalBox` as a writer per kind** (service). A proposal-file helper and a writer class per kind, `ProposeX` kept on the box; the workflow pattern with its writer. Survey "A family".
 
 **Outcome** 2026-10-14: `HelpProposalFile` holds what the kinds share (the write, through the atomic file and the moments, and the shared rules); each kind is an internal `Help<Kind>ProposalWriter` with one `Propose`, the workflow's partial in its one file for its pattern; the box keeps one-line `ProposeX`, so no call changed. The kind files keep their names because the driver's twin tests read them by path: PART7b renames them with those tests. Five types remain on the gate's list. On Opus: 160 tool calls. Detail: D166's PART7 note.
+
+## DEDUP6 — path and id rules decided once (2026-10-14, D166)
+
+> - [ ] **DEDUP6 — path and id rules decided once** (driver, modules). A `SafeNames` in `Platform/` with the rules D166's DEDUP6 note decided (a repository path joined to the disk, an id under the home, the plain and kebab ids), each caller keeping its sentence; after FLAT1a, whose moves it would cross. Survey §6.
+
+**Outcome** 2026-10-14: `Platform/SafeNames.cs` answers the repository-path, folder-id, plain-id and kebab-id rules; seven path checks, the local session ids' `PathOf`s, the history's and the markers' ids, five plain and four kebab copies ask it, each keeping its sentence, none widened. At the merge the plain and kebab rules refuse device names too; the CLI's twins follow in DEDUP6b. 76 tests. On Sonnet: 95 tool calls. Detail: D166's DEDUP6 notes.

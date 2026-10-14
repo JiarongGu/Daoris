@@ -18,7 +18,7 @@ public sealed class OpinionGates(string home)
 
     /// <summary>Where a chain's record is kept; null for a name that is no plain id.</summary>
     public string? PathOf(string chain) =>
-        Regex.IsMatch(chain, "^[A-Za-z0-9_-]{1,64}$") ? Path.Combine(home, "opinions", "gates", $"{chain}.json") : null;
+        SafeNames.IsPlainId(chain) ? Path.Combine(home, "opinions", "gates", $"{chain}.json") : null;
 
     /// <summary>What is kept for the chain's work in a repository; none where nothing reads.</summary>
     public OpinionGateKept Read(string chain, string repository) =>
