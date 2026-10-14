@@ -325,7 +325,7 @@ public sealed partial class Driver
         ISessionAdapter adapter;
         try
         {
-            adapter = _adapters.Resolve(helper);
+            adapter = Context.Adapters.Resolve(helper);
         }
         catch (DriverException error)
         {

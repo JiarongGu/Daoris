@@ -1,29 +1,6 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where one opinion stands as the driver delivers it (XAGENT1e, D155 point 7; the second-agent design §6.3–§6.7): its state,
-/// one of <see cref="OpinionDeliveryStates"/>, and the line a terminal and a look say, opening with that state.
-/// </summary>
-/// <param name="Line">What a terminal and a look say, one line. Never <i>no issues</i>: a pass that read nothing says so.</param>
-public sealed record OpinionDelivery(string Opinion, string State, string Line)
-{
-    /// <summary>Why, a code: a failed pass's (<c>ended</c>, <c>out-of-time</c>) or why its findings went to the person.</summary>
-    public string? Why { get; init; }
-
-    /// <summary>The working session the findings are for.</summary>
-    public string? Session { get; init; }
-
-    /// <summary>The working session's answers as read when its turn ended; null until then.</summary>
-    public OpinionReading? Reading { get; init; }
-
-    /// <summary>What waits for the person (design §6.6): null until the answers are read, or the findings went to the person.</summary>
-    public OpinionDisputes? Disputes { get; init; }
-
-    /// <summary>The one recheck, where this delivery asked it (design §6.5).</summary>
-    public OpinionPassRun? Recheck { get; init; }
-}
-
-/// <summary>
 /// The second opinion delivered (XAGENT1e, D155 point 7; the second-agent design §6.3–§6.7): a first pass's findings handed once
 /// to the working session as its next turn, through the local host's door, which keeps them on its record as another agent's
 /// claims in Daoris's fixed words; its answers read as its turn ends, each fix's commit checked; one recheck where a finding was
@@ -31,31 +8,29 @@ public sealed record OpinionDelivery(string Opinion, string State, string Line)
 /// </summary>
 /// <remarks>
 /// <para><b>The session goes on in its own conversation, by D137's door.</b> The words wait on its record with <c>by</c>, and the
-/// next look resumes it as it resumes the person's words (<see cref="ContinueAsync"/>): its record reopens, its account is its
+/// next look resumes it as it resumes the person's words (<see cref="Driver.ContinueAsync"/>): its record reopens, its account is its
 /// own, its quest is unmoved. They are never handed to a new session as the person's words (design §6.7).</para>
 ///
 /// <para><b>Idempotent, and read from facts.</b> <see cref="DeliverAsync"/> reads the host's opinion, the working session's
 /// record and what it kept (<see cref="OpinionDeliveries"/>), and does the next thing owed, once: the look (XAGENT1f) calls it at
 /// each look for the opinion on a landing until it says the opinion is answered, or with the person.</para>
 /// </remarks>
-public sealed partial class Driver
+/// <param name="opinions">
+/// The pass a recheck runs through (<see cref="LoopContext.Passes"/>, unless a test hands in a stand-in): the flow is one way,
+/// the gate delivers and the delivery passes.
+/// </param>
+internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opinions)
 {
-    /// <summary>
-    /// How a pass is run: <see cref="PassAsync"/>, unless a test hands in a stand-in, since a real pass spawns git and an agent,
-    /// which the suite's fast half may not (MOD8). The recheck is run through it (XAGENT1e).
-    /// </summary>
-    internal Func<OpinionPassAsk, ReviewerChoice, CancellationToken, Task<OpinionPassRun>>? Passes { get; init; }
+    private readonly LoopContext _context = context;
 
-    /// <summary>
-    /// How a fix's commit is read from git when the working session's turn ends (XAGENT1e, design §6.4): the review's seam,
-    /// <see cref="WorkingTree.ReadGitAsync"/> unless a test hands in its stand-in.
-    /// </summary>
-    internal WorkingTree.GitRead OpinionGit { get; init; } = WorkingTree.ReadGitAsync;
+    private readonly DriverOpinions _opinions = opinions;
 
     // What this machine's driver did with each opinion, beside its packet (XAGENT1e).
-    private readonly OpinionDeliveries _deliveries = new(home);
+    private readonly OpinionDeliveries _deliveries = new(context.Home);
 
     private OpinionDeliveries Deliveries => _deliveries;
+
+    private ServiceClient Service => _context.Service;
 
     /// <summary>
     /// Deliver <paramref name="opinion"/> as far as the facts let it go now: a pass still reading waits; a failed one is
@@ -63,11 +38,11 @@ public sealed partial class Driver
     /// session at its turn's end, or to the person where it cannot take them; its answers, once read, settle whether the one
     /// recheck is due, which runs here; a recheck's findings go to the person.
     /// </summary>
-    /// <param name="asked">What the first pass was asked with (<see cref="PassAsync"/>): the rule, the checkout, the workspace and
+    /// <param name="asked">What the first pass was asked with (<see cref="DriverOpinions.PassAsync"/>): the rule, the checkout, the workspace and
     /// what was asked, which its recheck reads again from the working tree's new tip.</param>
     public async Task<OpinionDelivery> DeliverAsync(string opinion, OpinionPassAsk asked, CancellationToken ct = default)
     {
-        var view = await service.Opinions.ReadAsync(opinion, ct).ConfigureAwait(false);
+        var view = await Service.Opinions.ReadAsync(opinion, ct).ConfigureAwait(false);
         if (view is null)
         {
             return new OpinionDelivery(opinion, OpinionDeliveryStates.Unknown, $"unknown  there is no second opinion `{opinion}` on this machine.");
@@ -117,9 +92,9 @@ public sealed partial class Driver
         if (kept.Answered is { } answered) return await AnsweredAsync(view, named, answered, kept, asked, ct).ConfigureAwait(false);
 
         // Handed: its record has the words, or its turn on them runs, until the turn ends and its answers are read.
-        var record = await service.RecordAsync(view.HandedTo, ct).ConfigureAwait(false);
+        var record = await Service.RecordAsync(view.HandedTo, ct).ConfigureAwait(false);
         if (record is null) return ToPersonKept(view, named, OpinionToPerson.NotFound);
-        if (view.HandedWord is { } word && new GoOnMarks(home).Read(record.Session) is { } mark && mark.Said.Contains(word, StringComparer.Ordinal))
+        if (view.HandedWord is { } word && new GoOnMarks(_context.Home).Read(record.Session) is { } mark && mark.Said.Contains(word, StringComparer.Ordinal))
         {
             // Marked as words its session could not go on with (design §6.7): the look that marked them said why.
             return ToPersonKept(view, named, mark.Why);
@@ -148,7 +123,7 @@ public sealed partial class Driver
     /// </summary>
     private async Task<OpinionDelivery> HandAsync(OpinionView view, string named, CancellationToken ct)
     {
-        var record = await service.RecordAsync(view.Working, ct).ConfigureAwait(false);
+        var record = await Service.RecordAsync(view.Working, ct).ConfigureAwait(false);
         var never = record switch
         {
             null => OpinionToPerson.NotFound,
@@ -167,7 +142,7 @@ public sealed partial class Driver
             return Waiting(view, named, record);
         }
 
-        var (handed, message, _) = await service.Opinions.HandAsync(view.Id, ct).ConfigureAwait(false);
+        var (handed, message, _) = await Service.Opinions.HandAsync(view.Id, ct).ConfigureAwait(false);
         if (!handed)
         {
             // The record moved between the read and the hand, or the host said why not: tried again at the next look.
@@ -176,7 +151,7 @@ public sealed partial class Driver
 
         var line = $"— {view.Who}'s {Plural(view.Findings!.Count, "finding")} on this work are its next turn, as another agent's claims "
                    + "to check, at the driver's next look.";
-        output?.Append(view.Working, line);
+        _context.Output?.Append(view.Working, line);
         return new OpinionDelivery(
             view.Id, OpinionDeliveryStates.Handed,
             $"handed  {named}: its {Plural(view.Findings.Count, "finding")} went to session {view.Working} as another agent's claims, "
@@ -207,7 +182,7 @@ public sealed partial class Driver
             }
         }
 
-        var recheck = kept.Recheck is { } id ? await service.Opinions.ReadAsync(id, ct).ConfigureAwait(false) : null;
+        var recheck = kept.Recheck is { } id ? await Service.Opinions.ReadAsync(id, ct).ConfigureAwait(false) : null;
         var disputes = OpinionDisputes.Of(reading, recheck);
         var then = kept.Recheck is not null
             ? $" Recheck {kept.Recheck} reads the commits since."
@@ -230,10 +205,10 @@ public sealed partial class Driver
     /// </summary>
     private async Task<OpinionPassRun> RecheckAsync(OpinionView first, OpinionReading reading, OpinionPassAsk asked, CancellationToken ct)
     {
-        var working = await service.RecordAsync(first.Working, ct).ConfigureAwait(false);
+        var working = await Service.RecordAsync(first.Working, ct).ConfigureAwait(false);
         IReadOnlyCollection<string> wrote = working?.Adapter is { Length: > 0 } adapter ? [adapter] : [];
         var choice = await ReviewerChoice.ChooseAsync(
-                _harnesses, asked.Rule with { Reviewers = [first.Adapter] }, wrote, config, asked.Workspace, ct)
+                _context.Harnesses, asked.Rule with { Reviewers = [first.Adapter] }, wrote, _context.Config, asked.Workspace, ct)
             .ConfigureAwait(false);
         var ask = asked with
         {
@@ -245,7 +220,7 @@ public sealed partial class Driver
             // A recheck is no ask of the gate's: it is found through what the delivery keeps (XAGENT1f).
             Opened = null,
         };
-        return await (Passes ?? PassAsync)(ask, choice, ct).ConfigureAwait(false);
+        return await (_context.Passes ?? _opinions.PassAsync)(ask, choice, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -254,13 +229,13 @@ public sealed partial class Driver
     /// </summary>
     private async Task<OpinionReading> ReadAnswersAsync(OpinionView view, string session, string? tree, CancellationToken ct)
     {
-        var reading = await OpinionAnswers.ReadAsync(view, session, tree, OpinionGit, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+        var reading = await OpinionAnswers.ReadAsync(view, session, tree, _context.OpinionGit, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
         Deliveries.Answered(view.Id, reading);
         // The machine log's line for it (XAGENT1f, design §8.6): counts only.
-        service.LandingSaid(OpinionLines.Answered(view.Id, reading));
+        Service.LandingSaid(OpinionLines.Answered(view.Id, reading));
         var noted = OpinionAnswers.Told(view, reading);
-        output?.Append(session, noted.Note);
-        _events.Keep(
+        _context.Output?.Append(session, noted.Note);
+        _context.Events.Keep(
             session,
             new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts, Opinion = view.Id },
             say: null);
@@ -271,14 +246,14 @@ public sealed partial class Driver
     /// A resumed run that carried another agent's findings ended (design §6.4): its answers read for each opinion whose words it
     /// took, before its record concludes, so a look never reads the record ended with nothing read.
     /// </summary>
-    private async Task OpinionsAnsweredAsync(ResumeAsk resume, string session, string tree, CancellationToken ct)
+    public async Task OpinionsAnsweredAsync(ResumeAsk resume, string session, string tree, CancellationToken ct)
     {
         if (!resume.Prompted) return;
         foreach (var id in resume.Opinions)
         {
             try
             {
-                if (await service.Opinions.ReadAsync(id, ct).ConfigureAwait(false) is { First: true, Findings: not null } view)
+                if (await Service.Opinions.ReadAsync(id, ct).ConfigureAwait(false) is { First: true, Findings: not null } view)
                 {
                     await ReadAnswersAsync(view, session, tree, ct).ConfigureAwait(false);
                 }
@@ -287,7 +262,7 @@ public sealed partial class Driver
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
                 // The look that delivers it reads them instead, once the record has ended (DeliverAsync).
-                output?.Append(session, $"— the answers to second opinion `{id}` could not be read as its turn ended: {error.Message}");
+                _context.Output?.Append(session, $"— the answers to second opinion `{id}` could not be read as its turn ended: {error.Message}");
             }
         }
     }
@@ -296,7 +271,7 @@ public sealed partial class Driver
     /// Another agent's findings that cannot go on in their session (design §6.7): they go to the person instead, unanswered,
     /// each <c>must</c> disputed. Kept once per opinion, the first reason standing.
     /// </summary>
-    private void FindingsToPerson(PriorSession record, ContinueReason why)
+    public void FindingsToPerson(PriorSession record, ContinueReason why)
     {
         foreach (var opinion in record.Findings) Deliveries.ToPerson(opinion, why.Code, DateTimeOffset.UtcNow);
     }

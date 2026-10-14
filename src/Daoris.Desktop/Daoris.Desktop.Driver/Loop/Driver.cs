@@ -93,7 +93,7 @@ public sealed partial class Driver(
         + "commits — and stopping it is the one move that reaches it.";
 
     /// <summary>Two lines a transcript opens with, either of which may be absent.</summary>
-    private static string? JoinNotices(string? first, string? second) =>
+    internal static string? JoinNotices(string? first, string? second) =>
         (first, second) switch
         {
             ({ Length: > 0 }, { Length: > 0 }) => $"{first}\n{second}",
@@ -105,41 +105,97 @@ public sealed partial class Driver(
     // a session no longer holds the sync back for its whole run, and one choice sets both.
     private readonly TimeSpan _syncBeside = TimeSpan.FromSeconds(Math.Max(1, config.PollSeconds));
 
-    // The sessions this driver started and has not yet reported ending — and which quest each holds, which
-    // is what the lost-claim stop checks this machine's claim on (D68 §5).
-    private readonly RunningSessions _runs = running ?? new RunningSessions();
+    /// <summary>
+    /// What the loop's classes share (PART10m, D166): the constructor's objects, the sessions and trees, the per-look adapters,
+    /// servers and catalogue, and the settables. Built once, here; the classes below hold it, and the ones that run through this
+    /// driver's machinery hold the driver as well.
+    /// </summary>
+    internal LoopContext Context { get; } = new(service, config, home, adapters, processes, harnesses, events, output, usage, running);
+
+    // The objects every part reads, kept in the context where the classes read them too; named as they were.
+    private RunningSessions _runs => Context.Runs;
+
+    private SessionProcesses _processes => Context.Processes;
+
+    private HarnessRoster _harnesses => Context.Harnesses;
+
+    private SessionTrees _trees => Context.Trees;
+
+    private SessionEvents _events => Context.Events;
 
     /// <summary>The sessions still running, which outlive the look that started them (DEV3).</summary>
     public RunningSessions Running => _runs;
-
-    // Shared across the per-tick instances a watch loop constructs, so a control surface can reach
-    // what is actually running; per-instance when nobody passes one, which no test has to care about.
-    private readonly SessionProcesses _processes = processes ?? new SessionProcesses();
-
-    // The same sharing, for the same reason: a probe spawns a process, so the cache has to outlive
-    // one tick or every quest would re-detect every harness. Per-instance when nobody passes one.
-    private readonly HarnessRoster _harnesses = harnesses ?? new HarnessRoster(adapters);
 
     // The build's own adapters, which each tick's plugins are laid over — held as a field so the
     // primary constructor's parameter is captured in one place only (CS9124).
     private readonly AdapterSet _built = adapters;
 
-    // The adapters this tick spawns with: the build's, plus whatever the plugins read this tick
-    // declare (D64 §3). Set once per tick, before any start is run.
-    private AdapterSet _adapters = adapters;
+    // The second opinion's classes (PART10m): the pass runs through this driver's machinery, the delivery passes, the gate delivers.
+    private DriverOpinions? _opinions;
+    private OpinionDeliverer? _deliverer;
+    private OpinionGateLook? _gate;
 
-    // The servers this tick hands every session (D65 §1f): what the contributing plugins declare,
-    // beside the knowledge host. Read with the catalogue, once per tick.
-    private IReadOnlyList<AcpMcpServer> _servers = [];
+    private DriverOpinions Opinions => LazyInitializer.EnsureInitialized(ref _opinions, () => new DriverOpinions(Context, this));
 
-    // The catalogue those servers came from: which plugin declares each, for the machine log's `plugin.served` (PLUGUI1d).
-    private PluginCatalog _catalog = PluginCatalog.None;
+    /// <summary>The second opinion's delivery, which the go-on also asks to read the answers and to send findings to the person.</summary>
+    internal OpinionDeliverer Deliverer => LazyInitializer.EnsureInitialized(ref _deliverer, () => new OpinionDeliverer(Context, Opinions));
 
-    // The worktree half of D51, beside the transcripts under the same home.
-    private readonly SessionTrees _trees = new(home);
+    private OpinionGateLook Gate => LazyInitializer.EnsureInitialized(ref _gate, () => new OpinionGateLook(Context, Opinions, Deliverer));
 
-    // The conversation half of D76, beside the transcripts it enriches.
-    private readonly SessionEvents _events = events ?? new SessionEvents(Path.Combine(home, "sessions"));
+    /// <summary>
+    /// How a pass is run: <see cref="PassAsync"/>, unless a test hands in a stand-in, since a real pass spawns git and an agent,
+    /// which the suite's fast half may not (MOD8). The recheck is run through it (XAGENT1e). Written through to the context.
+    /// </summary>
+    internal Func<OpinionPassAsk, ReviewerChoice, CancellationToken, Task<OpinionPassRun>>? Passes
+    {
+        get => Context.Passes;
+        init => Context.Passes = value;
+    }
+
+    /// <summary>
+    /// How a fix's commit is read from git when the working session's turn ends (XAGENT1e, design §6.4): the review's seam,
+    /// <see cref="WorkingTree.ReadGitAsync"/> unless a test hands in its stand-in. Written through to the context.
+    /// </summary>
+    internal WorkingTree.GitRead OpinionGit
+    {
+        get => Context.OpinionGit;
+        init => Context.OpinionGit = value;
+    }
+
+    /// <summary>
+    /// Read <paramref name="ask"/>'s work with the reviewer <paramref name="choice"/> names (XAGENT1d): <see cref="DriverOpinions.PassAsync"/>.
+    /// </summary>
+    public Task<OpinionPassRun> PassAsync(OpinionPassAsk ask, ReviewerChoice choice, CancellationToken ct = default) =>
+        Opinions.PassAsync(ask, choice, ct);
+
+    /// <summary>Deliver <paramref name="opinion"/> as far as the facts let it go now (XAGENT1e): <see cref="OpinionDeliverer.DeliverAsync"/>.</summary>
+    public Task<OpinionDelivery> DeliverAsync(string opinion, OpinionPassAsk asked, CancellationToken ct = default) =>
+        Deliverer.DeliverAsync(opinion, asked, ct);
+
+    /// <summary>The second opinions owed at a look (XAGENT1f): <see cref="OpinionGateLook.OpinionsAsync"/>.</summary>
+    internal Task<(IReadOnlyDictionary<string, string> Sits, int Passes)> OpinionsAsync(
+        Snapshot snapshot, List<string> events, CancellationToken ct, List<OpinionJudged>? judged = null) =>
+        Gate.OpinionsAsync(snapshot, events, ct, judged);
+
+    /// <summary>
+    /// Each run whose session opened in this look and that no binding names yet is bound to the workflow §4.1 chooses for it now
+    /// (WORKFLOW1e, D157 point 11; the workflow design §4.5): Workflows' use case (<see cref="WorkflowRunStart"/>), composed here over
+    /// the loop's service, home, choices and plugins, and the clock.
+    /// </summary>
+    private Task BindRunsAsync(IReadOnlyList<Consideration> opened, List<string> events, CancellationToken ct) =>
+        WorkflowRunStart.BindAsync(
+            [.. opened.Select(start => new WorkflowStarted(start.Quest, start.Workspace))], new StartWorld(service), home, config,
+            WorkflowCurrent.PluginsOf(Context.Catalog), () => DateTimeOffset.UtcNow, events, ct);
+
+    /// <summary>What binding a run reads and says through the loop's service: its quests, its asks, and the machine log's line.</summary>
+    private sealed class StartWorld(ServiceClient service) : IWorkflowStartWorld
+    {
+        public Task<IReadOnlyList<QuestView>> EveryQuestAsync(CancellationToken ct) => service.EveryQuestAsync(ct);
+
+        public Task<AskView?> FindAskAsync(string id, CancellationToken ct) => service.FindAskAsync(id, ct);
+
+        public void Chosen(LandingLine line) => service.LandingSaid(line);
+    }
 
     /// <summary>
     /// The door this machine's starts ride — the configured adapter's wire, read against this tick's
@@ -150,7 +206,7 @@ public sealed partial class Driver(
     {
         try
         {
-            return _adapters.Resolve(config.Adapter).Wire;
+            return Context.Adapters.Resolve(config.Adapter).Wire;
         }
         catch (DriverException)
         {
@@ -205,10 +261,10 @@ public sealed partial class Driver(
         // disabled since is stopped now. The catalogue refuses a name this build carries before
         // anything of that plugin is taken.
         var catalog = PluginCatalog.Load(home, _built.Names);
-        _adapters = _built.WithPlugins(catalog);
-        _servers = catalog.Servers;
-        _catalog = catalog;
-        _harnesses.Use(_adapters);
+        Context.Adapters = _built.WithPlugins(catalog);
+        Context.Servers = catalog.Servers;
+        Context.Catalog = catalog;
+        _harnesses.Use(Context.Adapters);
         if (hooks is not null)
         {
             events.AddRange(await hooks.ReconcileAsync(catalog, ct).ConfigureAwait(false));
@@ -1031,7 +1087,7 @@ public sealed partial class Driver(
         // a session handed the `connector` default takes and closes its quest whoever trusted what,
         // and trust then decides only whether the repository's OWN allow-list counts.
         ISessionAdapter? preflight = null;
-        try { preflight = _adapters.Resolve(agent); } catch (DriverException) { }
+        try { preflight = Context.Adapters.Resolve(agent); } catch (DriverException) { }
 
         if (preflight is { Toolchain.TrustFile: { Length: > 0 } trustFile }
             && !HandedConnector(preflight, start.Workspace, quest.To, "quest_respond"))
@@ -1144,7 +1200,7 @@ public sealed partial class Driver(
             // session's conversation, where the person wrote them.
             if (fellBack is not null) await HandedOnAsync(written!, sessionId, fellBack, ct).ConfigureAwait(false);
 
-            var adapter = _adapters.Resolve(agent);
+            var adapter = Context.Adapters.Resolve(agent);
             // What it may read and write outside its tree (D107): the rules it is handed, and the sentence
             // every harness's instruction carries.
             var across = AcrossRules.Reach(config, registry, quest.To, start.Workspace);
@@ -1160,7 +1216,7 @@ public sealed partial class Driver(
             // browser it was handed (BRWHINT1b, D78). With Daoris's own browser brought up for a server that drives it, or that server
             // left out and the transcript told why.
             var (servers, browserNoted, drivesBrowser, browserDrivers) =
-                await InAppBrowserServers.HandNotedAsync(_servers, browser, ct).ConfigureAwait(false);
+                await InAppBrowserServers.HandNotedAsync(Context.Servers, browser, ct).ConfigureAwait(false);
             var browserNotice = browserNoted?.Note;
             var target = WithLanguage(WithStanding(
                 await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false),
@@ -1231,7 +1287,7 @@ public sealed partial class Driver(
 
             // The protocol door carries the servers on the wire below; a pipe-door harness that takes a file at spawn is handed
             // one under Daoris's home, and the file goes when the session does.
-            hooks?.Log.Served(_catalog, sessionId, servers);
+            hooks?.Log.Served(Context.Catalog, sessionId, servers);
             var handed = SpawnServers.Hand(adapter, info, home, sessionId, servers);
 
             // What this session may do (PERM1, D72): the rules composed for its circle and repository,
@@ -1408,7 +1464,7 @@ public sealed partial class Driver(
     /// </summary>
     /// <returns>The process to start, and what this harness is doing that Daoris could not govern.</returns>
     /// <param name="prepared">The process a resume prepared (ANSWER1a), given the same environment; null prepares a start.</param>
-    private (ProcessStartInfo Info, string? Notice) Prepare(
+    internal (ProcessStartInfo Info, string? Notice) Prepare(
         ISessionAdapter adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo? prepared = null)
     {
         var info = prepared ?? adapter.Prepare(target, config.Commands.GetValueOrDefault(adapter.Name));
@@ -1481,7 +1537,7 @@ public sealed partial class Driver(
     /// The file, which goes when the session does, what the protocol door carries, and what was handed, for the instruction's
     /// account (CONTEXT1), which outlives the file.
     /// </returns>
-    private (string? File, object? Meta, HandedSection Handed) HandRules(
+    internal (string? File, object? Meta, HandedSection Handed) HandRules(
         ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
         string tree, string? kept, IReadOnlyList<string>? job = null, AcrossReach? across = null, string? said = null,
         bool opinion = false, bool helper = false)
@@ -1841,7 +1897,7 @@ public sealed partial class Driver(
     /// Told, as the run lets go of its process, the stop made of it, or null for none (FLAKE3): what a driver's close that cuts
     /// the conclusion off records in place of itself (<see cref="Observation.Closed"/>).
     /// </param>
-    private async Task<T> HoldAsync<T>(
+    internal async Task<T> HoldAsync<T>(
         ISessionAdapter adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
         string cwd, string? harnessNotice, (string? File, object? Meta, HandedSection? Handed) rules, string? handed, string? refusesInput,
         Func<int?, AcpUsage?, string?, HarnessEnding, Task<T>> conclude, CancellationToken ct,
@@ -1908,7 +1964,7 @@ public sealed partial class Driver(
             // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses name the
             // same D37 boundary three different ways, and one of them does not name it on the wire.
             ? CaptureAcpAsync(
-                process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? _servers,
+                process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? Context.Servers,
                 target.PersonSaid, inbox, said, keepAs, resume, account, waitsOnBackground, noConnector)
             : null;
         // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).
@@ -2193,7 +2249,7 @@ public sealed partial class Driver(
             // posture like every other tool it has.
             var offered = new List<AcpMcpServer>();
             if (connector is not null) offered.Add(connector);
-            offered.AddRange(servers ?? _servers);
+            offered.AddRange(servers ?? Context.Servers);
 
             // What it runs beside itself, each its own console stream (CONSOLE2) — kept wherever the
             // session's own console is — and stoppable from its tab while the session runs (CONSOLE3a).
@@ -2284,7 +2340,7 @@ public sealed partial class Driver(
     /// gain the host between ticks — carrying who the session is, where its rules live, and an intake's
     /// ask when it is one.
     /// </summary>
-    private AcpMcpServer? Connector(string sessionId, IReadOnlyDictionary<string, string>? scope) =>
+    internal AcpMcpServer? Connector(string sessionId, IReadOnlyDictionary<string, string>? scope) =>
         KnowledgeConnector.Offer(
             Environment.GetEnvironmentVariable(KnowledgeConnector.PathVariable),
             DaorisHome.Resolve(),

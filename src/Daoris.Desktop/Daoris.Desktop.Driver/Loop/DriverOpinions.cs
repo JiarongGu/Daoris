@@ -13,11 +13,19 @@ namespace Daoris.Driver;
 /// thing a pass takes is the opinion the reviewer said through its tool, which the local host keeps. The record moves on the
 /// exit code, never on what the reviewer said of itself (D46 §4): whether it gave its opinion is the host's to derive.</para>
 ///
-/// <para><b>The look asks it</b> (XAGENT1f, <see cref="OpinionsAsync"/>): for an opinion owed by itself and for the person's ask,
-/// beside the look, its slot taken before any quest's first start, and its findings delivered after (XAGENT1e).</para>
+/// <para><b>The look asks it</b> (XAGENT1f, <see cref="OpinionGateLook.OpinionsAsync"/>): for an opinion owed by itself and for the
+/// person's ask, beside the look, its slot taken before any quest's first start, and its findings delivered after (XAGENT1e).</para>
 /// </remarks>
-public sealed partial class Driver
+/// <param name="driver">
+/// The driver whose run machinery a pass goes through (PART10m, D166): the spawn's preparation, the connector, the rules handed,
+/// the hold of the process and the account sayings, which Continue, Helper and Intake call as well.
+/// </param>
+internal sealed class DriverOpinions(LoopContext context, Driver driver)
 {
+    private readonly LoopContext _context = context;
+
+    private readonly Driver _driver = driver;
+
     /// <summary>
     /// Read <paramref name="ask"/>'s work with the reviewer <paramref name="choice"/> names, on the account its walk chose: the
     /// candidate read, the copy made, the opinion asked of the local host, the reviewer run in its copy under the opinion's
@@ -38,7 +46,7 @@ public sealed partial class Driver
         OpinionCandidateRead candidate;
         try
         {
-            adapter = _adapters.Resolve(reviewer);
+            adapter = _context.Adapters.Resolve(reviewer);
             candidate = await OpinionPackets.ReadAsync(ask.Root, ask.Repository, ask.Base, ask.Tip, ct).ConfigureAwait(false);
         }
         catch (DriverException error)
@@ -51,7 +59,7 @@ public sealed partial class Driver
         OpinionTreeOpened copy;
         try
         {
-            copy = await OpinionTree.OpenAsync(home, ask.Root, ask.Repository, ask.Workspace, candidate.Tip, ct).ConfigureAwait(false);
+            copy = await OpinionTree.OpenAsync(_context.Home, ask.Root, ask.Repository, ask.Workspace, candidate.Tip, ct).ConfigureAwait(false);
         }
         catch (DriverException error)
         {
@@ -67,7 +75,7 @@ public sealed partial class Driver
         finally
         {
             // Removed however the run ended, the person's stop and the driver's own included: nothing in it is read back.
-            left = await OpinionTree.RemoveAsync(home, copy.Path).ConfigureAwait(false);
+            left = await OpinionTree.RemoveAsync(_context.Home, copy.Path).ConfigureAwait(false);
         }
 
         return left is null ? run : run with { TreeLeft = left, Line = $"{run.Line} {left}" };
@@ -78,10 +86,13 @@ public sealed partial class Driver
         OpinionPassAsk ask, ReviewerChoice choice, ISessionAdapter adapter, HarnessSelection selection, string reviewer, string label,
         OpinionCandidateRead candidate, OpinionTreeOpened copy, string named, CancellationToken ct)
     {
+        var service = _context.Service;
+        var home = _context.Home;
+
         // The repository's own rules as they stand in the candidate, read before the reviewer starts and never after (§4).
         var rules = OpinionPackets.RulesIn(copy.Path);
         var posture = OpinionPosture.Of(adapter);
-        var family = choice.Family ?? AgentFamily.Of(_adapters, reviewer);
+        var family = choice.Family ?? AgentFamily.Of(_context.Adapters, reviewer);
 
         OpinionAsked asked;
         try
@@ -122,8 +133,8 @@ public sealed partial class Driver
             };
 
         // An opinion on another account of the order says so, as a quest's start does (TOOL4f, D125 §3.2).
-        RotatedOpening.Say(service, _events, sessionId, reviewer, selection, carried: null);
-        var bound = OpinionPass.Bound(ask.Rule, config);
+        RotatedOpening.Say(service, _context.Events, sessionId, reviewer, selection, carried: null);
+        var bound = OpinionPass.Bound(ask.Rule, _context.Config);
 
         try
         {
@@ -150,7 +161,7 @@ public sealed partial class Driver
                 Session = sessionId,
                 Prompt = OpinionInstruction.Compose(packet),
             };
-            var (info, harnessNotice) = Prepare(adapter, target, selection);
+            var (info, harnessNotice) = _driver.Prepare(adapter, target, selection);
             await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
 
             var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
@@ -162,44 +173,44 @@ public sealed partial class Driver
             string? preamble = null;
             if (adapter.Wire == SessionWire.Pipe)
             {
-                var connector = Connector(sessionId, scope: null);
+                var connector = _driver.Connector(sessionId, scope: null);
                 if (connector is null) preamble = OpinionPass.NoConnector;
                 handed = SpawnServers.Hand(adapter, info, home, sessionId, connector is null ? [] : [connector]);
             }
 
             // What it may do (§5.2): the person's composition under the opinion's rules, held to its copy by the tree guard,
             // with a read of its folder outside it.
-            var handedRules = HandRules(
+            var handedRules = _driver.HandRules(
                 adapter, info, sessionId, ask.Workspace, ask.Repository, tree: copy.Path, kept: diff is null ? null : folder, opinion: true);
             var opening = OpinionPass.Opening(candidate, posture);
 
-            return await HoldAsync(
-                adapter, info, target, sessionId, transcript, copy.Path, JoinNotices(harnessNotice, opening), handedRules, handed,
+            return await _driver.HoldAsync(
+                adapter, info, target, sessionId, transcript, copy.Path, Driver.JoinNotices(harnessNotice, opening), handedRules, handed,
                 // 🔴 One turn, and no words (§5.6): nobody talks to a reviewer while it reads, on either door.
                 refusesInput: OpinionPass.TakesNoWords(opinion),
                 ct: ct,
-                preamble: JoinNotices(preamble, opening),
+                preamble: Driver.JoinNotices(preamble, opening),
                 handedServers: [],
-                said: Said(adapter, selection, sessionId),
+                said: _driver.Said(adapter, selection, sessionId),
                 minutes: bound,
                 noConnector: OpinionPass.NoConnector,
                 conclude: async (exitCode, used, turnFailed, ended) =>
                 {
                     if (used is not null)
                     {
-                        usage?.Record(new UsageEntry(
+                        _context.Usage?.Record(new UsageEntry(
                             sessionId, ask.Repository, adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
                     }
 
-                    var byPerson = _processes.WasStopRequested(sessionId);
+                    var byPerson = _context.Processes.WasStopRequested(sessionId);
                     var conclusion = byPerson
-                        ? SessionConclusion.Of("stopped", _processes.StopNote(sessionId) ?? Observation.Stopped)
+                        ? SessionConclusion.Of("stopped", _context.Processes.StopNote(sessionId) ?? Observation.Stopped)
                         : exitCode is int code
                             ? Read(opinion, code, turnFailed)
                             : SessionConclusion.Of("failed", Observation.TimedOut(bound));
-                    conclusion = AccountRefused(conclusion, adapter, selection, ended);
-                    conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed);
-                    (conclusion, var limited) = AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
+                    conclusion = _driver.AccountRefused(conclusion, adapter, selection, ended);
+                    conclusion = _driver.AccountSignedOut(conclusion, adapter, selection, turnFailed);
+                    (conclusion, var limited) = _driver.AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
 
                     await service.AdvanceAsync(
                         sessionId, conclusion.State, note: conclusion.Note, ct: ct, limit: limited, parts: conclusion.Parts).ConfigureAwait(false);
@@ -236,7 +247,7 @@ public sealed partial class Driver
         }
         finally
         {
-            output?.Close(sessionId);
+            _context.Output?.Close(sessionId);
         }
     }
 

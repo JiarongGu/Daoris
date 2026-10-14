@@ -563,7 +563,7 @@ public sealed class ReviewAndOpinionNotesTests
     [Fact]
     public void A_reviewers_conclusion_codes_each_ending_and_leaves_the_failure_as_the_programs()
     {
-        var failed = Daoris.Driver.Driver.Read("op1", 0, "no route to D:/x");
+        var failed = Daoris.Driver.DriverOpinions.Read("op1", 0, "no route to D:/x");
         Assert.Equal("failed", failed.State);
         Assert.Equal("the reviewer's turn failed as it read the work for second opinion `op1`: no route to D:/x", failed.Note);
         var failedNote = failed.AsNoted();
@@ -572,12 +572,12 @@ public sealed class ReviewAndOpinionNotesTests
         Assert.Equal((NoteBy.Program, "no route to D:/x"), (failedNote.Parts[1].By, failedNote.Parts[1].Words));
         NoteAssert.Holds(failedNote);
 
-        var read = Daoris.Driver.Driver.Read("op1", 0, null);
+        var read = Daoris.Driver.DriverOpinions.Read("op1", 0, null);
         Assert.Equal(("completed", "it read the work and ended; what it said is second opinion `op1`'s."), (read.State, read.Note));
         Assert.Equal(["opinion.reviewer-read"], NoteAssert.Codes(read.AsNoted().Parts));
         NoteAssert.Holds(read.AsNoted());
 
-        var exited = Daoris.Driver.Driver.Read("op1", 3, null);
+        var exited = Daoris.Driver.DriverOpinions.Read("op1", 3, null);
         Assert.Equal(
             ("failed", "it ended with exit 3 as it read the work; what it said, if anything, is second opinion `op1`'s."),
             (exited.State, exited.Note));

@@ -96,7 +96,7 @@ public sealed partial class Driver
         ISessionAdapter? adapter = null;
         // The agent this start runs on: the machine's, or the one a hand-over named for the quest (MIXAGENT1a-ii), passed in since
         // starts run side by side and a field would be every start's.
-        try { adapter = _adapters.Resolve(agent); } catch (DriverException) { }
+        try { adapter = Context.Adapters.Resolve(agent); } catch (DriverException) { }
 
         // The person wrote to a record that had ended, so it stays in view whatever comes of it (D137 §2.3): its archive mark
         // goes, and a mark of words it could not take before is past, since these are taken up now.
@@ -167,9 +167,9 @@ public sealed partial class Driver
                             && await desk.OpenForStepAsync(quest, shownIn, ct).ConfigureAwait(false) is { } unopened
                 ? $"— {unopened}"
                 : null;
-            var (servers, browserNotice, drivesBrowser) = await InAppBrowserServers.HandAsync(_servers, browser, ct).ConfigureAwait(false);
+            var (servers, browserNotice, drivesBrowser) = await InAppBrowserServers.HandAsync(Context.Servers, browser, ct).ConfigureAwait(false);
             browserNotice = JoinNotices(browserNotice, tabNotice);
-            hooks?.Log.Served(_catalog, sessionId, servers);
+            hooks?.Log.Served(Context.Catalog, sessionId, servers);
             var handed = SpawnServers.Hand(adapter, info, home, sessionId, servers);
             var rules = HandRules(
                 adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across,
@@ -374,7 +374,7 @@ public sealed partial class Driver
 
         // XAGENT1e (design §6.4): another agent's findings it took are answered as its turn ends, read before the record moves,
         // with each fix's commit read from its tree as it stands now; one it left unanswered is unresolved.
-        await OpinionsAnsweredAsync(resume, sessionId, workTree, ct).ConfigureAwait(false);
+        await Deliverer.OpinionsAnsweredAsync(resume, sessionId, workTree, ct).ConfigureAwait(false);
 
         // A stop made of it is its end, a pause's naming the pause (PAUSE1b, design §4.1), as a first run's is (FLAKE3: one reading).
         var stop = _processes.StopMade(sessionId);
@@ -455,7 +455,7 @@ public sealed partial class Driver
         var words = record.Waiting.Select(word => word.Id).OfType<string>().ToList();
         _marks.Mark(record.Session, words, why, DateTimeOffset.UtcNow);
         // Another agent's findings among them go to the person instead, unanswered (XAGENT1e, design §6.7).
-        FindingsToPerson(record, why);
+        Deliverer.FindingsToPerson(record, why);
         // A choice of a new session is spent with the words it named (MSG1g): words said later wait for the account again.
         _newSessions.Clear(record.Session);
         // The words' ids and the code beside the line (MSG1d), so the page says why in its own words.
@@ -485,7 +485,7 @@ public sealed partial class Driver
         if (record.Findings.Count > 0 || record.Helpers.Count > 0)
         {
             _marks.Mark(record.Session, record.Waiting.Where(word => !word.Persons).Select(word => word.Id).OfType<string>(), why, DateTimeOffset.UtcNow);
-            FindingsToPerson(record, why);
+            Deliverer.FindingsToPerson(record, why);
         }
 
         var ids = record.Waiting.Where(word => word.Persons).Select(word => word.Id).OfType<string>().ToList();

@@ -21,7 +21,7 @@ public interface IWorkflowStartWorld
 }
 
 /// <summary>A run bound to its workflow at its first start (WORKFLOW1e, D157 point 11; the workflow design §4.5).</summary>
-/// <remarks>The loop's look calls it for the starts it opened (<c>Driver.Workflow.cs</c>); STRUCT3b brought the use case here.</remarks>
+/// <remarks>The loop's look calls it for the starts it opened (<c>Driver.BindRunsAsync</c>); STRUCT3b brought the use case here.</remarks>
 public static class WorkflowRunStart
 {
     /// <summary>
