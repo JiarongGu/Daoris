@@ -1,3 +1,6 @@
+using static Daoris.Driver.TreeGit;
+using static Daoris.Driver.TreeWorktrees;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -187,7 +190,7 @@ public sealed partial class SessionTrees
         if (BeforeDeleting is { } seam) await seam(branch).ConfigureAwait(false);
         // git branch -D refuses a branch a working tree has checked out; update-ref does not ask, so this does. A list git could
         // not give is no answer to that (AUTOTIDY1).
-        if (await ReadWorktreesAsync(root, ct).ConfigureAwait(false) is not { } worktrees)
+        if (await _context.Worktrees.ReadAsync(root, ct).ConfigureAwait(false) is not { } worktrees)
         {
             return $"{ListUnread}, so whether a tree has it checked out is not known";
         }
@@ -249,10 +252,10 @@ public sealed partial class SessionTrees
                 {
                     ignored.Add(path);
                 }
-                else if (path.EndsWith('/') && !UnderBuildFolder(path))
+                else if (path.EndsWith('/') && !TreeScratch.UnderBuildFolder(path))
                 {
                     // Not a build's folder: what the session wrote in it is its own (TREEKEEP1), unless the checkout holds it as written.
-                    var mine = WrittenSince(tree, root, path, opened, out var large);
+                    var mine = TreeScratch.WrittenSince(tree, root, path, opened, out var large);
                     if (large) tooLarge.Add(path);
                     else if (mine.Count > 0) written.AddRange(mine);
                     else shared.Add(path);

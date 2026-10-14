@@ -1,3 +1,7 @@
+using static Daoris.Driver.TreeGit;
+using static Daoris.Driver.TreeLeftovers;
+using static Daoris.Driver.TreeWorktrees;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -64,7 +68,7 @@ public sealed partial class SessionTrees
         if (held.Count > 0)
         {
             // A list git could not give is never "no tree here" (AUTOTIDY1): each branch is kept, saying why.
-            var worktrees = await ReadWorktreesAsync(root, ct).ConfigureAwait(false);
+            var worktrees = await _context.Worktrees.ReadAsync(root, ct).ConfigureAwait(false);
             using var hold = TreeLock.TryReplaying(home, workspace, repository);
             var busy = hold is not null && inUse is not null
                 ? new HashSet<string>((await inUse(ct).ConfigureAwait(false)).Select(Normal), StringComparer.OrdinalIgnoreCase)
@@ -231,7 +235,7 @@ public sealed partial class SessionTrees
     {
         var full = Path.GetFullPath(tree);
         if (!Holds(full)) return null;
-        var (workspace, repository) = OwnerOf(full);
+        var (workspace, repository) = _context.OwnerOf(full);
         return repository.Length == 0 ? null : (workspace, repository, SessionPrefix + Path.GetFileName(full.TrimEnd(Path.DirectorySeparatorChar)));
     }
 
@@ -275,7 +279,7 @@ public sealed partial class SessionTrees
         }
 
         // A list git could not give is never "no tree here" (AUTOTIDY1): forced, it would take the branch from under a tree.
-        if (await ReadWorktreesAsync(root, ct).ConfigureAwait(false) is not { } worktrees)
+        if (await _context.Worktrees.ReadAsync(root, ct).ConfigureAwait(false) is not { } worktrees)
         {
             return new(false, $"`{branch}` stays: {ListUnread}, so whether a tree has it checked out is not known.");
         }
@@ -311,7 +315,7 @@ public sealed partial class SessionTrees
             {
                 var grewIn = Grown.All().LastOrDefault(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
                                                                 && string.Equals(entry.Branch, branch, StringComparison.Ordinal))?.Workspace;
-                var line = (await LineAsync(root, repository, RemoteTarget.Workspace(grewIn), ct).ConfigureAwait(false)).Branch;
+                var line = (await _context.LineAsync(root, repository, RemoteTarget.Workspace(grewIn), ct).ConfigureAwait(false)).Branch;
                 held = await HeldByContentAsync(root, judged, line, LandedHere(repository), ct).ConfigureAwait(false);
                 if (held is null)
                 {

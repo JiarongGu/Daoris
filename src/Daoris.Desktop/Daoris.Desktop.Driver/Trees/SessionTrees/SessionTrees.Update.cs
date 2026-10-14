@@ -1,3 +1,5 @@
+using static Daoris.Driver.TreeGit;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -35,7 +37,7 @@ public sealed partial class SessionTrees
 
         // 🔴 Nothing else of a folder that is no tree of this home's is read: git would walk up from it to the repository above.
         var full = Path.GetFullPath(tree);
-        var (workspace, repository) = OwnerOf(full);
+        var (workspace, repository) = _context.OwnerOf(full);
         var facts = new TreeFacts(repository);
         if (!Holds(full) || repository.Length == 0 || !await WorkingTree.IsTopLevelAsync(full, ct).ConfigureAwait(false))
         {
@@ -62,7 +64,7 @@ public sealed partial class SessionTrees
             .ConfigureAwait(false);
         if (rootCode != 0) return new(false, TreeUpdateWords.Left(facts, RebaseKind.Unknown, null, Failure(rootErr)));
         var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(commonDir.Trim()))!;
-        var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        var line = (await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         facts = facts with { Line = line, Branch = branch, NoLine = line is null };
         if (facts.First() is not null) return Refused(facts);
 

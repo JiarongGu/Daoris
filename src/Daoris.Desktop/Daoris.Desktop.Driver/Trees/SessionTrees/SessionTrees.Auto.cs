@@ -1,5 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
+using static Daoris.Driver.TreeGit;
+using static Daoris.Driver.TreeWorktrees;
 
 namespace Daoris.Driver;
 
@@ -135,7 +137,7 @@ public sealed partial class SessionTrees
         await ForgetGoneAsync(root, repository, CancellationToken.None).ConfigureAwait(false);
 
         // The line here, read with no fetch: the local branch, else origin's copy as this checkout last saw it.
-        var line = (await LineAsync(root, repository, space, ct).ConfigureAwait(false)).Branch;
+        var line = (await _context.LineAsync(root, repository, space, ct).ConfigureAwait(false)).Branch;
         var against = line is null ? null : await ComparableAsync(root, line, ct).ConfigureAwait(false);
         if (against is null) return Pass([]);
         var (code, refs, err) = await WorkingTree.GitAsync(
@@ -147,7 +149,7 @@ public sealed partial class SessionTrees
         if (candidates.Count == 0) return Pass([]);
 
         // A list of the working trees git could not give is never "no tree here": nothing in the repository is judged this look.
-        if (await ListWorktreesAsync(root, ct).ConfigureAwait(false) is null) return Pass([], TidyKept.Unread, ListUnread, TidyCause.List);
+        if (await _context.Worktrees.ListAsync(root, ct).ConfigureAwait(false) is null) return Pass([], TidyKept.Unread, ListUnread, TidyCause.List);
 
         using var hold = TreeLock.TryReplaying(home, space, repository);
         if (hold is null) return Pass([], TidyKept.Starting);
@@ -203,8 +205,8 @@ public sealed partial class SessionTrees
             return Directory.Exists(folder) ? (TidyKept.Unread, $"its folder at {folder} is here, and git lists no tree for it", TidyCause.Folder) : null;
         }
 
-        if (LinkBelowTreesRoot(tree) is not null) return (TidyKept.Linked, "its tree is reached through a link under the trees home", null);
-        if (await ListWorktreesAsync(root, ct).ConfigureAwait(false) is not { } entries) return (TidyKept.Unread, ListUnread, TidyCause.List);
+        if (_context.Worktrees.LinkBelowTreesRoot(tree) is not null) return (TidyKept.Linked, "its tree is reached through a link under the trees home", null);
+        if (await _context.Worktrees.ListAsync(root, ct).ConfigureAwait(false) is not { } entries) return (TidyKept.Unread, ListUnread, TidyCause.List);
         if (entries.FirstOrDefault(entry => SamePath(entry.Path, tree)) is { Locked: true } locked)
         {
             return (TidyKept.Refused, "its tree is locked" + (locked.LockReason is { Length: > 0 } reason ? $" ({reason})" : "")
@@ -292,7 +294,7 @@ public sealed partial class SessionTrees
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(to)!);
-                if (LinkBelowTreesRoot(Path.GetDirectoryName(to)!) is not null)
+                if (_context.Worktrees.LinkBelowTreesRoot(Path.GetDirectoryName(to)!) is not null)
                 {
                     return (false, null, TidyKept.Linked, "the folder it would be moved aside into is reached through a link under the trees home");
                 }

@@ -44,7 +44,7 @@ public sealed class TreeScratchTests : IDisposable
     [InlineData("local/", false)]
     [InlineData("binary/", false)]
     public void The_build_list_matches_by_any_path_segment(string path, bool build) =>
-        Assert.Equal(build, SessionTrees.UnderBuildFolder(path));
+        Assert.Equal(build, TreeScratch.UnderBuildFolder(path));
 
     [Fact]
     public void A_file_written_after_the_tree_opened_and_absent_from_the_checkout_is_the_trees_own()
@@ -53,7 +53,7 @@ public sealed class TreeScratchTests : IDisposable
         Write(Tree, "devtools/.tmp/requests.json", opened.AddHours(1));
         Write(Checkout, "devtools/.tmp/other.json", opened.AddDays(-30));
 
-        var found = SessionTrees.WrittenSince(Tree, Checkout, "devtools/.tmp/", opened, out var tooLarge);
+        var found = TreeScratch.WrittenSince(Tree, Checkout, "devtools/.tmp/", opened, out var tooLarge);
 
         Assert.False(tooLarge);
         Assert.Equal(["devtools/.tmp/requests.json"], found);
@@ -65,7 +65,7 @@ public sealed class TreeScratchTests : IDisposable
         var opened = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
         Write(Tree, "devtools/.tmp/old.json", opened.AddHours(-1));
 
-        Assert.Empty(SessionTrees.WrittenSince(Tree, Checkout, "devtools/.tmp/", opened, out _));
+        Assert.Empty(TreeScratch.WrittenSince(Tree, Checkout, "devtools/.tmp/", opened, out _));
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public sealed class TreeScratchTests : IDisposable
         Write(Tree, "devtools/.tmp/cache.json", opened.AddHours(1));
         Write(Checkout, "devtools/.tmp/cache.json", opened.AddHours(-5));
 
-        Assert.Empty(SessionTrees.WrittenSince(Tree, Checkout, "devtools/.tmp/", opened, out _));
+        Assert.Empty(TreeScratch.WrittenSince(Tree, Checkout, "devtools/.tmp/", opened, out _));
     }
 
     [Theory]
@@ -87,7 +87,7 @@ public sealed class TreeScratchTests : IDisposable
         Write(Tree, "devtools/.tmp/cache.json", opened.AddHours(1));
         Write(Checkout, "devtools/.tmp/cache.json", opened.AddHours(-5), checkoutBytes);
 
-        var found = SessionTrees.WrittenSince(Tree, Checkout, "devtools/.tmp/", opened, out _);
+        var found = TreeScratch.WrittenSince(Tree, Checkout, "devtools/.tmp/", opened, out _);
 
         Assert.Equal(["devtools/.tmp/cache.json"], found);
     }
@@ -98,9 +98,9 @@ public sealed class TreeScratchTests : IDisposable
         var opened = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
         var folder = Path.Combine(Tree, "wide");
         Directory.CreateDirectory(folder);
-        for (var n = 0; n <= SessionTrees.ScratchWalkLimit; n++) File.WriteAllBytes(Path.Combine(folder, $"f{n}"), []);
+        for (var n = 0; n <= TreeScratch.ScratchWalkLimit; n++) File.WriteAllBytes(Path.Combine(folder, $"f{n}"), []);
 
-        SessionTrees.WrittenSince(Tree, Checkout, "wide/", opened, out var tooLarge);
+        TreeScratch.WrittenSince(Tree, Checkout, "wide/", opened, out var tooLarge);
 
         Assert.True(tooLarge);
     }

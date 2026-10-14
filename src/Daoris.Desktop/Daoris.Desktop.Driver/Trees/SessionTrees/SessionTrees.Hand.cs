@@ -1,3 +1,5 @@
+using static Daoris.Driver.TreeGit;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -46,7 +48,7 @@ public sealed partial class SessionTrees
         }
 
         // The landing's own frame, said in the machine log as a hand-off (PLUGUI1d).
-        var said = await _plugins.HandAsync(plan.Plugin, frame, ct).ConfigureAwait(false);
+        var said = await _context.Plugins.HandAsync(plan.Plugin, frame, ct).ConfigureAwait(false);
         var handed = said is { Pushed: true, Failed: false };
         var message = handed
             ? $"handed `{entry.Branch}` to plugin `{said.Plugin}`. {Said(said, entry.Branch)}"
@@ -72,7 +74,7 @@ public sealed partial class SessionTrees
         var repository = entry.Repository;
         var branch = entry.Branch;
         var workspace = RemoteTarget.Workspace(entry.Workspace);
-        var rule = LandingRules.Choose(Config(), repository, workspace).Rule;
+        var rule = LandingRules.Choose(_context.Config(), repository, workspace).Rule;
         var plugin = named is { Length: > 0 } ? named : rule.Form == LandingForm.Branch ? rule.Plugin : null;
         (HandPlan, LandingFrame?, string?) Refused(string why, int commits = 0) =>
             (new HandPlan(repository, branch, plugin, why, entry.PullRequest, commits), null, null);
@@ -90,7 +92,7 @@ public sealed partial class SessionTrees
                 + "the landing made, and Daoris does not hand on a branch it did not make.");
         }
 
-        var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        var line = (await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         var against = line is null ? "HEAD" : await ComparableAsync(root, line, ct).ConfigureAwait(false) ?? line;
         // Oldest first, each commit's id and subject: what the landing told its plugin (D100).
         var (logCode, ahead, logErr) = await WorkingTree.GitAsync(
@@ -113,7 +115,7 @@ public sealed partial class SessionTrees
         }
 
         // D100's refusals, in its words: not installed, off, unsound, or speaking on no `work/land` point.
-        if (_plugins.Problem(plugin) is { } unready) return Refused($"{unready} Nothing was handed on.", commits.Count);
+        if (_context.Plugins.Problem(plugin) is { } unready) return Refused($"{unready} Nothing was handed on.", commits.Count);
 
         if (commits.Count == 0) return Refused($"`{branch}` holds nothing `{line ?? "HEAD"}` does not — nothing to hand on.");
 

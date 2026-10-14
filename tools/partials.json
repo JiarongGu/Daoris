@@ -39,18 +39,15 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Follow.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Hand.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Landed.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Leftovers.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.OnlyHere.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Opinion.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.PullRequests.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Review.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Scratch.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Squash.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Sync.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Tidy.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Update.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Work.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.Worktrees.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.cs"
   ]
 }

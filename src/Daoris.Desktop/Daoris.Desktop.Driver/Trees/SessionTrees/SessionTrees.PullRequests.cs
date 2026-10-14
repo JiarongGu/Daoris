@@ -1,3 +1,6 @@
+using static Daoris.Driver.TreeGit;
+using static Daoris.Driver.TreeWorktrees;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -28,14 +31,14 @@ public sealed partial class SessionTrees
         IEnumerable<(string Root, string Repository, string Workspace)> repositories, bool landedMayGo, CancellationToken ct,
         LandedBranch? again = null)
     {
-        var now = _plugins.Now;
+        var now = _context.Plugins.Now;
         var asks = new List<StateAsk>();
         foreach (var (root, repository, workspace) in repositories)
         {
             asks.AddRange(await DueAsksAsync(root, repository, workspace, now, landedMayGo, again, ct).ConfigureAwait(false));
         }
 
-        var answers = await _plugins.AskStatesAsync(asks, ct).ConfigureAwait(false);
+        var answers = await _context.Plugins.AskStatesAsync(asks, ct).ConfigureAwait(false);
         foreach (var answer in answers)
         {
             try
@@ -65,8 +68,8 @@ public sealed partial class SessionTrees
     private async Task<IReadOnlyList<StateAsk>> DueAsksAsync(
         string root, string repository, string workspace, DateTimeOffset now, bool landedMayGo, LandedBranch? again, CancellationToken ct)
     {
-        var rule = LandingRules.Choose(Config(), repository, workspace).Rule;
-        var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        var rule = LandingRules.Choose(_context.Config(), repository, workspace).Rule;
+        var line = (await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         var forms = await LineFormsAsync(root, line, ct).ConfigureAwait(false);
         IReadOnlyList<string>? unlanded = null;
 
@@ -112,7 +115,7 @@ public sealed partial class SessionTrees
         {
             asked = asked with { Final = true };
         }
-        else if (PullRequestAsking.PluginFor(entry, LandingRules.Choose(Config(), entry.Repository, workspace).Rule) is null)
+        else if (PullRequestAsking.PluginFor(entry, LandingRules.Choose(_context.Config(), entry.Repository, workspace).Rule) is null)
         {
             asked = asked with { Code = PullRequestCodes.NoPlugin, Why = PullRequestWords.NoPlugin };
         }
@@ -131,7 +134,7 @@ public sealed partial class SessionTrees
 
         var now = Recorded.Entries().LastOrDefault(each => SameLanding(each, entry)) ?? entry;
         if (now.PullRequestState is not { } kept) return asked with { Entry = now };
-        var line = (await LineAsync(root, now.Repository, workspace, ct).ConfigureAwait(false)).Branch;
+        var line = (await _context.LineAsync(root, now.Repository, workspace, ct).ConfigureAwait(false)).Branch;
         var forms = await LineFormsAsync(root, line, ct).ConfigureAwait(false);
         var tip = now.GoneAt is null ? await StandingTipAsync(root, now, ct).ConfigureAwait(false) : null;
         return asked with { Entry = now, Verdict = await VerdictAsync(root, line, forms, kept, tip, ct).ConfigureAwait(false) };
@@ -271,7 +274,7 @@ public sealed partial class SessionTrees
         Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse, CancellationToken ct)
     {
         await AskStatesAsync([(root, repository, workspace)], landedMayGo: false, ct).ConfigureAwait(false);
-        var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        var line = (await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         var carriers = await CarriersAsync(root, repository, line, ct).ConfigureAwait(false);
         if (carriers.Count == 0) return [];
 
@@ -295,7 +298,7 @@ public sealed partial class SessionTrees
         if (carried.Count == 0) return [];
         var results = new List<TidiedBranch>();
         // A list git could not give is never "no tree here" (AUTOTIDY1): each branch is kept, saying why.
-        var worktrees = await ReadWorktreesAsync(root, ct).ConfigureAwait(false);
+        var worktrees = await _context.Worktrees.ReadAsync(root, ct).ConfigureAwait(false);
         using var hold = TreeLock.TryReplaying(home, workspace, repository);
         var busy = hold is not null && inUse is not null
             ? new HashSet<string>((await inUse(ct).ConfigureAwait(false)).Select(Normal), StringComparer.OrdinalIgnoreCase)
@@ -313,7 +316,7 @@ public sealed partial class SessionTrees
             if (!tidied.Removed) continue;
             try
             {
-                Recorded.Carried(carrier.Entry, new CarriedBranch(branch, tip, _plugins.Now, CarriedBy.Tidy));
+                Recorded.Carried(carrier.Entry, new CarriedBranch(branch, tip, _context.Plugins.Now, CarriedBy.Tidy));
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {

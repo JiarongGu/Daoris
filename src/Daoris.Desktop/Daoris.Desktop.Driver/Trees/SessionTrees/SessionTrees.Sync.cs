@@ -1,4 +1,6 @@
 using System.Globalization;
+using static Daoris.Driver.TreeGit;
+using static Daoris.Driver.TreeWorktrees;
 
 namespace Daoris.Driver;
 
@@ -402,7 +404,7 @@ public sealed partial class SessionTrees
     private async Task<IReadOnlyList<Fetched>> FetchedAsync(List<Checkout> checkouts, bool fetch, CancellationToken ct) =>
         await AtMostAsync(checkouts, SyncBounds.FetchesAtOnce, async (each, token) =>
         {
-            var line = (await LineAsync(each.Root, each.Repository, RemoteTarget.Workspace(each.Space), token).ConfigureAwait(false)).Branch;
+            var line = (await _context.LineAsync(each.Root, each.Repository, RemoteTarget.Workspace(each.Space), token).ConfigureAwait(false)).Branch;
             if (!fetch) return new Fetched(line);
             var (failed, url) = await FetchAsync(each.Root, line, token).ConfigureAwait(false);
             return failed is null
@@ -636,13 +638,13 @@ public sealed partial class SessionTrees
     {
         if (!Holds(tree) || !Directory.Exists(tree)) return new(recorded, null);
         var full = Path.GetFullPath(tree);
-        var (workspace, repository) = OwnerOf(full);
+        var (workspace, repository) = _context.OwnerOf(full);
         var record = await RecordedBaseAsync(full, repository, recorded, ct).ConfigureAwait(false);
 
         var (rootCode, commonDir, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct)
             .ConfigureAwait(false);
         var line = rootCode == 0
-            ? (await LineAsync(Path.GetDirectoryName(commonDir.Trim())!, repository, workspace, ct).ConfigureAwait(false)).Branch
+            ? (await _context.LineAsync(Path.GetDirectoryName(commonDir.Trim())!, repository, workspace, ct).ConfigureAwait(false)).Branch
             : null;
 
         // By the refs' full names, never the short one (AUTOTIDY1): git reads a tag of that name first.
@@ -854,7 +856,7 @@ public sealed partial class SessionTrees
 
         // The session branches that stay as they are after the press: a replayed one shares only the line's commits.
         var staying = judged.Where(each => !each.Item.Replays).Select(each => each.Item.Branch).ToList();
-        var config = asked is null ? null : Config();
+        var config = asked is null ? null : _context.Config();
         foreach (var landed in await JudgeLandedAsync(root, repository, workspace, entries, staying, stale: null, ct).ConfigureAwait(false))
         {
             // What its pull request's answer was, and why the look did not ask where it would have (PLUGHOOK1c, design §2.5).
