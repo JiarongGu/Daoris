@@ -324,6 +324,8 @@ Decision/trigger rows stay held; diagnostic captures are not permission to chang
 - [ ] **MCPSDK2 — protocol revision** (service; decide before SDK upgrade). Choose negotiation semantics before taking 2.x. MCPDISCOVER1; end-to-end probe.
 - [ ] **SWAP2b — swap evidence** (tools). Marker distinguishes same-commit builds; retain longest holds from five loaded runs. D139/D60; failing marker proof.
 - [ ] **SWAP2d — rollback by phase** (web/driver). Busy/move/start sentences and shared code table. D139/D41; bilingual twin cases.
+- [ ] **TWINSTOP1 — the shell's stop bound, held by both sides** (modules tests). The service's shell-started drain (`InputEndStop.Drain`, 3 s) assumes the shell kills at 5 s (`HostSupervisor.StopWithin`), and nothing ties them: pin `StopWithin` in `HostSupervisorTests` beside the service's test. FIX-LOG 2026-10-15 (FLAKE2).
+- [ ] **REALHOSTPORT1 — a test host is its own before it is up** (service tests). `RealHost.StartAsync` takes a host as up once anything answers on its port, so a port taken between `FreePort` and the bind talks to another host: check the process first, or match a per-start nonce in `/api/status`. FIX-LOG 2026-10-15 (FLAKE2).
 - [ ] **FLAKE1 — diagnostic waits** (driver/modules tests). Instrument repeating failures; three loaded serial greens, named slow step. MOD8/PROC1/FIX-LOG.
 - [ ] **WEBPORT1 — independent web hosts** (web). Allocate per-run port and pass base URL. REHEARSEPORT1; simultaneous-host test.
 - [ ] **DEPLOYCOUNT1 — rehearsal-owned hosts** (tools). Count processes under this run's scratch only. Outside-process stand-in test.
