@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { api, Registration } from '../api';
+import type { api, Registration } from '../data/api';
 import { sentence } from '../locales/format';
 import { InlineConfirm } from '../work/InlineConfirm';
-import { workspaceOf } from '../workspaces';
-import { useImportFolder, useRegisterRepository, useRetireRepository, useWireRepository } from '../queries';
+import { workspaceOf } from '../data/workspaces';
+import { useImportFolder, useRegisterRepository, useRetireRepository, useWireRepository } from '../data/queries';
 import { type FolderInspection, usePickFolder, useWriteDeclaration } from '../bridge/shell';
 import { Button, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTitle, Tip } from '../ui';
 

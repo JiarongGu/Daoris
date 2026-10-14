@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Quest, Session } from '../api';
+import type { Quest, Session } from '../data/api';
 import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
 import { Button, SectionTitle } from '../ui';

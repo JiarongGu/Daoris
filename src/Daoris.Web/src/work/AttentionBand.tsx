@@ -4,7 +4,7 @@ import { runsForLine } from '../agents/agents';
 import { useHarnessRun, WithHarnessRuns } from '../agents/harnessRuns';
 import {
   useAcceptQuest, useAnswerGoAhead, useAsks, usePublishAsk, useQuests, useRegistry, useSessions,
-} from '../queries';
+} from '../data/queries';
 import {
   retryNotice, useAccounts, useConsidered, useHarnessAction, useHarnesses, useNudge, useOpinionWaits, useRefreshHarnesses,
   useRetryQuest, useRuleProposal, useRules, useSessionGroups, useTrustFolder, useUntrusted, useWaits,

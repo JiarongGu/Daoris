@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { store, stored } from './lib/stored';
+import { store, stored } from '../lib/stored';
 
 // The workspace scope (WSP5; workspace design §4): every cross-repository answer is scoped to ONE
 // workspace per query, and the platform never silently mixes circles. The scope is global chrome

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getBridge, useShenora, useShenoraEvent } from '@shenora/react';
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 import type { UpdateMode, UpdateState } from '../update/UpdateBanner';
 
 // An install's update (UPDATE1, D139): where it stands, and the person's word on it, over `DAORIS.UPDATE`. The terminal's

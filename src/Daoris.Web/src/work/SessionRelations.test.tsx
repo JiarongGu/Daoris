@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../locales/i18n';
-import type { Quest, Session } from '../api';
+import type { Quest, Session } from '../data/api';
 import { SessionRelations } from './SessionRelations';
 
 // SESS1: who a session worked with, beyond its chain — each relation a door, as the strip's are.

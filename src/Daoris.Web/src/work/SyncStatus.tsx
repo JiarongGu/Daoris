@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { SyncStanding } from '../api';
+import type { SyncStanding } from '../data/api';
 import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
 import { Icon, Menu, Tip } from '../ui';

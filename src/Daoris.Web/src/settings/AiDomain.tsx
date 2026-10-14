@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import { useRegistry, useStatus } from '../queries';
+import { useRegistry, useStatus } from '../data/queries';
 import { useDriver, useHarnesses, useSetHelper, useSetIntake, useStarts } from '../bridge/shell';
 import { doorLabel } from '../agents/tools';
 import { failure, type Notify } from '../ui';
-import { workspacesOf } from '../workspaces';
+import { workspacesOf } from '../data/workspaces';
 import { AiJobs, type SearchTier } from './AiJobs';
 import { namer } from './namer';
 

@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { getBridge, useShenora } from '@shenora/react';
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 import { TIDIED_EVENTS } from '../projects/WorkspaceTidied';
 import type { LogFilters, LogReading, LogSince } from '../settings/Logs';
 

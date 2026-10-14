@@ -1,4 +1,4 @@
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 import { answeredPark, SESSION_ACTIVE, type ShownState, shownState } from '../ui';
 import { sessionOrigin } from './identity';
 

@@ -4,7 +4,7 @@ import {
 } from '../bridge/git';
 import { useSessionOpenings } from '../bridge/sessions';
 import { sentence } from '../locales/format';
-import { useQuests, useSessions } from '../queries';
+import { useQuests, useSessions } from '../data/queries';
 import { questName, sessionTitle } from '../work/identity';
 import { BranchPage, type BranchRead } from './BranchPage';
 import { BranchesTab, type GitRead, HistoryTab, type HistoryRead } from './RepositoryGit';

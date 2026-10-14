@@ -1,5 +1,5 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
-import type { Quest, Session } from '../api';
+import type { Quest, Session } from '../data/api';
 import i18n from '../locales/i18n';
 import { buildChain } from '../map/chain';
 import { InTheme } from '../plugins/storyIcons';

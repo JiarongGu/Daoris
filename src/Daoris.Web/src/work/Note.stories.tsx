@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { NotePart } from '../api';
+import type { NotePart } from '../data/api';
 import { chinese } from '../storyLanguage';
 import { Note } from './Note';
 

@@ -1,7 +1,7 @@
 import { type InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
-import type { Session } from '../api';
-import { keys } from '../queries';
+import type { Session } from '../data/api';
+import { keys } from '../data/queries';
 import { searchable } from '../lib/searchable';
 import type { SessionEvent } from '../work/conversation';
 import type { SessionEntry } from '../work/entries';

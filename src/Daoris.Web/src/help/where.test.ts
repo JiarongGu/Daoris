@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 import { VIEWS } from '../menus/commands';
 import type { KnowledgeMode } from '../knowledge/modes';
 import { en } from '../locales';

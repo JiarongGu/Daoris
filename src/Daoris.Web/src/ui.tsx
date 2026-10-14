@@ -20,10 +20,10 @@ import {
   Undo2, Workflow, Wrench, WrapText, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Quest, SessionState } from './api';
+import type { Quest, SessionState } from './data/api';
 import { cn } from './lib/cn';
 import { isComposing } from './lib/composing';
-import { TOAST_LIMIT, withNotice } from './signals';
+import { TOAST_LIMIT, withNotice } from './data/signals';
 
 // The platform's component language (D41), rebuilt on headless primitives (D42): Radix supplies the
 // behaviour — focus traps, dismissal, ARIA, typeahead — and every pixel stays ours, which is how the

@@ -1,6 +1,6 @@
 import { type ComponentProps, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { GoAhead, Quest, Session } from '../api';
+import type { GoAhead, Quest, Session } from '../data/api';
 import { ChannelPanel } from '../asks/ChannelSection';
 import type { GoAheadAnswer } from '../asks/GoAheadList';
 import { answeredPark, Button, EmptyState } from '../ui';

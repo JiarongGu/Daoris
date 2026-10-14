@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../locales/i18n';
-import type { Quest, Session } from '../api';
+import type { Quest, Session } from '../data/api';
 import { StreamTile } from './StreamTile';
 
 // A molecule, so every state is reached by PASSING it (components plan §2) — including the one

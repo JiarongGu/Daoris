@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { Quest } from '../api';
+import type { Quest } from '../data/api';
 import { Button, Chip, Pill, QUEST_TONE } from '../ui';
 import { questName } from '../work/identity';
 import type { MapSelection } from './MapCanvas';

@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../locales/i18n';
 import { OverviewView } from './OverviewView';
-import { WorkspaceScopeProvider } from '../scope';
+import { WorkspaceScopeProvider } from '../data/scope';
 import { columnsFollow } from '../test/mainSplit';
 import type { Notify } from '../ui';
 

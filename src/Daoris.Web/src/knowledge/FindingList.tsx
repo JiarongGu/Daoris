@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { Convergence } from '../api';
+import type { Convergence } from '../data/api';
 import { Button, EmptyState, Inline, SkeletonRows } from '../ui';
 import { cn } from '../lib/cn';
 import { ListRowDoor } from '../work/ListPane';

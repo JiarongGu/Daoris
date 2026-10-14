@@ -21,7 +21,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import i18n from '../locales/i18n';
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 import { code } from '../test/code';
 import { AskDaoris } from './AskDaoris';
 import type { HelpWhere } from './where';

@@ -25,7 +25,7 @@ vi.mock('@shenora/react', () => ({
 import { OverviewView } from '../overview/OverviewView';
 import { chooseRow, QuestsView } from '../test/questsView';
 import { ShellSignals } from '../ShellSignals';
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 import { DRIVER_STATE, respond, show } from '../test/shellHarness';
 
 describe('a driven quest in the shell', () => {

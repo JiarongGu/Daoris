@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Quest, Session } from '../api';
-import { useQuests, useSessions } from '../queries';
+import type { Quest, Session } from '../data/api';
+import { useQuests, useSessions } from '../data/queries';
 import { useChatTurns, useDriver, useHarnesses, useOpenWindow, useSessionOpenings } from '../bridge/shell';
 import { frameShortcut } from '../menus/shortcuts';
 import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';

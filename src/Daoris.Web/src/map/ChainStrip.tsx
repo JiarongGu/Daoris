@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { Quest, Session } from '../api';
+import type { Quest, Session } from '../data/api';
 import { elapsed, sessionTool } from '../locales/format';
 import type { AccountNamer } from '../agents/tools';
 import { Pill, QUEST_TONE, SectionTitle, SESSION_TONE } from '../ui';

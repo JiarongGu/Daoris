@@ -5,7 +5,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../locales/i18n';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
-import type { Entry } from '../api';
+import type { Entry } from '../data/api';
 import { EntryMainNotice, EntryPage } from './EntryPage';
 
 // An entry's page (FRAME1f, D118 §2): what the reader drawer showed, in Search's main area. Moved from the reader's

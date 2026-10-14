@@ -7,8 +7,8 @@ import { RING_MAX } from './layers';
 import { LinesMenu, lineCounts, useMapWhen, useShownLines } from './LinesMenu';
 import { MapDetail } from './MapDetail';
 import { buildTopology, keepQuests, type LineKind, showLines } from './topology';
-import { useCodeMap, useConvergence, useQuests, useRegistry, useSessions } from '../queries';
-import { useScope } from '../scope';
+import { useCodeMap, useConvergence, useQuests, useRegistry, useSessions } from '../data/queries';
+import { useScope } from '../data/scope';
 import { buttonNamed, returnFocus } from '../lib/returnFocus';
 import {
   Button, Card, EmptyState, Icon, type Notify, PageHeader, SkeletonRows, useErrorNotify,

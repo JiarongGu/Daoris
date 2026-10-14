@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { SetUpRef } from '../api';
+import type { SetUpRef } from '../data/api';
 import { cn } from '../lib/cn';
 import { Icon, Menu, Tip } from '../ui';
 

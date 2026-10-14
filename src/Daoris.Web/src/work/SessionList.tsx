@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Quest, Session } from '../api';
+import type { Quest, Session } from '../data/api';
 import { Button, EmptyState } from '../ui';
 import type { SessionActId } from './acts';
 import {

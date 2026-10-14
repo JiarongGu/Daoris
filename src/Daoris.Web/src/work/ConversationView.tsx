@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { compact, elapsed, moment, span } from '../locales/format';
 import { cn } from '../lib/cn';
 import { Button, Dot, Icon, Inline, Tip } from '../ui';
-import type { NotePart } from '../api';
+import type { NotePart } from '../data/api';
 import { CHANNEL_CLAIM_OPENING } from './channel';
 import { type Ask, type Block, CONVERSATION_CODES, type PlanEntry, runCount, segments, type Turn } from './conversation';
 import type { AccountNames } from './accountNames';

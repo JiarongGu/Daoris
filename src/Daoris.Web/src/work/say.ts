@@ -1,4 +1,4 @@
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 import { type AccountsAnswer, agentOf } from '../settings/accounts';
 import { toolOf, type ToolDoor } from '../agents/tools';
 import { answeredPark, SESSION_ACTIVE } from '../ui';

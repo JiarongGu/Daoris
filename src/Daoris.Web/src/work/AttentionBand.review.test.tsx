@@ -23,7 +23,7 @@ vi.mock('@shenora/react', async () => {
 });
 
 import i18n from '../locales/i18n';
-import { WorkspaceScopeProvider } from '../scope';
+import { WorkspaceScopeProvider } from '../data/scope';
 import { AttentionBand } from './AttentionBand';
 import { STEP_SHOWN } from './reviewFixtures';
 

@@ -1,4 +1,4 @@
-import type { NotePart } from '../api';
+import type { NotePart } from '../data/api';
 import { figure, list, moment } from '../locales/format';
 import { windowName } from '../settings/accounts';
 import type { AccountNames } from './accountNames';

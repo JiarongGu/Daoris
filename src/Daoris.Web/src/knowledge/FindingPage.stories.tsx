@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { Convergence } from '../api';
+import type { Convergence } from '../data/api';
 import { BODIES, CJK_FINDING, CONVERGENT, IDENTICAL, RESTATEMENT } from './fixtures';
 import { FindingMainNotice, FindingPage } from './FindingPage';
 import type { EntryReading } from './records';

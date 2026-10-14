@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import type { Ask } from '../api';
+import type { Ask } from '../data/api';
 import { ago } from '../locales/format';
 
 // The facts line under an ask's title (HEAD2d, D162 §4, the entry-and-heads design §2): where it goes, its age, and the one

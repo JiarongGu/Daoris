@@ -2,7 +2,7 @@ import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { workflowHolds } from '../workflow/gate';
 import { WorkflowHold } from '../workflow/WorkflowHold';
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 import { sentence } from '../locales/format';
 import { cn } from '../lib/cn';
 import { ExternalLink } from '../links';

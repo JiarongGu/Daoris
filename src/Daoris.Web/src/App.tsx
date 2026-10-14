@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 import {
   useAsks, useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions,
   useStatus, useSyncStanding, useWorkspaceHoldings, useWorkspaces,
-} from './queries';
-import { useScope } from './scope';
+} from './data/queries';
+import { useScope } from './data/scope';
 import { AskDaoris } from './help/AskDaoris';
 import type { AskOpening } from './help/AskConversation';
 import { QuickAsk } from './help/QuickAsk';

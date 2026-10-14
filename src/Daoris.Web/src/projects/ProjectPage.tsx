@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Registration, Repository } from '../api';
+import type { Registration, Repository } from '../data/api';
 import { ago, figure } from '../locales/format';
 import type { RepositoryLine } from '../settings/Lines';
 import { Button, Chip, Icon, Inline, Prose, Tip, WhyGlyph } from '../ui';

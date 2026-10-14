@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { Ask } from '../api';
+import type { Ask } from '../data/api';
 import { ago } from '../locales/format';
 import { Button, Inline } from '../ui';
 

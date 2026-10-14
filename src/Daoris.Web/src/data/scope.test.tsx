@@ -3,7 +3,7 @@ import { render, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { WorkspaceScopeProvider } from './scope';
-import { QuestsView } from './test/questsView';
+import { QuestsView } from '../test/questsView';
 
 // The claim WSP5 makes (workspace design §4): every cross-repository answer is scoped to ONE workspace
 // per query. Held at the query layer, so a view that never mentions workspaces still asks for one —

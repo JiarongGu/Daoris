@@ -1,4 +1,4 @@
-import type { Ask, Session } from '../api';
+import type { Ask, Session } from '../data/api';
 
 // Asks in each state a real machine reaches, for the stories and the molecule tests alike — one set, so
 // what a reviewer designs against is what the tests assert against.

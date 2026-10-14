@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { Quest, Session } from '../api';
+import type { Quest, Session } from '../data/api';
 import { SessionTimeline, TimelineEntry } from './SessionTimeline';
 
 // Each kind of observed event, then the assembled layer. What is NOT here is the point: there is no

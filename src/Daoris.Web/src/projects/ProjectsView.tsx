@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { canBeAsked, type Registration } from '../api';
+import { canBeAsked, type Registration } from '../data/api';
 import { sentence } from '../locales/format';
 import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
 import { projectsItem, workspaceItem } from '../opener';
@@ -11,8 +11,8 @@ import { RepositoryBranch, RepositoryBranches, RepositoryHistory } from './Repos
 import type { Driving, RepositorySetupProps } from './RepositorySetup';
 import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './tabs';
 import { WorkspaceView } from './WorkspaceView';
-import { useRegistry, useRepositories } from '../queries';
-import { useScope } from '../scope';
+import { useRegistry, useRepositories } from '../data/queries';
+import { useScope } from '../data/scope';
 import { type CommitEdit, commitToast } from '../settings/Commits';
 import { type HelperEdit, helperToast } from '../settings/Helpers';
 import type { LandingRule } from '../settings/Landings';
@@ -27,7 +27,7 @@ import { doorOf } from '../agents/tools';
 import { failure, type Notify, useErrorNotify } from '../ui';
 import { ListMore } from '../work/ListPane';
 import type { ViewLayout } from '../work/ViewFrame';
-import { workspaceOf, workspacesOf } from '../workspaces';
+import { workspaceOf, workspacesOf } from '../data/workspaces';
 import { buttonNamed, returnFocus } from '../lib/returnFocus';
 
 const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] : []);

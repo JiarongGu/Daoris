@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { Quest, Session } from '../api';
+import type { Quest, Session } from '../data/api';
 import { SessionRelations } from './SessionRelations';
 
 // Who a session worked with (SESS1): asked for by another session, carried on after an answer, and

@@ -1,4 +1,4 @@
-import type { Quest, Session } from '../api';
+import type { Quest, Session } from '../data/api';
 import { answeredPark, type IconName, type MenuAct, SESSION_ACTIVE } from '../ui';
 import type { SessionGrouping } from './groups';
 import { isHelp, isIntake, sessionOrigin } from './identity';

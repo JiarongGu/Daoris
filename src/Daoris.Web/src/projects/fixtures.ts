@@ -1,4 +1,4 @@
-import type { Registration, Repository } from '../api';
+import type { Registration, Repository } from '../data/api';
 import type { RepositoryLine } from '../settings/Lines';
 import type { GraphCommitRow } from './CommitGraph';
 import type { RepositorySetupProps } from './RepositorySetup';

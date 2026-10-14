@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import { useQuests, useRegistry, useRepositories } from '../queries';
+import { useQuests, useRegistry, useRepositories } from '../data/queries';
 import { ago, compact, figure, sittingDays } from '../locales/format';
 import { ranked, widest } from './overview';
 import { useConsidered } from '../bridge/shell';
-import { sittingBecause, sittingSentence } from '../signals';
+import { sittingBecause, sittingSentence } from '../data/signals';
 import {
   Card, CardHeader, Button, EmptyState, Icon, Inline, type Notify, PageHeader, Pill, QUEST_TONE,
   SkeletonRows, Tile, Tip, useErrorNotify,

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { type ReactNode, useState } from 'react';
-import type { SessionState } from '../api';
+import type { SessionState } from '../data/api';
 import { Button, Icon, SESSION_ACTIVE, Tip } from '../ui';
 import { cn } from '../lib/cn';
 import { Splitter } from './frame';

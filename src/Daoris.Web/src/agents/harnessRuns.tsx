@@ -5,7 +5,7 @@ import { sentence } from '../locales/format';
 import { type DefaultStanding, type HarnessRoster, useHarnessAction, useHarnessEnded } from '../bridge/shell';
 import { byTool, type AccountPlace } from './tools';
 import { accountName } from './agents';
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 import type { Notify } from '../ui';
 import type { Answered } from '../work/InlineConfirm';
 

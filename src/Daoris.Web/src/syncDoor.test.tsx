@@ -28,7 +28,7 @@ vi.mock('@shenora/react', async () => {
 import './locales/i18n';
 import { App } from './App';
 import { AT_START } from './help/setupGuide';
-import { WorkspaceScopeProvider } from './scope';
+import { WorkspaceScopeProvider } from './data/scope';
 
 function respond(url: string): Response {
   if (url.startsWith('/api/registry')) {

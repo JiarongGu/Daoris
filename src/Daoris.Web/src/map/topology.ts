@@ -12,7 +12,7 @@
  * the edges are what happened. A map that drew both would draw the intent and the fact as the same
  * line.
  */
-import type { Convergence, Quest, QuestStep, Registration, Session } from '../api';
+import type { Convergence, Quest, QuestStep, Registration, Session } from '../data/api';
 import { answeredPark } from '../ui';
 
 export type MapNode = {

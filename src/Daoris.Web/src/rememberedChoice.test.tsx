@@ -29,7 +29,7 @@ vi.mock('@shenora/react', async () => {
 import './locales/i18n';
 import { App } from './App';
 import { AT_START } from './help/setupGuide';
-import { WorkspaceScopeProvider } from './scope';
+import { WorkspaceScopeProvider } from './data/scope';
 
 const OPEN = {
   id: 'abc123', from: 'game', to: 'engine', title: 'Expose a streaming budget', body: 'World streaming needs a cap.',

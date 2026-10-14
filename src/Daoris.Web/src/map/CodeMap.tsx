@@ -1,6 +1,6 @@
 import { type KeyboardEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { CodeDependency, CodeModule, Provenance } from '../api';
+import type { CodeDependency, CodeModule, Provenance } from '../data/api';
 import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';

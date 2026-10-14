@@ -3,7 +3,7 @@ import { render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { ReactElement } from 'react';
-import type { Ask } from '../api';
+import type { Ask } from '../data/api';
 import i18n from '../locales/i18n';
 import { askLines } from '../work/entries';
 import { EVIDENCE_ENTRIES } from '../work/entries.fixtures';

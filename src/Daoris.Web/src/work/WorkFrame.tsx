@@ -4,7 +4,7 @@ import { SessionConsole } from './SessionConsole';
 import { sentence } from '../locales/format';
 import { buildChain } from '../map/chain';
 import type { Compose, OpenGroup } from '../opener';
-import { useAnswerSession, useAsks, usePersonDone, useQuests, useRegistry, useSessions } from '../queries';
+import { useAnswerSession, useAsks, usePersonDone, useQuests, useRegistry, useSessions } from '../data/queries';
 import {
   type TurnStop, useCancelTurn, useEditQueued, useEndChat, useHarnesses, useResolveSession, useSendMessage,
   NO_TURNS, useChatTurns, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionStreams, useSessionWhere,
@@ -20,7 +20,7 @@ import { OpinionGate } from './OpinionGate';
 import { reviewHolds, reviewState } from './review';
 import { ReviewGate } from './ReviewGate';
 import { useReviewActs } from './reviewActs';
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 import type { HeadLink, HeadOpinion, HeadReview } from './SessionHead';
 import { sayDiscard } from '../settings/Sweep';
 import { doorOf, toolOf } from '../agents/tools';

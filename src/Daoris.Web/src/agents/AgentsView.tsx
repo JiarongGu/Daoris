@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from '../locales/format';
 import { useHarnessRun, WithHarnessRuns } from './harnessRuns';
-import { useRegistry } from '../queries';
-import { useScope } from '../scope';
+import { useRegistry } from '../data/queries';
+import { useScope } from '../data/scope';
 import { SessionConsole } from '../work/SessionConsole';
 import {
   useAccountUse, useAccounts, useHarnessAction, useHarnesses, useRefreshHarnesses, useRuleAction, useRuleProposal, useRules,
@@ -13,7 +13,7 @@ import { SignIn } from './SignIn';
 import { byTool, type Tool } from './tools';
 import { failure, type Notify, useErrorNotify } from '../ui';
 import type { ViewLayout } from '../work/ViewFrame';
-import { workspacesOf } from '../workspaces';
+import { workspacesOf } from '../data/workspaces';
 import { agentOf } from '../settings/accounts';
 import type { ScopeActs } from '../settings/AccountUse';
 import { proposalChange } from '../settings/proposals';

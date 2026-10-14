@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 import { type SessionHit } from '../bridge/shell';
 import { SearchResults } from './SessionRail';
 

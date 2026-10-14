@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Ask, DeclarationMatch, Session } from '../api';
+import type { Ask, DeclarationMatch, Session } from '../data/api';
 import { ago, sessionTool, size, stamp } from '../locales/format';
 import { ExternalLink } from '../links';
-import type { Consideration } from '../signals';
+import type { Consideration } from '../data/signals';
 import type { AccountNamer } from '../agents/tools';
 import { Button, Icon, type IconName, Inline, Menu, Pill, Prose, SelectField, SESSION_TONE } from '../ui';
 import { ClearAsk } from '../work/ClearAsk';

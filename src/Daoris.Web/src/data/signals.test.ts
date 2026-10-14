@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import i18n from './locales/i18n';
+import i18n from '../locales/i18n';
 import {
   type Consideration, TOAST_LIMIT, capped, newsFrom, sittingBecause, sittingSentence, waitsForAccount, withNotice,
 } from './signals';

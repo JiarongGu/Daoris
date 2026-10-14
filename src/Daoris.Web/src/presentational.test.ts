@@ -14,7 +14,8 @@ import { describe, expect, it } from 'vitest';
 
 /** Modules that reach the service or the shell — every other presentational file must not. */
 const FORBIDDEN: { what: string; pattern: RegExp }[] = [
-  { what: "the query layer ('./queries')", pattern: /\bfrom\s+'(?:\.\.?\/)+queries'/ },
+  // `data/queries` since STRUCT5c (D166) moved it from the sources' top.
+  { what: "the query layer ('./queries')", pattern: /\bfrom\s+'(?:\.\.?\/)+(?:data\/)?queries'/ },
   { what: "the shell bridge ('./shell')", pattern: /\bfrom\s+'(?:\.\.?\/)+shell'/ },
   // Its domains, which `./shell` only re-exports since MOD3: without this row the rule is side-stepped
   // by importing the file the barrel names.
@@ -167,6 +168,8 @@ const presentational = Object.entries(sources)
 describe('the presentational boundary', () => {
   it('catches an import it is meant to catch — the check itself, sabotaged', () => {
     expect(offenders([['./work/SessionRow.tsx', "import { useSessions } from '../queries';\n"]]))
+      .toEqual(["./work/SessionRow.tsx imports the query layer ('./queries')"]);
+    expect(offenders([['./work/SessionRow.tsx', "import { useSessions } from '../data/queries';\n"]]))
       .toEqual(["./work/SessionRow.tsx imports the query layer ('./queries')"]);
     expect(offenders([['./work/SessionRow.tsx', "import { useDriver } from '../shell';\n"]]))
       .toHaveLength(1);

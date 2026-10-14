@@ -1,4 +1,4 @@
-import { type Convergence, type Entry, notFound } from '../api';
+import { type Convergence, type Entry, notFound } from '../data/api';
 import { sentence } from '../locales/format';
 
 // What Search's and Convergence's lists remember and read (FRAME1f, D118 §2, §3f): their filters as kept, a finding's

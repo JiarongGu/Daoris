@@ -1,13 +1,13 @@
 import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, type Quest, type Session } from '../api';
+import { api, type Quest, type Session } from '../data/api';
 import { isImage } from '../compose/attachments';
 import { ago, sessionTool, size, stamp } from '../locales/format';
 import { ExternalLink } from '../links';
 import type { ChainStep } from '../map/chain';
 import { ChainStrip } from '../map/ChainStrip';
 import type { AccountNamer } from '../agents/tools';
-import { type Consideration, sittingSentence, type TrustHold, waitsForAccount } from '../signals';
+import { type Consideration, sittingSentence, type TrustHold, waitsForAccount } from '../data/signals';
 import { Button, Icon, type IconName, Inline, Menu, Pill, Prose, QUEST_TONE, SectionTitle, SESSION_TONE, shownKey } from '../ui';
 import { type SessionGrouping, shownOf } from '../work/groups';
 import { liveParts } from '../work/noteLines';

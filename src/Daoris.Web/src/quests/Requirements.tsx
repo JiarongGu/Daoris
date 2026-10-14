@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { QuestAnswer, QuestRequirement, QuestStep } from '../api';
+import type { QuestAnswer, QuestRequirement, QuestStep } from '../data/api';
 import { ago } from '../locales/format';
 import { Button, Pill, SectionTitle } from '../ui';
 

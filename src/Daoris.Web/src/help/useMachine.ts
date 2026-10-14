@@ -1,4 +1,4 @@
-import { useRegistry, useSessions } from '../queries';
+import { useRegistry, useSessions } from '../data/queries';
 import { useDriver, useHarnesses, useLines } from '../bridge/shell';
 import { type Machine, readMachine } from './machine';
 

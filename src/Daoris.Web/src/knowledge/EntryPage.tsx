@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { Entry } from '../api';
+import type { Entry } from '../data/api';
 import { Inline, Pill, Prose } from '../ui';
 import type { ContextOffer } from '../menus/press';
 import { type MainNotice, PageHead, ViewMain } from '../work/ViewMain';

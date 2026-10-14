@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { Convergence } from '../api';
+import type { Convergence } from '../data/api';
 import { Inline, Prose, SkeletonRows } from '../ui';
 import { contextOffer } from '../menus/press';
 import { type MainNotice, PageHead, ViewMain } from '../work/ViewMain';

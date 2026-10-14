@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuests, useSessions } from '../queries';
+import { useQuests, useSessions } from '../data/queries';
 import { namer } from '../settings/namer';
 import { useChatTurns, useHarnesses, useSessionOpenings, useSessionStreams } from '../bridge/shell';
 import { frameShortcut } from '../menus/shortcuts';

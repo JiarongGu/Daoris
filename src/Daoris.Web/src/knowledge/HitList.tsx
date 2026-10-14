@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Hit } from '../api';
+import type { Hit } from '../data/api';
 import { mark } from './highlight';
 import { Button, CheckField, EmptyState, Icon, Inline, PathText, SkeletonRows } from '../ui';
 import { cn } from '../lib/cn';

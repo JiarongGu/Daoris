@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { type Consideration, sittingBecause, sittingSentence } from '../signals';
+import { type Consideration, sittingBecause, sittingSentence } from '../data/signals';
 import { Inline, Pill, QUEST_TONE, SESSION_TONE, type ShownState } from '../ui';
 import type { WorkPlanSession } from '../work/pausing';
 import { whyItSits, type WorkItem } from './workTree';

@@ -14,7 +14,7 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => undefined,
 }));
 
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 import {
   gitRefusal, useCheckoutBranch, useGitBlame, useGitBranches, useGitCommit, useGitCompare, useGitGraph, useGitHistory,
   type GitAnswer, type GitCommitDetail,

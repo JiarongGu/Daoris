@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { GoAhead } from '../api';
+import type { GoAhead } from '../data/api';
 import { ago } from '../locales/format';
 import { Button, Pill } from '../ui';
 import { type Answered, Refused } from '../work/InlineConfirm';

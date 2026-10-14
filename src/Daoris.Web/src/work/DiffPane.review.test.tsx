@@ -17,7 +17,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import '../locales/i18n';
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 import { DiffPane } from './DiffPane';
 
 const FILES = [{ path: 'src/report/compare.ts', status: 'modified', added: 4, removed: 1, patch: '@@ -1 +1,2 @@\n-a\n+b' }];

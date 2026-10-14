@@ -20,7 +20,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import '../locales/i18n';
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 import { QuestsView, questMain } from '../test/questsView';
 
 const QUESTS = [

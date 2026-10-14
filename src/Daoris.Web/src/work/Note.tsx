@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { NotePart } from '../api';
+import type { NotePart } from '../data/api';
 import { cn } from '../lib/cn';
 import { Inline } from '../ui';
 import type { AccountNames } from './accountNames';

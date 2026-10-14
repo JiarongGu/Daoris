@@ -1,4 +1,4 @@
-import type { Consideration } from '../signals';
+import type { Consideration } from '../data/signals';
 import type { Line, PausedByFact, WorkPlan, WorkPlanQuest, WorkPlanSession } from '../work/pausing';
 
 // An ask's work as its page lists it (PAUSE1h, D132 §7.1, `docs/2026-10-02-pause-and-clean-up-design.md` §1): each quest of

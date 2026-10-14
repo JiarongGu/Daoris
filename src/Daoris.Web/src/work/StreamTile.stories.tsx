@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { Quest, Session } from '../api';
+import type { Quest, Session } from '../data/api';
 import { MonoWell } from '../ui';
 import { StreamTile } from './StreamTile';
 

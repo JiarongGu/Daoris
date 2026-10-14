@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { canBeAsked, type Quest } from '../api';
+import { canBeAsked, type Quest } from '../data/api';
 import { linksOf, toUpload } from '../compose/attachments';
 import { useAsksPart } from '../asks/AsksPart';
 import { sentence } from '../locales/format';
@@ -9,7 +9,7 @@ import { askItem, type OpenGroup, questsItem } from '../opener';
 import {
   useAcceptQuest, useDeleteQuest, useDismissConflict, usePersonDone, usePublishQuest, useQuests, useRegistry, useRespondQuest,
   useSessions,
-} from '../queries';
+} from '../data/queries';
 import { EMPTY_QUEST, QuestComposer, type QuestDraft } from './QuestComposer';
 import { QuestList } from './QuestList';
 import {
@@ -21,7 +21,7 @@ import {
   retryNotice, useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useRetryQuest, useSessionGroups, useSetHold, useTrace,
   useTrustFolder, useUntrusted, useWorkflowRun, useWorkPlan,
 } from '../bridge/shell';
-import { sittingBecause } from '../signals';
+import { sittingBecause } from '../data/signals';
 import { failure, type Notify, useErrorNotify } from '../ui';
 import type { HistoryDoor } from '../work/history';
 import { useHistoryActs } from '../work/historyActs';

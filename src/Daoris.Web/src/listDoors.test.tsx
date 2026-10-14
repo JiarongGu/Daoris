@@ -28,7 +28,7 @@ vi.mock('@shenora/react', async () => {
 import './locales/i18n';
 import { App } from './App';
 import { AT_START } from './help/setupGuide';
-import { WorkspaceScopeProvider } from './scope';
+import { WorkspaceScopeProvider } from './data/scope';
 
 const CHAT = {
   id: 's1a2b3c4', quest: null, repository: 'engine', adapter: 'claude-code', kind: 'chat', state: 'completed',

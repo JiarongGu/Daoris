@@ -16,7 +16,7 @@ vi.mock('@shenora/react', () => ({
 
 import { sentence } from '../locales/format';
 import i18n from '../locales/i18n';
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 import {
   useArchiveSessions, useDeleteSession, useGoOnNew, useOpenSessionFolder, useSessionGroups, type SessionGrouping,
 } from './sessions';

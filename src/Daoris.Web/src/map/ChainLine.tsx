@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Quest } from '../api';
+import type { Quest } from '../data/api';
 import { Button } from '../ui';
 import { cn } from '../lib/cn';
 import { questName } from '../work/identity';

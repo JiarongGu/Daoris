@@ -1,6 +1,6 @@
 import { type InfiniteData, type QueryClient, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 import { type HelpListing, joinPages, listingPage } from '../help/history';
 import type { HelpProposal } from '../help/ProposalCard';
 import type { HelpPlace } from '../help/places';

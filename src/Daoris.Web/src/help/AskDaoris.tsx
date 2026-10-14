@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { useSessions } from '../queries';
+import { useSessions } from '../data/queries';
 import { type AskOpening, useAskConversation } from './AskConversation';
 import { AskPanel } from './AskPanel';
 import { setupProgress, setupSteps } from './setup';

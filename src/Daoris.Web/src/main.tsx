@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { App } from './App';
 import { SecondaryWindowRoot } from './SecondaryWindowRoot';
-import { WorkspaceScopeProvider } from './scope';
+import { WorkspaceScopeProvider } from './data/scope';
 import { secondaryWindow } from './work/window';
 import { applyTheme } from './theme';
 import { installPageErrors } from './bridge/shell';

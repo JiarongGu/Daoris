@@ -2,7 +2,7 @@ import { type ReactElement, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { SessionState } from './api';
+import type { SessionState } from './data/api';
 import i18n from './locales/i18n';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {

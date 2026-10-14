@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { Quest, Session } from '../api';
+import type { Quest, Session } from '../data/api';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../storyLanguage';
 import { offeredActs } from './acts';

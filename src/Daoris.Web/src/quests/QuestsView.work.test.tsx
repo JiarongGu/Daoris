@@ -16,7 +16,7 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => undefined,
 }));
 
-import { keys } from '../queries';
+import { keys } from '../data/queries';
 import { chooseRow, QuestsView } from '../test/questsView';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
 import { ABANDON_ANSWER, PAUSABLE_ASK, PAUSABLE_QUEST } from '../work/pausingFixtures';

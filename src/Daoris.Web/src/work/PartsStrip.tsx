@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 import { ago } from '../locales/format';
 import { cn } from '../lib/cn';
 import { Dot, SectionTitle, SESSION_DOT, shownKey } from '../ui';

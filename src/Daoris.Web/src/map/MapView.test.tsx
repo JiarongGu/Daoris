@@ -6,7 +6,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { MapView } from './MapView';
 import { MapDetail } from './MapDetail';
 import { buildTopology } from './topology';
-import { WorkspaceScopeProvider } from '../scope';
+import { WorkspaceScopeProvider } from '../data/scope';
 import { columnsFollow } from '../test/mainSplit';
 
 // MAP2 (D67 §3): the workspace map, over a stubbed service — a view of its own, the owner's choice.

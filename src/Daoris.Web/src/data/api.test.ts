@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { api, notFound } from './api';
-import { sentence } from './locales/format';
-import i18n from './locales/i18n';
+import { sentence } from '../locales/format';
+import i18n from '../locales/i18n';
 
 /**
  * 🔴 UX5 U29: with the machine's service stopped, every request the page made failed with the

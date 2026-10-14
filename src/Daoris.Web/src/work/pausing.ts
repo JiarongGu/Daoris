@@ -1,5 +1,5 @@
-import type { Quest } from '../api';
-import type { Consideration } from '../signals';
+import type { Quest } from '../data/api';
+import type { Consideration } from '../data/signals';
 import type { Answered } from './InlineConfirm';
 
 // Pausing and abandoning an ask's work or a quest's on the screen (PAUSE1e, D132, `docs/2026-10-02-pause-and-clean-up-design.md`

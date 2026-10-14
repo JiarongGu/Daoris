@@ -1,4 +1,4 @@
-import type { NotePart, Quest, Session, SessionState } from '../api';
+import type { NotePart, Quest, Session, SessionState } from '../data/api';
 
 // The observed audit layer (design §3), derived from the record and nothing else.
 

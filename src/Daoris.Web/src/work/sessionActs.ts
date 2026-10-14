@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 import {
   retryNotice, stopNotice, useArchiveSessions, useCancelTurn, useDeleteSession, useHandOver, useOpenSessionFolder, useOpenWindow,
   useResolveSession, useRetryQuest, useStopSession,

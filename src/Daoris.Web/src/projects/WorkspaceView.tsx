@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTidiedBranches } from '../bridge/log';
 import { sentence } from '../locales/format';
-import { useSyncStanding } from '../queries';
+import { useSyncStanding } from '../data/queries';
 import { commitToast } from '../settings/Commits';
 import { helperToast } from '../settings/Helpers';
 import type { LandingRule } from '../settings/Landings';

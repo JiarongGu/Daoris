@@ -3,7 +3,7 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import i18n from '../locales/i18n';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../storyLanguage';
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 import { HandOverAsk, type HandOverRoster } from './HandOverAsk';
 import { HandOverOfferLine } from './HandOverOfferLine';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';

@@ -1,4 +1,4 @@
-import type { Session } from '../api';
+import type { Session } from '../data/api';
 
 // Searching the rail (RAIL1). By name happens here, at once: the derived title — a conversation's
 // first line, a quest's title — the repository and the id. By content is the host's, over the bridge,

@@ -1,4 +1,4 @@
-import type { Ask, GoAhead } from '../api';
+import type { Ask, GoAhead } from '../data/api';
 import { list } from '../locales/format';
 import { neverSentence } from './say';
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { NotePart, Quest } from '../api';
+import type { NotePart, Quest } from '../data/api';
 import { Button, Segmented, WaitingCard } from '../ui';
 import { type Answered, InlineConfirm } from './InlineConfirm';
 import { Note } from './Note';

@@ -1,13 +1,13 @@
 import i18n from '../locales/i18n';
-import type { Ask, Quest, Registration } from '../api';
+import type { Ask, Quest, Registration } from '../data/api';
 import { accountName, accountState, accountStates, joinChoices, ownState, runsFor, waitsOnPerson } from '../agents/agents';
 import { clockOf, list, moment } from '../locales/format';
 import {
   type AccountCooling, type AccountScope, type AccountsAnswer, type AgentAccounts, agentOf, machineScope, workspaceScope,
 } from '../settings/accounts';
-import type { AccountWaitTick, Consideration } from '../signals';
+import type { AccountWaitTick, Consideration } from '../data/signals';
 import type { Tool } from '../agents/tools';
-import { workspaceOf } from '../workspaces';
+import { workspaceOf } from '../data/workspaces';
 import type { Attention } from './AttentionRow';
 import { questName } from './identity';
 
