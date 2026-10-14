@@ -14656,3 +14656,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **KEYPARITY2 — a key's class subtraction** (driver/cli). .NET reads `[a-z-[aeiou]]` as a class minus a class, JavaScript as a class then `]`: both compile, so each twin finds a different ticket. Refuse `-[` inside a class on both twins with one sentence. D164's PROCESS1b-i note.
 
 **Outcome** 2026-10-15: both twins' key readers refuse `-[` inside a character class with one sentence (`LandingRules.KeyProblem`, `keyProblem`); a test case on each side, an escaped `\-[` still taken. Detail: D164's KEYPARITY2 note.
+
+## NAMEZH1 — 本机 in a helper's note (2026-10-15, D163)
+
+> - [ ] **NAMEZH1 — 本机 in a helper's note** (web). `note.helper.why.asker-gone` says 这台机器 where the glossary's name is 本机; correct it and drop its entry from `names.test.ts`'s list. D163's MIXAGENT3a-i note.
+
+**Outcome** 2026-10-15: `note.helper.why.asker-gone` (zh) now says 提问的会话不在本机上, and its entry left the names test's list of strays. Detail: D163's NAMEZH1 note.

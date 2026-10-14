@@ -456,8 +456,6 @@ describe('the real glossary and catalogues', () => {
       .map(({ key, language }) => `${key}:${language}`).sort();
     expect(stray).toEqual([
       'errors.HARNESS_ACTION_IDLE:zh', 'errors.INVALID_PAYLOAD_VALUE:zh',
-      // MIXAGENT2a-ii: an asker gone from this machine says 这台机器 where the name is 本机 (note.json's to correct).
-      'note.helper.why.asker-gone:zh',
       'settings.browser.which.hintDaoris:en', 'settings.browser.which.hintEdge:en',
       'settings.home.hint:en', 'settings.home.hintOverridden:en', 'settings.home.hintThisStart:en',
     ]);
