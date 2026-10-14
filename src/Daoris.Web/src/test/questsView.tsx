@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { OpenGroup } from '../opener';
-import { useQuestsView } from '../QuestsView';
+import { useQuestsView } from '../quests/QuestsView';
 import type { Notify } from '../ui';
 import { useListPanes } from '../work/listPanes';
 import { ViewFrame } from '../work/ViewFrame';

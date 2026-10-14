@@ -90,6 +90,8 @@ const ORGANISMS = new Set<string>([
   './knowledge/KnowledgeView.tsx',
   // The map's view (MAP2): the workspace's wiring, so the drawing and the detail below it hold none.
   './map/MapView.tsx',
+  // Quests' view (FRAME1d): the queries, so the list, a quest's page and its composer hold none.
+  './quests/QuestsView.tsx',
 ]);
 
 /**

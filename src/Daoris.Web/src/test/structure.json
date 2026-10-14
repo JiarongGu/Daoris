@@ -83,13 +83,6 @@
     "menuBar.test.tsx": "menus",
     "contextMenus.test.tsx": "menus",
 
-    "QuestsView.tsx": "quests",
-    "QuestsView.test.tsx": "quests",
-    "QuestsView.held.test.tsx": "quests",
-    "QuestsView.history.test.tsx": "quests",
-    "QuestsView.shell.test.tsx": "quests",
-    "QuestsView.work.test.tsx": "quests",
-
     "ProjectsView.tsx": "projects",
     "ProjectsView.test.tsx": "projects",
     "ProjectsView.git.test.tsx": "projects",

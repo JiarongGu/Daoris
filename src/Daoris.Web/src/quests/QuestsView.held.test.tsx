@@ -19,9 +19,9 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => {},
 }));
 
-import './i18n';
-import { keys } from './queries';
-import { QuestsView, questMain } from './test/questsView';
+import '../i18n';
+import { keys } from '../queries';
+import { QuestsView, questMain } from '../test/questsView';
 
 const QUESTS = [
   {

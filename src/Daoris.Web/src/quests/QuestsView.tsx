@@ -1,38 +1,38 @@
 import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { canBeAsked, type Quest } from './api';
-import { linksOf, toUpload } from './attachments';
-import { useAsksPart } from './asks/AsksPart';
-import { sentence } from './format';
-import { buildChain } from './map/chain';
-import { askItem, type OpenGroup, questsItem } from './opener';
+import { canBeAsked, type Quest } from '../api';
+import { linksOf, toUpload } from '../attachments';
+import { useAsksPart } from '../asks/AsksPart';
+import { sentence } from '../format';
+import { buildChain } from '../map/chain';
+import { askItem, type OpenGroup, questsItem } from '../opener';
 import {
   useAcceptQuest, useDeleteQuest, useDismissConflict, usePersonDone, usePublishQuest, useQuests, useRegistry, useRespondQuest,
   useSessions,
-} from './queries';
-import { EMPTY_QUEST, QuestComposer, type QuestDraft } from './quests/QuestComposer';
-import { QuestList } from './quests/QuestList';
+} from '../queries';
+import { EMPTY_QUEST, QuestComposer, type QuestDraft } from './QuestComposer';
+import { QuestList } from './QuestList';
 import {
   answered, freshest, keptFilters, latestSessions, type QuestFilters, questFilters, questionOf, questStanding,
-} from './quests/records';
-import { QuestPage, QuestsMainNotice } from './quests/QuestPage';
-import { namer } from './settings/namer';
+} from './records';
+import { QuestPage, QuestsMainNotice } from './QuestPage';
+import { namer } from '../settings/namer';
 import {
   retryNotice, useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useRetryQuest, useSessionGroups, useSetHold, useTrace,
   useTrustFolder, useUntrusted, useWorkflowRun, useWorkPlan,
-} from './shell';
-import { sittingBecause } from './signals';
-import { failure, type Notify, useErrorNotify } from './ui';
-import type { HistoryDoor } from './work/history';
-import { useHistoryActs } from './work/historyActs';
-import { stepState } from './work/review';
-import { useReviewActs } from './work/reviewActs';
-import type { Answered } from './work/InlineConfirm';
-import { groupHeading, ListMore, useBringGroup } from './work/ListPane';
-import { type AbandonAnswer, wiredFor, type WorkDoor, type WorkTarget } from './work/pausing';
-import type { TraceDoor } from './work/HowItCameToBe';
-import type { ViewLayout } from './work/ViewFrame';
-import { useWorkActs } from './work/workActs';
+} from '../shell';
+import { sittingBecause } from '../signals';
+import { failure, type Notify, useErrorNotify } from '../ui';
+import type { HistoryDoor } from '../work/history';
+import { useHistoryActs } from '../work/historyActs';
+import { stepState } from '../work/review';
+import { useReviewActs } from '../work/reviewActs';
+import type { Answered } from '../work/InlineConfirm';
+import { groupHeading, ListMore, useBringGroup } from '../work/ListPane';
+import { type AbandonAnswer, wiredFor, type WorkDoor, type WorkTarget } from '../work/pausing';
+import type { TraceDoor } from '../work/HowItCameToBe';
+import type { ViewLayout } from '../work/ViewFrame';
+import { useWorkActs } from '../work/workActs';
 
 /** A radio item cannot carry an empty value, so "every receiver" travels as a sentinel. */
 const EVERYONE = '*';

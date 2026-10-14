@@ -32,7 +32,7 @@ import { Drawer, failure, Prose, SESSION_ACTIVE, Toasts, useToasts } from './ui'
 import { OverviewView } from './overview/OverviewView';
 import { useKnowledgeMode, useKnowledgeView } from './knowledge/KnowledgeView';
 import { MapView } from './map/MapView';
-import { useQuestsView } from './QuestsView';
+import { useQuestsView } from './quests/QuestsView';
 import { useProjectsView } from './ProjectsView';
 import {
   type ProjectTab, readProjectTab, readWorkspaceTab, storeProjectTab, storeWorkspaceTab, type WorkspaceSection, type WorkspaceTab,

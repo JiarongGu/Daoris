@@ -423,23 +423,23 @@ public sealed partial class HelpCoverageTests
             + "`sync` kind's door, which brings branches up to date (D109).")),
         ("SecondaryWindowRoot", "useOpenBrowser", null, OpensTheBrowser),
 
-        // Quests: a quest's own page, and the list's presses.
-        ("QuestsView", "usePublishQuest", null, Own("quests",
+        // Quests: a quest's own page, and the list's presses, in `quests/QuestsView` (STRUCT5c).
+        ("quests", "usePublishQuest", null, Own("quests",
             "publishing a quest by hand is the person's own request to a repository, made on Quests beside the intake that "
             + "publishes from an ask (D65)")),
-        ("QuestsView", "useRespondQuest", "take", Own("quests",
+        ("quests", "useRespondQuest", "take", Own("quests",
             "taking a quest is its receiver's answer to it, given on the quest's own page")),
-        ("QuestsView", "useRespondQuest", "done", Own("quests",
+        ("quests", "useRespondQuest", "done", Own("quests",
             "saying a quest is done answers it with its work, on the quest's own page where that work is read")),
-        ("QuestsView", "useRespondQuest", "decline", new Exempt(
+        ("quests", "useRespondQuest", "decline", new Exempt(
             "declining a quest is the person's answer with their reason (D37), as *Decline…* is exempt (D126 §7.3); Ask Daoris "
             + "takes the person to the quest and never writes the reason.")),
-        ("QuestsView", "useAcceptQuest", null, new Door("accept", "accept")),
-        ("QuestsView", "useDeleteQuest", null, new Door("delete", "quest")),
-        ("QuestsView", "useRetryQuest", null, new Door("setting", "retry")),
-        ("QuestsView", "usePersonDone", null, PersonDone),
-        ("QuestsView", "useTrustFolder", null, TrustFolder),
-        ("QuestsView", "useDismissConflict", null, new Exempt(
+        ("quests", "useAcceptQuest", null, new Door("accept", "accept")),
+        ("quests", "useDeleteQuest", null, new Door("delete", "quest")),
+        ("quests", "useRetryQuest", null, new Door("setting", "retry")),
+        ("quests", "usePersonDone", null, PersonDone),
+        ("quests", "useTrustFolder", null, TrustFolder),
+        ("quests", "useDismissConflict", null, new Exempt(
             "it puts away a conflict the person has read, an operation that travels and changes no status of the quest or its "
             + "work (SYNC6c), as the banner's *Dismiss* is exempt, so there is nothing to propose.")),
 

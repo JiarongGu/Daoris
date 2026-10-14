@@ -5,11 +5,11 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { useQuestsView } from './QuestsView';
-import { useListPanes } from './work/listPanes';
-import { ViewFrame } from './work/ViewFrame';
+import { useListPanes } from '../work/listPanes';
+import { ViewFrame } from '../work/ViewFrame';
 import {
   chooseRow, makeFromList, moreAct, openFilters, QuestsView, questList, questMain, questPage,
-} from './test/questsView';
+} from '../test/questsView';
 
 // The view over a stubbed service, on the frame (FRAME1d, D118): its list pane holds the asks and the quests, its
 // main area the chosen record, and the composers are drawers. The shapes are what the real endpoints return, without
@@ -297,7 +297,7 @@ describe('QuestsView', () => {
   });
 
   it('says a quest\'s lanes in 中文, the lanes\' own names left as they are', async () => {
-    const { default: i18n } = await import('./i18n');
+    const { default: i18n } = await import('../i18n');
     await i18n.changeLanguage('zh');
     try {
       stubLaned();
