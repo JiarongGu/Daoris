@@ -51,7 +51,7 @@ internal sealed record StructureBreach(string File, int Line, string Rule, strin
 /// <item><c>composition</c>: nothing outside <c>Composition</c> names a type declared in it, in code only.</item>
 /// </list>
 /// </summary>
-internal static partial class StructureCheck
+internal static class StructureCheck
 {
     /// <summary>The composition root: it may use every module, and no module uses it.</summary>
     public const string Composition = "Composition";
@@ -307,15 +307,20 @@ internal static partial class StructureCheck
         return end - i;
     }
 
-    [GeneratedRegex(@"(?<![\w.@])[A-Za-z_]\w*")]
-    private static partial Regex Identifier();
+    // Plain regexes, not generated ones: the partials gate (tools/partials.json) allows no partial type outside its list.
+    private static readonly Regex IdentifierPattern = new(@"(?<![\w.@])[A-Za-z_]\w*");
 
-    [GeneratedRegex(@"\b(?:class|struct|interface|enum|record)\s+(?<name>[A-Za-z_]\w*)|\bdelegate\s+[\w.<>\[\]?, ]+?\s+(?<name>[A-Za-z_]\w*)\s*[<(]")]
-    private static partial Regex Declaration();
+    private static readonly Regex DeclarationPattern = new(
+        @"\b(?:class|struct|interface|enum|record)\s+(?<name>[A-Za-z_]\w*)|\bdelegate\s+[\w.<>\[\]?, ]+?\s+(?<name>[A-Za-z_]\w*)\s*[<(]");
 
     /// <summary>A namespace with a body, whose types sit one brace deep; a file-scoped one's sit at the top.</summary>
-    [GeneratedRegex(@"^\s*namespace\s+[\w.]+\s*\{", RegexOptions.Multiline)]
-    private static partial Regex BlockNamespace();
+    private static readonly Regex BlockNamespacePattern = new(@"^\s*namespace\s+[\w.]+\s*\{", RegexOptions.Multiline);
+
+    private static Regex Identifier() => IdentifierPattern;
+
+    private static Regex Declaration() => DeclarationPattern;
+
+    private static Regex BlockNamespace() => BlockNamespacePattern;
 
     /// <summary>One source, its path and its code.</summary>
     private sealed class Source(string path, string text)

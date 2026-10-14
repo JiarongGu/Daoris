@@ -88,6 +88,15 @@
     "TextTests.cs": "Knowledge",
     "OneCheckoutTests.cs": "Knowledge",
     "ProbeLockQuestionTests.cs": "Knowledge",
-    "ServiceDegradationTests.cs": "Knowledge"
+    "ServiceDegradationTests.cs": "Knowledge",
+    "McpHelperToolTests.cs": "Mcp",
+    "McpOpinionToolTests.cs": "Mcp",
+    "McpToolDescriptionTests.cs": "Mcp",
+    "McpToolGuardTests.cs": "Mcp",
+    "McpToolRegistrationTests.cs": "Mcp",
+    "McpToolsFixture.cs": "Mcp",
+    "McpToolsTests.cs": "Mcp",
+    "ConnectorStartFailureTests.cs": "Mcp",
+    "DiscoverProbeTests.cs": "Mcp"
   }
 }

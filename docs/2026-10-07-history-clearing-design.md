@@ -404,7 +404,7 @@ it):
 | `GET /api/history?workspace=` · `?quest=` · `?ask=` · `?quest=&failed=true` | per unit: what it holds (counts), whether it may be cleared, forgotten or removed outright, and the refusal's word with what it names; deletes nothing |
 | `POST /api/history/clear` `{ units }` | per unit: cleared (removed or forgotten) or kept with its word; judges again inside each unit's transaction |
 
-One judgement class, `HistoryDesk` in `Daoris.Service.Core`, judges the records' half for both routes (D36's one place):
+One judgement class, `HistoryDesk` in `Daoris.Service.Core/Asks/History.cs`, judges the records' half for both routes (D36's one place):
 it reads the quests, the log's pending operations, the sessions, the asks, the rule proposals and the workspace's
 wiring. It clears through `QuestStore.ForgetAsync` (row and log together, H3, and the mark where numbered),
 `SessionStore.ForgetAsync` and `AskStore.DeleteAsync`. A refusal travels as a word (`open`, `asked`, `live`,
