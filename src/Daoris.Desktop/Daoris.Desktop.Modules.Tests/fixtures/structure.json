@@ -2,15 +2,6 @@
   "modules": ["Bridge", "Browser", "Windows", "Update", "Loop", "Platform"],
   "loose": ["Bridge.cs", "DriverModuleBridge.cs", "LoopbackHost.cs", "Category.cs", "GlobalUsings.cs", "Parallelism.cs", "EveryModuleChildIsHandedTheToolsTests.cs", "SourceFiles.cs", "StructureCheck.cs", "StructureTests.cs"],
   "root": {
-    "WindowsModule.cs": "Windows",
-    "SecondaryWindow.cs": "Windows",
-    "TaskbarIdentity.cs": "Windows",
-    "ChromePalette.cs": "Windows",
-    "UiStallWatch.cs": "Windows",
-    "DesktopPage.cs": "Windows",
-    "OpenFolder.cs": "Windows",
-    "PickFile.cs": "Windows",
-    "TerminalModule.cs": "Windows",
     "UpdateModule.cs": "Update",
     "InstallUpdater.cs": "Update",
     "InstallHome.cs": "Update",
@@ -98,6 +89,13 @@
     "EngineProfileTests.cs": "Browser",
     "InAppBrowserTests.cs": "Browser",
     "ReviewServingTests.cs": "Browser",
-    "StandInChromium.cs": "Browser"
+    "StandInChromium.cs": "Browser",
+    "ChromePaletteTests.cs": "Windows",
+    "DesktopPageTests.cs": "Windows",
+    "FirstWindowTests.cs": "Windows",
+    "TaskbarIdentityTests.cs": "Windows",
+    "TerminalModuleTests.cs": "Windows",
+    "UiStallWatchTests.cs": "Windows",
+    "WindowsModuleTests.cs": "Windows"
   }
 }
