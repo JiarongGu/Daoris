@@ -298,7 +298,7 @@ public static class RuleProposals
             var settled = root["settled"] as JsonObject;
             return new RuleProposal(
                 id,
-                DateTimeOffset.TryParse(Json.Trimmed(root["proposed"]), out var proposed) ? proposed : File.GetLastWriteTimeUtc(path),
+                Moments.Read(root["proposed"]) ?? File.GetLastWriteTimeUtc(path),
                 Json.Trimmed(by?["session"]),
                 Json.Trimmed(by?["ask"]),
                 new ProposedChange(
@@ -325,7 +325,7 @@ public static class RuleProposals
                     ? state
                     : ProposalState.Proposed)
             {
-                Settled = DateTimeOffset.TryParse(Json.Trimmed(settled?["at"]), out var at) ? at : null,
+                Settled = Moments.Read(settled?["at"]),
                 SettledBy = Json.Trimmed(settled?["by"]),
                 Note = Json.Trimmed(settled?["note"]),
             };
@@ -341,7 +341,7 @@ public static class RuleProposals
     {
         var root = JsonNode.Parse(File.ReadAllText(path)) as JsonObject ?? [];
         root["state"] = state.ToString().ToLowerInvariant();
-        root["settled"] = new JsonObject { ["at"] = at.ToString("O"), ["by"] = by, ["note"] = note };
+        root["settled"] = new JsonObject { ["at"] = Moments.Write(at), ["by"] = by, ["note"] = note };
 
         AtomicFile.WriteText(path, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n");
     }

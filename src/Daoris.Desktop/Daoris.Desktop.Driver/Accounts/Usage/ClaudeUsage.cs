@@ -78,8 +78,11 @@ public static class ClaudeUsage
                 if (percent != 0) continue;
                 reset = now + length;
             }
-            else if (at.ValueKind != JsonValueKind.String
-                     || !DateTimeOffset.TryParse(at.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out reset))
+            else if (Moments.Read(each, "resets_at") is { } read)
+            {
+                reset = read;
+            }
+            else
             {
                 continue;
             }

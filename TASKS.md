@@ -285,7 +285,6 @@ folder.
 
 **Duplication** (the owner: *"we more focus on modularize the code to reduce duplication and easier to manage"*). Evidence: `docs/2026-10-14-duplication-survey.md`, by section. After FLAT1; DEDUP1 to 3 touch the same files, so one at a time.
 
-- [ ] **DEDUP2a — one way to write and read a moment, its first half** (driver). A public `Moments` in `Platform/` (round-trip write, invariant read, strict read) for the writers and readers in Accounts, Agents, Conversations, Help, Platform and Plugins, those read in the machine's culture among them. Survey §2.
 - [ ] **DEDUP2b — the moments, their second half** (driver, modules; after 2a). Quests, Review, Service, Sessions, Setup, Trees, Workflows and the Modules bridge. Survey §2.
 - [ ] **DEDUP3 — one way to write a JSON file** (driver, modules). A public `JsonFile` in `Platform/` (LF text with a trailing newline, one options object, its folder made, an atomic write) for about 65 sites: it fixes the seven written with CRLF on Windows and the plain writes past `AtomicFile`. Survey §3, §9.
 - [ ] **DEDUP5 — the accounts' files share their helpers** (driver). One helper for the `Load`, `Key`, `Child`, `Text`, `Flag` and `Moment` that `AccountCooling`, `AccountNames`, `AccountReads` and `AccountWindows` copy; a small store for the eight gate-and-edit stores only where each one fits. Survey §5.

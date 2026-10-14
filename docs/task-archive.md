@@ -14344,3 +14344,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PART10b — `KnowledgeTools`: the review, go-ahead, helper and opinion tools** (service; after 10a). Each its class with only its services, added to `KnowledgeServer.ToolTypes`; `quest_publish`'s records `ReviewChoice` and `ReviewProposal` beside `QuestTools`' own. Survey "The large five, as scouted".
 
 **Outcome** 2026-10-14: `ReviewTools`, `GoAheadTools`, `HelperTools` and `OpinionTools` are classes in `KnowledgeServer.ToolTypes`, each with only the services it uses; `quest_publish`'s two records sit with `QuestTools`; `KnowledgeTools` keeps only the Help kinds' tools, built from the intake and the help box. The 33 names unchanged. On Sonnet: 47 tool calls. Detail: D166's PART10b note.
+
+## DEDUP2a — one way to write and read a moment, its first half (2026-10-14, D166)
+
+> - [ ] **DEDUP2a — one way to write and read a moment, its first half** (driver). A public `Moments` in `Platform/` (round-trip write, invariant read, strict read) for the writers and readers in Accounts, Agents, Conversations, Help, Platform and Plugins, those read in the machine's culture among them. Survey §2.
+
+**Outcome** 2026-10-14: `Platform/Moments.cs` writes in the invariant round trip, reads keeping the offset as written (a text, a JSON field or a node), and holds the one strict read of the four formats four copies had; the helper files', rule proposals' and driver lock's reads and writes in the machine's culture are fixed, each fallback kept. Kept as formats of their own: the cooling's seconds-only stamp (the CLI's twin writes it) and the workflow proposal's moment. Twenty-one tests under three cultures. On Sonnet: 61 tool calls. Detail: D166's DEDUP2a note.

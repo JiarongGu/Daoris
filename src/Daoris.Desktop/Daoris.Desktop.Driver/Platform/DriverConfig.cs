@@ -781,17 +781,7 @@ public sealed record DriverConfig(
     /// forms <see cref="AccountCooling"/> reads (TOOL4d), and the CLI's <c>cooling.ts</c> (<c>isoMoment</c>): a lenient parse
     /// would read <i>Oct 2</i> as this year's.
     /// </summary>
-    private static DateTimeOffset? Moment(string? text) =>
-        text is not null && DateTimeOffset.TryParseExact(
-            text, IsoMoments, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var moment)
-            ? moment
-            : null;
-
-    private static readonly string[] IsoMoments =
-    [
-        "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm:ss.FFFFFFF'Z'", "yyyy-MM-dd'T'HH:mm:sszzz",
-        "yyyy-MM-dd'T'HH:mm:ss.FFFFFFFzzz",
-    ];
+    private static DateTimeOffset? Moment(string? text) => Moments.ReadStrict(text);
 
     private static void WriteFlags(Utf8JsonWriter writer, string name, IReadOnlyDictionary<string, bool> map)
     {

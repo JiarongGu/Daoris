@@ -235,10 +235,7 @@ public sealed class DriverLock : IDisposable
                 return null;
             }
 
-            var since = root.TryGetProperty("since", out var at) && at.ValueKind == JsonValueKind.String
-                        && DateTimeOffset.TryParse(at.GetString(), out var parsed)
-                ? parsed
-                : new DateTimeOffset(ticks, TimeSpan.Zero);
+            var since = Moments.Read(root, "since") ?? new DateTimeOffset(ticks, TimeSpan.Zero);
             return (new DriverHolder(kind.Value, id, since), ticks);
         }
         catch (JsonException)

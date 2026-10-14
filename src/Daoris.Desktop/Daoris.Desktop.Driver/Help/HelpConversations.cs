@@ -316,7 +316,7 @@ public sealed class HelpConversations(string home)
         {
             writer.WriteStartObject();
             if (kept.Name is { } name) writer.WriteString("name", name);
-            if (kept.Pinned is { } pinned) writer.WriteString("pinned", pinned.ToString("O", CultureInfo.InvariantCulture));
+            if (kept.Pinned is { } pinned) writer.WriteString("pinned", Moments.Write(pinned));
             if (kept.From is { } from) writer.WriteString("from", from);
             if (kept.Handed is { } handed) writer.WriteString("handed", handed);
             writer.WriteEndObject();
@@ -325,8 +325,7 @@ public sealed class HelpConversations(string home)
         return Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n";
     }
 
-    private static DateTimeOffset? Time(JsonElement element, string name) =>
-        DateTimeOffset.TryParse(Json.NonEmpty(element, name), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at) ? at : null;
+    private static DateTimeOffset? Time(JsonElement element, string name) => Moments.Read(element, name);
 }
 
 /// <summary>

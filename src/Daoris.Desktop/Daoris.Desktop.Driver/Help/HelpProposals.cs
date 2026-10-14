@@ -434,7 +434,7 @@ public static class HelpProposals
                 var root = document.RootElement;
                 var proposal = Read(root, Path.GetFileNameWithoutExtension(path));
                 if (proposal.State != "proposed" || !string.Equals(proposal.Session, session, StringComparison.OrdinalIgnoreCase)) continue;
-                var at = DateTimeOffset.TryParse(Json.Text(root, "proposed"), CultureInfo.InvariantCulture, DateTimeStyles.None, out var when) ? when : DateTimeOffset.MinValue;
+                var at = Moments.Read(root, "proposed") ?? DateTimeOffset.MinValue;
                 found.Add((at, proposal));
             }
             catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)

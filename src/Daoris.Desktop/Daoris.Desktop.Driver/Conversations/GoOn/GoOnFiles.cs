@@ -28,7 +28,7 @@ internal static class GoOnFiles
             foreach (var id in said) writer.WriteStringValue(id);
             writer.WriteEndArray();
             writer.WriteString("why", why);
-            writer.WriteString("at", at.ToString("O", CultureInfo.InvariantCulture));
+            writer.WriteString("at", Moments.Write(at));
             writer.WriteEndObject();
         }
 
@@ -51,10 +51,7 @@ internal static class GoOnFiles
                 return null;
             }
 
-            var at = root.TryGetProperty("at", out var when) && when.ValueKind == JsonValueKind.String
-                     && DateTimeOffset.TryParse(when.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsed)
-                ? parsed
-                : DateTimeOffset.MinValue;
+            var at = Moments.Read(root, "at") ?? DateTimeOffset.MinValue;
             return new GoOnMark(
                 [.. said.EnumerateArray().Where(id => id.ValueKind == JsonValueKind.String).Select(id => id.GetString()!)], code, at);
         }
@@ -75,7 +72,7 @@ internal static class GoOnFiles
             writer.WriteStartArray("said");
             foreach (var id in said) writer.WriteStringValue(id);
             writer.WriteEndArray();
-            writer.WriteString("at", at.ToString("O", CultureInfo.InvariantCulture));
+            writer.WriteString("at", Moments.Write(at));
             writer.WriteEndObject();
         }
 
@@ -93,8 +90,7 @@ internal static class GoOnFiles
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object
                 || !root.TryGetProperty("said", out var said) || said.ValueKind != JsonValueKind.Array
-                || !root.TryGetProperty("at", out var when) || when.ValueKind != JsonValueKind.String
-                || !DateTimeOffset.TryParse(when.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at))
+                || Moments.Read(root, "at") is not { } at)
             {
                 return null;
             }

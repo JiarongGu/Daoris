@@ -29,7 +29,7 @@ internal static class HandOverFiles
             if (request.Account is { } account) writer.WriteString("account", account); else writer.WriteNull("account");
             writer.WriteString("why", request.Why);
             writer.WriteString("askedBy", request.AskedBy);
-            writer.WriteString("at", request.At.ToString("O", CultureInfo.InvariantCulture));
+            writer.WriteString("at", Moments.Write(request.At));
             writer.WriteEndObject();
         }
 
@@ -49,7 +49,7 @@ internal static class HandOverFiles
                 || Text(root, "agent") is not { Length: > 0 } agent
                 || Text(root, "why") is not { } why || !HandOverWhy.Known(why)
                 || Text(root, "askedBy") is not { } by || !HandOverBy.Known(by)
-                || !DateTimeOffset.TryParse(Text(root, "at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at))
+                || Moments.Read(root, "at") is not { } at)
             {
                 return null;
             }
@@ -75,7 +75,7 @@ internal static class HandOverFiles
             writer.WriteString("from", handed.From);
             writer.WriteString("why", handed.Why);
             writer.WriteString("askedBy", handed.AskedBy);
-            writer.WriteString("at", handed.At.ToString("O", CultureInfo.InvariantCulture));
+            writer.WriteString("at", Moments.Write(handed.At));
             writer.WriteEndObject();
         }
 
@@ -96,7 +96,7 @@ internal static class HandOverFiles
                 || Text(root, "from") is not { Length: > 0 } from
                 || Text(root, "why") is not { } why || !HandOverWhy.Known(why)
                 || Text(root, "askedBy") is not { } by || !HandOverBy.Known(by)
-                || !DateTimeOffset.TryParse(Text(root, "at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at))
+                || Moments.Read(root, "at") is not { } at)
             {
                 return null;
             }
