@@ -109,8 +109,11 @@ public sealed partial class DriverModule : ModuleBase
     [
         Domain.Of(module => module),
         Domain.Of(module => new ConsoleRoutes(module._loop)),
+        Domain.Of(module => new HistoryRoutes(module._loop)),
         Domain.Of(module => new RegistryRoutes(module._loop)),
+        Domain.Of(module => new RulesRoutes(module._loop)),
         Domain.Of(module => new TraceRoutes(module._loop)),
+        Domain.Of(module => new WorkflowRoutes(module._loop)),
     ];
 
     // The handlers, read once off their marks. A route marked twice fails here, at the module's first use, as a switch with

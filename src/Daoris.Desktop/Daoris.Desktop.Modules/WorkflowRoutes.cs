@@ -13,8 +13,10 @@ namespace Daoris.Desktop;
 /// (WORKFLOW1c), the runs <see cref="WorkflowRunReader"/> reads. Read-only: nothing here writes, and every gate goes on
 /// reading the rules as it did.
 /// </summary>
-public sealed partial class DriverModule
+public sealed class WorkflowRoutes(DriverLoop loop)
 {
+    private readonly DriverLoop _loop = loop;
+
     // A repository's Current, or a workspace's: `{repository}` or `{workspace}`, exactly one. A repository's workspace is the
     // registry's, so it waits for the driver as the lines do; one the registry does not hold is read as in no workspace, and
     // the answer says so. A workspace's Current is the file's alone, and beside it each repository the registry holds there,
@@ -141,7 +143,8 @@ public sealed partial class DriverModule
             run.Session,
             run.At,
             run.Problem,
-            WorkflowGate = WorkflowWaits(run.WorkflowGate),
+            // The workflow's wait, in the shape the Trees domain's landing gate answers it.
+            WorkflowGate = DriverModule.WorkflowWaits(run.WorkflowGate),
             Workflow = new { run.Current.Version, run.Current.StartHolds, Limits = limits,
                 Id = run.Process?.Named == true ? run.Process.Binding!.Workflow : null,
                 BoundVersion = run.Process?.Named == true ? run.Process.Binding!.Version : null },

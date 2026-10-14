@@ -23,8 +23,10 @@ namespace Daoris.Desktop;
 /// <para><b>The answers are the driver library's projection</b> (<see cref="HistoryAnswers"/>, HIST1d), which
 /// <c>daoris-driver history --json</c> prints too, so the terminal's answer is this route's field for field (D50).</para>
 /// </remarks>
-public sealed partial class DriverModule
+public sealed class HistoryRoutes(DriverLoop loop)
 {
+    private readonly DriverLoop _loop = loop;
+
     /// <summary>
     /// The first press (§5 step 1): every unit of a workspace, one quest's work, one quest's failed sessions or one ask's work,
     /// each with what it takes, what that holds on the disk and why it would stay; and for a workspace, the reading (§2.4).
@@ -34,7 +36,7 @@ public sealed partial class DriverModule
     private async Task<object?> HistoryPlanAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var (scope, id) = HistoryNamed(request);
-        var plan = await HistoryClearing.PlanAsync(HistoryWorldOf(), scope, id, cancellationToken).ConfigureAwait(false);
+        var plan = await HistoryClearing.PlanAsync(WorldOf(_loop), scope, id, cancellationToken).ConfigureAwait(false);
         if (scope != HistoryScope.Workspace && plan.Units is [{ Keep.Word: HistoryWords.Unknown } unknown]) throw HistoryKept(unknown.Keep!);
 
         // HIST1d: the driver library's projection, which `daoris-driver history --json` prints too, field for field.
@@ -51,7 +53,7 @@ public sealed partial class DriverModule
     {
         var (scope, id) = HistoryNamed(request);
         var units = HistoryUnits(request);
-        var outcome = await HistoryClearing.ClearAsync(HistoryWorldOf(), scope, id, units, PluginEvents.Screen, cancellationToken)
+        var outcome = await HistoryClearing.ClearAsync(WorldOf(_loop), scope, id, units, PluginEvents.Screen, cancellationToken)
             .ConfigureAwait(false);
         if (scope != HistoryScope.Workspace && outcome is { Cleared.Count: 0, Changed: [var stayed] }) throw HistoryKept(stayed.Keep!);
 
@@ -84,11 +86,14 @@ public sealed partial class DriverModule
     private static string? UnitText(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
-    /// <summary>The loop's world for a clear: its service, its home, its file, its processes, its conversations and its log.</summary>
-    private HistoryWorld HistoryWorldOf()
+    /// <summary>
+    /// The loop's world for a clear: its service, its home, its file, its processes, its conversations and its log. Ask Daoris's
+    /// history cards clear through it too, as the screen's own door.
+    /// </summary>
+    internal static HistoryWorld WorldOf(DriverLoop loop)
     {
-        var service = _loop.Service ?? throw NotReady();
-        return new HistoryWorld(service, _loop.Home, _loop.ConfigPath, _loop.Processes) { Events = _loop.Events, Log = _loop.Log };
+        var service = loop.Service ?? throw NotReady();
+        return new HistoryWorld(service, loop.Home, loop.ConfigPath, loop.Processes) { Events = loop.Events, Log = loop.Log };
     }
 
     /// <summary>

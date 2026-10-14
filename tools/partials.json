@@ -28,15 +28,12 @@
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Driver.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Git.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Help.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.History.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Lines.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Plugins.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Rules.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Sessions.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Tools.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Trees.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Work.cs",
-    "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Workflow.cs",
     "src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs"
   ],
   "KnowledgeTools": [

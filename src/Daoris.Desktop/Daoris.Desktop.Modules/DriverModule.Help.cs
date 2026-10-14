@@ -85,7 +85,7 @@ public sealed partial class DriverModule
             var records = await service.SessionRecordsAsync(cancellationToken).ConfigureAwait(false);
             var quests = await service.EveryQuestAsync(cancellationToken).ConfigureAwait(false);
             var everyAsk = await service.EveryAskAsync(cancellationToken).ConfigureAwait(false);
-            var world = HistoryWorldOf();
+            var world = HistoryRoutes.WorldOf(_loop);
             var readings = new List<HistoryReading>();
             foreach (var workspace in records.Select(record => record.Workspace)
                          .Concat(quests.Select(quest => quest.Workspace))
@@ -378,7 +378,7 @@ public sealed partial class DriverModule
         // HISTORY_CLEAR's own clear of exactly the units the card listed (HIST1f-c): the driver library's one owner, each unit judged
         // again as it goes; the outcome comes back whole, and a service that did not answer throws before anything was removed.
         public Task<HistoryOutcome> ClearHistoryAsync(HistoryScope scope, string id, IReadOnlyList<HistoryUnitName> units, CancellationToken ct) =>
-            HistoryClearing.ClearAsync(module.HistoryWorldOf(), scope, id, units, PluginEvents.Screen, ct);
+            HistoryClearing.ClearAsync(HistoryRoutes.WorldOf(module._loop), scope, id, units, PluginEvents.Screen, ct);
 
         // SESSION_DELETE's own delete: the driver library's one owner, then the loop asked to look (SESSUX1h2c).
         public async Task<(bool Ok, string Message)> DeleteSessionAsync(string id, CancellationToken ct)
@@ -786,7 +786,7 @@ public sealed partial class DriverModule
         // §6.4). A service that cannot be read throws, and the proposal stays unsettled.
         if (JudgedAgainstHistory(proposals))
         {
-            var world = HistoryWorldOf();
+            var world = HistoryRoutes.WorldOf(_loop);
             var plans = new List<HistoryPlan>();
             foreach (var proposal in proposals.Where(each => each.Kind == "clear"))
             {
