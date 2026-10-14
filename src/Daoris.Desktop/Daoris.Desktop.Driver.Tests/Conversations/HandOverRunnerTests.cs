@@ -87,6 +87,24 @@ public sealed class HandOverRunnerTests : IDisposable
     }
 
     /// <summary>
+    /// HANDWORDS1: a take's end is told, however it came out, with its box gone by then, so the words the shell held while it was
+    /// taken go on to the conversation that continues it. Here the new one's adapter refuses to prepare, so it ends failed.
+    /// </summary>
+    [Fact]
+    public async Task A_takes_end_is_told_once_its_box_is_gone()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c0nv0001", "completed", "talk", _root);
+        using var runner = Runner(ledger);
+        var ended = new List<(string Session, bool Box)>();
+        runner.TakeEnded += id => { lock (ended) ended.Add((id, new HandOverBox(_home).Read(id) is not null)); };
+
+        await HandAsync(runner, "c0nv0001", "other");
+
+        lock (ended) Assert.Equal([("c0nv0001", false)], ended);
+    }
+
+    /// <summary>
     /// 🔴 MIXAGENT1a-iii (D163 point 4): a conversation started to go on from another opens its record naming that one, why and who
     /// asked, read back as the record answers it; one started plainly names none. Nothing is spawned: the stand-in adapter refuses
     /// to prepare, after the record is open, so each record ends failed.

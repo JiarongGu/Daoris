@@ -126,6 +126,42 @@ public sealed class ChannelHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Single((await host.GetAsync("/api/asks/9a8b7e/channel")).Json.GetProperty("items").EnumerateArray());
     }
 
+    private static ChannelMessage From(string origin, string id, string ask, DateTimeOffset at) => new(
+        id, ask, "default", at, Session: "ab12cd34", Repository: "Keeper", Agent: "claude", Entry: "ask-" + ask + "/keeper", To: null, Re: null,
+        Question: false, "words " + id, Origin: origin);
+
+    /// <summary>
+    /// 🔴 SESSONE2h: <c>GET /api/channel/elsewhere</c> lists the asks the mirrored messages name that this machine does not hold: each with
+    /// its origins, its latest message, its count and its unread against the person's local mark, newest first; an ask held here is not in it.
+    /// </summary>
+    [Fact]
+    public async Task The_asks_held_elsewhere_are_listed_with_their_origins_latest_and_unread()
+    {
+        var now = DateTimeOffset.UtcNow;
+        await host.Composed.Messages.MirrorAsync(From("key-a", "e1", "7e6f50", now.AddMinutes(-30)));
+        await host.Composed.Messages.MirrorAsync(From("key-b", "e2", "7e6f50", now.AddMinutes(-20)));
+        await host.Composed.Messages.MirrorAsync(From("key-a", "e3", "7e6f51", now.AddMinutes(-10)));
+        await host.Composed.Messages.MirrorAsync(From("key-a", "e4", "7e6f51", now.AddMinutes(-5)));
+        await host.Composed.Messages.MoveMarkAsync("7e6f51", ChannelDesk.PersonEntry, now.AddMinutes(-7));
+        var held = await AskedAsync("Channel the fifth report through the bridge.");
+        await host.PostAsync($"/api/asks/{held}/channel", new { text = "mine" });
+
+        var listed = await host.GetAsync("/api/channel/elsewhere");
+
+        Assert.Equal(200, listed.Status);
+        var asks = listed.Json.GetProperty("asks").EnumerateArray().ToArray();
+        Assert.DoesNotContain(asks, a => a.GetProperty("id").GetString() == held);
+        var ours = asks.Where(a => a.GetProperty("id").GetString()!.StartsWith("7e6f5", StringComparison.Ordinal)).ToArray();
+        Assert.Equal(["7e6f51", "7e6f50"], ours.Select(a => a.GetProperty("id").GetString()));
+        var older = ours[1];
+        Assert.Equal(["key-a", "key-b"], older.GetProperty("origins").EnumerateArray().Select(o => o.GetString()));
+        Assert.Equal((2, 2), (older.GetProperty("messages").GetInt32(), older.GetProperty("unread").GetInt32()));
+        Assert.Equal("default", older.GetProperty("workspace").GetString());
+        Assert.Equal((2, 1), (ours[0].GetProperty("messages").GetInt32(), ours[0].GetProperty("unread").GetInt32()));
+        Assert.True(ours[0].GetProperty("latest").GetDateTimeOffset() > older.GetProperty("latest").GetDateTimeOffset());
+        Assert.False(ours[0].TryGetProperty("title", out _));
+    }
+
     /// <summary>Deleting an ask forgets its channel, so the same words asked again find none of it.</summary>
     [Fact]
     public async Task Deleting_the_ask_forgets_its_channel()

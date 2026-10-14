@@ -23,6 +23,12 @@ internal sealed class ChatHandOver(ChatContext context, ChatRunner runner)
     private readonly ChatRunner _runner = runner;
 
     /// <summary>
+    /// A take of a conversation's box is over, however it came out, its box gone (HANDWORDS1): the person's words held while it was
+    /// taken go on now, to the conversation that continues it where one opened. Told on the take's own thread, after its end.
+    /// </summary>
+    public event Action<string>? TakeEnded;
+
+    /// <summary>
     /// *Hand a conversation over* (MIXAGENT1a-i): <see cref="HandOver.AskAsync"/> judges and keeps the box; a conversation that is
     /// not talking is taken at once, and one that is talking keeps the box until its turn ends (<see cref="Due"/>), or the
     /// shell comes up (<see cref="ChatRunner.TakeUpAsync"/>).
@@ -144,6 +150,20 @@ internal sealed class ChatHandOver(ChatContext context, ChatRunner runner)
             held?.Release();
             _context.GoingOn.TryRemove(sessionId, out _);
             going.TrySetResult();
+            Ended(sessionId);
+        }
+    }
+
+    /// <summary>Tell <see cref="TakeEnded"/>: a listener's failure is its own, and the take is over either way.</summary>
+    private void Ended(string sessionId)
+    {
+        try
+        {
+            TakeEnded?.Invoke(sessionId);
+        }
+        catch (Exception)
+        {
+            // The words it holds are tried again at its next look (SessionWords' poll), so nothing is lost by a listener that threw.
         }
     }
 

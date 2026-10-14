@@ -392,6 +392,34 @@ public sealed class ChatGoOnTests : IDisposable
         Assert.Equal(["w4"], marks.Read("c4")!.Said);
     }
 
+    /// <summary>
+    /// 🔴 HANDWORDS1 (D163 point 1, D165 point 3): a conversation handed over or moved went on in another, which holds its tree now
+    /// and takes its words. Words left on its record never restart it: not as its go-on is asked, not as the shell comes up, and not
+    /// as a word is shown; it stays as it ended, its words unmarked and nothing said in it.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_that_went_on_in_another_never_goes_on_itself()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "talk", _root).Say("w1", "Also log the port.");
+        ledger.Chat("c2", "working", "talk", _root, from: new ContinuedFrom("c1", HandOverWhy.Curve, HandOverBy.Daoris));
+        new HarnessConversations(_home).Keep("c1", "talk", "conv-c1");
+        var events = Events;
+        using var runner = Runner(ledger, events);
+
+        var answer = await runner.GoOnAsync("c1", DriverConfig.Empty);
+        var taken = await runner.TakeUpAsync();
+        events.Append("c1", Shown("w1", "Also log the port."));
+        await Task.Delay(300);
+
+        Assert.Equal(((string?)null, "conversation `c1` went on in conversation `c2`, which takes its words."), (answer.SessionId, answer.Message));
+        Assert.Empty(taken);
+        Assert.Empty(ledger.Moves("c1"));
+        Assert.Equal(["w1"], ledger.Said("c1"));
+        Assert.Null(new GoOnMarks(_home).Read("c1"));
+        Assert.DoesNotContain(events.After("c1", 0).Events, e => e.Kind == SessionEventKind.Note);
+    }
+
     /// <summary>MSG1c2: a chat the sweep takes up announces its end as one a word takes up does.</summary>
     [Fact]
     public async Task A_chat_the_sweep_takes_up_announces_its_end()

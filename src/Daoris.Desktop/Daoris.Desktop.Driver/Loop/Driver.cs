@@ -1226,7 +1226,7 @@ public sealed class Driver(
 
         // The session this start continues, why and who asked (MIXAGENT1a-iii, D163 point 4): the one the quest was handed over
         // from, or one a limit cut off when this runs on another account; named on the record as it opens.
-        var continues = ContinuesFrom(handedQuest, carryingOn ? start.Resumes : null, selection.Profile);
+        var continues = ContinuesFrom(handedQuest, carryingOn ? start.Resumes : null, selection.Profile, selection.Steps?.FirstOrDefault()?.Why);
 
         // The ledger judges the open — the same door any other client would use. A refusal here is
         // an answer (someone else got there first), not an error.
@@ -2573,11 +2573,18 @@ public sealed class Driver(
     /// <param name="handed">The quest's hand-over as held, or null.</param>
     /// <param name="carried">The record it carries on, where it carries one on, or null.</param>
     /// <param name="profile">The account it opens on.</param>
-    internal static ContinuedFrom? ContinuesFrom(HandedQuest? handed, PriorSession? carried, string? profile) =>
+    /// <param name="walked">
+    /// The reason of the walk's first step, where the walk chose the account (<see cref="StepSaid.Why"/>). An account over its
+    /// curve passed, or the most room under it, is the usage curve's move (SWITCH1c-iii, the switch design §4); a cooling or
+    /// refused account passed, a limit reached and the rest are not.
+    /// </param>
+    internal static ContinuedFrom? ContinuesFrom(HandedQuest? handed, PriorSession? carried, string? profile, string? walked = null) =>
         carried is null ? null
         : handed is not null && string.Equals(carried.Session, handed.From, StringComparison.Ordinal)
             ? new ContinuedFrom(carried.Session, handed.Why, handed.AskedBy)
         : carried.Limit && OnAnotherAccount(carried, profile)
             ? new ContinuedFrom(carried.Session, HandOverWhy.Limit, HandOverBy.Daoris)
+        : walked is OpeningWhy.OverCurve or OpeningWhy.MostRoom && OnAnotherAccount(carried, profile)
+            ? new ContinuedFrom(carried.Session, HandOverWhy.Curve, HandOverBy.Daoris)
         : null;
 }

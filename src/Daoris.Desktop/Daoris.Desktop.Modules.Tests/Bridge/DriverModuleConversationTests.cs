@@ -233,6 +233,65 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// 🔴 HANDWORDS1 (D163 point 1, D165 point 3): a conversation handed over or moved went on in another, which takes its words. A
+    /// word to it is refused <c>continued</c>, naming the latest of the conversations that continue it, as the queue says it too;
+    /// nothing is kept on its record, so nothing could restart it in the tree its successor holds.
+    /// </summary>
+    [Fact]
+    public async Task Words_to_a_conversation_that_went_on_are_refused_naming_the_one_that_continues_it()
+    {
+        var ledger = new Ledger { Records = Records(Chat("c1", "completed"), Chat("c2", "completed", from: "c1"), Chat("c3", "working", from: "c2")) };
+        var (loop, module) = await UpAsync(ledger);
+
+        var sent = await AnswerAsync(module, "SESSION_INPUT", new { id = "c1", text = "one more thing" });
+        var queue = await AnswerAsync(module, "SESSION_QUEUE", new { id = "c1" });
+
+        Assert.Equal((false, WordsNever.Continued, "c3"), (sent.GetProperty("sent").GetBoolean(), sent.GetProperty("why").GetString(), sent.GetProperty("to").GetString()));
+        Assert.Equal((WordsNever.Continued, "c3"), (queue.GetProperty("why").GetString(), queue.GetProperty("to").GetString()));
+        var reach = queue.GetProperty("reach");
+        Assert.Equal((WordsNever.Continued, "c3"), (reach.GetProperty("why").GetString(), reach.GetProperty("to").GetString()));
+        Assert.Empty(ledger.Posts);
+        Assert.Empty(loop.Events.Page("c1").Events);
+        Assert.Equal(0, loop.Nudges);
+    }
+
+    /// <summary>
+    /// 🔴 HANDWORDS1: words said while a conversation is handed over or moved (its box kept until the take is done) are held here, never
+    /// kept on the record that is ending, even once it has ended; when the take is told done they go to the conversation that
+    /// continues it, kept and shown there, and nothing is held any more.
+    /// </summary>
+    [Fact]
+    public async Task Words_said_while_a_conversation_is_handed_over_go_to_the_one_that_continues_it()
+    {
+        var ledger = new Ledger { Records = Records(Chat("c1", "working")) };
+        var (loop, module) = await UpAsync(ledger);
+        new HandOverBox(loop.Home).Write("c1", new HandOverRequest("talk", "account-2", HandOverWhy.Curve, HandOverBy.Daoris, DateTimeOffset.UtcNow));
+
+        var sent = await AnswerAsync(module, "SESSION_INPUT", new { id = "c1", text = "and the readme" });
+
+        Assert.Equal((true, "resume"), (sent.GetProperty("sent").GetBoolean(), sent.GetProperty("reaches").GetString()));
+        Assert.Empty(ledger.Posts);
+
+        // The take ends the old conversation and opens the one that continues it; until its box is gone the words still wait.
+        ledger.Records = Records(Chat("c1", "completed"), Chat("c2", "working", from: "c1"));
+        await loop.Service!.AdvanceAsync("c1", "completed", note: "the conversation went on in c2.");
+        await Task.Delay(300);
+        Assert.Empty(ledger.Posts);
+
+        new HandOverBox(loop.Home).Clear("c1");
+        loop.Words.OnTakeEnded("c1");
+
+        await UntilAsync(() => ledger.Posts.Count >= 1);
+        var (_, path, body) = Assert.Single(ledger.Posts);
+        Assert.Equal("/api/sessions/c2/say", path);
+        using (var said = JsonDocument.Parse(body)) Assert.Equal("and the readme", said.RootElement.GetProperty("text").GetString());
+        await UntilAsync(() => loop.Events.Page("c2").Events.Count == 1);
+        Assert.Equal(("w1", "resume", "screen"), (loop.Events.Page("c2").Events[0].Id, loop.Events.Page("c2").Events[0].Reaches, loop.Events.Page("c2").Events[0].Door));
+        Assert.Empty(loop.Events.Page("c1").Events);
+        await UntilAsync(() => !File.Exists(SessionWords.HeldPath(Home)));
+    }
+
+    /// <summary>
     /// MSG1d (D137 §5.3): what a word said now would do, for the page to offer the box by: a session that ended or parked
     /// goes on with it, and a driven session's inbox answers its door's reach, which is not known until the door is.
     /// </summary>
@@ -461,6 +520,13 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     private static string Record(string id, string state, string quest = "q1") =>
         $$"""{"id":"{{id}}","repository":"engine","state":"{{state}}","quest":"{{quest}}","kind":"driven","created":"2026-10-03T08:00:00Z"}""";
 
+    /// <summary>A conversation's record, continuing <paramref name="from"/> where one is named (MIXAGENT1a-iii's <c>from</c>).</summary>
+    private static string Chat(string id, string state, string? from = null)
+    {
+        var continues = from is null ? "" : $",\"from\":\"{from}\"";
+        return $$"""{"id":"{{id}}","repository":"engine","state":"{{state}}","kind":"chat","created":"2026-10-03T08:00:00Z"{{continues}}}""";
+    }
+
     /// <summary>The say door's yes: the record, its sentence, and the word as kept, with the id the record gave it.</summary>
     private static string Kept(string id, string word = "w1", string text = "also the changelog") => $$"""
         {"session":{"id":"{{id}}","state":"completed"},"message":"Kept for session `{{id}}` to go on with.",
@@ -476,7 +542,8 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     {
         private readonly List<(string Method, string Path, string Body)> _posts = [];
 
-        public string Records { get; init; } = "[]";
+        /// <summary>The records the service answers; a test moves them on as a take would (HANDWORDS1).</summary>
+        public string Records { get; set; } = "[]";
 
         public Func<string, (HttpStatusCode Status, string Body)> Say { get; init; } = id => (HttpStatusCode.OK, Kept(id));
 

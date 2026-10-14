@@ -586,7 +586,7 @@ export function WorkFrame({
 
   // Words nothing took, in the page's words: by the driver's code where it gave one (MSG1d), else that nothing took them.
   const untaken = (said: WordsAnswer, fallback: string) =>
-    (said.why ? neverSentence(t, said.why, { quest: attended?.quest }) : fallback);
+    (said.why ? neverSentence(t, said.why, { quest: attended?.quest, to: said.to }) : fallback);
 
   const onSend = (text: string, files: File[] = []) => {
     if (!attended) return;

@@ -12,7 +12,11 @@ import { answeredPark, SESSION_ACTIVE } from '../design/ui';
  * session (`next-step`, `turn-end` or `resume`, or null where it is taken at once or the door is not known yet), and why
  * nothing takes it, by a code, where nothing does.
  */
-export type Reach = { reaches: string | null; why: string | null };
+export type Reach = {
+  reaches: string | null; why: string | null;
+  /** The conversation a `continued` one went on in (HANDWORDS1); present only then. */
+  to?: string;
+};
 
 /**
  * The box a session is offered.
@@ -22,7 +26,7 @@ export type Reach = { reaches: string | null; why: string | null };
  * - `say`: words the same session goes on with (D137 §2.2): a park's `answer`; `goOn`, a session that ended or a park
  *   already answered, whose next word joins the first (§2.4); or one `ending`, whose words wait for its record to end and
  *   then reopen it.
- * - `line`: nothing takes words, and the line says why, by the code.
+ * - `line`: nothing takes words, and the line says why, by the code, naming where a `continued` one went on (`to`).
  * - `none`: nothing to offer and nothing to say: no session, a live intake whose head says it, or nothing known yet.
  */
 export type Box =
@@ -30,7 +34,7 @@ export type Box =
   | { kind: 'chat' }
   | { kind: 'steer' }
   | { kind: 'say'; mode: 'answer' | 'goOn' | 'ending' }
-  | { kind: 'line'; why: string };
+  | { kind: 'line'; why: string; to?: string };
 
 /** What decides a session's box: its record, whether it is this machine's, and what the module answered. */
 export type BoxFacts = {
@@ -64,7 +68,7 @@ export function boxOf({ session, here, intake, listening, reach }: BoxFacts): Bo
   const live = SESSION_ACTIVE.has(session.state);
   if (session.opinion) return live ? { kind: 'none' } : { kind: 'line', why: 'opinion' };
   if (intake) return live ? { kind: 'none' } : { kind: 'line', why: 'intake' };
-  if (reach?.why) return { kind: 'line', why: reach.why };
+  if (reach?.why) return { kind: 'line', why: reach.why, ...(reach.to ? { to: reach.to } : {}) };
   const resumes = reach?.reaches === 'resume';
 
   if (session.kind === 'chat') {
@@ -91,16 +95,21 @@ export const NEVER: Record<string, string> = {
   'opinion': 'work.say.opinion',
   'help': 'work.say.help',
   'superseded': 'work.say.superseded',
+  // HANDWORDS1: a conversation handed over or moved went on in another, which the module names as `to`.
+  'continued': 'work.say.continued',
   'not-found': 'work.say.notFound',
 };
 
 /**
  * Why a session takes no words, in the page's own words (D137 §5.1): a code the module answered, or one the page knows.
- * A code a newer host answers that this page has no sentence for is named rather than left unsaid.
+ * A code a newer host answers that this page has no sentence for is named rather than left unsaid. `to` is the conversation
+ * a `continued` one went on in (HANDWORDS1), as the module answers it beside the code.
  */
-export function neverSentence(t: Translate, code: string, { quest }: { quest?: string | null }): string {
+export function neverSentence(
+  t: Translate, code: string, { quest, to }: { quest?: string | null; to?: string | null },
+): string {
   const key = NEVER[code];
-  return key ? t(key, { quest: quest ?? '' }) : t('work.say.takesNone', { code });
+  return key ? t(key, { quest: quest ?? '', to: to ?? '' }) : t('work.say.takesNone', { code });
 }
 
 /** The sentence for each code *Start a conversation with these words* is refused by that is not a never (MSG1f2), by its key. */

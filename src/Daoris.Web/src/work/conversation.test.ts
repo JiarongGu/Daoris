@@ -897,6 +897,16 @@ describe('the words’ answers', () => {
     await waitFor(() => expect(older.result.current).toEqual({ reaches: null, why: null }));
   });
 
+  /** HANDWORDS1: a conversation handed over or moved is `continued`, and the reach names the one it went on in, live too. */
+  it('keeps the conversation a continued one went on in', async () => {
+    invoke.mockResolvedValueOnce({ session: 'c1', queued: [], taking: false, why: 'continued', to: 'c2', reach: { why: 'continued', to: 'c2' } });
+    const { result } = renderHook(() => useSessionReach({ id: 'c1', state: 'completed' }), { wrapper });
+    await waitFor(() => expect(result.current).toEqual({ reaches: null, why: 'continued', to: 'c2' }));
+
+    act(() => { eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c1', queued: [], taking: false, reach: { why: 'continued', to: 'c3' } }); });
+    await waitFor(() => expect(result.current).toEqual({ reaches: null, why: 'continued', to: 'c3' }));
+  });
+
   it('asks nothing with no session', () => {
     const { result } = renderHook(() => useSessionReach(null), { wrapper });
     expect(result.current).toBeUndefined();

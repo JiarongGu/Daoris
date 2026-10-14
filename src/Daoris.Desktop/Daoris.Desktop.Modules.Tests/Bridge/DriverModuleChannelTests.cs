@@ -46,6 +46,29 @@ public sealed class DriverModuleChannelTests : DriverModuleBridge
         Assert.Equal("2026-10-14T08:00:00", read.GetProperty("mark").GetString()![..19]);
     }
 
+    /// <summary>
+    /// SESSONE2h: <c>ASKS_ELSEWHERE</c> answers the asks the mirrored messages name that this machine does not hold, as the service lists
+    /// them (circle, origins, latest, count, unread), and an empty list from a host from before the door.
+    /// </summary>
+    [Fact]
+    public async Task ASKS_ELSEWHERE_lists_the_asks_held_elsewhere_and_none_from_a_host_before_the_door()
+    {
+        var (module, service) = await UpAsync(new StandIn(_ => (HttpStatusCode.OK,
+            """{"asks":[{"id":"7e6f51","workspace":"default","origins":["key-a","key-b"],"latest":"2026-10-15T09:05:00Z","messages":3,"unread":2}]}""")));
+
+        var listed = await AnswerAsync(module, "ASKS_ELSEWHERE", new { });
+
+        Assert.Equal(["GET /api/channel/elsewhere"], service.Requests);
+        var ask = Assert.Single(listed.GetProperty("asks").EnumerateArray());
+        Assert.Equal(("7e6f51", "default", 3, 2), (ask.GetProperty("id").GetString(), ask.GetProperty("workspace").GetString(),
+            ask.GetProperty("messages").GetInt32(), ask.GetProperty("unread").GetInt32()));
+        Assert.Equal(["key-a", "key-b"], ask.GetProperty("origins").EnumerateArray().Select(o => o.GetString()));
+        Assert.Equal("2026-10-15T09:05:00", ask.GetProperty("latest").GetString()![..19]);
+
+        var (older, _) = await UpAsync(new StandIn(_ => null));
+        Assert.Equal(0, (await AnswerAsync(older, "ASKS_ELSEWHERE", new { })).GetProperty("asks").GetArrayLength());
+    }
+
     /// <summary>A named entry's read and a tail after a moment go to the door as its query.</summary>
     [Fact]
     public async Task CHANNEL_READ_passes_an_entry_and_a_since_on()

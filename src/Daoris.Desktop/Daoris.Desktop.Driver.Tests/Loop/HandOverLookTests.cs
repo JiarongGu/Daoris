@@ -198,6 +198,54 @@ public sealed class HandOverLookTests : IDisposable
         Assert.Null(Daoris.Driver.Driver.ContinuesFrom(handed, null, "account-1"));
     }
 
+    /// <summary>
+    /// 🔴 SWITCH1c-iii (D165 point 3, the switch design §4): a carry-on that starts on the account the curve ranks first, which moves
+    /// it off the last session's account, names that session with `curve` and `daoris`; one that stays, one moved for another reason
+    /// (a cooling account, a limit reached) and a limit's own move say what they always said.
+    /// </summary>
+    [Fact]
+    public void A_carry_on_the_curve_moves_to_another_account_names_the_curve()
+    {
+        PriorSession Prior(string session, bool limit = false, string? profile = "account-1") =>
+            new(session, null, "stopped") { Limit = limit, Profile = profile };
+
+        // Moved: the walk's first step was an account over its curve, or the most room under it, and the account changed.
+        Assert.Equal(new ContinuedFrom("s1", "curve", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1"), "account-2", OpeningWhy.OverCurve));
+        Assert.Equal(new ContinuedFrom("s1", "curve", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1"), "account-2", OpeningWhy.MostRoom));
+
+        // Stays: the same account, whatever the walk said, says nothing.
+        Assert.Null(Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1"), "account-1", OpeningWhy.MostRoom));
+        // Moved for another reason than the curve says nothing, and nothing is claimed of a start no walk chose.
+        Assert.Null(Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1"), "account-2", OpeningWhy.Cooling));
+        Assert.Null(Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1"), "account-2", OpeningWhy.NearReached));
+        Assert.Null(Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1"), "account-2", null));
+        // A limit is the limit's move, and a hand-over its own, whatever the walk then said.
+        Assert.Equal(new ContinuedFrom("s1", "limit", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, Prior("s1", limit: true), "account-2", OpeningWhy.MostRoom));
+        Assert.Equal(new ContinuedFrom("s1", "near", "person"), Daoris.Driver.Driver.ContinuesFrom(
+            new HandedQuest("codex-acp", null, "s1", HandOverWhy.Near, HandOverBy.Person, T0), Prior("s1"), "account-2", OpeningWhy.MostRoom));
+    }
+
+    /// <summary>
+    /// SWITCH1c-iii: the opening line of a carry-on the curve moved says why, in English and by code (the page words it in both
+    /// languages from the `opening.carried-on` reason it already has): the session, the account and the curve's step, no limit's turn.
+    /// </summary>
+    [Fact]
+    public void A_carry_on_the_curve_moved_opens_saying_the_curve_s_step()
+    {
+        var why = "it has the most room under its curve, 53 points on its weekly window";
+        var selection = new HarnessSelection(null, "account-2")
+        {
+            Choice = new AccountChoice(WalkStep.Pace, why),
+            Steps = [new StepSaid(why, OpeningWhy.MostRoom, [("room", 53), ("window", "weekly")])],
+        };
+
+        var line = RotatedOpening.Line(selection, new RotatedOpening.Carried("s1", null, null))!;
+
+        Assert.StartsWith($"carried on from session `s1` on `account-2`; {why}.", line.Note, StringComparison.Ordinal);
+        Assert.Equal(["opening.carried-on"], NoteAssert.Codes(line.Parts).Take(1));
+        Assert.Equal(OpeningWhy.MostRoom, line.Parts[0].Value("why"));
+    }
+
     /// <summary>The open says the link, read back as the record answers it; an open that names none says none.</summary>
     [Fact]
     public async Task A_quest_s_open_names_the_session_it_continues_on_its_record()

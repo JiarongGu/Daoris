@@ -1,7 +1,7 @@
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
-import { type Channel, channelOf, type ChannelPost, type ChannelPosted, postedOf } from '../work/channel';
+import { type Channel, channelOf, type ChannelPost, type ChannelPosted, elsewhereOf, postedOf } from '../work/channel';
 import { call } from './call';
 
 // An ask's own doors (SESSONE2c, D167 points 6 to 8; the co-working design §2.4): its channel, where its sessions and the person
@@ -9,7 +9,7 @@ import { call } from './call';
 // `daoris-driver ask channel` reads the same way (D50). Shell-only: a browser has no driver, and no channel is asked there.
 
 /** The shapes the routes answer live with the screen's own rule (`work/channel.ts`), since a molecule may read a shape and never a bridge domain. */
-export type { Channel, ChannelItem, ChannelPost, ChannelPosted } from '../work/channel';
+export type { Channel, ChannelItem, ChannelPost, ChannelPosted, ElsewhereAsk } from '../work/channel';
 
 /**
  * Under the asks' key, so a tick, which asks the asks again (the attention band reads them beside the sessions), asks each
@@ -57,6 +57,24 @@ export const useChannelUnreads = (asks: readonly string[], { enabled = true }: {
       results.flatMap((result, at): [string, number][] => (result.data ? [[asks[at], result.data.unread]] : [])),
     ),
   });
+};
+
+/** Under the asks' key, like each channel: a tick asks the asks again, and the teammates' asks follow. */
+export const elsewhereKey = [...keys.allAsks, 'elsewhere'] as const;
+
+/**
+ * The asks the mirrored messages name that this machine does not hold (`ASKS_ELSEWHERE`, SESSONE2h): a teammate's ask has no
+ * record here, and its page is its channel. None in a browser, which has no driver, and none from a shell from before the route.
+ */
+export const useElsewhereAsks = ({ enabled = true }: { enabled?: boolean } = {}) => {
+  const { isAvailable } = useShenora();
+  const query = useQuery({
+    queryKey: elsewhereKey,
+    queryFn: async () => elsewhereOf(await call<unknown>('ASKS_ELSEWHERE', {})),
+    enabled: isAvailable && enabled,
+    refetchOnWindowFocus: false,
+  });
+  return { asks: query.data ?? [], loading: query.isPending && query.fetchStatus !== 'idle', available: isAvailable };
 };
 
 /**

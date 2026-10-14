@@ -79,6 +79,9 @@ export const LineHelp: Story = { args: { box: { kind: 'line', why: 'help' } } };
 /** An earlier session of a quest that went on in a later one here (MSG1d). */
 export const LineSuperseded: Story = { args: { box: { kind: 'line', why: 'superseded' } } };
 
+/** A conversation handed over or moved, naming the one it went on in (HANDWORDS1). */
+export const LineContinued: Story = { args: { box: { kind: 'line', why: 'continued', to: 'c4d5e6f7' } } };
+
 /** A record the service no longer has. */
 export const LineNotFound: Story = { args: { box: { kind: 'line', why: 'not-found' } } };
 

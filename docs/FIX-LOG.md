@@ -64,6 +64,23 @@ repository.
   the window is too narrow for the suite to show in 40 runs, which is why the probe is the proof. Merged with main, 2043 of
   2043, and the HTTP host's suite 266 of 266.
 - **Commit:** `ef852e2c`.
+## 2026-10-15 — Words to a conversation handed over or moved stayed on its record and could restart it (HANDWORDS1-i)
+
+- **Symptom:** none seen on the install; named by SWITCH1c-ii's note as a later row. A word said while a conversation was handed
+  over or moved by the curve was held as a winding-up session's is, then kept on the old record once it ended; a word said to the
+  old one after the take was kept there too. Either woke its go-on (or the next come-up), which restarted the old conversation in
+  the tree its successor held, and the successor never heard the words.
+- **Root cause:** nothing read a record's successor. A take links the new record to the old by `from` (MIXAGENT1a-iii), but the say
+  doors, the go-on and the come-up judged the old record alone, as an ended conversation with words waiting.
+- **Fix:** `WordsNever.ContinuedIn` reads the latest conversation down the `from` chain, and the never table refuses the old id
+  `continued`, naming it (the say doors, start-from, go-on-new, the hand-over judge). The shell's judge holds a word while the
+  conversation's box stands and passes it to that conversation once the take is told over (`ChatRunner.TakeEnded`); the go-on and
+  the come-up leave a record with a successor as it ended. D165's HANDWORDS1-i note.
+- **Verify:** red then green: `DriverModuleConversationTests.Words_said_while_a_conversation_is_handed_over_go_to_the_one_that_continues_it`
+  and `…Words_to_a_conversation_that_went_on_are_refused_naming_the_one_that_continues_it`,
+  `ChatGoOnTests.A_conversation_that_went_on_in_another_never_goes_on_itself`, `HandOverRunnerTests.A_takes_end_is_told_once_its_box_is_gone`
+  and the refusal rows in `SessionsSayCommandTests`, `StartFromTests`, `GoOnNewTests` and `HandOverTests`; the driver's fast half
+  (7563) and the modules' (929). A real take with a word said during it is the Process half's and the window's to show.
 
 ## 2026-10-15 — The person's words to a session whose closed quest had once waited on a question never went on
 

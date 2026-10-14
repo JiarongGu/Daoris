@@ -37,11 +37,11 @@ public sealed class SessionsSayCommandTests : IDisposable
 
     private static JsonObject Record(
         string id, string state, string? quest = "q1", string repository = "engine", string kind = "driven", string? ask = null,
-        int minutes = 0) => new()
+        int minutes = 0, string? from = null) => new()
         {
             ["id"] = id, ["repository"] = repository, ["state"] = state, ["kind"] = kind, ["quest"] = quest, ["ask"] = ask,
             ["adapter"] = "claude-code", ["created"] = T0.AddMinutes(minutes).ToString("O"),
-            ["updated"] = T0.AddMinutes(minutes + 5).ToString("O"), ["said"] = new JsonArray(),
+            ["updated"] = T0.AddMinutes(minutes + 5).ToString("O"), ["said"] = new JsonArray(), ["from"] = from,
         };
 
     private static JsonObject Quest(string id, string status) => new()
@@ -119,6 +119,10 @@ public sealed class SessionsSayCommandTests : IDisposable
             Record("e4rl1er0", "failed", quest: "q2", minutes: 0),
             Record("l4t3r000", "completed", quest: "q2", minutes: 10),
             Record("laptop/s9", "working", quest: "q2", minutes: 20),
+            // HANDWORDS1: a conversation handed over, then moved: its words go to the latest that continues it.
+            Record("h4nd3d00", "completed", quest: null, kind: "chat", minutes: 30),
+            Record("m0v3d000", "completed", quest: null, kind: "chat", minutes: 31, from: "h4nd3d00"),
+            Record("n3w3st00", "working", quest: null, kind: "chat", minutes: 32, from: "m0v3d000"),
         ],
         [Quest("q2", "Done"), Quest("q3", "Taken")]);
 
@@ -132,6 +136,7 @@ public sealed class SessionsSayCommandTests : IDisposable
     [InlineData("1ntake00", "is an intake; answer its ask #a1 instead")]
     [InlineData("st00d000", "it stood down: #q3 is someone else's, so it has nothing to go on with")]
     [InlineData("e4rl1er0", "#q2 went on in a later session here, l4t3r000; say it to that one: daoris-driver sessions say l4t3r000")]
+    [InlineData("h4nd3d00", "h4nd3d00 went on in conversation n3w3st00; say it to that one: daoris-driver sessions say n3w3st00")]
     public async Task Each_never_is_refused_by_its_code_before_anything_is_asked(string id, string why)
     {
         var room = Nevers();
@@ -178,6 +183,36 @@ public sealed class SessionsSayCommandTests : IDisposable
         var record = new SessionRecord(id, repository, state) { Quest = quest, Ask = ask };
 
         Assert.Equal(code, WordsNever.Judge(record, last));
+    }
+
+    /// <summary>
+    /// HANDWORDS1 (D163 point 1, D165 point 3): a conversation handed over or moved went on in another, whose record's <c>from</c>
+    /// names it; the one it is continued in is the latest down that chain, so a conversation handed over and then moved names where
+    /// it is now. A teammate's record continues nothing here, a quest's session that went on is <c>superseded</c>'s, and a chain
+    /// that comes back on itself ends where it would repeat.
+    /// </summary>
+    [Fact]
+    public void A_conversation_handed_over_or_moved_is_continued_in_the_latest_that_continues_it()
+    {
+        static SessionRecord Chat(string id, string? from = null, int minutes = 0) =>
+            new(id, "engine", "completed") { Kind = "chat", From = from, Created = T0.AddMinutes(minutes) };
+        IReadOnlyList<SessionRecord> records =
+        [
+            Chat("c1"), Chat("c2", from: "c1", minutes: 1), Chat("c3", from: "c2", minutes: 2),
+            new("laptop/c4", "engine", "working") { Kind = "chat", From = "c3" },
+            new("s1", "engine", "failed") { Quest = "q1" }, new("s2", "engine", "working") { Quest = "q1", From = "s1" },
+            Chat("c5"), Chat("c6", from: "c7"), Chat("c7", from: "c6"),
+        ];
+
+        Assert.Equal(("c3", "c3", (string?)null, (string?)null), (
+            WordsNever.ContinuedIn(records, "c1"), WordsNever.ContinuedIn(records, "c2"), WordsNever.ContinuedIn(records, "c3"),
+            WordsNever.ContinuedIn(records, "c5")));
+        Assert.Equal(((string?)null, (string?)null, "c7"), (
+            WordsNever.ContinuedIn(records, "s1"), WordsNever.ContinuedIn(records, "nobody"), WordsNever.ContinuedIn(records, "c6")));
+        Assert.Equal(WordsNever.Continued, WordsNever.Judge(records[0], last: null, next: "c3"));
+        Assert.Null(WordsNever.Judge(records[2], last: null, next: null));
+        Assert.Equal(WordsNever.Superseded, WordsNever.Judge(records[4], last: "s2", next: "s9"));
+        Assert.Equal("c1 went on in conversation c3; say it to that one.", WordsNever.WentOn("c1", "c3"));
     }
 
     [Fact]

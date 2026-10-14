@@ -54,6 +54,9 @@ describe('boxOf', () => {
   it('draws the line for the code the module answered', () => {
     expect(boxOf(facts({ session: session({ state: 'completed' }), reach: { reaches: null, why: 'superseded' } })))
       .toEqual({ kind: 'line', why: 'superseded' });
+    // HANDWORDS1: the conversation a continued one went on in rides the line.
+    expect(boxOf(facts({ session: session({ kind: 'chat', state: 'completed' }), reach: { reaches: null, why: 'continued', to: 'c2' } })))
+      .toEqual({ kind: 'line', why: 'continued', to: 'c2' });
     expect(boxOf(facts({ session: session({ kind: 'chat', quest: null, state: 'stopped' }), reach: { reaches: null, why: 'help' } })))
       .toEqual({ kind: 'line', why: 'help' });
   });
@@ -121,10 +124,16 @@ describe('neverSentence', () => {
     ['intake', 'An intake takes no words: it is answered through its ask.'],
     ['help', 'Ask Daoris\'s conversations take words in its own panel, which starts a new one.'],
     ['superseded', '#q1 went on in a later session here, so write to that one.'],
+    // HANDWORDS1: a conversation handed over or moved names the one that continues it.
+    ['continued', 'It went on in conversation c2; say it to that one.'],
     ['not-found', 'Daoris no longer has this session\'s record, so nothing can take words for it.'],
   ])('says %s in its own sentence', (code, said) => {
-    expect(neverSentence(t, code, { quest: 'q1' })).toBe(said);
-    expect(neverSentence(zh, code, { quest: 'q1' })).not.toBe(said);
+    expect(neverSentence(t, code, { quest: 'q1', to: 'c2' })).toBe(said);
+    expect(neverSentence(zh, code, { quest: 'q1', to: 'c2' })).not.toBe(said);
+  });
+
+  it('carries the conversation a continued one went on in into both languages', () => {
+    expect(neverSentence(zh, 'continued', { to: 'c2' })).toContain('c2');
   });
 
   it('names a code it has no sentence for, rather than saying nothing', () => {

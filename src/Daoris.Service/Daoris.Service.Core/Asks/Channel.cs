@@ -114,6 +114,15 @@ public sealed record ChannelRead(
         [.. Lines.Cast<IChannelItem>().Concat(Messages).OrderBy(item => item.At)];
 }
 
+/// <summary>An ask the mirrored messages name and this machine does not hold (SESSONE2h): all this machine knows of it.</summary>
+/// <param name="Id">The ask's id.</param>
+/// <param name="Workspace">Its circle, from its messages.</param>
+/// <param name="Origins">The machines its messages came from, ordered; empty where only this machine's own are kept.</param>
+/// <param name="Latest">The moment of its newest message.</param>
+/// <param name="Messages">How many of its messages are kept.</param>
+/// <param name="Unread">How many are after the person's local mark.</param>
+public sealed record ElsewhereAsk(string Id, string Workspace, IReadOnlyList<string> Origins, DateTimeOffset Latest, int Messages, int Unread);
+
 /// <summary>What a post did.</summary>
 public sealed record ChannelOutcome(ChannelRefusal Refusal, ChannelMessage? Message);
 
@@ -330,6 +339,25 @@ public sealed class ChannelStore
             Text("text"), Maybe("origin"));
     }
 
+    /// <summary>
+    /// Every ask the kept messages name, each with its circle and the moments of its messages by origin (SESSONE2h): what a list of the
+    /// asks held elsewhere is made of. The messages' words are not read.
+    /// </summary>
+    public Task<IReadOnlyList<(string Ask, string Workspace, string? Origin, DateTimeOffset At)>> NamedAsksAsync(CancellationToken ct = default) =>
+        _db.RunAsync<IReadOnlyList<(string Ask, string Workspace, string? Origin, DateTimeOffset At)>>(async () =>
+        {
+            await using var command = _db.Command();
+            command.CommandText = "SELECT ask, workspace, origin, at FROM channel ORDER BY seq";
+            var read = new List<(string Ask, string Workspace, string? Origin, DateTimeOffset At)>();
+            await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+            while (await reader.ReadAsync(ct).ConfigureAwait(false))
+            {
+                read.Add((reader.GetString(0), reader.GetString(1), reader.IsDBNull(2) ? null : reader.GetString(2), Moments.ReadRequired(reader.GetString(3))));
+            }
+
+            return read;
+        }, ct);
+
     /// <summary>The moment an entry last read the ask's channel up to, or null when it never has.</summary>
     public Task<DateTimeOffset?> MarkAsync(string ask, string entry, CancellationToken ct = default) => _db.RunAsync<DateTimeOffset?>(async () =>
     {
@@ -451,6 +479,29 @@ public sealed class ChannelDesk(
         return new ChannelRead(
             [.. mirrored.Where(m => since is null || m.At > since).OrderBy(m => m.At)], [],
             mirrored.Count(m => mark is null || m.At > mark), mark);
+    }
+
+    /// <summary>
+    /// The asks the mirrored messages name that this machine does not hold (SESSONE2h), newest message first. No ask record is here, so a
+    /// title is not: the messages carry their circle, the machines they came from, and when. Unread is against the person's local mark;
+    /// each is readable at <see cref="ReadAsync"/> by its id.
+    /// </summary>
+    public async Task<IReadOnlyList<ElsewhereAsk>> ElsewhereAsync(CancellationToken ct = default)
+    {
+        var named = await store.NamedAsksAsync(ct).ConfigureAwait(false);
+        var listed = new List<ElsewhereAsk>();
+        foreach (var group in named.GroupBy(row => row.Ask, StringComparer.Ordinal))
+        {
+            if (await asks.FindAsync(group.Key, ct).ConfigureAwait(false) is not null) continue;
+
+            var mark = await store.MarkAsync(group.Key, PersonEntry, ct).ConfigureAwait(false);
+            listed.Add(new ElsewhereAsk(
+                group.Key, group.First().Workspace,
+                [.. group.Select(row => row.Origin).OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)],
+                group.Max(row => row.At), group.Count(), group.Count(row => mark is null || row.At > mark)));
+        }
+
+        return [.. listed.OrderByDescending(ask => ask.Latest)];
     }
 
     private async Task<bool> IsMirroredAsync(string askId, CancellationToken ct) =>

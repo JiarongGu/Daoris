@@ -15,10 +15,16 @@ namespace Daoris.Desktop;
 /// </param>
 /// <param name="Why">
 /// Where nothing takes them, why, by a code the page words itself: <c>teammate</c>, <c>intake</c>, <c>stood-down</c>,
-/// <c>help</c>, <c>superseded</c>, <c>not-found</c> or <c>no-words</c>. Null where they are taken or held.
+/// <c>help</c>, <c>superseded</c>, <c>continued</c>, <c>not-found</c> or <c>no-words</c>. Null where they are taken or held.
 /// </param>
 public sealed record WordsAnswer(bool Sent, string? Reaches, string? Why)
 {
+    /// <summary>
+    /// Where <see cref="Why"/> is <c>continued</c> (HANDWORDS1), the conversation it went on in, the latest that continues it: where
+    /// the words go instead. Null otherwise.
+    /// </summary>
+    public string? To { get; init; }
+
     /// <summary>Whether the words reached a running session's own door, which keeps them on its ask only as it takes them.</summary>
     public bool Running { get; init; }
 
@@ -44,8 +50,13 @@ public sealed record WordsAnswer(bool Sent, string? Reaches, string? Why)
 /// <remarks>
 /// <para><b>What never goes on is said by a code</b> (D137 §2.2), judged from the record before anything is posted by the
 /// driver library's one table, <see cref="WordsNever"/>, which the terminal's <c>sessions say</c> judges by too: a
-/// teammate's record, an intake, a session that stood down, Ask Daoris's own conversation, and a session whose quest went
-/// on in a later session here. The service judges again as it keeps them, and its refusal is the answer.</para>
+/// teammate's record, an intake, a session that stood down, Ask Daoris's own conversation, a session whose quest went
+/// on in a later session here, and a conversation handed over or moved, which names the one it went on in (HANDWORDS1). The
+/// service judges again as it keeps them, and its refusal is the answer.</para>
+///
+/// <para><b>Words said while a conversation is handed over or moved</b> (HANDWORDS1, D165's SWITCH1c-ii note) wait here as
+/// words said as a session winds up do, from the take's ask until it is told over (<see cref="OnTakeEnded"/>), never kept on
+/// the record that is ending; then they go to the conversation that continues it.</para>
 ///
 /// <para><b>Both doors.</b> The screen's box says words through <see cref="SayAsync"/>; a terminal's <c>sessions say</c>
 /// reaches the shell's request watch, which hands it to <see cref="HoldAsync"/>, the same judgement at the door
@@ -108,12 +119,22 @@ public sealed class SessionWords : IDisposable
     /// A record moved through this machine's client (<see cref="ServiceClient.Moved"/>): words held for it are tried now, and
     /// what a word said to it now would do is told again (MSG1f2), since a move is what changes it.
     /// </summary>
-    public void OnMoved(SessionMoved moved)
+    public void OnMoved(SessionMoved moved) => Wake(moved.Session);
+
+    /// <summary>
+    /// A conversation's hand-over or curve move was taken (<see cref="ChatRunner.TakeEnded"/>, HANDWORDS1), its box gone: words held
+    /// for it while it was taken go on now, to the conversation that continues it, and what a word said to it now would do is told
+    /// again, since it went on elsewhere.
+    /// </summary>
+    public void OnTakeEnded(string session) => Wake(session);
+
+    /// <summary>The words held for a record are tried now, and what a word said to it now would do is told again (MSG1f2).</summary>
+    private void Wake(string session)
     {
         TaskCompletionSource? told = null;
         lock (_gate)
         {
-            if (_waiting.TryGetValue(moved.Session, out var waiting))
+            if (_waiting.TryGetValue(session, out var waiting))
             {
                 told = waiting.Moved;
                 waiting.Moved = Signal();
@@ -121,7 +142,7 @@ public sealed class SessionWords : IDisposable
         }
 
         told?.TrySetResult();
-        Tell(moved.Session);
+        Tell(session);
     }
 
     /// <summary>
@@ -244,7 +265,9 @@ public sealed class SessionWords : IDisposable
         {
             if (await ReadAsync(id, ct).ConfigureAwait(false) is not { } read) return new(false, null, null);
             if (read.Record is not { } record) return WordsAnswer.Refused(WordsNever.NotFound);
-            return WordsNever.Judge(record, read.Last) is { } never ? WordsAnswer.Refused(never) : new(true, "resume", null);
+            // Being handed over or moved (HANDWORDS1): a word said now is held for the take, as SayAsync holds it.
+            if (TakeWaits(record)) return new(true, "resume", null);
+            return Never(record, read) ?? new(true, "resume", null);
         }
         catch (Exception error) when (Unanswered(error))
         {
@@ -301,11 +324,64 @@ public sealed class SessionWords : IDisposable
 
         if (read is null) return null;
         if (read.Record is not { } record) return WordsAnswer.Refused(WordsNever.NotFound);
-        if (WordsNever.Judge(record, read.Last) is { } never) return WordsAnswer.Refused(never);
+
+        // 🔴 HANDWORDS1 (D163 point 1, D165 point 3): a conversation being handed over or moved, its box kept until the take is done.
+        // Its words are never kept on the record that is ending, which would restart it in the tree its successor holds: they wait
+        // here, and go to the conversation that continues it once the take is over (PumpAsync). Judged before the nevers, since the
+        // successor's record opens before the take is done.
+        var holding = TakeWaits(record);
+        if (!holding && Never(record, read) is { } never) return never;
 
         // Kept as a conversation keeps what is attached (CONV4c), so the names on the record name files that exist.
         var kept = files.Count > 0 ? ChatFiles.Keep(_loop.Home, id, files) : [];
-        return await KeepOrHoldAsync(id, new Word(text, [.. kept.Select(file => file.Name)], door), ct).ConfigureAwait(false);
+        var word = new Word(text, [.. kept.Select(file => file.Name)], door);
+        return holding
+            ? await HoldForTakeAsync(id, word, ct).ConfigureAwait(false)
+            : await KeepOrHoldAsync(id, word, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Whether a conversation's hand-over or curve move waits or is being taken (HANDWORDS1): its box is kept from the ask until the
+    /// take is over, however it came out. A quest's session's box is the driver's look's, which carries its words on itself.
+    /// </summary>
+    private bool TakeWaits(SessionRecord record) =>
+        record is { Kind: "chat", Teammate: false } && new HandOverBox(_loop.Home).Read(record.Id) is not null;
+
+    /// <summary>
+    /// What never goes on, as the answer says it (D137 §2.2): a conversation that went on in another names that one (HANDWORDS1),
+    /// with the terminal's sentence beside the code. Null where the record can go on with words.
+    /// </summary>
+    private static WordsAnswer? Never(SessionRecord record, Read read) =>
+        WordsNever.Judge(record, read.Last, read.Next) switch
+        {
+            null => null,
+            WordsNever.Continued => WordsAnswer.Refused(WordsNever.Continued, WordsNever.WentOn(record.Id, read.Next!)) with { To = read.Next },
+            var never => WordsAnswer.Refused(never),
+        };
+
+    /// <summary>
+    /// A word said while its conversation is handed over or moved (HANDWORDS1), held behind any already held for it and tried once
+    /// the take is told over (<see cref="OnTakeEnded"/>), or at once where the box went while it was held.
+    /// </summary>
+    private async Task<WordsAnswer> HoldForTakeAsync(string id, Word word, CancellationToken ct)
+    {
+        var waiting = WaitingFor(id);
+        await waiting.Turn.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            TaskCompletionSource moved;
+            lock (_gate) moved = waiting.Moved;
+            Hold(waiting, word);
+            StartPump(id, waiting, moved);
+        }
+        finally
+        {
+            waiting.Turn.Release();
+        }
+
+        // Taken while it was held: no end will be told for it now.
+        if (new HandOverBox(_loop.Home).Read(id) is null) Wake(id);
+        return new(true, "resume", null);
     }
 
     /// <summary>
@@ -338,7 +414,7 @@ public sealed class SessionWords : IDisposable
 
         if (read is null) throw new DriverException(NotUp);
         if (read.Record is not { } record) return (WordsAnswer.Refused(WordsNever.NotFound), false);
-        if (WordsNever.Judge(record, read.Last) is { } never) return (WordsAnswer.Refused(never), false);
+        if (Never(record, read) is { } never) return (never, false);
         if (record.State != "awaiting-person") return (new(false, null, null), false);
         if (!record.Answered) return (new(false, null, null), true);
 
@@ -485,8 +561,18 @@ public sealed class SessionWords : IDisposable
                 try
                 {
                     lock (_gate) moved = waiting.Moved;
-                    while (waiting.Words.TryPeek(out var word))
+                    // HANDWORDS1: while its conversation is being handed over or moved the words wait; once it went on in another,
+                    // they go there, never onto the record that ended.
+                    var (waits, next) = await WhereAsync(id, ct).ConfigureAwait(false);
+                    while (!waits && waiting.Words.TryPeek(out var word))
                     {
+                        if (next is not null)
+                        {
+                            if (!await PassAsync(id, next, word, ct).ConfigureAwait(false)) break;
+                            Taken(waiting);
+                            continue;
+                        }
+
                         if (_loop.Service is not { } service) break;
                         SayAnswer said;
                         try
@@ -521,6 +607,68 @@ public sealed class SessionWords : IDisposable
         {
             // The loop is closing: what is held stays in its file for the next shell to try (MSG1d4).
         }
+    }
+
+    /// <summary>
+    /// Where held words go now (HANDWORDS1): nowhere yet while the record's conversation is handed over or moved (its box stands), or
+    /// where the service did not answer; to the conversation it went on in where one did; else to the record itself, as before.
+    /// </summary>
+    private async Task<(bool Waits, string? Next)> WhereAsync(string id, CancellationToken ct)
+    {
+        try
+        {
+            if (await ReadAsync(id, ct).ConfigureAwait(false) is not { Record: { } record } read) return (false, null);
+            return TakeWaits(record) ? (true, null) : (false, read.Next);
+        }
+        catch (Exception error) when (Unanswered(error) && !ct.IsCancellationRequested)
+        {
+            // Nothing known is nothing claimed: the words are tried again at the record's next move, or the next look.
+            return (true, null);
+        }
+    }
+
+    /// <summary>
+    /// A held word said to the conversation its record went on in (HANDWORDS1), at the door it was first said at, with its files read
+    /// back from where they were kept: that conversation's turns take it where it runs here, else its record keeps it and it is shown
+    /// there, as any word said to it would be. True where it is off this record's queue: taken, or refused and said so here. False
+    /// where nothing could answer now, so it is tried again.
+    /// </summary>
+    private async Task<bool> PassAsync(string id, string next, Word word, CancellationToken ct)
+    {
+        WordsAnswer? said;
+        try
+        {
+            said = await SayAsync(next, word.Text, Uploads(id, word.Files), preface: null, word.Door, ct).ConfigureAwait(false);
+        }
+        catch (DriverException)
+        {
+            // The service did not answer for the conversation it went on in (its files were taken once already): tried again.
+            return false;
+        }
+
+        if (said is null) return false;
+        if (said.Running) KeepOnAsk(next, word.Text);
+        if (!said.Sent) Lost(id, said.Why, said.Message);
+        return true;
+    }
+
+    /// <summary>A held word's files, read back from where its record kept them; one gone since is left out, as a resumed run's is (MSG1d3).</summary>
+    private IReadOnlyList<ChatUpload> Uploads(string id, IReadOnlyList<string> names)
+    {
+        var uploads = new List<ChatUpload>();
+        foreach (var name in names)
+        {
+            try
+            {
+                if (ChatFiles.Find(_loop.Home, id, name) is { } kept) uploads.Add(new ChatUpload(name, File.ReadAllBytes(kept.Path)));
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                // Held open or gone since it was kept: the words still go.
+            }
+        }
+
+        return uploads;
     }
 
     /// <summary>A word held behind the others for this record, and the file written with it (MSG1d4).</summary>
@@ -675,30 +823,37 @@ public sealed class SessionWords : IDisposable
     }
 
     /// <summary>Held words the record would not keep once it ended, said where the person wrote them, never dropped silently.</summary>
-    private void Lost(string id, SayAnswer said)
+    private void Lost(string id, SayAnswer said) =>
+        Lost(id, said.Refusal is { } refusal ? WordsNever.Code(refusal) : null, said.Message);
+
+    /// <summary>Held words nothing would take, by the refusal's code where there is one, said where the person wrote them.</summary>
+    private void Lost(string id, string? why, string? message)
     {
         // Both ways: the `Why` makes the page say it cannot go on here (it wins where it reads), and the parts word the line
         // by code where there is none or the page does not know it (CONVNOTE2d2).
-        var line = WordsNotes.NotKept(said.Message);
+        var line = WordsNotes.NotKept(message ?? $"nothing takes them ({why ?? "refused"}).");
         _loop.Output.Append(id, line.Note);
-        _loop.Events.Keep(id, new SessionEvent
-        {
-            Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts,
-            Why = said.Refusal is { } refusal ? WordsNever.Code(refusal) : null,
-        }, null);
+        _loop.Events.Keep(id, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts, Why = why }, null);
     }
 
-    /// <summary>The records, and this one among them with its quest's last session here; null with no service yet.</summary>
+    /// <summary>
+    /// The records, and this one among them with its quest's last session here and the conversation it went on in; null with no
+    /// service yet.
+    /// </summary>
     private async Task<Read?> ReadAsync(string id, CancellationToken ct)
     {
         if (_loop.Service is not { } service) return null;
         var json = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
-        var record = SessionRecords.Parse(json).FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
-        return new Read(record, WordsNever.LastHere(json, record?.Quest));
+        var records = SessionRecords.Parse(json);
+        var record = records.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
+        return new Read(record, WordsNever.LastHere(json, record?.Quest), WordsNever.ContinuedIn(records, id));
     }
 
-    /// <summary>A record as read, and the session its quest last ran in here (D79's reading), or null for none.</summary>
-    private sealed record Read(SessionRecord? Record, string? Last);
+    /// <summary>
+    /// A record as read, the session its quest last ran in here (D79's reading), and the conversation it went on in (HANDWORDS1),
+    /// each null for none.
+    /// </summary>
+    private sealed record Read(SessionRecord? Record, string? Last, string? Next);
 
     /// <summary>A driven inbox's reach in the wire's spelling, as the record's events spell it (D136).</summary>
     private static string? Spelled(DrivenReach? reach) => reach switch
