@@ -194,8 +194,6 @@ EVID1a → b → c; corresponding EVID1 precedes EVID2; EVID1d also needs DEV5/7
 Contracts: session-management (D126 §9), session-messages (D137), answer-continues (D131),
 pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
 
-- [ ] **TICKSHOWN1 — a refused start is said on the session** (driver/web). Words planned to go on and refused at the start (the FIX-LOG 2026-10-15 case) showed only *going on* in the sessions list, at every look; the refusal lived in the tick's events alone. A start the service refuses for a record the person wrote to puts the refusal on that record's row, as a hold's reason is, so the person reads why their words wait. Proof: a SessionGroups case; the window.
-
 Co-working (D167, `docs/2026-10-14-co-working-design.md`; the owner's two tasks are the canary):
 
 - [ ] **SESSONE1c-look — co-working on the installed window** (parent). Seen 2026-10-14 (中文): three sessions with parts and the strip. Left: acts on a part, archive per entry, *Group by ask*, the ask page, English; WAITSHOWN1, QUEUEEDIT1b, USERSHOWN1 on live turns; the ask's *Channel* on a live ask (post, *To*, *Reply to*, unread, a session's panel, a claim turn), republished 2026-10-15 on 3be8d382b.

@@ -129,6 +129,37 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 TICKSHOWN1: words planned to go on whose start the service refuses (the FIX-LOG 2026-10-15 case) said so only in the
+    /// tick's events, so the record's row showed <i>going on</i> at every look. The refusal is the consideration's own verdict
+    /// now, Blocked with the refusal's sentence, as a hold's is, and the look names it on the row.
+    /// </summary>
+    [Fact]
+    public async Task A_refused_start_of_the_persons_words_is_the_considerations_blocked_verdict()
+    {
+        const string Why = "A session is already open for this quest.";
+        _ledger.OpenRefusal = Why;
+        var service = _ledger.Client();
+        var runs = new StandInRuns(service, _ledger);
+        var adapters = AdapterSet.Built();
+        var config = DriverConfig.Empty with { Drivable = ["engine"], Adapter = "stub", Cap = 3, PollSeconds = 1, Trees = ["engine"] };
+        var driver = new Daoris.Driver.Driver(
+            service, config, adapters, _home, harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")))
+        {
+            Runner = runs.Runner,
+        };
+        await _ledger.Client().SayAsync("s1", "Port 8080.");
+
+        var tick = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+
+        var held = Assert.Single(tick.Considerations);
+        Assert.Equal(StartVerdict.Blocked, held.Verdict);
+        Assert.True(held.GoesOn);
+        Assert.Contains(Why, held.Reason, StringComparison.Ordinal);
+        Assert.Contains(tick.Events, line => line.Contains(Why, StringComparison.Ordinal));
+        Assert.Empty(runs.Started);
+    }
+
+    /// <summary>
     /// 🔴 The unobserved task beside each failure: a run the driver gives up before it awaited what it was reading (here, the
     /// record refusing to move) leaves that capture to fail on its own. Observed, its failure is written with its reason, to the
     /// machine log as an <c>error</c> that names its place, and to the session's console, never left to the finalizer.
