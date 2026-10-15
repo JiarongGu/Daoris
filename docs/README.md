@@ -113,6 +113,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-04-plugin-hooks-design.md` | Contract: hook occasions and PR state | D148 |
 | `2026-10-04-ux6-redesign.md` | Contract: settings on their things | D150/D152 |
 | `2026-10-05-ux7-design.md` | Contract: menus, accounts and page heads | D152 |
+| `2026-10-16-this-daoris-design.md` | Contract: Settings → This Daoris, every wire and its source, every setting found, the wiring set up | D171's WIRING1a note; WIRING rows in TASKS |
 
 ## Studies and evidence
 
