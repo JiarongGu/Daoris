@@ -348,6 +348,64 @@ public sealed class SessionMessagesTickTests : IDisposable
     }
 
     /// <summary>
+    /// A first run whose turn fails with its quest still taken: the record ends <c>failed</c>, and words said to it then wait for a
+    /// resume, which a door that refuses it turns into a fallback to a new session (the quest being open to it).
+    /// </summary>
+    private async Task FailedFirstRunAsync(SaidStandIn service)
+    {
+        File.WriteAllText(Path.Combine(_home, "go.flag"), "");
+        await Protocol(service, "fails").RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        Assert.True(service.State("s1") == "failed", service.Record("s1"));
+    }
+
+    /// <summary>
+    /// 🔴 SAIDBACK1f (D137 §2.4): a fallback hands its new session the words the record holds now. The resume of the failed
+    /// record is refused, so the words go to a new session; one of the two is taken back after the look and after the resume put
+    /// the record back, and only the other is handed on and taken off the record by the new session. While the look's words were
+    /// handed, the word taken back went too.
+    /// </summary>
+    [Fact]
+    public async Task A_word_taken_back_before_a_fallbacks_open_is_never_handed_to_the_new_session()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        await FailedFirstRunAsync(service);
+        Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
+        Assert.Equal("w2", await service.SayAsync("s1", "And use 9090."));
+        service.TakeBackAtMoveBack("s1", "w1");
+
+        var look = await Protocol(service, "elsewhere").RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(90));
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\ntaken: {string.Join(" | ", service.Taken)}";
+        Assert.True(service.SessionCount == 2, seen);
+        Assert.True(service.Taken.SequenceEqual([("s1", "w2", (string?)"s2")]), seen);
+        Assert.True(service.Said("s1").Count == 0, seen);
+    }
+
+    /// <summary>
+    /// SAIDBACK1f: every word taken back before the fallback's open, so nothing is sent: no new session opens, no word is taken,
+    /// and the fresh tree the look made for the start it will not make is let go.
+    /// </summary>
+    [Fact]
+    public async Task Every_word_taken_back_before_a_fallbacks_open_sends_nothing_and_leaves_no_fresh_tree()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        await FailedFirstRunAsync(service);
+        Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
+        service.TakeBackAtMoveBack("s1", "w1");
+        var branches = Branches();
+        var folders = TreeFolders();
+
+        var look = await Protocol(service, "elsewhere").RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(90));
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\nbranches: {string.Join(",", Branches())}";
+        Assert.True(service.SessionCount == 1, seen);
+        Assert.Empty(service.Taken);
+        Assert.True(Branches().SequenceEqual(branches), seen);
+        Assert.True(TreeFolders().SequenceEqual(folders), seen);
+        Assert.Contains(look.Events, line => line.Contains("taken back", StringComparison.Ordinal));
+    }
+
+    /// <summary>
     /// The protocol door's stand-in: it names its conversation <c>conv-&lt;session&gt;</c>, and on its first prompt takes and
     /// closes the quest. The mode is how it resumes: <c>resumes</c> honours <c>session/resume</c>, and a resumed prompt is
     /// logged with its blocks; <c>elsewhere</c> refuses it as <c>codex-acp</c> does a thread another client holds.
@@ -476,6 +534,7 @@ public sealed class SessionMessagesTickTests : IDisposable
         private readonly Dictionary<string, List<string>> _moves = [];
         private readonly List<JsonObject> _quests;
         private readonly Dictionary<string, string> _takenBackAtMove = [];
+        private readonly Dictionary<string, string> _takenBackAtMoveBack = [];
         private int _words;
 
         public string Url { get; }
@@ -549,6 +608,15 @@ public sealed class SessionMessagesTickTests : IDisposable
         public void TakeBackAtMove(string id, string word)
         {
             lock (_sessions) _takenBackAtMove[id] = word;
+        }
+
+        /// <summary>
+        /// Take <paramref name="word"/> back off the record the moment before its next move out of working: the resume was
+        /// tried and put the record back, so the words a fallback hands on were read before this and are now fewer (SAIDBACK1f).
+        /// </summary>
+        public void TakeBackAtMoveBack(string id, string word)
+        {
+            lock (_sessions) _takenBackAtMoveBack[id] = word;
         }
 
         /// <summary>What the person says to a session, through the say door as the page's box will (MSG1d): the word's id.</summary>
@@ -669,6 +737,12 @@ public sealed class SessionMessagesTickTests : IDisposable
                         {
                             session["said"] = new JsonArray([.. session["said"]!.AsArray()
                                 .Where(word => word!["id"]!.GetValue<string>() != takenBack).Select(word => word!.DeepClone())]);
+                        }
+
+                        if (from == "working" && to != "working" && _takenBackAtMoveBack.Remove(id, out var takenBackLater))
+                        {
+                            session["said"] = new JsonArray([.. session["said"]!.AsArray()
+                                .Where(word => word!["id"]!.GetValue<string>() != takenBackLater).Select(word => word!.DeepClone())]);
                         }
 
                         if (!Live.Contains(from))
