@@ -3427,6 +3427,31 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
+   * PROCESS1e (D164's amendment point 3): the attended session's *Details* says the process its own tree runs under, as the driver
+   * answers it for that session, with where each rule was set.
+   */
+  it('says in Details how the session commits and lands, as the driver answers for it', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_PROCESS'
+      ? {
+          session: 's1a2b3c4',
+          process: {
+            commits: { repository: 'engine', workspace: 'default', rule: { mode: 'at-end' }, source: 'repository' },
+            landing: { repository: 'engine', workspace: 'default', source: 'default', form: 'merge' },
+          },
+        }
+      : DRIVER_STATE));
+    show('s1a2b3c4');
+
+    const head = (await screen.findByRole('button', { name: /^Details/ })).closest('header')!;
+    fireEvent.click(within(head).getByRole('button', { name: /^Details/ }));
+    expect(await within(head).findByText('Commits')).toBeInTheDocument();
+    expect(within(head).getByText('Commits').nextElementSibling)
+      .toHaveTextContent('One commit is made when the work is done. Set for this repository.');
+    expect(within(head).getByText('Landing').nextElementSibling).toHaveTextContent('Merged into its line — the default.');
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_PROCESS', expect.objectContaining({ payload: { id: 's1a2b3c4' } }));
+  });
+
+  /**
    * MIXAGENT3a-i (the mixed-agents design §4): a session that continues another says which agent's in its facts, by the roster's
    * name for it, and why in the hand-over's words; its *Details* names that session and attends it on a press.
    */

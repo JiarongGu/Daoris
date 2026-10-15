@@ -6,6 +6,8 @@
   "work.head.openQuest": "Open quest #{{id}}",
   "work.head.continues": "Continues",
   "work.head.helping": "Helping",
+  "work.head.commits": "Commits",
+  "work.head.landing": "Landing",
   "work.head.openSession": "Open session",
   "work.head.tool": "Agent",
   "work.head.machine": "Machine",

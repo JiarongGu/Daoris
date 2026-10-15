@@ -525,7 +525,8 @@ controls are in the frame design's §3.
     its title on one line, whole in its tip, then a facts line its state chooses (its repository, account, how long, and
     *attempt 4: the 3 before it failed* where its quest's earlier sessions failed); then its loud act where its state has
     one (*Try again*, *Review*), *Stop…* while it is live, and ⋯ with the rest and its id. The record under it says the
-    whole title once only where the header said a short one, and folds its reference into *Details*; the chain opens
+    whole title once only where the header said a short one, and folds its reference into *Details*, among it the process
+    its own tree runs under, how its work is committed and how it lands, each with where it was set (PROCESS1e); the chain opens
     folded on every session. The conversation scrolls under it, and the long run's way through pins beneath it.
     Below 560 px of main area its acts take their own line. **A session's stop has one owner, this header**: *Stop…*
     asks once under it, saying what follows by what the session is, then *Stop session* or *Never mind*. *Delete…*, in

@@ -78,14 +78,78 @@ public sealed class DriverModuleCommitsTests : DriverModuleBridge
         Assert.Equal("aurora", commits[0].GetProperty("workspace").GetString());
     }
 
-    /// <summary>A stand-in service holding three repositories, two in one workspace and one in none.</summary>
-    private sealed class StandInService : HttpMessageHandler
+    /// <summary>
+    /// PROCESS1e (D164's amendment point 3): what a session's *Details* says of the process its own tree runs under, its
+    /// repository's commit rule and landing rule as resolved here, each with where it was set, read from the driver file and the
+    /// tree's place alone. A session whose record names a tree this home did not make (the person's checkout) or none is told no
+    /// process (PROCESS1d's guard), and the answer says none.
+    /// </summary>
+    [Fact]
+    public async Task A_sessions_process_is_its_own_trees_rules_and_where_each_was_set()
+    {
+        var config = CommitRules.Apply(DriverConfig.Empty, new CommitEdit
+        {
+            Workspace = "aurora", Set = new CommitSet { Mode = "ask", ModeGiven = true, Convention = "Say why.", ConventionGiven = true },
+        });
+        config.WithLanding("engine", new LandingRule("branch", "feature/{ticket}-{slug}", Key: "ENG-\\d+", Squash: true)).Save(DriverConfigPath);
+        var sessions = JsonSerializer.Serialize(new object[]
+        {
+            new { id = "s1a2b3c4", tree = Path.Combine(Home, "trees", "aurora", "engine", "s-1") },
+            new { id = "s2b3c4d5", tree = Path.Combine(Home, "trees", "default", "tools", "s-2") },
+            new { id = "s3c4d5e6", tree = Path.Combine(Home, "checkouts", "engine") },
+            new { id = "s4d5e6f7", tree = (string?)null },
+        });
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService(sessions))));
+
+        var own = (await AnswerAsync(module, "SESSION_PROCESS", new { id = "s1a2b3c4" })).GetProperty("process");
+        var defaults = (await AnswerAsync(module, "SESSION_PROCESS", new { id = "s2b3c4d5" })).GetProperty("process");
+        var checkout = await AnswerAsync(module, "SESSION_PROCESS", new { id = "s3c4d5e6" });
+        var none = await AnswerAsync(module, "SESSION_PROCESS", new { id = "s4d5e6f7" });
+
+        var commits = own.GetProperty("commits");
+        Assert.Equal(("engine", "aurora"), (commits.GetProperty("repository").GetString(), commits.GetProperty("workspace").GetString()));
+        Assert.Equal("ask", commits.GetProperty("rule").GetProperty("mode").GetString());
+        Assert.Equal("Say why.", commits.GetProperty("rule").GetProperty("convention").GetString());
+        Assert.Equal("workspace", commits.GetProperty("source").GetString());
+        var landing = own.GetProperty("landing");
+        Assert.Equal("branch", landing.GetProperty("form").GetString());
+        Assert.Equal("feature/{ticket}-{slug}", landing.GetProperty("pattern").GetString());
+        Assert.Equal("ENG-\\d+", landing.GetProperty("key").GetString());
+        Assert.True(landing.GetProperty("squash").GetBoolean());
+        Assert.Equal("repository", landing.GetProperty("source").GetString());
+
+        // Nothing set for its repository or its workspace: Daoris's defaults, each from `default`.
+        Assert.Equal("as-you-go", defaults.GetProperty("commits").GetProperty("rule").GetProperty("mode").GetString());
+        Assert.Equal("default", defaults.GetProperty("commits").GetProperty("source").GetString());
+        Assert.Equal("merge", defaults.GetProperty("landing").GetProperty("form").GetString());
+        Assert.Equal("default", defaults.GetProperty("landing").GetProperty("source").GetString());
+
+        // Told none: no process, as every null the bridge carries is left out.
+        Assert.False(checkout.TryGetProperty("process", out var told) && told.ValueKind != JsonValueKind.Null);
+        Assert.False(none.TryGetProperty("process", out var nothing) && nothing.ValueKind != JsonValueKind.Null);
+        Assert.Equal("s4d5e6f7", none.GetProperty("session").GetString());
+    }
+
+    /// <summary>The process reads the session's record, so before the driver is up it is the cold-start sentence.</summary>
+    [Fact]
+    public async Task A_sessions_process_before_the_driver_is_up_is_a_sentence()
+    {
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "SESSION_PROCESS", new { id = "s1a2b3c4" }));
+    }
+
+    /// <summary>A stand-in service holding three repositories, two in one workspace and one in none, and the sessions it is given.</summary>
+    private sealed class StandInService(string sessions = "[]") : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
-            var body = request.RequestUri!.AbsolutePath == "/api/registry"
-                ? """[{"repository":"game","workspace":"aurora"},{"repository":"engine","workspace":"aurora"},{"repository":"tools"}]"""
-                : "[]";
+            var body = request.RequestUri!.AbsolutePath switch
+            {
+                "/api/registry" => """[{"repository":"game","workspace":"aurora"},{"repository":"engine","workspace":"aurora"},{"repository":"tools"}]""",
+                "/api/sessions" => sessions,
+                _ => "[]",
+            };
             return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
             {
                 Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json"),

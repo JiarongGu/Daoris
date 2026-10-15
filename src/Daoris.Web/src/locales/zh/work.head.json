@@ -6,6 +6,8 @@
   "work.head.openQuest": "打开委托 #{{id}}",
   "work.head.continues": "接续自",
   "work.head.helping": "协助对象",
+  "work.head.commits": "提交",
+  "work.head.landing": "落地",
   "work.head.openSession": "打开会话",
   "work.head.tool": "智能体",
   "work.head.machine": "机器",

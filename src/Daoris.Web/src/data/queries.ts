@@ -46,6 +46,11 @@ export const keys = {
    */
   workflow: (scope: 'repository' | 'workspace', name: string) => ['driver', 'lines', 'workflow', scope, name] as const,
   /**
+   * The process a session's own tree runs under (PROCESS1e) — shell-only, and under the lines' key, since it is the rules they
+   * resolve: every change that asks the lines again asks it again.
+   */
+  sessionProcess: (session: string) => ['driver', 'lines', 'process', session] as const,
+  /**
    * Where a session's, a quest's or an ask's work stands in its workflow (WORKFLOW1c) — shell-only, and under the driver's key,
    * so every tick, which asks the driver again, asks it again: a run is read from records that move at every look.
    */
