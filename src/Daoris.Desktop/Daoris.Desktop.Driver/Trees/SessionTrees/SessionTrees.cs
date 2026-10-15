@@ -528,6 +528,34 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
         string path, string session, LandingSubject entry, CancellationToken ct = default, WorkflowProcess? process = null) =>
         Entries.JoinAsync(path, session, entry, ct, process);
 
+    /// <summary>
+    /// What one session's landing is named for, at every door that lands one session (ACCEPTALL1b, ACCEPTALL1f; D167's 2026-10-15
+    /// amendment point 2): the review's <c>LANDING</c> and <c>LAND_SESSION_TREE</c>, the terminal's <c>trees land</c> and the look's
+    /// landing at done. A part of an entry with others (<see cref="EntryAccepts.EntryLead"/>) is its entry's Accept for that part alone:
+    /// named for the entry's first part (its chain's first quest), its own session recorded, on the entry's branch
+    /// (<see cref="JoinEntryAsync"/>), which <see cref="LandingSubject.Joins"/> then lands on. Otherwise the session's own subject, the
+    /// chain's first quest (WSR5), as before. A merge rule makes no branch to join; a TREEFOLLOW1 tree still lands as its own branch, and
+    /// is named for its own quest and title (TREEFOLLOWNAME1).
+    /// </summary>
+    /// <param name="quest">The session's own quest, null for a conversation.</param>
+    /// <param name="records">The service's session records, which say the session's entry and its parts.</param>
+    /// <param name="find">A quest by id, as the service holds it, for the chain's walk.</param>
+    /// <param name="opening">A session's opening words, which name a conversation with no quest.</param>
+    /// <param name="process">The run's process the door's gate read (WORKFLOW1f), whose landing step names the entry's branch.</param>
+    public async Task<LandingSubject> OwnSubjectAsync(
+        string path, string session, string? quest, IReadOnlyList<SessionRecord> records, Func<string, Task<QuestView?>> find,
+        Func<string, string?> opening, WorkflowProcess? process, CancellationToken ct = default)
+    {
+        var lead = EntryAccepts.EntryLead(records, session);
+        var named = lead?.Id ?? session;
+        var subject = await LandingRules.SubjectAsync(named, lead is null ? quest : lead.Quest, find, opening(named)).ConfigureAwait(false);
+        if (lead is null) return subject;
+        var joined = await JoinEntryAsync(path, session, subject, ct, process).ConfigureAwait(false);
+        // TREEFOLLOWNAME1: a tree on a branch of its own lands as that branch, so it is named for its own quest, not its entry's first part's.
+        if (joined.EntryBranch is null || !await Entries.FollowsOwnAsync(path, ct).ConfigureAwait(false)) return joined;
+        return joined.NamedFor(await LandingRules.SubjectAsync(session, quest, find, opening(session)).ConfigureAwait(false));
+    }
+
     /// <inheritdoc cref="EntryLands.PlanAsync"/>
     public Task<EntryPlan> PlanEntryAsync(IReadOnlyList<EntryLandingPart> parts, LandingSubject subject, CancellationToken ct = default) =>
         Entries.PlanAsync(parts, subject, ct);

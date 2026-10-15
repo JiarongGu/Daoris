@@ -1046,8 +1046,12 @@ export function WorkFrame({
     if (view === 'ask') return ask;
     if (view === 'terminal') return <TerminalView terminals={terminals} cwd={terminalCwd} />;
     if (view === 'review') {
+      // The line of work the reviewed part belongs to, and its ask: either's one Accept holds this one's while it lands (ACCEPTALL1h).
+      const followingEntry = following ? entryOfSession(entries, following.id) : null;
       return withWhose(
         <DiffPane
+          entry={followingEntry?.entry ?? null}
+          ask={followingEntry && !isIntakeEntry(followingEntry) ? askOfEntry(followingEntry) : null}
           // The followed session's (UX6b): off Sessions an ended one is reviewed on Sessions, where it is attended.
           session={following?.id ?? null}
           // What its frame says while git reads (REVIEW4); off Sessions the line above already names the session.
@@ -1298,6 +1302,8 @@ export function WorkFrame({
   // What its own tree offers to land, whatever its ending (LAND4), as the driver's reader said it, and where accepting would
   // put it: the review's own plan, asked only where there is something to land, under the review's key.
   const lands = attended && here && grouping?.lands ? grouping.lands : null;
+  // The branch a moved tree is on (TREEFOLLOWWEB2): the head names it where the clean-up lists no `daoris/<folder>` row for it.
+  const ownBranch = attended && here ? grouping?.work?.branch ?? null : null;
   // LANDNAME1b: the branch name typed in the head's land ask, so its plan is asked again with it and a refusal shows first.
   const [landName, setLandName] = useState('');
   const landing = useLanding(lands ? attended!.id : null, landName);
@@ -1340,7 +1346,10 @@ export function WorkFrame({
   // SQUASHTIDY1b: where the line holds its commits by content, no landing but its discard, the review's own, unforced.
   const discards = attended && here && !lands && grouping?.discards ? grouping.discards : null;
   const discardTree = useDiscardSessionTree();
-  const landsNow = useUnderWay('LAND_SESSION_TREE', attended?.id ?? null);
+  // Its line of work's one Accept, or its ask's, lands it too (ACCEPTALL1h): the head's own press waits while either is under way.
+  const lineLandsNow = useUnderWaySubject('LAND_ENTRY', attendedEntry?.entry ?? null);
+  const askLandsNow = useUnderWaySubject('LAND_ASK', channelAsk);
+  const landsNow = useUnderWay('LAND_SESSION_TREE', attended?.id ?? null) || lineLandsNow || askLandsNow;
   const discardsNow = useUnderWay('DISCARD_SESSION_TREE', attended?.id ?? null);
   // Its one press, for the head and, in Accept's place, the review (SQUASHTIDY1f): never forced from here, a refusal the
   // driver's sentence inside the ask, and the review's Discard the door that asks twice.
@@ -1861,6 +1870,7 @@ export function WorkFrame({
             onSession={(session) => attend(session.id)}
             onQuest={onOpenQuest ? (row) => onOpenQuest(row.id) : undefined}
             branch={branch}
+            ownBranch={ownBranch}
             // Only this machine's own record: the clean-up's list is this machine's, and so is the branch it names.
             // Told back to its ask (UXFIX2): a branch kept, or a refusal, is said inside it.
             onDiscardBranch={branch && here

@@ -54,6 +54,14 @@ internal sealed class TreeLands(
         if (process?.LandingCannot is not null || plan.Target.Length == 0) return plan;
         var full = Path.GetFullPath(path);
         var (workspace, repository) = context.OwnerOf(full);
+        // ACCEPTALL1g: whether the branch already stands, so the review says the press moves it on rather than promising a new one.
+        if (plan is { Form: LandingForm.Branch, Own: false } && Directory.Exists(full)
+            && await CommitOfAsync(full, $"refs/heads/{plan.Target}", ct).ConfigureAwait(false) is { } standsAt)
+        {
+            // STANDSREFUSE1: and what the press would refuse it for, said before it, where nothing else is said first.
+            plan = plan with { Stands = true, Problem = plan.Problem ?? await StandingProblemAsync(full, repository, plan.Target, standsAt, subject, ct).ConfigureAwait(false) };
+        }
+
         var (sync, _) = await syncs.JudgeAsync(full, repository, workspace, plan.Form == LandingForm.Branch, fetch: false, ct).ConfigureAwait(false);
         if (sync is null || sync.Held.HoldsNone) return plan;
         if (plan.Own && await OnRemoteAsync(sync.Root, sync.Branch, ct).ConfigureAwait(false))
@@ -68,6 +76,30 @@ internal sealed class TreeLands(
             Lands = sync.Held.Kept,
             Conflict = conflicts is null ? null : TreeLandSyncs.Conflicted(sync, conflicts).Conflict,
         };
+    }
+
+    /// <summary>
+    /// The refusal a press would meet at a standing branch, from what is cheap to read (STANDSREFUSE1, D167's ACCEPTALL1g note, D145
+    /// §3), in the press's own words: a name entered that is somebody's branch, or <see cref="LandingAdvance.Standing"/>'s record, tip,
+    /// checkout and kept pull request word. Null where those allow the move; git's proof that its work is on the line, and how this
+    /// work grows from it, stay the press's to judge.
+    /// </summary>
+    /// <param name="standsAt">The commit the branch stands at, read a moment ago.</param>
+    private async Task<string?> StandingProblemAsync(
+        string tree, string repository, string name, string standsAt, LandingSubject subject, CancellationToken ct)
+    {
+        var recorded = context.Recorded.Of(repository, name);
+        if (recorded is null && subject.EnteredName is not null) return EnteredStands(name, repository);
+        // Where the press would read it: only once the record and the tip allow a move. A list git could not give says nothing here,
+        // and the press asks again.
+        string? checkedOut = null;
+        if (recorded is not null && string.Equals(standsAt, recorded.Tip, StringComparison.OrdinalIgnoreCase)
+            && await EntriesAsync(tree, ct).ConfigureAwait(false) is { } listed)
+        {
+            checkedOut = ByBranch(listed).GetValueOrDefault(name);
+        }
+
+        return LandingAdvance.Standing(name, repository, recorded, standsAt, checkedOut)?.Message;
     }
 
     /// <summary>What a press would do under the rule, before LANDSYNC1's judgement of what the line holds; an entry's Accept names its branch by it.</summary>
@@ -672,9 +704,7 @@ internal sealed class TreeLands(
             root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{name}^{{commit}}"], ct).ConfigureAwait(false);
         if (exists == 0 && entered && context.Recorded.Of(repository, name) is null)
         {
-            return new TreeLanding(false, $"the branch name you entered, `{name}`, is already a branch in `{repository}`, and Daoris does "
-                + "not move a branch it did not make. Enter another name, or leave it blank for the rule's.")
-            { Refusal = AutoLandingCode.Exists };
+            return new TreeLanding(false, EnteredStands(name, repository)) { Refusal = AutoLandingCode.Exists };
         }
 
         if (exists == 0)
@@ -885,6 +915,11 @@ internal sealed class TreeLands(
     /// <summary>What a pattern is expanded from: the quest, or the session where there is none; the quest's name's words (LANDNAME1).</summary>
     private static string EnteredInvalid(string name) =>
         $"the branch name you entered, `{name}`, is not a branch name git would take. Enter another, or leave it blank for the rule's.";
+
+    /// <summary>An entered name that is already a branch Daoris did not make (LANDNAME1a): the press's refusal, which the plan says first.</summary>
+    private static string EnteredStands(string name, string repository) =>
+        $"the branch name you entered, `{name}`, is already a branch in `{repository}`, and Daoris does "
+        + "not move a branch it did not make. Enter another name, or leave it blank for the rule's.";
 
     /// <summary>A name entered where the tree's own branch lands as it stands (TREEFOLLOW1): refused, not ignored, as a merge's is.</summary>
     private static string EnteredOwn(string own) =>

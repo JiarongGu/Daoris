@@ -142,6 +142,55 @@ public sealed class LandingChainTests : IDisposable
     }
 
     /// <summary>
+    /// STANDSREFUSE1 (D167's ACCEPTALL1g note): what a plan can say before the press from the cheap facts alone (the record's entry,
+    /// where the branch stands, where it is checked out, the platform's kept word) is the press's own refusal, word for word; what
+    /// needs git's proof or the session's work (merged by git's reading, grown apart, nothing new) is left to the press.
+    /// </summary>
+    [Theory]
+    [InlineData("unrecorded", true)]
+    [InlineData("moved", true)]
+    [InlineData("checked-out", true)]
+    [InlineData("kept-completed", true)]
+    [InlineData("kept-abandoned", true)]
+    [InlineData("kept-open", false)]
+    [InlineData("completed", false)]
+    [InlineData("apart", false)]
+    [InlineData("nothing-new", false)]
+    [InlineData("advances", false)]
+    public void A_standing_branchs_cheap_refusal_is_the_press_s_own_and_the_rest_is_left_to_the_press(string facts, bool said)
+    {
+        var standing = new AdvanceFacts(Entry(), Tip, CheckedOutAt: null, Descends: true, Ahead: 1, Completed: null);
+        AdvanceFacts Kept(string state) => standing with
+        {
+            Recorded = Entry() with { PullRequestState = new PullRequestState(state) { Plugin = "acme.lands" } },
+        };
+        var given = facts switch
+        {
+            "unrecorded" => standing with { Recorded = null },
+            "moved" => standing with { Tip = Next },
+            "checked-out" => standing with { CheckedOutAt = "/elsewhere" },
+            "kept-completed" => Kept(PullRequestStates.Completed),
+            "kept-abandoned" => Kept(PullRequestStates.Abandoned),
+            "kept-open" => Kept(PullRequestStates.Open),
+            "completed" => standing with { Completed = "origin/main" },
+            "apart" => standing with { Descends = false, Ahead = 0 },
+            "nothing-new" => standing with { Ahead = 0 },
+            _ => standing,
+        };
+
+        var early = LandingAdvance.Standing("feature/q1-fix-the-gap", "engine", given.Recorded, given.Tip, given.CheckedOutAt);
+
+        if (!said)
+        {
+            Assert.Null(early);
+            return;
+        }
+
+        var refused = LandingAdvance.Refusal("feature/q1-fix-the-gap", "engine", "daoris/s-2", given);
+        Assert.Equal((refused!.Message, refused.Refusal), (early!.Message, early.Refusal));
+    }
+
+    /// <summary>
     /// ACCEPTALL1d (D87's 2026-10-15 amendment point 3): under a squash rule a session's work grows from the tip the record says was
     /// squashed, but work replayed onto the branch's tip (a part that joined its entry's branch, or past what the line holds) grows
     /// from that tip, the record's own, so its advance is no longer refused as grown apart.

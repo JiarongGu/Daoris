@@ -292,6 +292,30 @@ public sealed class AutoLandingTests : IDisposable
     }
 
     /// <summary>
+    /// ACCEPTALL1f (D167's 2026-10-15 amendment point 2): the look lands a part of an entry with others as the press does. Two parts of one
+    /// entry that ran alongside, each in a tree of its own, each done: both land on the entry's one branch, named for its first part, the
+    /// other joining it by a replay onto its tip, so the entry has one pull request. Before, each made a branch for its own quest.
+    /// </summary>
+    [Fact]
+    public async Task An_entrys_alongside_parts_land_at_done_on_the_entrys_one_branch()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", AutoAccept: true));
+        await DoneSessionAsync(root, "s1", "q1", entry: "ask:a3/engine");
+        await DoneSessionAsync(root, "s2", "q2", entry: "ask:a3/engine");
+
+        var lines = await LookAsync();
+
+        const string branch = "feature/q1-fix-the-gap";
+        Assert.Equal(2, lines.Count);
+        Assert.Equal(branch, (await GitAsync(root, "branch", "--list", "feature/*")).Trim().TrimStart('*', ' '));
+        Assert.Equal("2", (await GitAsync(root, "rev-list", "--count", $"main..{branch}")).Trim());
+        var due = new AutoLandings(_home);
+        Assert.Equal([AutoLandingCode.Advanced, AutoLandingCode.Landed], new[] { "s1", "s2" }.Select(id => due.Of(id)!.Last!.Code).Order(StringComparer.Ordinal));
+        Assert.All(new[] { "s1", "s2" }, id => Assert.Equal(branch, new LandedBranches(_home).Landing(id)!.Branch));
+    }
+
+    /// <summary>
     /// <c>ReviewableTree</c>'s rule: a live session in the tree is using it, so the look waits; a newer session on it stands for it,
     /// so the entry closes. The switch turned off closes it for the person's press, which, made meanwhile, reads as already landed.
     /// </summary>
@@ -597,13 +621,18 @@ public sealed class AutoLandingTests : IDisposable
     /// <summary>A session that worked in its own tree and concluded on its quest's done, made due as the driver's conclusion makes it.</summary>
     /// <param name="parent">The quest it follows, where it is a chain's later step.</param>
     /// <param name="from">The session branch its tree grows from, as a chain's step grows (CHAIN2).</param>
+    /// <param name="entry">The entry its record names (SESSONE1b), shared by an entry's parts; none is its own line of work.</param>
     private async Task<string> DoneSessionAsync(
-        string root, string session, string quest, bool held = false, bool commit = true, string? parent = null, string? from = null)
+        string root, string session, string quest, bool held = false, bool commit = true, string? parent = null, string? from = null,
+        string? entry = null)
     {
         var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora", from: from);
         if (commit) await CommitAsync(opened.Path, $"{session}.txt", $"the work of {session}", $"the work of {session}");
         _world.Quests[quest] = new QuestView(quest, "game", "engine", "Fix the gap", "Fix it.", "Done") { Held = held, Parent = parent };
-        _world.Records.Add(new SessionRecord(session, "engine", "completed") { Quest = quest, Tree = opened.Path, Created = DateTimeOffset.UtcNow });
+        _world.Records.Add(new SessionRecord(session, "engine", "completed")
+        {
+            Quest = quest, Tree = opened.Path, Created = DateTimeOffset.UtcNow, Entry = entry,
+        });
         var verdict = AutoLander.Concluded(_home, Config(), new SessionEvents(Path.Combine(_home, "sessions")), session, _world.Quests[quest],
             "Done", "completed", opened.Path, "aurora");
         Assert.Equal(Config().Landings.GetValueOrDefault("engine")?.AutoAccept == true ? AutoConcluded.Due : null, verdict);

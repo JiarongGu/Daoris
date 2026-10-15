@@ -95,7 +95,7 @@ export type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from './Lands';
  */
 export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
-  onAnswerSession, branch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
+  onAnswerSession, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
   continues, helps, onOpenSession, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek,
 }: {
@@ -211,6 +211,11 @@ export function SessionHead({
    * where, or what only it holds. Absent where it has no tree of its own here, or nothing has answered.
    */
   branch?: SweepBranch | null;
+  /**
+   * The branch its tree is on where the agent moved it onto one of its own (TREEFOLLOW1), as the driver's `work` says it
+   * (TREEFOLLOWWEB2): named when the clean-up lists no row, since it lists only `daoris/` branches and the tidy removed that one.
+   */
+  ownBranch?: string | null;
   /**
    * Discard that branch, its commits with it (LAND3b): offered once its tree is gone, where the driver says its commits are a
    * failed or superseded attempt's, and asked once first; told back to its ask (UXFIX2). Absent where nothing here can press
@@ -357,9 +362,14 @@ export function SessionHead({
         <div data-wait-section className="grid gap-2.5">
           <Discards key={session.id} discards={discards} onReview={onReview} onDiscard={onDiscardTree} ask={workAsk} busy={workBusy} />
         </div>
-      ) : branch && (
+      ) : branch ? (
         <Left key={branch.branch} branch={branch} onReview={onReview} onDiscard={onDiscardBranch} discarding={discardingBranch} />
-      )}
+      ) : ownBranch ? (
+        <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
+          <span className="text-ink-faint">{t('work.head.itsWork')}</span>
+          <PathText path={ownBranch} className="min-w-0 text-meta text-ink-faint" />
+        </p>
+      ) : null}
 
       {/* The reference (UX7c, D152 §7): the meta line's eight pairs became a folded *Details*, its line naming the quest,
           the agent and the start, so the conversation is not pushed down by facts that are looked up. The tree's machine

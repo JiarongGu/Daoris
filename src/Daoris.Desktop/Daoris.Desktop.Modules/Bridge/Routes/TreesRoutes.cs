@@ -466,14 +466,7 @@ public sealed class TreesRoutes(DriverLoop loop)
         }
 
         var questId = await service.SessionQuestAsync(id, cancellationToken);
-        // ACCEPTALL1b (D167's 2026-10-15 amendment point 2): a part of an entry with others is its entry's Accept for that part alone,
-        // named for the entry's first part as ENTRY_LANDING names it; a session with no entry, or its entry's only part, as before.
-        var lead = EntryLead(await service.SessionRecordsAsync(cancellationToken), id);
-        var named = lead?.Id ?? id;
-        // Named for the chain's first quest (WSR5): a chain lands from its last step.
-        var subject = await LandingRules.SubjectAsync(
-            named, lead is null ? questId : lead.Quest, quest => service.FindQuestAsync(quest, cancellationToken),
-            _loop.Events.Openings([named]).GetValueOrDefault(named));
+        var records = await service.SessionRecordsAsync(cancellationToken);
         // A rule's plugin says its lines on the console under its name, as a hook's do (D64 §4, D100); what the
         // landing did with it goes to the machine log and the loop's record of its health (PLUGUI1d).
         var trees = new SessionTrees(_loop.Home, new LandingPlugins(
@@ -484,10 +477,13 @@ public sealed class TreesRoutes(DriverLoop loop)
         // Said to every window while the press is under way (PRESSSTEP1); a plan is no press and says it to nobody.
         PressSteps.Reach(PressSteps.Gate);
         var gate = await trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, cancellationToken);
-        // On the entry's one branch, joining it where this part ran alongside; a name the person entered still lands as entered.
-        if (lead is not null) subject = await trees.JoinEntryAsync(tree, id, subject, cancellationToken, gate.Process);
-        subject = Entering(subject, request);
-        var joins = subject.EntryBranch is not null && subject.EnteredName is null;
+        // Named for the chain's first quest (WSR5), and a part of an entry with others for its entry's first part, on the entry's one
+        // branch (ACCEPTALL1b, D167's 2026-10-15 amendment point 2): the call every door that lands one session makes (ACCEPTALL1f).
+        // A name the person entered still lands as entered.
+        var subject = Entering(await trees.OwnSubjectAsync(
+            tree, id, questId, records, quest => service.FindQuestAsync(quest, cancellationToken),
+            named => _loop.Events.Openings([named]).GetValueOrDefault(named), gate.Process, cancellationToken), request);
+        var lead = EntryLead(records, id);
 
         if (request.Type == "LANDING")
         {
@@ -495,19 +491,8 @@ public sealed class TreesRoutes(DriverLoop loop)
             var plan = await trees.PlanAsync(tree, subject, cancellationToken, gate.Process);
             // Accept refuses until the tree's uncommitted paths are committed (D164 point 4): the page says so before the press.
             var uncommitted = UncommittedCount(await trees.UncommittedAsync(tree, cancellationToken));
-            return new
-            {
-                // Own (TREEFOLLOW1): the target is the branch the session's agent made, which lands as it stands.
-                Session = id, plan.Form, plan.Target, plan.Source, plan.Plugin, plan.Problem, plan.Own, Uncommitted = uncommitted,
-                Workflow = WorkflowWaits(gate.Workflow), Review = Waits(gate.Review), Opinion = Opinion(gate.Opinion),
-                // LANDSYNC1 (D87's 2026-10-15 amendment point 4): what the press would leave out because the line holds it, what it
-                // would land, and a conflict it would be refused for; each absent where the line holds none of the tree's commits.
-                LeftOut = LeftOut(plan.LeftOut), Lands = plan.Lands?.Select(commit => new { Commit = Short(commit.Sha), commit.Subject }).ToArray(),
-                Conflict = Conflict(plan.Conflict),
-                // ACCEPTALL1c (D167's amendment point 3): the branch its line of work landed on where the person left this part out of
-                // it, so its review says so and leads with Discard; only a part of an entry with others can have been.
-                LeftOutOf = lead is null ? null : LeftOutOfEntry(id),
-            };
+            // ACCEPTALL1c (D167's amendment point 3): only a part of an entry with others can have been left out.
+            return Planned(id, plan, uncommitted, gate, lead is null ? null : LeftOutOfEntry(id));
         }
 
         // The press answers what it showed beside Accept (the second-agent design §8.2–§8.3): a dispute or commits nobody read,
@@ -517,7 +502,7 @@ public sealed class TreesRoutes(DriverLoop loop)
         // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds (LAND3).
         PressSteps.Reach(PressSteps.Landing);
         var landed = await trees.LandAsync(tree, subject, cancellationToken, async token => await LinesRoutes.InUseAsync(service, token), gate: gate,
-            joins: joins);
+            joins: subject.Joins);
         // Kept where the conversation is kept, so the landing and the plugin's word outlast the press (D100).
         if (landed.Landed) _loop.Events.Keep(id, LandingRules.Note(landed), line => _loop.Output.Append(id, line));
         if (_loop.Log is { } log && LandingGateWords.Held(id, trees.Owner(tree), gate, landed, ReviewDoors.Screen) is { } held)
@@ -540,6 +525,27 @@ public sealed class TreesRoutes(DriverLoop loop)
             Conflict = Conflict(landed.Conflict),
         };
     }
+
+    /// <summary>
+    /// <c>LANDING</c>'s answer: what a press would do (WSR1, D87), said before it, beside what holds it and how many paths the tree holds
+    /// uncommitted (D164 point 4).
+    /// </summary>
+    /// <param name="leftOutOf">
+    /// The branch its line of work landed on where the person left this part out of it (ACCEPTALL1c), so its review says so and leads with
+    /// Discard; null where none did.
+    /// </param>
+    public static object Planned(string session, LandingPlan plan, int uncommitted, LandingGate gate, string? leftOutOf) => new
+    {
+        // Own (TREEFOLLOW1): the target is the branch the session's agent made, which lands as it stands. Stands (ACCEPTALL1g): the
+        // target already stands, an entry's or a chain's branch, so the press moves it on rather than making it.
+        Session = session, plan.Form, plan.Target, plan.Source, plan.Plugin, plan.Problem, plan.Own, plan.Stands, Uncommitted = uncommitted,
+        Workflow = WorkflowWaits(gate.Workflow), Review = Waits(gate.Review), Opinion = Opinion(gate.Opinion),
+        // LANDSYNC1 (D87's 2026-10-15 amendment point 4): what the press would leave out because the line holds it, what it would land,
+        // and a conflict it would be refused for; each absent where the line holds none of the tree's commits.
+        LeftOut = LeftOut(plan.LeftOut), Lands = plan.Lands?.Select(commit => new { Commit = Short(commit.Sha), commit.Subject }).ToArray(),
+        Conflict = Conflict(plan.Conflict),
+        LeftOutOf = leftOutOf,
+    };
 
     /// <summary>The part a session's own Accept is named for (ACCEPTALL1b): the library's, <see cref="EntryAccepts.EntryLead"/>.</summary>
     public static SessionRecord? EntryLead(IReadOnlyList<SessionRecord> records, string session) => EntryAccepts.EntryLead(records, session);
