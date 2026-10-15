@@ -106,6 +106,13 @@ public sealed record SessionTarget(
     public IReadOnlyList<string> InFlight { get; init; } = [];
 
     /// <summary>
+    /// For a session going on in a tree that stands — a resume, a carry-on, a further part gone into its session's tree (LANDSYNC2,
+    /// D87's 2026-10-15 amendment point 7): what its start did against the line (<see cref="TreeStartWords"/>), said before how to go
+    /// on. Null where there was nothing to tell it, and the instruction reads as it did.
+    /// </summary>
+    public string? InSync { get; init; }
+
+    /// <summary>
     /// What the person answered, when the session before parked to ask them (STANDDOWN2) — the carry-on
     /// is handed it in their words. Null for a carry-on after a cut-off.
     /// </summary>
@@ -313,6 +320,9 @@ public static class TargetPrompt
     /// </summary>
     private static IEnumerable<Piece> Tail(SessionTarget target, string close) =>
     [
+        // What its start did against the line, in a tree that stands (LANDSYNC2): the driver's own words, so counted with the close
+        // they come before, and no page catalogue changed.
+        new(HandedSections.Close, target.InSync is { Length: > 0 } told ? $"\n{told}\n" : ""),
         // A set-up step's own section (REVIEWENV1c, design §2.2), before the close it changes, and accounted as its own since the
         // page words it (REVIEWENV1c2).
         new(HandedSections.SetUp, SetUp(target)),

@@ -30,12 +30,18 @@ internal sealed record BeyondCommit(string Sha, bool Held, IReadOnlyList<string>
 /// </param>
 /// <param name="Commits">The commits beyond <paramref name="Cut"/>, oldest first, merges aside.</param>
 /// <param name="Skips">Among them, those the line holds: the replay skips each, replaying the runs between.</param>
-/// <param name="LeftOut">Every commit the line holds, the ones the cut moved past and the skips.</param>
-/// <param name="ByContent">The walk by content moved the cut: the run up to it reads on the line, a squash of several.</param>
-internal sealed record HeldBeyond(string Cut, IReadOnlyList<string> Commits, IReadOnlyList<string> Skips, int LeftOut, bool ByContent = false)
+/// <param name="LeftOut">Every commit the line holds by patch beyond the cut WSR6 made, the ones the cut moved past and the skips.</param>
+/// <param name="ByContent">
+/// How many commits the walk by content moved the cut past, where it did: the run up to it reads on the line, a squash of several.
+/// WSR6's words say that run as the cut (<see cref="CutBy.Content"/>), not as commits left out.
+/// </param>
+internal sealed record HeldBeyond(string Cut, IReadOnlyList<string> Commits, IReadOnlyList<string> Skips, int LeftOut, int ByContent = 0)
 {
     /// <summary>The commits the replay carries.</summary>
     public int Kept => Commits.Count - Skips.Count;
+
+    /// <summary>The line holds some of the commits beyond the cut WSR6 made, by patch or by content (LANDSYNC2's question).</summary>
+    public bool HoldsAny => LeftOut + ByContent > 0;
 }
 
 /// <summary>
@@ -162,8 +168,7 @@ internal static class LineHolds
             var (byContent, by) = await BranchJudging.CutByContentAsync(root, tip, leaves, line, onto, ct).ConfigureAwait(false);
             if (by == CutBy.Content && await ReadBeyondAsync(root, tip, onto, byContent, ct).ConfigureAwait(false) is { } after)
             {
-                var judged = Beyond(byContent, after);
-                return judged with { LeftOut = judged.LeftOut + beyond.Count - after.Count, ByContent = true };
+                return Beyond(byContent, after) with { ByContent = beyond.Count - after.Count };
             }
         }
 

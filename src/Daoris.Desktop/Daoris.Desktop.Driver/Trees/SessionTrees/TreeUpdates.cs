@@ -37,7 +37,9 @@ internal sealed class TreeUpdates(
     /// </remarks>
     /// <param name="tree">A session tree this home opened.</param>
     /// <param name="running">Whether something runs in the tree now.</param>
-    internal async Task<TreeUpdate> UpdateTreeAsync(string tree, Func<CancellationToken, Task<bool>> running, CancellationToken ct = default)
+    /// <param name="fetched">The caller fetched the line already (a start, LANDSYNC2), so this fetches nothing and refuses no fetch.</param>
+    internal async Task<TreeUpdate> UpdateTreeAsync(
+        string tree, Func<CancellationToken, Task<bool>> running, CancellationToken ct = default, bool fetched = false)
     {
         static TreeUpdate Refused(TreeFacts facts) => new(false, TreeUpdateWords.Refused(facts.First()!.Value, facts));
 
@@ -91,7 +93,7 @@ internal sealed class TreeUpdates(
         if (facts.First() is not null) return Refused(facts);
 
         // The one network step (point 2). FetchAsync names no address only where there is no `origin` at all: nothing to fetch.
-        var (failed, url) = await FetchAsync(root, line, ct).ConfigureAwait(false);
+        var (failed, url) = fetched ? (null, null) : await FetchAsync(root, line, ct).ConfigureAwait(false);
         var noOrigin = failed is not null && url is null;
         facts = facts with { NotFetched = noOrigin ? null : failed };
         if (facts.First() is not null) return Refused(facts);
@@ -121,6 +123,78 @@ internal sealed class TreeUpdates(
             : await UpdateBranchAsync(full, root, repository, workspace, line!, onto, branch, facts, ct).ConfigureAwait(false);
         return done.Done && noOrigin ? done with { Message = done.Message + TreeUpdateWords.NoOrigin } : done;
     }
+
+    /// <summary>
+    /// A session going on in an old tree starts from the line (LANDSYNC2, D87's 2026-10-15 amendment point 7): before a resume, words
+    /// going on, a carry-on or a further part's start in a tree that stands, the line is fetched once, and where it holds some of the
+    /// tree's commits (the walk by content or patch id, not merely because it moved) <see cref="UpdateTreeAsync"/> brings the tree up
+    /// to date. What the session is told comes back with it.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Never a reason not to start.</b> A fetch that fails is judged against the last one and said in point 6's words, where the
+    /// person's own press refuses it (REVIEWBASE2-i point 2). A conflict, or any reason the press leaves a tree, leaves it as it was and
+    /// tells the session to replay its own commits itself.</para>
+    ///
+    /// <para><b>Before the start's own hold.</b> The replay holds the repository's trees alone (<see cref="TreeLock"/>), which a start
+    /// takes shared, so the caller asks this before it takes its own; another start in the repository at that moment is the press's
+    /// <c>Held</c>, told as any reason the tree was left.</para>
+    ///
+    /// <para><b>A start's git, never a look's per tree</b> (UIFREEZE1): nothing where the tree is not this home's or has no line; else
+    /// the fetch, the line's latest, where the tree leaves it and <see cref="LineHolds.JudgeBeyondAsync"/>'s one log, the line's files
+    /// only where a squash could be read; the press's own only where the line holds some of its commits.</para>
+    /// </remarks>
+    internal async Task<TreeStartSync> StartInSyncAsync(string tree, CancellationToken ct = default)
+    {
+        // One look (UIFREEZE1, PROC1d-i): git's guess at the line is asked once by the judgement and the press it may make.
+        using var look = context.OneLook();
+        var full = Path.GetFullPath(tree);
+        var (workspace, repository) = context.OwnerOf(full);
+        if (!context.Holds(full) || repository.Length == 0 || !Directory.Exists(full)
+            || !await WorkingTree.IsTopLevelAsync(full, ct).ConfigureAwait(false))
+        {
+            return TreeStartSync.Nothing;
+        }
+
+        var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
+        if (here.Code != 0) return TreeStartSync.Nothing;
+        var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(here.CommonDir.Trim()))!;
+        if ((await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch is not { } line) return TreeStartSync.Nothing;
+
+        // The one network step. No `origin` at all is nothing to fetch, and nothing to say: the line here is all there is.
+        var (failed, url) = await FetchAsync(root, line, ct).ConfigureAwait(false);
+        var fetch = failed is null || url is null
+            ? ""
+            : LandingSyncWords.NotFetched(failed, await LastFetchAsync(root, line, ct).ConfigureAwait(false), ReachOf(url), DateTimeOffset.UtcNow);
+        TreeStartSync Left() => fetch.Length == 0 ? TreeStartSync.Nothing : new(null, TreeStartWords.HoldsNone(line) + fetch);
+
+        var localLine = await CommitOfAsync(root, $"refs/heads/{line}", ct).ConfigureAwait(false);
+        if (await LatestAsync(root, line, ct).ConfigureAwait(false) is not { } onto
+            || await CommitOfAsync(full, "HEAD", ct).ConfigureAwait(false) is not { } head)
+        {
+            return Left();
+        }
+
+        var (baseCode, baseOut, _) = await WorkingTree.GitAsync(root, ["merge-base", head, onto], ct).ConfigureAwait(false);
+        var leaves = baseOut.Trim();
+        if (baseCode != 0 || leaves == onto) return Left();
+
+        // Not merely because the line moved (point 7): only where it holds some of the tree's commits.
+        if (await LineHolds.JudgeBeyondAsync(root, head, onto, leaves, leaves, line, walk: true, ct).ConfigureAwait(false)
+            is not { HoldsAny: true } held)
+        {
+            return Left();
+        }
+
+        var ontoName = onto == localLine ? line : $"origin/{line}";
+        var done = await UpdateTreeAsync(full, NothingRuns, ct, fetched: true).ConfigureAwait(false);
+        var holds = held.LeftOut + held.ByContent;
+        return done is { Done: true, Moved: { } moved }
+            ? new(moved, TreeStartWords.Moved(line, ontoName, holds, moved.Commits) + fetch)
+            : new(null, TreeStartWords.NotMoved(line, ontoName, holds, done.Message) + fetch);
+    }
+
+    /// <summary>A start's tree runs nothing yet: the start is what would run in it, and asks this before it does.</summary>
+    private static Task<bool> NothingRuns(CancellationToken _) => Task.FromResult(false);
 
     /// <summary>
     /// A tree on a branch, by WSR6's judgement and replay (<see cref="BranchJudging.JudgeReplayAsync"/>, <see cref="BranchReplays.ReplayAsync"/>): its own commits
@@ -173,7 +247,10 @@ internal sealed class TreeUpdates(
             return new(false, TreeUpdateWords.Left(new TreeFacts(), RebaseKind.Unknown, null, "git found no point where it left the line"));
         }
 
-        var had = await CountAsync(root, $"{from}..{head}", ct).ConfigureAwait(false);
+        // LANDSYNC3 (D87's 2026-10-15 amendment point 1): what the line holds of its commits is left out, as a landing leaves it out,
+        // and the commits it lacks between them are replayed run by run; where git cannot list them, every commit is replayed as before.
+        var held = await LineHolds.JudgeBeyondAsync(root, head, onto, from, from, line, walk: true, ct).ConfigureAwait(false);
+        var had = held?.Kept ?? await CountAsync(root, $"{from}..{head}", ct).ConfigureAwait(false);
 
         // 🔴 Read again immediately before: still detached, at the commit judged, clean.
         if (await DetachedAtAsync(tree, head, ct).ConfigureAwait(false) is not true || await StatusPathsAsync(tree, ct).ConfigureAwait(false) > 0)
@@ -181,7 +258,9 @@ internal sealed class TreeUpdates(
             return new(false, TreeUpdateWords.MovedSince);
         }
 
-        var (failed, words) = await BranchReplays.RebaseInAsync(tree, onto, from, ct).ConfigureAwait(false);
+        var (failed, words) = held is { Skips.Count: > 0 }
+            ? await BranchReplays.RebaseRunsInAsync(tree, head, onto, held.Commits, held.Skips, ct).ConfigureAwait(false)
+            : await BranchReplays.RebaseInAsync(tree, onto, held?.Cut ?? from, ct).ConfigureAwait(false);
         if (failed) return new(false, TreeUpdateWords.NotReplayed(line, words, await PutBackAsync(tree, head, ct).ConfigureAwait(false)));
 
         // 🔴 Proven before it is kept: nothing of its own changed but what the line brought.
@@ -190,7 +269,7 @@ internal sealed class TreeUpdates(
         if (beyond is not null) return new(false, TreeUpdateWords.NotKept(beyond, await PutBackAsync(tree, head, ct).ConfigureAwait(false)));
 
         var kept = await CountAsync(root, $"{onto}..{now}", ct).ConfigureAwait(false);
-        return new(true, TreeUpdateWords.Replayed(line, kept, had), new TreeMoved(line, head, now!, null, kept));
+        return new(true, TreeUpdateWords.Replayed(line, kept, had, held?.LeftOut ?? 0), new TreeMoved(line, head, now!, null, kept));
     }
 
     /// <summary>The paths a tree's <c>git status --porcelain</c> lists: its uncommitted work, untracked files included.</summary>

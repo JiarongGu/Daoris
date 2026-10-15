@@ -158,7 +158,7 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
             return Item(RebaseKind.Replay, tip, cut, cutBy, await CountAsync(root, $"{cut}..{tip}", ct).ConfigureAwait(false));
         }
 
-        return Item(RebaseKind.Replay, tip, held.Cut, held.ByContent ? CutBy.Content : cutBy, held.Kept) with
+        return Item(RebaseKind.Replay, tip, held.Cut, held.ByContent > 0 ? CutBy.Content : cutBy, held.Kept) with
         {
             Beyond = held.Commits, Skips = held.Skips, LeftOut = held.LeftOut,
         };
