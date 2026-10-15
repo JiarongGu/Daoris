@@ -41,6 +41,9 @@ internal sealed class TreeUpdates(
     {
         static TreeUpdate Refused(TreeFacts facts) => new(false, TreeUpdateWords.Refused(facts.First()!.Value, facts));
 
+        // One look (UIFREEZE1, PROC1d-i): git's guess at the line is asked once by the update and the judging it runs.
+        using var look = context.OneLook();
+
         // 🔴 Nothing else of a folder that is no tree of this home's is read: git would walk up from it to the repository above.
         var full = Path.GetFullPath(tree);
         var (workspace, repository) = context.OwnerOf(full);

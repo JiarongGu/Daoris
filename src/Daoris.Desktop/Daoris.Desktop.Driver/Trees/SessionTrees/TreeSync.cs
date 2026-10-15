@@ -32,6 +32,8 @@ internal sealed class TreeSync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
         bool fetch = true, CancellationToken ct = default, SyncScope? scope = null)
     {
+        // One look (UIFREEZE1, PROC1d-i): git's guess at each checkout's line is asked once, not by each judgement.
+        using var look = context.OneLook();
         var busy = new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);
         var lines = new List<LinePull>();
         var rebases = new List<RebaseItem>();
@@ -180,6 +182,8 @@ internal sealed class TreeSync(
         IReadOnlySet<string>? only = null, bool fetch = false, CancellationToken ct = default,
         Func<CancellationToken, Task<IReadOnlySet<string>>>? inUseNow = null, SyncScope? scope = null)
     {
+        // One look (UIFREEZE1, PROC1d-i): only git's guess is kept; each judgement is still re-read right before it acts (D88).
+        using var look = context.OneLook();
         var busy = new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);
         var pulls = new List<PullResult>();
         var rebases = new List<RebaseResult>();
