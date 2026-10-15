@@ -267,6 +267,7 @@
   "projects.tidied.title": "自动清理的分支",
   "projects.tidied.done": "{{when}}已清理",
   "projects.tidied.kept": "{{when}}已保留",
+  "projects.tidied.landing": "落地的分支，会话 {{session}}",
   "projects.tidied.aside": "它的工作树文件夹已另行存放",
   "projects.tidied.why.unread": "读取不了",
   "projects.tidied.why.refused": "被拒绝",

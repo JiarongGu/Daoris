@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTidiedBranches } from '../bridge/log';
 import { sentence } from '../locales/format';
-import { useSyncStanding } from '../data/queries';
+import { useSessions, useSyncStanding } from '../data/queries';
+import { sessionTitle } from '../work/identity';
 import { commitToast } from '../settings/Commits';
 import { helperToast } from '../settings/Helpers';
 import type { LandingRule } from '../settings/Landings';
@@ -248,6 +249,11 @@ function BranchesPart({ workspace, notify, onOpenRepository, onOpenBranch, onOpe
   const sync = useTreesSync(workspace);
   // What the look cleaned up on its own (AUTOTIDY1a): the machine log's, so a browser has none; a failed read draws nothing.
   const tidied = useTidiedBranches(workspace);
+  // A landing's branch tidied names its session by id (TIDIEDLANDING1): the sessions are asked only while a line does, so the
+  // row says it by name where the list holds the session.
+  const tidiedLines = Array.isArray(tidied.data?.lines) ? tidied.data.lines : null;
+  const landings = useSessions(null, true, Boolean(tidiedLines?.some((line) => line.event === 'branch.tidied' && !line.data.branch && line.data.session)));
+  const titles = Object.fromEntries((landings.data ?? []).map((session) => [session.id, sessionTitle(session)]));
   useErrorNotify(plan.error, notify);
   // A look the page stopped waiting for is said in the section, where it was asked (WSR7); every other failure is the
   // driver's own sentence, in a toast.
@@ -266,7 +272,7 @@ function BranchesPart({ workspace, notify, onOpenRepository, onOpenBranch, onOpe
   return (
     <InclusionContext.Provider value={inclusion}>
       <WorkspaceBranchGroups workspace={workspace} onOpenRepository={onOpenRepository} onOpenBranch={onOpenBranch} onOpenHistory={onOpenHistory} />
-      <WorkspaceTidied lines={Array.isArray(tidied.data?.lines) ? tidied.data.lines : null} />
+      <WorkspaceTidied lines={tidiedLines} titles={titles} />
       <SweepList
         branches={Array.isArray(plan.data?.branches) ? mine(plan.data.branches, workspace) : undefined}
         landed={Array.isArray(plan.data?.landed) ? mine(plan.data.landed, workspace) : undefined}

@@ -53,7 +53,11 @@ function group(rows: readonly LogRow[]): Group[] {
  * word of the page's by its code, and a folder, which is the machine's, is never named. A code the page does not know is
  * left unworded rather than written out.
  */
-export function WorkspaceTidied({ lines }: { lines: readonly LogRow[] | null | undefined }) {
+export function WorkspaceTidied({ lines, titles = {} }: {
+  lines: readonly LogRow[] | null | undefined;
+  /** Session ids to the names the page gives them (TIDIEDLANDING1): a landing's line names its session by id, shown by name where known. */
+  titles?: Readonly<Record<string, string>>;
+}) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const rows = group((lines ?? []).filter((line) => line.event === 'branch.tidied' || line.event === 'branch.kept'));
@@ -65,7 +69,7 @@ export function WorkspaceTidied({ lines }: { lines: readonly LogRow[] | null | u
     <section className="grid min-w-0 gap-2 border-t border-line pt-4">
       <h2 className="m-0 text-body font-semibold text-ink">{t('projects.tidied.title')}</h2>
       <ul className="m-0 grid list-none gap-2 p-0">
-        {shown.map((row, index) => <Tidied key={`${row.line.time}-${index}`} line={row.line} oldest={row.oldest} />)}
+        {shown.map((row, index) => <Tidied key={`${row.line.time}-${index}`} line={row.line} oldest={row.oldest} titles={titles} />)}
       </ul>
       {hidden > 0 && (
         <div>
@@ -77,9 +81,12 @@ export function WorkspaceTidied({ lines }: { lines: readonly LogRow[] | null | u
 }
 
 /** One line: the branch where the log names one, then what became of it and when, with its repository. */
-function Tidied({ line, oldest }: { line: LogRow; oldest: string | null }) {
+function Tidied({ line, oldest, titles }: { line: LogRow; oldest: string | null; titles: Readonly<Record<string, string>> }) {
   const { t } = useTranslation();
   const branch = text(line.data.branch);
+  // A landing's branch name carries the quest title's words, which the log never holds (AUTOTIDY2b, D88): its line names the
+  // session whose work it carried and no branch (TIDIEDLANDING1).
+  const session = line.event === 'branch.tidied' && !branch ? text(line.data.session) : null;
   const repository = text(line.data.repository);
   const done = line.event === 'branch.tidied';
   const why = WHY.find((code) => code === line.data.why);
@@ -96,6 +103,7 @@ function Tidied({ line, oldest }: { line: LogRow; oldest: string | null }) {
   return (
     <li className="grid min-w-0 gap-0.5">
       {branch && <span className="font-mono text-small text-ink [overflow-wrap:anywhere]">{branch}</span>}
+      {session && <span className="text-small text-ink">{t('projects.tidied.landing', { session: titles[session] ?? session })}</span>}
       <span className="text-small text-ink-soft">{meta.join(' · ')}</span>
     </li>
   );

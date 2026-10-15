@@ -46,6 +46,30 @@ describe('what was cleaned up on its own', () => {
     expect(second).not.toHaveTextContent('set aside');
   });
 
+  // AUTOTIDY2b: a landing's branch name carries the quest title's words, which the log never holds, so the line has a session and no branch.
+  const landing = (session: string, hours: number): LogRow => tidied('', hours, { branch: null, session, kind: 'on-line', kept: null });
+
+  it("says a branch tidied with a session and no branch was a landing's, for that session, in English and Chinese", async () => {
+    render(<WorkspaceTidied lines={[landing('1a2b3c4d', 3)]} />);
+    const row = screen.getByRole('listitem');
+    expect(row).toHaveTextContent("A landing's branch, for session 1a2b3c4d");
+    expect(row).toHaveTextContent('Cleaned up 3h ago');
+    await i18n.changeLanguage('zh');
+    expect(screen.getByRole('listitem')).toHaveTextContent('落地的分支，会话 1a2b3c4d');
+  });
+
+  it("names the session by its title where the page has one, and claims no landing for a line with neither a branch nor a session", () => {
+    render(<WorkspaceTidied lines={[landing('1a2b3c4d', 3), tidied('', 4, { branch: null, session: undefined })]} titles={{ '1a2b3c4d': 'Add the billing export' }} />);
+    const [named, none] = screen.getAllByRole('listitem');
+    expect(named).toHaveTextContent("A landing's branch, for session Add the billing export");
+    expect(none).not.toHaveTextContent('for session');
+  });
+
+  it('keeps a branch the log names as it was, with no landing words', () => {
+    render(<WorkspaceTidied lines={[tidied('daoris/s-1f2e3d4c', 3, { session: '1a2b3c4d' })]} />);
+    expect(screen.getByRole('listitem')).not.toHaveTextContent("A landing's branch");
+  });
+
   it.each([
     ['unread', 'unreadable'],
     ['refused', 'refused'],
