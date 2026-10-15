@@ -102,7 +102,8 @@ public sealed partial class PressesTold(string home)
             {
                 // 🔴 Taken by holding it alone, its close deleting it: of two loops looking at once one has it and the other is
                 // refused. A rename to take it, as a request is taken, lost one note in twenty in PressesToldTests when two loops
-                // took at once (its read came back empty-handed after its rename had succeeded; the cause was not pinned down).
+                // took at once (its read came back empty-handed after its rename had succeeded: the other loop's rename, holding it
+                // to move it, refused the read, and the first then removed it unread; FIX-LOG 2026-10-16, REQTAKE1).
                 using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None, 4096, FileOptions.DeleteOnClose);
                 using var reader = new StreamReader(stream, Encoding.UTF8);
                 text = reader.ReadToEnd();

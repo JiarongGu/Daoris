@@ -136,6 +136,50 @@ public sealed class SessionRequestsTests : IDisposable
         Assert.Equal(1, stops);
     }
 
+    /// <summary>
+    /// REQTAKE1: two loops taking twenty at once, on threads of their own, honour every one exactly once. A take by renaming lost
+    /// one: the other loop's rename held the file open to move it, which refused the first loop's read of the name it had just
+    /// moved it to, and the first then deleted it (FIX-LOG 2026-10-16).
+    /// </summary>
+    [Fact]
+    public async Task Two_loops_taking_twenty_at_once_honour_each_exactly_once()
+    {
+        var sessions = Enumerable.Range(1, 20).Select(i => $"s{i}").ToList();
+        foreach (var session in sessions) Requests.Write(new SessionRequest(session, SessionMove.Stop, Now));
+        var stops = new System.Collections.Concurrent.ConcurrentBag<string>();
+        await using var one = new SessionRequestWatch(_home, runsHere: _ => true, stop: id => { stops.Add(id); return true; }, service: () => null, clock: () => Now);
+        await using var two = new SessionRequestWatch(_home, runsHere: _ => true, stop: id => { stops.Add(id); return true; }, service: () => null, clock: () => Now);
+
+        await Task.WhenAll(Task.Run(() => one.HonourAsync()), Task.Run(() => two.HonourAsync()));
+        // A request the other loop's look held at that moment waits for the next look, and is honoured then, once.
+        await one.HonourAsync();
+
+        Assert.Equal(sessions.Order(), stops.Order());
+        Assert.Empty(Requests.Pending(Now));
+    }
+
+    /// <summary>
+    /// REQTAKE1, the loss itself: held as another loop's rename holds it the moment before it moves it (open, letting it be moved,
+    /// refusing a reader), a take is taken either then or at the next look, never neither. On Windows the take's own rename
+    /// succeeds and its read is refused, and the take that then removed what it moved lost the request unread.
+    /// </summary>
+    [Fact]
+    public void A_take_whose_read_is_refused_leaves_the_request_for_the_next_look()
+    {
+        Requests.Write(new SessionRequest("s1", SessionMove.Stop, Now));
+
+        SessionRequest? whileHeld;
+        using (new FileStream(Requests.PathOf("s1"), FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete))
+        {
+            whileHeld = Requests.Take("s1");
+        }
+
+        var afterwards = Requests.Take("s1");
+
+        Assert.Equal(SessionMove.Stop, Assert.Single(new[] { whileHeld, afterwards }.OfType<SessionRequest>()).Move);
+        Assert.Empty(Directory.GetFiles(Requests.Folder));
+    }
+
     /// <summary>A request withdrawn is gone, and withdrawing one already taken says it was not there.</summary>
     [Fact]
     public void A_request_is_withdrawn_while_it_waits()
