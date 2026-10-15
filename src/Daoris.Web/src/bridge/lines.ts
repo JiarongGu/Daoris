@@ -44,17 +44,14 @@ export const useLines = () => {
 
 /**
  * Set how work lands in a repository or a workspace, or clear it with no form — the file `daoris driver
- * landing` edits (D50). Every repository's answer moves with it, so that is asked again.
+ * landing` edits (D50). Its answer is the driver's state, written where it is read; every repository's rules and every plan
+ * move with it, which the state hub asks again, as the route declares them (STATEHUB1b, D169).
  */
 export const useSetLanding = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (change: LandingChange) => call<DriverState>('SET_LANDING', change),
-    onSuccess: (state) => {
-      client.setQueryData(keys.driver, state);
-      void client.invalidateQueries({ queryKey: keys.lines });
-      void client.invalidateQueries({ queryKey: keys.allLandings });
-    },
+    onSuccess: (state) => client.setQueryData(keys.driver, state),
   });
 };
 
@@ -74,7 +71,11 @@ export const useSweepPlan = () => {
   });
 };
 
-/** The clean-up's press: only the branches the list showed to go, each judged again by the driver. */
+/**
+ * The clean-up's press: only the branches the list showed to go, each judged again by the driver. What it moved (the list, the
+ * sessions, the reviews kept until something moves their tree (REVIEW4), and which repositories hold Daoris's branches, D112)
+ * the state hub asks again, as the route declares it (STATEHUB1b, D169).
+ */
 export const useSweep = () => {
   const client = useQueryClient();
   return useMutation({
@@ -84,14 +85,8 @@ export const useSweep = () => {
         landed?: { branch: LandedBranch; removed: boolean; message: string }[];
         removed: number;
       }>('SWEEP', { only }),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: keys.sweep });
-      void client.invalidateQueries({ queryKey: keys.allSessions });
-      // A tree removed: an ended session's review is kept until something moves its tree (REVIEW4), and this did.
-      void client.invalidateQueries({ queryKey: keys.allDiffs });
-      // A session branch gone may leave its repository holding nothing of Daoris's (D112).
-      void client.invalidateQueries({ queryKey: treesSyncScopeKey });
-    },
+    // Asked here too until the review's tests hear the hub (STATEHUB1f), never cancelling a read the hub's event began.
+    onSuccess: () => void client.invalidateQueries({ queryKey: keys.allDiffs }, { cancelRefetch: false }),
   });
 };
 
@@ -99,21 +94,19 @@ export const useSweep = () => {
  * Discard a failed or superseded attempt's session branch, its commits with it and its tree where it is still here (LAND3b,
  * D102's LAND3 note): the screen's half of `daoris-driver trees remove <branch> --repository <name> --force`. Always
  * forced, since the page asks once, naming the branch and its commits, before it sends; a branch the driver kept is an
- * answer with its sentence. The list is asked again either way, since a branch gone already is a list out of date.
+ * answer with its sentence. What it moved is asked again either way, since a branch gone already is a list out of date: the
+ * state hub's, as the route declares it, as after the clean-up (STATEHUB1b, D169).
  */
 export const useDiscardSessionBranch = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ repository, branch }: { repository: string; branch: string }) =>
       call<BranchDiscard>('DISCARD_SESSION_BRANCH', { repository, branch, force: true }),
+    // Asked here too until the head's, the workspace's and the review's tests hear the hub (STATEHUB1f), never cancelling a
+    // read the hub's event began.
     onSuccess: (result) => {
-      void client.invalidateQueries({ queryKey: keys.sweep });
-      if (!result.done) return;
-      void client.invalidateQueries({ queryKey: keys.allSessions });
-      // A tree removed with its branch: a kept review is read again (REVIEW4), as after the clean-up.
-      void client.invalidateQueries({ queryKey: keys.allDiffs });
-      // A session branch gone may leave its repository holding nothing of Daoris's (D112).
-      void client.invalidateQueries({ queryKey: treesSyncScopeKey });
+      void client.invalidateQueries({ queryKey: keys.sweep }, { cancelRefetch: false });
+      if (result.done) void client.invalidateQueries({ queryKey: keys.allDiffs }, { cancelRefetch: false });
     },
   });
 };
@@ -244,8 +237,9 @@ export const useTreesSyncPlan = (workspace?: string) => {
 
 /**
  * The press: only the rows the list showed, each judged again by the driver, which does not fetch again. The
- * branches it moved or deleted change the clean-up's list, the sessions' trees and which repositories hold Daoris's
- * branches, so those are asked again. It waits for each row's replay, one after another (WSR7). Asked for a workspace,
+ * branches it moved or deleted change the clean-up's list, the sessions' trees, what a kept review reads (REVIEW4), every
+ * plan judged against a line, and which repositories hold Daoris's branches, so the state hub asks those again, as the
+ * route declares them (STATEHUB1b, D169). It waits for each row's replay, one after another (WSR7). Asked for a workspace,
  * the driver judges that workspace's checkouts alone (BRSCOPE1), as its look did.
  */
 export const useTreesSync = (workspace?: string) => {
@@ -258,13 +252,8 @@ export const useTreesSync = (workspace?: string) => {
         deletes: { branch: LandedBranch; removed: boolean; message: string }[];
         changed: number;
       }>('TREES_SYNC', workspace === undefined ? { only } : { only, workspace }, { timeoutMs: pressBound(only.length) }),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: keys.sweep });
-      void client.invalidateQueries({ queryKey: keys.allSessions });
-      // A tree replayed or a branch deleted moves what a kept review reads (REVIEW4).
-      void client.invalidateQueries({ queryKey: keys.allDiffs });
-      void client.invalidateQueries({ queryKey: treesSyncScopeKey });
-    },
+    // Asked here too until the review's tests hear the hub (STATEHUB1f), never cancelling a read the hub's event began.
+    onSuccess: () => void client.invalidateQueries({ queryKey: keys.allDiffs }, { cancelRefetch: false }),
   });
 };
 
