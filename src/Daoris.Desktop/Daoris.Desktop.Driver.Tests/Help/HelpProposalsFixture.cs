@@ -381,6 +381,16 @@ public sealed class HelpStandInDoors : IHelpDoors
         Calls.Add("change");
     }
 
+    // IHelpSetupDoors
+    /// <summary>What the set-up press answers (LAYOUT8): one quest published by default, or a refusal in the service's words.</summary>
+    public SetupOutcome SetUp { get; set; } = new(true, "Published.", "a1", "q1", []);
+
+    public Task<SetupOutcome> SetUpAsync(SetupPlan plan, CancellationToken ct)
+    {
+        Calls.Add($"SETUP_PRESS {plan.Repository}");
+        return Task.FromResult(SetUp);
+    }
+
     // IHelpSyncDoors
     /// <summary>What the look lists, as <c>TREES_SYNC_PLAN</c> would.</summary>
     public SyncPlan Listed { get; init; } = new([], [], []);

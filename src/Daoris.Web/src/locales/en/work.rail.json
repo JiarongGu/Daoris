@@ -31,6 +31,7 @@
   "work.rail.parts_other": "{{count}} parts",
   "work.rail.continues": "continues {{title}}",
   "work.rail.helps": "helps {{title}}",
+  "work.rail.under": "Working for {{title}}",
   "work.rail.parkedAfter": "after {{count}} failed session",
   "work.rail.parkedAfter_other": "after {{count}} failed sessions",
   "work.rail.parkedAfterSome": "after its failed sessions",

@@ -62,6 +62,8 @@ public static class SecondaryWindow
 
     private const string SessionPrefix = "session:";
 
+    private const string MainPrefix = "main:";
+
     /// <summary>
     /// Which session ids may be named — the alphabet the ledger mints, plus the `origin/id` a
     /// mirrored record wears (D47 §6). Narrow on purpose: a separator, a query character or `..` is
@@ -70,12 +72,35 @@ public static class SecondaryWindow
     private static readonly Regex SessionId =
         new(@"^[A-Za-z0-9][A-Za-z0-9._-]*(?:/[A-Za-z0-9][A-Za-z0-9._-]*)?$", RegexOptions.Compiled);
 
+    /// <summary>A main window's number: two and up, written once (the first main window is the application's own, and unnamed).</summary>
+    private static readonly Regex MainNumber = new(@"^(?:[2-9]|[1-9][0-9]+)$", RegexOptions.Compiled);
+
     /// <summary>One session, detached into its own window.</summary>
     public static string ForSession(string id) => SessionPrefix + id;
+
+    /// <summary>
+    /// Another main window of the instance that runs (ONEINSTANCE1, D171 point 2): the whole platform, as the application's
+    /// own window carries it, opened for a later launch of the executable. Numbered from two.
+    /// </summary>
+    public static string ForMain(int number) => MainPrefix + number.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>Whether this names another main window.</summary>
+    public static bool IsMain(string? name) =>
+        name?.StartsWith(MainPrefix, StringComparison.Ordinal) == true && MainNumber.IsMatch(name[MainPrefix.Length..]);
+
+    /// <summary>The main window a launch opens next: the lowest number from two that no open window wears.</summary>
+    public static string NextMain(IEnumerable<string> opened)
+    {
+        var taken = opened.Where(IsMain).ToHashSet(StringComparer.Ordinal);
+        var number = 2;
+        while (taken.Contains(ForMain(number))) number++;
+        return ForMain(number);
+    }
 
     /// <summary>Whether this is a window this build knows how to open.</summary>
     public static bool IsKnown(string? name) =>
         name == Monitor
+        || IsMain(name)
         || (name?.StartsWith(SessionPrefix, StringComparison.Ordinal) == true
             && SessionId.IsMatch(name[SessionPrefix.Length..]));
 

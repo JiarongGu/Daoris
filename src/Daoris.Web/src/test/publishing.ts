@@ -44,6 +44,11 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SESSION_INPUT: { scopes: ['sessions', 'help'], session: 'id' },
   SESSION_DELETE: { scopes: ['sessions', 'help'], session: 'id' },
   END_CHAT: { scopes: ['sessions'], session: 'id' },
+  // A helper asked of a session, and the person's yes to an agent's ask (MIXAGENT2b): files the loop's next look takes; and
+  // their no (HELPERNO1), the ask refused and its note written at once.
+  SESSION_HELPER_ASK: { scopes: ['sessions', 'driver'], session: 'id' },
+  SESSION_HELPER_APPROVE: { scopes: ['sessions', 'driver'], session: 'session' },
+  SESSION_HELPER_DECLINE: { scopes: ['sessions', 'driver'], session: 'session' },
   // The plugins' presses (STATEHUB1d), which the Plugins view's tests publish.
   PLUGIN_ACTION: { scopes: ['plugins', 'harnesses'] },
   PLUGIN_UPDATE: { scopes: ['plugins', 'harnesses'] },
@@ -83,6 +88,8 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   CHANNEL_POST: { scopes: ['asks'] },
   CHANNEL_MARK: { scopes: ['asks'] },
   REGISTRY_REFRESH: { scopes: ['registry'] },
+  // A set-up's press (LAYOUT8): one ask and its quest, and the repository's rule.
+  SETUP_PRESS: { scopes: ['quests', 'asks', 'rules'] },
   TOOLS_USE: { scopes: ['tools'] },
   TOOLS_DOWNLOAD: { scopes: ['tools'] },
   TOOLS_DELETE: { scopes: ['tools'] },
@@ -94,7 +101,7 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   HELP_START_FROM: { scopes: ['sessions', 'help'], session: 'id' },
   HELP_DISMISS: { scopes: ['help'] },
   HELP_APPLY: {
-    scopes: ['sessions', 'quests', 'asks', 'driver', 'history', 'registry', 'plugins', 'harnesses', 'help', 'browser'],
+    scopes: ['sessions', 'quests', 'asks', 'driver', 'rules', 'history', 'registry', 'plugins', 'harnesses', 'help', 'browser'],
   },
   // The browser module's presses (BROWSERPUBLISH1), `DAORIS.BROWSER`'s, which the publisher reads beside the driver's.
   ADD_FAVORITE: { scopes: ['browser'] },

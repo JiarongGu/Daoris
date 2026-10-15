@@ -3,7 +3,8 @@ import type { CaptionButtonRect } from '@shenora/react';
 import { WindowCommands, useShenora, useWindowMaximized } from '@shenora/react';
 import { CAPTION_ATTRIBUTE, CAPTION_SLOTS } from '../work/caption';
 import { effectiveDark, subscribeTheme } from '../design/theme';
-import { useEngineTheme } from '../bridge/shell';
+import { tellFrameTheme, useEngineTheme } from '../bridge/shell';
+import { anotherMainWindow } from '../work/window';
 
 export { CAPTION_ATTRIBUTE, CAPTION_SLOTS, type CaptionSlot } from '../work/caption';
 
@@ -122,7 +123,12 @@ export function useWindowChrome() {
     // The theme the PAGE is in, which is the viewer's choice when there is one (D66) and the OS's
     // when there is not — so pushed on either changing. Told only the OS, a window set to light on
     // a dark desktop would keep dark caption buttons over a light strip.
-    const push = () => fire((commands) => commands.setTheme(effectiveDark()));
+    // Another main window, which a later launch opened (ONEINSTANCE1), is told by its name: the kit's
+    // `SET_THEME` reaches the first main window alone, and answers any other with no route.
+    const named = anotherMainWindow(globalThis.location?.search ?? '');
+    const push = named
+      ? () => tellFrameTheme(named)
+      : () => fire((commands) => commands.setTheme(effectiveDark()));
     push();
     media?.addEventListener('change', push);
     const stop = subscribeTheme(push);

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { GoAhead, Session } from '../data/api';
 import type { RuleProposal } from '../settings/AgentRules';
+import type { HelperAskRow } from './HelperAsks';
 import { GATES } from './opinionFixtures';
 import { landingStands, rulesAsked, waitsOf } from './waits';
 
@@ -116,6 +117,31 @@ describe('the waits on the person', () => {
       .toEqual([{ kind: 'question', below: true }, { kind: 'goAhead', number: 2 }, { kind: 'rule', id: 'r1' }]);
     expect(waitsOf({ session: session(), lands: LANDS, landing: PLAN, onLand: press, rules }))
       .toEqual([{ kind: 'rule', id: 'r1' }, { kind: 'accept' }]);
+  });
+
+  // MIXAGENT2c (D168 points 2 and 3, D163 point 3): an agent's ask for a helper the driver's look holds waiting on the person's
+  // word is one of the session's waits, as a rule it proposed is.
+  const ask = (id: string, over: Partial<HelperAskRow> = {}): HelperAskRow => ({
+    id, question: 'Which test covers the loader?', agent: null, askedBy: 'agent', at: '2026-09-21T11:00:00Z', state: 'waiting',
+    code: null, helper: null, startedOn: null, ...over,
+  });
+
+  it('names each agent’s ask for a helper that waits on the person’s word, and none that waits on anything else', () => {
+    const asks = [
+      ask('a1'), ask('a2', { state: null }), ask('a3', { askedBy: 'person' }), ask('a4', { code: 'cap' }),
+      ask('a5', { state: 'approved' }), ask('a6', { state: 'started', helper: 'h1' }), ask('a7', { state: 'refused', code: 'declined' }),
+      ask('a8'),
+    ];
+    expect(waitsOf({ session: session({ state: 'working' }), helpers: { asks, onApprove: press } }))
+      .toEqual([{ kind: 'helper', id: 'a1' }, { kind: 'helper', id: 'a8' }]);
+    // With no press to answer them (a browser, a teammate's record), none.
+    expect(waitsOf({ session: session({ state: 'working' }), helpers: { asks } })).toEqual([]);
+  });
+
+  it('stands after the rules and before the work', () => {
+    const rules = { proposals: [proposal('r1', 'waiting')], onAnswer: press };
+    expect(waitsOf({ session: session(), lands: LANDS, landing: PLAN, onLand: press, rules, helpers: { asks: [ask('a1')], onApprove: press } }))
+      .toEqual([{ kind: 'rule', id: 'r1' }, { kind: 'helper', id: 'a1' }, { kind: 'accept' }]);
   });
 });
 

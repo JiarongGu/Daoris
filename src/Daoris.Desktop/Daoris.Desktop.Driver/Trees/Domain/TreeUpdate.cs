@@ -13,6 +13,51 @@ public sealed record TreeUpdate(bool Done, string Message, TreeMoved? Moved = nu
 /// <param name="Commits">The tree's own commits beyond the line now.</param>
 public sealed record TreeMoved(string Line, string From, string To, string? Branch, int Commits);
 
+/// <summary>
+/// What a session's start did with its tree against the line (LANDSYNC2, D87's 2026-10-15 amendment point 7): where the line holds some
+/// of the tree's commits, the tree is brought up to date before the turn, and the session is told either way.
+/// </summary>
+/// <param name="Moved">Where the tree went, where it was brought up to date; null where it stayed.</param>
+/// <param name="Told">
+/// What the session's instruction carries (<see cref="TreeStartWords"/>): what moved, or that the line holds some of its work and the
+/// tree could not be brought up to date, and a fetch that failed. Null where there is nothing to tell it.
+/// </param>
+public sealed record TreeStartSync(TreeMoved? Moved, string? Told)
+{
+    /// <summary>Nothing to do and nothing to tell: not a tree of this home's, no line, or a start in no tree of its own.</summary>
+    public static TreeStartSync Nothing { get; } = new(null, null);
+}
+
+/// <summary>
+/// What a session going on in an old tree is told before its work (LANDSYNC2, D87's amendment point 7): the agent's words, in the
+/// instruction or after the person's words where its conversation resumes, never the page's.
+/// </summary>
+public static class TreeStartWords
+{
+    /// <summary>
+    /// The tree was brought up to date: the line held <paramref name="leftOut"/> of its commits, left out, and
+    /// <paramref name="kept"/> of its own were replayed onto <paramref name="ontoName"/>.
+    /// </summary>
+    public static string Moved(string line, string ontoName, int leftOut, int kept) =>
+        $"Before this turn Daoris brought this tree up to date with `{line}`: the line already holds {leftOut} of its commit(s), "
+        + "which were left out, " + (kept == 0
+            ? $"and the tree now stands on `{ontoName}` with nothing of its own beyond it."
+            : $"and its other {kept} commit(s) were replayed onto `{ontoName}`, so its branch holds only what the line lacks.")
+        + " Read the log before you go on: the commits you made have new ids.";
+
+    /// <summary>
+    /// The line holds some of the tree's work and the tree was not brought up to date (a conflict in git's words, or why it was left):
+    /// the session is asked to replay its own commits onto the line itself before anything else (point 5's words, for a start).
+    /// </summary>
+    public static string NotMoved(string line, string ontoName, int leftOut, string why) =>
+        $"The line `{line}` already holds {leftOut} of this tree's commit(s), and Daoris could not bring the tree up to date before this "
+        + $"turn: {why.Trim().TrimEnd('.')}. Before anything else, replay your own commits onto `{ontoName}`, keeping only what the line "
+        + "lacks, resolve any conflict, and check that the work still holds: a landing carries only what the line lacks.";
+
+    /// <summary>The line holds none of the tree's work, said only where the fetch failed, so the session knows what it was judged against.</summary>
+    public static string HoldsNone(string line) => $"Before this turn Daoris judged this tree against `{line}`, and the line holds none of its work.";
+}
+
 /// <summary>Why a tree is not brought up to date, in the order the press asks (REVIEWBASE2-i): the first found is the answer.</summary>
 public enum TreeRefusal
 {
@@ -113,10 +158,16 @@ public static class TreeUpdateWords
           + ", whose work has not reached the line yet: replaying only its own would lose the work it builds on, so it was left as it was"
         : $"git could not tell: {detail}";
 
-    /// <summary>A detached tree replayed in place (point 4): <paramref name="kept"/> of its <paramref name="had"/> commits of its own.</summary>
-    public static string Replayed(string line, int kept, int had) => had == 0
-        ? $"moved the tree to `{line}`: it held nothing of its own beyond the line."
+    /// <summary>
+    /// A detached tree replayed in place (point 4): <paramref name="kept"/> of its <paramref name="had"/> commits of its own, leaving out
+    /// <paramref name="leftOut"/> the line already holds (LANDSYNC3), said apart from those the replay found empty.
+    /// </summary>
+    public static string Replayed(string line, int kept, int had, int leftOut = 0) => had == 0
+        ? leftOut == 0
+            ? $"moved the tree to `{line}`: it held nothing of its own beyond the line."
+            : $"moved the tree to `{line}`: it holds nothing of its own beyond work that reached the line ({leftOut} commit(s) the line holds left out)."
         : $"replayed the tree onto `{line}`: {kept} commit(s) of its own"
+          + (leftOut > 0 ? $", leaving out {leftOut} the line holds" : "")
           + (kept < had ? $" ({had - kept} became empty, their changes already on the line)." : ".");
 
     /// <summary>A detached tree's replay git would not make: a conflict names its files. <paramref name="back"/>: HEAD is where it was.</summary>

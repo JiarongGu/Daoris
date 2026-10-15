@@ -22,24 +22,101 @@
 // And since TOOLS4, a tool's maker and a resource location, for `daoris tool download|use … managed|update|look`
 // (D121 §3.6, §3.7): the same fetcher, its hops held to the address rule the dispatcher names.
 
-import { createWriteStream } from 'node:fs';
+import { createWriteStream, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { once } from 'node:events';
+import { join } from 'node:path';
 import { finished } from 'node:stream/promises';
 import { DaorisError, RefusalError } from '../platform/errors.ts';
+import { daorisHome, THIS_INSTALL } from '../platform/home.ts';
 import type { Fetcher } from '../agents/channels.ts';
 
-/** Where the service is, and the key it wants — supplied by the environment, never committed. */
-export function endpoint(env: NodeJS.ProcessEnv = process.env): { url: string; key: string | null } {
-  const url = env.DAORIS_SERVICE_URL;
-  if (!url) {
-    throw new DaorisError(
-      'no DAORIS_SERVICE_URL — this command talks to a knowledge service, and needs\n'
-      + '  to know where one is. Set it in your environment; a local service is usually\n'
-      + '  http://localhost:5177. Everything else daoris does works without one.');
+const NO_SERVICE =
+  'no DAORIS_SERVICE_URL — this command talks to a knowledge service, and needs\n'
+  + '  to know where one is. Set it in your environment; a local service is usually\n'
+  + '  http://localhost:5177. Everything else daoris does works without one.';
+
+/**
+ * Where the service is, and the key it wants — supplied by the environment, never committed. With no variable, a `daoris`
+ * the install carries finds the service the running desktop holds (FINDDAORIS1, D171 point 1, `runningService`), and refuses
+ * saying Daoris is not running there and how to start it. A checkout reads no address file: on a machine with an install, the
+ * account's `DAORIS_HOME` names that install's live home, and a test that cleared the variable must never reach it.
+ */
+export async function endpoint(
+  env: NodeJS.ProcessEnv = process.env, get: Get = fetch, install: string | null = THIS_INSTALL,
+): Promise<{ url: string; key: string | null }> {
+  const found = await located(env, get, install);
+  if ('why' in found) throw new DaorisError(found.why ? `${NO_SERVICE}\n  ${found.why}` : NO_SERVICE);
+  return { url: found.url, key: env.DAORIS_SERVICE_KEY ?? null };
+}
+
+/** The service's address: the variable, else (installed) the running desktop's, else why there is none ('' where none was looked for). */
+async function located(env: NodeJS.ProcessEnv, get: Get, install: string | null): Promise<{ url: string } | { why: string }> {
+  const named = env.DAORIS_SERVICE_URL?.trim().replace(/\/+$/, '');
+  if (named) return { url: named };
+  const home = install ? daorisHome(env, install) : null;
+  return install && home ? runningService(home, install, get) : { why: '' };
+}
+
+/** The address file the running desktop leaves in its home (the driver's `RunningAddress.FileName`). */
+export const RUNNING_FILE = 'running.json';
+
+/**
+ * The service the running desktop holds for `home` (FINDDAORIS1, D171 point 1), from the address it left there: taken only
+ * while the process it names lives, the address is this machine's (a terminal's verbs send this machine's paths, D46), and
+ * its status door answers as a Daoris host's, naming its search tier. Otherwise why not, in a sentence that says how to start
+ * Daoris. The driver's `RunningService` holds the same contract in C#.
+ */
+export async function runningService(
+  home: string, install: string, get: Get = fetch, lives: (pid: number) => boolean = processLives,
+): Promise<{ url: string } | { why: string }> {
+  const start = join(install, 'Daoris.exe');
+  const entry = runningEntry(home);
+  if (!entry || !lives(entry.pid)) return { why: `Daoris is not running on ${home}: start it (${start}), and run this again once its window is up.` };
+  if (!isLocalService(entry.url)) {
+    return {
+      why: `the address Daoris left in ${home} (${entry.url}) is not on this machine, and only this machine's own service `
+        + 'is taken from it; set DAORIS_SERVICE_URL to reach another.',
+    };
   }
 
-  return { url: url.replace(/\/+$/, ''), key: env.DAORIS_SERVICE_KEY ?? null };
+  let daoris = false;
+  try {
+    const response = await get(`${entry.url}/api/status`, { method: 'GET', signal: AbortSignal.timeout(2_000) });
+    const status: unknown = await response.json().catch(() => null);
+    daoris = response.ok && typeof status === 'object' && status !== null && typeof (status as Record<string, unknown>).tier === 'string';
+  } catch {
+    daoris = false;
+  }
+
+  return daoris
+    ? { url: entry.url }
+    : {
+      why: `Daoris is running on ${home} (pid ${entry.pid}), and nothing answered as its service at ${entry.url}: run this `
+        + `again once its window is up, or start it again (${start}).`,
+    };
+}
+
+/** What a home's address file names, or null when there is none or it does not read. */
+function runningEntry(home: string): { url: string; pid: number } | null {
+  try {
+    const entry: unknown = JSON.parse(readFileSync(join(home, RUNNING_FILE), 'utf8'));
+    if (typeof entry !== 'object' || entry === null) return null;
+    const { url, pid } = entry as Record<string, unknown>;
+    return typeof url === 'string' && url.length > 0 && Number.isInteger(pid) ? { url: url.replace(/\/+$/, ''), pid: pid as number } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Whether a process runs with this id: signal 0 tests and sends nothing; one not ours to signal still runs. */
+function processLives(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === 'EPERM';
+  }
 }
 
 /**
@@ -67,7 +144,7 @@ export function isLocalService(url: string): boolean {
 export async function request(
   method: 'GET' | 'POST' | 'DELETE', path: string, body?: unknown,
 ): Promise<{ status: number; json: Record<string, unknown> | null }> {
-  const { url, key } = endpoint();
+  const { url, key } = await endpoint();
   const response = await fetch(`${url}${path}`, {
     method,
     headers: {
@@ -93,6 +170,12 @@ export function refusal(status: number, json: Record<string, unknown> | null): s
 /** The records door the driver reads its strikes from, closed records included (DRV6). */
 const RECORDS_PATH = '/api/sessions?includeClosed=true';
 
+/** Why a read has no host to ask: no variable, and where the running desktop's address was looked for, why it was not taken. */
+function noHost(why: string): string {
+  const none = 'no DAORIS_SERVICE_URL is set, so this terminal knows no host to ask (the desktop\'s own is usually http://localhost:5177)';
+  return why ? `${none}; ${why}` : none;
+}
+
 /**
  * This machine's session records, for `daoris driver retry` to count a quest's failures from as the driver does (RETRY1b):
  * the list the host answered, or why it could not be read, in words the retry's refusal carries. It never throws, so a
@@ -104,10 +187,11 @@ const RECORDS_PATH = '/api/sessions?includeClosed=true';
  * `SessionRecords`, spelled here so this module imports nothing a management verb's pure half holds.
  */
 export async function sessionRecords(
-  env: NodeJS.ProcessEnv = process.env, get: Get = fetch,
+  env: NodeJS.ProcessEnv = process.env, get: Get = fetch, install: string | null = THIS_INSTALL,
 ): Promise<{ records: unknown[] } | { unread: string }> {
-  const url = env.DAORIS_SERVICE_URL?.trim().replace(/\/+$/, '');
-  if (!url) return { unread: 'no DAORIS_SERVICE_URL is set, so this terminal knows no host to ask (the desktop\'s own is usually http://localhost:5177)' };
+  const found = await located(env, get, install);
+  if ('why' in found) return { unread: noHost(found.why) };
+  const { url } = found;
   if (!isLocalService(url)) {
     return { unread: `DAORIS_SERVICE_URL names ${url}, which is not this machine, and the strikes are counted from this machine's own host` };
   }
@@ -140,10 +224,11 @@ export async function sessionRecords(
  * this machine's checkouts. The type is `reviews.ts`'s `Checkout`, spelled here so this module imports nothing it holds.
  */
 export async function registryCheckouts(
-  env: NodeJS.ProcessEnv = process.env, get: Get = fetch,
+  env: NodeJS.ProcessEnv = process.env, get: Get = fetch, install: string | null = THIS_INSTALL,
 ): Promise<{ checkouts: { repository: string; workspace: string | null; root: string | null }[] } | { unread: string }> {
-  const url = env.DAORIS_SERVICE_URL?.trim().replace(/\/+$/, '');
-  if (!url) return { unread: 'no DAORIS_SERVICE_URL is set, so this terminal knows no host to ask (the desktop\'s own is usually http://localhost:5177)' };
+  const found = await located(env, get, install);
+  if ('why' in found) return { unread: noHost(found.why) };
+  const { url } = found;
   if (!isLocalService(url)) {
     return { unread: `DAORIS_SERVICE_URL names ${url}, which is not this machine, and only this machine's host answers where its checkouts are` };
   }

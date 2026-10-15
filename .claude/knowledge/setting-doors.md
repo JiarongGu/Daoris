@@ -74,3 +74,13 @@ the parent to add at the merge (the hand-back rule on bridge hooks).
 A door for another kind (`workflow`, `session`, `sync`, ...) has its own `Help<Kind>Proposals.cs` and writer
 (`twins`' row on Ask Daoris's proposals) and the same rows 3 to 10 in its own names. A new *kind* is wider: its card in
 the page (`help/ProposalCard.tsx`), `HelpProposalKinds` and `HelpProposalBox`'s `Propose…`, counted by their tables.
+
+LAYOUT8's `setup` kind is the worked example of a new kind, in three commits (service, driver with modules, web). Beyond a
+door's rows: the service's `Help<Kind>ProposalWriter.cs`, its line in `HelpProposalBox.Kinds`, `Help<Kind>Tool.cs` in
+`KnowledgeServer.ToolTypes`, and `McpToolRegistrationTests`' two lists; the driver's line in `HelpProposalKinds.All`, the
+fields it judges by under a comment of its own in `HelpMachineFacts` and `HelpPlan`, its `IHelp<Kind>Doors` in `IHelpDoors`
+and `HelpStandInDoors`; the modules' gate and the facts read only for it in `HelpRoutes.HelpFactsAsync`, its card data in
+`HELP_PROPOSALS`, its door in `ScreenDoors`, a nudge after `HELP_APPLY` where it moves work, and what it changes in `Applies`
+(with `StatePublisherTests` and `test/publishing.ts`); the page's union in `ProposalCard.tsx`, its title in both catalogues,
+the room's `HelpRoomMayPropose` row and the Ask Daoris design's §3 list. A kind whose facts start a process takes its world
+through a seam the modules' fast half stands in for (`DriverContext.SetupWorlds`).

@@ -48,6 +48,7 @@
   "help.proposal.acceptNote": "采纳就是你对上面每项偏离点头：委托留住的事会继续，偏离仍记录在委托上。",
   "help.proposal.accept": "采纳",
   "help.proposal.titleWorkflow": "问道衍提议更改工作流",
+  "help.proposal.titleSetup": "问道衍提议配置",
   "help.proposal.workflow.versionNew": "{{name}} 的 v{{version}}",
   "help.proposal.workflow.versionEdit": "{{name}} 的 v{{version}}，基于 v{{base}}",
   "help.proposal.workflow.yourPart": "你的部分",

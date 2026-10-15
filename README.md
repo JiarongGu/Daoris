@@ -105,7 +105,8 @@ its use over its curve, and marks a reading over the scope's curve with the curv
 **`connect`, `retire` and `import` are the management commands** — opt-in, they talk to a service, and
 no gate ever runs them. `remote`, `agent`, `driver`, `plugin`, `browser` and `tool` are management too; they edit files under
 **the Daoris home** (`DAORIS_HOME` — the installed application's own `data/`, set once for your
-account, never your profile; D63), refusing with none set. `agent` runs each agent's own installer,
+account, never your profile; D63), refusing with none set. A `daoris` the install carries needs neither that nor
+`DAORIS_SERVICE_URL`: it takes its install's `data/`, and the service the running Daoris holds (D171). `agent` runs each agent's own installer,
 updater or login flow, `agent pin` fetches from a maker's verified channel, and `agent trust --yes`
 and `agent settings` edit the agent's files (D73, D98). Every other
 command above is offline by construction. **The machine's registry

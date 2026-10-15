@@ -5,7 +5,7 @@ import type { RuleListName } from '../settings/AgentRules';
 import { COMMIT_DEFAULT, type CommitEdit, CommitField, commitRowSays, commitSummary, type RepositoryCommits } from '../settings/Commits';
 import { HELPER_DEFAULT, type HelperEdit, HelperField, helperRowSays, helperSummary, type RepositoryHelpers } from '../settings/Helpers';
 import {
-  type Accepting, AcceptingNote, LandingField, landingProcessSays, type LandingRule, type RepositoryLanding,
+  type Accepting, AcceptingNote, LandingField, landingFrom, landingProcessSays, type LandingRule, type RepositoryLanding,
 } from '../settings/Landings';
 import { LanguageChoice, type LanguageOption, type RepositoryLanguage } from '../settings/Languages';
 import { LineField, type RepositoryLine } from '../settings/Lines';
@@ -510,11 +510,7 @@ function LandingSetting({ repository, landing, above, landers, busy, onLanding, 
   const { t } = useTranslation();
   const [accepting, setAccepting] = useState<Accepting>(null);
   const own = landing.source === 'repository';
-  const said = landing.source === 'default'
-    ? t('settings.landing.from.default')
-    : t(`settings.landing.from.${landing.source}.${landing.form === 'branch' ? 'branch' : 'merge'}`, {
-        pattern: landing.pattern, workspace: landing.workspace,
-      });
+  const said = landingFrom(t, landing);
   const branch = landing.form === 'branch';
   const says = landingRowSays(
     t, said, branch ? landing.plugin : undefined, branch && !!landing.autoAccept, onOpenPlugin, landingProcessSays(t, landing));

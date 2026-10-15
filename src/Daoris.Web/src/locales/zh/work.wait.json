@@ -27,5 +27,7 @@
   "work.wait.rule.untold": "已允许，但会话 {{session}} 没有接收这些话：请你自己告诉它继续。",
   "work.wait.inConversation": "在对话中查看",
   "work.wait.raised": "由此等你处理：{{names}}",
-  "work.wait.toWait": "到等待处：{{names}}"
+  "work.wait.toWait": "到等待处：{{names}}",
+  "work.wait.name.helper": "它请的助手",
+  "work.wait.helper.lead": "它想请另一个智能体帮忙。在你同意之前，不会去问。"
 }

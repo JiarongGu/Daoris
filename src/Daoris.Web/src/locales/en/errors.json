@@ -95,7 +95,7 @@
   "errors.PREVIEW_NO_TREE": "This session's record names no tree on this machine, or its tree is gone and no branch its landing made stands here to read instead, so there is no file here to show.",
   "errors.PREVIEW_NOT_A_FILE": "`{{path}}` is not a file in this session's tree now: it was deleted or moved, it is a folder, or it cannot be read.",
   "errors.PREVIEW_NOT_ON_BRANCH": "`{{path}}` is not a file on `{{branch}}`, the branch this session's work landed on: it was deleted or moved there, or it is a folder or a link.",
-  "errors.WINDOW_UNKNOWN": "{{name}} is not a window this build opens. There are two: the monitor, and one session on its own.",
+  "errors.WINDOW_UNKNOWN": "{{name}} is not a window this build opens. There are three: the monitor, one session on its own, and another main window.",
   "errors.BROWSER_NOT_A_PAGE": "{{address}} is not a web page, so it cannot be a favorite.",
   "errors.BROWSER_FILE_UNREADABLE": "{{file}} could not be read ({{problem}}). Fix it, or delete it to start from nothing — Daoris will not write over a file it could not read.",
   "errors.BROWSER_SETTING_UNKNOWN": "The extensions setting is offer or refuse, not {{value}}.",

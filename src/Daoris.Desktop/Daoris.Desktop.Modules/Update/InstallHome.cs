@@ -70,16 +70,16 @@ public static class HomeAccount
 public static class InstallHome
 {
     /// <summary>The file `desktop-publish` writes at an install's root, and nothing else does.</summary>
-    public const string Marker = "INSTALLED.md";
+    public const string Marker = DaorisHome.InstallMarker;
 
     /// <summary>The home's name, beside the executable.</summary>
-    public const string Folder = "data";
+    public const string Folder = DaorisHome.InstallData;
 
     /// <summary>What a `~/.daoris` of before D63 keeps: the CLI's own service install (`publish:service --install`), which the CLI moves when it is asked to.</summary>
     private static readonly HashSet<string> Stays = new(StringComparer.OrdinalIgnoreCase) { "bin" };
 
     /// <summary>The folder the shell runs from inside an install (D93), beside `data/`.</summary>
-    public const string AppFolder = "app";
+    public const string AppFolder = DaorisHome.InstallApp;
 
     /// <summary>
     /// What the install's own runtime writes under `data/` before Daoris has: the engine's profile

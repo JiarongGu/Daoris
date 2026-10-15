@@ -97,4 +97,13 @@ describe('the taskbar\'s count (NOTIFY1b)', () => {
     expect(told()).toHaveLength(1);
     await act(async () => {});
   });
+
+  /** ONEINSTANCE1: another main window a later launch opened counts the same, and the taskbar's button is the first one's. */
+  it('says nothing from another main window', () => {
+    invoke.mockResolvedValue({ applied: true });
+    window.history.replaceState(null, '', '/?window=main%3A2');
+    renderHook(() => useTaskbarCount(3, '3 waiting on you'));
+
+    expect(told()).toEqual([]);
+  });
 });

@@ -6,8 +6,10 @@ using Daoris.Driver;
 // verdict — a quest that is sitting must always say why.
 //
 //   DAORIS_HOME            where every machine-local file lives (D63) — required unless each file's
-//                          own variable names it; the installed desktop sets it for the account
-//   DAORIS_SERVICE_URL     where the service is                (required — the driver is its client)
+//                          own variable names it; the installed desktop sets it for the account, and a
+//                          host the install carries takes the install's `data/` when none is named (D171)
+//   DAORIS_SERVICE_URL     where the service is                (the driver is its client: a host the install
+//                          carries finds the running desktop's from its home when none is named, D171)
 //   DAORIS_SERVICE_KEY     sent as a bearer token when set     (absent: local trust, D21)
 //   DAORIS_DRIVER_CONFIG   the person's standing choices       (default: $DAORIS_HOME/driver.json)
 //   DAORIS_REMOTE_URL      one workspace's remote, with its key (or $DAORIS_HOME/remotes.json — D48 §5;
@@ -237,6 +239,12 @@ if (OperatingSystem.IsWindows())
 {
     Console.OutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 }
+
+// A terminal finds the Daoris that runs (FINDDAORIS1, D171 point 1): the install's launcher sets no variable, so a host the
+// install carries takes the install's own `data/` as its home where none is named, as the desktop does (D63), before any door
+// reads one. The service is found where a door asks for it (`ServiceHttp.FromEnvironment`): the variable, else the address the
+// running desktop left in this home. A workspace build is no install, and keeps needing both named.
+DaorisHome.Adopt(AppContext.BaseDirectory);
 
 // One read from a commit, a session or a quest back to its ask (TRACE1, D143, D50). Routed before the machine log opens,
 // since that open prunes old files and the trace writes nothing anywhere; it keeps its own catch for the same reason.

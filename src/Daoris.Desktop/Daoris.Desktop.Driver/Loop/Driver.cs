@@ -204,8 +204,24 @@ public sealed class Driver(
     /// <summary>The record the person's words wait on, continued or ended saying why (ANSWER1a): <see cref="DriverContinuations.ContinueAsync"/>.</summary>
     private Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> ContinueAsync(
         Consideration start, PriorSession park, HarnessSelection selection, IReadOnlyList<RepoView> registry,
-        TreeLock? starting, Action onOpened, CancellationToken ct, string agent, ContinueReason? account = null) =>
-        GoOns.ContinueAsync(start, park, selection, registry, starting, onOpened, ct, agent, account);
+        TreeLock? starting, Action onOpened, CancellationToken ct, string agent, ContinueReason? account = null, string? inSync = null) =>
+        GoOns.ContinueAsync(start, park, selection, registry, starting, onOpened, ct, agent, account, inSync);
+
+    /// <summary>
+    /// A tree a start goes on in, brought up to date where the line holds some of its commits (LANDSYNC2): what the session is told,
+    /// or null. Git or a disk that fails here is no reason to hold the start: it goes on in the tree as it stands, told nothing.
+    /// </summary>
+    private async Task<TreeStartSync?> StartInSyncAsync(string tree, CancellationToken ct)
+    {
+        try
+        {
+            return await Context.Trees.StartInSyncAsync(tree, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
 
     /// <summary>
     /// How a pass is run: <see cref="PassAsync"/>, unless a test hands in a stand-in, since a real pass spawns git and an agent,
@@ -1095,6 +1111,12 @@ public sealed class Driver(
             }
         }
 
+        // LANDSYNC2 (D87's 2026-10-15 amendment point 7): a session going on in a tree that stands — a resume, words going on, a
+        // carry-on, a further part gone into its session's tree — starts from the line where the line came to hold some of its commits,
+        // and is told what was done. Asked before this start's own hold below, since bringing a tree up to date holds the repository's
+        // trees alone; never a reason to hold the start.
+        var inSync = (resumedIn ?? joinedIn) is { } goingOn ? await StartInSyncAsync(goingOn, ct).ConfigureAwait(false) : null;
+
         // 🔴 WSR6's open window (LEFT2): bringing the repository up to date must not rebase a tree a session is
         // starting in. Its trees are held, beside any other start, from choosing the tree until the record is open,
         // when the ledger holds it; a replay holding them holds this start for one look. Let go right after the
@@ -1195,7 +1217,7 @@ public sealed class Driver(
         {
             // Where its own account could not carry the words, the walk's pick did, and the reason says why (MSG1g).
             (var continued, fellBack, answerKept) = await ContinueAsync(
-                    start, park, selection, registry, starting, onOpened, ct, agent, account: resume?.Elsewhere)
+                    start, park, selection, registry, starting, onOpened, ct, agent, account: resume?.Elsewhere, inSync: inSync?.Told)
                 .ConfigureAwait(false);
             // The fresh tree opened above is used by none of the returns that follow, so each lets it go by the clean path (GOONTREE1,
             // D51): a tree and branch for a start that is never made would be left at every look.
@@ -1346,6 +1368,8 @@ public sealed class Driver(
                 CutOff = carryingOn && quest.Status != "Open" ? start.Resumes!.Note ?? "it ended before closing the quest." : null,
                 // A further part gone into its session's tree is told what the part before it left uncommitted there (SESSONE1d).
                 InFlight = carryingOn || joinedIn is not null ? await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) : [],
+                // What its start did against the line in the tree it goes on in (LANDSYNC2).
+                InSync = inSync?.Told,
                 GrewFrom = opened?.GrewFrom,
                 // The parts before it on its session's line, and how its tree stands to theirs (SESSONE1d).
                 Parts = start.Entry is { } entry ? await PartsAsync(entry, joinedIn, entryTree, opened, quest.To, ct).ConfigureAwait(false) : null,

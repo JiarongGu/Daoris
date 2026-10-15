@@ -134,7 +134,10 @@ public sealed class EntryAccepts(
             var (tree, _) = await service.SessionGroundAsync(part.Session, cancellationToken).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(tree)) continue;
             var gate = await trees.GateAsync(tree, part.Quest, new ServiceReviewWorld(service), part.Session, cancellationToken).ConfigureAwait(false);
-            parts.Add(new EntryLandingPart(part.Session, tree) { Gate = gate });
+            // TREEFOLLOWNAME1: its own words, which name its landing where its tree is on a branch of its own.
+            var own = await LandingRules.SubjectAsync(part.Session, part.Quest, quest => service.FindQuestAsync(quest, cancellationToken),
+                events.Openings([part.Session]).GetValueOrDefault(part.Session)).ConfigureAwait(false);
+            parts.Add(new EntryLandingPart(part.Session, tree) { Gate = gate, Own = own });
         }
 
         var lead = entry.Parts.Count > 0 ? entry.Parts[0] : null;

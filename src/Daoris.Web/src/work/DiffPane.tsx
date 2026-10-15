@@ -9,7 +9,7 @@ import { ExternalLink } from '../design/links';
 import { store, stored } from '../lib/stored';
 import {
   type LandingConflict, useDiscardSessionTree, useHandOff, useHandOffPress, useLandSessionTree, useLanding, useReadingSince, useSay, useSessionDiff,
-  useUnderWay, useUnderWayStep,
+  useUnderWay, useUnderWayStep, useUnderWaySubject,
 } from '../bridge/shell';
 import { Button, EmptyState, Inline, SESSION_ACTIVE } from '../design/ui';
 import { reviewBranch, reviewKnown } from './diff';
@@ -17,6 +17,7 @@ import type { DiscardOffer } from './groups';
 import { HeldDiscardAsk, HeldDiscardButton, heldDiscardable } from './HeldDiscard';
 import { type Answered, InlineConfirm } from './InlineConfirm';
 import { LandedNote } from './LandedNote';
+import { landsOnBranch } from './Lands';
 import { LeftOutLines, RebaseAsk } from './LandingSync';
 import type { DiffLayout } from './PatchView';
 import { opinionHolds, opinionState } from './opinion';
@@ -73,6 +74,10 @@ const LAYOUT = 'daoris.reviewLayout';
  * says the person left this part out when its line of work landed (`leftOutOf`, its conversation's note), the foot says so first,
  * *Discard tree* leads, and *Accept* follows it, quiet: landing it later is a press of its own.
  *
+ * **A part's Accept holds while its line of work lands** (ACCEPTALL1h, D169's ACCEPTALL1e note). Where its entry's one Accept, or
+ * its ask's, is under way in any window, read by the entry's and the ask's subject, its own *Accept* reads *Landing…* and waits:
+ * a press of its own would land on the same branch meanwhile.
+ *
  * **It says what it is doing while git reads** (REVIEW4). The frame stands at once with what the record holds —
  * the title, the repository, its own branch, the base and the commits it reported — and the files and the patch as
  * a skeleton under words that say what is read and, after a moment, for how long. A refusal is worded from its code
@@ -82,9 +87,13 @@ const LAYOUT = 'daoris.reviewLayout';
  * Desktop-only, structurally: the hook is gated on the bridge, so in a browser this never asks.
  */
 export function DiffPane({
-  session, record, title = null, hasTree = false, onSendBack, onPreview, discards = null, onDiscardTree,
+  session, record, title = null, hasTree = false, onSendBack, onPreview, discards = null, onDiscardTree, entry = null, ask = null,
 }: {
   session: string | null;
+  /** The line of work the session is a part of (its entry's key), whose one Accept holds this one's while it lands (ACCEPTALL1h). */
+  entry?: string | null;
+  /** The ask that line of work answers, whose one Accept lands it too; none for an intake or a line no ask began. */
+  ask?: string | null;
   /**
    * What its tree offers where the line holds its commits by content (SQUASHTIDY1b), as the driver's reader said it for the
    * session's head: shown in *Accept*'s place (SQUASHTIDY1f). Absent where it offers none, or nothing has answered.
@@ -154,6 +163,9 @@ export function DiffPane({
   // nothing it answers, so the head's *Accept…*, which lists a dispute or the commits nobody read, is the press that answers them.
   const opinionWaits = opinionHolds(landing.data);
   const canAccept = plannable && !workflow && !waits && !opinionWaits;
+  // What the plan says a press would be refused with now (D100): a plugin that cannot land, a name, or a standing branch the press
+  // may not move on (STANDSREFUSE1, D167's ACCEPTALL1g note).
+  const refusedNow = landing.data?.problem || null;
   // LANDSYNC1 (D87's 2026-10-15 amendment point 5): a replay onto the line that conflicts, as the plan tried it or the press was refused
   // for it, until the plan is read again after the press. In Accept's place, the words its session is asked to rebase with.
   const [pressed, setPressed] = useState<{ session: string; conflict: LandingConflict; at: number } | null>(null);
@@ -177,7 +189,11 @@ export function DiffPane({
     hand: useUnderWay('HANDOFF', session),
     // Where the landing has reached, where its driver says (PRESSSTEP1): the gate is read before anything lands.
     landStep: useUnderWayStep('LAND_SESSION_TREE', session),
+    // Its line of work's one Accept, or its ask's, lands this part too (ACCEPTALL1h): a press carries its entry or ask, not its parts.
+    entry: useUnderWaySubject('LAND_ENTRY', entry),
+    ask: useUnderWaySubject('LAND_ASK', ask),
   };
+  const landsNow = underWay.land || underWay.entry || underWay.ask;
   const handable = handOff.data?.branch && handOff.data.plugin ? handOff.data : null;
 
   // Per-reader, per-session, and never written down: which files this person has opened and which
@@ -354,19 +370,22 @@ export function DiffPane({
       )}
       {/* Where a press sends the work, before it is pressed (D87) — and who pushes it where a plugin
           does (D100). A shell older than the rule answers no form, and the pane then claims nothing. */}
+      {/* A branch that already stands, an entry's or a chain's, is moved on, not made (ACCEPTALL1g); the session's own lands as it
+          stands (TREEFOLLOWWEB1). */}
       {!said && canAccept && landing.data?.form === 'branch' && landing.data.target && (
         <p className="m-0 text-small text-ink-faint">
-          <Inline text={landing.data.plugin
-            ? t('work.review.landsOnBranchPlugin', { branch: landing.data.target, plugin: landing.data.plugin })
-            : t('work.review.landsOnBranch', { branch: landing.data.target })} />
+          <Inline text={landsOnBranch(t, {
+            target: landing.data.target, plugin: landing.data.plugin, stands: landing.data.stands, own: landing.data.own,
+          })} />
         </p>
       )}
       {/* What the press leaves out because the line holds it, and what it replays (LANDSYNC1), said before it. */}
       {!said && canAccept && <LeftOutLines leftOut={landing.data?.leftOut} lands={landing.data?.lands} />}
       {conflict && <RebaseAsk key={session} conflict={conflict} onSay={(text) => say.mutateAsync({ id: session, text }).then((answer) => answer.sent)} />}
-      {!said && canAccept && landing.data?.problem && (
+      {/* The sentence a press would be refused with now (D100), a standing branch's among them (STANDSREFUSE1): Accept waits on it. */}
+      {!said && canAccept && refusedNow && (
         <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
-          {t('work.review.landingProblem', { problem: landing.data.problem })}
+          <Inline text={t('work.review.landingProblem', { problem: refusedNow })} />
         </p>
       )}
       {/* Said before the press, which stays open: its own refusal still answers (D164 point 4, REVIEWDIRTY1). */}
@@ -413,7 +432,8 @@ export function DiffPane({
         {canAccept && !conflict && (
           <Button
             variant={leftOutOf ? 'default' : 'primary'}
-            disabled={underWay.land}
+            // A press that could only be refused is not offered (UX5 U66): the sentence above says why (STANDSREFUSE1).
+            disabled={landsNow || Boolean(refusedNow)}
             onClick={() => {
               const at = landing.dataUpdatedAt;
               act(land.mutateAsync(session).then((result) => {
@@ -422,7 +442,7 @@ export function DiffPane({
               }));
             }}
           >
-            {underWay.land ? t(underWay.landStep === 'gate' ? 'work.review.acceptingGate' : 'work.review.accepting') : t('work.review.accept')}
+            {landsNow ? t(underWay.landStep === 'gate' ? 'work.review.acceptingGate' : 'work.review.accepting') : t('work.review.accept')}
           </Button>
         )}
 

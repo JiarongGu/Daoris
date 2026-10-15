@@ -5,10 +5,11 @@ import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
 import { FULL, NOTHING_SET, PLUGIN_UNREADY } from '../workflow/fixtures';
 import {
-  CJK, COUNTS, ELSEWHERE, ENGINE, GAME, GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES, LINE, MIRRORED, NEWBIE, SETUP_DEFAULTS, SETUP_OWN,
-  SETUP_PROCESS, SETUP_PROCESS_OWN, UNDECLARED,
+  CJK, COUNTS, ELSEWHERE, ENGINE, GAME, GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES, LINE, MIRRORED, NEWBIE, NEWBIE_SETUP,
+  SETUP_DEFAULTS, SETUP_OWN, SETUP_PROCESS, SETUP_PROCESS_OWN, UNDECLARED,
 } from './fixtures';
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
+import type { SetUpForAgentsProps } from './SetUpForAgents';
 import { BranchesTab, type GitRead, HistoryTab, type HistoryRead } from './RepositoryGit';
 import type { RepositorySetupProps } from './RepositorySetup';
 import type { ProjectTab } from './tabs';
@@ -166,6 +167,62 @@ export const AnotherAdopter: Story = { args: { registration: GAME, counts: COUNT
  * reasoning on the info glyph; Setup holds its driving.
  */
 export const NotAdopted: Story = { args: { registration: NEWBIE, counts: COUNTS.newbie, drivable: false, onManage: undefined } };
+
+/** *Set up for agents* on a not adopted repository's Details (LAYOUT8), its holder's state handed in: nothing read yet. */
+const setUp = (more: Partial<SetUpForAgentsProps> = {}): SetUpForAgentsProps => ({
+  repository: 'newbie', plan: null, reading: false, pressing: false, pressed: null, problem: null,
+  onLook: nothing, onPress: nothing, onClose: nothing, ...more,
+});
+
+/** Not adopted, with *Set up for agents* beneath its steps (LAYOUT8, D117 §6.1): nothing is read until the person asks. */
+export const NotAdoptedSetUp: Story = {
+  args: { registration: NEWBIE, counts: COUNTS.newbie, drivable: false, onManage: undefined, setUp: setUp() },
+};
+
+/** The plan, `--plan`'s twin, before the press: what was read on its line, the rule it adds and the quest, folded. */
+export const NotAdoptedSetUpPlan: Story = {
+  args: { ...NotAdoptedSetUp.args, setUp: setUp({ plan: NEWBIE_SETUP }) },
+};
+
+/** A plan the press refuses: every refusal at once, each naming its door, and no press. */
+export const NotAdoptedSetUpRefused: Story = {
+  args: {
+    ...NotAdoptedSetUp.args,
+    setUp: setUp({
+      plan: {
+        ...NEWBIE_SETUP, pressable: false,
+        refusals: [
+          {
+            code: 'not-driven', sentence: '`newbie` is not driven here: it is not opted into driving on this machine, and only a '
+              + 'driven session carries a set-up. Drive it under Repositories → the repository\'s page → Setup → Driving, or with '
+              + '`daoris driver drive newbie`.',
+          },
+          {
+            code: 'no-doctrine-tool', sentence: 'the doctrine tool cannot run here: no `daoris` on the PATH Daoris\'s children start '
+              + 'with. An install that does not carry the doctrine tool puts none there, and a republish of Daoris that carries it does.',
+          },
+        ],
+      },
+    }),
+  },
+};
+
+/** What the press published: the service's sentence, and that the repository's own session takes it. */
+export const NotAdoptedSetUpPublished: Story = {
+  args: {
+    ...NotAdoptedSetUp.args,
+    setUp: setUp({
+      plan: NEWBIE_SETUP,
+      pressed: {
+        published: true, message: 'Asked as `#a1b2c3d4` in `default`.', askId: 'a1b2c3d4', questId: 'q1a2b3c4',
+        added: NEWBIE_SETUP.rules, plan: NEWBIE_SETUP,
+      },
+    }),
+  },
+};
+
+/** The plan in 中文: the chrome translates, the quest, the rule and the names stay as written. */
+export const NotAdoptedSetUpChinese: Story = { args: NotAdoptedSetUpPlan.args, decorators: [chinese] };
 
 /** Not adopted, on a machine whose door is direct: its Driving says a quest there sits. */
 export const NotAdoptedOnADirectDoor: Story = {

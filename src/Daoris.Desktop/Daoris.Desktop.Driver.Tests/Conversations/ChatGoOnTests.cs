@@ -357,6 +357,28 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
+    /// LANDSYNC2b (D87's 2026-10-15 amendment point 7): a conversation going on in its own tree is told what its start did against
+    /// the line after the person's words, on both doors, as a driven session's words going on are; and before anything else the
+    /// resume carries after them. Nothing told, and the ask reads as it did. The runs are <c>ChatGoesOnInSyncProcessTests</c>'.
+    /// </summary>
+    [Fact]
+    public void A_conversation_going_on_in_its_own_tree_is_told_after_the_words_what_its_start_did_against_the_line()
+    {
+        const string told = "Before this turn Daoris brought this tree up to date with `main`: the line already holds 1 of its commit(s).";
+        var word = new SaidWordView("w1", "Also log the port.", DateTimeOffset.UtcNow, [], true);
+
+        var ask = new ResumeAsk("conv-c1", [word], "— your words are the next turn", Continuations.AfterWords(told, after: null));
+        var plain = new ResumeAsk("conv-c1", [word], "— your words are the next turn", Continuations.AfterWords(null, after: null));
+
+        Assert.Equal($"Also log the port.\n\n{told}", ask.Prompt);
+        Assert.Equal(["Also log the port.", told], ask.Blocks);
+        Assert.Equal("Also log the port.", plain.Prompt);
+        Assert.Equal(["Also log the port."], plain.Blocks);
+        Assert.Equal($"{told}\n\nThe answers to the go-aheads.", Continuations.AfterWords(told, "The answers to the go-aheads."));
+        Assert.Equal("The answers to the go-aheads.", Continuations.AfterWords("", "The answers to the go-aheads."));
+    }
+
+    /// <summary>
     /// MIXAGENT2a-iii: an ended conversation goes on with a helper's answer through its own going-on, and says so as the driven
     /// quest's does (D163): the ledger's note and the opening name a helper's answer where it is all that waits, "your words" only
     /// where the person's wait too, and never "your words" for a claim of another agent.

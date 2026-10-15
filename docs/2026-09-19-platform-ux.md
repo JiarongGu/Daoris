@@ -441,7 +441,8 @@ controls are in the frame design's §3.
   D150 §4.2). *Details*: the index with the local/canonical split, the commit it was fed from, its
   workspace, its line read-only with a door to Setup, and its unlanded branches; its declaration as chips;
   and for one not adopted the *Adoption steps*, led by one line with its reasoning on the info glyph (U36)
-  and the join steps proposed as text. *Branches*: its branches by kind (the built-in Git design §2.2, D150's UX6h2a
+  and the join steps proposed as text, then, on a shell, for one that can be asked, *Set up for agents* (LAYOUT8, D117 §6.1,
+  §6.5): its plan only once asked, `--plan`'s twin, then *Set it up*, which asks its own session. *Branches*: its branches by kind (the built-in Git design §2.2, D150's UX6h2a
   note), the line at the head with what set it, how it stands to origin and the last fetch, then *Sessions'*, *Landed*
   and *Yours*, folded after five. **A branch's name opens its page** in the repository's place (UX6h3b, the built-in Git
   design §2.3): its name, its kind and where it stands against its line, origin and its pull request, in the list's words,
@@ -525,7 +526,8 @@ controls are in the frame design's §3.
     its title on one line, whole in its tip, then a facts line its state chooses (its repository, account, how long, and
     *attempt 4: the 3 before it failed* where its quest's earlier sessions failed); then its loud act where its state has
     one (*Try again*, *Review*), *Stop…* while it is live, and ⋯ with the rest and its id. The record under it says the
-    whole title once only where the header said a short one, and folds its reference into *Details*; the chain opens
+    whole title once only where the header said a short one, and folds its reference into *Details*, among it the process
+    its own tree runs under, how its work is committed and how it lands, each with where it was set (PROCESS1e); the chain opens
     folded on every session. The conversation scrolls under it, and the long run's way through pins beneath it.
     Below 560 px of main area its acts take their own line. **A session's stop has one owner, this header**: *Stop…*
     asks once under it, saying what follows by what the session is, then *Stop session* or *Never mind*. *Delete…*, in

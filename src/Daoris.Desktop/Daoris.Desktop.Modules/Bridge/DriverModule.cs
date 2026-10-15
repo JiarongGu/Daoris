@@ -38,6 +38,16 @@ public sealed class DriverModule : ModuleBase
         init => _context.Offers = value;
     }
 
+    /// <summary>
+    /// The world a set-up press reads (LAYOUT8): null is the real one; a test names a stand-in, since the real one starts the
+    /// doctrine tool for its version. Held by the context, which the set-up and help routes read at each request.
+    /// </summary>
+    public Func<ServiceClient, ISetupWorld>? SetupWorlds
+    {
+        get => _context.SetupWorlds;
+        init => _context.SetupWorlds = value;
+    }
+
     // Each domain's handler, built over the context, in the order of Domains: a route's entry names its domain's place.
     private readonly object[] _handlers;
 
@@ -143,6 +153,7 @@ public sealed class DriverModule : ModuleBase
         Domain.Of(context => new RegistryRoutes(context.Loop)),
         Domain.Of(context => new RulesRoutes(context.Loop)),
         Domain.Of(context => new SessionsRoutes(context)),
+        Domain.Of(context => new SetupRoutes(context)),
         Domain.Of(context => new ToolsRoutes(context)),
         Domain.Of(context => new TraceRoutes(context.Loop)),
         Domain.Of(context => new TreesRoutes(context.Loop)),

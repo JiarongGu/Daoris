@@ -5,7 +5,20 @@ using static Daoris.Driver.TreeWorktrees;
 namespace Daoris.Driver;
 
 /// <summary>A branch as judged for the replay, with what the press acts on: its tip, its tree, where its own commits start.</summary>
-internal sealed record RebaseJudged(RebaseItem Item, string? Tip = null, string? Tree = null, string? Cut = null);
+internal sealed record RebaseJudged(RebaseItem Item, string? Tip = null, string? Tree = null, string? Cut = null)
+{
+    /// <summary>The commits beyond <see cref="Cut"/>, oldest first, as LANDSYNC3 read them; null where they were not read.</summary>
+    public IReadOnlyList<string>? Beyond { get; init; }
+
+    /// <summary>Among <see cref="Beyond"/>, the commits the line holds, which the replay skips (LANDSYNC3).</summary>
+    public IReadOnlyList<string> Skips { get; init; } = [];
+
+    /// <summary>
+    /// How many commits the line holds that the replay leaves out (LANDSYNC3): those the cut moved past, and the skips. The row's own,
+    /// so the list says it as the press does (LANDSYNC3b).
+    /// </summary>
+    public int LeftOut => Item.LeftOut;
+}
 
 /// <summary>
 /// Each branch of a repository judged for the replay onto its line (WSR6; PART10j, out of <c>SessionTrees.Sync.cs</c>): the
@@ -111,15 +124,16 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
             if (!string.IsNullOrWhiteSpace(dirty)) return Item(RebaseKind.Dirty, tip, detail: $"{dirty.Trim().Split('\n').Length} path(s) uncommitted");
         }
 
-        if (await IsAncestorAsync(root, onto, tip, ct).ConfigureAwait(false)) return Item(RebaseKind.UpToDate, tip);
-        if (pushedOnRecord || await OnRemoteAsync(root, branch, ct, refs).ConfigureAwait(false)) return Item(RebaseKind.Pushed, tip);
-
+        // Where it leaves the line answers whether it already holds the line's tip too, so one start asks both (UIFREEZE1, LANDSYNC3).
         var (baseCode, baseOut, baseErr) = await WorkingTree.GitAsync(root, ["merge-base", tip, onto], ct).ConfigureAwait(false);
-        if (baseCode != 0) return Item(RebaseKind.Unknown, tip, detail: $"git found no point where it left the line: {FirstLine(baseErr)}");
         var leaves = baseOut.Trim();
+        if (baseCode == 0 && leaves == onto) return Item(RebaseKind.UpToDate, tip);
+        if (pushedOnRecord || await OnRemoteAsync(root, branch, ct, refs).ConfigureAwait(false)) return Item(RebaseKind.Pushed, tip);
+        if (baseCode != 0) return Item(RebaseKind.Unknown, tip, detail: $"git found no point where it left the line: {FirstLine(baseErr)}");
 
         string cut;
         string cutBy;
+        var walked = false;
         if (grow is not null && await IsAncestorAsync(root, grow, tip, ct).ConfigureAwait(false))
         {
             if (await IsAncestorAsync(root, grow, leaves, ct).ConfigureAwait(false))
@@ -136,9 +150,19 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
         else
         {
             (cut, cutBy) = await CutByContentAsync(root, tip, leaves, line, onto, ct).ConfigureAwait(false);
+            walked = true;
         }
 
-        return Item(RebaseKind.Replay, tip, cut, cutBy, await CountAsync(root, $"{cut}..{tip}", ct).ConfigureAwait(false));
+        // 🔴 LANDSYNC3 (D87's amendment point 1): judged as a landing judges, so what the line holds is neither counted nor replayed. A
+        // branch grown from the line has the walk by content asked too, where it could find a squash of several of its commits.
+        if (await LineHolds.JudgeBeyondAsync(root, tip, onto, leaves, cut, line, walk: !walked && cutBy == CutBy.Line, ct).ConfigureAwait(false)
+            is not { } held)
+        {
+            return Item(RebaseKind.Replay, tip, cut, cutBy, await CountAsync(root, $"{cut}..{tip}", ct).ConfigureAwait(false));
+        }
+
+        var replay = Item(RebaseKind.Replay, tip, held.Cut, held.ByContent > 0 ? CutBy.Content : cutBy, held.Kept);
+        return replay with { Item = replay.Item with { LeftOut = held.LeftOut }, Beyond = held.Commits, Skips = held.Skips };
     }
 
     /// <summary>How far back the proof by content looks for where a branch's own work starts, before taking where it leaves the line.</summary>

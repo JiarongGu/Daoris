@@ -21,8 +21,9 @@ import { type ReviewEdit, reviewToast } from '../settings/Reviews';
 import {
   useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetCommits, useSetDrivable, useSetHelpers,
   useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees,
-  useSetWriteAcross, useSweepPlan, useWorkflowCurrent,
+  useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent,
 } from '../bridge/shell';
+import type { SetUpForAgentsProps } from './SetUpForAgents';
 import { doorOf } from '../agents/tools';
 import { failure, type Notify, useErrorNotify } from '../design/ui';
 import { ListMore } from '../work/ListPane';
@@ -195,6 +196,11 @@ export function useProjectsView({
   useErrorNotify(setupShown ? across.error : null, notify);
 
   const attached = driver.data !== undefined;
+  // A repository's *Set up for agents* (LAYOUT8, D117 §6.1, §6.5): the repository whose plan the person asked to see, read
+  // only then since it starts git and two programs, and the press, `daoris-driver setup`'s.
+  const [setUpAsked, setSetUpAsked] = useState<string | null>(null);
+  const setUpPlan = useSetupPlan(setUpAsked, { enabled: active });
+  const setUpPress = useSetupPress();
   // An open drawer, and the workspace a go filled it with (ENTRY1d2b); the list's own doors fill none.
   const [adding, setAdding] = useState<{ workspace?: string } | null>(null);
   useEffect(() => {
@@ -430,6 +436,33 @@ export function useProjectsView({
   };
 
   /**
+   * **Set up for agents** (LAYOUT8, D117 §6.1, §6.5; D170 point 1): for one not adopted that can be asked, on a shell. Its plan,
+   * `--plan`'s twin, read once the person asks and again on *Look again*; then the press, which asks its own session through one
+   * quest and adds the rule it needs. A bridge's refusal (a driver still coming up) is said in its place.
+   */
+  const setUpOf = (registration: Registration): SetUpForAgentsProps | null => {
+    if (!attached || registration.adopted || !canBeAsked(registration)) return null;
+    const { repository } = registration;
+    const asked = setUpAsked === repository;
+    const mine = setUpPress.variables === repository;
+    const problem = asked ? setUpPlan.error ?? (mine ? setUpPress.error : null) : null;
+    return {
+      repository,
+      plan: asked ? setUpPlan.plan : null,
+      reading: asked && setUpPlan.reading,
+      pressing: mine && setUpPress.isPending,
+      pressed: mine ? setUpPress.data ?? null : null,
+      problem: problem ? sentence(problem) : null,
+      onLook: () => (asked ? setUpPlan.again() : setSetUpAsked(repository)),
+      onPress: () => setUpPress.mutate(repository),
+      onClose: () => {
+        setSetUpAsked(null);
+        setUpPress.reset();
+      },
+    };
+  };
+
+  /**
    * **Its Workflow** (WORKFLOW1b, the workflow design §6.1): its Current as the driver answers it, read only while the tab
    * shows, and a refusal said in its place. A step its workspace set opens the workspace's Setup, whose defaults open by
    * themselves wherever a rule is set there.
@@ -519,6 +552,7 @@ export function useProjectsView({
           drivable={driver.data ? named(driver.data.drivable, shown.repository) : undefined}
           held={driver.data ? named(driver.data.holds, shown.repository) : undefined}
           setup={setupOf(shown)}
+          setUp={setUpOf(shown)}
           workflow={workflowOf(shown)}
           // Its branches and its line's history (UX6h1): a shell's, each read only while its tab shows (D147 §6).
           branches={attached

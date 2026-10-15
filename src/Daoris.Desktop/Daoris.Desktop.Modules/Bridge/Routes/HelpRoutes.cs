@@ -17,9 +17,10 @@ public sealed class HelpRoutes(DriverContext context)
     /// <summary>
     /// What an Apply may change (STATEHUB1h, D169), every door it holds: the page's hook asked each of these again by hand before.
     /// </summary>
+    /// <remarks>LAYOUT8: a set-up's Apply adds a rule to the repository's scope, so the rules are among them.</remarks>
     private const StateScopes Applies = StateScopes.Sessions | StateScopes.Quests | StateScopes.Asks | StateScopes.Driver
-        | StateScopes.History | StateScopes.Registry | StateScopes.Plugins | StateScopes.Harnesses | StateScopes.Help
-        | StateScopes.Browser;
+        | StateScopes.Rules | StateScopes.History | StateScopes.Registry | StateScopes.Plugins | StateScopes.Harnesses
+        | StateScopes.Help | StateScopes.Browser;
 
     private readonly DriverContext _context = context;
     private readonly DriverLoop _loop = context.Loop;
@@ -279,6 +280,8 @@ public sealed class HelpRoutes(DriverContext context)
                 Accept = AcceptShown(plan.Accept),
                 // A workflow's version, as the card shows it (WORKFLOW1h-c), never the steps or the choice Apply carries.
                 Workflow = WorkflowShown(plan.Workflow),
+                // A set-up's plan (LAYOUT8), as the repository's page shows it before its press.
+                Setup = plan.Setup is { } setup ? SetupRoutes.Shown(setup) : null,
             });
         }
 
@@ -344,8 +347,9 @@ public sealed class HelpRoutes(DriverContext context)
 
         var applied = await HelpProposals.ApplyAsync(
             _loop.Home, proposal, plan, Doors(_context, service), Say, cancellationToken).ConfigureAwait(false);
-        // An accept publishes the step a departure held and lets a quest waiting on it go on (DRIFT1d2), as a delete or an ask moves the work.
-        if (proposal.Kind is "ask" or "delete" or "accept" or "session" or "pause" or "clear") _loop.Nudge();
+        // An accept publishes the step a departure held and lets a quest waiting on it go on (DRIFT1d2), as a delete or an ask moves the work;
+        // a set-up publishes an ask its session takes at the next look (LAYOUT8).
+        if (proposal.Kind is "ask" or "delete" or "accept" or "session" or "pause" or "clear" or "setup") _loop.Nudge();
 
         return ApplyAnswer(proposal, applied);
     }
@@ -431,6 +435,11 @@ public sealed class HelpRoutes(DriverContext context)
         // The quest page's Accept the departure (DRIFT1d2): the local host's `POST /api/quests/{id}/accept`, the terminal's too.
         public Task<(bool Ok, string Message)> AcceptDepartureAsync(string id, CancellationToken ct) =>
             (service ?? throw NotReady()).AcceptDepartureAsync(id, ct);
+
+        // The repository page's Set up for agents (LAYOUT8): SETUP_PRESS's and `daoris-driver setup`'s press of the plan judged
+        // as the person applied it, the rule first, then the ask; a refusal from the service takes the rule back.
+        public Task<SetupOutcome> SetUpAsync(SetupPlan plan, CancellationToken ct) =>
+            SetupPress.ApplyAsync(plan, context.SetupWorldOf(service ?? throw NotReady()), _loop.Home, ct);
 
         // SESSION_ARCHIVE's own marks (SESSUX1h2c): each judged again by where the list places it as it goes, counted in the
         // machine log as the screen's. The service is the one this Apply was handed, as the other doors use it.
@@ -719,6 +728,12 @@ public sealed class HelpRoutes(DriverContext context)
     public static bool JudgedAgainstWorkflows(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => proposal.Kind == "workflow");
 
     /// <summary>
+    /// Whether a pending proposal is a set-up (LAYOUT8), judged by the press's own plan for the repository it names, which reads
+    /// the line with git and asks the doctrine tool its version, so that is read only then. Public so the fast half holds the gate.
+    /// </summary>
+    public static bool JudgedAgainstSetups(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => proposal.Kind == "setup");
+
+    /// <summary>
     /// The runs bound on this machine, each as its file under the bindings folder reads (WORKFLOW1h-c): a card says how many keep the
     /// version they started on. A file that is not a binding is skipped, as the run's own reading skips it.
     /// </summary>
@@ -920,6 +935,22 @@ public sealed class HelpRoutes(DriverContext context)
         if (JudgedAgainstWorkflows(proposals))
         {
             facts = facts with { Workflows = WorkflowStore.List(_loop.Home), WorkflowRuns = BoundRuns(_loop.Home) };
+        }
+
+        // A set-up proposal is judged by the press's plan for the repository it names, as `daoris-driver setup <repository> --plan`
+        // reads it and SETUP_PLAN answers it (LAYOUT8), every refusal at once; read only for one, once per repository named.
+        if (JudgedAgainstSetups(proposals))
+        {
+            var world = _context.SetupWorldOf(service);
+            var plans = new List<SetupPlan>();
+            foreach (var named in proposals.Where(each => each.Kind == "setup").Select(each => each.Target?.Trim() ?? "")
+                .Where(named => named.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                plans.Add(await SetupPress.PlanAsync(world, config, _context.Door(config), named, DateOnly.FromDateTime(DateTime.Now), ct)
+                    .ConfigureAwait(false));
+            }
+
+            facts = facts with { Setups = plans };
         }
 
         // Daoris's browser's files as the Browser screen reads them (HELP10), read only when a browser change is pending.
