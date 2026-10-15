@@ -26,6 +26,12 @@ export type HelperAskRow = {
 };
 
 /**
+ * One agent's ask that waits on the person's word, as `HELPER_WAITS` answers it across this machine's sessions (MIXAGENT2c):
+ * *What needs you*'s row, with the session that asked.
+ */
+export type HelperWait = { id: string; session: string; question: string; agent: string | null; at: string };
+
+/**
  * The person's yes or no to one ask, told how it ended (UXFIX2): `done` once the driver's file holds it, `refused` with why not.
  */
 export type HelperApprove = (ask: string, answered: Answered) => void;

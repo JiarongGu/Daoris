@@ -1412,6 +1412,9 @@ export function WorkFrame({
       busy: ruleAnswer.busy,
       heard: !intake && box.kind !== 'line',
     },
+    // The helpers it asked for (MIXAGENT2b), with the yes and the no: an agent's ask the look holds waiting on the person's word is
+    // one of its waits, at the head and at the foot alike (MIXAGENT2c, D168).
+    helpers: helperWaits,
     // Its review, wherever the review stands (SESS2 H4): the move beside unlanded work.
     onReview: () => openView('review'),
     // LAND4: commits its tree holds, offered to land beside what it left; the press is the review's Accept, its sentence said
@@ -1902,7 +1905,6 @@ export function WorkFrame({
             relations={attended ? relationsOf(attended, quest, quests.data ?? [], sessions.data ?? []) : undefined}
             continues={continues}
             helps={helps}
-            helpers={helperWaits}
             onSession={(session) => attend(session.id)}
             onQuest={onOpenQuest ? (row) => onOpenQuest(row.id) : undefined}
             branch={branch}

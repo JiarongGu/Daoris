@@ -381,6 +381,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     // HELPERNO1: the person's no, the ask refused and the asker's note written at once.
     [InlineData("SESSION_HELPER_DECLINE", "sessions,driver", "session")]
     [InlineData("SESSION_HELPERS", "", null)]
+    // MIXAGENT2c: what of the agents' asks waits on the person, *What needs you*'s read.
+    [InlineData("HELPER_WAITS", "", null)]
     [InlineData("SESSION_OPENINGS", "", null)]
     [InlineData("SESSION_WHERE", "", null)]
     [InlineData("SESSION_GROUPS", "", null)]

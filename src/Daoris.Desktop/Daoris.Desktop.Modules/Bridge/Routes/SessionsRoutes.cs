@@ -193,6 +193,22 @@ public sealed class SessionsRoutes(DriverContext context)
         return Task.FromResult<object?>(new { Helpers = helpers });
     }
 
+    // What of the agents' asks waits on the person's word across this machine's sessions (MIXAGENT2c, D168; D163 point 3), for
+    // *What needs you*: each the driver's look holds `waiting` with no code under the `helpers` rule's `ask`, the one state the yes
+    // and the no answer, oldest first, with the session that asked. A read off the home's `helpers` folder: it declares nothing,
+    // and sits under the sessions' key on the page, which every tick asks again; the look says a new one in its report.
+    [DriverRoute("HELPER_WAITS")]
+    private Task<object?> HelperWaitsAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var files = new HelperFiles(_loop.Home);
+        var waits = files.Asks()
+            .Where(ask => ask.AskedBy == HelperAsk.ByAgent && files.ReadState(ask.Id) is { State: HelperStates.Waiting, Code: null })
+            .OrderBy(ask => ask.At)
+            .Select(ask => new { ask.Id, Session = ask.Asker, ask.Question, ask.Agent, At = Moments.Write(ask.At) })
+            .ToList();
+        return Task.FromResult<object?>(new { Waits = waits });
+    }
+
     // The person's yes to an agent's ask under the `helpers` rule's `ask` (MIXAGENT2b, D163 point 3; design §5): the `approved`
     // state the driver's look reads (`HelperJudge`), written where the ask waits on that yes: no state yet, or `waiting` with no
     // code. A yes again is the same yes. A person's own ask needs none, one past its start is past it, one waiting on a slot or an

@@ -27,5 +27,7 @@
   "work.wait.rule.untold": "Allowed, and session {{session}} did not take the words: tell it yourself to go on.",
   "work.wait.inConversation": "In the conversation",
   "work.wait.raised": "Waiting on you from here: {{names}}",
-  "work.wait.toWait": "To the wait: {{names}}"
+  "work.wait.toWait": "To the wait: {{names}}",
+  "work.wait.name.helper": "a helper it asked for",
+  "work.wait.helper.lead": "It asked for another agent’s help. Nothing is asked until you let it."
 }

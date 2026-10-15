@@ -207,6 +207,44 @@ public sealed class DriverModuleSessionHelpersTests : DriverModuleBridge
         Assert.Single(loop.Events.Page("c1").Events, e => e.Kind == SessionEventKind.Note);
     }
 
+    /// <summary>
+    /// MIXAGENT2c (D168, D163 point 3): what of the agents' asks waits on the person's word across this machine's sessions, for
+    /// *What needs you*: each the look holds `waiting` with no code, oldest first, with its session, question, agent and when. One
+    /// it has not read yet, one waiting on a slot, one with a yes, one past its start and a person's own wait on no word of theirs.
+    /// </summary>
+    [Fact]
+    public async Task The_asks_waiting_on_the_persons_word_are_listed_across_sessions_oldest_first()
+    {
+        var files = new HelperFiles(Home);
+        Directory.CreateDirectory(Path.Combine(Home, HelperFiles.Folder));
+        foreach (var (id, asker, at, state, code) in new[]
+                 {
+                     ("a1", "c1", "2026-10-16T09:01:00Z", HelperStates.Waiting, (string?)null),
+                     ("a2", "c2", "2026-10-16T09:00:00Z", HelperStates.Waiting, null),
+                     ("a3", "c1", "2026-10-16T09:02:00Z", null, null),
+                     ("a4", "c1", "2026-10-16T09:03:00Z", HelperStates.Waiting, HelperVerdict.Cap),
+                     ("a5", "c1", "2026-10-16T09:04:00Z", HelperStates.Approved, null),
+                     ("a6", "c1", "2026-10-16T09:05:00Z", HelperStates.Refused, HelperWhy.Declined),
+                 })
+        {
+            AgentAsk(files, id, asker, $"Question {id}?", at);
+            if (state is not null) files.WriteState(new HelperState(id, state, code, null, DateTimeOffset.UtcNow));
+        }
+
+        var own = files.WriteAsk("c1", "My own.", null, DateTimeOffset.UtcNow);
+        files.WriteState(new HelperState(own, HelperStates.Waiting, null, null, DateTimeOffset.UtcNow));
+
+        var waits = (await AnswerAsync(Module(), "HELPER_WAITS", new { })).GetProperty("waits").EnumerateArray().ToList();
+
+        Assert.Equal(["a2", "a1"], waits.Select(row => row.GetProperty("id").GetString()));
+        Assert.Equal(["c2", "c1"], waits.Select(row => row.GetProperty("session").GetString()));
+        Assert.Equal("Question a1?", waits[1].GetProperty("question").GetString());
+        Assert.Equal(JsonValueKind.Null, waits[1].GetProperty("agent").ValueKind);
+        Assert.Equal(DateTimeOffset.Parse("2026-10-16T09:01:00Z"), DateTimeOffset.Parse(waits[1].GetProperty("at").GetString()!));
+        // Nothing of the machine's path, nor of what the state keeps for the driver.
+        Assert.False(waits[1].TryGetProperty("words", out _));
+    }
+
     /// <summary>An agent's ask, as a connector's <c>helper_ask</c> writes it: the shape the driver's reader reads.</summary>
     private string AgentAsk(HelperFiles files, string id, string asker, string question, string at)
     {

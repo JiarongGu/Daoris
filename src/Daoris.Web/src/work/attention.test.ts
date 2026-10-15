@@ -682,9 +682,32 @@ describe('the groups', () => {
     expect(ATTENTION_GROUP).toEqual({
       parked: 'holding', 'parked-quest': 'holding', 'go-ahead': 'holding', trust: 'holding',
       'account-wait': 'holding', 'signed-out': 'holding',
-      proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', unanswerable: 'word',
-      review: 'ready',
+      proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
+      unanswerable: 'word', review: 'ready',
     });
+  });
+
+  /**
+   * MIXAGENT2c (D168, D163 point 3): an agent's ask for a helper the driver's look holds waiting on the person's word waits for
+   * their word, beside a rule an agent proposed: its question's first line, the session that asked and its repository, since it
+   * was asked, with *Let it ask* and *Not now*, the session's page its door. From the driver's own list (`HELPER_WAITS`).
+   */
+  it('lists an agent’s ask for a helper that waits on the person, with the session that asked and its presses', () => {
+    const asker = session({ id: 'c0nv0001', quest: '7a82cc' });
+    const waits = [
+      { id: 'a1', session: 'c0nv0001', question: 'Which test covers the loader?\nIt drops the last day.', agent: 'codex-acp', at: '2026-09-21T09:30:00Z' },
+      { id: 'a2', session: 'g0n3', question: 'Is the cap right?', agent: null, at: '2026-09-21T09:10:00Z' },
+    ];
+    const rows = needsAPerson([asker], [quest()], [registration('engine')], [], [], [], [], [], undefined, [], waits);
+
+    expect(rows.map((row) => `${row.kind}:${row.id}`)).toEqual(['helper:a2', 'helper:a1']);
+    expect(rows[1]).toMatchObject({
+      title: 'Which test covers the loader?', where: 'engine', since: '2026-09-21T09:30:00Z', session: 'c0nv0001',
+      detail: 'Expose a streaming budget on the chunk API asked for another agent’s help. Nothing is asked until you let it.',
+    });
+    // A session the page does not hold is named by its id, and no repository is guessed.
+    expect(rows[0]).toMatchObject({ where: '', detail: '#g0n3 asked for another agent’s help. Nothing is asked until you let it.' });
+    expect(rows.map(attentionActs)).toEqual([['let-ask', 'not-now'], ['let-ask', 'not-now']]);
   });
 
   /**
@@ -745,6 +768,8 @@ describe('what a row offers', () => {
     expect(attentionActs(row('go-ahead'))).toEqual(['approve', 'refuse']);
     expect(attentionActs(row('trust', { trust: { folder: 'f', trustFile: 'g' } }))).toEqual(['trust']);
     expect(attentionActs(row('rule'))).toEqual(['accept-rule', 'decline-rule']);
+    // MIXAGENT2c: an agent's ask for a helper is answered as its session's page answers it, in one press each.
+    expect(attentionActs(row('helper'))).toEqual(['let-ask', 'not-now']);
   });
 
   /** Answering a park or an intake's question, and accepting a review, need reading: each is its door alone. */

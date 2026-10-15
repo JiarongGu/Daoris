@@ -56,7 +56,8 @@ const HELPER_REFUSALS = new Set([
   'blank', 'too-long', 'agent', 'not-held', 'helper', 'reviewer', 'intake', 'gone', 'person', 'waits', 'past', 'approved', 'unread',
 ]);
 
-const helperSaid = (t: Translate, why: string | null, message: string) =>
+/** A helper's refusal in the catalogue's words, by its code: *What needs you*'s yes and no say them too (MIXAGENT2c). */
+export const helperSaid = (t: Translate, why: string | null, message: string) =>
   (why && HELPER_REFUSALS.has(why) ? t(`work.helper.refused.${why}`) : message || why || '');
 
 /** Which of the frame's doors an act goes through. */

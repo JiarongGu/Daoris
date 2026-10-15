@@ -6,7 +6,7 @@ import { searchable } from '../lib/searchable';
 import type { SessionEvent } from '../work/conversation';
 import type { SessionEntry } from '../work/entries';
 import type { SessionGroupName, SessionGrouping } from '../work/groups';
-import type { HelperAskRow } from '../work/HelperAsks';
+import type { HelperAskRow, HelperWait } from '../work/HelperAsks';
 import type { NewSessionAnswer } from '../work/say';
 import type { SessionWhere } from '../work/SessionRow';
 import { call } from './call';
@@ -342,6 +342,32 @@ export const useDeclineHelper = () => useMutation({
     return { declined: answer?.declined === true, why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '' };
   },
 });
+
+/**
+ * What of the agents' asks waits on the person's word across this machine's sessions (MIXAGENT2c, D168): *What needs you*'s rows,
+ * oldest first, read off this machine's own files, so shell-only. Under the sessions' key, so every tick asks it again, and the
+ * driver's look says a new one in its report, which is a tick. A row with no id, session or question is left out.
+ */
+export const useHelperWaits = () => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: ['sessions', 'helperWaits'] as const,
+    queryFn: async (): Promise<HelperWait[]> => {
+      const rows = (await call<{ waits?: unknown } | null>('HELPER_WAITS'))?.waits;
+      if (!Array.isArray(rows)) return [];
+      return rows.filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === 'object')
+        .filter((row) => word(row.id) !== null && word(row.session) !== null && typeof row.question === 'string')
+        .map((row) => ({
+          id: row.id as string,
+          session: row.session as string,
+          question: row.question as string,
+          agent: word(row.agent),
+          at: typeof row.at === 'string' ? row.at : '',
+        }));
+    },
+    enabled: isAvailable,
+  });
+};
 
 /** Where a search found its words: the session, the event it began at, whose words, and a window of them. */
 export type SessionHit = { session: string; seq: number; kind: string; snippet: string };

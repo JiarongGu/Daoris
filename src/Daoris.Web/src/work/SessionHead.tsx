@@ -22,7 +22,7 @@ import { isIntake, sessionOrigin, sessionTitle } from './identity';
 import type { SayRebase } from './LandingSync';
 import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from './Lands';
 import { Note } from './Note';
-import { HelperAsks, type HelperWaits, openAsks } from './HelperAsks';
+import { HelperAsks, type HelperWaits, openAsks, waitsOnWord } from './HelperAsks';
 import { hasNote, noteBlocks, noteLines } from './noteLines';
 import { ProposedRules, type RuleAsk, type RuleWaits } from './ProposedRules';
 import { movedAt } from './rail';
@@ -330,9 +330,14 @@ export function SessionHead({
       )}
 
       {/* The helpers it asked for that are still on their way (MIXAGENT2b, D163): an agent's ask that waits on the person's yes
-          says so here, with the yes. A settled one is said where it settled, in the conversation and the timeline. */}
+          says so here, with the yes and the no. A settled one is said where it settled, in the conversation and the timeline.
+          Marked a wait's section while one waits on the person's word (MIXAGENT2c), so the strip stands aside for it too. */}
       {helpers && openAsks(helpers.asks).length > 0 && (
-        <section aria-labelledby={`helpers-${session.id}`} className="grid gap-1">
+        <section
+          aria-labelledby={`helpers-${session.id}`}
+          data-wait-section={helpers.onApprove && helpers.asks.some(waitsOnWord) ? '' : undefined}
+          className="grid gap-1"
+        >
           <h3 id={`helpers-${session.id}`} className="m-0 text-small font-semibold">{t('work.helper.heading')}</h3>
           <HelperAsks {...helpers} asks={openAsks(helpers.asks)} />
         </section>

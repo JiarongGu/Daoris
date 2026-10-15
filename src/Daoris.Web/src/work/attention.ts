@@ -9,6 +9,7 @@ import { accountAttention, type AccountsKnown } from './accountAttention';
 import type { SessionGrouping } from './groups';
 import { askName, questName, sessionOrigin, sessionTitle } from './identity';
 import type { Attention, AttentionKind } from './AttentionRow';
+import type { HelperWait } from './HelperAsks';
 import { type OpinionWait, opinionState } from './opinion';
 import { opinionSays } from './OpinionGate';
 import { newestSetUp, setUpRef, waitsForLook } from './review';
@@ -47,6 +48,9 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   // nothing already running is held by it.
   opinion: 'word',
   rule: 'word',
+  // An agent's ask for a helper that waits on the person's yes (MIXAGENT2c, D163 point 3): the session that asked goes on
+  // meanwhile, as one that proposed a rule does, so it holds nothing up.
+  helper: 'word',
   unanswerable: 'word',
   review: 'ready',
 };
@@ -85,7 +89,8 @@ export function rowRun(item: Attention): { session?: string | null; quest?: stri
 /** An act a row offers (design §6.2–§6.3), named as the row's press. */
 export type AttentionActId =
   | 'publish' | 'choose' | 'retry' | 'approve' | 'refuse' | 'trust' | 'accept-departure' | 'accept-rule' | 'decline-rule'
-  | 'sign-in' | 'read' | 'let-run' | 'reviewed' | 'not-yet' | 'show-again' | 'opinion-again' | 'opinion-anyway';
+  | 'sign-in' | 'read' | 'let-run' | 'reviewed' | 'not-yet' | 'show-again' | 'opinion-again' | 'opinion-anyway'
+  | 'let-ask' | 'not-now';
 
 /** An act a row offers, and for an account's act which account it is for (UX6d): a row may sign two in. */
 export type AttentionOffer = { act: AttentionActId; account?: string };
@@ -151,6 +156,8 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     // again* only for a local set-up, which Daoris serves; *Skip…* is the step's page's, where the work is read.
     case 'set-up': return item.setUp ? plain('reviewed', 'not-yet', ...(item.local ? ['show-again' as const] : [])) : [];
     case 'rule': return plain('accept-rule', 'decline-rule');
+    // An agent's ask for a helper (MIXAGENT2c): its session's page's own yes and no, each one press, as they are there.
+    case 'helper': return plain('let-ask', 'not-now');
     // A second opinion that waits on the person (XAGENT1g, §8.5): *Go on anyway…* only where no press of theirs is coming (the
     // work lands by itself, or none could be had and the rule requires one), and a pass asked again; the rest are its session's.
     case 'opinion': return opinionOffers(item);
@@ -270,6 +277,10 @@ export function waitingInSessions(
  * carries on meanwhile, so it holds nothing up. A narrowing applied itself, and one the driver has not judged yet may be
  * one, so neither is here. Only the shell reads the rules, so a browser has none.
  *
+ * **An agent's ask for a helper waits for the person's word** (MIXAGENT2c, D163 point 3): one the driver's look holds waiting
+ * on their yes under the `helpers` rule's `ask`, from the driver's own list (`HELPER_WAITS`), which a browser has none of. Its row
+ * is the question's first line, as written, and the session that asked; *Let it ask* and *Not now* are its session's page's own.
+ *
  * **A departure waits for the person's word** (DRIFT1d2, D133 §4): a done held for their yes because it departed from
  * what they required, which the quests list carries (`held`) until they accept it.
  *
@@ -302,6 +313,7 @@ export function needsAPerson(
   groups: readonly SessionGrouping[] = [],
   accounts: AccountsKnown = { tools: [] },
   opinions: readonly OpinionWait[] = [],
+  helpers: readonly HelperWait[] = [],
 ): Attention[] {
   const live = asks.filter((ask) => ask.state === 'Open' || ask.state === 'Proposed');
   const intakeOf = (ask: Ask) =>
@@ -505,6 +517,22 @@ export function needsAPerson(
       detail: proposal.why,
     }));
 
+  // An agent's ask for a helper that waits on the person's yes (MIXAGENT2c): its question's first line as written, the session
+  // that asked named as Sessions names it, or by its id where the page holds no such record, and its repository.
+  const helperAsks = helpers.map((wait): Attention => {
+    const record = sessions.find((one) => one.id === wait.session);
+    const asker = record ? sessionTitle(record, quests.find((quest) => quest.id === record.quest)) : `#${wait.session}`;
+    return {
+      id: wait.id,
+      kind: 'helper',
+      title: wait.question.split('\n')[0]!.trim() || wait.question,
+      where: record?.repository ?? '',
+      since: wait.at || null,
+      detail: i18n.t('work.attention.helperWhy', { session: asker }),
+      session: wait.session,
+    };
+  });
+
   // The starts waiting on their accounts, and the signed-out accounts no waiting start names (UX6d).
   const accountRows = accountAttention(accounts, considered, quests, asks, registry);
 
@@ -515,7 +543,7 @@ export function needsAPerson(
     (a.since === null || b.since === null ? Number(a.since === null) - Number(b.since === null) : a.since.localeCompare(b.since));
   return [
     [...accountRows, ...parked, ...parkedQuests, ...goAheads, ...folders.values()],
-    [...waitingAsks, ...departures, ...setUps, ...secondOpinions, ...widenings, ...unanswerable],
+    [...waitingAsks, ...departures, ...setUps, ...secondOpinions, ...widenings, ...helperAsks, ...unanswerable],
     reviews,
   ].flatMap((group) => group.sort(oldestFirst));
 }

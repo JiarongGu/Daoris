@@ -6,8 +6,8 @@ import {
   useAcceptQuest, useAnswerGoAhead, useAsks, usePublishAsk, useQuests, useRegistry, useSessions,
 } from '../data/queries';
 import {
-  retryNotice, useAccounts, useConsidered, useHarnessAction, useHarnesses, useNudge, useOpinionWaits, useRefreshHarnesses,
-  useRetryQuest, useRules, useSessionGroups, useTrustFolder, useUntrusted, useWaits,
+  retryNotice, useAccounts, useApproveHelper, useConsidered, useDeclineHelper, useHarnessAction, useHarnesses, useHelperWaits, useNudge,
+  useOpinionWaits, useRefreshHarnesses, useRetryQuest, useRules, useSessionGroups, useTrustFolder, useUntrusted, useWaits,
 } from '../bridge/shell';
 import { useSay } from '../bridge/conversation';
 import { SignIn } from '../agents/SignIn';
@@ -22,6 +22,7 @@ import { needsAPerson, rowRun } from './attention';
 import { useOpinionActs } from './opinionActs';
 import { useReviewActs } from './reviewActs';
 import { ruleHearing, useRuleAnswer } from './ruleAnswer';
+import { helperSaid } from './sessionActs';
 import { runSessionOf } from '../workflow/run';
 
 export type { AttentionDoors } from './AttentionList';
@@ -117,6 +118,10 @@ function Band({ doors, notify, onSessions, onRun }: {
   const proposed = Array.isArray(proposals) && proposals.some((one) => one.session);
   const ended = useSessions(null, true, reviewing || onRun !== undefined || proposed);
   const opinionWaits = useOpinionWaits(reviewing);
+  // The agents' asks for a helper that wait on the person's yes (MIXAGENT2c): the driver's own list, so a browser has none.
+  const helperWaits = useHelperWaits();
+  const approveHelper = useApproveHelper();
+  const declineHelper = useDeclineHelper();
   // The accounts as last known and the tick's waits (UX6d): a browser has none.
   const accounts = useAccountsKnown();
 
@@ -144,7 +149,7 @@ function Band({ doors, notify, onSessions, onRun }: {
   const waiting = needsAPerson(
     (reviewing ? ended.data : undefined) ?? sessions.data ?? [], quests.data ?? [], registry.data ?? [], asks.data ?? [],
     untrusted.data ?? [], Array.isArray(proposals) ? proposals : [], considered.data ?? [], groups.data ?? [], accounts,
-    opinionWaits.data ?? []);
+    opinionWaits.data ?? [], helperWaits.data ?? []);
 
   if (waiting.length === 0) {
     return (
@@ -243,6 +248,23 @@ function Band({ doors, notify, onSessions, onRun }: {
         (session, text) => say.mutateAsync({ id: session, text })),
     ), (said) => notify(said), answered),
     declineRule: (item) => run(item, () => ruleAnswer.settled(item.id, false, item.title), (said) => notify(said)),
+    // An agent's ask for a helper said yes or no to, as its session's page says it (MIXAGENT2c): its answer said in the page's
+    // words, a refusal by its code in the error's tone. The hub reads the waits again (D169).
+    helper: (item, yes) => {
+      const session = item.session;
+      if (!session) return;
+      run(item, async () => {
+        if (yes) {
+          const answer = await approveHelper.mutateAsync({ session, ask: item.id });
+          return { done: answer.approved, why: answer.why, message: answer.message };
+        }
+        const answer = await declineHelper.mutateAsync({ session, ask: item.id });
+        return { done: answer.declined, why: answer.why, message: answer.message };
+      }, ({ done: settled, why, message }) => {
+        if (settled) notify(t(yes ? 'work.helper.approved' : 'work.helper.declined'));
+        else notify(helperSaid(t, why, message), 'error');
+      });
+    },
     // The agent's own sign-in through its account-owning door, as its page starts it (SIGNIN1): its end is said wherever the
     // person is, and the roster read again then, which reads that account (ROSTER1).
     signIn: (item, account) => {

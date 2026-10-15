@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import i18n from '../locales/i18n';
 import type { GoAhead, Session } from '../data/api';
 import type { RuleProposal } from '../settings/AgentRules';
+import type { HelperAskRow, HelperWaits } from './HelperAsks';
 import { STEP_SHOWN } from './reviewFixtures';
 import { WaitStrip } from './WaitStrip';
 
@@ -206,6 +207,47 @@ describe('the strip of what waits on the person, at the foot', () => {
 
   it('has no rule\'s line where nothing can answer it', () => {
     const { container } = render(<WaitStrip session={session()} rules={{ proposals: [RULE] }} onTop={vi.fn()} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  // MIXAGENT2c (D168 points 1 to 3, D163 point 3): an agent's ask for a helper that waits on the person's word, with the head's own
+  // yes and no, and none of the asks that wait on nothing of theirs.
+  const ASK: HelperAskRow = {
+    id: 'a1', question: 'Which test covers the loader?', agent: 'codex-acp', askedBy: 'agent', at: '2026-09-21T11:00:00Z',
+    state: 'waiting', code: null, helper: null, startedOn: null,
+  };
+  const helpers = (over: Partial<HelperWaits> = {}): HelperWaits => ({
+    asks: [ASK, { ...ASK, id: 'a2', question: 'Waits on a slot.', code: 'cap' }, { ...ASK, id: 'a3', question: 'Mine.', askedBy: 'person', state: null }],
+    nameOf: (agent) => (agent === 'codex-acp' ? 'Codex' : agent),
+    onApprove: vi.fn(),
+    onDecline: vi.fn(),
+    ...over,
+  });
+
+  it('answers an agent’s ask for a helper through the head’s own yes and no, and shows none that waits on nothing of the person’s', async () => {
+    const given = helpers();
+    render(<WaitStrip session={session({ state: 'working' })} helpers={given} onTop={vi.fn()} />);
+
+    expect(strip()).toHaveAccessibleName('Waiting on you');
+    expect(within(strip()).getByText('It asked for another agent’s help. Nothing is asked until you let it.')).toBeInTheDocument();
+    const items = within(strip()).getAllByRole('listitem');
+    expect(items).toHaveLength(1);
+    expect(items[0]).toHaveTextContent('Which test covers the loader?');
+
+    await userEvent.click(within(items[0]!).getByRole('button', { name: 'Let it ask' }));
+    expect(given.onApprove).toHaveBeenCalledWith('a1', { done: expect.any(Function), refused: expect.any(Function) });
+    const [, told] = vi.mocked(given.onApprove!).mock.calls[0]!;
+    told.done();
+    await userEvent.click(within(items[0]!).getByRole('button', { name: 'Not now' }));
+    expect(given.onDecline).toHaveBeenCalledWith('a1', { done: expect.any(Function), refused: expect.any(Function) });
+  });
+
+  it('folds naming a helper it asked for, and has none where nothing can answer it', async () => {
+    render(<WaitStrip session={parked} onResolve={vi.fn()} answerBelow goAheads={GO_AHEADS} onGoAhead={vi.fn()} helpers={helpers()} onTop={vi.fn()} />);
+    await userEvent.click(within(strip()).getByRole('button', { name: 'Fold' }));
+    expect(strip()).toHaveTextContent('its question · go-ahead #2 · a helper it asked for');
+
+    const { container } = render(<WaitStrip session={session({ state: 'working' })} helpers={helpers({ onApprove: undefined })} onTop={vi.fn()} />);
     expect(container).toBeEmptyDOMElement();
   });
 

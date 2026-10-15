@@ -84,8 +84,9 @@ each is still held:
 
 - **MIXAGENT2b** (D163's note): `SESSION_HELPER_ASK` and `SESSION_HELPER_APPROVE`, presses declaring `sessions` and `driver`,
   and `SESSION_HELPERS`, a read under the sessions' key; its two hooks' coverage rows were added at HELPERNO1.
-- **HELPERNO1** (D163's note): `SESSION_HELPER_DECLINE`, a press beside the yes, walked through rows 1, 3 to 7 and 9 in one
-  change; and MIXAGENT2c's `HELPER_WAITS`, a read with no row 3, 4 or 7.
+- **HELPERNO1** (D163's note): `SESSION_HELPER_DECLINE`, a press beside the yes, walked through rows 1, 3 to 7, 9 and 10 in
+  one change; and MIXAGENT2c's `HELPER_WAITS` (D168's note), a read: no mark, its `StatePublisherTests` row saying so, no
+  `DECLARED` entry, no coverage row, its key under the sessions' family.
 - **ACCEPTALL1e** (D169's note): a declaration's `Subject`, a second payload field a press carries under way.
 
 ## What this does not cover

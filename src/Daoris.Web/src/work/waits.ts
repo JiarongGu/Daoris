@@ -6,6 +6,7 @@ import { workflowHolds } from '../workflow/gate';
 import type { LineBehind } from './diff';
 import type { DiscardOffer, LandOffer } from './groups';
 import { heldDiscardable } from './HeldDiscard';
+import { type HelperAskRow, waitsOnWord } from './HelperAsks';
 import { isIntake } from './identity';
 import type { LandingPlan } from './Lands';
 import { acceptAnswers, opinionAsked, opinionHolds, opinionState, opinionTone } from './opinion';
@@ -13,15 +14,16 @@ import { REVIEW_TONE, reviewHolds, reviewState } from './review';
 
 /**
  * What waits on the person in a session, one at a time (WAITFOOT1b, D168 point 2): its question, an intake's ask, each
- * go-ahead still open, each rule it proposed that the person still answers (PROPOSEHERE1b), and what its work offers them,
- * *Accept…*, the rebase words, a gate in their hue, or a discard the line holds. The foot's strip names them; the head draws
- * the same.
+ * go-ahead still open, each rule it proposed that the person still answers (PROPOSEHERE1b), each helper it asked for that waits
+ * on their word (MIXAGENT2c), and what its work offers them, *Accept…*, the rebase words, a gate in their hue, or a discard the
+ * line holds. The foot's strip names them; the head draws the same.
  */
 export type Wait =
   | { kind: 'question'; below: boolean }
   | { kind: 'intake'; ask: string }
   | { kind: 'goAhead'; number: number }
   | { kind: 'rule'; id: string }
+  | { kind: 'helper'; id: string }
   | { kind: 'accept' }
   | { kind: 'rebase' }
   | { kind: 'opinion' }
@@ -81,6 +83,8 @@ export type WaitFacts = {
   onGoAhead?: unknown;
   /** The machine's rule proposals as the shell read them, and the door that answers them (PROPOSEHERE1b). */
   rules?: { proposals?: unknown; onAnswer?: unknown } | null;
+  /** The helpers it asked for as the driver's look left them, and the yes that answers one (MIXAGENT2c). */
+  helpers?: { asks?: readonly HelperAskRow[]; onApprove?: unknown } | null;
   lands?: LandOffer | null;
   landing?: LandingPlan | null;
   behind?: LineBehind | null;
@@ -115,6 +119,11 @@ export function waitsOf(facts: WaitFacts): Wait[] {
   // Whatever its state: a session refused something files the proposal and goes on, or ends its turn (PROPOSEHERE1b).
   if (facts.rules?.onAnswer) {
     for (const proposal of rulesAsked(facts.rules.proposals, session.id)) waits.push({ kind: 'rule', id: proposal.id });
+  }
+  // An agent's ask for a helper the look holds waiting on the person's word, whatever the session's state, as a rule it proposed
+  // (MIXAGENT2c, D163 point 3): one not read yet, or waiting on a slot or an agent, waits on no word of theirs.
+  if (facts.helpers?.onApprove) {
+    for (const row of facts.helpers.asks ?? []) if (waitsOnWord(row)) waits.push({ kind: 'helper', id: row.id });
   }
   if (facts.lands) {
     const stands = landingStands({ lands: facts.lands, landing: facts.landing, behind: facts.behind });
