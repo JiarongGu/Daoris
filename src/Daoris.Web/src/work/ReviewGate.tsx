@@ -8,7 +8,7 @@ import { shellWord } from '../lib/shellWord';
 import { Button, CodeText, Inline, Pill } from '../design/ui';
 import { type Answered, InlineConfirm, Refused } from './InlineConfirm';
 import {
-  newestSetUp, type ReviewPress, reviewPresses, type ReviewState, setUpRef, shortCommit, verdictOn,
+  newestSetUp, REVIEW_TONE, type ReviewPress, reviewPresses, type ReviewState, setUpRef, shortCommit, verdictOn,
 } from './review';
 
 /**
@@ -30,18 +30,6 @@ export type ReviewGateActs = {
   open?: () => void;
 };
 
-/** The hue a state wears: the person's (open) where it waits on their look, taken's while a step works, neutral otherwise. */
-const TONE: Record<ReviewState, 'open' | 'taken' | 'done' | 'neutral'> = {
-  'not-shown': 'open',
-  'being-set-up': 'taken',
-  shown: 'open',
-  'not-yet': 'taken',
-  'not-held': 'open',
-  unread: 'neutral',
-  reviewed: 'done',
-  skipped: 'neutral',
-  none: 'neutral',
-};
 
 /**
  * **Review in `<environment>`** (REVIEWENV1g, D154 points 7–8; the review environment design §3.1–§3.3, §3.6): where a chain's
@@ -153,13 +141,13 @@ export function ReviewGate({
       aria-labelledby={headingId}
       className={cn(
         'grid min-w-0 gap-2 rounded-card border border-line border-l-[3px] bg-raised px-3 py-2.5',
-        TONE[state] === 'open' ? 'border-l-st-open' : TONE[state] === 'done' ? 'border-l-st-done' : 'border-l-line-strong',
+        REVIEW_TONE[state] === 'open' ? 'border-l-st-open' : REVIEW_TONE[state] === 'done' ? 'border-l-st-done' : 'border-l-line-strong',
         className,
       )}
     >
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         {/* Status leads (D41 §4): the state, then where the work is reviewed. */}
-        <Pill tone={TONE[state]}>{t(`review.state.${state}`)}</Pill>
+        <Pill tone={REVIEW_TONE[state]}>{t(`review.state.${state}`)}</Pill>
         <h3 id={headingId} className="m-0 min-w-0 text-small font-semibold text-ink">
           {/* An unread gate names no environment: what it could not read is whether one waits. */}
           <Inline text={environment ? t('review.title', { environment }) : t('review.titleAny')} />

@@ -139,7 +139,9 @@ sessions take the same roles once the trial says which split works (MODELROLE1).
      next merge's prune would take it. Unlock it once it has landed, so the prune can clear it.
    - **A hand-back that names `Process` tests it wrote and could not run** is run by the parent on the open merge before
      the commit: `dotnet test <the test project> --settings src/Daoris.Desktop/process.runsettings --filter
-     "FullyQualifiedName~<class>"`. A merge never runs that half, so nothing else would until the full set. XAGENT1g3's
+     "FullyQualifiedName~<class>"`, or `git.process.runsettings` for a class marked `Parallel=Git` (PROC1c), which
+     the first file's filter leaves out: run with it, such a class matches no test. A merge never runs those halves,
+     so nothing else would until the full set. XAGENT1g3's
      equivalence test failed on its first run there (a fixture seeded another state than the test named, 2026-10-12).
 7. **Commit the merge yourself.** The tool never commits. Read `git diff --cached` and write the
    records, as the `records` lane's steward: move the row from `TASKS.md` to the archive with the

@@ -16,6 +16,14 @@ public sealed class LinesRoutes(DriverContext context)
     private readonly DriverContext _context = context;
     private readonly DriverLoop _loop = context.Loop;
 
+    /// <summary>
+    /// What a press that removes, replays or moves session branches and trees changes (STATEHUB1b, D169): the sessions'
+    /// trees, every plan judged against a line, the reviews, the landed branches a plugin could take, the clean-up's list,
+    /// and which repositories hold Daoris's branches. About no one session, so every one's is read again.
+    /// </summary>
+    private const StateScopes Moves = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff | StateScopes.HandOff
+        | StateScopes.Sweep | StateScopes.TreesSync;
+
     // A repository's line, or a workspace's (WSR2), or either cleared with no branch — the same
     // file `daoris driver line` edits: one truth, two doors (D50).
     [DriverRoute("SET_LINE")]
@@ -137,6 +145,7 @@ public sealed class LinesRoutes(DriverContext context)
     // A repository's landing rule or a workspace's, or either cleared with no form — the same file
     // `daoris driver landing` edits: one truth, two doors (D50).
     [DriverRoute("SET_LANDING")]
+    [Publishes("SET_LANDING", StateScopes.Landing | StateScopes.Lines)]
     private object? SetLanding(IpcRequest request)
     {
         var repository = Optional(request, "repository");
@@ -217,6 +226,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("SWEEP_PLAN")]
     [DriverRoute("SWEEP")]
+    [Publishes("SWEEP", Moves)]
     private async Task<object?> SweepAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, null, cancellationToken);
@@ -269,6 +279,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// whatever the press says (<see cref="SessionBranchDiscard"/>).
     /// </remarks>
     [DriverRoute("DISCARD_SESSION_BRANCH")]
+    [Publishes("DISCARD_SESSION_BRANCH", Moves)]
     private async Task<object?> DiscardBranchAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
@@ -296,6 +307,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// </remarks>
     [DriverRoute("TREES_SYNC_PLAN")]
     [DriverRoute("TREES_SYNC")]
+    [Publishes("TREES_SYNC", Moves)]
     private async Task<object?> TreesSyncAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var named = Optional(request, "repository");

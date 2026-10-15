@@ -5,6 +5,31 @@ with the version and date at release.
 
 ## Unreleased
 
+- A rule a session proposed after it was refused something now waits on you in that session, at its top and at its foot, with
+  what it would change and why: *Allow…* asks once, *Decline* is one press, and *In the conversation* shows the call that
+  proposed it. Allowed there, the session is told the rule is allowed now and goes on with it; a session that takes no words
+  says so instead. In What needs you, allowing one now says *Allowed* (已允许), as its press reads.
+- After a session's work is accepted (采纳), its *Accept…* and the plan beside it read anew wherever they are shown, in
+  every open window and when you switch back to a tab, where an old plan used to stand until the driver's next change. The
+  same holds after discarding a session's tree, handing a branch to its plugin, a press on a second opinion, the clean-up,
+  bringing repositories up to date and saving how work lands.
+- Ask Daoris no longer loses your message on a busy machine. It opens at once and reads the machine while your first words wait,
+  shown as *opening Ask Daoris…*; words you send show at once as *sending…*, and where the machine is slow to answer they stay,
+  saying it has not answered yet (本机尚未回应), rather than vanishing behind an error. Nothing goes back in the box to be sent
+  twice; words that never arrived come back there, said so.
+- The words you said to a session that ended, or that parked to ask you, wait above its box with *Edit* and *Remove* until it
+  goes on with them, as words waiting behind a running turn do: remove one it no longer needs, or put new words in its place.
+- What waits on you in a session is at its foot too, above the box you type in, so you need not scroll back to its top: its
+  question (answered in the box), a go-ahead still open with *Approve* and *Refuse*, its work's *Accept…*, the words asking it
+  to rebase, the second opinion's and the review's presses, and a branch to discard, each the same press as in its head, an
+  ask opened in one place closing the other. Several fold to one line; *To the top* takes you to the head.
+- Each thing waiting on you in a session leads to where its conversation raised it: *In the conversation* on its head and at
+  its foot shows the question it asked, the call that asked a go-ahead, or the end of the turn whose work waits to be accepted,
+  outlined; that place says what waits on you from there, with *To the wait* back to it at the foot.
+- A theme you choose (light or dark, under Settings or View → Theme) now reaches the window's Chromium as well as the page:
+  its scrollbars and controls, its own pages, and what a page reads as the system's theme follow your choice in the main
+  window, the monitor and a detached session, where they followed Windows' setting before. *System* still follows Windows.
+  Daoris's browser keeps its own setting.
 - A session no longer thanks you for accepting when you type "accept": it says its work waits for *Accept…* on its page and
   where that is, and when it asks you to approve a rule it proposed, it names the Agents page's *Proposals*. In What needs you,
   the act on a rule an agent proposed reads *Allow…* (允许…), no longer the same *Accept…* (采纳…) as landing a session's work.
@@ -34,6 +59,10 @@ with the version and date at release.
   session to change it. A tree holding only ignored files (installed dependencies, a build's output, a session's own logs) goes
   too: its folder is moved aside for fourteen days, as before. Uncommitted or untracked work, a session still running or waiting,
   words you said to a session that ended, and a tree whose branch never moved keep it.
+- The branches *Accept…* made (`feature/…`) now go by themselves too, once their pull request merged or the line holds their
+  work, with the session branch that grew them: a squash merge no longer leaves both until *Clean up*. One whose pull request is
+  still open, one checked out somewhere, one you pushed and moved since, and one a running session still works from stay. A tree
+  whose installed packages hold paths past Windows' 260 characters is moved aside and deleted fourteen days later like any other.
 - An ask's page has a *Channel* (频道), where its sessions and you talk: their messages and Daoris's lines about its quests
   (published, taken, done, declined, waiting on your yes) in your language, an open question marked, and a box to write to
   everyone on the ask or one of its repositories, answering a message if you choose. A session on an ask has the same channel

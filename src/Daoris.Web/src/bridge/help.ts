@@ -14,11 +14,15 @@ import { logEvent } from './log';
 /**
  * Ask Daoris's conversation (HELP1a, D89): the one this machine is running, carried on, or a new one in
  * its room. Refused in the driver's words while no agent is named for it (D89: off until named).
+ *
+ * @remarks
+ * Since HELPSTART1 the driver answers once the conversation is placed, `starting`: its room is read and its agent spawned
+ * after, and the words said to it meanwhile wait as its queue, opening. A driver before it answers once it runs.
  */
 export const useStartHelp = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: () => call<{ sessionId: string | null; message: string; running?: boolean }>('START_HELP'),
+    mutationFn: () => call<{ sessionId: string | null; message: string; running?: boolean; starting?: boolean }>('START_HELP'),
     onSuccess: () => void client.invalidateQueries({ queryKey: keys.allSessions }),
   });
 };

@@ -96,7 +96,7 @@ export function namedLines(input: string | null | undefined): LineRange | null {
 }
 
 /** A call's input as the object it is, or null where it is absent, not JSON, not an object, or was cut. */
-function inputObject(input: string | null | undefined): Record<string, unknown> | null {
+export function inputObject(input: string | null | undefined): Record<string, unknown> | null {
   if (!input) return null;
   let parsed: unknown;
   try {

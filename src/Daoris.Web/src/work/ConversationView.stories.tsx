@@ -1,5 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { chinese } from '../design/storyLanguage';
+import { InTheme } from '../plugins/storyIcons';
 import { ConversationView } from './ConversationView';
 import { type SessionEvent, settle, toTurns } from './conversation';
 import { CLAIMED } from './handedFixtures';
@@ -243,3 +244,36 @@ export const WithEarlierTurns: Story = { args: { turns: toTurns(DRIVEN).turns, e
 export const Chinese: Story = { args: { turns: toTurns(CHINESE).turns } };
 export const TextOnlyDoor: Story = { args: { turns: [] } };
 export const TextOnlyDoorStillRunning: Story = { args: { turns: [], live: true } };
+
+// WAITFOOT1c (D168 point 4): the blocks that raised what waits on the person say so, with *To the wait*: a go-ahead's call
+// (folded in its run, so its run's line says it), the question the park asked, and the work at the end of the turn that did it.
+const ASKED_TARGET = ev({ kind: 'user', origin: 'target', text: 'You are the engine repository\'s agent. Take quest #q1 — "Set the dashboard\'s target".' });
+const ASKED_CALL = ev({
+  kind: 'tool', id: 'g1', title: 'go_ahead_ask', status: 'completed',
+  input: JSON.stringify({ kind: 'write', on: 'production', act: 'dashboard configuration', why: 'The tile reads its target from it.' }),
+});
+const ASKED_QUESTION = ev({ kind: 'message', text: 'The tile is ready. I need go-ahead **#2** to write its target to production: shall I keep 0.95, or the 0.9 the report used?' });
+const RAISED: SessionEvent[] = [
+  ASKED_TARGET,
+  ev({ kind: 'tool', id: 'r1', title: 'Read src/dashboard/tile.ts', toolKind: 'read', status: 'completed' }),
+  ASKED_CALL,
+  ASKED_QUESTION,
+  ev({ kind: 'turn', stopReason: 'end_turn' }),
+];
+const MARKS = {
+  [`e${ASKED_CALL.seq}`]: [{ kind: 'goAhead' as const, number: 2 }],
+  [`e${ASKED_QUESTION.seq}`]: [{ kind: 'question' as const, below: true }],
+  [`end-e${ASKED_TARGET.seq}`]: [{ kind: 'accept' as const }],
+};
+const darkTheme: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
+
+/** Each block that raised a wait, marked with *To the wait*; the question is the one a press in the strip just revealed. */
+export const WaitsRaisedHere: Story = {
+  args: { turns: toTurns(RAISED).turns, marks: MARKS, onToWait: () => {}, reveal: `e${ASKED_QUESTION.seq}` },
+};
+/** The same in 中文. */
+export const WaitsRaisedHereChinese: Story = { ...WaitsRaisedHere, decorators: [chinese] };
+/** The same in dark. */
+export const WaitsRaisedHereDark: Story = { ...WaitsRaisedHere, decorators: [darkTheme] };
+/** The same in dark and 中文. */
+export const WaitsRaisedHereDarkChinese: Story = { ...WaitsRaisedHere, decorators: [chinese, darkTheme] };

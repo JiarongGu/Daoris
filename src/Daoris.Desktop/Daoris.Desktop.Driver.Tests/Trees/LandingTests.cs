@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Real git for the door, as the other tree tests use it.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class LandingTests : IDisposable
 {
     private readonly string _scratch;

@@ -196,6 +196,7 @@
   "work.steer.sending": "Stopping its turn: what you added goes next.",
   "work.say.placeholder": "write to it — the same session goes on with your words",
   "work.say.heldEnding": "held until this run ends — then the same session goes on with them",
+  "work.say.waiting": "waiting for the same session to go on with them",
   "work.say.tooLong": "This agent's door takes at most {{count}} characters at once; shorten it, or send it in parts.",
   "work.say.cannot": "It cannot go on in this session, because {{why}}.",
   "work.say.startChat": "Start a conversation with these words",

@@ -350,6 +350,18 @@ public sealed class DriverLoop(
     public LastLook Look { get; } = new();
 
     /// <summary>
+    /// The last whole look at the sessions this shell took, with when (HELPSTART1): what Ask Daoris's room reads where it is
+    /// recent, rather than judge every tree with git again.
+    /// </summary>
+    public SessionsLooked SessionsLooked { get; } = new();
+
+    /// <summary>
+    /// Ask Daoris's conversation placed and not yet running (HELPSTART1): the press answers once it is placed, and the words said
+    /// to it meanwhile wait here for its door.
+    /// </summary>
+    public HelpStarting HelpStarting { get; } = new();
+
+    /// <summary>
     /// The second-opinion gates the last tick judged (XAGENT1g3), replaced whole each tick: what <c>OPINION_WAITS</c> answers, as of
     /// that tick, at most one poll old. Null before the first.
     /// </summary>

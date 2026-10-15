@@ -408,7 +408,7 @@ const stalens = (paths: string[]): string[] => ALL.filter((gate) => tool.pathsRe
 const BASE = ['universal', 'code-map', 'orient-index', 'cli'];
 const ALL = repoPlan.map((gate) => gate.name);
 // GATE5: the real-process halves and the deployment rehearsal, 30 to 70 minutes a merge, run only in the full set.
-const LONG = ['driver-process', 'modules-process', 'deployment'];
+const LONG = ['driver-process', 'driver-process-git', 'modules-process', 'deployment'];
 /** The kept names' table (SESSDEL1c): among the driver's tests, and the page's twin reads it too. */
 const KEPT_NAMES = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/kept-names.json';
 /**
@@ -425,6 +425,7 @@ const isPageParsedRule = (rule: Rule) => rule.paths?.some((path) => PAGE_PARSED_
 test('the long gates are the real-process halves and the deployment rehearsal, read from what each runs', () => {
   assert.deepEqual(repoPlan.filter((gate) => tool.isLongGate(gate)).map((gate) => gate.name), LONG);
   assert.equal(tool.isLongGate({ name: 'renamed', run: 'dotnet test x --settings src/Daoris.Desktop/process.runsettings' }), true);
+  assert.equal(tool.isLongGate({ name: 'renamed', run: 'dotnet test x --settings src/Daoris.Desktop/git.process.runsettings' }), true);
   assert.equal(tool.isLongGate({ name: 'renamed', run: 'npm run rehearse:deploy' }), true);
   assert.equal(tool.isLongGate({ name: 'driver', run: 'dotnet test x --filter Category!=Process' }), false);
   assert.equal(tool.isLongGate({ name: 'rehearse-family', run: 'npm run rehearse:family' }), false);
@@ -440,13 +441,14 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['the web shell', ['src/Daoris.Web/src/App.tsx'], [...BASE, 'service', 'driver', 'modules', 'web']],
     ["the web's settings", ['src/Daoris.Web/src/settings/DriverDomain.tsx'], [...BASE, 'service', 'driver', 'modules', 'web']],
     ['the driver', ['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs'],
-      [...BASE, 'driver', 'modules', 'driver-process', 'modules-process', 'rehearse-family', 'deployment']],
+      [...BASE, 'driver', 'modules', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']],
     ['ServiceHostLocator', ['src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceHostLocator.cs'],
-      [...BASE, 'driver', 'modules', 'driver-process', 'modules-process', 'rehearse-family', 'deployment']],
+      [...BASE, 'driver', 'modules', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']],
     // MOD9e: the page's twin vitests parse these driver sources' declarations, so a change to one runs the web gate as well.
     ...PAGE_PARSED.map((path): [string, string[], string[]] => [`${path.split('/').at(-1)}, which a page twin parses`, [path],
-      [...BASE, 'driver', 'modules', 'driver-process', 'modules-process', 'rehearse-family', 'web', 'deployment']]),
-    ["the driver's tests", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs'], [...BASE, 'driver', 'driver-process']],
+      [...BASE, 'driver', 'modules', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'web', 'deployment']]),
+    // PROC1b: the driver's Process classes run in two halves, one class at a time and the git-only ones four at once.
+    ["the driver's tests", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs'], [...BASE, 'driver', 'driver-process', 'driver-process-git']],
     // GATE6: a browser test is the web gate's alone; no .NET suite reads it (the test below holds that).
     ['a browser test', ['src/Daoris.Web/e2e/platform.spec.ts'], [...BASE, 'web']],
     // MOD9c: the driver's console and occasion scans read every C# source of the modules and the app, from its source root.
@@ -495,6 +497,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
       [...BASE, 'service', 'devkit', 'driver', 'rehearse-family', 'web', 'deployment']],
     ['the devkit', ['src/Daoris.Devkit/Daoris.Devkit.Core/Gates.cs'], [...BASE, 'devkit']],
     ["the Process halves' settings", ['src/Daoris.Desktop/process.runsettings'], [...BASE, 'driver-process', 'modules-process']],
+    // PROC1c: the second file runs only the driver's git-only classes, four at once.
+    ["the git-only classes' settings", ['src/Daoris.Desktop/git.process.runsettings'], [...BASE, 'driver-process-git']],
     ['the declared gates', ['daoris.gates.json'], ALL],
     // Written into every merge and held by its own check, which is in the baseline (ORIENT1a).
     ['the orientation index', ['docs/index/routes.md', 'docs/index/outlines/tools/merge-branch.mjs.md'], BASE],
@@ -510,7 +514,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
   assert.deepEqual(runs(['docs/x.md', 'tools/release-rehearsal.mjs', 'src/Daoris.Desktop/Daoris.Desktop.App/Program.cs']),
     [...BASE, 'service', 'driver', 'modules', 'rehearse']);
 
-  // GATE5's proof: a driver change runs seven gates, and says the long three are in the full set before staging.
+  // GATE5's proof: a driver change runs seven gates, and says the long four are in the full set before staging.
   const driver = selected(['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs']);
   assert.deepEqual(driver.filter((entry) => entry.run).map((entry) => entry.gate.name),
     ['universal', 'code-map', 'orient-index', 'cli', 'driver', 'modules', 'rehearse-family']);
@@ -701,12 +705,13 @@ test('every tool a rehearsal imports or starts is one whose change reaches that 
  * scratch workspace in this repository's layout read as `src/Daoris.Desktop/app/bin`.
  */
 test("every repository file a .NET suite reads is one whose change reaches that suite (MOD9's incident)", () => {
-  const suites: [string, string, string | null][] = [
-    ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/', 'driver', 'driver-process'],
-    ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/', 'modules', 'modules-process'],
-    ['src/Daoris.Service/Daoris.Service.Tests/', 'service', null],
-    ['src/Daoris.Service/Daoris.Service.Http.Tests/', 'service', null],
-    ['src/Daoris.Devkit/Daoris.Devkit.Tests/', 'devkit', null],
+  // A suite's fast gate, its Process half, and the half its Parallel=Git classes run in (PROC1b), where it has one.
+  const suites: [string, string, string | null, string | null][] = [
+    ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/', 'driver', 'driver-process', 'driver-process-git'],
+    ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/', 'modules', 'modules-process', null],
+    ['src/Daoris.Service/Daoris.Service.Tests/', 'service', null, null],
+    ['src/Daoris.Service/Daoris.Service.Http.Tests/', 'service', null, null],
+    ['src/Daoris.Devkit/Daoris.Devkit.Tests/', 'devkit', null, null],
   ];
   const files = trackedFiles();
   const folders = folderSet(files);
@@ -721,6 +726,7 @@ test("every repository file a .NET suite reads is one whose change reaches that 
     if (!suite) continue;
     const text = readFileSync(join(repoRoot, file), 'utf8');
     const isProcess = /\[Trait\(Category\.Name, Category\.Process\)\]/.test(text);
+    const half = /\[Trait\(Category\.Parallel, Category\.Git\)\]/.test(text) ? suite[3] ?? suite[2] : suite[2];
     const found = srcReads(text, files);
     const outside = treeReads(text, files);
     const fromRoot = sourceRootReads(file, text, files);
@@ -736,7 +742,7 @@ test("every repository file a .NET suite reads is one whose change reaches that 
       if (!isReal(read, files, folders)) problems.push(`${file} reads ${read}, which is no file or folder this repository tracks`);
       else if (tool.selectGates(repoPlan, [read], { lanes: repoLanes }).unplaced.length) problems.push(`${file} reads ${read}, which no rule of the lane table places`);
       else if (!runs([read]).includes(suite[1])) problems.push(`${file} reads ${read}, and a merge changing it does not run ${suite[1]}`);
-      else if (isProcess && suite[2] && !reaches([read]).includes(suite[2])) problems.push(`${file} (a Process class) reads ${read}, and a change there does not reach ${suite[2]}`);
+      else if (isProcess && half && !reaches([read]).includes(half)) problems.push(`${file} (a Process class) reads ${read}, and a change there does not reach ${half}`);
     }
   }
   assert.deepEqual(problems, [], 'each a read the lane table does not hold');
@@ -1340,6 +1346,8 @@ const CATALOGUE_FAILURE = [
 
 test('only a gate that runs the Process category is one whose failures may be flakes (MOD8)', () => {
   assert.equal(tool.isProcessGate({ name: 'driver-process', run: 'dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings' }), true);
+  // PROC1c: the git-only classes' half is a Process half too, by its settings file's name: its trx and its alone-rerun hold.
+  assert.equal(tool.isProcessGate({ name: 'driver-process-git', run: 'dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/git.process.runsettings' }), true);
   assert.equal(tool.isProcessGate({ name: 'driver', run: 'dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category!=Process' }), false);
   assert.equal(tool.isProcessGate({ name: 'service', run: 'dotnet test src/Daoris.Service' }), false);
 });
@@ -1903,7 +1911,7 @@ test("a verdict stands until a path that reaches its gate changes: a browser tes
   const w = Object.fromEntries(web.gates.map((gate) => [gate.name, gate]));
   assert.deepEqual(w['web']!.stale!.paths, [spec], 'which path made it stale, the records forgiven');
   assert.equal(w['web']!.stale!.verdict.at, at(9));
-  for (const gate of ['driver', 'driver-process', 'modules', 'modules-process', 'deployment', 'rehearse-family']) {
+  for (const gate of ['driver', 'driver-process', 'driver-process-git', 'modules', 'modules-process', 'deployment', 'rehearse-family']) {
     assert.equal(w[gate]!.verdict!.tree, 'F', gate);
     assert.deepEqual(w[gate]!.standing, { standing: 'unreached', paths: [spec], records: ['TASKS.md', 'docs/decisions/D150.md'] }, gate);
   }
@@ -1913,7 +1921,7 @@ test("a verdict stands until a path that reaches its gate changes: a browser tes
 
   // A driver change voids the driver's verdicts, and every gate it reaches; the page's and the service's stand.
   const driver = tool.stageJudgement({ ...judging('D'), plan: ALL, verdicts: full });
-  assert.deepEqual(driver.missing, inPlan([...BASE, 'driver', 'modules', 'driver-process', 'modules-process', 'rehearse-family', 'deployment']));
+  assert.deepEqual(driver.missing, inPlan([...BASE, 'driver', 'modules', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']));
   const d = Object.fromEntries(driver.gates.map((gate) => [gate.name, gate]));
   assert.deepEqual(d['driver-process']!.stale!.paths, [driverCs]);
   for (const gate of ['service', 'devkit', 'rehearse', 'web']) assert.equal(d[gate]!.standing!.standing, 'unreached', gate);

@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { sentence } from '../locales/format';
 import { keys } from '../data/queries';
-import { useDriverReady } from '../bridge/shell';
+import { useDriverReady, useStateHub } from '../bridge/shell';
 import { type AccountWaitTick, type Consideration, type TrustHold, newsFrom } from '../data/signals';
 import type { Notify } from '../design/ui';
 
@@ -92,6 +92,9 @@ export function ShellSignals({ notify, onAttend }: {
 
   // The driver's service is up (LOOK2a): what it refused while it came up is asked again now, not at the first tick.
   useDriverReady();
+
+  // What a press changed, wherever it was pressed (STATEHUB1b, D169): asked again here at the one place, in every window.
+  useStateHub();
 
   // A failure the driver names is worded from the catalogue, in the reader's language (UX5 U30): a
   // refused connection toasted the .NET socket's own words. Anything else keeps the driver's.

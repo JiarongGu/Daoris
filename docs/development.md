@@ -62,8 +62,11 @@ dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter Category!=P
 ```
 
 Real-process suites use `src/Daoris.Desktop/process.runsettings`; they run serially and may take
-substantial time. Rehearsals also run serially, use repository scratch and record transcripts there.
-Do not overlap them with another full gate run. `npm run test:web` rebuilds the HTTP host: a running
+substantial time. The driver's git-only Process classes, marked `Parallel=Git` beside `Category=Process`,
+run four at once in one host with `src/Daoris.Desktop/git.process.runsettings` (gate `driver-process-git`,
+PROC1c): four at once is load, so that half runs after the serial one, never beside it, and a class
+marked so is run alone with that file, not the other, whose filter leaves it out. Rehearsals also run
+serially, use repository scratch and record transcripts there. Do not overlap them with another full gate run. `npm run test:web` rebuilds the HTTP host: a running
 development instance can hold its assemblies. Identify the owner before stopping a process; do not
 stop an installed application or an unrelated host merely to unblock a build.
 

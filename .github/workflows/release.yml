@@ -270,7 +270,8 @@ jobs:
       # Each desktop suite runs as two gates (MOD8): the tests that start real processes or run real
       # ticks carry the `Process` category and run one class at a time after the rest
       # (`process.runsettings`), which is how the parent's merge runs them too. They are the ones load
-      # has failed (FLAKE1).
+      # has failed (FLAKE1). The driver's git-only Process classes, marked `Parallel=Git` as well, run
+      # four at once in a third gate of their own (`git.process.runsettings`, PROC1c).
       - name: Driver gate
         run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category!=Process --nologo
 
@@ -281,6 +282,9 @@ jobs:
 
       - name: Driver process gate
         run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings --nologo
+
+      - name: Driver git process gate
+        run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/git.process.runsettings --nologo
 
       - name: Desktop modules process gate
         run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --settings src/Daoris.Desktop/process.runsettings --nologo

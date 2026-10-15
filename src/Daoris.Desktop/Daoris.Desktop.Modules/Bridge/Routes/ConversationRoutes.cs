@@ -203,9 +203,11 @@ public sealed class ConversationRoutes(DriverContext context)
     // `id` is the one SESSION_QUEUE and SESSION_QUEUED name it by. With no text it removes the word; with some it replaces its
     // words where it waits, order and files kept, under a new id. A turn that took it already is the answer `{ done: false,
     // why: "taken" }`, as a stop with nothing to stop is: the page asking a moment late deserves no error. Refused for a
-    // session that takes no input, as CANCEL_TURN is. The queue tells every list as it moves (SESSION_QUEUED).
+    // session that takes no input, as CANCEL_TURN is. The queue tells every list as it moves (SESSION_QUEUED). A word nothing
+    // here holds may wait on the session's record, parked or ended (SAIDBACK1b): the service's take-back door answers for it,
+    // and refuses what never goes on in its own sentence.
     [DriverRoute("SESSION_QUEUE_EDIT")]
-    private object? SessionQueueEdit(IpcRequest request)
+    private async Task<object?> SessionQueueEditAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -229,6 +231,13 @@ public sealed class ConversationRoutes(DriverContext context)
         {
             if (_loop.Processes.RefusesInput(session) is { } why) throw new DriverException(why);
             edit = _loop.Chat?.EditQueued(session, id, text) ?? QueueEdit.Taken;
+        }
+
+        // Neither holds it: the record's words, which only the service can take back (SAIDBACK1b). A record that runs again
+        // answers taken there, so a word a live turn took a moment ago is still the answer it was.
+        if (edit == QueueEdit.Taken)
+        {
+            edit = await _loop.Words.TakeBackAsync(session, id, text, cancellationToken).ConfigureAwait(false);
         }
 
         return edit == QueueEdit.Done ? new { Done = true } : new { Done = false, Why = "taken" };
@@ -260,7 +269,8 @@ public sealed class ConversationRoutes(DriverContext context)
     }
 
     // Where a conversation's turns stand (CONV4a): whether one is in flight, and what is waiting.
-    // A page that just opened it asks once, and takes every change after that as `SESSION_QUEUED`.
+    // A page that just opened it asks once, and takes every change after that as `SESSION_QUEUED`. What waits on a parked or
+    // ended record is read with the record (SAIDBACK1b), so it is listed here and in each `SESSION_QUEUED` the record tells.
     [DriverRoute("SESSION_QUEUE")]
     private async Task<object?> SessionQueueAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -279,14 +289,23 @@ public sealed class ConversationRoutes(DriverContext context)
     /// moment longer. Whether the page offers a box is <c>reaches</c> and <c>why</c>'s: what a word said now would do (D137
     /// §5.3), and why nothing takes one, which is when it draws the line instead. <c>reach</c> says the same as an object
     /// (<see cref="ReachOf"/>), which tells a page this shell follows it live.
+    ///
+    /// <c>Queued</c> is what an inbox or a conversation's turns hold here, or, where neither holds any, the person's words
+    /// waiting on the record as <paramref name="reach"/> read it (SAIDBACK1b): each by its id, which <c>SESSION_QUEUE_EDIT</c>
+    /// takes back through the service. Read with the reach, never apart from it, so this answer stays whole and synchronous
+    /// for <c>SESSION_QUEUED</c>, and a record that tells its reach again lists its words again, never an empty list over them.
     /// </remarks>
     internal static object QueueAnswer(DriverLoop loop, string id, WordsAnswer reach)
     {
         var inbox = loop.Processes.InboxOf(id);
-        var queue = inbox?.State ?? loop.Chat?.Queue(id) ?? ChatQueue.Idle;
+        // Ask Daoris's conversation still starting holds its words itself, opening (HELPSTART1).
+        var queue = loop.HelpStarting.Queue(id) ?? inbox?.State ?? loop.Chat?.Queue(id) ?? ChatQueue.Idle;
+        var queued = inbox is null && queue.Queued.Count == 0 && reach.Waiting is { } waiting
+            ? waiting.Select(Said).ToArray()
+            : queue.Queued.Select(Said).ToArray();
         return new
         {
-            Session = id, Queued = queue.Queued.Select(Said).ToArray(), queue.Taking, queue.Opening,
+            Session = id, Queued = queued, queue.Taking, queue.Opening,
             Listening = inbox is { State.Taking: true },
             // When its last turn ended here (RAIL2), the page's "moved" for a live chat.
             LastTurn = queue.LastTurnEnded,
@@ -361,4 +380,7 @@ public sealed class ConversationRoutes(DriverContext context)
     /// </summary>
     public static object Said(ChatMessage message) =>
         new { message.Id, message.Text, Files = message.Files.Select(file => file.Name).ToArray() };
+
+    /// <summary>A word waiting on a record (SAIDBACK1b) in the same shape: its id on the record, its words, its files' names.</summary>
+    public static object Said(WaitingWord word) => new { word.Id, word.Text, Files = word.Files.ToArray() };
 }

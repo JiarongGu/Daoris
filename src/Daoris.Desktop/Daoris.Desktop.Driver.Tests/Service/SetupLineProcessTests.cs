@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the checkout says it holds links as text, and what is uncommitted, or on another branch, is never read.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class SetupLineProcessTests : IDisposable
 {
     private readonly string _scratch = Path.Combine(RepoRoot(), "_fixtures", "setup-line", Guid.NewGuid().ToString("N")[..8]);

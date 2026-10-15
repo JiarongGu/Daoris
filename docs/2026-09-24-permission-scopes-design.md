@@ -218,7 +218,8 @@ tool.
 - **The person answers a widening from either door**: `daoris agent rules proposals | accept <id> |
   decline <id> [--note "…"]`, and the card's *Proposed by agents* section, where earlier proposals are
   one press away. A waiting widening is also a `rule` row in *What needs you*, whose door opens this
-  card. Both are desktop only.
+  card. A session's own open proposals are answered in its conversation too, at its head and its
+  foot, where an *Allow* also tells the session (D74's PROPOSEHERE1b note). All are desktop only.
 - **Every change is recorded with who made it**: the session by id (and its ask, for an intake), the
   driver or the person who settled it, and the note that says why.
 

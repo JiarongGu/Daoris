@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { getBridge, useShenora } from '@shenora/react';
-import { effectiveDark, subscribeTheme } from '../design/theme';
+import { ColorScheme, getBridge, useShenora } from '@shenora/react';
+import { effectiveDark, subscribeTheme, themeChoice } from '../design/theme';
 
-// This build's secondary windows (MOD3): opening one, and telling its frame the theme.
+// This build's secondary windows (MOD3): opening one, and telling its frame the theme; and telling the engine every
+// window renders on the viewer's choice (THEMESCHEME1).
 
 /**
  * Open one of this build's secondary windows (D55 §b, SURF8): the monitor, or one session detached.
@@ -30,10 +31,11 @@ export const useOpenWindow = () => useMutation({
  * window was opened under — on arrival, when the viewer's choice changes, and when the OS does. The
  * main window's frame is told by Shenora's `SET_THEME`; a second window's has no route there (0.17:
  * NO_ROUTE), so it goes through Daoris's own window module. Fire and forget: a window that cannot be
- * told keeps the OS's caption, which is what it had before.
+ * told keeps the OS's caption, which is what it had before. The engine is told the choice too (`useEngineTheme`).
  */
 export function useSecondaryWindowTheme(name: string) {
   const { isAvailable } = useShenora();
+  useEngineTheme();
   useEffect(() => {
     if (!isAvailable) return undefined;
     const tell = () => {
@@ -48,4 +50,38 @@ export function useSecondaryWindowTheme(name: string) {
       stop();
     };
   }, [isAvailable, name]);
+}
+
+/**
+ * The viewer's choice told to the engine every window renders on (THEMESCHEME1), on arrival and each time it changes,
+ * here or in another window: the kit's colour scheme (`SHENORA.COLOR_SCHEME`), which the engine applies to the one
+ * Chromium the main window and each secondary window share. So Chromium's own UI and `prefers-color-scheme` follow an
+ * explicit light or dark, and *System* still follows the OS.
+ *
+ * @remarks
+ * **The choice, never the effective theme.** A scheme held at the OS's theme of the moment answers the very media
+ * query this page reads the OS through, so a viewer on System would stop following the OS. Turning back to System, a
+ * frame is told the held theme first and the OS's a round trip later, as the scheme lands and the media query changes.
+ * Fire and forget: an engine that cannot be told keeps following the OS, as it did before.
+ */
+export function useEngineTheme() {
+  const { isAvailable } = useShenora();
+  useEffect(() => {
+    if (!isAvailable) return undefined;
+    let scheme: ColorScheme;
+    try {
+      scheme = new ColorScheme();
+    } catch {
+      // No bridge to make the client on: nothing to tell.
+      return undefined;
+    }
+    const tell = () => {
+      void scheme.set(themeChoice()).catch(() => {});
+    };
+    tell();
+    const stop = subscribeTheme(tell);
+    return () => {
+      stop();
+    };
+  }, [isAvailable]);
 }

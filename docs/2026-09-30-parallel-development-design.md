@@ -72,6 +72,8 @@ that hold today's behaviour are what prove it.
    rest. FLAKE1's classes are exactly the ones that fail under another worktree's load. Built (MOD8):
    the trait is on the class, each desktop suite is two declared gates (`--filter Category!=Process`,
    and `--settings src/Daoris.Desktop/process.runsettings`, serial), and a dogfood test holds the pair.
+   The driver's git-only Process classes, marked `Parallel=Git` too, run four at once in a third gate
+   (`git.process.runsettings`, PROC1c); `development.md` gives the rule.
 6. **One merge tool.** `tools/merge-branch.mjs` merges `--no-ff --no-commit`, stops on a conflict it
    cannot resolve and names the files, then runs the declared gates in order, fast first. It keeps
    every gate's whole output under `local/scratch/`. This replaces the hand-typed chains, one of which

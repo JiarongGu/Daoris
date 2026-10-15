@@ -7,6 +7,10 @@
   declares both halves of each suite, and each test project's Category.cs says which classes carry
   the trait, and why.
 
+  The driver's git-only classes, marked Parallel=Git as well (PROC1b), are left to git.process.runsettings,
+  which runs them four at once; a suite that marks none, as the modules' marks none, runs every Process
+  class here. A test without the second trait is Parallel!=Git, as one without a category is Category!=Process.
+
   A file, not a run-settings argument at the end of the command line: VSTest ANDs this filter with any
   filter the caller adds, so the merge tool can re-run one failed test alone by adding its own. Whatever
   is appended after a trailing run-settings argument is read as one more: measured, that re-run built
@@ -14,7 +18,7 @@
 -->
 <RunSettings>
   <RunConfiguration>
-    <TestCaseFilter>Category=Process</TestCaseFilter>
+    <TestCaseFilter>Category=Process&amp;Parallel!=Git</TestCaseFilter>
   </RunConfiguration>
   <xUnit>
     <ParallelizeTestCollections>false</ParallelizeTestCollections>

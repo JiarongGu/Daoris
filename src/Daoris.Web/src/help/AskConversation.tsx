@@ -8,7 +8,7 @@ import { useHelpSessions } from '../data/queries';
 import {
   HELP_HISTORY, type HelpSettled, NO_TURNS, useCancelTurn, useChatTurns, useDeleteSession, useEditQueued, useEndChat, useHarnesses,
   useHelpConversations, useHelpProposals, useHelpReadied, useHelpStartFrom, usePinHelp, useRenameHelp, useSendMessage,
-  useSettleHelp, useStartHelp, useStopSession,
+  useSessionEvents, useSettleHelp, useStartHelp, useStopSession, stoppedWaiting,
 } from '../bridge/shell';
 import { useHeldHarnessRun } from '../agents/harnessRuns';
 import { Button, Prose, SESSION_ACTIVE } from '../design/ui';
@@ -27,6 +27,37 @@ import { logEvent } from '../bridge/shell';
 
 /** How often the list is asked again while words to an ended conversation wait for it to go on (ASKHIST1). */
 const GOING_ON_POLL = 1500;
+
+/**
+ * How far before its send a record's words may be stamped and still be the words sent (SENDLOST1): the record's time is the
+ * driver's, the send's the page's, on one machine.
+ */
+const SAID_SKEW = 5000;
+
+/** The words that open a conversation (HELP4), with their files, and the conversation that takes them once known. */
+type FirstWords = {
+  words: ChatMessage;
+  files: File[];
+  session?: string;
+  /**
+   * Where the page stopped waiting on the start (SENDLOST1): the conversations listed as the words were said, when it stopped,
+   * and its sentence, said if nothing took them.
+   */
+  late?: { before: string[]; at: number; why: string };
+};
+
+/** Words on their way to one conversation (SENDLOST1), shown the moment they are sent until it holds them. */
+type Sent = {
+  /** Which send, so its answer settles its own words. */
+  n: number;
+  words: ChatMessage;
+  files: File[];
+  session: string;
+  /** When they were sent, on the page's clock. */
+  at: number;
+  /** The page stopped waiting on the send (the bridge's TIMEOUT): the machine may still take them. */
+  late: boolean;
+};
 
 /** What the person is writing to one conversation: its words and its files (ASKHIST1c). */
 type Draft = { text: string; carry: Carry };
@@ -198,19 +229,27 @@ export function useAskConversation(
   // agent spawned — and they showed nowhere meanwhile, so they read as lost. Held here until the
   // driver's queue answers for the conversation they opened, which shows them from then on: let go
   // any sooner, they vanished while the session list caught up. One that ended at once has no queue
-  // to answer, and its record says what became of them.
-  const [firstWords, setFirstWords] = useState<{ words: ChatMessage; session?: string } | null>(null);
+  // to answer, and its record says what became of them. `late` where the page stopped waiting on the start (SENDLOST1).
+  const [firstWords, setFirstWords] = useState<FirstWords | null>(null);
   const handedOver = firstWords?.session !== undefined && shown?.id === firstWords.session
     && (!live || held[firstWords.session] !== undefined);
   useEffect(() => {
     if (handedOver) setFirstWords(null);
   }, [handedOver]);
   const waiting = firstWords && !handedOver ? firstWords.words : null;
-  // 🔴 A message that did not arrive goes back into the box it was written in, its files with it, never lost (the composer's
-  // own rule).
-  const giveBack = (key: string, text: string, files: File[], why: string) => {
+  // Words on their way to a conversation (SENDLOST1): shown the moment they are sent, until it holds them.
+  const [sent, setSent] = useState<Sent[]>([]);
+  const sends = useRef(0);
+  // The box shown now: a message given back after the list moved on goes where the person can see it. Words to a
+  // conversation the list then shows ended were given back to a box no longer drawn, and read as lost (SENDLOST1).
+  const box = useRef(draftKey);
+  useEffect(() => {
+    box.current = draftKey;
+  }, [draftKey]);
+  // 🔴 A message that did not arrive goes back into the box, its files with it, never lost (the composer's own rule).
+  const giveBack = (text: string, files: File[], why: string) => {
     setRefusal(why);
-    editDraft(key, (was) => ({
+    editDraft(box.current, (was) => ({
       text: [text, was.text.trim()].filter(Boolean).join('\n\n'),
       carry: { ...was.carry, files: [...files, ...was.carry.files] },
     }));
@@ -218,14 +257,26 @@ export function useAskConversation(
 
   // The last preface each conversation was handed, so an unchanged screen is not said again.
   const told = useRef(new Map<string, string>());
-  const deliver = (id: string, text: string, files: File[], key: string, lost?: () => void) => {
+  /**
+   * The person's words to one conversation. Words to the one running are shown at once, as sending; first words are shown as
+   * opening it already, and `lost` lets them go. 🔴 A send the page stopped waiting on (the bridge's TIMEOUT) may still be taken
+   * by the machine: its words are kept, saying so, and never put back in the box, where a second send would say them twice
+   * (SENDLOST1). They settle by the conversation's own record or the list's next read.
+   */
+  const deliver = (id: string, text: string, files: File[], lost?: () => void) => {
     const now = where ? prefaceOf(where) : undefined;
     const preface = now && told.current.get(id) !== now ? now : undefined;
+    const n = ++sends.current;
+    const words: ChatMessage = { text, files: files.map((file) => file.name) };
+    const at = Date.now();
+    if (!lost) setSent((all) => [...all, { n, words, files, session: id, at, late: false }]);
+    const done = () => setSent((all) => all.filter((each) => each.n !== n));
     send.mutate({ id, text, files, ...(preface ? { preface } : {}) }, {
       onSuccess: (answer) => {
+        done();
         if (!answer.sent) {
           lost?.();
-          giveBack(key, text, files, t('help.notSent'));
+          giveBack(text, files, t('help.notSent'));
           return;
         }
         if (preface) told.current.set(id, preface);
@@ -239,57 +290,107 @@ export function useAskConversation(
         }
       },
       onError: (error) => {
+        if (stoppedWaiting(error)) {
+          setSent((all) => [...all.filter((each) => each.n !== n), { n, words, files, session: id, at, late: true }]);
+          lost?.();
+          void sessions.refetch();
+          return;
+        }
+        done();
         lost?.();
-        giveBack(key, text, files, sentence(error));
+        giveBack(text, files, sentence(error));
       },
     });
   };
+
+  // Words whose send the page stopped waiting on, to the conversation shown (SENDLOST1), settled by its own record: let go
+  // once its record or its queue holds them, and given back, said so, once it ended without them, since they never arrived.
+  const lateShown = shown ? sent.filter((each) => each.late && each.session === shown.id) : [];
+  const record = useSessionEvents(lateShown.length > 0 ? shown!.id : null);
+  useEffect(() => {
+    if (lateShown.length === 0) return;
+    const holds = (each: Sent) => turns.queued.some((queued) => queued.text === each.words.text)
+      || record.events.some((event) => event.kind === 'user' && event.origin === 'person' && event.text === each.words.text
+        && Date.parse(event.at) >= each.at - SAID_SKEW);
+    const arrived = lateShown.filter(holds);
+    const never = !live && record.loaded ? lateShown.filter((each) => !holds(each)) : [];
+    if (arrived.length === 0 && never.length === 0) return;
+    const settled = new Set([...arrived, ...never].map((each) => each.n));
+    setSent((all) => all.filter((each) => !settled.has(each.n)));
+    for (const each of never) giveBack(each.words.text, each.files, t('help.notSent'));
+    // Asked again as the record, the queue or the list moves; the words themselves are read from this render.
+  }, [record.events, record.loaded, turns.queued, live, lateShown.length]);
 
   // The opening ahead still on its way (HELP5): what it answers, the conversation it opened or null.
   const ahead = useRef<Promise<string | null> | null>(null);
   // First words waiting on that answer: the box holds its fire, as it does while a send opens one.
   const [joining, setJoining] = useState(false);
 
+  // First words handed to the conversation that takes them: seen from now on, in both hosts, however late an opening's
+  // answer arrives, and shown as the conversation now, whichever the person had chosen (ASKHIST1).
+  const handFirst = (id: string, words: ChatMessage, files: File[]) => {
+    help.spoke(id);
+    setCleared(null);
+    setChosen(null);
+    setFirstWords({ words, files, session: id });
+    // Called by its first question, as the driver will call it, until the history says so (ASKHIST1c).
+    const first = words.text.split('\n', 1)[0]!.trim();
+    if (first) setSpoken({ session: id, title: first });
+    deliver(id, words.text, files, () => setFirstWords(null));
+  };
+
+  // First words whose start the page stopped waiting on (SENDLOST1), settled by the list's next read: the driver may have
+  // opened their conversation all the same, and the one it lists now that it did not when they were said takes them, once.
+  // Where it lists none, nothing took them, and they go back in the box with why.
+  useEffect(() => {
+    const words = firstWords;
+    if (!words?.late || words.session !== undefined || sessions.dataUpdatedAt <= words.late.at) return;
+    const late = words.late;
+    const opened = helpSessions.find((session) => SESSION_ACTIVE.has(session.state) && !late.before.includes(session.id));
+    if (opened) {
+      handFirst(opened.id, words.words, words.files);
+      return;
+    }
+    setFirstWords(null);
+    giveBack(words.words.text, words.files, late.why);
+    // Only the list's next read settles them.
+  }, [sessions.dataUpdatedAt, firstWords?.late]);
+
   const onSend = (text: string, files: File[]) => {
     logEvent('message.sent', { kind: 'help', length: text.length, files: files.length, ...(shown && (live || goesOn) ? { session: shown.id } : {}) });
     setRefusal(null);
-    // The box the words came from, which takes them back if they do not arrive.
-    const key = draftKey;
     // The one running, or one that ended the person chose and that goes on in itself (ASKHIST1).
     if (shown && (live || goesOn)) {
       if (startedFrom?.session === shown.id) setStartedFrom(null);
-      deliver(shown.id, text, files, key);
+      deliver(shown.id, text, files);
       return;
     }
 
     const said = { text, files: files.map((file) => file.name) };
-    setFirstWords({ words: said });
-    const handTo = (id: string) => {
-      // Seen from now on, in both hosts, however late an opening's answer arrives.
-      help.spoke(id);
-      setCleared(null);
-      // A new conversation is the one shown now, whichever the person had chosen (ASKHIST1).
-      setChosen(null);
-      setFirstWords({ words: said, session: id });
-      // Called by its first question, as the driver will call it, until the history says so (ASKHIST1c).
-      const first = text.split('\n', 1)[0]!.trim();
-      if (first) setSpoken({ session: id, title: first });
-      deliver(id, text, files, key, () => setFirstWords(null));
-    };
+    // The conversations listed as the words are said: one listed later is one opened for them.
+    const before = helpSessions.map((session) => session.id);
+    setFirstWords({ words: said, files });
+    const handTo = (id: string) => handFirst(id, said, files);
     const begin = () => start.mutate(undefined, {
       // The driver's own sentence when it cannot: no agent named, the agent signed out, one already
       // running elsewhere. Shown where the person pressed send, whole.
       onSuccess: (answer) => {
         if (!answer.sessionId) {
           setFirstWords(null);
-          giveBack(key, text, files, answer.message);
+          giveBack(text, files, answer.message);
         } else {
           handTo(answer.sessionId);
         }
       },
       onError: (error) => {
+        if (stoppedWaiting(error)) {
+          // SENDLOST1: kept, saying the machine has not answered yet, and the list read again.
+          setFirstWords({ words: said, files, late: { before, at: Date.now(), why: sentence(error) } });
+          void sessions.refetch();
+          return;
+        }
         setFirstWords(null);
-        giveBack(key, text, files, sentence(error));
+        giveBack(text, files, sentence(error));
       },
     });
 
@@ -502,6 +603,10 @@ export function useAskConversation(
     />
   ) : null;
 
+  // The words on their way shown with the conversation they were said to, or with none while the list has not listed it yet.
+  const going = sent.filter((each) => each.session === shown?.id || !helpSessions.some((session) => session.id === each.session));
+  const unanswered = Boolean(firstWords?.late) || going.some((each) => each.late);
+
   // No box under one the person chose that cannot go on, or is still being checked (ASKHIST1c): words typed there started a
   // fresh conversation without its own, the press offering one from its words below the transcript, perhaps out of view.
   const composer = readOnly ? null : (
@@ -519,9 +624,13 @@ export function useAskConversation(
       carried={draft.carry}
       onCarry={(carry) => editDraft(draftKey, (was) => ({ ...was, carry }))}
       focus={focusBox}
-      queued={waiting ? [waiting, ...turns.queued] : turns.queued}
-      // Words waiting on the conversation opening, rather than on a turn, are said as Ask Daoris opening.
-      queuedLabel={waiting || turns.opening || !turns.taking ? t('help.opening') : undefined}
+      queued={[...(waiting ? [waiting] : []), ...going.map((each) => each.words), ...turns.queued]}
+      // Words the machine has not answered for are said so (SENDLOST1); words waiting on the conversation opening, rather
+      // than on a turn, are said as Ask Daoris opening; words on their way to the one running, as sending.
+      queuedLabel={unanswered ? t('help.unanswered')
+        : waiting ? t('help.opening')
+          : going.length > 0 ? t('help.sending')
+            : turns.opening || !turns.taking ? t('help.opening') : undefined}
       taking={turns.taking}
       stoppable={structured === true}
       stopping={cancelTurn.isPending}

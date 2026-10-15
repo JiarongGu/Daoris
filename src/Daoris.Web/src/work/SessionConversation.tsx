@@ -6,17 +6,27 @@ import { searchable } from '../lib/searchable';
 import { useHarnesses, useSessionEvents, useSessionSearch } from '../bridge/shell';
 import { Icon } from '../design/ui';
 import { accountNames } from './accountNames';
-import { firstAnswerWait, settle, toTurns, type Turn, type Usage } from './conversation';
+import { type AnchorAsks, type Anchors, anchorsOf, type AnchorWait, marksOf } from './anchors';
+import { firstAnswerWait, lastWords, settle, toTurns, type Usage } from './conversation';
 import { ConversationFind } from './ConversationFind';
 import { type Cooling, ConversationView } from './ConversationView';
 import type { ReasonValues } from './say';
 import { useFollowTail } from './followTail';
+import type { Wait } from './waits';
 
 /** How many blocks a conversation holds before it is offered a way through (SESS1 S9). */
 const LONG = 20;
 
 /** Whether the reader is at the conversation's tail, and the way there: what a host that draws the press is told. */
 export type TailState = { atTail: boolean; toTail: () => void };
+
+/**
+ * The waits whose raising event the conversation holds, or may hold on a page before, and the way to one (WAITFOOT1c, D168
+ * point 4): what a host that draws *In the conversation* is told.
+ */
+export type AnchorState = { anchored: AnchorWait[]; show: (wait: AnchorWait) => void };
+
+const NO_ANCHORS: Anchors = { held: {}, earlier: [] };
 
 /**
  * *Back to bottom* as a press of its own (ASKHIST1c): 28 px, for a strip its host keeps outside the transcript, so it takes
@@ -50,13 +60,28 @@ export function BackToBottom({ onPress, className }: { onPress: () => void; clas
  *
  * **A long run gets a way through** (SESS1 S9): a jump to where it first failed and to its last words,
  * and a search within it. **A jump lands on an event**: the pages before it are loaded until it is
- * held, then its block is shown, its fold open, and scrolled to.
+ * held, then its block is shown, its fold open, and scrolled to. The frame jumps too, to the event that raised a wait on the
+ * person (WAITFOOT1c, `onAnchors`).
  *
  * Desktop-only for the console's reason (D47 §4): the record arrives over the bridge.
  */
 export function SessionConversation({
   session, adapter, chat = false, tree, live, turnRunning, scroller, onUsage, onWaiting, onSession, onStartFrom, reasons, cooling, onTail,
+  waits, onAnchors, onToWait,
 }: {
+  /**
+   * What waits on the person in this session, and what its joins name (WAITFOOT1c, D168 point 4): the waits that stand, its
+   * go-aheads, the opinion the landing's gate names. Each is anchored to the event that raised it where the join finds one.
+   */
+  waits?: Omit<AnchorAsks, 'session'>;
+  /**
+   * Told which waits it holds the raising event of, and the way to one, on a change only (WAITFOOT1c): the jump this organism
+   * kept to itself, the frame's to press, as `onTail` is. Pressed, the event is shown and outlined, the pages before it loaded
+   * first where it is older than the page.
+   */
+  onAnchors?: (session: string, anchors: AnchorState) => void;
+  /** Go to a wait's line where it is answered: the raising block's *To the wait*. Absent, no block is marked. */
+  onToWait?: (wait: Wait) => void;
   /**
    * Told whether the reader is at the tail and how to go there (ASKHIST1c), where the host draws *Back to bottom* in a strip
    * of its own outside the transcript (`BackToBottom`). Absent, the press is drawn at the transcript's foot, as before.
@@ -142,10 +167,14 @@ export function SessionConversation({
   const [reveal, setReveal] = useState<{ key: string; n: number } | null>(null);
   const show = (key: string) => setReveal((was) => ({ key, n: (was?.n ?? 0) + 1 }));
 
+  // The wait a press is headed for, until the page holds the event that raised it (WAITFOOT1c).
+  const [seeking, setSeeking] = useState<AnchorWait | null>(null);
+
   useEffect(() => {
     setQuery('');
     setPending(null);
     setReveal(null);
+    setSeeking(null);
   }, [session]);
   useEffect(() => { setAt(0); }, [found.data]);
 
@@ -163,6 +192,42 @@ export function SessionConversation({
       setPending(null);
     }
   }, [pending, where, earlier, loadEarlier]);
+
+  // Where each wait was raised (WAITFOOT1c, D168 point 4), read from what the page holds: the asks compared by value, since the
+  // frame hands a new object on every render.
+  const asked = JSON.stringify(waits ?? null);
+  const from = events[0]?.at;
+  const anchors = useMemo(
+    () => (waits ? anchorsOf(turns, { ...waits, session }, { earlier, from }) : NO_ANCHORS),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `asked` stands for `waits`
+    [turns, asked, session, earlier, from],
+  );
+  const marks = useMemo(() => (onToWait && waits ? marksOf(waits.waits, anchors.held) : undefined),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `asked` stands for `waits`
+    [anchors, asked, Boolean(onToWait)]);
+  const anchored = [...Object.keys(anchors.held), ...anchors.earlier] as AnchorWait[];
+  const said = anchored.join(' ');
+  const tellAnchors = useRef(onAnchors);
+  tellAnchors.current = onAnchors;
+  useEffect(() => {
+    tellAnchors.current?.(session, { anchored: said ? said.split(' ') as AnchorWait[] : [], show: setSeeking });
+  }, [session, said]);
+  useEffect(() => () => tellAnchors.current?.(session, { anchored: [], show: () => {} }), [session]);
+
+  // 🔴 A press for a wait whose event the page does not hold loads the pages before until it does, as a jump to an event does,
+  // and gives up where none are left or the join says it would be held by now.
+  useEffect(() => {
+    if (seeking === null) return;
+    const key = anchors.held[seeking];
+    if (key) {
+      show(key);
+      setSeeking(null);
+    } else if (earlier && anchors.earlier.includes(seeking)) {
+      void loadEarlier();
+    } else {
+      setSeeking(null);
+    }
+  }, [seeking, anchors, earlier, loadEarlier]);
 
   useEffect(() => {
     if (!reveal) return;
@@ -198,6 +263,8 @@ export function SessionConversation({
         reasons={reasons}
         cooling={cooling}
         names={names}
+        marks={marks}
+        onToWait={onToWait}
         toolbar={long ? (
           <ConversationFind
             hasFailure={firstFailure !== null}
@@ -223,15 +290,4 @@ export function SessionConversation({
       )}
     </>
   );
-}
-
-/** The key of the last thing the agent said, where it said anything. */
-function lastWords(turns: readonly Turn[]): string | undefined {
-  for (let turn = turns.length - 1; turn >= 0; turn -= 1) {
-    const items = turns[turn]!.items;
-    for (let item = items.length - 1; item >= 0; item -= 1) {
-      if (items[item]!.kind === 'message') return items[item]!.key;
-    }
-  }
-  return undefined;
 }
