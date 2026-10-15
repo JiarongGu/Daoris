@@ -37,6 +37,9 @@ public sealed class MainForm : OptimizedForm
     private readonly HostSupervisor _supervisor;
     private readonly SessionNotifier _notifier;
     private readonly TaskbarBadge _badge;
+    private readonly Daoris.Driver.MachineLog _log;
+    // When the splash comes down (SPLASHDATA1): the page's word that its first screen has its data, or the bound.
+    private readonly SplashLift _lift = new();
     private ChromePalette _palette;
     private Label? _trouble;
 
@@ -50,7 +53,8 @@ public sealed class MainForm : OptimizedForm
         HostSupervisor supervisor,
         IColorScheme colorScheme,
         ILogger<ChromiumView>? viewLog = null,
-        UiStallWatch? watch = null)
+        UiStallWatch? watch = null,
+        Daoris.Driver.MachineLog? log = null)
         : base(new OptimizedFormOptions
         {
             FramelessChrome = true,
@@ -70,6 +74,7 @@ public sealed class MainForm : OptimizedForm
         _viewLog = viewLog ?? NullLogger<ChromiumView>.Instance;
         _driver = driver;
         _supervisor = supervisor;
+        _log = log ?? Daoris.Driver.MachineLog.None;
         _palette = StartingPalette(colorScheme);
 
         // Still set: it is the taskbar's label and the caption of the one MessageBox left. While anything
@@ -110,7 +115,8 @@ public sealed class MainForm : OptimizedForm
         MinimumSize = new Size(960, 600);
         CaptionButtonColors = CaptionColors(_palette);
 
-        // The view comes once the host answers (BringUpAsync); the splash holds the window till then.
+        // The view comes once the host answers (BringUpAsync); the splash holds the window till then, and on until the
+        // page's first screen has its data (SPLASHDATA1).
         _splash = new SplashPanel(new SplashPanelOptions { BackColor = _palette.Page });
         Controls.Add(_splash);
         _splash.BringToFront();
@@ -129,6 +135,8 @@ public sealed class MainForm : OptimizedForm
             // The page's rectangles are read against the view that sent them (ChromiumView), per
             // monitor, so no coordinate space is named here.
             SetCaptionButtons = SetCaptionButtons,
+            // The page's CLOSE_SPLASH (SPLASHDATA1): its first screen has its data. Only the main window's page reaches it.
+            CloseSplash = _lift.PageSaid,
         }));
 
         // The OS notification (SURF5b), which closes driver design open question 5: a session that
@@ -285,6 +293,10 @@ public sealed class MainForm : OptimizedForm
             _splash.BringToFront();
 
             if (view.Browser is { } browser) await browser.Created;
+
+            // Down once the page says its first screen has its data (SPLASHDATA1), not as its browser is made, which
+            // lifted it onto an empty frame; at the bound, said in the log, when the page never says.
+            await _lift.WaitAsync(_log, SplashLift.Bound);
             if (!_splash.IsDisposed)
             {
                 Controls.Remove(_splash);
