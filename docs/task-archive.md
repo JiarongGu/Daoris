@@ -15075,3 +15075,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **REWORDBOUND1 — a reword keeps the box's bound** (web). A reword through *Edit* skips the box's `accepts` check, so on the native door it can exceed the command line's 32,767-character bound new words are refused at. D137 §2.4. Proof: a `SessionBox`/`Composer` test where an over-long reword is refused and the text stays in the box.
 
 **Outcome** 2026-10-16: the composer's reword path asks the box's `accepts` as a send does, and an over-long reword stays in the box, still editing, with nothing sent (`Composer.test`, seen failing first). On Sonnet, with NOTIFY1d. Detail: `work/Composer.tsx`.
+
+## HELPROOM1 — why the room's session look took 25 s (2026-10-16, D161)
+
+> - [ ] **HELPROOM1 — why the room's session look took 25 s** (modules). The look's steps are timed in the `help.room.look` line (`recordsMs`, `questsMs`, `verdictsMs`, `marksMs`, `waitingMs`, `treesMs`, `trees`); read a fresh (`kept` false) line on the install and shorten whichever step dominates (the git check judges the trees one after another; a slow `treesMs` over many `trees` points there). D161's HELPROOM1 note. Proof: the step times on the install, then the shortening's own test.
+
+**Outcome** 2026-10-16: timed, and not shortened, since nothing on the install is slow to shorten. The line carries each step's time (HELPSTART1b's branch). The install's only slow looks were two at 06:42-06:43 UTC on 2026-10-15 (24.9 s and 24.3 s), while three branch-workers and the gates ran on the machine; every fresh look since took 51-198 ms, and the rest reuse the loop's kept look (0 ms). A person's start no longer waits on the room either way (HELPSTART1, HELPSTART1b). A slow line from now on names its step. On Sonnet, with HELPSTART1b. Detail: D161's HELPROOM1 note; `HelpRoomLookLog`.
