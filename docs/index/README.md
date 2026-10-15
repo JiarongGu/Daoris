@@ -162,7 +162,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `tools/deployment-rehearsal.mjs` | 100 | 1751 |
-| `tools/desktop-publish.mjs` | 62 | 1114 |
+| `tools/desktop-publish.mjs` | 63 | 1116 |
 | `tools/desktop.mjs` | 51 | 1052 |
 | `tools/family-rehearsal.mjs` | 340 | 5983 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
@@ -181,7 +181,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-09-21-working-surface-components.md` | 53 | 353 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |
 | `docs/2026-09-26-ux5-screen-audit.md` | 46 | 141 |
-| `docs/2026-09-30-machine-log-design.md` | 52 | 494 |
+| `docs/2026-09-30-machine-log-design.md` | 52 | 495 |
 | `docs/2026-10-01-account-rotation-design.md` | 52 | 613 |
 | `docs/2026-10-01-agent-layout-design.md` | 59 | 790 |
 | `docs/2026-10-01-development-documents-design.md` | 62 | 825 |

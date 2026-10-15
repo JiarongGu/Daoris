@@ -171,6 +171,11 @@ internal static class Program
         builder.Services.AddSingleton<SecondaryWindowHost>();
         builder.Services.AddSingleton<ISecondaryWindows>(
             sp => sp.GetRequiredService<SecondaryWindowHost>());
+        // A later launch of the executable, handed here by the kit's single-instance guard (ONEINSTANCE1, D171 point 2): a new
+        // main window of this instance once its service answers, rather than a second process and a second loop on this home.
+        builder.Services.AddSingleton(sp => new SecondLaunch(
+            sp.GetRequiredService<ISecondaryWindows>(), sp.GetRequiredService<PlatformAddress>(),
+            () => sp.GetRequiredService<DriverLoop>().HostReady, log));
         // Daoris's own browser (D78, D85): the engine's own window, in a process of its own
         // (`daoris-browser`: this executable with the browser's argument, CHR8), with its profile under
         // the home — the directory `driver.json` sits in, as every machine file's is.
@@ -261,6 +266,14 @@ internal static class Program
             {
                 Store = sp => new JsonFileWindowStateStore(
                     Path.Combine(sp.GetRequiredService<ShenoraPaths>().DataArea("config"), "window-state.json")),
+            },
+            // One instance per install, the kit's default, and a later launch is a new main window of it (ONEINSTANCE1, D171
+            // point 2): the guard brings this instance's main window forward and hands the launch over on the window's thread,
+            // and the hand-over opens the window off it, once the service answers.
+            SingleInstance = new SingleInstanceHostOptions
+            {
+                OnActivated = (running, launch) =>
+                    _ = running.Services.GetRequiredService<SecondLaunch>().OpenAsync(launch.Arguments),
             },
         });
 

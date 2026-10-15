@@ -85,7 +85,7 @@
   "errors.PREVIEW_NO_TREE": "这个会话的记录在本机没有工作树，或它的工作树已不存在、这里也没有它落地时建的分支可读，所以这里没有文件可以显示。",
   "errors.PREVIEW_NOT_A_FILE": "`{{path}}` 现在不是这个会话工作树里的文件：它已被删除或移走、是一个文件夹，或无法读取。",
   "errors.PREVIEW_NOT_ON_BRANCH": "`{{path}}` 不是 `{{branch}}` 上的文件——这个会话的工作落地在这个分支上：它在那里已被删除或移走，或是一个文件夹或链接。",
-  "errors.WINDOW_UNKNOWN": "{{name}} 不是这个版本能打开的窗口。只有两个：监视窗口，以及单独一个会话的窗口。",
+  "errors.WINDOW_UNKNOWN": "{{name}} 不是这个版本能打开的窗口。只有三种：监视窗口、单独一个会话的窗口，以及另一个主窗口。",
   "errors.BROWSER_NOT_A_PAGE": "{{address}} 不是网页，不能收藏。",
   "errors.BROWSER_FILE_UNREADABLE": "无法读取 {{file}}（{{problem}}）。修好它，或删掉它从头开始——Daoris 不会覆盖一个它读不了的文件。",
   "errors.BROWSER_SETTING_UNKNOWN": "扩展设置只能是询问（offer）或拒绝（refuse），不是 {{value}}。",
