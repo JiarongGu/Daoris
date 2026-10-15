@@ -221,6 +221,14 @@ public static class Continuations
         now is null ? look : now.Waiting;
 
     /// <summary>
+    /// The record a fallback hands its words on from (SAIDBACK1f, D137 §2.4): the look's, with the words it holds now, so one
+    /// taken back or reworded since the look never goes to the new session. A park's answer is no said word, and the look's
+    /// record stands where it could not be read again.
+    /// </summary>
+    internal static PriorSession HandedOn(PriorSession look, PriorSession? now) =>
+        now is null || look.Parked ? look : look with { Said = now.Said ?? [] };
+
+    /// <summary>
     /// Where a quest's record goes back to when the driver moved it to working and no run of it then started (SAIDBACK1e, D137
     /// §2.4), its words waiting on it again. An ended record goes back to how it ended, its note, its parts and its flags as the
     /// look read them. A park whose words were all taken back waits on the person again; one whose run could not start ends as a

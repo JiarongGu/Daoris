@@ -404,6 +404,27 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 SAIDBACK1f (D137 §2.4): a fallback hands its new session the words the record holds as the move left them, never those
+    /// the look read, so a word taken back between the two does not go; the look's only where the record cannot be read again.
+    /// </summary>
+    [Fact]
+    public void A_fallback_hands_on_the_words_the_record_holds_now_not_those_the_look_read()
+    {
+        var second = Word with { Id = "w2", Text = "And the tests." };
+        var look = Written("completed", Word, second);
+
+        var now = Continuations.HandedOn(look, Written("completed", second));
+        Assert.Equal(["w2"], now.Waiting.Select(word => word.Id));
+        Assert.Equal("completed", now.State);
+
+        Assert.False(Continuations.HandedOn(look, Written("completed")).WordsWaiting);
+        Assert.Same(look, Continuations.HandedOn(look, null));
+        // A park's answer is not a said word: the look's record stands.
+        var park = Written("awaiting-person", Word);
+        Assert.Same(park, Continuations.HandedOn(park, Written("awaiting-person")));
+    }
+
+    /// <summary>
     /// The notes a resume that cannot happen leaves on an ended record: on a closed quest it cannot go on, and nothing else
     /// carries the words on by itself; on a taken or open one they went to a new session.
     /// </summary>

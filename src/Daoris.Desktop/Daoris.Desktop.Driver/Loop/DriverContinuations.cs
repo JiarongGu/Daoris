@@ -504,8 +504,15 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         return (null, why, false);
     }
 
+    /// <summary>
+    /// The record a fallback goes on from, its words as they stand now (SAIDBACK1f, <see cref="Continuations.HandedOn"/>): the
+    /// look's words may have been taken back since, and one taken back must never reach an agent.
+    /// </summary>
+    internal async Task<PriorSession> HandedOnRecordAsync(PriorSession look, CancellationToken ct) =>
+        look.Parked ? look : Continuations.HandedOn(look, await ReadAgainAsync(_context.Service, look.Session, ct).ConfigureAwait(false));
+
     /// <summary>The look's line where every word waiting on the record was taken back before it went on (SAIDBACK1d, SAIDBACK1e).</summary>
-    private static StartRun TakenBackFirst(QuestView quest, string session) => new(
+    internal static StartRun TakenBackFirst(QuestView quest, string session) => new(
         $"held  #{quest.Id} → {quest.To}: every word waiting on session {session} was taken back before it went on; nothing is sent.",
         false);
 

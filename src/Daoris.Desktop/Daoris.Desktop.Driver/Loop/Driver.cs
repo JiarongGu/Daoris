@@ -1205,6 +1205,17 @@ public sealed class Driver(
                 return continued;
             }
 
+            // 🔴 SAIDBACK1f (D137 §2.4): the words as the record holds them now, not as the look read them, so a word taken back
+            // since never goes to the new session; none left, nothing is sent.
+            park = await GoOns.HandedOnRecordAsync(park, ct).ConfigureAwait(false);
+            if (!park.Parked && !park.Running && !park.WordsWaiting)
+            {
+                if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                return DriverContinuations.TakenBackFirst(quest, park.Session);
+            }
+
+            written = park;
+
             // Nothing carries the words on by itself from a closed quest's session, nor from a never (D137 §2.2): they stay
             // waiting as said, marked so a later look leaves them there, and the person's press is the next move (MSG1f).
             if (fellBack!.Never || quest.Status is not ("Open" or "Taken"))
