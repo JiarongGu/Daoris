@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-16 — A chain's step that merged the line showed its parent's work as its own (REVIEWBASE3)
+
+- **Symptom:** a session grown from its parent's tip (a chain's step) that then merged the line: Review listed the parent's commits'
+  files beside the step's own, as the step's work.
+- **Root cause:** REVIEWBASE1 chooses the review's base among the line's merge-base and the record's base. Where neither reaches the
+  other, `ReviewBase.Newest` takes the line's, so the line's changes are not shown, and the parent's, which the line does not hold, are.
+  No single commit in the tree's history excludes both.
+- **Fix:** where `merge-base --independent` names both, the diff reads from `git merge-tree --write-tree` of the two
+  (`ReviewRange.Against`, `Reads`), one git start more in that case only; the answer's `base` is still the line's commit. A conflict
+  between them reads from the line's, as before. D164's REVIEWBASE3 note.
+- **Verification:** `ReviewBaseChoiceTests`' three `Incomparable` cases (red first, the member missing, then green).
+  `ReviewBaseTests.A_chain_step_that_merged_the_line_shows_only_its_own_changes` and
+  `A_chain_step_whose_parent_conflicts_with_the_line_reads_from_the_line_as_before` are `Process` rows, owed to the parent's serial run.
+
 ## 2026-10-16 — Under a squash rule a part joining its entry's branch was refused as grown apart (ACCEPTALL1d)
 
 - **Symptom:** under a branch rule that squashes (PROCESS1b-ii), an entry's Accept landed its first part as one squashed commit and

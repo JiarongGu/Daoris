@@ -75,7 +75,9 @@ public sealed class TreesRoutes(DriverLoop loop)
             // in newer line commits (WSR6's replay, a merge, a rebase, the line checked out) would otherwise show the line's own
             // changes as the session's work. It says how far the latest line it knows is past the tree, and fetches nothing.
             var range = await trees.ReviewRangeAsync(tree!, baseCommit, cancellationToken);
-            var diff = await WorkingTree.DiffAsync(tree!, range.From, cancellationToken);
+            // A chain's step that merged the line reads from a merge of the line's base and its parent's tip (REVIEWBASE3), a tree
+            // and no commit: the answer still names the commit it is measured from.
+            var diff = await WorkingTree.DiffAsync(tree!, range.Reads, cancellationToken) is { } read ? read with { Base = range.From } : null;
             if (diff is not null)
             {
                 var standing = landing is null
