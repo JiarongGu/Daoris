@@ -1094,6 +1094,30 @@ describe('the way from the head\'s waits to the conversation', () => {
     render(<SessionHead session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()} lands={LANDS} landing={PLAN} onLand={vi.fn()} />);
     expect(screen.queryByRole('button', { name: 'In the conversation' })).toBeNull();
   });
+
+  /**
+   * WAITFOOT2 (D168's WAITFOOT2 note): each section a wait stands in is marked, for the frame to watch; and while the head is on
+   * screen, where the strip stands aside, a raising block's *To the wait* leads here: the line takes the focus, outlined.
+   */
+  it('marks the sections its waits stand in, and shows the one a raising block leads to', () => {
+    const props = { session: session(parked), onResolve: vi.fn(), goAheads: ASKED, onGoAhead: vi.fn(), lands: LANDS, landing: PLAN, onLand: vi.fn() };
+    const { container, rerender } = render(<SessionHead {...props} />);
+    const sections = [...container.querySelectorAll('[data-wait-section]')];
+    expect(sections).toHaveLength(3);
+    expect(sections[0]).toHaveTextContent('This one is waiting on you');
+    expect(sections[1]).toBe(screen.getByRole('region', { name: 'Go-aheads it asked' }));
+    expect(sections[2]).toContainElement(screen.getByRole('button', { name: 'Accept…' }));
+
+    rerender(<SessionHead {...props} seek={{ wait: 'goAhead:2', n: 1 }} />);
+    const second = within(sections[1] as HTMLElement).getAllByRole('listitem')[1]!;
+    expect(second).toHaveFocus();
+    expect(second.className).toContain('outline-accent');
+
+    rerender(<SessionHead {...props} seek={{ wait: 'work', n: 2 }} />);
+    expect(sections[2]).toHaveFocus();
+    expect((sections[2] as HTMLElement).className).toContain('outline-accent');
+    expect(second.className).not.toContain('outline-accent');
+  });
 });
 
 /** PROPOSEHERE1b (D168 point 2, D74): the rules the session proposed stand in its head, whatever its state, with their presses. */

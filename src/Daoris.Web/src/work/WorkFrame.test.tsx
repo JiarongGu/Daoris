@@ -46,6 +46,7 @@ import i18n from '../locales/i18n';
 import { ContextMenus } from '../menus/ContextMenu';
 import type { OpenGroup } from '../app/opener';
 import { menuActs, rightClick } from '../test/contextMenu';
+import { watchScreen } from '../test/onScreen';
 import { WorkFrame } from './WorkFrame';
 import { DiffPane } from './DiffPane';
 
@@ -3843,6 +3844,40 @@ describe('acting on what a session landed', () => {
     expect(within(asks()[0]!).getByRole('textbox', { name: 'Branch name' })).toHaveValue('');
   });
 
+  // WAITFOOT2a: the strip stands aside while the head's waits are on screen, never from under an ask open in it.
+  it('keeps the strip up while the work\'s ask is open in it, though the head came on screen', async () => {
+    const watched = watchScreen();
+    try {
+      SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
+      invoke.mockImplementation(async (_module: string, type: string) => {
+        if (type === 'SESSION_GROUPS') {
+          return { sessions: [{ session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false,
+            lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
+        }
+        if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace' };
+        if (type === 'SESSION_DIFF') return DIFF;
+        return DRIVER_STATE;
+      });
+      show('s1a2b3c4', vi.fn());
+      await screen.findAllByRole('button', { name: 'Accept…' });
+      await waitFor(() => expect(watched.observers()).not.toHaveLength(0));
+      watched.show(false);
+      const strip = screen.getByRole('region', { name: 'Waiting on you' });
+      await userEvent.click(within(strip).getByRole('button', { name: 'Accept…' }));
+      await userEvent.click(screen.getByRole('main'));
+
+      watched.show(true);
+      expect(within(strip).getByRole('group', { name: 'accept daoris/s-4e6837ed' })).toBeInTheDocument();
+      // Put down, and the person gone from it, the strip stands aside: the head's *Accept…* is the one on screen.
+      await userEvent.click(within(strip).getByRole('button', { name: 'Never mind' }));
+      await userEvent.click(screen.getByRole('main'));
+      expect(screen.queryByRole('region', { name: 'Waiting on you' })).toBeNull();
+      expect(screen.getAllByRole('button', { name: 'Accept…' })).toHaveLength(1);
+    } finally {
+      watched.restore();
+    }
+  });
+
   /**
    * XAGENT1g (the second-agent design §7–§9): where a level asks a second opinion, the session's page draws it before *Accept…*
    * from the landing's plan, its findings read from the gate, and *Accept…*, which answers a dispute, sends the gate's token back.
@@ -4783,6 +4818,40 @@ describe('a park\'s go-aheads', () => {
     expect(notify).toHaveBeenCalledWith("Approved go-ahead #2; the same session goes on with it at the driver's next look.");
   });
 
+  /**
+   * WAITFOOT2a (D168's WAITFOOT2 note): the owner, 2026-10-15, found "a lot of duplicated options and message boxes": each wait
+   * in the head and again in the strip. The strip stands aside while the head's waits are wholly on screen, and stands again
+   * once any of them leaves it, so no press is ever out of sight.
+   */
+  it('draws each go-ahead once while the head\'s waits are on screen, and at the foot too once they are not', async () => {
+    const watched = watchScreen();
+    try {
+      show('g0ah3ad0');
+      const head = await screen.findByRole('region', { name: 'Go-aheads it asked' });
+      // Watched where the record scrolls, below the page head pinned at its top.
+      await waitFor(() => expect(watched.observers().flatMap((one) => one.targets)).toContain(head));
+      const [watching] = watched.observers();
+      expect(watching!.root).toBe(screen.getByRole('main'));
+      expect(watching!.rootMargin).toMatch(/^-\d+px 0px 0px 0px$/);
+      // Not yet told, the strip waits for the observer's word rather than flash over a head that may be on screen.
+      expect(screen.queryByRole('region', { name: '3 waiting on you' })).toBeNull();
+
+      watched.show(true);
+      expect(screen.queryByRole('region', { name: '3 waiting on you' })).toBeNull();
+      expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(2);
+      expect(head.contains(screen.getAllByRole('button', { name: 'Approve' })[0]!)).toBe(true);
+
+      watched.show(false);
+      expect(screen.getByRole('region', { name: '3 waiting on you' })).toBeInTheDocument();
+
+      // Half of one on screen is not on screen: its press may be the half that is not.
+      watched.show((section) => (section === head ? 0.5 : 1));
+      expect(screen.getByRole('region', { name: '3 waiting on you' })).toBeInTheDocument();
+    } finally {
+      watched.restore();
+    }
+  });
+
   it('takes the person from the strip to the head\'s waits at the top', async () => {
     show('g0ah3ad0');
     const strip = await screen.findByRole('region', { name: '3 waiting on you' });
@@ -4837,10 +4906,9 @@ describe('a park\'s go-aheads', () => {
       .map((said) => said.closest<HTMLElement>('[data-block]')).find(Boolean)!;
     await waitFor(() => expect(words.className).toContain('outline-accent'));
 
-    // And back: the call says what waits from it, and *To the wait* leads to its line at the foot.
+    // And back: the call's mark names what waits from it, and *To the wait* leads to its line at the foot.
     const block = call.closest<HTMLElement>('[data-block]')!;
-    expect(block).toHaveTextContent('Waiting on you from here: go-ahead #1');
-    await userEvent.click(within(block).getByRole('button', { name: 'To the wait' }));
+    await userEvent.click(within(block).getByRole('button', { name: 'To the wait: go-ahead #1' }));
     await waitFor(() => expect(within(strip).getAllByRole('listitem')[0]).toHaveFocus());
 
     // Away and back, the press is spent: the strip drawn again takes no focus and outlines nothing.
@@ -4855,6 +4923,40 @@ describe('a park\'s go-aheads', () => {
     const again = await screen.findByRole('region', { name: '3 waiting on you' });
     expect(within(again).getAllByRole('listitem')[0]).not.toHaveFocus();
     expect(within(again).getAllByRole('listitem')[0]!.className).not.toContain('outline-accent');
+  });
+
+  // WAITFOOT2b (D168's WAITFOOT2 note): while the head's waits are on screen the strip stands aside, so *To the wait* leads there.
+  it('leads a raising block\'s *To the wait* to the head\'s line while the head is on screen', async () => {
+    const watched = watchScreen();
+    try {
+      const asked = '2026-09-02T00:30:00Z';
+      invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_HISTORY' ? {
+        session: 'g0ah3ad0', earlier: false, latest: 4, events: [
+          { seq: 1, at: asked, kind: 'user', origin: 'target', text: 'Your target is the quest…' },
+          {
+            seq: 2, at: asked, kind: 'tool', id: 'g1', title: 'ask for a go-ahead', status: 'completed',
+            input: JSON.stringify({ kind: 'write', on: 'production', act: 'dashboard configuration', why: 'The tile reads its target from it.' }),
+          },
+          { seq: 3, at: asked, kind: 'message', id: 'm2', text: 'I need go-aheads 1 and 2 before I can finish.' },
+          { seq: 4, at: asked, kind: 'turn', stopReason: 'end_turn' },
+        ],
+      } : DRIVER_STATE));
+      show('g0ah3ad0');
+      const call = await screen.findByText('ask for a go-ahead');
+      await waitFor(() => expect(watched.observers()).not.toHaveLength(0));
+      watched.show(true);
+      expect(screen.queryByRole('region', { name: '3 waiting on you' })).toBeNull();
+
+      const block = call.closest<HTMLElement>('[data-block]')!;
+      await userEvent.click(within(block).getByRole('button', { name: 'To the wait: go-ahead #1' }));
+      const line = within(screen.getByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem')[0]!;
+      await waitFor(() => expect(line).toHaveFocus());
+      expect(line.className).toContain('outline-accent');
+      // The strip stays aside: the line it would have led to is the one on screen.
+      expect(screen.queryByRole('region', { name: '3 waiting on you' })).toBeNull();
+    } finally {
+      watched.restore();
+    }
   });
 });
 
@@ -4976,11 +5078,11 @@ describe('a session\'s rule proposal', () => {
     const strip = await screen.findByRole('region', { name: 'Waiting on you' });
     const call = await screen.findByText('permission_propose');
     const block = call.closest<HTMLElement>('[data-block]')!;
-    await waitFor(() => expect(block).toHaveTextContent('Waiting on you from here: a rule it proposed'));
+    const mark = await within(block).findByRole('button', { name: 'To the wait: a rule it proposed' });
 
     await userEvent.click(within(within(strip).getByRole('listitem')).getByRole('button', { name: 'In the conversation' }));
     await waitFor(() => expect(block.className).toContain('outline-accent'));
-    await userEvent.click(within(block).getByRole('button', { name: 'To the wait' }));
+    await userEvent.click(mark);
     await waitFor(() => expect(within(strip).getByRole('listitem')).toHaveFocus());
   });
 });
