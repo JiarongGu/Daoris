@@ -78,11 +78,6 @@ public sealed class SessionNotifier : IDisposable
         var detail = Read(payload, "Detail");
         var session = Read(payload, "Session");
         var kind = Read(payload, "Kind");
-        var parked = string.Equals(kind, "Parked", StringComparison.Ordinal);
-        // A quest's park waits on the person too (SESSUX1i), and its session is its last, whose page offers Try again.
-        var questParked = string.Equals(kind, "QuestParked", StringComparison.Ordinal);
-        // A conversation answered the person (NOTIFY1a): news they wait on, read on its page.
-        var answered = string.Equals(kind, "Answered", StringComparison.Ordinal);
 
         _window.BeginInvoke(() =>
         {
@@ -95,15 +90,9 @@ public sealed class SessionNotifier : IDisposable
                 // overload requires it.
                 timeout: 10_000,
                 tipTitle: headline,
-                // A balloon with an empty body renders as a title with a gap under it.
-                tipText: string.IsNullOrWhiteSpace(detail)
-                    ? (parked ? "Open Daoris to answer it."
-                        : questParked ? "Open Daoris to try it again."
-                        : answered ? "Open Daoris to read it."
-                        : "Open Daoris to see what it did.")
-                    : detail,
-                // Warn for a park: it is the one that is WAITING on somebody. An ending, or an answer, is news.
-                tipIcon: parked || questParked ? ToolTipIcon.Warning : ToolTipIcon.Info);
+                // The body and icon by kind are the modules' judgement (NOTIFY1d).
+                tipText: SessionBalloon.Body(kind, detail),
+                tipIcon: SessionBalloon.Icon(kind) == BalloonIcon.Warning ? ToolTipIcon.Warning : ToolTipIcon.Info);
         });
     }
 
