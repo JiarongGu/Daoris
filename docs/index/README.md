@@ -144,10 +144,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/src/plugins/plugins.ts` | 69 | 1383 |
 | `src/Daoris.Cli/src/workflows/workflowdoor.ts` | 46 | 836 |
 | `src/Daoris.Cli/test/agents/toolchain.test.ts` | 101 | 1936 |
-| `src/Daoris.Cli/test/desktop-publish.test.ts` | 55 | 1007 |
+| `src/Daoris.Cli/test/desktop-publish.test.ts` | 60 | 1066 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 43 | 834 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 47 | 825 |
-| `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 132 | 2434 |
+| `src/Daoris.Cli/test/driver/driverconfig.test.ts` | 133 | 2446 |
 | `src/Daoris.Cli/test/merge-branch.test.ts` | 188 | 2909 |
 | `src/Daoris.Cli/test/setup-kit.test.ts` | 52 | 955 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1226 |
@@ -156,8 +156,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `tools/deployment-rehearsal.mjs` | 99 | 1736 |
-| `tools/desktop-publish.mjs` | 59 | 1051 |
+| `tools/deployment-rehearsal.mjs` | 100 | 1751 |
+| `tools/desktop-publish.mjs` | 62 | 1114 |
 | `tools/desktop.mjs` | 51 | 1052 |
 | `tools/family-rehearsal.mjs` | 340 | 5983 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |

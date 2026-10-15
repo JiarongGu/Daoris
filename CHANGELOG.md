@@ -13,6 +13,9 @@ with the version and date at release.
   them: `daoris-driver sessions take-back <id>` lists the words waiting with their ids, `sessions take-back <id> <word>` takes
   one back, and `sessions reword <id> <word> "…"` puts new words in its place, so a finished quest's session need not go on
   with words you no longer mean.
+- The installed Daoris now ships the driver's own verbs to a terminal: `daoris-driver` (and `daoris-driver.cmd`) in the
+  install's `app/bin/` runs `trees list|clean|land`, `sessions archive|take-back`, `history clear` and `update` against the
+  install's home, so the clean-up no longer needs the window's list. `daoris driver` says where they are.
 - The window is on the desktop kit's 0.21.1. Opening Daoris while it is still closing now starts it once the closing one
   has gone, where that launch used to be lost.
 - Accepting a session's work lands only what its line lacks. Where the line already holds some of its commits (a pull request

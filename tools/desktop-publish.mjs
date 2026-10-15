@@ -340,6 +340,52 @@ export function cliLaunchers() {
 }
 
 /**
+ * The driver's own verbs as an install's door (DRIVERDOOR1): `trees clean`, `sessions archive`, `history clear` and
+ * `update` are `daoris-driver` verbs, and the install shipped only `daoris`, so a terminal outside the window had no
+ * way to them. The Host is published framework-dependent into a folder of its own under `app/`, replaced whole by a
+ * republish (and carried by an update's swap of `app/`), and run from `app/bin/` by a launcher for each shell, so the
+ * PATH every child Daoris starts has it by its bare name. It finds the home by `DAORIS_HOME`, as the CLI does (D105).
+ */
+export const DRIVER_PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Host';
+export const DRIVER_HOME = Object.freeze(['app', 'daoris-driver']);
+export const DRIVER_EXE = 'daoris-driver.exe';
+export const DRIVER_LAUNCHERS = Object.freeze(['daoris-driver', 'daoris-driver.cmd']);
+
+/** The publish of the Host into `folder`: a runtime-dependent folder, the shape the application and the launcher have. */
+export function driverPublishCommand(folder, rid = INSTALL_RID) {
+  return `dotnet publish "${DRIVER_PROJECT}" -c Release -r ${rid} --self-contained false -p:DebugType=none -o "${folder}"`;
+}
+
+/** The text of each driver launcher, by name: the Host's executable found from the launcher's own folder. */
+export function driverLaunchers() {
+  const exe = posix.relative(CLI_BIN.join('/'), [...DRIVER_HOME, DRIVER_EXE].join('/'));
+  const sh = [
+    '#!/bin/sh',
+    '# Daoris\'s driver verbs, the host this install carries (DRIVERDOOR1), run from its own folder.',
+    '# Written by the publish, and replaced by the next one.',
+    'basedir=$(dirname "$(echo "$0" | sed -e \'s,\\\\,/,g\')")',
+    'if command -v cygpath >/dev/null 2>&1; then basedir=$(cygpath -w "$basedir"); fi',
+    `exec "$basedir/${exe}" "$@"`,
+    '',
+  ].join('\n');
+  const cmd = [
+    '@echo off',
+    'rem Daoris\'s driver verbs, the host this install carries (DRIVERDOOR1), run from its own folder.',
+    'rem Written by the publish, and replaced by the next one.',
+    `"%~dp0${exe.replace(/\//g, '\\')}" %*`,
+    '',
+  ].join('\r\n');
+  return { [DRIVER_LAUNCHERS[0]]: sh, [DRIVER_LAUNCHERS[1]]: cmd };
+}
+
+/** Write the driver's launchers into `<install>/app/bin/`, beside the doctrine tool's (which {@link layCli} replaces whole). */
+export function layDriverLaunchers(install) {
+  const bin = join(install, ...CLI_BIN);
+  mkdirSync(bin, { recursive: true });
+  for (const [name, text] of Object.entries(driverLaunchers())) writeFileSync(join(bin, name), text, { mode: 0o755 });
+}
+
+/**
  * What is wrong with an unpacked package as the doctrine tool an install carries, or null when it is the
  * release's `daoris`: named `daoris`, its bin entry, its built dispatcher (without `dist/` the entry falls
  * back to sources a package does not ship), its canon at the package's own version (`release-prep` holds the
@@ -596,7 +642,7 @@ Published from a Daoris workspace by \`tools/desktop-publish.mjs\`.
 | | |
 |---|---|
 | \`${LAUNCHER}\` | **the application** — the only thing to run. A small launcher that starts \`${[...SHELL_HOME, SHELL_EXE].join('/')}\`. |
-| \`${SHELL_HOME[0]}/\` | the application itself, on the Chromium it carries (its files are listed in \`${SHELL_FILES.join('/')}\`), which is also Daoris's own browser; when published with \`--service\`, the HTTP host in \`${HOST_HOME.slice(1).join('/')}/\` and, in \`${CONNECTOR_HOME.slice(1).join('/')}/\`, the knowledge connector a session on the protocol door is handed, each run ahead of any in \`bin/\` under the home; and Daoris's own example plugins in \`${PLUGIN_OFFERS.slice(1).join('/')}/\` (${OFFERED_PLUGINS.join(', ')}), offered in the Plugins place and by \`daoris plugin list\`, none installed until you install one; and \`${RESOURCES.slice(1).join('/')}\`, the list of where each version of the tools Daoris runs downloads from, read and never rewritten; and the doctrine tool, in \`${CLI_HOME.slice(1).join('/')}/\` and \`${CLI_BIN.slice(1).join('/')}/\` (below). Nothing to open. |
+| \`${SHELL_HOME[0]}/\` | the application itself, on the Chromium it carries (its files are listed in \`${SHELL_FILES.join('/')}\`), which is also Daoris's own browser; when published with \`--service\`, the HTTP host in \`${HOST_HOME.slice(1).join('/')}/\` and, in \`${CONNECTOR_HOME.slice(1).join('/')}/\`, the knowledge connector a session on the protocol door is handed, each run ahead of any in \`bin/\` under the home; and Daoris's own example plugins in \`${PLUGIN_OFFERS.slice(1).join('/')}/\` (${OFFERED_PLUGINS.join(', ')}), offered in the Plugins place and by \`daoris plugin list\`, none installed until you install one; and \`${RESOURCES.slice(1).join('/')}\`, the list of where each version of the tools Daoris runs downloads from, read and never rewritten; and the doctrine tool, in \`${CLI_HOME.slice(1).join('/')}/\` and \`${CLI_BIN.slice(1).join('/')}/\` (below), with the driver's verbs in \`${DRIVER_HOME.slice(1).join('/')}/\`. Nothing to open. |
 | \`${HOME}/\` | **the Daoris home**: the registry, the quests, the drivable set, the harness profiles, the installed service binaries — and the window's engine profile (\`chromium/\`) and its geometry. |
 | \`${STAGE[0]}/\` | an update: a build staged with \`--stage\` in \`${STAGED.slice(1).join('/')}/\`, which the application installs once its work allows, and the launcher's record of the last swap, \`${SWAP_JOURNAL}\` (D139). Present only once something was staged. |
 
@@ -631,6 +677,11 @@ this install's home, \`${HOME}/\`, sits beside \`${CLI_BIN[0]}/\` (D124).
 Nothing puts \`${CLI_BIN.join('/')}/\` on your account's PATH, so a terminal of yours outside Daoris still runs whatever
 \`daoris\` you installed; run this one by its path there, from the repository it should look at. A re-publish
 replaces both folders whole.
+
+The same folder holds \`${DRIVER_LAUNCHERS[0]}\` and \`${DRIVER_LAUNCHERS[1]}\`, which run the driver's own verbs
+from \`${DRIVER_HOME.join('/')}/\` (it needs no Node): \`daoris-driver trees list|clean|land\`, \`sessions archive|take-back\`,
+\`history clear\` and \`update\`. They read the same home (\`DAORIS_HOME\`) the application and \`daoris\` do, so what the
+window's lists offer is at a terminal too (\`daoris driver\` says which verbs are which).
 
 ## Pinning it to the taskbar
 
@@ -942,7 +993,7 @@ async function main() {
   const staged = readdirSync(shellStage);
   // The doctrine tool's two folders are laid out whole below, so an application file of either name would
   // be replaced by them, and lost without a word.
-  const clash = staged.filter((name) => name === CLI_HOME.at(-1) || name === CLI_BIN.at(-1));
+  const clash = staged.filter((name) => name === CLI_HOME.at(-1) || name === CLI_BIN.at(-1) || name === DRIVER_HOME.at(-1));
   if (clash.length > 0) {
     console.error(`desktop-publish: the application's publish carries ${clash.join(' and ')}, where the install `
       + 'keeps the doctrine tool (WSSETUP2).');
@@ -966,6 +1017,18 @@ async function main() {
     console.error(error.message);
     process.exit(1);
   }
+
+  // The driver's verbs (DRIVERDOOR1): the Host in a folder of its own, REPLACED whole as the service hosts are, and its
+  // launchers beside the doctrine tool's, laid after `layCli` replaced `app/bin/`.
+  console.log(`desktop-publish: publishing ${DRIVER_HOME.at(-1)} under ${DRIVER_HOME.join('/')}/…`);
+  const driverFolder = join(root, ...DRIVER_HOME);
+  rmSync(driverFolder, { recursive: true, force: true });
+  run(`${driverPublishCommand(driverFolder)} --nologo`);
+  if (!existsSync(join(driverFolder, DRIVER_EXE))) {
+    console.error(`desktop-publish: the publish of ${DRIVER_HOME.at(-1)} made no ${DRIVER_EXE}.`);
+    process.exit(1);
+  }
+  layDriverLaunchers(root);
   rmSync(stages, { recursive: true, force: true });
 
   // Daoris's own example plugins, as offers beside the application (PLUG9 d, D103): the Plugins place

@@ -2432,3 +2432,15 @@ test('a driver.json keeps a commit rule the CLI did not write, and writes none w
   assert.equal('workspaceCommits' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
   fx.cleanup();
 });
+
+/**
+ * DRIVERDOOR1: the verbs the window's lists press (`trees clean`, `sessions archive`, `history clear`, `update`) are the
+ * `daoris-driver` program's, not this command's, and the usage says so and where it is. Not forwarded: this command's
+ * `trees <repo> on|off` and the driver's `trees list|clean|land` share a word.
+ */
+test('the usage names the drive-time verbs as daoris-driver, in the install’s app/bin', async () => {
+  const { command } = await import('../../src/cli/driver.ts');
+  const usage = command.usage.join('\n').replace(/\s+/g, ' ');
+  assert.match(usage, /trees list\|clean\|land, sessions archive\|take-back, history clear and update are `daoris-driver`/);
+  assert.match(usage, /app\/bin\//);
+});
