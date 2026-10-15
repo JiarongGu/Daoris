@@ -19,13 +19,19 @@ import { type Box, neverSentence } from './say';
  * - **Winding up**: words said as its run ends wait for its record to end and then reopen it (D137 §2.1), shown above the
  *   box until its record keeps them and the conversation shows them.
  * - **The line**: nothing takes words, in the page's own words by the code.
+ * - **Words on their way** (SENDLOST1b): above every box, as sending, and kept where the page stopped waiting on their send.
  *
  * A molecule: the box it is handed, the words in and a press out.
  */
 export function SessionBox({
   box, quest, draft, onDraft, sending = false, refusal, held, ending = [], waiting = [], stopping = false, focus = 0, accepts, onSend,
-  onSendNow, onRemove, onEdit,
+  onSendNow, onRemove, onEdit, going,
 }: {
+  /**
+   * Words on their way to the session (SENDLOST1b), shown above every box that takes words until it holds them: as sending,
+   * or `late` where the page stopped waiting on their send.
+   */
+  going?: { words: ChatMessage[]; late: boolean };
   /** Take a held or waiting word back out, or reword it, by its id (QUEUEEDIT1b, SAIDBACK1b); absent, none offers a control. */
   onRemove?: (id: string) => Promise<{ done: boolean } | void>;
   onEdit?: (id: string, text: string) => Promise<{ done: boolean } | void>;
@@ -66,7 +72,7 @@ export function SessionBox({
 
   // Every box here: words alone, no endings of its own (the page header and the parked card own those, D126 §3.3).
   const shared = {
-    live: true, endings: false, attachments: false, sending, refusal, draft, onDraft, focus, accepts,
+    live: true, endings: false, attachments: false, sending, refusal, draft, onDraft, focus, accepts, going,
     onSend: (text: string) => onSend(text.trim()), onFinish: () => {},
   };
 

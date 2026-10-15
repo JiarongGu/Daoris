@@ -5,6 +5,13 @@ with the version and date at release.
 
 ## Unreleased
 
+- A press in one window — a session's stop, archive or delete, a work's pause, a rule, a plugin, a sync, a history clear —
+  now shows in every open window at once, as an Accept already did.
+- A message you send in Sessions no longer vanishes on a busy machine. In a conversation, and in the box at the foot of any
+  session (telling one at work something, answering one that parked, or writing to one that ended), your words show at once as
+  *sending…*; where the machine is slow to answer they stay, saying it has not answered yet (本机尚未回应), rather than
+  vanishing behind an error, and go once the session holds them. Nothing goes back in the box to be sent twice; words a
+  conversation never took before it ended come back there, said so.
 - When a conversation answers what you said while Daoris's window is behind another, Windows tells you so, as *engine — a
   conversation answered you*; a click opens it. Nothing is said while you are looking at a Daoris window (the page shows it
   instead), for a turn you stopped, or while notifications are off.

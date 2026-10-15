@@ -14,6 +14,8 @@ const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => {
   // Every hook listening to an event hears it, as in the shell: each hook's latest handler is kept,
   // told apart by its source, since a render hands over a new closure each time. One handler per
   // event name meant a second listener (the console's, CONSOLE3a) silenced the first (the tabs').
+  // 🔴 Two mounted instances of one hook share a source, so here only the last rendered hears: the frame's own second
+  // reading of a record (SENDLOST1b's `SentSettler`) is mounted only while words wait on it, never beside every conversation.
   const byName = new Map<string, Map<string, (payload: unknown) => void>>();
   return {
     invoke: vi.fn(),
@@ -115,6 +117,13 @@ const PARKED_INTAKE = {
 const RUNNING_INTAKE = { ...PARKED_INTAKE, id: 'r7n8t7k6', state: 'working', note: undefined };
 
 let SESSIONS: unknown[] = [DRIVEN];
+
+/** Every `SESSION_INPUT` the page sent, in order (SENDLOST1b: a send the page stopped waiting on is never said twice). */
+const inputs = () => invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT');
+/** What words on their way say once the page stopped waiting on their send (SENDLOST1b). */
+const UNANSWERED = 'The machine has not answered yet; it may still take them.';
+/** The bridge's own end of a call the page stopped waiting on (`stoppedWaiting`). */
+const timedOut = () => Object.assign(new Error('The driver did not answer in time.'), { code: 'TIMEOUT' });
 
 function respond(url: string): Response {
   if (url.startsWith('/api/sessions')) return Response.json(SESSIONS);
@@ -1581,6 +1590,64 @@ describe('starting and holding a conversation', () => {
   });
 
   /**
+   * SENDLOST1b: on a loaded machine the page stopped waiting on a chat's send (the bridge's TIMEOUT): the person's words
+   * vanished behind the error, though the driver may still take them. They show the moment they are sent, as sending; a send
+   * the page stopped waiting on keeps them, saying the machine has not answered yet, with nothing put back in the box to send
+   * twice, until the conversation's queue holds them.
+   */
+  it('shows a chat\'s words as sending, keeps them when the send times out, and lets them go once its queue holds them', async () => {
+    SESSIONS = [CHAT];
+    let stop: () => void = () => {};
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return STRUCTURED_ROSTER;
+      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [], taking: true };
+      if (type === 'SESSION_INPUT') return new Promise((_, reject) => { stop = () => reject(timedOut()); });
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show('c0ffee11', notify);
+
+    const box = await screen.findByLabelText('Message');
+    await userEvent.type(box, 'and the line?{Enter}');
+    expect(await screen.findByRole('list', { name: 'sending…' })).toHaveTextContent('and the line?');
+
+    await act(async () => { stop(); });
+    expect(await screen.findByRole('list', { name: UNANSWERED })).toHaveTextContent('and the line?');
+    expect(box).toHaveValue('');
+    expect(notify).not.toHaveBeenCalledWith(expect.anything(), 'error');
+
+    // The driver took them after all: they wait behind the turn as any word does, and are not said twice.
+    await act(async () => {
+      eventHandlers.get('DAORIS.SESSION_QUEUED')!({
+        session: 'c0ffee11', queued: [{ id: 'q1', text: 'and the line?', files: [] }], taking: true,
+      });
+    });
+    expect(screen.queryByRole('list', { name: UNANSWERED })).toBeNull();
+    expect(screen.getByRole('list', { name: 'waiting for this turn to end' })).toHaveTextContent('and the line?');
+    expect(inputs()).toHaveLength(1);
+  });
+
+  /** SENDLOST1b: words whose send timed out to a chat that then ended without them never arrived, so they come back, said so. */
+  it('gives a chat\'s words back, said so, once the conversation ended without them', async () => {
+    SESSIONS = [CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_INPUT') {
+        SESSIONS = [{ ...CHAT, state: 'completed' }];
+        throw timedOut();
+      }
+      return DRIVER_STATE;
+    });
+    show('c0ffee11');
+
+    await userEvent.type(await screen.findByLabelText('Message'), 'are you there?{Enter}');
+
+    expect(await screen.findByText('The conversation ended before this reached it. It is back in the box.')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue('are you there?'));
+    expect(screen.queryByRole('list', { name: UNANSWERED })).toBeNull();
+    expect(inputs()).toHaveLength(1);
+  });
+
+  /**
    * Finishing and stopping are different verbs and mean different things: end-of-input lets the
    * harness wind up, a stop cuts it off and the record says the person did.
    */
@@ -2096,6 +2163,40 @@ describe('starting and holding a conversation', () => {
     expect(screen.queryByLabelText('Message')).toBeNull();
   });
 
+  /**
+   * SENDLOST1b: words to a working driven session's running door show as sending; a send the page stopped waiting on keeps
+   * them, saying the machine has not answered yet, with no error and nothing back in the box, until the driver holds them.
+   */
+  it('keeps words to a working driven session whose send timed out, until the driver holds them behind its turn', async () => {
+    let stop: () => void = () => {};
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_QUEUE') return { session: 's1a2b3c4', queued: [], taking: true, listening: true };
+      if (type === 'SESSION_INPUT') return new Promise((_, reject) => { stop = () => reject(timedOut()); });
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show('s1a2b3c4', notify);
+
+    const box = await screen.findByLabelText('Message');
+    await userEvent.type(box, 'the budget is in level.json');
+    await userEvent.click(screen.getByRole('button', { name: 'Queue' }));
+    expect(await screen.findByRole('list', { name: 'sending…' })).toHaveTextContent('the budget is in level.json');
+
+    await act(async () => { stop(); });
+    expect(await screen.findByRole('list', { name: UNANSWERED })).toHaveTextContent('the budget is in level.json');
+    expect(box).toHaveValue('');
+    expect(notify).not.toHaveBeenCalledWith(expect.anything(), 'error');
+
+    await act(async () => {
+      eventHandlers.get('DAORIS.SESSION_QUEUED')!({
+        session: 's1a2b3c4', queued: [{ id: 'said-1', text: 'the budget is in level.json', files: [] }], taking: true, listening: true,
+      });
+    });
+    expect(screen.queryByRole('list', { name: UNANSWERED })).toBeNull();
+    expect(screen.getByRole('list', { name: 'waiting for this turn to end' })).toHaveTextContent('the budget is in level.json');
+    expect(inputs()).toHaveLength(1);
+  });
+
   it('offers no box to a driven session the driver says nothing could hear', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_QUEUE'
       ? { session: 's1a2b3c4', queued: [], taking: false, listening: false }
@@ -2227,6 +2328,49 @@ describe('the box on every session that takes words', () => {
 
     expect(await screen.findByText('held until this run ends — then the same session goes on with them')).toBeInTheDocument();
     expect(screen.getByText('keep the old flag for a release')).toBeInTheDocument();
+  });
+
+  /**
+   * SENDLOST1b: words to a session that ended, whose send the page stopped waiting on, stay above its box saying the machine
+   * has not answered yet, with no error and nothing back in the box, until its record holds them.
+   */
+  it('keeps words to a session that ended whose send timed out, until its record holds them', async () => {
+    const words = 'also say so in the release notes';
+    let stop: () => void = () => {};
+    let recorded = false;
+    let read: () => void = () => {};
+    const reading = new Promise<void>((resolve) => { read = resolve; });
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_QUEUE') return { session: 's1a2b3c4', queued: [], taking: false, reaches: 'resume' };
+      if (type === 'SESSION_INPUT') {
+        return new Promise((_, reject) => { stop = () => { recorded = true; reject(timedOut()); }; });
+      }
+      if (type === 'SESSION_HISTORY' && recorded) {
+        await reading;
+        return {
+          session: 's1a2b3c4', earlier: false, latest: 1,
+          events: [{ seq: 1, at: new Date().toISOString(), kind: 'user', origin: 'person', text: words }],
+        };
+      }
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show('s1a2b3c4', notify);
+
+    const box = await screen.findByLabelText('Message');
+    await userEvent.type(box, words);
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByRole('list', { name: 'sending…' })).toHaveTextContent(words);
+
+    await act(async () => { stop(); });
+    expect(await screen.findByRole('list', { name: UNANSWERED })).toHaveTextContent(words);
+    expect(box).toHaveValue('');
+    expect(notify).not.toHaveBeenCalledWith(expect.anything(), 'error');
+
+    await act(async () => { read(); });
+    await waitFor(() => expect(screen.queryByRole('list', { name: UNANSWERED })).toBeNull());
+    expect(screen.getByLabelText('Message')).toHaveValue('');
+    expect(inputs()).toHaveLength(1);
   });
 
   /**
@@ -2486,6 +2630,41 @@ describe('clearing a parked session', () => {
       payload: { id: 'p4rk3d00', text: 'go ahead with the PUT' },
     }));
     expect(vi.mocked(fetch)).not.toHaveBeenCalledWith('/api/sessions/p4rk3d00/answer', expect.anything());
+  });
+
+  /**
+   * SENDLOST1b: a park's answer whose send the page stopped waiting on stays above its box, saying the machine has not
+   * answered yet, never said answered and never back in the box, until the words waiting on its record list it.
+   */
+  it('keeps a park\'s answer whose send timed out, until the words waiting on its record list it', async () => {
+    const words = 'go ahead with the PUT';
+    let stop: () => void = () => {};
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_QUEUE') return { session: 'p4rk3d00', queued: [], taking: false, reaches: 'resume' };
+      if (type === 'SESSION_INPUT') return new Promise((_, reject) => { stop = () => reject(timedOut()); });
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show('p4rk3d00', notify);
+
+    const box = await screen.findByLabelText('Message');
+    await userEvent.type(box, words);
+    await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
+    expect(await screen.findByRole('list', { name: 'sending…' })).toHaveTextContent(words);
+
+    await act(async () => { stop(); });
+    expect(await screen.findByRole('list', { name: UNANSWERED })).toHaveTextContent(words);
+    expect(box).toHaveValue('');
+    expect(notify).not.toHaveBeenCalled();
+
+    await act(async () => {
+      eventHandlers.get('DAORIS.SESSION_QUEUED')!({
+        session: 'p4rk3d00', queued: [{ id: 'said-1', text: words, files: [] }], taking: false, reaches: 'resume',
+      });
+    });
+    expect(screen.queryByRole('list', { name: UNANSWERED })).toBeNull();
+    expect(screen.getByRole('list', { name: 'waiting for the same session to go on with them' })).toHaveTextContent(words);
+    expect(inputs()).toHaveLength(1);
   });
 
   /**

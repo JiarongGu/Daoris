@@ -11,8 +11,9 @@ import {
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useSessionDiff,
-  useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules,
+  useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting,
 } from '../bridge/shell';
+import { type Sent, useSending, useSettled } from './sending';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
 import { opinionAsked, opinionHolds } from './opinion';
 import { useOpinionActs } from './opinionActs';
@@ -133,6 +134,15 @@ const readCheckout: CheckoutReader = (repository, workspace) => {
 /** Whether a door reports context, from the roster's word on it — undefined until the roster says. */
 const door = (structured?: boolean): 'structured' | 'text' | undefined =>
   structured === true ? 'structured' : structured === false ? 'text' : undefined;
+
+/**
+ * Settles the person's words whose send the page stopped waiting on (SENDLOST1b) by the attended session's record and queue.
+ * Mounted only while some wait, so the record is read a second time, beside its conversation's own reading, only then.
+ */
+function SentSettler({ sending, giveBack }: { sending: ReturnType<typeof useSending>; giveBack: (sent: Sent) => void }) {
+  useSettled(sending, useSessionEvents(sending.lateTo), giveBack);
+  return null;
+}
 
 /**
  * The **Work frame** (D55): the rail, the attended session, the composer and the output panel.
@@ -488,6 +498,20 @@ export function WorkFrame({
   useEffect(() => {
     if (!attended || ending?.session !== attended.id || !SESSION_ACTIVE.has(attended.state)) setEnding(null);
   }, [attended, ending?.session]);
+  // The person's words on their way to the attended session (SENDLOST1b, D137 §2.4): shown the moment they are sent, kept
+  // where the page stopped waiting on their send, and settled by its own queue and record (`SentSettler`, which reads it
+  // only while some wait). A chat that ended without them gives them back, said so; a driven session keeps words once they
+  // arrive.
+  const sending = useSending(attended && here && !oneTurn
+    ? { id: attended.id, queued: chatTurns[attended.id]?.queued, endedChat: conversation && !live }
+    : null);
+  const giveBackSent = (sent: Sent) => {
+    setDraft((was) => [sent.words.text, was.trim()].filter(Boolean).join('\n\n'));
+    if (sent.words.files.length > 0) {
+      notify(t('work.composer.filesNotSent', { count: 1, names: sent.words.files.join(', ') }), 'error');
+    }
+    setRefusal({ session: sent.session, text: t('work.composer.notSent') });
+  };
   const taking = Object.fromEntries(Object.entries(chatTurns).map(([id, held]) => [id, held.taking]));
   // When each live chat's last turn ended here (RAIL2): its *moved*, which its record never says.
   const lastTurns = Object.fromEntries(Object.entries(chatTurns).flatMap(([id, held]) => (held.lastTurn ? [[id, held.lastTurn]] : [])));
@@ -598,6 +622,19 @@ export function WorkFrame({
   const untaken = (said: WordsAnswer, fallback: string) =>
     (said.why ? neverSentence(t, said.why, { quest: attended?.quest, to: said.to }) : fallback);
 
+  // 🔴 A send the page stopped waiting on (the bridge's TIMEOUT) may still be taken by the machine (SENDLOST1b): its words
+  // are kept above the box, saying so, never put back in it, where a second send would say them twice, and the sessions are
+  // read again; the session's own queue and record settle them. Any other failure lets them go, for the caller to give back.
+  const stillTaking = (n: number, error: unknown) => {
+    if (!stoppedWaiting(error)) {
+      sending.answered(n);
+      return false;
+    }
+    sending.unanswered(n);
+    void sessions.refetch();
+    return true;
+  };
+
   const onSend = (text: string, files: File[] = []) => {
     if (!attended) return;
     const session = attended.id;
@@ -610,10 +647,13 @@ export function WorkFrame({
         notify(t('work.composer.filesNotSent', { count: 1, names: files.map((file) => file.name).join(', ') }), 'error');
       }
     };
+    // Shown at once, as sending, until the answer says what came of them (SENDLOST1b).
+    const n = sending.begin(session, { text, files: files.map((file) => file.name) });
     send.mutate({ id: session, text, files }, {
       // False is an answer: the session ended while they were typing. It lands on the composer
       // rather than in a toast, because that is where the person is looking — on THAT session's.
       onSuccess: (result) => {
+        sending.answered(n);
         if (result.sent) {
           counted(session, 'chat', text, files.length, result);
           setRefusal(null);
@@ -623,6 +663,7 @@ export function WorkFrame({
         setRefusal({ session, text: untaken(result, t('work.composer.notListening')) });
       },
       onError: (error: unknown) => {
+        if (stillTaking(n, error)) return;
         giveBack();
         notify(sentence(error), 'error');
       },
@@ -651,8 +692,10 @@ export function WorkFrame({
     const kind = box.kind === 'steer' ? 'steer' : box.mode === 'answer' ? 'answer' : 'say';
     const winding = box.kind === 'say' && box.mode === 'ending';
     const giveBack = () => setDraft((was) => [text, was.trim()].filter(Boolean).join('\n\n'));
+    const n = sending.begin(session, { text, files: [] });
     say.mutate({ id: session, text }, {
       onSuccess: (result) => {
+        sending.answered(n);
         if (!result.sent) {
           giveBack();
           setRefusal({ session, text: untaken(result, t('work.say.notTaken')) });
@@ -665,6 +708,7 @@ export function WorkFrame({
         if (winding) setEnding((was) => ({ session, words: [...(was?.session === session ? was.words : []), text] }));
       },
       onError: (error: unknown) => {
+        if (stillTaking(n, error)) return;
         giveBack();
         notify(sentence(error), 'error');
       },
@@ -1868,6 +1912,8 @@ export function WorkFrame({
           />
         )}
 
+        {sending.lateTo && <SentSettler key={sending.lateTo} sending={sending} giveBack={giveBackSent} />}
+
         {talking && attended && box.kind === 'chat' && (
           <Composer
             // Per session: the files attached in one conversation never follow the person to another.
@@ -1886,6 +1932,7 @@ export function WorkFrame({
             queued={turns.queued}
             // A parked conversation's waiting words are its record's, which it goes on with (SAIDBACK1b): no turn, no door.
             queuedLabel={attended.state === 'awaiting-person' ? t('work.say.waiting') : undefined}
+            going={sending.going}
             taking={turns.taking}
             opening={turns.opening}
             // Only a door that can see a turn end can stop one; the roster says which (CONV3b).
@@ -1931,6 +1978,7 @@ export function WorkFrame({
             ending={ending?.session === attended.id ? ending.words : []}
             // What waits on a park's or an ended session's record (SAIDBACK1b), as the driver lists it.
             waiting={box.kind === 'say' ? chatTurns[attended.id]?.queued ?? [] : []}
+            going={sending.going}
             stopping={cancelTurn.isPending}
             // *Answer…* from its row, and *Send back…* from its review, put the focus here (D126 §3.1, D137 §5.1).
             focus={answerFocus?.session === attended.id ? answerFocus.at : 0}

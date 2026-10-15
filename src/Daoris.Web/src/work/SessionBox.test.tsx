@@ -47,6 +47,24 @@ describe('SessionBox', () => {
     expect(onEdit).toHaveBeenCalledWith('a1', 'cap it hard');
   });
 
+  /**
+   * SENDLOST1b: words on their way show above every box that takes words, the running door's, the park's answer, the box
+   * where the same session goes on and the one winding up, as sending or, once the page stopped waiting, as unanswered.
+   */
+  it('shows the words on their way above every box that takes words', () => {
+    const going = { words: [{ text: 'and the line?', files: [] }], late: true };
+    for (const box of [
+      { kind: 'steer' }, { kind: 'say', mode: 'answer' }, { kind: 'say', mode: 'goOn' }, { kind: 'say', mode: 'ending' },
+    ] as const) {
+      const { unmount } = show({ box, going, held: { queued: [], taking: true } });
+      expect(screen.getByRole('list', { name: 'The machine has not answered yet; it may still take them.' }))
+        .toHaveTextContent('and the line?');
+      unmount();
+    }
+    show({ box: { kind: 'say', mode: 'goOn' }, going: { ...going, late: false } });
+    expect(screen.getByRole('list', { name: 'sending…' })).toHaveTextContent('and the line?');
+  });
+
   /** D126 §3.1, D137 §5.1: on a parked session the box is the answer. */
   it('offers a parked session the answer', async () => {
     const onSend = vi.fn();
