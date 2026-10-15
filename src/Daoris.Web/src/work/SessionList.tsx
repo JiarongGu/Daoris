@@ -1,13 +1,14 @@
-import { type ReactNode, useState } from 'react';
+import { Fragment, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../data/api';
 import { Button, EmptyState } from '../design/ui';
 import type { SessionActId } from './acts';
 import {
-  cutEnded, ENDED_SHOWN, type SessionArrangement, type SessionGrouping, sessionsByRepository, sessionsByState, stripSessions,
+  cutEnded, ENDED_SHOWN, type NestedRow, nestServing, type SessionArrangement, type SessionGrouping, sessionsByRepository,
+  sessionsByState, stripSessions,
 } from './groups';
-import { type EntryFacts, type SessionEntry, sessionsByAsk } from './entries';
-import { isHelp, isIntake } from './identity';
+import { type EntryFacts, entryOfSession, type SessionEntry, sessionsByAsk } from './entries';
+import { isHelp, isIntake, sessionTitle } from './identity';
 import { type Answered, InlineConfirm } from './InlineConfirm';
 import { groupHeading, ListGroup } from './ListPane';
 import { RepositoryGroup } from './RepositoryGroup';
@@ -75,11 +76,19 @@ type RowActs = {
  * - **Ended** shows twelve and then *Show N more* (§4.4), and never cuts the attended session out of its group.
  * - **Archived** (SESSUX1e, §5.2) is drawn while *Show archived* is ticked, and says so where nothing is archived. An
  *   archived row under no Archived heading (by repository) says it is archived on its line.
+ * - **A helper and a reviewer under the work they serve** (MIXAGENT3a-ii, the mixed-agents design §4), in every arrangement:
+ *   moved there out of their own group (`nestServing`), so a group counts the rows it draws as its own, and their lines leave
+ *   whose work it is to the row above. Where that row is not drawn, or the person must act on them, they keep their place.
  */
 export function SessionList({
   arrangement, rows, groupings, selected = null, archived = false, live = false, repositoryFacts, onSelect, actsFor, onAct,
-  entries, askNames = {}, unread = {}, askAccept,
+  entries, askNames = {}, unread = {}, askAccept, serving = {},
 }: RowActs & {
+  /**
+   * The session whose work each helper and reviewer serves, by the helper's or reviewer's id, as the rail joined them
+   * (MIXAGENT3a-ii): a helper's `serves`, a reviewer's opinion's `working`. Absent, every row is its own.
+   */
+  serving?: Readonly<Record<string, string>>;
   /** What is unread on each ask's channel, by its id (SESSONE2c, D167), said in the heading *by ask* draws; none where no driver says. */
   unread?: Readonly<Record<string, number>>;
   /**
@@ -119,19 +128,22 @@ export function SessionList({
     return facts.session.repository;
   };
 
-  // `underArchived`: the row is drawn under the Archived heading, which already says what its line would (§4.5).
-  const row = (session: Session, byState: boolean, underArchived = false, byAsk = false) => {
+  // `underArchived`: the row is drawn under the Archived heading, which already says what its line would (§4.5). `parent`: the
+  // row it is drawn under (MIXAGENT3a-ii), which says whose work it serves and, where it is the same, the repository.
+  const row = (session: Session, byState: boolean, underArchived = false, byAsk = false, parent?: Session) => {
     const facts = factsOf.get(session.id) ?? { session };
     const grouping = live ? null : placed.get(session.id);
     return (
       <SessionRow
         key={session.id}
         {...facts}
+        reads={parent ? null : facts.reads}
+        helps={parent ? null : facts.helps}
         // The ask's heading says whose it is, so each row there is the line of work's own name (its leading part's).
         name={byAsk ? null : facts.name}
         parts={facts.entry?.parts}
         grouping={grouping}
-        place={byState ? placeOf(facts) : null}
+        place={byState && parent?.repository !== session.repository ? placeOf(facts) : null}
         archived={Boolean(grouping?.archived) && !underArchived}
         // The entry is attended while any of its parts is: the strip on its page picks which one (SESSONE1c).
         selected={session.id === selected || Boolean(selected && facts.entry?.ids.includes(selected))}
@@ -142,12 +154,38 @@ export function SessionList({
     );
   };
 
-  // The rest of a long Ended group, on a press (§4.4): counted, never silently cut.
-  const ended = (all: readonly Session[], byState: boolean, underArchived = false): ReactNode => {
-    const { rows: shown, hidden } = cutEnded(all, { limit: ENDED_SHOWN, open: allEnded, keep: selected });
+  // Each helper and reviewer under the row of the work it serves (MIXAGENT3a-ii): that work's entry's row where entries are
+  // answered, and never one the reader says waits on the person or is to review.
+  const nest = (drawn: readonly (readonly Session[])[]) => nestServing(drawn, serving, {
+    standsFor: (id) => entryOfSession(entries, id)?.leading ?? id,
+    keepOwn: (id) => !live && ['you', 'review'].includes(placed.get(id)?.group ?? ''),
+  });
+
+  // A row the list draws as its own, then what is drawn under it, a list of its own named for whose work it is: rows of the
+  // list all the same, so its arrows move through them.
+  const drawRow = ({ session, under }: NestedRow, byState: boolean, underArchived = false, byAsk = false): ReactNode => {
+    if (!under.length) return row(session, byState, underArchived, byAsk);
+    const facts = factsOf.get(session.id) ?? { session };
+    const title = (byAsk ? null : facts.name) || sessionTitle(session, facts.quest, facts.opening);
+    return (
+      <Fragment key={session.id}>
+        {row(session, byState, underArchived, byAsk)}
+        <li>
+          <ul aria-label={t('work.rail.under', { title })} className="m-0 ml-3 list-none border-l border-line p-0">
+            {under.map((child) => row(child, byState, underArchived, byAsk, session))}
+          </ul>
+        </li>
+      </Fragment>
+    );
+  };
+
+  // The rest of a long Ended group, on a press (§4.4): counted, never silently cut, and never the row the attended one is under.
+  const ended = (all: readonly NestedRow[], byState: boolean, underArchived = false): ReactNode => {
+    const keep = all.find((each) => each.under.some((child) => child.id === selected))?.id ?? selected;
+    const { rows: shown, hidden } = cutEnded(all, { limit: ENDED_SHOWN, open: allEnded, keep });
     return (
       <>
-        {shown.map((session) => row(session, byState, underArchived))}
+        {shown.map((each) => drawRow(each, byState, underArchived))}
         {hidden > 0 && (
           <li className="px-1.5 py-1">
             <Button variant="ghost" onClick={() => setAllEnded(true)} className="text-small">
@@ -165,10 +203,12 @@ export function SessionList({
 
   // By ask (D167 point 5): each ask a heading, its entries under it with their repositories, what no ask began last.
   if (arrangement === 'ask' && entries && !live) {
-    const asks = sessionsByAsk(sessions, entries, { selected, archived });
+    const byAsk = sessionsByAsk(sessions, entries, { selected, archived });
+    const nested = nest(byAsk.map((group) => group.sessions));
+    const asks = byAsk.map(({ ask }, index) => ({ ask, members: nested[index]! })).filter((group) => group.members.length > 0);
     return (
       <>
-        {asks.map(({ ask, sessions: members }) => {
+        {asks.map(({ ask, members }) => {
           const accept = ask === null ? null : askAccept?.(ask);
           return (
             // What is unread on the ask's channel is said in its heading (SESSONE2c, D167): the person's count, not any session's.
@@ -179,7 +219,7 @@ export function SessionList({
                 : `${askNames[ask] ?? `#${ask}`}${unread[ask] ? ` · ${t('asks.channel.unread', { count: unread[ask] })}` : ''}`}
             >
               {accept && <li className="grid justify-items-start gap-1 px-2.5 pb-1.5">{accept}</li>}
-              {members.map((session) => row(session, true, false, true))}
+              {members.map((each) => drawRow(each, true, false, true))}
             </ListGroup>
           );
         })}
@@ -189,15 +229,17 @@ export function SessionList({
   }
 
   if (arrangement !== 'repository') {
-    const groups = sessionsByState(sessions, groupings, { selected, archived });
+    const byState = sessionsByState(sessions, groupings, { selected, archived });
+    const nested = nest(byState.map((group) => group.sessions));
+    const groups = byState.map(({ group }, index) => ({ group, members: nested[index]! })).filter((group) => group.members.length > 0);
     return (
       <>
-        {groups.map(({ group, sessions: members }) => (
+        {groups.map(({ group, members }) => (
           // Its heading's id is what a door into the group brings into view (ENTRY1b).
           <ListGroup key={group} id={groupHeading('sessions', group)} title={t(`work.group.${group}`, { count: members.length })}>
             {group === 'ended' || group === 'archived'
               ? ended(members, true, group === 'archived')
-              : members.map((session) => row(session, true))}
+              : members.map((each) => drawRow(each, true))}
           </ListGroup>
         ))}
         {/* Shown and empty (SESSUX1e): the group the tick asked for, saying it holds nothing, rather than no answer. Not a
@@ -212,13 +254,25 @@ export function SessionList({
   }
 
   // By repository: the live sessions, grouped by the repository each runs in; the monitor's, without the parked.
-  const { live: groups, ended: rest } = sessionsByRepository(sessions, live ? undefined : groupings, { selected, archived });
+  const byRepository = sessionsByRepository(sessions, live ? undefined : groupings, { selected, archived });
+  const nested = nest([...byRepository.live.map((group) => group.sessions), byRepository.ended]);
+  const rest = nested.at(-1)!;
+  const groups = byRepository.live
+    .map(({ repository }, index) => ({ repository, members: nested[index]! }))
+    .filter((group) => group.members.length > 0);
   return (
     <>
       {!groups.length && <p className="px-3 py-2 text-small text-ink-faint">{t('work.rail.empty.headline')}</p>}
-      {groups.map(({ repository, sessions: members }) => (
-        <RepositoryGroup key={repository} repository={repository} count={members.length} {...repositoryFacts?.(repository, members)}>
-          {members.map((session) => row(session, false))}
+      {groups.map(({ repository, members }) => (
+        // Its facts read every session of this repository it draws, those under another's row among them, as before they moved.
+        <RepositoryGroup
+          key={repository}
+          repository={repository}
+          count={members.length}
+          {...repositoryFacts?.(repository, members.flatMap((each) => [each.session, ...each.under])
+            .filter((session) => session.repository === repository))}
+        >
+          {members.map((each) => drawRow(each, false))}
         </RepositoryGroup>
       ))}
 
