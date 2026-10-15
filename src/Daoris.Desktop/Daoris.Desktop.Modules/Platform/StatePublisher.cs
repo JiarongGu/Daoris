@@ -82,6 +82,21 @@ public sealed record StateChanged(
     IReadOnlyList<string> Scopes,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<string>? Sessions);
 
+/// <summary>One press under way on the wire (STATEHUB1c, D169 point 7): its route, and the session its payload named.</summary>
+/// <param name="Route">The route pressed, as the page names it when it sends.</param>
+/// <param name="Session">The session the route's declaration names in the payload; absent where it names none.</param>
+public sealed record PressUnderWay(
+    string Route,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Session);
+
+/// <summary>
+/// <c>UNDER_WAY</c> on the wire (STATEHUB1c, D169 point 7): every declared press dispatched and not yet answered, told whole at
+/// each change, in the order they were dispatched; no words, no payload but the session, no machine path.
+/// </summary>
+/// <param name="Seq">Counts each telling, so a window keeps the newest whatever order the bus delivered them in.</param>
+/// <param name="Presses">What is under way now; empty is nothing.</param>
+public sealed record UnderWay(long Seq, IReadOnlyList<PressUnderWay> Presses);
+
 /// <summary>
 /// Every change a route makes, published on the kit's bus as <c>DAORIS.STATE_CHANGED</c> once the route has answered
 /// (STATEHUB1b, D169): the dispatcher's middleware, after <see cref="OffTheWindow"/>, reading what the route declares.
@@ -99,6 +114,11 @@ public sealed record StateChanged(
 /// answer waiting on any of them; a subscriber's failure is the bus's to isolate.</para>
 ///
 /// <para><b>Shell-only</b> (D47): the bus is this machine's, forwarded to its windows and to nothing else.</para>
+///
+/// <para><b>And what is under way</b> (STATEHUB1c, D169 point 7): a declared press, from its dispatch until it answers or
+/// throws, told whole as <c>UNDER_WAY</c> at each change, so *落地中…* is shown by every view and window, not only the
+/// component that pressed. The kit's request tracker could not say it: its snapshot carries the route but never the payload,
+/// so not which session a landing is for, and it is silent until a request outlives its grace period.</para>
 /// </remarks>
 public static class StatePublisher
 {
@@ -108,21 +128,44 @@ public static class StatePublisher
     /// <summary>The event's type.</summary>
     public const string Type = "STATE_CHANGED";
 
+    /// <summary>The type of the event telling what is under way (STATEHUB1c).</summary>
+    public const string UnderWayType = "UNDER_WAY";
+
     /// <summary>The middleware over the driver's marks, publishing on <paramref name="bus"/>.</summary>
     public static MessageMiddleware Middleware(IEventBus bus) => Middleware(bus, DriverModule.Declared);
 
     /// <summary>The middleware over <paramref name="declared"/>, what each request's route declares it changes.</summary>
-    public static MessageMiddleware Middleware(IEventBus bus, Func<IpcRequest, StateChange?> declared) => async (request, next, _) =>
+    public static MessageMiddleware Middleware(IEventBus bus, Func<IpcRequest, StateChange?> declared)
     {
-        // No ConfigureAwait: the kit's pipeline keeps the caller's context, as RefusalLog's says.
-        var response = await next();
-        if (response is { Success: true } && declared(request) is { Scopes: not StateScopes.None } change)
+        // What this pipeline has under way: one per composed dispatcher, as the shell composes one.
+        var underWay = new Presses();
+        return async (request, next, _) =>
         {
-            bus.Emit(Module, Type, Event(change, request));
-        }
+            if (declared(request) is not { Scopes: not StateScopes.None } change)
+            {
+                return await next();
+            }
 
-        return response;
-    };
+            var press = new object();
+            bus.Emit(Module, UnderWayType, underWay.Begin(press, new PressUnderWay(request.Type, SessionOf(change, request))));
+            try
+            {
+                // No ConfigureAwait: the kit's pipeline keeps the caller's context, as RefusalLog's says.
+                var response = await next();
+                // What moved before it is no longer under way: the views ask again while they still say *落地中…*.
+                if (response is { Success: true })
+                {
+                    bus.Emit(Module, Type, Event(change, request));
+                }
+
+                return response;
+            }
+            finally
+            {
+                bus.Emit(Module, UnderWayType, underWay.End(press));
+            }
+        };
+    }
 
     /// <summary>The scopes' names on the wire, in the page's words and in their declared order.</summary>
     public static IReadOnlyList<string> Names(StateScopes scopes) =>
@@ -135,6 +178,37 @@ public static class StatePublisher
     /// <summary>The event for <paramref name="change"/>: its scopes, and the session the request's payload named.</summary>
     public static StateChanged Event(StateChange change, IpcRequest request) =>
         new(Names(change.Scopes), SessionOf(change, request) is { } session ? [session] : null);
+
+    /// <summary>
+    /// The presses under way, in dispatch order, each change numbered under the same lock, so the telling is whole and the
+    /// newest is known whatever order the bus delivers it in.
+    /// </summary>
+    private sealed class Presses
+    {
+        private readonly Lock _gate = new();
+        private readonly List<(object Press, PressUnderWay Told)> _underWay = [];
+        private long _seq;
+
+        public UnderWay Begin(object press, PressUnderWay told)
+        {
+            lock (_gate)
+            {
+                _underWay.Add((press, told));
+                return Telling();
+            }
+        }
+
+        public UnderWay End(object press)
+        {
+            lock (_gate)
+            {
+                _underWay.RemoveAll(each => ReferenceEquals(each.Press, press));
+                return Telling();
+            }
+        }
+
+        private UnderWay Telling() => new(++_seq, [.. _underWay.Select(each => each.Told)]);
+    }
 
     private static string? SessionOf(StateChange change, IpcRequest request) =>
         change.Session is { } field
