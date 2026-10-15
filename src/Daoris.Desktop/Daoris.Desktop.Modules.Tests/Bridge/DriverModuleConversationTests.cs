@@ -445,6 +445,10 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
         Assert.Equal(
             [(SessionEventKind.Note, SessionEventCodes.Withdrawn, "w1"), (SessionEventKind.Note, SessionEventCodes.Withdrawn, "w2")],
             shown.Where(each => each.Kind == SessionEventKind.Note).Select(each => (each.Kind, each.Code, Assert.Single(each.Words!))));
+        // WITHDRAWNLINE1: one note shape for every door: the library's, the one the driver's terminal keeps.
+        Assert.All(
+            shown.Where(each => each.Kind == SessionEventKind.Note),
+            each => Assert.Equal(SessionNotes.Withdrawn(each.Words![0]).Text, each.Text));
         var renamed = Assert.Single(shown, each => each.Kind == SessionEventKind.User);
         Assert.Equal(("w3", "use the green one", "resume", "screen"), (renamed.Id, renamed.Text, renamed.Reaches, renamed.Door));
         await UntilAsync(() => QueuedWords("s1") is ["w3"]);

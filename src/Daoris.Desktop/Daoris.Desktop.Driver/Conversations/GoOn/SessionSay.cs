@@ -196,6 +196,30 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
     }
 
     /// <summary>
+    /// A terminal's <c>sessions take-back</c> (SAIDBACK1c, D137 §2.4), as the loop that holds the home does it: the service's
+    /// take-back door judges it, and where it is done the loop settles the word the conversation showed waiting with the
+    /// withdrawn note (<see cref="SessionNotes.Withdrawn"/>), and shows a reword's new words, in its own record of the conversation,
+    /// the one a page may have open. Answered in the say's shape: sent is done, the refusal's code is <c>why</c>.
+    /// </summary>
+    public async Task<WordsHeld> TakeBackAsync(SessionRequest request, CancellationToken ct)
+    {
+        var id = request.Session;
+        if (request.Word is not { Length: > 0 } word) return WordsHeld.Failed("a take-back names the word to take back.");
+        if (service() is not { } client)
+        {
+            return WordsHeld.Failed("the driver is still coming up — its service is not answering yet. A moment.");
+        }
+
+        var back = await client.TakeBackAsync(id, word, request.Text, ct).ConfigureAwait(false);
+        if (!back.Done) return back.Why is { } why ? WordsHeld.Refused(why, back.Message) : WordsHeld.Failed(back.Message);
+
+        Events?.Keep(id, SessionNotes.Withdrawn(word), null);
+        if (back.Word is { } kept) Events?.Keep(id, Shown(kept, request.By), null);
+        Nudge?.Invoke();
+        return new WordsHeld(true, null, null) { Word = back.Word?.Id, Message = back.Message };
+    }
+
+    /// <summary>
     /// Words a record kept, as its conversation shows them the moment they are kept (D137 §3.1): the person's, under the id the
     /// record gave them, reaching it on <c>resume</c>, with the door they were said at, which <c>session.reopened</c> names.
     /// </summary>

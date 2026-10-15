@@ -714,7 +714,9 @@ public sealed class SessionsSayCommandTests : IDisposable
 
         var (exit, said) = await RunAsync(room, ["reword", "d0ne0000", "w1", "Use", "the", "green", "one."]);
         using var service = room.Client();
-        var (looped, _) = await RunAsync(room, ["reword", "d0ne0000", "w2", "Use", "the", "red", "one."], World(service, loop: true));
+        // A loop is said to hold the home and none answers: the verb waits out its short time and goes to the service itself.
+        var (looped, _) = await RunAsync(
+            room, ["reword", "d0ne0000", "w2", "Use", "the", "red", "one."], World(service, loop: true, wait: TimeSpan.FromMilliseconds(200)));
 
         Assert.Equal((0, 0), (exit, looped));
         Assert.Equal("sessions: Reworded word `w1` on session `d0ne0000`: the new words wait last, as `w2`.\n", said);
@@ -724,6 +726,59 @@ public sealed class SessionsSayCommandTests : IDisposable
         Assert.Equal((SessionEventCodes.Withdrawn, "w1"), (events[0].Code, Assert.Single(events[0].Words!)));
         Assert.Equal((SessionEventKind.User, "w2", "Use the green one.", "resume", RequestDoor.Terminal),
             (events[1].Kind, events[1].Id, events[1].Text, events[1].Reaches, events[1].Door));
+    }
+
+    /// <summary>
+    /// SAIDBACK1c: with a loop on the home, a take-back reaches it through the request folder, as a say does, and the loop that
+    /// takes it writes the withdrawn note into its own record of the conversation, so the page settles the word it showed waiting.
+    /// A reword's new words are shown by that loop too, and no request is left behind.
+    /// </summary>
+    [Fact]
+    public async Task A_take_back_with_a_loop_on_the_home_reaches_the_loop_which_writes_the_withdrawn_note()
+    {
+        var room = Waiting("Use the blue one.", "And another.");
+        using var service = room.Client();
+        var events = new SessionEvents(Sessions);
+        var processes = new SessionProcesses(Sessions);
+        await using var loop = new SessionRequestWatch(_home, processes, () => service, every: TimeSpan.FromMilliseconds(20))
+        {
+            TakeBack = new LoopWords(processes, () => service) { Events = events }.TakeBackAsync,
+        };
+
+        var (exit, said) = await RunAsync(room, ["take-back", "d0ne0000", "w1"], World(service, loop: true));
+        var (reworded, rewording) = await RunAsync(room, ["reword", "d0ne0000", "w2", "Use", "the", "red", "one."], World(service, loop: true));
+
+        Assert.Equal((0, 0), (exit, reworded));
+        Assert.Equal("sessions: Took word `w1` back from session `d0ne0000`: 1 still wait.\n", said);
+        Assert.Equal("sessions: Reworded word `w2` on session `d0ne0000`: the new words wait last, as `w3`.\n", rewording);
+        Assert.Equal(["w3"], room.Said("d0ne0000"));
+        var shown = events.Page("d0ne0000").Events;
+        Assert.Equal(
+            [(SessionEventCodes.Withdrawn, "w1"), (SessionEventCodes.Withdrawn, "w2")],
+            shown.Where(each => each.Kind == SessionEventKind.Note).Select(each => (each.Code!, Assert.Single(each.Words!))));
+        Assert.Equal("w3", Assert.Single(shown, each => each.Kind == SessionEventKind.User).Id);
+        Assert.False(AnyRequest());
+    }
+
+    /// <summary>A loop that refuses the take-back, as the service does, is a policy answer, exit 1, and writes no note.</summary>
+    [Fact]
+    public async Task A_take_back_the_loop_refuses_is_a_policy_answer_and_writes_no_note()
+    {
+        var room = Waiting("Use the blue one.");
+        using var service = room.Client();
+        var events = new SessionEvents(Sessions);
+        var processes = new SessionProcesses(Sessions);
+        await using var loop = new SessionRequestWatch(_home, processes, () => service, every: TimeSpan.FromMilliseconds(20))
+        {
+            TakeBack = new LoopWords(processes, () => service) { Events = events }.TakeBackAsync,
+        };
+
+        var (exit, said) = await RunAsync(room, ["take-back", "d0ne0000", "w9"], World(service, loop: true));
+
+        Assert.Equal(1, exit);
+        Assert.Contains("Word `w9` no longer waits on session `d0ne0000`", said);
+        Assert.Empty(events.Page("d0ne0000").Events);
+        Assert.Equal(["w1"], room.Said("d0ne0000"));
     }
 
     /// <summary>A word a session took already, and what never goes on, are refusals: exit 1, the record and its conversation untouched.</summary>
