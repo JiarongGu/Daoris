@@ -48,6 +48,7 @@ public static class KnowledgeServer
         typeof(HelpRepositoryTool),
         typeof(HelpSessionTool),
         typeof(HelpSettingTool),
+        typeof(HelpSetupTool),
         typeof(HelpSyncTool),
         typeof(HelpWorkflowTool),
     ];

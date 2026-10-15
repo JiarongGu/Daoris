@@ -21,7 +21,8 @@
       "mcp__daoris-knowledge__session_propose",
       "mcp__daoris-knowledge__pause_propose",
       "mcp__daoris-knowledge__clear_propose",
-      "mcp__daoris-knowledge__workflow_propose"
+      "mcp__daoris-knowledge__workflow_propose",
+      "mcp__daoris-knowledge__setup_propose"
     ]
   }
 }

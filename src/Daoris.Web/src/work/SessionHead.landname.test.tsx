@@ -80,6 +80,8 @@ describe("the head's land ask names a branch", () => {
       landing={{ ...BRANCH, target: 'main', problem: 'a branch named `main` stands, which Daoris did not make.' }} />);
     expect(within(ask()).getByRole('textbox', { name: 'Branch name' })).toHaveAttribute('placeholder', 'feature/delta');
     expect(ask()).toHaveTextContent('which Daoris did not make.');
+    // STANDSREFUSE1: a press the plan says would be refused is held, its sentence saying why.
+    expect(within(ask()).getByRole('button', { name: 'Accept' })).toBeDisabled();
   });
 
   it('puts the name down with the ask, so the plan is the rule’s again', async () => {
@@ -95,6 +97,20 @@ describe("the head's land ask names a branch", () => {
     render(<SessionHead session={session()} lands={LANDS} onLand={vi.fn()} onName={vi.fn()} landing={{ ...BRANCH, form: 'merge', target: 'main' }} />);
     await userEvent.click(screen.getByRole('button', { name: 'Accept…' }));
     expect(within(ask()).queryByRole('textbox')).toBeNull();
+  });
+
+  /**
+   * TREEFOLLOWWEB1 (D164's TREEFOLLOW1 note): a tree its agent moved onto a branch of its own lands that branch as it stands, which
+   * the ask says, naming the branch the head's line names; a name entered has nowhere to go, so no field is offered.
+   */
+  it('says the session’s own branch lands as it stands, and offers no field for a name', async () => {
+    const own = { branch: 'feature/x', tree: 's-1a2b3c4', commits: 2, uncommitted: 0 };
+    render(<SessionHead session={session()} lands={own} onLand={vi.fn()} onName={vi.fn()} landing={{ ...BRANCH, target: 'feature/x', own: true }} />);
+    expect(screen.getByText('feature/x')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Accept…' }));
+    const asked = screen.getByRole('group', { name: 'accept feature/x' });
+    expect(asked).toHaveTextContent("Accepting lands feature/x, the session's own branch, as it stands");
+    expect(within(asked).queryByRole('textbox')).toBeNull();
   });
 
   it('says its words in Chinese, and the name stays as typed', async () => {

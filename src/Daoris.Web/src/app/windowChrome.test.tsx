@@ -362,6 +362,40 @@ describe('the window\'s engine and the viewer\'s theme', () => {
 });
 
 /**
+ * ONEINSTANCE1 (D171 point 2): a later launch opens another main window of the instance that runs, the whole platform in a
+ * frameless window of its own. The kit's window commands act on it, but its `SET_THEME` has no route there, so its page tells
+ * its own frame the theme by the name it was opened under, as a utility window's page does.
+ */
+describe('another main window\'s frame and the viewer\'s theme', () => {
+  afterEach(() => {
+    setThemeChoice('system');
+    invoke.mockReset();
+    window.history.replaceState(null, '', '/');
+  });
+
+  const told = () => invoke.mock.calls.filter(([module, type]) => module === 'DAORIS.WINDOWS' && type === 'SET_THEME');
+
+  it('tells its own frame the theme by its name on arrival and each time it changes', () => {
+    invoke.mockResolvedValue({ applied: true });
+    window.history.replaceState(null, '', '/?window=main%3A2&host=http%3A%2F%2Flocalhost%3A5177');
+    setThemeChoice('light');
+    renderHook(() => useWindowChrome());
+
+    expect(invoke).toHaveBeenLastCalledWith('DAORIS.WINDOWS', 'SET_THEME', { payload: { name: 'main:2', dark: false } });
+    act(() => setThemeChoice('dark'));
+    expect(invoke).toHaveBeenLastCalledWith('DAORIS.WINDOWS', 'SET_THEME', { payload: { name: 'main:2', dark: true } });
+  });
+
+  it('says nothing by name from the application\'s own window, whose frame the kit tells', () => {
+    invoke.mockResolvedValue({ applied: true });
+    renderHook(() => useWindowChrome());
+    act(() => setThemeChoice('dark'));
+
+    expect(told()).toEqual([]);
+  });
+});
+
+/**
  * A primary press on `target` at a fixed point, a move of `travel` with the button held, and the release,
  * as one pointer, so the move is seen with the button down.
  */

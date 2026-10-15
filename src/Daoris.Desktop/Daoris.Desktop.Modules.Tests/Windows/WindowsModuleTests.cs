@@ -110,6 +110,8 @@ public sealed class WindowsModuleTests : Bridge
     [InlineData("session:a:b")]
     [InlineData("monitor?window=other")]
     [InlineData("settings")]
+    [InlineData("main:1")]
+    [InlineData("main:../x")]
     [InlineData("")]
     public async Task A_name_the_shell_does_not_know_is_refused_and_nothing_is_opened(string name)
     {
@@ -135,6 +137,21 @@ public sealed class WindowsModuleTests : Bridge
 
         var gone = await AnswerAsync(Module(), "SET_THEME", new { name = "session:a1b2c3d4", dark = false });
         Assert.False(gone.GetProperty("applied").GetBoolean());
+    }
+
+    /// <summary>
+    /// ONEINSTANCE1: another main window, which a later launch opened, is frameless as the main one is, and the kit's
+    /// <c>SET_THEME</c> has no route to it, so its page tells its frame the theme by its name here, as a utility window's does.
+    /// </summary>
+    [Fact]
+    public async Task Another_main_windows_page_tells_its_frame_its_theme_by_name()
+    {
+        await AnswerAsync(Module(), "OPEN", new { name = "main:2" });
+
+        Assert.Equal(("main:2", "/?window=main%3A2&host=http%3A%2F%2Flocalhost%3A5177"), _windows.Asked.Single());
+        var told = await AnswerAsync(Module(), "SET_THEME", new { name = "main:2", dark = false });
+        Assert.True(told.GetProperty("applied").GetBoolean());
+        Assert.Equal(("main:2", false), _windows.Themed.Single());
     }
 
     [Fact]

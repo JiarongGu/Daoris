@@ -70,6 +70,21 @@ public sealed class HelperJudgeTests
         Assert.Equal(HelperVerdict.Wait(HelperVerdict.Cap), HelperJudge.Judge(Ask(), null, Asker(), Rule(HelperRules.On), started: 0, slot: false));
     }
 
+    /// <summary>
+    /// HELPERNO1 (D163 point 3): the person's no to an agent's ask is a refusal with its own code, `declined`, which the judge reads
+    /// as past judging whatever the rule says now, so a rule turned `on` after the no never starts it.
+    /// </summary>
+    [Theory]
+    [InlineData(HelperRules.Ask)]
+    [InlineData(HelperRules.On)]
+    [InlineData(HelperRules.Off)]
+    public void The_persons_no_is_past_judging_whatever_the_rule(string mode)
+    {
+        var declined = new HelperState("a1b2c3d4", HelperStates.Refused, HelperWhy.Declined, null, At);
+        Assert.Equal(HelperVerdict.Done, HelperJudge.Judge(Ask(), declined, Asker(), Rule(mode), 0, true));
+        Assert.Equal("the person said no to it", HelperWhy.Said(HelperWhy.Declined));
+    }
+
     /// <summary>A refused or answered ask is over: the judge says nothing more of it, so a look never restarts it.</summary>
     [Theory]
     [InlineData(HelperStates.Refused)]

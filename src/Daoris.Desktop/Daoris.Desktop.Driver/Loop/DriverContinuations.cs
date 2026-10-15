@@ -89,9 +89,13 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// Why the record's own account could not carry the words, where its resume asked for it (MSG1g): the walk's pick carries
     /// them, and the reason says why. Null where its own account runs it, or nobody asked.
     /// </param>
+    /// <param name="inSync">
+    /// What the start did with the tree against the line before the words go on (LANDSYNC2, D87's 2026-10-15 amendment point 7), said
+    /// after them: the conversation was handed no instruction it could read it in. Null for nothing to tell.
+    /// </param>
     internal async Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> ContinueAsync(
         Consideration start, PriorSession park, HarnessSelection selection, IReadOnlyList<RepoView> registry,
-        TreeLock? starting, Action onOpened, CancellationToken ct, string agent, ContinueReason? account = null)
+        TreeLock? starting, Action onOpened, CancellationToken ct, string agent, ContinueReason? account = null, string? inSync = null)
     {
         var service = _context.Service;
         var config = _context.Config;
@@ -188,11 +192,13 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             var words = Continuations.HandedAfterMove(park.Waiting, await ReadAgainAsync(service, sessionId, ct).ConfigureAwait(false));
             if (words.Count == 0) return await PutBackAsync(quest, park, agent, why: null).ConfigureAwait(false);
 
-            // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words.
+            // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words; what its start did with
+            // its tree against the line first after them (LANDSYNC2), since that is where its next commit goes.
+            var after = await ResumedAfterAsync(service, quest, sessionId, target.Language, ct).ConfigureAwait(false);
             resume = new ResumeAsk(
                 kept.Conversation, words,
                 Continuations.OpeningNoted(adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons, helper),
-                await ResumedAfterAsync(service, quest, sessionId, target.Language, ct).ConfigureAwait(false),
+                Continuations.AfterWords(inSync, after),
                 files: word => ChatFiles.Kept(home, sessionId, word.Files));
 
             // The protocol door resumes on its wire, from the same spawn a start has; the native door is run on the

@@ -5,6 +5,36 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-16 — *Bring up to date* counted and replayed commits the line already held (LANDSYNC3)
+
+- **Symptom:** on the install, WSR6's plan said *replays 3 commit(s)* of a session branch whose first commit a pull request had
+  squash-merged, and *replays 1* of one whose only commit was; the press replayed those commits again, where they became empty or, with
+  the line's changelog changed beside them, conflicted.
+- **Root cause:** `BranchJudging.JudgeReplayAsync` cut a branch only by its record (where it grew from) or, with no record, by the walk
+  by content, then counted `cut..tip`. A session grown from the line is cut where it leaves the line, so nothing asked whether the line
+  held any of its commits since: a one-commit squash matches no content walk once the line changed its file, and a recorded branch never
+  walked at all. LANDSYNC1 built the per-commit judgement for the landing alone.
+- **Fix:** `LineHolds.JudgeBeyondAsync` reads the commits beyond the cut in one `git log --cherry-mark --right-only` (patch ids and
+  files); the walk by content is asked for a recorded branch where the line changed every file its first unheld commit touched. The cut
+  moves past held commits it begins with, held ones between are skipped run by run (`BranchReplays.Stretches`), the count is what the
+  replay carries. D87's LANDSYNC3 note.
+- **Verification:** `LineHeldBeyondTests` (fast: red as they could not compile, green after). `TreeSyncHeldTests` (Process: the
+  install's two branches, a squash of several, a skipped cherry-pick) and `TreeSyncStartsTests`' bound are written and owed to the
+  serial run.
+## 2026-10-16 — A chain's step that merged the line showed its parent's work as its own (REVIEWBASE3)
+
+- **Symptom:** a session grown from its parent's tip (a chain's step) that then merged the line: Review listed the parent's commits'
+  files beside the step's own, as the step's work.
+- **Root cause:** REVIEWBASE1 chooses the review's base among the line's merge-base and the record's base. Where neither reaches the
+  other, `ReviewBase.Newest` takes the line's, so the line's changes are not shown, and the parent's, which the line does not hold, are.
+  No single commit in the tree's history excludes both.
+- **Fix:** where `merge-base --independent` names both, the diff reads from `git merge-tree --write-tree` of the two
+  (`ReviewRange.Against`, `Reads`), one git start more in that case only; the answer's `base` is still the line's commit. A conflict
+  between them reads from the line's, as before. D164's REVIEWBASE3 note.
+- **Verification:** `ReviewBaseChoiceTests`' three `Incomparable` cases (red first, the member missing, then green).
+  `ReviewBaseTests.A_chain_step_that_merged_the_line_shows_only_its_own_changes` and
+  `A_chain_step_whose_parent_conflicts_with_the_line_reads_from_the_line_as_before` are `Process` rows, owed to the parent's serial run.
+
 ## 2026-10-16 — Under a squash rule a part joining its entry's branch was refused as grown apart (ACCEPTALL1d)
 
 - **Symptom:** under a branch rule that squashes (PROCESS1b-ii), an entry's Accept landed its first part as one squashed commit and

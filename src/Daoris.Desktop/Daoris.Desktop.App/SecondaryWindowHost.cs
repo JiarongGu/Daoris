@@ -20,7 +20,8 @@ namespace Daoris.Desktop;
 /// blocking <c>Invoke</c> from here would deadlock the UI.</para>
 ///
 /// <para><b>These windows keep their native frame</b> (D55 §b); <see cref="SecondaryForm"/> carries
-/// the reason.</para>
+/// the reason. Another main window, opened for a later launch (ONEINSTANCE1, D171 point 2), wears the
+/// main window's own chrome instead.</para>
 /// </remarks>
 public sealed class SecondaryWindowHost(
     Shenora.Chromium.ChromiumEngine engine,
@@ -71,14 +72,17 @@ public sealed class SecondaryWindowHost(
             // 🔴 `MinWidth`/`MinHeight` here are ALSO applied as the form's DPI-scaled
             // `MinimumSize`, so they outrank anything the form sets for itself. A utility window
             // pinned to a main window's floor cannot be parked narrow beside something else on a
-            // second screen, which is most of what a monitor is for.
-            StateOptions = new WindowStateOptions
-            {
-                DefaultWidth = 1100,
-                DefaultHeight = 760,
-                MinWidth = 520,
-                MinHeight = 360,
-            },
+            // second screen, which is most of what a monitor is for. Another main window
+            // (ONEINSTANCE1) carries the whole platform, and keeps the main window's floor.
+            StateOptions = SecondaryWindow.IsMain(name)
+                ? new WindowStateOptions { DefaultWidth = 1280, DefaultHeight = 800, MinWidth = 960, MinHeight = 600 }
+                : new WindowStateOptions
+                {
+                    DefaultWidth = 1100,
+                    DefaultHeight = 760,
+                    MinWidth = 520,
+                    MinHeight = 360,
+                },
         });
     }
 

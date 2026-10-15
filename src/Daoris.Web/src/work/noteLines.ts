@@ -342,6 +342,8 @@ export const HELPER_REASONS: Readonly<Record<string, { key: string; values: read
   'no-answer': { key: 'note.helper.why.no-answer', values: [] },
   conversation: { key: 'note.helper.why.conversation', values: [] },
   'cannot-take': { key: 'note.helper.why.cannot-take', values: [] },
+  // The person's no to an agent's ask (HELPERNO1), added after the nine.
+  declined: { key: 'note.helper.why.declined', values: [] },
 };
 
 /**

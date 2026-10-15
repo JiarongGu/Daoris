@@ -7,6 +7,7 @@ import { keys } from '../data/queries';
 import { REVIEW_BOUND_MINUTES, type SessionDiff } from '../work/diff';
 import type { OpinionDetail, OpinionGate, OpinionWait } from '../work/opinion';
 import type { TreeFile } from '../work/preview';
+import type { SessionProcessAnswer } from '../work/process';
 import type { ReviewWaits } from '../work/review';
 import { call, pluginBound } from './call';
 
@@ -295,6 +296,16 @@ export const useLanding = (id: string | null, branch?: string | null) => {
     placeholderData: named ? keepPreviousData : undefined,
     queryFn: () => call<{
       session: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string; review?: ReviewWaits | null;
+      /**
+       * The branch the press lands on already stands (ACCEPTALL1g): an entry's or a chain's, which the press moves on instead of
+       * making it. False or absent (an older host) is a branch the press makes.
+       */
+      stands?: boolean;
+      /**
+       * The target is the branch the session's own agent moved its tree onto (TREEFOLLOW1), which the press lands as it stands and
+       * makes no other (TREEFOLLOWWEB1). Absent from an older host, read as a branch the rule names.
+       */
+      own?: boolean;
       /** How many paths the tree holds uncommitted (REVIEWDIRTY1): 0 where clean, absent from an older host. */
       uncommitted?: number;
       opinion?: OpinionGate | null;
@@ -313,6 +324,21 @@ export const useLanding = (id: string | null, branch?: string | null) => {
       leftOutOf?: string | null;
     }>('LANDING', { id, ...(named ? { branch: named } : {}) }),
     enabled: isAvailable && id !== null,
+  });
+};
+
+/**
+ * The process a session's own tree runs under (PROCESS1e, D164's amendment point 3): how its work is committed and how it lands,
+ * each with where it was set, for its *Details*. Read from the driver file alone, so it runs no git; none where the session has no
+ * tree of its own here, which was told none. Shell-only: the rules and the tree are this machine's. Under the lines' key, so a rule
+ * set on Setup or by Ask Daoris asks it again.
+ */
+export const useSessionProcess = (session: string | null) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.sessionProcess(session ?? ''),
+    queryFn: () => call<SessionProcessAnswer>('SESSION_PROCESS', { id: session }),
+    enabled: isAvailable && session !== null,
   });
 };
 

@@ -27,6 +27,8 @@ import { resolveCanonRoot } from '../src/doctrine/canon.ts';
 import { OFFERS_DIR, readManifest } from '../src/plugins/plugins.ts';
 import { BUILT_IN, BUILT_IN_LAYOUT, parseResources } from '../src/tools/resources.ts';
 import { INSTALL_BIN, installBin } from '../src/tools/tools.ts';
+import { INSTALL_APP, INSTALL_DATA, INSTALL_MARKER, installOf } from '../src/platform/home.ts';
+import { RUNNING_FILE } from '../src/service/service.ts';
 import { makeFixture } from './_fixture.ts';
 import { TAR_END, tarEntry } from './_tar.ts';
 
@@ -828,6 +830,28 @@ test('the doctrine tool lands where the CLI reads the canon it ships, as npm lay
   assert.equal(manifest.name, CLI_PACKAGE.at(-1));
   assert.equal(manifest.bin?.daoris, CLI_ENTRY.join('/'));
   assert.ok(manifest.files.includes(CLI_ENTRY[0]), 'the bin entry ships');
+});
+
+/**
+ * FINDDAORIS1 (D171 point 1): a program the install carries finds its install, and the home in it, by the layout the publish
+ * lays out: the marker at the root, the programs under `app/`, the home in `data/`. And the running desktop's address in that
+ * home is one file name to the driver that writes it and the CLI that reads it. Three spellings each, held here.
+ */
+test('a terminal’s programs find the install and the running Daoris where the publish and the desktop put them', () => {
+  assert.equal(INSTALL_MARKER, MARKER);
+  assert.equal(INSTALL_APP, SHELL_HOME[0]);
+  assert.equal(INSTALL_DATA, HOME);
+  const home = readFileSync(driverFile('DaorisHome.cs'), 'utf8');
+  assert.ok(home.includes(`InstallMarker = "${MARKER}"`), 'DaorisHome.InstallMarker');
+  assert.ok(home.includes(`InstallApp = "${SHELL_HOME[0]}"`), 'DaorisHome.InstallApp');
+  assert.ok(home.includes(`InstallData = "${HOME}"`), 'DaorisHome.InstallData');
+  assert.ok(readFileSync(driverFile('RunningAddress.cs'), 'utf8').includes(`FileName = "${RUNNING_FILE}"`), 'RunningAddress.FileName');
+
+  // The CLI as an install carries it, and the driver host, each find the install above them.
+  const install = folder();
+  markInstalled(install);
+  assert.equal(installOf(join(install, ...CLI_PACKAGE, 'src', 'platform')), install);
+  assert.equal(installOf(join(install, ...DRIVER_HOME)), install);
 });
 
 /**

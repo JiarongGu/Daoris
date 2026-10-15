@@ -68,3 +68,26 @@ export function secondaryWindow(search: string): SecondaryWindow | null {
 export function sessionWindowName(id: string): string {
   return `session:${id}`;
 }
+
+/** Another main window's name: `main:` and its number from two, written once (the host's `SecondaryWindow.IsMain`). */
+const MAIN_WINDOW = /^main:(?:[2-9]|[1-9][0-9]+)$/;
+
+/**
+ * Another main window of the instance that runs (ONEINSTANCE1, D171 point 2): the name a later launch of the executable
+ * opened it under, or null for the application's own window and every other.
+ *
+ * @remarks
+ * **It is the application itself**, so `secondaryWindow` answers null for it and the page renders the platform whole. Its
+ * name is read for one thing: the kit's window commands act on the window whose page sent them, but its theme has no route
+ * to any window but the first, so this page tells its own frame by name, as a utility window's does (`windowChrome.ts`).
+ */
+export function anotherMainWindow(search: string): string | null {
+  let name: string | null;
+  try {
+    name = new URLSearchParams(search).get(WINDOW_PARAMETER);
+  } catch {
+    return null;
+  }
+
+  return name !== null && MAIN_WINDOW.test(name) ? name : null;
+}

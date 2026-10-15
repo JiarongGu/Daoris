@@ -337,19 +337,13 @@ public sealed class LinesRoutes(DriverContext context)
             // Where the fetch failed (WSR7): when this checkout last heard from origin, and how origin is reached.
             pull.LastFetch, pull.Reach,
         };
-        object Rebase(RebaseItem item) => new
-        {
-            item.Repository, item.Workspace, item.Branch, item.Landed, item.Kind, item.Onto, item.Cut, item.CutBy, item.GrewFrom,
-            item.Commits, item.Detail, item.Replays,
-        };
-
         if (request.Type == "TREES_SYNC_PLAN")
         {
             var plan = await trees.SyncPlanAsync(repositories, inUse, fetch: true, cancellationToken, scope);
             return new
             {
                 Lines = plan.Lines.Select(Pull).ToArray(),
-                Rebases = plan.Rebases.Select(Rebase).ToArray(),
+                Rebases = plan.Rebases.Select(RebaseRow).ToArray(),
                 Deletes = plan.Deletes.Select(LandedRow).ToArray(),
                 // What the look took, and every other repository with a checkout, listed apart for the person to include (D112).
                 Looked = plan.Looked.Select(Repository).ToArray(),
@@ -370,7 +364,7 @@ public sealed class LinesRoutes(DriverContext context)
         return new
         {
             Lines = done.Lines.Select(result => new { Line = Pull(result.Pull), result.Moved, result.Message }).ToArray(),
-            Rebases = done.Rebases.Select(result => new { Branch = Rebase(result.Item), result.Replayed, result.Message }).ToArray(),
+            Rebases = done.Rebases.Select(result => new { Branch = RebaseRow(result.Item), result.Replayed, result.Message }).ToArray(),
             Deletes = done.Deletes.Select(result => new { Branch = LandedRow(result.Item), result.Removed, result.Message }).ToArray(),
             Changed = done.Lines.Count(result => result.Moved) + done.Rebases.Count(result => result.Replayed) + done.Deletes.Count(result => result.Removed),
         };
@@ -412,6 +406,17 @@ public sealed class LinesRoutes(DriverContext context)
         Discardable = SessionBranchDoors.RemovalOffered(item) is not null,
         Session = item.Tree is not null && session is not null ? new { session.Id, session.State } : null,
         Landable = SessionBranchDoors.LandingOffered(item, session) is not null,
+    };
+
+    /// <summary>
+    /// A branch's row in bringing up to date (WSR6), the list's and the press's alike: what the press does with it, where its own
+    /// commits start, how many it carries, and how many the line already holds, which the replay leaves out (LANDSYNC3b, D87's
+    /// 2026-10-16 note), as `trees sync` says them.
+    /// </summary>
+    public static object RebaseRow(RebaseItem item) => new
+    {
+        item.Repository, item.Workspace, item.Branch, item.Landed, item.Kind, item.Onto, item.Cut, item.CutBy, item.GrewFrom,
+        item.Commits, item.LeftOut, item.Detail, item.Replays,
     };
 
     /// <summary>A landed branch's row: what the proof found, and the files that keep it where some do (WSR5).</summary>

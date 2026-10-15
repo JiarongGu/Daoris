@@ -350,6 +350,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("TREES_SYNC", "sessions,landing,diff,handOff,sweep,treesSync", null)]
     [InlineData("SET_LANDING", "landing,lines", null)]
     [InlineData("LANDING", "", null)]
+    [InlineData("SESSION_PROCESS", "", null)]
     [InlineData("OPINION_GATE", "", null)]
     [InlineData("OPINION_WAITS", "", null)]
     [InlineData("HANDOFF_PLAN", "", null)]
@@ -375,6 +376,14 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("STOP_SESSION", "sessions,driver", "id")]
     [InlineData("RESOLVE_SESSION", "sessions,quests,driver", "id")]
     [InlineData("SESSION_GO_ON_NEW", "sessions,driver", "id")]
+    // MIXAGENT2b: the person's ask of a helper and their yes to an agent's, each a file the loop's next look takes; the asks' read.
+    [InlineData("SESSION_HELPER_ASK", "sessions,driver", "id")]
+    [InlineData("SESSION_HELPER_APPROVE", "sessions,driver", "session")]
+    // HELPERNO1: the person's no, the ask refused and the asker's note written at once.
+    [InlineData("SESSION_HELPER_DECLINE", "sessions,driver", "session")]
+    [InlineData("SESSION_HELPERS", "", null)]
+    // MIXAGENT2c: what of the agents' asks waits on the person, *What needs you*'s read.
+    [InlineData("HELPER_WAITS", "", null)]
     [InlineData("SESSION_OPENINGS", "", null)]
     [InlineData("SESSION_WHERE", "", null)]
     [InlineData("SESSION_GROUPS", "", null)]
@@ -477,6 +486,9 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("CHANNEL_READ", "", null)]
     [InlineData("ASKS_ELSEWHERE", "", null)]
     [InlineData("REGISTRY_REFRESH", "registry", null)]
+    // LAYOUT8: a set-up's press publishes one ask, whose quest it becomes, and adds the repository's rule; its plan reads.
+    [InlineData("SETUP_PRESS", "quests,asks,rules", null)]
+    [InlineData("SETUP_PLAN", "", null)]
     [InlineData("TOOLS_USE", "tools", null)]
     [InlineData("TOOLS_DOWNLOAD", "tools", null)]
     [InlineData("TOOLS_DELETE", "tools", null)]
@@ -493,7 +505,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("HELP_PIN", "sessions,help", "id")]
     [InlineData("HELP_START_FROM", "sessions,help", "id")]
     [InlineData("HELP_DISMISS", "help", null)]
-    [InlineData("HELP_APPLY", "sessions,quests,asks,driver,history,registry,plugins,harnesses,help,browser", null)]
+    // LAYOUT8: a set-up's Apply adds the repository's rule, so an Apply may move the rules too.
+    [InlineData("HELP_APPLY", "sessions,quests,asks,driver,rules,history,registry,plugins,harnesses,help,browser", null)]
     [InlineData("HELP_PROPOSALS", "", null)]
     [InlineData("HELP_CONVERSATIONS", "", null)]
     [InlineData("STOP_TASK", "", null)]

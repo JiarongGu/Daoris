@@ -31,6 +31,7 @@
   "work.rail.parts_other": "{{count}} 段",
   "work.rail.continues": "接续「{{title}}」",
   "work.rail.helps": "协助「{{title}}」",
+  "work.rail.under": "为「{{title}}」工作",
   "work.rail.parkedAfter": "{{count}} 个会话失败后挂起",
   "work.rail.parkedAfter_other": "{{count}} 个会话失败后挂起",
   "work.rail.parkedAfterSome": "会话多次失败后挂起",

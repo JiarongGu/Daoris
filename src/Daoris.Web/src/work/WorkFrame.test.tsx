@@ -3195,6 +3195,45 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
+   * MIXAGENT2b (D163 points 2 and 3; the mixed-agents design §3, §5): the session's asks of helpers stand in its head under
+   * *Helpers*, an agent's that waits on the person with *Let it ask*, which sends `SESSION_HELPER_APPROVE`; *Ask another agent…*
+   * folds into the head's ⋯ and asks under the head, its *Ask* sending `SESSION_HELPER_ASK` with the question, the agent left to
+   * Daoris, and the ask closes once it is on file.
+   */
+  it('lists a session’s asks of helpers with the person’s yes, and asks another agent from the head', async () => {
+    SESSIONS = [{ ...CHAT, state: 'completed' }];
+    const helpers = [{
+      id: 'a1', question: 'Is the cap right?', agent: null, askedBy: 'agent', at: '2026-10-16T09:00:00Z', state: 'waiting', code: null,
+      helper: null, startedOn: null,
+    }];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return TWO_AGENTS;
+      if (type === 'SESSION_HELPERS') return { helpers };
+      if (type === 'SESSION_HELPER_APPROVE') return { approved: true, why: null, message: 'yes' };
+      if (type === 'SESSION_HELPER_ASK') return { asked: 'a2', why: null, message: 'asked' };
+      return DRIVER_STATE;
+    });
+    show('c0ffee11');
+
+    const asks = await screen.findByRole('region', { name: 'Helpers' });
+    expect(within(asks).getByText('The agent asked · waits for your yes')).toBeInTheDocument();
+    const user = userEvent.setup();
+    await user.click(within(asks).getByRole('button', { name: 'Let it ask' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HELPER_APPROVE', { payload: { session: 'c0ffee11', ask: 'a1' } });
+
+    const acts = within(screen.getByRole('group', { name: 'Session actions' }));
+    acts.getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(await screen.findByRole('menuitem', { name: 'Ask another agent…' }));
+    const ask = await screen.findByRole('group', { name: 'ask another agent' });
+    await user.type(within(ask).getByRole('textbox', { name: 'Your question' }), 'Which test covers the loader?');
+    await user.click(within(ask).getByRole('button', { name: 'Ask' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HELPER_ASK', { payload: { id: 'c0ffee11', question: 'Which test covers the loader?' } });
+    await waitFor(() => expect(screen.queryByRole('group', { name: 'ask another agent' })).toBeNull());
+  });
+
+  /**
    * MIXAGENT1b-ii (D163 point 3): when the conversation's own account is near its limit by its scope's near, a line under the head
    * offers *Go on with codex (team)* and *Choose…*; the press asks `SESSION_HAND_OVER` with the reason `near` as Daoris's, *Choose…*
    * opens the ask with that choice made, and *Not now* puts it down for the run. Nothing is taken without the press.
@@ -3424,6 +3463,31 @@ describe('a session’s page header and its acts', () => {
     expect(within(head).queryByRole('heading', { level: 2 })).toBeNull();
     fireEvent.click(within(head).getByRole('button', { name: /^Details/ }));
     expect(within(head).getByText('s1a2b3c4')).toBeInTheDocument();
+  });
+
+  /**
+   * PROCESS1e (D164's amendment point 3): the attended session's *Details* says the process its own tree runs under, as the driver
+   * answers it for that session, with where each rule was set.
+   */
+  it('says in Details how the session commits and lands, as the driver answers for it', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_PROCESS'
+      ? {
+          session: 's1a2b3c4',
+          process: {
+            commits: { repository: 'engine', workspace: 'default', rule: { mode: 'at-end' }, source: 'repository' },
+            landing: { repository: 'engine', workspace: 'default', source: 'default', form: 'merge' },
+          },
+        }
+      : DRIVER_STATE));
+    show('s1a2b3c4');
+
+    const head = (await screen.findByRole('button', { name: /^Details/ })).closest('header')!;
+    fireEvent.click(within(head).getByRole('button', { name: /^Details/ }));
+    expect(await within(head).findByText('Commits')).toBeInTheDocument();
+    expect(within(head).getByText('Commits').nextElementSibling)
+      .toHaveTextContent('One commit is made when the work is done. Set for this repository.');
+    expect(within(head).getByText('Landing').nextElementSibling).toHaveTextContent('Merged into its line — the default.');
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_PROCESS', expect.objectContaining({ payload: { id: 's1a2b3c4' } }));
   });
 
   /**
@@ -4047,6 +4111,58 @@ describe('acting on what a session landed', () => {
     await userEvent.click(within(ask).getByRole('button', { name: 'Accept all' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_ENTRY', { payload: { entry: 'ask:a3/engine' }, timeoutMs: expect.any(Number) });
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Landed 2 part(s) on `feature/a3`.'));
+  });
+
+  /**
+   * ACCEPTALL1h (D169's ACCEPTALL1e note): while a line of work's one Accept lands it, its part's own *Accept…* in the head and its
+   * review's *Accept* wait, read by the entry the press names, and come back once it answered.
+   */
+  it('holds a part’s own Accept in the head and in its review while its line of work lands', async () => {
+    const tree = (name: string) => `C:\\somewhere\\.daoris\\trees\\default\\engine\\${name}`;
+    SESSIONS = [
+      { ...IN_A_TREE, state: 'completed', tree: tree('s-1a2b3c4') },
+      { ...IN_A_TREE, id: 's5e6f7a8', quest: 'abc124', state: 'completed', tree: tree('s-5e6f7a8'), created: '2026-09-02T02:00:00Z', updated: '2026-09-02T03:00:00Z' },
+    ];
+    const lands = (name: string) => ({ branch: `daoris/${name}`, tree: name, commits: 1, uncommitted: 0 });
+    const part = (session: string, quest: string) => ({ session, quest, shown: 'completed', group: 'review', began: 'opened', after: null, askedBy: null });
+    let landed: (answer: unknown) => void = () => {};
+    invoke.mockImplementation((_module: string, type: string) => {
+      if (type === 'SESSION_GROUPS') {
+        return Promise.resolve({
+          sessions: [
+            { session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-1a2b3c4') },
+            { session: 's5e6f7a8', group: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-5e6f7a8') },
+          ],
+          entries: [{ entry: 'ask:a3/engine', origin: 'ask:a3', repository: 'engine', group: 'review', leading: 's5e6f7a8',
+            parts: [part('s1a2b3c4', 'abc123'), part('s5e6f7a8', 'abc124')] }],
+        });
+      }
+      if (type === 'LANDING') return Promise.resolve({ session: 's1a2b3c4', form: 'branch', target: 'feature/a3', source: 'workspace' });
+      if (type === 'ENTRY_LANDING') {
+        return Promise.resolve({ entry: 'ask:a3/engine', repository: 'engine', form: 'branch', target: 'feature/a3',
+          parts: [{ session: 's1a2b3c4', target: 'feature/a3' }, { session: 's5e6f7a8', target: 'feature/a3' }] });
+      }
+      if (type === 'LAND_ENTRY') return new Promise((resolve) => { landed = resolve; });
+      if (type === 'SESSION_DIFF') return Promise.resolve(DIFF);
+      return Promise.resolve(DRIVER_STATE);
+    });
+
+    show('s1a2b3c4', vi.fn());
+    const main = within(screen.getByRole('main'));
+    expect(await main.findByRole('button', { name: 'Accept…' })).toBeEnabled();
+    await userEvent.click(await main.findByRole('button', { name: 'Accept all 2 parts…' }));
+    const ask = screen.getByRole('group', { name: 'accept every part of this line of work' });
+    await within(ask).findByText('Lands 2 parts on feature/a3, one after another, in the order they ran.');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Accept all' }));
+
+    await vi.waitFor(() => expect(main.getByRole('button', { name: 'Accept…' })).toBeDisabled());
+    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    const review = within(await screen.findByRole('tabpanel'));
+    await review.findByText('src/chunk.ts');
+    expect(await review.findByRole('button', { name: 'Landing…' })).toBeDisabled();
+
+    await act(async () => landed({ entry: 'ask:a3/engine', repository: 'engine', done: true, message: 'Landed 2 part(s) on `feature/a3`.', parts: [] }));
+    await vi.waitFor(() => expect(review.queryByRole('button', { name: 'Landing…' })).toBeNull());
   });
 
   /**

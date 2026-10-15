@@ -89,13 +89,11 @@ public sealed partial class HelpCoverageTests
         + "waits on the lock instead (D104).");
 
     /// <summary>
-    /// LAYOUT7's <c>daoris-driver setup</c> (D117 §6.1), a verb of the headless host rather than the CLI's table: a door
-    /// Ask Daoris owes, until LAYOUT8 builds the <c>setup</c> kind it is to take.
+    /// LAYOUT7's <c>daoris-driver setup</c> (D117 §6.1), a verb of the headless host rather than the CLI's table, and the
+    /// repository page's *Set up for agents* (<c>useSetupPress</c>), its twin: the <c>setup</c> kind's <c>setup</c> door since
+    /// LAYOUT8 (D170 point 1), judged by the press's own plan and applied as the press.
     /// </summary>
-    private static readonly Owed SetupDoor = new(
-        "setting a repository up publishes a quest to it and adds a rule its session needs, a widening the person applies "
-        + "as a card, so Ask Daoris should propose it; that waits on LAYOUT8's `setup` kind: the service's box and tool, the "
-        + "driver's judge against the same facts, and the card (D110).");
+    private static readonly Door SetupDoor = new("setup", "setup");
 
     /// <summary>
     /// WSSETUP5's <c>daoris-driver register</c> (D124 §3.1), a verb of the headless host: a door Ask Daoris owes, until WSSETUP7
@@ -226,14 +224,25 @@ public sealed partial class HelpCoverageTests
         + "`daoris-driver sessions hand-over` and the page's *Go on with another agent…* (its head's ⋯, which asks under the head).");
 
     /// <summary>
-    /// MIXAGENT2a-ii's <c>daoris-driver sessions helper</c> (D163 point 2), a verb of the headless host: exempt, since it is the
-    /// person's own ask of another agent, which spends that agent's allowance on a question about their work; whether an agent
-    /// may ask for one is the person's rule (<c>helpers</c>), set elsewhere. The page's press is MIXAGENT2b's row.
+    /// MIXAGENT2a-ii's <c>daoris-driver sessions helper</c> (D163 point 2), a verb of the headless host, and MIXAGENT2b's page press
+    /// (<c>useAskHelper</c>, *Ask another agent…*): exempt, since it is the person's own ask of another agent, which spends that
+    /// agent's allowance on a question about their work; whether an agent may ask for one is the person's rule (<c>helpers</c>),
+    /// set elsewhere.
     /// </summary>
     private static readonly Exempt HelperAskDoor = new(
         "asking another agent to read a session's work and answer a question spends that agent's allowance on the person's own "
         + "question (D163), which stays the person's to ask (D133 §1), so Ask Daoris proposes none; it can name "
-        + "`daoris-driver sessions helper` and the screen's press once the page has it.");
+        + "`daoris-driver sessions helper` and the page's *Ask another agent…* (its head's ⋯, which asks under the head).");
+
+    /// <summary>
+    /// MIXAGENT2b's *Let it ask* (<c>useApproveHelper</c>) and HELPERNO1's *Not now* (<c>useDeclineHelper</c>): the person's yes
+    /// or no to an agent's ask for a helper that waits on it under the <c>helpers</c> rule's <c>ask</c> (D163 point 3). Exempt,
+    /// since it is their word on that one ask, given where it waits; what an agent's ask does at all is the rule, a door already.
+    /// </summary>
+    private static readonly Exempt HelperAnswerDoor = new(
+        "a yes or a no to an agent's ask for a helper is the person's word on that one ask, which spends another agent's "
+        + "allowance or does not (D163 point 3), given where it waits, on the session's page or What needs you; what an agent's ask "
+        + "does at all is the person's `helpers` rule, the `setting` kind's `helpers` door, so Ask Daoris proposes no single answer.");
 
     /// <summary>
     /// TRACE1's <c>daoris-driver trace</c> (D143), a verb of the headless host: exempt, since it reads the records back to an ask
@@ -536,6 +545,10 @@ public sealed partial class HelpCoverageTests
         ("work", "useGoOnNew", null, GoOnNewDoor),
         ("work", "useStartFrom", null, StartFromDoor),
         ("work", "useHandOver", null, HandOverDoor),
+        // MIXAGENT2b (D163 points 2 and 3): *Ask another agent…* and the person's yes to an agent's ask; HELPERNO1: their no.
+        ("work", "useAskHelper", null, HelperAskDoor),
+        ("work", "useApproveHelper", null, HelperAnswerDoor),
+        ("work", "useDeclineHelper", null, HelperAnswerDoor),
         // SESSONE2c (D167 points 6 to 8): the ask's channel, posted to from the ask's page and a session's panel, and its mark.
         ("asks", "usePostChannel", null, ChannelPostDoor),
         ("work", "usePostChannel", null, ChannelPostDoor),
@@ -729,6 +742,8 @@ public sealed partial class HelpCoverageTests
         ("projects", "useImportFolder", null, RepositoryAddGo),
         // ENTRY1d1 (D161's ENTRY1d note): a move needs no path, so the `repository` kind proposes it by name.
         ("projects", "useWireRepository", null, new Door("repository", "wire")),
+        // LAYOUT8 (D170 point 1): a not adopted repository's *Set up for agents*, the `setup` kind's door, as its terminal is.
+        ("projects", "useSetupPress", null, SetupDoor),
         ("projects", "useRetireRepository", null, new Exempt(
             "retiring takes a repository off this machine's registry and its entries out of the index, a removal, which stays "
             + "the person's own press (D89), as a plugin's removal does; registering it again is the person's Add repository, "
@@ -868,7 +883,6 @@ public sealed partial class HelpCoverageTests
             .Concat(Elsewhere.Select(row => row.Answer))
             .Concat(Starts.Select(row => row.Answer))
             .Append(Share)
-            .Append(SetupDoor)
             .Append(RegisterDoor)
             .Append(WorkspaceDoor)
             .Append(SessionsStopVerb)
@@ -917,43 +931,42 @@ public sealed partial class HelpCoverageTests
     }
 
     /// <summary>
-    /// LAYOUT7: the headless host's <c>setup</c> is a door owed to LAYOUT8's <c>setup</c> kind (D110), while the host's usage
-    /// spells it and no kind of that name is built; the room names it meanwhile, so the helper can point the person at it.
-    /// When LAYOUT8 lands the kind, this owed door becomes its door.
+    /// LAYOUT8 (D170 point 1): the headless host's <c>setup</c>, owed since LAYOUT7, is the <c>setup</c> kind's door while the
+    /// host's usage spells it, and the room names its screen, the repository page's *Set up for agents*, beside its command.
     /// </summary>
     [Fact]
-    public void The_headless_hosts_setup_is_a_door_owed_to_the_setup_kind()
+    public void The_headless_hosts_setup_is_the_setup_kinds_door()
     {
         Assert.Contains("setup <repository> [--plan]", DriverCommand.Usage);
-        Assert.Null(HelpProposalKinds.Find("setup"));
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver setup <repository> [--plan]`", StringComparison.Ordinal));
-        Assert.Contains("LAYOUT8", SetupDoor.Reason);
+        Assert.Contains(SetupDoor.Name, HelpProposalKinds.Find(SetupDoor.Kind)!.Doors);
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver setup <repository> [--plan]`", StringComparison.Ordinal)
+            && door.Screen.Contains("Set up for agents", StringComparison.Ordinal));
     }
 
     /// <summary>
     /// WSSETUP5: the headless host's <c>register</c> is a door owed to the <c>setup</c> kind's <c>register</c> (D124 §4.5), while
-    /// the host's usage spells it and no kind of that name is built; the room names it meanwhile.
+    /// the host's usage spells it and the kind LAYOUT8 built takes no such door yet; the room names it meanwhile.
     /// </summary>
     [Fact]
     public void The_headless_hosts_register_is_a_door_owed_to_the_setup_kind()
     {
         Assert.Contains("register [--repository <name>]", DriverCommand.Usage);
-        Assert.Null(HelpProposalKinds.Find("setup"));
+        Assert.DoesNotContain("register", HelpProposalKinds.Find("setup")!.Doors);
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver register [--repository <name>]`", StringComparison.Ordinal));
         Assert.Contains("WSSETUP7", RegisterDoor.Reason);
     }
 
     /// <summary>
     /// WSSETUP6: the headless host's <c>setup --workspace</c>, its press and its pause, resume and stop, are doors owed to the
-    /// <c>setup</c> kind (D124 §4.5) while the host's usage spells them and no kind of that name is built; the room names both
-    /// forms meanwhile, so the helper can point the person at them. The screen's route is WSSETUP7's too.
+    /// <c>setup</c> kind (D124 §4.5) while the host's usage spells them and the kind LAYOUT8 built takes none of them yet; the
+    /// room names both forms meanwhile, so the helper can point the person at them. The screen's route is WSSETUP7's too.
     /// </summary>
     [Fact]
     public void The_headless_hosts_workspace_plan_is_a_door_owed_to_the_setup_kind()
     {
         Assert.Contains("setup --workspace <name> [--plan]", DriverCommand.Usage);
         Assert.Contains("setup --workspace <name> --pause | --resume | --stop", DriverCommand.Usage);
-        Assert.Null(HelpProposalKinds.Find("setup"));
+        Assert.Empty(HelpProposalKinds.Find("setup")!.Doors.Intersect(["workspace", "pause", "resume", "stop"]));
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver setup --workspace <name> [--plan]", StringComparison.Ordinal)
             && door.Terminal.Contains("--pause|--resume|--stop", StringComparison.Ordinal));
         Assert.Contains("WSSETUP7", WorkspaceDoor.Reason);
