@@ -254,6 +254,9 @@ public sealed class SessionWords : IDisposable
     {
         if (_loop.Processes.InboxOf(id) is { State.Taking: true } inbox) return new(true, Spelled(inbox.Reach), null);
 
+        // Ask Daoris's conversation still starting (HELPSTART1): a word waits for its door, which opens with it as its first turn.
+        if (_loop.HelpStarting.Queue(id) is not null) return new(true, null, null);
+
         if (_loop.Processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase) && _loop.Processes.RefusesInput(id) is null)
         {
             // A conversation this machine runs (D49 §3): a word goes into the running turn where its agent takes words at its
@@ -310,6 +313,13 @@ public sealed class SessionWords : IDisposable
         }
 
         if (id.Contains('/')) return WordsAnswer.Refused("teammate");
+
+        // Ask Daoris's conversation placed and still starting (HELPSTART1): its words wait for its door, as its queue, opening.
+        if (_loop.HelpStarting.Hold(id, text, files, preface))
+        {
+            Tell(id);
+            return new(true, null, null);
+        }
 
         var running = _loop.Processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase);
         var refuses = _loop.Processes.RefusesInput(id);

@@ -9,6 +9,10 @@ with the version and date at release.
   every open window and when you switch back to a tab, where an old plan used to stand until the driver's next change. The
   same holds after discarding a session's tree, handing a branch to its plugin, a press on a second opinion, the clean-up,
   bringing repositories up to date and saving how work lands.
+- Ask Daoris no longer loses your message on a busy machine. It opens at once and reads the machine while your first words wait,
+  shown as *opening Ask Daoris…*; words you send show at once as *sending…*, and where the machine is slow to answer they stay,
+  saying it has not answered yet (本机尚未回应), rather than vanishing behind an error. Nothing goes back in the box to be sent
+  twice; words that never arrived come back there, said so.
 - The words you said to a session that ended, or that parked to ask you, wait above its box with *Edit* and *Remove* until it
   goes on with them, as words waiting behind a running turn do: remove one it no longer needs, or put new words in its place.
 - What waits on you in a session is at its foot too, above the box you type in, so you need not scroll back to its top: its
