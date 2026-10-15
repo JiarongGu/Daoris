@@ -71,6 +71,28 @@ export const ParkedWithAGoAheadDark: Story = { ...ParkedWithAGoAhead, decorators
 /** The same in dark and 中文. */
 export const ParkedWithAGoAheadDarkChinese: Story = { ...ParkedWithAGoAhead, decorators: [chinese, dark] };
 
+/**
+ * Each line leads to the event in the conversation that raised it, where the conversation found one (WAITFOOT1c): the question
+ * and go-ahead 2's call here; the work to accept at the end of its turn.
+ */
+export const InTheConversation: Story = {
+  args: {
+    ...ParkedWithAGoAhead.args, lands: LANDS, landing: PLAN, onLand: nothing, onReview: nothing,
+    toEvent: { question: nothing, work: nothing, goAheads: { 2: nothing } },
+  },
+};
+
+/** The same in 中文. */
+export const InTheConversationChinese: Story = { ...InTheConversation, decorators: [chinese] };
+
+/** The same in dark and 中文. */
+export const InTheConversationDarkChinese: Story = { ...InTheConversation, decorators: [chinese, dark] };
+
+/** A raising block's *To the wait* led here: go-ahead 2's line, outlined. */
+export const LedToFromTheConversation: Story = {
+  args: { ...InTheConversation.args, seek: { wait: 'goAhead:2', n: 1 } },
+};
+
 /** Several, folded to one line naming them. */
 export const Folded: Story = {
   ...ParkedWithAGoAhead,
