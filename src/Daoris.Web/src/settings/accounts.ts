@@ -166,8 +166,13 @@ export type AccountUseChange = {
 /** Today's defaults (D130 §16.6), the CLI's `USE_DEFAULTS` and the driver's `RotationUse.Default`, for a scope with no list. */
 export const USE_DEFAULTS: ScopeUse = { use: 'goal', keep: null, early: true, near: 90 };
 
-/** *Near*'s range (D130 §14): a whole percent from the one to the other. */
-export const NEAR_RANGE = { lowest: 50, highest: 99 } as const;
+/**
+ * When a scope switches (SWITCH1d, D165 §6): its `switch`; from a shell older than that, which answers only the old names,
+ * `off` where `early` is false and else the smart switch, its `near` alone naming no curve the page could draw.
+ */
+export function switchOf(use: ScopeUse): Switch {
+  return use.switch ?? (use.early === false ? 'off' : 'smart');
+}
 
 /**
  * An agent's accounts as the answer holds them, read defensively: a shell older than TOOL4g answers no such route, and a
@@ -331,7 +336,7 @@ export function nextWhy(next: NextStart, scope: AccountScope, labelOf: (name: st
       return i18n.t(`harness.next.why.near${by.suffix}`, { over, window: by.window });
     }
     case 'pace':
-      return i18n.t(scope.use.early ? 'harness.next.why.room' : 'harness.next.why.pace', { over });
+      return i18n.t(switchOf(scope.use) !== 'off' ? 'harness.next.why.room' : 'harness.next.why.pace', { over });
     case 'list':
       if (next.account === scope.default) return i18n.t('harness.next.why.listDefault');
       if (next.account === scope.begins || !next.over) return i18n.t('harness.next.why.listFirst');

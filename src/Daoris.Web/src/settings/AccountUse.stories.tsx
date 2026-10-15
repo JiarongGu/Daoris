@@ -8,8 +8,8 @@ import { AccountFactsLines, OwnSignInLine, type ScopeActs, ScopeEditor, TermsLin
 
 // How an agent's accounts are used (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6), in every state Settings → Agents
 // shows: an account cooling until a stated reset, by Daoris's default, or in this machine's zone; what an agent last said;
-// its pace warning, in English and 中文 (USAGEREAD3b); nothing said yet; the tool's own sign-in shared with the person; the terms; a scope with three accounts, one near and one
-// kept; six accounts and nothing said; no list yet; a default outside the list; one by one; an agent that says nothing of
+// its pace warning, in English and 中文 (USAGEREAD3b); nothing said yet; the tool's own sign-in shared with the person; the terms; a scope with three accounts, one over
+// the person's own curve and one kept, its charts and points (SWITCH1d), in 中文, refused, and the switch off; six accounts and nothing said; no list yet; a default outside the list; one by one; an agent that says nothing of
 // its limits; a workspace on this machine's accounts and on its own; a 中文 account; and which account the next start takes
 // and why (TOOL6e): offered again after a cool-off, waiting, and waiting on the tool's own sign-in.
 
@@ -30,8 +30,39 @@ type Story = StoryObj<typeof ScopeEditor>;
 /** This machine's three accounts, made the most of: where starts begin, one cooling, nothing kept. */
 export const ThreeAccounts: Story = {};
 
-/** One near its limit by the scope's own near of 85, and one kept for conversations. */
+/**
+ * SWITCH1d: the person's own curve, its five-hour window flat at 85, with one account over it and one kept for conversations;
+ * each window's chart, the five-hour window's points to edit, the week on Daoris's curve, and *Clear my own curve*.
+ */
 export const NearAndKept: Story = { args: { scope: MACHINE_NEAR } };
+
+/** The same in 中文. */
+export const OwnCurveChinese: Story = { args: { scope: MACHINE_NEAR }, decorators: [chinese] };
+
+/** SWITCH1d: *Off*, which still draws Daoris's curve a start passes an account by. */
+export const SwitchOff: Story = { args: { scope: { ...THREE.scopes[0]!, use: { ...USE_DEFAULTS, early: false, switch: 'off' } } } };
+
+/**
+ * SWITCH1d: a curve's points that break a rule, said in the door's own sentence before anything is saved: the five-hour
+ * window's second point uses less than its first.
+ */
+export const OwnCurveRefused: Story = {
+  args: { scope: MACHINE_NEAR },
+  play: async ({ canvasElement }) => {
+    const group = [...canvasElement.querySelectorAll('fieldset')][0]!;
+    const add = [...group.querySelectorAll('button')].find((button) => button.textContent?.includes('Add a row'));
+    add?.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const used = group.querySelectorAll<HTMLInputElement>('input[type="number"]')[3];
+    if (used) {
+      const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+      set.call(used, '40');
+      used.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    [...group.querySelectorAll('button')].find((button) => button.textContent?.includes('Save the curve'))?.click();
+  },
+};
 
 /** Six accounts, none of which has said what it has left: the walk spreads by Daoris's own sessions, and says so. */
 export const SixAccountsNothingSaid: Story = { args: { agent: SIX_AGENT, scope: SIX_AGENT.scopes[0]!, accounts: SIX_CHOICES } };

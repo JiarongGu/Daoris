@@ -6,8 +6,10 @@ import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { Button, CheckField, Icon, Inline, Pill, Prose, Segmented, SelectField, SettingRow, Tip } from '../design/ui';
 import {
   type AccountCooling, type AccountFacts, type AccountScope, type AccountUseChange, type AgentAccounts, cannotLeave,
-  coolingLine, heldLine, moved, NEAR_RANGE, nextLine, nothingSaid, offeredLine, ownLine, saidLine, used,
+  coolingLine, heldLine, moved, nextLine, nothingSaid, offeredLine, ownLine, saidLine, switchOf, used,
 } from './accounts';
+import { type CurveAccount, CurveChart, CurvePoints } from './UsageCurve';
+import { CURVE_WINDOWS, curveFor, curveNow, elapsed, ownPoints, type Switch } from './usageCurves';
 
 // How each agent's accounts are used, as Settings → Agents shows it (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6).
 // Molecules: every state arrives as props, so a cooling account, a scope with six accounts, a workspace on this machine's
@@ -137,7 +139,9 @@ export function NextStartRow({ agent, product, scope, labelOf, isKey, workspace 
   const offered = facts?.offered && !facts.cooling ? t('harness.next.offeredSentence', { when: moment(facts.offered) }) : null;
   const held = heldLine(next, labelOf, isKey, scope.near);
   // The goal's step 5 is the most room under the curve, and the week's pace with the switch off (SWITCH1b-iii).
-  const walk = scope.use.use === 'order' ? 'harness.next.whyOrder' : scope.use.early ? 'harness.next.whyGoal' : 'harness.next.whyGoalOff';
+  const walk = scope.use.use === 'order'
+    ? 'harness.next.whyOrder'
+    : switchOf(scope.use) !== 'off' ? 'harness.next.whyGoal' : 'harness.next.whyGoalOff';
   return (
     <SettingRow
       label={t('harness.next.label')}
@@ -167,10 +171,10 @@ export type ScopeActs = {
 };
 
 /**
- * One scope's list and how it is used (D130 §3.2, §16.6): its accounts in order, each with *Use* and, once used, up and
- * down; then *Use accounts*, *Keep for conversations* and *Switch before the limit* with its *near*. The settings come with
- * the list, so a scope with none shows where its starts run instead. Any number of accounts: the editor holds as many rows
- * as the agent has.
+ * One scope's list and how it is used (D130 §3.2, §16.6 as D165 §6 amends it): its accounts in order, each with *Use* and,
+ * once used, up and down; then *Use accounts*, *Keep for conversations* and *Switch accounts* with each window's curve
+ * (SWITCH1d). The settings come with the list, so a scope with none shows where its starts run instead. Any number of
+ * accounts: the editor holds as many rows as the agent has.
  */
 export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, acts }: {
   agent: AgentAccounts;
@@ -236,9 +240,10 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
                 </span>
                 {row.used && scope.begins === row.name && <Pill tone="neutral">{t('harness.use.begins')}</Pill>}
                 {row.used && scope.use.keep === row.name && <Pill tone="neutral">{t('harness.use.kept')}</Pill>}
+                {/* What passes it at a start, in the curve's words (SWITCH1d): over its curve, its limit reached, or credits. */}
                 {row.used && near && (
                   <Tip content={saidLine(agent.accounts.find((each) => each.name === row.name)?.said)}>
-                    <span><Pill tone="neutral">{t('harness.use.near')}</Pill></span>
+                    <span><Pill tone="neutral">{t(`harness.use.passed.${near.by}`)}</Pill></span>
                   </Tip>
                 )}
                 {coolingOf(row.name) && <Pill tone="neutral">{t('harness.cooling.pill')}</Pill>}
@@ -330,32 +335,7 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
             {scope.list.length < 2 && <p className="m-0 text-small text-ink-faint">{t('harness.use.keep.needsTwo')}</p>}
           </SettingRow>
 
-          <SettingRow
-            label={t('harness.use.early.label')}
-            hint={t('harness.use.early.hint', hinted)}
-            why={t('harness.use.early.why')}
-            control={(
-              <CheckField
-                hideLabel
-                checked={scope.use.early}
-                disabled={busy}
-                onChange={(early) => acts.onUse(where, { early })}
-                label={`${t('harness.use.early.label')} · ${scopeName}`}
-              />
-            )}
-          >
-            {!agent.speaks && (
-              <p className="m-0 text-small text-ink-faint">{t('harness.use.early.silent', { product })}</p>
-            )}
-          </SettingRow>
-
-          {scope.use.early && (
-            <SettingRow
-              label={t('harness.use.near.label')}
-              hint={t('harness.use.near.hint', hinted)}
-              control={<NearField near={scope.use.near} busy={busy} label={`${t('harness.use.near.label')} · ${scopeName}`} onNear={(near) => acts.onUse(where, { near })} />}
-            />
-          )}
+          <SwitchRow agent={agent} product={product} scope={scope} labelOf={labelOf} workspace={workspace} busy={busy} acts={acts} />
         </>
       )}
     </div>
@@ -363,31 +343,90 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
 }
 
 /**
- * *Near*'s percent, held as text while typed: a number passing through `5` on its way to `55` is not written, and a value
- * outside 50–99 or the one it holds puts the held value back (REV3's rule for the strikes).
+ * *Switch accounts* (SWITCH1d; D165 point 2; the switch design §5, §6), the scope's `switch` as `profile use --switch` writes
+ * it: *Smart*, Daoris's curve; *My own curve*, the person's points; *Off*, no switch while a session runs. Under it each window's
+ * curve in effect, drawn with each account of the list where it stands now; under *My own curve*, each window's points to edit,
+ * saved as `--curve` saves them, and *Clear my own curve* as `--no-curve`. The person's curve is kept whatever the switch says,
+ * and read only under *My own curve*.
  */
-function NearField({ near, busy, label, onNear }: { near: number; busy?: boolean; label: string; onNear: (near: number) => void }) {
-  const [typed, setTyped] = useState<string | null>(null);
+function SwitchRow({ agent, product, scope, labelOf, workspace, busy, acts, now = new Date() }: {
+  agent: AgentAccounts;
+  product: string;
+  scope: AccountScope;
+  labelOf: (name: string) => string;
+  workspace?: string;
+  busy?: boolean;
+  acts: Pick<ScopeActs, 'onUse'>;
+  /** The moment the accounts are placed at; now, unless a story's. */
+  now?: Date;
+}) {
+  const { t } = useTranslation();
+  const where = workspace ?? null;
+  const scopeName = workspace ? t('harness.use.workspace', { workspace }) : t('harness.use.machine');
+  const hinted = { agent: agent.agent, scoped: scopedFlag(workspace) };
+  const switched = switchOf(scope.use);
+  const own = (window: string) => ownPoints(scope.use, window);
+  // Each account of the list on a window now, where its agent said a share of it.
+  const placed = (window: string): CurveAccount[] => scope.list.flatMap((name) => {
+    const said = agent.accounts.find((account) => account.name === name)?.said?.windows.find((each) => each.window === window);
+    const gone = said ? elapsed(window, said.reset, now) : null;
+    const curve = said ? curveNow(scope.use, window, said.reset, now) : null;
+    if (!said || typeof said.used !== 'number' || gone === null || curve === null) return [];
+    return [{ name, label: labelOf(name), gone, used: said.used * 100, over: curve - said.used * 100 < 0 }];
+  });
   return (
-    <span className="inline-flex items-center gap-1">
-      <input
-        type="number"
-        min={NEAR_RANGE.lowest}
-        max={NEAR_RANGE.highest}
-        aria-label={label}
-        disabled={busy}
-        value={typed ?? String(near)}
-        onChange={(event) => setTyped(event.target.value)}
-        onBlur={() => {
-          const value = typed === null || typed.trim() === '' ? near : Number(typed);
-          setTyped(null);
-          if (!Number.isInteger(value) || value < NEAR_RANGE.lowest || value > NEAR_RANGE.highest || value === near) return;
-          onNear(value);
-        }}
-        className="w-[4.5rem] rounded-control border border-line-strong bg-raised px-2.5 py-1 text-right text-body text-ink"
-      />
-      <span className="text-small text-ink-soft">%</span>
-    </span>
+    <SettingRow
+      label={t('harness.use.switch.label')}
+      hint={t('harness.use.switch.hint', hinted)}
+      why={t('harness.use.switch.why')}
+      control={(
+        <Segmented
+          label={`${t('harness.use.switch.label')} · ${scopeName}`}
+          value={switched}
+          options={[
+            { value: 'smart', label: t('harness.use.switch.smart') },
+            { value: 'curve', label: t('harness.use.switch.curve') },
+            { value: 'off', label: t('harness.use.switch.off') },
+          ]}
+          onChange={(to: Switch) => { if (!busy && to !== switched) acts.onUse(where, { switch: to }); }}
+        />
+      )}
+    >
+      <p className="m-0 text-small text-ink-soft">{t(`harness.use.switch.${switched}Says`)}</p>
+      {!agent.speaks && <p className="m-0 mt-1 text-small text-ink-faint">{t('harness.use.switch.silent', { product })}</p>}
+      <div className="mt-2 grid grid-cols-[repeat(auto-fit,minmax(14rem,1fr))] gap-x-6 gap-y-3">
+        {CURVE_WINDOWS.map((window) => (
+          <div key={window} className="flex min-w-0 flex-col gap-2">
+            <CurveChart
+              window={window}
+              points={curveFor(scope.use, window) ?? []}
+              own={switched === 'curve' && own(window) !== null}
+              accounts={placed(window)}
+            />
+            {switched === 'curve' && (
+              <CurvePoints
+                // Keyed by what is saved, so a save that lands starts the editor afresh from it.
+                key={JSON.stringify(own(window))}
+                window={window}
+                points={own(window)}
+                busy={busy}
+                hint={t('harness.curve.hint', {
+                  ...hinted, window,
+                  points: own(window)?.map(([gone, used]) => `${gone}:${used}`).join(',') ?? '<elapsed>:<used>,…',
+                })}
+                onSave={(points) => acts.onUse(where, { curve: { [window]: points } })}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+      {switched === 'curve' && CURVE_WINDOWS.some((window) => own(window) !== null) && (
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <Button variant="ghost" disabled={busy} onClick={() => acts.onUse(where, { noCurve: true })}>{t('harness.curve.clear')}</Button>
+          <span className="text-small text-ink-faint"><Inline text={t('harness.curve.clearHint', hinted)} /></span>
+        </div>
+      )}
+    </SettingRow>
   );
 }
 
