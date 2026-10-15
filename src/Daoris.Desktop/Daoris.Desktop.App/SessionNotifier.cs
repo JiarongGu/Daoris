@@ -37,9 +37,13 @@ public sealed class SessionNotifier : IDisposable
     /// <summary>The session the last balloon was about — what clicking it opens.</summary>
     private string? _about;
 
-    public SessionNotifier(Form window, IEventBus events)
+    /// <summary>Asked before the window is shown: a window put away is taken back first (MAINWINDOWS2). Null asks nothing.</summary>
+    private readonly Action? _takingBack;
+
+    public SessionNotifier(Form window, IEventBus events, Action? takingBack = null)
     {
         _window = window;
+        _takingBack = takingBack;
         _icon = new NotifyIcon
         {
             // The window's own icon where it has one, so the tray matches the taskbar.
@@ -105,6 +109,10 @@ public sealed class SessionNotifier : IDisposable
     private void Show(string? session)
     {
         if (_window.IsDisposed) return;
+
+        // The person asked for it: where the first main window was put away it is theirs again (MAINWINDOWS2), said before it
+        // is shown, so its showing is not read as a later launch's.
+        _takingBack?.Invoke();
 
         // 🔴 THE ORDER IS THE PART PEOPLE GET WRONG, and the framework's own `WindowActivation`
         // documents it — un-minimize BEFORE activating, because activating a minimized window leaves

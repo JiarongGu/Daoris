@@ -143,11 +143,9 @@ internal static class Program
             log,
             work: () => sp.GetRequiredService<DriverLoop>().Work(),
             relaunch: () => Relaunch(installRoot),
-            close: () =>
-            {
-                var form = sp.GetRequiredService<MainForm>();
-                if (form.IsHandleCreated) form.BeginInvoke(form.Close);
-            },
+            // For good (MAINWINDOWS2): a close from code reads as the person's, which only puts the first away while another
+            // main window is open, and an update has to end the application whatever is open.
+            close: () => sp.GetRequiredService<MainForm>().CloseForGood(),
             bus: sp.GetRequiredService<Shenora.Core.Events.IEventBus>()));
         builder.Services.AddIpcModule<UpdateModule>();
         builder.Services.AddSingleton<MainForm>();
@@ -173,9 +171,16 @@ internal static class Program
             sp => sp.GetRequiredService<SecondaryWindowHost>());
         // A later launch of the executable, handed here by the kit's single-instance guard (ONEINSTANCE1, D171 point 2): a new
         // main window of this instance once its service answers, rather than a second process and a second loop on this home.
+        // A put-away first main window is that launch's window, shown again rather than another opened (MAINWINDOWS2).
         builder.Services.AddSingleton(sp => new SecondLaunch(
             sp.GetRequiredService<ISecondaryWindows>(), sp.GetRequiredService<PlatformAddress>(),
-            () => sp.GetRequiredService<DriverLoop>().HostReady, log));
+            () => sp.GetRequiredService<DriverLoop>().HostReady, log,
+            mains: sp.GetRequiredService<MainWindows>(),
+            showFirst: () => sp.GetRequiredService<MainForm>().TakeBack()));
+        // The application ends with its last main window, not its first (MAINWINDOWS2, D171 point 2): the first, whose form the
+        // kit's loop runs on and as which the pickers, the taskbar's count, the tray and the update are resolved, is put away
+        // on the person's close while another main window is open, and closed for good when the last of them closes.
+        builder.Services.AddSingleton(sp => new MainWindows(() => sp.GetRequiredService<MainForm>().CloseForGood(), log));
         // Daoris's own browser (D78, D85): the engine's own window, in a process of its own
         // (`daoris-browser`: this executable with the browser's argument, CHR8), with its profile under
         // the home — the directory `driver.json` sits in, as every machine file's is.
