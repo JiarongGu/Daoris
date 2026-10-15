@@ -387,7 +387,7 @@ export const BASELINE = Object.freeze(['universal', 'code-map', 'orient-index', 
 
 // The .NET suites with a test that reads the page's catalogues or sources: MOD9's incident was two of them.
 const PAGE_READERS = ['service', 'driver', 'modules'];
-const DESKTOP_SUITES = ['driver', 'modules', 'driver-process', 'modules-process'];
+const DESKTOP_SUITES = ['driver', 'modules', 'driver-process', 'driver-process-git', 'modules-process'];
 // What the CLI's sources reach; a narrow rule for one of its files names these as well, since the first rule decides.
 const CLI_READERS = ['driver', 'rehearse', 'rehearse-family', 'web', 'deployment'];
 // What the modules lane's sources reach, named by its narrow rule for the C# sources as well (MOD9c).
@@ -433,6 +433,7 @@ export const REACH = Object.freeze([
   { paths: ['tools/deployment-rehearsal.mjs', 'tools/desktop.mjs'], gates: ['deployment'], why: 'the deployment rehearsal and what it imports' },
   { paths: ['src/Daoris.Devkit/**'], gates: ['devkit'], why: 'its own suite; it is also the universal gates and the code map, which every merge runs' },
   { paths: ['src/Daoris.Desktop/process.runsettings'], gates: ['driver-process', 'modules-process'], why: "the Process halves' settings (MOD8)" },
+  { paths: ['src/Daoris.Desktop/git.process.runsettings'], gates: ['driver-process-git'], why: "the driver's git-only Process classes' settings, four at once (PROC1c)" },
   // Before the driver's tests, which would place it first: the page's twin reads it too.
   {
     paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/kept-names.json'],
@@ -468,7 +469,7 @@ export const REACH = Object.freeze([
     gates: ['driver', 'modules'],
     why: "the driver's TreesCommandTests and the modules' DriverModuleLinesTests read the checkout-scope table (BRSCOPE1b)",
   },
-  { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**'], gates: ['driver', 'driver-process'], why: "the driver's tests, both halves" },
+  { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**'], gates: ['driver', 'driver-process', 'driver-process-git'], why: "the driver's tests, the fast half and both Process halves" },
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/**'], gates: ['modules', 'modules-process'], why: "the modules' tests, both halves" },
   // Before the service's tests, which would place it first: the driver's twin reads it too.
   {

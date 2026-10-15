@@ -72,7 +72,8 @@
         "package.json",
         "package-lock.json",
         "src/Daoris.Devkit/**",
-        "src/Daoris.Desktop/process.runsettings"
+        "src/Daoris.Desktop/process.runsettings",
+        "src/Daoris.Desktop/git.process.runsettings"
       ]
     },
     {

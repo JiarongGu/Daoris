@@ -98,8 +98,8 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
   your lane changes, one suite at a time. A desktop suite runs its fast half only:
   `dotnet test src/Daoris.Desktop/<project> --filter Category!=Process` (MOD8).
 - **Never run** any of these:
-  - a desktop suite's `Process` half (`--settings src/Daoris.Desktop/process.runsettings`): the test
-    classes that start real processes or run real ticks
+  - a desktop suite's `Process` half (`--settings src/Daoris.Desktop/process.runsettings`, and the driver's
+    git-only classes' `git.process.runsettings`, four at once): the test classes that start real processes or run real ticks
   - the rehearsals (`npm run rehearse`, `rehearse:family`, `rehearse:deploy`) or `test:web`
   - the desktop window (`npm run desktop -- run|shot|eval|click|restart|kill`)
   - `publish:desktop` or `publish:service`
