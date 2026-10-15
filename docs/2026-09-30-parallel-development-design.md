@@ -123,6 +123,11 @@ one fix committed after the full set no longer costs a second full run.
 and the devkit's docs gate dates paths from HEAD's history, so TOOL4e's merge passed and failed `verify` once
 committed. The universal gates, in their gate and in `verify`, now run through `tools/as-merged.mjs`, where HEAD is
 that commit; outside a merge it changes nothing. `docs/FIX-LOG.md` keeps the incident.
+**GATELANES1 (2026-10-16)** ended "in order" for the gates that start no real process. They run in a light lane beside
+the Process lane (the real-process halves and the rehearsals), which still runs one gate at a time, as rule 5 has it.
+A Process-lane gate starts once the light gates of its .NET component have built it, and a rehearsal once the light
+lane has ended. The first failure starts nothing more in either lane. `--one-at-a-time` runs every gate in turn, for a
+loaded machine. D115's note has the rules.
 
 ## 4. The splits (the code half)
 

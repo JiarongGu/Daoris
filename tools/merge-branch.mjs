@@ -35,7 +35,7 @@
  *    merge, and one beside others is written once they are resolved. Before it, each decision file the merge
  *    changed has a blank line set before a note's label union left under another note, one line said per
  *    note (`setApart`, MERGEJOIN1).
- * 6. The gates, one at a time, in a fixed order, fast first. The plan is every gate `daoris.gates.json`
+ * 6. The gates, in a fixed order, fast first, in two lanes (below). The plan is every gate `daoris.gates.json`
  *    declares, plus every `npm run` step the release workflow runs that the declaration does not (the
  *    release and family rehearsals). The order is by kind (a devkit check, then the suites, then the
  *    rehearsals); within a kind the declared order holds, and the workflow's own rehearsals go before the
@@ -52,7 +52,7 @@
  *    HEAD's history, and there HEAD is the commit the merge would make.
  * 7. Each gate's whole output goes to `local/scratch/merge-<branch>/<gate>.log` (gitignored), written
  *    beside and renamed when the gate ends, and one line per gate says its result and that file. The
- *    first failing gate stops the run (`--keep-going` runs the rest), and what did not run is named. A
+ *    first failing gate starts nothing more, in either lane (`--keep-going` runs the rest), and what did not run is named. A
  *    Process gate also writes `<gate>.trx` there, each test's duration, and the ten slowest classes are
  *    printed after its line (PROC1), so where its time goes is measured at every merge that runs it.
  * 8. Each verdict is recorded with the tree it ran on, in `local/gate-verdicts.json` (gitignored), which
@@ -134,6 +134,27 @@
  * built, and passed alone. If the second run passes, the gate reads FLAKE. A rehearsal that reported a
  * failed check has failed whatever its exit, and so has one that said why it stopped; neither is run again.
  *
+ * ## Two lanes (GATELANES1)
+ *
+ * The real-process halves and the rehearsals start real processes and run one at a time (AGENTS.md); the other gates
+ * start none, and a full set of about 55 minutes waited about ten of them on those. So the gates run in two lanes at
+ * once: the Process lane (`isProcessLane`: a gate run with a `process.runsettings` file, or an `npm run rehearse*`
+ * script), one gate at a time, and the light lane beside it, one gate at a time too. The lane is read from what a gate
+ * runs, as `isProcessGate` is, rather than declared: the workflow's own rehearsals are in no declaration.
+ *
+ * Two builds of one .NET project at once fight over its `obj/` and `bin/`. So a Process-lane gate starts only once the
+ * light gates of its component (`dotnetComponent`: the first two folders of the project its command names) have ended,
+ * and the light lane runs those first: the desktop's fast halves build what its Process halves then run. A Process-lane
+ * gate whose command names no project, a rehearsal, starts once the light lane has ended: it builds the hosts behind its
+ * script's name, and the deployment rehearsal first shuts the build servers down. A Process gate's failures are re-run
+ * alone only once the light lane has ended, so a pass alone is still a pass with nothing beside it (FLAKE1).
+ *
+ * Each gate's log, verdict and line are its own, the line printed as the gate ends; once both lanes have ended, every
+ * gate's line is printed again in the plan's order, a gate not started as NOT RUN. The first failure, unless
+ * `--keep-going`, starts nothing more in either lane, and the gate running in the other lane runs to its end and keeps
+ * its verdict: a gate is never stopped midway. `--one-at-a-time` runs every gate in turn in the plan's order, as before,
+ * for a loaded machine; a batch keeps it once given. The web gate keeps its own cap on its workers (WEBGATE1).
+ *
  * ## A batch
  *
  * `--batch` names more branches. A merge left uncommitted blocks the next one (git refuses to merge over
@@ -141,12 +162,12 @@
  * the checks and suites, the parent commits it, and `--continue` merges the next. The rehearsals run
  * once, after the last. The batch is recorded in `local/scratch/merge-batch.json`.
  *
- *   node tools/merge-branch.mjs <branch> [--batch <branch>…] [--full] [--keep-going] [--no-commit-check] [--no-prune]
- *   node tools/merge-branch.mjs --continue [--full] [--keep-going] [--no-prune]
- *   node tools/merge-branch.mjs --rerun <gate>… [--keep-going]
- *   node tools/merge-branch.mjs --stale [--keep-going]
+ *   node tools/merge-branch.mjs <branch> [--batch <branch>…] [--full] [--keep-going] [--one-at-a-time] [--no-commit-check] [--no-prune]
+ *   node tools/merge-branch.mjs --continue [--full] [--keep-going] [--one-at-a-time] [--no-prune]
+ *   node tools/merge-branch.mjs --rerun <gate>… [--keep-going] [--one-at-a-time]
+ *   node tools/merge-branch.mjs --stale [--keep-going] [--one-at-a-time]
  *   node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]
- *   node tools/merge-branch.mjs --full [--keep-going]
+ *   node tools/merge-branch.mjs --full [--keep-going] [--one-at-a-time]
  *   node tools/merge-branch.mjs --passed
  *   node tools/merge-branch.mjs --prune [--plan]
  *   node tools/merge-branch.mjs --drop-batch
@@ -198,13 +219,57 @@ export const isProcessGate = (gate) => /process\.runsettings/.test(gate.run);
  */
 export const isLongGate = (gate) => isProcessGate(gate) || /\brehearse:deploy\b/.test(gate.run);
 
+/**
+ * The Process lane (GATELANES1): the gates that start real processes, run one at a time beside the light lane. The
+ * real-process halves, and every `npm run rehearse*` script. Read from what each runs, as `isProcessGate` is: the
+ * workflow's own rehearsals are in no declaration, and the devkit reads `daoris.gates.json` too.
+ */
+export const isProcessLane = (gate) => isProcessGate(gate) || /^npm run rehearse/.test(gate.run.trim());
+
+/**
+ * The component a `dotnet test|build|run|publish` command builds (GATELANES1): the first two folders of the project it
+ * names (`src/Daoris.Desktop`), or null when it names none. A project references only projects of its own component
+ * (a test holds it), so gates of two components never build one project.
+ */
+export function dotnetComponent(run) {
+  const command = run.trim().replace(/^node tools\/as-merged\.mjs\s+/, '');
+  const verb = /^dotnet\s+(?:test|build|run|publish)(?=\s|$)(.*)$/.exec(command);
+  if (!verb) return null;
+  const args = verb[1].trim().split(/\s+/).filter(Boolean);
+  const at = args.indexOf('--project');
+  const path = at >= 0 ? args[at + 1] : args[0];
+  if (!path || path.startsWith('-')) return null;
+  const folders = path.replace(/^["']|["']$/g, '').split(/[\\/]+/).filter((part) => part && part !== '.');
+  return folders.length ? folders.slice(0, 2).join('/') : null;
+}
+
+/**
+ * The two lanes of a run (GATELANES1), and what each Process-lane gate starts after. Two builds of one project at once
+ * fight over its `obj/` and `bin/`, so a Process-lane gate whose command names a component waits for the light gates of
+ * that component, which run first in their lane, and one that names none (a rehearsal: it builds the hosts behind its
+ * script's name, and the deployment rehearsal shuts the build servers down) waits for the whole light lane. Within each
+ * rule, the plan's order holds.
+ */
+export function laneSchedule(gates) {
+  const process = gates.filter(isProcessLane);
+  const planned = gates.filter((gate) => !isProcessLane(gate));
+  const sharing = (component) => planned.filter((other) => component !== null && dotnetComponent(other.run) === component);
+  const first = new Set(process.flatMap((gate) => sharing(dotnetComponent(gate.run))).map((gate) => gate.name));
+  const light = [...planned.filter((gate) => first.has(gate.name)), ...planned.filter((gate) => !first.has(gate.name))];
+  const waits = Object.fromEntries(process.map((gate) => {
+    const component = dotnetComponent(gate.run);
+    return [gate.name, { after: (component === null ? light : sharing(component)).map((other) => other.name), component }];
+  }));
+  return { light, process, waits };
+}
+
 export const USAGE = [
-  'usage: node tools/merge-branch.mjs <branch> [--batch <branch>…] [--full] [--keep-going] [--no-commit-check] [--no-prune]',
-  '       node tools/merge-branch.mjs --continue [--full] [--keep-going] [--no-prune]',
-  '       node tools/merge-branch.mjs --rerun <gate>… [--keep-going]',
-  '       node tools/merge-branch.mjs --stale [--keep-going]',
+  'usage: node tools/merge-branch.mjs <branch> [--batch <branch>…] [--full] [--keep-going] [--one-at-a-time] [--no-commit-check] [--no-prune]',
+  '       node tools/merge-branch.mjs --continue [--full] [--keep-going] [--one-at-a-time] [--no-prune]',
+  '       node tools/merge-branch.mjs --rerun <gate>… [--keep-going] [--one-at-a-time]',
+  '       node tools/merge-branch.mjs --stale [--keep-going] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]',
-  '       node tools/merge-branch.mjs --full [--keep-going]',
+  '       node tools/merge-branch.mjs --full [--keep-going] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --passed',
   '       node tools/merge-branch.mjs --prune [--plan]',
   '       node tools/merge-branch.mjs --drop-batch',
@@ -227,7 +292,7 @@ const usageError = (message) => new Refusal(message, 2, true);
 export function parseArgs(argv) {
   const options = {
     branches: [], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
-    full: false, rerun: [], passed: false, stale: false,
+    full: false, rerun: [], passed: false, stale: false, oneAtATime: false,
   };
   let batch = false;
   let rerun = false;
@@ -241,6 +306,7 @@ export function parseArgs(argv) {
       if (positional === 0) throw usageError('--batch follows the first branch: <branch> --batch <branch>…');
       batch = true;
     } else if (arg === '--keep-going') options.keepGoing = true;
+    else if (arg === '--one-at-a-time') options.oneAtATime = true;
     else if (arg === '--no-commit-check') options.commitCheck = false;
     else if (arg === '--continue') options.resume = true;
     else if (arg === '--drop-batch') options.dropBatch = true;
@@ -272,16 +338,21 @@ export function parseArgs(argv) {
   if (batch && batched === 0) throw usageError('--batch names at least one branch after it');
   if (rerun) {
     if (options.rerun.length === 0) throw usageError('--rerun names the gates to run again: --rerun <gate>…');
-    if (flags.some((flag) => flag !== '--rerun' && flag !== '--keep-going')) throw usageError('--rerun takes gate names and --keep-going');
+    if (flags.some((flag) => !['--rerun', '--keep-going', '--one-at-a-time'].includes(flag))) {
+      throw usageError('--rerun takes gate names, --keep-going and --one-at-a-time');
+    }
     if (options.branches.length) throw usageError('--rerun takes no branch: it acts on the merge in place, or on the checkout when none is open');
   } else if (options.stale) {
     if (options.branches.length) throw usageError('--stale takes no branch: it acts on the checkout as it stands');
-    if (flags.some((flag) => flag !== '--stale' && flag !== '--keep-going')) throw usageError('--stale takes only --keep-going');
+    if (flags.some((flag) => !['--stale', '--keep-going', '--one-at-a-time'].includes(flag))) {
+      throw usageError('--stale takes only --keep-going and --one-at-a-time');
+    }
   } else if (options.passed) {
     if (options.branches.length) throw usageError('--passed takes no branch: it asks about the checkout as it stands');
   } else if (options.prune) {
     if (!options.autoPrune) throw usageError('--no-prune is for a merge; --prune is the prune itself');
     if (options.full) throw usageError('--full is for a merge or the checkout; --prune runs no gate');
+    if (options.oneAtATime) throw usageError('--one-at-a-time is for a run of gates; --prune runs no gate');
     if (options.branches.length) throw usageError('--prune takes no branch: it acts on every branch merged into main');
   } else if (options.resume || options.dropBatch) {
     if (options.branches.length) {
@@ -1726,8 +1797,11 @@ function runSteps(root, gate, log, step, command = gate.run) {
   });
 }
 
-/** One gate, its steps before it, and its flake re-run: a result with its verdict, note and log. */
-export async function runGate(root, gate, dir, { step = runStep } = {}) {
+/**
+ * One gate, its steps before it, and its flake re-run: a result with its verdict, note and log. `settled`, handed to a
+ * Process-lane gate, resolves once the light lane beside it has ended (GATELANES1).
+ */
+export async function runGate(root, gate, dir, { step = runStep, settled = null } = {}) {
   const log = join(dir, `${gate.name}.log`);
   const started = Date.now();
   // PROC1: a Process half also leaves each test's duration beside its log, read once it ends.
@@ -1757,6 +1831,8 @@ export async function runGate(root, gate, dir, { step = runStep } = {}) {
     if (decision.rerun.length === 0) {
       result.note = `exit ${code}; ${decision.reason}`;
     } else {
+      // GATELANES1: alone means with nothing beside it, as FLAKE1 measured it, so the light lane ends first.
+      if (settled) await settled();
       const rerun = await rerunAlone(root, gate, dir, decision.rerun, step);
       const names = decision.rerun.map(short).join(', ');
       if (rerun.passed) {
@@ -1784,23 +1860,116 @@ function slowestLines(root, result) {
   ];
 }
 
-/**
- * The gates in order, one line each as it ends (and a Process gate's slowest classes under it). The first
- * failure stops the run and every gate after it is named as not run, unless `keepGoing`.
- */
-export async function runGates(root, gates, dir, { keepGoing = false, run = runGate, print = console.log } = {}) {
+const notRunLine = (gate) => `  ${pad('NOT RUN', 8)} ${gate.name}`;
+
+/** A promise resolved from outside: a gate's end, which a gate of the other lane waits for. */
+function signal() {
+  let resolve;
+  const promise = new Promise((done) => { resolve = done; });
+  return { promise, resolve };
+}
+
+/** What a two-lane run says before it starts: each lane, and what each Process-lane gate waits for and why. */
+function laneLines(schedule) {
+  const names = (list) => list.join(', ');
+  const out = [
+    '  two lanes at once (--one-at-a-time runs every gate in turn, for a loaded machine):',
+    `    light    ${names(schedule.light.map((gate) => gate.name))}`,
+    `    Process  ${names(schedule.process.map((gate) => gate.name))}, one at a time`,
+  ];
+  const groups = new Map();
+  for (const gate of schedule.process) {
+    const { after, component } = schedule.waits[gate.name];
+    if (!after.length) continue;
+    const key = `${component}\0${names(after)}`;
+    if (!groups.has(key)) groups.set(key, { after, component, gates: [] });
+    groups.get(key).gates.push(gate.name);
+  }
+  for (const { after, component, gates } of groups.values()) {
+    const verb = gates.length === 1 ? 'starts' : 'start';
+    out.push(component === null
+      ? `    ${names(gates)} ${verb} once the light lane has ended: a rehearsal builds what its command does not name`
+      : `    ${names(gates)} ${verb} once ${names(after)} ${after.length === 1 ? 'has' : 'have'} ended: they build ${component} first`);
+  }
+  return out;
+}
+
+/** One gate after another, in the plan's order: every run before GATELANES1, and `--one-at-a-time`. */
+async function runInTurn(root, gates, dir, { keepGoing, run, print }) {
   const results = [];
   for (let i = 0; i < gates.length; i += 1) {
-    const result = await run(root, gates[i], dir);
+    const result = await run(root, gates[i], dir, {});
     results.push(result);
     print(resultLine(root, result));
     for (const line of slowestLines(root, result)) print(line);
     if (result.verdict === 'FAIL' && !keepGoing) {
-      for (const skipped of gates.slice(i + 1)) print(`  ${pad('NOT RUN', 8)} ${skipped.name}`);
+      for (const skipped of gates.slice(i + 1)) print(notRunLine(skipped));
       break;
     }
   }
   return results;
+}
+
+/**
+ * The gates, one line each as it ends (and a Process gate's slowest classes under it). The first failure starts
+ * nothing more and every gate not started is named as not run, unless `keepGoing`.
+ *
+ * GATELANES1: the light lane runs beside the Process lane (`laneSchedule`), each one gate at a time, and once both have
+ * ended every gate's line is printed again in the plan's order. A failure in either lane starts nothing more in either;
+ * the gate running in the other lane runs to its end and keeps its verdict, since a gate is never stopped midway. A run
+ * with one lane, or `oneAtATime`, runs every gate in turn as before. The results are in the plan's order.
+ */
+export async function runGates(root, gates, dir, { keepGoing = false, oneAtATime = false, run = runGate, print = console.log } = {}) {
+  const schedule = laneSchedule(gates);
+  if (oneAtATime || !schedule.light.length || !schedule.process.length) return runInTurn(root, gates, dir, { keepGoing, run, print });
+
+  for (const line of laneLines(schedule)) print(line);
+  const results = new Map();
+  const ended = new Map(schedule.light.map((gate) => [gate.name, signal()]));
+  const lightEnded = signal();
+  let stopped = false;
+  const one = async (gate, beside) => {
+    let result;
+    try {
+      result = await run(root, gate, dir, beside);
+    } catch (error) {
+      // A tool error ends the run as it always did, once the other lane's gate has ended.
+      stopped = true;
+      throw error;
+    }
+    results.set(gate.name, result);
+    print(resultLine(root, result));
+    for (const line of slowestLines(root, result)) print(line);
+    if (result.verdict === 'FAIL' && !keepGoing) stopped = true;
+  };
+  const light = (async () => {
+    try {
+      for (const gate of schedule.light) {
+        if (stopped) break;
+        await one(gate, {});
+        ended.get(gate.name).resolve();
+      }
+    } finally {
+      // A gate the stop left unstarted has ended too, for whatever waits on it.
+      for (const each of ended.values()) each.resolve();
+      lightEnded.resolve();
+    }
+  })();
+  const settled = () => lightEnded.promise;
+  const processLane = (async () => {
+    for (const gate of schedule.process) {
+      await Promise.all(schedule.waits[gate.name].after.map((name) => ended.get(name).promise));
+      if (stopped) break;
+      await one(gate, { settled });
+    }
+  })();
+  const outcomes = await Promise.allSettled([light, processLane]);
+  const thrown = outcomes.find((outcome) => outcome.status === 'rejected');
+  if (thrown) throw thrown.reason;
+
+  print("  every gate, in the plan's order:");
+  for (const gate of gates) print(results.has(gate.name) ? resultLine(root, results.get(gate.name)) : notRunLine(gate));
+  return gates.filter((gate) => results.has(gate.name)).map((gate) => results.get(gate.name));
 }
 
 function clearLogs(dir) {
@@ -1897,14 +2066,15 @@ const headCommit = (root) => git(root, ['rev-parse', 'HEAD'], { allowFail: true 
  * The gates run in order, each verdict recorded with the tree it ran on (GATE3), as its gate ends, so a run
  * cut short keeps what it learned. `onResult` hears each result.
  */
-function runRecorded(root, gates, dir, { keepGoing = false, branch = null, onResult = () => {} } = {}) {
+function runRecorded(root, gates, dir, { keepGoing = false, oneAtATime = false, branch = null, onResult = () => {} } = {}) {
   const commit = headCommit(root);
   return runGates(root, gates, dir, {
     keepGoing,
-    run: async (where, gate, logs) => {
+    oneAtATime,
+    run: async (where, gate, logs, beside) => {
       const tree = contentTree(where);
       const started = nowIso();
-      const result = await runGate(where, gate, logs);
+      const result = await runGate(where, gate, logs, beside);
       Object.assign(result, { tree, at: started });
       addVerdicts(where, [{ gate: gate.name, verdict: result.verdict, tree, at: started, commit, branch }]);
       onResult(result);
@@ -1936,6 +2106,7 @@ async function gateMerge(root, state, plan) {
   for (const line of selectionLines(selection)) console.log(line);
   const results = await runRecorded(root, gates, dir, {
     keepGoing: state.keepGoing,
+    oneAtATime: state.oneAtATime === true,
     branch,
     onResult: (result) => {
       state.results[branch][result.gate.name] = { verdict: result.verdict, at: result.at, tree: result.tree, note: result.note, log: shown(root, result.log) };
@@ -2030,6 +2201,7 @@ async function rerunGates(root, options) {
   state.results = { [branch]: results };
   const ran = await runRecorded(root, gates, dir, {
     keepGoing: state.keepGoing || options.keepGoing,
+    oneAtATime: state.oneAtATime === true || options.oneAtATime,
     branch,
     onResult: (result) => {
       results[result.gate.name] = { verdict: result.verdict, at: result.at, tree: result.tree, note: result.note, log: shown(root, result.log) };
@@ -2071,7 +2243,7 @@ async function gateCheckout(root, options) {
   clearLogs(dir);
   const dirty = treeState(root).changed.length > 0;
   console.log(`the full set on ${head.slice(0, 7)}${dirty ? ' and its uncommitted changes' : ''}: ${plan.length} gates, fast first; nothing is merged`);
-  const results = await runRecorded(root, plan, dir, { keepGoing: options.keepGoing });
+  const results = await runRecorded(root, plan, dir, { keepGoing: options.keepGoing, oneAtATime: options.oneAtATime });
   const failed = results.filter((result) => result.verdict === 'FAIL');
   const flakes = results.filter((result) => result.verdict === 'FLAKE');
   console.log('');
@@ -2193,7 +2365,7 @@ async function rerunCheckout(root, options) {
   }
   // The rest as the stage reads them: each verdict that stands, a failure kept, and a gate with none.
   for (const line of stageLines(judged.gates.filter((gate) => !planned.run.includes(gate.name)))) console.log(line);
-  const ran = await runRecorded(root, gates, dir, { keepGoing: options.keepGoing });
+  const ran = await runRecorded(root, gates, dir, { keepGoing: options.keepGoing, oneAtATime: options.oneAtATime });
 
   const failed = ran.filter((result) => result.verdict === 'FAIL').map((result) => result.gate.name);
   const notRun = gates.length - ran.length;
@@ -2275,7 +2447,7 @@ async function start(root, options) {
   readPlan(root);
   return mergeNext(root, {
     branches: options.branches, at: 0, tips: {}, keepGoing: options.keepGoing, commitCheck: options.commitCheck, autoPrune: options.autoPrune,
-    full: options.full,
+    full: options.full, oneAtATime: options.oneAtATime,
   });
 }
 
@@ -2284,6 +2456,8 @@ async function resume(root, options) {
   if (!state) throw new Refusal('nothing to continue: this tool has no merge recorded here');
   state.keepGoing = state.keepGoing || options.keepGoing;
   state.full = state.full === true || options.full;
+  // GATELANES1: a loaded machine stays loaded through its batch, so one at a time, once given, is kept.
+  state.oneAtATime = state.oneAtATime === true || options.oneAtATime;
   state.commitCheck = state.commitCheck && options.commitCheck;
   // A batch recorded before the prune existed has no field, and prunes.
   state.autoPrune = state.autoPrune !== false && options.autoPrune;
