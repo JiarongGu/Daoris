@@ -401,6 +401,14 @@ public sealed record SweepItem(
     public bool Worked { get; init; }
 
     /// <summary>
+    /// Landed, judged for the look's own tidy (AUTOTIDY2a): its work is on the line itself, every commit an ancestor of the line's
+    /// own branch or origin's copy, or held there by content; or a squashing landing's branch the line holds. False where it is
+    /// only on another branch of the person's, whose session the person may still ask to change it: the look waits for the line,
+    /// and the press may take it before. False on every row the press's list judged.
+    /// </summary>
+    public bool OnLine { get; init; }
+
+    /// <summary>
     /// The branch the session's tree moved onto (TREEFOLLOW1): its agent checked out a branch of its own there, as its repository's
     /// rules ask, so no tree has this session branch out any more and the work is on that branch. Null where the tree is on this
     /// one, or gone. The tree is that branch's: it is never taken with this one.

@@ -57,14 +57,14 @@ public sealed class BranchTidyingProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The row's own case, AUTOTIDY1's and AUTOTIDY2a's: every branch the press clears goes by itself, each said once in the
-    /// report and the machine log. A session branch whose work a merge took onto the line goes with its tree, and one whose tree
-    /// was removed by hand; one landed on a branch of the person's; one on the line by content after a squash, its commits kept
-    /// on a ref of their own; and, each on a branch the line took, a tree holding an ignored file only it holds and one holding a
-    /// build's output the checkout holds too, each folder moved aside whole. Every other branch stays, as the press finds it, and
-    /// says nothing: commits beyond the line; a tree whose branch never moved, which words to its session go on in; and, each on
-    /// a branch the line took, an uncommitted change, an untracked file, a session working in its tree, and one waiting on the
-    /// person.
+    /// 🔴 The row's own case, AUTOTIDY1's and AUTOTIDY2a's: every branch the press clears whose work is on the line goes by
+    /// itself, each said once in the report and the machine log. A session branch whose work a merge took onto the line goes with
+    /// its tree, and one whose tree was removed by hand; one on the line by content after a squash, its commits kept on a ref of
+    /// their own; and, each on a branch the line took, a tree holding an ignored file only it holds and one holding a build's
+    /// output the checkout holds too, each folder moved aside whole. Every other branch stays, as the press finds it, and says
+    /// nothing: commits beyond the line; commits on a branch of the person's the line does not hold yet, whose session may still
+    /// be asked to change them; a tree whose branch never moved, which words to its session go on in; and, each on a branch the
+    /// line took, an uncommitted change, an untracked file, a session working in its tree, and one waiting on the person.
     /// </summary>
     [Fact]
     public async Task The_look_removes_every_branch_the_press_clears_and_keeps_every_other()
@@ -105,28 +105,26 @@ public sealed class BranchTidyingProcessTests : IDisposable
 
         var branches = await GitAsync(root, "branch", "--list", "daoris/*");
         Assert.DoesNotContain("daoris/s-treeless", branches, StringComparison.Ordinal);
-        var gone = new[] { merged, featured, squashed, ignored, built };
+        var gone = new[] { merged, squashed, ignored, built };
         foreach (var each in gone)
         {
             Assert.DoesNotContain(each.Branch, branches, StringComparison.Ordinal);
             Assert.False(Directory.Exists(each.Path), each.Path);
         }
 
-        foreach (var kept in new[] { beyond, unmoved, changed, untracked, running, waiting })
+        foreach (var kept in new[] { beyond, featured, unmoved, changed, untracked, running, waiting })
         {
             Assert.Contains(kept.Branch, branches, StringComparison.Ordinal);
             Assert.True(Directory.Exists(kept.Path), kept.Path);
         }
 
-        Assert.Equal(6, said.Count);
+        Assert.Equal(5, said.Count);
         Assert.Contains("tidy  engine: removed `daoris/s-treeless`, which held nothing beyond `main`.", said);
         foreach (var each in new[] { merged, ignored, built })
         {
             Assert.Contains(said, line => line.StartsWith(Removed(each), StringComparison.Ordinal));
         }
 
-        Assert.Contains(said, line => line.StartsWith(
-            $"tidy  engine: removed `{featured.Branch}`, since its work is on `feature/x`; its tree's folder was moved aside to ", StringComparison.Ordinal));
         var discarded = (await GitAsync(root, "for-each-ref", "--format=%(refname)", "refs/daoris/discarded/")).Trim();
         Assert.Contains(squashed.Branch, discarded, StringComparison.Ordinal);
         Assert.Contains(said, line => line.StartsWith(
@@ -144,9 +142,9 @@ public sealed class BranchTidyingProcessTests : IDisposable
         var listed = (await GitAsync(root, "worktree", "list", "--porcelain")).Replace('\\', '/');
         Assert.All(gone, each => Assert.DoesNotContain(each.Path.Replace('\\', '/'), listed, StringComparison.OrdinalIgnoreCase));
         var tidied = Events("branch.tidied");
-        Assert.Equal(6, tidied.Length);
+        Assert.Equal(5, tidied.Length);
         Assert.Equal(
-            [SweepKind.Empty, SweepKind.Empty, SweepKind.Empty, SweepKind.Empty, SweepKind.Landed, SweepKind.Landed],
+            [SweepKind.Empty, SweepKind.Empty, SweepKind.Empty, SweepKind.Empty, SweepKind.Landed],
             tidied.Select(data => data.GetProperty("kind").GetString()).Order(StringComparer.Ordinal));
         Assert.Empty(Events("branch.kept"));
         // The record of where session branches grew from forgets it, as the press's does.
@@ -364,8 +362,8 @@ public sealed class BranchTidyingProcessTests : IDisposable
 
     /// <summary>
     /// The line is read by its full name: a tag named as the line, which git reads before the branch, never stands for it. A
-    /// session branch a person's feature branch took, which such a tag holds, is landed on that branch, never empty beyond the
-    /// line, and the look that takes it (AUTOTIDY2a) says where its work is.
+    /// session branch a person's feature branch took, which such a tag holds, is landed elsewhere, not on the line, and stays
+    /// the press's (AUTOTIDY2a's wait for the line).
     /// </summary>
     [Fact]
     public async Task A_tag_named_as_the_line_never_stands_for_it()
@@ -376,16 +374,14 @@ public sealed class BranchTidyingProcessTests : IDisposable
         await GitAsync(root, "branch", "feature/x", featured.Branch);
         await GitAsync(root, "tag", "main", "feature/x");
         _ledger.Register("engine", root);
-        var plan = await trees.SweepPlanAsync([("engine", "default", root)], new HashSet<string>());
-        var row = plan.Single(item => item.Branch == featured.Branch);
-        Assert.Equal((SweepKind.Landed, "feature/x"), (row.Kind, row.Where));
 
         var said = await new BranchTidying(_home).LookAsync(_ledger.Client(), null, _closing.Token).WaitAsync(Bound);
 
-        Assert.StartsWith(
-            $"tidy  engine: removed `{featured.Branch}`, since its work is on `feature/x`; its tree's folder was moved aside to ",
-            Assert.Single(said), StringComparison.Ordinal);
-        Assert.DoesNotContain(featured.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
+        Assert.Empty(said);
+        Assert.Contains(featured.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
+        Assert.True(Directory.Exists(featured.Path));
+        var plan = await trees.SweepPlanAsync([("engine", "default", root)], new HashSet<string>());
+        Assert.Equal(SweepKind.Landed, plan.Single(item => item.Branch == featured.Branch).Kind);
     }
 
     /// <summary>
@@ -631,13 +627,13 @@ public sealed class BranchTidyingProcessTests : IDisposable
     }
 
     /// <summary>
-    /// TREEFOLLOW1: a session branch that holds commits of its own, whose tree moved on, has its commits on the tree's branch
-    /// now, so it is landed by ancestry, and the look takes it as the press would (AUTOTIDY2a), saying where its work is; the
-    /// tree stays, on its branch, untouched, and the look warns of no unread tree. And the ledger forgets an entry whose tree and
-    /// both branches are gone at the look, not only after a removal.
+    /// TREEFOLLOW1: a session branch that holds commits of its own stays when its tree moved on, silently: its commits are on
+    /// the tree's branch now, so it is landed by ancestry, which the look leaves until the line has it (AUTOTIDY2a), and the
+    /// look warns of no unread tree. And the ledger forgets an entry whose tree and both branches are gone at the look, not only
+    /// after a removal.
     /// </summary>
     [Fact]
-    public async Task A_session_branch_with_work_of_its_own_goes_when_its_tree_moved_on_and_a_gone_entry_is_forgotten()
+    public async Task A_session_branch_with_work_of_its_own_stays_when_its_tree_moved_on_and_a_gone_entry_is_forgotten()
     {
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(_home);
@@ -651,10 +647,9 @@ public sealed class BranchTidyingProcessTests : IDisposable
 
         var said = await tidying.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
 
-        Assert.Equal([$"tidy  engine: removed `{moved.Branch}`, since its work is on `feature/x`."], said);
+        Assert.Empty(said);
         Assert.Empty(Events("branch.kept"));
-        Assert.DoesNotContain(moved.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
-        Assert.Equal("feature/x", (await GitAsync(moved.Path, "branch", "--show-current")).Trim());
+        Assert.Contains(moved.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
         Assert.Equal("feature/x", trees.Grown.Of("engine", moved.Branch)!.Now);
         Assert.Null(trees.Grown.Of("engine", "daoris/s-742b2f42"));
     }
@@ -764,6 +759,77 @@ public sealed class BranchTidyingProcessTests : IDisposable
 
         Assert.StartsWith(removed, Assert.Single(free), StringComparison.Ordinal);
         Assert.Contains(squashed.Branch, await GitAsync(root, "for-each-ref", "--format=%(refname)", "refs/daoris/discarded/"), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// 🔴 AUTOTIDY2a, the look waits for the line: Accept's landing put each session's commits on a branch of the person's, its
+    /// pull request still open, so the line does not hold them and the person may still ask that session to change them in its
+    /// own tree. The look keeps each tree and branch, saying nothing, though the press would take them. Once the line has the
+    /// commits, merged into its own branch, or only into origin's copy as a fetch leaves a platform's merge nobody pulled yet,
+    /// the next look takes each.
+    /// </summary>
+    [Fact]
+    public async Task A_branch_landed_on_a_branch_of_the_person_s_waits_for_the_line()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var merged = await TreeWithWorkAsync(trees, root);
+        await GitAsync(root, "branch", "feature/q1-merged", merged.Branch);
+        var fetched = await TreeWithWorkAsync(trees, root);
+        await GitAsync(root, "branch", "feature/q2-fetched", fetched.Branch);
+        _ledger.Register("engine", root);
+        var tidying = new BranchTidying(_home) { Pace = TimeSpan.Zero };
+        var plan = await trees.SweepPlanAsync([("engine", "default", root)], new HashSet<string>());
+        Assert.All(plan, item => Assert.True(item is { Kind: SweepKind.Landed, Removable: true }, item.Branch));
+
+        var early = await tidying.LookAsync(_ledger.Client(), null, _closing.Token).WaitAsync(Bound);
+
+        Assert.Empty(early);
+        var branches = await GitAsync(root, "branch", "--list", "daoris/*");
+        foreach (var each in new[] { merged, fetched })
+        {
+            Assert.Contains(each.Branch, branches, StringComparison.Ordinal);
+            Assert.True(Directory.Exists(each.Path), each.Path);
+        }
+
+        // The first is merged into the line's own branch; the second reaches only origin's copy, as a platform's fast-forward a
+        // fetch brought here before anyone pulled it.
+        await GitAsync(root, "update-ref", "refs/remotes/origin/main", "refs/heads/feature/q2-fetched");
+        await GitAsync(root, "merge", "--no-ff", "--no-edit", "feature/q1-merged");
+
+        var next = await tidying.LookAsync(_ledger.Client(), null, _closing.Token).WaitAsync(Bound);
+
+        Assert.Equal(2, next.Count);
+        Assert.Contains(next, line => line.StartsWith(Removed(merged), StringComparison.Ordinal));
+        Assert.Contains(next, line => line.StartsWith(
+            $"tidy  engine: removed `{fetched.Branch}`, since its work is on `origin/main`; its tree's folder was moved aside to ", StringComparison.Ordinal));
+        var after = await GitAsync(root, "branch", "--list", "daoris/*");
+        Assert.DoesNotContain(merged.Branch, after, StringComparison.Ordinal);
+        Assert.DoesNotContain(fetched.Branch, after, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// 🔴 AUTOTIDY2d: a tree whose session ended with the person's words still waiting on its record stays from the look, as a
+    /// session in use keeps its own: the next loop goes on with those words in that tree (MSG1b, D137 §2.2). A tree whose ended
+    /// session holds no words goes as ever.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_whose_ended_session_has_words_waiting_stays_from_the_look()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var spoken = await LandedTreeAsync(trees, root);
+        var quiet = await LandedTreeAsync(trees, root);
+        _ledger.Register("engine", root);
+        _ledger.Working("s-spoken", "engine", spoken.Path, state: "completed");
+        _ledger.Working("s-quiet", "engine", quiet.Path, state: "completed");
+        Assert.NotNull((await _ledger.Client().SayAsync("s-spoken", "fix the review comment")).Word);
+
+        var said = await new BranchTidying(_home).LookAsync(_ledger.Client(), null, _closing.Token).WaitAsync(Bound);
+
+        Assert.StartsWith(Removed(quiet), Assert.Single(said), StringComparison.Ordinal);
+        Assert.Contains(spoken.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
+        Assert.True(Directory.Exists(spoken.Path));
     }
 
     /// <summary>A link at <paramref name="link"/> to <paramref name="target"/>: a junction on Windows, which needs no privilege.</summary>

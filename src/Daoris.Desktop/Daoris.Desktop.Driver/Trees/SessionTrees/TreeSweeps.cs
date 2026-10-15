@@ -282,7 +282,12 @@ internal sealed class TreeSweeps(
             // is landed where that branch is, with no ref to keep.
             if (await squashes.SquashedHolderAsync(root, repository, tip, ct).ConfigureAwait(false) is { } squashedOn)
             {
-                return (Item(SweepKind.Landed, unlanded.Length, squashedOn.Branch, string.Join('\n', unlanded.Take(3))), tip);
+                // AUTOTIDY2a: the look's only once the line holds the branch the landing made, or the work by content.
+                var squashOnLine = byItself
+                    && (await LineHoldingAsync(root, line, $"refs/heads/{squashedOn.Branch}", ct).ConfigureAwait(false) is not null
+                        || (await ContentHolds.HeldByContentAsync(root, tip, line, content.LandedHere(repository), ct).ConfigureAwait(false)) is { } byContent
+                            && IsLineForm(byContent.Where, line));
+                return (Item(SweepKind.Landed, unlanded.Length, squashedOn.Branch, string.Join('\n', unlanded.Take(3))) with { OnLine = squashOnLine }, tip);
             }
 
             // PLUGHOOK1a: a squash left these commits on no branch of the person's, and a completed pull request carried them.
@@ -297,7 +302,8 @@ internal sealed class TreeSweeps(
             if ((tree is null || context.Holds(tree))
                 && await ContentHolds.HeldByContentAsync(root, tip, line, content.LandedHere(repository), ct).ConfigureAwait(false) is { } held)
             {
-                return (Item(SweepKind.Landed, unlanded.Length, held.Where, string.Join('\n', unlanded.Take(3))) with { HeldBy = held }, tip);
+                return (Item(SweepKind.Landed, unlanded.Length, held.Where, string.Join('\n', unlanded.Take(3)))
+                    with { HeldBy = held, OnLine = byItself && IsLineForm(held.Where, line) }, tip);
             }
 
             return (Item(SweepKind.Unlanded, unlanded.Length, detail: string.Join('\n', unlanded.Take(3))), tip);
@@ -317,6 +323,27 @@ internal sealed class TreeSweeps(
             .FirstOrDefault(name => !name.StartsWith("daoris/", StringComparison.Ordinal) && !name.Contains("/daoris/", StringComparison.Ordinal));
         var (_, count, _) = await WorkingTree.GitAsync(
             root, ["rev-list", "--count", tip, "--not", against ?? "HEAD"], ct).ConfigureAwait(false);
-        return (Item(SweepKind.Landed, int.TryParse(count.Trim(), out var n) ? n : 0, where), tip);
+        // AUTOTIDY2a: for the look, the form of the line that holds it, which it names; none where only a branch of the person's does.
+        var onLine = byItself ? await LineHoldingAsync(root, line, tip, ct).ConfigureAwait(false) : null;
+        return (Item(SweepKind.Landed, int.TryParse(count.Trim(), out var n) ? n : 0, onLine ?? where) with { OnLine = onLine is not null }, tip);
     }
+
+    /// <summary>
+    /// The form of the line that holds <paramref name="commit"/> by ancestry (AUTOTIDY2a): the line's own branch, else origin's
+    /// copy, which a fetch brings a platform's merge to before anyone pulls it. Null where neither does, or git could not say.
+    /// </summary>
+    private static async Task<string?> LineHoldingAsync(string root, string? line, string commit, CancellationToken ct)
+    {
+        foreach (var form in await LandedProofs.LineFormsAsync(root, line, ct).ConfigureAwait(false))
+        {
+            var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", commit, form.Ref], ct).ConfigureAwait(false);
+            if (code == 0) return form.Name;
+        }
+
+        return null;
+    }
+
+    /// <summary>Whether a content proof's holder is a form of the line (<see cref="LandedProofs.LineFormsAsync"/>'s names), not a branch of the person's.</summary>
+    private static bool IsLineForm(string where, string? line) =>
+        line is not null && (where == line || where == $"origin/{line}");
 }

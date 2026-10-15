@@ -80,19 +80,44 @@ public sealed class BranchTidyingTests : IDisposable
             IgnoredShared = ignoredShared,
             Unread = unread,
             Worked = worked,
+            // A landed row here is the line's: its work is on the line itself (AUTOTIDY2a's wait is the next theory's).
+            OnLine = kind == SweepKind.Landed,
         };
 
         Assert.Equal(goes, new SessionTrees(_home).GoesByItself(item));
     }
 
     /// <summary>
+    /// AUTOTIDY2a: a landed branch goes by itself only once its work is on the line. Landed only on another branch of the
+    /// person's (the branch Accept's landing made, one the person pushed), its pull request still open, the person may still say
+    /// words to its session in its own tree: the look waits for the line, and the press may take it earlier by the person's choice.
+    /// </summary>
+    [Theory]
+    [InlineData(At.Home, false)]
+    [InlineData(At.None, false)]
+    [InlineData(At.Home, true)]
+    [InlineData(At.None, true)]
+    public void A_landed_branch_goes_by_itself_only_once_the_line_has_it(At at, bool onLine)
+    {
+        var item = new SweepItem("engine", "default", "daoris/s-1a2b3c4d", at == At.Home ? HomeTree : null, SweepKind.Landed, 2, "feature/q1-fix", null)
+        {
+            Worked = true,
+            OnLine = onLine,
+        };
+
+        Assert.True(item.Removable);
+        Assert.Equal(onLine, new SessionTrees(_home).GoesByItself(item));
+    }
+
+    /// <summary>
     /// TREEFOLLOW1: an agent that moved its tree onto a branch of its own leaves the session branch behind, which no tree has out.
-    /// Empty it goes (the tree stays, on its branch), and the report says where the work is; landed or carried it goes as the
-    /// press would take it (AUTOTIDY2a); holding commits no branch of the person's holds it stays.
+    /// Empty it goes (the tree stays, on its branch), and the report says where the work is; carried it goes as the press would
+    /// take it (AUTOTIDY2a); landed on the tree's own branch, which the line does not hold yet, it waits for the line; holding
+    /// commits no branch of the person's holds it stays.
     /// </summary>
     [Theory]
     [InlineData(SweepKind.Empty, true)]
-    [InlineData(SweepKind.Landed, true)]
+    [InlineData(SweepKind.Landed, false)]
     [InlineData(SweepKind.Carried, true)]
     [InlineData(SweepKind.Unlanded, false)]
     public void A_session_branch_whose_tree_moved_on_goes_as_the_press_would_take_it(string kind, bool goes)
@@ -132,18 +157,21 @@ public sealed class BranchTidyingTests : IDisposable
     }
 
     /// <summary>
-    /// A squash merge's branch landed by content goes by itself as the press takes it (AUTOTIDY2a), its commits kept on a ref of
-    /// their own by the press's one path; a tree whose branch never moved stays the press's, as an empty one's does.
+    /// A squash merge's branch landed by content on the line goes by itself as the press takes it (AUTOTIDY2a), its commits kept
+    /// on a ref of their own by the press's one path; a tree whose branch never moved stays the press's, as an empty one's does;
+    /// and work a cherry-pick put on another branch of the person's waits for the line.
     /// </summary>
     [Theory]
-    [InlineData(true, true)]
-    [InlineData(false, false)]
-    public void A_branch_landed_by_content_goes_by_itself(bool worked, bool goes)
+    [InlineData(true, true, true)]
+    [InlineData(false, true, false)]
+    [InlineData(true, false, false)]
+    public void A_branch_landed_by_content_goes_by_itself_once_the_line_holds_it(bool worked, bool onLine, bool goes)
     {
         var item = new SweepItem("engine", "default", "daoris/s-1a2b3c4d", HomeTree, SweepKind.Landed, 1, "main", null)
         {
-            HeldBy = new ContentHold("main", Squash: true),
+            HeldBy = new ContentHold(onLine ? "main" : "feature/x", Squash: onLine),
             Worked = worked,
+            OnLine = onLine,
         };
 
         Assert.Equal(goes, new SessionTrees(_home).GoesByItself(item));
@@ -160,7 +188,7 @@ public sealed class BranchTidyingTests : IDisposable
         using var log = new MachineLog(_home, "driver", () => _now);
         var tidying = new BranchTidying(_home);
         var aside = Path.Combine(_home, "trees", ".tidied", "default", "engine", "s-1-20261009T090000000Z");
-        var landed = Item("daoris/s-1", HomeTree) with { Kind = SweepKind.Landed, Commits = 2, Where = "feature/x" };
+        var landed = Item("daoris/s-1", HomeTree) with { Kind = SweepKind.Landed, Commits = 2, Where = "origin/main", OnLine = true };
         var held = Item("daoris/s-2") with { Kind = SweepKind.Landed, Commits = 1, HeldBy = new ContentHold("main", Squash: true) };
         var carried = Item("daoris/s-3") with { Kind = SweepKind.Carried, Commits = 1, Where = "feature/q1-fix" };
         const string Ref = "refs/daoris/discarded/daoris/s-2";
@@ -175,7 +203,7 @@ public sealed class BranchTidyingTests : IDisposable
 
         Assert.Equal(
         [
-            $"tidy  engine: removed `daoris/s-1`, since its work is on `feature/x`; its tree's folder was moved aside to {aside}, "
+            $"tidy  engine: removed `daoris/s-1`, since its work is on `origin/main`; its tree's folder was moved aside to {aside}, "
             + "and goes once it is left untouched for 14 days.",
             "tidy  engine: removed `daoris/s-2`, since its work is on `main` by content (a squash merge). "
             + $"Its commits stay at `{Ref}` until you delete that ref; `git branch daoris/s-2 {Ref}` brings the branch back.",
@@ -463,6 +491,24 @@ public sealed class BranchTidyingTests : IDisposable
 
         Assert.Equal([HomeTree], await BranchTidying.ReviewingAsync(null, ledger.Client(), CancellationToken.None));
         Assert.Equal([folder, HomeTree], await BranchTidying.ReviewingAsync(desk, ledger.Client(), CancellationToken.None));
+    }
+
+    /// <summary>
+    /// AUTOTIDY2d: a record that ended with the person's words still waiting on it names its tree, which the next loop goes on
+    /// in (MSG1b, D137 §2.2); an ended record with none, and a running one (the active list's), name none here.
+    /// </summary>
+    [Fact]
+    public async Task A_record_ended_with_words_waiting_names_its_tree()
+    {
+        using var ledger = new StandInLedger();
+        var waiting = Path.Combine(_home, "trees", "default", "engine", "s-5e6f7a8b");
+        ledger.Working("s-waiting", "engine", waiting, state: "completed");
+        ledger.Working("s-done", "engine", HomeTree, state: "completed");
+        ledger.Working("s-running", "engine", Path.Combine(_home, "trees", "default", "engine", "s-9a8b7c6d"));
+        using var client = ledger.Client();
+        Assert.NotNull((await client.SayAsync("s-waiting", "fix the review comment")).Word);
+
+        Assert.Equal([waiting], await client.WaitingTreesAsync());
     }
 
     /// <summary>With no set-up waiting and no desk, nothing is reviewed here.</summary>

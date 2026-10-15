@@ -116,12 +116,14 @@ public sealed class BranchTidying(string home)
             }
         }
 
-        // A session running or waiting holds its tree; so does a review step in progress, by the folder it shows from.
+        // A session running or waiting holds its tree; so does one that ended with the person's words waiting on its record, which
+        // the next loop goes on with there (AUTOTIDY2d, D137 §2.2); and a review step in progress, by the folder it shows from.
         async Task<IReadOnlySet<string>> InUseAsync(CancellationToken token)
         {
             var held = (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
                 .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            held.UnionWith(await service.WaitingTreesAsync(token).ConfigureAwait(false));
             if (reviewing is not null) held.UnionWith(TreesOf(new SessionTrees(home).TreesRoot, await reviewing(token).ConfigureAwait(false)));
             return held;
         }

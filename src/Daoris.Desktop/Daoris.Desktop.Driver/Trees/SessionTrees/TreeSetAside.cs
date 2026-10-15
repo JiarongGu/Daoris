@@ -19,9 +19,13 @@ internal sealed class TreeSetAside(TreeContext context)
     /// whose branch never moved is a conversation's place, which words to its session go on in (D137): removed, they could not,
     /// so it stays the press's, whatever its kind. A tree holding only ignored paths goes, since the look moves its folder aside
     /// for fourteen days rather than deleting it; uncommitted and untracked paths keep it, as the judgement's <c>dirty</c>.
+    /// A landed branch goes only once its work is on the line (<see cref="SweepItem.OnLine"/>): landed on another branch of the
+    /// person's alone, its pull request may still be open and its session asked to change it in its own tree, so the look waits
+    /// for the merge D88 began from, and the press may take it before by the person's choice.
     /// </summary>
     internal bool GoesByItself(SweepItem item) =>
         item is { Removable: true, Unread: false }
+        && (item.Kind != SweepKind.Landed || item.OnLine)
         && (item.Tree is null || (context.Holds(item.Tree) && item.Worked));
 
     /// <summary>The folder under the trees home the look's own tidy moves a tree's folder aside into (AUTOTIDY1).</summary>
