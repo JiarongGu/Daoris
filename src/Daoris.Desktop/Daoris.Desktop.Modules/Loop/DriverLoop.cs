@@ -509,6 +509,11 @@ public sealed class DriverLoop(
         // record of its health (PLUGUI1d).
         _hooks = new HookSet(homeDirectory, Output, log: log, health: Health);
 
+        // A plugin observes the pipeline beside it (STATEHUB1g, D169 point 9): each change the publisher tells the windows is told
+        // to the plugins at `state/changed` too, queued by the set, so no press's answer waits on a plugin. Before the home's lock,
+        // as the set is; while another loop drives the home this set runs no plugin, and a change is told to nobody.
+        using var observing = StatePublisher.Observe(eventBus, change => _hooks?.Tell(change));
+
         // What is worth interrupting the person for (SURF5b). The judgement is the library's, so the
         // headless host reaches the same answer; the shell's half is only what an event BECOMES.
         // One live driver per home (DRV8a, D104): the loop waits for the home's lock while a headless loop

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Daoris.Driver;
 using Shenora.Core.Events;
 using Shenora.Core.Ipc;
 
@@ -121,8 +122,8 @@ public sealed record UnderWay(long Seq, IReadOnlyList<PressUnderWay> Presses);
 /// landing refused for a conflict fetched the line its plan reads against, and a list out of date is read again. A refusal
 /// thrown as an error is not: the driver refused before it acted.</para>
 ///
-/// <para><b>Not awaited.</b> The bus runs its subscribers (each window's pump, later a plugin's observer) without the press's
-/// answer waiting on any of them; a subscriber's failure is the bus's to isolate.</para>
+/// <para><b>Not awaited.</b> The bus runs its subscribers (each window's pump, and the plugins' observation, <see cref="Observe"/>)
+/// without the press's answer waiting on any of them; a subscriber's failure is the bus's to isolate.</para>
 ///
 /// <para><b>Shell-only</b> (D47): the bus is this machine's, forwarded to its windows and to nothing else.</para>
 ///
@@ -185,6 +186,19 @@ public static class StatePublisher
             }
         };
     }
+
+    /// <summary>
+    /// The plugins' observation of the pipeline (STATEHUB1g, D169 point 9): each <c>STATE_CHANGED</c> on <paramref name="bus"/>,
+    /// handed to <paramref name="tell"/> as the plugins' frame. Beside the pipeline, never in it: the bus does not wait for its
+    /// subscribers, the change is published once the press has answered, and <paramref name="tell"/> (the loop's hook set's)
+    /// only queues it, so no plugin holds, changes or refuses an answer. Dispose to stop.
+    /// </summary>
+    public static IDisposable Observe(IEventBus bus, Action<StateChangedFrame> tell) =>
+        bus.Subscribe(Module, Type, message =>
+        {
+            if (message.Payload is StateChanged changed) tell(new StateChangedFrame(changed.Scopes, changed.Sessions));
+            return Task.CompletedTask;
+        });
 
     /// <summary>The scopes' names on the wire, in the page's words and in their declared order.</summary>
     public static IReadOnlyList<string> Names(StateScopes scopes) =>

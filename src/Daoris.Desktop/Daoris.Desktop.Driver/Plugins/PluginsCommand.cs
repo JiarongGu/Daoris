@@ -237,6 +237,8 @@ public static class PluginsCommand
         var at = where is PluginEvents.AtStart or PluginEvents.AtProcess
             ? points.Contains(HookPoints.QuestConsider, StringComparer.Ordinal) ? HookPoints.QuestConsider
               : points.Contains(HookPoints.SessionEnded, StringComparer.Ordinal) ? HookPoints.SessionEnded
+              // STATEHUB1g: an observation too, so a plugin that only watches the state costs nothing when it fails.
+              : points.Contains(HookPoints.StateChanged, StringComparer.Ordinal) ? HookPoints.StateChanged
               : points.Contains(HookPoints.Land, StringComparer.Ordinal) ? HookPoints.Land
               : HookPoints.State
             : where;

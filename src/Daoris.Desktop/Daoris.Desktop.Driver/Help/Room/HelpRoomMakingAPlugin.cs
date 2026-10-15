@@ -16,6 +16,7 @@ internal sealed class HelpRoomMakingAPlugin : IHelpRoomSection
         [HookPoints.SessionEnded] = "to hear how a session ended",
         [HookPoints.Land] = "to push a branch Daoris made and open its pull request",
         [HookPoints.State] = "to say whether a landed branch's pull request completed, and with which commit",
+        [HookPoints.StateChanged] = "to hear what a press or a terminal's verb changed of what the driver holds",
     };
 
     public string Render(HelpMachine machine)

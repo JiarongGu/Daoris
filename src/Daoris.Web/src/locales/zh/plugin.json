@@ -44,6 +44,7 @@
   "plugin.kit.kind.decision": "一个决定，在计划的启动花费任何东西之前",
   "plugin.kit.kind.observation": "一次观察，在会话结束之后",
   "plugin.kit.kind.act": "一个动作，在落地已建好它的分支之后",
+  "plugin.kit.kind.stateChanged": "一次观察，在驱动所持的状态改变之后",
   "plugin.kit.folder": "建在",
   "plugin.kit.folderPlaceholder": "你的插件仓库中的一个文件夹",
   "plugin.kit.folderHint": "插件自己的文件夹会建在这里面，并以它的 id 命名。已经装有任何内容的文件夹会被拒绝，从不覆盖。",

@@ -283,6 +283,10 @@ public static class PluginTrials
                 await peer.EndedAsync(frame, ct).ConfigureAwait(false);
                 return "answered; an observation changes nothing.";
 
+            case HookPoints.StateChanged:
+                await peer.ChangedAsync(frame, ct).ConfigureAwait(false);
+                return "answered; an observation changes nothing.";
+
             case HookPoints.Land:
             {
                 var landing = await peer.LandAsync(frame, ct).ConfigureAwait(false);

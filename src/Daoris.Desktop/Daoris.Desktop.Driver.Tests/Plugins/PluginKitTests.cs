@@ -50,7 +50,7 @@ public sealed class PluginKitTests : IDisposable
     public void The_kit_has_every_point_the_driver_has_in_the_driver_s_order()
     {
         Assert.Equal(HookPoints.All, PluginKit.Points.Select(point => point.Name));
-        Assert.Equal(["decision", "observation", "act", "query"], PluginKit.Points.Select(point => point.Kind));
+        Assert.Equal(["decision", "observation", "act", "query", "observation"], PluginKit.Points.Select(point => point.Kind));
     }
 
     [Fact]
@@ -60,6 +60,7 @@ public sealed class PluginKitTests : IDisposable
         Assert.Equal(TimeSpan.FromSeconds(10), PluginKit.Find(HookPoints.SessionEnded)!.Patience);
         Assert.Equal(LandingPlugins.DefaultPatience, PluginKit.Find(HookPoints.Land)!.Patience);
         Assert.Equal(TimeSpan.FromSeconds(30), PluginKit.Find(HookPoints.State)!.Patience);
+        Assert.Equal(TimeSpan.FromSeconds(10), PluginKit.Find(HookPoints.StateChanged)!.Patience);
     }
 
     /// <summary>
@@ -91,8 +92,15 @@ public sealed class PluginKitTests : IDisposable
         await new LandingPlugins(home, start: (_, _, _) => Task.FromResult<IHookChannel>(new RecordingChannel(HookPoints.All, told)))
             .AskStatesAsync([new StateAsk(landed, "acme.every", PluginKit.SampleState)]);
 
-        Assert.Equal(4, told.Count);
-        for (var i = 0; i < 4; i++)
+        // The change's frame, through the loop's set as the shell's bus tells it (STATEHUB1g).
+        await using (var set = new HookSet(home, start: (_, _, _) => Task.FromResult<IHookChannel>(channel)))
+        {
+            await set.ReconcileAsync(PluginCatalog.Load(home), CancellationToken.None);
+            await set.ChangedAsync(PluginKit.SampleChange, CancellationToken.None);
+        }
+
+        Assert.Equal(5, told.Count);
+        for (var i = 0; i < 5; i++)
         {
             Assert.Equal(
                 JsonSerializer.SerializeToNode(told[i])!.ToJsonString(),
@@ -198,7 +206,7 @@ public sealed class PluginKitTests : IDisposable
     {
         var unknown = Assert.Throws<DriverException>(() => PluginKit.Plan("acme.gate", ["quest/started"], _scratch));
         Assert.Contains("`quest/started` is not a point", unknown.Message);
-        Assert.Contains("quest/consider, session/ended, work/land, work/state", unknown.Message);
+        Assert.Contains("quest/consider, session/ended, work/land, work/state, state/changed", unknown.Message);
 
         var none = Assert.Throws<DriverException>(() => PluginKit.Plan("acme.gate", [], _scratch));
         Assert.Contains("at least one point", none.Message);
@@ -248,7 +256,8 @@ public sealed class PluginKitTests : IDisposable
         { new[] { HookPoints.SessionEnded } },
         { new[] { HookPoints.Land } },
         { new[] { HookPoints.State } },
-        { new[] { HookPoints.QuestConsider, HookPoints.SessionEnded, HookPoints.Land, HookPoints.State } },
+        { new[] { HookPoints.StateChanged } },
+        { new[] { HookPoints.QuestConsider, HookPoints.SessionEnded, HookPoints.Land, HookPoints.State, HookPoints.StateChanged } },
     };
 
     /// <summary>
@@ -690,6 +699,9 @@ public sealed class PluginKitTests : IDisposable
         { HookPoints.State, """{"state":"open","at":"yesterday"}""", false },
         { HookPoints.State, """{"state":"open","message":7}""", false },
         { HookPoints.State, "null", false },
+        // STATEHUB1g: an observation's answer is not read, as session/ended's is not.
+        { HookPoints.StateChanged, "{}", true },
+        { HookPoints.StateChanged, "null", true },
     };
 
     private const string FullA = "1111111111111111111111111111111111111111";
@@ -930,6 +942,12 @@ public sealed class PluginKitTests : IDisposable
         {
             told.Add(payload);
             return Task.FromResult(new PullRequestState(PullRequestStates.Unknown));
+        }
+
+        public Task ChangedAsync(object payload, CancellationToken ct)
+        {
+            told.Add(payload);
+            return Task.CompletedTask;
         }
 
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
