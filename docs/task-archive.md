@@ -15201,3 +15201,129 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SAIDBACK1g — a chat put back after its words were taken back keeps what ended it** (driver). `ChatGoOn.TakenBackAsync` replaced the record's whole note with the taken-back line and dropped the interrupted/limit flags the go-on's move cleared: use `Continuations.PutBack`'s state and note for ended records. D137's SAIDBACK1d/1e notes. Proof: a `ChatGoOnTests` row, seen failing first.
 
 **Outcome** 2026-10-16: a chat put back after all its words were taken back keeps its own state, note, parts and interrupted or limit flag (`Continuations.PutBack`); the taken-back line is said in the conversation only (`ChatGoOnTests`, seen failing first). Found by SAIDBACK1e's worker. On Sonnet, with SAIDBACK1f. Detail: D137's SAIDBACK1g note.
+
+## GATELANES1 — the light gates run beside the Process lane (2026-10-16, D115)
+
+> - [ ] **GATELANES1 — the light gates run beside the Process lane** (tools; the owner, 2026-10-16: *"let's continue the development and speed up"*). `tools/merge-branch.mjs` runs every gate in turn, so a full set (about 55 min under load) waits about 10 min on gates that start no real process (`universal`, `code-map`, `orient-index`, `cli`, `service`, `devkit`, `driver`, `modules`, `web`) beside the Process lane (`driver-process`, `driver-process-git`, `modules-process`, the rehearsals, `deployment`), which stays serial as AGENTS.md has it. Run the two lanes at once on a machine with the cores (22 here, 40% busy under three workers and a Process gate), each gate's log and verdict its own, a failure stopping only what the first-failure rule stops, `--keep-going` as now. Contract: the parallel-development design §3 rule 6; development.md's gate lines; a dated note in the decision that owns the merge tool. Proof: `merge-branch.test.ts` cases (two lanes, a failure in each, `--keep-going`); a full set's wall time before and after on this machine, in FLAKE1.
+
+**Outcome** 2026-10-16: `tools/merge-branch.mjs` runs the gates that start no real process beside the serial Process lane (the real-process halves and the rehearsals, placed by what each gate runs); a Process-lane gate waits for its .NET component's light gates, which run first, and a rehearsal for the whole light lane, so no two builds of one project meet; the first failure starts nothing more in either lane; `--one-at-a-time` runs every gate in turn. `merge-branch.test.ts` 75 to 84. The wall-time measurement is the next full set's. On Opus: 125 tool calls. Detail: D115's GATELANES1 note; the tool's header, "Two lanes".
+
+## ACCEPTALL1h — a part's own review holds while its entry lands (2026-10-16, D169)
+
+> - [ ] **ACCEPTALL1h — a part's own review holds while its entry lands** (web). An entry's or an ask's press shows under way on its own Accept, but each part's review still offers its own *Accept* meanwhile: hold it, reading the entry's subject for the part. D169's ACCEPTALL1e note. Proof: a `WorkFrame` or `DiffPane` test with an entry press under way.
+
+**Outcome** 2026-10-16: a part's review (`DiffPane`'s `entry`/`ask`) and its head (`WorkFrame`'s `landsNow`) read its entry's and its ask's press under way (`useUnderWaySubject`), so its own *Accept* reads *Landing…* and *Accept…* waits while either lands it, in any window. On Opus, with TREEFOLLOWWEB1 and STANDSREFUSE1: 228 tool calls. Detail: D169's ACCEPTALL1h note.
+
+## TREEFOLLOWWEB1 — the page names the branch a moved tree is on (2026-10-16, D164)
+
+> - [ ] **TREEFOLLOWWEB1 — the page names the branch a moved tree is on** (web; en/zh). The head's "its work" line matches its sweep row by the layout's `daoris/<folder>` (`work/diff.ts:47`), so once the tidy removes that branch it finds nothing: read the session row's real branch instead; and the Accept line says *lands `feature/…`, the session's own branch* from the `LANDING` answer's `own`. D164's TREEFOLLOW1 notes; proof: a window shot of the head and the Accept line.
+
+**Outcome** 2026-10-16: the Accept line reads `LANDING`'s `own`: the review's foot and the head's ask say the session's own branch lands as it stands and no other is made (`work.review.landsOwn`, en and zh), and the ask offers no name field; the head's line once its tree offers nothing became TREEFOLLOWWEB2. On Opus, with ACCEPTALL1h. Detail: D164's TREEFOLLOWWEB1 note.
+
+## LANDSYNC3 — *Bring up to date* counts what the line holds (2026-10-16, D87)
+
+> - [ ] **LANDSYNC3 — *Bring up to date* counts what the line holds** (driver). WSR6's plan said *replays 3 commit(s)* for `daoris/s-906da175`, whose first is squash-merged, and *replays 1* for `daoris/s-6062dcc3`, whose only one is: judge as the landing does, drop what the line holds, and move a branch it holds entirely onto the line as *holds nothing of its own*. D87's amendment, point 1. Proof: `TreeSyncTests`.
+
+**Outcome** 2026-10-16: *Bring up to date* judges a branch's commits as a landing does (patch ids in one log, the walk by content for a branch grown from the line): the cut moves past what the line holds, held commits between are skipped run by run, the count is what the replay carries, and a branch the line holds entirely moves onto it holding nothing of its own; a detached tree's press judges the same; the look's git starts are unchanged. The family rehearsal's WSR6 words follow. On Opus, with LANDSYNC2: 200 tool calls. Detail: D87's LANDSYNC3 and LANDSYNC2 note; FIX-LOG's LANDSYNC3 entry.
+
+## LANDSYNC2 — a session going on in an old tree starts from the line (2026-10-16, D87)
+
+> - [ ] **LANDSYNC2 — a session going on in an old tree starts from the line** (driver; after 0). A resume, words going on, a carry-on and SESSONE1d's taken-up tree: where the line holds some of its commits, `UpdateTreeAsync` brings it up to date first, a failed fetch said and not refused, a conflict told in the instruction. D87's 2026-10-15 amendment, point 7. Proof: a Process case per door.
+
+**Outcome** 2026-10-16: before a resume, words going on, a carry-on or a further part's start in a tree that stands, the driver fetches the line once and, where the line holds some of the tree's commits, brings the tree up to date by `UpdateTreeAsync`'s replay (`TreeUpdates.StartInSyncAsync`); a failed fetch is said and judged against the last, a conflict or any other reason the tree is left is told in the instruction, or after the person's words where its conversation resumes; it never holds the start. On Opus, with LANDSYNC3. Detail: D87's note.
+
+## REVIEWBASE3 — a chain step that merged the line reviews its own work only (2026-10-16, D164)
+
+> - [ ] **REVIEWBASE3 — a chain step that merged the line reviews its own work only** (driver). Where the record's base (the parent's tip) and the line's merge-base are incomparable, the review shows the parent's commits; measure against a merge of the two (`git merge-tree --write-tree`). A Process case in `ReviewBaseTests`. D164's REVIEWBASE1 note.
+
+**Outcome** 2026-10-16: where the line's merge-base and the record's base are incomparable (a chain's step that merged the line), the review reads from `git merge-tree --write-tree` of the two (`ReviewBase.Incomparable`, `ReviewRange.Against`/`Reads`), one git start more in that case only; `SESSION_DIFF` still names the line's commit as base; a conflict reads as before. On Opus, with PROCESS1e: 213 tool calls. Detail: D164's REVIEWBASE3 note; the fix log.
+
+## PROCESS1e — a session's Details say its process (2026-10-16, D164)
+
+> - [ ] **PROCESS1e — a session's Details say its process** (web/modules; after 1a, 1b). The commit rule, the landing and their source on the session's page. D164's amendment point 3.
+
+**Outcome** 2026-10-16: `SESSION_PROCESS {id}` answers a session's own tree's commit rule and landing rule with their sources from the driver file alone (none without a tree of its own here); *Details* says *Commits* and *Landing* in Setup's sentences, en and zh, in the main and the detached window. On Opus, with REVIEWBASE3. Detail: D164's PROCESS1e note.
+
+## MIXAGENT3a-ii — helpers and reviewers under the work they serve (2026-10-16, D163)
+
+> - [ ] **MIXAGENT3a-ii — helpers and reviewers under the work they serve** (web; after 3a-i). The rail and lists nest a helper under the session it serves (`serves`) and a reviewer under its work (the opinions join), each staying its own place where its parent is not listed; groups.ts pure and tested. Closes XAGENT1g4d. Design §4.
+
+**Outcome** 2026-10-16: Sessions' list draws a helper under the session it serves and a reviewer under the work it read, by state, repository and ask: moved never copied, its own place where that row is not drawn or the person must act on it, one level (`nestServing`); a nested line drops *helps*/*reads*. Closes XAGENT1g4d. On Opus, with MIXAGENT2b: 309 tool calls. Detail: D163's MIXAGENT3a-ii note; D155's XAGENT1g4d note.
+
+## MIXAGENT2b — *Ask another agent… (2026-10-16, D163)
+
+> - [ ] **MIXAGENT2b — *Ask another agent…*** (modules/web; after 2a). The person's press on a session's page; the helper's rows. Design §3.
+
+**Outcome** 2026-10-16: *Ask another agent…* in a session page's ⋯ asks under the head (question, agent) through `SESSION_HELPER_ASK`; the head lists the asks still on their way under *Helpers*, with *Let it ask* (`SESSION_HELPER_APPROVE`) and *Open helper*, read by `SESSION_HELPERS`. On Opus, with MIXAGENT3a-ii. Detail: D163's MIXAGENT2b note.
+
+## XAGENT1g4d — the reviewer beside its work (2026-10-16, D155)
+
+> - [ ] **XAGENT1g4d — the reviewer beside its work** (web; consider). The row says whose work it reads (XAGENT1g4c); group it under that session in the rail, or give the line a press to it. §9; D155's XAGENT1g4c note.
+
+**Outcome** 2026-10-16: closed by MIXAGENT3a-ii: a reviewer is drawn under the work it read. Detail: D155's XAGENT1g4d note.
+
+## ACCEPTALL1f — the terminal's and the automatic landing's entry branch (2026-10-16, D167)
+
+> - [ ] **ACCEPTALL1f — the terminal's and the automatic landing's entry branch** (found and built in the same round; see the outcome).
+
+**Outcome** 2026-10-16: every door that lands one session (the review's `LANDING`/`LAND_SESSION_TREE`, the terminal's `trees land`, the look's landing at done) names it by one call after its gate, `SessionTrees.OwnSubjectAsync`: a part of an entry with others is named for its entry's first part and lands on the entry's branch with `joins`; a merged entry branch's successor applies at done too. On Opus, with ACCEPTALL1g: 167 tool calls. Detail: D167's ACCEPTALL1f note.
+
+## ACCEPTALL1g — the review says when Accept moves a branch on (2026-10-16, D167)
+
+> - [ ] **ACCEPTALL1g — the review says when Accept moves a branch on** (found and built in the same round; see the outcome).
+
+**Outcome** 2026-10-16: `LANDING` answers `stands` (`LandingPlan.Stands`; the answer is `TreesRoutes.Planned`); the review's foot, the head's ask and `trees land --plan` say *adds this work to `<branch>`, a branch that already stands, moving it on* where they promised a new branch (en and zh). On Opus, with ACCEPTALL1f. Detail: D167's ACCEPTALL1g note.
+
+## STANDSREFUSE1 — the plan says a standing branch the press would refuse (2026-10-16, D167)
+
+> - [ ] **STANDSREFUSE1 — the plan says a standing branch the press would refuse** (found and built in the same round; see the outcome).
+
+**Outcome** 2026-10-16: where its target stands, the plan asks `LandingAdvance.Standing` (the record, the recorded tip, a checkout, the kept pull-request word; `Refusal` asks it first) and puts the press's own refusal in `problem`; the review's Accept and the head's ask hold while any problem stands, as the press refuses each. On Opus, with ACCEPTALL1h. Detail: D167's STANDSREFUSE1 note.
+
+## STANDSREFUSE1b — a line of work's Accept says a part's refusal before the press (2026-10-16, D167)
+
+> - [ ] **STANDSREFUSE1b — a line of work's Accept says a part's refusal before the press** (found and built in the same round; see the outcome).
+
+**Outcome** 2026-10-16: `EntryAccept` says each part's `problem` and holds the entry's and the ask's press where a kept part would be refused (per repository under an ask), en and zh. On Sonnet, with TREEFOLLOWWEB2 and TREEFOLLOWNAME1: 130 tool calls. Detail: D167's STANDSREFUSE1b note.
+
+## TREEFOLLOWWEB2 — the head names a moved tree's branch once its tree offers nothing (2026-10-16, D164)
+
+> - [ ] **TREEFOLLOWWEB2 — the head names a moved tree's branch once its tree offers nothing** (found and built in the same round; see the outcome).
+
+**Outcome** 2026-10-16: `work.branch` is on `SESSION_GROUPS` and `sessions --json`, and the head names a moved tree's branch once the clean-up lists none. On Sonnet, with STANDSREFUSE1b. Detail: D164's TREEFOLLOWWEB2 note.
+
+## TREEFOLLOWNAME1 — what a TREEFOLLOW1 part of an entry is named for (2026-10-16, D167)
+
+> - [ ] **TREEFOLLOWNAME1 — what a TREEFOLLOW1 part of an entry is named for** (found and built in the same round; see the outcome).
+
+**Outcome** 2026-10-16: decided: a part on its own branch is recorded and titled for its own quest and title, at the entry's press and at the one-session doors; the entry's other parts keep the entry's name. On Sonnet, with STANDSREFUSE1b. Detail: D167's TREEFOLLOWNAME1 note.
+
+## LANDSYNC2b — a conversation going on in its own tree starts from the line (2026-10-16, D87)
+
+> - [ ] **LANDSYNC2b — a conversation going on in its own tree starts from the line** (found and built in the same round; see the outcome).
+
+**Outcome** 2026-10-16: `ChatGoOn` asks `StartInSyncAsync` for a conversation in a tree of its own before its hold, and hands what it told after the person's words (`Continuations.AfterWords`, shared with the driven resume). On Opus, with LANDSYNC3b: 161 tool calls. Detail: D87's LANDSYNC2b and LANDSYNC3b note.
+
+## LANDSYNC3b — the Sync list says what a replay leaves out (2026-10-16, D87)
+
+> - [ ] **LANDSYNC3b — the Sync list says what a replay leaves out** (found and built in the same round; see the outcome).
+
+**Outcome** 2026-10-16: `RebaseItem.LeftOut` counts what a replay leaves out because the line holds it; the bridge's row carries it (`LinesRoutes.RebaseRow`), and the terminal's list, Ask Daoris's rows and the Updates row say it (en and zh). On Opus, with LANDSYNC2b. Detail: D87's note.
+
+## MIXAGENT2c — the helper's yes as a wait (2026-10-16, D168)
+
+> - [ ] **MIXAGENT2c — the helper's yes as a wait** (found and built in the same round; see the outcome).
+
+**Outcome** 2026-10-16: an agent's ask waiting on the person's word is a wait at the head, in the foot strip and in *What needs you* (the read `HELPER_WAITS`), with the same yes and no; the look reports a new wait once so windows refresh. On Opus, with HELPERNO1 and BRIDGEPRESS1: 326 tool calls. Detail: D168's MIXAGENT2c note.
+
+## HELPERNO1 — the person's no to an agent's ask (2026-10-16, D163)
+
+> - [ ] **HELPERNO1 — the person's no to an agent's ask** (found and built in the same round; see the outcome).
+
+**Outcome** 2026-10-16: `SESSION_HELPER_DECLINE` refuses an agent's ask that waits on the person's word with the code `declined` and its `helper.refused` note; *Not now* stands beside *Let it ask*; the coverage rows are added. On Opus, with MIXAGENT2c. Detail: D163's HELPERNO1 note.
+
+## BRIDGEPRESS1 — the places a new bridge press goes (2026-10-16, D169)
+
+> - [ ] **BRIDGEPRESS1 — the places a new bridge press goes** (found and built in the same round; see the outcome).
+
+**Outcome** 2026-10-16: `.claude/knowledge/bridge-presses.md` names the ten places a new bridge route goes, each with the test that holds it, and a read route's five; its index row is written by `daoris sync`. On Opus, with MIXAGENT2c. Detail: D169's BRIDGEPRESS1 note.
