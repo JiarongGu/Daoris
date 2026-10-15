@@ -117,8 +117,7 @@ public sealed record UnderWay(long Seq, IReadOnlyList<PressUnderWay> Presses);
 ///
 /// <para><b>And what is under way</b> (STATEHUB1c, D169 point 7): a declared press, from its dispatch until it answers or
 /// throws, told whole as <c>UNDER_WAY</c> at each change, so *落地中…* is shown by every view and window, not only the
-/// component that pressed. The kit's request tracker could not say it: its snapshot carries the route but never the payload,
-/// so not which session a landing is for, and it is silent until a request outlives its grace period.</para>
+/// component that pressed. Not the kit's request tracker, which names no session (D169's STATEHUB1c note).</para>
 /// </remarks>
 public static class StatePublisher
 {
