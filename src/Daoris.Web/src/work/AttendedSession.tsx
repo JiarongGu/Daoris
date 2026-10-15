@@ -15,6 +15,7 @@ import type { WaitEvents } from './anchors';
 import type { Answered } from './InlineConfirm';
 import type { SayRebase } from './LandingSync';
 import type { SessionEntry } from './entries';
+import { EntryAccept } from './EntryAccept';
 import type { DiscardOffer, LandOffer } from './groups';
 import { type PartFacts, PartsStrip } from './PartsStrip';
 import type { Relations } from './relations';
@@ -58,7 +59,7 @@ export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
-  opinion, continues, helps, parts, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek,
+  opinion, continues, helps, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek,
 }: {
   /** Passed straight through to the head: the wait a raising block's *To the wait* leads to there (WAITFOOT2b). */
   seek?: Seek | null;
@@ -83,6 +84,11 @@ export function AttendedSession({
     rows: Readonly<Record<string, PartFacts | undefined>>;
     onShow: (session: string) => void;
   };
+  /**
+   * Its line of work's one Accept (ACCEPTALL1, D167's 2026-10-15 amendment), where more than one of its parts offers work to land:
+   * the frame holds the plan and the press. Absent where one part or none does, whose own Accept is the head's.
+   */
+  entryAccept?: ComponentProps<typeof EntryAccept>;
   /**
    * Passed straight through to the head: the session it continues and the one a helper helps, where the frame holds them
    * (MIXAGENT3a-i). Its *Details* opens them with `onSession`.
@@ -240,6 +246,8 @@ export function AttendedSession({
         seek={seek}
       />
       {parts && <PartsStrip {...parts} />}
+      {/* One Accept for every part with work to land (ACCEPTALL1, D167's 2026-10-15 amendment), under the strip that lists them. */}
+      {entryAccept && <div className="grid justify-items-start gap-1"><EntryAccept {...entryAccept} /></div>}
       {/* Every stop a door (the study's §5: "every stop pressable"): a session attends, a quest opens.
           One line of stops by default, since the whole strip stood 350 to 450px between the head and
           the conversation, saying the head's title again (SESS2 H7); whole on a press. */}

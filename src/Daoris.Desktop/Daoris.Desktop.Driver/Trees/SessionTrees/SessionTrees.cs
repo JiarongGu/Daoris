@@ -109,6 +109,7 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     private TreeTidies? _tidies;
     private TreeLandSyncs? _syncs;
     private TreeLands? _lands;
+    private EntryLands? _entries;
 
     /// <summary>Where each session tree's work is, and the branch the layout names for it (TREEFOLLOW1).</summary>
     private TreeFollows Follows => _follows ??= new(_context);
@@ -181,6 +182,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
 
     /// <summary>The landing: its plan, the merge, the branch form and its advance, and the rule's tidy (WSR1, D87, D100).</summary>
     private TreeLands Lands => _lands ??= new(_context, Follows, WorkReads, Removals, Tidies, Syncs);
+
+    /// <summary>An entry's Accept: its parts' work on one branch, in ledger order (ACCEPTALL1, D167).</summary>
+    private EntryLands Entries => _entries ??= new(_context, Lands, Syncs);
 
     /// <summary>
     /// The test seam (SQUASHTIDY1c): run with the branch's name between a judgement and the delete it cleared, where a test
@@ -518,6 +522,16 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
         string acceptedBy = AcceptedBy.Person, LandingGate? gate = null) =>
         Lands.LandAsync(path, subject, ct, inUse, acceptedBy, gate);
+
+    /// <inheritdoc cref="EntryLands.PlanAsync"/>
+    public Task<EntryPlan> PlanEntryAsync(IReadOnlyList<EntryLandingPart> parts, LandingSubject subject, CancellationToken ct = default) =>
+        Entries.PlanAsync(parts, subject, ct);
+
+    /// <inheritdoc cref="EntryLands.LandAsync"/>
+    public Task<EntryLanding> LandEntryAsync(
+        IReadOnlyList<EntryLandingPart> parts, LandingSubject subject, IReadOnlySet<string> leaveOut, CancellationToken ct = default,
+        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null) =>
+        Entries.LandAsync(parts, subject, leaveOut, ct, inUse);
 
     /// <inheritdoc cref="TreeRemovals.RemoveAsync"/>
     public Task<TreeRemoval> RemoveAsync(string path, bool force = false, CancellationToken ct = default) => Removals.RemoveAsync(path, force, ct);

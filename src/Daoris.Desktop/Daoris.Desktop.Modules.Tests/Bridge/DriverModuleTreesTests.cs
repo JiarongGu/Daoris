@@ -412,6 +412,11 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     {
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "LANDING", new { id = "s1a2b3c4" }));
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "LAND_SESSION_TREE", new { id = "s1a2b3c4" }));
+        // An entry's Accept and an ask's (ACCEPTALL1) read the records too.
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "ENTRY_LANDING", new { entry = "ask:a3/engine" }));
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "LAND_ENTRY", new { entry = "ask:a3/engine" }));
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "ASK_LANDING", new { ask = "a3" }));
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "LAND_ASK", new { ask = "a3" }));
     }
 
     /// <summary>A hand-off (WSR5b) reads the registry's checkouts, so before the driver is up each route is the cold-start sentence.</summary>

@@ -14,6 +14,7 @@ export * from './browser';
 export * from './console';
 export * from './conversation';
 export * from './driver';
+export * from './entries';
 export * from './help';
 export * from './history';
 export * from './lines';

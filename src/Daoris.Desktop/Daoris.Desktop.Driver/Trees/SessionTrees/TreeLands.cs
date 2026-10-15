@@ -70,8 +70,8 @@ internal sealed class TreeLands(
         };
     }
 
-    /// <summary>What a press would do under the rule, before LANDSYNC1's judgement of what the line holds.</summary>
-    private async Task<LandingPlan> PlanRuleAsync(string path, LandingSubject subject, CancellationToken ct, WorkflowProcess? process)
+    /// <summary>What a press would do under the rule, before LANDSYNC1's judgement of what the line holds; an entry's Accept names its branch by it.</summary>
+    internal async Task<LandingPlan> PlanRuleAsync(string path, LandingSubject subject, CancellationToken ct, WorkflowProcess? process)
     {
         var full = Path.GetFullPath(path);
         var (workspace, repository) = context.OwnerOf(full);
@@ -281,9 +281,14 @@ internal sealed class TreeLands(
     /// (<see cref="AutoLandingCode.Opinion"/>, then <see cref="AutoLandingCode.Unreviewed"/>); what let each go is kept on the
     /// landing record. Null is a door that asked none.
     /// </param>
+    /// <param name="joins">
+    /// This part joins its entry's one branch (ACCEPTALL1, D167's 2026-10-15 amendment point 2): where that branch stands and this
+    /// tree's work does not grow from its tip (a part that ran alongside, in a tree of its own), what neither the branch nor the line
+    /// holds is replayed onto its tip, which then moves by D145 §3's fast-forward, and the tree follows. False lands as before.
+    /// </param>
     internal async Task<TreeLanding> LandAsync(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
-        string acceptedBy = AcceptedBy.Person, LandingGate? gate = null)
+        string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false)
     {
         // One look (UIFREEZE1, PROC1d-i): the landing and its tidy ask git's guess at the line once.
         using var look = context.OneLook();
@@ -366,9 +371,12 @@ internal sealed class TreeLands(
         {
             var branched = await BranchAsync(full, workspace, repository,
                 BranchNamed(subject, landing.Rule, repository), handedOn: plugin is not null, ct,
-                entered: subject.EnteredName is not null, squash: landing.Rule.Squash ? subject : null, sync: replaying).ConfigureAwait(false);
+                entered: subject.EnteredName is not null, squash: landing.Rule.Squash ? subject : null, sync: replaying,
+                join: joins ? sync : null).ConfigureAwait(false);
             landed = Fetched(branched.Landing, fetched);
             replayed = landed.Landed ? branched.Replay : null;
+            // ACCEPTALL1: a part that joined its entry's branch by a replay follows it as a replay onto the line does (point 7).
+            if (replayed is not null && replaying is null && joins) replaying = sync;
             followed = branched.Followed;
             squashedTip = landed.Landed ? branched.Squashed : null;
             // Recorded the moment it exists (WSR5): the branch is Daoris's to judge and to hand on only
@@ -541,9 +549,14 @@ internal sealed class TreeLands(
     /// what neither it nor the line holds, replayed onto its tip; a branch of the tree's own is replayed in place. Null lands the
     /// commits as made.
     /// </param>
+    /// <param name="join">
+    /// The tree's judgement where it joins its entry's branch (ACCEPTALL1), even where the line holds none of its commits: where the
+    /// branch stands and the tree's tip does not grow from it, what neither holds is replayed onto the branch's tip, as
+    /// <paramref name="sync"/>'s would be. Null advances only by the session's own tip, as before.
+    /// </param>
     private async Task<Branched> BranchAsync(
         string full, string workspace, string repository, string name, bool handedOn, CancellationToken ct, bool entered = false,
-        LandingSubject? squash = null, LandSync? sync = null)
+        LandingSubject? squash = null, LandSync? sync = null, LandSync? join = null)
     {
         if (!context.Holds(full))
         {
@@ -665,7 +678,10 @@ internal sealed class TreeLands(
             // A chain's later done moves the chain's branch on (LAND2c, D149): only one Daoris made, as a fast-forward, or under
             // a squash by one more commit (PROCESS1b-ii point 4).
             var standsAt = standing.Trim();
-            if (sync is null)
+            // ACCEPTALL1 (D167's amendment point 2): a part that ran alongside, its work not grown from the entry's branch, joins it by
+            // the same replay as what the line partly holds; one grown from it still moves it by its own tip.
+            var onto = sync ?? (join is not null && !await IsAncestorAsync(root, standsAt, join.Tip, ct).ConfigureAwait(false) ? join : null);
+            if (onto is null)
             {
                 return await AdvanceAsync(root, repository, name, standsAt, branch, line, commits, handedOn, ct, against, squash).ConfigureAwait(false);
             }
@@ -673,22 +689,26 @@ internal sealed class TreeLands(
             // LANDSYNC1 (point 3): what neither the branch nor the line holds, replayed onto the branch's tip, which then moves by D145
             // §3's fast-forward as before.
             var lacking = new List<LandingCommit>();
-            foreach (var commit in sync.Held.Kept)
+            foreach (var commit in onto.Held.Kept)
             {
                 if (!await IsAncestorAsync(root, commit.Sha, standsAt, ct).ConfigureAwait(false)) lacking.Add(commit);
             }
 
-            var (onBranch, refusedOn) = await syncs.ReplayAsync(sync, repository, workspace, standsAt, lacking, ct).ConfigureAwait(false);
+            var (onBranch, refusedOn) = await syncs.ReplayAsync(onto, repository, workspace, standsAt, lacking, ct, joining: sync is null ? name : null)
+                .ConfigureAwait(false);
             if (refusedOn is not null) return refusedOn;
             var holds = await LineHolds.CommitsAsync(root, $"{against}..{onBranch!.Now}", ct).ConfigureAwait(false) ?? onBranch.Landed;
             var advanced = await AdvanceAsync(root, repository, name, standsAt, branch, line, holds, handedOn, ct, against, squash, onBranch.Now)
                 .ConfigureAwait(false);
+            // A part that joined with nothing the line holds left nothing out: said as a landing of the commits as made says it.
+            var joined = sync is null;
             return !advanced.Landing.Landed ? advanced : advanced with
             {
                 Landing = advanced.Landing with
                 {
-                    LeftOut = onBranch.LeftOut,
-                    Message = BeforeTreeStays(advanced.Landing.Message, LandingSyncWords.LeftOutLanded(onBranch.LeftOut)),
+                    LeftOut = joined && onBranch.LeftOut.Count == 0 ? null : onBranch.LeftOut,
+                    Message = BeforeTreeStays(advanced.Landing.Message,
+                        (joined ? EntryLandWords.Joined(name, onBranch.Landed.Count) : "") + LandingSyncWords.LeftOutLanded(onBranch.LeftOut)),
                 },
                 Replay = onBranch,
             };
@@ -869,5 +889,5 @@ internal sealed class TreeLands(
     /// <c>{ticket}</c> found by the rule's key (PROCESS1b-i). The plan and the press both ask it, so they name one branch.
     /// </summary>
     private static string BranchNamed(LandingSubject subject, LandingRule rule, string repository) =>
-        subject.EnteredName ?? LandingRules.Branch(subject, rule, repository);
+        subject.EnteredName ?? subject.EntryBranch ?? LandingRules.Branch(subject, rule, repository);
 }

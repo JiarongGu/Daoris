@@ -25,6 +25,7 @@ import { SessionRail } from './SessionRail';
 
 let ENTRIES: unknown = EVIDENCE_ENTRIES;
 let SESSIONS: unknown[] = EVIDENCE_SESSIONS;
+let GROUPINGS: unknown[] = EVIDENCE_GROUPINGS;
 
 /** What is unread on each ask's channel (SESSONE2c), by the ask's id; an ask not named reads as an empty channel. */
 let UNREAD: Record<string, number> = {};
@@ -34,7 +35,13 @@ const drive = async (_module: string, type: string, options?: { payload?: { ask?
     const ask = options?.payload?.ask ?? '';
     return { ask, entry: 'person', items: [], unread: UNREAD[ask] ?? 0, mark: null };
   }
-  if (type === 'SESSION_GROUPS') return { sessions: EVIDENCE_GROUPINGS, ...(ENTRIES === undefined ? {} : { entries: ENTRIES }) };
+  if (type === 'SESSION_GROUPS') return { sessions: GROUPINGS, ...(ENTRIES === undefined ? {} : { entries: ENTRIES }) };
+  if (type === 'ASK_LANDING') {
+    return { ask: 'c98a7e', entries: [{ entry: 'ask:c98a7e/app', repository: 'app', form: 'branch', target: 'feature/c98a7e', parts: [
+      { session: 'ap000002', target: 'feature/c98a7e' }, { session: 'ap000003', target: 'feature/c98a7e' },
+    ] }] };
+  }
+  if (type === 'LAND_ASK') return { ask: 'c98a7e', done: true, repositories: [{ entry: 'ask:c98a7e/app', repository: 'app', done: true, message: 'Landed 2 part(s).', parts: [] }] };
   return { drivable: ['app'], holds: [], trees: [], running: [] };
 };
 
@@ -64,6 +71,7 @@ describe('the session rail over entries (SESSONE1c)', () => {
     UNREAD = {};
     ENTRIES = EVIDENCE_ENTRIES;
     SESSIONS = EVIDENCE_SESSIONS;
+    GROUPINGS = EVIDENCE_GROUPINGS;
     bridge.available = true;
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
     invoke.mockImplementation(drive);
@@ -146,6 +154,31 @@ describe('the session rail over entries (SESSONE1c)', () => {
 
       expect(await screen.findByRole('heading', { level: 3, name: 'Add the export feed to the app, backed by the database · 2 unread' })).toBeInTheDocument();
       expect(screen.getByRole('heading', { level: 3, name: 'Tidy the settings page' })).toBeInTheDocument();
+    });
+
+    /**
+     * ACCEPTALL1 (D167's 2026-10-15 amendment point 4): an ask whose lines of work hold more than one part with work to land offers
+     * one Accept under its heading; its plan is read only once the ask opens, and the press lands the ask's work.
+     */
+    it("offers one Accept for an ask's work, reading its plan only once asked", async () => {
+      const lands = (session: string) => ({ branch: `daoris/s-${session}`, tree: `s-${session}`, commits: 1, uncommitted: 0 });
+      GROUPINGS = EVIDENCE_GROUPINGS.map((row) => (row.session === 'ap000002' || row.session === 'db000001' ? { ...row, lands: lands(row.session) } : row));
+      show({ arrangement: 'ask' });
+
+      const first = (await screen.findByRole('heading', { level: 3, name: 'Add the export feed to the app, backed by the database' })).closest('section')!;
+      const press = await within(first).findByRole('button', { name: "Accept the ask's 2 parts…" });
+      expect(within(screen.getByRole('heading', { level: 3, name: 'Tidy the settings page' }).closest('section')!)
+        .queryByRole('button', { name: /^Accept the ask's/ })).toBeNull();
+      // The two rows are still the list's, and the press is not one of them.
+      expect(rowsOf(first).filter((button) => !/^Accept/.test(button.textContent ?? ''))).toHaveLength(2);
+      expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'ASK_LANDING', expect.anything());
+
+      await userEvent.click(press);
+      expect(await within(first).findByText('Lands 2 parts on feature/c98a7e, one after another, in the order they ran.')).toBeInTheDocument();
+      expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ASK_LANDING', { payload: { ask: 'c98a7e' } });
+
+      await userEvent.click(within(first).getByRole('button', { name: 'Accept all' }));
+      await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_ASK', { payload: { ask: 'c98a7e' }, timeoutMs: expect.any(Number) }));
     });
 
     it('puts a conversation under Not on an ask', async () => {

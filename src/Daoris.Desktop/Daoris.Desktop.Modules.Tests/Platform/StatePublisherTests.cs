@@ -259,6 +259,10 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     /// </summary>
     [Theory]
     [InlineData("LAND_SESSION_TREE", "sessions,landing,diff,handOff,sweep,treesSync", "id")]
+    [InlineData("LAND_ENTRY", "sessions,landing,diff,handOff,sweep,treesSync", null)]
+    [InlineData("LAND_ASK", "sessions,landing,diff,handOff,sweep,treesSync", null)]
+    [InlineData("ENTRY_LANDING", "", null)]
+    [InlineData("ASK_LANDING", "", null)]
     [InlineData("DISCARD_SESSION_TREE", "sessions,landing,diff,sweep,treesSync", "id")]
     [InlineData("HANDOFF", "handOff,sweep", "id")]
     [InlineData("ASK_OPINION", "sessions,landing", "id")]

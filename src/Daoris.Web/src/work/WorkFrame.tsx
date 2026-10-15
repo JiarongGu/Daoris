@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { type ComponentProps, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionConsole } from './SessionConsole';
 import { sentence } from '../locales/format';
@@ -12,6 +12,7 @@ import {
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useSessionDiff,
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting, useUnderWay,
+  useEntryLanding, useLandEntry,
 } from '../bridge/shell';
 import { type Sent, useSending, useSettled } from './sending';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
@@ -23,6 +24,7 @@ import { ReviewGate } from './ReviewGate';
 import { useReviewActs } from './reviewActs';
 import type { Session } from '../data/api';
 import type { HeadLink, HeadOpinion, HeadReview, WorkAsk } from './SessionHead';
+import type { EntryAccept } from './EntryAccept';
 import { type WaitProps, WaitStrip } from './WaitStrip';
 import { type AnchorWait, anchorOf, waitEvents } from './anchors';
 import type { RuleAsk } from './ProposedRules';
@@ -1406,6 +1408,37 @@ export function WorkFrame({
     // Under way for this session from either place or another window (STATEHUB1c, D169 point 7), never another session's press.
     workBusy: landsNow || discardsNow,
   } : null;
+  // ACCEPTALL1 (D167's 2026-10-15 amendment): its line of work's one Accept, where more than one of its parts offers work to land
+  // here; the plan reads git for every part, so it is asked only once the ask is open.
+  const entryOffered = attendedEntry && here
+    ? attendedEntry.parts.filter((part) => (groups.data ?? []).some((row) => row.session === part.session && row.lands)).length
+    : 0;
+  const entryAccepts = attendedEntry && entryOffered > 1 ? attendedEntry.entry : null;
+  const [entryAsking, setEntryAsking] = useState<string | null>(null);
+  const entryPlan = useEntryLanding(entryAccepts, entryAccepts !== null && entryAsking === entryAccepts);
+  const landEntry = useLandEntry();
+  const entryAccept: ComponentProps<typeof EntryAccept> | undefined = entryAccepts && attendedEntry ? {
+    scope: 'entry',
+    offered: entryOffered,
+    open: entryAsking === entryAccepts,
+    onOpen: (open) => setEntryAsking(open ? entryAccepts : null),
+    plans: entryPlan.data ? [entryPlan.data] : null,
+    reading: entryPlan.isFetching && !entryPlan.data,
+    busy: landEntry.isPending,
+    numberOf: (session) => attendedEntry.parts.findIndex((part) => part.session === session) + 1 || null,
+    // Told back to its ask: every part landed, or the driver's sentence of what landed and what was refused, said inside it.
+    onLand: (leaveOut, answered) => landEntry.mutate({ entry: entryAccepts, parts: entryOffered, leaveOut }, {
+      onSuccess: (result) => {
+        if (!result.done) {
+          answered.refused(result.message);
+          return;
+        }
+        notify(result.message);
+        answered.done();
+      },
+      onError: (error) => answered.refused(sentence(error)),
+    }),
+  } : undefined;
   // WAITFOOT1c (D168 point 4): the waits that stand where the strip draws them, and the events that raised them, which the
   // conversation finds and tells; the way to each is handed to the head and the strip alike, and a raising block's *To the wait*
   // leads to its line where it is on screen (WAITFOOT2b).
@@ -1807,6 +1840,7 @@ export function WorkFrame({
               }])),
               onShow: (id: string) => attend(id),
             } : undefined}
+            entryAccept={entryAccept}
             // Its ask's channel, kept to this line of work (SESSONE2c): a post is the person's words, and a refusal is the service's code.
             channel={attended && attendedEntry && channelAsk && channel.available && (channel.loading || channel.channel) ? {
               channel: channel.channel,
