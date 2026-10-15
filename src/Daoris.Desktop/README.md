@@ -199,8 +199,9 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   each `TaskbarButtonCreated`) and in its title, `(3) Daoris (道衍)`, the taskbar's hover and Alt-Tab's label. What it
   says is `WaitingBadge`'s, in the modules where it is tested; a secondary window's page never sends it.
 - **It notifies, and decides nothing** (SURF5b): a session that parks, or ends without the person
-  asking, raises an OS balloon unless one of its windows has focus. `AttentionWatch` in the library
-  makes the judgement, so `daoris-driver` prints the same one as a line.
+  asking, or a conversation that answers the person's words (NOTIFY1a), raises an OS balloon unless
+  one of its windows has focus. `AttentionWatch` in the library makes the judgement, so `daoris-driver`
+  prints the tick's as a line; its console conversation answers in the console itself.
 - **It brings up the local host**, adopting one already running or spawning and owning one, and runs
   the driver's watch loop in-process with `driver.json` re-read every tick. On close it takes the
   loop and its owned host down, with in-flight sessions ended and recorded `stopped` and

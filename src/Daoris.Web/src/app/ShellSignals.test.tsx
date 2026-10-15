@@ -207,6 +207,24 @@ describe('the shell push channel (ShellSignals)', () => {
     expect(notify).toHaveBeenCalledWith('tools — a session failed', 'ok');
   });
 
+  /**
+   * NOTIFY1a: a conversation that answered the person is news they wait on, never a demand: the driver's own sentence, in
+   * the ending's tone, and the sessions asked again so its row shows the turn's end.
+   */
+  it('a conversation that answered is news in the driver\'s own words', () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    const notify = vi.fn();
+    show(<ShellSignals notify={notify} />, client);
+
+    eventHandlers.get('DAORIS.SESSION_ATTENTION')!({
+      kind: 'Answered', session: 'c1a2b3c4', repository: 'engine', headline: 'engine — a conversation answered you',
+    });
+
+    expect(notify).toHaveBeenCalledWith('engine — a conversation answered you', 'ok');
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions });
+  });
+
   /** An older shell, or a reworded payload: the console must tolerate any shape (SES1's rule). */
   it('an attention event with nothing to say is not a blank toast', () => {
     const notify = vi.fn();

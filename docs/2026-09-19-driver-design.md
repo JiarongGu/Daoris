@@ -274,3 +274,10 @@ tier, and says which tier ran.
    reaches the same answer and prints it instead (D50), and the decision is testable where a balloon
    is not. A park is seen by diffing the tick's active sessions; an end is known from the driver's own
    conclusion, which already carries whose decision it was.
+   *Amended 2026-10-15 (NOTIFY1a): a conversation's answer is the fifth kind, `Answered`. A chat's end
+   is still not said, but the turn the person's own words started ending, after the last of them, is:
+   it is what they wait on while the window is behind another. The chat runner tells the watch the
+   person's words, their stop and each turn's change (`Asked`, `Stopped`, `Turned`), outside the tick;
+   the loop says it on `SESSION_ATTENTION` while notifications are on, the balloon is quiet while a
+   window is in front, and the page's toast is news, not a demand. The headless console's own
+   conversation answers in that console, so it prints nothing more.*
