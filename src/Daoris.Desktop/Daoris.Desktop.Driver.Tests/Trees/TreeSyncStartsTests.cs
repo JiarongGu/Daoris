@@ -53,8 +53,9 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
         // PROC1d-ii: a branch's tip, the line's forms and an upstream come from one read of the refs per judgement, so asking
         // git for one ref at a time is left only to the line's guess (`rev-parse --verify refs/heads/main`), whatever N is.
         Assert.True(starts.Count(each => each.StartsWith("rev-parse --verify", StringComparison.Ordinal)) <= 1, report);
-        // 44 starts before the look (two guesses of the line), 42 after, over three session branches; PROC1d-iii cuts the rest.
-        Assert.True(starts.Count is > 0 and <= 42, report);
+        // Over three session branches: 44 starts before the look (two guesses of the line), 42 after it, 29 with the refs read once
+        // per judgement (8 `rev-parse --verify` before, 1 after); PROC1d-iii and -iv cut the rest.
+        Assert.True(starts.Count is > 0 and <= 29, report);
     }
 
     /// <summary>
