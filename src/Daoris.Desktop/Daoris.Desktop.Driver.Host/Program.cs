@@ -151,6 +151,7 @@ using Daoris.Driver;
 //                 conversation in its tree on that agent, in this terminal, as start-from does; a conversation that is
 //                 talking keeps the ask until its turn ends. A quest's session, Ask Daoris's and an intake are refused, exit 1.
 //   sessions helper <id> "<question>" [--agent <name>]
+//   sessions helper --approve|--decline <ask>
 //                 the person's own ask for a helper (MIXAGENT2a-ii, D163): the ask `helper_ask` writes, as the person's, under the
 //                 home's `helpers` folder; the driver takes it at its next look and starts a read-only helper on another agent,
 //                 whose answer comes back to that session as its next turn, marked as the helper's. A helper, a reviewer and an

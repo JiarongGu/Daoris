@@ -26,6 +26,13 @@ public static class SessionsHelperCommand
         problem = null;
         switch (args)
         {
+            case ["helper", "--approve", var ask] when Word(ask):
+                return new SessionsAsk("helper-approve") { Ids = [ask] };
+            case ["helper", "--decline", var ask] when Word(ask):
+                return new SessionsAsk("helper-decline") { Ids = [ask] };
+            case ["helper", "--approve" or "--decline", ..]:
+                problem = "`helper --approve` and `helper --decline` take one ask's id, as `#<ask>` is said on its session's page.";
+                return null;
             case ["helper", var id, var question] when Word(id) && question.Trim().Length > 0:
                 return new SessionsAsk("helper") { Ids = [id], Text = question.Trim() };
             case ["helper", var id, var question, "--agent", var agent] when Word(id) && question.Trim().Length > 0 && Word(agent):
@@ -93,6 +100,30 @@ public static class SessionsHelperCommand
             $"sessions: asked `#{asked}` for session {id}: the driver takes it at its next look and starts a helper on another agent, "
             + "read-only, within the limits; its answer comes back to that session as its next turn, marked as the helper's.");
         return 0;
+    }
+
+    /// <summary>
+    /// <c>helper --approve|--decline &lt;ask&gt;</c> (HELPERTERM1): the person's yes or no to an agent's ask that waits on it, by the
+    /// judge the page's presses use (<see cref="HelperPersonWord"/>). The driver's look reads the file at its next look; the loop
+    /// is not nudged from here, and the line says so. Exit 0 where the word stands, 1 where the judge refuses it.
+    /// </summary>
+    public static Task<int> RunWordAsync(SessionsWorld world, SessionsAsk ask, TextWriter output)
+    {
+        var id = ask.Ids[0].TrimStart('#');
+        var files = new HelperFiles(world.Home);
+        try
+        {
+            var answer = ask.Verb == "helper-approve"
+                ? HelperPersonWord.Approve(files, null, id)
+                : HelperPersonWord.Decline(files, new SessionEvents(Path.Combine(world.Home, "sessions")), null, null, id);
+            output.WriteLine($"sessions: {answer.Message}{(answer.Stands ? "" : " Nothing was changed.")}");
+            return Task.FromResult(answer.Stands ? 0 : 1);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            output.WriteLine($"sessions: the word could not be written under the home ({error.Message}), so nothing was changed.");
+            return Task.FromResult(2);
+        }
     }
 
     private static bool Word(string word) => word.Trim().Length > 0 && !word.StartsWith('-');
