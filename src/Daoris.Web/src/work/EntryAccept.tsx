@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { Button, Inline } from '../design/ui';
+import { Button, CheckField, Inline } from '../design/ui';
 import { type Answered, InlineConfirm } from './InlineConfirm';
 import type { LandingConflict, LandsCommit, LeftOutCommit } from './LandingSync';
 
@@ -155,10 +155,11 @@ function PlanLines({ t, plan, named, name, leaving, onLeave, held }: {
                       part: part_, by: name(part.superseded.by), says: part.superseded.says,
                     })} />
                   </span>
-                  <label className="flex items-center gap-1.5">
-                    <input type="checkbox" checked={leaving.has(part.session)} onChange={() => onLeave(part.session)} />
-                    {t('work.accept.leaveOut', { part: part_ })}
-                  </label>
+                  <CheckField
+                    checked={leaving.has(part.session)}
+                    onChange={() => onLeave(part.session)}
+                    label={t('work.accept.leaveOut', { part: part_ })}
+                  />
                 </>
               )}
             </li>
