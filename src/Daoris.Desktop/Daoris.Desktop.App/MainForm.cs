@@ -48,6 +48,7 @@ public sealed class MainForm : OptimizedForm
         IEventBus eventBus,
         DriverLoop driver,
         HostSupervisor supervisor,
+        IColorScheme colorScheme,
         ILogger<ChromiumView>? viewLog = null,
         UiStallWatch? watch = null)
         : base(new OptimizedFormOptions
@@ -56,11 +57,11 @@ public sealed class MainForm : OptimizedForm
             // The window owns the caption pixels and paints them (D56 as amended by SURF7's reading
             // of the framework). Inert until the page reports where it left the room.
             NativeCaptionButtons = true,
-            BackColor = StartingPalette.Page,
+            BackColor = StartingPalette(colorScheme).Page,
             // The 1px Win11 border line. The system default is light, which is visibly wrong on the
             // dark theme and slightly wrong on the light one.
-            DwmBorderColor = StartingPalette.Line,
-            ImmersiveDarkMode = StartingPalette.IsDark,
+            DwmBorderColor = StartingPalette(colorScheme).Line,
+            ImmersiveDarkMode = StartingPalette(colorScheme).IsDark,
         })
     {
         _engine = engine;
@@ -69,7 +70,7 @@ public sealed class MainForm : OptimizedForm
         _viewLog = viewLog ?? NullLogger<ChromiumView>.Instance;
         _driver = driver;
         _supervisor = supervisor;
-        _palette = StartingPalette;
+        _palette = StartingPalette(colorScheme);
 
         // Still set: it is the taskbar's label and the caption of the one MessageBox left. While anything
         // waits on the person it leads with the count (NOTIFY1b, ShowWaiting).
@@ -183,8 +184,12 @@ public sealed class MainForm : OptimizedForm
         _badge.Show(count, description);
     }
 
-    /// <summary>What the OS is set to, for the first paint — the page corrects it a round trip later.</summary>
-    private static ChromePalette StartingPalette { get; } = ChromePalette.For(OperatingSystemPrefersDark());
+    /// <summary>
+    /// The first paint's palette: the viewer's choice as the app's scheme starts at, kept from the last run (THEMESTART1),
+    /// and the OS's at <i>System</i>. The page's word, a round trip later, is the one that stands.
+    /// </summary>
+    private static ChromePalette StartingPalette(IColorScheme colorScheme) =>
+        ChromePalette.For(KeptScheme.StartsDark(colorScheme.Scheme, OperatingSystemPrefersDark));
 
     /// <summary>
     /// The page's effective theme, arriving over <c>SET_THEME</c> on every change.
@@ -221,7 +226,7 @@ public sealed class MainForm : OptimizedForm
     };
 
     /// <summary>
-    /// Whether the OS is in dark mode. Only for the first paint: the page is authoritative and says
+    /// Whether the OS is in dark mode. Only for the first paint at <i>System</i>: the page is authoritative and says
     /// so within a round trip.
     /// </summary>
     /// <remarks>

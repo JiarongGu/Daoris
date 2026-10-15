@@ -199,7 +199,9 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   route (`AddShenoraColorScheme`, advertised as `colorScheme`), and each window's page sets it to the viewer's choice.
   The engine applies it to Chromium's global context, which every window's browser takes, so Chromium's own UI and
   `prefers-color-scheme` follow an explicit light or dark, and *System* the OS. Daoris's browser, a process of its
-  own, keeps following the OS.
+  own, keeps following the OS. The shell keeps each scheme the page sets (`KeptScheme`, `color-scheme.json` beside
+  the window's geometry) and starts the next run from it (THEMESTART1), so the engine and the windows' first frame
+  wear the choice before the page speaks.
 - **The taskbar button counts what waits on the person** (NOTIFY1b, D126's note): the main window's page tells its
   frame Overview's *What needs you* count over `DAORIS.WINDOWS SET_BADGE`, and the window wears it as the button's
   overlay (`TaskbarBadge`, a number on a circle drawn at run time through `ITaskbarList3`, *9+* past nine, put back on
