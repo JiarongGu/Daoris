@@ -38,6 +38,7 @@ import { WorkspaceScopeProvider } from '../data/scope';
 import { useListPanes } from '../work/listPanes';
 import { ViewFrame } from '../work/ViewFrame';
 import { useDoor } from '../test/door';
+import { DECLARED } from '../test/publishing';
 import { usePluginsView } from './PluginsView';
 
 const GATE = {
@@ -69,14 +70,6 @@ const answer = (plugins: unknown[], offers: unknown[] = [BROWSER_OFFER]) => {
   catalog = { folder: 'C:/somewhere/data/plugins', plugins, kit: KIT, offers };
 };
 
-/**
- * What the driver's plugin presses declare they change (STATEHUB1d, `PluginsRoutes`): the mocked shell publishes it once the
- * route has answered, as `StatePublisher` does, so the view reads its catalogue again through the state hub, not the hook.
- */
-const PUBLISHES: Record<string, string[]> = {
-  PLUGIN_ACTION: ['plugins', 'harnesses'], PLUGIN_UPDATE: ['plugins', 'harnesses'], PLUGIN_INSTALL: ['plugins', 'harnesses'],
-};
-
 /** The driver's routes, as the mocked shell answers them; `routes` overrides one. */
 let routes: Record<string, (payload: Record<string, unknown>) => unknown>;
 function wire() {
@@ -85,8 +78,10 @@ function wire() {
     const route = routes[type];
     if (route) {
       const answered = route(args?.payload ?? {});
-      const scopes = PUBLISHES[type];
-      if (module === 'DAORIS.DRIVER' && scopes) setTimeout(() => hub.heard?.({ scopes }), 0);
+      // What the plugin presses declare they change (`PluginsRoutes`), published once the route has answered, as `StatePublisher`
+      // does, so the view reads its catalogue again through the state hub, not the hook.
+      const declared = module === 'DAORIS.DRIVER' ? DECLARED[type] : undefined;
+      if (declared) setTimeout(() => hub.heard?.({ scopes: declared.scopes }), 0);
       return answered;
     }
     if (module === 'DAORIS.REMOTES') return { path: 'remotes.json', fromEnvironment: false, remotes: [] };
