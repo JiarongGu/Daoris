@@ -1,6 +1,6 @@
 ---
 name: bridge-presses
-applies_when: adding a route the page sends the driver's bridge module (`DAORIS.DRIVER`), a press or a read, the way `SESSION_HELPER_APPROVE` and `SESSION_HELPER_DECLINE` were added, or a new route domain, or changing what an existing press changes
+applies_when: adding a route the page sends the driver's bridge module (`DAORIS.DRIVER`), a press or a read, the way `SESSION_HELPER_DECLINE` and `HELPER_WAITS` were added, or a new route domain, or changing what an existing press changes
 enforces: a new route goes into every one of its places in the same change, the domain's handler and its mark, what it changes and the page's copy of it, the README's row, the page's call, Ask Daoris's row for its hook, a landing's count; each place has a test that fails on the place it misses, and some of those tests run only in another lane
 ---
 
@@ -51,6 +51,25 @@ Paths are under `src/`. A **press** changes something; a **read** changes nothin
 
 A route's answer is a wire shape: a field is added, never renamed or changed in place, and a rehearsal that compares the
 answer whole reads its neighbours too (`tools/*rehearsal*.mjs`). Search them for the fields beside the one you add.
+
+### A read
+
+A route that only answers what is on disk or in the loop (a list, a plan, a gate, what waits) goes into fewer places, and
+each is still held:
+
+1. **Its handler** in the domain class named after the bridge file that sends it (row 1), with no `[Publishes]`: a read
+   never declares a change (D169 point 2), and one that did would make every window read again without end (the
+   `HARNESSES` split, D169's HARNESSREFRESH1 note). Its `StatePublisherTests` row says so, `""` and `null` (row 3), and it
+   has no entry in `DECLARED` (row 4).
+2. **Its domain's README row** (row 5), held by the same census, `The_readme_names_each_route_in_its_domains_row`.
+3. **Its hook in that bridge file** (row 6), a `useQuery` enabled only where the shell answers it (`useShenora`'s
+   `isAvailable`), its answer read defensively, an older shell's none read as empty.
+4. **Its query key under the scope whose `STATE_CHANGED` should refresh it**: the hub's map in
+   `Daoris.Web/src/bridge/stateHub.ts` turns each scope into key families (`sessions` into `keys.allSessions`), so a key that
+   begins `['sessions', …]` is read again by every press that declares `sessions`, and by each tick the loop sends
+   (`app/ShellSignals.tsx` asks the sessions again whatever the report says). A key under no scope's family is read again
+   only by its own stale time and a window's focus.
+5. **The index regenerated** (`node tools/orient-index.mjs`, row 10). A read is no coverage row (row 7): it changes nothing.
 
 ### Check before saying done
 
