@@ -2018,14 +2018,17 @@ folder git does not know) the two are asked as before, so each answer and each f
 branch with `symbolic-ref`, so it takes the one start's only as a plain name or a detached `HEAD` and asks `symbolic-ref` for
 anything else. Counted from code: a sync plan over three session branches 29 starts → 28 (`TreeSyncStartsTests`' bound, its
 `worktree list` held at one), one start fewer at each of the other sites and two at a landing that tidies (its own and its
-removal's). *Owed:* `TreeSyncStartsTests` (6, one new: the one start answers as the two did, on a branch, detached and in the
-checkout) has not run on this; its wall goes here beside PROC1d-ii's 80 s.
+removal's). `TreeSyncStartsTests` (6, one new: the one start answers as the two did, on a branch, detached and in the
+checkout) passed in the git half's gate run on `c7ed4c6`, 2026-10-16: 104 s of test time summed over its six, four classes at once
+beside it, where PROC1d-ii's 80 s was its five alone.
 
 **PROC1f (2026-10-16): the last git-only classes join the four-at-once half.** `SessionTreesTests` (16 tests) and
 `LandingPluginTests` (8, its helpers now `LandingPluginFixture`) carry `Parallel=Git`; the plugin that never answers, timed out at
 three seconds of patience, is `LandingPluginPatienceTests`, run one at a time. Listed on this branch with each file: the git half
-359 tests (334 before, plus `TreeSyncStartsTests`' new one), the serial half 568 (592 before). *Owed:* those three classes' runs,
-each alone with its file, and their walls here.
+359 tests (334 before, plus `TreeSyncStartsTests`' new one), the serial half 568 (592 before). The gate run on `c7ed4c6`,
+2026-10-16, passed them: `SessionTreesTests` 45 s and `LandingPluginTests` 102 s of test time in the git half, and
+`LandingPluginPatienceTests` 21 s in the serial half. The serial half's wall fell from 15 m 15 s (`000b5d9`) to 11 m 55 s, and
+the git half's went from 17 m 24 s to 16 m 9 s holding 25 more tests.
 
 ## TEST1 (open): a Node process on Windows aborts with 0xC0000409 (since 2026-09-21)
 

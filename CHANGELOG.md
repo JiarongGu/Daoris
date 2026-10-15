@@ -5,6 +5,14 @@ with the version and date at release.
 
 ## Unreleased
 
+- One *Accept* lands a whole line of work: under a session's parts, *Accept all N parts…* lands them on one branch in the
+  order they were made, and in the list grouped by ask, *Accept the ask's N parts…* lands every repository's, each answered on
+  its own. Before it lands, its plan says where and in what order, and names a part a later one superseded, which you may
+  leave out. A plugin can now observe each change to what the driver holds (`state/changed`), after the press has answered.
+  `daoris-driver trees land`, `remove`, `clean`, `sync` and `hand` in a terminal now show in the open window within a
+  second. A stop or words sent to a session are no longer lost when two Daoris loops take them at once. *Read again* on the
+  agents, a word said or a conversation deleted in Ask Daoris, and a change to the browser's settings now show in every open
+  window. The plugin kit names `work/state` a query, not the raw word.
 - A word you take back is never sent: a conversation that goes on just as you take back its only word now stays as it ended,
   saying so, and `sessions take-back` or `reword` in a terminal, while Daoris runs, is shown in the open conversation at once.
   A helper's or a reviewer's conversation no longer offers acts that would send it words it refuses, and rewording a waiting

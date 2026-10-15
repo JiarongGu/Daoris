@@ -15086,10 +15086,46 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **STATEHUB1g — a plugin observes the driver's state changes at `state/changed`** (driver/modules; D169 point 9, D64). A plugin is a middleware in the event pipeline only as a contained observation: the driver feeds it each `STATE_CHANGED` from the bus by stdio, never a .NET middleware, never code in the host, never holding or changing the route's answer. Adding the point edits `HookPoints.All`, `HookFrames`, twins.md and the PluginKit samples. Proof: a driver test with a sample plugin receiving the frame; a modules test that a slow plugin never delays a press's answer.
 
-**Outcome** 2026-10-16: `state/changed` is the fifth hook point, an observation the shell's loop feeds from the bus (`StatePublisher.Observe`) into its hook set's queue, told in order and contained, so a slow or failing plugin neither delays nor changes a press's answer (`HookChangedTests`, `StateObservedTests`, seen failing first). The kit, its wire test, try, Ask Daoris's room and the page's gloss name it; `PluginKitTests` and `DriverModulePluginsTests` (Process) were edited and their run is owed. On Opus, with STATEHUB1e. Detail: D169's STATEHUB1g note; D64's amendment.
+**Outcome** 2026-10-16: `state/changed` is the fifth hook point, an observation the shell's loop feeds from the bus (`StatePublisher.Observe`) into its hook set's queue, told in order and contained, so a slow or failing plugin neither delays nor changes a press's answer (`HookChangedTests`, `StateObservedTests`, seen failing first). The kit, its wire test, try, Ask Daoris's room and the page's gloss name it; `PluginKitTests` and `DriverModulePluginsTests` (Process) were edited and their run is owed. On Opus, with STATEHUB1e: 239 tool calls. Detail: D169's STATEHUB1g note; D64's amendment.
 
 ## STATEHUB1e — a press from the terminal reaches an open window (2026-10-16, D169)
 
 > - [ ] **STATEHUB1e — a press from the terminal reaches an open window** (modules; D169 point 8). `daoris-driver trees land`, `remove` and `clean` run in another process with no bus, so an open page hears nothing until a record moves a tick. The loop learns them from what they write (the landings record and the trees, or the request folder `SessionRequestWatch` reads) and publishes the same `STATE_CHANGED`. Proof: a modules test where a landing recorded by another process publishes `landing`.
 
 **Outcome** 2026-10-16: through the request folder. `trees land`, `remove`, `clean --yes`, `sync --yes` and `hand` tell the route their press is (`PressesTold`), the shell's loop takes each note once at its watch's next second and publishes what that route declares (`StatePublisher.Publish`); a headless loop takes none (`PressesToldTests`, `StateToldTests`, seen failing first). Taking by rename lost a note under two loops at once, so a note is taken by an exclusive open. On Opus, with STATEHUB1g. Detail: D169's STATEHUB1e note.
+
+## HARNESSREFRESH1 — *Read again* on the agents is its own press (2026-10-16, D169)
+
+> - [ ] **HARNESSREFRESH1 — *Read again* on the agents is its own press** (modules/web). `HARNESSES` answers both the roster's read and *Read again*, so it cannot declare `harnesses` without every window's read publishing and every window reading again without end; `useRefreshHarnesses` still asks again by hand. Split the press off into a route that declares `harnesses`. D169's STATEHUB1h note. Proof: a `StatePublisherTests` row; the hook's own invalidation dropped.
+
+**Outcome** 2026-10-16: *Read again* is `HARNESSES_REFRESH`, declaring `harnesses`; `HARNESSES` is a pure read that declares nothing; `useRefreshHarnesses` calls the press and asks nothing again itself, the hub's `harnesses` prefix covering the roster, the starts and the accounts. On Sonnet, with HELPHISTORYHUB1 and BROWSERPUBLISH1: 111 tool calls. Detail: D169's HARNESSREFRESH1, HELPHISTORYHUB1, BROWSERPUBLISH1 note.
+
+## HELPHISTORYHUB1 — Ask Daoris's history hears a word said and a delete (2026-10-16, D169)
+
+> - [ ] **HELPHISTORYHUB1 — Ask Daoris's history hears a word said and a delete** (modules/web). `AskConversation` still asks `HELP_HISTORY` again by hand after `SESSION_INPUT` and `SESSION_DELETE`, which declare `sessions` only: declare `help` on `SESSION_DELETE`, and decide whether a help conversation's first words publish `help`. D169's STATEHUB1h note. Proof: a modules row and an `AskDaoris` test through the publishing seam.
+
+**Outcome** 2026-10-16: `SESSION_DELETE` and `SESSION_INPUT` declare `sessions` and `help` (the route cannot tell a help conversation from another session, and first words are what list one in the history; only a window with the history open reads again), and `AskConversation`'s three hand re-asks are gone (`AskDaoris.test`, two rows seen failing first). On Sonnet, with HARNESSREFRESH1. Detail: D169's note.
+
+## BROWSERPUBLISH1 — the browser module's presses tell every window (2026-10-16, D169)
+
+> - [ ] **BROWSERPUBLISH1 — the browser module's presses tell every window** (modules). The publisher reads only the driver's marks, so `DAORIS.BROWSER`'s edits (the browser, links, extensions, favorites) still update only the window that pressed, though the hub maps `browser` to the browser settings since STATEHUB1h. D169 point 2, its STATEHUB1h note. Proof: a `StatePublisherTests` case for that module's presses.
+
+**Outcome** 2026-10-16: `BrowserModule.Declared` marks `ADD_FAVORITE`, `REMOVE_FAVORITE`, `SET_EXTENSIONS`, `SET_BROWSER` and `SET_LINKS` as `browser`, and `StatePublisher.Declared` reads the driver's marks then the browser's, the middleware's default, so the shell needed no change; the seam answers `DAORIS.BROWSER` too (`stateHub.presses.test`, five rows seen failing first). On Sonnet, with HARNESSREFRESH1. Detail: D169's note.
+
+## REQTAKE1 — a session request is never lost when two loops take it at once (2026-10-16, D126)
+
+> - [ ] **REQTAKE1 — a session request is never lost when two loops take it at once** (driver). Taking a note by renaming it, as `SessionRequests.TakeAt` does, lost 1 of 20 `.told` notes in `PressesToldTests` when two loops took at once, and requests (stop, say, take-back) use the same take, so a person's stop or words could be silently dropped. Contract: D126 §7.1, D137 §2.4 for words. Proof: a `SessionRequestsTests` case with two watches taking twenty requests at once, each honoured exactly once; root cause, fix and verification in the FIX-LOG.
+
+**Outcome** 2026-10-16: on Windows a rename begun by another loop let a take's own rename succeed, refused its read, and the take removed the request unread. `TakeAt` now retries a refused read, takes nothing where the file moved on, removes only what it read, and puts back what it cannot read; the rename stays, since on Linux an exclusive open is advisory and would let a withdrawal and a take both win. Two new `SessionRequestsTests`, the held-file case seen failing first; the twenty-at-once case did not reproduce the loss alone. Found by STATEHUB1e's worker; the row was made and built in one branch. On Opus, with KITGLOSS1: 93 tool calls. Detail: FIX-LOG 2026-10-16 (REQTAKE1), D126's REQTAKE1 note.
+
+## KITGLOSS1 — `work/state` has no gloss on the plugin kit page (2026-10-16, D119)
+
+> - [ ] **KITGLOSS1 — `work/state` has no gloss on the plugin kit page** (web). The page keys a point's gloss by its kind and there is no `plugin.kit.kind.query`, so `work/state` shows the raw word "query". Contract: D119 §3.2 (plugins screen design §3.2), the gloss in en and zh with the glossary's names. Proof: a `PluginKit.test` row.
+
+**Outcome** 2026-10-16: `plugin.kit.kind.query` reads *A query, when git cannot tell whether a landed branch merged* (一次查询，在 git 无法判断落地的分支是否已合并之时), with a glossary room entry beside the other kinds, so `work/state` reads as a query in the kit and on a plugin's page (`PluginKit.test`, seen failing first). On Opus, with REQTAKE1. Detail: `locales/*/plugin.json`.
+
+## ACCEPTALL1 — one Accept for an entry, and for an ask (2026-10-16, D167)
+
+> - [ ] **ACCEPTALL1 — one Accept for an entry, and for an ask** (driver/modules/web; after 0, 1). The entry's head lands its parts in ledger order on one branch, a superseded part left out only by choice; *Group by ask* lands every entry, answered per repository, a refusal holding only its own. D167's 2026-10-15 amendment. Proof: two alongside parts on one branch (Process); modules and web tests; the owner's ask on the window.
+
+**Outcome** 2026-10-16: an entry's parts land on one branch in ledger order with one press (`EntryLands`, `LAND_ENTRY`), each through its own landing, so each keeps its gate, line judgement, record and plugin; a part alongside the branch joins it by LANDSYNC1's replay; a superseded part (its kept commits after a later part's conflict or add nothing, tried in trees only) is named in the plan and left out only by the person's choice; a held part holds the entry, a refused one stops those after it. An ask's entries land with one press (`LAND_ASK`), answered per repository. The page's *Accept all N parts…* sits under the Parts strip and *Accept the ask's N parts…* under the ask's heading, en and zh (`EntryAccept`). `EntryLandingTests` (Process, five cases) runs in the merge's gate set. Left as rows: ACCEPTALL1b-e and the window's look (ACCEPTALL1w). On Opus: 247 tool calls. Detail: D167's ACCEPTALL1 note; the ACCEPTALL1 commits.
