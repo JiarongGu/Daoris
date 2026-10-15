@@ -967,6 +967,11 @@ public static class WorkingTree
         {
             return (-1, "", error.Message);
         }
+        finally
+        {
+            // PROC1d-ii: a git that may have moved a ref, finished, stopped or failed, drops the refs this flow read at once.
+            RefSnapshot.Ran(arguments);
+        }
     }
 
     /// <summary>
