@@ -28,7 +28,7 @@ fetch again**, by folder, and each folder means one thing for backup, moving and
   window's engine profile (`chromium/`) and its geometry and theme copy (`config/`, `Program.cs:257, 268`,
   `SecondaryWindowHost.cs:71`) under `<root>/data`, which in an install is the home. Its `ShenoraPathsOptions.DataDirectory`
   names that folder outright, and its `res/` is read-only resources a build ships (the kit's own documentation).
-- **The dev loop has two roots**: the home at `<scratch>/home` and the kit's root at `<scratch>/app`
+- **The dev loop has two roots**: the home in its scratch folder's `home`, and the kit's root in its `app`
   (`tools/desktop.mjs:154-167, 734, 751`), so its window's data is not where an install's is.
 
 **The owner's install, 2026-10-16** (`du`, rounded): `app/` 565 MB; `data/` 5.1 GB, of which session trees 1.7 GB,
@@ -184,7 +184,7 @@ Each moves at a start where nothing holds it (§7); one held is read where it is
 | Run | `DAORIS_HOME` | the kit's root | the window's memory |
 |---|---|---|---|
 | An install | the install's folder (or its `data/`, read as it) | the install's folder | `profiles/window/` |
-| The dev loop's scratch run | `<scratch>/home` | `--app-root <scratch>/home` | `<scratch>/home/profiles/window/` |
+| The dev loop's scratch run | its scratch root | `--app-root` naming the same folder | that root's `profiles/window/` |
 | `npm run desktop -- run --real` | the account's, a real home | the build's folder | the build's own, never the install's |
 | A rehearsal | its install under `_fixtures` | that install | its `profiles/window/` |
 | A test | a scratch folder it made | none | none |
