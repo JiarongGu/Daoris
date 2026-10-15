@@ -23,6 +23,7 @@
   "work.wait.rule.unheard": "It takes no words now, so it is not told; a session started from now on is handed the rule.",
   "work.wait.rule.said": "The rule you proposed is allowed now: {{change}}. Go on with what you needed it for.",
   "work.wait.rule.told": "Session {{session}} is told the rule is allowed, and goes on.",
+  "work.wait.rule.notHeard": "Session {{session}} takes no words now, so it is not told; a session started from now on is handed the rule.",
   "work.wait.rule.untold": "Allowed, and session {{session}} did not take the words: tell it yourself to go on.",
   "work.wait.inConversation": "In the conversation",
   "work.wait.raised": "Waiting on you from here: {{names}}",

@@ -9,6 +9,7 @@ import {
   retryNotice, useAccounts, useConsidered, useHarnessAction, useHarnesses, useNudge, useOpinionWaits, useRefreshHarnesses,
   useRetryQuest, useRules, useSessionGroups, useTrustFolder, useUntrusted, useWaits,
 } from '../bridge/shell';
+import { useSay } from '../bridge/conversation';
 import { SignIn } from '../agents/SignIn';
 import { byTool } from '../agents/tools';
 import { failure, type Notify } from '../design/ui';
@@ -20,7 +21,7 @@ import { attentionKey, AttentionList, type AttentionDoors, AttentionRegion, Noth
 import { needsAPerson, rowRun } from './attention';
 import { useOpinionActs } from './opinionActs';
 import { useReviewActs } from './reviewActs';
-import { useRuleAnswer } from './ruleAnswer';
+import { ruleHearing, useRuleAnswer } from './ruleAnswer';
 import { runSessionOf } from '../workflow/run';
 
 export type { AttentionDoors } from './AttentionList';
@@ -112,7 +113,9 @@ function Band({ doors, notify, onSessions, onRun }: {
   const reviewing = (groups.data ?? []).some((placed) => placed.group === 'review');
   // And every record, ended ones too, where a row's door opens its run (WORKFLOW1c): a held done's or a set-up's quest is
   // found its newest session here. The frame holds the same list on every view of a shell, under the same key.
-  const ended = useSessions(null, true, reviewing || onRun !== undefined);
+  // A rule's proposer is found here too (PROPOSEHERE1c), so the list is asked while a proposal names a session.
+  const proposed = Array.isArray(proposals) && proposals.some((one) => one.session);
+  const ended = useSessions(null, true, reviewing || onRun !== undefined || proposed);
   const opinionWaits = useOpinionWaits(reviewing);
   // The accounts as last known and the tick's waits (UX6d): a browser has none.
   const accounts = useAccountsKnown();
@@ -124,6 +127,8 @@ function Band({ doors, notify, onSessions, onRun }: {
   const trust = useTrustFolder();
   // A proposal's answer, its one owner (PROPOSEHERE1b): the session's conversation and the Agents page press the same.
   const ruleAnswer = useRuleAnswer({ notify });
+  // The words to the session that proposed an allowed rule (PROPOSEHERE1c): the conversation's own door, `sessions say`'s.
+  const say = useSay();
   const nudge = useNudge();
   const readOne = useRefreshHarnesses();
   const harnessAct = useHarnessAction();
@@ -231,7 +236,12 @@ function Band({ doors, notify, onSessions, onRun }: {
       if (hold) run(item, () => trust.mutateAsync(hold), (granted) => notify(granted.message, granted.verified ? 'ok' : 'error'), answered);
       else answered.done();
     },
-    acceptRule: (item, answered) => run(item, () => ruleAnswer.settled(item.id, true, item.title), (said) => notify(said), answered),
+    // An *Allow* tells the session that proposed it, as the conversation's does (PROPOSEHERE1c); a proposal naming none tells none.
+    acceptRule: (item, answered) => run(item, () => ruleAnswer.settled(
+      item.id, true, item.title, 'allow',
+      ruleHearing((Array.isArray(proposals) ? proposals : []).find((one) => one.id === item.id), ended.data ?? sessions.data ?? [],
+        (session, text) => say.mutateAsync({ id: session, text })),
+    ), (said) => notify(said), answered),
     declineRule: (item) => run(item, () => ruleAnswer.settled(item.id, false, item.title), (said) => notify(said)),
     // The agent's own sign-in through its account-owning door, as its page starts it (SIGNIN1): its end is said wherever the
     // person is, and the roster read again then, which reads that account (ROSTER1).

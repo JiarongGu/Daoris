@@ -36,17 +36,18 @@ import type { AgentPart } from './agents';
 import { useAgentsView } from './AgentsView';
 
 /** The place as the application holds it: its list and its main area in a frame, the list's memory its own. */
-function Place({ notify, first = 'claude-code', part = null, onAnchored, onOpenPlugin }: {
+function Place({ notify, first = 'claude-code', part = null, onAnchored, onOpenPlugin, say }: {
   notify: (message: string, tone?: 'ok' | 'error') => void;
   first?: string | null;
   part?: AgentPart | null;
   onAnchored?: () => void;
   onOpenPlugin?: (plugin: string) => void;
+  say?: (session: string, text: string) => Promise<{ sent: boolean }>;
 }) {
   const lists = useListPanes();
   const [chosen, setChosen] = useState<string | null>(first);
   const [over, setOver] = useState(false);
-  const layout = useAgentsView({ active: true, chosen, onChoose: setChosen, notify, part, onAnchored, onOpenPlugin });
+  const layout = useAgentsView({ active: true, chosen, onChoose: setChosen, notify, part, onAnchored, onOpenPlugin, say });
   return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
 }
 
@@ -1634,6 +1635,31 @@ describe('what it may do', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', { payload: { id: 'p0000002', accept: true } });
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
       'Accepted: allow WebFetch for every session on this machine. Sessions started from now on are handed it.'));
+  });
+
+  /** PROPOSEHERE1c: an *Accept* here tells the session that proposed the rule too, through the door the application hands the place. */
+  it('tells the session that proposed a rule once it is accepted, through the door it is handed', async () => {
+    const proposed = {
+      ...RULES,
+      proposals: [{
+        id: 'p0000002', state: 'waiting', action: 'add', scope: 'machine', list: 'allow', rule: 'WebFetch',
+        why: 'The docs it needs are on the web.', session: 'c0ffee11', proposed: '2026-09-24T11:00:00Z',
+      }],
+    };
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'HARNESSES' ? ROSTER : type === 'RULES' || type === 'RULE_PROPOSAL' ? proposed : WIRING));
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => String(input).startsWith('/api/sessions')
+      ? Response.json([{ id: 'c0ffee11', adapter: 'claude-code', created: '2026-09-24T09:00:00Z', workspace: 'default', quest: null, repository: 'engine', kind: 'chat', state: 'working', updated: '2026-09-24T10:00:00Z' }])
+      : respond(String(input))));
+    const say = vi.fn(async () => ({ sent: true }));
+    const notify = vi.fn();
+    place(notify, { say });
+
+    const row = await screen.findByRole('listitem', { name: 'proposal #p0000002' });
+    await userEvent.click(within(row).getByRole('button', { name: 'Accept' }));
+    await waitFor(() => expect(say).toHaveBeenCalledWith(
+      'c0ffee11', 'The rule you proposed is allowed now: allow WebFetch for every session on this machine. Go on with what you needed it for.'));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Session c0ffee11 is told the rule is allowed, and goes on.', 'ok'));
   });
 
   /** A section appears only where the agent has that concept (§5.1): no rules where Daoris hands the agent none. */

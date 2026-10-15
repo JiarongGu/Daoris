@@ -44,6 +44,7 @@ import {
   useRules, useSayUpdate, useSessionGroups, useShowReviewAgain, useSyncNow, useTaskbarCount, useUntrusted, useUpdateState,
 } from '../bridge/shell';
 import { byTool } from '../agents/tools';
+import { useSay } from '../bridge/conversation';
 import { UpdateBanner } from '../update/UpdateBanner';
 import { LinkOpener } from '../design/links';
 import { BrowserDoor } from '../work/BrowserDoor';
@@ -332,7 +333,11 @@ export function App() {
   // The Agents place (UX6e, D150 §5): held on every view, as Plugins is; it reads the roster the frame holds and the
   // accounts' files, and opening it asks no account. A sign-in started there outlives leaving it (SIGNIN1).
   const agentsPane = lists.pane('agents');
+  // The words to the session that proposed a rule an *Accept* on the page kept (PROPOSEHERE1c): the Agents place is handed the
+  // door, its own view pressing no say hook (the driver's `HelpCoverageTests` follows what a place's view imports).
+  const sayToSession = useSay();
   const agents = useAgentsView({
+    say: (session, text) => sayToSession.mutateAsync({ id: session, text }),
     active: view === 'agents',
     chosen: agentsPane.chosen,
     onChoose: (item) => lists.choose('agents', item),

@@ -23,6 +23,7 @@
   "work.wait.rule.unheard": "它现在不接收消息，所以不会得到告知；此后启动的会话会拿到这条规则。",
   "work.wait.rule.said": "你提议的规则现在已允许：{{change}}。请继续做你需要它来做的事。",
   "work.wait.rule.told": "已告知会话 {{session}} 规则已允许，它会继续。",
+  "work.wait.rule.notHeard": "会话 {{session}} 现在不接收消息，所以不会得到告知；此后启动的会话会拿到这条规则。",
   "work.wait.rule.untold": "已允许，但会话 {{session}} 没有接收这些话：请你自己告诉它继续。",
   "work.wait.inConversation": "在对话中查看",
   "work.wait.raised": "由此等你处理：{{names}}",

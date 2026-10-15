@@ -1,9 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import { useRuleProposal } from '../bridge/shell';
+import type { Session } from '../data/api';
 import type { Notify } from '../design/ui';
 import { sentence } from '../locales/format';
 import type { RuleProposal } from '../settings/AgentRules';
 import { proposalChange } from '../settings/proposals';
+import { isIntake } from './identity';
 import type { Answered } from './InlineConfirm';
 
 /**
@@ -11,6 +13,25 @@ import type { Answered } from './InlineConfirm';
  * what it answers, sent or not.
  */
 export type RuleTell = { session: string; say: (text: string) => Promise<{ sent: boolean }> };
+
+/** Who an *Allow* from the band or the Agents page tells (PROPOSEHERE1c): a session's door, one that takes no words, or no one. */
+export type RuleHearing = RuleTell | { unheard: string } | null;
+
+/**
+ * The session that proposed a rule, found in the list the page holds, and the door to it (PROPOSEHERE1c, D74's PROPOSEHERE1b
+ * note). Nothing where the proposal names none (a pipe-door quest session's), the list does not hold it, or no door was given;
+ * an intake takes no words (INT4b), so it is named, to be said so. An ended session's words are kept on its record by the driver.
+ */
+export function ruleHearing(
+  proposal: RuleProposal | undefined,
+  sessions: readonly Session[],
+  say: ((session: string, text: string) => Promise<{ sent: boolean }>) | undefined,
+): RuleHearing {
+  const session = proposal?.session ? sessions.find((one) => one.id === proposal.session) : undefined;
+  if (!session || !say) return null;
+  if (isIntake(session)) return { unheard: session.id };
+  return { session: session.id, say: (text) => say(session.id, text) };
+}
 
 /**
  * **The one owner of the person's answer to an agent's rule proposal** (PERM2, D74; PROPOSEHERE1b): the Agents page's card, *What
@@ -34,18 +55,29 @@ export function useRuleAnswer({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
   const settle = useRuleProposal();
 
-  /** Settle a proposal; resolves with the sentence of what became of it, said as the press was named. */
-  const settled = (id: string, accept: boolean, change: string, press: 'accept' | 'allow' = 'allow') =>
-    settle.mutateAsync({ id, accept }).then(() => t(
-      !accept ? 'settings.rules.proposals.declined' : press === 'allow' ? 'work.attention.allowedRule' : 'settings.rules.proposals.accepted',
-      { change },
-    ));
-
   /** Tell the session the rule it proposed is allowed now, as its next turn. */
   const told = ({ session, say }: RuleTell, change: string) => say(t('work.wait.rule.said', { change })).then(
     (result) => notify(t(result.sent ? 'work.wait.rule.told' : 'work.wait.rule.untold', { session }), result.sent ? 'ok' : 'error'),
     () => notify(t('work.wait.rule.untold', { session }), 'error'),
   );
+
+  /**
+   * Settle a proposal; resolves with the sentence of what became of it, said as the press was named.
+   *
+   * Where the press is an *Allow* and the caller found the session that proposed it (`ruleHearing`, PROPOSEHERE1c), that session
+   * is told once the rule is kept, as the conversation's own *Allow* does; one that takes no words says so in the sentence.
+   */
+  const settled = (id: string, accept: boolean, change: string, press: 'accept' | 'allow' = 'allow', hearing: RuleHearing = null) =>
+    settle.mutateAsync({ id, accept }).then(() => {
+      const said = t(
+        !accept ? 'settings.rules.proposals.declined' : press === 'allow' ? 'work.attention.allowedRule' : 'settings.rules.proposals.accepted',
+        { change },
+      );
+      if (!accept || !hearing) return said;
+      if ('unheard' in hearing) return `${said} ${t('work.wait.rule.notHeard', { session: hearing.unheard })}`;
+      void told(hearing, change);
+      return said;
+    });
 
   /**
    * The conversation's answer (PROPOSEHERE1b): settled, its sentence said, the ask told how it ended, and on an *Allow* the
