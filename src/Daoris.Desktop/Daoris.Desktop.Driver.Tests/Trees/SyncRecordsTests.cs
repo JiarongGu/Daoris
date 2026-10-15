@@ -189,4 +189,27 @@ public sealed class SyncRecordsTests : IDisposable
         Assert.Contains("it grew from `daoris/s-1`, whose work has not reached the line", SyncWords.Describe(Item(RebaseKind.Waits, grewFrom: "daoris/s-1")));
         Assert.Contains("git said so", SyncWords.Describe(Item(RebaseKind.Unknown)));
     }
+
+    /// <summary>
+    /// LANDSYNC3b (D87's 2026-10-15 amendment point 4, by analogy): the list says what a replay leaves out because the line holds it,
+    /// as the press's answer does, beside what it carries; a row from before reads none left out, and says what it said.
+    /// </summary>
+    [Fact]
+    public void A_replay_says_what_it_leaves_out_that_the_line_holds()
+    {
+        RebaseItem Item(int commits, string? cutBy = CutBy.Line) =>
+            new("engine", "aurora", "daoris/s-2", false, RebaseKind.Replay, "main", "abcd1234", cutBy, null, commits, null);
+
+        Assert.Equal(0, Item(1).LeftOut);
+        Assert.Equal("engine  daoris/s-2  replays 1 commit(s) of its own onto `main`", SyncWords.Describe(Item(1)));
+        Assert.Equal(
+            "engine  daoris/s-2  replays 2 commit(s) of its own onto `main`, leaving out 1 the line holds",
+            SyncWords.Describe(Item(2) with { LeftOut = 1 }));
+        Assert.EndsWith(
+            "after its newest commit whose work reads on the line, leaving out 1 the line holds",
+            SyncWords.Describe(Item(1, CutBy.Content) with { LeftOut = 1 }));
+        Assert.Equal(
+            "engine  daoris/s-2  moves onto `main`: it holds nothing of its own beyond work that reached the line (2 commit(s) the line holds left out)",
+            SyncWords.Describe(Item(0) with { LeftOut = 2 }));
+    }
 }

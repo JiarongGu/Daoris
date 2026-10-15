@@ -229,6 +229,17 @@ public static class Continuations
         now is null || look.Parked ? look : look with { Said = now.Said ?? [] };
 
     /// <summary>
+    /// What a resumed conversation carries after the words (<see cref="ResumeAsk"/>'s appendix): what its start did with its tree
+    /// against the line first (LANDSYNC2, LANDSYNC2b; D87's 2026-10-15 amendment point 7), since that is where its next commit goes,
+    /// then anything else the resume carries. A driven session's words going on and a conversation's own both say it so.
+    /// </summary>
+    /// <param name="inSync">What <c>StartInSyncAsync</c> told; null or empty for nothing.</param>
+    /// <param name="after">What else the resume carries after the words; null or empty for nothing.</param>
+    internal static string? AfterWords(string? inSync, string? after) => inSync is { Length: > 0 } told
+        ? after is { Length: > 0 } more ? $"{told}\n\n{more}" : told
+        : after;
+
+    /// <summary>
     /// Where a quest's record goes back to when the driver moved it to working and no run of it then started (SAIDBACK1e, D137
     /// §2.4), its words waiting on it again. An ended record goes back to how it ended, its note, its parts and its flags as the
     /// look read them. A park whose words were all taken back waits on the person again; one whose run could not start ends as a

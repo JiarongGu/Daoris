@@ -57,6 +57,8 @@
   "settings.sync.branch.after.record": "它从 `{{from}}` 的工作之后开始，而那些工作已到达主线。",
   "settings.sync.branch.after.recordUnnamed": "它从它所生长自的工作之后开始，而那些工作已到达主线。",
   "settings.sync.branch.after.content": "它从它最新的、工作已在主线上的提交之后开始。",
+  "settings.sync.branch.leavesOut": "它略去主线已包含的 {{count}} 个提交。",
+  "settings.sync.branch.leavesOut_other": "它略去主线已包含的 {{count}} 个提交。",
   "settings.sync.branch.kind.upToDate": "已在 `{{onto}}` 上。",
   "settings.sync.branch.kind.inUse": "仍在运行或等待中的会话正持有它的工作树。",
   "settings.sync.branch.kind.dirty": "它的工作树有未提交的工作。",

@@ -646,6 +646,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     public Task<TreeUpdate> UpdateTreeAsync(string tree, Func<CancellationToken, Task<bool>> running, CancellationToken ct = default) =>
         Updates.UpdateTreeAsync(tree, running, ct);
 
+    /// <inheritdoc cref="TreeUpdates.StartInSyncAsync"/>
+    public Task<TreeStartSync> StartInSyncAsync(string tree, CancellationToken ct = default) => Updates.StartInSyncAsync(tree, ct);
+
     /// <inheritdoc cref="LandedReviews.LandedReviewAsync"/>
     public Task<LandedReview> LandedReviewAsync(string? root, LandedBranch entry, bool changes = true, CancellationToken ct = default) =>
         Reviews.LandedReviewAsync(root, entry, changes, ct);

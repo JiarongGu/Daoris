@@ -51,6 +51,10 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         var (baseCommit, upstream) = await WithinAsync(root, replayed, tip, cut, ct).ConfigureAwait(false) is { } within
             ? (within.NewTip, within.OldTip)
             : (onto, cut);
+        // LANDSYNC3: the commits the line holds beyond where the replay starts are skipped, the runs between them replayed; null for a
+        // plain replay. None left to replay is the line's commit itself, while the proof still reads from where its own work started.
+        var stretches = StretchesBeyond(judged, upstream);
+        var replayFrom = stretches is { Count: 0 } ? tip : upstream;
 
         string? now;
         string words;
@@ -65,7 +69,8 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
                 return new(item, false, $"`{item.Branch}` {TreeSync.LeftSince}");
             }
 
-            (now, words) = await ReplayDetachedAsync(tree, item.Branch, baseCommit, upstream, ct).ConfigureAwait(false);
+            (now, words) = await ReplayDetachedAsync(tree, item.Branch, baseCommit, replayFrom, tip, stretches is { Count: > 0 } ? stretches : null, ct)
+                .ConfigureAwait(false);
             if (now is null)
             {
                 return new(item, false, await BackOnAsync(tree, item.Branch, tip, ct).ConfigureAwait(false)
@@ -74,13 +79,14 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
                       + "anything else (`git rebase --abort`, then `git switch` to the branch).");
             }
         }
-        else if (upstream == tip)
+        else if (replayFrom == tip)
         {
             now = baseCommit;
         }
         else
         {
-            (now, words) = await ReplayAsideAsync(root, workspace, repository, tip, baseCommit, upstream, ct).ConfigureAwait(false);
+            (now, words) = await ReplayAsideAsync(root, workspace, repository, tip, baseCommit, replayFrom, stretches is { Count: > 0 } ? stretches : null, ct)
+                .ConfigureAwait(false);
             if (now is null) return new(item, false, $"`{item.Branch}` would not replay onto `{line}`: {words} Nothing was moved.");
         }
 
@@ -101,8 +107,12 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
 
         replayed.Add(new Replayed(tip, now, cut));
         var kept = await CountAsync(root, $"{onto}..{now}", ct).ConfigureAwait(false);
-        var message = $"replayed `{item.Branch}` onto `{line}`: {kept} commit(s) of its own"
-            + (kept < item.Commits ? $" ({item.Commits - kept} became empty, their changes already on the line)." : ".");
+        // What the line holds is said apart from what became empty (LANDSYNC3): the one was judged before, the other found by the replay.
+        var message = kept == 0 && item.Commits == 0 && judged.LeftOut > 0
+            ? $"moved `{item.Branch}` onto `{line}`: it holds nothing of its own beyond work that reached the line ({judged.LeftOut} commit(s) the line holds left out)."
+            : $"replayed `{item.Branch}` onto `{line}`: {kept} commit(s) of its own"
+              + (judged.LeftOut > 0 ? $", leaving out {judged.LeftOut} the line holds" : "")
+              + (kept < item.Commits ? $" ({item.Commits - kept} became empty, their changes already on the line)." : ".");
 
         // Where it grows from now is the line: the record says so, so the next press and the review cut here.
         try
@@ -169,13 +179,42 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     /// words. The branch itself is not moved here, and on a failure the tree is left detached for
     /// <see cref="BackOnAsync"/> to put back.
     /// </summary>
+    /// <param name="tip">The commit the tree stands on, detached from it here.</param>
+    /// <param name="stretches">The runs to replay where the line holds commits between them (LANDSYNC3); null replays all from <paramref name="upstream"/>.</param>
     private static async Task<(string? Commit, string Words)> ReplayDetachedAsync(
-        string tree, string branch, string onto, string upstream, CancellationToken ct)
+        string tree, string branch, string onto, string upstream, string tip, IReadOnlyList<(string From, string To)>? stretches, CancellationToken ct)
     {
         var (detached, _, detachErr) = await WorkingTree.GitAsync(tree, ["switch", "--quiet", "--detach"], ct).ConfigureAwait(false);
         if (detached != 0) return (null, $"git would not detach its tree to replay it: {Failure(detachErr)}");
+        if (stretches is not null)
+        {
+            var made = await RebaseStretchesAsync(tree, onto, stretches, switchFirst: stretches[0].To != tip, ct).ConfigureAwait(false);
+            return (made.Now, made.Words);
+        }
+
         var (failed, words) = await RebaseInAsync(tree, onto, upstream, ct).ConfigureAwait(false);
         return failed ? (null, words) : (await CommitOfAsync(tree, "HEAD", ct).ConfigureAwait(false), "");
+    }
+
+    /// <summary>
+    /// The runs a replay from <paramref name="upstream"/> carries where the line holds commits between them (LANDSYNC3): null where it
+    /// skips none, so the replay is a plain one; empty where the line holds every one left.
+    /// </summary>
+    private static IReadOnlyList<(string From, string To)>? StretchesBeyond(RebaseJudged judged, string upstream)
+    {
+        if (judged.Skips.Count == 0 || judged.Beyond is not { } beyond) return null;
+        var from = 0;
+        if (upstream != judged.Cut)
+        {
+            // Replayed onto a branch this press already replayed (WithinAsync): only the commits beyond that one's old tip.
+            var at = beyond.ToList().IndexOf(upstream);
+            if (at < 0) return null;
+            from = at + 1;
+        }
+
+        var rest = beyond.Skip(from).ToList();
+        var skips = judged.Skips.Where(rest.Contains).ToHashSet(StringComparer.Ordinal);
+        return skips.Count == 0 ? null : Stretches(rest, skips);
     }
 
     /// <summary>A session's tree put back on its branch after a replay that was not kept — true where it is on it, at the commit judged.</summary>
@@ -211,12 +250,19 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     /// deepest files.
     /// </remarks>
     private async Task<(string? Commit, string Words)> ReplayAsideAsync(
-        string root, string workspace, string repository, string tip, string onto, string upstream, CancellationToken ct)
+        string root, string workspace, string repository, string tip, string onto, string upstream,
+        IReadOnlyList<(string From, string To)>? stretches, CancellationToken ct)
     {
-        var (aside, notMade) = await OpenAsideAsync(root, workspace, repository, tip, ct).ConfigureAwait(false);
+        var (aside, notMade) = await OpenAsideAsync(root, workspace, repository, stretches?[0].To ?? tip, ct).ConfigureAwait(false);
         if (aside is null) return (null, notMade);
         try
         {
+            if (stretches is not null)
+            {
+                var made = await RebaseStretchesAsync(aside, onto, stretches, switchFirst: false, ct).ConfigureAwait(false);
+                return (made.Now, made.Words);
+            }
+
             var (failed, words) = await RebaseInAsync(aside, onto, upstream, ct).ConfigureAwait(false);
             return failed ? (null, words) : (await CommitOfAsync(aside, "HEAD", ct).ConfigureAwait(false), "");
         }
@@ -276,15 +322,36 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
     {
         if (kept.Count == 0) return new(onto, "", false);
         var keeps = kept.Select(each => each.Sha).ToHashSet(StringComparer.Ordinal);
+        var stretches = Stretches([.. commits.Select(each => each.Sha)], commits.Select(each => each.Sha).Where(sha => !keeps.Contains(sha)).ToHashSet(StringComparer.Ordinal));
+
+        var (aside, notMade) = await OpenAsideAsync(root, workspace, repository, stretches[0].To, ct).ConfigureAwait(false);
+        if (aside is null) return new(null, notMade, false);
+        try
+        {
+            return await RebaseStretchesAsync(aside, onto, stretches, switchFirst: false, ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            // Daoris's own tree, made a moment ago for this one replay and holding nothing of anyone's, as WSR6's is.
+            await CloseAsideAsync(root, aside).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// The runs of <paramref name="commits"/> (oldest first) between those <paramref name="skips"/> names, each as the commit before its
+    /// first and its last: what one <c>git rebase --onto</c> replays (LANDSYNC1; LANDSYNC3 for <i>Bring up to date</i>).
+    /// </summary>
+    internal static IReadOnlyList<(string From, string To)> Stretches(IReadOnlyList<string> commits, IReadOnlySet<string> skips)
+    {
         var stretches = new List<(string From, string To)>();
         string? first = null;
         string? last = null;
         foreach (var commit in commits)
         {
-            if (keeps.Contains(commit.Sha))
+            if (!skips.Contains(commit))
             {
-                first ??= commit.Sha;
-                last = commit.Sha;
+                first ??= commit;
+                last = commit;
                 continue;
             }
 
@@ -293,32 +360,46 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         }
 
         if (first is not null) stretches.Add(($"{first}^", last!));
+        return stretches;
+    }
 
-        var (aside, notMade) = await OpenAsideAsync(root, workspace, repository, stretches[0].To, ct).ConfigureAwait(false);
-        if (aside is null) return new(null, notMade, false);
-        try
+    /// <summary>
+    /// <paramref name="commits"/> (oldest first) replayed in <paramref name="tree"/>, detached at <paramref name="tip"/>, onto
+    /// <paramref name="onto"/>, skipping those the line holds (LANDSYNC3, a detached tree's <i>Bring up to date</i>): the answer
+    /// <see cref="RebaseInAsync"/> gives, run by run. On a failure HEAD may stand anywhere, for the caller to put back.
+    /// </summary>
+    internal static async Task<(bool Failed, string Words)> RebaseRunsInAsync(
+        string tree, string tip, string onto, IReadOnlyList<string> commits, IReadOnlyList<string> skips, CancellationToken ct)
+    {
+        var stretches = Stretches(commits, skips.ToHashSet(StringComparer.Ordinal));
+        if (stretches.Count == 0) return await RebaseInAsync(tree, onto, tip, ct).ConfigureAwait(false);
+        var made = await RebaseStretchesAsync(tree, onto, stretches, switchFirst: stretches[0].To != tip, ct).ConfigureAwait(false);
+        return made.Now is null ? (true, made.Words) : (false, "");
+    }
+
+    /// <summary>
+    /// <paramref name="stretches"/> replayed in <paramref name="tree"/>, detached, each onto the last one's new tip, starting at
+    /// <paramref name="onto"/>: the new tip, or null and git's words, and whether those name a conflict. Each run is taken up detached
+    /// at its last commit first (the first only where <paramref name="switchFirst"/>: a tree opened there already stands on it).
+    /// </summary>
+    private static async Task<KeptReplay> RebaseStretchesAsync(
+        string tree, string onto, IReadOnlyList<(string From, string To)> stretches, bool switchFirst, CancellationToken ct)
+    {
+        var current = onto;
+        for (var at = 0; at < stretches.Count; at++)
         {
-            var current = onto;
-            for (var at = 0; at < stretches.Count; at++)
+            if (at > 0 || switchFirst)
             {
-                if (at > 0)
-                {
-                    var (moved, _, moveErr) = await WorkingTree.GitAsync(aside, ["switch", "--quiet", "--detach", stretches[at].To], ct).ConfigureAwait(false);
-                    if (moved != 0) return new(null, $"git would not take up its next commits to replay: {Failure(moveErr)}", false);
-                }
-
-                var (failed, words) = await RebaseInAsync(aside, current, stretches[at].From, ct).ConfigureAwait(false);
-                if (failed) return new(null, words, words.StartsWith("CONFLICT", StringComparison.Ordinal));
-                current = await CommitOfAsync(aside, "HEAD", ct).ConfigureAwait(false) ?? current;
+                var (moved, _, moveErr) = await WorkingTree.GitAsync(tree, ["switch", "--quiet", "--detach", stretches[at].To], ct).ConfigureAwait(false);
+                if (moved != 0) return new(null, $"git would not take up its next commits to replay: {Failure(moveErr)}", false);
             }
 
-            return new(current, "", false);
+            var (failed, words) = await RebaseInAsync(tree, current, stretches[at].From, ct).ConfigureAwait(false);
+            if (failed) return new(null, words, words.StartsWith("CONFLICT", StringComparison.Ordinal));
+            current = await CommitOfAsync(tree, "HEAD", ct).ConfigureAwait(false) ?? current;
         }
-        finally
-        {
-            // Daoris's own tree, made a moment ago for this one replay and holding nothing of anyone's, as WSR6's is.
-            await CloseAsideAsync(root, aside).ConfigureAwait(false);
-        }
+
+        return new(current, "", false);
     }
 
     /// <summary>The record forgets session branches that are gone, so a name is never judged by a start it no longer has.</summary>
