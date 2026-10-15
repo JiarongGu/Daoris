@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// it; the plugin is faked on its channel, answering by branch as its platform would, so nothing reaches a network.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class PullRequestStateTests : LandedFixture
 {
     private const string Plugin = "acme.asks";

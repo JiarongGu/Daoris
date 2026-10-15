@@ -13,6 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// tree holds (LAND3c). Real git, as the other tree tests.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class LandingTidyTests : IDisposable
 {
     private static readonly Func<CancellationToken, Task<IReadOnlySet<string>>> NoneRunning =

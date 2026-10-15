@@ -15,6 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// channel: nothing reaches a network or a harness.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class AutoLandingTests : IDisposable
 {
     private const string Plugin = "example.lands";
