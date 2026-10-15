@@ -1239,6 +1239,36 @@ if (mode == ServiceMode.Local)
             _ => Results.Conflict(refused),
         };
     });
+
+    // The person taking back, or rewording, one word waiting on a record before a session took it (SAIDBACK1a, D137 §2.4). A
+    // word that no longer waits, or one on a record that runs again, answers `done: false, why: taken`, never an error. Nothing
+    // is kept on the ask, since nothing took the words. LOCAL mode only, as the say door: the words wait only here.
+    app.MapPost("/api/sessions/{id}/take-back", async (
+        ComposedService s, HttpContext http, string id, TakeBackRequest body, CancellationToken ct) =>
+    {
+        var outcome = await s.Ledger.TakeBackAsync(id, body.Word, body.Text, DateTimeOffset.UtcNow, ct);
+        if (outcome.Refusal == SessionSayRefusal.None)
+        {
+            var local = MachineLocal(http);
+            return Results.Ok(new TakeBackResponse(
+                true, outcome.Message, Session: await ToSessionAsync(s, outcome.Session!, local),
+                Said: local && outcome.Word is { } word ? ToSaid(word) : null));
+        }
+
+        if (outcome.Refusal == SessionSayRefusal.Taken)
+        {
+            return Results.Ok(new TakeBackResponse(false, outcome.Message, SayRefusal(outcome.Refusal)));
+        }
+
+        var refused = new SessionSayRefusalResponse(
+            outcome.Message, SayRefusal(outcome.Refusal), outcome.Quest, outcome.Ask, outcome.Origin, outcome.Opinion);
+        return outcome.Refusal switch
+        {
+            SessionSayRefusal.NotFound => Results.NotFound(refused),
+            SessionSayRefusal.Empty => Results.BadRequest(refused),
+            _ => Results.Conflict(refused),
+        };
+    });
 }
 
 // Second opinions (XAGENT1c, D155 point 11; the second agent design §6.2–§6.3): the driver asks a pass, which opens its
@@ -2275,6 +2305,7 @@ static string SayRefusal(SessionSayRefusal refusal) => refusal switch
     SessionSayRefusal.StoodDown => "stood-down",
     SessionSayRefusal.Opinion => "opinion",
     SessionSayRefusal.Helper => "helper",
+    SessionSayRefusal.Taken => "taken",
     _ => "running",
 };
 

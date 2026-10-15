@@ -1063,6 +1063,157 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(SessionSayRefusal.NotOurs, (await _ledger.TakeSaidAsync("alice-laptop/ab12cd34", ["ab12cd34"], by: null)).Refusal);
     }
 
+    // ——— SAIDBACK1a (D137 §2.4): the person takes back, or rewords, words that wait on a record before it goes on with them.
+
+    /// <summary>
+    /// SAIDBACK1a: a word waiting on an ended record is taken back by its id, the others staying in order, and nothing that
+    /// travels changes, as nothing did when it was kept. The last one taken back leaves nothing waiting, so the planner no
+    /// longer goes on with the record.
+    /// </summary>
+    [Fact]
+    public async Task A_word_waiting_on_an_ended_session_is_taken_back_by_its_id()
+    {
+        var ended = await Ended("completed");
+        var first = (await _ledger.SayAsync(ended.Id, "One more thing.", null, Now.AddMinutes(20))).Word!;
+        var second = (await _ledger.SayAsync(ended.Id, "And another.", null, Now.AddMinutes(21))).Word!;
+        var revision = await RevisionOf(ended.Id);
+
+        var back = await _ledger.TakeBackAsync(ended.Id, first.Id, text: null, Now.AddMinutes(22));
+
+        Assert.Equal(SessionSayRefusal.None, back.Refusal);
+        Assert.Equal(first.Id, back.Taken!.Id);
+        Assert.Null(back.Word);
+        Assert.Equal([second.Id], back.Session!.Said.Select(word => word.Id));
+        Assert.Equal([second.Id], (await _sessions.FindAsync(ended.Id))!.Said.Select(word => word.Id));
+        Assert.Equal(revision, await RevisionOf(ended.Id));
+        Assert.Equal(SessionState.Completed, (await _sessions.FindAsync(ended.Id))!.State);
+
+        await _ledger.TakeBackAsync(ended.Id, second.Id, text: null, Now.AddMinutes(23));
+        var record = (await _sessions.FindAsync(ended.Id))!;
+        Assert.Empty(record.Said);
+        Assert.Null(record.Answer);
+    }
+
+    /// <summary>
+    /// SAIDBACK1a: a reword takes the old word out and keeps the new words last, under a new id, said now, with the old
+    /// word's files and its <c>reopens</c>, in one step. Order among several waiting words is not kept.
+    /// </summary>
+    [Fact]
+    public async Task A_reword_takes_the_old_word_out_and_keeps_the_new_one_last_under_a_new_id_with_its_files()
+    {
+        var ended = await Ended("completed");
+        var first = (await _ledger.SayAsync(ended.Id, "Use the blue one.", ["C:\\shots\\blue.png"], Now.AddMinutes(20))).Word!;
+        var second = (await _ledger.SayAsync(ended.Id, "And another.", null, Now.AddMinutes(21))).Word!;
+
+        var reworded = await _ledger.TakeBackAsync(ended.Id, first.Id, "  Use the green one.  ", Now.AddMinutes(25));
+
+        Assert.Equal(SessionSayRefusal.None, reworded.Refusal);
+        Assert.Equal(first.Id, reworded.Taken!.Id);
+        var word = reworded.Word!;
+        Assert.NotEqual(first.Id, word.Id);
+        Assert.Equal(("Use the green one.", Now.AddMinutes(25), true), (word.Text, word.At, word.Reopens));
+        Assert.Equal(["blue.png"], word.Files);
+        Assert.True(word.Persons);
+        var said = (await _sessions.FindAsync(ended.Id))!.Said;
+        Assert.Equal([second.Id, word.Id], said.Select(each => each.Id));
+        Assert.Equal(["And another.", "Use the green one."], said.Select(each => each.Text));
+        Assert.Equal(["blue.png"], said[1].Files);
+    }
+
+    /// <summary>
+    /// SAIDBACK1a: a word no longer on the record, or one on a record that runs again (its run may already have read it),
+    /// answers <c>taken</c>, and the words stay as they were.
+    /// </summary>
+    [Fact]
+    public async Task A_word_no_longer_waiting_or_on_a_running_record_answers_taken()
+    {
+        var ended = await Ended("completed");
+        var word = (await _ledger.SayAsync(ended.Id, "One more thing.", null, Now.AddMinutes(20))).Word!;
+
+        var gone = await _ledger.TakeBackAsync(ended.Id, "gone1234", text: null, Now.AddMinutes(21));
+        Assert.Equal(SessionSayRefusal.Taken, gone.Refusal);
+        Assert.Equal($"Word `gone1234` no longer waits on session `{ended.Id}`: it was taken, or taken back, already.", gone.Message);
+
+        Assert.Equal(SessionAdvanceRefusal.None, (await _ledger.AdvanceAsync(ended.Id, "working", null, null, null, Now.AddMinutes(22))).Refusal);
+        var running = await _ledger.TakeBackAsync(ended.Id, word.Id, "Something else.", Now.AddMinutes(23));
+
+        Assert.Equal(SessionSayRefusal.Taken, running.Refusal);
+        Assert.Equal(
+            $"Session `{ended.Id}` is working: its run may already have taken word `{word.Id}`, so it cannot be taken back.",
+            running.Message);
+        Assert.Equal([word.Id], (await _sessions.FindAsync(ended.Id))!.Said.Select(each => each.Id));
+    }
+
+    /// <summary>
+    /// SAIDBACK1a (D137 §2.2): what never goes on refuses a take-back as it refuses words: a teammate's record, an intake, a
+    /// stand-down, each naming what it names. Words put on such a record past the ledger stay.
+    /// </summary>
+    [Fact]
+    public async Task The_nevers_refuse_a_take_back_as_they_refuse_words()
+    {
+        var stood = await Ended("stood-down", note: "someone else has it.");
+        await _sessions.KeepSaidAsync(stood.Id, new SaidWord("planted1", "Do it anyway.", Now.AddMinutes(21), [], Reopens: true));
+        var intake = await _sessions.CreateAsync(null, "ask #a1b2c3", "stub", Now, kind: SessionKind.Chat, ask: "a1b2c3");
+        await _sessions.KeepSaidAsync(intake.Id, new SaidWord("planted2", "Ask the reports repository.", Now, [], Reopens: true));
+        const string Theirs = "alice-laptop/ab12cd34";
+        await _sessions.MirrorAsync(new Session(
+            Theirs, null, "Owner", "claude-code", SessionState.Completed, "landed.", null, null, Now, Now.AddMinutes(3)));
+
+        var standDown = await _ledger.TakeBackAsync(stood.Id, "planted1", text: null, Now.AddMinutes(22));
+        var asked = await _ledger.TakeBackAsync(intake.Id, "planted2", "Ask the other one.", Now.AddMinutes(22));
+        var teammate = await _ledger.TakeBackAsync(Theirs, "ab12cd34", text: null, Now.AddMinutes(22));
+
+        Assert.Equal((SessionSayRefusal.StoodDown, stood.Quest), (standDown.Refusal, standDown.Quest));
+        Assert.Equal((SessionSayRefusal.Intake, "a1b2c3"), (asked.Refusal, asked.Ask));
+        Assert.Equal((SessionSayRefusal.NotOurs, "alice-laptop"), (teammate.Refusal, teammate.Origin));
+        Assert.Equal(["planted1"], (await _sessions.FindAsync(stood.Id))!.Said.Select(word => word.Id));
+        Assert.Equal(["Ask the reports repository."], (await _sessions.FindAsync(intake.Id))!.Said.Select(word => word.Text));
+    }
+
+    /// <summary>
+    /// SAIDBACK1a: a reword with no words is refused before anything moves, so the old word waits as it was; so is a take-back
+    /// that names no word, and one of a session nobody holds is not found.
+    /// </summary>
+    [Fact]
+    public async Task A_refused_reword_leaves_the_word_as_it_was()
+    {
+        var ended = await Ended("completed");
+        var word = (await _ledger.SayAsync(ended.Id, "One more thing.", ["notes.txt"], Now.AddMinutes(20))).Word!;
+
+        var blank = await _ledger.TakeBackAsync(ended.Id, word.Id, "   ", Now.AddMinutes(21));
+        var unnamed = await _ledger.TakeBackAsync(ended.Id, " ", text: null, Now.AddMinutes(21));
+        var nobody = await _ledger.TakeBackAsync("zzzzzzzz", word.Id, text: null, Now.AddMinutes(21));
+
+        Assert.Equal(SessionSayRefusal.Empty, blank.Refusal);
+        Assert.Equal(
+            $"There are no words to put in the place of word `{word.Id}`: it waits as it was. Take it back instead to leave none.",
+            blank.Message);
+        Assert.Equal(SessionSayRefusal.Empty, unnamed.Refusal);
+        Assert.Equal(SessionSayRefusal.NotFound, nobody.Refusal);
+        var kept = Assert.Single((await _sessions.FindAsync(ended.Id))!.Said);
+        Assert.Equal((word.Id, word.Text, word.At), (kept.Id, kept.Text, kept.At));
+        Assert.Equal(word.Files, kept.Files);
+    }
+
+    /// <summary>
+    /// SAIDBACK1a: a park's answer can be taken back while it waits, and the record stays parked, waiting on the person again.
+    /// Its note keeps the answer's line, which travelled already, as history.
+    /// </summary>
+    [Fact]
+    public async Task A_parks_answer_is_taken_back_and_the_park_waits_on_the_person_again()
+    {
+        var (_, parked) = await Parked();
+        var said = (await _ledger.SayAsync(parked.Id, "Merged it.", null, Now.AddMinutes(5))).Word!;
+
+        var back = await _ledger.TakeBackAsync(parked.Id, said.Id, text: null, Now.AddMinutes(6));
+
+        Assert.Equal(SessionSayRefusal.None, back.Refusal);
+        var record = (await _sessions.FindAsync(parked.Id))!;
+        Assert.Equal(SessionState.AwaitingPerson, record.State);
+        Assert.Empty(record.Said);
+        Assert.Contains("Answered: Merged it.", record.Note);
+    }
+
     [Fact]
     public async Task A_closed_quest_is_refused()
     {
