@@ -105,7 +105,8 @@ public sealed record SessionRequest(string Session, string Move, DateTimeOffset 
 /// name it was moved to: on Windows a rename another loop had already begun moves it on from under the first (REQTAKE1), so
 /// the loop whose name it ends under has it. Two loops honouring at once act on it once, and never neither. The door that
 /// asked withdraws it when nothing took it in time, so a late loop never acts on an
-/// answer the person was already told did not come. A request nobody took for <see cref="Lifetime"/> is dropped by any
+/// answer the person was already told did not come; it says withdrawn only once nothing else holds what it moved aside, since
+/// a take's rename begun a moment before moves it on from there (REQTAKE2). A request nobody took for <see cref="Lifetime"/> is dropped by any
 /// loop that looks, so one left by a door that died does not wait for ever.</para>
 ///
 /// <para><b>Built for PAUSE1b too</b> (D132 §2.1, §6.1): a pause stops what of an ask's work another process runs through
@@ -127,6 +128,12 @@ public sealed partial class SessionRequests(string home)
     /// for the moment it moves it, so twenty tries ten milliseconds apart is ample.
     /// </summary>
     private const int ReadTries = 20;
+
+    /// <summary>
+    /// How often a withdrawal opens what it moved aside before putting it back (REQTAKE2): what holds it is a take's rename for
+    /// the moment it moves it, or a reader, so a second of tries ten milliseconds apart is ample, and is spent only while held.
+    /// </summary>
+    private const int WithdrawTries = 100;
 
     private const string Answered = ".answer.json";
 
@@ -281,15 +288,19 @@ public sealed partial class SessionRequests(string home)
         }
     }
 
-    /// <summary>Withdraw a session's request while nobody has taken it; false when it was taken, or never written.</summary>
+    /// <summary>
+    /// Withdraw a session's request while nobody has taken it; false when it was taken, or never written, or held past every
+    /// try, when it is put back for a loop to take (REQTAKE2).
+    /// </summary>
     public bool Withdraw(string session) => WithdrawAt(PathOf(session));
 
     /// <summary>Withdraw this request by its own name while nobody has taken it: a say by its key.</summary>
     public bool Withdraw(SessionRequest request) => WithdrawAt(PathOf(request));
 
     /// <summary>
-    /// Withdrawn by renaming it aside, as a loop takes it, so of a withdrawal and a take only one wins; a look reading it that
-    /// moment holds it for milliseconds, and is waited out rather than read as a take (MSG1e).
+    /// Withdrawn by renaming it aside, as a loop takes it, then removed only once nothing else holds it, so of a withdrawal and a
+    /// take only one wins and the answer says which (REQTAKE2); a look reading it that moment holds it for milliseconds, and is
+    /// waited out rather than read as a take (MSG1e).
     /// </summary>
     private static bool WithdrawAt(string path)
     {
@@ -315,8 +326,36 @@ public sealed partial class SessionRequests(string home)
             }
         }
 
-        Remove(withdrawing);
-        return true;
+        // 🔴 REQTAKE2 (FIX-LOG 2026-10-16): on Windows a take's rename opens the file, letting it be moved, a moment before it
+        // moves it, so a rename begun before this one lands after it and moves the file on from the withdrawn name. Removing that
+        // name found nothing there and said withdrawn while the loop acted on it. So the file is opened alone, which waits out
+        // every handle opened before the rename above (none can be opened after it, the name being gone), and removed as that
+        // handle closes; gone by then, the take that moved it on has it. On Linux a rename is by name and whole, so nothing moves
+        // it on, and the open waits only for a reader.
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                using (new FileStream(withdrawing, FileMode.Open, FileAccess.Read, FileShare.None, 1, FileOptions.DeleteOnClose))
+                {
+                    return true;
+                }
+            }
+            catch (Exception error) when (error is FileNotFoundException or DirectoryNotFoundException)
+            {
+                return false;
+            }
+            catch (Exception error) when (attempt < WithdrawTries && error is IOException or UnauthorizedAccessException)
+            {
+                Thread.Sleep(10);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                // Held past every try: put back, it stands for a loop to take, and is not withdrawn.
+                PutBack(withdrawing, path);
+                return false;
+            }
+        }
     }
 
     /// <summary>

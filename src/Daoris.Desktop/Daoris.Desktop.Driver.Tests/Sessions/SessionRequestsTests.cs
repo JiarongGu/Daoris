@@ -180,6 +180,53 @@ public sealed class SessionRequestsTests : IDisposable
         Assert.Empty(Directory.GetFiles(Requests.Folder));
     }
 
+    /// <summary>
+    /// REQTAKE2 (D126 §7.1): of a withdrawal and a take only one wins, and the withdrawal says which. On Windows a take's rename
+    /// opens the file, letting it be moved, a moment before it moves it; a withdrawal's rename landing in that moment moves it
+    /// aside, and the take's rename then moves it on from the withdrawn name. The withdrawal that removed what it had moved found
+    /// nothing there, said withdrawn, and the loop acted on it. Held here as such a rename holds it, the rename then completes
+    /// from wherever the file is: on Windows, through its handle, so the take has it and the withdrawal says it was not
+    /// withdrawn; on Linux a rename is by name and whole, so the withdrawal had it and the take finds nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_withdrawal_and_a_take_begun_before_it_never_both_win()
+    {
+        Requests.Write(new SessionRequest("s1", SessionMove.Stop, Now));
+        var path = Requests.PathOf("s1");
+        var taking = path + ".a1b2c3d4.taking";
+
+        Task<bool> withdrawing;
+        var taken = false;
+        using (new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete))
+        {
+            withdrawing = Task.Run(() => Requests.Withdraw("s1"));
+            await Poll.Until(() => !File.Exists(path), () => "the withdrawal never moved the request aside", TimeSpan.FromSeconds(10));
+
+            // The take's rename lands: on Windows its handle moves the file from wherever it now is, on Linux its name is gone.
+            var from = OperatingSystem.IsWindows() ? Directory.GetFiles(Requests.Folder).SingleOrDefault() : path;
+            try
+            {
+                if (from is not null)
+                {
+                    File.Move(from, taking);
+                    taken = true;
+                }
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                // Gone, or removed while it was held: nothing for the take.
+            }
+        }
+
+        var withdrawn = await withdrawing.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.False(withdrawn && taken, "the door said withdrawn while the loop took it");
+        Assert.True(withdrawn || taken, "neither the withdrawal nor the take has it");
+        if (OperatingSystem.IsWindows()) Assert.True(taken, "a rename begun before the withdrawal's lands after it, so the take has it");
+        string[] left = taken ? [Path.GetFileName(taking)] : [];
+        Assert.Equal(left, Directory.GetFiles(Requests.Folder).Select(Path.GetFileName));
+    }
+
     /// <summary>A request withdrawn is gone, and withdrawing one already taken says it was not there.</summary>
     [Fact]
     public void A_request_is_withdrawn_while_it_waits()

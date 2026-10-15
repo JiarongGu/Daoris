@@ -314,6 +314,29 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 SAIDBACK1g (D137 §2.4): a chat put back because every word was taken back keeps what ended it: its own note, and the
+    /// interrupted flag the move to working cleared, not the taken-back line in place of them. The conversation says so beside.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_put_back_after_its_words_were_taken_back_keeps_what_ended_it()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "stopped", "talk", _root).Say("w1", "Also log the port.");
+        ledger.Edit("c1", session => { session["note"] = "the person stopped it."; session["interrupted"] = true; });
+        ledger.WhenWorking = session => session["said"] = new JsonArray();
+        new HarnessConversations(_home).Keep("c1", "talk", "conv-c1");
+        var events = Events;
+        using var runner = Runner(ledger, events);
+
+        events.Append("c1", Shown("w1", "Also log the port."));
+
+        await NoteAsync(events, "c1", e => e.Text?.Contains("taken back before it went on") == true);
+        Assert.Equal("stopped", ledger.State("c1"));
+        Assert.Equal("the person stopped it.", ledger.Note("c1"));
+        Assert.True(ledger.Flag("c1", "interrupted"));
+    }
+
+    /// <summary>
     /// SAIDBACK1d: a word taken back or reworded between the look and the move is read as the move left the record: the words
     /// handed are the record's now, a reword's new words included, never the look's.
     /// </summary>
@@ -622,6 +645,18 @@ internal sealed class ChatLedger : HttpMessageHandler
         return new Words(this, id);
     }
 
+    /// <summary>Change a record's stored fields as the ledger would have left them (SAIDBACK1g).</summary>
+    public void Edit(string id, Action<JsonObject> change)
+    {
+        lock (_gate) change(Find(id));
+    }
+
+    /// <summary>A record's flag as the ledger keeps it: <c>interrupted</c> or <c>limit</c>.</summary>
+    public bool Flag(string id, string name)
+    {
+        lock (_gate) return Find(id)[name]?.GetValue<bool>() ?? false;
+    }
+
     /// <summary>The words of a record already here, as the say door keeps them.</summary>
     public Words For(string id) => new(this, id);
 
@@ -774,6 +809,10 @@ internal sealed class ChatLedger : HttpMessageHandler
                     }
 
                     session["state"] = to;
+                    // The flags the ledger keeps with an end, cleared by a move to working (SAIDBACK1g).
+                    var moved = JsonNode.Parse(body!)!;
+                    session["interrupted"] = moved["interrupted"]?.GetValue<bool>() ?? false;
+                    session["limit"] = moved["limit"]?.GetValue<bool>() ?? false;
                     if (to == "working") WhenWorking?.Invoke(session);
                     if (JsonNode.Parse(body!)!["note"]?.GetValue<string>() is { } note)
                     {
