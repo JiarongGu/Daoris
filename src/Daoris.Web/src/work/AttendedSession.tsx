@@ -20,6 +20,7 @@ import { type PartFacts, PartsStrip } from './PartsStrip';
 import type { Relations } from './relations';
 import type { LineBehind } from './diff';
 import type { RuleAsk, RuleWaits } from './ProposedRules';
+import type { Seek } from './WaitAnchor';
 import { type HeadLink, type HeadOpinion, type HeadReview, type LandingPlan, SessionHead, type WorkAsk } from './SessionHead';
 import { SessionRelations } from './SessionRelations';
 import { SessionTimeline } from './SessionTimeline';
@@ -57,8 +58,10 @@ export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
-  opinion, continues, helps, parts, channel, workAsk, workBusy, toEvent, rules, ruleAsk,
+  opinion, continues, helps, parts, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek,
 }: {
+  /** Passed straight through to the head: the wait a raising block's *To the wait* leads to there (WAITFOOT2b). */
+  seek?: Seek | null;
   /** Passed straight through to the head: the rules it proposed that the person still answers (PROPOSEHERE1b). */
   rules?: RuleWaits | null;
   /** And where a rule's *Allow…* is open, the frame's, the head's or the foot's (D168 point 3). */
@@ -234,6 +237,7 @@ export function AttendedSession({
         toEvent={toEvent}
         rules={rules}
         ruleAsk={ruleAsk}
+        seek={seek}
       />
       {parts && <PartsStrip {...parts} />}
       {/* Every stop a door (the study's §5: "every stop pressable"): a session attends, a quest opens.

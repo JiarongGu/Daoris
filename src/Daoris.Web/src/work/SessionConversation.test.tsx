@@ -189,7 +189,7 @@ describe('the way to the event a wait was raised by', () => {
     await waitFor(() => expect(onAnchors).toHaveBeenLastCalledWith('s1', expect.objectContaining({ anchored: ['question', 'goAhead:3'] })));
     // The block that raised it says so, and its press goes to the wait.
     const block = words.closest<HTMLElement>('[data-block]')!;
-    await userEvent.click(within(block).getByRole('button', { name: 'To the wait' }));
+    await userEvent.click(within(block).getByRole('button', { name: 'To the wait: its question' }));
     expect(onToWait).toHaveBeenCalledWith({ kind: 'question', below: true });
 
     act(() => (onAnchors.mock.lastCall![1] as AnchorState).show('question'));

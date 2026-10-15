@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GoAhead, Session } from '../data/api';
 import { cn } from '../lib/cn';
-import type { AnchorWait, WaitEvents } from './anchors';
+import type { WaitEvents } from './anchors';
 import { type GoAheadAnswer, GoAheadList } from '../asks/GoAheadList';
 import { Button } from '../design/ui';
 import type { QuestClose, Resolution } from './AwaitingPerson';
@@ -12,7 +12,7 @@ import type { Answered } from './InlineConfirm';
 import type { SayRebase } from './LandingSync';
 import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from './Lands';
 import { ProposedRules, type RuleAsk, type RuleWaits } from './ProposedRules';
-import { InConversation, waitName } from './WaitAnchor';
+import { InConversation, leftFor, type Seek, SOUGHT, useSought, waitName } from './WaitAnchor';
 import { rulesAsked, type Wait, WORK_WAITS, waitsOf } from './waits';
 
 /**
@@ -55,9 +55,6 @@ export type WaitProps = {
   toEvent?: WaitEvents;
 };
 
-/** The outline a line wears once a raising block's *To the wait* led to it, as the conversation outlines a revealed block. */
-const SOUGHT = 'rounded-control outline-2 outline-offset-2 outline-accent/60';
-
 /**
  * **What waits on the person, at the foot** (WAITFOOT1b, D168): above the session's box and outside the conversation's scroll,
  * where the person reads its last message, each open wait with the same press its head has, so none is a record's length
@@ -73,10 +70,14 @@ const SOUGHT = 'rounded-control outline-2 outline-offset-2 outline-accent/60';
  * **One owner of each answer** (D168 point 3): the frame holds the presses and their pending; the work's ask is open in one
  * place at a time (`workAsk`); a refusal is said where the press was made.
  *
+ * **One place at a time** (WAITFOOT2a, D168's WAITFOOT2 note): while the head's waits are wholly on screen (`aside`, the
+ * frame's to read) the strip stands aside, hidden and not unmade, so a fold and words begun in it are kept. Never from under the
+ * person: it stays while an ask is open in it, while a press led to its line, and while the focus is in it.
+ *
  * Several fold to one line naming them; *To the top* takes the person to the head's waits. Nothing waits, nothing is drawn.
- * A molecule: no hook beyond its own fold.
+ * A molecule: no hook beyond its own fold, focus and sought line.
  */
-export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, ...props }: WaitProps & {
+export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, aside = false, ...props }: WaitProps & {
   /** The foot's box takes the park's answer: a driven park's answer box, or a parked chat's composer. */
   answerBelow?: boolean;
   /** Where the work's ask is open, the frame's, so it is open here or in the head (D168 point 3). */
@@ -89,37 +90,24 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
    * The wait a raising block's *To the wait* leads to (WAITFOOT1c), counted so the same one pressed again is shown again: the
    * strip unfolds, and its line takes the focus, outlined.
    */
-  seek?: { wait: AnchorWait; n: number } | null;
+  seek?: Seek | null;
+  /** The head's waits are wholly on screen, so the strip stands aside unless the person is in it (WAITFOOT2a). */
+  aside?: boolean;
 }) {
   const { t } = useTranslation();
   const [folded, setFolded] = useState(false);
-  const [sought, setSought] = useState<AnchorWait | null>(null);
+  const [inside, setInside] = useState(false);
   const section = useRef<HTMLElement>(null);
+  const { sought, letGo } = useSought(section, seek, () => setFolded(false));
+  // A line unmade with the focus in it (an ask put down, a go-ahead answered) says no blur: the focus is read again once drawn.
+  useEffect(() => {
+    if (inside && !section.current?.contains(section.current.ownerDocument.activeElement)) setInside(false);
+  });
   const { session, toEvent } = props;
   const waits = waitsOf({ ...props, answerBelow });
-  // A press owes its line the focus until the line is drawn: in the strip only once the fold opens.
-  const focusing = useRef(false);
-  useEffect(() => {
-    if (!seek) return;
-    setFolded(false);
-    setSought(seek.wait);
-    focusing.current = true;
-  }, [seek?.n]);
-  useEffect(() => {
-    if (!focusing.current || !seek) return;
-    // A proposal's id is the driver's, found by its value rather than spelled into a selector.
-    const rule = seek.wait.startsWith('rule:') ? seek.wait.slice('rule:'.length) : null;
-    const line = seek.wait.startsWith('goAhead:')
-      ? `[data-go-ahead="${seek.wait.slice('goAhead:'.length)}"]`
-      : `[data-wait="${seek.wait === 'opinion' ? 'work' : seek.wait}"]`;
-    const drawn = rule !== null
-      ? [...(section.current?.querySelectorAll<HTMLElement>('[data-rule]') ?? [])].find((each) => each.dataset.rule === rule)
-      : section.current?.querySelector<HTMLElement>(line);
-    if (!drawn) return;
-    focusing.current = false;
-    drawn.focus();
-  });
   if (waits.length === 0) return null;
+  // Never from under the person (WAITFOOT2a): an ask open here, or the focus, a line a press led to's among it, holds it up.
+  const held = inside || Boolean(workAsk?.open) || Boolean(ruleAsk?.open);
   const several = waits.length > 1;
   const shut = several && folded;
   const question = waits.find((wait) => wait.kind === 'question');
@@ -135,9 +123,15 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
     <section
       ref={section}
       aria-label={title}
+      hidden={aside && !held}
       className="shrink-0 border-t border-line bg-page"
-      // The outline goes once the person moves on from the line it led to.
-      onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setSought(null); }}
+      onFocus={() => setInside(true)}
+      // The outline goes once the person moves on from the line it led to, and the strip with it where the head's are on screen.
+      onBlur={(event) => {
+        if (!leftFor(event)) return;
+        letGo();
+        setInside(false);
+      }}
     >
       {/* Bounded, so a long gate never pushes the conversation off the window: the strip scrolls in itself. */}
       <div className="grid max-h-[40vh] grid-cols-[minmax(0,1fr)] gap-2 overflow-y-auto px-4 py-2">
