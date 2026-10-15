@@ -490,6 +490,8 @@ public static class NoteCodes
         new(HelperWhy.NoAnswer, [], "note.helper.why.no-answer"),
         new(HelperWhy.Conversation, [], "note.helper.why.conversation"),
         new(HelperWhy.CannotTake, [], "note.helper.why.cannot-take"),
+        // HELPERNO1: the person's no to an agent's ask, added after the nine (a reason is additive).
+        new(HelperWhy.Declined, [], "note.helper.why.declined"),
     ]);
 
     // ——— A helper (MIXAGENT2a-ii, D163 point 2): on the asker, a helper asked, answered or refused, with the agent and why;

@@ -36,6 +36,7 @@ import { AttentionBand, type AttentionDoors } from './AttentionBand';
 import type { SessionGrouping } from './groups';
 import { sessionTitle } from './identity';
 import type { OpinionWait } from './opinion';
+import type { HelperWait } from './HelperAsks';
 import type { Session } from '../data/api';
 
 const base = { adapter: 'claude-code', created: '2026-10-01T09:00:00Z', workspace: 'default' };
@@ -106,14 +107,18 @@ function respond(url: string): Response {
   return Response.json([]);
 }
 
-function start({ considered = [], untrusted = [], proposals = [], groups = [], waits = [], roster = {}, accounts = {}, opinions = [] }: {
+function start({ considered = [], untrusted = [], proposals = [], groups = [], waits = [], roster = {}, accounts = {}, opinions = [], helpers = [] }: {
   considered?: Consideration[]; untrusted?: TrustHold[]; proposals?: RuleProposal[]; groups?: SessionGrouping[];
   waits?: AccountWaitTick[]; roster?: HarnessRoster | object; accounts?: AccountsAnswer | object; opinions?: OpinionWait[];
+  helpers?: HelperWait[];
 }, props: { doors?: AttentionDoors; notify?: (text: string, kind?: 'ok' | 'error') => void; onSessions?: () => void } = {}) {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
   invoke.mockImplementation(async (_module: string, type: string, request?: { payload?: Record<string, unknown> }) => {
     if (type === 'RULES') return { proposals };
     if (type === 'OPINION_WAITS') return { waits: opinions };
+    if (type === 'HELPER_WAITS') return { waits: helpers };
+    if (type === 'SESSION_HELPER_APPROVE') return { approved: true, why: null, message: 'yes' };
+    if (type === 'SESSION_HELPER_DECLINE') return { declined: false, why: 'approved', message: 'x' };
     if (type === 'ASK_OPINION') return { session: request?.payload?.id, done: true, message: 'A second opinion is asked.' };
     if (type === 'OPINION_ANYWAY') return { session: request?.payload?.id, done: true, message: 'You went on without a settled second opinion.' };
     if (type === 'SESSION_GROUPS') return { sessions: groups };
@@ -171,10 +176,31 @@ describe('What needs you on a machine', () => {
     await screen.findByRole('listitem', { name: 'Intake for ask #a1' });
 
     // The second opinion's waits (XAGENT1g): the driver's own reading of the work it owes an opinion, asked only while the list
-    // places work To review, the only work one is owed on. It asks no agent.
-    expect([...new Set(asked())].sort()).toEqual(['ACCOUNTS', 'HARNESSES', 'OPINION_WAITS', 'RULES', 'SESSION_GROUPS']);
+    // places work To review, the only work one is owed on. The agents' asks for a helper waiting on the person (MIXAGENT2c): the
+    // driver's own files. Neither asks an agent.
+    expect([...new Set(asked())].sort()).toEqual(['ACCOUNTS', 'HARNESSES', 'HELPER_WAITS', 'OPINION_WAITS', 'RULES', 'SESSION_GROUPS']);
     const roster = invoke.mock.calls.filter(([, type]) => type === 'HARNESSES');
     expect(roster.every(([, , request]) => !request?.payload?.refresh)).toBe(true);
+  });
+
+  /**
+   * MIXAGENT2c (D168, D163 point 3): an agent's ask for a helper that waits on the person's word is a row waiting for it, with
+   * *Let it ask* and *Not now*, the session's page's own presses by the session and the ask; a refusal is said in its words.
+   */
+  it('lists an agent’s ask for a helper, lets it ask in one press and says a refused no in its words', async () => {
+    const notify = vi.fn();
+    start({ helpers: [{ id: 'a1', session: 'c0nv0001', question: 'Which test covers the loader?', agent: null, at: '2026-10-01T09:00:00Z' }] },
+      { notify, doors: { helper: vi.fn() } });
+
+    const row = await screen.findByRole('listitem', { name: 'Which test covers the loader?' });
+    expect(within(row).getByText('an agent asks for a helper')).toBeInTheDocument();
+    await userEvent.click(within(row).getByRole('button', { name: 'Let it ask' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HELPER_APPROVE', { payload: { session: 'c0nv0001', ask: 'a1' } }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('It has your yes: the driver starts a helper at its next look.'));
+
+    await userEvent.click(within(row).getByRole('button', { name: 'Not now' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HELPER_DECLINE', { payload: { session: 'c0nv0001', ask: 'a1' } }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('It has your yes already: the driver starts it at its next look.', 'error'));
   });
 
   /**

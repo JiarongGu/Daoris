@@ -43,6 +43,23 @@ export const AfterASquashMerge: Story = {
   },
 };
 
+/**
+ * LANDSYNC3b, the install's case: a session went on in its tree after its first commit was squash-merged, so its replay leaves
+ * that commit out and carries the two the line lacks; a second branch the line holds entirely moves onto it.
+ */
+export const LeavesOutWhatTheLineHolds: Story = {
+  args: {
+    plan: {
+      lines: [pull({ kind: 'fast-forward', commits: 2, moves: true, from: 'b10be2c1', to: 'b0b311d4' })],
+      rebases: [
+        rebase({ branch: 'daoris/s-3c4d5e6f', kind: 'replay', commits: 2, leftOut: 1, replays: true }),
+        rebase({ branch: 'daoris/s-7a8b9c0d', kind: 'replay', commits: 0, leftOut: 1, replays: true }),
+      ],
+      deletes: [],
+    },
+  },
+};
+
 /** Every reason a row stays as it is. */
 export const EveryReasonToStay: Story = {
   args: {

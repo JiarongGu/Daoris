@@ -17,6 +17,33 @@ internal sealed record LineHeld(
     public bool HoldsNone => LeftOut.Count == 0;
 }
 
+/// <summary>One commit beyond a branch's cut as the look's one log reads it (LANDSYNC3): whether the line has its patch, and its files.</summary>
+internal sealed record BeyondCommit(string Sha, bool Held, IReadOnlyList<string> Files);
+
+/// <summary>
+/// A branch's commits beyond its cut as <i>Bring up to date</i> judges them (LANDSYNC3, D87's 2026-10-15 amendment point 1): what the
+/// line holds is left out, so the count is what the replay carries.
+/// </summary>
+/// <param name="Cut">
+/// Where its own commits start after: moved past the commits it begins with that the line holds, so the replay is a plain one from
+/// there; the last of them where the line holds every one.
+/// </param>
+/// <param name="Commits">The commits beyond <paramref name="Cut"/>, oldest first, merges aside.</param>
+/// <param name="Skips">Among them, those the line holds: the replay skips each, replaying the runs between.</param>
+/// <param name="LeftOut">Every commit the line holds by patch beyond the cut WSR6 made, the ones the cut moved past and the skips.</param>
+/// <param name="ByContent">
+/// How many commits the walk by content moved the cut past, where it did: the run up to it reads on the line, a squash of several.
+/// WSR6's words say that run as the cut (<see cref="CutBy.Content"/>), not as commits left out.
+/// </param>
+internal sealed record HeldBeyond(string Cut, IReadOnlyList<string> Commits, IReadOnlyList<string> Skips, int LeftOut, int ByContent = 0)
+{
+    /// <summary>The commits the replay carries.</summary>
+    public int Kept => Commits.Count - Skips.Count;
+
+    /// <summary>The line holds some of the commits beyond the cut WSR6 made, by patch or by content (LANDSYNC2's question).</summary>
+    public bool HoldsAny => LeftOut + ByContent > 0;
+}
+
 /// <summary>
 /// The per-commit judgement of what the line holds (LANDSYNC1): first WSR6's walk by content (D109 §2), which reads a squash of
 /// several commits; then, beyond the run it finds, each commit whose patch id a commit the line gained since has, which finds a
@@ -116,6 +143,88 @@ internal static class LineHolds
     /// <summary>Up to three of git's <c>CONFLICT</c> lines, as <see cref="BranchReplays.RebaseInAsync"/> says them.</summary>
     internal static string Joined(IReadOnlyList<string> conflicts) =>
         string.Join("; ", conflicts.Take(3)) + (conflicts.Count > 3 ? $"; and {conflicts.Count - 3} more." : ".");
+
+    /// <summary>
+    /// <i>Bring up to date</i>'s judgement of a branch's commits beyond <paramref name="cut"/> (LANDSYNC3, D87's amendment point 1): (b)'s
+    /// patch ids and the commits' files in one log, then, where <paramref name="walk"/> and the line changed every file the first commit
+    /// it lacks touched, (a)'s walk by content, which proves commit after commit and so is asked only where it can find a squash. Null
+    /// where git could not list the commits.
+    /// </summary>
+    /// <remarks>
+    /// The look's own form of <see cref="JudgeAsync"/>, held to its git starts (UIFREEZE1, PROC1d): the one log takes the place of the
+    /// count WSR6 made, and the line's files are read only where a commit could be the line's by content.
+    /// </remarks>
+    /// <param name="leaves">Where the branch leaves the line: the newest commit it shares with <paramref name="onto"/>.</param>
+    /// <param name="cut">Where its own commits start after, as WSR6 cut it: <paramref name="leaves"/>, or a commit beyond it.</param>
+    /// <param name="walk">Whether the walk by content may move the cut: not where a record or the walk already cut it.</param>
+    internal static async Task<HeldBeyond?> JudgeBeyondAsync(
+        string root, string tip, string onto, string leaves, string cut, string? line, bool walk, CancellationToken ct)
+    {
+        if (await ReadBeyondAsync(root, tip, onto, cut == leaves ? null : cut, ct).ConfigureAwait(false) is not { } beyond) return null;
+        if (walk && beyond.Any(each => !each.Held)
+            && await LandedProofs.NamesAsync(root, leaves, onto, ct).ConfigureAwait(false) is { } brought
+            && MayHoldByContent(beyond, brought))
+        {
+            var (byContent, by) = await BranchJudging.CutByContentAsync(root, tip, leaves, line, onto, ct).ConfigureAwait(false);
+            if (by == CutBy.Content && await ReadBeyondAsync(root, tip, onto, byContent, ct).ConfigureAwait(false) is { } after)
+            {
+                return Beyond(byContent, after) with { ByContent = beyond.Count - after.Count };
+            }
+        }
+
+        return Beyond(cut, beyond);
+    }
+
+    /// <summary>
+    /// The commits beyond <paramref name="cut"/> (where the branch leaves <paramref name="onto"/>, for null), oldest first, merges
+    /// aside, each marked where a commit the line gained since has its patch, with the files it touched: one start. Null where git
+    /// could not list them.
+    /// </summary>
+    internal static async Task<IReadOnlyList<BeyondCommit>?> ReadBeyondAsync(string root, string tip, string onto, string? cut, CancellationToken ct)
+    {
+        var (code, output, _) = await WorkingTree.GitAsync(
+            root,
+            [
+                "-c", "core.quotePath=false", "log", "--reverse", "--topo-order", "--cherry-mark", "--right-only", "--no-merges",
+                "--format=%x1e%m%H", "--name-only", $"{onto}...{tip}", .. cut is null ? Array.Empty<string>() : [$"^{cut}"],
+            ],
+            ct).ConfigureAwait(false);
+        return code != 0 ? null : ReadBeyond(output);
+    }
+
+    /// <summary><see cref="ReadBeyondAsync"/>'s log read: each commit after its separator, <c>=</c> where the line holds its patch, then its files.</summary>
+    internal static IReadOnlyList<BeyondCommit> ReadBeyond(string log) =>
+    [
+        .. log.Split('\u001e', StringSplitOptions.RemoveEmptyEntries)
+            .Select(each => each.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Where(lines => lines.Length > 0 && lines[0].Length > 1)
+            .Select(lines => new BeyondCommit(lines[0][1..], lines[0][0] == '=', lines[1..])),
+    ];
+
+    /// <summary>
+    /// What the line holds of <paramref name="beyond"/>, cut at <paramref name="cut"/> (LANDSYNC3): the commits it begins with that the
+    /// line holds move the cut past them, so the replay is WSR6's plain one; any held after a commit it lacks is skipped.
+    /// </summary>
+    internal static HeldBeyond Beyond(string cut, IReadOnlyList<BeyondCommit> beyond)
+    {
+        var at = 0;
+        while (at < beyond.Count && beyond[at].Held) at++;
+        var rest = beyond.Skip(at).ToList();
+        var skips = rest.Where(each => each.Held).Select(each => each.Sha).ToList();
+        return new(at == 0 ? cut : beyond[at - 1].Sha, [.. rest.Select(each => each.Sha)], skips, at + skips.Count);
+    }
+
+    /// <summary>
+    /// Whether the walk by content could find any of <paramref name="beyond"/> on the line: a run from where the branch left it reads
+    /// there only where the line changed every file the run changed, so at least those the first commit it lacks by patch touched.
+    /// </summary>
+    /// <param name="brought">The files the line changed since the branch left it.</param>
+    internal static bool MayHoldByContent(IReadOnlyList<BeyondCommit> beyond, IReadOnlyCollection<string> brought)
+    {
+        if (beyond.FirstOrDefault(each => !each.Held && each.Files.Count > 0) is not { } first) return false;
+        var changed = brought.ToHashSet(StringComparer.Ordinal);
+        return first.Files.All(changed.Contains);
+    }
 
     /// <summary>The commits of a range, oldest first, merges aside, with their subjects; null where git could not list them.</summary>
     internal static async Task<IReadOnlyList<LandingCommit>?> CommitsAsync(string root, string range, CancellationToken ct)

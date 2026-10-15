@@ -184,6 +184,106 @@ public sealed class EntryLandingTests : LandedFixture
     }
 
     /// <summary>
+    /// ACCEPTALL1f (D167's amendment point 2): every door that lands one session (the review's, the terminal's <c>trees land</c>, the look's
+    /// at done) names it by <see cref="SessionTrees.OwnSubjectAsync"/> over the service's records. Pressed in either order, an entry's
+    /// parts land on its one branch: the later part, pressed first, makes it under the first part's name, and the first part's own
+    /// landing joins it; each landing records its own session.
+    /// </summary>
+    [Fact]
+    public async Task Each_parts_own_landing_by_the_doors_one_call_lands_on_the_entrys_branch_in_either_order()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        var second = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "a.txt", "a\n", "the first part");
+        await CommitAsync(second.Path, "b.txt", "b\n", "the second part");
+        IReadOnlyList<SessionRecord> records =
+        [
+            new("s5e6f7a8", "engine", "completed") { Entry = "ask:a3/engine", Quest = "1b2c3d", Tree = second.Path, Created = At(2) },
+            new("s1a2b3c4", "engine", "completed") { Entry = "ask:a3/engine", Quest = "0fda18", Tree = first.Path, Created = At(1) },
+        ];
+        static Task<QuestView?> Find(string id) => Task.FromResult<QuestView?>(id switch
+        {
+            "0fda18" => new QuestView("0fda18", "game", "engine", "Fix the gap", "Fix it.", "Done"),
+            "1b2c3d" => new QuestView("1b2c3d", "game", "engine", "Check the gap", "Check it.", "Done"),
+            _ => null,
+        });
+        Task<LandingSubject> OwnAsync(string tree, string session, string quest) =>
+            trees.OwnSubjectAsync(tree, session, quest, records, Find, _ => null, process: null);
+
+        var later = await OwnAsync(second.Path, "s5e6f7a8", "1b2c3d");
+        var once = await trees.LandAsync(second.Path, later, joins: later.Joins);
+        Assert.True(once.Landed, once.Message);
+        Assert.Equal(Branch, once.Branch);
+
+        var lead = await OwnAsync(first.Path, "s1a2b3c4", "0fda18");
+        var landed = await trees.LandAsync(first.Path, lead, joins: lead.Joins);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal(Branch, landed.Branch);
+        Assert.NotNull(landed.AdvancedFrom);
+        Assert.Equal("the first part\nthe second part", (await GitAsync(root, "log", "--format=%s", $"main..{Branch}")).Trim());
+        var record = trees.Recorded.Of("engine", Branch)!;
+        Assert.Equal("s5e6f7a8", record.Session);
+        Assert.Equal("s1a2b3c4", Assert.Single(record.Advances).Session);
+    }
+
+    /// <summary>
+    /// TREEFOLLOWNAME1 (D167's note): a part whose tree is on a branch of its own lands as that branch, so its landing record carries
+    /// its own quest and title, at the entry's press and at the part's own door alike; the entry's other part keeps the entry's.
+    /// </summary>
+    [Fact]
+    public async Task A_part_on_its_own_branch_is_recorded_for_its_own_quest_and_title()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        var second = await trees.OpenAsync(root, "engine", "aurora");
+        await GitAsync(second.Path, "checkout", "-b", "mine/second-fix");
+        await CommitAsync(first.Path, "a.txt", "a\n", "the first part");
+        await CommitAsync(second.Path, "b.txt", "b\n", "the second part");
+        var firstOwn = new LandingSubject("s1a2b3c4", "0fda18", "Fix the gap");
+        var secondOwn = new LandingSubject("s5e6f7a8", "1b2c3d", "Check the gap");
+        EntryLandingPart[] parts = [new("s1a2b3c4", first.Path) { Own = firstOwn }, new("s5e6f7a8", second.Path) { Own = secondOwn }];
+
+        var landed = await trees.LandEntryAsync(parts, firstOwn, Kept);
+
+        Assert.True(landed.Landed, landed.Message);
+        var entryRecord = trees.Recorded.Of("engine", Branch)!;
+        Assert.Equal(("0fda18", "Fix the gap"), (entryRecord.Quest, entryRecord.Title));
+        var ownRecord = trees.Recorded.Of("engine", "mine/second-fix")!;
+        Assert.Equal(("s5e6f7a8", "1b2c3d", "Check the gap"), (ownRecord.Session, ownRecord.Quest, ownRecord.Title));
+    }
+
+    private static DateTimeOffset At(int minute) => new(2026, 10, 16, 9, minute, 0, TimeSpan.Zero);
+
+    /// <summary>
+    /// ACCEPTALL1g (D167's amendment point 2, D145 §3): the plan says whether the branch Accept lands on already stands. Before the
+    /// entry's first landing its branch is one the press makes; after it, the next part's plan names the same branch, standing, which
+    /// its press moves on, so the review stops promising a new branch there.
+    /// </summary>
+    [Fact]
+    public async Task The_plan_says_the_entrys_branch_already_stands_once_a_part_landed_on_it()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        var second = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "a.txt", "a\n", "the first part");
+        await CommitAsync(second.Path, "b.txt", "b\n", "the second part");
+
+        var lead = await trees.JoinEntryAsync(first.Path, "s1a2b3c4", Subject);
+        Assert.False((await trees.PlanAsync(first.Path, lead)).Stands);
+        var once = await trees.LandAsync(first.Path, lead, joins: true);
+        Assert.True(once.Landed, once.Message);
+
+        var plan = await trees.PlanAsync(second.Path, await trees.JoinEntryAsync(second.Path, "s5e6f7a8", Subject));
+
+        Assert.Equal((Branch, true), (plan.Target, plan.Stands));
+    }
+
+    /// <summary>
     /// ACCEPTALL1d (D87's amendment point 3): under a squash rule a part that ran alongside joins the entry's branch by one more squashed
     /// commit. Its work replayed onto the branch's tip grows from that tip, not from the first part's squashed one, so it is not refused.
     /// </summary>

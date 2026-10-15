@@ -416,6 +416,20 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.DoesNotContain(SessionsCommand.Facts(bare, record with { Id = "n0th1ng0" }), fact => fact.Contains("land", StringComparison.Ordinal));
     }
 
+    /// <summary>TREEFOLLOWWEB2: <c>--json</c> carries the branch a moved tree is on in <c>work</c>, as the screen's answer does (SESSUX1g).</summary>
+    [Fact]
+    public void A_moved_trees_branch_is_in_the_json_work()
+    {
+        var moved = new SessionGrouping("m0ved000", SessionGroup.Ended, "completed") { Work = new TreeWork(0, 0) { Branch = "feature/x-fix" } };
+        var own = new SessionGrouping("0wn00000", SessionGroup.Review, "completed") { Work = new TreeWork(1, 0) };
+
+        using var answer = JsonDocument.Parse(SessionsCommand.Json([moved, own]));
+        var rows = answer.RootElement.GetProperty("sessions").EnumerateArray().ToList();
+
+        Assert.Equal("feature/x-fix", rows[0].GetProperty("work").GetProperty("branch").GetString());
+        Assert.Equal(JsonValueKind.Null, rows[1].GetProperty("work").GetProperty("branch").ValueKind);
+    }
+
     /// <summary>
     /// SQUASHTIDY1b: a session whose work the line holds by content is offered no landing at the terminal either: <c>--json</c>
     /// carries the reader's <c>discards</c> whole, and the listing's line says where its work is, in Discard's own clause, with

@@ -109,6 +109,13 @@ public sealed record RebaseItem(
 {
     public bool Replays => Kind == RebaseKind.Replay;
 
+    /// <summary>
+    /// Replay: how many of its commits the line already holds, which the replay leaves out (LANDSYNC3b, D87's 2026-10-15 amendment
+    /// point 4 by analogy): those the cut moved past and those it skips, beside <see cref="Commits"/>, what it carries. A run the walk
+    /// by content moved the cut past is said by <see cref="CutBy"/> instead. An added field: a row from before reads 0.
+    /// </summary>
+    public int LeftOut { get; init; }
+
     /// <summary>A landed branch's latest answer about its pull request, as <see cref="LandedItem.State"/> (PLUGHOOK1c, design §2.5).</summary>
     public PullRequestState? State { get; init; }
 

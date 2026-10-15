@@ -876,6 +876,9 @@ export function App() {
     // A second opinion waiting on the person opens the session whose work it read, where its gate and every press are
     // (XAGENT1g, the second-agent design §9). A shell's alone: the opinion is this machine's.
     ...(attached ? { opinion: (item: Attention) => open('sessions', item.id) } : {}),
+    // An agent's ask for a helper opens the session that asked, whose head and foot carry its yes and no with its other waits
+    // (MIXAGENT2c, D168). A shell's alone: the asks are this machine's files.
+    ...(attached ? { helper: (item: Attention) => { if (item.session) open('sessions', item.session); } } : {}),
     // An account's row opens its agent's page at its accounts (UX6d, D150 §6.2), where every account's act is. A shell's alone.
     ...(attached ? {
       'account-wait': (item: Attention) => open('agents', item.account?.agent ?? null, { agentPart: 'accounts' }),

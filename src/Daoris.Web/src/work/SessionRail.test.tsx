@@ -934,11 +934,29 @@ describe('a group a door brings into view', () => {
     });
     afterEach(() => { OPINIONS = []; });
 
-    it('names the working session by its title, beside the kind', async () => {
+    /** MIXAGENT3a-ii closes XAGENT1g4d: drawn under the work it reads, whose row above says whose it is. */
+    it('draws the reviewer under the work it reads', async () => {
       OPINIONS = [opinion];
       show(<SessionRail notify={() => {}} />);
 
+      const under = await screen.findByRole('list', { name: 'Working for Expose a streaming budget on the chunk API' });
+      expect(within(under).getByText('Second opinion')).toBeInTheDocument();
+      expect(within(under).getByText(/^second opinion · moved/)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 3, name: 'Working (2)' })).toBeInTheDocument();
+    });
+
+    it('names the working session by its title where its row is not drawn', async () => {
+      OPINIONS = [opinion];
+      // Archived and hidden: the list holds it, and draws no row of it.
+      GROUPS = [
+        ...LIVE_GROUPS.filter((row) => row.session !== 's1a2b3c4'),
+        { session: 's1a2b3c4', group: 'archived', shown: 'completed', archived: true, teammate: false },
+        { session: 'e5f6a7b8', group: 'working', shown: 'working', archived: false, teammate: false },
+      ];
+      show(<SessionRail notify={() => {}} />);
+
       expect(await screen.findByText(/ · second opinion · reads Expose a streaming budget on the chunk API · moved/)).toBeInTheDocument();
+      expect(screen.queryByRole('list', { name: /^Working for/ })).toBeNull();
     });
 
     it('makes no claim where the service answers 404, or the working session is not listed', async () => {
@@ -978,12 +996,19 @@ describe('a group a door brings into view', () => {
       GROUPS = [...LIVE_GROUPS, working('f6a7b8c9'), working('a7b8c9d0')];
     });
 
-    it('names the session each one continues or helps by its title', async () => {
+    /**
+     * A helper is drawn under the session it serves (MIXAGENT3a-ii), never beside it as a second row of that work: its line
+     * leaves the title to the row above. A session that continues another is no helper, and keeps its own row.
+     */
+    it('names the session one continues by its title, and draws a helper under the session it helps', async () => {
       show(<SessionRail notify={() => {}} />);
 
       expect(await screen.findByText(/ · chat · continues Expose a streaming budget on the chunk API · moved/)).toBeInTheDocument();
-      expect(screen.getByText(/ · chat · helps Expose a streaming budget on the chunk API · moved/)).toBeInTheDocument();
-      expect(screen.getByText('Helper')).toBeInTheDocument();
+      const under = screen.getByRole('list', { name: 'Working for Expose a streaming budget on the chunk API' });
+      expect(within(under).getByText('Helper')).toBeInTheDocument();
+      expect(within(under).getByText(/^chat · moved/)).toBeInTheDocument();
+      expect(screen.queryByText(/helps/)).toBeNull();
+      expect(screen.getByRole('heading', { level: 3, name: 'Working (3)' })).toBeInTheDocument();
     });
 
     it('makes no claim where the session it names is not listed', async () => {
