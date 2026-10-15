@@ -7,10 +7,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// AUTOTIDY2a and AUTOTIDY2b over real git: the look waits for the line to hold what Accept landed on a branch of the person's,
 /// and takes the branches landings made once it does, after their sessions' branches. Split from
-/// <see cref="BranchTidyingProcessTests"/> (PROC1g).
+/// <see cref="BranchTidyingProcessTests"/> (PROC1g), and run one at a time: its looks judge the most branches of the tidy's
+/// classes, and with a gate set beside it one ran past the fixture's four-minute <c>Bound</c> alone, so four at once would
+/// break it.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
-[Trait(Category.Parallel, Category.Git)]
 public sealed class BranchTidyingLandingTests : BranchTidyingFixture
 {
     /// <summary>

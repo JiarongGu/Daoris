@@ -7,9 +7,10 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// What the look's tidy classes over real git share (AUTOTIDY1, D88's note): a home under the scratch folder, the stand-in
 /// ledger read through the real client, repositories on <c>main</c>, session trees with work, landed or landed by Accept's
-/// branch form, and the machine log's events. One class until PROC1g split it four ways by the time each takes: three run four
-/// at once with the git-only classes (<see cref="BranchTidyingProcessTests"/>, <see cref="BranchTidyingFolderTests"/> and
-/// <see cref="BranchTidyingLandingTests"/>), and <see cref="BranchTidyingWatchTests"/>, whose watch ticks, one at a time.
+/// branch form, and the machine log's events. One class until PROC1g split it four ways: two run four at once with the git-only
+/// classes (<see cref="BranchTidyingProcessTests"/> and <see cref="BranchTidyingFolderTests"/>), and two one at a time,
+/// <see cref="BranchTidyingLandingTests"/>, whose looks come nearest <see cref="Bound"/>, and <see cref="BranchTidyingWatchTests"/>,
+/// whose watch ticks.
 /// </summary>
 public abstract class BranchTidyingFixture : IDisposable
 {
