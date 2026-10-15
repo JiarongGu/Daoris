@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, render, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { type QueryKey, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // What a press changed reaches every window as `STATE_CHANGED` (STATEHUB1b, D169): the hub is the one place a scope becomes
@@ -28,7 +28,8 @@ import { treesSyncScopeKey } from './lines';
 import { usePlugins } from './plugins';
 import { useRules } from './rules';
 import { useSessionGroups } from './sessions';
-import { useStateHub } from './stateHub';
+import { useStateHub, useUnderWay } from './stateHub';
+import { useLandSessionTree } from './trees';
 import { useWorkPlan, workKey } from './work';
 
 function Hub() {
@@ -164,5 +165,125 @@ describe('the state hub (STATE_CHANGED)', () => {
     act(() => changed({ scopes: [scope] }));
 
     await waitFor(() => expect(asked()).toBe(2));
+  });
+});
+
+/**
+ * What is under way (STATEHUB1c, D169 point 7): the driver tells every window, whole at each change, which presses it has not
+ * answered yet, and the hub keeps it at the window's root; so *落地中…* is read by every view of that session, a view mounted
+ * mid-press among them, rather than held by the one component that pressed.
+ */
+describe('the state hub (UNDER_WAY)', () => {
+  afterEach(() => {
+    eventHandlers.clear();
+    invoke.mockReset();
+  });
+
+  const told = (underWay: unknown) => act(() => eventHandlers.get('DAORIS.UNDER_WAY')!(underWay));
+  const LANDING_S1 = { route: 'LAND_SESSION_TREE', session: 's1' };
+
+  /** Two views of a press, each reading whether it is under way; `shown` toggles the second, as a tab switch does. */
+  function views(client = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
+    function Under({ route, session }: { route: string; session: string | null }) {
+      return <span data-testid={`${route} ${session}`}>{useUnderWay(route, session) ? 'under way' : 'still'}</span>;
+    }
+    function Window({ shown }: { shown: boolean }) {
+      return (
+        <QueryClientProvider client={client}>
+          <Hub />
+          <Under route="LAND_SESSION_TREE" session="s1" />
+          {shown && <Under route="LAND_SESSION_TREE" session="s1" />}
+          <Under route="LAND_SESSION_TREE" session="s2" />
+          <Under route="DISCARD_SESSION_TREE" session="s1" />
+          <Under route="LAND_SESSION_TREE" session={null} />
+        </QueryClientProvider>
+      );
+    }
+    const view = render(<Window shown />);
+    const read = (route: string, session: string | null) => screen.getAllByTestId(`${route} ${session}`).map((each) => each.textContent);
+    return { ...view, client, read, show: (shown: boolean) => view.rerender(<Window shown={shown} />) };
+  }
+
+  /** What the views read once the query's notifications, which it batches to the next turn, have reached them. */
+  const settled = () => act(() => new Promise((resolve) => { setTimeout(resolve, 0); }));
+
+  it('says a press another window made is under way, that session’s and that route’s alone, until it is told otherwise', async () => {
+    const { read } = views();
+    expect(read('LAND_SESSION_TREE', 's1')).toEqual(['still', 'still']);
+
+    told({ seq: 1, presses: [LANDING_S1] });
+    await settled();
+
+    expect(read('LAND_SESSION_TREE', 's1')).toEqual(['under way', 'under way']);
+    expect(read('LAND_SESSION_TREE', 's2')).toEqual(['still']);
+    expect(read('DISCARD_SESSION_TREE', 's1')).toEqual(['still']);
+    // A view attending no session reads nothing under way.
+    expect(read('LAND_SESSION_TREE', null)).toEqual(['still']);
+
+    told({ seq: 2, presses: [] });
+    await settled();
+
+    expect(read('LAND_SESSION_TREE', 's1')).toEqual(['still', 'still']);
+  });
+
+  it('keeps the newest telling whatever order the bus delivered them in', async () => {
+    const { read } = views();
+
+    told({ seq: 4, presses: [LANDING_S1] });
+    told({ seq: 3, presses: [] });
+    await settled();
+
+    expect(read('LAND_SESSION_TREE', 's1')).toEqual(['under way', 'under way']);
+  });
+
+  it('a view mounted mid-press reads it, as one remounted by a tab switch does', async () => {
+    const { read, show } = views();
+    show(false);
+
+    told({ seq: 1, presses: [LANDING_S1] });
+    await settled();
+    show(true);
+
+    expect(read('LAND_SESSION_TREE', 's1')).toEqual(['under way', 'under way']);
+  });
+
+  it('a telling of any other shape changes nothing, and a press of any other shape is none', async () => {
+    const { read } = views();
+    told({ seq: 1, presses: [LANDING_S1] });
+
+    told({ seq: 2, presses: 'LAND_SESSION_TREE' });
+    told(undefined);
+    await settled();
+    expect(read('LAND_SESSION_TREE', 's1')).toEqual(['under way', 'under way']);
+
+    told({ seq: 3, presses: [{ route: 7, session: 's1' }, null, { session: 's1' }] });
+    await settled();
+    expect(read('LAND_SESSION_TREE', 's1')).toEqual(['still', 'still']);
+  });
+
+  /**
+   * This window's own press is under way from its send, before the driver's word arrives, and in a plain browser where none
+   * does: the window's client holds it, never the component that pressed, so another view of that session reads it too.
+   */
+  it('this window’s own press is under way in every view of that session from its send to its answer', async () => {
+    let answer: (value: unknown) => void = () => {};
+    invoke.mockImplementation((_module: string, type: string) =>
+      (type === 'LAND_SESSION_TREE' ? new Promise((resolve) => { answer = resolve; }) : Promise.resolve({})));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    function Press() {
+      const land = useLandSessionTree();
+      return <button type="button" onClick={() => land.mutate({ id: 's1', answers: null })}>Accept</button>;
+    }
+    render(<QueryClientProvider client={client}><Press /></QueryClientProvider>);
+    const { read } = views(client);
+
+    act(() => screen.getByRole('button', { name: 'Accept' }).click());
+
+    await waitFor(() => expect(read('LAND_SESSION_TREE', 's1')).toEqual(['under way', 'under way']));
+    expect(read('LAND_SESSION_TREE', 's2')).toEqual(['still']);
+
+    await act(async () => answer({ session: 's1', done: true, message: 'Landed.' }));
+
+    await waitFor(() => expect(read('LAND_SESSION_TREE', 's1')).toEqual(['still', 'still']));
   });
 });

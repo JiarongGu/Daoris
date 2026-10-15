@@ -404,6 +404,8 @@ export type PluginLanding = { id: string; pushed: boolean; pullRequest?: string;
 export const useLandSessionTree = () => {
   const client = useQueryClient();
   return useMutation({
+    // Keyed by its route, so every view of the session reads it under way, not only the one that pressed (STATEHUB1c).
+    mutationKey: ['LAND_SESSION_TREE'],
     mutationFn: (land: string | { id: string; answers?: string | null; branch?: string | null }) => {
       const { id, answers, branch } = typeof land === 'string' ? { id: land, answers: null, branch: null } : land;
       // LANDNAME1b: a name the person entered replaces the rule's whole name; blank sends none, so the payload is today's.
@@ -450,6 +452,7 @@ export const useHandOff = (id: string | null) => {
  */
 export const useHandOffPress = () =>
   useMutation({
+    mutationKey: ['HANDOFF'],
     mutationFn: (id: string) =>
       call<TreeAct & { branch?: string | null; plugin?: PluginLanding | null }>('HANDOFF', { id }, { timeoutMs: pluginBound }),
   });
@@ -461,6 +464,7 @@ export const useHandOffPress = () =>
  */
 export const useDiscardSessionTree = () =>
   useMutation({
+    mutationKey: ['DISCARD_SESSION_TREE'],
     mutationFn: (act: { id: string; force?: boolean }) =>
       call<TreeAct>('DISCARD_SESSION_TREE', { id: act.id, ...(act.force ? { force: true } : {}) }),
   });

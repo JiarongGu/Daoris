@@ -3947,6 +3947,41 @@ describe('acting on what a session landed', () => {
   });
 
   /**
+   * STATEHUB1c (D169 point 7, the owner's 2026-10-15 采纳): a landing pressed in the head was the head's alone, so the review
+   * offered *Accept* while it ran. Under way, every view of the session says so: the review's *Accept* reads *Landing…* and
+   * waits, as it would for its own press, until the landing answers.
+   */
+  it('holds the review’s Accept as Landing… while the head’s landing is under way', async () => {
+    SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
+    let landed: (answer: unknown) => void = () => {};
+    invoke.mockImplementation((_module: string, type: string) => {
+      if (type === 'SESSION_GROUPS') {
+        return Promise.resolve({ sessions: [{ session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false,
+          lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] });
+      }
+      if (type === 'LANDING') return Promise.resolve({ session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace' });
+      if (type === 'LAND_SESSION_TREE') return new Promise((resolve) => { landed = resolve; });
+      if (type === 'SESSION_DIFF') return Promise.resolve(DIFF);
+      return Promise.resolve(DRIVER_STATE);
+    });
+
+    show('s1a2b3c4', vi.fn());
+    await userEvent.click(await within(screen.getByRole('main')).findByRole('button', { name: 'Accept…' }));
+    const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
+    await vi.waitFor(() => expect(within(ask).getByRole('button', { name: 'Accept' })).toBeEnabled());
+    await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
+
+    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    const review = within(await screen.findByRole('tabpanel'));
+    await review.findByText('src/chunk.ts');
+    expect(await review.findByRole('button', { name: 'Landing…' })).toBeDisabled();
+    expect(review.queryByRole('button', { name: 'Accept' })).toBeNull();
+
+    await act(async () => landed({ session: 's1a2b3c4', done: true, message: 'put its work on `feature/delta` — 1 commit(s).' }));
+    await vi.waitFor(() => expect(review.queryByRole('button', { name: 'Landing…' })).toBeNull());
+  });
+
+  /**
    * LANDNAME1b (D145's LANDNAME1a note): a branch name entered in the head's ask asks the plan again with it, so the driver's
    * refusal shows before the press, and the press sends it; a press with no name stays `{ id }` (the test above).
    */
