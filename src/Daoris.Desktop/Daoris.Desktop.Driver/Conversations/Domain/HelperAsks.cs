@@ -48,9 +48,16 @@ public static class HelperWhy
     /// <summary>The asking session cannot take the answer: a teammate's, stood down, or gone.</summary>
     public const string CannotTake = "cannot-take";
 
+    /// <summary>
+    /// The person said no to an agent's ask that waited on their word under the rule's <c>ask</c> (HELPERNO1, D163 point 3): written
+    /// by the bridge's <c>SESSION_HELPER_DECLINE</c> with this code's note, and read by the look as past judging.
+    /// </summary>
+    public const string Declined = "declined";
+
     /// <summary>The reason in one English sentence's clause, for the terminal and the transcript.</summary>
     public static string Said(string why) => why switch
     {
+        Declined => "the person said no to it",
         Off => "the rule for helpers is off for this repository",
         AskerGone => "the session that asked is not on this machine",
         AskerUnfit => "the session that asked is itself a helper, a reviewer or an intake",

@@ -227,7 +227,49 @@ public sealed class SessionsRoutes(DriverContext context)
         }
     }
 
-    /// <summary>Why a person's ask of a helper, or their yes to an agent's, did nothing: the codes the page words (MIXAGENT2b).</summary>
+    // The person's no to an agent's ask under the `helpers` rule's `ask` (HELPERNO1, D163 point 3; design §5), beside the yes: the ask
+    // refused `declined` at once, with the coded note the look writes on the asker's record for every refusal (`helper.refused`), so
+    // the look reads it as past judging and its timeline says it as it says the rule's `off`. Written only where the look holds the
+    // ask waiting on the person's word, `waiting` with no code: one it has not read yet may be starting under `on`, so it waits on no
+    // word yet. A no again is the same no, with no second note. A person's own ask needs none, one with the person's yes waits on the
+    // look, one past its start is past it, one waiting on a slot or an agent waits on none, and one this session does not hold is
+    // gone: each `declined: false` with its code, its state untouched.
+    [DriverRoute("SESSION_HELPER_DECLINE")]
+    [Publishes("SESSION_HELPER_DECLINE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
+    private Task<object?> SessionHelperDeclineAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var askId = PayloadHelper.GetRequiredValue<string>(request.Payload, "ask");
+        var files = new HelperFiles(_loop.Home);
+        var ask = files.Asks().FirstOrDefault(each => each.Id == askId && string.Equals(each.Asker, session, StringComparison.Ordinal));
+        var state = ask is null ? null : files.ReadState(ask.Id);
+
+        static object Answer(bool declined, string? why, string message) => new { Declined = declined, Why = why, Message = message };
+        object answer = (ask, state) switch
+        {
+            (null, _) => Answer(false, HelperAskWhy.Gone, $"Session {session} holds no ask #{askId} for a helper."),
+            ({ AskedBy: HelperAsk.ByPerson }, _) => Answer(false, HelperAskWhy.Person, $"#{askId} is your own ask, which needs no word of yours."),
+            (_, { State: HelperStates.Refused, Code: HelperWhy.Declined }) => Answer(true, null, $"#{askId} has your no."),
+            (_, null) => Answer(false, HelperAskWhy.Unread, $"#{askId} is not read by the driver yet: say no once it waits on your word."),
+            (_, { State: HelperStates.Approved }) => Answer(false, HelperAskWhy.Approved, $"#{askId} has your yes, and starts at the driver's next look."),
+            ({ } waits, { State: HelperStates.Waiting, Code: null }) => Decline(files, waits),
+            (_, { State: HelperStates.Waiting }) => Answer(false, HelperAskWhy.Waits, $"#{askId} waits on {state!.Code}, not on your word."),
+            _ => Answer(false, HelperAskWhy.Past, $"#{askId} is past its start: {state!.State}."),
+        };
+        return Task.FromResult<object?>(answer);
+
+        // The look's own refusal, as `DriverHelpers.RefuseAsync` writes it: the state, then the note on the asker's record.
+        object Decline(HelperFiles helpers, HelperAsk declined)
+        {
+            helpers.WriteState(new HelperState(declined.Id, HelperStates.Refused, HelperWhy.Declined, null, DateTimeOffset.UtcNow));
+            var note = HelperNotes.Refused(HelperWhy.Declined);
+            _loop.Output.Append(declined.Asker, $"— {note.Note}");
+            _loop.Events.Keep(declined.Asker, new SessionEvent { Kind = SessionEventKind.Note, Text = note.Note, Parts = note.Parts }, say: null);
+            return Answer(true, null, $"#{declined.Id} has your no: no helper is started for it, and its session's timeline says so.");
+        }
+    }
+
+    /// <summary>Why a person's ask of a helper, or their yes or no to an agent's, did nothing: the codes the page words (MIXAGENT2b, HELPERNO1).</summary>
     internal static class HelperAskWhy
     {
         public const string Blank = "blank";
@@ -241,6 +283,12 @@ public sealed class SessionsRoutes(DriverContext context)
         public const string Person = "person";
         public const string Waits = "waits";
         public const string Past = "past";
+
+        /// <summary>A no to an ask that has the person's yes already (HELPERNO1).</summary>
+        public const string Approved = "approved";
+
+        /// <summary>A no to an ask the driver's look has not read yet (HELPERNO1).</summary>
+        public const string Unread = "unread";
     }
 
     private const string PersonMoves =

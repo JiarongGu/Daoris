@@ -155,6 +155,7 @@
   "note.helper.why.no-answer": "the helper ended without an answer",
   "note.helper.why.conversation": "that session is a conversation, which takes words only from you",
   "note.helper.why.cannot-take": "that session cannot take the answer",
+  "note.helper.why.declined": "you said no to it",
   "note.handed.why.press": "you asked for it",
   "note.handed.why.near": "its account was near its limit",
   "note.handed.why.limit": "its account reached its limit",

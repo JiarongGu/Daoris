@@ -152,6 +152,61 @@ public sealed class DriverModuleSessionHelpersTests : DriverModuleBridge
         Assert.Equal((HelperStates.Waiting, HelperVerdict.Cap), (files.ReadState(capped)!.State, files.ReadState(capped)!.Code));
     }
 
+    /// <summary>
+    /// HELPERNO1 (D163 point 3): the person's no. An agent's ask the look holds waiting on their word is refused `declined` at once,
+    /// with the coded note the look writes on the asking session's record for every refusal, so the look starts nothing for it; a no
+    /// again is the same no and notes nothing more. A person's own ask needs none, one with their yes waits on the look, one the look
+    /// has not read yet waits on no word of theirs yet, one past its start is past it, one waiting on a slot or an agent waits on
+    /// none, and one gone is gone: each answered by its code, its state left as it was.
+    /// </summary>
+    [Fact]
+    public async Task The_persons_no_refuses_an_agents_ask_with_its_note_and_refuses_by_code_what_waits_on_none()
+    {
+        var files = new HelperFiles(Home);
+        Directory.CreateDirectory(Path.Combine(Home, HelperFiles.Folder));
+        var waiting = AgentAsk(files, "a1", "c1", "Is the cap right?", "2026-10-16T09:00:00Z");
+        files.WriteState(new HelperState(waiting, HelperStates.Waiting, null, null, DateTimeOffset.UtcNow));
+        var unread = AgentAsk(files, "a2", "c1", "Not looked at yet.", "2026-10-16T09:01:00Z");
+        var own = files.WriteAsk("c1", "My own.", null, DateTimeOffset.UtcNow);
+        var approved = AgentAsk(files, "a3", "c1", "Has a yes.", "2026-10-16T09:02:00Z");
+        files.WriteState(new HelperState(approved, HelperStates.Approved, null, null, DateTimeOffset.UtcNow));
+        var started = AgentAsk(files, "a4", "c1", "Started.", "2026-10-16T09:03:00Z");
+        files.WriteState(new HelperState(started, HelperStates.Started, null, "h9", DateTimeOffset.UtcNow));
+        var capped = AgentAsk(files, "a5", "c1", "Waits on a slot.", "2026-10-16T09:04:00Z");
+        files.WriteState(new HelperState(capped, HelperStates.Waiting, HelperVerdict.Cap, null, DateTimeOffset.UtcNow));
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+
+        var no = await AnswerAsync(module, "SESSION_HELPER_DECLINE", new { session = "c1", ask = waiting });
+        Assert.True(no.GetProperty("declined").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, no.GetProperty("why").ValueKind);
+        Assert.Equal((HelperStates.Refused, HelperWhy.Declined), (files.ReadState(waiting)!.State, files.ReadState(waiting)!.Code));
+        var note = Assert.Single(loop.Events.Page("c1").Events, e => e.Kind == SessionEventKind.Note);
+        var part = Assert.Single(note.Parts!);
+        Assert.Equal(("helper.refused", (object?)HelperWhy.Declined), (part.Code, part.Value("why")));
+
+        Assert.True((await AnswerAsync(module, "SESSION_HELPER_DECLINE", new { session = "c1", ask = waiting })).GetProperty("declined").GetBoolean());
+        Assert.Single(loop.Events.Page("c1").Events, e => e.Kind == SessionEventKind.Note);
+
+        foreach (var (ask, session, why) in new[]
+                 {
+                     (unread, "c1", "unread"), (own, "c1", "person"), (approved, "c1", "approved"), (started, "c1", "past"),
+                     (capped, "c1", "waits"), ("zz", "c1", "gone"), (waiting, "c2", "gone"),
+                 })
+        {
+            var refused = await AnswerAsync(module, "SESSION_HELPER_DECLINE", new { session, ask });
+            Assert.False(refused.GetProperty("declined").GetBoolean());
+            Assert.Equal(why, refused.GetProperty("why").GetString());
+        }
+
+        Assert.Null(files.ReadState(unread));
+        Assert.Null(files.ReadState(own));
+        Assert.Equal(HelperStates.Approved, files.ReadState(approved)!.State);
+        Assert.Equal(HelperStates.Started, files.ReadState(started)!.State);
+        Assert.Equal((HelperStates.Waiting, HelperVerdict.Cap), (files.ReadState(capped)!.State, files.ReadState(capped)!.Code));
+        Assert.Single(loop.Events.Page("c1").Events, e => e.Kind == SessionEventKind.Note);
+    }
+
     /// <summary>An agent's ask, as a connector's <c>helper_ask</c> writes it: the shape the driver's reader reads.</summary>
     private string AgentAsk(HelperFiles files, string id, string asker, string question, string at)
     {

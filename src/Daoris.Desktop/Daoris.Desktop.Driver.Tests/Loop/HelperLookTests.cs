@@ -142,6 +142,27 @@ public sealed class HelperLookTests : IDisposable
         Assert.Single(pass.Asked);
     }
 
+    /// <summary>
+    /// The person's no (HELPERNO1, the bridge's `SESSION_HELPER_DECLINE`): the ask is refused `declined` with its note already on
+    /// the asker's record, so a look starts nothing, under any rule, and writes no second note and no line.
+    /// </summary>
+    [Theory]
+    [InlineData(HelperRules.Ask)]
+    [InlineData(HelperRules.On)]
+    public async Task A_declined_ask_starts_nothing_and_is_not_said_again(string mode)
+    {
+        Ask("a1");
+        var declined = new HelperState("a1", HelperStates.Refused, HelperWhy.Declined, null, At);
+        Files.WriteState(declined);
+        var driver = Driver(Host(), pass: null, rule: new HelperRule(mode, []));
+
+        var events = await Look(driver);
+
+        Assert.Empty(events);
+        Assert.Equal(declined, Files.ReadState("a1"));
+        Assert.DoesNotContain(new SessionEvents(Path.Combine(_home, "sessions")).After("s1", 0).Events, e => e.Kind == SessionEventKind.Note);
+    }
+
     [Fact]
     public async Task With_the_rule_off_an_agents_ask_is_refused_and_the_asker_reads_why_by_a_coded_note()
     {

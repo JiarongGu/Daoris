@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- An agent's ask for a helper that waits on your yes now offers *Not now* (暂不) beside *Let it ask*: no helper is started
+  for it, and its session's timeline says you said no.
 - A part's own *Accept* now lands on its line of work's one branch, as the line's *Accept* does; a part you leave out of
   the line's *Accept* says so in its review, with *Discard tree* first; and under a squash rule a line's later parts are
   squashed onto its branch, fetching the line once. While work lands, its *Accept* says *Checking…* (检查中…) at the gate,

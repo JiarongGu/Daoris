@@ -72,6 +72,41 @@ describe('the helpers a session asked for', () => {
     expect(lineOf('Not yet looked at.').getByRole('button', { name: 'Let it ask' })).toBeInTheDocument();
   });
 
+  /**
+   * HELPERNO1 (D163 point 3): the person's no beside the yes, on an agent's ask the driver's look holds waiting on their word. One
+   * the look has not read yet takes the yes only, since a no there could cross a start under the rule's `on`.
+   */
+  it('offers the person’s no beside the yes on an agent’s ask that waits on their word, and tells the press how it ended', async () => {
+    const decline = vi.fn();
+    render(
+      <HelperAsks
+        nameOf={nameOf}
+        onApprove={vi.fn()}
+        onDecline={decline}
+        asks={[row({ id: 'a1', question: 'Is the cap right?', state: 'waiting' }), row({ id: 'a2', question: 'Not yet looked at.' }),
+          row({ id: 'a3', question: 'Mine.', askedBy: 'person' })]}
+      />,
+    );
+
+    expect(lineOf('Not yet looked at.').getByRole('button', { name: 'Let it ask' })).toBeInTheDocument();
+    expect(lineOf('Not yet looked at.').queryByRole('button', { name: 'Not now' })).toBeNull();
+    expect(lineOf('Mine.').queryByRole('button')).toBeNull();
+    await userEvent.click(lineOf('Is the cap right?').getByRole('button', { name: 'Not now' }));
+    expect(decline).toHaveBeenCalledWith('a1', expect.objectContaining({ done: expect.any(Function), refused: expect.any(Function) }));
+    // On its way, both presses wait for it.
+    expect(lineOf('Is the cap right?').getByRole('button', { name: 'Let it ask' })).toBeDisabled();
+
+    const [, answered] = decline.mock.calls[0]!;
+    answered.refused('It has your yes already: the driver starts it at its next look.');
+    expect(await lineOf('Is the cap right?').findByText('It has your yes already: the driver starts it at its next look.')).toBeInTheDocument();
+    expect(lineOf('Is the cap right?').getByRole('button', { name: 'Not now' })).toBeEnabled();
+  });
+
+  it('says a declined ask as the person’s no', () => {
+    render(<HelperAsks nameOf={nameOf} asks={[row({ id: 'a1', question: 'Declined.', state: 'refused', code: 'declined' })]} />);
+    expect(lineOf('Declined.').getByText('The agent asked · no helper answered: you said no to it')).toBeInTheDocument();
+  });
+
   /** A settled ask is said where it settled: the answer in the conversation, a refusal in the timeline. */
   it('keeps on the page only the asks still on their way', () => {
     const asks = ['waiting', 'approved', 'started', 'answered', 'refused', null].map((state, at) => row({ id: `a${at}`, state }));
@@ -89,9 +124,10 @@ describe('the helpers a session asked for', () => {
   it('says it in 中文', async () => {
     await i18n.changeLanguage('zh');
     try {
-      render(<HelperAsks nameOf={nameOf} onApprove={vi.fn()} asks={[row({ id: 'a1', question: '缓存上限对吗？', state: 'waiting' })]} />);
+      render(<HelperAsks nameOf={nameOf} onApprove={vi.fn()} onDecline={vi.fn()} asks={[row({ id: 'a1', question: '缓存上限对吗？', state: 'waiting' })]} />);
       expect(lineOf('缓存上限对吗？').getByText('智能体问的 · 等你同意')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '让它问' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '暂不' })).toBeInTheDocument();
     } finally {
       await i18n.changeLanguage('en');
     }

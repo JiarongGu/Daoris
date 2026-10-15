@@ -78,6 +78,22 @@ public sealed class NoteCodesTests
         }
     }
 
+    /// <summary>
+    /// Every reason no helper answered (<see cref="HelperWhy"/>, the person's no among them since HELPERNO1) is one the helper's
+    /// <c>why</c> declares, once, so the page words each one.
+    /// </summary>
+    [Fact]
+    public void Every_helper_reason_is_declared_once()
+    {
+        var reasons = typeof(HelperWhy).GetFields()
+            .Where(field => field.IsLiteral && field.FieldType == typeof(string))
+            .Select(field => (string)field.GetRawConstantValue()!)
+            .Order(StringComparer.Ordinal);
+
+        Assert.Contains(HelperWhy.Declined, reasons);
+        Assert.Equal(reasons, NoteCodes.Helper.All.Select(reason => reason.Code).Order(StringComparer.Ordinal));
+    }
+
     /// <summary>Every reason the driver can give (MSG1f's <see cref="ContinueWhy"/>) is one a <c>why</c> declares, and only those.</summary>
     [Fact]
     public void Every_continue_reason_is_declared_once()

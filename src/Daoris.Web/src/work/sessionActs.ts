@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { Session } from '../data/api';
 import {
-  retryNotice, stopNotice, useApproveHelper, useArchiveSessions, useAskHelper, useCancelTurn, useDeleteSession, useHandOver,
+  retryNotice, stopNotice, useApproveHelper, useArchiveSessions, useAskHelper, useCancelTurn, useDeclineHelper, useDeleteSession, useHandOver,
   useOpenSessionFolder, useOpenWindow, useResolveSession, useRetryQuest, useStopSession,
 } from '../bridge/shell';
 import { list, sentence } from '../locales/format';
@@ -49,11 +49,11 @@ const FRAME_ACTS = new Set<SessionActId>([
 ]);
 
 /**
- * The codes a helper's ask and the person's yes to one answer by (MIXAGENT2b; the bridge's `HelperAskWhy`), each said in the
- * catalogue's words. A code a later driver adds is said in the driver's own sentence.
+ * The codes a helper's ask and the person's yes or no to one answer by (MIXAGENT2b, HELPERNO1; the bridge's `HelperAskWhy`), each
+ * said in the catalogue's words. A code a later driver adds is said in the driver's own sentence.
  */
 const HELPER_REFUSALS = new Set([
-  'blank', 'too-long', 'agent', 'not-held', 'helper', 'reviewer', 'intake', 'gone', 'person', 'waits', 'past',
+  'blank', 'too-long', 'agent', 'not-held', 'helper', 'reviewer', 'intake', 'gone', 'person', 'waits', 'past', 'approved', 'unread',
 ]);
 
 const helperSaid = (t: Translate, why: string | null, message: string) =>
@@ -96,7 +96,8 @@ const keptSaid = (t: Translate, name: string) =>
  * - **The delete's second press** (SESSUX1f, §5.4) through `SESSION_DELETE`; *Delete…* itself is the frame's, which asks
  *   once under the header.
  * - **A helper's ask's second press** (MIXAGENT2b, D163) through `SESSION_HELPER_ASK`, and the person's yes to an agent's ask
- *   through `SESSION_HELPER_APPROVE`; *Ask another agent…* itself is the frame's, which asks once under the header.
+ *   through `SESSION_HELPER_APPROVE` and their no through `SESSION_HELPER_DECLINE` (HELPERNO1); *Ask another agent…* itself is
+ *   the frame's, which asks once under the header.
  * - **Pause quest…** and **Pause ask…** are the frame's (PAUSE1e, D132 §2.6), which asks once under the header where the
  *   pause ends work in flight; **Resume** goes to the work's one owner (`workActs.ts`), the press the pages make too, and
  *   never asks, since it starts nothing itself.
@@ -118,6 +119,7 @@ export function useSessionActs({ notify, doors = {}, entries }: {
   const handOver = useHandOver();
   const askHelper = useAskHelper();
   const approveHelper = useApproveHelper();
+  const declineHelper = useDeclineHelper();
   const cancelTurn = useCancelTurn();
   const work = useWorkActs({ notify });
 
@@ -292,6 +294,22 @@ export function useSessionActs({ notify, doors = {}, entries }: {
   });
 
   /**
+   * The person's no to an agent's ask that waits on their word (HELPERNO1, D163 point 3), told back to its press: `done` once the
+   * driver refused it and noted so on the session's record; a refusal by its code, said beside the press.
+   */
+  const declineHelperNow = (session: string, ask: string, answered: Answered) => declineHelper.mutate({ session, ask }, {
+    onSuccess: (answer) => {
+      if (!answer.declined) {
+        answered.refused(helperSaid(t, answer.why, answer.message));
+        return;
+      }
+      notify(t('work.helper.declined'));
+      answered.done();
+    },
+    onError: refusedIn(answered),
+  });
+
+  /**
    * *Delete…*'s second press (SESSUX1f, D126 §5.4), told back to its ask: `done` once the host deleted it, when the record
    * and what this machine kept of it go, and so does the draft this viewer kept for it (§5.1). A refusal is said in the
    * catalogue's words inside the ask (UXFIX2), and the ask stays, since nothing went.
@@ -334,12 +352,13 @@ export function useSessionActs({ notify, doors = {}, entries }: {
     handOverNow,
     askHelperNow,
     approveHelperNow,
+    declineHelperNow,
     deleteNow,
     archiveListed,
     /** A helper's ask on its way: its ask's presses wait for it (MIXAGENT2b). */
     askingHelper: askHelper.isPending,
-    /** A yes to an agent's ask on its way: the rows' presses wait for it. */
-    approvingHelper: approveHelper.isPending,
+    /** A yes or a no to an agent's ask on its way: the rows' presses wait for it. */
+    approvingHelper: approveHelper.isPending || declineHelper.isPending,
     /** A stop on its way. */
     stopping: stop.isPending || resolve.isPending,
     /** A hand-over on its way (with the turn's stop it asks after): its ask's presses wait for it. */

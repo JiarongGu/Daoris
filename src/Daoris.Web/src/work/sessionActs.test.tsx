@@ -308,6 +308,34 @@ describe('the acts on a session', () => {
     await waitFor(() => expect(told.refused).toHaveBeenCalledWith('It has started already, or ended: nothing waits on your yes.'));
   });
 
+  /**
+   * HELPERNO1 (D163 point 3): the person's no to an agent's ask, by the session and the ask, said where it went; a refusal by its
+   * code, `approved` and `unread` among the no's own, or the driver's sentence for one the page does not know.
+   */
+  it('says no to an agent’s ask by its session and its id, and a refusal by its code', async () => {
+    invoke.mockImplementationOnce(async () => ({ declined: true, why: null, message: 'no' }));
+    const { result, notify } = acts();
+    const told = { done: vi.fn(), refused: vi.fn() };
+
+    act(() => result.current.declineHelperNow('s1a2b3c4', 'a1', told));
+
+    await waitFor(() => expect(told.done).toHaveBeenCalled());
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HELPER_DECLINE', { payload: { session: 's1a2b3c4', ask: 'a1' } });
+    expect(notify).toHaveBeenCalledWith('Not asked: no helper is started for it, and its session’s timeline says you said no.');
+
+    invoke.mockImplementationOnce(async () => ({ declined: false, why: 'approved', message: 'x' }));
+    act(() => result.current.declineHelperNow('s1a2b3c4', 'a1', told));
+    await waitFor(() => expect(told.refused).toHaveBeenCalledWith('It has your yes already: the driver starts it at its next look.'));
+
+    invoke.mockImplementationOnce(async () => ({ declined: false, why: 'unread', message: 'x' }));
+    act(() => result.current.declineHelperNow('s1a2b3c4', 'a1', told));
+    await waitFor(() => expect(told.refused).toHaveBeenLastCalledWith('The driver has not read it yet: say no once it waits on your word.'));
+
+    invoke.mockImplementationOnce(async () => ({ declined: false, why: 'tomorrow', message: 'The driver’s own sentence.' }));
+    act(() => result.current.declineHelperNow('s1a2b3c4', 'a1', told));
+    await waitFor(() => expect(told.refused).toHaveBeenLastCalledWith('The driver’s own sentence.'));
+  });
+
   /** MIXAGENT1b-ii (D163): Daoris's own offer is asked with its reason and as Daoris's own; a press names neither. */
   it('asks Daoris’s offer with its reason and asked-by daoris, which a press never sends', async () => {
     invoke.mockImplementation(async () => ({ sessionId: 'c2', kept: true, message: 'goes on.' }));

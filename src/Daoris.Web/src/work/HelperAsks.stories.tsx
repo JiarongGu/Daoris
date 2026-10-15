@@ -4,8 +4,9 @@ import { chinese } from '../design/storyLanguage';
 import { type HelperAskRow, HelperAsks } from './HelperAsks';
 
 // The helpers a session asked for, under its head (MIXAGENT2b, D163 points 2 and 3): each ask's question as written, who asked and
-// where the driver's look left it; an agent's ask that waits on the person with *Let it ask*, and a started helper's door. The
-// head keeps those still on their way; the list draws whatever it is handed, so every state is here. In English, 中文 and dark.
+// where the driver's look left it; an agent's ask that waits on the person with *Let it ask* and *Not now* (HELPERNO1), and a
+// started helper's door. The head keeps those still on their way; the list draws whatever it is handed, so every state is here.
+// In English, 中文 and dark.
 
 const row = (over: Partial<HelperAskRow> & Pick<HelperAskRow, 'id' | 'question'>): HelperAskRow => ({
   agent: null, askedBy: 'agent', at: '2026-10-16T09:00:00Z', state: null, code: null, helper: null, startedOn: null, ...over,
@@ -23,7 +24,7 @@ const ASKS: HelperAskRow[] = [
 const meta: Meta<typeof HelperAsks> = {
   title: 'Work/HelperAsks',
   component: HelperAsks,
-  args: { asks: ASKS, nameOf: (agent) => NAMES[agent] ?? agent, onApprove: () => {}, onOpen: () => {} },
+  args: { asks: ASKS, nameOf: (agent) => NAMES[agent] ?? agent, onApprove: () => {}, onDecline: () => {}, onOpen: () => {} },
   decorators: [(Story) => <div className="w-[36rem] max-w-full bg-page p-4"><Story /></div>],
 };
 export default meta;
@@ -50,5 +51,5 @@ export const OnTheirWayDark: Story = {
   decorators: [(Story) => <InTheme theme="dark"><Story /></InTheme>],
 };
 
-/** Read only, as a browser shows them: no yes and no door. */
-export const NothingToPress: Story = { args: { onApprove: undefined, onOpen: undefined } };
+/** Read only, as a browser shows them: no yes, no no and no door. */
+export const NothingToPress: Story = { args: { onApprove: undefined, onDecline: undefined, onOpen: undefined } };

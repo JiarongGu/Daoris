@@ -21,6 +21,8 @@
   "work.helper.state.refused": "no helper answered: {{why}}",
   "work.helper.approve": "Let it ask",
   "work.helper.approved": "It has your yes: the driver starts a helper at its next look.",
+  "work.helper.decline": "Not now",
+  "work.helper.declined": "Not asked: no helper is started for it, and its session’s timeline says you said no.",
   "work.helper.open": "Open helper",
   "work.helper.refused.blank": "Write the question the helper is to answer.",
   "work.helper.refused.too-long": "A question is at most 4000 characters: shorten it.",
@@ -32,5 +34,7 @@
   "work.helper.refused.gone": "That ask is no longer this session’s.",
   "work.helper.refused.person": "It is your own ask, which needs no yes.",
   "work.helper.refused.waits": "It waits on a free slot or an agent, not on your yes.",
-  "work.helper.refused.past": "It has started already, or ended: nothing waits on your yes."
+  "work.helper.refused.past": "It has started already, or ended: nothing waits on your yes.",
+  "work.helper.refused.approved": "It has your yes already: the driver starts it at its next look.",
+  "work.helper.refused.unread": "The driver has not read it yet: say no once it waits on your word."
 }

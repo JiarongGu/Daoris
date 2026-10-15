@@ -28,8 +28,9 @@ public sealed record HelperVerdict(string Kind, string? Code = null)
 /// </summary>
 /// <remarks>
 /// <para><b>The person's rule is for an agent's ask.</b> <c>off</c> refuses it, <c>ask</c> holds it <c>waiting</c> until the
-/// person approves (MIXAGENT2b's press), <c>on</c> starts it within the limits. An ask the person wrote themselves (the terminal
-/// verb) is theirs: they said yes by typing it, so it goes whatever the rule says.</para>
+/// person approves (MIXAGENT2b's press) or says no (HELPERNO1's, a refusal <see cref="HelperWhy.Declined"/> the bridge writes with
+/// its note, past judging here like any refusal), <c>on</c> starts it within the limits. An ask the person wrote themselves (the
+/// terminal verb) is theirs: they said yes by typing it, so it goes whatever the rule says.</para>
 ///
 /// <para><b>The limits</b> (design §5): at most two helpers at once per asker, refused in a coded sentence the asker reads past
 /// that; and each a slot under the cap, which only waits, since a slot frees.</para>

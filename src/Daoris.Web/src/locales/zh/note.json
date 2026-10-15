@@ -155,6 +155,7 @@
   "note.helper.why.no-answer": "助手结束时没有给出回答",
   "note.helper.why.conversation": "该会话是一段对话，只接受你的输入",
   "note.helper.why.cannot-take": "该会话无法接收这个回答",
+  "note.helper.why.declined": "你没有同意",
   "note.handed.why.press": "你要求转交",
   "note.handed.why.near": "它的账户接近上限",
   "note.handed.why.limit": "它的账户已达上限",

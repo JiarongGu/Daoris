@@ -258,6 +258,9 @@ export type HelperAsked = { asked: string | null; why: string | null; message: s
 /** What the person's yes to an agent's ask answered (MIXAGENT2b): whether the ask has it, else why not by its code. */
 export type HelperApproved = { approved: boolean; why: string | null; message: string };
 
+/** What the person's no to an agent's ask answered (HELPERNO1): whether the ask has it, else why not by its code. */
+export type HelperDeclined = { declined: boolean; why: string | null; message: string };
+
 const word = (value: unknown): string | null => (typeof value === 'string' && value ? value : null);
 
 /**
@@ -323,6 +326,20 @@ export const useApproveHelper = () => useMutation({
       session: yes.session, ask: yes.ask,
     });
     return { approved: answer?.approved === true, why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '' };
+  },
+});
+
+/**
+ * The person's no to an agent's ask the driver's look holds waiting on their word (HELPERNO1, D163 point 3): the ask refused
+ * `declined` and its note on the asking session's record, at once, by the session and the ask. A refusal is the answer, by its
+ * code. The sessions and the driver are asked again by the state hub (D169).
+ */
+export const useDeclineHelper = () => useMutation({
+  mutationFn: async (no: { session: string; ask: string }): Promise<HelperDeclined> => {
+    const answer = await call<{ declined?: unknown; why?: unknown; message?: unknown } | null>('SESSION_HELPER_DECLINE', {
+      session: no.session, ask: no.ask,
+    });
+    return { declined: answer?.declined === true, why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '' };
   },
 });
 

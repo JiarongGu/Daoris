@@ -1285,11 +1285,13 @@ export function WorkFrame({
     } : {}),
   };
   const actions = useSessionActs({ notify, doors, entries });
-  // The head's helpers (MIXAGENT2b): the asks read above, the yes through the acts' one owner, and a door to each helper.
+  // The head's helpers (MIXAGENT2b): the asks read above, the yes and the no (HELPERNO1) through the acts' one owner, and a door
+  // to each helper.
   const helperWaits = attended && here && helperAsks.data ? {
     asks: helperAsks.data,
     nameOf: (agent: string) => agentRoster.names?.[agent] ?? agent,
     onApprove: (ask: string, answered: Answered) => actions.approveHelperNow(attended.id, ask, answered),
+    onDecline: (ask: string, answered: Answered) => actions.declineHelperNow(attended.id, ask, answered),
     onOpen: (helper: string) => {
       chosen();
       attend(helper);
