@@ -15327,3 +15327,21 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **BRIDGEPRESS1 — the places a new bridge press goes** (found and built in the same round; see the outcome).
 
 **Outcome** 2026-10-16: `.claude/knowledge/bridge-presses.md` names the ten places a new bridge route goes, each with the test that holds it, and a read route's five; its index row is written by `daoris sync`. On Opus, with MIXAGENT2c. Detail: D169's BRIDGEPRESS1 note.
+
+## LAYOUT8 — setup UI/proposals (2026-10-16, D117/D170)
+
+> - [ ] **LAYOUT8 — setup UI/proposals** (driver/service/modules/web; D170 point 1). Repository Setup and setup kind: Ask Daoris's `setup_propose` (the service's box and tool, the driver's judge, the card, Apply running what `daoris-driver setup <repository>` runs) and the Repositories screen's *Set up* press with its plan, the twin of `--plan`. The owner asked Ask Daoris to include a registered, not-adopted repository and it could only name the terminal command. D117 §6.1/§6.5, UX6f; `HelpCoverageTests`' `SetupDoor` becomes a door. Proof: driver judge, service tool, modules route and web card tests, en and zh; installed bilingual proof.
+
+**Outcome** 2026-10-16: Ask Daoris proposes setting a repository up (`setup_propose`), judged by the press's own `--plan` refusals; the card shows the plan, and Apply is the press `daoris-driver setup` runs. The repository page's *Set up for agents* (为智能体配置) shows the plan first, then the press (`SETUP_PLAN`, `SETUP_PRESS`), en and zh. `HelpCoverageTests`' `SetupDoor` is a door. Left as rows: LAYOUT8b (the rest of §6.5), LAYOUT8c (the installed look). On Opus: 385 tool calls. Detail: D117's LAYOUT8 note, D170's note, D169's note; `.claude/knowledge/setting-doors.md` (a new kind's places).
+
+## FINDDAORIS1 — a terminal finds the Daoris that runs (2026-10-16, D171)
+
+> - [ ] **FINDDAORIS1 — a terminal finds the Daoris that runs** (desktop/driver host/CLI; D171 point 1). The owner ran `daoris-driver setup <repository> --plan` in their own PowerShell and met *no DAORIS_SERVICE_URL*: the install's launcher sets neither variable. The home from the install's `data` where a command runs from `app/`; the service from an address file the desktop writes in its home while it holds or adopts the service (removed at a clean exit; kept only where its process lives and the address answers as this home's); the variables still win; the refusal says Daoris is not running and how to start it. Proof: host tests per order step; a test that the desktop writes and removes the file; on the install, the owner's command in a plain PowerShell.
+
+**Outcome** 2026-10-16: the host and the CLI an install carries find the home as `DAORIS_HOME` else the install's `data/`, and the service as `DAORIS_SERVICE_URL` else `<home>/running.json`, which the desktop's loop writes once its service answers and removes at its stop; it is trusted only while its process lives, its address is loopback and its status names a tier, else the refusal says Daoris is not running and names `Daoris.exe`. A workspace build reads no address file (this machine's account names the live install's home). On Opus, with ONEINSTANCE1: 329 tool calls. Detail: D171's FINDDAORIS1 note; `twins.md`.
+
+## ONEINSTANCE1 — a second launch opens a window of the instance that runs (2026-10-16, D171)
+
+> - [ ] **ONEINSTANCE1 — a second launch opens a window of the instance that runs** (desktop; D171 point 2). Find what the UI kit's single-instance guard does with a second launch; hand the launch to the running instance and open a new main window there; where the kit cannot, ask its owner. Proof: a desktop test of the hand-over; on the install, a second click on the executable opening a second window that hears the first's presses.
+
+**Outcome** 2026-10-16: the kit's guard already handed a later launch to the running instance; its `OnActivated` now opens another main window (`main:<n>`, frameless, the whole platform) through `SecondLaunch` once the service answers, its page telling its frame the theme; the taskbar count stays the first window's. Nothing was asked of the kit's owner. On Opus, with FINDDAORIS1. Detail: D171's ONEINSTANCE1 note.
