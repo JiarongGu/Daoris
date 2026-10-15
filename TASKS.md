@@ -10,7 +10,8 @@ Use discovery skills, then read the contract. Integrate through `tools/merge-bra
 serially. Owner-only work, downloads, account spending, installation, publication and decisions retain
 their existing grants and holds. A dependency named below must be complete before its dependent starts.
 
-Development remains at `0.0.x`, unpublished, with no live consumers. Adoption is the owner's call.
+Development remains at `0.0.x`, unpublished. The owner runs an install of it every day on real work, so a change reaches a
+live home through the staged update (D139); adoption by anyone else is the owner's call.
 Current recovery, review coverage and verification: `docs/2026-10-10-integration-review.md`.
 Historical installation receipts and adoption mechanics remain in their evidence records.
 
@@ -22,7 +23,8 @@ Historical installation receipts and adoption mechanics remain in their evidence
 
 ## UI/UX first
 
-Start with NEW1 and HEAD2 (the owner's, 2026-10-12), then the place-name inconsistencies (UX6i2a/b, UX6i3).
+Start with the owner's reports of 2026-10-16 (below), then what the window freezes still owe (SWEEPFLIGHT1, PROCSTART2),
+then the installed proofs, batched against one staged build (INSTALLPROOF1 first).
 Contracts: platform UX §4/§6, `docs/2026-10-05-ux7-design.md` (D152), `docs/2026-10-12-entry-and-heads-design.md` (D162),
 `docs/2026-10-04-ux6-redesign.md` (D150, §12 proofs). UI work needs stories, behavior tests and
 installed-window evidence in both themes/languages; Storybook alone does not close an installed proof.
@@ -42,6 +44,8 @@ it had no shell.
 - [ ] **HELPOWED1 — the room says a missing door is owed, not a limit** (driver). Where Ask Daoris has no door for an act, it names the terminal command and says Daoris still owes that door (D170 point 2), from `HelpCoverageTests`' owed rows rather than a second list. Proof: `HelpRoomTests` and the room's goldens.
 - [ ] **HELPPLUG1a — a plugin's server for Ask Daoris** (driver/modules/web; D170 point 3). The manifest declares a server for sessions (the default, today's), for Ask Daoris, or both; the room's spawn hands the declared ones and allows their tools as the plugin declares them; the plugin's page says what it hands Ask Daoris, en and zh. Both manifest twins. Proof: catalogue and spawn tests, a `HelpRoom` rules test, a plugin page test; a real Ask Daoris turn calling a plugin tool on the install.
 - [ ] **HELPPLUG1b — a plugin's skills for Ask Daoris and sessions** (driver/web; D170 point 4; measure first). Measure which tier the harness reads skills from untrusted (as D107 measured its rules), then hand a plugin's declared skills through it, never into a repository's checkout. Both manifest twins; the plugin page lists them. Proof: the measurement in D170's note; spawn tests; a real turn using a plugin's skill.
+- [ ] **HELPAPPLY1 — Apply lands what the card showed, once** (driver/modules; a design review's finding, 2026-10-16). `HELP_APPLY` reads and plans again before it applies (`HelpRoutes.cs` ~332), so a card can apply something other than what it showed, and two windows can apply one proposal together. Bind Apply to the shown plan's revision (a material change asks again, said on the card) and claim the proposal atomically. D89, D170. Proof: modules tests: a plan changed between card and Apply asks again; two Applies at once, one wins.
+- [ ] **INSTALLPROOF1 — one installed regression pass over this week's changes** (parent; after republish). Against one staged build: an *Accept* across a tab switch and from a second window opened by a second launch; a `daoris-driver` press from the owner's own terminal reaching the open windows; Ask Daoris's setup card and Apply; a park answered in one box (no duplicated options or boxes); the taskbar count with a helper waiting. Dated shots, en and zh, both themes. Proof: the shots and the machine log's lines, in the archive entry.
 - [ ] **UXFIX2bi — installed confirmations look** (parent; after republish). Retire right on 2026-10-11's second look (its own question; focus back to the press with a pointer-like click); the rest need data the machine lacks: tool, plugin, pause, abandon, decline, close, finish, archive, discard, both themes/languages.
 - [ ] **UX7b — installed account UI** (web). Verify recovered account rows and add/name/join flow at 1546/680 px, both themes/languages. D152 §4.
 - [ ] **ACCTEDIT1b — installed refused edits** (parent; after republish). Verify rename, workspace use and add refusals retain drafts, including dark borders. D152 §4; dated shots.
@@ -331,6 +335,7 @@ DEV5 → 6 → 7, then 8/9, then 10/11. Predictions wait for LAYOUT2 measurement
 - [ ] **AGENTS2a — DeepSeek key probe** (driver/CLI). No-key/invalid-key dsh measurement before twin declaration. D57/D67; ACP3 evidence.
 - [ ] **PROC1d-iv — memo `NamesAsync` and ancestry by pair** (driver; only on a measured need). `diff --no-ext-diff` (`LandedProofs.NamesAsync`, twice a form) needs trees, not refs, and `merge-base --is-ancestor` is asked per pair many times in one judgement: memoise both by their oid pair within one judgement. No "one walk" ancestry. Contract: UIFREEZE1. Proof: `TreeSyncStartsTests`' count after PROC1d-ii and -iii still shows them as the larger part.
 - [ ] **PROC1e — ten minutes, or a new bar** (decide; after PROC1b-d). PROC1a projects b and c to about 47 minutes under a full set's usual load and 24 on a quiet machine, the node-hook classes joining to about 20 quiet, and d to about 15; the 66 serial classes (670 s loaded, about 340 quiet) run alone in every plan. Ten minutes needs them shortened (`DrivenSessionInputTests` 109 s, `PluginKitTests` 102 s, `BranchTidyingProcessTests` 94 s) or run beside the pool with the merge tool's alone-rerun taking the load's failures; else the owner sets the bar the measures reach. Contract: FIX-LOG FLAKE1, PROC1a's paragraph; development.md:64-66. Proof: the chosen bar met three times, recorded there.
+- [ ] **PROC1g — the slowest serial Process classes made shorter** (driver/modules tests; the owner, 2026-10-16: *"we kind of need to boost the development speed"*). The serial half is the gate set's long pole (12 min quiet, 35 min under load). Shorten its slowest classes by the trx's sums without losing a case: one fixture repository per class where cases only read it, waits on the condition instead of fixed ones, a git-only class moved to the four-at-once half, a class split where its cases need not share a process. Proof: each class's time before and after, in FLAKE1's PROC1 paragraphs; `CategoryTests` green; three runs of each changed class.
 - [ ] **TESTGIT1b — shared GitFixture** (driver tests). Landing plugin/tidy/fixture/landing/auto classes; eliminate independent git runners. Serial Process proof.
 - [ ] **TRYTOOLS1 — trial tools** (driver). Folder trial uses configured machine tools. D101/D121 §3; named-Node Process case.
 
