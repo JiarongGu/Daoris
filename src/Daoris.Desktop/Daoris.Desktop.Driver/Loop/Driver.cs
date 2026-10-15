@@ -1197,16 +1197,30 @@ public sealed class Driver(
             (var continued, fellBack, answerKept) = await ContinueAsync(
                     start, park, selection, registry, starting, onOpened, ct, agent, account: resume?.Elsewhere)
                 .ConfigureAwait(false);
-            if (continued is not null) return continued;
+            // The fresh tree opened above is used by none of the returns that follow, so each lets it go by the clean path (GOONTREE1,
+            // D51): a tree and branch for a start that is never made would be left at every look.
+            if (continued is not null)
+            {
+                if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                return continued;
+            }
 
             // Nothing carries the words on by itself from a closed quest's session, nor from a never (D137 §2.2): they stay
             // waiting as said, marked so a later look leaves them there, and the person's press is the next move (MSG1f).
-            if (fellBack!.Never || quest.Status is not ("Open" or "Taken")) return GoOns.CannotGoOn(quest, park, fellBack);
+            if (fellBack!.Never || quest.Status is not ("Open" or "Taken"))
+            {
+                if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                return GoOns.CannotGoOn(quest, park, fellBack);
+            }
 
             // Another agent's findings go on only in their own session (XAGENT1e, design §6.7): where they are all that waits,
             // nothing is carried on, and they go to the person. The person's words beside them are carried on as ever.
             // A helper's answer is the same (MIXAGENT2a-ii): another agent's claim, never carried to a new session as the person's.
-            if ((park.Findings.Count > 0 || park.Helpers.Count > 0) && !park.Waiting.Any(word => word.Persons)) return GoOns.CannotGoOn(quest, park, fellBack);
+            if ((park.Findings.Count > 0 || park.Helpers.Count > 0) && !park.Waiting.Any(word => word.Persons))
+            {
+                if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                return GoOns.CannotGoOn(quest, park, fellBack);
+            }
 
             // A taken quest is carried on, an open one started, handed the words, in the tree the session worked in.
             start = start with { Resumes = park.Parked || park.Said is null ? park with { State = "completed" } : park };
