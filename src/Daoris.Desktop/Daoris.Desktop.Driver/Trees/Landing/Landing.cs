@@ -578,6 +578,34 @@ public static class LandingRules
         return new SessionEvent { Kind = SessionEventKind.Note, Text = said.Note, Parts = said.Parts };
     }
 
+    /// <summary>
+    /// What a part's conversation keeps where the person left it out of its entry's Accept (ACCEPTALL1c, D167's 2026-10-15 amendment
+    /// point 3): the branch its line of work landed on, or the line it merged into, so its review says so and leads with Discard.
+    /// Machine-local, as every note there is; landing it later is a press of its own.
+    /// </summary>
+    public static SessionEvent LeftOutNote(string branch)
+    {
+        var said = Noted.Of(NoteCodes.LandingLeftOut,
+            $"the person left this part out when its line of work landed on `{branch}`: its work did not land there.", ("branch", branch));
+        return new SessionEvent { Kind = SessionEventKind.Note, Text = said.Note, Parts = said.Parts };
+    }
+
+    /// <summary>
+    /// Where a part's review reads it left out (ACCEPTALL1c): the branch the newest <see cref="LeftOutNote"/> names, while no acceptance
+    /// (<see cref="IsAcceptance"/>, a press of its own or a landing at done) came after it; null where none says it.
+    /// </summary>
+    public static string? LeftOutOf(IReadOnlyList<SessionEvent> events)
+    {
+        for (var at = events.Count - 1; at >= 0; at--)
+        {
+            if (events[at] is not { Kind: SessionEventKind.Note } note) continue;
+            if (note.Text is { } text && IsAcceptance(text)) return null;
+            if (note.Parts?.FirstOrDefault(part => part.Code == NoteCodes.LandingLeftOut.Code)?.Value("branch") is string branch) return branch;
+        }
+
+        return null;
+    }
+
     /// <summary>How the conversation's note of a press opens: what the trace knows an acceptance by (TRACE1).</summary>
     public const string PersonAccepted = "the person accepted this work:";
 

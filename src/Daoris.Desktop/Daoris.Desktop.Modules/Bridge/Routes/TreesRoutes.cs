@@ -502,6 +502,9 @@ public sealed class TreesRoutes(DriverLoop loop)
                 // would land, and a conflict it would be refused for; each absent where the line holds none of the tree's commits.
                 LeftOut = LeftOut(plan.LeftOut), Lands = plan.Lands?.Select(commit => new { Commit = Short(commit.Sha), commit.Subject }).ToArray(),
                 Conflict = Conflict(plan.Conflict),
+                // ACCEPTALL1c (D167's amendment point 3): the branch its line of work landed on where the person left this part out of
+                // it, so its review says so and leads with Discard; only a part of an entry with others can have been.
+                LeftOutOf = lead is null ? null : LeftOutOfEntry(id),
             };
         }
 
@@ -547,6 +550,23 @@ public sealed class TreesRoutes(DriverLoop loop)
             .OrderBy(record => record.Created).ThenBy(record => record.Id, StringComparer.Ordinal)
             .ToList();
         return parts.Count > 1 ? parts[0] : null;
+    }
+
+    /// <summary>
+    /// Where the person left this part out of its entry's Accept (ACCEPTALL1c): the branch its conversation's newest note names, while
+    /// nothing accepted it since (<see cref="LandingRules.LeftOutOf"/>). A record that does not read says nothing left out, and the
+    /// review offers Accept as before.
+    /// </summary>
+    private string? LeftOutOfEntry(string id)
+    {
+        try
+        {
+            return File.Exists(_loop.Events.PathOf(id)) ? LandingRules.LeftOutOf(_loop.Events.After(id, 0).Events) : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+        {
+            return null;
+        }
     }
 
     /// <summary>A landing's left-out commits on the wire (LANDSYNC1): short id, subject, why, and the line's commit with its patch.</summary>

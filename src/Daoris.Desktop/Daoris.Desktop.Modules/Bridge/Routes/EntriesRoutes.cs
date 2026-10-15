@@ -208,6 +208,14 @@ public sealed class EntriesRoutes(DriverContext context)
 
         var landed = await trees.LandEntryAsync(pressed, subject, leaveOut, cancellationToken, async token => await LinesRoutes.InUseAsync(service, token))
             .ConfigureAwait(false);
+        // ACCEPTALL1c (D167's amendment point 3): a part the person left out is recorded with the landing, on its conversation, so its
+        // review says so and leads with Discard; only where the entry's work landed somewhere.
+        var landedAny = landed.Parts.Any(part => part.Outcome == EntryPartOutcome.Landed);
+        foreach (var part in landed.Parts.Where(part => part.Outcome == EntryPartOutcome.LeftOut && landedAny && landed.Branch is not null))
+        {
+            _loop.Events.Keep(part.Session, LandingRules.LeftOutNote(landed.Branch!), line => _loop.Output.Append(part.Session, line));
+        }
+
         foreach (var part in landed.Parts)
         {
             if (part.Landing is not { } its) continue;
