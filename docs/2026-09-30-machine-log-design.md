@@ -474,6 +474,10 @@ neither, as Daoris's own relay did before CHR8, so a CDP client still connected 
 can leave an `error` from *an unobserved task* here. That is a request for the kit's owner, not an edit
 from this repository.
 
+*Amended by SHEN3 (2026-10-15): answered by the kit. Since Shenora.Chromium 0.20.0 the relay gives the pump still
+answering a close a moment to finish, lets go of the sockets only once neither pump runs, and observes both, so the
+unobserved task above can no longer come from it. Daoris runs 0.21.1.*
+
 ## 8. Not chosen
 
 - **One file for every process.** Appending from several processes is not safe on Windows without a
