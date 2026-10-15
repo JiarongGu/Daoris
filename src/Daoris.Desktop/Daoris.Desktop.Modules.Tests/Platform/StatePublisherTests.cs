@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// What a route changed reaches every window as <c>STATE_CHANGED</c> (STATEHUB1b, D169): published by the dispatcher's
-/// middleware after the route answered, from what the route declares on its mark, never by the handler.
+/// middleware after the route answered, from what the route declares beside its mark, never by the handler.
 /// </summary>
 /// <remarks>
 /// Composed as the shell composes its dispatcher (the kit's <c>UseMessageDispatcher</c>, the middleware in its application

@@ -112,8 +112,9 @@ public sealed class DriverModule : ModuleBase
     public static IReadOnlyCollection<string> Routes => Table.Keys;
 
     /// <summary>
-    /// What a request's route declares a successful answer changed (STATEHUB1b, D169 point 2), read off its mark: null for a
-    /// read, a route nobody declared, or a request to another module. <see cref="StatePublisher"/> publishes it.
+    /// What a request's route declares a successful answer changed (STATEHUB1b, D169 point 2), read off the
+    /// <see cref="PublishesAttribute"/> beside its mark: null for a read, a route nobody declared, or a request to another
+    /// module. <see cref="StatePublisher"/> publishes it.
     /// </summary>
     public static StateChange? Declared(IpcRequest request) =>
         request.Module == Name && request.Type is { } type && Table.TryGetValue(type, out var route) ? route.Change : null;
@@ -166,7 +167,7 @@ public sealed class DriverModule : ModuleBase
 
     /// <summary>
     /// A route's entry in the table: its domain's place in <see cref="Domains"/>, the handler over that domain's instance, and
-    /// what its mark declares a successful answer changed (D169), null for a read.
+    /// what it declares a successful answer changed (D169), null for a read.
     /// </summary>
     private readonly record struct Handler(int Domain, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change);
 
@@ -181,20 +182,29 @@ public sealed class DriverModule : ModuleBase
 
         /// <summary>
         /// A domain whose handler class is <typeparamref name="T"/>: each <see cref="DriverRouteAttribute"/> on one of its
-        /// non-public instance methods, by its route. A handler answers at once, <c>object? M(IpcRequest)</c>, or later,
-        /// <c>Task&lt;object?&gt; M(IpcRequest, CancellationToken)</c>.
+        /// non-public instance methods, by its route, with what its <see cref="PublishesAttribute"/> beside it declares. A
+        /// handler answers at once, <c>object? M(IpcRequest)</c>, or later, <c>Task&lt;object?&gt; M(IpcRequest, CancellationToken)</c>.
         /// </summary>
         public static Domain Of<T>(Func<DriverContext, T> build) where T : class
         {
             var routes = new List<(string, Func<object, IpcRequest, CancellationToken, Task<object?>>, StateChange?)>();
             foreach (var method in typeof(T).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic))
             {
-                foreach (var route in method.GetCustomAttributes<DriverRouteAttribute>())
+                var marks = method.GetCustomAttributes<DriverRouteAttribute>().ToList();
+                var publishes = method.GetCustomAttributes<PublishesAttribute>().ToDictionary(each => each.Route, StringComparer.Ordinal);
+                // A declaration for a route this method does not mark is a typo that would publish nothing: refused here, at the
+                // module's first use, as a route marked twice is.
+                if (publishes.Keys.FirstOrDefault(route => marks.All(mark => mark.Type != route)) is { } stray)
+                {
+                    throw new InvalidOperationException($"{typeof(T).Name}.{method.Name} declares what `{stray}` changes, and marks no such route.");
+                }
+
+                foreach (var route in marks)
                 {
                     routes.Add((route.Type, method.GetParameters().Length == 1
                         ? Now(method.CreateDelegate<Func<T, IpcRequest, object?>>())
                         : Later(method.CreateDelegate<Func<T, IpcRequest, CancellationToken, Task<object?>>>()),
-                        route.Changes == StateScopes.None ? null : new StateChange(route.Changes, route.Session)));
+                        publishes.TryGetValue(route.Type, out var declared) ? new StateChange(declared.Changes, declared.Session) : null));
                 }
             }
 
@@ -216,18 +226,31 @@ public sealed class DriverModule : ModuleBase
 /// A route is added in its domain's class by marking its handler, so no central switch is edited per route.
 /// </summary>
 /// <param name="type">The route's name, as the page's bridge sends it.</param>
-/// <remarks>
-/// A route that changes the driver's state says so on its mark (STATEHUB1b, D169 point 2): <see cref="Changes"/>, and
-/// <see cref="Session"/> where the change is one session's. <see cref="StatePublisher"/> publishes it after a successful answer,
-/// so no handler emits its own. A read says nothing.
-/// </remarks>
+/// <remarks>A route that changes the driver's state says so beside its mark, with <see cref="PublishesAttribute"/>.</remarks>
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
 internal sealed class DriverRouteAttribute(string type) : Attribute
 {
     public string Type { get; } = type;
+}
 
-    /// <summary>What a successful answer changed, as the page's query families; none for a read.</summary>
-    public StateScopes Changes { get; set; }
+/// <summary>
+/// What one of a handler's routes changes when it answers successfully (STATEHUB1b, D169 point 2), declared beside its
+/// <see cref="DriverRouteAttribute"/>: <see cref="StatePublisher"/> publishes it, so no handler emits its own. A read declares
+/// nothing. Named by its route, since a handler may answer a read and a press (a plan and the press it plans), and a route the
+/// method does not mark fails the module's first use.
+/// </summary>
+/// <remarks>
+/// Its own mark rather than a property of the route's, and on one line: the index reads a route's mark as written
+/// (`tools/orient-index.mjs`), and skips the marks under it to find the handler.
+/// </remarks>
+/// <param name="route">The route it declares for, one this method marks.</param>
+/// <param name="changes">What a successful answer changed, as the page's query families.</param>
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+internal sealed class PublishesAttribute(string route, StateScopes changes) : Attribute
+{
+    public string Route { get; } = route;
+
+    public StateScopes Changes { get; } = changes;
 
     /// <summary>The payload's field naming the session the change was about, where it is one session's.</summary>
     public string? Session { get; set; }

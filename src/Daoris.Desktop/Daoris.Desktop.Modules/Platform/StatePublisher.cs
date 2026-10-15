@@ -7,7 +7,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// What a route's press can change, as named families of the page's queries (STATEHUB1b, D169 point 3). A route declares
-/// them on its mark; <see cref="StatePublisher"/> names them on the wire in the page's words, in this order.
+/// them beside its mark; <see cref="StatePublisher"/> names them on the wire in the page's words, in this order.
 /// </summary>
 /// <remarks>A wire's words: a scope is added, never renamed or renumbered in place (D169 point 3).</remarks>
 [Flags]
@@ -59,7 +59,7 @@ public sealed record StateChanged(
 /// </summary>
 /// <remarks>
 /// <para><b>Declared, never emitted by hand.</b> A handler that emitted its own change would be one more list somebody forgets
-/// to append to; the route's mark says what it changes (<see cref="DriverModule.Declared"/>), and this is the one place that
+/// to append to; the route says what it changes beside its mark (<see cref="DriverModule.Declared"/>), and this is the one place that
 /// publishes it. A route that declares nothing, a read, publishes nothing.</para>
 ///
 /// <para><b>On success, whatever the answer says</b> (D169 point 5). A refusal answered as data is published as an answer is: a

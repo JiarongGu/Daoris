@@ -13,6 +13,20 @@ public sealed class TreesRoutes(DriverLoop loop)
 {
     private readonly DriverLoop _loop = loop;
 
+    /// <summary>
+    /// What a landing changes (STATEHUB1b, D169): the session, every plan and gate (the line it merged into is what each
+    /// session's plan judges against, LANDSYNC1, so `landing` is never only its own), its review, its hand-off, the clean-up's
+    /// list, and which repositories hold Daoris's branches.
+    /// </summary>
+    private const StateScopes Lands = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff | StateScopes.HandOff
+        | StateScopes.Sweep | StateScopes.TreesSync;
+
+    /// <summary>What discarding a session's tree changes: as a landing, but for the branch a plugin could take, which it keeps.</summary>
+    private const StateScopes Discards = Lands & ~StateScopes.HandOff;
+
+    /// <summary>What a press at the second opinion's gate changes: every plan and gate, and the sessions whose reviewer it moved.</summary>
+    private const StateScopes Gates = StateScopes.Sessions | StateScopes.Landing;
+
     // What a session actually did (SURF6, design §5). The evidence string says that work
     // happened; this says what it was. Desktop-only by construction, like the console: it is
     // read off a checkout, and only the machine holding one can answer at all.
@@ -390,8 +404,8 @@ public sealed class TreesRoutes(DriverLoop loop)
     /// refusal that names what would be lost, so the page asks, shows that sentence, and only then
     /// sends `force`. Destroying work is never a side effect of tidying (D51 rule 7).</para>
     /// </remarks>
-    [DriverRoute("DISCARD_SESSION_TREE", Session = "id",
-        Changes = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff | StateScopes.Sweep | StateScopes.TreesSync)]
+    [DriverRoute("DISCARD_SESSION_TREE")]
+    [Publishes("DISCARD_SESSION_TREE", Discards, Session = "id")]
     private async Task<object?> DiscardTreeAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -435,9 +449,8 @@ public sealed class TreesRoutes(DriverLoop loop)
     /// A refusal is an answer, as the merge door's are.
     /// </remarks>
     [DriverRoute("LANDING")]
-    // The line a landing merged into is what every session's plan judges against (LANDSYNC1), so `landing` is every plan's.
-    [DriverRoute("LAND_SESSION_TREE", Session = "id", Changes = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff
-        | StateScopes.HandOff | StateScopes.Sweep | StateScopes.TreesSync)]
+    [DriverRoute("LAND_SESSION_TREE")]
+    [Publishes("LAND_SESSION_TREE", Lands, Session = "id")]
     private async Task<object?> LandAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -574,10 +587,14 @@ public sealed class TreesRoutes(DriverLoop loop)
     /// judgement no agent has made. Each answers the gate as it then stands, in <see cref="Opinion"/>'s shape.
     /// </remarks>
     [DriverRoute("OPINION_GATE")]
-    [DriverRoute("ASK_OPINION", Session = "id", Changes = StateScopes.Sessions | StateScopes.Landing)]
-    [DriverRoute("OPINION_ANYWAY", Session = "id", Changes = StateScopes.Sessions | StateScopes.Landing)]
-    [DriverRoute("OPINION_MYSELF", Session = "id", Changes = StateScopes.Sessions | StateScopes.Landing)]
-    [DriverRoute("STOP_OPINION", Changes = StateScopes.Sessions | StateScopes.Landing)]
+    [DriverRoute("ASK_OPINION")]
+    [DriverRoute("OPINION_ANYWAY")]
+    [DriverRoute("OPINION_MYSELF")]
+    [DriverRoute("STOP_OPINION")]
+    [Publishes("ASK_OPINION", Gates, Session = "id")]
+    [Publishes("OPINION_ANYWAY", Gates, Session = "id")]
+    [Publishes("OPINION_MYSELF", Gates, Session = "id")]
+    [Publishes("STOP_OPINION", Gates)]
     private async Task<object?> OpinionPressAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
@@ -743,7 +760,8 @@ public sealed class TreesRoutes(DriverLoop loop)
     /// tidied away; a repository with no checkout here is answered in the same sentence form.
     /// </remarks>
     [DriverRoute("HANDOFF_PLAN")]
-    [DriverRoute("HANDOFF", Session = "id", Changes = StateScopes.HandOff | StateScopes.Sweep)]
+    [DriverRoute("HANDOFF")]
+    [Publishes("HANDOFF", StateScopes.HandOff | StateScopes.Sweep, Session = "id")]
     private async Task<object?> HandOffAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");

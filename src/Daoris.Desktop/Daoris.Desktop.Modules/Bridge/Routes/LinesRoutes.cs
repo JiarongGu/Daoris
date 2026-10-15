@@ -144,7 +144,8 @@ public sealed class LinesRoutes(DriverContext context)
 
     // A repository's landing rule or a workspace's, or either cleared with no form — the same file
     // `daoris driver landing` edits: one truth, two doors (D50).
-    [DriverRoute("SET_LANDING", Changes = StateScopes.Landing | StateScopes.Lines)]
+    [DriverRoute("SET_LANDING")]
+    [Publishes("SET_LANDING", StateScopes.Landing | StateScopes.Lines)]
     private object? SetLanding(IpcRequest request)
     {
         var repository = Optional(request, "repository");
@@ -224,7 +225,8 @@ public sealed class LinesRoutes(DriverContext context)
     /// branches landings made (WSR5): each goes where its work reached the line, by the same press.
     /// </summary>
     [DriverRoute("SWEEP_PLAN")]
-    [DriverRoute("SWEEP", Changes = Moves)]
+    [DriverRoute("SWEEP")]
+    [Publishes("SWEEP", Moves)]
     private async Task<object?> SweepAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, null, cancellationToken);
@@ -276,7 +278,8 @@ public sealed class LinesRoutes(DriverContext context)
     /// branch and its commits, and sends `force`. A branch whose tree a session still running or waiting holds is kept
     /// whatever the press says (<see cref="SessionBranchDiscard"/>).
     /// </remarks>
-    [DriverRoute("DISCARD_SESSION_BRANCH", Changes = Moves)]
+    [DriverRoute("DISCARD_SESSION_BRANCH")]
+    [Publishes("DISCARD_SESSION_BRANCH", Moves)]
     private async Task<object?> DiscardBranchAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
@@ -303,7 +306,8 @@ public sealed class LinesRoutes(DriverContext context)
     /// judges, that workspace's checkouts alone, and what it leaves apart is its own. With none, every checkout here.</para>
     /// </remarks>
     [DriverRoute("TREES_SYNC_PLAN")]
-    [DriverRoute("TREES_SYNC", Changes = Moves)]
+    [DriverRoute("TREES_SYNC")]
+    [Publishes("TREES_SYNC", Moves)]
     private async Task<object?> TreesSyncAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var named = Optional(request, "repository");
