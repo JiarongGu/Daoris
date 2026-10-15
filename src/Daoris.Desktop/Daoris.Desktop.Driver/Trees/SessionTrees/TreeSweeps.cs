@@ -49,7 +49,7 @@ internal sealed class TreeSweeps(
 
             var named = sessions.Where(branch => only is null || only.Contains($"{repository}:{branch}")).ToList();
             // A list git could not give is never read as "no tree here" (AUTOTIDY1): every branch is kept, saying why.
-            if (await context.Worktrees.ListAsync(root, ct).ConfigureAwait(false) is not { } listed)
+            if (await context.Worktrees.ListAsync(root, ct, refs).ConfigureAwait(false) is not { } listed)
             {
                 items.AddRange(named.Select(branch => new SweepItem(
                     repository, RemoteTarget.Workspace(workspace), branch, null, SweepKind.Unlanded, 0, null, $"git could not tell: {ListUnread}")
@@ -123,7 +123,10 @@ internal sealed class TreeSweeps(
             }
 
             var root = known.First(r => string.Equals(r.Repository, item.Repository, StringComparison.OrdinalIgnoreCase)).Root!;
-            if (await context.Worktrees.ListAsync(root, ct).ConfigureAwait(false) is not { } listed)
+            // Judged again from the refs and the working trees as they are now (PROC1d-ii, -iii, D88): never the list's, since a
+            // removal before it wrote.
+            var fresh = RefSnapshot.Take(root);
+            if (await context.Worktrees.ListAsync(root, ct, fresh).ConfigureAwait(false) is not { } listed)
             {
                 results.Add(new(item with { Unread = true, Detail = ListUnread }, false, $"{ListUnread}, so it is kept") { Kept = TidyKept.Unread, Cause = TidyCause.List });
                 continue;
@@ -131,8 +134,6 @@ internal sealed class TreeSweeps(
 
             var worktrees = ByBranch(listed);
             var line = (await context.LineAsync(root, item.Repository, item.Workspace, ct).ConfigureAwait(false)).Branch;
-            // Judged again from the refs as they are now (PROC1d-ii, D88): never the list's, since a removal before it wrote.
-            var fresh = RefSnapshot.Take(root);
             var carriers = item.Kind == SweepKind.Carried ? await asks.CarriersAsync(root, item.Repository, line, ct, fresh).ConfigureAwait(false) : [];
             // The commit it was judged at (SQUASHTIDY1c): the one its delete must still find, and the one a pull request's answer
             // removed, for the record of it (PLUGHOOK1a, design §2.5).

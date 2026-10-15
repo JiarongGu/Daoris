@@ -179,7 +179,7 @@ internal sealed class AutoTidies(
         if (branches.Count == 0 && entries.Count == 0) return Pass([]);
 
         // A list of the working trees git could not give is never "no tree here": nothing in the repository is judged this look.
-        if (await context.Worktrees.ListAsync(root, ct).ConfigureAwait(false) is null) return Pass([], TidyKept.Unread, ListUnread, TidyCause.List);
+        if (await context.Worktrees.ListAsync(root, ct, refs).ConfigureAwait(false) is null) return Pass([], TidyKept.Unread, ListUnread, TidyCause.List);
 
         // Judged before the hold, as the press's list judges them, with the sessions asked so no tree a session works in is read:
         // what stays is said from here, and only what may go holds the repository.

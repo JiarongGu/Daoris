@@ -31,12 +31,11 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
         string full, string repository, string workspace, bool branchForm, bool fetch, CancellationToken ct)
     {
         if (!context.Holds(full) || !Directory.Exists(full)) return (null, null);
-        var (rootCode, commonDir, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct)
-            .ConfigureAwait(false);
-        if (rootCode != 0) return (null, null);
-        var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(commonDir.Trim()))!;
-        var (_, branchOut, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
-        var branch = branchOut.Trim();
+        // Its repository and its branch, one start (PROC1d-iii).
+        var tree = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
+        if (tree.Code != 0) return (null, null);
+        var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(tree.CommonDir.Trim()))!;
+        var branch = tree.Branch.Trim();
         if (branch is "" or "HEAD") return (null, null);
         if ((await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch is not { } line) return (null, null);
 

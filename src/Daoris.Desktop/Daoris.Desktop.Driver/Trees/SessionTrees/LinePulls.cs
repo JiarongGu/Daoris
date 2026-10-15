@@ -33,7 +33,7 @@ internal static class LinePulls
         }
 
         var commits = await CountAsync(root, $"{local}..{remote}", ct).ConfigureAwait(false);
-        var trees = await WorktreesAsync(root, ct).ConfigureAwait(false);
+        var trees = await WorktreesAsync(root, ct, refs).ConfigureAwait(false);
         if (!trees.TryGetValue(line, out var tree)) return (Pull(PullKind.FastForward, local, remote, commits), false);
         if (!SamePath(tree, root)) return (Pull(PullKind.CheckedOut, local, remote, commits), false);
 

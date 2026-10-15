@@ -336,10 +336,10 @@ internal sealed class LandedCleanups(
         string root, string repository, string workspace, IReadOnlyList<LandedBranch> entries, IReadOnlyCollection<string> staying,
         List<string>? stale, CancellationToken ct, RefSnapshot? refs = null)
     {
-        // One read of the refs for every branch judged here (PROC1d-ii); a write in this flow drops it.
+        // One read of the refs and the working trees for every branch judged here (PROC1d-ii, -iii); a write in this flow drops it.
         refs ??= RefSnapshot.Take(root);
         // A list git could not give is never "no tree here" (AUTOTIDY1): every branch is then kept as one checked out.
-        var worktrees = await context.Worktrees.ReadAsync(root, ct).ConfigureAwait(false);
+        var worktrees = await context.Worktrees.ReadAsync(root, ct, refs).ConfigureAwait(false);
         var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         var forms = await LandedProofs.LineFormsAsync(root, line, ct, refs).ConfigureAwait(false);
 

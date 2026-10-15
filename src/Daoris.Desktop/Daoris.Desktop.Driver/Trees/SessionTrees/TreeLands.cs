@@ -150,17 +150,15 @@ internal sealed class TreeLands(
             return new(false, $"there is no tree at {path}.");
         }
 
-        var (rootCode, commonDir, rootErr) = await WorkingTree.GitAsync(
-            full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct).ConfigureAwait(false);
-        if (rootCode != 0)
+        // Its repository and its branch, one start (PROC1d-iii).
+        var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
+        if (here.Code != 0)
         {
-            return new(false, $"{path} is not a working tree git recognises: {FirstLine(rootErr)}");
+            return new(false, $"{path} is not a working tree git recognises: {FirstLine(here.Err)}");
         }
 
-        var root = Path.GetDirectoryName(commonDir.Trim())!;
-        var (_, branchOut, _) = await WorkingTree.GitAsync(
-            full, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
-        var branch = branchOut.Trim();
+        var root = Path.GetDirectoryName(here.CommonDir.Trim())!;
+        var branch = here.Branch.Trim();
         if (branch is "" or "HEAD")
         {
             return new(false, $"the tree at {path} is not on a branch, so there is nothing to merge.");
@@ -470,9 +468,7 @@ internal sealed class TreeLands(
         // the same proof an unforced removal makes — never forced.
         if (!landed.Landed || !landing.Rule.Tidy) return landed;
         // Read before the tree goes (LAND3): the repository it belongs to and the branch it was on.
-        var (factsCode, commonDir, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct)
-            .ConfigureAwait(false);
-        var (_, pressedOut, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
+        var (factsCode, commonDir, _, pressedOut, _) = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
         var tidied = await removals.RemoveAsync(path, force: false, ct).ConfigureAwait(false);
         landed = landed with
         {
@@ -559,16 +555,15 @@ internal sealed class TreeLands(
             return new TreeLanding(false, $"there is no tree at {full}.");
         }
 
-        var (rootCode, commonDir, rootErr) = await WorkingTree.GitAsync(
-            full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct).ConfigureAwait(false);
-        if (rootCode != 0)
+        // Its repository and its branch, one start (PROC1d-iii).
+        var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
+        if (here.Code != 0)
         {
-            return new TreeLanding(false, $"{full} is not a working tree git recognises: {FirstLine(rootErr)}");
+            return new TreeLanding(false, $"{full} is not a working tree git recognises: {FirstLine(here.Err)}");
         }
 
-        var root = Path.GetDirectoryName(commonDir.Trim())!;
-        var (_, branchOut, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
-        var branch = branchOut.Trim();
+        var root = Path.GetDirectoryName(here.CommonDir.Trim())!;
+        var branch = here.Branch.Trim();
         if (branch is "" or "HEAD")
         {
             return new TreeLanding(false, $"the tree at {full} is not on a branch, so there is nothing to land.");
