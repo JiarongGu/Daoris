@@ -30,6 +30,12 @@ public sealed record TidyPass(IReadOnlyList<SweepResult> Results, string? Held =
     /// the session branches; those it would not take are the press's, and are not listed.
     /// </summary>
     public IReadOnlyList<LandedResult> Landed { get; init; } = [];
+
+    /// <summary>
+    /// What the look did with the folders under the repository's trees that are no tree of its own (AUTOTIDY2c, OPENCUT1), before
+    /// its session branches: each moved aside, or kept and why (<see cref="TreeStrays"/>).
+    /// </summary>
+    public IReadOnlyList<StrayResult> Strays { get; init; } = [];
 }
 
 /// <summary>

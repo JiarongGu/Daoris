@@ -31,8 +31,21 @@ public sealed record TreeMerge(bool Merged, string Message);
 /// <param name="Path">Where it is.</param>
 /// <param name="Workspace">Whose circle, read from the layout Daoris itself chose.</param>
 /// <param name="Repository">Whose repository, same.</param>
-/// <param name="Branch">The session branch checked out in it.</param>
-public sealed record SessionTree(string Path, string Workspace, string Repository, string Branch);
+/// <param name="Branch">
+/// The session branch checked out in it; <see cref="NotATree"/> for a folder with no link to a repository, and
+/// <see cref="SetAside"/> for a folder the look moved aside.
+/// </param>
+public sealed record SessionTree(string Path, string Workspace, string Repository, string Branch)
+{
+    /// <summary>What a folder with no <c>.git</c> is listed as (AUTOTIDY2c): no tree, which the look moves aside once it is left quiet.</summary>
+    public const string NotATree = "(not a tree)";
+
+    /// <summary>What a folder the look moved aside is listed as (AUTOTIDY1, AUTOTIDY2c), until the purge deletes it.</summary>
+    public const string SetAside = "(moved aside)";
+
+    /// <summary>When the look moved it aside, read from its name; null for anything not moved aside.</summary>
+    public DateTimeOffset? MovedAside { get; init; }
+}
 
 /// <summary>
 /// The worktree half of D51: a repository may have more than one working tree, and the extra ones are
@@ -85,6 +98,7 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     private TreeRemovals? _removals;
     private TreeSweeps? _sweeps;
     private AutoTidies? _autoTidy;
+    private TreeStrays? _strays;
     private LandedCleanups? _cleanups;
     private BranchJudging? _judging;
     private TreeSync? _sync;
@@ -133,6 +147,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
 
     /// <summary>The look's own tidy of one repository (AUTOTIDY1), the landings' branches with it (AUTOTIDY2b).</summary>
     private AutoTidies AutoTidy => _autoTidy ??= new(_context, Follows, Replays, Sweeps, SetAsides, Cleanups);
+
+    /// <summary>The look's own tidy of the folders under a repository's trees that are no tree of its own (AUTOTIDY2c, OPENCUT1).</summary>
+    private TreeStrays Strays => _strays ??= new(_context, SetAsides, Content);
 
     /// <summary>The clean-up's list and press, and each landed branch judged (D88, WSR5).</summary>
     private LandedCleanups Cleanups => _cleanups ??= new(_context, Asks, Content, Replays, Sweeps);
@@ -412,7 +429,8 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
 
     /// <summary>
     /// Every session tree on this machine, read from the layout itself — the directory is the
-    /// registry, the same argument the credential profiles made (D49 §4).
+    /// registry, the same argument the credential profiles made (D49 §4). Then each folder the look moved aside
+    /// (AUTOTIDY1, AUTOTIDY2c), with when, until the purge deletes it.
     /// </summary>
     public async Task<IReadOnlyList<SessionTree>> ListAsync(CancellationToken ct = default)
     {
@@ -424,17 +442,38 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
         foreach (var repository in Directory.EnumerateDirectories(workspace))
         foreach (var tree in Directory.EnumerateDirectories(repository))
         {
-            var (code, branch, _) = await WorkingTree.GitAsync(
-                tree, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
+            // AUTOTIDY2c: a folder with no link to a repository is no tree, and git asked in it would answer for whatever
+            // repository holds the home.
+            var (code, branch, _) = Path.Exists(Path.Combine(tree, ".git"))
+                ? await WorkingTree.GitAsync(tree, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false)
+                : (1, SessionTree.NotATree, "");
             found.Add(new(
                 tree,
                 Path.GetFileName(workspace),
                 Path.GetFileName(repository),
-                code == 0 ? branch.Trim() : "(unreadable)"));
+                code == 0 ? branch.Trim() : branch == SessionTree.NotATree ? branch : "(unreadable)"));
+        }
+
+        var aside = SetAsides.SetAsideRoot;
+        if (!Directory.Exists(aside)) return found;
+        foreach (var workspace in Directory.EnumerateDirectories(aside))
+        foreach (var repository in Directory.EnumerateDirectories(workspace))
+        foreach (var folder in Directory.EnumerateDirectories(repository))
+        {
+            found.Add(new(folder, Path.GetFileName(workspace), Path.GetFileName(repository), SessionTree.SetAside)
+            {
+                MovedAside = TreeSetAside.MovedAt(Path.GetFileName(folder)),
+            });
         }
 
         return found;
     }
+
+    /// <inheritdoc cref="TreeStrays.TidyAsync"/>
+    public Task<IReadOnlyList<StrayResult>> TidyStraysAsync(
+        string root, string repository, string? workspace, Func<CancellationToken, Task<IReadOnlySet<string>>> inUse, DateTimeOffset now,
+        CancellationToken ct = default) =>
+        Strays.TidyAsync(root, repository, workspace, inUse, now, ct);
 
     /// <summary>
     /// Where a tree on <paramref name="branch"/> grows from: the branch itself where this checkout has
