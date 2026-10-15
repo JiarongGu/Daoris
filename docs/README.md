@@ -83,6 +83,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-09-person-door-design.md` | Contract: person/driver authorization | D156; starter integration remains in TASKS |
 | `2026-10-09-workflow-design.md` | Contract: choices, versions and gates | D157 |
 | `2026-10-14-co-working-design.md` | Contract: one session per line of work, its records its parts; an ask's channel | D167; SESSONE rows in TASKS |
+| `2026-10-16-install-layout-design.md` | Contract: the Daoris folder's top folders, every home path placed, and the move into them | D172; HOMELAYOUT rows in TASKS |
 
 ## UI, browser, tools and plugin contracts
 
