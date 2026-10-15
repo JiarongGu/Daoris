@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- After a session's work is accepted (采纳), its *Accept…* and the plan beside it read anew wherever they are shown, in
+  every open window and when you switch back to a tab, where an old plan used to stand until the driver's next change. The
+  same holds after discarding a session's tree, handing a branch to its plugin, a press on a second opinion, the clean-up,
+  bringing repositories up to date and saving how work lands.
 - A session no longer thanks you for accepting when you type "accept": it says its work waits for *Accept…* on its page and
   where that is, and when it asks you to approve a rule it proposed, it names the Agents page's *Proposals*. In What needs you,
   the act on a rule an agent proposed reads *Allow…* (允许…), no longer the same *Accept…* (采纳…) as landing a session's work.

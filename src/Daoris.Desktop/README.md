@@ -140,6 +140,13 @@ conversations, the continuation judge, the say, and the words a failed run left,
 
 **`DAORIS.DRIVER` by domain.** A new door is a marked handler in its domain's class and its name in
 that domain's row here; a new domain is its `Bridge/Routes/<Domain>Routes.cs` (the structure gate holds that a `*Routes.cs` sits there and is the only file that marks a route), its line in `DriverModule`'s list and its row.
+A route that changes the driver's state says so beside its mark, `[Publishes("ROUTE", scopes, Session = "id")]` (the
+scopes it moved, and the payload field naming the session where the change is one session's; on one line, as the index
+reads marks), and `StatePublisher`, the dispatcher's innermost middleware, raises
+`STATE_CHANGED` {scopes, sessions?} once it has answered successfully, a refusal answered as data included; the page's
+state hub asks those scopes again in every window (STATEHUB1b, D169). The landing family declares its scopes so far
+(`LAND_SESSION_TREE`, `DISCARD_SESSION_TREE`, `HANDOFF`, the opinion presses, `SWEEP`, `DISCARD_SESSION_BRANCH`,
+`TREES_SYNC`, `SET_LANDING`); a handler never raises it by hand.
 
 | Domain | What it carries |
 |---|---|
