@@ -209,6 +209,8 @@ public static class PersonDoors
         new("POST", "/api/asks/{id}/go-aheads/{number}", DoorClass.Person, "a go-ahead's answer"),
         new("POST", "/api/sessions/{id}/added", DoorClass.Person, "words added to a running session"),
         new("POST", "/api/sessions/{id}/say", DoorClass.Person, "words to a session"),
+        // SAIDBACK1a: the person's words, taken back or reworded before a session took them, are theirs to move as saying them is.
+        new("POST", "/api/sessions/{id}/take-back", DoorClass.Person, "words taken back from a session"),
         new("POST", "/api/sessions/{id}/answer", DoorClass.Person, "an answer to a parked session"),
         new("POST", "/api/asks/{id}/close", DoorClass.Person, "an ask's close"),
         new("DELETE", "/api/asks/{id}", DoorClass.Person, "an ask's delete"),

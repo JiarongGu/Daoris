@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-15 — Words that could not go on left a fresh tree and branch at every look (GOONTREE1)
+
+- **Symptom:** the owner's, on the install: words waiting on a closed quest's last session whose tree had been removed made a
+  new tree and `daoris/` branch at each look (`s-7e410474` at the new window's first look, a half-checked-out `s-0031408d` as
+  the old window closed), then the record said *its tree is gone* and nothing started.
+- **Root cause:** `Driver.RunAsync` opens the start's tree before the go-on is judged. The go-on's returns that start nothing
+  (a closed quest or a never, findings alone, a continued run in the record's own tree) did not remove it, where every other
+  early return after the open does.
+- **Fix:** each of those returns removes the opened tree by the clean path (D51) first. Reordering the judgement before the open
+  was not taken: the starting lock and the carry-on's second lock sit between them.
+- **Verification:** `SessionMessagesTickTests.Words_that_cannot_go_on_because_the_tree_is_gone_leave_no_fresh_tree_behind`
+  (Process half, real git) failed first on a new branch after the look, then passed; the fast half of the driver suite passes.
+  Not fixed: a start cut off inside `git worktree add` by a cancel or a kill can leave a half tree and branch (OPENCUT1).
+
 ## 2026-10-15 — The landing molecules reached the bridge (LANDSYNC1w)
 
 - **Symptom:** `design/presentational.test.ts` ("no presentational component reaches the service or the shell") failed on main

@@ -419,6 +419,35 @@ public sealed class ServiceClient : IDisposable
     }
 
     /// <summary>
+    /// Take back one of the person's words waiting on a record before a session took it, or with <paramref name="text"/> reword
+    /// it (SAIDBACK1a's take-back door, D137 §2.4): the old word leaves, and a reword's new words wait last under a new id, which
+    /// comes back. Whether it was done is an answer, never an exception: a word no longer waiting is <c>taken</c>, a refusal
+    /// carries the service's word beside its sentence, and a host without the door (one older than SAIDBACK1a, or a shared
+    /// one) says so with no word.
+    /// </summary>
+    public async Task<TakeBackAnswer> TakeBackAsync(string id, string word, string? text = null, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("word", word);
+            if (text is not null) writer.WriteString("text", text);
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/take-back", body, ct)
+            .ConfigureAwait(false);
+        if (root is not { } answered)
+        {
+            return new TakeBackAnswer(false, $"the service at {_base} has no door for taking back words a session has not taken ({status}) — is it older than this driver?");
+        }
+
+        if (!ok) return new TakeBackAnswer(false, Text(answered, "error") ?? payload, Text(answered, "refusal"));
+        return new TakeBackAnswer(
+            Flag(answered, "done"), Text(answered, "message") ?? "", Text(answered, "why"),
+            answered.ValueKind == JsonValueKind.Object && answered.TryGetProperty("said", out var said) ? ReadWord(said) : null);
+    }
+
+    /// <summary>
     /// Take the person's words off a record once a session took them (MSG1a's door, MSG1b): by their ids, so a word said
     /// after the driver read the record stays for the next run; <paramref name="by"/> names the new session a fallback
     /// handed them to. The service keeps each word said after the record ended on its ask as <c>reopened</c>. Whether they
@@ -1589,6 +1618,28 @@ public sealed class ServiceClient : IDisposable
     /// </summary>
     public async Task<PriorSession?> RecordAsync(string id, CancellationToken ct = default) =>
         ReadRecord(await GetAsync(SessionRecords.Door, ct).ConfigureAwait(false), id);
+
+    /// <summary>
+    /// The trees of this machine's records the person's words wait on (AUTOTIDY2d, MSG1b, D137 §2.2): a record that ended or
+    /// parked with words a later run goes on with in its own tree, which the look's own tidy keeps as it keeps a session's in use.
+    /// </summary>
+    public async Task<IReadOnlyList<string>> WaitingTreesAsync(CancellationToken ct = default) =>
+        WaitingTrees(await GetAsync(SessionRecords.Door, ct).ConfigureAwait(false));
+
+    /// <summary><see cref="WaitingTreesAsync"/>'s trees among the answer's records; a teammate's is none here.</summary>
+    internal static IReadOnlyList<string> WaitingTrees(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        if (document.RootElement.ValueKind != JsonValueKind.Array) return [];
+        var trees = new List<string>();
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            if (session.ValueKind != JsonValueKind.Object || IsTeams(session)) continue;
+            if (Prior(session) is { WordsWaiting: true, Tree: { Length: > 0 } tree }) trees.Add(tree);
+        }
+
+        return trees;
+    }
 
     /// <summary>The record with this id among the answer's, read as <see cref="RecordAsync"/> reads it; a teammate's is none here.</summary>
     internal static PriorSession? ReadRecord(string json, string id)

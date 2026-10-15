@@ -1170,6 +1170,71 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// SAIDBACK1a (D137 §2.4): the take-back door takes a word waiting on an ended session of this machine's off its record by
+    /// its id, or with <c>text</c> rewords it: the old word out, the new one last under a new id, answered to this machine only.
+    /// A word no longer waiting answers <c>done: false, why: taken</c>, never an error; a reword with no words is 400, a session
+    /// nobody holds 404, and what never goes on 409 by the say door's word. Nothing is kept on the ask.
+    /// </summary>
+    [Fact]
+    public async Task The_take_back_door_takes_a_waiting_word_back_or_rewords_it()
+    {
+        var asked = await host.PostAsync("/api/asks", new
+        {
+            workspace = "default", sentence = "Build the yearly report through the v3 bridge.", to = "Keeper",
+        });
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        var quest = asked.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        var id = await RunningAsync(quest, "saidback1a");
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state = "completed", note = "landed." })).Status);
+        var words = await WordsAsync();
+        var first = (await host.PostAsync($"/api/sessions/{id}/say", new { text = "Use the blue one." })).Json.GetProperty("said").GetProperty("id").GetString()!;
+        var second = (await host.PostAsync($"/api/sessions/{id}/say", new { text = "And another." })).Json.GetProperty("said").GetProperty("id").GetString()!;
+
+        var reworded = await host.PostAsync($"/api/sessions/{id}/take-back", new { word = first, text = "Use the green one." });
+
+        Assert.Equal(200, reworded.Status);
+        Assert.True(reworded.Json.GetProperty("done").GetBoolean());
+        var word = reworded.Json.GetProperty("said");
+        var renamed = word.GetProperty("id").GetString()!;
+        Assert.NotEqual(first, renamed);
+        Assert.Equal(("Use the green one.", true), (word.GetProperty("text").GetString(), word.GetProperty("reopens").GetBoolean()));
+        Assert.Equal([second, renamed], Said(reworded.Json.GetProperty("session")));
+        Assert.Equal("completed", reworded.Json.GetProperty("session").GetProperty("state").GetString());
+
+        var back = await host.PostAsync($"/api/sessions/{id}/take-back", new { word = second });
+
+        Assert.Equal(200, back.Status);
+        Assert.True(back.Json.GetProperty("done").GetBoolean());
+        Assert.False(back.Json.TryGetProperty("said", out _));
+        Assert.Equal([renamed], Said(back.Json.GetProperty("session")));
+        Assert.Equal(words, await WordsAsync());
+
+        var again = await host.PostAsync($"/api/sessions/{id}/take-back", new { word = second });
+        var blank = await host.PostAsync($"/api/sessions/{id}/take-back", new { word = renamed, text = "  " });
+        var unnamed = await host.PostAsync($"/api/sessions/{id}/take-back", new { text = "Hello." });
+        var unknown = await host.PostAsync("/api/sessions/nothing4/take-back", new { word = renamed });
+        await host.Composed.Sessions.MirrorAsync(new Session(
+            "ef56ab78", quest, "Keeper", "claude-code", SessionState.Completed, "landed.", null, null,
+            DateTimeOffset.UtcNow, DateTimeOffset.UtcNow) { Origin = "alice-laptop" });
+        var theirs = await host.PostAsync("/api/sessions/ef56ab78/take-back", new { word = "ab12cd34" });
+
+        Assert.Equal(200, again.Status);
+        Assert.Equal((false, "taken"), (again.Json.GetProperty("done").GetBoolean(), again.Json.GetProperty("why").GetString()));
+        Assert.Equal($"Word `{second}` no longer waits on session `{id}`: it was taken, or taken back, already.", again.Json.GetProperty("message").GetString());
+        Assert.Equal((400, "no-words"), (blank.Status, Refusal(blank)));
+        Assert.Equal((400, "no-words"), (unnamed.Status, Refusal(unnamed)));
+        Assert.Equal((404, "not-found"), (unknown.Status, Refusal(unknown)));
+        Assert.Equal((409, "not-ours", "alice-laptop"), (theirs.Status, Refusal(theirs), theirs.Json.GetProperty("origin").GetString()));
+        Assert.Equal([renamed], Said((await ListedSessionAsync(id))!.Value));
+        Assert.Equal(words, await WordsAsync());
+
+        static string? Refusal(Answer answer) => answer.Json.GetProperty("refusal").GetString();
+        static IEnumerable<string?> Said(JsonElement session) => session.GetProperty("said").EnumerateArray().Select(w => w.GetProperty("id").GetString()).ToList();
+        async Task<IEnumerable<string?>> WordsAsync() =>
+            (await host.GetAsync($"/api/asks/{ask}")).Json.GetProperty("words").EnumerateArray().Select(w => w.GetProperty("kind").GetString()).ToList();
+    }
+
+    /// <summary>
     /// MSG1a (D137 §2.4, D133 §1): the person's words reach the ask the session's work is for. Said to a parked session,
     /// through the say door as through the answer door, they are its answer and kept at once. Said to an ended one, they
     /// are kept once taken, as `reopened`, said to the session that took them; an answer taken off the record is not kept

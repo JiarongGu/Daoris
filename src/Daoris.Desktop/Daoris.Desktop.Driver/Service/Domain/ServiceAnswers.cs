@@ -19,6 +19,20 @@ public sealed record SayAnswer(bool Kept, string Message)
 }
 
 /// <summary>
+/// What the service said of one word waiting on a record that the person took back or reworded (SAIDBACK1a's take-back door,
+/// D137 §2.4): whether it left the record, and its sentence.
+/// </summary>
+/// <param name="Done">The word is off the record; a reword's new words wait in its stead.</param>
+/// <param name="Message">The service's sentence: its yes, or why not, verbatim.</param>
+/// <param name="Why">
+/// Why not, as the service's word: <c>taken</c>, where the word no longer waits or the record runs again, or the say door's
+/// refusals (<c>not-ours</c>, <c>intake</c>, <c>stood-down</c>, <c>not-found</c>, <c>no-words</c>, …). Null when done, and for a
+/// host with no door.
+/// </param>
+/// <param name="Word">A reword's new word, with the id it now waits under. Null otherwise.</param>
+public sealed record TakeBackAnswer(bool Done, string Message, string? Why = null, SaidWordView? Word = null);
+
+/// <summary>
 /// What the ledger said of deleting a session's record (SESSUX1f, D126 §5.4): whether it did, or would; and if not its
 /// sentence, its word (<c>not-found</c>, <c>not-ours</c>, <c>live</c>, <c>served-quest</c>, <c>named</c>,
 /// <c>on-remote</c>), which a reader acts on instead of the sentence, and the facts the word names.

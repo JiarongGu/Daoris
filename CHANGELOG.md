@@ -5,6 +5,17 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session no longer thanks you for accepting when you type "accept": it says its work waits for *Accept…* on its page and
+  where that is, and when it asks you to approve a rule it proposed, it names the Agents page's *Proposals*. In What needs you,
+  the act on a rule an agent proposed reads *Allow…* (允许…), no longer the same *Accept…* (采纳…) as landing a session's work.
+- Words that could not go on in a session whose tree was gone no longer leave a fresh tree and branch behind at each look.
+- Words you said to a session that ended, or that parked to ask you, can be taken back or reworded until it goes on with
+  them: `daoris-driver sessions take-back <id>` lists the words waiting with their ids, `sessions take-back <id> <word>` takes
+  one back, and `sessions reword <id> <word> "…"` puts new words in its place, so a finished quest's session need not go on
+  with words you no longer mean.
+- The installed Daoris now ships the driver's own verbs to a terminal: `daoris-driver` (and `daoris-driver.cmd`) in the
+  install's `app/bin/` runs `trees list|clean|land`, `sessions archive|take-back`, `history clear` and `update` against the
+  install's home, so the clean-up no longer needs the window's list. `daoris driver` says where they are.
 - The window is on the desktop kit's 0.21.1. Opening Daoris while it is still closing now starts it once the closing one
   has gone, where that launch used to be lost.
 - Accepting a session's work lands only what its line lacks. Where the line already holds some of its commits (a pull request
@@ -16,6 +27,13 @@ with the version and date at release.
   says the same.
 - The window no longer freezes for minutes while the Sessions page's clean-up list is read: its git work goes on away from
   the window's thread, at most four programs start at once, and each repository's line is asked of git once per list.
+- Daoris now removes its own session branches by itself wherever *Clean up* would, once their work is on the line: a branch
+  whose work was merged into the line or its copy on origin, is on the line by content after a squash merge (its commits kept
+  on a ref, which the report names with how to bring the branch back), or was carried by a completed pull request, not only one
+  with nothing beyond the line. Work accepted onto a branch whose pull request has not merged yet stays, so you can still ask its
+  session to change it. A tree holding only ignored files (installed dependencies, a build's output, a session's own logs) goes
+  too: its folder is moved aside for fourteen days, as before. Uncommitted or untracked work, a session still running or waiting,
+  words you said to a session that ended, and a tree whose branch never moved keep it.
 - An ask's page has a *Channel* (频道), where its sessions and you talk: their messages and Daoris's lines about its quests
   (published, taken, done, declined, waiting on your yes) in your language, an open question marked, and a box to write to
   everyone on the ask or one of its repositories, answering a message if you choose. A session on an ask has the same channel

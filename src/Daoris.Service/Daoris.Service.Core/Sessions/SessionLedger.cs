@@ -105,14 +105,23 @@ public enum SessionSayRefusal
     /// It is a helper's record (MIXAGENT2a-i, D163 point 2): a helper takes one turn, answers a question and is never resumed.
     /// </summary>
     Helper,
+
+    /// <summary>
+    /// Taking words back (SAIDBACK1a, D137 §2.4): the word no longer waits on the record, or the record runs again, so its
+    /// run may already have read it. An answer, never an error, as a live queue's taken word is (QUEUEEDIT1a, D76).
+    /// </summary>
+    Taken,
 }
 
 /// <param name="Refusal"><see cref="SessionSayRefusal.None"/> when the words were kept.</param>
 /// <param name="Message">The whole answer, phrased once here for every door.</param>
 /// <param name="Session">The session as it now stands, when the words were kept.</param>
-/// <param name="Word">The word as it was kept, with its id, when they were.</param>
+/// <param name="Word">The word as it was kept, with its id, when they were; a reword's new word (SAIDBACK1a).</param>
 public sealed record SessionSayOutcome(SessionSayRefusal Refusal, string Message, Session? Session, SaidWord? Word = null)
 {
+    /// <summary>The word a take-back took off the record, as it waited (SAIDBACK1a), when it did.</summary>
+    public SaidWord? Taken { get; init; }
+
     /// <summary>The quest of a session that stood down, where that refused the words.</summary>
     public string? Quest { get; init; }
 
@@ -591,46 +600,7 @@ public sealed class SessionLedger(
                 return new SessionSayOutcome(SessionSayRefusal.NotFound, $"No session `{id}`.", Session: null);
             }
 
-            if (session.Origin is { } origin)
-            {
-                return new SessionSayOutcome(
-                    SessionSayRefusal.NotOurs, $"Session `{id}` ran on `{origin}`, where its conversation is; it cannot go on here.",
-                    Session: null) { Origin = origin };
-            }
-
-            if (session.Ask is { } ask)
-            {
-                return new SessionSayOutcome(SessionSayRefusal.Intake, IntakeRefusal(id, ask), Session: null) { Ask = ask };
-            }
-
-            if (session.Opinion is { } opinion)
-            {
-                return new SessionSayOutcome(
-                    SessionSayRefusal.Opinion,
-                    $"Session `{id}` read another session's work for second opinion `{opinion}`: a pass takes one turn and no words, "
-                    + "and is never resumed. Ask again, with your words, for a fresh one.",
-                    Session: null) { Opinion = opinion };
-            }
-
-            // MIXAGENT2a-i: the helper's twin of the reviewer's refusal above: its answer comes back through its file.
-            if (session.Serves is { } serves)
-            {
-                return new SessionSayOutcome(
-                    SessionSayRefusal.Helper,
-                    $"Session `{id}` is a helper for session `{serves}`: it takes one turn and no words, and is never resumed. "
-                    + "Ask another agent again, with your words, for a fresh one.",
-                    Session: null);
-            }
-
-            if (session.State == SessionState.StoodDown)
-            {
-                return new SessionSayOutcome(
-                    SessionSayRefusal.StoodDown,
-                    session.Quest is { } theirs
-                        ? $"Session `{id}` stood down: `#{theirs}` is someone else's, so it has nothing to go on with."
-                        : $"Session `{id}` stood down, so it has nothing to go on with.",
-                    Session: null) { Quest = session.Quest };
-            }
+            if (Never(session) is { } never) return never;
 
             var parked = session.State == SessionState.AwaitingPerson;
             if (session.Active && !parked)
@@ -697,6 +667,140 @@ public sealed class SessionLedger(
                       + (by is null || by == id ? "." : $": session `{by}` took them."),
                 left, taken);
         }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Take one of the words waiting on this machine's record back before a session took it, or reword it (SAIDBACK1a, D137
+    /// §2.4): with no <paramref name="text"/> the word leaves the record; with one, the old word leaves and the new words are
+    /// kept last, under a new id, said now, with the old word's files' names and its <c>reopens</c>. The new words are the
+    /// person's whoever said the old. Read, judged and written as one step (REV3), so a refused reword leaves the old word as
+    /// it was, and the driver taking the record up cannot read it between the two writes.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Refused as <see cref="SessionSayRefusal.Taken"/></b>, an answer and never an error: a word no longer on the
+    /// record, and any word of a record that runs again (queued, starting, working), whose run may already be building its
+    /// prompt from it. A park takes its words back, as it takes them (§2.2). What never goes on refuses as the say door does,
+    /// before anything is read of the words.</para>
+    ///
+    /// <para><b>Nothing is kept on the ask</b>, unlike <see cref="TakeSaidAsync"/>'s door: nothing took the words. A park's
+    /// answer line stays on its note, which travelled already; a reworded park's answer adds its own line, as a second
+    /// answer does. Order among several waiting words is not kept: the new words wait last.</para>
+    /// </remarks>
+    /// <returns>The record as it now stands, the word taken off it, and a reword's new word.</returns>
+    public async Task<SessionSayOutcome> TakeBackAsync(
+        string id, string? word, string? text, DateTimeOffset now, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(word))
+        {
+            return new(SessionSayRefusal.Empty, "Name the word to take back: none was named, so nothing was taken back.", Session: null);
+        }
+
+        var named = word.Trim();
+        var words = text?.Trim();
+        if (words is { Length: 0 })
+        {
+            return new(
+                SessionSayRefusal.Empty,
+                $"There are no words to put in the place of word `{named}`: it waits as it was. Take it back instead to leave none.",
+                Session: null);
+        }
+
+        return await sessions.ExclusiveAsync(async inside =>
+        {
+            var session = await sessions.FindAsync(id, inside).ConfigureAwait(false);
+            if (session is null)
+            {
+                return new SessionSayOutcome(SessionSayRefusal.NotFound, $"No session `{id}`.", Session: null);
+            }
+
+            if (Never(session) is { } never) return never;
+
+            var parked = session.State == SessionState.AwaitingPerson;
+            if (session.Active && !parked)
+            {
+                return new SessionSayOutcome(
+                    SessionSayRefusal.Taken,
+                    $"Session `{id}` is {Spell(session.State)}: its run may already have taken word `{named}`, so it cannot be taken back.",
+                    Session: null);
+            }
+
+            if (session.Said.FirstOrDefault(each => string.Equals(each.Id, named, StringComparison.Ordinal)) is not { } old)
+            {
+                return new SessionSayOutcome(
+                    SessionSayRefusal.Taken,
+                    $"Word `{named}` no longer waits on session `{id}`: it was taken, or taken back, already.",
+                    Session: null);
+            }
+
+            var left = await sessions.TakeSaidAsync(id, [named], inside).ConfigureAwait(false);
+            if (words is null)
+            {
+                return new SessionSayOutcome(
+                    SessionSayRefusal.None,
+                    $"Took word `{named}` back from session `{id}`"
+                    + (left!.Said.Count == 0 ? ": no words wait on it now." : $": {left.Said.Count} still wait."),
+                    left) { Taken = old };
+            }
+
+            var reworded = new SaidWord(NewWordId(), words, now, old.Files, old.Reopens);
+            var (note, parts) = parked ? AnsweredNote(session, words) : (null, null);
+            var kept = await sessions.KeepSaidAsync(id, reworded, note, inside, noteParts: parts).ConfigureAwait(false);
+            return new SessionSayOutcome(
+                SessionSayRefusal.None,
+                $"Reworded word `{named}` on session `{id}`: the new words wait last, as `{reworded.Id}`.",
+                kept, reworded) { Taken = old };
+        }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// What never goes on (D137 §2.2, MSG1a), judged before anything is read of the words, for the say door and the take-back
+    /// alike: a teammate's record, an intake, a second opinion's reviewer, a helper and a stand-down. Null for any other.
+    /// </summary>
+    private static SessionSayOutcome? Never(Session session)
+    {
+        var id = session.Id;
+        if (session.Origin is { } origin)
+        {
+            return new SessionSayOutcome(
+                SessionSayRefusal.NotOurs, $"Session `{id}` ran on `{origin}`, where its conversation is; it cannot go on here.",
+                Session: null) { Origin = origin };
+        }
+
+        if (session.Ask is { } ask)
+        {
+            return new SessionSayOutcome(SessionSayRefusal.Intake, IntakeRefusal(id, ask), Session: null) { Ask = ask };
+        }
+
+        if (session.Opinion is { } opinion)
+        {
+            return new SessionSayOutcome(
+                SessionSayRefusal.Opinion,
+                $"Session `{id}` read another session's work for second opinion `{opinion}`: a pass takes one turn and no words, "
+                + "and is never resumed. Ask again, with your words, for a fresh one.",
+                Session: null) { Opinion = opinion };
+        }
+
+        // MIXAGENT2a-i: the helper's twin of the reviewer's refusal above: its answer comes back through its file.
+        if (session.Serves is { } serves)
+        {
+            return new SessionSayOutcome(
+                SessionSayRefusal.Helper,
+                $"Session `{id}` is a helper for session `{serves}`: it takes one turn and no words, and is never resumed. "
+                + "Ask another agent again, with your words, for a fresh one.",
+                Session: null);
+        }
+
+        if (session.State == SessionState.StoodDown)
+        {
+            return new SessionSayOutcome(
+                SessionSayRefusal.StoodDown,
+                session.Quest is { } theirs
+                    ? $"Session `{id}` stood down: `#{theirs}` is someone else's, so it has nothing to go on with."
+                    : $"Session `{id}` stood down, so it has nothing to go on with.",
+                Session: null) { Quest = session.Quest };
+        }
+
+        return null;
     }
 
     /// <summary>A new word's id: random, as a session's is, and never <see cref="SessionStore.AnswerWordId"/>.</summary>

@@ -257,6 +257,9 @@ daoris <command> [options]
                                                    its agent names no time for
                                                    its limit; 60 by default
                          cap <n> · adapter <name>
+                       trees list|clean|land, sessions archive|take-back, history
+                       clear and update are `daoris-driver`, not verbs here:
+                       the install's app/bin/ holds it (sh and .cmd).
   plugin [verb]        this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json):
                          list                      each one, what it declares and
                                                    speaks, why a refused one does not

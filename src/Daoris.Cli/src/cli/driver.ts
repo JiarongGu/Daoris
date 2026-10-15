@@ -150,6 +150,9 @@ export const command: CliCommand = {
     '                                                   its agent names no time for',
     '                                                   its limit; 60 by default',
     '                         cap <n> · adapter <name>',
+    '                       trees list|clean|land, sessions archive|take-back, history',
+    '                       clear and update are `daoris-driver`, not verbs here:',
+    '                       the install\'s app/bin/ holds it (sh and .cmd).',
   ],
   // `retry` without `--at` counts the quest's failures from this machine's records (RETRY1b), and `review` looks for a
   // procedure in the registry's checkouts (REVIEWENV1a), through the one module that may reach a network, handed in here so

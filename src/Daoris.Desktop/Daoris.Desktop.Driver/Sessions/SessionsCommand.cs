@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <param name="Verb">
 /// <c>list</c>, <c>stop</c>, <c>finish</c>, <c>decline</c>, <c>archive</c>, <c>unarchive</c>, <c>delete</c>, <c>say</c>,
-/// <c>go-on-new</c> or <c>start-from</c>.
+/// <c>take-back</c>, <c>reword</c>, <c>go-on-new</c> or <c>start-from</c>.
 /// </param>
 public sealed record SessionsAsk(string Verb)
 {
@@ -35,8 +35,11 @@ public sealed record SessionsAsk(string Verb)
     /// <summary><c>archive --ended --yes</c>: archive what the list holds.</summary>
     public bool Yes { get; init; }
 
-    /// <summary>A say's words (MSG1e), joined by a space as `answer` joins them.</summary>
+    /// <summary>A say's words (MSG1e), joined by a space as `answer` joins them; a reword's new words (SAIDBACK1a).</summary>
     public string? Text { get; init; }
+
+    /// <summary>A take-back's or a reword's word (SAIDBACK1a): the id it waits under on the record; null lists them.</summary>
+    public string? Word { get; init; }
 
     /// <summary>A say's files, each as the person named its path.</summary>
     public IReadOnlyList<string> Files { get; init; } = [];
@@ -140,6 +143,7 @@ public static class SessionsCommand
                daoris-driver sessions stop <id>  ·  sessions finish <id> [--note "…"]  ·  sessions decline <id> --reason "…"
                daoris-driver sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>
                daoris-driver sessions say <id> "…" [--file <path>]…
+               daoris-driver sessions take-back <id> [<word>]  ·  sessions reword <id> <word> "…"
                daoris-driver sessions go-on-new <id>
                daoris-driver sessions start-from <id>
                daoris-driver sessions hand-over <id> --agent <adapter> [--account <name>]
@@ -201,6 +205,19 @@ public static class SessionsCommand
                 return null;
             case ["say", ..]:
                 return ReadSay(args, out problem);
+            case ["take-back", var id] when Id(id):
+                return new SessionsAsk("take-back") { Ids = [id] };
+            case ["take-back", var id, var word] when Id(id) && Id(word):
+                return new SessionsAsk("take-back") { Ids = [id], Word = word.Trim() };
+            case ["take-back", ..]:
+                problem = "`take-back` takes one session's id, then the word to take back; with no word it lists those waiting. "
+                    + "To put new words in its place, `reword <id> <word> \"…\"`.";
+                return null;
+            case ["reword", var id, var word, _, ..] when Id(id) && Id(word) && string.Join(' ', args.Skip(3)).Trim().Length > 0:
+                return new SessionsAsk("reword") { Ids = [id], Word = word.Trim(), Text = string.Join(' ', args.Skip(3)).Trim() };
+            case ["reword", ..]:
+                problem = "`reword` takes one session's id, the word to reword, then the words to put in its place.";
+                return null;
             case ["go-on-new", var id] when Id(id):
                 return new SessionsAsk("go-on-new") { Ids = [id] };
             case ["go-on-new", ..]:
@@ -282,6 +299,7 @@ public static class SessionsCommand
         ask.Verb switch
         {
             "say" => await SayAsync(world, ask, output, ct).ConfigureAwait(false),
+            "take-back" or "reword" => await TakeBackAsync(world, ask, output, ct).ConfigureAwait(false),
             "go-on-new" => await GoOnNewAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
             "start-from" => await StartFromAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
             "hand-over" => await HandOverAsync(world, ask, output, ct).ConfigureAwait(false),
@@ -1131,6 +1149,59 @@ public static class SessionsCommand
     }
 
     private static int Seconds(SessionsWorld world) => (int)Math.Round(world.Wait.TotalSeconds);
+
+    // ——— Take back and reword (SAIDBACK1a, D137 §2.4): words waiting on a record, before a session took them.
+
+    /// <summary>
+    /// One word waiting on a parked or ended record, taken back or reworded through the service's take-back door, which judges
+    /// it; with no word named, the words waiting listed under their ids. Where no loop drives the home, the record's
+    /// conversation settles the word it showed waiting with the withdrawn line (QUEUEEDIT1a's) and shows a reword's new words
+    /// as the terminal's, as <see cref="KeepAsync"/> shows words it keeps; where a loop does, its record of the conversation may
+    /// be open, so nothing is written there. Exit 0 done or listed, 1 refused (<c>taken</c> among them), 2 could not.
+    /// </summary>
+    private static async Task<int> TakeBackAsync(SessionsWorld world, SessionsAsk ask, TextWriter output, CancellationToken ct)
+    {
+        var id = ask.Ids[0];
+        if (ask.Word is not { } word)
+        {
+            if (await world.Service.RecordAsync(id, ct).ConfigureAwait(false) is not { } record)
+            {
+                output.WriteLine($"sessions: no session of this machine's is {id}.");
+                return 1;
+            }
+
+            var waiting = record.Waiting.Where(each => each.Id is not null).ToList();
+            if (waiting.Count == 0)
+            {
+                output.WriteLine($"sessions: no words wait on {id}.");
+                return 0;
+            }
+
+            output.WriteLine(
+                $"sessions: {waiting.Count} word{(waiting.Count == 1 ? " waits" : "s wait")} on {id}; take one back with "
+                + $"`daoris-driver sessions take-back {id} <word>`:");
+            foreach (var each in waiting) output.WriteLine($"  {each.Id}  {OneLine(each.Text)}");
+            return 0;
+        }
+
+        var answer = await world.Service.TakeBackAsync(id, word, ask.Verb == "reword" ? ask.Text : null, ct).ConfigureAwait(false);
+        if (answer.Done && !world.LoopRuns())
+        {
+            var events = new SessionEvents(Path.Combine(world.Home, "sessions"));
+            events.Keep(id, ChatTurns.Withdrawn(word), null);
+            if (answer.Word is { } kept) events.Keep(id, LoopWords.Shown(kept, RequestDoor.Terminal), null);
+        }
+
+        output.WriteLine($"sessions: {answer.Message}");
+        return answer.Done ? 0 : answer.Why is null ? 2 : 1;
+
+        // A word's text on the listing's one line: its lines joined by a space, cut after a hundred characters.
+        static string OneLine(string text)
+        {
+            var line = string.Join(' ', text.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+            return line.Length <= 100 ? line : line[..99] + "…";
+        }
+    }
 
     // ——— Go on in a new session (MSG1g, D137 §2.2): the screen's press, at a terminal.
 
