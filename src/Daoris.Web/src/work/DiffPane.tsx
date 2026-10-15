@@ -9,7 +9,7 @@ import { ExternalLink } from '../design/links';
 import { store, stored } from '../lib/stored';
 import {
   type LandingConflict, useDiscardSessionTree, useHandOff, useHandOffPress, useLandSessionTree, useLanding, useReadingSince, useSay, useSessionDiff,
-  useUnderWay,
+  useUnderWay, useUnderWayStep,
 } from '../bridge/shell';
 import { Button, EmptyState, Inline, SESSION_ACTIVE } from '../design/ui';
 import { reviewBranch, reviewKnown } from './diff';
@@ -168,6 +168,8 @@ export function DiffPane({
     land: useUnderWay('LAND_SESSION_TREE', session),
     discard: useUnderWay('DISCARD_SESSION_TREE', session),
     hand: useUnderWay('HANDOFF', session),
+    // Where the landing has reached, where its driver says (PRESSSTEP1): the gate is read before anything lands.
+    landStep: useUnderWayStep('LAND_SESSION_TREE', session),
   };
   const handable = handOff.data?.branch && handOff.data.plugin ? handOff.data : null;
 
@@ -384,7 +386,7 @@ export function DiffPane({
               }));
             }}
           >
-            {underWay.land ? t('work.review.accepting') : t('work.review.accept')}
+            {underWay.land ? t(underWay.landStep === 'gate' ? 'work.review.acceptingGate' : 'work.review.accepting') : t('work.review.accept')}
           </Button>
         )}
 

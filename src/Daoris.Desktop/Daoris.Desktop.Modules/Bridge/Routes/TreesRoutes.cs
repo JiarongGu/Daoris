@@ -478,6 +478,8 @@ public sealed class TreesRoutes(DriverLoop loop)
 
         // The landing gate (XAGENT1f, REVIEWENV1c): the second opinion, then the review. What holds the press says so before it,
         // and the press refuses it.
+        // Said to every window while the press is under way (PRESSSTEP1); a plan is no press and says it to nobody.
+        PressSteps.Reach(PressSteps.Gate);
         var gate = await trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, cancellationToken);
 
         if (request.Type == "LANDING")
@@ -503,6 +505,7 @@ public sealed class TreesRoutes(DriverLoop loop)
         gate = await new OpinionPresses(_loop.Home, service).PressedAsync(id, gate, Optional(request, "answers"), tree, questId, cancellationToken);
 
         // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds (LAND3).
+        PressSteps.Reach(PressSteps.Landing);
         var landed = await trees.LandAsync(tree, subject, cancellationToken, async token => await LinesRoutes.InUseAsync(service, token), gate: gate);
         // Kept where the conversation is kept, so the landing and the plugin's word outlast the press (D100).
         if (landed.Landed) _loop.Events.Keep(id, LandingRules.Note(landed), line => _loop.Output.Append(id, line));
@@ -794,6 +797,7 @@ public sealed class TreesRoutes(DriverLoop loop)
             return new { Session = id, Branch = (string?)plan.Branch, plan.Repository, plan.Plugin, plan.Problem, plan.PullRequest, plan.Commits };
         }
 
+        PressSteps.Reach(PressSteps.HandOff);
         var handed = await HandAsync(_loop, trees, root, entry, named, cancellationToken);
         return new
         {
