@@ -4857,3 +4857,130 @@ describe('a park\'s go-aheads', () => {
     expect(within(again).getAllByRole('listitem')[0]!.className).not.toContain('outline-accent');
   });
 });
+
+/**
+ * PROPOSEHERE1b (D168 point 2, D74): auto mode refused a driven session's local branch delete, and its `permission_propose`
+ * waited on the Agents page and the band while the person kept asking it in its conversation. Its own waiting proposals are a
+ * wait where they talk to it, in the head and at the foot; *Allow* settles it through the band's own door, then tells the
+ * session it is allowed, so its next turn, composed with the rule, goes on. A session that takes no words is said so instead.
+ */
+describe('a session\'s rule proposal', () => {
+  const RESTING = { ...DRIVEN, id: 'r3st1ng0', state: 'completed', updated: '2026-10-15T10:21:00Z' };
+  const proposed = '2026-10-15T10:20:00Z';
+  const MINE = {
+    id: 'p0000007', state: 'waiting', action: 'add', scope: 'repository', name: 'engine', list: 'allow',
+    rule: 'Bash(git branch -D:*)', why: 'Auto mode refused the local branch delete you asked for.', session: 'r3st1ng0', proposed,
+  };
+  const OTHERS = { ...MINE, id: 'p0000008', rule: 'Bash(git push:*)', session: 'o7h3r000' };
+  let reach: Record<string, unknown> = { reaches: 'resume' };
+  let proposals: Record<string, unknown>[] = [MINE, OTHERS];
+
+  beforeEach(() => {
+    SESSIONS = [RESTING];
+    reach = { reaches: 'resume' };
+    proposals = [MINE, OTHERS];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(async (_module: string, type: string, request?: { payload?: { id?: string; accept?: boolean } }) => {
+      if (type === 'RULES') return { path: 'C:/somewhere/.daoris/permissions.json', defaults: [], scopes: [], proposals };
+      if (type === 'RULE_PROPOSAL') {
+        proposals = proposals.map((one) => (one.id === request?.payload?.id
+          ? { ...one, state: request?.payload?.accept ? 'accepted' : 'declined' } : one));
+        return { path: 'C:/somewhere/.daoris/permissions.json', defaults: [], scopes: [], proposals };
+      }
+      if (type === 'SESSION_QUEUE') return reach;
+      if (type === 'SESSION_INPUT') return { sent: true, reaches: 'resume' };
+      if (type === 'SESSION_HISTORY') {
+        return {
+          session: 'r3st1ng0', earlier: false, latest: 4, events: [
+            { seq: 1, at: proposed, kind: 'user', text: 'Delete the merged branch and its worktree.' },
+            {
+              seq: 2, at: proposed, kind: 'tool', id: 't2', title: 'permission_propose', status: 'completed',
+              input: JSON.stringify({ action: 'add', scope: 'repository', list: 'allow', rule: 'Bash(git branch -D:*)', why: MINE.why }),
+            },
+            { seq: 3, at: proposed, kind: 'message', id: 'm3', text: 'I proposed a rule; once it is allowed I can delete it.' },
+            { seq: 4, at: proposed, kind: 'turn', stopReason: 'end_turn' },
+          ],
+        };
+      }
+      return DRIVER_STATE;
+    });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    eventHandlers.clear();
+  });
+
+  const said = () => invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT');
+
+  it('stands in its head and at the foot, and not another session\'s', async () => {
+    show('r3st1ng0');
+    const strip = await screen.findByRole('region', { name: 'Waiting on you' });
+    expect(within(strip).getByRole('listitem')).toHaveTextContent('allow Bash(git branch -D:*) for repository engine');
+    const head = screen.getByRole('region', { name: 'Rules it proposed' });
+    expect(within(head).getAllByRole('listitem')).toHaveLength(1);
+    expect(screen.queryByText(/Bash\(git push:\*\)/)).toBeNull();
+  });
+
+  it('allows it after asking once, then tells the session it is allowed, so its next turn goes on', async () => {
+    const notify = vi.fn();
+    show('r3st1ng0', notify);
+    const item = within(await screen.findByRole('region', { name: 'Waiting on you' })).getByRole('listitem');
+
+    await userEvent.click(within(item).getByRole('button', { name: 'Allow…' }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', expect.anything());
+    await userEvent.click(within(item).getByRole('button', { name: 'Allow' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', { payload: { id: 'p0000007', accept: true } }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: {
+        id: 'r3st1ng0',
+        text: 'The rule you proposed is allowed now: allow Bash(git branch -D:*) for repository engine. Go on with what you needed it for.',
+      },
+    }));
+    // Settled before it is said: the turn the words start is composed with the rule.
+    const order = invoke.mock.calls.map(([, type]) => type).filter((type) => type === 'RULE_PROPOSAL' || type === 'SESSION_INPUT');
+    expect(order).toEqual(['RULE_PROPOSAL', 'SESSION_INPUT']);
+    expect(notify).toHaveBeenCalledWith('Allowed: allow Bash(git branch -D:*) for repository engine. Sessions started from now on are handed it.');
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Session r3st1ng0 is told the rule is allowed, and goes on.', 'ok'));
+    // Settled, it waits no more.
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Rules it proposed' })).toBeNull());
+  });
+
+  it('declines it in one press, telling the session nothing', async () => {
+    const notify = vi.fn();
+    show('r3st1ng0', notify);
+    const head = await screen.findByRole('region', { name: 'Rules it proposed' });
+    await userEvent.click(within(head).getByRole('button', { name: 'Decline' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', { payload: { id: 'p0000007', accept: false } }));
+    expect(notify).toHaveBeenCalledWith('Declined: allow Bash(git branch -D:*) for repository engine. The rules are as they were.');
+    expect(said()).toEqual([]);
+  });
+
+  it('says on the card where the session takes no words, and allows it without telling it', async () => {
+    reach = { sent: false, why: 'stood-down' };
+    show('r3st1ng0');
+    const item = within(await screen.findByRole('region', { name: 'Waiting on you' })).getByRole('listitem');
+    await waitFor(() => expect(item).toHaveTextContent('It takes no words now, so it is not told'));
+
+    await userEvent.click(within(item).getByRole('button', { name: 'Allow…' }));
+    await userEvent.click(within(item).getByRole('button', { name: 'Allow' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', { payload: { id: 'p0000007', accept: true } }));
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Rules it proposed' })).toBeNull());
+    expect(said()).toEqual([]);
+  });
+
+  it('leads between the proposal and the call that raised it', async () => {
+    show('r3st1ng0');
+    const strip = await screen.findByRole('region', { name: 'Waiting on you' });
+    const call = await screen.findByText('permission_propose');
+    const block = call.closest<HTMLElement>('[data-block]')!;
+    await waitFor(() => expect(block).toHaveTextContent('Waiting on you from here: a rule it proposed'));
+
+    await userEvent.click(within(within(strip).getByRole('listitem')).getByRole('button', { name: 'In the conversation' }));
+    await waitFor(() => expect(block.className).toContain('outline-accent'));
+    await userEvent.click(within(block).getByRole('button', { name: 'To the wait' }));
+    await waitFor(() => expect(within(strip).getByRole('listitem')).toHaveFocus());
+  });
+});

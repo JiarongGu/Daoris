@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { GoAhead, Session } from '../data/api';
+import type { RuleProposal } from '../settings/AgentRules';
 import { GATES } from './opinionFixtures';
-import { landingStands, waitsOf } from './waits';
+import { landingStands, rulesAsked, waitsOf } from './waits';
 
 // WAITFOOT1b (D168 point 2): which waits on the person stand, one rule the foot's strip and the head's work read, so the two
 // cannot disagree. A wait is the person's to press; what waits on an agent, a workflow or nothing is not one.
@@ -86,6 +87,35 @@ describe('the waits on the person', () => {
     };
     expect(waitsOf({ session: session(), discards, onDiscardTree: press })).toEqual([{ kind: 'discard' }]);
     expect(waitsOf({ session: session(), discards: { ...discards, keptAt: null }, onDiscardTree: press })).toEqual([]);
+  });
+
+  // PROPOSEHERE1b (D168 point 2, D74): a rule the session proposed waits on the person where they talk to it.
+  const proposal = (id: string, state: RuleProposal['state'], over: Partial<RuleProposal> = {}): RuleProposal => ({
+    id, state, action: 'add', scope: 'repository', name: 'engine', list: 'allow', rule: 'Bash(git branch -D:*)',
+    why: 'Auto mode refused the branch delete you asked for.', session: 's1a2b3c4', proposed: '2026-10-15T10:20:00Z', ...over,
+  });
+
+  it('names each rule this session proposed that the person still answers, and none of another\'s or one settled', () => {
+    const proposals = [
+      proposal('r1', 'waiting'), proposal('r2', 'proposed'), proposal('r3', 'applied'), proposal('r4', 'declined'),
+      proposal('r5', 'waiting', { session: 'o7h3r000' }), proposal('r6', 'waiting', { session: undefined }),
+    ];
+    expect(rulesAsked(proposals, 's1a2b3c4').map((one) => one.id)).toEqual(['r1', 'r2']);
+    expect(waitsOf({ session: session(), rules: { proposals, onAnswer: press } })).toEqual([
+      { kind: 'rule', id: 'r1' }, { kind: 'rule', id: 'r2' },
+    ]);
+    // With no door to answer them (a browser has no rules), none; an older shell's answer that is no list holds none.
+    expect(waitsOf({ session: session(), rules: { proposals } })).toEqual([]);
+    expect(rulesAsked({ proposals }, 's1a2b3c4')).toEqual([]);
+    expect(rulesAsked(undefined, 's1a2b3c4')).toEqual([]);
+  });
+
+  it('stands after the go-aheads and before the work, parked or not', () => {
+    const rules = { proposals: [proposal('r1', 'waiting')], onAnswer: press };
+    expect(waitsOf({ session: parked, onResolve: press, answerBelow: true, goAheads: [goAhead(2, 'asked')], onGoAhead: press, rules }))
+      .toEqual([{ kind: 'question', below: true }, { kind: 'goAhead', number: 2 }, { kind: 'rule', id: 'r1' }]);
+    expect(waitsOf({ session: session(), lands: LANDS, landing: PLAN, onLand: press, rules }))
+      .toEqual([{ kind: 'rule', id: 'r1' }, { kind: 'accept' }]);
   });
 });
 

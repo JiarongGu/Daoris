@@ -22,8 +22,10 @@ import type { SayRebase } from './LandingSync';
 import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from './Lands';
 import { Note } from './Note';
 import { hasNote, noteBlocks, noteLines } from './noteLines';
+import { ProposedRules, type RuleAsk, type RuleWaits } from './ProposedRules';
 import { movedAt } from './rail';
 import { RunningIntake } from './RunningIntake';
+import { rulesAsked } from './waits';
 
 // The work's line is its own molecule, which the foot's strip draws too (WAITFOOT1b, D168); its shapes are read from here too.
 export type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from './Lands';
@@ -51,6 +53,9 @@ export type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from './Lands';
  * and *Refuse* where the frame can answer, and answering the last one open there sends the same session on, as on the
  * ask's page (GOAHEAD2b). They stay while it is parked, answered or not, so one still waiting can be answered before it
  * goes on.
+ *
+ * **The rules it proposed stand beneath them, whatever its state** (PROPOSEHERE1b, D74): a session refused something files a
+ * proposal and goes on or ends its turn, so its own open proposals are answered here, *Allow…* asking once, as at the foot.
  *
  * **It says how an ended session stands, in the record's note** (SESS2, reversing the rule that it
  * did not): the rule rested on *"the timeline below carries it"*, and since FRAME6 the timeline is in
@@ -90,8 +95,15 @@ export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, branch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
-  continues, helps, onOpenSession, workAsk, workBusy = false, toEvent,
+  continues, helps, onOpenSession, workAsk, workBusy = false, toEvent, rules, ruleAsk,
 }: {
+  /**
+   * The rules it proposed that the person still answers (PROPOSEHERE1b, D74), the frame's, handed to the foot's strip alike:
+   * the machine's proposals as the shell read them, the answer's door, its pending and whether the session takes words now.
+   */
+  rules?: RuleWaits | null;
+  /** Where a rule's *Allow…* is open, the frame's, so it is open in the head or at the foot, never both (D168 point 3). */
+  ruleAsk?: RuleAsk;
   /**
    * The way from each wait to the event in the conversation that raised it, where the conversation found one (WAITFOOT1c, D168
    * point 4): *In the conversation* on the park's card, each go-ahead and the work's line. The frame's, handed to the foot's
@@ -232,6 +244,7 @@ export function SessionHead({
   const intake = isIntake(session);
   const shown = shownState(session, taking);
   const noted = hasNote({ note: session.note, parts: session.noteParts });
+  const proposed = rulesAsked(rules?.proposals, session.id);
 
   return (
     // Where the foot's *To the top* puts the focus (WAITFOOT1b, D168 point 1): every wait stands here with its reading.
@@ -274,6 +287,20 @@ export function SessionHead({
             onAnswer={onGoAhead}
             lead={t('work.awaiting.goAheadsLead')}
             inConversation={toEvent?.goAheads}
+          />
+        </section>
+      )}
+      {proposed.length > 0 && (
+        <section aria-labelledby={`rules-${session.id}`} className="grid gap-1">
+          <h3 id={`rules-${session.id}`} className="m-0 text-small font-semibold">{t('work.wait.rule.title')}</h3>
+          <ProposedRules
+            proposals={proposed}
+            busy={rules?.busy}
+            onAnswer={rules?.onAnswer}
+            heard={rules?.heard}
+            lead={t('work.wait.rule.lead')}
+            inConversation={toEvent?.rules}
+            ask={ruleAsk}
           />
         </section>
       )}
