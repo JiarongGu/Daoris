@@ -103,6 +103,8 @@ export function SessionBox({
       <Composer
         {...shared}
         {...resting}
+        // One box with its waiting words folded to a line (WAITFOOT2c).
+        fold
         placeholder={t('work.awaiting.answerPlaceholder')}
         sendLabel={t('work.awaiting.answerConfirm')}
       />

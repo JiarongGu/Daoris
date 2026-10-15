@@ -225,6 +225,41 @@ describe('the shell push channel (ShellSignals)', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions });
   });
 
+  /**
+   * NOTIFY1c: the conversation the person is reading in a window in front already shows its answer, so its toast says nothing
+   * new; every other session's answer, every other kind and a hidden window keep theirs.
+   */
+  it('skips the answered toast for the conversation attended in a window in front, and only that', () => {
+    const notify = vi.fn();
+    show(<ShellSignals notify={notify} attended="c1a2b3c4" />);
+    const answered = (session: string) => eventHandlers.get('DAORIS.SESSION_ATTENTION')!({
+      kind: 'Answered', session, repository: 'engine', headline: 'engine — a conversation answered you',
+    });
+
+    answered('c1a2b3c4');
+    expect(notify).not.toHaveBeenCalled();
+
+    answered('c9z9z9z9');
+    expect(notify).toHaveBeenCalledWith('engine — a conversation answered you', 'ok');
+
+    // A park of the attended session still demands them: only an answer is news the page already shows.
+    notify.mockClear();
+    eventHandlers.get('DAORIS.SESSION_ATTENTION')!({ kind: 'Parked', session: 'c1a2b3c4', headline: 'engine — a session needs you' });
+    expect(notify).toHaveBeenCalledWith('engine — a session needs you', 'error');
+  });
+
+  it('keeps the answered toast while the window is hidden, though its conversation is the attended one', () => {
+    const notify = vi.fn();
+    const visibility = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    try {
+      show(<ShellSignals notify={notify} attended="c1a2b3c4" />);
+      eventHandlers.get('DAORIS.SESSION_ATTENTION')!({ kind: 'Answered', session: 'c1a2b3c4', headline: 'engine — a conversation answered you' });
+      expect(notify).toHaveBeenCalledWith('engine — a conversation answered you', 'ok');
+    } finally {
+      visibility.mockRestore();
+    }
+  });
+
   /** An older shell, or a reworded payload: the console must tolerate any shape (SES1's rule). */
   it('an attention event with nothing to say is not a blank toast', () => {
     const notify = vi.fn();

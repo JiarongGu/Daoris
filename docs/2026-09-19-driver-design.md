@@ -281,3 +281,6 @@ tier, and says which tier ran.
    the loop says it on `SESSION_ATTENTION` while notifications are on, the balloon is quiet while a
    window is in front, and the page's toast is news, not a demand. The headless console's own
    conversation answers in that console, so it prints nothing more.*
+   *Amended 2026-10-16 (NOTIFY1c): the page's toast for an `Answered` is skipped when its session is the one attended on the
+   Sessions view of a window whose document is visible, since that page already shows the answer; `ShellSignals` is handed the
+   attended session. Every other kind keeps its toast, the attended session's park and ending included.*

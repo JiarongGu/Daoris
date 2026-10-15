@@ -1935,6 +1935,7 @@ export function WorkFrame({
             queued={turns.queued}
             // A parked conversation's waiting words are its record's, which it goes on with (SAIDBACK1b): no turn, no door.
             queuedLabel={attended.state === 'awaiting-person' ? t('work.say.waiting') : undefined}
+            fold={attended.state === 'awaiting-person'}
             going={sending.going}
             taking={turns.taking}
             opening={turns.opening}
