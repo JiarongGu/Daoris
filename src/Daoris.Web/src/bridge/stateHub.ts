@@ -1,4 +1,4 @@
-import { type QueryClient, type QueryKey, useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, type QueryKey, skipToken, useIsMutating, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenoraEvent } from '@shenora/react';
 import { keys } from '../data/queries';
 import { ALL_HISTORY } from './history';
@@ -60,11 +60,72 @@ export function stateChanged(client: QueryClient, change: StateChanged | null | 
   }
 }
 
+/** One press the driver has not answered yet (STATEHUB1c, D169 point 7): its route, and the session its payload named. */
+export type PressUnderWay = { route: string; session?: string };
+
+/** What the driver last told under way, whole, and its number, so a telling the bus delivered late changes nothing. */
+type UnderWay = { seq: number | null; presses: PressUnderWay[] };
+
+const NOTHING: UnderWay = { seq: null, presses: [] };
+
+/** The presses a telling names; a press of any other shape is none, and a telling with no list is no telling. */
+const pressesOf = (value: unknown): PressUnderWay[] | null => (Array.isArray(value)
+  ? value.flatMap((each: unknown) => {
+    const press = each as { route?: unknown; session?: unknown } | null;
+    if (typeof press?.route !== 'string') return [];
+    return [typeof press.session === 'string' ? { route: press.route, session: press.session } : { route: press.route }];
+  })
+  : null);
+
 /**
- * The page's half of the driver's state as events (D169): every `STATE_CHANGED` the shell forwards, at one place. Mounted by
- * `ShellSignals` in both roots, so every window of the desktop hears it; a plain browser has no bus, and polls as before.
+ * Keep what the driver says is under way (D169 point 7), replaced whole at the window's root. A telling numbered at or before the
+ * one kept is older, however late the bus delivered it; one of any other shape changes nothing.
+ */
+export function underWay(client: QueryClient, told: { seq?: unknown; presses?: unknown } | null | undefined) {
+  const presses = pressesOf(told?.presses);
+  if (!presses) return;
+  const seq = typeof told?.seq === 'number' ? told.seq : null;
+  const kept = client.getQueryData<UnderWay>(keys.underWay)?.seq ?? null;
+  if (seq !== null && kept !== null && seq <= kept) return;
+  client.setQueryData<UnderWay>(keys.underWay, { seq, presses });
+}
+
+/** Never fetched: written by the hub alone, and read by every view through the one query, which the hub's own read keeps. */
+const useTold = () => useQuery<UnderWay>({
+  queryKey: keys.underWay, queryFn: skipToken, initialData: NOTHING, staleTime: Infinity, gcTime: Infinity,
+}).data ?? NOTHING;
+
+/** The session a press of this window's was sent for: the session itself, or the `id` that names it, as the routes declare. */
+function sessionPressed(variables: unknown): string | null {
+  if (typeof variables === 'string') return variables;
+  const id = (variables as { id?: unknown } | null | undefined)?.id;
+  return typeof id === 'string' ? id : null;
+}
+
+/**
+ * Whether a press of `route` is under way for `session` (STATEHUB1c, D169 point 7), read alike by every view of that session, so
+ * the head's press holds the review's *Accept* and a view mounted mid-press says *落地中…*. This window's own press is under
+ * way from its send, kept by the window's client and not the component that pressed (its mutation, keyed by its route), and
+ * in a plain browser too; another window's from the driver's telling. No session attended is nothing under way.
+ */
+export function useUnderWay(route: string, session: string | null): boolean {
+  const told = useTold();
+  const own = useIsMutating({
+    mutationKey: [route],
+    predicate: (mutation) => session !== null && sessionPressed(mutation.state.variables) === session,
+  });
+  return session !== null && (own > 0 || told.presses.some((press) => press.route === route && press.session === session));
+}
+
+/**
+ * The page's half of the driver's state as events (D169): every `STATE_CHANGED` the shell forwards, at one place, and what is
+ * under way (`UNDER_WAY`, STATEHUB1c), kept at the root so a view mounted later reads it. Mounted by `ShellSignals` in both roots,
+ * so every window of the desktop hears it; a plain browser has no bus, and polls as before.
  */
 export function useStateHub() {
   const client = useQueryClient();
   useShenoraEvent<StateChanged>('DAORIS', 'STATE_CHANGED', (change) => stateChanged(client, change));
+  useShenoraEvent<{ seq?: unknown; presses?: unknown }>('DAORIS', 'UNDER_WAY', (told) => underWay(client, told));
+  // The root's own read of it: what was told stays while no view of it is mounted, as long as the press it names may run.
+  useTold();
 }

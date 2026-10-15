@@ -476,20 +476,14 @@ export const useSendMessage = () =>
  * park's answer, a session that ended, or one winding up, all through `SESSION_INPUT`, which keeps a park's and an ended
  * record's words on the record and nudges the driver's loop (MSG1d). Words alone: the resumed run is handed no files.
  *
- * The sessions are asked again by the state hub (STATEHUB1d), so a park shows its answer and a record its words waiting.
- *
- * @remarks
- * And by the hook until STATEHUB1f, without cancelling the hub's read: `WorkFrame`'s tests press it with no hub mounted
- * (D169's STATEHUB1d note).
+ * The sessions are asked again by the state hub alone (STATEHUB1d, STATEHUB1f), so a park shows its answer and a record its
+ * words waiting.
  */
-export const useSay = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useSay = () =>
+  useMutation({
     mutationFn: async (words: { id: string; text: string }) =>
       wordsOf(await call<unknown>('SESSION_INPUT', { id: words.id, text: words.text })),
-    onSuccess: () => void client.invalidateQueries({ queryKey: keys.allSessions }, { cancelRefetch: false }),
   });
-};
 
 /**
  * What a go-ahead answered on a park's page did (KNOWUSE1a2, GOAHEAD2b): the go-ahead's sentence, what became of the park,
@@ -592,13 +586,9 @@ export const useHandOver = () => useMutation({
  * `useStopSession` is the other verb and means something else — the person cut it off.
  *
  * @remarks
- * The sessions are asked again by the state hub (STATEHUB1d), and by the hook until STATEHUB1f, without cancelling the hub's
- * read: Ask Daoris's tests press it with no hub mounted (D169's STATEHUB1d note).
+ * The sessions are asked again by the state hub alone (STATEHUB1d, STATEHUB1f).
  */
-export const useEndChat = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useEndChat = () =>
+  useMutation({
     mutationFn: (id: string) => call<{ ended: boolean }>('END_CHAT', { id }),
-    onSuccess: () => void client.invalidateQueries({ queryKey: keys.allSessions }, { cancelRefetch: false }),
   });
-};

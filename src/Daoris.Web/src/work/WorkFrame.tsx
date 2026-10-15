@@ -11,7 +11,7 @@ import {
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useSessionDiff,
-  useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting,
+  useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting, useUnderWay,
 } from '../bridge/shell';
 import { type Sent, useSending, useSettled } from './sending';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
@@ -1333,6 +1333,8 @@ export function WorkFrame({
   // SQUASHTIDY1b: where the line holds its commits by content, no landing but its discard, the review's own, unforced.
   const discards = attended && here && !lands && grouping?.discards ? grouping.discards : null;
   const discardTree = useDiscardSessionTree();
+  const landsNow = useUnderWay('LAND_SESSION_TREE', attended?.id ?? null);
+  const discardsNow = useUnderWay('DISCARD_SESSION_TREE', attended?.id ?? null);
   // Its one press, for the head and, in Accept's place, the review (SQUASHTIDY1f): never forced from here, a refusal the
   // driver's sentence inside the ask, and the review's Discard the door that asks twice.
   const discardHeld = discards && attended ? (answered: Answered) => discardTree.mutate({ id: attended.id }, {
@@ -1396,7 +1398,8 @@ export function WorkFrame({
     // SQUASHTIDY1b: its discard, never forced from here (`discardHeld`).
     discards,
     onDiscardTree: discardHeld,
-    workBusy: land.isPending || discardTree.isPending,
+    // Under way for this session from either place or another window (STATEHUB1c, D169 point 7), never another session's press.
+    workBusy: landsNow || discardsNow,
   } : null;
   // WAITFOOT1c (D168 point 4): the waits that stand where the strip draws them, and the events that raised them, which the
   // conversation finds and tells; the way to each is handed to the head and the strip alike, and a raising block's *To the wait*

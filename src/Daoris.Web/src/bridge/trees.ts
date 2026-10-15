@@ -399,11 +399,13 @@ export type PluginLanding = { id: string; pushed: boolean; pullRequest?: string;
  *
  * What it moved is the route's to declare and the state hub's to ask again, in every window (STATEHUB1b, D169): every plan and
  * gate (the line moved, or a refusal fetched it), the sessions, its review, its hand-off and the clean-up's list. Asked here
- * alone, and never the plan after a done press, the plan read before it answered after a tab switch (STATEHUB1).
+ * alone, and never the plan after a done press, the plan read before it answered after a tab switch (STATEHUB1); the hook asks
+ * nothing itself, a conflict's plan among it (STATEHUB1f).
  */
-export const useLandSessionTree = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useLandSessionTree = () =>
+  useMutation({
+    // Keyed by its route, so every view of the session reads it under way, not only the one that pressed (STATEHUB1c).
+    mutationKey: ['LAND_SESSION_TREE'],
     mutationFn: (land: string | { id: string; answers?: string | null; branch?: string | null }) => {
       const { id, answers, branch } = typeof land === 'string' ? { id: land, answers: null, branch: null } : land;
       // LANDNAME1b: a name the person entered replaces the rule's whole name; blank sends none, so the payload is today's.
@@ -416,15 +418,7 @@ export const useLandSessionTree = () => {
       }>(
         'LAND_SESSION_TREE', { id, ...(answers ? { answers } : {}), ...(named ? { branch: named } : {}) }, { timeoutMs: pluginBound });
     },
-    // LANDSYNC1's conflict, asked here too until the review's tests hear the hub (STATEHUB1f), never cancelling a read the hub's
-    // event began.
-    onSuccess: (result) => {
-      if (!result.done && result.conflict) {
-        void client.invalidateQueries({ queryKey: keys.landing(result.session) }, { cancelRefetch: false });
-      }
-    },
   });
-};
 
 /**
  * Whether the branch this session's landing made can be handed to a landing plugin now (WSR5b): the
@@ -450,6 +444,7 @@ export const useHandOff = (id: string | null) => {
  */
 export const useHandOffPress = () =>
   useMutation({
+    mutationKey: ['HANDOFF'],
     mutationFn: (id: string) =>
       call<TreeAct & { branch?: string | null; plugin?: PluginLanding | null }>('HANDOFF', { id }, { timeoutMs: pluginBound }),
   });
@@ -461,6 +456,7 @@ export const useHandOffPress = () =>
  */
 export const useDiscardSessionTree = () =>
   useMutation({
+    mutationKey: ['DISCARD_SESSION_TREE'],
     mutationFn: (act: { id: string; force?: boolean }) =>
       call<TreeAct>('DISCARD_SESSION_TREE', { id: act.id, ...(act.force ? { force: true } : {}) }),
   });

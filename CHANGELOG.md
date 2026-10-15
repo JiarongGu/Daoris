@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- While a session's work lands, its review says *Landing…* (落地中…) wherever it is shown: after *Accept…* at the session's top,
+  after switching tabs and back, and in every other open window, where it offered *Accept* again before. So too its *Discard
+  tree* waits while its tree is discarded, and its hand-off says *Handing off…* while its branch is handed to its plugin.
 - Allowing a rule a session proposed from What needs you, or accepting it on the Agents page, now tells that session so, as
   allowing it in its conversation does, so it goes on instead of sitting idle. And a branch Daoris cleaned up that a landing
   made reads *A landing's branch, for session …* in the Branches tab's *Cleaned up on its own*, not a bare repository row.

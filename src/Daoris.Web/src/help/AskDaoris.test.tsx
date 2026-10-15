@@ -8,20 +8,29 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 // HELP1a (D89): Ask Daoris's conversation, with the bridge mocked as present — the panel exists only in
 // the shell, since most of what it reads is this machine's (D47 §4).
 
-const { invoke, notifyReady } = vi.hoisted(() => ({
+const { invoke, notifyReady, heard } = vi.hoisted(() => ({
   invoke: vi.fn(),
   notifyReady: vi.fn(() => Promise.resolve()),
+  // The state hub's ear (STATEHUB1f, D169): what the mocked shell publishes after a press reaches it, as the kit's pump would.
+  heard: new Map<string, (payload: unknown) => void>(),
 }));
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
-  useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
-  useShenoraEvent: () => {},
-}));
+vi.mock('@shenora/react', async () => {
+  const { publishing } = await import('../test/publishing');
+  const published = publishing(invoke, (type, payload) => heard.get(type)?.(payload));
+  return {
+    isShenoraAvailable: () => true,
+    getBridge: () => ({ isAvailable: true, invoke: published, notifyReady }),
+    useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+    useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
+      if (module === 'DAORIS') heard.set(type, handler);
+    },
+  };
+});
 
 import i18n from '../locales/i18n';
 import { keys } from '../data/queries';
+import { useStateHub } from '../bridge/stateHub';
 import { code } from '../test/code';
 import { AskDaoris } from './AskDaoris';
 import type { HelpWhere } from './where';
@@ -71,10 +80,17 @@ function bridge(start: { sessionId: string | null; message: string } = { session
 /** How many times the page asked the driver to open Ask Daoris's conversation. */
 const starts = () => invoke.mock.calls.filter(([, type]) => type === 'START_HELP').length;
 
+/** The window's state hub, as `ShellSignals` mounts it: the sessions a finished conversation moved are asked again here. */
+function Hub() {
+  useStateHub();
+  return null;
+}
+
 function show(where?: Omit<HelpWhere, 'session'>, attending: string | null = null, onGo = vi.fn()) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
+      <Hub />
       <Tooltip.Provider>
         <AskDaoris where={where} attending={attending} onGo={onGo} onClose={vi.fn()} />
       </Tooltip.Provider>

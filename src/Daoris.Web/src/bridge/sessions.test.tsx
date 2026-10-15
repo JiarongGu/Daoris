@@ -16,7 +16,6 @@ vi.mock('@shenora/react', () => ({
 
 import { sentence } from '../locales/format';
 import i18n from '../locales/i18n';
-import { keys } from '../data/queries';
 import {
   useArchiveSessions, useDeleteSession, useGoOnNew, useOpenSessionFolder, useSessionGroups, type SessionGrouping,
 } from './sessions';
@@ -60,10 +59,9 @@ describe('the sessions domain', () => {
 
   /**
    * An archive names the sessions and which way. The sessions, their groups among them, are asked again by the driver's
-   * `STATE_CHANGED`, in every window (STATEHUB1d, D169 point 6); the hook asks them too, without cancelling the hub's read,
-   * only until `SessionRail`'s tests hear the hub (STATEHUB1f).
+   * `STATE_CHANGED`, in every window (STATEHUB1d, D169 point 6), and by the hook never (STATEHUB1f).
    */
-  it('archives on DAORIS.DRIVER and asks the sessions again without cancelling the hub’s read', async () => {
+  it('archives on DAORIS.DRIVER and leaves asking the sessions again to the state hub', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const invalidate = vi.spyOn(client, 'invalidateQueries');
     invoke.mockImplementation(async () => ({ archived: [{ session: 's1', at: '2026-10-02T09:00:00Z' }], kept: [] }));
@@ -73,7 +71,7 @@ describe('the sessions domain', () => {
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_ARCHIVE', { payload: { ids: ['s1'], archived: true } });
     expect(answer.archived.map((mark) => mark.session)).toEqual(['s1']);
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions }, { cancelRefetch: false });
+    expect(invalidate).not.toHaveBeenCalled();
   });
 
   /**

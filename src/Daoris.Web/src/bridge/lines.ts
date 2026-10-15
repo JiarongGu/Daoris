@@ -74,42 +74,30 @@ export const useSweepPlan = () => {
 /**
  * The clean-up's press: only the branches the list showed to go, each judged again by the driver. What it moved (the list, the
  * sessions, the reviews kept until something moves their tree (REVIEW4), and which repositories hold Daoris's branches, D112)
- * the state hub asks again, as the route declares it (STATEHUB1b, D169).
+ * the state hub asks again, as the route declares it (STATEHUB1b, D169), and the hook nothing itself (STATEHUB1f).
  */
-export const useSweep = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useSweep = () =>
+  useMutation({
     mutationFn: (only: string[]) =>
       call<{
         results: { branch: SweepBranch; removed: boolean; message: string }[];
         landed?: { branch: LandedBranch; removed: boolean; message: string }[];
         removed: number;
       }>('SWEEP', { only }),
-    // Asked here too until the review's tests hear the hub (STATEHUB1f), never cancelling a read the hub's event began.
-    onSuccess: () => void client.invalidateQueries({ queryKey: keys.allDiffs }, { cancelRefetch: false }),
   });
-};
 
 /**
  * Discard a failed or superseded attempt's session branch, its commits with it and its tree where it is still here (LAND3b,
  * D102's LAND3 note): the screen's half of `daoris-driver trees remove <branch> --repository <name> --force`. Always
  * forced, since the page asks once, naming the branch and its commits, before it sends; a branch the driver kept is an
  * answer with its sentence. What it moved is asked again either way, since a branch gone already is a list out of date: the
- * state hub's, as the route declares it, as after the clean-up (STATEHUB1b, D169).
+ * state hub's, as the route declares it, as after the clean-up (STATEHUB1b, D169), and never the hook's own (STATEHUB1f).
  */
-export const useDiscardSessionBranch = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useDiscardSessionBranch = () =>
+  useMutation({
     mutationFn: ({ repository, branch }: { repository: string; branch: string }) =>
       call<BranchDiscard>('DISCARD_SESSION_BRANCH', { repository, branch, force: true }),
-    // Asked here too until the head's, the workspace's and the review's tests hear the hub (STATEHUB1f), never cancelling a
-    // read the hub's event began.
-    onSuccess: (result) => {
-      void client.invalidateQueries({ queryKey: keys.sweep }, { cancelRefetch: false });
-      if (result.done) void client.invalidateQueries({ queryKey: keys.allDiffs }, { cancelRefetch: false });
-    },
   });
-};
 
 /**
  * Where the last look at bringing repositories up to date is kept (WSR6): one per workspace, so a workspace's page never
@@ -242,9 +230,8 @@ export const useTreesSyncPlan = (workspace?: string) => {
  * route declares them (STATEHUB1b, D169). It waits for each row's replay, one after another (WSR7). Asked for a workspace,
  * the driver judges that workspace's checkouts alone (BRSCOPE1), as its look did.
  */
-export const useTreesSync = (workspace?: string) => {
-  const client = useQueryClient();
-  return useMutation({
+export const useTreesSync = (workspace?: string) =>
+  useMutation({
     mutationFn: (only: string[]) =>
       call<{
         lines: { line: LinePull; moved: boolean; message: string }[];
@@ -252,10 +239,7 @@ export const useTreesSync = (workspace?: string) => {
         deletes: { branch: LandedBranch; removed: boolean; message: string }[];
         changed: number;
       }>('TREES_SYNC', workspace === undefined ? { only } : { only, workspace }, { timeoutMs: pressBound(only.length) }),
-    // Asked here too until the review's tests hear the hub (STATEHUB1f), never cancelling a read the hub's event began.
-    onSuccess: () => void client.invalidateQueries({ queryKey: keys.allDiffs }, { cancelRefetch: false }),
   });
-};
 
 /**
  * Set a repository's line or a workspace's, or clear it with no branch — the file `daoris driver

@@ -35,16 +35,22 @@ const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => {
   };
 });
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
-  useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
-  useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
-    eventHandlers.set(`${module}.${type}`, handler);
-  },
-}));
+vi.mock('@shenora/react', async () => {
+  // What a press moved reaches the frame's state hub as the shell publishes it (STATEHUB1f, D169), never the press's hook.
+  const { publishing } = await import('../test/publishing');
+  const published = publishing(invoke, (type, payload) => eventHandlers.get(`DAORIS.${type}`)?.(payload));
+  return {
+    isShenoraAvailable: () => true,
+    getBridge: () => ({ isAvailable: true, invoke: published, notifyReady }),
+    useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+    useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
+      eventHandlers.set(`${module}.${type}`, handler);
+    },
+  };
+});
 
 import i18n from '../locales/i18n';
+import { useStateHub } from '../bridge/stateHub';
 import { ContextMenus } from '../menus/ContextMenu';
 import type { OpenGroup } from '../app/opener';
 import { menuActs, rightClick } from '../test/contextMenu';
@@ -144,12 +150,19 @@ function carried() {
   };
 }
 
+/** The window's state hub, as `ShellSignals` mounts it beside the frame: what a press moved is asked again here. */
+function Hub() {
+  useStateHub();
+  return null;
+}
+
 /** The frame with the application's selection held for it, as `App` holds it. */
 function show(selected: string | null = null, notify: (text: string) => void = () => {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const onSelect = vi.fn();
   const view = render(
     <QueryClientProvider client={client}>
+      <Hub />
       <Tooltip.Provider>
         <WorkFrame selected={selected} onSelect={onSelect} notify={notify} />
       </Tooltip.Provider>
@@ -172,6 +185,7 @@ function going(group: OpenGroup) {
   }
   render(
     <QueryClientProvider client={client}>
+      <Hub />
       <Tooltip.Provider>
         <Going />
       </Tooltip.Provider>
@@ -2100,6 +2114,7 @@ describe('starting and holding a conversation', () => {
 
     view.rerender(
       <QueryClientProvider client={view.client}>
+        <Hub />
         <Tooltip.Provider>
           <WorkFrame selected="decaf222" onSelect={view.onSelect} notify={() => {}} />
         </Tooltip.Provider>
@@ -2109,6 +2124,7 @@ describe('starting and holding a conversation', () => {
 
     view.rerender(
       <QueryClientProvider client={view.client}>
+        <Hub />
         <Tooltip.Provider>
           <WorkFrame selected="c0ffee11" onSelect={view.onSelect} notify={() => {}} />
         </Tooltip.Provider>
@@ -3951,6 +3967,41 @@ describe('acting on what a session landed', () => {
   });
 
   /**
+   * STATEHUB1c (D169 point 7, the owner's 2026-10-15 采纳): a landing pressed in the head was the head's alone, so the review
+   * offered *Accept* while it ran. Under way, every view of the session says so: the review's *Accept* reads *Landing…* and
+   * waits, as it would for its own press, until the landing answers.
+   */
+  it('holds the review’s Accept as Landing… while the head’s landing is under way', async () => {
+    SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
+    let landed: (answer: unknown) => void = () => {};
+    invoke.mockImplementation((_module: string, type: string) => {
+      if (type === 'SESSION_GROUPS') {
+        return Promise.resolve({ sessions: [{ session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false,
+          lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] });
+      }
+      if (type === 'LANDING') return Promise.resolve({ session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace' });
+      if (type === 'LAND_SESSION_TREE') return new Promise((resolve) => { landed = resolve; });
+      if (type === 'SESSION_DIFF') return Promise.resolve(DIFF);
+      return Promise.resolve(DRIVER_STATE);
+    });
+
+    show('s1a2b3c4', vi.fn());
+    await userEvent.click(await within(screen.getByRole('main')).findByRole('button', { name: 'Accept…' }));
+    const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
+    await vi.waitFor(() => expect(within(ask).getByRole('button', { name: 'Accept' })).toBeEnabled());
+    await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
+
+    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    const review = within(await screen.findByRole('tabpanel'));
+    await review.findByText('src/chunk.ts');
+    expect(await review.findByRole('button', { name: 'Landing…' })).toBeDisabled();
+    expect(review.queryByRole('button', { name: 'Accept' })).toBeNull();
+
+    await act(async () => landed({ session: 's1a2b3c4', done: true, message: 'put its work on `feature/delta` — 1 commit(s).' }));
+    await vi.waitFor(() => expect(review.queryByRole('button', { name: 'Landing…' })).toBeNull());
+  });
+
+  /**
    * LANDNAME1b (D145's LANDNAME1a note): a branch name entered in the head's ask asks the plan again with it, so the driver's
    * refusal shows before the press, and the press sends it; a press with no name stays `{ id }` (the test above).
    */
@@ -4749,6 +4800,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
     const { rerender, client, onSelect } = show('s1a2b3c4');
     const attend = (id: string) => rerender(
       <QueryClientProvider client={client}>
+        <Hub />
         <Tooltip.Provider><WorkFrame selected={id} onSelect={onSelect} notify={() => {}} /></Tooltip.Provider>
       </QueryClientProvider>,
     );
@@ -5098,6 +5150,7 @@ describe('a park\'s go-aheads', () => {
     // Away and back, the press is spent: the strip drawn again takes no focus and outlines nothing.
     const attend = (selected: string) => view.rerender(
       <QueryClientProvider client={view.client}>
+        <Hub />
         <Tooltip.Provider><WorkFrame selected={selected} onSelect={view.onSelect} notify={() => {}} /></Tooltip.Provider>
       </QueryClientProvider>,
     );

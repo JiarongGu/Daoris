@@ -36,6 +36,22 @@ public sealed class StatePublisherTests : DriverModuleBridge
         }
     }
 
+    /// <summary>A route that answers only once the test lets it, so what is under way can be read while it is.</summary>
+    private sealed class Held : ModuleBase
+    {
+        private readonly TaskCompletionSource _let = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public override string ModuleName => "TEST.HELD";
+
+        public void Let() => _let.TrySetResult();
+
+        protected override async Task<object?> RouteMessageAsync(IpcRequest request, IModuleContext context, CancellationToken cancellationToken)
+        {
+            await _let.Task;
+            return request.Type == "REFUSE" ? throw new DriverException("refused before anything moved.") : new { Done = true };
+        }
+    }
+
     private IMessageDispatcher Compose(IIpcModule module, Func<IpcRequest, StateChange?>? declared = null)
     {
         var services = new ServiceCollection();
@@ -58,6 +74,15 @@ public sealed class StatePublisherTests : DriverModuleBridge
             CancellationToken.None);
 
     private IReadOnlyList<EventMessage> Changed() => [.. Raised.Where(message => message.Type == StatePublisher.Type)];
+
+    /// <summary>What was told under way, in the order the publisher numbered it (the bus does not wait, so not always raised so).</summary>
+    private IReadOnlyList<string> Told() =>
+    [
+        .. Raised.Where(message => message.Type == StatePublisher.UnderWayType)
+            .Select(message => (Seq: ((UnderWay)message.Payload!).Seq, Shape: Shape(message)))
+            .OrderBy(told => told.Seq)
+            .Select(told => told.Shape),
+    ];
 
     private static string Shape(EventMessage message) => JsonSerializer.Serialize(message.Payload, Wire);
 
@@ -117,6 +142,45 @@ public sealed class StatePublisherTests : DriverModuleBridge
         await UntilAsync(() => Changed().Count == 1);
         await Task.Delay(50);
         Assert.Equal("""{"scopes":["sessions","landing"],"sessions":["s2"]}""", Shape(Assert.Single(Changed())));
+    }
+
+    /// <summary>
+    /// STATEHUB1c (D169 point 7): a declared press is under way from its dispatch until it answers, and every window is told what
+    /// is, whole and numbered at each change, with the session its payload named; so *落地中…* is shown by every view of that
+    /// session, whichever window pressed. One refused as an error ends as one that answered does; a read is never under way.
+    /// </summary>
+    [Fact]
+    public async Task A_declared_press_is_told_under_way_whole_until_it_answers()
+    {
+        var held = new Held();
+        var dispatcher = Compose(held, Declared);
+
+        var moving = Dispatch(dispatcher, held.ModuleName, "MOVE", new { id = "s1" });
+        await UntilAsync(() => Told().Count == 1);
+        var sweeping = Dispatch(dispatcher, held.ModuleName, "SWEEP_ALL", new { only = new[] { "daoris/s-1" } });
+        await UntilAsync(() => Told().Count == 2);
+        var refusing = Dispatch(dispatcher, held.ModuleName, "REFUSE", new { id = "s2" });
+        var reading = Dispatch(dispatcher, held.ModuleName, "PLAN", new { id = "s1" });
+        await UntilAsync(() => Told().Count == 3);
+
+        Assert.Equal(
+            [
+                """{"seq":1,"presses":[{"route":"MOVE","session":"s1"}]}""",
+                """{"seq":2,"presses":[{"route":"MOVE","session":"s1"},{"route":"SWEEP_ALL"}]}""",
+                """{"seq":3,"presses":[{"route":"MOVE","session":"s1"},{"route":"SWEEP_ALL"},{"route":"REFUSE","session":"s2"}]}""",
+            ],
+            Told());
+
+        held.Let();
+        var answers = await Task.WhenAll(moving, sweeping, refusing, reading);
+
+        Assert.Equal([true, true, false, true], answers.Select(answer => answer.Success));
+        await UntilAsync(() => Told().Count == 6);
+        await Task.Delay(50);
+        // Each end told whole, the thrown refusal's too, and the read never: the last word is that nothing is under way.
+        Assert.Equal(6, Told().Count);
+        Assert.Equal("""{"seq":6,"presses":[]}""", Told()[^1]);
+        Assert.Equal(2, Changed().Count);
     }
 
     /// <summary>
