@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { TFunction } from 'i18next';
 import type { GoAhead, Session } from '../data/api';
 import { type GoAheadAnswer, GoAheadList } from '../asks/GoAheadList';
 import { Button } from '../design/ui';
@@ -10,6 +9,7 @@ import type { DiscardOffer, LandOffer } from './groups';
 import type { Answered } from './InlineConfirm';
 import type { SayRebase } from './LandingSync';
 import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from './Lands';
+import { waitName } from './WaitAnchor';
 import { type Wait, WORK_WAITS, waitsOf } from './waits';
 
 /**
@@ -41,16 +41,6 @@ export type WaitProps = {
   /** A landing or a discard of its work is on its way, pressed in either place. */
   workBusy?: boolean;
 };
-
-/** A wait's name on the folded line. */
-function nameOf(t: TFunction, wait: Wait): string {
-  switch (wait.kind) {
-    case 'question': return t('work.wait.name.question');
-    case 'intake': return t('work.wait.name.intake', { ask: wait.ask });
-    case 'goAhead': return t('work.wait.name.goAhead', { number: wait.number });
-    default: return t(`work.wait.name.${wait.kind}`);
-  }
-}
 
 /**
  * **What waits on the person, at the foot** (WAITFOOT1b, D168): above the session's box and outside the conversation's scroll,
@@ -98,7 +88,7 @@ export function WaitStrip({ answerBelow = false, workAsk, onTop, ...props }: Wai
       <div className="grid max-h-[40vh] grid-cols-[minmax(0,1fr)] gap-2 overflow-y-auto px-4 py-2">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <h2 className="m-0 text-small font-semibold text-ink-open">{title}</h2>
-          {shut && <span className="min-w-0 text-small text-ink-soft">{waits.map((wait) => nameOf(t, wait)).join(' · ')}</span>}
+          {shut && <span className="min-w-0 text-small text-ink-soft">{waits.map((wait) => waitName(t, wait)).join(' · ')}</span>}
           <span className="ml-auto flex shrink-0 gap-1">
             {several && (
               <Button variant="ghost" className="px-2 py-0.5 text-small" aria-expanded={!shut} onClick={() => setFolded(!shut)}>

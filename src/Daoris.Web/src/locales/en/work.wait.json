@@ -14,5 +14,8 @@
   "work.wait.name.rebase": "a rebase to ask for",
   "work.wait.name.opinion": "the second opinion",
   "work.wait.name.review": "the review",
-  "work.wait.name.discard": "its branch to discard"
+  "work.wait.name.discard": "its branch to discard",
+  "work.wait.inConversation": "In the conversation",
+  "work.wait.raised": "Waiting on you from here: {{names}}",
+  "work.wait.toWait": "To the wait"
 }

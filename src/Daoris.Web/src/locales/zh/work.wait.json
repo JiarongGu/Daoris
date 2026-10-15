@@ -14,5 +14,8 @@
   "work.wait.name.rebase": "待请它变基",
   "work.wait.name.opinion": "第二意见",
   "work.wait.name.review": "审阅",
-  "work.wait.name.discard": "待丢弃的分支"
+  "work.wait.name.discard": "待丢弃的分支",
+  "work.wait.inConversation": "在对话中查看",
+  "work.wait.raised": "由此等你处理：{{names}}",
+  "work.wait.toWait": "到等待处"
 }
