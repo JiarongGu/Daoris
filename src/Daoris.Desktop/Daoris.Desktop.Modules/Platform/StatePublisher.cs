@@ -65,6 +65,17 @@ public enum StateScopes
 
     /// <summary>The agents this machine can run, what each start would run on, and their accounts.</summary>
     Harnesses = 1 << 15,
+
+    // STATEHUB1h (D169's STATEHUB1h note): the remaining presses' families, after STATEHUB1d's, which keep their numbers.
+
+    /// <summary>The tools this machine runs, what is downloaded and offered, and where it looks.</summary>
+    Tools = 1 << 16,
+
+    /// <summary>Ask Daoris's conversations: their history, and what each proposed.</summary>
+    Help = 1 << 17,
+
+    /// <summary>Daoris's browser's settings and favorites.</summary>
+    Browser = 1 << 18,
 }
 
 /// <summary>

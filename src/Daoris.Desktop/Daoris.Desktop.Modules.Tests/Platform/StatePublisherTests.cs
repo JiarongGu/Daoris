@@ -296,13 +296,96 @@ public sealed class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A press named in the wire's words a page reads: the scopes STATEHUB1d added sit after the first slice's, in their declared
-    /// order, so a scope is added and none is renumbered (D169 point 3).
+    /// The presses still told only to the window that pressed (STATEHUB1h, D169's STATEHUB1h note): the driver's standing
+    /// choices, a go-ahead, a turn stopped and a word taken back, and what the accounts, agents, asks, across, registry, tools
+    /// and help domains press, each the families its hook asked again by hand, or the window wrote its own answer into. The
+    /// looks beside them, the workflow domain's every route, and the presses whose change an event already tells whole or no
+    /// window reads declare nothing; the roster's *Read again* shares its route with the roster's read, so it declares nothing.
+    /// </summary>
+    [Theory]
+    [InlineData("SET_DRIVABLE", "driver", null)]
+    [InlineData("SET_HOLD", "driver", null)]
+    [InlineData("SET_TREES", "driver", null)]
+    [InlineData("SET_STANDING", "driver", null)]
+    [InlineData("SET_NOTIFY", "driver", null)]
+    [InlineData("SET_STRIKES", "driver", null)]
+    [InlineData("SET_COOLOFF", "driver", null)]
+    [InlineData("SET_INTAKE", "driver,harnesses", null)]
+    [InlineData("SET_HELPER", "driver", null)]
+    [InlineData("TRUST_FOLDER", "driver", null)]
+    [InlineData("RETRY_QUEST", "sessions,driver", null)]
+    [InlineData("SHOW_REVIEW_AGAIN", "driver", null)]
+    [InlineData("STATE", "", null)]
+    [InlineData("NUDGE", "", null)]
+    [InlineData("SET_LINE", "driver", null)]
+    [InlineData("SET_LANGUAGE", "driver", null)]
+    [InlineData("SET_REVIEW", "driver", null)]
+    [InlineData("SET_OPINION", "driver", null)]
+    [InlineData("SET_COMMITS", "driver", null)]
+    [InlineData("SET_HELPERS", "driver", null)]
+    [InlineData("LINES", "", null)]
+    [InlineData("SET_READ_ACROSS", "driver", null)]
+    [InlineData("SET_WRITE_ACROSS", "driver", null)]
+    [InlineData("ACROSS", "", null)]
+    [InlineData("SESSION_GO_AHEAD", "sessions,asks", "id")]
+    [InlineData("CANCEL_TURN", "sessions", "id")]
+    [InlineData("SESSION_QUEUE_EDIT", "sessions", "session")]
+    [InlineData("SET_SESSION_OPTION", "", null)]
+    [InlineData("SESSION_OPTIONS", "", null)]
+    [InlineData("ACCOUNT_USE", "harnesses", null)]
+    [InlineData("ACCOUNTS", "", null)]
+    [InlineData("HARNESS_ACTION", "harnesses", null)]
+    [InlineData("SET_AGENT_SETTINGS", "harnesses", null)]
+    [InlineData("HARNESS_INPUT", "", null)]
+    [InlineData("HARNESS_CANCEL", "", null)]
+    [InlineData("HARNESSES", "", null)]
+    [InlineData("STARTS", "", null)]
+    [InlineData("USAGE", "", null)]
+    [InlineData("CHANNEL_POST", "asks", null)]
+    [InlineData("CHANNEL_MARK", "asks", null)]
+    [InlineData("CHANNEL_READ", "", null)]
+    [InlineData("ASKS_ELSEWHERE", "", null)]
+    [InlineData("REGISTRY_REFRESH", "registry", null)]
+    [InlineData("TOOLS_USE", "tools", null)]
+    [InlineData("TOOLS_DOWNLOAD", "tools", null)]
+    [InlineData("TOOLS_DELETE", "tools", null)]
+    [InlineData("TOOLS_LOOK", "tools", null)]
+    [InlineData("TOOLS_LOCATION", "tools", null)]
+    [InlineData("TOOLS_STOP", "", null)]
+    [InlineData("TOOLS_LIST", "", null)]
+    [InlineData("TOOLS_GIT", "", null)]
+    [InlineData("TOOLS_PICK", "", null)]
+    [InlineData("WORKFLOW_CURRENT", "", null)]
+    [InlineData("WORKFLOW_RUN", "", null)]
+    [InlineData("START_HELP", "sessions", null)]
+    [InlineData("HELP_RENAME", "sessions,help", "id")]
+    [InlineData("HELP_PIN", "sessions,help", "id")]
+    [InlineData("HELP_START_FROM", "sessions,help", "id")]
+    [InlineData("HELP_DISMISS", "help", null)]
+    [InlineData("HELP_APPLY", "sessions,quests,asks,driver,history,registry,plugins,harnesses,help,browser", null)]
+    [InlineData("HELP_PROPOSALS", "", null)]
+    [InlineData("HELP_CONVERSATIONS", "", null)]
+    [InlineData("STOP_TASK", "", null)]
+    [InlineData("TAIL_SESSION", "", null)]
+    [InlineData("TRACE", "", null)]
+    public void The_remaining_presses_declare_what_they_change(string route, string scopes, string? session)
+    {
+        Assert.Contains(route, DriverModule.Routes);
+        var declared = DriverModule.Declared(new IpcRequest { Id = "x", Module = DriverModule.Name, Type = route });
+
+        Assert.Equal(scopes, string.Join(",", StatePublisher.Names(declared?.Scopes ?? StateScopes.None)));
+        Assert.Equal(session, declared?.Session);
+    }
+
+    /// <summary>
+    /// A press named in the wire's words a page reads: the scopes STATEHUB1d added sit after the first slice's, and STATEHUB1h's
+    /// after those, in their declared order, so a scope is added and none is renumbered (D169 point 3).
     /// </summary>
     [Fact]
     public void Every_scope_has_its_word_on_the_wire_in_its_declared_order() =>
         Assert.Equal(
-            "sessions,landing,diff,handOff,sweep,treesSync,lines,quests,asks,driver,rules,history,sync,registry,plugins,harnesses",
+            "sessions,landing,diff,handOff,sweep,treesSync,lines,quests,asks,driver,rules,history,sync,registry,plugins,harnesses,"
+            + "tools,help,browser",
             string.Join(",", StatePublisher.Names((StateScopes)~0)));
 
     /// <summary>A request to another module is never the driver's, whatever its type is called.</summary>

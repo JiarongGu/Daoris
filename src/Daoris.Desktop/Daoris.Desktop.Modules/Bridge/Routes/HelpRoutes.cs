@@ -11,6 +11,16 @@ namespace Daoris.Desktop;
 /// </summary>
 public sealed class HelpRoutes(DriverContext context)
 {
+    /// <summary>What a history act changes (STATEHUB1h, D169): Ask Daoris's history, and the conversations the panel shows.</summary>
+    private const StateScopes Kept = StateScopes.Sessions | StateScopes.Help;
+
+    /// <summary>
+    /// What an Apply may change (STATEHUB1h, D169), every door it holds: the page's hook asked each of these again by hand before.
+    /// </summary>
+    private const StateScopes Applies = StateScopes.Sessions | StateScopes.Quests | StateScopes.Asks | StateScopes.Driver
+        | StateScopes.History | StateScopes.Registry | StateScopes.Plugins | StateScopes.Harnesses | StateScopes.Help
+        | StateScopes.Browser;
+
     private readonly DriverContext _context = context;
     private readonly DriverLoop _loop = context.Loop;
     private readonly IEventBus _events = context.Events;
@@ -25,8 +35,9 @@ public sealed class HelpRoutes(DriverContext context)
     // HELPSTART1 (D89's note): answered once the conversation is placed, its record open, with `starting`; the room is read and
     // its agent spawned after, off the request, its end told as the conversation's events. On a loaded machine the room's
     // session look alone took 24.9 s, and the page stops waiting at 30 (SENDLOST1). One placed and still starting is handed to
-    // the next press.
+    // the next press. Its record opens, so it declares the sessions (STATEHUB1h, D169); the history lists it once it is spoken in.
     [DriverRoute("START_HELP")]
+    [Publishes("START_HELP", StateScopes.Sessions)]
     private async Task<object?> StartHelpAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         // Asked first: no service answer changes it, and it says what to do.
@@ -307,8 +318,12 @@ public sealed class HelpRoutes(DriverContext context)
 
     // The person's Apply: made through the door the screen's own route uses (HELP6), judged again
     // first, since the machine may have moved since the card was drawn. The result goes back into
-    // the conversation as the person's next message, so the agent knows (D89).
+    // the conversation as the person's next message, so the agent knows (D89). It acts through the doors directly, not through
+    // their routes, so it declares every family a door it holds may move (STATEHUB1h, D169): the driver's file and what reads
+    // it, an ask, a quest or a session it made, paused or deleted, an agent's settings or pin, a plugin, the browser's settings,
+    // a repository moved, finished history cleared, and the proposal itself.
     [DriverRoute("HELP_APPLY")]
+    [Publishes("HELP_APPLY", Applies)]
     private async Task<object?> HelpApplyAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -356,8 +371,9 @@ public sealed class HelpRoutes(DriverContext context)
         applied.Stands,
     };
 
-    // The person's Not now: nothing changes, and the agent is told so.
+    // The person's Not now: nothing changes but the proposal, and the agent is told so.
     [DriverRoute("HELP_DISMISS")]
+    [Publishes("HELP_DISMISS", StateScopes.Help)]
     private async Task<object?> HelpDismissAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -956,8 +972,10 @@ public sealed class HelpRoutes(DriverContext context)
         listing.Next,
     };
 
-    // Name an Ask Daoris conversation, or clear its name with none: its first question is its title again.
+    // Name an Ask Daoris conversation, or clear its name with none: its first question is its title again. A history act
+    // declares the history and the conversations the panel shows (STATEHUB1h, D169), as pinning and starting from one do.
     [DriverRoute("HELP_RENAME")]
+    [Publishes("HELP_RENAME", Kept, Session = "id")]
     private async Task<object?> HelpRenameAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = await HelpConversationOfAsync(PayloadHelper.GetRequiredValue<string>(request.Payload, "id"), cancellationToken)
@@ -969,6 +987,7 @@ public sealed class HelpRoutes(DriverContext context)
 
     // Pin an Ask Daoris conversation to the top of its history, or unpin it.
     [DriverRoute("HELP_PIN")]
+    [Publishes("HELP_PIN", Kept, Session = "id")]
     private async Task<object?> HelpPinAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = await HelpConversationOfAsync(PayloadHelper.GetRequiredValue<string>(request.Payload, "id"), cancellationToken)
@@ -982,6 +1001,7 @@ public sealed class HelpRoutes(DriverContext context)
     // agent, the room's running conversation set aside first, and the earlier one's transcript handed with the person's first
     // words. Its end reaches the page as a start's does.
     [DriverRoute("HELP_START_FROM")]
+    [Publishes("HELP_START_FROM", Kept, Session = "id")]
     private async Task<object?> HelpStartFromAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var config = DriverConfig.Load(_loop.ConfigPath);

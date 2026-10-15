@@ -269,9 +269,11 @@ public sealed class AccountsRoutes(DriverLoop loop)
     /// </summary>
     /// <remarks>
     /// The loop is asked to look after each, since each changes what the next start runs on: an account offered again
-    /// should take a waiting start now, not at the next poll.
+    /// should take a waiting start now, not at the next poll. The accounts' lists and what each start runs on sit under the
+    /// roster's key, which it declares (STATEHUB1h, D169).
     /// </remarks>
     [DriverRoute("ACCOUNT_USE")]
+    [Publishes("ACCOUNT_USE", StateScopes.Harnesses)]
     private object? AccountUse(IpcRequest request)
     {
         var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");

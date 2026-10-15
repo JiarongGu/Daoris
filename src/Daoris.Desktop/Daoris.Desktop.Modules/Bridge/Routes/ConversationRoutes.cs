@@ -152,8 +152,9 @@ public sealed class ConversationRoutes(DriverContext context)
     // are the go-ahead's, as on the ask's page, never said to the park: there they would send it on with one still open, or
     // join a *carry on.* that was never theirs (GOAHEAD2). A refused go-ahead answers nothing else, in the service's sentence.
     // `{ message, sent, reaches, why, waits }`: the go-ahead's sentence, what became of the park as `SESSION_INPUT` says it,
-    // and whether it still waits on the person.
+    // and whether it still waits on the person. It moves the ask and the park (STATEHUB1h, D169).
     [DriverRoute("SESSION_GO_AHEAD")]
+    [Publishes("SESSION_GO_AHEAD", StateScopes.Sessions | StateScopes.Asks, Session = "id")]
     private async Task<object?> SessionGoAheadAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -190,8 +191,10 @@ public sealed class ConversationRoutes(DriverContext context)
     // Stopping the turn and keeping the conversation (CONV4a) — the third verb, beside finishing
     // and stopping the session. What was waiting comes back, so the page can hand it to the
     // person rather than lose it. Refused for a session that takes no input, as a message is,
-    // and for a door that carries only text, in the driver's words: it has no turn to stop.
+    // and for a door that carries only text, in the driver's words: it has no turn to stop. It publishes as a word said does
+    // (STATEHUB1h, D169): a driven session's held words go as its next prompt.
     [DriverRoute("CANCEL_TURN")]
+    [Publishes("CANCEL_TURN", StateScopes.Sessions, Session = "id")]
     private async Task<object?> CancelTurnAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -214,8 +217,10 @@ public sealed class ConversationRoutes(DriverContext context)
     // why: "taken" }`, as a stop with nothing to stop is: the page asking a moment late deserves no error. Refused for a
     // session that takes no input, as CANCEL_TURN is. The queue tells every list as it moves (SESSION_QUEUED). A word nothing
     // here holds may wait on the session's record, parked or ended (SAIDBACK1b): the service's take-back door answers for it,
-    // and refuses what never goes on in its own sentence.
+    // and refuses what never goes on in its own sentence. A word taken back from a record moves it, so the edit publishes as a
+    // word said does (STATEHUB1h, D169), naming the session by its `session` field.
     [DriverRoute("SESSION_QUEUE_EDIT")]
+    [Publishes("SESSION_QUEUE_EDIT", StateScopes.Sessions, Session = "session")]
     private async Task<object?> SessionQueueEditAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
@@ -265,7 +270,8 @@ public sealed class ConversationRoutes(DriverContext context)
 
     // The person's change to one of them (AGT6b): `session/set_config_option` on the conversation's
     // session. The driver refuses the mode, an option never offered and a conversation it does not
-    // hold, in its own words; the agent refuses a value it does not take, in its.
+    // hold, in its own words; the agent refuses a value it does not take, in its. It declares nothing (STATEHUB1h, D169): every
+    // window hears the options whole as `SESSION_OPTIONS_CHANGED` when they change.
     [DriverRoute("SET_SESSION_OPTION")]
     private async Task<object?> SetSessionOptionAsync(IpcRequest request, CancellationToken cancellationToken)
     {
