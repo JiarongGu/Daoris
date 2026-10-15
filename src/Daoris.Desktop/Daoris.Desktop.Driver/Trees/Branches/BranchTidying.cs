@@ -219,15 +219,17 @@ public sealed class BranchTidying(string home)
                     var item = result.Item;
                     if (result.Removed)
                     {
-                        lines.Add($"tidy  {pass.Repository}: removed `{item.Branch}`, which held nothing beyond `{item.Where}`"
+                        lines.Add($"tidy  {pass.Repository}: removed `{item.Branch}`, {Why(item)}"
                             + (result.MovedTo is { } to
                                 ? $"; its tree's folder was moved aside to {to}, and goes once it is left untouched for {SetAsideFor.TotalDays:0} days."
                                 // TREEFOLLOW1: the tree stays, on the branch its agent made; this one only said where it started.
-                                : item.TreeOn is { } on ? $"; the session's work is on `{on}`." : "."));
+                                : item.TreeOn is { } on && on != item.Where ? $"; the session's work is on `{on}`." : ".")
+                            + (result.KeptRef is { } kept ? $" {ContentHold.KeptAt(item.Branch, kept)}" : ""));
+                        // AUTOTIDY2a: `kind` and `kept` are fields added after the rest, so what read the line before reads it the same.
                         log?.Info("branch.tidied",
                             ("repository", pass.Repository), ("workspace", pass.Workspace), ("branch", item.Branch), ("tree", item.Tree is not null),
                             ("folder", result.MovedTo is { } moved ? Path.GetRelativePath(home, moved).Replace('\\', '/') : null),
-                            ("on", item.TreeOn));
+                            ("on", item.TreeOn), ("kind", item.Kind), ("kept", result.KeptRef));
                         continue;
                     }
 
@@ -297,9 +299,21 @@ public sealed class BranchTidying(string home)
         TidyKept.Starting => $"{pass.Repository}: {TreeLock.Starting(pass.Repository)}.",
         TidyKept.Sessions when pass.Repository.Length == 0 =>
             $"the session branches were not looked at, since the service did not answer for its registry: {Clause(pass.Detail ?? "")}.",
-        TidyKept.Sessions => $"{pass.Repository}: its empty session branches stay this look, since the service did not say which "
+        TidyKept.Sessions => $"{pass.Repository}: its session branches stay this look, since the service did not say which "
             + $"sessions run: {Clause(pass.Detail ?? "")}.",
-        _ => $"{pass.Repository}: its empty session branches stay this look, since git could not list them: {Clause(pass.Detail ?? "")}.",
+        _ => $"{pass.Repository}: its session branches stay this look, since git could not list them: {Clause(pass.Detail ?? "")}.",
+    };
+
+    /// <summary>
+    /// Why a removed branch could go, by its kind, as the clean-up's list words it (AUTOTIDY2a): nothing beyond the line, its work
+    /// on a branch of the person's or on the line by content, or carried by a completed pull request.
+    /// </summary>
+    private static string Why(SweepItem item) => item.Kind switch
+    {
+        SweepKind.Landed when item.HeldBy is { } held => $"since {held.Said}",
+        SweepKind.Landed => item.Where is { } where ? $"since its work is on `{where}`" : "since its work is on a branch of yours",
+        SweepKind.Carried => $"since `{item.Where}`'s completed pull request carried its work",
+        _ => $"which held nothing beyond `{item.Where}`",
     };
 
     /// <summary>The press's sentence as a clause: its own "and is kept" and its full stop are the line's to say.</summary>

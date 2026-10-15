@@ -418,6 +418,12 @@ public sealed record SweepResult(SweepItem Item, bool Removed, string Message)
 
     /// <summary>Removed by the look's own tidy (AUTOTIDY1): where its tree's folder was moved aside to; null where it had no folder here.</summary>
     public string? MovedTo { get; init; }
+
+    /// <summary>
+    /// Removed though held by content (SQUASHTIDY1c): the ref its commits were kept on, for the look's report and log to name
+    /// (AUTOTIDY2a); null where none was kept.
+    /// </summary>
+    public string? KeptRef { get; init; }
 }
 
 /// <summary>

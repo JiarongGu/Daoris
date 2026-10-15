@@ -86,22 +86,27 @@ public static class TidyCause
 }
 
 /// <summary>
-/// The look's own tidy of one repository (AUTOTIDY1; PART10l-ii, out of <c>SessionTrees.Auto.cs</c>): the pass that holds the
-/// repository and hands its candidates to the clean-up's press path. Over the trees' context, the follow's ledger, the replay's
-/// record tidying and the sweep, which takes the look's guards and set-aside (<see cref="TreeSetAside"/>) itself.
+/// The look's own tidy of one repository (AUTOTIDY1; PART10l-ii, out of <c>SessionTrees.Auto.cs</c>): the pass that judges the
+/// repository's session branches, holds it, and hands what may go to the clean-up's press path. Over the trees' context, the
+/// follow's ledger, the replay's record tidying, the sweep, which takes the look's guards and set-aside itself, and the set-aside's
+/// judgement of what goes (<see cref="TreeSetAside"/>).
 /// </summary>
-internal sealed class AutoTidies(TreeContext context, TreeFollows follows, BranchReplays replays, TreeSweeps sweeps)
+internal sealed class AutoTidies(TreeContext context, TreeFollows follows, BranchReplays replays, TreeSweeps sweeps, TreeSetAside setAside)
 {
     /// <summary>
-    /// The look's own tidy of one repository (AUTOTIDY1, D88's note): every session branch whose tip the line holds, read from
-    /// the line here with no fetch, is judged and removed by the clean-up's own press (<see cref="TreeSweeps"/>), taking only
-    /// what <see cref="TreeSetAside.GoesByItself"/> takes, judged again right before it goes, and deleted only while it is the
-    /// commit judged.
+    /// The look's own tidy of one repository (AUTOTIDY1, D88's note; AUTOTIDY2a): every session branch, judged as the press's
+    /// list judges it against the line read here with no fetch, and those <see cref="TreeSetAside.GoesByItself"/> takes removed
+    /// by the clean-up's own press (<see cref="TreeSweeps"/>), judged again right before each goes, and deleted only while it is
+    /// the commit judged.
     /// </summary>
     /// <remarks>
     /// <para>🔴 <b>Held alone, the sessions asked inside the hold</b>: a fresh tree a start just opened is an empty branch with
     /// a clean tree until its record opens, so the repository's trees are held as bringing them up to date holds them
     /// (<see cref="TreeLock"/>), and a start that holds them leaves every branch for another look.</para>
+    ///
+    /// <para><b>Judged before the hold</b> (AUTOTIDY2a): every session branch is judged first, the sessions asked for it too so
+    /// no tree a session works in is read, and the hold is taken only where one may go. A start waits on it only while those few
+    /// are judged again and removed, and a look with nothing to take never holds the repository.</para>
     ///
     /// <para><b>The checkout must be a repository of its own</b>: git walks up from a folder that is not one, and would answer
     /// for the repository above it (FIX-LOG).</para>
@@ -129,37 +134,56 @@ internal sealed class AutoTidies(TreeContext context, TreeFollows follows, Branc
         // branch deleted by hand left one behind. A list git cannot give forgets nothing; not cancelled, as the removal's is not.
         await replays.ForgetGoneAsync(root, repository, CancellationToken.None).ConfigureAwait(false);
 
-        // The line here, read with no fetch: the local branch, else origin's copy as this checkout last saw it.
-        var line = (await context.LineAsync(root, repository, space, ct).ConfigureAwait(false)).Branch;
+        // The line here, read with no fetch: the local branch, else origin's copy as this checkout last saw it. One look for the
+        // pass (UIFREEZE1): the judgement before the hold and the press's path inside it ask git the checkout's line once.
+        using var look = context.OneLook();
+        var line =(await context.LineAsync(root, repository, space, ct).ConfigureAwait(false)).Branch;
         var against = line is null ? null : await ComparableAsync(root, line, ct).ConfigureAwait(false);
         if (against is null) return Pass([]);
+        // Every session branch (AUTOTIDY2a): the press takes landed, content-held and carried ones the line need not hold, so the
+        // look no longer asks git for those the line holds alone.
         var (code, refs, err) = await WorkingTree.GitAsync(
-            root, ["for-each-ref", "--format=%(refname:short)", $"--merged={against}", "refs/heads/daoris/"], ct).ConfigureAwait(false);
+            root, ["for-each-ref", "--format=%(refname:short)", "refs/heads/daoris/"], ct).ConfigureAwait(false);
         if (code != 0) return Pass([], TidyKept.Unread, FirstLine(err), TidyCause.Refs);
-        var candidates = refs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        var branches = refs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(branch => $"{repository}:{branch}")
             .ToHashSet(StringComparer.Ordinal);
-        if (candidates.Count == 0) return Pass([]);
+        if (branches.Count == 0) return Pass([]);
 
         // A list of the working trees git could not give is never "no tree here": nothing in the repository is judged this look.
         if (await context.Worktrees.ListAsync(root, ct).ConfigureAwait(false) is null) return Pass([], TidyKept.Unread, ListUnread, TidyCause.List);
 
+        // Judged before the hold, as the press's list judges them, with the sessions asked so no tree a session works in is read:
+        // what stays is said from here, and only what may go holds the repository.
+        var (before, unsaid) = await BusyAsync().ConfigureAwait(false);
+        if (before is null) return Pass([], TidyKept.Sessions, unsaid);
+        var plan = await sweeps.SweepPlanAsync([(repository, space, root)], before, ct, branches, byItself: true).ConfigureAwait(false);
+        var stays = plan.Where(item => !setAside.GoesByItself(item)).Select(item => new SweepResult(item, false, "kept")).ToList();
+        var candidates = plan.Where(setAside.GoesByItself).Select(item => $"{repository}:{item.Branch}").ToHashSet(StringComparer.Ordinal);
+        if (candidates.Count == 0) return Pass(stays);
+
         using var hold = TreeLock.TryReplaying(context.Home, space, repository);
         if (hold is null) return Pass([], TidyKept.Starting);
-        IReadOnlySet<string> busy;
-        try
-        {
-            busy = await inUse(ct).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException or JsonException)
-        {
-            return Pass([], TidyKept.Sessions, error.Message);
-        }
+        var (busy, unsaidNow) = await BusyAsync().ConfigureAwait(false);
+        if (busy is null) return Pass([], TidyKept.Sessions, unsaidNow);
 
         var results = await sweeps.SweepAsync([(repository, space, root)], busy, candidates, byItself: true, ct).ConfigureAwait(false);
         // The record of where session branches grew from drops what is gone (LAND3), as the press's does: after a removal, so not
         // cancelled either.
         if (results.Any(result => result.Removed)) await replays.ForgetGoneAsync(root, repository, CancellationToken.None).ConfigureAwait(false);
-        return Pass(results);
+        return Pass([.. stays, .. results]);
+
+        // The trees sessions running or waiting name; none where the service did not say, with its words.
+        async Task<(IReadOnlySet<string>? Busy, string? Why)> BusyAsync()
+        {
+            try
+            {
+                return (await inUse(ct).ConfigureAwait(false), null);
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or JsonException)
+            {
+                return (null, error.Message);
+            }
+        }
     }
 }

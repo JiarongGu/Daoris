@@ -13,15 +13,15 @@ namespace Daoris.Driver;
 internal sealed class TreeSetAside(TreeContext context)
 {
     /// <summary>
-    /// Whether the look takes this session branch without a press (AUTOTIDY1): the clean-up's <c>empty</c> kind alone, nothing
-    /// beyond the line, and every guard read. With no tree it goes; with a tree, only one of this home's that holds nothing at
-    /// all, an ignored path the checkout also holds included, on a branch whose work the line took (<see cref="SweepItem.Worked"/>).
-    /// A tree whose branch never moved is a conversation's place, which words to its session go on in (D137): removed, they
-    /// could not, so it stays the press's. Every other kind stays the press's, as it was: a squash merge's carried or
-    /// content-held branch is <c>landed</c> or <c>carried</c>, never <c>empty</c>.
+    /// Whether the look takes this session branch without a press (AUTOTIDY1, AUTOTIDY2a): every kind the press clears
+    /// (<see cref="SweepItem.Removable"/>: empty, landed by ancestry or by content, carried), with every guard read. With no tree
+    /// it goes; with a tree, only one of this home's on a branch that moved since it grew (<see cref="SweepItem.Worked"/>). A tree
+    /// whose branch never moved is a conversation's place, which words to its session go on in (D137): removed, they could not,
+    /// so it stays the press's, whatever its kind. A tree holding only ignored paths goes, since the look moves its folder aside
+    /// for fourteen days rather than deleting it; uncommitted and untracked paths keep it, as the judgement's <c>dirty</c>.
     /// </summary>
     internal bool GoesByItself(SweepItem item) =>
-        item is { Kind: SweepKind.Empty, Unread: false, IgnoredShared: 0, HeldBy: null, CarriedBy: null }
+        item is { Removable: true, Unread: false }
         && (item.Tree is null || (context.Holds(item.Tree) && item.Worked));
 
     /// <summary>The folder under the trees home the look's own tidy moves a tree's folder aside into (AUTOTIDY1).</summary>

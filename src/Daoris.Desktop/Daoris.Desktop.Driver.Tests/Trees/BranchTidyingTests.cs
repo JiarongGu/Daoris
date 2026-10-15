@@ -4,8 +4,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// AUTOTIDY1 (D88's note): which session branches the look's own tidy takes without a press, what it says of each, and how
-/// often. The decision reads the clean-up's own judgement (<see cref="SweepItem"/>); only the empty kind with nothing in its
-/// tree goes by itself, and every other kind stays a press. Nothing here starts a process: the git half is
+/// often. The decision reads the clean-up's own judgement (<see cref="SweepItem"/>); every kind the press clears goes by itself
+/// behind the look's guards (AUTOTIDY2a), and the rest stay a press. Nothing here starts a process: the git half is
 /// <see cref="BranchTidyingProcessTests"/>'.
 /// </summary>
 public sealed class BranchTidyingTests : IDisposable
@@ -44,17 +44,24 @@ public sealed class BranchTidyingTests : IDisposable
         { SweepKind.Empty, At.Home, 0, false, true, true },
         // A tree whose branch never moved is a conversation's place, which words to its session go on in (D137): the press's.
         { SweepKind.Empty, At.Home, 0, false, false, false },
-        // An ignored path the checkout also holds goes with the tree at the press (SQUASHTIDY1c); never by itself.
-        { SweepKind.Empty, At.Home, 2, false, true, false },
+        // An ignored path the checkout also holds goes with the tree, moved aside for fourteen days (AUTOTIDY2a).
+        { SweepKind.Empty, At.Home, 2, false, true, true },
         // A tree a person checked the branch out in is the person's, whatever it holds.
         { SweepKind.Empty, At.Outside, 0, false, true, false },
         // What git could not read keeps it.
         { SweepKind.Empty, At.Home, 0, true, true, false },
-        // Every other kind stays exactly as it is: landed (ancestry, or content after a squash), carried by a completed pull
-        // request, holding commits no branch of the person's holds, dirty, or in use.
-        { SweepKind.Landed, At.None, 0, false, true, false },
-        { SweepKind.Landed, At.Home, 0, false, true, false },
-        { SweepKind.Carried, At.None, 0, false, true, false },
+        // AUTOTIDY2a: every other kind the press clears goes too, behind the same guards: landed (ancestry, or content after a
+        // squash) and carried by a completed pull request.
+        { SweepKind.Landed, At.None, 0, false, false, true },
+        { SweepKind.Landed, At.Home, 0, false, true, true },
+        { SweepKind.Landed, At.Home, 3, false, true, true },
+        { SweepKind.Landed, At.Home, 0, false, false, false },
+        { SweepKind.Landed, At.Outside, 0, false, true, false },
+        { SweepKind.Landed, At.Home, 0, true, true, false },
+        { SweepKind.Carried, At.None, 0, false, true, true },
+        { SweepKind.Carried, At.Home, 0, false, true, true },
+        { SweepKind.Carried, At.Home, 0, false, false, false },
+        // What the press keeps stays exactly as it is: commits no branch of the person's holds, dirty, or in use.
         { SweepKind.Unlanded, At.Home, 0, false, true, false },
         { SweepKind.Unlanded, At.None, 0, true, false, false },
         { SweepKind.Dirty, At.Home, 0, false, true, false },
@@ -64,7 +71,7 @@ public sealed class BranchTidyingTests : IDisposable
 
     [Theory]
     [MemberData(nameof(Table))]
-    public void Only_an_empty_branch_with_nothing_in_its_tree_goes_by_itself(
+    public void Every_kind_the_press_clears_goes_by_itself_behind_the_look_s_guards(
         string kind, At at, int ignoredShared, bool unread, bool worked, bool goes)
     {
         var tree = at switch { At.Home => HomeTree, At.Outside => OutsideTree, _ => null };
@@ -80,13 +87,15 @@ public sealed class BranchTidyingTests : IDisposable
 
     /// <summary>
     /// TREEFOLLOW1: an agent that moved its tree onto a branch of its own leaves the session branch behind, which no tree has out.
-    /// Empty it goes (the tree stays, on its branch), and the report says where the work is; holding anything of its own it stays.
+    /// Empty it goes (the tree stays, on its branch), and the report says where the work is; landed or carried it goes as the
+    /// press would take it (AUTOTIDY2a); holding commits no branch of the person's holds it stays.
     /// </summary>
     [Theory]
     [InlineData(SweepKind.Empty, true)]
-    [InlineData(SweepKind.Landed, false)]
+    [InlineData(SweepKind.Landed, true)]
+    [InlineData(SweepKind.Carried, true)]
     [InlineData(SweepKind.Unlanded, false)]
-    public void A_session_branch_whose_tree_moved_on_goes_only_while_it_holds_nothing(string kind, bool goes)
+    public void A_session_branch_whose_tree_moved_on_goes_as_the_press_would_take_it(string kind, bool goes)
     {
         var item = new SweepItem("engine", "default", "daoris/s-1a2b3c4d", null, kind, 0, "main", null) { TreeOn = "feature/x" };
 
@@ -122,16 +131,74 @@ public sealed class BranchTidyingTests : IDisposable
         Assert.Contains("\"now\": \"feature/x\"", File.ReadAllText(ledger.FilePath), StringComparison.Ordinal);
     }
 
-    /// <summary>A squash merge's carried branch stays a press, however it was proven (SQUASHTIDY1b's offer, PLUGHOOK1a's carriers).</summary>
-    [Fact]
-    public void A_branch_landed_by_content_stays_a_press()
+    /// <summary>
+    /// A squash merge's branch landed by content goes by itself as the press takes it (AUTOTIDY2a), its commits kept on a ref of
+    /// their own by the press's one path; a tree whose branch never moved stays the press's, as an empty one's does.
+    /// </summary>
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    public void A_branch_landed_by_content_goes_by_itself(bool worked, bool goes)
     {
-        var item = new SweepItem("engine", "default", "daoris/s-1a2b3c4d", null, SweepKind.Landed, 1, "main", null)
+        var item = new SweepItem("engine", "default", "daoris/s-1a2b3c4d", HomeTree, SweepKind.Landed, 1, "main", null)
         {
             HeldBy = new ContentHold("main", Squash: true),
+            Worked = worked,
         };
 
-        Assert.False(new SessionTrees(_home).GoesByItself(item));
+        Assert.Equal(goes, new SessionTrees(_home).GoesByItself(item));
+    }
+
+    /// <summary>
+    /// AUTOTIDY2a: a removal says why its kind let it go, as the clean-up's list words the kind: landed on a branch of the
+    /// person's, landed by content with where its commits are kept, or carried by a completed pull request. The log names the
+    /// kind, and the ref a content-held removal kept its commits on, which holds no path.
+    /// </summary>
+    [Fact]
+    public void A_removal_says_why_its_kind_let_it_go_and_logs_the_kind()
+    {
+        using var log = new MachineLog(_home, "driver", () => _now);
+        var tidying = new BranchTidying(_home);
+        var aside = Path.Combine(_home, "trees", ".tidied", "default", "engine", "s-1-20261009T090000000Z");
+        var landed = Item("daoris/s-1", HomeTree) with { Kind = SweepKind.Landed, Commits = 2, Where = "feature/x" };
+        var held = Item("daoris/s-2") with { Kind = SweepKind.Landed, Commits = 1, HeldBy = new ContentHold("main", Squash: true) };
+        var carried = Item("daoris/s-3") with { Kind = SweepKind.Carried, Commits = 1, Where = "feature/q1-fix" };
+        const string Ref = "refs/daoris/discarded/daoris/s-2";
+
+        var said = tidying.Said(
+        [
+            Pass("engine",
+                new SweepResult(landed, true, "removed") { MovedTo = aside },
+                new SweepResult(held, true, "removed") { KeptRef = Ref },
+                new SweepResult(carried, true, "removed")),
+        ], log);
+
+        Assert.Equal(
+        [
+            $"tidy  engine: removed `daoris/s-1`, since its work is on `feature/x`; its tree's folder was moved aside to {aside}, "
+            + "and goes once it is left untouched for 14 days.",
+            "tidy  engine: removed `daoris/s-2`, since its work is on `main` by content (a squash merge). "
+            + $"Its commits stay at `{Ref}` until you delete that ref; `git branch daoris/s-2 {Ref}` brings the branch back.",
+            "tidy  engine: removed `daoris/s-3`, since `feature/q1-fix`'s completed pull request carried its work.",
+        ], said);
+        var lines = LogLines();
+        Assert.Equal(3, lines.Length);
+        Assert.Contains("\"kind\":\"landed\",\"kept\":null", lines[0], StringComparison.Ordinal);
+        Assert.Contains($"\"kind\":\"landed\",\"kept\":\"{Ref}\"", lines[1], StringComparison.Ordinal);
+        Assert.Contains("\"kind\":\"carried\",\"kept\":null", lines[2], StringComparison.Ordinal);
+    }
+
+    /// <summary>What holds a whole repository holds every session branch in it now, not only the empty ones (AUTOTIDY2a).</summary>
+    [Fact]
+    public void A_repository_held_says_its_session_branches_stay()
+    {
+        var held = new TidyPass([], TidyKept.Sessions, "the service did not answer") { Repository = "engine", Workspace = "default" };
+
+        var said = new BranchTidying(_home).Said([held], null);
+
+        Assert.Equal(
+            ["tidy  engine: its session branches stay this look, since the service did not say which sessions run: the service did not answer."],
+            said);
     }
 
     [Fact]
@@ -297,7 +364,10 @@ public sealed class BranchTidyingTests : IDisposable
         Assert.Contains("\"why\":\"refused\"", Assert.Single(LogLines()), StringComparison.Ordinal);
     }
 
-    /// <summary>Every other branch the look judged and kept (dirty, in use, a build's output) is the press's, and says nothing.</summary>
+    /// <summary>
+    /// Every other branch the look judged and kept (dirty, in use, commits no branch of the person's holds) is the press's, and
+    /// says nothing: the look now judges every session branch (AUTOTIDY2a), and most of them are these.
+    /// </summary>
     [Fact]
     public void A_branch_kept_for_what_it_holds_says_nothing()
     {
@@ -309,7 +379,7 @@ public sealed class BranchTidyingTests : IDisposable
             Pass("engine",
                 new SweepResult(Item("daoris/s-1") with { Kind = SweepKind.Dirty, Detail = "1 path(s) uncommitted" }, false, "kept"),
                 new SweepResult(Item("daoris/s-2", HomeTree) with { Kind = SweepKind.InUse }, false, "kept"),
-                new SweepResult(Item("daoris/s-3", HomeTree) with { IgnoredShared = 3 }, false, "kept")),
+                new SweepResult(Item("daoris/s-3", HomeTree) with { Kind = SweepKind.Unlanded, Commits = 2 }, false, "kept")),
         ], log);
 
         Assert.Empty(said);
