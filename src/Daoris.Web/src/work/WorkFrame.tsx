@@ -1317,7 +1317,9 @@ export function WorkFrame({
     rules: {
       proposals: ruleState.data?.proposals,
       onAnswer: here
-        ? (proposal, accept, answered) => ruleAnswer.answer(proposal, accept, answered, intake || box.kind === 'line' ? null : attended.id)
+        ? (proposal, accept, answered) => ruleAnswer.answer(proposal, accept, answered, intake || box.kind === 'line'
+          ? null
+          : { session: attended.id, say: (text) => say.mutateAsync({ id: attended.id, text }) })
         : undefined,
       busy: ruleAnswer.busy,
       heard: !intake && box.kind !== 'line',
