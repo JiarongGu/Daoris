@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-16 — A word taken back from a driven session could still go to its resumed run (SAIDBACK1e)
+
+- **Symptom:** none met; read by SAIDBACK1d. The person takes back a word waiting on a quest's parked or ended session, the door
+  says it was taken back, and the resumed run is still handed it.
+- **Root cause:** `DriverContinuations.ContinueAsync` read the record's words and built the resumed prompt (on the native door,
+  into the spawn's command line) before `Driver.HoldAsync` spawned the run, and the ledger's move to working came only after the
+  spawn. The take-back door refuses a record that runs, so until that move it took words back that the prompt already held.
+- **Fix:** the move to working comes first, then the words are read as it left them and the run is spawned (`HoldAsync`'s
+  `movedFirst`). A run that never starts puts the record back with its words (`Continuations.PutBack`): an ended record as it
+  ended, a park ended as a fallback ends it, its words carried on, never `failed` with them. D137's SAIDBACK1e note.
+- **Verification:** `ContinuationTests.A_record_moved_to_working_goes_back_as_it_was_where_no_run_of_it_started` (red first,
+  the member missing). `SessionMessagesTickTests.A_word_taken_back_between_the_look_and_the_move_never_goes` and
+  `Words_whose_run_could_not_be_spawned_wait_on_the_record_as_it_ended` are `Process` rows, owed to the parent's serial run.
+
 ## 2026-10-16 — A withdrawn session request could also be taken, the door saying withdrawn (REQTAKE2)
 
 - **Symptom:** none met; REQTAKE1's mechanics read against `SessionRequests.WithdrawAt`. A terminal verb withdraws a request

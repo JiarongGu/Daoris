@@ -220,6 +220,27 @@ public static class Continuations
     internal static IReadOnlyList<SaidWordView> HandedAfterMove(IReadOnlyList<SaidWordView> look, PriorSession? now) =>
         now is null ? look : now.Waiting;
 
+    /// <summary>
+    /// Where a quest's record goes back to when the driver moved it to working and no run of it then started (SAIDBACK1e, D137
+    /// §2.4), its words waiting on it again. An ended record goes back to how it ended, its note, its parts and its flags as the
+    /// look read them. A park whose words were all taken back waits on the person again; one whose run could not start ends as a
+    /// fallback ends it (<see cref="EndedNote"/>), its words carried on, since moved back to waiting on the person the ledger
+    /// would clear them (a park asks anew).
+    /// </summary>
+    /// <param name="why">Why its run could not start; null where every word was taken back before it went on.</param>
+    internal static (string State, Noted Note, bool Interrupted, bool Limit) PutBack(PriorSession record, ContinueReason? why)
+    {
+        if (record.Parked)
+        {
+            return why is null ? (record.State, record.AsNoted(), false, false) : ("completed", EndedNote(record, why), false, false);
+        }
+
+        // Each flag only where the ledger takes it, on the state that says it.
+        var stopped = string.Equals(record.State, "stopped", StringComparison.OrdinalIgnoreCase);
+        var failed = string.Equals(record.State, "failed", StringComparison.OrdinalIgnoreCase);
+        return (record.State, new Noted(record.Note ?? "", record.NoteParts ?? []), record.Interrupted && stopped, record.Limit && failed);
+    }
+
     /// <summary><see cref="GoingOn"/> with its code (LANG1a).</summary>
     public static Noted GoingOnNoted => Noted.Of(NoteCodes.WorkingGoesOn, GoingOn);
 

@@ -452,9 +452,9 @@ public sealed class Driver(
         var intakes = await IntakesDueAsync(config.Cap - snapshot.Active.Count - starts.Count - passes, events, ct)
             .ConfigureAwait(false);
 
-        // 🔴 One run per record the person's words wait on (ANSWER2, D131 §3): a run that took a record up is told it opened
-        // before its process starts and moves the record to working, so a look in between still reads it waiting and plans it
-        // again. A second run's move to working was refused (working → working) and failed the session the first was resuming.
+        // 🔴 One run per record the person's words wait on (ANSWER2, D131 §3): a run that took a record up moves it to working a
+        // moment after the look planned it (before its spawn since SAIDBACK1e), so a look in between still reads it waiting and
+        // plans it again. A second run's move to working was refused (working → working) and failed the session the first was resuming.
         // Claimed here for the run's whole life, so a later look begins nothing on it, and says why. After the intakes are
         // counted, so the slot the record holds is counted as the plan counted it.
         var goingOn = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -2070,6 +2070,14 @@ public sealed class Driver(
     /// Told, as the run lets go of its process, the stop made of it, or null for none (FLAKE3): what a driver's close that cuts
     /// the conclusion off records in place of itself (<see cref="Observation.Closed"/>).
     /// </param>
+    /// <param name="movedFirst">
+    /// That the caller moved the record to working before the spawn (SAIDBACK1e, D137 §2.4): a resume whose words are read once
+    /// that move is made, so no word is taken back after its prompt is built. The move is not made again here.
+    /// </param>
+    /// <param name="spawned">
+    /// Told once the process started, before anything else here can fail: what tells such a caller a run that never started, its
+    /// record to be put back, from one that did (SAIDBACK1e).
+    /// </param>
     internal async Task<T> HoldAsync<T>(
         ISessionAdapter adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
         string cwd, string? harnessNotice, (string? File, object? Meta, HandedSection? Handed) rules, string? handed, string? refusesInput,
@@ -2078,10 +2086,11 @@ public sealed class Driver(
         IReadOnlyList<AcpMcpServer>? handedServers = null, bool drivesBrowser = false, Action<JsonElement>? said = null,
         ResumeAsk? resume = null, Noted? workingNote = null, Func<string, string, ProcessStartInfo?>? goOn = null,
         Action? working = null, Func<CancellationToken, Task<bool>>? waitsOnBackground = null, int? minutes = null,
-        string? noConnector = null, Action<SessionStop?>? stopMade = null)
+        string? noConnector = null, Action<SessionStop?>? stopMade = null, bool movedFirst = false, Action? spawned = null)
     {
         using var process = Process.Start(info)
             ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
+        spawned?.Invoke();
         // Kept beside the process, so who is driving Daoris's browser lasts exactly as long as it (BRW8).
         using var tracked = Context.Processes.Track(sessionId, process, refusesInput, drivesBrowser);
         using var reaper = new Disposer(() => SessionProcesses.EndIfRunning(process));
@@ -2151,17 +2160,20 @@ public sealed class Driver(
         var structured = acp is null ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid, said, keepAs, resume, account, own) : null;
         Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
 
-        try
+        if (!movedFirst)
         {
-            await service.AdvanceAsync(
-                sessionId, "working", note: workingNote?.Note, transcript: transcript, ct: ct, parts: workingNote?.Parts).ConfigureAwait(false);
-        }
-        catch
-        {
-            // 🔴 The record would not become this run's (ANSWER2: a second resume met working → working), so the run is ended
-            // here, and what was reading its output is observed: its failure is written with its reason, never left unawaited.
-            await AbandonedAsync(process, capture, sessionId, Log, output).ConfigureAwait(false);
-            throw;
+            try
+            {
+                await service.AdvanceAsync(
+                    sessionId, "working", note: workingNote?.Note, transcript: transcript, ct: ct, parts: workingNote?.Parts).ConfigureAwait(false);
+            }
+            catch
+            {
+                // 🔴 The record would not become this run's (ANSWER2: a second resume met working → working), so the run is ended
+                // here, and what was reading its output is observed: its failure is written with its reason, never left unawaited.
+                await AbandonedAsync(process, capture, sessionId, Log, output).ConfigureAwait(false);
+                throw;
+            }
         }
 
         working?.Invoke();

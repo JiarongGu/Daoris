@@ -48,7 +48,8 @@ public sealed class SessionMessagesTickTests : IDisposable
 
     private IReadOnlyList<SessionEvent> Events(string session) => new SessionEvents(Path.Combine(_home, "sessions")).After(session, 0).Events;
 
-    private Daoris.Driver.Driver Protocol(SaidStandIn service, string mode, SessionProcesses? processes = null)
+    /// <param name="command">What the protocol door runs in place of the stand-in agent: a file that is no program, so its spawn fails.</param>
+    private Daoris.Driver.Driver Protocol(SaidStandIn service, string mode, SessionProcesses? processes = null, IReadOnlyList<string>? command = null)
     {
         var adapters = AdapterSet.Built();
         var config = DriverConfig.Empty with
@@ -58,7 +59,7 @@ public sealed class SessionMessagesTickTests : IDisposable
             Adapter = "acp-stub",
             TimeoutMinutes = 1,
             PollSeconds = 1,
-            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Log, mode] },
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = command ?? ["node", Agent(), Log, mode] },
         };
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: processes ?? new SessionProcesses(),
@@ -293,6 +294,60 @@ public sealed class SessionMessagesTickTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 SAIDBACK1e (D137 §2.4): a word the person takes back between the look and the ledger's move to working never goes. The
+    /// look reads two words, and the take-back lands just before the move, as the ledger orders the two: the resumed run is handed
+    /// the one the move left, and only that one is taken off the record. While the move followed the spawn, the prompt was built
+    /// from the words read before it, and the word taken back went.
+    /// </summary>
+    [Fact]
+    public async Task A_word_taken_back_between_the_look_and_the_move_never_goes()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        var driver = Protocol(service, "resumes");
+        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
+        Assert.Equal("w2", await service.SayAsync("s1", "And use 9090."));
+        service.TakeBackAtMove("s1", "w1");
+
+        var look = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\nheard: {string.Join(" | ", Heard().Select(h => h.ToJsonString()))}";
+        var prompt = Heard().Last(line => line["method"]!.GetValue<string>() == "session/prompt");
+        Assert.True(prompt["resumed"]!.GetValue<bool>(), seen);
+        Assert.Equal(["And use 9090."], prompt["blocks"]!.AsArray().Select(block => block!.GetValue<string>()));
+        Assert.Equal([("s1", "w2", (string?)null)], service.Taken);
+        Assert.True(service.Said("s1").Count == 0, seen);
+        Assert.True(service.MovesAfterWords("s1").SequenceEqual(["working", "completed"]), seen);
+    }
+
+    /// <summary>
+    /// SAIDBACK1e: a record moved to working before its run's spawn goes back as it ended where the spawn fails, its words waiting
+    /// on it as said, never `failed` with them. Its quest closed, nothing carries them on, so they wait marked, as words a resume
+    /// the agent refused leave there, until more are said.
+    /// </summary>
+    [Fact]
+    public async Task Words_whose_run_could_not_be_spawned_wait_on_the_record_as_it_ended()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        await Protocol(service, "resumes").RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
+        var ended = (service.State("s1"), service.Note("s1"));
+        var notAProgram = Path.Combine(_home, "not-a-program.txt");
+        File.WriteAllText(notAProgram, "not a program");
+
+        var look = await Protocol(service, "resumes", command: [notAProgram]).RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
+        Assert.True(service.MovesAfterWords("s1").SequenceEqual(["working", "completed"]), seen);
+        Assert.True((service.State("s1"), service.Note("s1")) == ended, seen);
+        Assert.True(service.Said("s1").SequenceEqual(["w1"]), seen);
+        Assert.Empty(service.Taken);
+        Assert.Contains(Events("s1"), e => e.Words is ["w1"] && e.Why == ContinueWhy.Refused);
+        Assert.Single(Heard(), line => line["method"]!.GetValue<string>() == "session/new");
+        Assert.DoesNotContain(Heard(), line => line["method"]!.GetValue<string>() == "session/resume");
+    }
+
+    /// <summary>
     /// The protocol door's stand-in: it names its conversation <c>conv-&lt;session&gt;</c>, and on its first prompt takes and
     /// closes the quest. The mode is how it resumes: <c>resumes</c> honours <c>session/resume</c>, and a resumed prompt is
     /// logged with its blocks; <c>elsewhere</c> refuses it as <c>codex-acp</c> does a thread another client holds.
@@ -420,6 +475,7 @@ public sealed class SessionMessagesTickTests : IDisposable
         private readonly List<JsonObject> _sessions = [];
         private readonly Dictionary<string, List<string>> _moves = [];
         private readonly List<JsonObject> _quests;
+        private readonly Dictionary<string, string> _takenBackAtMove = [];
         private int _words;
 
         public string Url { get; }
@@ -483,6 +539,16 @@ public sealed class SessionMessagesTickTests : IDisposable
         public IReadOnlyList<string> MovesAfterWords(string id)
         {
             lock (_sessions) return [.. _moves.GetValueOrDefault(id) ?? []];
+        }
+
+        /// <summary>
+        /// Take <paramref name="word"/> back off the record the moment before its next move to working, as the ledger orders a
+        /// take-back that lands between the driver's look and its move: the record still parked or ended, so the take-back door
+        /// takes it.
+        /// </summary>
+        public void TakeBackAtMove(string id, string word)
+        {
+            lock (_sessions) _takenBackAtMove[id] = word;
         }
 
         /// <summary>What the person says to a session, through the say door as the page's box will (MSG1d): the word's id.</summary>
@@ -599,6 +665,12 @@ public sealed class SessionMessagesTickTests : IDisposable
                         var from = session["state"]!.GetValue<string>();
                         var to = body["state"]!.GetValue<string>();
                         var note = body["note"]?.GetValue<string>();
+                        if (to == "working" && _takenBackAtMove.Remove(id, out var takenBack))
+                        {
+                            session["said"] = new JsonArray([.. session["said"]!.AsArray()
+                                .Where(word => word!["id"]!.GetValue<string>() != takenBack).Select(word => word!.DeepClone())]);
+                        }
+
                         if (!Live.Contains(from))
                         {
                             // MSG1a's one move out of an ended state: to working, with words waiting.
