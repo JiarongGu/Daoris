@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, render, renderHook, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
@@ -7,7 +7,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 // is WinForms and has no test project by construction — `npm run desktop -- shot` is its gate — so
 // everything that could live here does, and what is left there is wiring with no branches in it.
 
-const { invoke, commands, window_ } = vi.hoisted(() => {
+const { invoke, commands, window_, scheme } = vi.hoisted(() => {
   // Every gesture command the strip can send, logged in the order sent, so a test can say "restored,
   // then dragged" and "sent nothing" over the same list.
   const sent: string[] = [];
@@ -25,6 +25,8 @@ const { invoke, commands, window_ } = vi.hoisted(() => {
       showSystemMenu: command('showSystemMenu'),
     },
     window_: { maximized: false },
+    // The kit's colour-scheme client (THEMESCHEME1): what the engine the window renders on was told.
+    scheme: vi.fn((_scheme: string) => Promise.resolve()),
   };
 });
 
@@ -38,9 +40,13 @@ vi.mock('@shenora/react', async () => {
     setCaptionButtons = () => Promise.resolve();
     setTheme = () => Promise.resolve();
   }
+  class ColorScheme {
+    set = scheme;
+  }
   return {
     ...actual,
     WindowCommands,
+    ColorScheme,
     isShenoraAvailable: () => true,
     getBridge: () => ({ isAvailable: true, invoke, notifyReady: () => Promise.resolve() }),
     useShenora: () => ({ isAvailable: true, bridge: { notifyReady: () => Promise.resolve() } }),
@@ -51,6 +57,7 @@ vi.mock('@shenora/react', async () => {
 import '../locales/i18n';
 import { CAPTION_ATTRIBUTE, CAPTION_SLOTS, captionRects, useWindowChrome } from './windowChrome';
 import { AppStrip, DRAG_DISTANCE, STRIP_SPACE } from '../work/frame';
+import { setThemeChoice } from '../design/theme';
 
 /** A strip with three laid-out slots, as the real one has once the browser has measured it. */
 function strip(sizes: Partial<Record<string, DOMRect>> = {}): HTMLElement {
@@ -332,6 +339,29 @@ describe('the strip wired to the window, gesture by gesture', () => {
     await userEvent.pointer({ keys: '[MouseRight]', target: strip });
     await userEvent.pointer({ keys: '[MouseLeft>]', target: strip.querySelector('.cursor-ns-resize')! });
     await waitFor(() => expect(commands.sent).toEqual(['showSystemMenu', 'startResize']));
+  });
+});
+
+/**
+ * THEMESCHEME1: the main window's Chromium follows the viewer's choice, as its caption does, so Chromium's own UI and
+ * `prefers-color-scheme` agree with the page on a desktop set the other way. The choice is told, never the effective
+ * theme, which would hold a viewer on System at the OS's theme of that moment.
+ */
+describe('the window\'s engine and the viewer\'s theme', () => {
+  afterEach(() => {
+    setThemeChoice('system');
+    scheme.mockClear();
+  });
+
+  it('tells the engine the viewer\'s choice on arrival and each time it changes', () => {
+    setThemeChoice('light');
+    renderHook(() => useWindowChrome());
+
+    expect(scheme).toHaveBeenLastCalledWith('light');
+    act(() => setThemeChoice('dark'));
+    expect(scheme).toHaveBeenLastCalledWith('dark');
+    act(() => setThemeChoice('system'));
+    expect(scheme).toHaveBeenLastCalledWith('system');
   });
 });
 
