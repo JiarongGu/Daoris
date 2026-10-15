@@ -34,6 +34,7 @@
   "work.act.handOver": "换个智能体继续…",
   "work.act.handOverStop": "停止并转交…",
   "work.act.handOverMeanIt": "转交",
+  "work.act.askHelper": "问另一个智能体…",
   "work.handOver.title": "换个智能体继续",
   "work.handOver.idle": "它会在同一个文件夹里，用你选的智能体开一段新对话继续。Daoris 会把它保留的这段对话交给那个智能体：你的请求、计划、最后的话和未提交的改动。智能体自己的上下文不会带过去。",
   "work.handOver.working": "先停止它这一轮，再在同一个文件夹里，用你选的智能体开一段新对话继续。Daoris 会把它保留的这段对话交给那个智能体：你的请求、计划、最后的话和未提交的改动。智能体自己的上下文不会带过去。",

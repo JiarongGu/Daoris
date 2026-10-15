@@ -74,8 +74,18 @@ const facts = (sessions: readonly Session[]): SessionRowFacts[] => {
     taking: row.kind === 'chat' ? false : undefined,
     continues: titled(row.from),
     helps: titled(row.serves),
+    reads: titled(row.opinion ? READS[row.opinion] : null),
   }));
 };
+
+/** Whose work each second opinion reads, by the opinion's id: what the rail joins from `/api/opinions` (XAGENT1g4c). */
+const READS: Record<string, string> = { o9a1b2c3: 'w0rk1ng0' };
+
+/** The rail's join for MIXAGENT3a-ii: each helper's `serves`, and each reviewer's opinion's `working`. */
+const servingOf = (sessions: readonly Session[]): Record<string, string> => Object.fromEntries(sessions.flatMap((row) => {
+  const served = row.serves ?? (row.opinion ? READS[row.opinion] : null);
+  return served ? [[row.id, served]] : [];
+}));
 
 /** Fifteen that ended, newest first: past the twelve a group shows before its press (§4.4). */
 const MANY_ENDED = Array.from({ length: 15 }, (_, index) =>
@@ -135,6 +145,7 @@ function SessionsListPane({
           selected={selected}
           archived={archived}
           repositoryFacts={(repository) => ({ drivable: repository !== 'tools', held: repository === 'tools', busy: repository === 'game' ? true : null })}
+          serving={servingOf(sessions)}
           onSelect={() => {}}
           // Each row's acts as the one rule offers them (SESSUX1d), as the rail hands them.
           actsFor={(row) => offeredActs({ session: row, grouping: groupings?.find((each) => each.session === row.id) }, 'row')}
@@ -252,19 +263,25 @@ export const Strip: Story = { args: { layout: CLOSED } };
 export const LaidOver: Story = { args: { layout: { mode: 'over', width: LIST_BOUNDS.sessions.initial, beside: LIST_STRIP, auto: true } } };
 
 /**
- * MIXAGENT3a-i (the mixed-agents design §4): a conversation handed over says on its line the session it continues, and a
- * helper, titled as one, the session it helps; in English, 中文 and dark.
+ * MIXAGENT3a-i (the mixed-agents design §4): a conversation handed over says on its line the session it continues. And
+ * MIXAGENT3a-ii: a helper, titled as one, is drawn under the session it helps (out of *Working*, into *Waiting on you* under
+ * the parked session that asked it), and a second opinion's reviewer under the work it read (out of *Ended*), their lines
+ * leaving whose work it is to the row above; in English, 中文 and dark.
  */
 const LINKED: Session[] = [
   ...SESSIONS,
   session({ id: 'h4nd3d00', state: 'working', kind: 'chat', repository: 'game', from: 'w0rk1ng0', fromWhy: 'near', fromBy: 'daoris', created: at(4), updated: at(1) }),
   session({ id: 'h3lp3r00', state: 'working', kind: 'chat', serves: 'p4rk3d00', created: at(3), updated: at(1) }),
+  session({ id: 'r3v13w00', state: 'completed', kind: 'chat', repository: 'game', opinion: 'o9a1b2c3', created: at(30), updated: at(20) }),
 ];
 const LINKED_GROUPINGS: SessionGrouping[] = [
   ...GROUPINGS,
   { session: 'h4nd3d00', group: 'working', shown: 'working', archived: false, teammate: false },
   { session: 'h3lp3r00', group: 'working', shown: 'working', archived: false, teammate: false },
+  { session: 'r3v13w00', group: 'ended', shown: 'completed', archived: false, teammate: false },
 ];
 export const ContinuesAndHelps: Story = { args: { sessions: LINKED, groupings: LINKED_GROUPINGS, selected: 'h4nd3d00' } };
 export const ContinuesAndHelpsChinese: Story = { ...ContinuesAndHelps, decorators: [chinese] };
 export const ContinuesAndHelpsDark: Story = { ...ContinuesAndHelps, decorators: [(Story) => <InTheme theme="dark"><Story /></InTheme>] };
+/** The same, by repository: each repository's group draws its helper under the session it helps, its reviewer under its work. */
+export const ContinuesAndHelpsByRepository: Story = { args: { ...ContinuesAndHelps.args, arrangement: 'repository' } };

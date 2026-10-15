@@ -147,13 +147,31 @@ describe('the acts a session is offered', () => {
 
   it('offers a conversation of this machine its hand-over after its stop, working or not, and no other session', () => {
     const chat = session({ quest: null, kind: 'chat', state: 'completed', tree: TREE });
-    expect(offeredActs({ session: chat, root: ROOT }, 'header')).toEqual(['handOver', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
+    expect(offeredActs({ session: chat, root: ROOT }, 'header'))
+      .toEqual(['handOver', 'askHelper', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
     expect(offeredActs({ session: { ...chat, state: 'working' }, root: ROOT }, 'header').slice(0, 2)).toEqual(['stop', 'handOver']);
     // Not a quest's session, an intake, Ask Daoris's, nor a teammate's: each has its own door or none (MIXAGENT1a-i, D163).
     expect(offeredActs({ session: session(), root: ROOT }, 'row')).not.toContain('handOver');
     expect(offeredActs({ session: { ...chat, ask: '0fda18' }, root: null }, 'row')).not.toContain('handOver');
     expect(offeredActs({ session: { ...chat, repository: 'daoris:help' }, root: null }, 'row')).not.toContain('handOver');
     expect(offeredActs({ session: { ...chat, id: 'person@machine-b/c1' }, root: null }, 'row')).not.toContain('handOver');
+  });
+
+  /**
+   * MIXAGENT2b (D163 point 2; the mixed-agents design §3): *Ask another agent…* on the page of a session of this machine's that may
+   * ask, driven or a conversation, live or ended, after the hand-over; in its header only, where its ask opens, so no row's ⋯ grows.
+   * Not a helper (a helper cannot ask for a helper), a reviewer, an intake, Ask Daoris's, nor a teammate's.
+   */
+  it('offers Ask another agent… in the header of a session of this machine’s that may ask, and nowhere else', () => {
+    const driven = { session: session(), grouping: placed({ group: 'working', shown: 'working' }), root: ROOT };
+    expect(offeredActs(driven, 'header')).toEqual(['stop', 'askHelper', 'pauseQuest', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
+    expect(offeredActs({ ...driven, session: session({ state: 'completed' }) }, 'header')).toContain('askHelper');
+    expect(offeredActs(driven, 'row')).not.toContain('askHelper');
+
+    const chat = session({ quest: null, kind: 'chat', state: 'completed', tree: TREE });
+    for (const other of [{ serves: 's9z8y7x6' }, { opinion: 'o1p2q3' }, { ask: '0fda18' }, { repository: 'daoris:help' }, { id: 'person@machine-b/c1' }]) {
+      expect(offeredActs({ session: { ...chat, ...other }, root: ROOT }, 'header')).not.toContain('askHelper');
+    }
   });
 
   /** HELPERACTS1 (D163's MIXAGENT2a-i note): a helper's and a reviewer's records are refused words and resume, so no act takes any. */

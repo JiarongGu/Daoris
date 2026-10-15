@@ -11,13 +11,16 @@ import type { SessionWhere } from './SessionRow';
 
 /** Every act a session's doors offer, by the name `sessionActs.ts` runs it by. Finish and Decline… stay its card's. */
 export type SessionActId =
-  | 'answer' | 'stop' | 'handOver' | 'pauseQuest' | 'pauseAsk' | 'resumeQuest' | 'resumeAsk' | 'retry' | 'review' | 'openFolder'
-  | 'terminal' | 'detach' | 'archive' | 'unarchive' | 'delete' | 'copy';
+  | 'answer' | 'stop' | 'handOver' | 'askHelper' | 'pauseQuest' | 'pauseAsk' | 'resumeQuest' | 'resumeAsk' | 'retry' | 'review'
+  | 'openFolder' | 'terminal' | 'detach' | 'archive' | 'unarchive' | 'delete' | 'copy';
 
-/** §3.1's order, the order a menu lists them in; a pause beside the stop, and a resume where *Try again* stands (D132 §7.1). */
+/**
+ * §3.1's order, the order a menu lists them in; a pause beside the stop, and a resume where *Try again* stands (D132 §7.1). Another
+ * agent's two doors stand together: the hand-over, then a helper (MIXAGENT2b).
+ */
 export const ACT_ORDER: readonly SessionActId[] = [
-  'answer', 'stop', 'handOver', 'pauseQuest', 'pauseAsk', 'resumeQuest', 'resumeAsk', 'retry', 'review', 'openFolder', 'terminal',
-  'detach', 'archive', 'unarchive', 'delete', 'copy',
+  'answer', 'stop', 'handOver', 'askHelper', 'pauseQuest', 'pauseAsk', 'resumeQuest', 'resumeAsk', 'retry', 'review', 'openFolder',
+  'terminal', 'detach', 'archive', 'unarchive', 'delete', 'copy',
 ];
 
 /**
@@ -29,6 +32,8 @@ export const ACT_LOOK: Record<SessionActId, { label: string; icon: IconName; dan
   stop: { label: 'work.act.stop', icon: 'stop', danger: true },
   // MIXAGENT1b-i: one act with two names by state (`handOverLabel`); never a second danger button beside Stop… (D163).
   handOver: { label: 'work.act.handOver', icon: 'redo' },
+  // MIXAGENT2b: the agent at work, as a workflow's step draws another agent's part; Ask Daoris keeps its own question mark.
+  askHelper: { label: 'work.act.askHelper', icon: 'stepWork' },
   // PAUSE1e: the player's pause and play, since a pause keeps everything and Resume carries it on where it stood.
   pauseQuest: { label: 'work.act.pauseQuest', icon: 'pause' },
   pauseAsk: { label: 'work.act.pauseAsk', icon: 'pause' },
@@ -101,6 +106,9 @@ export function folderOf({ session, root, where }: ActFacts): string | null {
  *   whose stop holds its quest. **Review** where there is work to read: its tree, its landing, or a place in To review.
  * - **Go on with another agent…** (or **Stop and hand over…** while it works) for a conversation of this machine's own: not
  *   an intake, Ask Daoris's, nor a quest's session (MIXAGENT1b-i, D163). One act with two names; it asks under the header.
+ * - **Ask another agent…** in the header of a session of this machine's own that may ask, driven or a conversation, live or
+ *   ended: not a helper (a helper cannot ask for a helper), a reviewer, an intake nor Ask Daoris's (MIXAGENT2b, D163 point 2).
+ *   On the session's page only, where its ask opens, so no row's ⋯ grows by it.
  * - **Open folder** and **Open a terminal here** where its folder is on this machine (`folderOf`).
  * - **Archive** where the reader placed it in Ended, **Unarchive** wherever its mark stands, **Copy session ID** always.
  * - **Delete…** where the reader says the delete would be taken (SESSUX1f, D126 §5.4): a conversation that served no
@@ -127,6 +135,7 @@ export function offeredActs(facts: ActFacts, door: 'row' | 'header'): SessionAct
     if (live) offered.add('stop');
     // A conversation of this machine's own: not an intake, Ask Daoris's, nor a quest's session, each of which has its own door.
     if (session.kind === 'chat' && !session.quest && !intake && !isHelp(session) && !wordless) offered.add('handOver');
+    if (door === 'header' && !intake && !isHelp(session) && !wordless) offered.add('askHelper');
     const driven = live && Boolean(session.quest) && session.kind !== 'chat' && !intake && !isHelp(session) && !wordless;
     if (driven && !pausedBy) {
       offered.add('pauseQuest');

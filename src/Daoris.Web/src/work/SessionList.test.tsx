@@ -103,6 +103,45 @@ describe("Sessions' list by state", () => {
     expect(within(second!).getByText(/^engine · chat · helps Tidy the tools · /)).toBeInTheDocument();
   });
 
+  /**
+   * MIXAGENT3a-ii (the mixed-agents design §4, XAGENT1g4d): a helper and a reviewer are drawn under the row of the work they
+   * serve, out of their own groups, their lines no longer naming it; the groups count the rows they draw as their own.
+   */
+  it('draws a helper and a reviewer under the work they serve, their lines no longer naming it', () => {
+    const helper = session({ id: 'h3lp3r00', state: 'working', kind: 'chat', repository: 'tools', serves: 'w0rk1ng0' });
+    const reviewer = session({ id: 'r3v13w00', state: 'completed', kind: 'chat', repository: 'tools', opinion: 'o1' });
+    list({
+      rows: [...facts(SESSIONS), { session: helper, helps: 'Session' }, { session: reviewer, reads: 'Session' }],
+      groupings: [...GROUPINGS, placed({ session: 'h3lp3r00', group: 'working' }), placed({ session: 'r3v13w00', group: 'ended', shown: 'completed' })],
+      serving: { h3lp3r00: 'w0rk1ng0', r3v13w00: 'w0rk1ng0' },
+    });
+
+    expect(headings()).toEqual(['Waiting on you (2)', 'To review (1)', 'Working (1)', 'Resumes later (1)', 'Ended (2)']);
+    const working = groupRows('Working (1)');
+    expect(working).toHaveLength(3);
+    const under = screen.getByRole('list', { name: 'Working for Session' });
+    expect(within(under).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(under).getByText('Helper')).toBeInTheDocument();
+    expect(within(under).getByText('Second opinion')).toBeInTheDocument();
+    // The row above says whose work it is, and the repository it is in.
+    expect(within(under).getByText(/^chat · moved/)).toBeInTheDocument();
+    expect(within(under).getByText(/^second opinion · moved/)).toBeInTheDocument();
+    expect(screen.queryByText(/helps|reads/)).toBeNull();
+    expect(groupRows('Ended (2)').map((row) => row.textContent)).not.toContain(expect.stringContaining('Second opinion'));
+  });
+
+  it('keeps a helper its own place, naming whom it helps, where that row is not drawn', () => {
+    const helper = session({ id: 'h3lp3r00', state: 'working', kind: 'chat', serves: 'd0ne0000' });
+    list({
+      rows: [...facts(SESSIONS.filter((row) => row.id !== 'd0ne0000')), { session: helper, helps: 'Session' }],
+      groupings: [...GROUPINGS, placed({ session: 'h3lp3r00', group: 'working' })],
+      serving: { h3lp3r00: 'd0ne0000' },
+    });
+
+    expect(within(groupRows('Working (2)')[1]!).getByText(/^engine · chat · helps Session · /)).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: /^Working for/ })).toBeNull();
+  });
+
   it('leaves out a group with nothing in it', () => {
     list({ rows: facts([SESSIONS[0]!]), groupings: [GROUPINGS[3]!] });
     expect(headings()).toEqual(['Working (1)']);
@@ -356,6 +395,21 @@ describe("Sessions' list by repository", () => {
     // The ended beneath, newest first, with their words: awaiting a reply, to review, and the record's own.
     expect(within(ended).getAllByRole('listitem').map((row) => within(row).getAllByText(/./)[0]!.textContent))
       .toEqual(['stopped', 'awaiting reply', 'declined', 'completed']);
+  });
+
+  /** MIXAGENT3a-ii: by repository too, a helper under the session it serves, which counts it as none of its own. */
+  it('draws a helper under the session it serves, out of its repository group', () => {
+    const helper = session({ id: 'h3lp3r00', state: 'working', kind: 'chat', serves: 'p4rk3d00' });
+    list({
+      arrangement: 'repository',
+      rows: [...facts(SESSIONS), { session: helper, helps: 'Chat' }],
+      groupings: [...GROUPINGS, placed({ session: 'h3lp3r00', group: 'working' })],
+      serving: { h3lp3r00: 'p4rk3d00' },
+    });
+
+    const engine = screen.getByRole('heading', { level: 3, name: 'engine' }).closest('section')!;
+    expect(within(engine).getByText('2')).toBeInTheDocument();
+    expect(within(within(engine).getByRole('list', { name: 'Working for Chat' })).getByText('Helper')).toBeInTheDocument();
   });
 
   /** The monitor's list is the present tense only (UX5 U70): nothing ended, and no parked row with no tile to go to. */

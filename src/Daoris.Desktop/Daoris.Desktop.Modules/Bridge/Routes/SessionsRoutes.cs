@@ -116,6 +116,133 @@ public sealed class SessionsRoutes(DriverContext context)
         return new { answer.Sent, answer.Why, answer.Message };
     }
 
+    // *Ask another agent…* (MIXAGENT2b, D163 point 2; the mixed-agents design §3): the person's own ask of a helper for a session,
+    // the file `daoris-driver sessions helper` writes (`HelperFiles.WriteAsk`, asked by the person, so the `helpers` rule's `ask`
+    // and `off` do not hold it), judged as that verb judges: a question within the bound, an agent of one word, and a session of
+    // this machine's that may ask. Everything else is the driver's, at its next look, which the nudge brings sooner. What cannot is
+    // `asked: null` with its code for the page to word, and the verb's sentence beside it; the page never reads a path.
+    [DriverRoute("SESSION_HELPER_ASK")]
+    [Publishes("SESSION_HELPER_ASK", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
+    private async Task<object?> SessionHelperAskAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var question = (Optional(request, "question") ?? "").Trim();
+        var agent = Optional(request, "agent")?.Trim();
+        var service = _loop.Service ?? throw NotReady();
+
+        static object Refused(string why, string sentence) => new { Asked = (string?)null, Why = why, Message = $"{sentence} Nothing was asked." };
+        if (question.Length == 0) return Refused(HelperAskWhy.Blank, "A helper is asked a question, and none was given.");
+        if (question.Length > SessionsHelperCommand.MaxQuestion)
+        {
+            return Refused(HelperAskWhy.TooLong,
+                $"A question is at most {SessionsHelperCommand.MaxQuestion} characters, and this is {question.Length}.");
+        }
+
+        if (agent is not null && agent.Any(c => char.IsWhiteSpace(c) || char.IsControl(c)))
+        {
+            return Refused(HelperAskWhy.Agent, $"An agent is named as one word, as it is listed in Settings, and `{agent}` is not.");
+        }
+
+        // The verb's sentences, so the person reads the same one from either door.
+        var asker = await service.RecordAsync(id, cancellationToken).ConfigureAwait(false);
+        var refused = asker switch
+        {
+            null or { Teammate: true } => (HelperAskWhy.NotHeld, $"No session `{id}` of this machine's is held to bring an answer back to."),
+            { Serves: { } serves } => (HelperAskWhy.Helper, $"Session `{id}` is itself a helper for session `{serves}`, and a helper cannot ask for a helper."),
+            { Opinion: { } opinion } => (HelperAskWhy.Reviewer, $"Session `{id}` reads another session's work for second opinion `{opinion}`, and a reviewer cannot ask for a helper."),
+            { Ask: { Length: > 0 } intake } => (HelperAskWhy.Intake, $"Session `{id}` is the intake for ask `#{intake}`, which does no work in a repository, and an intake cannot ask for a helper."),
+            _ => ((string, string)?)null,
+        };
+        if (refused is var (why, sentence)) return Refused(why, sentence);
+
+        var asked = new HelperFiles(_loop.Home).WriteAsk(id, question, agent, DateTimeOffset.UtcNow);
+        _loop.Nudge();
+        return new
+        {
+            Asked = asked,
+            Why = (string?)null,
+            Message = $"Asked #{asked} for session {id}: the driver starts a helper on another agent at its next look, read-only, and "
+                      + "its answer comes back to that session as its next turn, marked as the helper's.",
+        };
+    }
+
+    // The asks a session made of helpers (MIXAGENT2b), oldest first, each as the driver's look left it: its state and code, the
+    // helper's session once started and the agent it started on. Read off the home's `helpers` folder, the driver's own files;
+    // what the state keeps for the driver alone (the last words, the word it was handed as) is not the page's.
+    [DriverRoute("SESSION_HELPERS")]
+    private Task<object?> SessionHelpersAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var files = new HelperFiles(_loop.Home);
+        var helpers = files.Asks()
+            .Where(ask => string.Equals(ask.Asker, id, StringComparison.Ordinal))
+            .Select(ask => (Ask: ask, State: files.ReadState(ask.Id)))
+            .Select(each => new
+            {
+                each.Ask.Id,
+                each.Ask.Question,
+                each.Ask.Agent,
+                each.Ask.AskedBy,
+                At = Moments.Write(each.Ask.At),
+                each.State?.State,
+                each.State?.Code,
+                each.State?.Helper,
+                StartedOn = each.State?.Agent,
+            })
+            .ToList();
+        return Task.FromResult<object?>(new { Helpers = helpers });
+    }
+
+    // The person's yes to an agent's ask under the `helpers` rule's `ask` (MIXAGENT2b, D163 point 3; design §5): the `approved`
+    // state the driver's look reads (`HelperJudge`), written where the ask waits on that yes: no state yet, or `waiting` with no
+    // code. A yes again is the same yes. A person's own ask needs none, one past its start is past it, one waiting on a slot or an
+    // agent waits on no yes, and one this session does not hold is gone: each `approved: false` with its code, its state untouched.
+    [DriverRoute("SESSION_HELPER_APPROVE")]
+    [Publishes("SESSION_HELPER_APPROVE", StateScopes.Sessions | StateScopes.Driver, Session = "session")]
+    private Task<object?> SessionHelperApproveAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+        var askId = PayloadHelper.GetRequiredValue<string>(request.Payload, "ask");
+        var files = new HelperFiles(_loop.Home);
+        var ask = files.Asks().FirstOrDefault(each => each.Id == askId && string.Equals(each.Asker, session, StringComparison.Ordinal));
+        var state = ask is null ? null : files.ReadState(ask.Id);
+
+        static object Answer(bool approved, string? why, string message) => new { Approved = approved, Why = why, Message = message };
+        object answer = (ask, state) switch
+        {
+            (null, _) => Answer(false, HelperAskWhy.Gone, $"Session {session} holds no ask #{askId} for a helper."),
+            ({ AskedBy: HelperAsk.ByPerson }, _) => Answer(false, HelperAskWhy.Person, $"#{askId} is your own ask, which needs no yes."),
+            (_, { State: HelperStates.Approved }) => Answer(true, null, $"#{askId} has your yes."),
+            (_, null) or (_, { State: HelperStates.Waiting, Code: null }) => Approve(files, askId),
+            (_, { State: HelperStates.Waiting }) => Answer(false, HelperAskWhy.Waits, $"#{askId} waits on {state!.Code}, not on your yes."),
+            _ => Answer(false, HelperAskWhy.Past, $"#{askId} is past its start: {state!.State}."),
+        };
+        return Task.FromResult<object?>(answer);
+
+        object Approve(HelperFiles helpers, string id)
+        {
+            helpers.WriteState(new HelperState(id, HelperStates.Approved, null, null, DateTimeOffset.UtcNow));
+            _loop.Nudge();
+            return Answer(true, null, $"#{id} has your yes: the driver starts a helper at its next look, within the limits.");
+        }
+    }
+
+    /// <summary>Why a person's ask of a helper, or their yes to an agent's, did nothing: the codes the page words (MIXAGENT2b).</summary>
+    internal static class HelperAskWhy
+    {
+        public const string Blank = "blank";
+        public const string TooLong = "too-long";
+        public const string Agent = "agent";
+        public const string NotHeld = "not-held";
+        public const string Helper = "helper";
+        public const string Reviewer = "reviewer";
+        public const string Intake = "intake";
+        public const string Gone = "gone";
+        public const string Person = "person";
+        public const string Waits = "waits";
+        public const string Past = "past";
+    }
+
     private const string PersonMoves =
         "A person may finish, decline or stop a parked session — not move it anywhere else. "
         + "Answering it so it carries on is a message, not a move.";

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Session } from '../data/api';
 import {
-  cutEnded, endedToArchive, GROUP_ORDER, keptSessionFilters, sessionFilters, type SessionGrouping, sessionsByRepository, sessionsByState,
-  shownOf, stripSessions, waitsOnYou,
+  cutEnded, endedToArchive, GROUP_ORDER, keptSessionFilters, type NestedRow, nestServing, sessionFilters, type SessionGrouping,
+  sessionsByRepository, sessionsByState, shownOf, stripSessions, waitsOnYou,
 } from './groups';
 
 // The session list by state (SESSUX1c, D126 §2.1, §4): the reader's groups as the list draws them, by repository as
@@ -262,6 +262,55 @@ describe('the strip', () => {
   it('keeps the attended session one press away, whatever it reached', () => {
     expect(ids(stripSessions(sessions, groupings, { arrangement: 'state', selected: 'c1', archived: false })))
       .toEqual(['p1', 'f1', 'w1', 'c1']);
+  });
+});
+
+/**
+ * MIXAGENT3a-ii (the mixed-agents design §4, closing XAGENT1g4d): a helper under the session it serves, a reviewer under the
+ * session whose work it reads, each its own place where that session's row is not drawn. Never a second copy of a row.
+ */
+describe('helpers and reviewers under the work they serve', () => {
+  const asker = session({ id: 'ask3r000', state: 'working' });
+  const helper = session({ id: 'h3lp3r00', state: 'working', kind: 'chat', serves: 'ask3r000' });
+  const reviewer = session({ id: 'r3v13w00', state: 'completed', kind: 'chat', opinion: 'o1' });
+  const other = session({ id: 'oth3r000', state: 'completed' });
+  // The rail's join: each helper's `serves`, and each reviewer's opinion's `working`.
+  const serving = { h3lp3r00: 'ask3r000', r3v13w00: 'ask3r000' };
+  const drawn = (groups: NestedRow[][]) => groups.map((group) => group.map((row) => [row.id, ids(row.under)]));
+
+  it('draws each under the row of the work it serves, out of its own group, in the order the list drew them', () => {
+    expect(drawn(nestServing([[helper, asker], [reviewer, other]], serving))).toEqual([
+      [['ask3r000', ['h3lp3r00', 'r3v13w00']]],
+      [['oth3r000', []]],
+    ]);
+  });
+
+  it('keeps each its own place where the row of the work it serves is not drawn', () => {
+    expect(drawn(nestServing([[helper], [reviewer, other]], serving))).toEqual([
+      [['h3lp3r00', []]],
+      [['r3v13w00', []], ['oth3r000', []]],
+    ]);
+  });
+
+  /** One row per line of work (D167): a helper of a part that does not lead goes under its entry's row. */
+  it('draws one under the row that stands for the part it serves', () => {
+    const ofPart = session({ id: 'h3lp3r01', state: 'working', kind: 'chat', serves: 'p4rt0000' });
+    const nested = nestServing([[asker, ofPart]], { h3lp3r01: 'p4rt0000' }, {
+      standsFor: (id) => (id === 'p4rt0000' ? 'ask3r000' : id),
+    });
+    expect(drawn(nested)).toEqual([[['ask3r000', ['h3lp3r01']]]]);
+  });
+
+  it('never moves one that waits on the person out of its place', () => {
+    const nested = nestServing([[helper], [asker]], serving, { keepOwn: (id) => id === 'h3lp3r00' });
+    expect(drawn(nested)).toEqual([[['h3lp3r00', []]], [['ask3r000', []]]]);
+  });
+
+  /** Depth one, as a helper cannot ask for a helper: a row drawn under another holds none, and what it serves keeps its place. */
+  it('nests one level only', () => {
+    const below = session({ id: 'b3l0w000', state: 'working', kind: 'chat', serves: 'h3lp3r00' });
+    const nested = nestServing([[asker, helper, below]], { ...serving, b3l0w000: 'h3lp3r00' });
+    expect(drawn(nested)).toEqual([[['ask3r000', ['h3lp3r00']], ['b3l0w000', []]]]);
   });
 });
 

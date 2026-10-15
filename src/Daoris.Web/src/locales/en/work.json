@@ -34,6 +34,7 @@
   "work.act.handOver": "Go on with another agent…",
   "work.act.handOverStop": "Stop and hand over…",
   "work.act.handOverMeanIt": "Hand over",
+  "work.act.askHelper": "Ask another agent…",
   "work.handOver.title": "go on with another agent",
   "work.handOver.idle": "It goes on in a new conversation with the agent you choose, in the same folder. Daoris hands that agent what it kept of this one: your request, its plan, its last words and what is uncommitted. The agent’s own context does not carry over.",
   "work.handOver.working": "Its turn is stopped, then it goes on in a new conversation with the agent you choose, in the same folder. Daoris hands that agent what it kept of this one: your request, its plan, its last words and what is uncommitted. The agent’s own context does not carry over.",
