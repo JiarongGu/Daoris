@@ -233,9 +233,11 @@ internal sealed class LandedCleanups(
             var sessions = LandedProofs.EntriesOf(context.Recorded.All(), repository)
                 .GroupBy(entry => entry.Branch, StringComparer.Ordinal)
                 .ToDictionary(group => group.Key, group => group.MaxBy(entry => entry.LandedAt)!.Session, StringComparer.Ordinal);
+            // The refs read once for the judgement over the whole set, and afresh for each judgement again (PROC1d-ii).
+            var refs = RefSnapshot.Take(root);
             var first = await JudgeLandedAsync(
                 root, repository, workspace, LandedProofs.EntriesOf(context.Recorded.All(), repository),
-                await LandedProofs.SessionBranchesAsync(root, ct).ConfigureAwait(false), stale, ct).ConfigureAwait(false);
+                await LandedProofs.SessionBranchesAsync(root, ct, refs).ConfigureAwait(false), stale, ct, refs).ConfigureAwait(false);
 
             // Inside first: each is proven through a branch still standing.
             foreach (var judged in first.OrderBy(each => each.Item.Kind == LandedKind.Inside ? 0 : 1))
@@ -251,10 +253,11 @@ internal sealed class LandedCleanups(
                     continue;
                 }
 
+                var fresh = RefSnapshot.Take(root);
                 var again = await JudgeLandedAsync(
                     root, repository, workspace,
                     LandedProofs.EntriesOf(context.Recorded.All(), repository).Where(entry => !removed.Contains(entry.Branch)).ToList(),
-                    await LandedProofs.SessionBranchesAsync(root, ct).ConfigureAwait(false), stale: null, ct).ConfigureAwait(false);
+                    await LandedProofs.SessionBranchesAsync(root, ct, fresh).ConfigureAwait(false), stale: null, ct, fresh).ConfigureAwait(false);
                 var now = again.FirstOrDefault(each => each.Item.Branch == item.Branch);
                 if (now is null || !now.Item.Removable || now.Tip != judged.Tip)
                 {
@@ -328,27 +331,27 @@ internal sealed class LandedCleanups(
     /// </summary>
     /// <param name="staying">The session branches that stay: a landed branch one of them leans on stays too.</param>
     /// <param name="stale">Where a branch that is gone, or no longer the landing's, is named for the record to forget; null to only look.</param>
+    /// <param name="refs">The refs the caller's judgement read (PROC1d-ii); null takes this judgement's own, so each judgement again reads afresh.</param>
     internal async Task<List<Judged>> JudgeLandedAsync(
         string root, string repository, string workspace, IReadOnlyList<LandedBranch> entries, IReadOnlyCollection<string> staying,
-        List<string>? stale, CancellationToken ct)
+        List<string>? stale, CancellationToken ct, RefSnapshot? refs = null)
     {
+        // One read of the refs for every branch judged here (PROC1d-ii); a write in this flow drops it.
+        refs ??= RefSnapshot.Take(root);
         // A list git could not give is never "no tree here" (AUTOTIDY1): every branch is then kept as one checked out.
         var worktrees = await context.Worktrees.ReadAsync(root, ct).ConfigureAwait(false);
         var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
-        var forms = await LandedProofs.LineFormsAsync(root, line, ct).ConfigureAwait(false);
+        var forms = await LandedProofs.LineFormsAsync(root, line, ct, refs).ConfigureAwait(false);
 
         var judged = new List<(LandedBranch Entry, string Tip, LandedProofs.Proof Proof, string? Keep, int Ahead, PullRequestVerdict? Verdict)>();
         foreach (var entry in entries)
         {
-            var (tipCode, tipOut, _) = await WorkingTree.GitAsync(
-                root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{entry.Branch}^{{commit}}"], ct).ConfigureAwait(false);
-            if (tipCode != 0)
+            if (await TreeRefs.CommitOfAsync(root, $"refs/heads/{entry.Branch}", ct, refs).ConfigureAwait(false) is not { } tip)
             {
                 stale?.Add(entry.Branch);
                 continue;
             }
 
-            var tip = tipOut.Trim();
             // 🔴 A person's own branch is never judged: one that took the recorded name since does not hold the
             // commit the landing made it at, whatever its files say.
             var (ours, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", entry.Tip, tip], ct).ConfigureAwait(false);
@@ -374,7 +377,7 @@ internal sealed class LandedCleanups(
             {
                 keep = LandedKind.CheckedOut;
             }
-            else if (proof.Kind != LandedKind.Merged && await AheadOfRemoteAsync(root, entry.Branch, tip, ct).ConfigureAwait(false) is { } lacking)
+            else if (proof.Kind != LandedKind.Merged && await AheadOfRemoteAsync(root, entry.Branch, tip, ct, refs).ConfigureAwait(false) is { } lacking)
             {
                 // Merged would lose nothing — every commit is on the line — so only that outranks a move since the push.
                 ahead = lacking;
@@ -441,17 +444,24 @@ internal sealed class LandedCleanups(
     /// upstream, else <c>origin/&lt;branch&gt;</c> — or null where it has none: never pushed, or its remote
     /// branch deleted and pruned since.
     /// </summary>
-    private static async Task<int?> AheadOfRemoteAsync(string root, string branch, string tip, CancellationToken ct)
+    /// <param name="refs">The judgement's refs (PROC1d-ii), where they hold the upstream and origin's copy; null asks git.</param>
+    internal static async Task<int?> AheadOfRemoteAsync(string root, string branch, string tip, CancellationToken ct, RefSnapshot? refs = null)
     {
+        // Its upstream as `<branch>@{upstream}` resolves it: none, or one whose ref is gone, falls to origin's copy.
+        var upstream = refs is null ? default : await refs.UpstreamAsync(branch, ct).ConfigureAwait(false);
         string? remote = null;
-        foreach (var candidate in new[] { $"{branch}@{{upstream}}", $"refs/remotes/origin/{branch}" })
+        if (!upstream.Known)
         {
-            var (code, sha, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{candidate}^{{commit}}"], ct).ConfigureAwait(false);
-            if (code != 0) continue;
-            remote = sha.Trim();
-            break;
+            var (code, sha, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{branch}@{{upstream}}^{{commit}}"], ct)
+                .ConfigureAwait(false);
+            if (code == 0) remote = sha.Trim();
+        }
+        else if (upstream.Full is not null)
+        {
+            remote = await TreeRefs.CommitOfAsync(root, upstream.Full, ct, refs).ConfigureAwait(false);
         }
 
+        remote ??= await TreeRefs.CommitOfAsync(root, $"refs/remotes/origin/{branch}", ct, refs).ConfigureAwait(false);
         if (remote is null) return null;
         var (countCode, count, _) = await WorkingTree.GitAsync(root, ["rev-list", "--count", tip, "--not", remote], ct).ConfigureAwait(false);
         // A count git could not make keeps the branch: an empty answer is not "nothing ahead".

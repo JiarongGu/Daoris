@@ -52,13 +52,15 @@ internal sealed class TreeSync(
         {
             var workspace = RemoteTarget.Workspace(space);
             var line = fetched.Line;
-            var (asJudged, _) = await LinePulls.JudgePullAsync(root, repository, workspace, line, fetched.Failed, ct).ConfigureAwait(false);
+            // The repository's refs read once for its line and its branches (PROC1d-ii), after its fetch; nothing here writes.
+            var refs = RefSnapshot.Take(root);
+            var (asJudged, _) = await LinePulls.JudgePullAsync(root, repository, workspace, line, fetched.Failed, ct, refs).ConfigureAwait(false);
             var pull = fetched.Onto(asJudged);
             lines.Add(pull);
 
             // What the line will be after the press: origin's tip where the pull moves it, else where it stands.
-            var onto = pull.Moves ? pull.To : await OntoAsync(root, line, ct).ConfigureAwait(false);
-            var (judged, gone) = await judging.JudgeBranchesAsync(root, repository, workspace, line, onto, busy, ct, asked).ConfigureAwait(false);
+            var onto = pull.Moves ? pull.To : await OntoAsync(root, line, ct, refs).ConfigureAwait(false);
+            var (judged, gone) = await judging.JudgeBranchesAsync(root, repository, workspace, line, onto, busy, ct, asked, refs).ConfigureAwait(false);
             rebases.AddRange(judged.Select(each => each.Item));
             deletes.AddRange(gone);
         }
