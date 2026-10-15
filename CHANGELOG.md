@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- Words you sent a session whose box then became its line, because the session no longer takes words, now come back to the
+  box with a line under it saying they did not go, where before they stayed *not answered yet* until you opened the page
+  again. Starting Ask Daoris from an earlier conversation opens at once, as a new one does, rather than waiting for the
+  machine to be read. And the Branches tab's *Cleaned up on its own* now says when a folder set aside was a folder under the
+  trees that was no tree, or an opening that was cut off.
 - While a session's work lands, its review says *Landing…* (落地中…) wherever it is shown: after *Accept…* at the session's top,
   after switching tabs and back, and in every other open window, where it offered *Accept* again before. So too its *Discard
   tree* waits while its tree is discarded, and its hand-off says *Handing off…* while its branch is handed to its plugin.
