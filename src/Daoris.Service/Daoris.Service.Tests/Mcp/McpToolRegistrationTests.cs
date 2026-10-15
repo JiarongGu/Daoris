@@ -21,7 +21,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         "channel_read", "clear_propose", "delete_propose", "go_ahead_ask", "go_propose", "hand_propose", "helper_answer", "helper_ask", "knowledge_convergence",
         "knowledge_get", "knowledge_refresh", "knowledge_repositories", "knowledge_search", "opinion_answer", "opinion_give",
         "pause_propose", "permission_propose", "plugin_propose", "quest_list", "quest_publish", "quest_respond", "registry",
-        "repository_propose", "review_ready", "review_serve", "session_propose", "setting_propose", "sync_propose",
+        "repository_propose", "review_ready", "review_serve", "session_propose", "setting_propose", "setup_propose", "sync_propose",
         "workflow_propose",
     ];
 
@@ -62,7 +62,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
             [
                 "ChannelTools", "GoAheadTools", "HelpAcceptTool", "HelpAccountTool", "HelpAgentTool", "HelpAskTool", "HelpBrowserTool", "HelpClearTool",
                 "HelpDeleteTool", "HelpGoTool", "HelpHandTool", "HelpPauseTool", "HelpPluginTool", "HelpRepositoryTool", "HelpSessionTool",
-                "HelpSettingTool", "HelpSyncTool", "HelpWorkflowTool", "HelperTools", "KnowledgeSearchTools", "OpinionTools", "QuestTools",
+                "HelpSettingTool", "HelpSetupTool", "HelpSyncTool", "HelpWorkflowTool", "HelperTools", "KnowledgeSearchTools", "OpinionTools", "QuestTools",
                 "ReviewTools", "RuleProposalTools",
             ],
             KnowledgeServer.ToolTypes.Select(type => type.Name).Order(StringComparer.Ordinal));
