@@ -1288,7 +1288,7 @@ export function App() {
       <ContextMenus doors={contextDoors} shell={chrome.present} />
       {/* A notification is a door (design §4): clicking the OS balloon lands on that session
           rather than on whatever was last open. */}
-      <ShellSignals notify={notify} onAttend={openInWork} />
+      <ShellSignals notify={notify} onAttend={openInWork} attended={view === 'sessions' ? attending : null} />
     </div>
     </MainOffer.Provider>
     </LinkOpener.Provider>

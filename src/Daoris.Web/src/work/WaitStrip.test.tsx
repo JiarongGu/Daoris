@@ -33,12 +33,23 @@ describe('the strip of what waits on the person, at the foot', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('names a park\'s question and says the box below carries its answer, with no second box', () => {
-    render(<WaitStrip session={parked} onResolve={vi.fn()} answerBelow onTop={vi.fn()} />);
-    expect(strip()).toHaveTextContent('It asked you a question: answer it in the box below.');
-    // The box below is the answer's one door (FIX-LOG 2026-09-29): nothing here takes the words.
+  // WAITFOOT2c (D168): the strip sits directly above the box that takes the park's answer, and the box is the door, so no
+  // line says "answer it in the box below" over it; a park with nothing else waiting draws nothing.
+  it('draws no line for a park\'s question where its box is right below', () => {
+    const { container } = render(<WaitStrip session={parked} onResolve={vi.fn()} answerBelow onTop={vi.fn()} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('names a park\'s question at the top where no box below takes it', () => {
+    render(<WaitStrip session={parked} onResolve={vi.fn()} onTop={vi.fn()} />);
+    expect(strip()).toHaveTextContent(/It asked you a question/);
     expect(within(strip()).queryByRole('textbox')).toBeNull();
-    expect(within(strip()).queryByRole('button', { name: /carry on|Finish|Decline/ })).toBeNull();
+  });
+
+  it('leaves the park\'s question line out while the go-aheads beside it stay', () => {
+    render(<WaitStrip session={parked} onResolve={vi.fn()} answerBelow goAheads={GO_AHEADS} onGoAhead={vi.fn()} onTop={vi.fn()} />);
+    expect(strip()).not.toHaveTextContent('answer it in the box below');
+    expect(strip()).toHaveTextContent('dashboard configuration');
   });
 
   it('answers a go-ahead still open through the head\'s own door, and lists none answered', async () => {
@@ -110,7 +121,7 @@ describe('the strip of what waits on the person, at the foot', () => {
     const toEvent = { question: vi.fn(), work: vi.fn(), goAheads: { 2: vi.fn() } };
     render(
       <WaitStrip
-        session={parked} onResolve={vi.fn()} answerBelow goAheads={GO_AHEADS} onGoAhead={vi.fn()}
+        session={parked} onResolve={vi.fn()} goAheads={GO_AHEADS} onGoAhead={vi.fn()}
         lands={LANDS} landing={PLAN} onLand={vi.fn()} toEvent={toEvent} onTop={vi.fn()}
       />,
     );
@@ -129,7 +140,7 @@ describe('the strip of what waits on the person, at the foot', () => {
   });
 
   it('shows the wait a raising block leads to: unfolded, focused and outlined', async () => {
-    const props = { session: parked, onResolve: vi.fn(), answerBelow: true, goAheads: GO_AHEADS, onGoAhead: vi.fn(), onTop: vi.fn() };
+    const props = { session: parked, onResolve: vi.fn(), goAheads: GO_AHEADS, onGoAhead: vi.fn(), onTop: vi.fn() };
     const { rerender } = render(<WaitStrip {...props} />);
     await userEvent.click(within(strip()).getByRole('button', { name: 'Fold' }));
     expect(within(strip()).queryByRole('listitem')).toBeNull();
@@ -243,8 +254,8 @@ describe('the strip of what waits on the person, at the foot', () => {
   it('speaks the active catalogue', async () => {
     await i18n.changeLanguage('zh');
     try {
-      render(<WaitStrip session={parked} onResolve={vi.fn()} answerBelow onTop={vi.fn()} />);
-      expect(screen.getByRole('region', { name: '等你处理' })).toHaveTextContent('在下面的框里回答它');
+      render(<WaitStrip session={parked} onResolve={vi.fn()} onTop={vi.fn()} />);
+      expect(screen.getByRole('region', { name: '等你处理' })).toHaveTextContent('到顶部阅读并回答它');
       expect(screen.getByRole('button', { name: '到顶部' })).toBeInTheDocument();
     } finally {
       await i18n.changeLanguage('en');

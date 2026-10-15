@@ -90,8 +90,13 @@ export function Composer({
   live, sending = false, refusal, endings = true, draft, onDraft, carried, onCarry,
   queued = [], queuedLabel, taking = false, opening = false, stoppable = false, stopping = false, mentions, onMentioning, context, placeholder,
   attachments = true, sendLabel, stopTurnLabel, stopTurnTip, offered, optionsBusy = false, onOption, onSend, onFinish, onStop, onStopTurn,
-  focus = 0, accepts, onRemove, onEdit, going,
+  focus = 0, accepts, onRemove, onEdit, going, fold = false,
 }: {
+  /**
+   * Fold the waiting words to one line with their count, open to the list on a press (WAITFOOT2c): a park's answer box and
+   * the words waiting on it read as one box. The words on their way (`going`) are never folded.
+   */
+  fold?: boolean;
   /**
    * Words on their way to the session (SENDLOST1b), in the order sent: shown the moment they are sent, as sending, until it
    * holds them. `late` where the page stopped waiting on their send (the bridge's TIMEOUT): the machine has not answered yet
@@ -192,6 +197,7 @@ export function Composer({
   // A waiting message being reworded (QUEUEEDIT1b): its words are in the box, and what the box held is kept for after.
   const [editing, setEditing] = useState<{ id: string; stash: string } | null>(null);
   const [taken, setTaken] = useState(false);
+  const [listed, setListed] = useState(false);
   // A list that moved on under the edit (the word went, or its id changed) ends the edit: its id would name nothing.
   const stale = editing !== null && !queued.some((message) => message.id === editing.id);
   useEffect(() => {
@@ -361,7 +367,23 @@ export function Composer({
 
       {live && queued.length > 0 && (
         <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
-          <span id={waitingLabel} className="text-meta text-ink-faint">{queuedLabel ?? t(taking && !opening ? 'work.composer.queued' : 'work.composer.opening')}</span>
+          {/* Folded (WAITFOOT2c): one line with the count, so a park's answer is one box; a press opens the list. */}
+          {fold ? (
+            <div className="flex min-w-0 items-center gap-2 text-meta text-ink-faint">
+              <span className="shrink-0 font-semibold text-ink-soft">{t('work.composer.waitCount', { n: queued.length })}</span>
+              <span id={waitingLabel} className="min-w-0 truncate">{queuedLabel ?? t(taking && !opening ? 'work.composer.queued' : 'work.composer.opening')}</span>
+              <Button
+                type="button" variant="ghost" aria-expanded={listed}
+                onClick={() => setListed(!listed)}
+                className="ml-auto h-6 shrink-0 px-1.5 text-meta"
+              >
+                {t(listed ? 'work.composer.waitHide' : 'work.composer.waitShow')}
+              </Button>
+            </div>
+          ) : (
+            <span id={waitingLabel} className="text-meta text-ink-faint">{queuedLabel ?? t(taking && !opening ? 'work.composer.queued' : 'work.composer.opening')}</span>
+          )}
+          {(!fold || listed) && (
           <ol aria-labelledby={waitingLabel} className="m-0 grid list-none grid-cols-[minmax(0,1fr)] gap-1 p-0">
             {queued.map((message, index) => (
               <li
@@ -396,7 +418,8 @@ export function Composer({
               </li>
             ))}
           </ol>
-          {taken && <p role="status" className="m-0 text-small text-ink-soft">{t('work.composer.taken')}</p>}
+          )}
+          {taken &&<p role="status" className="m-0 text-small text-ink-soft">{t('work.composer.taken')}</p>}
         </div>
       )}
 

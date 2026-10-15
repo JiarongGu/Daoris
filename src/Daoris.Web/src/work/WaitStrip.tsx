@@ -105,7 +105,10 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
   });
   const { session, toEvent } = props;
   const waits = waitsOf({ ...props, answerBelow });
-  if (waits.length === 0) return null;
+  // A park's question whose box is right below is counted but not drawn (WAITFOOT2c): the box is the door and says so in its
+  // own placeholder, so a line over it was a second statement of the same ask. With nothing else to draw, no strip.
+  const boxBelow = (wait: Wait) => wait.kind === 'question' && wait.below;
+  if (waits.every(boxBelow)) return null;
   // Never from under the person (WAITFOOT2a): an ask open here, or the focus, a line a press led to's among it, holds it up.
   const held = inside || Boolean(workAsk?.open) || Boolean(ruleAsk?.open);
   const several = waits.length > 1;
@@ -149,7 +152,7 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
         </div>
         {!shut && (
           <>
-            {question?.kind === 'question' && (
+            {question?.kind === 'question' && !question.below && (
               <p
                 data-wait="question"
                 tabIndex={-1}
