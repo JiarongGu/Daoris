@@ -622,6 +622,141 @@ public sealed class SessionsSayCommandTests : IDisposable
         Assert.Equal(0, room.Says);
     }
 
+    // ——— SAIDBACK1a (D137 §2.4): `sessions take-back` and `sessions reword`, the person's words taken back before a session took them.
+
+    private async Task<(int Exit, string Said)> RunAsync(Room room, string[] args, SessionsWorld? world = null)
+    {
+        using var service = room.Client();
+        var ask = SessionsCommand.Read(args, out var problem);
+        Assert.True(problem is null, problem);
+        var output = new StringWriter();
+        var exit = await SessionsCommand.RunAsync(ask!, world ?? World(service, loop: false), output);
+        return (exit, output.ToString().ReplaceLineEndings("\n"));
+    }
+
+    public static TheoryData<string[]> TakeBackProblems => new()
+    {
+        new[] { "take-back" },
+        new[] { "take-back", "--word" },
+        new[] { "take-back", "d0ne0000", "w1", "more" },
+        new[] { "reword", "d0ne0000", "w1" },
+        new[] { "reword", "d0ne0000", "w1", "   " },
+        new[] { "reword", "d0ne0000" },
+    };
+
+    [Theory]
+    [MemberData(nameof(TakeBackProblems))]
+    public void A_take_back_or_reword_it_does_not_take_is_a_problem(string[] args)
+    {
+        Assert.Null(SessionsCommand.Read(args, out var problem));
+        Assert.False(string.IsNullOrWhiteSpace(problem));
+        Assert.Contains("sessions take-back <id> [<word>]  ·  sessions reword <id> <word> \"…\"", SessionsCommand.Usage);
+    }
+
+    [Fact]
+    public void A_take_back_names_a_word_and_a_reword_joins_its_words()
+    {
+        var back = SessionsCommand.Read(["take-back", "d0ne0000", "w1"], out var problem);
+        var list = SessionsCommand.Read(["take-back", "d0ne0000"], out var listed);
+        var reword = SessionsCommand.Read(["reword", "d0ne0000", "w1", "use", "the", "green", "one"], out var reworded);
+
+        Assert.Equal((null, null, null), (problem, listed, reworded));
+        Assert.Equal(("take-back", "d0ne0000", "w1", (string?)null), (back!.Verb, back.Ids[0], back.Word, back.Text));
+        Assert.Equal(("take-back", (string?)null), (list!.Verb, list.Word));
+        Assert.Equal(("reword", "w1", "use the green one"), (reword!.Verb, reword.Word, reword.Text));
+    }
+
+    /// <summary>With no word named, the words waiting on the record are listed, each under the id a take-back names it by.</summary>
+    [Fact]
+    public async Task A_take_back_naming_no_word_lists_the_words_waiting_with_their_ids()
+    {
+        var room = Waiting("Use the blue one.", "And another,\nover two lines.");
+
+        var (exit, said) = await RunAsync(room, ["take-back", "d0ne0000"]);
+        var (none, nothing) = await RunAsync(Ended(), ["take-back", "d0ne0000"]);
+
+        Assert.Equal(0, exit);
+        Assert.Equal(
+            "sessions: 2 words wait on d0ne0000; take one back with `daoris-driver sessions take-back d0ne0000 <word>`:\n"
+            + "  w1  Use the blue one.\n  w2  And another, over two lines.\n",
+            said);
+        Assert.Equal(0, room.TakeBacks);
+        Assert.Equal((0, "sessions: no words wait on d0ne0000.\n"), (none, nothing));
+    }
+
+    /// <summary>
+    /// Taken back where no loop drives the home: off the record by its id, and its conversation settles the word it showed waiting
+    /// with the withdrawn line, as the composer's <c>Remove</c> does (QUEUEEDIT1a).
+    /// </summary>
+    [Fact]
+    public async Task A_word_taken_back_leaves_the_record_and_its_conversation_says_so()
+    {
+        var room = Waiting("Use the blue one.", "And another.");
+
+        var (exit, said) = await RunAsync(room, ["take-back", "d0ne0000", "w1"]);
+
+        Assert.Equal(0, exit);
+        Assert.Equal("sessions: Took word `w1` back from session `d0ne0000`: 1 still wait.\n", said);
+        Assert.Equal(["w2"], room.Said("d0ne0000"));
+        var withdrawn = Assert.Single(new SessionEvents(Sessions).Page("d0ne0000").Events);
+        Assert.Equal((SessionEventKind.Note, SessionEventCodes.Withdrawn), (withdrawn.Kind, withdrawn.Code));
+        Assert.Equal(["w1"], withdrawn.Words);
+    }
+
+    /// <summary>
+    /// Reworded: the old word settled as withdrawn and the new words shown waiting under their own id, as the terminal's; where a
+    /// loop drives the home its record of the conversation may be open, so nothing is written there.
+    /// </summary>
+    [Fact]
+    public async Task A_reworded_word_is_shown_under_its_new_id_and_a_loops_record_is_left_alone()
+    {
+        var room = Waiting("Use the blue one.");
+
+        var (exit, said) = await RunAsync(room, ["reword", "d0ne0000", "w1", "Use", "the", "green", "one."]);
+        using var service = room.Client();
+        var (looped, _) = await RunAsync(room, ["reword", "d0ne0000", "w2", "Use", "the", "red", "one."], World(service, loop: true));
+
+        Assert.Equal((0, 0), (exit, looped));
+        Assert.Equal("sessions: Reworded word `w1` on session `d0ne0000`: the new words wait last, as `w2`.\n", said);
+        Assert.Equal(["w3"], room.Said("d0ne0000"));
+        var events = new SessionEvents(Sessions).Page("d0ne0000").Events;
+        Assert.Equal(2, events.Count);
+        Assert.Equal((SessionEventCodes.Withdrawn, "w1"), (events[0].Code, Assert.Single(events[0].Words!)));
+        Assert.Equal((SessionEventKind.User, "w2", "Use the green one.", "resume", RequestDoor.Terminal),
+            (events[1].Kind, events[1].Id, events[1].Text, events[1].Reaches, events[1].Door));
+    }
+
+    /// <summary>A word a session took already, and what never goes on, are refusals: exit 1, the record and its conversation untouched.</summary>
+    [Theory]
+    [InlineData("d0ne0000", "w9", "Word `w9` no longer waits on session `d0ne0000`")]
+    [InlineData("st00d000", "w1", "It stood down.")]
+    public async Task A_take_back_refused_is_a_policy_answer(string id, string word, string why)
+    {
+        var room = new Room([Record("d0ne0000", "completed"), Record("st00d000", "stood-down", quest: "q3")], [Quest("q1", "Done")]);
+
+        var (exit, said) = await RunAsync(room, ["take-back", id, word]);
+
+        Assert.Equal(1, exit);
+        Assert.Contains(why, said);
+        Assert.Empty(new SessionEvents(Sessions).Page(id).Events);
+    }
+
+    /// <summary>An ended record with the words waiting on it, <c>w1</c> onwards.</summary>
+    private static Room Waiting(params string[] words)
+    {
+        var record = Record("d0ne0000", "completed");
+        var at = 0;
+        foreach (var text in words)
+        {
+            record["said"]!.AsArray().Add(new JsonObject
+            {
+                ["id"] = $"w{++at}", ["text"] = text, ["at"] = T0.AddMinutes(at).ToString("O"), ["files"] = new JsonArray(), ["reopens"] = true,
+            });
+        }
+
+        return new Room([record], [Quest("q1", "Done")]) { Next = words.Length };
+    }
+
     /// <summary>
     /// The service's doors the verb crosses, standing in: the records with the words waiting on each, the quests, the registry,
     /// and the say door (MSG1a), which keeps words on a parked or ended record and refuses the rest by its word.
@@ -639,6 +774,16 @@ public sealed class SessionsSayCommandTests : IDisposable
 
         /// <summary>How many times the say door was posted to.</summary>
         public int Says { get; private set; }
+
+        /// <summary>How many times the take-back door was posted to (SAIDBACK1a).</summary>
+        public int TakeBacks { get; private set; }
+
+        /// <summary>The words already given ids, so a word kept next is <c>w{Next + 1}</c>.</summary>
+        public int Next
+        {
+            get => _words;
+            init => _words = value;
+        }
 
         public ServiceClient Client() => new("http://room.test", null, new HttpClient(this, disposeHandler: false));
 
@@ -730,6 +875,49 @@ public sealed class SessionsSayCommandTests : IDisposable
                     return Answer(HttpStatusCode.OK, new JsonObject
                     {
                         ["session"] = record.DeepClone(), ["message"] = $"Kept for session `{id}` to go on with.", ["said"] = word,
+                    });
+                }
+
+                // The take-back door (SAIDBACK1a): one waiting word off a parked or ended record by its id, or reworded, the new
+                // words last under a new id; a word not waiting, or a running record's, answers `taken`.
+                if (request.Method == HttpMethod.Post && path.EndsWith("/take-back", StringComparison.Ordinal))
+                {
+                    TakeBacks++;
+                    var id = Uri.UnescapeDataString(path["/api/sessions/".Length..^"/take-back".Length]);
+                    var record = _records.FirstOrDefault(each => (string?)each["id"] == id);
+                    if (record is null) return Refuse(HttpStatusCode.NotFound, "not-found", $"No session `{id}`.");
+                    if ((string)record["state"]! == "stood-down") return Refuse(HttpStatusCode.Conflict, "stood-down", "It stood down.");
+                    var named = body!["word"]!.GetValue<string>();
+                    var said = record["said"]!.AsArray();
+                    var old = said.FirstOrDefault(word => (string?)word!["id"] == named);
+                    if ((string)record["state"]! is "queued" or "starting" or "working" || old is null)
+                    {
+                        return Answer(HttpStatusCode.OK, new JsonObject
+                        {
+                            ["done"] = false, ["why"] = "taken", ["message"] = $"Word `{named}` no longer waits on session `{id}`.",
+                        });
+                    }
+
+                    said.Remove(old);
+                    if (body["text"]?.GetValue<string>() is not { } text)
+                    {
+                        return Answer(HttpStatusCode.OK, new JsonObject
+                        {
+                            ["done"] = true, ["session"] = record.DeepClone(),
+                            ["message"] = $"Took word `{named}` back from session `{id}`: {said.Count} still wait.",
+                        });
+                    }
+
+                    var reworded = new JsonObject
+                    {
+                        ["id"] = $"w{++_words}", ["text"] = text.Trim(), ["at"] = DateTimeOffset.UtcNow.ToString("O"),
+                        ["files"] = old["files"]?.DeepClone() ?? new JsonArray(), ["reopens"] = old["reopens"]?.GetValue<bool>() ?? true,
+                    };
+                    said.Add(reworded.DeepClone());
+                    return Answer(HttpStatusCode.OK, new JsonObject
+                    {
+                        ["done"] = true, ["session"] = record.DeepClone(), ["said"] = reworded,
+                        ["message"] = $"Reworded word `{named}` on session `{id}`: the new words wait last, as `{reworded["id"]}`.",
                     });
                 }
 

@@ -305,6 +305,10 @@ public sealed class SessionGroupsTests
         ["words to a session to review go on: working, not to review"] =
             new(Look([Record("s1", "completed", "q1", Tree, said: ["w1"])], [Done], [GoesOn(Done)], [(Tree, new TreeWork(2, 0))]),
                 "s1", SessionGroup.Working, ShownState.GoingOn),
+        // SAIDBACK1a (D137 §2.4): words taken back leave nothing waiting, so the record rests as it ended, even where the last
+        // look planned it going on with them.
+        ["an ended record whose words were taken back rests as it ended"] =
+            new(Look([Record("s1", "completed", "q1", said: [])], [Done], [GoesOn(Done)]), "s1", SessionGroup.Ended, "completed"),
         ["an archived record whose words go on is working"] =
             new(Look([Record("s1", "failed", "q1", said: ["w1"])], [Taken], [GoesOn(Taken)], archived: ["s1"]),
                 "s1", SessionGroup.Working, ShownState.GoingOn),
