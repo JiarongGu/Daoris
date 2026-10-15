@@ -305,6 +305,37 @@ public sealed class SessionMessagesPlanTests
     }
 
     /// <summary>
+    /// 🔴 SAIDBACK1a, the owner's case of 2026-10-15: a closed quest's last session held two out-of-date words for seven hours,
+    /// planned going on at every look. Once both are taken back, the record the service answers holds an empty <c>said</c> and no
+    /// <c>answer</c>: nothing waits, so the closed quest is not carried beside the open ones and nothing goes on.
+    /// </summary>
+    [Fact]
+    public void A_closed_quests_last_session_whose_words_were_taken_back_is_not_gone_on_with()
+    {
+        const string Quests = """[{ "id": "q1", "from": "Asker", "to": "Game", "title": "One", "body": "", "status": "Done" }]""";
+        var waiting = ServiceClient.ReadLastRun("""
+            [{ "id": "s1", "quest": "q1", "state": "completed", "answer": "Use the blue one.\n\nAnd the old port.",
+               "said": [{ "id": "w1", "text": "Use the blue one.", "at": "2026-10-15T01:00:00Z", "files": [], "reopens": true },
+                        { "id": "w2", "text": "And the old port.", "at": "2026-10-15T01:01:00Z", "files": [], "reopens": true }],
+               "created": "2026-10-14T18:00:00Z" }]
+            """);
+        var takenBack = ServiceClient.ReadLastRun("""
+            [{ "id": "s1", "quest": "q1", "state": "completed", "said": [], "created": "2026-10-14T18:00:00Z" }]
+            """);
+
+        Assert.Single(Planner.Plan(Snapshot(waiting), Config()), c => c.GoesOn);
+        Assert.False(takenBack["q1"].WordsWaiting);
+        Assert.Empty(ServiceClient.ReadClosed(Quests, takenBack, open: []));
+        Assert.DoesNotContain(Planner.Plan(Snapshot(takenBack), Config()), c => c.GoesOn || c.Verdict == StartVerdict.Start);
+
+        static Snapshot Snapshot(IReadOnlyDictionary<string, PriorSession> last) => new([], [Repo], [])
+        {
+            Closed = ServiceClient.ReadClosed(Quests, last, open: []),
+            LastRun = last,
+        };
+    }
+
+    /// <summary>
     /// The last run reads the words waiting on each record, one by one with their ids, and an intake's ask; a host from before
     /// <c>said</c> answers none, which is not the same as nothing waiting.
     /// </summary>

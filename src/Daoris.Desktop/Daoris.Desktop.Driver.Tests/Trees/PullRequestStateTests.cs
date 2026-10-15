@@ -194,6 +194,38 @@ public sealed class PullRequestStateTests : LandedFixture
     }
 
     /// <summary>
+    /// AUTOTIDY2a: the watch's look takes a carried session branch by itself, as the press does, on the answer a list kept: its
+    /// tree's folder moved aside and its removal kept on the landing's entry. The look asks no plugin; it reads the kept answers.
+    /// </summary>
+    [Fact]
+    public async Task The_look_takes_a_session_branch_a_kept_answer_carried()
+    {
+        var (root, origin) = await RepositoryWithOriginAsync("engine");
+        var trees = Trees();
+        var carried = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(carried.Path, "carried.txt", "carried\n", "carried");
+        var landing = await trees.LandAsync(carried.Path, new LandingSubject("s1", "q1", "Carried"));
+        var source = (await GitAsync(root, "rev-parse", landing.Branch!)).Trim();
+        var merge = await SquashOnPlatformAsync(origin, landing.Branch!);
+        await GitAsync(root, "fetch", "--quiet", "--prune", "origin");
+        await GitAsync(root, "branch", "-D", landing.Branch!);
+        _answers[landing.Branch!] = () => Completed(merge, source);
+        await trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>());
+        var asked = _asked;
+
+        var pass = await trees.TidyEmptyAsync(root, "engine", "aurora", NoneRunning);
+
+        Assert.Equal(asked, _asked);
+        var removed = Assert.Single(pass.Results, result => result.Removed);
+        Assert.Equal((carried.Branch, SweepKind.Carried, landing.Branch), (removed.Item.Branch, removed.Item.Kind, removed.Item.Where));
+        Assert.NotNull(removed.MovedTo);
+        Assert.False(Directory.Exists(carried.Path));
+        Assert.Equal("", (await GitAsync(root, "branch", "--list", carried.Branch)).Trim());
+        var entry = trees.Recorded.Landing("s1")!;
+        Assert.Equal((carried.Branch, CarriedBy.CleanUp), (Assert.Single(entry.Carried).Branch, entry.Carried[0].By));
+    }
+
+    /// <summary>
     /// Without an answer nothing is removed, and absent is never zero (design §2.4): a plugin that fails keeps its code beside
     /// the kept answer, which it never overwrites, and the branch stays.
     /// </summary>

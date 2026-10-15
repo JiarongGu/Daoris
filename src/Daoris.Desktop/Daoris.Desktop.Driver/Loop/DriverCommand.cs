@@ -118,6 +118,9 @@ public static class DriverCommand
           sessions say <id> "…" [--file <path>]…
               say something to a session of this machine's: read at its next step or when its turn ends while it
               works, or, parked or ended, the same session goes on with it. Prints where the words stand.
+          sessions take-back <id> [<word>]  ·  sessions reword <id> <word> "…"
+              take back one of your words waiting on a parked or ended session before it goes on with them, or put
+              new words in its place; with no word, list those waiting with their ids.
           sessions go-on-new <id>
               words that wait for the account a session ran on to cool: go on now in a new session at the driver's
               next look, handed them, without that session's conversation.

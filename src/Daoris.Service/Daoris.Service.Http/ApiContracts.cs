@@ -403,6 +403,13 @@ public sealed record HelperActionResponse(string Message, SessionResponse? Sessi
 // MSG1a (D137 §2.4): the words a session took, by their ids; `By` the session that took them where it is not this one
 // (a fallback's new session).
 public sealed record TakenRequest(IReadOnlyList<string?>? Said, string? By = null);
+// SAIDBACK1a (D137 §2.4): one word waiting on a record, by its id, taken back before a session took it; with `text`, reworded:
+// the old word out and these words kept last under a new id, its files' names kept.
+public sealed record TakeBackRequest(string? Word, string? Text = null);
+// A take-back's answer: `done`, the ledger's sentence, and, when done, the session as it stands and a reword's new word (to this
+// machine only). Not done, `why` is `taken`: the word no longer waits, or the record runs again and may have read it; an
+// answer, never an error, as `SESSION_QUEUE_EDIT`'s is (QUEUEEDIT1a). What never goes on is refused as the say door refuses.
+public sealed record TakeBackResponse(bool Done, string Message, string? Why = null, SessionResponse? Session = null, SaidWordResponse? Said = null);
 // SESSUX1f (D126 §5.4): a session delete refused, or its judgement alone. `error` is the ledger's sentence, the field every
 // reader already knows; `refusal` its word, which a reader acts on instead of the sentence; and the facts the word names.
 public sealed record SessionDeletionResponse(
@@ -591,6 +598,8 @@ public sealed record ConfirmationActionResponse(ConfirmationResponse Confirmatio
 [JsonSerializable(typeof(SaidResponse))]
 [JsonSerializable(typeof(SessionSayRefusalResponse))]
 [JsonSerializable(typeof(TakenRequest))]
+[JsonSerializable(typeof(TakeBackRequest))]
+[JsonSerializable(typeof(TakeBackResponse))]
 [JsonSerializable(typeof(OpinionAskRequest))]
 [JsonSerializable(typeof(OpinionResponse))]
 [JsonSerializable(typeof(IEnumerable<OpinionResponse>))]

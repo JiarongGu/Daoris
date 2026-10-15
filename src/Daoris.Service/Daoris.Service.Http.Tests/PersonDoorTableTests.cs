@@ -83,6 +83,7 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/asks/{id}/go-aheads/{number}", Person),
         ("POST", "/api/sessions/{id}/added", Person),
         ("POST", "/api/sessions/{id}/say", Person),
+        ("POST", "/api/sessions/{id}/take-back", Person),
         ("POST", "/api/sessions/{id}/answer", Person),
         ("POST", "/api/asks/{id}/close", Person),
         ("DELETE", "/api/asks/{id}", Person),
@@ -121,11 +122,11 @@ public sealed class PersonDoorTableTests
         // driver's naming a session and the person's own with where to look, and the confirmation's two reads, its ask and
         // the person's two answers (PERSONDOOR1b), an ask's kind and workflow, the person's (WORKFLOW1e), and an ask's channel: a read, the
         // person's post (which an agent makes through the connector's tool instead) and an entry's read mark (SESSONE2a), and the list of
-        // the asks held elsewhere (SESSONE2h).
+        // the asks held elsewhere (SESSONE2h), and the person's taking back of words a session has not taken (SAIDBACK1a).
         Assert.Equal(24,Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
         Assert.Equal(16, Routes.Count(route => route.Class == Driver));
-        Assert.Equal(24, Routes.Count(route => route.Class == Person));
+        Assert.Equal(25, Routes.Count(route => route.Class == Person));
         // And a shared host's two channel doors, a feed and a page (SESSONE2d).
         Assert.Equal(9, Routes.Count(route => route.Class == Shared));
     }

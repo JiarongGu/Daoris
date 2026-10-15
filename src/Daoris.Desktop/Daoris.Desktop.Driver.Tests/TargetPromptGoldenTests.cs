@@ -209,6 +209,27 @@ public sealed class TargetPromptGoldenTests
     }
 
     /// <summary>
+    /// ACCEPTWORDS1: the person's accepting is their press on the session's page, so every instruction says that words in the
+    /// conversation land nothing, and where a proposal waits (a session once thanked the person for "accepting" and nothing landed).
+    /// </summary>
+    [Theory]
+    [InlineData("bare")]
+    [InlineData("full")]
+    [InlineData("carry-on")]
+    [InlineData("set-up")]
+    [InlineData("own-tree")]
+    [InlineData("part")]
+    [InlineData("part-alongside")]
+    [InlineData("channel")]
+    public void The_instruction_points_accepting_words_to_the_press(string which)
+    {
+        var text = TargetPrompt.Compose(Of(which));
+        Assert.Contains("*Accept…*", text);
+        Assert.Contains("land nothing", text);
+        Assert.Contains("*Proposals*", text);
+    }
+
+    /// <summary>
     /// The account kept beside each instruction (CONTEXT1), as the session's record writes it: each section's size, its
     /// source and what its bound left out. A section added, moved or resized shows here as the account's difference, and the
     /// sizes add up to the golden text's length.

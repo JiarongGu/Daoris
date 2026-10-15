@@ -80,7 +80,7 @@ import {
 } from './rehearsal-kit.mjs';
 // The install's layout, from the script that makes it (REV3 CLEAN1) — never a second spelling of it.
 import {
-  BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, CONNECTOR_EXE, CONNECTOR_HOME, HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES,
+  BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, DRIVER_EXE, DRIVER_HOME, DRIVER_LAUNCHERS, CONNECTOR_EXE, CONNECTOR_HOME, HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES,
   LAUNCHER, MARKER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RETIRED_BROWSER_EXE, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES,
   SHELL_HOME, STAGE, STAGED, SWAP_JOURNAL, promoteStage, unstage, writeManifest,
 } from './desktop-publish.mjs';
@@ -165,9 +165,11 @@ export function offerProblems(install, homes) {
  */
 export function cliProblems(install, version) {
   const problems = [];
-  for (const name of CLI_LAUNCHERS) {
+  for (const name of [...CLI_LAUNCHERS, ...DRIVER_LAUNCHERS]) {
     if (!existsSync(join(install, ...CLI_BIN, name))) problems.push(`${CLI_BIN.join('/')}/${name} is not there`);
   }
+  // DRIVERDOOR1: the driver's host the two driver launchers run.
+  if (!existsSync(join(install, ...DRIVER_HOME, DRIVER_EXE))) problems.push(`${DRIVER_HOME.join('/')}/${DRIVER_EXE} is not there`);
   const pkg = join(install, ...CLI_PACKAGE);
   const where = CLI_PACKAGE.join('/');
   for (const file of [CLI_ENTRY.join('/'), 'dist/cli.js', 'package.json', 'canon/canon.json']) {
@@ -729,6 +731,7 @@ async function main() {
   // application's files.
   const besideIt = [
     HOST_HOME.at(-1), CONNECTOR_HOME.at(-1), SHELL_FILES.at(-1), PLUGIN_OFFERS.at(-1), RESOURCES.at(-1), CLI_HOME.at(-1), CLI_BIN.at(-1),
+    DRIVER_HOME.at(-1),
   ];
   check(`…and ${SHELL_FILES.join('/')} names every file the application put there, and nothing else`,
     recorded.includes(SHELL_EXE)
@@ -1462,6 +1465,18 @@ if (!done.ok) throw new Error(done.text);
     const bashUnknown = shellRun(bash, ['-c', 'daoris no-such-verb']);
     check('…and a tool error comes back through the script as exit 2', bashUnknown.code === 2, bashUnknown.out);
   }
+
+  // DRIVERDOOR1: the driver's verbs by their bare name too (D50's terminal door), on a scratch home of their own so
+  // nothing of any install's is read: the shipped host, complete with its libraries, answers `trees list`.
+  const driverHome = join(scratch, 'driver-door-home');
+  mkdirSync(driverHome, { recursive: true });
+  const driverEnvironment = { ...toolEnvironment, DAORIS_HOME: driverHome };
+  const driverPrompt = spawnSync(process.env.ComSpec ?? 'cmd.exe', ['/d /s /c "daoris-driver trees list"'], {
+    cwd: doctrine, env: driverEnvironment, encoding: 'utf8', timeout: 120_000, windowsVerbatimArguments: true,
+  });
+  const driverOut = `${driverPrompt.stdout ?? ''}${driverPrompt.stderr ?? ''}`;
+  check(`Command Prompt runs \`daoris-driver trees list\` from ${CLI_BIN.join('/')}/ and it answers (exit 0)`,
+    driverPrompt.status === 0, driverOut);
 
   // -------------------------------------------------------------- 9. the install updates when its work allows
 

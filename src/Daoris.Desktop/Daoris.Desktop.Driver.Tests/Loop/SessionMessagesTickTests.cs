@@ -150,6 +150,63 @@ public sealed class SessionMessagesTickTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 GOONTREE1 (D137 §2.2, D51): words waiting on a closed quest's last session whose tree is gone cannot go on, and the
+    /// look leaves no fresh tree or branch for the start it never made. The record says its tree is gone and keeps its words.
+    /// </summary>
+    [Fact]
+    public async Task Words_that_cannot_go_on_because_the_tree_is_gone_leave_no_fresh_tree_behind()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        var driver = Protocol(service, "resumes");
+        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var tree = JsonNode.Parse(service.Record("s1"))!["tree"]?.GetValue<string>();
+        if (tree is { Length: > 0 } && Directory.Exists(tree))
+        {
+            Git("worktree", "remove", "--force", tree);
+            if (Directory.Exists(tree)) Directory.Delete(tree, recursive: true);
+        }
+
+        Git("worktree", "prune");
+        await service.SayAsync("s1", "Also log the port.");
+        var branches = Branches();
+        var folders = TreeFolders();
+
+        var look = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\nbranches: {string.Join(",", Branches())}";
+        Assert.True(service.SessionCount == 1, seen);
+        Assert.True(Branches().SequenceEqual(branches), seen);
+        Assert.True(TreeFolders().SequenceEqual(folders), seen);
+        Assert.Equal(["w1"], service.Said("s1"));
+        Assert.Equal(ContinueWhy.Tree, new GoOnMarks(_home).Read("s1")!.Why);
+    }
+
+    private string[] Branches()
+    {
+        var info = new ProcessStartInfo("git", ["branch", "--list", "daoris/*", "--format=%(refname:short)"])
+        {
+            WorkingDirectory = _repository, UseShellExecute = false, RedirectStandardOutput = true,
+        };
+        using var process = Process.Start(info)!;
+        var output = process.StandardOutput.ReadToEnd();
+        process.WaitForExit();
+        return [.. output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Order()];
+    }
+
+    /// <summary>The worktrees git lists besides the repository's own: a fresh tree shows here from its open.</summary>
+    private string[] TreeFolders()
+    {
+        var info = new ProcessStartInfo("git", ["worktree", "list", "--porcelain"])
+        {
+            WorkingDirectory = _repository, UseShellExecute = false, RedirectStandardOutput = true,
+        };
+        using var process = Process.Start(info)!;
+        var output = process.StandardOutput.ReadToEnd();
+        process.WaitForExit();
+        return [.. output.Split('\n', StringSplitOptions.RemoveEmptyEntries).Where(line => line.StartsWith("worktree ", StringComparison.Ordinal)).Order()];
+    }
+
+    /// <summary>
     /// 🔴 A native session never concludes while words are held (D137 §2.1): the person writes while it works, its process
     /// exits, and the driver resumes its own conversation (<c>claude -p &lt;words&gt; --resume &lt;kept id&gt;</c>) under the same
     /// record, which concludes once that run ends with nothing held. The words show at once with their reach, and again under

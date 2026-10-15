@@ -314,9 +314,9 @@ describe('What needs you on a machine', () => {
     start({ proposals: [WIDENING] }, { notify });
     const row = await screen.findByRole('listitem', { name: 'allow WebFetch for every session on this machine' });
 
-    await userEvent.click(within(row).getByRole('button', { name: 'Accept…' }));
+    await userEvent.click(within(row).getByRole('button', { name: 'Allow…' }));
     expect(asked()).not.toContain('RULE_PROPOSAL');
-    await userEvent.click(within(row).getByRole('button', { name: 'Accept' }));
+    await userEvent.click(within(row).getByRole('button', { name: 'Allow' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', { payload: { id: 'p0000002', accept: true } }));
     expect(notify).toHaveBeenCalledWith('Accepted: allow WebFetch for every session on this machine. Sessions started from now on are handed it.');
   });
