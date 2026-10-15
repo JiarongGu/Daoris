@@ -82,7 +82,7 @@ public sealed class PassLeftoversProcessTests : TreeSyncFixture
         Assert.True(replayed.Replayed, replayed.Message);
         var asides = Directory.GetDirectories(Path.Combine(Home, "trees", ".tidied", "aurora", "engine"));
         Assert.Equal(
-            ["r-0dead001", "r-0de1d002", "r-0f01d006"],
+            new[] { "r-0dead001", "r-0de1d002", "r-0f01d006" }.Order(StringComparer.Ordinal),
             asides.Select(each => Path.GetFileName(each)[.."r-0dead001".Length]).Order(StringComparer.Ordinal));
         Assert.True(File.Exists(Path.Combine(asides.Single(each => Path.GetFileName(each).StartsWith("r-0dead001-", StringComparison.Ordinal)), "shared.txt")));
         Assert.Equal(
