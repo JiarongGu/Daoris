@@ -12,6 +12,7 @@ import type { AccountNamer } from '../agents/tools';
 import type { QuestClose, Resolution } from './AwaitingPerson';
 import { HowItCameToBe, type TraceDoor } from './HowItCameToBe';
 import type { Answered } from './InlineConfirm';
+import type { SayRebase } from './LandingSync';
 import type { SessionEntry } from './entries';
 import type { DiscardOffer, LandOffer } from './groups';
 import { type PartFacts, PartsStrip } from './PartsStrip';
@@ -53,7 +54,7 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
 export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, onDiscardBranch, discardingBranch,
-  headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onName, discards, onDiscardTree, review, behind,
+  headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
   opinion, continues, helps, parts, channel,
 }: {
   /**
@@ -89,6 +90,8 @@ export function AttendedSession({
   landing?: LandingPlan | null;
   /** And its press, the review's Accept, told back to its ask, with the second opinion's token where it answers it (XAGENT1g). */
   onLand?: (answered: Answered, answers?: string | null, branch?: string | null) => void;
+  /** The press that says the rebase words where replaying conflicts (LANDSYNC1w). */
+  onSayRebase?: SayRebase;
   /** The plan shown is the previous name's while the entered one is read (LANDNAME1b). */
   planning?: boolean;
   /** The branch name typed in the land ask (LANDNAME1b). */
@@ -206,6 +209,7 @@ export function AttendedSession({
         lands={lands}
         landing={landing}
         onLand={onLand}
+        onSayRebase={onSayRebase}
         planning={planning}
         onName={onName}
         review={review}

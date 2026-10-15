@@ -1701,6 +1701,7 @@ export function WorkFrame({
               },
               onError: (error) => answered.refused(sentence(error)),
             }) : undefined}
+            onSayRebase={attended ? (text) => say.mutateAsync({ id: attended.id, text }).then((answer) => answer.sent) : undefined}
             onName={lands && attended ? setLandName : undefined}
             // SQUASHTIDY1b: its discard, never forced from here (`discardHeld`).
             discards={discards}

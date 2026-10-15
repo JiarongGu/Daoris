@@ -18,6 +18,19 @@ repository.
 - **Verification:** `SessionMessagesTickTests.Words_that_cannot_go_on_because_the_tree_is_gone_leave_no_fresh_tree_behind`
   (Process half, real git) failed first on a new branch after the look, then passed; the fast half of the driver suite passes.
   Not fixed: a start cut off inside `git worktree add` by a cancel or a kill can leave a half tree and branch (proposed row).
+## 2026-10-15 — The landing molecules reached the bridge (LANDSYNC1w)
+
+- **Symptom:** `design/presentational.test.ts` ("no presentational component reaches the service or the shell") failed on main
+  after LANDSYNC1 merged: `work/LandingSync.tsx` and `work/SessionHead.tsx` "import a bridge domain".
+- **Root cause:** LANDSYNC1's `LandingSync.tsx` imported its three shapes and `useSay` from `../bridge/shell`, and `RebaseAsk` called
+  `useSay()` itself, so a molecule held a hook; `SessionHead` imported the same types from the bridge. The branch's gate did not
+  catch it (unknown: the branch's hand-back is not in the record; the boundary test and the molecule list were not run or not
+  reached before the merge).
+- **Fix:** the three shapes are declared in `LandingSync.tsx` (structurally equal to `bridge/trees.ts`) and `SessionHead` imports them
+  from there. `RebaseAsk` takes `onSay: (words) => Promise<boolean>` and holds only its pending/said state; `DiffPane` (an organism)
+  and `WorkFrame` (through `AttendedSession` and `SessionHead`'s `onSayRebase`) hold `useSay`. Words and behaviour unchanged.
+- **Verify:** `presentational.test.ts` red before (as reported), green after; `SessionHead.landsync.test.tsx` changed only in its
+  render setup (an `onSayRebase` prop); `DiffPane.landsync.test.tsx` unchanged; the web suite 6364 tests pass, `tsc` clean.
 
 ## 2026-10-15 — The window froze for minutes behind a sweep's git starts (UIFREEZE1)
 
