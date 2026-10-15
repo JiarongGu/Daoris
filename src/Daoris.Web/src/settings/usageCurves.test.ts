@@ -1,7 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
-import { curveNow, type CurveScope, type CurvePoint, tightestSaid, wholePoints } from './usageCurves';
+import { beforeEach, describe, expect, it } from 'vitest';
+import i18n from '../locales/i18n';
+import { sentence } from '../locales/format';
+import {
+  curveNow, curveProblem, curveSentence, type CurveScope, type CurvePoint, tightestSaid, wholePoints,
+} from './usageCurves';
 
 /**
  * The usage curve on the page (SWITCH1d; D165 point 2; the switch design §2 and §5): how much of each window an account may have
@@ -53,5 +57,42 @@ describe('the usage curve, as the driver and the terminal measure it', () => {
 
   it('reads a scope from a shell older than the switch as the smart curve', () => {
     expect(curveNow({}, 'session', '2026-10-13T13:00:00Z', NOW)).toBe(90);
+  });
+});
+
+/**
+ * A curve's rules on the page (SWITCH1d; the switch design §2): the point editor says what is wrong before it saves, in the
+ * sentence the modules' `ACCOUNT_USE_CURVE` refusal is said in, its rule the catalogue's form. 🔴 The page's half of the twin the
+ * CLI's `curveProblem` and the driver's `UseCurve.ProblemOf` keep: every `refusal` row of the CLI's `rotation-use.json` is found
+ * by the page's rule and said in English word for word, so the catalogue cannot drift from the terminal's sentence.
+ */
+describe('a curve’s rules, as both doors refuse them', () => {
+  type Row = [why: string, curve: string, refused: string | null];
+  const ROWS = (JSON.parse(readFileSync(join(process.cwd(), '..', 'Daoris.Cli', 'test', 'fixtures', 'rotation-use.json'), 'utf8')) as {
+    refusal: Row[];
+  }).refusal;
+
+  beforeEach(() => i18n.changeLanguage('en'));
+
+  it('reads the table at all', () => {
+    expect(ROWS.length).toBeGreaterThan(0);
+  });
+
+  for (const [why, curve, refused] of ROWS) {
+    it(`${why}: said as the terminal says it`, () => {
+      const problem = curveProblem(JSON.parse(curve));
+      expect(problem === null ? null : curveSentence(problem)).toBe(refused);
+    });
+  }
+
+  it('says it in 中文, with the window and the numbers', async () => {
+    await i18n.changeLanguage('zh');
+    expect(curveSentence(curveProblem({ weekly: [[0, 30], [50, 70], [100, 60]] })!))
+      .toBe('`weekly` 的第 3 个点已用 60%，少于第 2 个点的 70%——已用量不会下降。');
+  });
+
+  it('says a rule this page has no form for by the terminal’s own sentence', () => {
+    expect(sentence({ code: 'ACCOUNT_USE_CURVE', parameters: { context: 'newer', said: 'A newer rule.' } }))
+      .toBe('That curve cannot be used: A newer rule.');
   });
 });

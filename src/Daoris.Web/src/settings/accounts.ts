@@ -1,6 +1,6 @@
 import i18n from '../locales/i18n';
 import { ago, elapsed, moment } from '../locales/format';
-import type { CurveScope } from './usageCurves';
+import type { CURVE_WINDOWS, CurvePoint, CurveScope, Switch } from './usageCurves';
 
 // How each agent's accounts are used, as the page reads it (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6): the shape
 // `bridge/accounts.ts` answers, and the words each account's row and each scope say, in the reader's language. Pure: the
@@ -151,8 +151,15 @@ export type AccountUseChange = {
   use?: 'goal' | 'order';
   keep?: string;
   noKeep?: boolean;
+  /** The old names (D165 §6), which the modules still take, and which this page no longer sends. */
   early?: boolean;
   near?: number;
+  /** When to switch (SWITCH1d, `--switch`): Daoris's curve, the person's own, or no switch while a session runs. */
+  switch?: Switch;
+  /** Each window of the person's curve set, the others kept (`--curve`); one that breaks a rule is `ACCOUNT_USE_CURVE`. */
+  curve?: Partial<Record<(typeof CURVE_WINDOWS)[number], CurvePoint[]>>;
+  /** The person's curve taken out, the switch kept (`--no-curve`). */
+  noCurve?: boolean;
   clear?: boolean;
 };
 

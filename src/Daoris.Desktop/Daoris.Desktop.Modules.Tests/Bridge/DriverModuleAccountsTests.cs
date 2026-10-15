@@ -591,6 +591,85 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Contains("setting=near", refused);
     }
 
+    /// <summary>
+    /// SWITCH1d (D165 point 2; the switch design §5, §6): the screen's switch and curve, as <c>profile use --switch</c> and
+    /// <c>--curve</c> write them: the switch as chosen, each window of the curve set keeping the other, and <c>noCurve</c> taking
+    /// the curve out with the switch kept, as <c>--no-curve</c> does.
+    /// </summary>
+    [Fact]
+    public async Task The_switch_and_the_curve_are_written_as_chosen_and_the_curve_taken_out_by_no_curve()
+    {
+        Accounts("claude-code", "account-1");
+        Wiring("""{ "rotation": { "claude-code": ["account-1"] } }""");
+        static JsonElement Curve(string json) => JsonDocument.Parse(json).RootElement.Clone();
+
+        await AnswerAsync(Module(), "ACCOUNT_USE", new Dictionary<string, object?>
+        {
+            ["action"] = "use", ["harness"] = "claude-code", ["switch"] = "curve", ["curve"] = Curve("""{ "weekly": [[0, 30], [50, 70], [100, 100]] }"""),
+        });
+        await AnswerAsync(Module(), "ACCOUNT_USE", new Dictionary<string, object?>
+        {
+            ["action"] = "use", ["harness"] = "claude-code", ["curve"] = Curve("""{ "session": [[0, 80]] }"""),
+        });
+
+        var use = HarnessSettings.Load(HarnessSettingsPath).ResolveScope("claude-code", null).Use;
+        Assert.Equal("curve", use.Switch);
+        Assert.Equal([new CurvePoint(0, 80)], use.Curve["session"]);
+        Assert.Equal([new CurvePoint(0, 30), new CurvePoint(50, 70), new CurvePoint(100, 100)], use.Curve["weekly"]);
+
+        await AnswerAsync(Module(), "ACCOUNT_USE", new { action = "use", harness = "claude-code", @switch = "off", noCurve = true });
+
+        use = HarnessSettings.Load(HarnessSettingsPath).ResolveScope("claude-code", null).Use;
+        Assert.Equal("off", use.Switch);
+        Assert.True(use.Curve.IsEmpty);
+    }
+
+    /// <summary>
+    /// SWITCH1d: a curve that breaks a rule is refused in its own code, the rule its <c>context</c> and the window, the point and
+    /// the numbers its values, so the page says it in the reader's language; its sentence is the terminal's (the shared table's
+    /// <c>refusal</c> rows). Nothing is written.
+    /// </summary>
+    [Theory]
+    [InlineData("""{ "weekly": [[0, 30], [50, 70], [100, 60]] }""", "context=falling window=weekly point=3 previous=2 value=60 before=70")]
+    [InlineData("""{ "weekly": [[50, 30], [40, 70]] }""", "context=rising window=weekly point=2 previous=1 value=40 before=50")]
+    [InlineData("""{ "monthly": [[0, 50]] }""", "context=window window=monthly")]
+    [InlineData("""{ "weekly": "0:30" }""", "context=list window=weekly")]
+    [InlineData("""{ "weekly": [] }""", "context=count window=weekly size=0")]
+    [InlineData("""{ "session": [[0]] }""", "context=point window=session point=1")]
+    [InlineData("""{ "session": [[-5, 90]] }""", "context=elapsed window=session point=1 value=-5")]
+    [InlineData("""{ "session": [[0, 101]] }""", "context=used window=session point=1 value=101")]
+    [InlineData("""[[0, 30]]""", "context=shape")]
+    public async Task A_curve_that_breaks_a_rule_is_refused_in_its_code_naming_the_rule(string curve, string values)
+    {
+        Accounts("claude-code", "account-1");
+        Wiring("""{ "rotation": { "claude-code": ["account-1"] } }""");
+        var before = File.ReadAllText(HarnessSettingsPath);
+        using var document = JsonDocument.Parse(curve);
+
+        var refused = await RefusalAsync(Module(), "ACCOUNT_USE", new Dictionary<string, object?>
+        {
+            ["action"] = "use", ["harness"] = "claude-code", ["switch"] = "curve", ["curve"] = document.RootElement,
+        });
+
+        Assert.StartsWith("ACCOUNT_USE_CURVE " + UseCurve.Problem(document.RootElement), refused);
+        foreach (var value in values.Split(' ')) Assert.Contains(value, refused);
+        Assert.Equal(before, File.ReadAllText(HarnessSettingsPath));
+    }
+
+    /// <summary>A switch this build does not know is refused as a value, naming the setting, as a way to use accounts is.</summary>
+    [Fact]
+    public async Task A_switch_this_build_does_not_know_is_refused()
+    {
+        Accounts("claude-code", "account-1");
+        Wiring("""{ "rotation": { "claude-code": ["account-1"] } }""");
+
+        var refused = await RefusalAsync(Module(), "ACCOUNT_USE", new { action = "use", harness = "claude-code", @switch = "sometimes" });
+
+        Assert.StartsWith("ACCOUNT_USE_VALUE", refused);
+        Assert.Contains("setting=switch", refused);
+        Assert.Contains("value=sometimes", refused);
+    }
+
     // ---------------------------------------------------------------- ACCOUNT_USE: Try now
 
     /// <summary>

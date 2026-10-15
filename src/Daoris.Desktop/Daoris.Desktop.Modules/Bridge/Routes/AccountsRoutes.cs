@@ -392,8 +392,9 @@ public sealed class AccountsRoutes(DriverLoop loop)
 
     /// <summary>
     /// How a scope's list is used (D130 §16.6), as <c>daoris agent profile use</c> writes it: each choice as made, refused where
-    /// the scope has no list of its own, a value this build does not know, or a kept account outside the list or alone in it.
-    /// Null clears the scope back to today's defaults.
+    /// the scope has no list of its own, a value this build does not know (a way to use accounts, when to switch, a near), or a
+    /// kept account outside the list or alone in it. A curve that breaks a rule is refused as it is read (SWITCH1d). Null clears
+    /// the scope back to today's defaults.
     /// </summary>
     public static HarnessSettings UseEdited(HarnessSettings settings, string owner, UseChange? change, string? workspace)
     {
@@ -412,6 +413,12 @@ public sealed class AccountsRoutes(DriverLoop loop)
         if (change.Use is { } mode && !RotationUse.Modes.Contains(mode, StringComparer.Ordinal))
         {
             throw Refusals.Because(Refusals.AccountUseValue, $"`{mode}` is not a way to use accounts — goal or order.", ("setting", "use"), ("value", mode));
+        }
+
+        if (change.Switch is { } switched && !RotationUse.Switches.Contains(switched, StringComparer.Ordinal))
+        {
+            throw Refusals.Because(
+                Refusals.AccountUseValue, $"`{switched}` is not when to switch — smart, curve or off.", ("setting", "switch"), ("value", switched));
         }
 
         if (change.Near is { } near && near is < RotationUse.NearLowest or > RotationUse.NearHighest)
@@ -496,7 +503,11 @@ public sealed class AccountsRoutes(DriverLoop loop)
     private static (string Key, string Value)[] Scoped(string? workspace, params (string Key, string Value)[] values) =>
         workspace is null ? values : [.. values, ("workspace", workspace), ("context", "workspace")];
 
-    /// <summary>The settings a <c>use</c> names: a field left out is no change; <c>noKeep</c> keeps none.</summary>
+    /// <summary>
+    /// The settings a <c>use</c> names: a field left out is no change; <c>noKeep</c> keeps none; <c>switch</c> and <c>curve</c>
+    /// as <c>profile use --switch</c> and <c>--curve</c> take them (SWITCH1d), each window of the curve set keeping the other, and
+    /// <c>noCurve</c> taking it out, as <c>--no-curve</c> does. A curve that breaks a rule is refused here, with the rule.
+    /// </summary>
     private static UseChange UseChangeOf(IpcRequest request)
     {
         bool? early = request.Payload is { } payload && payload.TryGetProperty("early", out var flag)
@@ -508,7 +519,37 @@ public sealed class AccountsRoutes(DriverLoop loop)
             Keep: Optional(request, "keep"),
             NoKeep: Flag(request, "noKeep"),
             Early: early,
-            Near: near is null ? null : (int)Math.Clamp(near.Value, int.MinValue, int.MaxValue));
+            Near: near is null ? null : (int)Math.Clamp(near.Value, int.MinValue, int.MaxValue),
+            Switch: Optional(request, "switch"),
+            Curve: CurveOf(request),
+            NoCurve: Flag(request, "noCurve"));
+    }
+
+    /// <summary>
+    /// The curve a <c>use</c> names, or null where it names none (or names it null); one that breaks a rule is refused in its own
+    /// code, the rule its <c>context</c> and what it names its values, so the page says it in the reader's language (SWITCH1d).
+    /// </summary>
+    private static UseCurve? CurveOf(IpcRequest request)
+    {
+        if (request.Payload is not { } payload || !payload.TryGetProperty("curve", out var raw) || raw.ValueKind == JsonValueKind.Null) return null;
+        if (UseCurve.ProblemOf(raw) is { } problem)
+        {
+            var values = new List<(string Key, string Value)> { ("context", problem.Kind), ("said", problem.Sentence) };
+            if (problem.Window is { } window) values.Add(("window", window));
+            if (problem.Point is { } point)
+            {
+                values.Add(("point", point.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+                values.Add(("previous", (point - 1).ToString(System.Globalization.CultureInfo.InvariantCulture)));
+            }
+
+            if (problem.Value is { } value) values.Add(("value", value));
+            if (problem.Before is { } before) values.Add(("before", before));
+            // As `size`: the page's catalogue reads a `count` as a plural's.
+            if (problem.Count is { } count) values.Add(("size", count.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+            throw Refusals.Because(Refusals.AccountUseCurve, problem.Sentence, [.. values]);
+        }
+
+        return UseCurve.Read(raw);
     }
 
     /// <summary>The account names the page sent, in order; a value that is not text is skipped.</summary>

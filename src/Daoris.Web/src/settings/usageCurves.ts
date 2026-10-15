@@ -16,7 +16,11 @@
 //   5. Room is the curve now less the used percent; the tightest window is the one said with the least room among those with a
 //      number, the first said on a tie; an account is over its curve where that room is below zero.
 //
-// Pure: the moment comes in as a value, and nothing is asked. The walk that ranks by it is the driver's alone.
+// Pure: the moment comes in as a value, and nothing is asked. The walk that ranks by it is the driver's alone. A curve's rules
+// (`curveProblem`) are the same three's, held by the CLI's `rotation-use.json` `refusal` rows, so the point editor says what is
+// wrong in the sentence the door would refuse it in.
+
+import { sentence } from '../locales/format';
 
 /** A point of a curve, `[elapsed, used]`, each a whole percent: as `harnesses.json` keeps it. */
 export type CurvePoint = [elapsed: number, used: number];
@@ -116,4 +120,62 @@ export function tightestSaid<W extends CurveSaid>(
 /** A number of points as a whole number, a half away from zero, as the driver and the terminal say one. */
 export function wholePoints(points: number): number {
   return Math.sign(points) * Math.round(Math.abs(points));
+}
+
+// ---------------------------------------------------------------- a curve's rules (the switch design §2, §6)
+
+/** A window's curve has one point to this many (the switch design §6): the driver's `UseCurve.MostPoints`. */
+export const MOST_POINTS = 12;
+
+/**
+ * What is wrong with a curve, as the modules' `ACCOUNT_USE_CURVE` refusal names it (SWITCH1d): the rule (the catalogue's form)
+ * and the window, point and numbers it names. The driver's `CurveProblem`, the CLI's `curveProblem`; the CLI's
+ * `rotation-use.json` `refusal` rows hold the three.
+ */
+export type CurveProblem = {
+  kind: 'shape' | 'window' | 'list' | 'count' | 'point' | 'elapsed' | 'used' | 'rising' | 'falling';
+  window?: string;
+  point?: number;
+  value?: number;
+  before?: number;
+  count?: number;
+};
+
+const isWhole = (value: unknown): value is number => typeof value === 'number' && Number.isInteger(value);
+
+/**
+ * The first problem with a curve, or null. Window by window in the order written, then point by point: its shape, elapsed from
+ * 0 to 100, used from 0 to 100, elapsed rising, used never falling — the twins' order, so the editor says before saving what
+ * the door would refuse.
+ */
+export function curveProblem(curve: unknown): CurveProblem | null {
+  if (typeof curve !== 'object' || curve === null || Array.isArray(curve)) return { kind: 'shape' };
+  for (const [window, points] of Object.entries(curve)) {
+    if (!(CURVE_WINDOWS as readonly string[]).includes(window)) return { kind: 'window', window };
+    if (!Array.isArray(points)) return { kind: 'list', window };
+    if (points.length < 1 || points.length > MOST_POINTS) return { kind: 'count', window, count: points.length };
+    let before: CurvePoint | null = null;
+    for (const [index, point] of (points as unknown[]).entries()) {
+      const at = index + 1;
+      if (!Array.isArray(point) || point.length !== 2 || !point.every(isWhole)) return { kind: 'point', window, point: at };
+      const [elapsed, used] = point as CurvePoint;
+      if (elapsed < 0 || elapsed > 100) return { kind: 'elapsed', window, point: at, value: elapsed };
+      if (used < 0 || used > 100) return { kind: 'used', window, point: at, value: used };
+      if (before !== null && elapsed <= before[0]) return { kind: 'rising', window, point: at, value: elapsed, before: before[0] };
+      if (before !== null && used < before[1]) return { kind: 'falling', window, point: at, value: used, before: before[1] };
+      before = [elapsed, used];
+    }
+  }
+  return null;
+}
+
+/** A curve's problem as the reader reads it: the modules' refusal's sentence, by its rule, in the reader's language. */
+export function curveSentence(problem: CurveProblem): string {
+  // The refusal's values as the modules send them: a point with the one before it, and the count as `size`, since i18next reads
+  // a `count` as a plural's.
+  const { kind, point, count, ...named } = problem;
+  const values = Object.fromEntries(Object.entries({
+    ...named, ...(point !== undefined ? { point, previous: point - 1 } : {}), ...(count !== undefined ? { size: count } : {}),
+  }).map(([key, value]) => [key, String(value)]));
+  return sentence({ code: 'ACCOUNT_USE_CURVE', parameters: { ...values, context: kind } });
 }
