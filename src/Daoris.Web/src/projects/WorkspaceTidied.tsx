@@ -95,7 +95,10 @@ function Tidied({ line, oldest, titles }: { line: LogRow; oldest: string | null;
     repository,
     t(done ? 'projects.tidied.done' : 'projects.tidied.kept', { when: ago(line.time) }),
     oldest ? t('projects.tidied.since', { when: ago(oldest) }) : null,
-    done && line.data.tree === true ? t('projects.tidied.aside') : null,
+    // A folder git lists no tree in, or a tree whose opening was cut off (AUTOTIDY2c, OPENCUT1, TIDIEDSTRAY1): said by its kind.
+    done && line.data.tree === true
+      ? t(line.data.kind === 'stray' ? 'projects.tidied.stray' : line.data.kind === 'opening' ? 'projects.tidied.opening' : 'projects.tidied.aside')
+      : null,
     !done && why ? t(`projects.tidied.why.${why}`) : null,
     !done && why === 'unread' && cause ? t(`projects.tidied.cause.${cause}`) : null,
   ].filter(Boolean);

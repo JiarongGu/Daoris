@@ -65,6 +65,7 @@ export function SessionBox({
     return (
       <div className="border-t border-line px-4 py-3">
         <p className="m-0 text-small text-ink-soft">{neverSentence(t, box.why, { quest, to: box.to })}</p>
+        {refusal && <p role="status" className="m-0 mt-1 text-small text-ink-soft [overflow-wrap:anywhere]">{refusal}</p>}
       </div>
     );
   }

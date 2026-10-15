@@ -269,6 +269,8 @@
   "projects.tidied.kept": "Left in place {{when}}",
   "projects.tidied.landing": "A landing's branch, for session {{session}}",
   "projects.tidied.aside": "Its tree's folder was set aside",
+  "projects.tidied.stray": "A folder under the trees that was no tree was set aside",
+  "projects.tidied.opening": "An opening that was cut off: its tree was set aside",
   "projects.tidied.why.unread": "unreadable",
   "projects.tidied.why.refused": "refused",
   "projects.tidied.why.busy": "in use",

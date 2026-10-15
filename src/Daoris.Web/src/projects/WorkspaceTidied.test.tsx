@@ -46,6 +46,22 @@ describe('what was cleaned up on its own', () => {
     expect(second).not.toHaveTextContent('set aside');
   });
 
+  // TIDIEDSTRAY1: a stray folder and a cut-off opening are set aside with no word of the session branch's, and say which they were.
+  it('says a stray folder was a folder under the trees that was no tree', () => {
+    render(<WorkspaceTidied lines={[tidied('', 2, { branch: null, kind: 'stray', tree: true, folder: 'trees/.tidied/work/billing/x-1' })]} />);
+    const [row] = screen.getAllByRole('listitem');
+    expect(row).toHaveTextContent('A folder under the trees that was no tree was set aside');
+    expect(row).not.toHaveTextContent("Its tree's folder was set aside");
+    expect(row).not.toHaveTextContent('trees/');
+  });
+
+  it('says a cut-off opening was one, and names the branch where the line has it', () => {
+    render(<WorkspaceTidied lines={[tidied('daoris/s-1f2e3d4c', 2, { kind: 'opening', tree: true, folder: 'trees/.tidied/work/billing/s-1' })]} />);
+    const [row] = screen.getAllByRole('listitem');
+    expect(row).toHaveTextContent('daoris/s-1f2e3d4c');
+    expect(row).toHaveTextContent('An opening that was cut off: its tree was set aside');
+  });
+
   // AUTOTIDY2b: a landing's branch name carries the quest title's words, which the log never holds, so the line has a session and no branch.
   const landing = (session: string, hours: number): LogRow => tidied('', hours, { branch: null, session, kind: 'on-line', kept: null });
 

@@ -2392,6 +2392,39 @@ describe('the box on every session that takes words', () => {
   });
 
   /**
+   * SENDLOST1c: the page stopped waiting on a send, and the driver then says nothing takes words (the box becomes the line):
+   * the words are not left *not answered yet*, they are said not to have gone and are kept for the box.
+   */
+  it('says words whose send timed out did not go when the reach turns to a code, and keeps them', async () => {
+    const words = 'also say so in the release notes';
+    let stop: () => void = () => {};
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_QUEUE') return { session: 's1a2b3c4', queued: [], taking: false, reaches: 'resume' };
+      if (type === 'SESSION_INPUT') return new Promise((_, reject) => { stop = () => reject(timedOut()); });
+      if (type === 'SESSION_HISTORY') return { session: 's1a2b3c4', earlier: false, latest: 0, events: [] };
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show('s1a2b3c4', notify);
+
+    const box = await screen.findByLabelText('Message');
+    await userEvent.type(box, words);
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await act(async () => { stop(); });
+    expect(await screen.findByRole('list', { name: UNANSWERED })).toHaveTextContent(words);
+
+    // The shell tells the session's reach live: nothing takes words for it now.
+    await act(async () => {
+      eventHandlers.get('DAORIS.SESSION_QUEUED')!({
+        session: 's1a2b3c4', queued: [], taking: false, listening: false, reach: { why: 'stood-down' },
+      });
+    });
+    expect(await screen.findByText(/did not go/)).toHaveTextContent(words);
+    expect(screen.queryByRole('list', { name: UNANSWERED })).toBeNull();
+    expect(inputs()).toHaveLength(1);
+  });
+
+  /**
    * SAIDBACK1b (D76): the words waiting on a session that ended are listed above its box by their ids, taken back or reworded
    * over the driver, and the list is read again from the queue the shell tells, where a reword's new id stands for the old.
    */
