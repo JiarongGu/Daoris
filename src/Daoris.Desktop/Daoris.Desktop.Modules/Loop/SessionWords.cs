@@ -379,7 +379,36 @@ public sealed class SessionWords : IDisposable
     /// <exception cref="DriverException">The service's refusal, in its sentence (what never goes on); or a service that did not answer.</exception>
     public async Task<QueueEdit> TakeBackAsync(string id, string word, string? text, CancellationToken ct)
     {
-        if (_loop.Service is not { } service) return QueueEdit.Taken;
+        if (await TakeBackToServiceAsync(id, word, text, ct).ConfigureAwait(false) is not { } answer) return QueueEdit.Taken;
+        if (!answer.Done)
+        {
+            return answer.Why is null or "taken" or WordsNever.NotFound ? QueueEdit.Taken : throw new DriverException(answer.Message);
+        }
+
+        return QueueEdit.Done;
+    }
+
+    /// <summary>
+    /// A terminal's <c>sessions take-back</c> (SAIDBACK1c, D137 §2.4): the shell's half, handed to its request watch as
+    /// <see cref="SessionRequestWatch.TakeBack"/>, so the withdrawn note is written in the record of the conversation this shell
+    /// holds, which the page may have open. Answered in the say's shape: sent is done, a refusal's code is <c>why</c>.
+    /// </summary>
+    public async Task<WordsHeld> HoldTakeBackAsync(SessionRequest request, CancellationToken ct)
+    {
+        if (request.Word is not { Length: > 0 } word) return WordsHeld.Failed("a take-back names the word to take back.");
+        var back = await TakeBackToServiceAsync(request.Session, word, request.Text, ct).ConfigureAwait(false);
+        if (back is null) return WordsHeld.Failed(NotUp);
+        if (back.Done) return new WordsHeld(true, null, null) { Word = back.Word?.Id, Message = back.Message };
+        return back.Why is { } why ? WordsHeld.Refused(why, back.Message) : WordsHeld.Failed(back.Message);
+    }
+
+    /// <summary>
+    /// The service's take-back door asked, the queue told again whatever it answers, and, where it is done, the conversation
+    /// settled and a reword's new words shown. Null where there is no service yet.
+    /// </summary>
+    private async Task<TakeBackAnswer?> TakeBackToServiceAsync(string id, string word, string? text, CancellationToken ct)
+    {
+        if (_loop.Service is not { } service) return null;
 
         TakeBackAnswer answer;
         try
@@ -392,10 +421,7 @@ public sealed class SessionWords : IDisposable
         }
 
         Tell(id);
-        if (!answer.Done)
-        {
-            return answer.Why is null or "taken" or WordsNever.NotFound ? QueueEdit.Taken : throw new DriverException(answer.Message);
-        }
+        if (!answer.Done) return answer;
 
         // QUEUEEDIT1a's line, by its code, which the page words; the one note shape every door keeps (WITHDRAWNLINE1).
         _loop.Output.Append(id, $"— the person took back word {word} before the session took it.");
@@ -406,7 +432,7 @@ public sealed class SessionWords : IDisposable
             _loop.Events.Keep(id, LoopWords.Shown(kept, "screen"), line => _loop.Output.Append(id, line));
         }
 
-        return QueueEdit.Done;
+        return answer;
     }
 
     /// <summary>

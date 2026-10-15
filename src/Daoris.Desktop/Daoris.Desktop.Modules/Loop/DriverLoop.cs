@@ -493,6 +493,8 @@ public sealed class DriverLoop(
             // A terminal's `sessions say` (MSG1e2) is judged as the box's words are: a conversation the window runs hears it,
             // kept words are shown at once and the loop nudged, and words said as a session winds up wait here.
             Say = Words.HoldAsync,
+            // SAIDBACK1c: and `sessions take-back` (the withdrawn note is written in the conversation's record here).
+            TakeBack = Words.HoldTakeBackAsync,
         };
 
         // A plugin's word goes to the console under `plugin:<id>` (D49 §2, D64 §4) — the same buffer
