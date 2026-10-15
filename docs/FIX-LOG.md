@@ -5,6 +5,39 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-16 — A word taken back from a driven session could still go to its resumed run (SAIDBACK1e)
+
+- **Symptom:** none met; read by SAIDBACK1d. The person takes back a word waiting on a quest's parked or ended session, the door
+  says it was taken back, and the resumed run is still handed it.
+- **Root cause:** `DriverContinuations.ContinueAsync` read the record's words and built the resumed prompt (on the native door,
+  into the spawn's command line) before `Driver.HoldAsync` spawned the run, and the ledger's move to working came only after the
+  spawn. The take-back door refuses a record that runs, so until that move it took words back that the prompt already held.
+- **Fix:** the move to working comes first, then the words are read as it left them and the run is spawned (`HoldAsync`'s
+  `movedFirst`). A run that never starts puts the record back with its words (`Continuations.PutBack`): an ended record as it
+  ended, a park ended as a fallback ends it, its words carried on, never `failed` with them. D137's SAIDBACK1e note.
+- **Verification:** `ContinuationTests.A_record_moved_to_working_goes_back_as_it_was_where_no_run_of_it_started` (red first,
+  the member missing). `SessionMessagesTickTests.A_word_taken_back_between_the_look_and_the_move_never_goes` and
+  `Words_whose_run_could_not_be_spawned_wait_on_the_record_as_it_ended` are `Process` rows, owed to the parent's serial run.
+
+## 2026-10-16 — A withdrawn session request could also be taken, the door saying withdrawn (REQTAKE2)
+
+- **Symptom:** none met; REQTAKE1's mechanics read against `SessionRequests.WithdrawAt`. A terminal verb withdraws a request
+  nothing took within its wait and tells the person so ("it was withdrawn"), and a loop could still act on it: a stop, words or a
+  take-back the person was told did not reach the session would reach it.
+- **Root cause:** the mirror of REQTAKE1. A take's `File.Move` opens the file for `DELETE`, sharing read, write and delete, then
+  renames through that handle. A withdrawal's rename landing between the two moved the file to its withdrawn name, the take's
+  handle then moved it on from there to the take's name, and the withdrawal's `File.Delete` of its withdrawn name found nothing,
+  which `File.Delete` does not report. `WithdrawAt` returned true and the take read and honoured the request.
+- **Fix:** after its rename, `WithdrawAt` opens the withdrawn name alone (`FileShare.None`, `DeleteOnClose`): that waits out
+  every handle opened before the rename (none can open it after, the name being gone), and removes the file as it closes. Gone
+  by then, the take that moved it on has it, and the withdrawal says false, so the verb says the loop took it. Held past a
+  second of tries, it is put back for a loop and is not withdrawn. On Linux a rename is by name and whole, so nothing moves it
+  on, and the open only waits out a reader. D126's REQTAKE2 note.
+- **Verification:** `SessionRequestsTests.A_withdrawal_and_a_take_begun_before_it_never_both_win` holds the file as a rename in
+  progress does, withdraws, and lets the rename land from wherever the file then is: it failed first (the withdrawal said
+  withdrawn and had already removed the file the rename was moving), then passed. On Linux the rename lands by name, finds
+  nothing, and the withdrawal has it, which the test allows.
+
 ## 2026-10-16 — A session request taken by two loops at once could be lost unread (REQTAKE1)
 
 - **Symptom:** STATEHUB1e's worker, taking `.told` notes as `SessionRequests.TakeAt` takes a request (rename aside, read,

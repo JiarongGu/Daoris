@@ -12,9 +12,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// Driven over the real client, the real planner and a look's real scheduling, with the service's doors and the resumed run
 /// standing in, in-process (DEV3's way): the run stands in for <c>Driver.ContinueAsync</c>, told it opened before its working
-/// move as the real one is, and failing its record with the ledger's sentence where that move is refused, as the real one
-/// does. The real resume over a protocol stub is <c>AnswerContinuesTickTests</c>' and <c>SessionMessagesTickTests</c>', in the
-/// <c>Process</c> half.
+/// move as the real one was until SAIDBACK1e moved the move before the spawn, and failing its record with the ledger's sentence
+/// where that move is refused, as the real one did after its spawn. The look's guard holds either order. The real resume over a
+/// protocol stub is <c>AnswerContinuesTickTests</c>' and <c>SessionMessagesTickTests</c>', in the <c>Process</c> half.
 /// </remarks>
 public sealed class AnswerGoesOnOnceTests : IDisposable
 {
@@ -73,8 +73,8 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The moment before the move: a run that took the park up is told it opened before its process starts and moves the
-    /// record, so a look in between still reads it parked with the answer and plans it to go on. The look begins no second run
+    /// 🔴 The moment before the move: a run that took the park up has not moved the record yet when a look comes, so the look
+    /// still reads it parked with the answer and plans it to go on. The look begins no second run
     /// on that record, and says why; the first moves it to working once and carries on.
     /// </summary>
     [Fact]
