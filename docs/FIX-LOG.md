@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-15 — An accepted session's plan read stale after a tab switch, and never in another window (STATEHUB1b)
+
+- **Symptom:** the owner's, on the install: *"the 采纳 status does not read properly when switching tab"*. After *Accept…*
+  (采纳…) the head and the review went on showing the plan from before the press when the view was shown again; a second
+  window showed it until the driver's next change.
+- **Root cause:** a press refreshed only what its own hook invalidated, in the window that pressed. `useLandSessionTree`
+  invalidated the sessions, the review, the hand-off and the clean-up's list after a done landing, never the plan
+  (`keys.landing`, read again only on a conflict), and the plan is kept fresh for fifteen seconds (`main.tsx`), so a remount
+  read the cached plan. `DRIVER_TICK`, which asks the driver's key again, comes only when the loop saw a change of its own,
+  which a landing need not be; and nothing reached another window or a press made outside the page.
+- **Fix:** D169. A route declares what it changes beside its mark (`[Publishes]`), `StatePublisher` raises `STATE_CHANGED`
+  after a successful answer, and `bridge/stateHub.ts`, mounted by `ShellSignals` in both roots, asks every plan again (a
+  landing moves the line each plan is judged against) with the rest the route declares, in every window.
+- **Verify:** `ShellSignals.test.tsx` (*a landing done in another window reads anew here, shown or mounted again, from the
+  event alone*, with the application's fifteen-second freshness) failed with no hub mounted, then passed; `stateHub.test.tsx`;
+  `StatePublisherTests` (the declared table, and the event raised only after the route answered). Not seen on the installed
+  window from this branch; the terminal's presses and a press in flight are STATEHUB1e and STATEHUB1c.
+
 ## 2026-10-15 — Words that could not go on left a fresh tree and branch at every look (GOONTREE1)
 
 - **Symptom:** the owner's, on the install: words waiting on a closed quest's last session whose tree had been removed made a

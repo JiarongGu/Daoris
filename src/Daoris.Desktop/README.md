@@ -144,9 +144,9 @@ A route that changes the driver's state says so beside its mark, `[Publishes("RO
 scopes it moved, and the payload field naming the session where the change is one session's; on one line, as the index
 reads marks), and `StatePublisher`, the dispatcher's innermost middleware, raises
 `STATE_CHANGED` {scopes, sessions?} once it has answered successfully, a refusal answered as data included; the page's
-state hub asks those scopes again in every window (STATEHUB1b, D169). The landing family declares its scopes so far
-(`LAND_SESSION_TREE`, `DISCARD_SESSION_TREE`, `HANDOFF`, the opinion presses, `SWEEP`, `DISCARD_SESSION_BRANCH`,
-`TREES_SYNC`, `SET_LANDING`); a handler never raises it by hand.
+state hub asks those scopes again in every window (D169, whose table names what each route declares). A handler never
+raises it by hand. A new scope is a `StateScopes` member added at the end (a wire's word, never renamed), its row in the
+page's `bridge/stateHub.ts`, and a case in `StatePublisherTests` and `stateHub.test.tsx`.
 
 | Domain | What it carries |
 |---|---|
