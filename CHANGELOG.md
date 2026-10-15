@@ -14,6 +14,10 @@ with the version and date at release.
 - Each thing waiting on you in a session leads to where its conversation raised it: *In the conversation* on its head and at
   its foot shows the question it asked, the call that asked a go-ahead, or the end of the turn whose work waits to be accepted,
   outlined; that place says what waits on you from there, with *To the wait* back to it at the foot.
+- A theme you choose (light or dark, under Settings or View → Theme) now reaches the window's Chromium as well as the page:
+  its scrollbars and controls, its own pages, and what a page reads as the system's theme follow your choice in the main
+  window, the monitor and a detached session, where they followed Windows' setting before. *System* still follows Windows.
+  Daoris's browser keeps its own setting.
 - A session no longer thanks you for accepting when you type "accept": it says its work waits for *Accept…* on its page and
   where that is, and when it asks you to approve a rule it proposed, it names the Agents page's *Proposals*. In What needs you,
   the act on a rule an agent proposed reads *Allow…* (允许…), no longer the same *Accept…* (采纳…) as landing a session's work.

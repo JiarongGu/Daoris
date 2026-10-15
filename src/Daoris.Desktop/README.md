@@ -180,6 +180,11 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   chosen theme through `DAORIS.WINDOWS SET_THEME` (WINDOW2), the kit's own having no route for a
   framed window; and they are disposed on shutdown rather than abandoned, because their threads are
   background and an unwaited exit kills them before their geometry is saved.
+- **The engine wears the viewer's chosen theme** (THEMESCHEME1, D22's note): the app mounts the kit's colour scheme
+  route (`AddShenoraColorScheme`, advertised as `colorScheme`), and each window's page sets it to the viewer's choice.
+  The engine applies it to Chromium's global context, which every window's browser takes, so Chromium's own UI and
+  `prefers-color-scheme` follow an explicit light or dark, and *System* the OS. Daoris's browser, a process of its
+  own, keeps following the OS.
 - **It notifies, and decides nothing** (SURF5b): a session that parks, or ends without the person
   asking, raises an OS balloon unless one of its windows has focus. `AttentionWatch` in the library
   makes the judgement, so `daoris-driver` prints the same one as a line.
