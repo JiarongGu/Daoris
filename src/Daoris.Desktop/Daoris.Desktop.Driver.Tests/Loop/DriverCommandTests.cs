@@ -208,6 +208,26 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
+    /// ACCEPTALL1f (D167's 2026-10-15 amendment point 2): the terminal's `trees land &lt;session&gt;` names a part of an entry with others
+    /// as the review's Accept does, by the library's one call after its gate (<c>SessionTrees.OwnSubjectAsync</c>, which
+    /// <c>OwnAcceptSubjectTests</c> holds), and lands it on the entry's branch where that call says it joins. No naming of its own.
+    /// </summary>
+    [Fact]
+    public void The_terminals_landing_names_a_part_for_its_entry_by_the_drivers_one_call()
+    {
+        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
+
+        Assert.Contains("await landing.OwnSubjectAsync(", console);
+        Assert.Contains("await service.SessionRecordsAsync()", console);
+        Assert.Contains("gate.Process", console[console.IndexOf("await landing.OwnSubjectAsync(", StringComparison.Ordinal)..]);
+        Assert.Contains("gate: gate, joins: subject.Joins)", console);
+        Assert.DoesNotContain("LandingRules.SubjectAsync(", console);
+        // The gate is read before the name, since the entry's branch is the gate's process's.
+        Assert.True(console.IndexOf("await landing.GateAsync(tree, questId", StringComparison.Ordinal)
+            < console.IndexOf("await landing.OwnSubjectAsync(", StringComparison.Ordinal));
+    }
+
+    /// <summary>
     /// LAND3c: the terminal's `trees remove &lt;session|branch&gt;` is the driver's one discard, the call the screen's
     /// <c>DISCARD_SESSION_BRANCH</c> ends in, so it keeps a branch a live session's tree holds as the screen does. The host
     /// composes none of its pieces itself: no layout read, no removal by branch. <c>SessionBranchDiscardTests</c> holds the act.

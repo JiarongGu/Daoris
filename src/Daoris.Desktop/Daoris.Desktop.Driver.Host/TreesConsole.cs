@@ -443,17 +443,18 @@ internal static class TreesConsole
 
                 var questId = await service.SessionQuestAsync(session).ConfigureAwait(false);
                 var events = new SessionEvents(Path.Combine(home, "sessions"));
-                // Named for the chain's first quest (WSR5), as the review's press names it.
-                var subject = await LandingRules.SubjectAsync(
-                    session, questId, quest => service.FindQuestAsync(quest),
-                    events.Openings([session]).GetValueOrDefault(session)).ConfigureAwait(false);
-                subject = subject with { Entered = entered };
                 // A plugin's own lines, said as they come, under its name — as the console says them (D64 §4).
                 var landing = new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => Console.WriteLine($"  plugin:{plugin}  {line}"), log: log));
 
                 // The landing gate (XAGENT1f, REVIEWENV1c): the second opinion, then the review, read once for the plan, and handed to
                 // the landing, which refuses the first that holds.
                 var gate = await landing.GateAsync(tree, questId, new ServiceReviewWorld(service), session).ConfigureAwait(false);
+                // Named for the chain's first quest (WSR5), as the review's press names it, and a part of an entry with others for its
+                // entry's first part, on the entry's one branch (ACCEPTALL1f, D167's 2026-10-15 amendment point 2): the driver's one call.
+                var subject = await landing.OwnSubjectAsync(
+                    tree, session, questId, await service.SessionRecordsAsync().ConfigureAwait(false), quest => service.FindQuestAsync(quest),
+                    named => events.Openings([named]).GetValueOrDefault(named), gate.Process).ConfigureAwait(false);
+                subject = subject with { Entered = entered };
 
                 if (args.Contains("--plan"))
                 {
@@ -477,7 +478,7 @@ internal static class TreesConsole
                 // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds (LAND3).
                 var landed = await landing.LandAsync(tree, subject, inUse: async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
                     .Select(each => each.Tree).OfType<string>().Where(each => each.Length > 0)
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase), gate: gate).ConfigureAwait(false);
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase), gate: gate, joins: subject.Joins).ConfigureAwait(false);
                 Told(home, PressesTold.Land, session);
                 Console.WriteLine($"trees: {landed.Message}");
                 if (log is not null && LandingGateWords.Held(session, landing.Owner(tree), gate, landed, ReviewDoors.Terminal) is { } held)

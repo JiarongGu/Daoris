@@ -271,12 +271,14 @@ public sealed class AutoLander(
             return Tried(entry, ahead == 0 ? AutoLandingCode.Nothing : AutoLandingCode.Already, choice.Tip, choice.Status);
         }
 
-        // Named for the chain's first quest (WSR5), as the press names it.
-        var subject = await LandingRules.SubjectAsync(
-            entry.Session, entry.Quest, id => world.QuestAsync(id, ct), events.Openings([entry.Session]).GetValueOrDefault(entry.Session))
-            .ConfigureAwait(false);
+        // Named for the chain's first quest (WSR5), as the press names it, and a part of an entry with others for its entry's first
+        // part, on the entry's one branch, joining it where it ran alongside (ACCEPTALL1f, D167's 2026-10-15 amendment point 2): the
+        // press's own call, over the records as they stand now.
+        var subject = await trees.OwnSubjectAsync(
+            entry.Tree, entry.Session, entry.Quest, await world.RecordsAsync(ct).ConfigureAwait(false), id => world.QuestAsync(id, ct),
+            named => events.Openings([named]).GetValueOrDefault(named), choice.Gate?.Process, ct).ConfigureAwait(false);
         var plan = await trees.PlanAsync(entry.Tree, subject, ct, choice.Gate?.Process).ConfigureAwait(false);
-        var landed = await trees.LandAsync(entry.Tree, subject, ct, world.InUseAsync, AcceptedBy.Auto, choice.Gate).ConfigureAwait(false);
+        var landed = await trees.LandAsync(entry.Tree, subject, ct, world.InUseAsync, AcceptedBy.Auto, choice.Gate, subject.Joins).ConfigureAwait(false);
         var code = AutoLandingRules.CodeOf(landed);
         return Tried(entry, code, choice.Tip, choice.Status, landed, plan.Plugin, plan.Target, unlanded);
     }

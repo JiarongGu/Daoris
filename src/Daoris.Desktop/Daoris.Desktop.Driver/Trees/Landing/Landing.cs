@@ -94,6 +94,12 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
     public string? EntryBranch { get; init; }
 
     /// <summary>
+    /// Whether the press joins the entry's branch (ACCEPTALL1b, ACCEPTALL1f): it lands on <see cref="EntryBranch"/>, replaying a part
+    /// that ran alongside onto its tip. False where no entry names a branch, or the person entered a name, which lands as entered.
+    /// </summary>
+    public bool Joins => EntryBranch is not null && EnteredName is null;
+
+    /// <summary>
     /// The request's body (PROCESS1b-i), where a ticket's key is searched after the title: the quest's, null where it is blank or
     /// there is no quest. A conversation's words are its opening, its <see cref="Title"/>.
     /// </summary>

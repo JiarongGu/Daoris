@@ -466,14 +466,7 @@ public sealed class TreesRoutes(DriverLoop loop)
         }
 
         var questId = await service.SessionQuestAsync(id, cancellationToken);
-        // ACCEPTALL1b (D167's 2026-10-15 amendment point 2): a part of an entry with others is its entry's Accept for that part alone,
-        // named for the entry's first part as ENTRY_LANDING names it; a session with no entry, or its entry's only part, as before.
-        var lead = EntryLead(await service.SessionRecordsAsync(cancellationToken), id);
-        var named = lead?.Id ?? id;
-        // Named for the chain's first quest (WSR5): a chain lands from its last step.
-        var subject = await LandingRules.SubjectAsync(
-            named, lead is null ? questId : lead.Quest, quest => service.FindQuestAsync(quest, cancellationToken),
-            _loop.Events.Openings([named]).GetValueOrDefault(named));
+        var records = await service.SessionRecordsAsync(cancellationToken);
         // A rule's plugin says its lines on the console under its name, as a hook's do (D64 §4, D100); what the
         // landing did with it goes to the machine log and the loop's record of its health (PLUGUI1d).
         var trees = new SessionTrees(_loop.Home, new LandingPlugins(
@@ -484,10 +477,13 @@ public sealed class TreesRoutes(DriverLoop loop)
         // Said to every window while the press is under way (PRESSSTEP1); a plan is no press and says it to nobody.
         PressSteps.Reach(PressSteps.Gate);
         var gate = await trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, cancellationToken);
-        // On the entry's one branch, joining it where this part ran alongside; a name the person entered still lands as entered.
-        if (lead is not null) subject = await trees.JoinEntryAsync(tree, id, subject, cancellationToken, gate.Process);
-        subject = Entering(subject, request);
-        var joins = subject.EntryBranch is not null && subject.EnteredName is null;
+        // Named for the chain's first quest (WSR5), and a part of an entry with others for its entry's first part, on the entry's one
+        // branch (ACCEPTALL1b, D167's 2026-10-15 amendment point 2): the call every door that lands one session makes (ACCEPTALL1f).
+        // A name the person entered still lands as entered.
+        var subject = Entering(await trees.OwnSubjectAsync(
+            tree, id, questId, records, quest => service.FindQuestAsync(quest, cancellationToken),
+            named => _loop.Events.Openings([named]).GetValueOrDefault(named), gate.Process, cancellationToken), request);
+        var lead = EntryLead(records, id);
 
         if (request.Type == "LANDING")
         {
@@ -517,7 +513,7 @@ public sealed class TreesRoutes(DriverLoop loop)
         // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds (LAND3).
         PressSteps.Reach(PressSteps.Landing);
         var landed = await trees.LandAsync(tree, subject, cancellationToken, async token => await LinesRoutes.InUseAsync(service, token), gate: gate,
-            joins: joins);
+            joins: subject.Joins);
         // Kept where the conversation is kept, so the landing and the plugin's word outlast the press (D100).
         if (landed.Landed) _loop.Events.Keep(id, LandingRules.Note(landed), line => _loop.Output.Append(id, line));
         if (_loop.Log is { } log && LandingGateWords.Held(id, trees.Owner(tree), gate, landed, ReviewDoors.Screen) is { } held)
