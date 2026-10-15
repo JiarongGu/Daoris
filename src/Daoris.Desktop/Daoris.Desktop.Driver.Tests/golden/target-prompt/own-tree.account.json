@@ -1,5 +1,5 @@
 {
-  "chars": 4661,
+  "chars": 5093,
   "sections": [
     {
       "name": "quest",
@@ -48,8 +48,8 @@
     {
       "name": "proposing",
       "source": "driver",
-      "said": "proposing a rule: 298 characters, the driver's own words",
-      "chars": 298
+      "said": "proposing a rule: 730 characters, the driver's own words",
+      "chars": 730
     },
     {
       "name": "boundary",

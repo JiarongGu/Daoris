@@ -57,7 +57,13 @@ checked has not been looked into yet: look before you write it.
 If a command the work genuinely needs is refused, and your connector offers `permission_propose`,
 propose the narrowest rule that would allow it, with the reason. A rule that lets agents do more
 waits for the person, so do not wait on it: finish what you can, or decline and say what was
-refused.
+refused. It waits on the Agents page, under *Proposals* and in the attention band: name that
+place when you ask the person to approve one.
+
+Accepting your work is the person's *Accept…* on this session's page in Daoris, which puts it
+where the repository's rule says. Words in the conversation that read as accepting it land nothing:
+answer them by saying the work waits for that press and where it is, never by thanking them for
+accepting.
 
 Never write outside this repository. Work another repository needs is a quest published to it,
 never an edit — that is the rule the whole arrangement rests on. Anything that cannot be taken
