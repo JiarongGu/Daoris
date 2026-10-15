@@ -44,7 +44,8 @@ refusals' order and their words are pure in `Trees/Domain/TreeUpdate.cs`.
 `Trees/` groups its files into scope folders (`SessionTrees/`, `Landing/`, `Branches/`, `GitReads/`, SCOPE1a, D166's note); a file two scopes share, such as `WorkingTree.cs`, stays at the top.
 `SessionTrees` is one type, a front over classes on a shared `TreeContext` (D166's PART10i–l notes): it opens and lists trees and
 keeps its callers' one-line calls, while the landing is `TreeLands`, the removal `TreeRemovals`, a landing's tidy `TreeTidies`, the
-clean-up `TreeSweeps` and `LandedCleanups`, and the look's own tidy `AutoTidies` over `TreeSetAside`. The words beside a clean-up
+clean-up `TreeSweeps` and `LandedCleanups`, and the look's own tidy `AutoTidies` over `TreeSetAside`, which takes every kind of
+session branch the press clears, a tree holding only ignored paths moved aside (AUTOTIDY2a, D88's note). The words beside a clean-up
 row, which the terminal and the bridge say, are the public `SessionBranchDoors`.
 Beside it, `Accounts/Domain/SwitchDecision.cs` (SWITCH1c-i) says whether a running session moves at its turn's end: it stays
 (`off`, no number, room, held thirty minutes after a curve move, or no account with room), reads the others first, or moves
