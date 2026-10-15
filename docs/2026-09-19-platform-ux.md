@@ -441,7 +441,8 @@ controls are in the frame design's §3.
   D150 §4.2). *Details*: the index with the local/canonical split, the commit it was fed from, its
   workspace, its line read-only with a door to Setup, and its unlanded branches; its declaration as chips;
   and for one not adopted the *Adoption steps*, led by one line with its reasoning on the info glyph (U36)
-  and the join steps proposed as text. *Branches*: its branches by kind (the built-in Git design §2.2, D150's UX6h2a
+  and the join steps proposed as text, then, on a shell, for one that can be asked, *Set up for agents* (LAYOUT8, D117 §6.1,
+  §6.5): its plan only once asked, `--plan`'s twin, then *Set it up*, which asks its own session. *Branches*: its branches by kind (the built-in Git design §2.2, D150's UX6h2a
   note), the line at the head with what set it, how it stands to origin and the last fetch, then *Sessions'*, *Landed*
   and *Yours*, folded after five. **A branch's name opens its page** in the repository's place (UX6h3b, the built-in Git
   design §2.3): its name, its kind and where it stands against its line, origin and its pull request, in the list's words,

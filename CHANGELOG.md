@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris can now set a repository up for you: asked to include a registered repository that has not adopted, it proposes
+  the set-up as a card showing what was read on the repository's line, the rule it adds and the quest's whole text, and
+  *Apply* publishes that one quest to the repository's own session, as `daoris-driver setup <repository>` does. The same press is
+  on the repository's page: *Set up for agents* (为智能体配置) under its adoption steps shows the plan first, every reason it
+  cannot go yet with what fixes it, then *Set it up*. Daoris still writes nothing into the repository.
 - A part's own *Accept* now lands on its line of work's one branch, as the line's *Accept* does; a part you leave out of
   the line's *Accept* says so in its review, with *Discard tree* first; and under a squash rule a line's later parts are
   squashed onto its branch, fetching the line once. While work lands, its *Accept* says *Checking…* (检查中…) at the gate,

@@ -59,7 +59,7 @@ a `SessionTree`:
   tools, the connector's `setting_propose` and `ask_propose` (and since HELP6 its four further
   `*_propose` tools, §9.6, since PLUG9 `plugin_propose`, §9.7, since WSR5b `hand_propose`, §9.8, and since HELP10
   `browser_propose` and `sync_propose`, §9.10, since DRIFT1d2 `accept_propose`, D133's note, and since ENTRY1d1
-  `repository_propose`, D161's ENTRY1d note, and since SESSUX1h2 `session_propose`, D161's SESSUX1h2a note, and since PAUSE1f `pause_propose`, D132's PAUSE1f notes, and since HIST1f `clear_propose`, D153's HIST1f notes), and nothing else. Over the protocol door
+  `repository_propose`, D161's ENTRY1d note, and since SESSUX1h2 `session_propose`, D161's SESSUX1h2a note, and since PAUSE1f `pause_propose`, D132's PAUSE1f notes, and since HIST1f `clear_propose`, D153's HIST1f notes, and since LAYOUT8 `setup_propose`, D117's LAYOUT8 note), and nothing else. Over the protocol door
   a request for anything unlisted is refused by construction (D52), which is the point: it reads, and
   it proposes.
 
@@ -127,6 +127,11 @@ to* would.
 **A yes to a departure** (DRIFT1d2, D133 §4): a quest a done's departure holds (`accept_propose`), proposed only when
 the person asks to accept it, its card showing each departure with the person's words it relied on, and applied through
 the local host's accept door, the quest page's *Accept the departure*.
+
+**Setting a repository up** (LAYOUT8, D170 point 1, D117 §6.1): a registered repository, by name (`setup_propose`), its
+card showing what `daoris-driver setup <repository> --plan` shows, and its Apply the press: one quest to that repository's own
+session and the rule its session needs, as the repository page's *Set up for agents* does. Where Ask Daoris had no such door it
+could only name the terminal command; a shell is still never given (D89, D170).
 
 **Never**: a push of Daoris's own, a merge, a discard, a sign-in, a key. Those stay the person's own
 presses where they already are; a hand-off's push is the plugin the person named, on their Apply.
