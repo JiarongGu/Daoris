@@ -36,6 +36,7 @@ public sealed class MainForm : OptimizedForm
     private readonly DriverLoop _driver;
     private readonly HostSupervisor _supervisor;
     private readonly SessionNotifier _notifier;
+    private readonly TaskbarBadge _badge;
     private ChromePalette _palette;
     private Label? _trouble;
 
@@ -70,13 +71,24 @@ public sealed class MainForm : OptimizedForm
         _supervisor = supervisor;
         _palette = StartingPalette;
 
-        // Still set: it is the taskbar's label and the caption of the one MessageBox left.
-        Text = "Daoris (道衍)";
+        // Still set: it is the taskbar's label and the caption of the one MessageBox left. While anything
+        // waits on the person it leads with the count (NOTIFY1b, ShowWaiting).
+        Text = WaitingBadge.Title(0);
 
         // One taskbar button for a pinned Daoris (TASKBAR1, D108): an install's window names Daoris's
         // id and a relaunch command that starts the root launcher, so it groups under the person's pin
         // and a pin made from it survives a republish. A workspace build wears nothing.
         TaskbarWindow.Wear(this);
+
+        // And on that button, how much waits on the person (NOTIFY1b): put back each time Explorer makes the
+        // button, which it says with a message of its own, so a restarted taskbar still counts.
+        _badge = new TaskbarBadge(this);
+        _badge.Wear(_palette);
+        WndProcHook = message =>
+        {
+            if (TaskbarBadge.ButtonCreated != 0 && message.Msg == TaskbarBadge.ButtonCreated) _badge.Apply();
+            return null;
+        };
 
         // 🔴 The WINDOW's icon, which a WinForms form does not take from anywhere by itself: it opens
         // wearing the framework's default unless told. Read from the `daoris.ico` the build copies
@@ -127,6 +139,7 @@ public sealed class MainForm : OptimizedForm
 
         Load += async (_, _) => await BringUpAsync();
         FormClosed += (_, _) => _notifier.Dispose();
+        FormClosed += (_, _) => _badge.Dispose();
 
         // How late this window's thread answers, and what held it (FREEZE1, D56's note): a press on the strip is handed
         // to this thread to move the window, so a late thread is a frozen bar. Looked at from the moment it is shown.
@@ -153,6 +166,23 @@ public sealed class MainForm : OptimizedForm
         }
     }
 
+    /// <summary>
+    /// How much waits on the person, as the page counts it for Overview's *What needs you* (NOTIFY1b, <c>SET_BADGE</c>):
+    /// the taskbar button's overlay and the title's lead. On this window's thread, posted from the bridge's, which waits
+    /// on nothing here.
+    /// </summary>
+    public void ShowWaiting(int count, string? description)
+    {
+        if (InvokeRequired)
+        {
+            Post(() => ShowWaiting(count, description));
+            return;
+        }
+
+        Text = WaitingBadge.Title(count);
+        _badge.Show(count, description);
+    }
+
     /// <summary>What the OS is set to, for the first paint — the page corrects it a round trip later.</summary>
     private static ChromePalette StartingPalette { get; } = ChromePalette.For(OperatingSystemPrefersDark());
 
@@ -171,6 +201,7 @@ public sealed class MainForm : OptimizedForm
         ApplyChromeTheme(_palette.Page, _palette.Line, immersiveDarkMode: dark);
 
         if (!_splash.IsDisposed) _splash.BackColor = _palette.Page;
+        _badge.Wear(_palette);
         if (_trouble is { IsDisposed: false })
         {
             _trouble.BackColor = _palette.Page;

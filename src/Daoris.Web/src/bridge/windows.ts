@@ -2,9 +2,10 @@ import { useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { ColorScheme, getBridge, useShenora } from '@shenora/react';
 import { effectiveDark, subscribeTheme, themeChoice } from '../design/theme';
+import { secondaryWindow } from '../work/window';
 
-// This build's secondary windows (MOD3): opening one, and telling its frame the theme; and telling the engine every
-// window renders on the viewer's choice (THEMESCHEME1).
+// This build's secondary windows (MOD3): opening one, and telling its frame the theme; telling the engine every window
+// renders on the viewer's choice (THEMESCHEME1); and telling the main window's taskbar button what waits (NOTIFY1b).
 
 /**
  * Open one of this build's secondary windows (D55 §b, SURF8): the monitor, or one session detached.
@@ -50,6 +51,24 @@ export function useSecondaryWindowTheme(name: string) {
       stop();
     };
   }, [isAvailable, name]);
+}
+
+/**
+ * The main window's page telling its frame how much waits on the person (NOTIFY1b): Overview's *What needs you* count, which
+ * the frame wears as its taskbar button's overlay and in its title, with `description` the words a screen reader says of
+ * the overlay, in the page's language. On arrival and on each change of either.
+ *
+ * @remarks
+ * **The main window's alone.** The taskbar button is the main window's, so a secondary window's page, which reads the same
+ * counts, never tells it: the page is a secondary window when its own address names one (`work/window.ts`). Fire and
+ * forget, as the theme is: a frame that cannot be told shows no count, which is what it showed before.
+ */
+export function useTaskbarCount(count: number, description: string) {
+  const { isAvailable } = useShenora();
+  useEffect(() => {
+    if (!isAvailable || secondaryWindow(globalThis.location?.search ?? '') !== null) return;
+    void getBridge().invoke('DAORIS.WINDOWS', 'SET_BADGE', { payload: { count, description } }).catch(() => {});
+  }, [isAvailable, count, description]);
 }
 
 /**

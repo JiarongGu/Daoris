@@ -175,3 +175,37 @@ describe("Overview's What needs you, on a machine", () => {
     expect(within(screen.getByRole('region', { name: 'What needs you' })).queryByText('parked after failed sessions')).toBeNull();
   });
 });
+
+/** What the page told the window's frame to wear on its taskbar button. */
+const badges = () => invoke.mock.calls.filter(([module, type]) => module === 'DAORIS.WINDOWS' && type === 'SET_BADGE');
+
+/**
+ * NOTIFY1b: the owner, on 15 October, asked for *a notification number at the tab icon*. The main window's page tells its
+ * frame Overview's count, the one its badge shows, for the taskbar button's overlay and the window's title, with the
+ * words a screen reader says of it. A secondary window counts the same and says nothing: the button is the main window's.
+ */
+describe("The taskbar's count", () => {
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    window.localStorage.clear();
+    window.history.replaceState(null, '', '/');
+  });
+
+  it('tells the main window’s frame what needs the person, as Overview’s badge counts it', async () => {
+    start(CONSIDERED);
+
+    await waitFor(() => expect(within(overviewButton()).getByText('3')).toBeInTheDocument());
+    await waitFor(() => expect(badges().at(-1)).toEqual(
+      ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 waiting on you' } }]));
+  });
+
+  it('is never told from a secondary window’s page', async () => {
+    window.history.replaceState(null, '', '/?window=monitor');
+    start(CONSIDERED);
+
+    await waitFor(() => expect(within(overviewButton()).getByText('3')).toBeInTheDocument());
+    expect(badges()).toEqual([]);
+  });
+});

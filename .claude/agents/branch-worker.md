@@ -123,7 +123,9 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
 - **A new bridge hook the page presses owes Ask Daoris a door or a reason.** The driver's `HelpCoverageTests` lists
   every page control with its `Door` or `Exempt`, and a branch outside the driver lane cannot run it. Name the row
   the hook needs, door or exemption with its reason, in the hand-back; the parent adds it at the merge. LAND3b's
-  `useDiscardSessionBranch` passed every gate it could run and failed the driver's.
+  `useDiscardSessionBranch` passed every gate it could run and failed the driver's. A web file a place's view imports
+  (AgentsView, ProjectsView, PluginsView) joins that place's controls in the test's closure, so a hook shared with it
+  may press only what that place already answers for: PROPOSEHERE1b's shared answer first used `useSay` there.
 - **Report a flake; do not chase it.** If a real-process test fails under load and passes alone, say so.
   If you think a failure is not yours, name it in the hand-back with the evidence (for example, it
   fails the same way on main). Never skip it silently.
