@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- When a conversation answers what you said while Daoris's window is behind another, Windows tells you so, as *engine — a
+  conversation answered you*; a click opens it. Nothing is said while you are looking at a Daoris window (the page shows it
+  instead), for a turn you stopped, or while notifications are off.
 - A rule a session proposed after it was refused something now waits on you in that session, at its top and at its foot, with
   what it would change and why: *Allow…* asks once, *Decline* is one press, and *In the conversation* shows the call that
   proposed it. Allowed there, the session is told the rule is allowed now and goes on with it; a session that takes no words
