@@ -36,6 +36,35 @@ public enum StateScopes
 
     /// <summary>Each repository's and workspace's rules: its line, how its work lands, and the rest the lines answer.</summary>
     Lines = 1 << 6,
+
+    // STATEHUB1d (D169 point 10): the rest of the routes' families, after the first slice's, which keep their numbers.
+
+    /// <summary>The quests, and each quest's or ask's work, which sits under their key.</summary>
+    Quests = 1 << 7,
+
+    /// <summary>The asks.</summary>
+    Asks = 1 << 8,
+
+    /// <summary>The driver's state and everything the page reads under its key: its standing choices, the lines, the plans and the lists.</summary>
+    Driver = 1 << 9,
+
+    /// <summary>What an agent Daoris starts may do, and what agents proposed about it.</summary>
+    Rules = 1 << 10,
+
+    /// <summary>What a clear of finished history would take and keep, every scope's.</summary>
+    History = 1 << 11,
+
+    /// <summary>Where each circle stands with its remote.</summary>
+    Sync = 1 << 12,
+
+    /// <summary>The workspaces and repositories this machine registered.</summary>
+    Registry = 1 << 13,
+
+    /// <summary>The plugins this machine holds.</summary>
+    Plugins = 1 << 14,
+
+    /// <summary>The agents this machine can run, what each start would run on, and their accounts.</summary>
+    Harnesses = 1 << 15,
 }
 
 /// <summary>

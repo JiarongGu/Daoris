@@ -48,7 +48,13 @@ public sealed class HistoryRoutes(DriverLoop loop)
     /// removed and what names it tidied. What went comes back in counts and bytes, with what changed since the list and stayed;
     /// a clear of one quest, one ask or one quest's failed sessions that stayed is refused in its code.
     /// </summary>
+    /// <remarks>
+    /// What it took leaves the quests, the asks and the sessions, and the driver's state its loop, nudged, reads again; and every
+    /// plan is stale (STATEHUB1d, D169). A clear refused in its code publishes nothing (D169 point 5): the page that pressed it
+    /// asks its plans again itself.
+    /// </remarks>
     [DriverRoute("HISTORY_CLEAR")]
+    [Publishes("HISTORY_CLEAR", StateScopes.Sessions | StateScopes.Quests | StateScopes.Asks | StateScopes.Driver | StateScopes.History)]
     private async Task<object?> HistoryClearAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var (scope, id) = HistoryNamed(request);

@@ -171,6 +171,76 @@ public sealed class StatePublisherTests : DriverModuleBridge
         Assert.Equal(session, declared?.Session);
     }
 
+    /// <summary>
+    /// D169's rest of the routes, domain by domain (STATEHUB1d): sessions, conversations, work, rules, history, sync and plugins
+    /// each declare what their presses change, the scopes their hooks used to ask again by hand; the looks beside them, the git
+    /// domain's every route and a look that fetches (<c>TREES_SYNC_PLAN</c>, above) declare nothing.
+    /// </summary>
+    [Theory]
+    [InlineData("SESSION_ARCHIVE", "sessions", null)]
+    [InlineData("SESSION_DELETE", "sessions", "id")]
+    [InlineData("STOP_SESSION", "sessions,driver", "id")]
+    [InlineData("RESOLVE_SESSION", "sessions,quests,driver", "id")]
+    [InlineData("SESSION_GO_ON_NEW", "sessions,driver", "id")]
+    [InlineData("SESSION_OPENINGS", "", null)]
+    [InlineData("SESSION_WHERE", "", null)]
+    [InlineData("SESSION_GROUPS", "", null)]
+    [InlineData("SESSION_SEARCH", "", null)]
+    [InlineData("SESSION_OPEN_FOLDER", "", null)]
+    [InlineData("START_CHAT", "sessions,driver", null)]
+    [InlineData("SESSION_START_FROM", "sessions,driver", "id")]
+    [InlineData("SESSION_HAND_OVER", "sessions,driver", "id")]
+    [InlineData("END_CHAT", "sessions", "id")]
+    [InlineData("SESSION_INPUT", "sessions", "id")]
+    [InlineData("SESSION_HISTORY", "", null)]
+    [InlineData("SESSION_QUEUE", "", null)]
+    [InlineData("WORK_PAUSE", "sessions,quests,asks,driver", null)]
+    [InlineData("WORK_RESUME", "sessions,quests,asks,driver", null)]
+    [InlineData("WORK_ABANDON", "sessions,quests,asks,driver", null)]
+    [InlineData("WORK_PLAN", "", null)]
+    [InlineData("RULE_ACTION", "rules", null)]
+    [InlineData("RULE_PROPOSAL", "rules", null)]
+    [InlineData("RULES", "", null)]
+    [InlineData("HISTORY_CLEAR", "sessions,quests,asks,driver,history", null)]
+    [InlineData("HISTORY_PLAN", "", null)]
+    [InlineData("SYNC_NOW", "sessions,quests,sync,registry", null)]
+    [InlineData("GIT_BRANCHES", "", null)]
+    [InlineData("CHECKOUT_BRANCH", "", null)]
+    [InlineData("GIT_GRAPH", "", null)]
+    [InlineData("GIT_COMMIT", "", null)]
+    [InlineData("GIT_HISTORY", "", null)]
+    [InlineData("GIT_BLAME", "", null)]
+    [InlineData("GIT_COMPARE", "", null)]
+    [InlineData("PLUGIN_ACTION", "plugins,harnesses", null)]
+    [InlineData("PLUGIN_UPDATE", "plugins,harnesses", null)]
+    [InlineData("PLUGIN_INSTALL", "plugins,harnesses", null)]
+    [InlineData("PLUGIN_ADD", "plugins,harnesses", null)]
+    [InlineData("PLUGINS", "", null)]
+    [InlineData("PLUGIN", "", null)]
+    [InlineData("PLUGIN_READ", "", null)]
+    [InlineData("PLUGIN_ACTIVITY", "", null)]
+    [InlineData("PLUGIN_NEW", "", null)]
+    [InlineData("PLUGIN_TRY", "", null)]
+    [InlineData("PLUGIN_OPEN_FOLDER", "", null)]
+    public void The_rest_of_the_routes_declare_what_they_change(string route, string scopes, string? session)
+    {
+        Assert.Contains(route, DriverModule.Routes);
+        var declared = DriverModule.Declared(new IpcRequest { Id = "x", Module = DriverModule.Name, Type = route });
+
+        Assert.Equal(scopes, string.Join(",", StatePublisher.Names(declared?.Scopes ?? StateScopes.None)));
+        Assert.Equal(session, declared?.Session);
+    }
+
+    /// <summary>
+    /// A press named in the wire's words a page reads: the scopes STATEHUB1d added sit after the first slice's, in their declared
+    /// order, so a scope is added and none is renumbered (D169 point 3).
+    /// </summary>
+    [Fact]
+    public void Every_scope_has_its_word_on_the_wire_in_its_declared_order() =>
+        Assert.Equal(
+            "sessions,landing,diff,handOff,sweep,treesSync,lines,quests,asks,driver,rules,history,sync,registry,plugins,harnesses",
+            string.Join(",", StatePublisher.Names((StateScopes)~0)));
+
     /// <summary>A request to another module is never the driver's, whatever its type is called.</summary>
     [Fact]
     public void Only_the_driver_s_requests_are_read_against_its_marks() =>

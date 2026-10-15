@@ -33,7 +33,10 @@ public sealed class ConversationRoutes(DriverContext context)
     // A conversation in a repository (D49 §3). The record is the service's and the lock is the
     // ledger's; what only this side can do is put a harness behind it — a process on this
     // machine, which never leaves it (D46 §7).
+    // A start changes the sessions and the driver's state its loop, nudged, reads again (STATEHUB1d, D169), as each press below
+    // that opens a conversation does.
     [DriverRoute("START_CHAT")]
+    [Publishes("START_CHAT", StateScopes.Sessions | StateScopes.Driver)]
     private async Task<object?> StartChatAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
@@ -79,7 +82,10 @@ public sealed class ConversationRoutes(DriverContext context)
     // loop nudged, so the same session goes on with them (MSG1b); words said as one winds up are held until its record ends,
     // never refused. What never goes on is `sent: false` with its code. 🔴 A session running here that takes no input at
     // all is REFUSED instead, in the driver's words (INT4h): false would tell a stale page it ended when it is running.
+    // Words kept on a park's or an ended record move it among the sessions (STATEHUB1d); a live chat's words reach its door
+    // alone, and the publisher reads no answer to tell them apart (D169 point 5), so every one asks the sessions again.
     [DriverRoute("SESSION_INPUT")]
+    [Publishes("SESSION_INPUT", StateScopes.Sessions, Session = "id")]
     private async Task<object?> SessionInputAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -102,6 +108,7 @@ public sealed class ConversationRoutes(DriverContext context)
     // message }`: what never goes on, a session still running, no words waiting and a quest that carries them on by itself are
     // refused by their codes before anything starts. Its end reaches the page as a start's does.
     [DriverRoute("SESSION_START_FROM")]
+    [Publishes("SESSION_START_FROM", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SessionStartFromAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -123,6 +130,7 @@ public sealed class ConversationRoutes(DriverContext context)
         askedBy == HandOverBy.Daoris && why is HandOverWhy.Near or HandOverWhy.Limit ? HandOverBy.Daoris : HandOverBy.Person;
 
     [DriverRoute("SESSION_HAND_OVER")]
+    [Publishes("SESSION_HAND_OVER", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SessionHandOverAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -169,6 +177,7 @@ public sealed class ConversationRoutes(DriverContext context)
     // what it was going to say, and exits on its own. `STOP_SESSION` is the other verb. Refused
     // for a session that takes no input, for the same reason as a message.
     [DriverRoute("END_CHAT")]
+    [Publishes("END_CHAT", StateScopes.Sessions, Session = "id")]
     private object? EndChat(IpcRequest request)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");

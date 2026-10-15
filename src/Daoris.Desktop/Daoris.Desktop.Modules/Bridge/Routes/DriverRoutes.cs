@@ -222,8 +222,10 @@ public sealed class DriverRoutes(DriverContext context)
 
     // *Sync now* (SYNC6b): the tick's own pass for one circle, through the loop's own set —
     // `daoris-driver sync` is the other door to the same pass (D50). What it says comes back
-    // in the driver's words; a circle with no remote is its refusal, mapped above.
+    // in the driver's words; a circle with no remote is its refusal, mapped above. A pass can move where each circle stands,
+    // the quests and sessions it fed, and the registry, and a wall it hit is answered as its report (STATEHUB1d, D169).
     [DriverRoute("SYNC_NOW")]
+    [Publishes("SYNC_NOW", StateScopes.Sessions | StateScopes.Quests | StateScopes.Sync | StateScopes.Registry)]
     private async Task<object?> SyncNowAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var workspace = RemoteTarget.Workspace(
