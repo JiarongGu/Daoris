@@ -125,7 +125,10 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
 
 /// <summary>What a press would do: the form, where the work would go (the line, or the branch it would make), and what said so.</summary>
 /// <param name="Plugin">The plugin that pushes the branch once it is made (D100), or null for the person.</param>
-/// <param name="Problem">Why that plugin cannot land work here now — the sentence a press would be refused with — or null.</param>
+/// <param name="Problem">
+/// The sentence a press would be refused with now, or null: the plugin cannot land work here, the name entered is refused, or the
+/// standing branch may not be moved on (STANDSREFUSE1, <see cref="LandingAdvance.Standing"/>).
+/// </param>
 /// <param name="AutoAccept">
 /// Whether the rule accepts automatically (LAND2b, D145): the quest's done lands the work, with no press, and the session's
 /// instruction says so.
@@ -141,9 +144,10 @@ public sealed record LandingPlan(string Form, string Target, string Source, stri
 
     /// <summary>
     /// The branch the press lands on already stands in the repository (ACCEPTALL1g, D167's 2026-10-15 amendment point 2): an entry's or
-    /// a chain's branch an earlier landing made, which the press moves on (D145 §3) instead of making it; one Daoris did not make, or
-    /// that moved since it landed on it, is refused by the press, said there as before. False for a branch the press would make, for
-    /// the tree's own branch (<see cref="Own"/>), and under a merge rule.
+    /// a chain's branch an earlier landing made, which the press moves on (D145 §3) instead of making it. The plain fact: one the
+    /// press may not move on (Daoris did not make it, it moved since, a tree has it checked out) stands too, its refusal said in
+    /// <see cref="Problem"/> (STANDSREFUSE1). False for a branch the press would make, for the tree's own branch (<see cref="Own"/>),
+    /// and under a merge rule.
     /// </summary>
     public bool Stands { get; init; }
 
