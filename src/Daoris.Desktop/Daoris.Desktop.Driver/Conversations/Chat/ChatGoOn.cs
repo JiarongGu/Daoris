@@ -337,6 +337,12 @@ internal sealed class ChatGoOn
         // A tree of its own is taken again: its repository's trees are held until the ledger holds this one once more (LEFT2),
         // so bringing the repository up to date does not rebase it under the conversation.
         var own = !SamePath(record.Tree!, known.Root!);
+
+        // LANDSYNC2b (D87's 2026-10-15 amendment point 7): a conversation going on in its own tree starts from the line where the line
+        // came to hold some of its commits, as a driven session's does (LANDSYNC2), and is told so after the words. Asked before this
+        // start's own hold below, since bringing a tree up to date holds the repository's trees alone. The person's checkout is never
+        // moved: a conversation in it asks nothing.
+        var inSync = own ? await StartInSyncAsync(record.Tree!, ct).ConfigureAwait(false) : null;
         using var starting = own ? TreeLock.TryStarting(_context.Home, known.Workspace, known.Repository) : null;
         if (own && starting is null) return Held(sessionId, HeldWords.Replaying(known.Repository));
 
@@ -359,10 +365,11 @@ internal sealed class ChatGoOn
         var words = Continuations.HandedAfterMove(record.Waiting, now);
         if (words.Count == 0) return await TakenBackAsync(record, ct).ConfigureAwait(false);
         // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words; the conversation's
-        // rules already read its own files folder (CONV4c).
+        // rules already read its own files folder (CONV4c). What its start did with its tree against the line after them (LANDSYNC2b).
         var ask = new ResumeAsk(
             kept.Conversation, words,
             OpeningNote(words, adapter.Name, selection.Version, record.HarnessVersion),
+            Continuations.AfterWords(inSync, after: null),
             files: word => ChatFiles.Kept(_context.Home, sessionId, word.Files));
 
         return await _runner.RunAsync(
@@ -569,6 +576,23 @@ internal sealed class ChatGoOn
 
     /// <summary>The line a conversation keeps where the words it was to go on with were all taken back first (SAIDBACK1d).</summary>
     public const string TakenBackBeforeGoingOn = "— the words waiting on it were taken back before it went on, so it stays as it ended.";
+
+    /// <summary>
+    /// A conversation's own tree brought up to date where the line holds some of its commits (LANDSYNC2b, as the driver's start asks
+    /// <see cref="SessionTrees.StartInSyncAsync"/>): what it is told, or null. Git or a disk that fails here is no reason to hold its
+    /// words: it goes on in the tree as it stands, told nothing.
+    /// </summary>
+    private async Task<string?> StartInSyncAsync(string tree, CancellationToken ct)
+    {
+        try
+        {
+            return (await new SessionTrees(_context.Home).StartInSyncAsync(tree, ct).ConfigureAwait(false)).Told;
+        }
+        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
 
     /// <summary>Whether two paths name one folder, whatever their separators or a trailing one.</summary>
     private static bool SamePath(string a, string b) =>

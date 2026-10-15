@@ -198,7 +198,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             resume = new ResumeAsk(
                 kept.Conversation, words,
                 Continuations.OpeningNoted(adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons, helper),
-                inSync is { Length: > 0 } told ? after.Length == 0 ? told : $"{told}\n\n{after}" : after,
+                Continuations.AfterWords(inSync, after),
                 files: word => ChatFiles.Kept(home, sessionId, word.Files));
 
             // The protocol door resumes on its wire, from the same spawn a start has; the native door is run on the
