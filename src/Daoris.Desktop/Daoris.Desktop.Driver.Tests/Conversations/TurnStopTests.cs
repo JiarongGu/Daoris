@@ -131,6 +131,50 @@ public sealed class TurnStopTests : IDisposable
         lock (session.Queues) return session.Queues.Count > 0 ? session.Queues[^1] : null;
     }
 
+    private static AttentionEvent[] Answers(Session session)
+    {
+        lock (session.Answered) return [.. session.Answered];
+    }
+
+    /// <summary>
+    /// NOTIFY1a: the turns the person's words started end, the second taking the words queued behind the first, and the
+    /// runner says the conversation answered them once, at the last turn's end, in the driver's own sentence.
+    /// </summary>
+    [Fact]
+    public async Task The_person_s_words_answered_are_said_once_at_the_last_turn_s_end()
+    {
+        await using var session = await Chat("claude-code");
+        Assert.Empty(Answers(session));
+
+        Assert.True(session.Runner.Say(session.Id, "first"));
+        Assert.True(session.Runner.Say(session.Id, "second"));
+        await Until(() => Turns(session) == 2 && LastQueue(session) is { Taking: false }, () => session.Seen());
+        await Until(() => Answers(session).Length > 0, () => session.Seen());
+
+        var answered = Assert.Single(Answers(session));
+        Assert.Equal(
+            (AttentionKind.Answered, session.Id, "engine — a conversation answered you"),
+            (answered.Kind, answered.Session, answered.Headline));
+    }
+
+    /// <summary>NOTIFY1a: a turn the person stopped ends on their own press, so only the next one, their words again, answered.</summary>
+    [Fact]
+    public async Task A_turn_the_person_stopped_is_not_said_to_have_answered()
+    {
+        await using var session = await Chat("acp-stub");
+
+        Assert.True(session.Runner.Say(session.Id, "hold"));
+        await Until(() => Said(session).Contains("agent: holding"), () => session.Seen());
+        await session.Runner.CancelTurnAsync(session.Id);
+        await Until(() => Turns(session) == 1 && !session.Runner.Taking(session.Id), () => session.Seen());
+
+        Assert.True(session.Runner.Say(session.Id, "again"));
+        await Until(() => Turns(session) == 2 && LastQueue(session) is { Taking: false }, () => session.Seen());
+        await Until(() => Answers(session).Length > 0, () => session.Seen());
+
+        Assert.Equal(session.Id, Assert.Single(Answers(session)).Session);
+    }
+
     /// <summary>The same stop on the protocol door: <c>session/cancel</c>, and the turn ends on the agent's own word.</summary>
     [Fact]
     public async Task Stopping_a_turn_on_the_protocol_door_cancels_it_and_keeps_the_session()
@@ -435,7 +479,7 @@ public sealed class TurnStopTests : IDisposable
 
     private sealed record Session(
         string Id, ChatRunner Runner, StandInService Service, SessionEvents Events, ServiceClient Client,
-        List<ChatQueue> Queues, Func<string> Seen, SessionUsage Usage) : IAsyncDisposable
+        List<ChatQueue> Queues, Func<string> Seen, SessionUsage Usage, List<AttentionEvent> Answered) : IAsyncDisposable
     {
         public async ValueTask DisposeAsync()
         {
@@ -467,6 +511,8 @@ public sealed class TurnStopTests : IDisposable
             harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")), usage: usage);
         var queues = new List<ChatQueue>();
         runner.QueueChanged += (_, queue) => { lock (queues) queues.Add(queue); };
+        var answered = new List<AttentionEvent>();
+        runner.Answered += item => { lock (answered) answered.Add(item); };
 
         var start = await runner.StartAsync("engine", adapter, config);
         var id = start.SessionId ?? throw new InvalidOperationException(start.Message);
@@ -474,7 +520,7 @@ public sealed class TurnStopTests : IDisposable
                          + $"record [{string.Join(" | ", Said(events, id))}]";
         await Until(() => service.State(id) == "working", Seen);
 
-        return new Session(id, runner, service, events, client, queues, Seen, usage);
+        return new Session(id, runner, service, events, client, queues, Seen, usage, answered);
     }
 
     private static string[] Said(Session session) => Said(session.Events, session.Id);
