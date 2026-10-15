@@ -53,8 +53,14 @@ public sealed partial class PressesTold(string home)
     /// <summary><c>trees hand &lt;session|branch&gt;</c>: a landed branch handed to a landing plugin.</summary>
     public const string HandOff = "HANDOFF";
 
+    /// <summary><c>trees land --entry &lt;id&gt;</c>: a line of work's one Accept (ACCEPTALL1e).</summary>
+    public const string LandEntry = "LAND_ENTRY";
+
+    /// <summary><c>trees land --ask &lt;id&gt;</c>: an ask's one Accept (ACCEPTALL1e).</summary>
+    public const string LandAsk = "LAND_ASK";
+
     /// <summary>Every route a terminal tells: the modules hold each to a route that declares what it changes.</summary>
-    public static readonly IReadOnlyList<string> Routes = [Land, DiscardTree, DiscardBranch, Sweep, TreesSync, HandOff];
+    public static readonly IReadOnlyList<string> Routes = [Land, DiscardTree, DiscardBranch, Sweep, TreesSync, HandOff, LandEntry, LandAsk];
 
     /// <summary>A note's ending, beside the requests' <c>.json</c>, so neither reads the other.</summary>
     public const string Suffix = ".told";

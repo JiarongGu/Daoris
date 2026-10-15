@@ -33,7 +33,7 @@ public sealed class EntriesRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("ENTRY_LANDING")]
     [DriverRoute("LAND_ENTRY")]
-    [Publishes("LAND_ENTRY", Lands)]
+    [Publishes("LAND_ENTRY", Lands, Subject = "entry")]
     private async Task<object?> EntryAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var key = PayloadHelper.GetRequiredValue<string>(request.Payload, "entry");
@@ -54,7 +54,7 @@ public sealed class EntriesRoutes(DriverContext context)
     /// </summary>
     [DriverRoute("ASK_LANDING")]
     [DriverRoute("LAND_ASK")]
-    [Publishes("LAND_ASK", Lands)]
+    [Publishes("LAND_ASK", Lands, Subject = "ask")]
     private async Task<object?> AskAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var ask = PayloadHelper.GetRequiredValue<string>(request.Payload, "ask");
@@ -96,16 +96,10 @@ public sealed class EntriesRoutes(DriverContext context)
     }
 
     /// <summary>The parts of <paramref name="entry"/> whose tree offers work to land, in the entry's order: what its Accept lands.</summary>
-    public static IReadOnlyList<EntryPart> PartsOf(SessionEntry entry, IReadOnlyList<SessionGrouping> rows)
-    {
-        var offering = rows.Where(row => row.Lands is not null).Select(row => row.Session).ToHashSet(StringComparer.Ordinal);
-        return [.. entry.Parts.Where(part => offering.Contains(part.Session))];
-    }
+    public static IReadOnlyList<EntryPart> PartsOf(SessionEntry entry, IReadOnlyList<SessionGrouping> rows) => EntryAccepts.PartsOf(entry, rows);
 
     /// <summary>An ask's own entries (point 4): one per repository, by its name, never its intake.</summary>
-    public static IReadOnlyList<SessionEntry> EntriesOf(string ask, IReadOnlyList<SessionEntry> entries) =>
-        [.. entries.Where(entry => entry.Origin == $"ask:{ask}" && entry.Repository != "intake")
-            .OrderBy(entry => entry.Repository, StringComparer.Ordinal)];
+    public static IReadOnlyList<SessionEntry> EntriesOf(string ask, IReadOnlyList<SessionEntry> entries) => EntryAccepts.EntriesOf(ask, entries);
 
     /// <summary>
     /// <c>ENTRY_LANDING</c>'s answer: the entry, its repository, the form and where its parts land, and each part: its own plan's
@@ -165,23 +159,25 @@ public sealed class EntriesRoutes(DriverContext context)
         ServiceClient service, Func<SessionEntry, bool> which, CancellationToken cancellationToken)
     {
         var config = DriverConfig.Load(_loop.ConfigPath);
-        // No tree is walked to find the entries (they are the records'); then only their parts' trees are.
-        var look = await SessionGroups.LookAsync(service, config, _context.Door(config), _loop.Look.Latest, _loop.Home, [], cancellationToken)
-            .ConfigureAwait(false);
-        look = look with { Waits = _loop.Look.Waits };
-        var entries = SessionGroups.ReadEntries(look).Where(which).ToList();
-        var ids = entries.SelectMany(entry => entry.Parts.Select(part => part.Session)).ToList();
-        var trees = new SessionTrees(_loop.Home);
-        look = await SessionGroups.JudgeAsync(look, trees.Holds, trees.WorkAsync, ids, cancellationToken).ConfigureAwait(false);
-        return (entries, SessionGroups.Read(look, ids));
+        return await EntryAccepts.LookAsync(
+            service, config, _context.Door(config), _loop.Look.Latest, _loop.Look.Waits, _loop.Home, which, cancellationToken).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// The library's entry Accept over this loop's surface (ACCEPTALL1e), which the terminal's <c>trees land --entry</c> builds over its
+    /// own: a rule's plugin says its lines on the console under its name, as a landing's do (D64 §4, D100); a landed part's note is
+    /// kept where its conversation is; a held gate is logged at the screen's door.
+    /// </summary>
+    private EntryAccepts Accepts(ServiceClient service) => new(
+        service, _loop.Home,
+        new SessionTrees(_loop.Home, new LandingPlugins(
+            _loop.Home, say: (plugin, line) => _loop.Output.Append($"plugin:{plugin}", line), log: _loop.Log, health: _loop.Health)),
+        _loop.Events, (session, line) => _loop.Output.Append(session, line),
+        async token => await LinesRoutes.InUseAsync(service, token), _loop.Log, ReviewDoors.Screen);
 
     private async Task<object> PlanAsync(ServiceClient service, SessionEntry entry, IReadOnlyList<SessionGrouping> rows, CancellationToken cancellationToken)
     {
-        var (trees, subject, parts) = await PartsAsync(service, entry, rows, cancellationToken).ConfigureAwait(false);
-        if (parts.Count == 0) return Plan(entry.Key, entry.Repository, new EntryPlan(LandingForm.Branch, "", []));
-        var plan = await trees.PlanEntryAsync(parts, subject, cancellationToken).ConfigureAwait(false);
-        var held = parts.Where(part => part.Gate?.Refusal is not null).ToDictionary(part => part.Session, part => part.Gate!.Refusal!.Message, StringComparer.Ordinal);
+        var (plan, held) = await Accepts(service).PlanAsync(entry, rows, cancellationToken).ConfigureAwait(false);
         return Plan(entry.Key, entry.Repository, plan, held);
     }
 
@@ -189,64 +185,10 @@ public sealed class EntriesRoutes(DriverContext context)
         ServiceClient service, SessionEntry entry, IReadOnlyList<SessionGrouping> rows, IReadOnlySet<string> leaveOut, CancellationToken cancellationToken) =>
         Landed(entry.Key, entry.Repository, await LandingAsync(service, entry, rows, leaveOut, cancellationToken).ConfigureAwait(false));
 
-    /// <summary>
-    /// The press on one entry: each part's gate counted as its own press counts it, the landing, then what each landed part's
-    /// conversation keeps of it and what a held gate writes to the machine log, as <c>LAND_SESSION_TREE</c> does for one.
-    /// </summary>
-    private async Task<EntryLanding> LandingAsync(
-        ServiceClient service, SessionEntry entry, IReadOnlyList<SessionGrouping> rows, IReadOnlySet<string> leaveOut, CancellationToken cancellationToken)
-    {
-        var (trees, subject, parts) = await PartsAsync(service, entry, rows, cancellationToken).ConfigureAwait(false);
-        if (parts.Count == 0) return new EntryLanding(false, "Nothing was landed: no part of this entry has work to land on this machine.", null, []);
-        var presses = new OpinionPresses(_loop.Home, service);
-        var pressed = new List<EntryLandingPart>(parts.Count);
-        foreach (var part in parts)
-        {
-            var quest = entry.Parts.First(each => each.Session == part.Session).Quest;
-            pressed.Add(part with { Gate = await presses.PressedAsync(part.Session, part.Gate!, null, part.Tree, quest, cancellationToken).ConfigureAwait(false) });
-        }
-
-        var landed = await trees.LandEntryAsync(pressed, subject, leaveOut, cancellationToken, async token => await LinesRoutes.InUseAsync(service, token))
-            .ConfigureAwait(false);
-        foreach (var part in landed.Parts)
-        {
-            if (part.Landing is not { } its) continue;
-            if (its.Landed) _loop.Events.Keep(part.Session, LandingRules.Note(its), line => _loop.Output.Append(part.Session, line));
-            var gate = pressed.First(each => each.Session == part.Session);
-            if (_loop.Log is { } log && LandingGateWords.Held(part.Session, trees.Owner(gate.Tree), gate.Gate!, its, ReviewDoors.Screen) is { } held)
-            {
-                SessionLog.WriteLanding(log, held);
-            }
-        }
-
-        return landed;
-    }
-
-    /// <summary>
-    /// The entry's parts with work, each with its tree here and its gate, and the subject the entry is named for: its first part's,
-    /// the chain's first quest walked up as a chain's is (WSR5), so every part lands on the branch named for it.
-    /// </summary>
-    private async Task<(SessionTrees Trees, LandingSubject Subject, IReadOnlyList<EntryLandingPart> Parts)> PartsAsync(
-        ServiceClient service, SessionEntry entry, IReadOnlyList<SessionGrouping> rows, CancellationToken cancellationToken)
-    {
-        // A rule's plugin says its lines on the console under its name, as a landing's do (D64 §4, D100).
-        var trees = new SessionTrees(_loop.Home, new LandingPlugins(
-            _loop.Home, say: (plugin, line) => _loop.Output.Append($"plugin:{plugin}", line), log: _loop.Log, health: _loop.Health));
-        var parts = new List<EntryLandingPart>();
-        foreach (var part in PartsOf(entry, rows))
-        {
-            var (tree, _) = await service.SessionGroundAsync(part.Session, cancellationToken).ConfigureAwait(false);
-            if (string.IsNullOrWhiteSpace(tree)) continue;
-            var gate = await trees.GateAsync(tree, part.Quest, new ServiceReviewWorld(service), part.Session, cancellationToken).ConfigureAwait(false);
-            parts.Add(new EntryLandingPart(part.Session, tree) { Gate = gate });
-        }
-
-        var lead = entry.Parts.Count > 0 ? entry.Parts[0] : null;
-        var subject = lead is null ? new LandingSubject(entry.Key, null, null)
-            : await LandingRules.SubjectAsync(lead.Session, lead.Quest, quest => service.FindQuestAsync(quest, cancellationToken),
-                _loop.Events.Openings([lead.Session]).GetValueOrDefault(lead.Session)).ConfigureAwait(false);
-        return (trees, subject, parts);
-    }
+    /// <summary>The press on one entry, which the terminal's lands too (<see cref="EntryAccepts.LandAsync"/>, ACCEPTALL1e).</summary>
+    private Task<EntryLanding> LandingAsync(
+        ServiceClient service, SessionEntry entry, IReadOnlyList<SessionGrouping> rows, IReadOnlySet<string> leaveOut, CancellationToken cancellationToken) =>
+        Accepts(service).LandAsync(entry, rows, leaveOut, cancellationToken);
 
     /// <summary>The parts the person chose to leave out (point 3), as the page sends them; none where it sends none.</summary>
     private static IReadOnlySet<string> LeaveOut(IpcRequest request) =>

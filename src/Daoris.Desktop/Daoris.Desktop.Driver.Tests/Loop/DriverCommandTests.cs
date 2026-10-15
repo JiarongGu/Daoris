@@ -182,6 +182,32 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
+    /// ACCEPTALL1e (D50's twin rule): an entry's one Accept and an ask's are a terminal's verb, the page's <c>LAND_ENTRY</c> and
+    /// <c>LAND_ASK</c> over the library's one code (<c>EntryAccepts</c>, which <c>DriverModuleEntriesTests</c> and the entry landings
+    /// hold over the route). The usage says so, the words are read by <c>TreesCommand.ReadEntryLand</c> before the service is asked,
+    /// and the press tells the open windows once, as each other press of the family does (STATEHUB1e).
+    /// </summary>
+    [Fact]
+    public void The_terminal_lands_an_entry_or_an_ask_by_the_drivers_one_code_and_tells_the_windows()
+    {
+        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
+
+        Assert.Contains("| land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]", DriverCommand.Usage);
+        Assert.Contains("| land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]", console);
+        Assert.Contains("case [\"land\", \"--entry\" or \"--ask\", ..]:", console);
+        // Before the session's own `land`, which would take `--entry` for a session.
+        Assert.True(console.IndexOf("case [\"land\", \"--entry\"", StringComparison.Ordinal) < console.IndexOf("case [\"land\", var session", StringComparison.Ordinal));
+        Assert.Contains("TreesCommand.ReadEntryLand(args, out var problem)", console);
+        Assert.Contains("accepts.LandAsync(entry, rows, ask.LeaveOut, default)", console);
+        Assert.Contains("Told(home, ask.IsAsk ? PressesTold.LandAsk : PressesTold.LandEntry);", console);
+        // The terminal's door is the log's, and its press carries the route's own marks: no copy of the page's code in the host.
+        Assert.Contains("ReviewDoors.Terminal", console);
+        Assert.DoesNotContain("LandEntryAsync", console);
+        Assert.Contains(PressesTold.LandEntry, PressesTold.Routes);
+        Assert.Contains(PressesTold.LandAsk, PressesTold.Routes);
+    }
+
+    /// <summary>
     /// LAND3c: the terminal's `trees remove &lt;session|branch&gt;` is the driver's one discard, the call the screen's
     /// <c>DISCARD_SESSION_BRANCH</c> ends in, so it keeps a branch a live session's tree holds as the screen does. The host
     /// composes none of its pieces itself: no layout read, no removal by branch. <c>SessionBranchDiscardTests</c> holds the act.

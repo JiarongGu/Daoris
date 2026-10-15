@@ -83,7 +83,10 @@ public enum StateScopes
 /// What a route declares a successful answer changed (D169 point 2): its scopes, and the payload field naming the session the
 /// change was about, where it is one session's.
 /// </summary>
-public sealed record StateChange(StateScopes Scopes, string? Session = null);
+/// <param name="Scopes">What a successful answer changed.</param>
+/// <param name="Session">The payload field naming the session the change was about.</param>
+/// <param name="Subject">The payload field naming the entry or ask the press is for, where it is no one session's (ACCEPTALL1e).</param>
+public sealed record StateChange(StateScopes Scopes, string? Session = null, string? Subject = null);
 
 /// <summary>
 /// <c>STATE_CHANGED</c> on the wire (D169 point 3): what moved, never what it is now; no words, no answer, no machine path.
@@ -97,9 +100,13 @@ public sealed record StateChanged(
 /// <summary>One press under way on the wire (STATEHUB1c, D169 point 7): its route, and the session its payload named.</summary>
 /// <param name="Route">The route pressed, as the page names it when it sends.</param>
 /// <param name="Session">The session the route's declaration names in the payload; absent where it names none.</param>
+/// <param name="Subject">The entry or ask the route's declaration names in the payload (ACCEPTALL1e); absent where it names none.</param>
+/// <param name="Step">The step its handler says it has reached (PRESSSTEP1, <see cref="PressSteps"/>); absent until it says one.</param>
 public sealed record PressUnderWay(
     string Route,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Session);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Session,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Subject = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Step = null);
 
 /// <summary>
 /// <c>UNDER_WAY</c> on the wire (STATEHUB1c, D169 point 7): every declared press dispatched and not yet answered, told whole at
@@ -174,7 +181,13 @@ public static class StatePublisher
             }
 
             var press = new object();
-            bus.Emit(Module, UnderWayType, underWay.Begin(press, new PressUnderWay(request.Type, SessionOf(change, request))));
+            bus.Emit(Module, UnderWayType, underWay.Begin(press, new PressUnderWay(
+                request.Type, FieldOf(change.Session, request), FieldOf(change.Subject, request))));
+            // The handler of this press says its step through PressSteps, which finds this press by the flow of the call.
+            using var steps = PressSteps.Within(step =>
+            {
+                if (underWay.Reach(press, step) is { } told) bus.Emit(Module, UnderWayType, told);
+            });
             try
             {
                 // No ConfigureAwait: the kit's pipeline keeps the caller's context, as RefusalLog's says.
@@ -241,8 +254,11 @@ public static class StatePublisher
     public static StateChanged Event(StateChange change, IpcRequest request) =>
         new(Names(change.Scopes), SessionOf(change, request) is { } session ? [session] : null);
 
-    private static string? SessionOf(StateChange change, IpcRequest request) =>
-        change.Session is { } field
+    private static string? SessionOf(StateChange change, IpcRequest request) => FieldOf(change.Session, request);
+
+    /// <summary>The string the request's payload holds in <paramref name="field"/>, where a declaration names the field and it is there.</summary>
+    private static string? FieldOf(string? field, IpcRequest request) =>
+        field is not null
         && request.Payload is { ValueKind: JsonValueKind.Object } payload
         && payload.TryGetProperty(field, out var named)
         && named.ValueKind == JsonValueKind.String
@@ -257,8 +273,8 @@ public static class StatePublisher
 /// (<see cref="DriverLoop.UnderWay"/>), which the driver's <c>UNDER_WAY</c> route reads for a window opened mid-press (STATEHUB1c2).
 /// </summary>
 /// <remarks>
-/// No step: each press runs as one call, and none reports where it has reached (D169's STATEHUB1c2 note). A step a route comes to
-/// know is a field added to <see cref="PressUnderWay"/>, never a change to one there (D169 point 3).
+/// A step is what the press's own handler says it has reached (<see cref="PressSteps"/>, PRESSSTEP1), a field beside the route and
+/// the session, never a change to them (D169 point 3).
 /// </remarks>
 public sealed class PressesUnderWay
 {
@@ -272,6 +288,21 @@ public sealed class PressesUnderWay
         lock (_gate)
         {
             _underWay.Add((press, told));
+            return Telling(++_seq);
+        }
+    }
+
+    /// <summary>
+    /// <paramref name="press"/> has reached <paramref name="step"/> (PRESSSTEP1): the telling it makes, or null where it is not under
+    /// way or already says that step, so the same step told again numbers nothing.
+    /// </summary>
+    public UnderWay? Reach(object press, string step)
+    {
+        lock (_gate)
+        {
+            var at = _underWay.FindIndex(each => ReferenceEquals(each.Press, press));
+            if (at < 0 || _underWay[at].Told.Step == step) return null;
+            _underWay[at] = (press, _underWay[at].Told with { Step = step });
             return Telling(++_seq);
         }
     }
@@ -296,4 +327,40 @@ public sealed class PressesUnderWay
     }
 
     private UnderWay Telling(long seq) => new(seq, [.. _underWay.Select(each => each.Told)]);
+}
+
+/// <summary>
+/// Where a declared press's handler says which step it has reached (PRESSSTEP1, D169 point 3), for the press it runs in: the
+/// publisher tells every window the press whole with the step beside its route and session. Found by the flow of the call, so a
+/// handler holds no bus and no list; said outside a declared press (a read, a terminal's verb, a test of the handler alone) it is
+/// said to nobody. The steps are the driver's words on the wire, added to and never renamed (the page words them).
+/// </summary>
+public static class PressSteps
+{
+    /// <summary>A landing's gate: the second opinion, then the review's.</summary>
+    public const string Gate = "gate";
+
+    /// <summary>A landing's move itself: its merge or replay, and the landing plugin's hand-off the rule names.</summary>
+    public const string Landing = "landing";
+
+    /// <summary>A landed branch handed to its plugin.</summary>
+    public const string HandOff = "handOff";
+
+    private static readonly AsyncLocal<Action<string>?> Current = new();
+
+    /// <summary>The press this call runs in has reached <paramref name="step"/>; nothing where it runs in none.</summary>
+    public static void Reach(string step) => Current.Value?.Invoke(step);
+
+    /// <summary>What the publisher holds for the press it dispatches: its handler's steps reach <paramref name="reach"/> until disposed.</summary>
+    internal static IDisposable Within(Action<string> reach)
+    {
+        var before = Current.Value;
+        Current.Value = reach;
+        return new Restore(before);
+    }
+
+    private sealed class Restore(Action<string>? before) : IDisposable
+    {
+        public void Dispose() => Current.Value = before;
+    }
 }

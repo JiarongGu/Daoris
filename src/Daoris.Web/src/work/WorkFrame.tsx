@@ -12,7 +12,7 @@ import {
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useSessionDiff,
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting, useUnderWay,
-  useEntryLanding, useLandEntry,
+  useEntryLanding, useLandEntry, useUnderWaySubject,
 } from '../bridge/shell';
 import { type Sent, useSending, useSettled } from './sending';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
@@ -1417,6 +1417,8 @@ export function WorkFrame({
   const [entryAsking, setEntryAsking] = useState<string | null>(null);
   const entryPlan = useEntryLanding(entryAccepts, entryAccepts !== null && entryAsking === entryAccepts);
   const landEntry = useLandEntry();
+  // Under way in any window (ACCEPTALL1e): this one's press from its send, another's from the driver's telling.
+  const entryLandsNow = useUnderWaySubject('LAND_ENTRY', entryAccepts);
   const entryAccept: ComponentProps<typeof EntryAccept> | undefined = entryAccepts && attendedEntry ? {
     scope: 'entry',
     offered: entryOffered,
@@ -1424,7 +1426,7 @@ export function WorkFrame({
     onOpen: (open) => setEntryAsking(open ? entryAccepts : null),
     plans: entryPlan.data ? [entryPlan.data] : null,
     reading: entryPlan.isFetching && !entryPlan.data,
-    busy: landEntry.isPending,
+    busy: entryLandsNow,
     numberOf: (session) => attendedEntry.parts.findIndex((part) => part.session === session) + 1 || null,
     // Told back to its ask: every part landed, or the driver's sentence of what landed and what was refused, said inside it.
     onLand: (leaveOut, answered) => landEntry.mutate({ entry: entryAccepts, parts: entryOffered, leaveOut }, {

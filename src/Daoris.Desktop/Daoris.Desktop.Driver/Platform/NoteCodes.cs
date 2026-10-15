@@ -603,6 +603,9 @@ public static class NoteCodes
     // the agent's own names for them, never a path.
     public static readonly NoteCode LandingPersonAccepted = new("landing.person-accepted", []);
     public static readonly NoteCode LandingPersonHanded = new("landing.person-handed", []);
+    // A part the person left out of its entry's Accept (ACCEPTALL1c, D167's amendment point 3): the branch its line of work landed on,
+    // or the line it merged into, a fact. Its review reads it back (LandingRules.LeftOutOf) and leads with Discard.
+    public static readonly NoteCode LandingLeftOut = new("landing.left-out", ["branch"]);
     public static readonly NoteCode ChatOptionSet = new("chat.option-set", ["option", "chosen"]);
     public static readonly NoteCode ChatToldWhere = new("chat.told-where", []);
 
