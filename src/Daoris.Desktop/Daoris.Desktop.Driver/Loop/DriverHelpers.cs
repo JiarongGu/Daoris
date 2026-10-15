@@ -149,10 +149,12 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
 
     /// <summary>
     /// An ask held: <c>waiting</c>, with why it waits where it waits for something but the person's yes. Written when it changes;
-    /// whether it was written.
+    /// whether it was written. An <c>approved</c> ask is left as it is (HELPERYES1, D163 point 3): the person's yes outlives a full
+    /// cap or an agent not ready, and the next look starts it once a slot frees, without a second yes.
     /// </summary>
     private static bool Wait(HelperFiles files, HelperAsk ask, HelperState? state, string? code)
     {
+        if (state is { State: HelperStates.Approved }) return false;
         if (state is { State: HelperStates.Waiting } kept && kept.Code == code) return false;
         files.WriteState(new HelperState(ask.Id, HelperStates.Waiting, code, null, DateTimeOffset.UtcNow));
         return true;
