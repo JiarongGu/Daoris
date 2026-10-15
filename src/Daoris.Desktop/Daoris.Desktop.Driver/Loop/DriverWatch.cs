@@ -78,7 +78,7 @@ public sealed class DriverWatch(
     public Func<bool>? Draining { get; init; }
 
     /// <summary>
-    /// The look's own tidy of empty session branches (AUTOTIDY1, D88's note), run beside the looks once each pace, as the start's
+    /// The look's own tidy of session branches (AUTOTIDY1, AUTOTIDY2a, D88's notes), run beside the looks once each pace, as the start's
     /// line-following runs beside them; what it says joins the report of the look that finds it done. Null keeps the watch's
     /// own, at <see cref="BranchTidying.DefaultPace"/>.
     /// </summary>
@@ -148,7 +148,7 @@ public sealed class DriverWatch(
         Task<IReadOnlyList<string>?>? following = null;
         var followed = false;
 
-        // The empty session branches tidied beside the looks (AUTOTIDY1): a pass once each pace, its lines joining the report
+        // The session branches tidied beside the looks (AUTOTIDY1, AUTOTIDY2a): a pass once each pace, its lines joining the report
         // of the look that finds it done, as the following's do.
         var tidy = Tidying ?? new BranchTidying(home);
         Task<IReadOnlyList<string>>? tidying = null;
@@ -217,7 +217,7 @@ public sealed class DriverWatch(
                         // A pass that failed past its own catches is said, and so observed, rather than left to the finalizer.
                         IReadOnlyList<string> lines = tidied.IsCompletedSuccessfully ? tidied.Result
                             : tidied.Exception?.InnerException is { } failure
-                                ? [$"tidy  the empty session branches were not looked at this time, and are looked at again later: {failure.Message}"]
+                                ? [$"tidy  the session branches were not looked at this time, and are looked at again later: {failure.Message}"]
                                 : [];
                         if (lines.Count > 0) report = report with { Events = [.. report.Events, .. lines] };
                     }
@@ -300,7 +300,7 @@ public sealed class DriverWatch(
             catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
                                               or IOException or UnauthorizedAccessException)
             {
-                return [$"tidy  the empty session branches were not looked at this time, and are looked at again later: {error.Message}"];
+                return [$"tidy  the session branches were not looked at this time, and are looked at again later: {error.Message}"];
             }
         }, CancellationToken.None);
     }

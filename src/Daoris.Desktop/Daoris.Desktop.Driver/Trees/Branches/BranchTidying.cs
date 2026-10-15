@@ -3,13 +3,14 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The look's own tidy of empty session branches (AUTOTIDY1, D88's note): a session branch that holds nothing beyond the line,
-/// with nothing in its tree, goes without a press, and the look says so in its report and the machine log. Held by the watch
-/// across its looks, since each look's driver is built fresh: what it already said, and when it last looked.
+/// The look's own tidy of session branches (AUTOTIDY1, AUTOTIDY2a, D88's notes): a session branch the press would clear goes
+/// without a press, its tree only where it holds no uncommitted or untracked path, and the look says so in its report and the
+/// machine log. Held by the watch across its looks, since each look's driver is built fresh: what it already said, and when it
+/// last looked.
 /// </summary>
 /// <remarks>
 /// <para><b>The press's path, not a second one.</b> Each repository is tidied by <see cref="SessionTrees.TidyEmptyAsync"/>,
-/// which runs the clean-up's own path over the few branches the line holds, taking only the empty kind
+/// which judges every session branch as the press's list does and runs the clean-up's own path over those the look takes
 /// (<see cref="SessionTrees.GoesByItself"/>). Every guard is the press's: judged again right before it goes, deleted only
 /// while it is the commit judged, never forced. The look adds its last guards, and never deletes a tree's folder: it moves it
 /// aside, and a later look deletes it only once it has waited <see cref="SetAsideFor"/> with nothing written in it since.</para>

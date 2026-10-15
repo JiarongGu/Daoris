@@ -388,14 +388,15 @@ public sealed record SweepItem(
 
     /// <summary>
     /// How many ignored paths its tree holds that the checkout holds too (AUTOTIDY1): a build's output, which goes with the tree
-    /// at the press (SQUASHTIDY1c) and keeps the tree from the look's own tidy. Zero for a branch with no tree here.
+    /// at the press (SQUASHTIDY1c), and with its folder moved aside at the look's own tidy (AUTOTIDY2a). Zero for a branch with no
+    /// tree here.
     /// </summary>
     public int IgnoredShared { get; init; }
 
     /// <summary>
-    /// Empty: it made commits, and the line holds every one (AUTOTIDY1). Its tip is not the commit it started at, by the record
-    /// of where it grew from (WSR6); false where the record has no entry for it. A branch that never moved is a conversation's
-    /// place, which words to it go on in (D137), so the look's own tidy leaves its tree for the press.
+    /// It made commits since it grew (AUTOTIDY1; on every kind once its tip is read, AUTOTIDY2a): its tip is not the commit it
+    /// started at, by the record of where it grew from (WSR6); false where the record has no entry for it. A branch that never
+    /// moved is a conversation's place, which words to it go on in (D137), so the look's own tidy leaves its tree for the press.
     /// </summary>
     public bool Worked { get; init; }
 

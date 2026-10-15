@@ -5,10 +5,13 @@ using static Daoris.Driver.TreeWorktrees;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the look's own tidy did in one repository (AUTOTIDY1): each empty session branch the press's path judged, removed or
-/// kept, or why none was judged this look.
+/// What the look's own tidy did in one repository (AUTOTIDY1, AUTOTIDY2a): each session branch judged, removed or kept, or why
+/// none was judged this look.
 /// </summary>
-/// <param name="Results">What the clean-up's press did with each candidate, in its own words (<see cref="SessionTrees.SweepAsync"/>).</param>
+/// <param name="Results">
+/// Each session branch judged: those the look would not take, kept as judged; then what the clean-up's press path did with each
+/// it would, in its own words (<see cref="SessionTrees.SweepAsync"/>).
+/// </param>
 /// <param name="Held">Why nothing was judged in the repository this look (<see cref="TidyKept"/>); null where the press's path ran.</param>
 /// <param name="Detail">git's or the service's own words beside <paramref name="Held"/>.</param>
 public sealed record TidyPass(IReadOnlyList<SweepResult> Results, string? Held = null, string? Detail = null)
@@ -24,8 +27,9 @@ public sealed record TidyPass(IReadOnlyList<SweepResult> Results, string? Held =
 }
 
 /// <summary>
-/// Why the look's own tidy left an empty session branch, or a repository's, where it would have gone (AUTOTIDY1): the
-/// machine log's <c>branch.kept</c> codes. What it holds (dirty, in use, a build's output) is no code: it is the press's.
+/// Why the look's own tidy left a session branch, or a repository's, where it would have gone (AUTOTIDY1): the machine log's
+/// <c>branch.kept</c> codes. What it holds (uncommitted work, commits no branch of the person's holds, in use) is no code: it is
+/// the press's.
 /// </summary>
 public static class TidyKept
 {
@@ -137,7 +141,7 @@ internal sealed class AutoTidies(TreeContext context, TreeFollows follows, Branc
         // The line here, read with no fetch: the local branch, else origin's copy as this checkout last saw it. One look for the
         // pass (UIFREEZE1): the judgement before the hold and the press's path inside it ask git the checkout's line once.
         using var look = context.OneLook();
-        var line =(await context.LineAsync(root, repository, space, ct).ConfigureAwait(false)).Branch;
+        var line = (await context.LineAsync(root, repository, space, ct).ConfigureAwait(false)).Branch;
         var against = line is null ? null : await ComparableAsync(root, line, ct).ConfigureAwait(false);
         if (against is null) return Pass([]);
         // Every session branch (AUTOTIDY2a): the press takes landed, content-held and carried ones the line need not hold, so the

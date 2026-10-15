@@ -284,7 +284,8 @@ internal sealed class ContentHolds(TreeContext context)
 
     /// <summary>
     /// What a tree holds that no commit does (SQUASHTIDY1c): uncommitted paths, and ignored paths only it holds; and the ignored
-    /// paths the checkout holds too, which a press lets go with the tree and the look's own tidy does not (AUTOTIDY1).
+    /// paths the checkout holds too, which a press lets go with the tree. The look's own tidy moves the folder aside whole, so for
+    /// it no ignored path keeps the tree (AUTOTIDY2a).
     /// </summary>
     /// <remarks>
     /// <paramref name="Written"/> and <paramref name="TooLarge"/> are a shared ignored folder's own part (TREEKEEP1): files the
