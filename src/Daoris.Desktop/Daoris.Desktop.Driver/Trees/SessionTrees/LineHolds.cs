@@ -79,7 +79,16 @@ internal static class LineHolds
     /// lines where it would, else null. A git too old to try, or one that cannot say, says nothing: the press still finds it.
     /// </summary>
     /// <remarks>Objects only: it writes no ref, no tree on disk and no index, so the plan stays a look.</remarks>
-    internal static async Task<string?> TrialAsync(string root, string onto, IReadOnlyList<LandingCommit> kept, CancellationToken ct)
+    internal static async Task<string?> TrialAsync(string root, string onto, IReadOnlyList<LandingCommit> kept, CancellationToken ct) =>
+        (await TrialTreeAsync(root, onto, kept, ct).ConfigureAwait(false)).Conflicts;
+
+    /// <summary>
+    /// <see cref="TrialAsync"/>'s trial, with the tree it ends at where it replays cleanly: what an entry's Accept compares to read a
+    /// part that adds nothing after a later part's (ACCEPTALL1, D167's amendment point 3). <paramref name="onto"/> may be a commit
+    /// or a tree. Both null where git cannot say.
+    /// </summary>
+    internal static async Task<(string? Tree, string? Conflicts)> TrialTreeAsync(
+        string root, string onto, IReadOnlyList<LandingCommit> kept, CancellationToken ct)
     {
         var current = onto;
         foreach (var commit in kept)
@@ -91,14 +100,17 @@ internal static class LineHolds
             if (code == 1)
             {
                 var conflicts = lines.Where(each => each.StartsWith("CONFLICT", StringComparison.Ordinal)).Distinct(StringComparer.Ordinal).ToList();
-                return conflicts.Count == 0 ? null : Joined(conflicts);
+                return (null, conflicts.Count == 0 ? null : Joined(conflicts));
             }
 
-            if (code != 0 || lines.Length == 0 || lines[0].Length == 0) return null;
+            if (code != 0 || lines.Length == 0 || lines[0].Length == 0) return (null, null);
             current = lines[0];
         }
 
-        return null;
+        // The tree the last step wrote, or the start's own where nothing was replayed, so two trials compare as trees.
+        if (kept.Count > 0) return (current, null);
+        var (treeCode, tree, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{onto}^{{tree}}"], ct).ConfigureAwait(false);
+        return (treeCode == 0 ? tree.Trim() : null, null);
     }
 
     /// <summary>Up to three of git's <c>CONFLICT</c> lines, as <see cref="BranchReplays.RebaseInAsync"/> says them.</summary>

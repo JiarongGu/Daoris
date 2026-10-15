@@ -1,0 +1,150 @@
+using Daoris.Driver;
+
+namespace Daoris.Desktop.Driver.Tests;
+
+/// <summary>
+/// ACCEPTALL1 (D167's 2026-10-15 amendment points 1 to 3): an entry's Accept lands its parts' work on one branch, in ledger order.
+/// On the install one ask's entry held parts that ran alongside, each in a tree of its own, and each offered its own Accept, so the
+/// person pressed once per part and the earlier attempt at the same fix became a branch of its own. Now the entry's one press lands
+/// the first part on the branch named for its first quest and replays each later part's commits onto it; a part a later part redid
+/// is named in the plan and left out only where the person chose; a conflict with the entry's earlier work is refused naming both
+/// parts. Real git in a scratch repository, so this is the suite's Process half; nothing reaches a network.
+/// </summary>
+[Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
+public sealed class EntryLandingTests : LandedFixture
+{
+    private const string Branch = "feature/0fda18-fix-the-gap";
+
+    private static readonly LandingSubject Subject = new("s1a2b3c4", "0fda18", "Fix the gap");
+
+    private static readonly IReadOnlySet<string> Kept = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>The row's proof: two parts that ran alongside, in trees of their own from the line, land on one branch in order.</summary>
+    [Fact]
+    public async Task Two_alongside_parts_land_on_one_branch_in_ledger_order()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        var second = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "a.txt", "a\n", "the first part");
+        await CommitAsync(second.Path, "b.txt", "b\n", "the second part");
+        EntryLandingPart[] parts = [new("s1a2b3c4", first.Path), new("s5e6f7a8", second.Path)];
+
+        var plan = await trees.PlanEntryAsync(parts, Subject);
+
+        Assert.Equal((LandingForm.Branch, Branch), (plan.Form, plan.Target));
+        Assert.Equal([Branch, Branch], plan.Parts.Select(part => part.Plan!.Target));
+        Assert.All(plan.Parts, part => Assert.Null(part.Superseded));
+
+        var landed = await trees.LandEntryAsync(parts, Subject, Kept);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal(Branch, landed.Branch);
+        Assert.Equal([EntryPartOutcome.Landed, EntryPartOutcome.Landed], landed.Parts.Select(part => part.Outcome));
+        Assert.StartsWith($"Landed 2 part(s) on `{Branch}`, in the order they ran.", landed.Message);
+        Assert.Equal("the second part\nthe first part", (await GitAsync(root, "log", "--format=%s", $"main..{Branch}")).Trim());
+        Assert.Contains("since its work ran alongside its entry's earlier parts", landed.Parts[1].Landing!.Message);
+        // The second part's tree follows to what landed; the record stands at the branch's tip, moved on by the second part.
+        var tip = (await GitAsync(root, "rev-parse", Branch)).Trim();
+        Assert.Equal(tip, (await GitAsync(second.Path, "rev-parse", "HEAD")).Trim());
+        Assert.Equal(tip, trees.Recorded.Of("engine", Branch)!.Tip);
+    }
+
+    /// <summary>The install's case: an earlier part's attempt at a fix a later part redid conflicts after it, and the plan says so.</summary>
+    [Fact]
+    public async Task A_superseded_part_is_named_and_left_out_only_by_the_persons_choice()
+    {
+        var root = await RepositoryAsync("engine");
+        await CommitAsync(root, "app.txt", "one\n", "the app");
+        var trees = new SessionTrees(Home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        var second = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "app.txt", "the first attempt\n", "an attempt at the fix");
+        await CommitAsync(second.Path, "app.txt", "the fix\n", "the fix");
+        EntryLandingPart[] parts = [new("s1a2b3c4", first.Path), new("s5e6f7a8", second.Path)];
+
+        var plan = await trees.PlanEntryAsync(parts, Subject);
+
+        var superseded = plan.Parts[0].Superseded!;
+        Assert.Equal(("s5e6f7a8", true), (superseded.By, superseded.Conflicts));
+        Assert.Contains("app.txt", superseded.Says);
+        Assert.Null(plan.Parts[1].Superseded);
+
+        var landed = await trees.LandEntryAsync(parts, Subject, new HashSet<string>(["s1a2b3c4"], StringComparer.Ordinal));
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal([EntryPartOutcome.LeftOut, EntryPartOutcome.Landed], landed.Parts.Select(part => part.Outcome));
+        Assert.Equal("the fix", (await GitAsync(root, "log", "--format=%s", $"main..{Branch}")).Trim());
+        Assert.True(Directory.Exists(first.Path));
+    }
+
+    /// <summary>Kept, the superseded part lands first and the later part's replay conflicts: refused naming both, nothing more made.</summary>
+    [Fact]
+    public async Task A_kept_superseded_part_lands_and_the_later_parts_conflict_is_refused_naming_both()
+    {
+        var root = await RepositoryAsync("engine");
+        await CommitAsync(root, "app.txt", "one\n", "the app");
+        var trees = new SessionTrees(Home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        var second = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "app.txt", "the first attempt\n", "an attempt at the fix");
+        await CommitAsync(second.Path, "app.txt", "the fix\n", "the fix");
+        var secondTip = (await GitAsync(second.Path, "rev-parse", "HEAD")).Trim();
+        EntryLandingPart[] parts = [new("s1a2b3c4", first.Path), new("s5e6f7a8", second.Path)];
+
+        var landed = await trees.LandEntryAsync(parts, Subject, Kept);
+
+        Assert.False(landed.Landed, landed.Message);
+        Assert.Equal([EntryPartOutcome.Landed, EntryPartOutcome.Refused], landed.Parts.Select(part => part.Outcome));
+        var refused = landed.Parts[1].Landing!;
+        Assert.StartsWith("`s5e6f7a8`'s work conflicts with what `s1a2b3c4` landed before it. Nothing was landed:", refused.Message);
+        Assert.Contains("CONFLICT (content): Merge conflict in app.txt", refused.Conflict!.Says);
+        Assert.StartsWith($"Rebase your work onto `{Branch}`", refused.Conflict.Words);
+        Assert.Equal("an attempt at the fix", (await GitAsync(root, "log", "--format=%s", $"main..{Branch}")).Trim());
+        Assert.Equal(secondTip, (await GitAsync(second.Path, "rev-parse", "HEAD")).Trim());
+    }
+
+    /// <summary>A part whose work a later part already holds adds nothing after it: named superseded, with its files.</summary>
+    [Fact]
+    public async Task A_part_that_adds_nothing_after_a_later_part_is_named_with_its_files()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        var second = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "fix.txt", "the fix\n", "the fix, first");
+        await CommitAsync(second.Path, "fix.txt", "the fix\n", "the fix, again");
+        await CommitAsync(second.Path, "notes.txt", "notes\n", "the notes");
+        EntryLandingPart[] parts = [new("s1a2b3c4", first.Path), new("s5e6f7a8", second.Path)];
+
+        var plan = await trees.PlanEntryAsync(parts, Subject);
+
+        Assert.Equal(new PartSuperseded("s5e6f7a8", "fix.txt", Conflicts: false), plan.Parts[0].Superseded);
+    }
+
+    /// <summary>After the entry's branch was squash-merged, its next work makes a new branch, still named for its first quest.</summary>
+    [Fact]
+    public async Task After_the_entrys_branch_merged_its_next_work_lands_on_a_new_branch()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "a.txt", "a\n", "the first part");
+        var once = await trees.LandEntryAsync([new("s1a2b3c4", first.Path)], Subject, Kept);
+        Assert.True(once.Landed, once.Message);
+        await SquashAsync(root, Branch);
+        var second = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(second.Path, "b.txt", "b\n", "the second part");
+        EntryLandingPart[] parts = [new("s5e6f7a8", second.Path)];
+
+        var plan = await trees.PlanEntryAsync(parts, Subject);
+        var landed = await trees.LandEntryAsync(parts, Subject, Kept);
+
+        Assert.Equal($"{Branch}-2", plan.Target);
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal($"{Branch}-2", landed.Branch);
+        Assert.Equal("the second part", (await GitAsync(root, "log", "--format=%s", $"main..{Branch}-2")).Trim());
+    }
+}
