@@ -83,9 +83,12 @@ public sealed class ConversationRoutes(DriverContext context)
     // never refused. What never goes on is `sent: false` with its code. 🔴 A session running here that takes no input at
     // all is REFUSED instead, in the driver's words (INT4h): false would tell a stale page it ended when it is running.
     // Words kept on a park's or an ended record move it among the sessions (STATEHUB1d); a live chat's words reach its door
-    // alone, and the publisher reads no answer to tell them apart (D169 point 5), so every one asks the sessions again.
+    // alone, and the publisher reads no answer to tell them apart (D169 point 5), so every one asks the sessions again. It
+    // declares Ask Daoris's history too (HELPHISTORYHUB1): the route cannot tell a help conversation's words from another's, a
+    // conversation's first words list it there, named by its question, and words kept on an ended one resume it; a history
+    // nobody has open only goes stale.
     [DriverRoute("SESSION_INPUT")]
-    [Publishes("SESSION_INPUT", StateScopes.Sessions, Session = "id")]
+    [Publishes("SESSION_INPUT", StateScopes.Sessions | StateScopes.Help, Session = "id")]
     private async Task<object?> SessionInputAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");

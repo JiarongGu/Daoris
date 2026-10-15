@@ -1075,12 +1075,16 @@ describe('Ask Daoris’s history', () => {
 
     expect(await screen.findByText('This conversation has ended. Write to go on in it: it remembers what was said.')).toBeInTheDocument();
     await userEvent.type(screen.getByLabelText('Message'), 'and a remote?');
+    const listed = () => invoke.mock.calls.filter(([, type]) => type === 'HELP_CONVERSATIONS').length;
+    const before = listed();
     await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
       payload: { id: EARLIER.id, text: 'and a remote?' },
     }));
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: expect.objectContaining({ id: 'n3xt0000' }) });
+    // The word said declares the history (HELPHISTORYHUB1), so the state hub lists it again, not the conversation's own ask.
+    await waitFor(() => expect(listed()).toBeGreaterThan(before));
   });
 
   /** The newest that ended still starts a new conversation by default, as before; *Go on in it* chooses it. */
@@ -1155,8 +1159,12 @@ describe('Ask Daoris’s history', () => {
 
     await menu();
     await user.click(await screen.findByRole('menuitem', { name: 'Delete…' }));
+    const listed = () => invoke.mock.calls.filter(([, type]) => type === 'HELP_CONVERSATIONS').length;
+    const before = listed();
     await user.click(await screen.findByRole('button', { name: 'Delete conversation' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DELETE', { payload: { id: EARLIER.id } }));
+    // The delete declares the history (HELPHISTORYHUB1): the state hub lists it again, the conversation asks nothing by hand.
+    await waitFor(() => expect(listed()).toBeGreaterThan(before));
   });
 });
 

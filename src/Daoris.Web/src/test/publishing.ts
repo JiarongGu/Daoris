@@ -16,7 +16,8 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   DISCARD_SESSION_BRANCH: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
   TREES_SYNC: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
   SESSION_ARCHIVE: { scopes: ['sessions'] },
-  SESSION_INPUT: { scopes: ['sessions'], session: 'id' },
+  SESSION_INPUT: { scopes: ['sessions', 'help'], session: 'id' },
+  SESSION_DELETE: { scopes: ['sessions', 'help'], session: 'id' },
   END_CHAT: { scopes: ['sessions'], session: 'id' },
   // The plugins' presses (STATEHUB1d), which the Plugins view's tests publish.
   PLUGIN_ACTION: { scopes: ['plugins', 'harnesses'] },

@@ -1,12 +1,11 @@
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQueryClient } from '@tanstack/react-query';
 import { HELP_REPOSITORY } from '../data/api';
 import { type Carry, NO_CARRY } from '../compose/carry';
 import { sentence } from '../locales/format';
 import { useHelpSessions } from '../data/queries';
 import {
-  HELP_HISTORY, type HelpSettled, NO_TURNS, useCancelTurn, useChatTurns, useDeleteSession, useEditQueued, useEndChat, useHarnesses,
+  type HelpSettled, NO_TURNS, useCancelTurn, useChatTurns, useDeleteSession, useEditQueued, useEndChat, useHarnesses,
   useHelpConversations, useHelpProposals, useHelpReadied, useHelpStartFrom, usePinHelp, useRenameHelp, useSendMessage,
   useSessionEvents, useSettleHelp, useStartHelp, useStopSession, stoppedWaiting,
 } from '../bridge/shell';
@@ -116,7 +115,6 @@ export function useAskConversation(
   onGo?: (door: StarterDoor) => void,
 ) {
   const { t } = useTranslation();
-  const client = useQueryClient();
   // The conversation the person chose from the history, or went on in (ASKHIST1): shown in the newest's place.
   const [chosen, setChosen] = useState<string | null>(null);
   // Words said to an ended conversation, waiting for its record to go on: the list is asked again until it has.
@@ -293,14 +291,11 @@ export function useAskConversation(
           return;
         }
         if (preface) told.current.set(id, preface);
-        // A conversation the history has not listed yet is listed once it is spoken in, and named by its first question.
-        if (!rows.data?.conversations.some((row) => row.session === id)) void client.invalidateQueries({ queryKey: HELP_HISTORY });
+        // A conversation the history has not listed yet is listed once it is spoken in, and named by its first question: the
+        // word said declares the history, which the state hub asks again (HELPHISTORYHUB1, D169).
         // Kept on an ended record (ASKHIST1): the same conversation goes on with them once the driver takes them up, which
         // the list is asked again for until it says so.
-        if (answer.reaches === 'resume') {
-          setGoingOn(id);
-          void client.invalidateQueries({ queryKey: HELP_HISTORY });
-        }
+        if (answer.reaches === 'resume') setGoingOn(id);
       },
       onError: (error) => {
         if (stoppedWaiting(error)) {
@@ -596,7 +591,6 @@ export function useAskConversation(
           if (left?.row === id) setLeft(null);
           // Its draft goes with it.
           setDrafts(({ [id]: _gone, ...kept }) => kept);
-          void client.invalidateQueries({ queryKey: HELP_HISTORY });
         },
         onError: (error) => answered.refused(sentence(error)),
       })}

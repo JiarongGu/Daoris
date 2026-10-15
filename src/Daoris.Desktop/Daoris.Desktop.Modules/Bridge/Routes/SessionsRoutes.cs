@@ -319,7 +319,7 @@ public sealed class SessionsRoutes(DriverContext context)
     /// log with no word of it.</para>
     /// </remarks>
     [DriverRoute("SESSION_DELETE")]
-    [Publishes("SESSION_DELETE", StateScopes.Sessions, Session = "id")]
+    [Publishes("SESSION_DELETE", StateScopes.Sessions | StateScopes.Help, Session = "id")]
     private async Task<object?> SessionDeleteAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");

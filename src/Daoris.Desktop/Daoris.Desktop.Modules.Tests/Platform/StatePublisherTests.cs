@@ -291,7 +291,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     /// </summary>
     [Theory]
     [InlineData("SESSION_ARCHIVE", "sessions", null)]
-    [InlineData("SESSION_DELETE", "sessions", "id")]
+    [InlineData("SESSION_DELETE", "sessions,help", "id")]
     [InlineData("STOP_SESSION", "sessions,driver", "id")]
     [InlineData("RESOLVE_SESSION", "sessions,quests,driver", "id")]
     [InlineData("SESSION_GO_ON_NEW", "sessions,driver", "id")]
@@ -304,7 +304,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SESSION_START_FROM", "sessions,driver", "id")]
     [InlineData("SESSION_HAND_OVER", "sessions,driver", "id")]
     [InlineData("END_CHAT", "sessions", "id")]
-    [InlineData("SESSION_INPUT", "sessions", "id")]
+    [InlineData("SESSION_INPUT", "sessions,help", "id")]
     [InlineData("SESSION_HISTORY", "", null)]
     [InlineData("SESSION_QUEUE", "", null)]
     [InlineData("WORK_PAUSE", "sessions,quests,asks,driver", null)]
