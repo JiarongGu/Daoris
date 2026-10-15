@@ -1,7 +1,8 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import i18n from '../locales/i18n';
 import { SyncSection, type LinePull, type RebaseBranch, type SyncPlan, type SyncRepository } from './Sync';
 import type { LandedBranch } from './Sweep';
 
@@ -139,6 +140,46 @@ describe('bringing repositories up to date', () => {
     expect(within(row('feature/q3-open')).getByText(/force push/)).toBeInTheDocument();
     expect(within(row('daoris/s-waits')).getByText(/has not reached the line yet/)).toBeInTheDocument();
     expect(within(row('feature/q1-first')).getByText('goes')).toBeInTheDocument();
+  });
+
+  /**
+   * LANDSYNC3b (D87's 2026-10-15 amendment point 4, by analogy): a replay counts only what the line lacks, and says beside it how
+   * many commits it leaves out because the line already holds them, as the press's answer does. A host from before answers no
+   * count, and the row reads as it did.
+   */
+  describe('what a replay leaves out (LANDSYNC3b)', () => {
+    afterEach(async () => { await i18n.changeLanguage('en'); });
+
+    const LEAVES: SyncPlan = {
+      lines: [pull({ kind: 'up-to-date' })],
+      rebases: [
+        rebase({ branch: 'daoris/s-rest', kind: 'replay', commits: 2, leftOut: 1, replays: true }),
+        rebase({ branch: 'daoris/s-held', kind: 'replay', commits: 0, leftOut: 2, replays: true }),
+        rebase({ branch: 'daoris/s-before', kind: 'replay', commits: 1, replays: true }),
+      ],
+      deletes: [],
+    };
+
+    it('says how many commits each replay leaves out that the line already holds', () => {
+      draw({ plan: LEAVES });
+
+      const row = (name: string) => within(screen.getByRole('listitem', { name }));
+      expect(row('daoris/s-rest').getByText(/Replays 2 commits of its own onto/)).toBeInTheDocument();
+      expect(row('daoris/s-rest').getByText(/It leaves out 1 commit the line already holds\./)).toBeInTheDocument();
+      expect(row('daoris/s-held').getByText(/holds nothing of its own beyond work that reached the line/)).toBeInTheDocument();
+      expect(row('daoris/s-held').getByText(/It leaves out 2 commits the line already holds\./)).toBeInTheDocument();
+      expect(row('daoris/s-before').queryByText(/leaves out/)).toBeNull();
+    });
+
+    it('says it in Chinese with the glossary’s line', async () => {
+      await i18n.changeLanguage('zh');
+      draw({ plan: LEAVES });
+
+      const row = (name: string) => within(screen.getByRole('listitem', { name }));
+      expect(row('daoris/s-rest').getByText(/它略去主线已包含的 1 个提交。/)).toBeInTheDocument();
+      expect(row('daoris/s-held').getByText(/它略去主线已包含的 2 个提交。/)).toBeInTheDocument();
+      expect(row('daoris/s-before').queryByText(/略去/)).toBeNull();
+    });
   });
 
   /** UXFIX4: its rows are the session branches card's, so a long name is heard and shown whole here too. */

@@ -57,6 +57,8 @@
   "settings.sync.branch.after.record": "It starts after `{{from}}`'s work, which reached the line.",
   "settings.sync.branch.after.recordUnnamed": "It starts after the work it grew from, which reached the line.",
   "settings.sync.branch.after.content": "It starts after its newest commit whose work reads on the line.",
+  "settings.sync.branch.leavesOut": "It leaves out {{count}} commit the line already holds.",
+  "settings.sync.branch.leavesOut_other": "It leaves out {{count}} commits the line already holds.",
   "settings.sync.branch.kind.upToDate": "Already on `{{onto}}`.",
   "settings.sync.branch.kind.inUse": "A session still running or waiting holds its tree.",
   "settings.sync.branch.kind.dirty": "Its tree has uncommitted work.",

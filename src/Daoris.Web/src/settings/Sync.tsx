@@ -56,6 +56,11 @@ export type RebaseBranch = {
   /** The step before's branch it grew from, where its record knows one. */
   grewFrom?: string | null;
   commits: number;
+  /**
+   * Replay: how many of its commits the line already holds, which the replay leaves out beside the `commits` it carries
+   * (LANDSYNC3b). A host from before answers none: read as 0.
+   */
+  leftOut?: number;
   detail?: string | null;
   replays: boolean;
 };
@@ -252,18 +257,23 @@ export function SyncSection({ plan, scope, included, apartFolded, looking, looki
     }
   };
 
+  // What the line already holds is said beside what the replay carries, as the press's answer says it (LANDSYNC3b).
+  const leavesOut = (branch: RebaseBranch) => (branch.leftOut ?? 0) > 0
+    ? ` ${t('settings.sync.branch.leavesOut', { count: branch.leftOut })}`
+    : '';
+
   const replays = (branch: RebaseBranch) => {
     const onto = branch.onto ?? '';
     switch (branch.kind) {
       case 'replay': {
-        if (branch.commits === 0) return t('settings.sync.branch.kind.replayNothing', { onto });
+        if (branch.commits === 0) return `${t('settings.sync.branch.kind.replayNothing', { onto })}${leavesOut(branch)}`;
         const replay = t('settings.sync.branch.kind.replay', { count: branch.commits, onto });
         if (branch.cutBy === 'record') {
           return `${replay} ${branch.grewFrom
             ? t('settings.sync.branch.after.record', { from: branch.grewFrom })
-            : t('settings.sync.branch.after.recordUnnamed')}`;
+            : t('settings.sync.branch.after.recordUnnamed')}${leavesOut(branch)}`;
         }
-        return branch.cutBy === 'content' ? `${replay} ${t('settings.sync.branch.after.content')}` : replay;
+        return `${branch.cutBy === 'content' ? `${replay} ${t('settings.sync.branch.after.content')}` : replay}${leavesOut(branch)}`;
       }
       case 'up-to-date': return t('settings.sync.branch.kind.upToDate', { onto });
       case 'in-use': return t('settings.sync.branch.kind.inUse');
