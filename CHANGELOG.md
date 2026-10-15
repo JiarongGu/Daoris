@@ -5,6 +5,17 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session no longer thanks you for accepting when you type "accept": it says its work waits for *Accept…* on its page and
+  where that is, and when it asks you to approve a rule it proposed, it names the Agents page's *Proposals*. In What needs you,
+  the act on a rule an agent proposed reads *Allow…* (允许…), no longer the same *Accept…* (采纳…) as landing a session's work.
+- Words that could not go on in a session whose tree was gone no longer leave a fresh tree and branch behind at each look.
+- Words you said to a session that ended, or that parked to ask you, can be taken back or reworded until it goes on with
+  them: `daoris-driver sessions take-back <id>` lists the words waiting with their ids, `sessions take-back <id> <word>` takes
+  one back, and `sessions reword <id> <word> "…"` puts new words in its place, so a finished quest's session need not go on
+  with words you no longer mean.
+- The installed Daoris now ships the driver's own verbs to a terminal: `daoris-driver` (and `daoris-driver.cmd`) in the
+  install's `app/bin/` runs `trees list|clean|land`, `sessions archive|take-back`, `history clear` and `update` against the
+  install's home, so the clean-up no longer needs the window's list. `daoris driver` says where they are.
 - The window is on the desktop kit's 0.21.1. Opening Daoris while it is still closing now starts it once the closing one
   has gone, where that launch used to be lost.
 - Accepting a session's work lands only what its line lacks. Where the line already holds some of its commits (a pull request

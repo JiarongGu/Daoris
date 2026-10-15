@@ -9,7 +9,6 @@ import { WorkflowHold } from '../workflow/WorkflowHold';
 import { DiscardBranchAsk, type SweepBranch } from '../settings/Sweep';
 import type { GoAhead, Quest, Session } from '../data/api';
 import type { AccountNamer } from '../agents/tools';
-import type { LandingConflict, LandsCommit, LeftOutCommit } from '../bridge/shell';
 import { type GoAheadAnswer, GoAheadList } from '../asks/GoAheadList';
 import { ago, elapsed, sessionTool, stamp } from '../locales/format';
 import {
@@ -24,7 +23,7 @@ import type { LineBehind } from './diff';
 import type { DiscardOffer, LandOffer } from './groups';
 import { HeldDiscardAsk, HeldDiscardButton, heldDiscardable } from './HeldDiscard';
 import { isIntake, sessionOrigin, sessionTitle } from './identity';
-import { LeftOutLines, RebaseAsk } from './LandingSync';
+import { type LandingConflict, type LandsCommit, type LeftOutCommit, LeftOutLines, RebaseAsk, type SayRebase } from './LandingSync';
 import { Note } from './Note';
 import { hasNote, noteBlocks, noteLines } from './noteLines';
 import {
@@ -98,7 +97,7 @@ import { RunningIntake } from './RunningIntake';
 export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, branch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
-  ownSignIn = false, nameOf, lands, landing, planning, onLand, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
+  ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
   continues, helps, onOpenSession,
 }: {
   /**
@@ -154,6 +153,8 @@ export function SessionHead({
    * (XAGENT1g). Absent where nothing can press it (a browser, a story).
    */
   onLand?: (answered: Answered, answers?: string | null, branch?: string | null) => void;
+  /** The press that says the rebase words where replaying conflicts (LANDSYNC1w); the frame holds the say door. */
+  onSayRebase?: SayRebase;
   /** The branch name typed in the land ask (LANDNAME1b), so the frame asks the plan again with it; `''` when the ask is put down. */
   onName?: (name: string) => void;
   /**
@@ -293,7 +294,7 @@ export function SessionHead({
           its tree offers to land are the reader's to say (LAND4), keyed by the session for the same reason. */}
       {lands ? (
         <Lands
-          key={session.id} session={session} lands={lands} landing={landing} planning={planning} onReview={onReview} onLand={onLand} onName={onName} review={review} behind={behind}
+          key={session.id} session={session} lands={lands} landing={landing} planning={planning} onReview={onReview} onLand={onLand} onSayRebase={onSayRebase} onName={onName} review={review} behind={behind}
           opinion={opinion}
         />
       ) : discards ? (
@@ -518,7 +519,9 @@ export type HeadOpinion = {
  * refuses, and for a session that did not finish that only what it committed lands. The move is the review's Accept, in
  * the primary's hue: a landing destroys nothing. Open until the landing answers, a refusal said inside it (UXFIX2).
  */
-function Lands({ session, lands, landing, planning, onReview, onLand, onName, review, behind, opinion }: {
+function Lands({ session, lands, landing, planning, onReview, onLand, onSayRebase, onName, review, behind, opinion }: {
+  /** The press that says the rebase words to the session, held by the frame (LANDSYNC1w). */
+  onSayRebase?: SayRebase;
   behind?: LineBehind | null;
   /** The plan shown is the previous name's while the entered one is read (LANDNAME1b). */
   planning?: boolean;
@@ -590,7 +593,7 @@ function Lands({ session, lands, landing, planning, onReview, onLand, onName, re
         )}
         {onReview && <Button className="px-2 py-0.5 text-small" onClick={onReview}>{t('work.head.review')}</Button>}
       </p>
-      {onLand && !asking && conflict && <RebaseAsk key={session.id} session={session.id} conflict={conflict} />}
+      {onLand && !asking && conflict && onSayRebase && <RebaseAsk key={session.id} conflict={conflict} onSay={onSayRebase} />}
       {workflow && <WorkflowHold gate={workflow} />}
       {second && (
         <OpinionGate

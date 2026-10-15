@@ -472,7 +472,7 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
       : act === 'refuse'
         ? t('asks.goAhead.refuse')
         : act === 'accept-rule'
-          ? t('settings.rules.proposals.accept')
+          ? t('work.attention.act.allowRule')
           : t('asks.record.publish');
   // The words a go-ahead's answer, a second opinion's gate or a *not yet* takes, in the one field each names.
   const wordsLabel = answering ? t('asks.goAhead.words') : anyway ? t('opinion.ask.words') : notYet ? t('review.ask.notYetWords') : null;
