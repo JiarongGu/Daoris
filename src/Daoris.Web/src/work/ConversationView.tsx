@@ -81,6 +81,8 @@ const SaidDoors = createContext<Said>({ chat: false, reasons: {} });
  * - **Words a cooling account holds** (MSG1g2, D137 §2.2) say they wait for its reset, and under them
  *   *Go on in a new session* carries them on now, without this conversation's context; a driven
  *   session's alone, since nothing carries a chat's words on by itself.
+ * - **A block that raised what waits on the person says so** (WAITFOOT1c, D168 point 4), with *To the wait*: the question, a
+ *   go-ahead's call (on its run's line while folded), the work at its turn's end.
  *
  * A molecule: turns in, a press out. The organism above it holds the record.
  */

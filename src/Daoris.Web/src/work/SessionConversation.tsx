@@ -60,7 +60,8 @@ export function BackToBottom({ onPress, className }: { onPress: () => void; clas
  *
  * **A long run gets a way through** (SESS1 S9): a jump to where it first failed and to its last words,
  * and a search within it. **A jump lands on an event**: the pages before it are loaded until it is
- * held, then its block is shown, its fold open, and scrolled to.
+ * held, then its block is shown, its fold open, and scrolled to. The frame jumps too, to the event that raised a wait on the
+ * person (WAITFOOT1c, `onAnchors`).
  *
  * Desktop-only for the console's reason (D47 §4): the record arrives over the bridge.
  */
