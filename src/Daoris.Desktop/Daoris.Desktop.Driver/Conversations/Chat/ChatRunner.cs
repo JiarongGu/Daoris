@@ -176,6 +176,10 @@ public sealed class ChatRunner : IDisposable
         set => _help.DescribeHelp = value;
     }
 
+    /// <summary>Place a new Ask Daoris conversation from an earlier one's words, its room read and agent spawned after (HELPSTART1b, <see cref="ChatHelp.PlaceHelpFromAsync"/>).</summary>
+    public Task<HelpPlaced> PlaceHelpFromAsync(string earlier, string adapter, DriverConfig config, CancellationToken ct = default) =>
+        _help.PlaceHelpFromAsync(earlier, adapter, config, ct);
+
     /// <summary>Start a new Ask Daoris conversation from an earlier one's words (ASKHIST1, <see cref="ChatHelp.StartHelpFromAsync"/>).</summary>
     public Task<ChatStart> StartHelpFromAsync(
         string earlier, string adapter, DriverConfig config, HelpMachine machine,

@@ -64,6 +64,36 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         Assert.Empty((await AnswerAsync(module, "SESSION_QUEUE", new { id = "h1" })).GetProperty("queued").EnumerateArray());
     }
 
+    /// <summary>
+    /// HELPSTART1b: starting from an earlier conversation answers as <c>START_HELP</c> does, the new conversation placed with its
+    /// record open, while the room's reading is held; the earlier one's words are kept for it, and once the room is read it starts.
+    /// </summary>
+    [Fact]
+    public async Task Starting_from_an_earlier_conversation_answers_before_the_room_is_read()
+    {
+        var (loop, module, service) = await UpAsync();
+        service.Seed("h1", "completed");
+        loop.Events.Append("h1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = Words });
+        loop.Events.Append("h1", new SessionEvent { Kind = SessionEventKind.Message, Text = "with a go." });
+        var reading = new TaskCompletionSource<HelpMachine?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        loop.DescribeHelp = _ => reading.Task;
+        var room = Path.Combine(HelpRoom.PathOf(loop.Home), "AGENTS.md");
+
+        var answer = await AnswerAsync(module, "HELP_START_FROM", new { id = "h1" }).WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal("h2", answer.GetProperty("sessionId").GetString());
+        Assert.Equal("h1", answer.GetProperty("from").GetString());
+        Assert.Equal("queued", service.State("h2"));
+        Assert.False(File.Exists(room));
+        Assert.Single(Directory.GetFiles(ChatFiles.Folder(loop.Home, "h2")));
+
+        reading.SetResult(new HelpMachine { Adapter = "talk", Helper = "talk" });
+
+        await UntilAsync(() => Raised.Any(m => m.Type == "SESSION_ENDED"));
+        Assert.True(File.Exists(room));
+        Assert.Equal("failed", service.State("h2"));
+    }
+
     /// <summary>A room that cannot be read is said in the conversation the press placed, which ends, rather than lost with the request.</summary>
     [Fact]
     public async Task A_room_that_cannot_be_read_ends_the_conversation_saying_why()
@@ -105,7 +135,11 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         var fresh = await loop.DescribeHelp!(CancellationToken.None);
 
         Assert.DoesNotContain(fresh!.Sessions!.Listed, each => each.Id == ended.Id);
-        Assert.Contains(LogLines(logs), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"kept\":false"));
+        // HELPROOM1: a fresh look says where its time went; a kept one took no steps and says none.
+        Assert.Contains(LogLines(logs), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"kept\":false")
+            && line.Contains("\"recordsMs\":") && line.Contains("\"questsMs\":") && line.Contains("\"verdictsMs\":")
+            && line.Contains("\"marksMs\":") && line.Contains("\"waitingMs\":") && line.Contains("\"treesMs\":") && line.Contains("\"trees\":0"));
+        Assert.DoesNotContain(LogLines(logs), line => line.Contains("\"kept\":true") && line.Contains("Ms\":") && line.Contains("recordsMs"));
         Assert.NotNull(loop.SessionsLooked.Within(HelpRoomLookLog.Recent, DateTimeOffset.UtcNow));
     }
 
@@ -167,6 +201,19 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         public string Note(string id)
         {
             lock (_gate) return Find(id)?["note"]?.ToJsonString() ?? "";
+        }
+
+        /// <summary>An earlier conversation of the room, already in the records.</summary>
+        public void Seed(string id, string state)
+        {
+            lock (_gate)
+            {
+                _sessions.Add(new JsonObject
+                {
+                    ["id"] = id, ["repository"] = HelpRoom.Repository, ["state"] = state, ["kind"] = "chat",
+                    ["adapter"] = "talk", ["created"] = "2026-10-15T06:42:13Z", ["said"] = new JsonArray(),
+                });
+            }
         }
 
         private JsonObject? Find(string id) => _sessions.FirstOrDefault(s => s["id"]!.GetValue<string>() == id);

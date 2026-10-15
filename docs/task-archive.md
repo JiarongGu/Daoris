@@ -14960,3 +14960,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **TIDIEDLANDING1 — a landing's branch tidied away says so** (web). A `branch.tidied` line with `session` and no `branch` (AUTOTIDY2b: a landing branch's name carries the quest title's words, which the log never holds) shows on the Branches tab's *Cleaned up on its own* as a bare repository row: say it was a landing's branch, en and zh. D88's AUTOTIDY2b note, the machine-log design §4, `WorkspaceTidied.tsx`. Proof: a `WorkspaceTidied` test with such a line.
 
 **Outcome** 2026-10-16: such a line's row reads *A landing's branch, for session …* (落地的分支，会话 …), with the session's name where the sessions list holds it, else its id (`WorkspaceTidied`'s `titles`, fed by `WorkspaceView`). On Sonnet, with PROPOSEHERE1c: 120 tool calls. Detail: D88's TIDIEDLANDING1 note.
+
+## HELPSTART1b — starting from an earlier conversation answers at once too (2026-10-16, D89)
+
+> - [ ] **HELPSTART1b — starting from an earlier conversation answers at once too** (modules). `HELP_START_FROM` still reads the whole room on its request and can pass the 30 s bound: place it and run it as `START_HELP` now does. D158, D89's HELPSTART1 note. Proof: a modules test with a slow room reading.
+
+**Outcome** 2026-10-16: `HELP_START_FROM` answers once the new conversation is placed and the earlier words kept for it (`ChatHelp.PlaceHelpFromAsync`), and the room is read and the agent spawned after, off the request, as `START_HELP`'s (`RunPlacedAsync`, held words and one-at-a-time included). On Sonnet. Detail: D89's HELPSTART1b note.

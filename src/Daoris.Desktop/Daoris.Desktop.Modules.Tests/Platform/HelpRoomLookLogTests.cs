@@ -52,6 +52,24 @@ public sealed class HelpRoomLookLogTests : IDisposable
         Assert.Contains("\"read\":true", line);
     }
 
+    /// <summary>HELPROOM1: the line names each step's milliseconds and how many trees the git check was asked about.</summary>
+    [Fact]
+    public async Task A_look_says_the_time_of_each_of_its_steps()
+    {
+        using var log = new MachineLog(_home, "driver");
+        var times = new LookTimes { Trees = 3 };
+        await times.TimeAsync("records", async () => { await Task.Delay(5); return 0; });
+        times.Time("trees", () => 1);
+
+        HelpRoomLookLog.Said(log, TimeSpan.FromMilliseconds(120), read: true, times: times);
+
+        var line = Assert.Single(Lines());
+        Assert.Contains("\"recordsMs\":", line);
+        Assert.Contains("\"treesMs\":", line);
+        Assert.Contains("\"trees\":3", line);
+        Assert.DoesNotContain("\"questsMs\"", line);
+    }
+
     [Fact]
     public void A_look_over_the_bound_is_a_warning_that_says_slow_and_the_bound()
     {
