@@ -13,8 +13,11 @@ internal sealed record RebaseJudged(RebaseItem Item, string? Tip = null, string?
     /// <summary>Among <see cref="Beyond"/>, the commits the line holds, which the replay skips (LANDSYNC3).</summary>
     public IReadOnlyList<string> Skips { get; init; } = [];
 
-    /// <summary>How many commits the line holds that the replay leaves out (LANDSYNC3): those the cut moved past, and the skips.</summary>
-    public int LeftOut { get; init; }
+    /// <summary>
+    /// How many commits the line holds that the replay leaves out (LANDSYNC3): those the cut moved past, and the skips. The row's own,
+    /// so the list says it as the press does (LANDSYNC3b).
+    /// </summary>
+    public int LeftOut => Item.LeftOut;
 }
 
 /// <summary>
@@ -158,10 +161,8 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
             return Item(RebaseKind.Replay, tip, cut, cutBy, await CountAsync(root, $"{cut}..{tip}", ct).ConfigureAwait(false));
         }
 
-        return Item(RebaseKind.Replay, tip, held.Cut, held.ByContent > 0 ? CutBy.Content : cutBy, held.Kept) with
-        {
-            Beyond = held.Commits, Skips = held.Skips, LeftOut = held.LeftOut,
-        };
+        var replay = Item(RebaseKind.Replay, tip, held.Cut, held.ByContent > 0 ? CutBy.Content : cutBy, held.Kept);
+        return replay with { Item = replay.Item with { LeftOut = held.LeftOut }, Beyond = held.Commits, Skips = held.Skips };
     }
 
     /// <summary>How far back the proof by content looks for where a branch's own work starts, before taking where it leaves the line.</summary>

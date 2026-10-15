@@ -40,8 +40,8 @@ public sealed class TreeSyncHeldTests : TreeSyncFixture
         var plan = await trees.SyncPlanAsync(Repositories(root), Nobody);
 
         var item = plan.Rebases.Single(each => each.Branch == tree.Branch);
-        Assert.Equal((RebaseKind.Replay, 2), (item.Kind, item.Commits));
-        Assert.Contains("replays 2 commit(s) of its own onto `main`", SyncWords.Describe(item));
+        Assert.Equal((RebaseKind.Replay, 2, 1), (item.Kind, item.Commits, item.LeftOut));
+        Assert.Contains("replays 2 commit(s) of its own onto `main`, leaving out 1 the line holds", SyncWords.Describe(item));
 
         var done = await trees.SyncAsync(Repositories(root), Nobody);
 
@@ -72,8 +72,9 @@ public sealed class TreeSyncHeldTests : TreeSyncFixture
         var plan = await trees.SyncPlanAsync(Repositories(root), Nobody);
 
         var item = plan.Rebases.Single(each => each.Branch == tree.Branch);
-        Assert.Equal((RebaseKind.Replay, 0), (item.Kind, item.Commits));
-        Assert.EndsWith("moves onto `main`: it holds nothing of its own beyond work that reached the line", SyncWords.Describe(item));
+        Assert.Equal((RebaseKind.Replay, 0, 1), (item.Kind, item.Commits, item.LeftOut));
+        Assert.EndsWith("moves onto `main`: it holds nothing of its own beyond work that reached the line (1 commit(s) the line holds left out)",
+            SyncWords.Describe(item));
 
         var done = await trees.SyncAsync(Repositories(root), Nobody);
 

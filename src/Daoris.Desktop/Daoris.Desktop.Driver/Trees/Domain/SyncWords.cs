@@ -77,15 +77,17 @@ public static class SyncWords
     public static string Describe(RebaseItem item) => Replay(item)
         + (item.Landed ? PullRequestWords.Row(item.State, item.StateCode, item.AskFailed, item.NotAsked) : "");
 
+    // What the line holds is said beside what the replay carries, in the press's own words (LANDSYNC3b; BranchReplays' answer).
     private static string Replay(RebaseItem item) => $"{item.Repository}  {item.Branch}  " + item.Kind switch
     {
-        RebaseKind.Replay when item.Commits == 0 => $"moves onto `{item.Onto}`: it holds nothing of its own beyond work that reached the line",
+        RebaseKind.Replay when item.Commits == 0 => $"moves onto `{item.Onto}`: it holds nothing of its own beyond work that reached the line"
+            + (item.LeftOut > 0 ? $" ({item.LeftOut} commit(s) the line holds left out)" : ""),
         RebaseKind.Replay => $"replays {item.Commits} commit(s) of its own onto `{item.Onto}`" + item.CutBy switch
         {
             CutBy.Record => item.GrewFrom is { } from ? $", after `{from}`'s work, which reached the line" : ", after the work it grew from, which reached the line",
             CutBy.Content => ", after its newest commit whose work reads on the line",
             _ => "",
-        },
+        } + (item.LeftOut > 0 ? $", leaving out {item.LeftOut} the line holds" : ""),
         RebaseKind.UpToDate => $"already on `{item.Onto}`",
         RebaseKind.InUse => "a session still running or waiting holds its tree",
         RebaseKind.Dirty => "its tree has uncommitted work",
