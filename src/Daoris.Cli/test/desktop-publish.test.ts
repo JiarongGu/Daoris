@@ -13,6 +13,7 @@ import {
   BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, CONNECTOR_EXE, CONNECTOR_HOME, GATE_COMMAND, HOME, HOST_EXE, HOST_HOME,
   KEPT_LOCALES, LAUNCHER, MANIFEST_SCHEMA, MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE, RETIRED_IN_APP,
   RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME, STAGE, STAGED, STAGED_REQUIRED, SWAP_JOURNAL, buildId, cliLaunchers, insideFixtures,
+  DRIVER_EXE, DRIVER_HOME, DRIVER_LAUNCHERS, DRIVER_PROJECT, driverLaunchers, driverPublishCommand, layDriverLaunchers,
   installedNote, isInstall, layCli, layOffers, layResources, promoteStage, recordedShellFiles, refusal, retiredPaths, servicePlan, stageRefusal,
   stagedManifest, ungatedRefusal, unstage, writeManifest,
   // @ts-expect-error — untyped workspace tooling; see above
@@ -872,6 +873,64 @@ test('a launcher for each shell runs the package’s bin entry on the node PATH 
     // Bare `node`: the one the child's PATH finds, which is the one Tools resolves (D124 §1.3).
     assert.match(text, /no node on PATH/, `${name} says so when there is no node`);
   }
+});
+
+/**
+ * DRIVERDOOR1: the install ships the driver's own verbs (`trees clean`, `sessions archive`, `history clear`, `update`) as
+ * `daoris-driver`, the Host published framework-dependent into `app/daoris-driver/` and run from `app/bin/` by a launcher
+ * for each shell, so a terminal that finds `daoris` finds the driver's door.
+ */
+test('the driver’s door is its own folder under app/ and one launcher for each shell beside the doctrine tool’s', () => {
+  assert.deepEqual([...DRIVER_HOME], [SHELL_HOME[0], 'daoris-driver']);
+  assert.equal(DRIVER_EXE, 'daoris-driver.exe');
+  assert.deepEqual([...DRIVER_LAUNCHERS], ['daoris-driver', 'daoris-driver.cmd']);
+  const csproj = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', DRIVER_PROJECT, 'Daoris.Desktop.Driver.Host.csproj'), 'utf8');
+  assert.ok(csproj.includes(`<AssemblyName>${DRIVER_HOME.at(-1)}</AssemblyName>`), 'the Host’s binary is the folder’s name');
+  const command: string = driverPublishCommand(join(tmpdir(), 'an-install', ...DRIVER_HOME));
+  assert.ok(command.startsWith(`dotnet publish "${DRIVER_PROJECT}" -c Release -r win-x64 --self-contained false`), command);
+  assert.ok(command.endsWith(` -o "${join(tmpdir(), 'an-install', ...DRIVER_HOME)}"`), command);
+  assert.doesNotMatch(command, /PublishSingleFile/, 'a folder of its own, framework-dependent');
+
+  const launchers: Record<string, string> = driverLaunchers();
+  assert.deepEqual(Object.keys(launchers).sort(), [...DRIVER_LAUNCHERS].sort());
+  const sh = launchers['daoris-driver'] ?? '';
+  assert.ok(sh.startsWith('#!/bin/sh\n') && !sh.includes('\r'));
+  const shPath = /exec "\$basedir\/([^"]+)" "\$@"/.exec(sh)?.[1] ?? '';
+  assert.equal(posix.normalize(posix.join(CLI_BIN.join('/'), shPath)), [...DRIVER_HOME, DRIVER_EXE].join('/'), `the script runs ${shPath}`);
+  const cmd = launchers['daoris-driver.cmd'] ?? '';
+  assert.ok(cmd.endsWith('\r\n') && cmd.split('\r\n').slice(0, -1).every((line) => !line.includes('\n')), 'CRLF');
+  const cmdPath = /"%~dp0([^"]+)" %\*/.exec(cmd)?.[1] ?? '';
+  assert.equal(posix.normalize(posix.join(CLI_BIN.join('/'), cmdPath.replace(/\\/g, '/'))), [...DRIVER_HOME, DRIVER_EXE].join('/'), `the batch file runs ${cmdPath}`);
+  for (const [name, text] of Object.entries(launchers)) {
+    assert.ok(/^[\x00-\x7F]*$/.test(text), `${name} is ASCII`);
+    assert.doesNotMatch(text, /[A-Za-z]:[\\/]|\/home\/|\/Users\//, `a machine path in ${name}`);
+  }
+});
+
+test('laying the driver’s launchers adds them to app/bin and leaves the doctrine tool’s; a republish replaces them', async () => {
+  const fx = makeFixture('publish-driver-lay');
+  const install = join(fx.root, 'install');
+  await layCli(packed(fx.root, 'daoris-0.4.2', releasePackage()), install);
+  layDriverLaunchers(install);
+  const expected = [...CLI_LAUNCHERS, ...DRIVER_LAUNCHERS].sort();
+  assert.deepEqual(readdirSync(join(install, ...CLI_BIN)).sort(), expected);
+  const launchers: Record<string, string> = driverLaunchers();
+  for (const name of DRIVER_LAUNCHERS) assert.equal(readFileSync(join(install, ...CLI_BIN, name), 'utf8'), launchers[name], name);
+  // A republish lays the doctrine tool first, which replaces app/bin whole; the driver's pair goes in again.
+  await layCli(packed(fx.root, 'daoris-0.4.3', releasePackage('0.4.3')), install);
+  assert.deepEqual(readdirSync(join(install, ...CLI_BIN)).sort(), [...CLI_LAUNCHERS].sort());
+  layDriverLaunchers(install);
+  assert.deepEqual(readdirSync(join(install, ...CLI_BIN)).sort(), expected);
+  fx.cleanup();
+});
+
+test('the install note says the driver’s verbs are in app/bin as daoris-driver, and what a re-publish does to its folder', () => {
+  const note: string = installedNote();
+  const row = note.split('\n').find((line) => line.startsWith(`| \`${SHELL_HOME[0]}/\``)) ?? '';
+  assert.ok(row.includes(`\`${DRIVER_HOME.slice(1).join('/')}/\``), 'the driver’s folder in the app row');
+  const section = note.slice(note.indexOf('## The doctrine tool')).split('\n## ')[0] ?? '';
+  for (const launcher of DRIVER_LAUNCHERS) assert.ok(section.includes(`\`${launcher}\``), `names ${launcher}`);
+  assert.match(section.replace(/\s+/g, ' '), /`daoris-driver trees list\|clean\|land`, `sessions archive\|take-back`, `history clear` and `update`/);
 });
 
 test('laying the doctrine tool out retries a held rename at each package and launcher step', async () => {
