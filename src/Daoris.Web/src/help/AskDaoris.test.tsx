@@ -187,6 +187,131 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
+   * SENDLOST1: on a loaded machine the page stopped waiting on Ask Daoris's start (the bridge's TIMEOUT) and the person's
+   * first words vanished, though the driver went on to open the conversation. They stay shown, saying the machine has not
+   * answered yet, nothing put back in the box to send twice, and go once to the conversation the list next shows.
+   */
+  it('keeps the first words when the machine stops answering, and gives them once to the conversation the list then shows', async () => {
+    const words = 'why did my message vanish?';
+    bridge();
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      // The one opened ahead could not; the send's own is still at work when the page stops waiting for it.
+      if (type === 'START_HELP' && starts() === 1) return { sessionId: null, message: 'not yet' };
+      if (type === 'START_HELP') throw Object.assign(new Error('timed out'), { code: 'TIMEOUT' });
+      return answered(module, type, ...rest);
+    });
+    let listed: () => void = () => {};
+    const late = new Promise<void>((resolve) => { listed = resolve; });
+    let holding = false;
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      if (holding && String(input).startsWith('/api/sessions')) await late;
+      return respond(String(input));
+    }));
+    show();
+
+    const box = await screen.findByLabelText('Message');
+    await waitFor(() => expect(starts()).toBe(1));
+    await userEvent.type(box, words);
+    holding = true;
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    await waitFor(() => expect(starts()).toBe(2));
+    expect(await screen.findByText('The machine has not answered yet; it may still take them.')).toBeInTheDocument();
+    expect(screen.getByText(words)).toBeInTheDocument();
+    expect((screen.getByLabelText('Message') as HTMLTextAreaElement).value).toBe('');
+    expect(screen.queryByText(/did not answer in time/)).toBeNull();
+
+    // The list's next read holds the conversation the driver opened: the words go to it, once.
+    SESSIONS = [HELP];
+    await act(async () => { listed(); });
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: HELP.id, text: words },
+    }));
+    expect(invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT')).toHaveLength(1);
+    expect(starts()).toBe(2);
+  });
+
+  /**
+   * SENDLOST1: words to the conversation running show the moment they are sent, as sending. A send the page stopped waiting
+   * on keeps them, saying the machine has not answered yet — never back in the box to be sent twice — until the
+   * conversation's own record holds them.
+   */
+  it('shows words as sending, keeps them when their send times out, and lets them go once the record holds them', async () => {
+    const words = 'and the line?';
+    SESSIONS = [HELP];
+    bridge();
+    const answered = invoke.getMockImplementation()!;
+    let stop: () => void = () => {};
+    let recorded = false;
+    let read: () => void = () => {};
+    const reading = new Promise<void>((resolve) => { read = resolve; });
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      if (type === 'SESSION_INPUT') {
+        return new Promise((_, reject) => {
+          stop = () => { recorded = true; reject(Object.assign(new Error('timed out'), { code: 'TIMEOUT' })); };
+        });
+      }
+      if (type === 'SESSION_HISTORY' && recorded) {
+        await reading;
+        return {
+          session: HELP.id, earlier: false, latest: 1,
+          events: [{ seq: 1, at: new Date().toISOString(), kind: 'user', origin: 'person', text: words }],
+        };
+      }
+      return answered(module, type, ...rest);
+    });
+    show();
+
+    const box = await screen.findByLabelText('Message');
+    await screen.findByRole('button', { name: 'New conversation' });
+    await userEvent.type(box, words);
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(await screen.findByText('sending…')).toBeInTheDocument();
+    expect(screen.getByText(words)).toBeInTheDocument();
+
+    await act(async () => { stop(); });
+    expect(await screen.findByText('The machine has not answered yet; it may still take them.')).toBeInTheDocument();
+    expect(screen.getByText(words)).toBeInTheDocument();
+    expect((screen.getByLabelText('Message') as HTMLTextAreaElement).value).toBe('');
+    expect(screen.queryByText(/did not answer in time/)).toBeNull();
+
+    await act(async () => { read(); });
+    await waitFor(() => expect(screen.queryByText('The machine has not answered yet; it may still take them.')).toBeNull());
+    expect(invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT')).toHaveLength(1);
+  });
+
+  /**
+   * SENDLOST1: words whose send timed out to a conversation that then ended without them never arrived: they go back in the
+   * box, said so, for the person to send again.
+   */
+  it('gives words back once their conversation ended without them', async () => {
+    const words = 'are you there?';
+    SESSIONS = [HELP];
+    // Once it ended, the next opens ahead (HELP5), under an id of its own.
+    bridge({ sessionId: 'n3xt0000', message: 'opened' });
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      if (type === 'SESSION_INPUT') {
+        SESSIONS = [{ ...HELP, state: 'failed' }];
+        throw Object.assign(new Error('timed out'), { code: 'TIMEOUT' });
+      }
+      return answered(module, type, ...rest);
+    });
+    show();
+
+    const box = await screen.findByLabelText('Message');
+    await screen.findByRole('button', { name: 'New conversation' });
+    await userEvent.type(box, words);
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(await screen.findByText(/Ask Daoris ended before this reached it/)).toBeInTheDocument();
+    await waitFor(() => expect((screen.getByLabelText('Message') as HTMLTextAreaElement).value).toBe(words));
+    expect(invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT')).toHaveLength(1);
+  });
+
+  /**
    * HELP5: the agent's spawn and its protocol session took seconds after the person pressed send. The
    * conversation opens as the panel shows instead: once, however often the panel draws, and once under
    * React's development double-mount. Nobody has spoken in it yet, so the panel goes on showing what it
