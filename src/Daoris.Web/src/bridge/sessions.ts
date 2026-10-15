@@ -204,9 +204,8 @@ export type ArchiveAnswer = {
  * its code. The sessions, their groups among them, are asked again by the state hub (STATEHUB1d).
  *
  * @remarks
- * **And by the hook, for now**: `SessionRail`'s tests, in another branch's lane during STATEHUB1d, press it with no hub
- * mounted, as STATEHUB1b kept four such for STATEHUB1f, which removes this with them. Without cancelling a read under way,
- * so where the hub's event came first its read is not asked twice.
+ * And by the hook until STATEHUB1f, without cancelling the hub's read: `SessionRail`'s tests press it with no hub mounted
+ * (D169's STATEHUB1d note).
  */
 export const useArchiveSessions = () => {
   const client = useQueryClient();

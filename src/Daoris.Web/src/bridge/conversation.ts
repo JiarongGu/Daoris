@@ -479,9 +479,8 @@ export const useSendMessage = () =>
  * The sessions are asked again by the state hub (STATEHUB1d), so a park shows its answer and a record its words waiting.
  *
  * @remarks
- * **And by the hook, for now**: `WorkFrame`'s tests, in another branch's lane during STATEHUB1d, press it with no hub mounted,
- * as STATEHUB1b kept four such for STATEHUB1f, which removes this with them. Without cancelling a read under way, so where
- * the hub's event came first its read is not asked twice.
+ * And by the hook until STATEHUB1f, without cancelling the hub's read: `WorkFrame`'s tests press it with no hub mounted
+ * (D169's STATEHUB1d note).
  */
 export const useSay = () => {
   const client = useQueryClient();
@@ -593,9 +592,8 @@ export const useHandOver = () => useMutation({
  * `useStopSession` is the other verb and means something else — the person cut it off.
  *
  * @remarks
- * The sessions are asked again by the state hub (STATEHUB1d), **and by the hook, for now**: Ask Daoris's tests, in another
- * lane during STATEHUB1d, press it with no hub mounted; STATEHUB1f removes this with the others it keeps, and it does not
- * cancel the hub's read.
+ * The sessions are asked again by the state hub (STATEHUB1d), and by the hook until STATEHUB1f, without cancelling the hub's
+ * read: Ask Daoris's tests press it with no hub mounted (D169's STATEHUB1d note).
  */
 export const useEndChat = () => {
   const client = useQueryClient();

@@ -63,9 +63,8 @@ export const useHistoryPlan = (target: HistoryTarget | null, { enabled = true }:
  * asks each again, in every window (STATEHUB1d, D169).
  *
  * @remarks
- * **The plans are asked again here too**, since a press refused for a unit that changed since the list is an error, which
- * publishes nothing (D169 point 5), and its plan is stale all the same; and `ProjectsView`'s tests press it with no hub mounted.
- * Without cancelling a read under way, so where the hub's event came first its read is not asked twice.
+ * The plans are asked again here too, without cancelling the hub's read: a press refused for a unit that changed since the
+ * list is an error, which publishes nothing (D169 point 5), and its plan is stale all the same.
  */
 export const useClearHistory = () => {
   const client = useQueryClient();
