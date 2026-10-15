@@ -21,6 +21,10 @@ public sealed class HelpRoutes(DriverContext context)
 
     // Ask Daoris's conversation (HELP1a, D89): the one this machine is running, carried on — one
     // per machine — or a new one in its room, written from the machine as the driver holds it now.
+    //
+    // HELPSTART1 (D89's note): answered once the conversation is placed, its record open, with `starting`; the room is read and
+    // its agent spawned after, off the request, its end told as the conversation's events. On a loaded machine the room's
+    // reading took 26 s and the page stops waiting at 30 (SENDLOST1). One placed and still starting is handed to the next press.
     [DriverRoute("START_HELP")]
     private async Task<object?> StartHelpAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -35,22 +39,83 @@ public sealed class HelpRoutes(DriverContext context)
 
         var chat = _loop.Chat ?? throw NotReady();
         var service = _loop.Service ?? throw NotReady();
-        var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
-        var held = _loop.Processes.Running;
-        if (snapshot.Active.FirstOrDefault(session =>
-                session.Repository == HelpRoom.Repository && held.Contains(session.Id, StringComparer.OrdinalIgnoreCase)) is { } running)
+        var starting = _loop.HelpStarting;
+        await starting.Placing.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
         {
-            return new { SessionId = running.Id, Message = $"Ask Daoris `{running.Id}` is carried on.", Running = true };
+            if (starting.Session is { } placed)
+            {
+                return new { SessionId = placed, Message = $"Ask Daoris `{placed}` is starting.", Running = false, Starting = true };
+            }
+
+            var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
+            var held = _loop.Processes.Running;
+            if (snapshot.Active.FirstOrDefault(session =>
+                    session.Repository == HelpRoom.Repository && held.Contains(session.Id, StringComparer.OrdinalIgnoreCase)) is { } running)
+            {
+                return new { SessionId = running.Id, Message = $"Ask Daoris `{running.Id}` is carried on.", Running = true };
+            }
+
+            var place = await chat.PlaceHelpAsync(helper, config, cancellationToken).ConfigureAwait(false);
+            if (place.SessionId is not { } id) return new { SessionId = (string?)null, place.Message, Running = false };
+
+            starting.Placed(id);
+            _ = Task.Run(() => RunPlacedAsync(chat, place, config));
+            _loop.Nudge();
+            return new { SessionId = id, place.Message, Running = false, Starting = true };
         }
+        finally
+        {
+            starting.Placing.Release();
+        }
+    }
 
-        var machine = await HelpMachineAsync(service, config, snapshot, cancellationToken).ConfigureAwait(false);
-        var start = await chat.StartHelpAsync(
-            helper, config, machine,
-            onEnded: (session, state) => DriverLoop.Ended(_events, session, state),
-            ct: cancellationToken).ConfigureAwait(false);
+    /// <summary>
+    /// The conversation <c>START_HELP</c> placed, started off the request (HELPSTART1): the room read through the loop's
+    /// <c>DescribeHelp</c> as a conversation going on reads it, then the agent spawned. The words said to it meanwhile go to its
+    /// door in order once it opens; where it could not start, its record says why and keeps them as the person's, so the page's
+    /// conversation shows both rather than losing either.
+    /// </summary>
+    private async Task RunPlacedAsync(ChatRunner chat, HelpPlaced place, DriverConfig config)
+    {
+        var id = place.SessionId!;
+        ChatStart? start = null;
+        try
+        {
+            start = await chat.RunHelpAsync(
+                place, config,
+                ct => _loop.DescribeHelp is { } describe ? describe(ct) : Task.FromResult<HelpMachine?>(null),
+                onEnded: (session, state) => DriverLoop.Ended(_events, session, state)).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // The runner ended the record saying why; nothing here could say more, and the words below are kept either way.
+        }
+        finally
+        {
+            var left = _loop.HelpStarting.Over(id, start?.SessionId is null ? null : word => Said(chat, id, word));
+            foreach (var word in left)
+            {
+                _loop.Events.Append(id, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = word.Text });
+            }
 
-        _loop.Nudge();
-        return new { start.SessionId, start.Message, Running = false };
+            // What a word said to it now would do, told again: its own queue now, or its record.
+            _loop.Words.Tell(id);
+            _loop.Nudge();
+        }
+    }
+
+    /// <summary>One held word handed to the conversation's door; false where the door would not take it, so the record keeps it.</summary>
+    private static bool Said(ChatRunner chat, string id, HeldWord word)
+    {
+        try
+        {
+            return chat.Say(id, word.Text, word.Files, word.Preface);
+        }
+        catch (DriverException)
+        {
+            return false;
+        }
     }
 
     /// <summary>
@@ -71,20 +136,27 @@ public sealed class HelpRoutes(DriverContext context)
         var standing = await service.AsksAsync(cancellationToken).ConfigureAwait(false);
         var asks = standing.Count(ask => ask.State == "Proposed");
         // This machine's sessions as the Sessions list places them (SESSUX1h3), so an archive or a delete names one it was shown;
-        // the room still opens where the look cannot be taken, saying the sessions were not read.
-        SessionLook? sessions = null;
+        // the room still opens where the look cannot be taken, saying the sessions were not read. The look this shell took last
+        // is read where it is recent (HELPSTART1): a fresh one judges every tree with git, 24.9 s on a loaded machine.
         var looking = System.Diagnostics.Stopwatch.StartNew();
-        try
+        var at = DateTimeOffset.UtcNow;
+        var kept = _loop.SessionsLooked.Within(HelpRoomLookLog.Recent, at);
+        var sessions = kept;
+        if (sessions is null)
         {
-            sessions = await SessionGroups.LookAsync(service, config, _context.Door(config), _loop.Look.Latest, _loop.Home, null, cancellationToken).ConfigureAwait(false);
-            sessions = sessions with { Waits = _loop.Look.Waits };
-        }
-        catch (DriverException)
-        {
-            // Left null: the room says `not read`, and a go still names a session the person names.
+            try
+            {
+                sessions = await SessionGroups.LookAsync(service, config, _context.Door(config), _loop.Look.Latest, _loop.Home, null, cancellationToken).ConfigureAwait(false);
+                _loop.SessionsLooked.Keep(sessions, at);
+            }
+            catch (DriverException)
+            {
+                // Left null: the room says `not read`, and a go still names a session the person names.
+            }
         }
 
-        HelpRoomLookLog.Said(_loop.Log, looking.Elapsed, sessions is not null);
+        sessions = sessions is null ? null : sessions with { Waits = _loop.Look.Waits };
+        HelpRoomLookLog.Said(_loop.Log, looking.Elapsed, sessions is not null, kept: kept is not null);
 
         // What each workspace keeps of finished work (HIST1f-c), the workspaces `daoris-driver history` reads; null where the
         // service could not be read, and the room says so.

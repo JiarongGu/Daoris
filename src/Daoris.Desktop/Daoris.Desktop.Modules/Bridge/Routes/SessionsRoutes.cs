@@ -287,10 +287,14 @@ public sealed class SessionsRoutes(DriverContext context)
     {
         var service = _loop.Service ?? throw NotReady();
         var config = DriverConfig.Load(_loop.ConfigPath);
+        // When it began, which its records are as old as.
+        var at = DateTimeOffset.UtcNow;
         var look = await SessionGroups.LookAsync(service, config, _context.Door(config), _loop.Look.Latest, _loop.Home, only, cancellationToken)
             .ConfigureAwait(false);
         // The cool-offs the loop's last look held starts on (MSG1f2): what a record whose words one holds says, its reset.
         look = look with { Waits = _loop.Look.Waits };
+        // A look at every session is kept with its time, for Ask Daoris's room to read where it is recent (HELPSTART1).
+        if (only is null) _loop.SessionsLooked.Keep(look, at);
         return (look, SessionGroups.Read(look, only));
     }
 

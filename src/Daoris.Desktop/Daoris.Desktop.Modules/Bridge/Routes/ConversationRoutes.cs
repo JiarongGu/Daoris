@@ -283,7 +283,8 @@ public sealed class ConversationRoutes(DriverContext context)
     internal static object QueueAnswer(DriverLoop loop, string id, WordsAnswer reach)
     {
         var inbox = loop.Processes.InboxOf(id);
-        var queue = inbox?.State ?? loop.Chat?.Queue(id) ?? ChatQueue.Idle;
+        // Ask Daoris's conversation still starting holds its words itself, opening (HELPSTART1).
+        var queue = loop.HelpStarting.Queue(id) ?? inbox?.State ?? loop.Chat?.Queue(id) ?? ChatQueue.Idle;
         return new
         {
             Session = id, Queued = queue.Queued.Select(Said).ToArray(), queue.Taking, queue.Opening,

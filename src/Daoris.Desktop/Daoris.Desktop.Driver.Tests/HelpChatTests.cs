@@ -127,6 +127,57 @@ public sealed class HelpChatTests : IDisposable
             kept);
     }
 
+    /// <summary>
+    /// HELPSTART1: placing opens the record in the room's folder before anything is read or written, which is what the person's
+    /// press waits for; the run reads the machine, writes the room and spawns the agent, and words said once it runs reach it.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_placed_opens_its_record_first_and_writes_its_room_as_it_runs()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        var (runner, events, _, client, config) = Runner(service);
+        using var _c = client;
+        using var _r = runner;
+        var room = Path.Combine(HelpRoom.PathOf(_home), "AGENTS.md");
+
+        var placed = await runner.PlaceHelpAsync("acp-stub", config);
+
+        var id = placed.SessionId ?? throw new InvalidOperationException(placed.Message);
+        Assert.False(File.Exists(room));
+
+        var start = await runner.RunHelpAsync(placed, config, _ => Task.FromResult<HelpMachine?>(Machine));
+
+        Assert.Equal(id, start.SessionId);
+        Assert.Contains("`engine`", File.ReadAllText(room));
+        string Seen() => $"heard [{string.Join(" | ", StubFile.Lines(Heard))}], state {service.State(id)}";
+        Assert.True(runner.Say(id, "what is a workspace?"));
+        await Until(() => events.Page(id).Events.Any(e => e.Kind == SessionEventKind.Message && e.Text == "heard what is a workspace?"), Seen);
+        Assert.True(runner.Finish(id));
+        await Until(() => service.State(id) == "completed", Seen);
+    }
+
+    /// <summary>HELPSTART1: a machine that cannot be read ends the placed record failed, saying why, so it never waits at its opening.</summary>
+    [Fact]
+    public async Task A_placed_conversation_whose_machine_cannot_be_read_ends_failed_saying_why()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        var (runner, _, _, client, config) = Runner(service);
+        using var _c = client;
+        using var _r = runner;
+        var ended = new List<(string, string)>();
+
+        var placed = await runner.PlaceHelpAsync("acp-stub", config);
+        var start = await runner.RunHelpAsync(
+            placed, config, _ => Task.FromResult<HelpMachine?>(null),
+            onEnded: (session, state) => { ended.Add((session, state)); return Task.CompletedTask; });
+
+        Assert.Null(start.SessionId);
+        Assert.Contains("room could not be written", start.Message);
+        Assert.Equal("failed", service.State(placed.SessionId!));
+        Assert.Contains("room could not be written", service.Note(placed.SessionId!));
+        Assert.Equal([(placed.SessionId!, "failed")], ended);
+    }
+
     /// <summary>One conversation per machine: a second while one runs is refused in the ledger's words, naming it.</summary>
     [Fact]
     public async Task A_second_conversation_while_one_runs_is_refused_naming_it()

@@ -8,6 +8,19 @@ namespace Daoris.Driver;
 public sealed record ChatStart(string? SessionId, string Message);
 
 /// <summary>
+/// Ask Daoris's conversation placed (HELPSTART1, <see cref="ChatRunner.PlaceHelpAsync"/>): its record open in the room's folder,
+/// its agent and account chosen, nothing spawned yet.
+/// </summary>
+/// <param name="SessionId">The record's id — null when nothing was placed, and <paramref name="Message"/> says why.</param>
+/// <param name="Message">The ledger's sentence, or why nothing was placed.</param>
+public sealed record HelpPlaced(string? SessionId, string Message)
+{
+    internal ISessionAdapter? Adapter { get; init; }
+
+    internal HarnessSelection? Selection { get; init; }
+}
+
+/// <summary>
 /// A conversation with an agent in one repository (D49 §3) — the session D46 built, entered by a
 /// person instead of planned from a quest.
 /// </summary>
@@ -472,6 +485,20 @@ public sealed class ChatRunner : IDisposable
         string adapter, DriverConfig config, HelpMachine machine,
         Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
     {
+        var placed = await PlaceHelpAsync(adapter, config, ct).ConfigureAwait(false);
+        return placed.SessionId is null
+            ? new(null, placed.Message)
+            : await RunHelpAsync(placed, config, _ => Task.FromResult<HelpMachine?>(machine), onEnded, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Place Ask Daoris's conversation (HELPSTART1, D89's note): its agent resolved, its account chosen and its record opened in
+    /// the room's folder, which is the same folder for every conversation, so nothing is read or written yet. What the person's
+    /// press waits for; <see cref="RunHelpAsync"/> reads the machine, writes the room and spawns the agent after.
+    /// </summary>
+    /// <exception cref="DriverException">The agent names no harness this machine knows.</exception>
+    public async Task<HelpPlaced> PlaceHelpAsync(string adapter, DriverConfig config, CancellationToken ct = default)
+    {
         var resolved = _harnesses.Adapters.Resolve(adapter);
         if (!resolved.Interactive)
         {
@@ -486,26 +513,67 @@ public sealed class ChatRunner : IDisposable
         var selection = await _harnesses.SelectAsync(resolved.Name, config, null, null, StartKind.Conversation, ct).ConfigureAwait(false);
         if (!selection.Allowed) return new(null, selection.Refusal!);
 
-        string room;
-        try
-        {
-            room = HelpRoom.Prepare(_home, machine);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return new(null, $"Ask Daoris's room could not be written — {error.Message}");
-        }
-
         var (sessionId, message) = await _service
-            .OpenHelpAsync(resolved.Name, room, selection.Version, selection.Profile, ct)
+            .OpenHelpAsync(resolved.Name, HelpRoom.PathOf(_home), selection.Version, selection.Profile, ct)
             .ConfigureAwait(false);
         if (sessionId is null) return new(null, message);
 
         // Ask Daoris's opening rotates like a start, on the machine's order (TOOL4f, D125 §3.2), and says so first.
         RotatedOpening.Say(_service, _events, sessionId, resolved.Name, selection, carried: null);
+        return new(sessionId, message) { Adapter = resolved, Selection = selection };
+    }
 
-        return await RunAsync(sessionId, message, resolved, selection, config, HelpPlace(room, machine.Reads), onEnded, ct)
-            .ConfigureAwait(false);
+    /// <summary>
+    /// Run Ask Daoris's conversation placed by <see cref="PlaceHelpAsync"/> (HELPSTART1): the machine read, the room written from
+    /// it, then the agent spawned as any conversation's. A reading or a room that fails ends the record <c>failed</c> saying why,
+    /// so a conversation the person was handed says what became of it rather than waiting at <c>queued</c>.
+    /// </summary>
+    /// <param name="machine">The machine as the room says it; null where it could not be read.</param>
+    public async Task<ChatStart> RunHelpAsync(
+        HelpPlaced placed, DriverConfig config, Func<CancellationToken, Task<HelpMachine?>> machine,
+        Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
+    {
+        if (placed is not { SessionId: { } sessionId, Adapter: { } resolved, Selection: { } selection }) return new(null, placed.Message);
+
+        // A start being made, as a start from a conversation's words is: no go-on takes it up meanwhile, and a closing waits for it.
+        var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _context.GoingOn.TryAdd(sessionId, going.Task);
+        try
+        {
+            HelpMachine read;
+            string room;
+            try
+            {
+                read = await machine(ct).ConfigureAwait(false)
+                       ?? throw new DriverException("this machine could not be read for it: the service is not answering yet");
+                room = HelpRoom.Prepare(_home, read);
+            }
+            catch (Exception error)
+            {
+                var cancelled = error is OperationCanceledException && ct.IsCancellationRequested;
+                var why = $"Ask Daoris's room could not be written — {error.Message}";
+                await Conclude(
+                    sessionId, "failed",
+                    cancelled ? Noted.Of(NoteCodes.ChatCancelled, "the request that started it was cancelled before its process started.") : Observation.Failure(why),
+                    onEnded).ConfigureAwait(false);
+                if (cancelled) throw;
+                return new(null, why);
+            }
+
+            if (_context.Closing)
+            {
+                await Conclude(sessionId, "failed", Observation.Failure("the application closed before its agent started."), onEnded).ConfigureAwait(false);
+                return new(null, "the application is closing, so no conversation starts now.");
+            }
+
+            return await RunAsync(sessionId, placed.Message, resolved, selection, config, HelpPlace(room, read.Reads), onEnded, ct)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            _context.GoingOn.TryRemove(new KeyValuePair<string, Task>(sessionId, going.Task));
+            going.TrySetResult();
+        }
     }
 
     /// <summary>

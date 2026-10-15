@@ -37,6 +37,19 @@ public sealed class HelpRoomLookLogTests : IDisposable
         Assert.Contains("\"ms\":120", line);
         Assert.Contains("\"slow\":false", line);
         Assert.Contains("\"read\":true", line);
+        Assert.Contains("\"kept\":false", line);
+    }
+
+    /// <summary>HELPSTART1: a room that read the look kept from the last half-minute says so, so its milliseconds read as no look.</summary>
+    [Fact]
+    public void A_look_kept_from_a_moment_ago_says_kept()
+    {
+        using var log = new MachineLog(_home, "driver");
+        HelpRoomLookLog.Said(log, TimeSpan.FromMilliseconds(1), read: true, kept: true);
+
+        var line = Assert.Single(Lines());
+        Assert.Contains("\"kept\":true", line);
+        Assert.Contains("\"read\":true", line);
     }
 
     [Fact]
