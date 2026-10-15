@@ -14937,3 +14937,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NOTIFY1c — no toast for the conversation already on screen** (web). The page toasts a conversation's answer even while the person reads that very conversation in a window in front (the balloon is quiet then): `ShellSignals` does not know which session is attended; skip the toast for it. SURF5b, D126. Proof: a `ShellSignals` test with that session attended.
 
 **Outcome** 2026-10-16: `ShellSignals` is handed the session attended on this window's Sessions view (`attended`) and says no toast for a kind `Answered` of that session while the document is visible; every other kind, every other session and a hidden window keep their toast, and the sessions are refetched as before. On Sonnet, with WAITFOOT2c: 89 tool calls. Detail: the driver design's open question 5, its NOTIFY1c note.
+
+## PROPOSEHERE1c — an Allow from the band tells the session too (2026-10-16, D74)
+
+> - [ ] **PROPOSEHERE1c — an Allow from the band tells the session too** (web). An *Allow* in What needs you or on the Agents page changes the rules, but the session that proposed it never hears, so it can sit idle as on 2026-10-15: where the proposal names a session the list holds, say the same words to it (`work.wait.rule.said`, `work/ruleAnswer.ts`'s tell). D74's PROPOSEHERE1b note (left out), D168. Proof: a band test with a proposal by a listed session.
+
+**Outcome** 2026-10-16: an *Allow* in What needs you and an *Accept* on the Agents page tell the session that proposed the rule, with the conversation's own words, once the rule is kept (`ruleHearing` and `settled`'s hearing in `work/ruleAnswer.ts`); an intake takes no words, so the sentence says it is not told, and a proposal naming no listed session tells none. The band presses the say hook; the Agents place is handed the door by `App.tsx`, since its view may not import it. Detail: D74's PROPOSEHERE1c note.
+
+## TIDIEDLANDING1 — a landing's branch tidied away says so (2026-10-16, D88)
+
+> - [ ] **TIDIEDLANDING1 — a landing's branch tidied away says so** (web). A `branch.tidied` line with `session` and no `branch` (AUTOTIDY2b: a landing branch's name carries the quest title's words, which the log never holds) shows on the Branches tab's *Cleaned up on its own* as a bare repository row: say it was a landing's branch, en and zh. D88's AUTOTIDY2b note, the machine-log design §4, `WorkspaceTidied.tsx`. Proof: a `WorkspaceTidied` test with such a line.
+
+**Outcome** 2026-10-16: such a line's row reads *A landing's branch, for session …* (落地的分支，会话 …), with the session's name where the sessions list holds it, else its id (`WorkspaceTidied`'s `titles`, fed by `WorkspaceView`). Detail: D88's TIDIEDLANDING1 note.

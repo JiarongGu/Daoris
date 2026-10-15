@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- Allowing a rule a session proposed from What needs you, or accepting it on the Agents page, now tells that session so, as
+  allowing it in its conversation does, so it goes on instead of sitting idle. And a branch Daoris cleaned up that a landing
+  made reads *A landing's branch, for session …* in the Branches tab's *Cleaned up on its own*, not a bare repository row.
 - Answering a session that parked is one box: the words waiting on it fold to one line with their count, *Show them* opens them
   to edit or remove, and the strip at the foot no longer says "answer it in the box below" over that box. A conversation that
   answers you while you are reading it in a window in front no longer also toasts.
