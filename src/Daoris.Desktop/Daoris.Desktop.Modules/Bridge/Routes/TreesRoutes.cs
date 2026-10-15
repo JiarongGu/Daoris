@@ -481,6 +481,8 @@ public sealed class TreesRoutes(DriverLoop loop)
 
         // The landing gate (XAGENT1f, REVIEWENV1c): the second opinion, then the review. What holds the press says so before it,
         // and the press refuses it.
+        // Said to every window while the press is under way (PRESSSTEP1); a plan is no press and says it to nobody.
+        PressSteps.Reach(PressSteps.Gate);
         var gate = await trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, cancellationToken);
         // On the entry's one branch, joining it where this part ran alongside; a name the person entered still lands as entered.
         if (lead is not null) subject = await trees.JoinEntryAsync(tree, id, subject, cancellationToken, gate.Process);
@@ -513,6 +515,7 @@ public sealed class TreesRoutes(DriverLoop loop)
         gate = await new OpinionPresses(_loop.Home, service).PressedAsync(id, gate, Optional(request, "answers"), tree, questId, cancellationToken);
 
         // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds (LAND3).
+        PressSteps.Reach(PressSteps.Landing);
         var landed = await trees.LandAsync(tree, subject, cancellationToken, async token => await LinesRoutes.InUseAsync(service, token), gate: gate,
             joins: joins);
         // Kept where the conversation is kept, so the landing and the plugin's word outlast the press (D100).
@@ -538,19 +541,8 @@ public sealed class TreesRoutes(DriverLoop loop)
         };
     }
 
-    /// <summary>
-    /// The part a session's own Accept is named for (ACCEPTALL1b, D167's 2026-10-15 amendment point 2): its entry's first, the records
-    /// sharing its key oldest first by <c>created</c> then id, as <see cref="SessionEntries.Read"/> orders an entry's parts. Null where
-    /// the session has no record here or is its entry's only part: it lands as before.
-    /// </summary>
-    public static SessionRecord? EntryLead(IReadOnlyList<SessionRecord> records, string session)
-    {
-        if (records.FirstOrDefault(record => record.Id == session) is not { } own) return null;
-        var parts = records.Where(record => string.Equals(record.EntryKey, own.EntryKey, StringComparison.Ordinal))
-            .OrderBy(record => record.Created).ThenBy(record => record.Id, StringComparer.Ordinal)
-            .ToList();
-        return parts.Count > 1 ? parts[0] : null;
-    }
+    /// <summary>The part a session's own Accept is named for (ACCEPTALL1b): the library's, <see cref="EntryAccepts.EntryLead"/>.</summary>
+    public static SessionRecord? EntryLead(IReadOnlyList<SessionRecord> records, string session) => EntryAccepts.EntryLead(records, session);
 
     /// <summary>
     /// Where the person left this part out of its entry's Accept (ACCEPTALL1c): the branch its conversation's newest note names, while
@@ -836,6 +828,7 @@ public sealed class TreesRoutes(DriverLoop loop)
             return new { Session = id, Branch = (string?)plan.Branch, plan.Repository, plan.Plugin, plan.Problem, plan.PullRequest, plan.Commits };
         }
 
+        PressSteps.Reach(PressSteps.HandOff);
         var handed = await HandAsync(_loop, trees, root, entry, named, cancellationToken);
         return new
         {

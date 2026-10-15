@@ -68,6 +68,31 @@ internal static class TreesConsole
     }
 
     /// <summary>
+    /// What an entry's Accept would do, in lines (ACCEPTALL1e): where its parts land, then each part's own words: what it shares,
+    /// what it leaves out, what it conflicts with, what holds it and what a later part superseded; the page's plan in a terminal's words.
+    /// </summary>
+    internal static IEnumerable<string> EntryPlanned(SessionEntry entry, EntryPlan plan, IReadOnlyDictionary<string, string> held)
+    {
+        var count = plan.Parts.Count(part => part.SameTreeAs is null);
+        yield return plan.Parts.Count == 0
+            ? $"trees: `{entry.Key}` ({entry.Repository}) has no part with work to land here."
+            : $"trees: accepting `{entry.Key}` ({entry.Repository}) would {(plan.Form == LandingForm.Branch ? "put its work on the branch" : "merge its work into")} "
+              + $"`{plan.Target}`, {count} tree(s), oldest first.";
+        foreach (var part in plan.Parts)
+        {
+            if (part.SameTreeAs is { } same) yield return $"  {part.Session}  shares `{same}`'s tree, which that part's landing carries.";
+            if (part.Plan?.LeftOut is { Count: > 0 } left) yield return $"  {part.Session}  leaves out {left.Count} commit(s) the line holds.";
+            if (part.Plan?.Conflict is { } conflict) yield return $"  {part.Session}  would conflict: {conflict.Says}";
+            if (held.TryGetValue(part.Session, out var why)) yield return $"  {part.Session}  is held: {why}";
+            if (part.Superseded is { } by)
+            {
+                yield return $"  {part.Session}  was redone by `{by.By}`: {(by.Conflicts ? "it conflicts after that part's work" : "it adds nothing after it")} "
+                    + $"(`--leave-out {part.Session}` leaves it out): {by.Says}";
+            }
+        }
+    }
+
+    /// <summary>
     /// A session's entry on the due list (LAND2b, design §8), for <c>trees land --plan</c>: when it became due, and its last try
     /// by its code; null where it was never due.
     /// </summary>
@@ -308,6 +333,71 @@ internal static class TreesConsole
                 return missed > 0 ? 1 : 0;
             }
 
+            // A line of work's one Accept, or an ask's (ACCEPTALL1e, D167's amendment, D50): the page's `LAND_ENTRY` and `LAND_ASK` from a
+            // terminal, over the library's one code (`EntryAccepts`); --plan says where the parts would land and does nothing.
+            case ["land", "--entry" or "--ask", ..]:
+            {
+                if (TreesCommand.ReadEntryLand(args, out var problem) is not { } ask) return Usage(problem);
+                using var service = ServiceClient.FromEnvironment();
+                var config = DriverConfig.Load(configPath);
+                var accepts = new EntryAccepts(
+                    service, home,
+                    new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => Console.WriteLine($"  plugin:{plugin}  {line}"), log: log)),
+                    new SessionEvents(Path.Combine(home, "sessions")), (_, line) => Console.Error.WriteLine($"trees: {line}"),
+                    async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
+                        .Select(each => each.Tree).OfType<string>().Where(each => each.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase),
+                    log, ReviewDoors.Terminal);
+                var (found, rows) = await EntryAccepts.LookAsync(
+                    service, config, SessionsConsole.Wire(config), lastLook: null, waits: null, home,
+                    ask.IsAsk ? entry => entry.Origin == $"ask:{ask.Id}" : entry => entry.Key == ask.Id, default).ConfigureAwait(false);
+                // An ask's are its own entries, one per repository, with work to land; an entry's is the one named.
+                var entries = ask.IsAsk
+                    ? [.. EntryAccepts.EntriesOf(ask.Id, found).Where(entry => EntryAccepts.PartsOf(entry, rows).Count > 0)]
+                    : found.Take(1).ToList();
+                if (entries.Count == 0)
+                {
+                    Console.Error.WriteLine($"trees: no {(ask.IsAsk ? "ask" : "entry")} `{ask.Id}` has work to land on this machine.");
+                    return 1;
+                }
+
+                if (ask.Plan)
+                {
+                    foreach (var entry in entries)
+                    {
+                        var (plan, held) = await accepts.PlanAsync(entry, rows, default).ConfigureAwait(false);
+                        foreach (var line in EntryPlanned(entry, plan, held)) Console.WriteLine(line);
+                    }
+
+                    return 0;
+                }
+
+                var done = true;
+                foreach (var entry in entries)
+                {
+                    // One repository's refusal, said or thrown, holds only its own entry; the next is landed all the same (point 4).
+                    EntryLanding landed;
+                    try
+                    {
+                        landed = await accepts.LandAsync(entry, rows, ask.LeaveOut, default).ConfigureAwait(false);
+                    }
+                    catch (DriverException error)
+                    {
+                        landed = new EntryLanding(false, $"Nothing was landed: {error.Message}", null, []);
+                    }
+
+                    done &= landed.Landed;
+                    Console.WriteLine($"trees: {entry.Repository}: {landed.Message}");
+                    foreach (var part in landed.Parts)
+                    {
+                        Console.WriteLine($"  {part.Outcome,-9}  {part.Session}" + (part.Landing is { } its ? $"  {its.Message}" : ""));
+                    }
+                }
+
+                Told(home, ask.IsAsk ? PressesTold.LandAsk : PressesTold.LandEntry);
+                await FollowMovedLinesAsync(service, home, log).ConfigureAwait(false);
+                return done ? 0 : 1;
+            }
+
             // Accepting a session's work (WSR1, D87): the review's Accept, from a terminal — D50's second
             // door, which the landing had not had. The workspace's rule decides the form (merged into the
             // line, or a branch for the person to push, or for the rule's plugin to push — D100), and --plan
@@ -507,6 +597,7 @@ internal static class TreesConsole
         if (problem is not null) Console.Error.WriteLine($"trees: {problem}");
         Console.Error.WriteLine("usage: daoris-driver trees [list | remove <path|session|branch> [--repository <name>] [--force]");
         Console.Error.WriteLine("                           | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>]");
+        Console.Error.WriteLine("                           | land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]");
         Console.Error.WriteLine("                           | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]");
         Console.Error.WriteLine("                           | state <session|branch> [--repository <name>]");
         Console.Error.WriteLine("                           | sync [--repository <name>] [--workspace <name>] [--all] [--yes]]");
@@ -525,6 +616,9 @@ internal static class TreesConsole
         Console.Error.WriteLine("  plugin hands the branch to it to push and open the pull request (D100). A session");
         Console.Error.WriteLine("  that already landed, while its branch stands or once its tree is gone, is said");
         Console.Error.WriteLine("  as its review says it, and lands nothing again (D113).");
+        Console.Error.WriteLine("  land --entry or --ask is the one Accept of a line of work or an ask, as Sessions' list has it: every part");
+        Console.Error.WriteLine("  lands in the order it ran, each by its own gate and the rule; --leave-out names a part a later one");
+        Console.Error.WriteLine("  redid, which --plan says (D167's 2026-10-15 amendment). An ask lands each repository's line of work.");
         Console.Error.WriteLine("  hand gives a branch a landing made to a landing plugin afterwards — the one");
         Console.Error.WriteLine("  --plugin names, else the rule's — to push and open the pull request (WSR5).");
         Console.Error.WriteLine("  state asks the plugin that pushed a landed branch, else the rule's, again whether");

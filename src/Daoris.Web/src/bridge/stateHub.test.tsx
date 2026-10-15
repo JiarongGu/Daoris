@@ -30,7 +30,8 @@ import { treesSyncScopeKey } from './lines';
 import { usePlugins } from './plugins';
 import { useRules } from './rules';
 import { useSessionGroups } from './sessions';
-import { useStateHub, useUnderWay } from './stateHub';
+import { useLandEntry } from './entries';
+import { useStateHub, useUnderWay, useUnderWayStep, useUnderWaySubject } from './stateHub';
 import { ALL_TOOLS, useTools } from './tools';
 import { useLandSessionTree } from './trees';
 import { useWorkPlan, workKey } from './work';
@@ -314,6 +315,94 @@ describe('the state hub (UNDER_WAY)', () => {
     told({ seq: 3, presses: [{ route: 7, session: 's1' }, null, { session: 's1' }] });
     await settled();
     expect(read('LAND_SESSION_TREE', 's1')).toEqual(['still', 'still']);
+  });
+
+  /** PRESSSTEP1: the step the driver says a press has reached, read by every view of that session, and gone with the press. */
+  it('says the step a press has reached, that session’s and that route’s alone', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    function Step({ route, session }: { route: string; session: string | null }) {
+      return <span data-testid={`step ${route} ${session}`}>{useUnderWayStep(route, session) ?? 'none'}</span>;
+    }
+    render(
+      <QueryClientProvider client={client}>
+        <Hub />
+        <Step route="LAND_SESSION_TREE" session="s1" />
+        <Step route="LAND_SESSION_TREE" session="s2" />
+        <Step route="HANDOFF" session="s1" />
+        <Step route="LAND_SESSION_TREE" session={null} />
+      </QueryClientProvider>,
+    );
+    const read = (route: string, session: string | null) => screen.getByTestId(`step ${route} ${session}`).textContent;
+
+    told({ seq: 1, presses: [LANDING_S1] });
+    await settled();
+    // A press that has said no step has reached none the page could word.
+    expect(read('LAND_SESSION_TREE', 's1')).toBe('none');
+
+    told({ seq: 2, presses: [{ ...LANDING_S1, step: 'gate' }] });
+    await settled();
+    expect(read('LAND_SESSION_TREE', 's1')).toBe('gate');
+    expect(read('LAND_SESSION_TREE', 's2')).toBe('none');
+    expect(read('HANDOFF', 's1')).toBe('none');
+    expect(read('LAND_SESSION_TREE', null)).toBe('none');
+
+    told({ seq: 3, presses: [{ ...LANDING_S1, step: 'landing' }] });
+    await settled();
+    expect(read('LAND_SESSION_TREE', 's1')).toBe('landing');
+
+    told({ seq: 4, presses: [] });
+    await settled();
+    expect(read('LAND_SESSION_TREE', 's1')).toBe('none');
+  });
+
+  /**
+   * ACCEPTALL1e: an entry's or an ask's Accept is under way in every window that shows that entry or ask, as another window's
+   * telling carries it, and in this window from its send; one entry's press holds no other's, nor the ask's of the same id.
+   */
+  it('says an entry’s or an ask’s Accept is under way, from the driver’s telling and from this window’s own press', async () => {
+    let answer: (value: unknown) => void = () => {};
+    invoke.mockImplementation((_module: string, type: string) =>
+      (type === 'LAND_ENTRY' ? new Promise((resolve) => { answer = resolve; }) : Promise.resolve({})));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    function Subject({ route, subject }: { route: string; subject: string | null }) {
+      return <span data-testid={`subject ${route} ${subject}`}>{useUnderWaySubject(route, subject) ? 'under way' : 'still'}</span>;
+    }
+    function Press() {
+      const land = useLandEntry();
+      return <button type="button" onClick={() => land.mutate({ entry: 'e2', parts: 2, leaveOut: [] })}>Accept</button>;
+    }
+    render(
+      <QueryClientProvider client={client}>
+        <Hub />
+        <Press />
+        <Subject route="LAND_ENTRY" subject="e1" />
+        <Subject route="LAND_ENTRY" subject="e2" />
+        <Subject route="LAND_ASK" subject="a1" />
+        <Subject route="LAND_ENTRY" subject="a1" />
+        <Subject route="LAND_ENTRY" subject={null} />
+      </QueryClientProvider>,
+    );
+    const read = (route: string, subject: string | null) => screen.getByTestId(`subject ${route} ${subject}`).textContent;
+
+    // Another window's: the driver's telling names the entry, and the ask.
+    told({ seq: 1, presses: [{ route: 'LAND_ENTRY', subject: 'e1' }, { route: 'LAND_ASK', subject: 'a1' }] });
+    await settled();
+    expect(read('LAND_ENTRY', 'e1')).toBe('under way');
+    expect(read('LAND_ASK', 'a1')).toBe('under way');
+    expect(read('LAND_ENTRY', 'a1')).toBe('still');
+    expect(read('LAND_ENTRY', 'e2')).toBe('still');
+    expect(read('LAND_ENTRY', null)).toBe('still');
+
+    // This window's own, from its send, before any telling.
+    await act(async () => { screen.getByRole('button', { name: 'Accept' }).click(); });
+    await waitFor(() => expect(read('LAND_ENTRY', 'e2')).toBe('under way'));
+    await act(async () => answer({ entry: 'e2', repository: 'r', done: true, message: 'ok', parts: [] }));
+    await waitFor(() => expect(read('LAND_ENTRY', 'e2')).toBe('still'));
+
+    told({ seq: 2, presses: [] });
+    await settled();
+    expect(read('LAND_ENTRY', 'e1')).toBe('still');
+    expect(read('LAND_ASK', 'a1')).toBe('still');
   });
 
   /**
