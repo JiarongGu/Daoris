@@ -67,6 +67,23 @@ public static class SessionEventCodes
     public static IReadOnlyList<string> All { get; } = [Lost, Withdrawn];
 }
 
+/// <summary>
+/// The notes every door keeps of a word the person took back (WITHDRAWNLINE1): the driver's terminal and conversations, and the
+/// modules' bridge, keep one shape, so the page settles the word it showed waiting however it was taken back.
+/// </summary>
+public static class SessionNotes
+{
+    /// <summary>The driver's English for <see cref="Withdrawn"/>: what a page that does not know the code shows.</summary>
+    public const string WithdrawnLine = "— taken back before it was sent.";
+
+    /// <summary>
+    /// The line a record keeps of a word taken back or reworded while it waited (QUEUEEDIT1a): its code, which the page words as
+    /// <c>work.conversation.withdrawn</c>, and the word's id, so the page settles the word it showed waiting.
+    /// </summary>
+    public static SessionEvent Withdrawn(string word) =>
+        new() { Kind = SessionEventKind.Note, Text = WithdrawnLine, Words = [word], Code = SessionEventCodes.Withdrawn };
+}
+
 /// <summary>What a tool call carries: text, a diff, or a terminal, in ACP's own three shapes.</summary>
 public sealed record ToolContent(
     string Type, string? Text = null, string? Path = null, string? OldText = null, string? NewText = null);

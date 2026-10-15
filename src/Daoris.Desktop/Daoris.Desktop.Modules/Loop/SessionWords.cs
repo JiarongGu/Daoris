@@ -397,12 +397,9 @@ public sealed class SessionWords : IDisposable
             return answer.Why is null or "taken" or WordsNever.NotFound ? QueueEdit.Taken : throw new DriverException(answer.Message);
         }
 
-        // QUEUEEDIT1a's line, by its code, which the page words; the driver's own (`ChatTurns.Withdrawn`) is not this library's.
+        // QUEUEEDIT1a's line, by its code, which the page words; the one note shape every door keeps (WITHDRAWNLINE1).
         _loop.Output.Append(id, $"— the person took back word {word} before the session took it.");
-        _loop.Events.Keep(id, new SessionEvent
-        {
-            Kind = SessionEventKind.Note, Text = "— taken back before it was sent.", Words = [word], Code = SessionEventCodes.Withdrawn,
-        }, null);
+        _loop.Events.Keep(id, SessionNotes.Withdrawn(word), null);
         if (answer.Word is { } kept)
         {
             _loop.Output.Append(id, $"— the person said, which the same session goes on with: {kept.Text}");
