@@ -641,6 +641,21 @@ describe('the composer, waiting messages with an id', () => {
     expect(box()).toHaveValue('half a thought');
   });
 
+  /** REWORDBOUND1 (D137 §2.4): a reword is words the door takes too, so the box's own bound refuses it as it refuses a send. */
+  it('refuses a reword the door could not take, keeping the text and the edit in the box', async () => {
+    const edit = vi.fn().mockResolvedValue({ done: true });
+    show({ taking: true, onRemove: vi.fn(), onEdit: edit, accepts: (text: string) => text.length <= 20, queued: WAITING });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Edit the waiting message: then commit' }));
+    await userEvent.clear(box());
+    await userEvent.type(box(), 'then commit and push everything');
+    await userEvent.click(screen.getByRole('button', { name: 'Queue' }));
+
+    expect(edit).not.toHaveBeenCalled();
+    expect(box()).toHaveValue('then commit and push everything');
+    expect(screen.getByText(/Editing a waiting message/)).toBeInTheDocument();
+  });
+
   it('leaves the message as it was when Escape cancels the edit', async () => {
     const edit = vi.fn();
     show({ taking: true, onRemove: vi.fn(), onEdit: edit, queued: WAITING });

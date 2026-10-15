@@ -335,6 +335,8 @@ export function Composer({
       // Rewording keeps the word's place and files, so the box's own files stay where they are. Blank is a removal, and
       // that is what *Remove* is for.
       if (!message || !live) return;
+      // REWORDBOUND1: the door's bound holds for a reword as for a send; the words and the edit stay in the box.
+      if (accepts && !accepts(message)) return;
       const { id, stash } = editing;
       setRefused(null);
       void onEdit(id, message).then((answer) => {
