@@ -11,14 +11,10 @@ namespace Daoris.Desktop.Modules.Tests;
 /// page's <c>prefers-color-scheme</c> agree with the page on a desktop set the other way.
 /// </summary>
 /// <remarks>
-/// <para><b>The kit's setting, through the kit's route.</b> <c>UseWindows</c> registers the app's
-/// <see cref="IColorScheme"/>, and the engine applies it to Chromium's global request context, which every window's
-/// browser takes (the main window's and each secondary window's alike: none is made with a context of its own). The page
-/// sets it by its choice over <c>SHENORA.COLOR_SCHEME</c>, which <c>AddShenoraColorScheme</c> mounts.</para>
-///
-/// <para><b>The choice, never the effective theme.</b> <c>SET_THEME</c>'s one flag cannot tell *System* from a held
-/// theme, and a scheme held at the OS's present value would leave a viewer on System behind the OS's next turn, since the
-/// page reads the OS through the very media query the held scheme answers.</para>
+/// The kit's setting, through the kit's route: <c>UseWindows</c> registers the app's <see cref="IColorScheme"/>, the
+/// engine applies it to the Chromium every window shares, and each window's page sets it to the viewer's choice over
+/// <c>SHENORA.COLOR_SCHEME</c>, which <c>AddShenoraColorScheme</c> mounts. Why the choice and not <c>SET_THEME</c>'s
+/// flag: D22's THEMESCHEME1 note.
 /// </remarks>
 public sealed class EngineThemeTests : Bridge
 {

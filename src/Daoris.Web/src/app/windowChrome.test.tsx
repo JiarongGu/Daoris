@@ -342,11 +342,7 @@ describe('the strip wired to the window, gesture by gesture', () => {
   });
 });
 
-/**
- * THEMESCHEME1: the main window's Chromium follows the viewer's choice, as its caption does, so Chromium's own UI and
- * `prefers-color-scheme` agree with the page on a desktop set the other way. The choice is told, never the effective
- * theme, which would hold a viewer on System at the OS's theme of that moment.
- */
+/** THEMESCHEME1: the main window's page tells the engine the viewer's choice, as a secondary window's does. */
 describe('the window\'s engine and the viewer\'s theme', () => {
   afterEach(() => {
     setThemeChoice('system');

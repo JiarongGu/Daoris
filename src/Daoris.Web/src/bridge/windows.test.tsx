@@ -49,11 +49,7 @@ describe('a secondary window\'s caption (WINDOW2)', () => {
     expect(invoke).toHaveBeenLastCalledWith('DAORIS.WINDOWS', 'SET_THEME', { payload: { name: 'monitor', dark: true } });
   });
 
-  /**
-   * THEMESCHEME1: the engine's own colour scheme follows the viewer's choice, not the OS, so Chromium's own UI and
-   * `prefers-color-scheme` in this window agree with the page. The choice itself, never the effective theme: a scheme
-   * held at the OS's present value would stop a viewer on System following the OS.
-   */
+  /** THEMESCHEME1: the engine is told the choice itself, never the effective theme (`useEngineTheme` has why). */
   it('tells the engine the viewer\'s choice on arrival and each time it changes', () => {
     invoke.mockResolvedValue({ applied: true });
     setThemeChoice('dark');
