@@ -8,6 +8,7 @@ import { Button } from '../design/ui';
 import type { QuestClose, Resolution } from './AwaitingPerson';
 import type { LineBehind } from './diff';
 import type { DiscardOffer, LandOffer } from './groups';
+import { HelperAsks, type HelperWaits } from './HelperAsks';
 import type { Answered } from './InlineConfirm';
 import type { SayRebase } from './LandingSync';
 import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from './Lands';
@@ -34,6 +35,12 @@ export type WaitProps = {
    * the answer's door, its pending, and whether the session takes words now. Absent where nothing reads the rules (a browser).
    */
   rules?: RuleWaits | null;
+  /**
+   * The helpers it asked for (MIXAGENT2b, D163): its asks as the driver's look left them, the agents' names, the person's yes and
+   * no, and a door to each helper. One an agent asked that the look holds waiting on the person's word is a wait (MIXAGENT2c).
+   * Absent where nothing reads them (a browser, a teammate's record).
+   */
+  helpers?: HelperWaits | null;
   lands?: LandOffer | null;
   landing?: LandingPlan | null;
   planning?: boolean;
@@ -63,7 +70,8 @@ export type WaitProps = {
  * @remarks
  * **The head's molecules, not copies** (D168 point 2): a go-ahead still open is `GoAheadList`'s, a rule the session proposed
  * `ProposedRules`' (PROPOSEHERE1b), the work's line `Lands` with its *Accept…*, the rebase words and the gates, a discard the line
- * holds `Discards`, each handed what the head is handed. A park's
+ * holds `Discards`, an agent's ask for a helper waiting on the person's word `HelperAsks` with its yes and no (MIXAGENT2c), each
+ * handed what the head is handed. A park's
  * question is named and not answered here: the box below is its answer's one door (FIX-LOG 2026-09-29), and its *Finish…* and
  * *Decline…* stay its card's (D56). A hand-over offer is the pinned page head's, already on screen.
  *
@@ -117,6 +125,7 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
   const intake = waits.find((wait): wait is Extract<Wait, { kind: 'intake' }> => wait.kind === 'intake');
   const open = new Set(waits.filter((wait) => wait.kind === 'goAhead').map((wait) => (wait as { number: number }).number));
   const ruled = new Set(waits.filter((wait) => wait.kind === 'rule').map((wait) => (wait as { id: string }).id));
+  const helping = new Set(waits.filter((wait) => wait.kind === 'helper').map((wait) => (wait as { id: string }).id));
   const work = waits.some((wait) => WORK_WAITS.has(wait.kind));
   const discard = waits.some((wait) => wait.kind === 'discard');
   // Never pluralised by `count`: in Chinese one is `other` too, and one wait is said without its number.
@@ -199,6 +208,12 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
                   marked={sought?.startsWith('rule:') ? sought.slice('rule:'.length) : undefined}
                   ask={ruleAsk}
                 />
+              </div>
+            )}
+            {helping.size > 0 && props.helpers && (
+              <div className="grid gap-1">
+                <p className="m-0 text-small text-ink-soft">{t('work.wait.helper.lead')}</p>
+                <HelperAsks {...props.helpers} asks={props.helpers.asks.filter((row) => helping.has(row.id))} />
               </div>
             )}
             {work && props.lands && (

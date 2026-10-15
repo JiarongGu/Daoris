@@ -12,7 +12,7 @@ import {
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useSessionDiff,
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting, useUnderWay,
-  useEntryLanding, useLandEntry, useUnderWaySubject, useSessionProcess,
+  useEntryLanding, useLandEntry, useSessionHelpers, useUnderWaySubject, useSessionProcess,
 } from '../bridge/shell';
 import { type Sent, useSending, useSettled } from './sending';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
@@ -68,6 +68,7 @@ import { sessionFacts } from './headFacts';
 import type { Answered } from './InlineConfirm';
 import type { AgentChoice } from './AgentChip';
 import { HandOverAsk, type HandOverRoster } from './HandOverAsk';
+import { AskHelper } from './AskHelper';
 import { handOverOffer, otherToolDoors } from './handOverOffer';
 import { HandOverOfferLine } from './HandOverOfferLine';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
@@ -313,6 +314,8 @@ export function WorkFrame({
   const [deleteAsking, setDeleteAsking] = useState<string | null>(null);
   // The session whose hand-over asks under the header (MIXAGENT1b-i, D163), the stop's way: of that session only.
   const [handOverAsking, setHandOverAsking] = useState<string | null>(null);
+  // The session whose helper's ask opens under the header (MIXAGENT2b, D163), the stop's way: of that session only.
+  const [helperAsking, setHelperAsking] = useState<string | null>(null);
   // The agent and account Daoris's offer named, and why, when *Choose…* opened that ask (MIXAGENT1b-ii): the ask opens with
   // the choice made and its press carries the reason. Cleared by the head's own door, whose press is the person's.
   const [handOverChosen, setHandOverChosen] = useState<{ why: 'near' | 'limit'; choice: AgentChoice } | null>(null);
@@ -567,6 +570,7 @@ export function WorkFrame({
     setStopAsking((asked) => (asked === selected ? asked : null));
     setDeleteAsking((asked) => (asked === selected ? asked : null));
     setHandOverAsking((asked) => (asked === selected ? asked : null));
+    setHelperAsking((asked) => (asked === selected ? asked : null));
     setPauseAsking((asked) => (asked?.session === selected ? asked : null));
   }, [selected]);
 
@@ -1200,6 +1204,9 @@ export function WorkFrame({
       return own ? { workspace, list: own.list } : { workspace: null, list: machineScope(use).list };
     },
   };
+  // The helpers the attended session asked for (MIXAGENT2b, D163): this machine's own files, so only for its own record. Its head
+  // lists those still on their way, with the person's yes to an agent's ask that waits on it and a door to each helper.
+  const helperAsks = useSessionHelpers(attended && here ? attended.id : null);
   // Words a cooling account holds (MSG1g2, D137 §2.2): a driven record of this machine's between runs, parked or ended, whose
   // own account cools. A running one hears words at its door, and a chat's go on with the next word said to it.
   const between = attended && here && attended.kind !== 'chat'
@@ -1219,6 +1226,7 @@ export function WorkFrame({
       attend(id);
       setDeleteAsking(null);
       setHandOverAsking(null);
+      setHelperAsking(null);
       setPauseAsking(null);
       setStopAsking(id);
     },
@@ -1228,6 +1236,7 @@ export function WorkFrame({
       attend(id);
       setStopAsking(null);
       setHandOverAsking(null);
+      setHelperAsking(null);
       setPauseAsking(null);
       setDeleteAsking(id);
     },
@@ -1237,9 +1246,20 @@ export function WorkFrame({
       attend(id);
       setStopAsking(null);
       setDeleteAsking(null);
+      setHelperAsking(null);
       setPauseAsking(null);
       setHandOverChosen(null);
       setHandOverAsking(id);
+    },
+    // *Ask another agent…* (MIXAGENT2b): attended, the helper's ask under its header, as a hand-over asks.
+    askHelper: (id) => {
+      chosen();
+      attend(id);
+      setStopAsking(null);
+      setDeleteAsking(null);
+      setHandOverAsking(null);
+      setPauseAsking(null);
+      setHelperAsking(id);
     },
     // The conversation a hand-over opened, attended as a start's is (MIXAGENT1b-i).
     attend: (id) => {
@@ -1253,6 +1273,7 @@ export function WorkFrame({
       setStopAsking(null);
       setDeleteAsking(null);
       setHandOverAsking(null);
+      setHelperAsking(null);
       setPauseAsking({ session: id, target });
     },
     // Its review: attended, with the dock open on its work.
@@ -1271,6 +1292,19 @@ export function WorkFrame({
     } : {}),
   };
   const actions = useSessionActs({ notify, doors, entries });
+  // The head's helpers (MIXAGENT2b): the asks read above, the yes and the no (HELPERNO1) through the acts' one owner, and a door
+  // to each helper.
+  const helperWaits = attended && here && helperAsks.data ? {
+    asks: helperAsks.data,
+    nameOf: (agent: string) => agentRoster.names?.[agent] ?? agent,
+    onApprove: (ask: string, answered: Answered) => actions.approveHelperNow(attended.id, ask, answered),
+    onDecline: (ask: string, answered: Answered) => actions.declineHelperNow(attended.id, ask, answered),
+    onOpen: (helper: string) => {
+      chosen();
+      attend(helper);
+    },
+    busy: actions.approvingHelper,
+  } : null;
 
   // The menu bar's verbs that are this frame's (UX7a, D152 §3.2): the attended session's answer, the views of the regions,
   // a new terminal where the attended session works, and *Archive what ended…*'s first press. Each from an effect, since
@@ -1390,6 +1424,9 @@ export function WorkFrame({
       busy: ruleAnswer.busy,
       heard: !intake && box.kind !== 'line',
     },
+    // The helpers it asked for (MIXAGENT2b), with the yes and the no: an agent's ask the look holds waiting on the person's word is
+    // one of its waits, at the head and at the foot alike (MIXAGENT2c, D168).
+    helpers: helperWaits,
     // Its review, wherever the review stands (SESS2 H4): the move beside unlanded work.
     onReview: () => openView('review'),
     // LAND4: commits its tree holds, offered to land beside what it left; the press is the review's Accept, its sentence said
@@ -1603,6 +1640,15 @@ export function WorkFrame({
             setHandOverChosen(null);
           }}
         />
+      ) : helperAsking === attended.id && headActs.includes('askHelper') ? (
+        <AskHelper
+          key={attended.id}
+          from={attended.adapter}
+          roster={agentRoster}
+          busy={actions.askingHelper}
+          onAsk={(asked, answered) => actions.askHelperNow(attended, asked, answered)}
+          onClose={() => setHelperAsking((was) => (was === attended.id ? null : was))}
+        />
       ) : pausing && !pauseQuiet ? (
         <PauseAsk
           className="mt-2.5"
@@ -1631,6 +1677,7 @@ export function WorkFrame({
             chosen();
             setStopAsking(null);
             setDeleteAsking(null);
+            setHelperAsking(null);
             setPauseAsking(null);
             setHandOverChosen({ why: offer.why, choice: { adapter: offer.agent, profile: offer.account ?? '' } });
             setHandOverAsking(attended.id);

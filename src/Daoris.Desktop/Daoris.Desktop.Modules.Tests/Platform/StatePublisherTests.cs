@@ -376,6 +376,14 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("STOP_SESSION", "sessions,driver", "id")]
     [InlineData("RESOLVE_SESSION", "sessions,quests,driver", "id")]
     [InlineData("SESSION_GO_ON_NEW", "sessions,driver", "id")]
+    // MIXAGENT2b: the person's ask of a helper and their yes to an agent's, each a file the loop's next look takes; the asks' read.
+    [InlineData("SESSION_HELPER_ASK", "sessions,driver", "id")]
+    [InlineData("SESSION_HELPER_APPROVE", "sessions,driver", "session")]
+    // HELPERNO1: the person's no, the ask refused and the asker's note written at once.
+    [InlineData("SESSION_HELPER_DECLINE", "sessions,driver", "session")]
+    [InlineData("SESSION_HELPERS", "", null)]
+    // MIXAGENT2c: what of the agents' asks waits on the person, *What needs you*'s read.
+    [InlineData("HELPER_WAITS", "", null)]
     [InlineData("SESSION_OPENINGS", "", null)]
     [InlineData("SESSION_WHERE", "", null)]
     [InlineData("SESSION_GROUPS", "", null)]

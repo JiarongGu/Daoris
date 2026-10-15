@@ -90,7 +90,13 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                         events.Add(await RefuseAsync(ask, verdict.Code!, null, files, ct).ConfigureAwait(false));
                         break;
                     case HelperVerdict.WaitKind:
-                        Wait(files, ask, state, verdict.Code);
+                        // An agent's ask that comes to wait on the person's word is said once (MIXAGENT2c, D168): the line makes
+                        // the loop's tick reach the windows, so the page reads what waits on the person again.
+                        if (Wait(files, ask, state, verdict.Code) && verdict.Code is null)
+                        {
+                            events.Add($"helper  ask `{ask.Id}` from session `{ask.Asker}` waits for the person's yes or no on its session's page");
+                        }
+
                         break;
                     case HelperVerdict.GoKind when _context.Runs.TryOpinion(HelperClaim(ask.Id)):
                         begun++;
@@ -141,11 +147,15 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
             }
         });
 
-    /// <summary>An ask held: <c>waiting</c>, with why it waits where it waits for something but the person's yes. Written when it changes.</summary>
-    private void Wait(HelperFiles files, HelperAsk ask, HelperState? state, string? code)
+    /// <summary>
+    /// An ask held: <c>waiting</c>, with why it waits where it waits for something but the person's yes. Written when it changes;
+    /// whether it was written.
+    /// </summary>
+    private static bool Wait(HelperFiles files, HelperAsk ask, HelperState? state, string? code)
     {
-        if (state is { State: HelperStates.Waiting } kept && kept.Code == code) return;
+        if (state is { State: HelperStates.Waiting } kept && kept.Code == code) return false;
         files.WriteState(new HelperState(ask.Id, HelperStates.Waiting, code, null, DateTimeOffset.UtcNow));
+        return true;
     }
 
     /// <summary>

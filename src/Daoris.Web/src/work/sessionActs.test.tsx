@@ -266,6 +266,76 @@ describe('the acts on a session', () => {
     expect(told.refused).not.toHaveBeenCalled();
   });
 
+  /**
+   * MIXAGENT2b (D163 point 2): *Ask another agent…*'s press asks `SESSION_HELPER_ASK` with the question and the agent the person
+   * named, and closes the ask saying where the answer comes back; a refusal is said inside it in the page's words by its code, or
+   * the driver's sentence for a code the page does not know.
+   */
+  it('asks a helper by the person’s press, and says a refusal in the ask by its code', async () => {
+    invoke.mockImplementationOnce(async () => ({ asked: 'f00d0001', why: null, message: 'Asked.' }));
+    const { result, notify } = acts();
+    const told = { done: vi.fn(), refused: vi.fn() };
+
+    act(() => result.current.askHelperNow(session({ kind: 'chat', quest: null }), { question: 'Which test?', agent: 'codex-acp' }, told));
+
+    await waitFor(() => expect(told.done).toHaveBeenCalled());
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HELPER_ASK', { payload: { id: 's1a2b3c4', question: 'Which test?', agent: 'codex-acp' } });
+    expect(notify).toHaveBeenCalledWith('Asked another agent: its answer comes back to this session as its next turn, marked as the helper’s.');
+
+    invoke.mockImplementationOnce(async () => ({ asked: null, why: 'helper', message: 'x' }));
+    act(() => result.current.askHelperNow(session(), { question: 'Why?', agent: null }, told));
+    await waitFor(() => expect(told.refused).toHaveBeenCalledWith('A helper cannot ask for a helper: ask from the session it helps.'));
+    expect(invoke).toHaveBeenLastCalledWith('DAORIS.DRIVER', 'SESSION_HELPER_ASK', { payload: { id: 's1a2b3c4', question: 'Why?' } });
+
+    invoke.mockImplementationOnce(async () => ({ asked: null, why: 'tomorrow', message: 'The driver’s own sentence.' }));
+    act(() => result.current.askHelperNow(session(), { question: 'Why?', agent: null }, told));
+    await waitFor(() => expect(told.refused).toHaveBeenLastCalledWith('The driver’s own sentence.'));
+  });
+
+  /** MIXAGENT2b (D163 point 3): the person's yes to an agent's ask, by the session and the ask; a refusal by its code. */
+  it('says yes to an agent’s ask by its session and its id, and a refusal by its code', async () => {
+    invoke.mockImplementationOnce(async () => ({ approved: true, why: null, message: 'yes' }));
+    const { result } = acts();
+    const told = { done: vi.fn(), refused: vi.fn() };
+
+    act(() => result.current.approveHelperNow('s1a2b3c4', 'a1', told));
+
+    await waitFor(() => expect(told.done).toHaveBeenCalled());
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HELPER_APPROVE', { payload: { session: 's1a2b3c4', ask: 'a1' } });
+
+    invoke.mockImplementationOnce(async () => ({ approved: false, why: 'past', message: 'x' }));
+    act(() => result.current.approveHelperNow('s1a2b3c4', 'a1', told));
+    await waitFor(() => expect(told.refused).toHaveBeenCalledWith('It has started already, or ended: nothing waits on your yes.'));
+  });
+
+  /**
+   * HELPERNO1 (D163 point 3): the person's no to an agent's ask, by the session and the ask, said where it went; a refusal by its
+   * code, `approved` and `unread` among the no's own, or the driver's sentence for one the page does not know.
+   */
+  it('says no to an agent’s ask by its session and its id, and a refusal by its code', async () => {
+    invoke.mockImplementationOnce(async () => ({ declined: true, why: null, message: 'no' }));
+    const { result, notify } = acts();
+    const told = { done: vi.fn(), refused: vi.fn() };
+
+    act(() => result.current.declineHelperNow('s1a2b3c4', 'a1', told));
+
+    await waitFor(() => expect(told.done).toHaveBeenCalled());
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HELPER_DECLINE', { payload: { session: 's1a2b3c4', ask: 'a1' } });
+    expect(notify).toHaveBeenCalledWith('Not asked: no helper is started for it, and its session’s timeline says you said no.');
+
+    invoke.mockImplementationOnce(async () => ({ declined: false, why: 'approved', message: 'x' }));
+    act(() => result.current.declineHelperNow('s1a2b3c4', 'a1', told));
+    await waitFor(() => expect(told.refused).toHaveBeenCalledWith('It has your yes already: the driver starts it at its next look.'));
+
+    invoke.mockImplementationOnce(async () => ({ declined: false, why: 'unread', message: 'x' }));
+    act(() => result.current.declineHelperNow('s1a2b3c4', 'a1', told));
+    await waitFor(() => expect(told.refused).toHaveBeenLastCalledWith('The driver has not read it yet: say no once it waits on your word.'));
+
+    invoke.mockImplementationOnce(async () => ({ declined: false, why: 'tomorrow', message: 'The driver’s own sentence.' }));
+    act(() => result.current.declineHelperNow('s1a2b3c4', 'a1', told));
+    await waitFor(() => expect(told.refused).toHaveBeenLastCalledWith('The driver’s own sentence.'));
+  });
+
   /** MIXAGENT1b-ii (D163): Daoris's own offer is asked with its reason and as Daoris's own; a press names neither. */
   it('asks Daoris’s offer with its reason and asked-by daoris, which a press never sends', async () => {
     invoke.mockImplementation(async () => ({ sessionId: 'c2', kept: true, message: 'goes on.' }));

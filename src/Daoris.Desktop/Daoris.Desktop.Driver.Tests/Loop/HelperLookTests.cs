@@ -126,6 +126,23 @@ public sealed class HelperLookTests : IDisposable
         Assert.Equal((HelperStates.Waiting, null, null), (state.State, state.Code, state.Helper));
     }
 
+    /// <summary>
+    /// MIXAGENT2c (D168): an agent's ask that comes to wait on the person's word is said once in the look's report, so the loop's
+    /// tick reaches the windows and the page asks what waits on the person again; the same wait at a later look says nothing.
+    /// </summary>
+    [Fact]
+    public async Task An_ask_that_comes_to_wait_on_the_person_is_said_once()
+    {
+        Ask("a1");
+        var driver = Driver(Host(), pass: null, rule: new HelperRule(HelperRules.Ask, []));
+
+        var first = await Look(driver);
+        var second = await Look(driver);
+
+        Assert.Equal("helper  ask `a1` from session `s1` waits for the person's yes or no on its session's page", Assert.Single(first));
+        Assert.Empty(second);
+    }
+
     /// <summary>A person's yes (`approved`, MIXAGENT2b's press) lets it go under `ask`: a helper starts and answers.</summary>
     [Fact]
     public async Task An_approved_ask_goes_under_the_rule_ask()
@@ -140,6 +157,27 @@ public sealed class HelperLookTests : IDisposable
         await Until(() => host.HelperHands.Count == 1);
 
         Assert.Single(pass.Asked);
+    }
+
+    /// <summary>
+    /// The person's no (HELPERNO1, the bridge's `SESSION_HELPER_DECLINE`): the ask is refused `declined` with its note already on
+    /// the asker's record, so a look starts nothing, under any rule, and writes no second note and no line.
+    /// </summary>
+    [Theory]
+    [InlineData(HelperRules.Ask)]
+    [InlineData(HelperRules.On)]
+    public async Task A_declined_ask_starts_nothing_and_is_not_said_again(string mode)
+    {
+        Ask("a1");
+        var declined = new HelperState("a1", HelperStates.Refused, HelperWhy.Declined, null, At);
+        Files.WriteState(declined);
+        var driver = Driver(Host(), pass: null, rule: new HelperRule(mode, []));
+
+        var events = await Look(driver);
+
+        Assert.Empty(events);
+        Assert.Equal(declined, Files.ReadState("a1"));
+        Assert.DoesNotContain(new SessionEvents(Path.Combine(_home, "sessions")).After("s1", 0).Events, e => e.Kind == SessionEventKind.Note);
     }
 
     [Fact]
