@@ -24,9 +24,8 @@ namespace Daoris.Desktop.Driver.Tests;
 ///
 /// The Process half runs as two (PROC1b): a Process class that starts git and nothing else that waits on a short
 /// bound also carries <c>[Trait(Category.Parallel, Category.Git)]</c>, and those classes run four at once in one
-/// host (<c>git.process.runsettings</c>), the rest one at a time (<c>process.runsettings</c>). PROC1a measured the
-/// half as git starts, one at a time, and four classes at once at about 2.2 times the throughput (FLAKE1's FIX-LOG
-/// entry). A class joins only when it holds no wall-clock bound a neighbour's load could break (a node hook under a
+/// host (<c>git.process.runsettings</c>, which says why four), the rest one at a time (<c>process.runsettings</c>).
+/// A class joins only when it holds no wall-clock bound a neighbour's load could break (a node hook under a
 /// landing's default patience may; <c>LandingPluginTests</c>' three seconds may not), starts no stub, tick, host or
 /// listener, and neither it nor its base sets or reads a variable of the process's environment, which the classes
 /// beside it share: <c>CategoryTests</c> holds the trait and the environment. The longest class is the run's wall,

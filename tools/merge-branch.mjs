@@ -1033,7 +1033,8 @@ function trxMs(duration) {
  * The slowest classes of a trx, at most `count`: each class's tests' durations summed, slowest first, by the
  * class's simple name (a nested class keeps its outer name, `Outer+Inner`). A test's class is its
  * definition's `TestMethod className`, matched to its result by `testId`; a test with no definition is
- * placed by its name. The Process half runs one class at a time, so the sums are its wall time.
+ * placed by its name. The serial Process half runs one class at a time, so its sums are its wall time; the git-only
+ * half runs four classes at once (PROC1c), so its sums are each class's share, and its slowest class is its wall's floor.
  */
 export function slowestClasses(trx, count = 10) {
   const classOf = new Map();
