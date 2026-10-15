@@ -33,8 +33,10 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  the account one the room lists under that agent).\n");
         // TOOL4l-b (D130 §9): the account doors the screen's How accounts are used fold offers, each a card the person applies.
         text.Append("  `use` sets how an agent's list of accounts is used (`use` goal or order, `keep` one account of the list or none,\n");
-        text.Append("  `early`, and `near` from 50 to 99); `order` writes the list in walk order, or with `clear` sends a workspace back\n");
-        text.Append("  to this machine's accounts; `ready` ends an account's cool-off, as *Try now* does (`own` is the tool's own sign-in).\n");
+        // SWITCH1d: the switch and the person's curve, in place of `early` and `near`.
+        text.Append("  `switch` smart, curve or off, and `curve` the person's own points a window, or `no_curve`); `order` writes the\n");
+        text.Append("  list in walk order, or with `clear` sends a workspace back to this machine's accounts; `ready` ends an account's\n");
+        text.Append("  cool-off, as *Try now* does (`own` is the tool's own sign-in).\n");
         text.Append("  Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is\n");
         text.Append("  offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.\n");
         text.Append("- `agent_settings_propose`: an account's own model and effort, as Agents → the agent's page → Model and\n");

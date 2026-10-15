@@ -212,12 +212,14 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "rotates)", Agent + "How accounts are used → Use, up and down; and Workspaces → Its own accounts",
             "`daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]`"),
         // TOOL6a (D130 §16.6): how a list is used, the terminal's door; TOOL4g gave it the screen's controls, and judges Ask
-        // Daoris's `use` door (`use`, `keep`, `early`, `near`), listed since TOOL4l-b.
+        // Daoris's `use` door (`use`, `keep`, since SWITCH1d `switch` and `curve`), listed since TOOL4l-b.
         ("choose how a list is used, for the machine or a workspace: make the most of its accounts (`goal`) or one by one "
-            + "in order (`order`), one kept for conversations, and switching before a limit",
-            Agent + "How accounts are used → Use accounts, Keep for conversations, Switch before the limit",
-            "`daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>] "
-            + "[--workspace <name>]` (no flag prints them; `--clear` returns to today's defaults)"),
+            + "in order (`order`), one kept for conversations, and when to switch accounts, by Daoris's usage curve, your own, "
+            + "or not while a session runs",
+            Agent + "How accounts are used → Use accounts, Keep for conversations, Switch accounts",
+            "`daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] "
+            + "[--curve <window>=<elapsed>:<used>,…] [--no-curve] [--workspace <name>]` (no flag prints them; `--clear` returns "
+            + "to today's defaults)"),
         ("end an account's cool-off now, after its agent hit a limit", Agent + "the account's Try now",
             "`daoris agent profile ready <agent> <profile>|--own` (`--own` is the tool's own sign-in)"),
         // HELP6: the doors built since, which the helper now proposes too.

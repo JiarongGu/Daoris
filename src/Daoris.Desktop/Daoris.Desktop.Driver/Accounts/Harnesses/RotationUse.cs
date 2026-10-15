@@ -496,7 +496,8 @@ public sealed record CurveProblem(
 /// </summary>
 /// <remarks>
 /// <paramref name="Early"/> and <paramref name="Near"/> are the old names (D165 §6), which the modules' <c>ACCOUNT_USE</c>
-/// and Ask Daoris's <c>use</c> door still take until SWITCH1d: <c>Early</c> false is <c>switch: off</c>, and true is
+/// and Ask Daoris's <c>use</c> door still read beside <c>switch</c> and <c>curve</c> since SWITCH1d, for a page or a proposal
+/// written before it: <c>Early</c> false is <c>switch: off</c>, and true is
 /// <c>smart</c> where it was off; <c>Near</c> other than 90 is the session window flat at it, and <c>switch: curve</c> unless
 /// it is off, and 90 takes the session window back to the smart curve's. They are applied before <paramref name="Switch"/>
 /// and <paramref name="Curve"/>, so a new name beside an old one is the one written — as the CLI's <c>UseChange</c>.
