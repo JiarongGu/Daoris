@@ -37,6 +37,9 @@ public sealed class MainForm : OptimizedForm
     private readonly HostSupervisor _supervisor;
     private readonly SessionNotifier _notifier;
     private readonly TaskbarBadge _badge;
+    private readonly Daoris.Driver.MachineLog _log;
+    // When the splash comes down (SPLASHDATA1): the page's word that its first screen has its data, or the bound.
+    private readonly SplashLift _lift = new();
     private ChromePalette _palette;
     private Label? _trouble;
 
@@ -48,19 +51,21 @@ public sealed class MainForm : OptimizedForm
         IEventBus eventBus,
         DriverLoop driver,
         HostSupervisor supervisor,
+        IColorScheme colorScheme,
         ILogger<ChromiumView>? viewLog = null,
-        UiStallWatch? watch = null)
+        UiStallWatch? watch = null,
+        Daoris.Driver.MachineLog? log = null)
         : base(new OptimizedFormOptions
         {
             FramelessChrome = true,
             // The window owns the caption pixels and paints them (D56 as amended by SURF7's reading
             // of the framework). Inert until the page reports where it left the room.
             NativeCaptionButtons = true,
-            BackColor = StartingPalette.Page,
+            BackColor = StartingPalette(colorScheme).Page,
             // The 1px Win11 border line. The system default is light, which is visibly wrong on the
             // dark theme and slightly wrong on the light one.
-            DwmBorderColor = StartingPalette.Line,
-            ImmersiveDarkMode = StartingPalette.IsDark,
+            DwmBorderColor = StartingPalette(colorScheme).Line,
+            ImmersiveDarkMode = StartingPalette(colorScheme).IsDark,
         })
     {
         _engine = engine;
@@ -69,7 +74,8 @@ public sealed class MainForm : OptimizedForm
         _viewLog = viewLog ?? NullLogger<ChromiumView>.Instance;
         _driver = driver;
         _supervisor = supervisor;
-        _palette = StartingPalette;
+        _log = log ?? Daoris.Driver.MachineLog.None;
+        _palette = StartingPalette(colorScheme);
 
         // Still set: it is the taskbar's label and the caption of the one MessageBox left. While anything
         // waits on the person it leads with the count (NOTIFY1b, ShowWaiting).
@@ -109,7 +115,8 @@ public sealed class MainForm : OptimizedForm
         MinimumSize = new Size(960, 600);
         CaptionButtonColors = CaptionColors(_palette);
 
-        // The view comes once the host answers (BringUpAsync); the splash holds the window till then.
+        // The view comes once the host answers (BringUpAsync); the splash holds the window till then, and on until the
+        // page's first screen has its data (SPLASHDATA1).
         _splash = new SplashPanel(new SplashPanelOptions { BackColor = _palette.Page });
         Controls.Add(_splash);
         _splash.BringToFront();
@@ -128,6 +135,8 @@ public sealed class MainForm : OptimizedForm
             // The page's rectangles are read against the view that sent them (ChromiumView), per
             // monitor, so no coordinate space is named here.
             SetCaptionButtons = SetCaptionButtons,
+            // The page's CLOSE_SPLASH (SPLASHDATA1): its first screen has its data. Only the main window's page reaches it.
+            CloseSplash = _lift.PageSaid,
         }));
 
         // The OS notification (SURF5b), which closes driver design open question 5: a session that
@@ -183,8 +192,12 @@ public sealed class MainForm : OptimizedForm
         _badge.Show(count, description);
     }
 
-    /// <summary>What the OS is set to, for the first paint — the page corrects it a round trip later.</summary>
-    private static ChromePalette StartingPalette { get; } = ChromePalette.For(OperatingSystemPrefersDark());
+    /// <summary>
+    /// The first paint's palette: the viewer's choice as the app's scheme starts at, kept from the last run (THEMESTART1),
+    /// and the OS's at <i>System</i>. The page's word, a round trip later, is the one that stands.
+    /// </summary>
+    private static ChromePalette StartingPalette(IColorScheme colorScheme) =>
+        ChromePalette.For(KeptScheme.StartsDark(colorScheme.Scheme, OperatingSystemPrefersDark));
 
     /// <summary>
     /// The page's effective theme, arriving over <c>SET_THEME</c> on every change.
@@ -221,7 +234,7 @@ public sealed class MainForm : OptimizedForm
     };
 
     /// <summary>
-    /// Whether the OS is in dark mode. Only for the first paint: the page is authoritative and says
+    /// Whether the OS is in dark mode. Only for the first paint at <i>System</i>: the page is authoritative and says
     /// so within a round trip.
     /// </summary>
     /// <remarks>
@@ -280,6 +293,10 @@ public sealed class MainForm : OptimizedForm
             _splash.BringToFront();
 
             if (view.Browser is { } browser) await browser.Created;
+
+            // Down once the page says its first screen has its data (SPLASHDATA1), not as its browser is made, which
+            // lifted it onto an empty frame; at the bound, said in the log, when the page never says.
+            await _lift.WaitAsync(_log, SplashLift.Bound);
             if (!_splash.IsDisposed)
             {
                 Controls.Remove(_splash);

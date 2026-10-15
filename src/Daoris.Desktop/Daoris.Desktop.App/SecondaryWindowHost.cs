@@ -26,6 +26,7 @@ public sealed class SecondaryWindowHost(
     Shenora.Chromium.ChromiumEngine engine,
     ShenoraPaths paths,
     SecondaryWindows windows,
+    IColorScheme colorScheme,
     Microsoft.Extensions.Logging.ILogger<ChromiumView>? log = null) : ISecondaryWindows, IDisposable
 {
     /// <summary>
@@ -51,8 +52,10 @@ public sealed class SecondaryWindowHost(
             // once the geometry has been applied.
             CreateForm = () =>
             {
+                // Until its page speaks, the viewer's choice as the app's scheme holds it now (THEMESTART1).
                 var form = new SecondaryForm(
-                    name, address, engine, log ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<ChromiumView>.Instance);
+                    name, address, engine, log ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<ChromiumView>.Instance,
+                    () => KeptScheme.StartsDark(colorScheme.Scheme, MainForm.OperatingSystemPrefersDark));
                 lock (_forms) _forms[name] = form;
                 form.FormClosed += (_, _) =>
                 {

@@ -9,7 +9,7 @@ import { ExternalLink } from '../design/links';
 import { store, stored } from '../lib/stored';
 import {
   type LandingConflict, useDiscardSessionTree, useHandOff, useHandOffPress, useLandSessionTree, useLanding, useReadingSince, useSay, useSessionDiff,
-  useUnderWay,
+  useUnderWay, useUnderWayStep,
 } from '../bridge/shell';
 import { Button, EmptyState, Inline, SESSION_ACTIVE } from '../design/ui';
 import { reviewBranch, reviewKnown } from './diff';
@@ -68,6 +68,10 @@ const LAYOUT = 'daoris.reviewLayout';
  * holds no commit past the line, lists no file and nothing uncommitted, the foot says so where *Accept* would be, offers neither
  * *Accept* nor *Send back…*, and *Discard tree* leads. The head names the branch the tree stands on once the answer says it, over
  * the record's `daoris/` guess, and none where the tree is detached.
+ *
+ * **A part left out of its entry's Accept leads with Discard** (ACCEPTALL1c, D167's 2026-10-15 amendment point 3). Where the plan
+ * says the person left this part out when its line of work landed (`leftOutOf`, its conversation's note), the foot says so first,
+ * *Discard tree* leads, and *Accept* follows it, quiet: landing it later is a press of its own.
  *
  * **It says what it is doing while git reads** (REVIEW4). The frame stands at once with what the record holds —
  * the title, the repository, its own branch, the base and the commits it reported — and the files and the patch as
@@ -156,6 +160,9 @@ export function DiffPane({
   const conflict = canAccept
     ? (pressed && pressed.session === session && pressed.at === landing.dataUpdatedAt ? pressed.conflict : landing.data?.conflict ?? null)
     : null;
+  // ACCEPTALL1c (D167's 2026-10-15 amendment point 3): a part the person left out of its entry's Accept, as its conversation keeps it.
+  // The review says so and leads with *Discard tree*; *Accept* stays after it, landing it later being a press of its own.
+  const leftOutOf = plannable ? landing.data?.leftOutOf ?? null : null;
   const say = useSay();
   const discard = useDiscardSessionTree();
   // The branch this session's landing made, handed to a landing plugin afterwards (WSR5b) — asked whether
@@ -168,6 +175,8 @@ export function DiffPane({
     land: useUnderWay('LAND_SESSION_TREE', session),
     discard: useUnderWay('DISCARD_SESSION_TREE', session),
     hand: useUnderWay('HANDOFF', session),
+    // Where the landing has reached, where its driver says (PRESSSTEP1): the gate is read before anything lands.
+    landStep: useUnderWayStep('LAND_SESSION_TREE', session),
   };
   const handable = handOff.data?.branch && handOff.data.plugin ? handOff.data : null;
 
@@ -299,6 +308,28 @@ export function DiffPane({
   const files = diff.data?.files ?? [];
   const uncommitted = diff.data?.uncommitted?.files ?? [];
 
+  // One discard where the held one is offered: unforced, the review's own would do the same without naming the ref.
+  const discardTree = !treeHere || heldPress || confirmingDiscard
+    ? null
+    : (
+      <Button
+        // The next move where nothing is beyond the line (REVIEWBASE4), or where the person left this part out of its entry's
+        // Accept (ACCEPTALL1c), so it leads; beside *Accept*, it stays quiet.
+        variant={nothingBeyond || leftOutOf ? 'primary' : 'ghost'}
+        disabled={underWay.discard}
+        // Unforced. A tree with nothing to lose is simply removed; one holding uncommitted
+        // work or unmerged commits comes back REFUSED with the sentence naming what would go —
+        // and that refusal is what arms the second press.
+        onClick={() => act(
+          discard.mutateAsync({ id: session }),
+          undefined,
+          () => setConfirmingDiscard(true),
+        )}
+      >
+        {t('work.review.discard')}
+      </Button>
+    );
+
   // Gated on the TREE, not on the diff: a session whose range git cannot read may still hold a tree
   // worth discarding, and one whose record travelled here holds none at all. Sending the work back
   // is about the work, not the tree, so it stands wherever there is a door for it (UX5 U66) — but for
@@ -315,6 +346,12 @@ export function DiffPane({
       )}
       {/* Where Accept would be, a tree with nothing beyond its line (REVIEWBASE4): a landed one's note already says where it went. */}
       {!said && nothingBeyond && !asLanded && <NothingToLand line={nothingBeyond.line} />}
+      {/* A part the person left out of its entry's Accept (ACCEPTALL1c): said first, since its next move is Discard's. */}
+      {!said && leftOutOf && (
+        <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
+          <Inline text={t('work.review.leftOutOf', { branch: leftOutOf })} />
+        </p>
+      )}
       {/* Where a press sends the work, before it is pressed (D87) — and who pushes it where a plugin
           does (D100). A shell older than the rule answers no form, and the pane then claims nothing. */}
       {!said && canAccept && landing.data?.form === 'branch' && landing.data.target && (
@@ -372,9 +409,10 @@ export function DiffPane({
       )}
 
       <div className="flex flex-wrap items-center gap-2">
+        {leftOutOf && discardTree}
         {canAccept && !conflict && (
           <Button
-            variant="primary"
+            variant={leftOutOf ? 'default' : 'primary'}
             disabled={underWay.land}
             onClick={() => {
               const at = landing.dataUpdatedAt;
@@ -384,7 +422,7 @@ export function DiffPane({
               }));
             }}
           >
-            {underWay.land ? t('work.review.accepting') : t('work.review.accept')}
+            {underWay.land ? t(underWay.landStep === 'gate' ? 'work.review.acceptingGate' : 'work.review.accepting') : t('work.review.accept')}
           </Button>
         )}
 
@@ -402,26 +440,7 @@ export function DiffPane({
 
         {sendBack && <Button onClick={sendBack}>{t('work.review.sendBack')}</Button>}
 
-        {/* One discard where the held one is offered: unforced, the review's own would do the same without naming the ref. */}
-        {!treeHere || heldPress || confirmingDiscard
-          ? null
-          : (
-            <Button
-              // The next move where nothing is beyond the line, so it leads (REVIEWBASE4); beside *Accept*, it stays quiet.
-              variant={nothingBeyond ? 'primary' : 'ghost'}
-              disabled={underWay.discard}
-              // Unforced. A tree with nothing to lose is simply removed; one holding uncommitted
-              // work or unmerged commits comes back REFUSED with the sentence naming what would go —
-              // and that refusal is what arms the second press.
-              onClick={() => act(
-                discard.mutateAsync({ id: session }),
-                undefined,
-                () => setConfirmingDiscard(true),
-              )}
-            >
-              {t('work.review.discard')}
-            </Button>
-          )}
+        {!leftOutOf && discardTree}
       </div>
       {treeHere && !heldPress && confirmingDiscard && (
         /* The unforced press's refusal named what would go and armed this (above): it is the ask's own sentence, so the foot

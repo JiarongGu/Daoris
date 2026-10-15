@@ -142,6 +142,23 @@ public sealed class LandingChainTests : IDisposable
     }
 
     /// <summary>
+    /// ACCEPTALL1d (D87's 2026-10-15 amendment point 3): under a squash rule a session's work grows from the tip the record says was
+    /// squashed, but work replayed onto the branch's tip (a part that joined its entry's branch, or past what the line holds) grows
+    /// from that tip, the record's own, so its advance is no longer refused as grown apart.
+    /// </summary>
+    [Fact]
+    public void A_replayed_advance_grows_from_the_branchs_tip_under_a_squash_too()
+    {
+        var squashed = Entry() with { Squashed = Next };
+
+        Assert.Equal(Next, LandingAdvance.GrewFrom(squashed, squash: true, replayed: false));
+        Assert.Equal(Tip, LandingAdvance.GrewFrom(squashed, squash: true, replayed: true));
+        Assert.Equal(Tip, LandingAdvance.GrewFrom(squashed, squash: false, replayed: false));
+        Assert.Equal(Tip, LandingAdvance.GrewFrom(Entry(), squash: true, replayed: false));
+        Assert.Null(LandingAdvance.GrewFrom(null, squash: true, replayed: true));
+    }
+
+    /// <summary>
     /// D149 point 3: a branch whose pull request was merged is not moved on, and the sentence says the way through — bring the
     /// repository up to date, which replays this session's own commits and removes that branch, then Accept lands it fresh.
     /// </summary>

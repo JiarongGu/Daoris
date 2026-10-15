@@ -147,4 +147,123 @@ public sealed class EntryLandingTests : LandedFixture
         Assert.Equal($"{Branch}-2", landed.Branch);
         Assert.Equal("the second part", (await GitAsync(root, "log", "--format=%s", $"main..{Branch}-2")).Trim());
     }
+
+    /// <summary>
+    /// ACCEPTALL1b (D167's amendment point 2): a part's own Accept, in its review, is its entry's Accept for that part alone. Two parts
+    /// that ran alongside, each accepted from its own review, land on the entry's one branch: the second joins it as the entry's press would.
+    /// </summary>
+    [Fact]
+    public async Task An_alongside_parts_own_accept_advances_the_entrys_branch()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        var second = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "a.txt", "a\n", "the first part");
+        await CommitAsync(second.Path, "b.txt", "b\n", "the second part");
+
+        var lead = await trees.JoinEntryAsync(first.Path, "s1a2b3c4", Subject);
+        var once = await trees.LandAsync(first.Path, lead, joins: true);
+        Assert.True(once.Landed, once.Message);
+        Assert.Equal(Branch, once.Branch);
+
+        var joined = await trees.JoinEntryAsync(second.Path, "s5e6f7a8", Subject);
+        Assert.Equal(("s5e6f7a8", Branch), (joined.Session, joined.EntryBranch));
+        Assert.Equal(Branch, (await trees.PlanAsync(second.Path, joined)).Target);
+
+        var landed = await trees.LandAsync(second.Path, joined, joins: true);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal(Branch, landed.Branch);
+        Assert.NotNull(landed.AdvancedFrom);
+        Assert.Contains("since its work ran alongside its entry's earlier parts", landed.Message);
+        Assert.Equal("the second part\nthe first part", (await GitAsync(root, "log", "--format=%s", $"main..{Branch}")).Trim());
+        var tip = (await GitAsync(root, "rev-parse", Branch)).Trim();
+        Assert.Equal(tip, (await GitAsync(second.Path, "rev-parse", "HEAD")).Trim());
+        Assert.Equal(tip, trees.Recorded.Of("engine", Branch)!.Tip);
+    }
+
+    /// <summary>
+    /// ACCEPTALL1d (D87's amendment point 3): under a squash rule a part that ran alongside joins the entry's branch by one more squashed
+    /// commit. Its work replayed onto the branch's tip grows from that tip, not from the first part's squashed one, so it is not refused.
+    /// </summary>
+    [Fact]
+    public async Task Under_a_squash_rule_an_alongside_part_joins_by_one_more_squashed_commit()
+    {
+        Squashing();
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        var second = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "a.txt", "a\n", "the first part");
+        await CommitAsync(second.Path, "b.txt", "b\n", "the second part");
+        EntryLandingPart[] parts = [new("s1a2b3c4", first.Path), new("s5e6f7a8", second.Path)];
+
+        var landed = await trees.LandEntryAsync(parts, Subject, Kept);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal([EntryPartOutcome.Landed, EntryPartOutcome.Landed], landed.Parts.Select(part => part.Outcome));
+        Assert.Equal("2", (await GitAsync(root, "rev-list", "--count", $"main..{Branch}")).Trim());
+        Assert.Equal(("a", "b"), ((await GitAsync(root, "show", $"{Branch}:a.txt")).Trim(), (await GitAsync(root, "show", $"{Branch}:b.txt")).Trim()));
+        // The record moves to the tip this advance squashed, which the second part's tree followed to.
+        var record = trees.Recorded.Of("engine", Branch)!;
+        Assert.Equal((await GitAsync(root, "rev-parse", Branch)).Trim(), record.Tip);
+        Assert.Equal((await GitAsync(second.Path, "rev-parse", "HEAD")).Trim(), record.Squashed);
+    }
+
+    /// <summary>
+    /// ACCEPTALL1d, with ACCEPTALL1b's join: under a squash rule a part's own later work, grown from the tip its first landing squashed,
+    /// still advances by its own tip, with nothing replayed, as a chain's later step under a squash does.
+    /// </summary>
+    [Fact]
+    public async Task Under_a_squash_rule_a_parts_later_work_advances_by_its_own_tip()
+    {
+        Squashing();
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "a.txt", "a\n", "the first part");
+        var lead = await trees.JoinEntryAsync(first.Path, "s1a2b3c4", Subject);
+        var once = await trees.LandAsync(first.Path, lead, joins: true);
+        Assert.True(once.Landed, once.Message);
+        await CommitAsync(first.Path, "a2.txt", "a2\n", "more of the first part");
+        var tip = (await GitAsync(first.Path, "rev-parse", "HEAD")).Trim();
+
+        var again = await trees.LandAsync(first.Path, await trees.JoinEntryAsync(first.Path, "s1a2b3c4", Subject), joins: true);
+
+        Assert.True(again.Landed, again.Message);
+        Assert.Contains("1 more commit(s), squashed into one", again.Message);
+        Assert.DoesNotContain("replayed", again.Message);
+        Assert.Equal(tip, trees.Recorded.Of("engine", Branch)!.Squashed);
+        Assert.Equal(tip, (await GitAsync(first.Path, "rev-parse", "HEAD")).Trim());
+    }
+
+    /// <summary>
+    /// ACCEPTALL1d (D87's amendment point 6): an entry's press fetches its line once, not once per part. Where the fetch fails, its
+    /// words are said once, in the entry's answer, and no part's landing says them again.
+    /// </summary>
+    [Fact]
+    public async Task An_entrys_press_fetches_once_and_says_a_failed_fetch_once()
+    {
+        var (root, _) = await RepositoryWithOriginAsync("engine");
+        var trees = new SessionTrees(Home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        var second = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "a.txt", "a\n", "the first part");
+        await CommitAsync(second.Path, "b.txt", "b\n", "the second part");
+        await GitAsync(root, "remote", "set-url", "origin", Path.Combine(Scratch, "gone.git"));
+        EntryLandingPart[] parts = [new("s1a2b3c4", first.Path), new("s5e6f7a8", second.Path)];
+
+        var landed = await trees.LandEntryAsync(parts, Subject, Kept);
+
+        Assert.True(landed.Landed, landed.Message);
+        const string NotFetched = "`origin` was not fetched (";
+        Assert.Equal(1, landed.Message.Split(NotFetched).Length - 1);
+        Assert.All(landed.Parts, part => Assert.DoesNotContain(NotFetched, part.Landing!.Message));
+    }
+
+    /// <summary>The repository's rule squashes each landing into one commit (PROCESS1b-ii), named as the default rule names it.</summary>
+    private void Squashing() =>
+        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Squash: true))
+            .Save(Path.Combine(Home, "driver.json"));
 }

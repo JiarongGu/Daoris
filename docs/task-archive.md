@@ -15129,3 +15129,75 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ACCEPTALL1 — one Accept for an entry, and for an ask** (driver/modules/web; after 0, 1). The entry's head lands its parts in ledger order on one branch, a superseded part left out only by choice; *Group by ask* lands every entry, answered per repository, a refusal holding only its own. D167's 2026-10-15 amendment. Proof: two alongside parts on one branch (Process); modules and web tests; the owner's ask on the window.
 
 **Outcome** 2026-10-16: an entry's parts land on one branch in ledger order with one press (`EntryLands`, `LAND_ENTRY`), each through its own landing, so each keeps its gate, line judgement, record and plugin; a part alongside the branch joins it by LANDSYNC1's replay; a superseded part (its kept commits after a later part's conflict or add nothing, tried in trees only) is named in the plan and left out only by the person's choice; a held part holds the entry, a refused one stops those after it. An ask's entries land with one press (`LAND_ASK`), answered per repository. The page's *Accept all N parts…* sits under the Parts strip and *Accept the ask's N parts…* under the ask's heading, en and zh (`EntryAccept`). `EntryLandingTests` (Process, five cases) runs in the merge's gate set. Left as rows: ACCEPTALL1b-e and the window's look (ACCEPTALL1w). On Opus: 247 tool calls. Detail: D167's ACCEPTALL1 note; the ACCEPTALL1 commits.
+
+## PUBLISHTWIN2 — the page's publishing table holds every mark (2026-10-16, D169)
+
+> - [ ] **PUBLISHTWIN2 — the page's publishing table holds every mark** (web/modules tests). `DECLARED` covers only the presses tests make, so a test pressing another declared route never hears its change. Make the twin two-way. D169's PUBLISHTWIN1 note. Proof: a mark with no `DECLARED` entry fails, with `WorkFrame.test` and the other `publishing` importers green.
+
+**Outcome** 2026-10-16: `StatePublisherTests` holds every driver and browser mark to an entry in `test/publishing.ts` and each entry to its mark; turned on, it named 18 presses missing from `DECLARED` (the opinion presses, `SET_LANDING`, `START_CHAT`, `STOP_SESSION`, the `WORK_*` presses, `SYNC_NOW` among them), now added, and no importer's expectation moved. Seen failing first. On Sonnet, with PRESSSTEP1 and ACCEPTALL1e: 182 tool calls. Detail: D169's PUBLISHTWIN2 note; `twins.md`.
+
+## PRESSSTEP1 — a press says which step it has reached (2026-10-16, D169)
+
+> - [ ] **PRESSSTEP1 — a press says which step it has reached** (modules/web; D169 point 7, its STATEHUB1c2 note). No landing, discard or sweep reports its step, so no view can say a landing is at the gate, merging or handing off to its plugin. A `step` beside `route` and `session` on `UNDER_WAY` (point 3), written by the handler for its own press. Proof: a `StatePublisherTests` row and a `useUnderWay` reading.
+
+**Outcome** 2026-10-16: a press under way carries its `step` where the driver knows it (`gate` and `landing` in `LAND_SESSION_TREE`, `handOff` in `HANDOFF`), said by the handler through `PressSteps` (an `AsyncLocal` the publisher sets, so a handler holds no bus) and kept in the held list, so a window opened mid-press reads it too; the review's Accept says *Checking…* (检查中…) at the gate, then *Landing…*. Merge and replay inside one landing are not told apart (one library call). On Sonnet, with PUBLISHTWIN2. Detail: D169's PRESSSTEP1 note; `StatePublisherTests`, `DiffPane.underway.test`.
+
+## ACCEPTALL1e — an entry's or an ask's Accept under way in every window, and in the terminal (2026-10-16, D169)
+
+> - [ ] **ACCEPTALL1e — an entry's or an ask's Accept under way in every window, and in the terminal** (modules/web/driver). `useUnderWay` names one session, so another window shows no entry or ask press under way; and no terminal verb lands an entry or an ask (D50's twin rule). Proof: a `stateHub` test; a `trees land --entry`/`--ask` command test.
+
+**Outcome** 2026-10-16: an entry's or an ask's press carries its `subject` (`[Publishes(…, Subject = "entry"|"ask")]`), read by `useUnderWaySubject`, so its Accept shows under way in every window, in the head and in the list by ask; `daoris-driver trees land --entry <id> | --ask <id> [--leave-out <session>]… [--plan]` lands them from a terminal over the library's `EntryAccepts` (the entries' lookup and landing moved out of `EntriesRoutes`), writing one `.told` note. A part's own review is not held while its entry lands. On Sonnet, with PUBLISHTWIN2. Detail: D169's note; `TreesCommandTests`, `StateToldTests`.
+
+## ACCEPTALL1b — a part's own Accept lands on its entry's branch (2026-10-16, D167)
+
+> - [ ] **ACCEPTALL1b — a part's own Accept lands on its entry's branch** (driver/modules). `LANDING` and `LAND_SESSION_TREE` still name a part's landing by its own quest, where D167's 2026-10-15 amendment point 2 has it join the entry's branch (`LandingSubject.EntryBranch`). Proof: a Process case where an alongside part's own Accept advances the entry's branch; a modules test.
+
+**Outcome** 2026-10-16: `LANDING` and `LAND_SESSION_TREE` name a part of an entry with others for the entry's first part and join the entry's branch (`EntryAccepts.EntryLead`, `EntryLands.JoinAsync`, `joins`), including the `-2` successor after a merged pull request; a session alone, a merge rule, a typed branch name and a TREEFOLLOW1 branch land as before. The terminal's `trees land` and the automatic landing are ACCEPTALL1f. On Opus, with ACCEPTALL1c and ACCEPTALL1d, and the merge of PRESSSTEP1's branch: 217 tool calls. Detail: D167's ACCEPTALL1b note.
+
+## ACCEPTALL1d — a joined part under a squash rule, and one fetch per entry (2026-10-16, D87)
+
+> - [ ] **ACCEPTALL1d — a joined part under a squash rule, and one fetch per entry** (driver). Under a squash rule a joined part's advance is refused (`AdvanceAsync`'s `grewFrom` should be the recorded tip when a replay was made), and each part's landing fetches where one fetch per entry would do. D87's amendment points 3 and 6. Proof: Process cases.
+
+**Outcome** 2026-10-16: under a squash rule a replayed advance grows from the recorded tip (`LandingAdvance.GrewFrom`), so a joined part is squashed on as one more commit instead of refused, and a part's own later work still advances by its own tip; an entry's press fetches its line once (`TreeLandSyncs.FetchLineAsync`) and says a failed fetch once. On Opus, with ACCEPTALL1b. Detail: D87's ACCEPTALL1d note; FIX-LOG 2026-10-16.
+
+## ACCEPTALL1c — a left-out part is recorded, and its review leads with Discard (2026-10-16, D167)
+
+> - [ ] **ACCEPTALL1c — a left-out part is recorded, and its review leads with Discard** (driver/web). An entry's Accept says what it left out but nothing keeps it: a coded note on the part's conversation (en and zh) and the review reading it. D167's amendment point 3. Proof: a driver note test and a `DiffPane` test.
+
+**Outcome** 2026-10-16: a part left out of an entry's press keeps a `landing.left-out` note (en and zh, in every note-code twin and the page's `noteLines`), written in `EntryAccepts.LandAsync` so the terminal's press writes it too; `LANDING` answers `leftOutOf`, and the review says so first with *Discard tree* primary and *Accept* after it (`DiffPane.leftout.test`). On Opus, with ACCEPTALL1b. Detail: D167's ACCEPTALL1c note.
+
+## REQTAKE2 — a withdrawn request is never also honoured (2026-10-16, D126)
+
+> - [ ] **REQTAKE2 — a withdrawn request is never also honoured** (driver). `WithdrawAt` renames the request aside and reports it withdrawn, but on Windows a take's rename that opened the file a moment earlier moves it on from the withdrawn name, so the door tells the person nothing took it while the loop acts on it. D126 §7.1 and its REQTAKE1 note (of a withdrawal and a take only one wins). Proof: a `SessionRequestsTests` case holding the file as a rename in progress does while withdrawing, then taking: never both withdrawn and taken, seen failing first.
+
+**Outcome** 2026-10-16: `SessionRequests.WithdrawAt` renames the request aside, then opens it alone and removes it as that closes, so a take's rename begun before it moves it on and wins, and the withdrawal says false (the verb says the loop took it); held past a second it is put back. A `SessionRequestsTests` row, seen failing first. On Opus, with SAIDBACK1e: 140 tool calls. Detail: FIX-LOG 2026-10-16 (REQTAKE2), D126's REQTAKE2 note.
+
+## SAIDBACK1e — a driven quest session's resume hands its run the words the move to working returned (2026-10-16, D137)
+
+> - [ ] **SAIDBACK1e — a driven quest session's resume hands its run the words the move to working returned** (driver). The chat go-on is closed (SAIDBACK1d) but a quest's resume still spawns its run with the words read just before the spawn, and the ledger's move to working follows the spawn (`Driver.HoldAsync`), so a word taken back in that gap still goes. Closing it means the move before the spawn, which changes what a spawn that fails does (today a record still ended or parked hands its words on to a new session; moved first it is `failed`). D137 §2.4, MSG1b. Proof: a continuation test (a `Process` class, `SessionMessagesTickTests`) with a word taken back between the look and the move.
+
+**Outcome** 2026-10-16: a quest's resume moves its record to working before it reads the words and spawns (`HoldAsync`'s `movedFirst` and `spawned`), so a word taken back between the look and the move never goes; a run that never starts puts the record back with its words (`Continuations.PutBack`), an ended record as it ended, a park ended as a fallback ends it. A `ContinuationTests` row seen failing first; two `SessionMessagesTickTests` rows run in the merge's gate set. On Opus, with REQTAKE2. Detail: D137's SAIDBACK1e note; FIX-LOG 2026-10-16 (SAIDBACK1e).
+
+## THEMESTART1 — the first frame wears the saved choice (2026-10-16, D22)
+
+> - [ ] **THEMESTART1 — the first frame wears the saved choice** (desktop/web). Before the page speaks, the window and Chromium follow the OS: keep the choice through `IColorScheme.Changed` and seed `WindowsHostOptions.ColorScheme` and the starting palette from it. D22's THEMESCHEME1 note, D66. Proof: a start capture with the OS set opposite.
+
+**Outcome** 2026-10-16: the shell keeps each colour scheme the page sets (`KeptScheme`, `color-scheme.json` beside the window's geometry) and starts the next run from it: `WindowsHostOptions.ColorScheme`, and the main and secondary windows' first palette, the OS's only at System. The page still owns the choice and sets it on arrival. Window captures with the OS set opposite are ACCEPTALL1w's kind: THEMESTART1w. On Opus, with SPLASHDATA1: 128 tool calls. Detail: D22's THEMESTART1 note.
+
+## SPLASHDATA1 — the splash lifts once the first screen has data (2026-10-16, D56)
+
+> - [ ] **SPLASHDATA1 — the splash lifts once the first screen has data** (desktop; after SHEN3). Shenora 0.21's `CloseSplash` lets the app lift `SplashPanel` when it chooses: lift it once the first screen's data has come (`MainForm.BringUpAsync`), not at the bundle's load. D56; D22's SHEN3 note. Proof: a window capture at start.
+
+**Outcome** 2026-10-16: the main window answers the kit's `CLOSE_SPLASH` and lifts its splash once the page says its first screen has its data (`useSplashLift`: every query settled, then 150 ms with nothing fetching), or 10 s after the page's browser is made (`SplashLift.Bound`), writing `splash.lifted` (a warning at the bound). Touches the web shell (`app/splash.ts`, `App.tsx`). On Opus, with THEMESTART1. Detail: D56's SPLASHDATA1 note; the machine-log design §4.
+
+## SAIDBACK1f — a fallback hands its new session the words the move left (2026-10-16, D137)
+
+> - [ ] **SAIDBACK1f — a fallback hands its new session the words the move left, not those the look read** (driver). `Driver.RunAsync` carried `start.Resumes = park` (the look's record) into the new session, so a word taken back between the look and the fallback's open still went to it. D137 §2.4, MSG1b, its SAIDBACK1d/1e notes. Proof: a continuation test with a word taken back before a fallback's open, seen failing first.
+
+**Outcome** 2026-10-16: a fallback hands its new session the words the record holds now, re-read before the hand-on (`Continuations.HandedOn`); a word taken back since the look never goes, and none left means nothing is sent and the fresh tree is removed. A `ContinuationTests` row seen failing first; two `SessionMessagesTickTests` rows for the wiring run in the merge's gate set. Found by SAIDBACK1e's worker. On Sonnet, with SAIDBACK1g: 58 tool calls. Detail: D137's SAIDBACK1f note.
+
+## SAIDBACK1g — a chat put back after its words were taken back keeps what ended it (2026-10-16, D137)
+
+> - [ ] **SAIDBACK1g — a chat put back after its words were taken back keeps what ended it** (driver). `ChatGoOn.TakenBackAsync` replaced the record's whole note with the taken-back line and dropped the interrupted/limit flags the go-on's move cleared: use `Continuations.PutBack`'s state and note for ended records. D137's SAIDBACK1d/1e notes. Proof: a `ChatGoOnTests` row, seen failing first.
+
+**Outcome** 2026-10-16: a chat put back after all its words were taken back keeps its own state, note, parts and interrupted or limit flag (`Continuations.PutBack`); the taken-back line is said in the conversation only (`ChatGoOnTests`, seen failing first). Found by SAIDBACK1e's worker. On Sonnet, with SAIDBACK1f. Detail: D137's SAIDBACK1g note.

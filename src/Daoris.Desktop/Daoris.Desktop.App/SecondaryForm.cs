@@ -25,25 +25,32 @@ public sealed class SecondaryForm : OptimizedForm
 {
     private readonly ChromiumView _view;
     private readonly Microsoft.Win32.UserPreferenceChangedEventHandler _themeChanged;
+    private readonly Func<bool> _startsDark;
     private bool _pageSaid;
     private bool _pageDark;
 
+    /// <param name="startsDark">
+    /// The theme to wear until the page says its own: the viewer's held choice, or the OS's at <i>System</i>, asked each
+    /// time (THEMESTART1, <see cref="KeptScheme.StartsDark"/>).
+    /// </param>
     public SecondaryForm(
         string name,
         string page,
         ChromiumEngine engine,
-        ILogger<ChromiumView> log)
+        ILogger<ChromiumView> log,
+        Func<bool> startsDark)
         : base(new OptimizedFormOptions
         {
             // Framed, which is the whole point (D55 §b) — but the DWM dark-mode flag and the border
             // colour are still ours to set, and a light title bar over a dark page is the most
             // visible thing in the window.
             FramelessChrome = false,
-            BackColor = ChromePalette.For(MainForm.OperatingSystemPrefersDark()).Page,
-            DwmBorderColor = ChromePalette.For(MainForm.OperatingSystemPrefersDark()).Line,
-            ImmersiveDarkMode = MainForm.OperatingSystemPrefersDark(),
+            BackColor = ChromePalette.For(startsDark()).Page,
+            DwmBorderColor = ChromePalette.For(startsDark()).Line,
+            ImmersiveDarkMode = startsDark(),
         })
     {
+        _startsDark = startsDark;
         // The taskbar's label and the window's own caption — this one HAS a caption, so it is read.
         Text = name == SecondaryWindow.Monitor ? "Daoris — Monitor" : $"Daoris — {name}";
         StartPosition = FormStartPosition.CenterScreen;
@@ -52,10 +59,10 @@ public sealed class SecondaryForm : OptimizedForm
         // own beside the main one's, grouped by the executable the main one no longer is.
         TaskbarWindow.Wear(this);
 
-        // The OS theme, until the page says which one it is in (WINDOW2: `FollowPage`, over
-        // `DAORIS.WINDOWS`). Shenora's window commands route a second window's `SET_THEME` nowhere,
-        // so the page tells this form by its name instead. Before it has spoken — the moments while
-        // the page comes up — the OS is the best guess, and a person who switches their OS theme
+        // The viewer's held choice, or the OS theme at System, until the page says which one it is in (WINDOW2:
+        // `FollowPage`, over `DAORIS.WINDOWS`; THEMESTART1). Shenora's window commands route a second window's
+        // `SET_THEME` nowhere, so the page tells this form by its name instead. Before it has spoken — the moments
+        // while the page comes up — that is the best guess, and a person on System who switches their OS theme
         // with the page not yet up still gets a matching title bar.
         _themeChanged = (_, changed) =>
         {
@@ -66,7 +73,7 @@ public sealed class SecondaryForm : OptimizedForm
             // BeginInvoke, never Invoke: this arrives on the system-events thread and every window
             // here runs its own pump — a blocking marshal is the deadlock the framework warns about.
             if (IsDisposed || !IsHandleCreated) return;
-            BeginInvoke(() => Theme(MainForm.OperatingSystemPrefersDark()));
+            BeginInvoke(() => Theme(_startsDark()));
         };
         Microsoft.Win32.SystemEvents.UserPreferenceChanged += _themeChanged;
 
@@ -114,11 +121,11 @@ public sealed class SecondaryForm : OptimizedForm
         _ = SetWindowPos(Handle, IntPtr.Zero, 0, 0, 0, 0, FrameChanged);
     }
 
-    /// <summary>The OS's theme on arrival, painted as soon as there is a window to paint.</summary>
+    /// <summary>The held choice's theme or the OS's on arrival, painted as soon as there is a window to paint.</summary>
     protected override void OnHandleCreated(EventArgs e)
     {
         base.OnHandleCreated(e);
-        Theme(_pageSaid ? _pageDark : MainForm.OperatingSystemPrefersDark());
+        Theme(_pageSaid ? _pageDark : _startsDark());
     }
 
     private const int DwmImmersiveDarkMode = 20;
@@ -165,7 +172,7 @@ public sealed class SecondaryForm : OptimizedForm
             {
                 Dock = DockStyle.Fill,
                 Text = error.Message,
-                ForeColor = ChromePalette.For(MainForm.OperatingSystemPrefersDark()).Ink,
+                ForeColor = ChromePalette.For(_pageSaid ? _pageDark : _startsDark()).Ink,
                 Padding = new Padding(24),
                 Font = new Font("Segoe UI", 10.5f),
             });

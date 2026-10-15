@@ -373,6 +373,58 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 SAIDBACK1e (D137 §2.4): a quest's record goes on by the ledger's move to working before its run is spawned, so no word is
+    /// taken back once the words are read, and where no run of it then started it goes back, its words waiting on it again. An
+    /// ended record goes back to how it ended, its note, parts and flags as they were; a park whose words were all taken back
+    /// waits on the person again; a park whose run could not start ends as a fallback ends it, its words carried on, since back
+    /// to waiting on the person the ledger would clear them.
+    /// </summary>
+    [Fact]
+    public void A_record_moved_to_working_goes_back_as_it_was_where_no_run_of_it_started()
+    {
+        var why = ContinueWhy.Of(ContinueWhy.Refused);
+
+        var stopped = Written("stopped", Word) with { Note = "the sweep stopped it.", Interrupted = true };
+        var back = Continuations.PutBack(stopped, why);
+        Assert.Equal(("stopped", "the sweep stopped it.", true, false), (back.State, back.Note.Note, back.Interrupted, back.Limit));
+        Assert.Empty(back.Note.Parts);
+
+        var limited = Written("failed", Word) with { Note = "the quest reached done.", NoteParts = [NoteCodes.EndedDone.Part("the quest reached done.")], Limit = true };
+        back = Continuations.PutBack(limited, why);
+        Assert.Equal(("failed", "the quest reached done.", false, true), (back.State, back.Note.Note, back.Interrupted, back.Limit));
+        Assert.Equal(["ended.done"], NoteAssert.Codes(back.Note.Parts));
+        // Nothing to go on with is the same way back for an ended record.
+        Assert.Equal(back, Continuations.PutBack(limited, why: null));
+
+        var park = Written("awaiting-person", Word);
+        back = Continuations.PutBack(park, why);
+        Assert.Equal(("completed", Continuations.EndedNote(park, why).Note, false, false), (back.State, back.Note.Note, back.Interrupted, back.Limit));
+        back = Continuations.PutBack(park, why: null);
+        Assert.Equal(("awaiting-person", park.Note), (back.State, back.Note.Note));
+    }
+
+    /// <summary>
+    /// 🔴 SAIDBACK1f (D137 §2.4): a fallback hands its new session the words the record holds as the move left them, never those
+    /// the look read, so a word taken back between the two does not go; the look's only where the record cannot be read again.
+    /// </summary>
+    [Fact]
+    public void A_fallback_hands_on_the_words_the_record_holds_now_not_those_the_look_read()
+    {
+        var second = Word with { Id = "w2", Text = "And the tests." };
+        var look = Written("completed", Word, second);
+
+        var now = Continuations.HandedOn(look, Written("completed", second));
+        Assert.Equal(["w2"], now.Waiting.Select(word => word.Id));
+        Assert.Equal("completed", now.State);
+
+        Assert.False(Continuations.HandedOn(look, Written("completed")).WordsWaiting);
+        Assert.Same(look, Continuations.HandedOn(look, null));
+        // A park's answer is not a said word: the look's record stands.
+        var park = Written("awaiting-person", Word);
+        Assert.Same(park, Continuations.HandedOn(park, Written("awaiting-person")));
+    }
+
+    /// <summary>
     /// The notes a resume that cannot happen leaves on an ended record: on a closed quest it cannot go on, and nothing else
     /// carries the words on by itself; on a taken or open one they went to a new session.
     /// </summary>

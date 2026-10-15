@@ -245,9 +245,16 @@ internal static class Program
             app.Services.GetRequiredService<HostSupervisor>().Stop();
         });
 
+        // The viewer's colour scheme as the last run kept it (THEMESTART1, D22's THEMESCHEME1 note), beside the window's
+        // geometry: the kit keeps the scheme in memory only and asks the app to pass the saved one at its start.
+        var keptScheme = Path.Combine(builder.Paths.DataArea("config"), KeptScheme.FileName);
+
         builder.UseWindows(new WindowsHostOptions
         {
             MainForm = sp => sp.GetRequiredService<MainForm>(),
+            // The app's scheme starts at the kept choice, so the engine and the window's first frame wear it before the
+            // page has said it (the window's palette reads it, `MainForm.StartingPalette`), rather than the OS's and then a flip.
+            ColorScheme = KeptScheme.Read(keptScheme),
             WindowState = new WindowStateHostOptions
             {
                 Store = sp => new JsonFileWindowStateStore(
@@ -256,6 +263,8 @@ internal static class Program
         });
 
         using var app = builder.Build();
+        // And each choice the page sets from here, for the next start.
+        using var keeping = KeptScheme.Keep(app.Services.GetRequiredService<IColorScheme>(), keptScheme, log);
         app.Run();
     }
 

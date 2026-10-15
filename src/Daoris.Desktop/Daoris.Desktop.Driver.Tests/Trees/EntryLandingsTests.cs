@@ -111,4 +111,35 @@ public sealed class EntryLandingsTests
         Assert.StartsWith("Rebase your work onto `feature/x`: its entry's earlier work landed there", refused.Conflict!.Words);
         Assert.Equal("`s2`'s work conflicts with what `s1` landed before it. ", EntryLandWords.After("s2", ["s1"]));
     }
+
+    /// <summary>
+    /// ACCEPTALL1c (D167's amendment point 3): a part the person left out is recorded with the landing, a coded note on its conversation
+    /// naming the branch its line of work landed on, so its review can say so and lead with Discard.
+    /// </summary>
+    [Fact]
+    public void A_left_out_part_is_kept_as_a_coded_note_naming_the_entrys_branch()
+    {
+        var note = LandingRules.LeftOutNote("feature/x");
+
+        Assert.Equal(SessionEventKind.Note, note.Kind);
+        Assert.Equal("the person left this part out when its line of work landed on `feature/x`: its work did not land there.", note.Text);
+        var part = Assert.Single(note.Parts!);
+        Assert.Equal((NoteCodes.LandingLeftOut.Code, "feature/x", note.Text), (part.Code, part.Value("branch"), part.Text));
+    }
+
+    /// <summary>
+    /// Its review reads the newest such note while nothing accepted the part since: a press of its own, or a landing at done, after it
+    /// ends what the note said. Where no note says it, nothing is read.
+    /// </summary>
+    [Fact]
+    public void A_parts_review_reads_it_left_out_until_it_is_accepted_after()
+    {
+        SessionEvent At(SessionEvent note, long seq) => note with { Seq = seq };
+        var said = new SessionEvent { Kind = SessionEventKind.Note, Text = "a turn ended." };
+
+        Assert.Equal("feature/x-2", LandingRules.LeftOutOf([At(LandingRules.LeftOutNote("feature/x"), 1), said, At(LandingRules.LeftOutNote("feature/x-2"), 3)]));
+        Assert.Null(LandingRules.LeftOutOf([At(LandingRules.LeftOutNote("feature/x"), 1), At(LandingRules.Note(new TreeLanding(true, "put the work on `feature/x`.")), 2)]));
+        Assert.Equal("feature/x", LandingRules.LeftOutOf([At(LandingRules.Note(new TreeLanding(true, "put the work on `feature/y`.")), 1), At(LandingRules.LeftOutNote("feature/x"), 2)]));
+        Assert.Null(LandingRules.LeftOutOf([said]));
+    }
 }
