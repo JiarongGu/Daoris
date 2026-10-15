@@ -152,7 +152,7 @@
         "wiring.version", "work.composer.label", "work.conversation.driver", "work.conversation.plan",
         "work.conversation.target", "work.conversation.opinion", "work.head.elapsed", "work.head.itsWork", "work.head.machine",
         "work.head.moved", "work.head.quest", "work.head.ran", "work.head.repository", "work.head.started",
-        "work.head.tool", "work.head.account", "work.head.id", "work.head.continues", "work.head.helping", "quests.field.short",
+        "work.head.tool", "work.head.account", "work.head.id", "work.head.continues", "work.head.helping", "work.head.commits", "work.head.landing", "quests.field.short",
         "work.intake.ask", "work.intake.room", "work.preview.show", "work.relations.asked",
         "work.relations.askedBy", "work.relations.resumed", "work.review.layout", "work.review.viewed",
         "work.start.harness", "work.start.tree", "work.start.agentAccount", "work.start.profile", "work.start.repository",

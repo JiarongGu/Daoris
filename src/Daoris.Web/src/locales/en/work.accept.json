@@ -19,6 +19,9 @@
   "work.accept.held": "{{part}} is held: {{says}}",
   "work.accept.heldAll": "A gate holds a part, and what holds one part holds the whole line of work: answer it in that part's review first.",
   "work.accept.heldAsk": "A part here is held, so {{repository}}'s work stays; the other repositories' work lands.",
+  "work.accept.problem": "{{part}} would be refused now: {{says}}",
+  "work.accept.problemAll": "A part that would be refused now holds the whole line of work: answer it in that part's review first, or leave it out where you can.",
+  "work.accept.problemAsk": "A part here would be refused, so {{repository}}'s work stays; the other repositories' work lands.",
   "work.accept.meanIt": "Accept all",
   "work.accept.nothing": "Nothing was landed: none of this ask's lines of work has work to land here."
 }

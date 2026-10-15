@@ -7,7 +7,7 @@ import type { AccountNamer } from '../agents/tools';
 import { type GoAheadAnswer, GoAheadList } from '../asks/GoAheadList';
 import { ago, elapsed, sessionTool, stamp } from '../locales/format';
 import {
-  answeredPark, Button, PathText, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
+  answeredPark, Button, Inline, PathText, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
 } from '../design/ui';
 import { cn } from '../lib/cn';
 import { AnsweredPark } from './AnsweredPark';
@@ -23,6 +23,7 @@ import type { SayRebase } from './LandingSync';
 import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from './Lands';
 import { Note } from './Note';
 import { hasNote, noteBlocks, noteLines } from './noteLines';
+import { processCommitsSays, processLandingSays, type SessionProcess } from './process';
 import { ProposedRules, type RuleAsk, type RuleWaits } from './ProposedRules';
 import { movedAt } from './rail';
 import { RunningIntake } from './RunningIntake';
@@ -95,9 +96,9 @@ export type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from './Lands';
  */
 export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
-  onAnswerSession, branch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
+  onAnswerSession, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
-  continues, helps, onOpenSession, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek,
+  continues, helps, onOpenSession, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek,
 }: {
   /**
    * The wait a raising block's *To the wait* leads to while the head's waits are on screen (WAITFOOT2b, D168's WAITFOOT2 note),
@@ -138,6 +139,11 @@ export function SessionHead({
   helps?: HeadLink | null;
   /** Attend one of those sessions (MIXAGENT3a-i): the door beside its title in *Details*. Absent, the title has no door. */
   onOpenSession?: (session: Session) => void;
+  /**
+   * The process its own tree runs under (PROCESS1e, D164's amendment point 3): how its work is committed and how it lands, each
+   * with where it was set, *Details*' rows. Absent or null where it was told none (no tree of its own here) or nothing answered.
+   */
+  process?: SessionProcess | null;
   /** The landing plan shown is the previous one while the entered name's is read (LANDNAME1b); the press waits. */
   planning?: boolean;
   /**
@@ -211,6 +217,11 @@ export function SessionHead({
    * where, or what only it holds. Absent where it has no tree of its own here, or nothing has answered.
    */
   branch?: SweepBranch | null;
+  /**
+   * The branch its tree is on where the agent moved it onto one of its own (TREEFOLLOW1), as the driver's `work` says it
+   * (TREEFOLLOWWEB2): named when the clean-up lists no row, since it lists only `daoris/` branches and the tidy removed that one.
+   */
+  ownBranch?: string | null;
   /**
    * Discard that branch, its commits with it (LAND3b): offered once its tree is gone, where the driver says its commits are a
    * failed or superseded attempt's, and asked once first; told back to its ask (UXFIX2). Absent where nothing here can press
@@ -357,9 +368,14 @@ export function SessionHead({
         <div data-wait-section className="grid gap-2.5">
           <Discards key={session.id} discards={discards} onReview={onReview} onDiscard={onDiscardTree} ask={workAsk} busy={workBusy} />
         </div>
-      ) : branch && (
+      ) : branch ? (
         <Left key={branch.branch} branch={branch} onReview={onReview} onDiscard={onDiscardBranch} discarding={discardingBranch} />
-      )}
+      ) : ownBranch ? (
+        <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
+          <span className="text-ink-faint">{t('work.head.itsWork')}</span>
+          <PathText path={ownBranch} className="min-w-0 text-meta text-ink-faint" />
+        </p>
+      ) : null}
 
       {/* The reference (UX7c, D152 §7): the meta line's eight pairs became a folded *Details*, its line naming the quest,
           the agent and the start, so the conversation is not pushed down by facts that are looked up. The tree's machine
@@ -378,6 +394,9 @@ export function SessionHead({
           // Whom it continues and whom it helps (MIXAGENT3a-i), the record's own links, each a door where the frame holds it.
           linkRow(t, t('work.head.continues'), session.from, continues, onOpenSession),
           linkRow(t, t('work.head.helping'), session.serves, helps, onOpenSession),
+          // The process its own tree runs under and where each rule was set (PROCESS1e, D164's amendment point 3), in Setup's words.
+          { label: t('work.head.commits'), value: process ? <Inline text={processCommitsSays(t, process)} /> : null },
+          { label: t('work.head.landing'), value: process ? <Inline text={processLandingSays(t, process)} /> : null },
           { label: t('work.head.quest'), value: session.quest ? `#${session.quest}` : null, mono: true },
           { label: t('work.head.tool'), value: sessionTool({ adapter: session.adapter, harnessVersion: session.harnessVersion }) },
           {

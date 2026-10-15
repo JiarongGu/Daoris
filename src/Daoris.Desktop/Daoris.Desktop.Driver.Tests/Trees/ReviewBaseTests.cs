@@ -151,6 +151,63 @@ public sealed class ReviewBaseTests : LandedFixture
         Assert.Equal(new LineBehind("main", 0, 2), range.Behind);
     }
 
+    /// <summary>A chain's step grown from its parent's tip (`topic`, one commit the line does not hold), with a commit of its own.</summary>
+    private async Task<(string Root, SessionTrees Trees, TreeOpened Tree, string Began)> StepAsync(string parentFile = "parent.txt")
+    {
+        var (root, _) = await RepositoryWithOriginAsync("engine");
+        var trees = new SessionTrees(Home);
+        await GitAsync(root, "branch", "topic");
+        await CommitOnAsync(root, "topic", parentFile, "the parent's\n", "the parent's work");
+        var tree = await trees.OpenAsync(root, "engine", "aurora", from: "topic");
+        var began = await RevAsync(tree.Path, "HEAD");
+        await CommitAsync(tree.Path, "own.txt", "mine\n", "its own work");
+        return (root, trees, tree, began);
+    }
+
+    /// <summary>
+    /// REVIEWBASE3 (D164's REVIEWBASE1 note): a chain's step grew from its parent's tip and then merged the line, so the record's base
+    /// and the line's are incomparable. Measured from the line's, the parent's work read as the step's; measured from a merge of the
+    /// two (in trees, nothing on disk), the step's own changes stand alone. The base the page names is still the line's commit.
+    /// </summary>
+    [Fact]
+    public async Task A_chain_step_that_merged_the_line_shows_only_its_own_changes()
+    {
+        var (root, trees, tree, began) = await StepAsync();
+        await LineMovesAsync(root);
+        await GitAsync(tree.Path, "merge", "--quiet", "--no-edit", "main");
+        var status = await GitAsync(tree.Path, "status", "--porcelain", "--untracked-files=all");
+
+        var range = await trees.ReviewRangeAsync(tree.Path, began);
+
+        Assert.Equal(await RevAsync(root, "main"), range.From);
+        Assert.NotNull(range.Against);
+        Assert.Equal(["own.txt"], await ChangedAsync(tree.Path, range.Reads));
+        // What it read before: the parent's work beside its own.
+        Assert.Equal(["own.txt", "parent.txt"], await ChangedAsync(tree.Path, range.From));
+        // The parent's commit, its own and its merge are beyond the line; nothing of the tree was touched by the read.
+        Assert.Equal(new LineBehind("main", 0, 3), range.Behind);
+        Assert.Equal(status, await GitAsync(tree.Path, "status", "--porcelain", "--untracked-files=all"));
+    }
+
+    /// <summary>
+    /// The parent's work and the line's conflict, which the step resolved in its own merge: git's merged tree would hold conflict
+    /// markers neither side wrote, so the review reads from the line's as before, the parent's work with it.
+    /// </summary>
+    [Fact]
+    public async Task A_chain_step_whose_parent_conflicts_with_the_line_reads_from_the_line_as_before()
+    {
+        var (root, trees, tree, began) = await StepAsync(parentFile: "line.txt");
+        await LineMovesAsync(root);
+        await GitAsync(tree.Path, "merge", "--quiet", "--no-edit", "-X", "ours", "main");
+
+        var range = await trees.ReviewRangeAsync(tree.Path, began);
+
+        Assert.Equal(await RevAsync(root, "main"), range.From);
+        Assert.Null(range.Against);
+        Assert.Equal(range.From, range.Reads);
+        Assert.Equal(["line.txt", "own.txt"], await ChangedAsync(tree.Path, range.Reads));
+    }
+
     private static async Task<string> RevAsync(string cwd, string revision) => (await GitAsync(cwd, "rev-parse", revision)).Trim();
 
     /// <summary>The paths the review lists from <paramref name="from"/>, as the route reads them.</summary>

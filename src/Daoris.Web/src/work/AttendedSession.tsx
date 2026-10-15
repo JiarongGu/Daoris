@@ -18,6 +18,7 @@ import type { SessionEntry } from './entries';
 import { EntryAccept } from './EntryAccept';
 import type { DiscardOffer, LandOffer } from './groups';
 import { type PartFacts, PartsStrip } from './PartsStrip';
+import type { SessionProcess } from './process';
 import type { Relations } from './relations';
 import type { LineBehind } from './diff';
 import type { RuleAsk, RuleWaits } from './ProposedRules';
@@ -57,10 +58,12 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
 
 export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
-  chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, onDiscardBranch, discardingBranch,
+  chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
-  opinion, continues, helps, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek,
+  opinion, continues, helps, process, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek,
 }: {
+  /** Passed straight through to the head: the process its own tree runs under, *Details*' rows (PROCESS1e). */
+  process?: SessionProcess | null;
   /** Passed straight through to the head: the wait a raising block's *To the wait* leads to there (WAITFOOT2b). */
   seek?: Seek | null;
   /** Passed straight through to the head: the rules it proposed that the person still answers (PROPOSEHERE1b). */
@@ -151,6 +154,8 @@ export function AttendedSession({
   onQuest?: (quest: Quest) => void;
   /** The branch its own tree left, as the clean-up judged it (SESS1 S10) — the head's. */
   branch?: SweepBranch | null;
+  /** The branch a moved tree is on (TREEFOLLOWWEB2), passed straight to the head. */
+  ownBranch?: string | null;
   /** Passed straight through to the head: that branch discarded once its tree is gone (LAND3b), told back to its ask. */
   onDiscardBranch?: (answered: Answered) => void;
   /** That discard is on its way. */
@@ -215,6 +220,7 @@ export function AttendedSession({
         onAnswerAsk={onAnswerAsk}
         onAnswerSession={onAnswerSession}
         branch={branch}
+        ownBranch={ownBranch}
         onReview={onReview}
         onDiscardBranch={onDiscardBranch}
         discardingBranch={discardingBranch}
@@ -222,6 +228,7 @@ export function AttendedSession({
         onOpenQuest={onQuest}
         continues={continues}
         helps={helps}
+        process={process}
         onOpenSession={onSession}
         goAheads={goAheads}
         onGoAhead={onGoAhead}

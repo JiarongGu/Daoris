@@ -24,6 +24,11 @@ internal sealed class ReviewRanges(TreeContext context)
     /// line's own changes read as the session's work (seen 2026-10-13: 26 files, none its own). Each line's candidate is
     /// <c>merge-base HEAD &lt;ref&gt;</c>, so it is in the tree's history by construction; <see cref="ReviewBase.Newest"/> chooses.</para>
     ///
+    /// <para><b>A chain's step that merged the line</b> (REVIEWBASE3): its record's base is its parent's tip, which the line does not
+    /// hold, so neither base reaches the other. The line's is the base the review names, and the diff reads from a merge of the two
+    /// (<see cref="ReviewRange.Against"/>), so the parent's work is not read as the step's either. Where they conflict, the line's
+    /// alone, as before.</para>
+    ///
     /// <para><b>Read-only, and it fetches nothing</b>: the refs are as the last look's fetch left them. A tree that is not this
     /// home's, or a line git cannot name, keeps the record's word and says no line, as before.</para>
     /// </remarks>
@@ -56,13 +61,37 @@ internal sealed class ReviewRanges(TreeContext context)
         }
 
         var candidates = ReviewBase.Candidates(here, onOrigin, record);
-        var from = candidates.Count switch
+        string from;
+        string? against = null;
+        if (candidates.Count < 2)
         {
-            0 => recorded,
-            1 => candidates[0],
-            _ => ReviewBase.Newest(candidates, await IndependentAsync(full, candidates, ct).ConfigureAwait(false)) ?? record ?? recorded,
-        };
-        return new(from, line is null ? null : await BehindAsync(full, line, known, ct).ConfigureAwait(false));
+            from = candidates.Count == 1 ? candidates[0] : recorded;
+        }
+        else
+        {
+            var maximal = await IndependentAsync(full, candidates, ct).ConfigureAwait(false);
+            from = ReviewBase.Newest(candidates, maximal) ?? record ?? recorded;
+            // REVIEWBASE3: one more git start, only where the line's base and the record's are incomparable.
+            if (ReviewBase.Incomparable(candidates, maximal, record) is var (lineBase, recordBase))
+            {
+                against = await MergedAsync(full, lineBase, recordBase, ct).ConfigureAwait(false);
+            }
+        }
+
+        return new(from, line is null ? null : await BehindAsync(full, line, known, ct).ConfigureAwait(false), against);
+    }
+
+    /// <summary>
+    /// The tree a merge of <paramref name="lineBase"/> and <paramref name="recordBase"/> would make (REVIEWBASE3), by
+    /// <c>git merge-tree --write-tree</c>: objects only, no ref, no index and nothing on disk moved. Null where they conflict, since
+    /// git's tree would then hold conflict markers neither side wrote, and where git cannot say (one older than 2.38): the review
+    /// then reads from the line's base, as before.
+    /// </summary>
+    private static async Task<string?> MergedAsync(string tree, string lineBase, string recordBase, CancellationToken ct)
+    {
+        var (code, output, _) = await WorkingTree.GitAsync(tree, ["merge-tree", "--write-tree", lineBase, recordBase], ct).ConfigureAwait(false);
+        var first = output.Split('\n', 2)[0].Trim();
+        return code == 0 && first.Length > 0 && first.All(char.IsAsciiHexDigit) ? first : null;
     }
 
     /// <summary>

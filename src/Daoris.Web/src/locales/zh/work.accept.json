@@ -19,6 +19,9 @@
   "work.accept.held": "{{part}}被拦住：{{says}}",
   "work.accept.heldAll": "有一段被关卡拦住，而拦住一段就拦住整条工作线：请先在那一段的审阅中处理。",
   "work.accept.heldAsk": "这里有一段被拦住，所以 {{repository}} 的工作不落地；其他仓库的工作照常落地。",
+  "work.accept.problem": "{{part}}现在会被拒绝：{{says}}",
+  "work.accept.problemAll": "有一段现在会被拒绝，而它会拦住整条工作线：请先在那一段的审阅中处理，或在可以时不采纳它。",
+  "work.accept.problemAsk": "这里有一段会被拒绝，所以 {{repository}} 的工作不落地；其他仓库的工作照常落地。",
   "work.accept.meanIt": "全部采纳",
   "work.accept.nothing": "没有任何工作落地：此需求的工作线在这里都没有可落地的工作。"
 }

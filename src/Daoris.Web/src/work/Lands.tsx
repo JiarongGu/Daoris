@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Session } from '../data/api';
@@ -27,6 +28,10 @@ const NAME_PAUSE = 300;
 export type LandingPlan = {
   workflow?: import('../workflow/gate').WorkflowGateState | null;
   session?: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string;
+  /** The branch the press lands on already stands, an entry's or a chain's, so the press moves it on (ACCEPTALL1g). */
+  stands?: boolean;
+  /** The target is the branch the session's own agent moved its tree onto, which lands as it stands (TREEFOLLOW1, TREEFOLLOWWEB1). */
+  own?: boolean;
   review?: ReviewWaits | null;
   /** The second opinion's gate where a level asks one (XAGENT1f), which the head draws before the review's (XAGENT1g). */
   opinion?: OpinionGateState | null;
@@ -35,6 +40,29 @@ export type LandingPlan = {
   lands?: LandsCommit[] | null;
   conflict?: LandingConflict | null;
 };
+
+/**
+ * Where Accept puts the work under a branch rule, said before the press (D87, D100): a new branch, or one that already stands, which
+ * the press moves on (ACCEPTALL1g, D167's 2026-10-15 amendment point 2, D145 §3): an entry's or a chain's, an earlier landing made.
+ * The session's own branch, which its agent moved its tree onto, lands as it stands and makes none (TREEFOLLOWWEB1, D164 point 4).
+ */
+export function landsOnBranch(
+  t: TFunction, plan: { target: string; plugin?: string | null; stands?: boolean | null; own?: boolean | null },
+): string {
+  if (plan.own) {
+    return plan.plugin
+      ? t('work.review.landsOwnPlugin', { branch: plan.target, plugin: plan.plugin })
+      : t('work.review.landsOwn', { branch: plan.target });
+  }
+  if (plan.stands) {
+    return plan.plugin
+      ? t('work.review.landsOnStandingPlugin', { branch: plan.target, plugin: plan.plugin })
+      : t('work.review.landsOnStanding', { branch: plan.target });
+  }
+  return plan.plugin
+    ? t('work.review.landsOnBranchPlugin', { branch: plan.target, plugin: plan.plugin })
+    : t('work.review.landsOnBranch', { branch: plan.target });
+}
 
 /** The review's gate as the head draws it (REVIEWENV1g): the set-up step's record where the frame holds it, and the presses. */
 export type HeadReview = { step?: Quest | null; served?: boolean | null; acts?: ReviewGateActs; busy?: boolean };
@@ -107,7 +135,8 @@ export function Lands({ session, lands, landing, planning, onReview, onLand, onS
   const [asked, setAsked] = useState('');
   const typed = entered.trim();
   const rule = useRef<string | null>(null);
-  if (!typed && landing?.form === 'branch' && landing.target) rule.current = landing.target;
+  // The session's own branch lands as it stands (TREEFOLLOWWEB1): a name entered would be refused, so none is asked for.
+  if (!typed && landing?.form === 'branch' && landing.target) rule.current = landing.own ? null : landing.target;
   const askPlan = (name: string) => {
     setAsked(name);
     onName?.(name);
@@ -130,8 +159,7 @@ export function Lands({ session, lands, landing, planning, onReview, onLand, onS
   const unfinished = session.state !== 'completed';
   const where = !landing?.target ? null
     : landing.form === 'merge' ? t('work.review.landsOnLine', { line: landing.target })
-      : landing.plugin ? t('work.review.landsOnBranchPlugin', { branch: landing.target, plugin: landing.plugin })
-        : t('work.review.landsOnBranch', { branch: landing.target });
+      : landsOnBranch(t, { target: landing.target, plugin: landing.plugin, stands: landing.stands, own: landing.own });
   return (
     <>
       <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
@@ -205,7 +233,8 @@ export function Lands({ session, lands, landing, planning, onReview, onLand, onS
             </>
           )}
           meanIt={t('work.head.landMeanIt')}
-          ready={typed === asked && !planning}
+          // Held while the plan says the press would be refused (D100, STANDSREFUSE1): its sentence above says why.
+          ready={typed === asked && !planning && !landing?.problem}
           onConfirm={(answered) => onLand?.(answered, answers, typed || null)}
           onClose={putDown}
         >

@@ -35,7 +35,11 @@ export type SessionGrouping = {
   strikes?: number | null;
   awaits?: string | null;
   awaitsOf?: string | null;
-  work?: { commits: number | null; uncommitted: number | null } | null;
+  work?: {
+    commits: number | null; uncommitted: number | null;
+    /** The branch the tree is on where the agent moved it onto one of its own (TREEFOLLOW1, TREEFOLLOWWEB2); absent from an older host. */
+    branch?: string | null;
+  } | null;
   /**
    * Whether this session's stop holds its quest on this machine (SESSUX1b, D126 §3.3): the person stopped it, and nothing
    * starts the quest here until *Try again* releases it. Its row says so, and offers *Try again* (SESSUX1d). Absent on a

@@ -350,6 +350,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("TREES_SYNC", "sessions,landing,diff,handOff,sweep,treesSync", null)]
     [InlineData("SET_LANDING", "landing,lines", null)]
     [InlineData("LANDING", "", null)]
+    [InlineData("SESSION_PROCESS", "", null)]
     [InlineData("OPINION_GATE", "", null)]
     [InlineData("OPINION_WAITS", "", null)]
     [InlineData("HANDOFF_PLAN", "", null)]

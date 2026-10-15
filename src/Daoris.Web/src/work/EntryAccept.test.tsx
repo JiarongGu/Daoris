@@ -76,6 +76,50 @@ describe("a line of work's one Accept", () => {
     expect(screen.queryByRole('button', { name: 'Accept all' })).toBeNull();
   });
 
+  // STANDSREFUSE1b: a part's problem (a standing branch the press would refuse) is said, and holds the press.
+  const REFUSED = 'The branch mine/fix was made by someone else.';
+
+  it("says a part's refusal before the press and offers no move where the entry would be refused", () => {
+    ask({ plans: [{ ...PLAN, parts: [PLAN.parts[0]!, { session: 's2', problem: REFUSED }] }] });
+
+    const group = screen.getByRole('group', { name: 'accept every part of this line of work' });
+    expect(within(group).getByText(/part 2 would be refused now/)).toHaveTextContent(`part 2 would be refused now: ${REFUSED}`);
+    expect(within(group).getByText(/part that would be refused now holds the whole line of work/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Accept all' })).toBeNull();
+  });
+
+  it('lets a refused part that the person leaves out go', async () => {
+    const { onLand } = ask({
+      plans: [{ ...PLAN, parts: [{ ...PLAN.parts[0]!, problem: REFUSED }, PLAN.parts[1]!] }],
+    });
+
+    expect(screen.queryByRole('button', { name: 'Accept all' })).toBeNull();
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Leave part 1 out' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Accept all' }));
+
+    expect(onLand).toHaveBeenCalledWith(['s1'], expect.anything());
+  });
+
+  it("keeps an ask's other repositories pressable where one entry would be refused", () => {
+    ask({
+      scope: 'ask',
+      offered: 3,
+      plans: [PLAN, { entry: 'ask:a3/web', repository: 'web', form: 'merge', target: 'main', parts: [{ session: 's9', problem: REFUSED }] }],
+    });
+
+    expect(screen.getByText(/s9 would be refused now/)).toBeInTheDocument();
+    expect(screen.getByText(/would be refused, so web's work stays/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Accept all' })).toBeInTheDocument();
+  });
+
+  it("says a part's refusal in Chinese", async () => {
+    await i18n.changeLanguage('zh');
+    ask({ plans: [{ ...PLAN, parts: [{ session: 's2', problem: REFUSED }] }] });
+
+    expect(screen.getByText(/第 2 段现在会被拒绝/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '全部采纳' })).toBeNull();
+  });
+
   it('says that a part sharing a tree lands with the part whose tree it is, and a part on a branch of its own lands as it', () => {
     ask({ plans: [{ ...PLAN, parts: [{ session: 's1', target: 'mine/fix', own: true }, { session: 's3', sameTreeAs: 's1' }] }] });
 

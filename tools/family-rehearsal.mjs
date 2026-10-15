@@ -4126,7 +4126,8 @@ rmSync(join(newcomer, 'work-in-flight.txt'), { force: true });
 // (a bare repository in scratch, so nothing reaches a network), and the platform squash-merges it, so the line
 // holds its content and none of its commits. The session had carried on in its tree after its landing. `trees
 // sync` then fast-forwards the line, replays the session branch with only its own commit, and deletes the landed
-// branch. Only `--repository newcomer`: the examples' registered roots are not repositories of their own, and git
+// branch. Its landed commit is the squash's patch, so the list counts one commit, not two, and the list and the press both
+// say they leave that one out (LANDSYNC3 and LANDSYNC3b, D87's 2026-10-15 amendment point 1). Only `--repository newcomer`: the examples' registered roots are not repositories of their own, and git
 // walks UP from a folder that is not one. The replay makes commits, so it is handed an identity as every git
 // call here is, since the rehearsal runs on machines with no git config.
 const escaped = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -4168,10 +4169,10 @@ run(`git ${GIT_ID} commit -q -m "carried on after its landing"`, syncTree);
 const lineBefore = run(`git rev-parse ${syncLine}`, newcomer).out.trim();
 const syncListed = run(`dotnet "${driverDll}" trees sync --repository newcomer`, scratch, cleanEnv);
 check(
-  '`daoris-driver trees sync` fetches and lists the line’s fast-forward, the session branch’s replay and the landed branch going — and moves nothing',
+  '`daoris-driver trees sync` fetches and lists the line’s fast-forward, the session branch’s replay with what it leaves out, and the landed branch going — and moves nothing',
   syncListed.code === 0
     && new RegExp(`moves\\s+newcomer\\s+${escaped(syncLine)}\\s+fast-forwards 1 commit\\(s\\) to \`origin/${escaped(syncLine)}\``).test(syncListed.out)
-    && new RegExp(`moves\\s+newcomer\\s+${escaped(sessionBranch)}\\s+replays 2 commit\\(s\\) of its own onto \`${escaped(syncLine)}\``).test(syncListed.out)
+    && new RegExp(`moves\\s+newcomer\\s+${escaped(sessionBranch)}\\s+replays 1 commit\\(s\\) of its own onto \`${escaped(syncLine)}\`, leaving out 1 the line holds`).test(syncListed.out)
     && new RegExp(`goes\\s+newcomer\\s+${escaped(landedBranch)}\\s+its pull request reached`).test(syncListed.out)
     && /trees: 3 thing\(s\) would change/.test(syncListed.out)
     && run(`git rev-parse ${syncLine}`, newcomer).out.trim() === lineBefore,
@@ -4188,7 +4189,7 @@ check(
   '…and --yes fast-forwards the line, replays the session branch with only its own commit, and deletes the landed branch',
   syncPressed.code === 0
     && new RegExp(`moved\\s+newcomer\\s+fast-forwarded \`${escaped(syncLine)}\` by 1 commit\\(s\\)`).test(syncPressed.out)
-    && new RegExp(`moved\\s+newcomer\\s+replayed \`${escaped(sessionBranch)}\` onto \`${escaped(syncLine)}\`: 1 commit\\(s\\) of its own \\(1 became empty`).test(syncPressed.out)
+    && new RegExp(`moved\\s+newcomer\\s+replayed \`${escaped(sessionBranch)}\` onto \`${escaped(syncLine)}\`: 1 commit\\(s\\) of its own, leaving out 1 the line holds\\.`).test(syncPressed.out)
     && new RegExp(`removed\\s+newcomer\\s+${escaped(landedBranch)}\\s`).test(syncPressed.out)
     && /trees: 1 line\(s\) moved, 1 branch\(es\) replayed, 1 removed\./.test(syncPressed.out),
   syncPressed.out,
