@@ -2,14 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuests, useSessions } from '../data/queries';
 import { namer } from '../settings/namer';
-import { useChatTurns, useHarnesses, useSessionOpenings, useSessionStreams } from '../bridge/shell';
+import { useChatTurns, useHarnesses, useSessionOpenings, useSessionProcess, useSessionStreams } from '../bridge/shell';
 import { frameShortcut } from '../menus/shortcuts';
 import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../design/ui';
 import { SessionConsole } from './SessionConsole';
 import { AttendedSession } from './AttendedSession';
 import { useDetachedPanel } from './closings';
 import { OutputPanel, PANEL_MIN } from './frame';
-import { sessionOrigin } from './identity';
+import { isIntake, sessionOrigin } from './identity';
 import { SessionConversation } from './SessionConversation';
 import { panelTabs } from './streams';
 
@@ -68,6 +68,8 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
     : null;
   // The console is this machine's to give only for a session this machine ran (D47 §4).
   const here = session ? sessionOrigin(session) === null : false;
+  // The process its own tree runs under, as the main window's head says it (PROCESS1e); never an intake's, which is told none.
+  const told = useSessionProcess(session && here && !isIntake(session) ? session.id : null);
 
   // Ctrl+J, wherever focus is, as in the main window: the panel is the one region this window has, so
   // Ctrl+B and the side bar's key are left alone. The latest panel, for a listener added once.
@@ -114,6 +116,7 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
           lastTurn={turns[session.id]?.lastTurn}
           timeline="always"
           nameOf={nameOf}
+          process={told.data?.process ?? null}
         />
         {here && (
           <div className="mt-4 min-w-0">

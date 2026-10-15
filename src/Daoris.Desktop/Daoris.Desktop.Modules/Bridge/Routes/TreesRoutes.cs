@@ -75,7 +75,9 @@ public sealed class TreesRoutes(DriverLoop loop)
             // in newer line commits (WSR6's replay, a merge, a rebase, the line checked out) would otherwise show the line's own
             // changes as the session's work. It says how far the latest line it knows is past the tree, and fetches nothing.
             var range = await trees.ReviewRangeAsync(tree!, baseCommit, cancellationToken);
-            var diff = await WorkingTree.DiffAsync(tree!, range.From, cancellationToken);
+            // A chain's step that merged the line reads from a merge of the line's base and its parent's tip (REVIEWBASE3), a tree
+            // and no commit: the answer still names the commit it is measured from.
+            var diff = await WorkingTree.DiffAsync(tree!, range.Reads, cancellationToken) is { } read ? read with { Base = range.From } : null;
             if (diff is not null)
             {
                 var standing = landing is null
@@ -119,6 +121,57 @@ public sealed class TreesRoutes(DriverLoop loop)
         {
             return false;
         }
+    }
+
+    /// <summary>
+    /// The process a session's own tree runs under (PROCESS1e, D164's amendment point 3), for its page's *Details*: how its work is
+    /// committed and how it lands, each with where it was set. Read from the driver file and the tree's place alone: no git, so a
+    /// page may ask it for every session it shows.
+    /// </summary>
+    /// <remarks>
+    /// Only a tree this home made is told a process (PROCESS1d's guard, <see cref="SessionTrees.Holds"/>): a session in the person's
+    /// checkout, or whose record names no tree here, answers none, as its start told it none. The rules are as resolved now, which a
+    /// press of Accept reads; a rule changed since the session's start was not told to it.
+    /// </remarks>
+    [DriverRoute("SESSION_PROCESS")]
+    private async Task<object?> ProcessAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var service = _loop.Service ?? throw NotReady();
+
+        var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
+        return new { Session = id, Process = SessionProcess(DriverConfig.Load(_loop.ConfigPath), new SessionTrees(_loop.Home), tree) };
+    }
+
+    /// <summary>
+    /// What <c>SESSION_PROCESS</c> says of a tree: its repository's commit rule and landing rule as <c>LINES</c> says each, with where
+    /// it was set, the repository and workspace read from the tree's place; null where the tree is not one this home made.
+    /// </summary>
+    public static object? SessionProcess(DriverConfig config, SessionTrees trees, string? tree)
+    {
+        if (!OwnTree(trees, tree)) return null;
+        var (workspace, repository) = trees.Owner(tree!);
+        if (repository.Length == 0) return null;
+
+        var commits = CommitRules.Resolve(config, repository, workspace);
+        var landing = LandingRules.Choose(config, repository, workspace);
+        return new
+        {
+            Commits = new { Repository = repository, Workspace = workspace, Rule = LinesRoutes.CommitWire(commits.Rule), commits.Source },
+            Landing = new
+            {
+                Repository = repository,
+                Workspace = workspace,
+                landing.Rule.Form,
+                landing.Rule.Pattern,
+                landing.Rule.Tidy,
+                landing.Rule.Plugin,
+                landing.Rule.AutoAccept,
+                landing.Rule.Key,
+                landing.Rule.Squash,
+                landing.Source,
+            },
+        };
     }
 
     /// <summary>The landing plan's count of uncommitted paths in the session's own tree: 0 where clean or not asked (REVIEWDIRTY1-a).</summary>

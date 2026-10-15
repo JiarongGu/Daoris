@@ -6,6 +6,7 @@ import type { GoAhead, Quest, Session } from '../data/api';
 import type { SweepBranch } from '../settings/Sweep';
 import type { Answered } from './InlineConfirm';
 import { DETAIL, GATES } from './opinionFixtures';
+import type { SessionProcess } from './process';
 import { SessionHead } from './SessionHead';
 
 // Props-only, like every molecule here: a parked session with its analysis, a record read over a
@@ -258,6 +259,73 @@ describe('the attended session\'s head', () => {
     } finally {
       await i18n.changeLanguage('en');
     }
+  });
+
+  /**
+   * PROCESS1e (D164's amendment point 3): *Details* says the process its own tree runs under, how its work is committed and how
+   * it lands, each with where it was set, in Setup's words; a session told none (no tree of its own here) says neither.
+   */
+  describe('the process it runs under', () => {
+    const PROCESS: SessionProcess = {
+      commits: { repository: 'engine', workspace: 'aurora', rule: { mode: 'ask', convention: 'Say why.' }, source: 'workspace' },
+      landing: {
+        repository: 'engine', workspace: 'aurora', source: 'repository', form: 'branch', pattern: 'feature/{ticket}-{slug}',
+        plugin: 'example.lands', key: 'ENG-\\d+', squash: true,
+      },
+    };
+
+    it('says how its work is committed and how it lands, and where each was set', () => {
+      render(<SessionHead session={session()} process={PROCESS} />);
+      details();
+
+      const commits = screen.getByText('Commits').nextElementSibling!;
+      expect(commits).toHaveTextContent('Each commit waits for your yes before it is made.');
+      expect(commits).toHaveTextContent('“Say why.”');
+      expect(commits).toHaveTextContent('From the workspace aurora.');
+      const landing = screen.getByText('Landing').nextElementSibling!;
+      expect(landing).toHaveTextContent('On a branch feature/{ticket}-{slug}, set for this repository.');
+      expect(landing).toHaveTextContent('Then plugin example.lands pushes it and opens the pull request.');
+      expect(landing).toHaveTextContent('{ticket} is the first match of ENG-\\d+ in the title');
+      expect(landing).toHaveTextContent('Squashed: Accept makes the pull request\'s branch one commit');
+    });
+
+    it('says the default where nothing is set', () => {
+      render(
+        <SessionHead
+          session={session()}
+          process={{
+            commits: { repository: 'engine', workspace: 'default', rule: { mode: 'as-you-go' }, source: 'default' },
+            landing: { repository: 'engine', workspace: 'default', source: 'default', form: 'merge' },
+          }}
+        />,
+      );
+      details();
+
+      expect(screen.getByText('Commits').nextElementSibling).toHaveTextContent(
+        'Each piece that passes its checks is committed as the work goes. Daoris\'s default: nothing is set.');
+      expect(screen.getByText('Landing').nextElementSibling).toHaveTextContent('Merged into its line — the default.');
+    });
+
+    it('says neither where it was told no process', () => {
+      render(<SessionHead session={session()} process={null} />);
+      details();
+
+      expect(screen.queryByText('Commits')).not.toBeInTheDocument();
+      expect(screen.queryByText('Landing')).not.toBeInTheDocument();
+    });
+
+    it('says them in 中文', async () => {
+      await i18n.changeLanguage('zh');
+      try {
+        render(<SessionHead session={session()} process={PROCESS} />);
+        details();
+        expect(screen.getByText('提交').nextElementSibling).toHaveTextContent('每次提交前都等你同意。');
+        expect(screen.getByText('提交').nextElementSibling).toHaveTextContent('沿用工作区 aurora。');
+        expect(screen.getByText('落地').nextElementSibling).toHaveTextContent('放到分支 feature/{ticket}-{slug} 上，为该仓库设置。');
+      } finally {
+        await i18n.changeLanguage('en');
+      }
+    });
   });
 
   /**

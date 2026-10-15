@@ -7,7 +7,7 @@ import type { AccountNamer } from '../agents/tools';
 import { type GoAheadAnswer, GoAheadList } from '../asks/GoAheadList';
 import { ago, elapsed, sessionTool, stamp } from '../locales/format';
 import {
-  answeredPark, Button, PathText, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
+  answeredPark, Button, Inline, PathText, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
 } from '../design/ui';
 import { cn } from '../lib/cn';
 import { AnsweredPark } from './AnsweredPark';
@@ -23,6 +23,7 @@ import type { SayRebase } from './LandingSync';
 import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from './Lands';
 import { Note } from './Note';
 import { hasNote, noteBlocks, noteLines } from './noteLines';
+import { processCommitsSays, processLandingSays, type SessionProcess } from './process';
 import { ProposedRules, type RuleAsk, type RuleWaits } from './ProposedRules';
 import { movedAt } from './rail';
 import { RunningIntake } from './RunningIntake';
@@ -97,7 +98,7 @@ export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
-  continues, helps, onOpenSession, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek,
+  continues, helps, onOpenSession, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek,
 }: {
   /**
    * The wait a raising block's *To the wait* leads to while the head's waits are on screen (WAITFOOT2b, D168's WAITFOOT2 note),
@@ -138,6 +139,11 @@ export function SessionHead({
   helps?: HeadLink | null;
   /** Attend one of those sessions (MIXAGENT3a-i): the door beside its title in *Details*. Absent, the title has no door. */
   onOpenSession?: (session: Session) => void;
+  /**
+   * The process its own tree runs under (PROCESS1e, D164's amendment point 3): how its work is committed and how it lands, each
+   * with where it was set, *Details*' rows. Absent or null where it was told none (no tree of its own here) or nothing answered.
+   */
+  process?: SessionProcess | null;
   /** The landing plan shown is the previous one while the entered name's is read (LANDNAME1b); the press waits. */
   planning?: boolean;
   /**
@@ -388,6 +394,9 @@ export function SessionHead({
           // Whom it continues and whom it helps (MIXAGENT3a-i), the record's own links, each a door where the frame holds it.
           linkRow(t, t('work.head.continues'), session.from, continues, onOpenSession),
           linkRow(t, t('work.head.helping'), session.serves, helps, onOpenSession),
+          // The process its own tree runs under and where each rule was set (PROCESS1e, D164's amendment point 3), in Setup's words.
+          { label: t('work.head.commits'), value: process ? <Inline text={processCommitsSays(t, process)} /> : null },
+          { label: t('work.head.landing'), value: process ? <Inline text={processLandingSays(t, process)} /> : null },
           { label: t('work.head.quest'), value: session.quest ? `#${session.quest}` : null, mono: true },
           { label: t('work.head.tool'), value: sessionTool({ adapter: session.adapter, harnessVersion: session.harnessVersion }) },
           {

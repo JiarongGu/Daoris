@@ -64,6 +64,29 @@ export function landingProcessSays(t: TFunction, rule: LandingRule): string[] {
   ];
 }
 
+/** Where a repository's rule was set and what it lands as, the first of a Setup row's sentences. */
+export function landingFrom(t: TFunction, landing: RepositoryLanding): string {
+  return landing.source === 'default'
+    ? t('settings.landing.from.default')
+    : t(`settings.landing.from.${landing.source}.${landing.form === 'branch' ? 'branch' : 'merge'}`, {
+        pattern: landing.pattern, workspace: landing.workspace,
+      });
+}
+
+/**
+ * A repository's rule in words alone, each sentence as its Setup row says it (PROCESS1e, a session's *Details*): where it was set
+ * and what it lands as, who pushes a branch, whether its quest's done accepts it, what finds its ticket and what its squash makes.
+ */
+export function landingRuleSays(t: TFunction, landing: RepositoryLanding): string[] {
+  const branch = landing.form === 'branch';
+  return [
+    landingFrom(t, landing),
+    ...(branch && landing.plugin ? [t('settings.landing.byPlugin', { plugin: landing.plugin })] : []),
+    ...(branch && landing.autoAccept ? [t('settings.landing.byAuto')] : []),
+    ...landingProcessSays(t, landing),
+  ];
+}
+
 /** What a draft that accepts automatically does: the plugin that pushes it, or none. Null where it does not. */
 export type Accepting = { plugin?: string } | null;
 

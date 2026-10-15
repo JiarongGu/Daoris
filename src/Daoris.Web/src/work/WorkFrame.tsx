@@ -12,7 +12,7 @@ import {
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useSessionDiff,
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting, useUnderWay,
-  useEntryLanding, useLandEntry, useUnderWaySubject,
+  useEntryLanding, useLandEntry, useUnderWaySubject, useSessionProcess,
 } from '../bridge/shell';
 import { type Sent, useSending, useSettled } from './sending';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
@@ -456,6 +456,9 @@ export function WorkFrame({
   // So does a second opinion's reviewer (XAGENT1g), and a helper (MIXAGENT3a-i, D163): one turn and no words, which its
   // record's host refuses besides.
   const oneTurn = intake || (attended ? isOpinion(attended) || isHelper(attended) : false);
+  // The process its own tree runs under, for its *Details* (PROCESS1e): this machine's own record, never an intake's, which is told
+  // none; the driver answers none for a session with no tree of its own here.
+  const told = useSessionProcess(attended && here && !intake ? attended.id : null);
   // The go-aheads a park asked on its quest's ask (KNOWUSE1a2, D135 §2), read only for a driven park whose quest an ask
   // asked: shown in its head, where answering the last one open sends it on (GOAHEAD2b). The asks are asked for nowhere
   // else here.
@@ -1867,6 +1870,7 @@ export function WorkFrame({
             relations={attended ? relationsOf(attended, quest, quests.data ?? [], sessions.data ?? []) : undefined}
             continues={continues}
             helps={helps}
+            process={told.data?.process ?? null}
             onSession={(session) => attend(session.id)}
             onQuest={onOpenQuest ? (row) => onOpenQuest(row.id) : undefined}
             branch={branch}
