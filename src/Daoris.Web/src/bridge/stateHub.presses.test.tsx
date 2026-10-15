@@ -31,6 +31,7 @@ import { useAccountUse } from './accounts';
 import { useHarnessAction, useRefreshHarnesses, useSetAgentSettings } from './agents';
 import { useSetReadAcross, useSetWriteAcross } from './across';
 import { channelKey, usePostChannel } from './asks';
+import { useAddFavorite, useRemoveFavorite, useSetBrowser, useSetExtensions, useSetLinks } from './browser';
 import { useParkGoAhead } from './conversation';
 import { useSetIntake, useTrustFolder } from './driver';
 import { HELP_HISTORY, useHelpStartFrom, usePinHelp, useRenameHelp, useStartHelp } from './help';
@@ -65,6 +66,12 @@ const presses: [hook: string, usePress: () => Press, variables: unknown, family:
   ['useToolDelete', useToolDelete, { tool: 'git', version: '2.46.0' }, [[...ALL_TOOLS, 'list', false]]],
   ['useToolsLook', useToolsLook, 1, [[...ALL_TOOLS, 'list', true]]],
   ['useToolLocation', useToolLocation, { action: 'add', address: 'https://tools.example' }, [[...ALL_TOOLS, 'list', false]]],
+  // BROWSERPUBLISH1: the browser module's own presses (`DAORIS.BROWSER`), each answering the whole state it also declares.
+  ['useAddFavorite', useAddFavorite, { address: 'https://example.com' }, [keys.browserSettings]],
+  ['useRemoveFavorite', useRemoveFavorite, { address: 'https://example.com' }, [keys.browserSettings]],
+  ['useSetExtensions', useSetExtensions, { extensions: 'refuse' }, [keys.browserSettings]],
+  ['useSetBrowser', useSetBrowser, { browser: 'edge' }, [keys.browserSettings]],
+  ['useSetLinks', useSetLinks, { links: 'daoris' }, [keys.browserSettings]],
   ['useStartHelp', useStartHelp, undefined, [keys.allSessions]],
   ['useRenameHelp', useRenameHelp, { id: 'h1', name: 'Lines' }, [[...HELP_HISTORY, ''], keys.allSessions]],
   ['usePinHelp', usePinHelp, { id: 'h1', pinned: true }, [[...HELP_HISTORY, ''], keys.allSessions]],

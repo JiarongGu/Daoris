@@ -439,6 +439,45 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
             + "tools,help,browser",
             string.Join(",", StatePublisher.Names((StateScopes)~0)));
 
+    /// <summary>
+    /// BROWSERPUBLISH1: the browser module's edits declare the browser, so every window's Settings → Browser and link opener ask it
+    /// again; its read declares nothing. Published on the wire as the driver's marks are, through the shell's own middleware.
+    /// </summary>
+    [Theory]
+    [InlineData("ADD_FAVORITE", "browser")]
+    [InlineData("REMOVE_FAVORITE", "browser")]
+    [InlineData("SET_EXTENSIONS", "browser")]
+    [InlineData("SET_BROWSER", "browser")]
+    [InlineData("SET_LINKS", "browser")]
+    [InlineData("STATE", "")]
+    public void The_browser_module_s_presses_declare_the_browser(string route, string scopes)
+    {
+        var declared = StatePublisher.Declared(new IpcRequest { Id = "x", Module = BrowserModule.Name, Type = route });
+
+        Assert.Equal(scopes, string.Join(",", StatePublisher.Names(declared?.Scopes ?? StateScopes.None)));
+        Assert.Null(declared?.Session);
+    }
+
+    /// <summary>A browser press is published on the bus once it answers, over the real pipeline.</summary>
+    [Fact]
+    public async Task A_browser_press_is_published_once_it_has_answered()
+    {
+        var route = new Moving(() => Changed().Count > 0);
+        var dispatcher = Compose(route, request => StatePublisher.Declared(
+            new IpcRequest { Id = request.Id, Module = BrowserModule.Name, Type = request.Type }));
+
+        var answer = await Dispatch(dispatcher, route.ModuleName, "SET_LINKS", new { links = "daoris" });
+
+        Assert.True(answer.Success);
+        await UntilAsync(() => Changed().Count == 1);
+        Assert.Equal("""{"scopes":["browser"]}""", Shape(Assert.Single(Changed())));
+    }
+
+    /// <summary>A browser route's name on another module's request declares nothing.</summary>
+    [Fact]
+    public void A_browser_route_name_on_another_module_declares_nothing() =>
+        Assert.Null(StatePublisher.Declared(new IpcRequest { Id = "x", Module = "DAORIS.WINDOWS", Type = "SET_LINKS" }));
+
     /// <summary>A request to another module is never the driver's, whatever its type is called.</summary>
     [Fact]
     public void Only_the_driver_s_requests_are_read_against_its_marks() =>
@@ -458,7 +497,9 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
         Assert.NotEmpty(copied);
         foreach (var (route, scopes, session) in copied)
         {
-            var declared = DriverModule.Declared(new IpcRequest { Id = "x", Module = DriverModule.Name, Type = route });
+            // The seam answers for the driver's routes and the browser module's, as the publisher reads both.
+            var declared = StatePublisher.Declared(new IpcRequest { Id = "x", Module = DriverModule.Name, Type = route })
+                ?? StatePublisher.Declared(new IpcRequest { Id = "x", Module = BrowserModule.Name, Type = route });
             // The route with each side's words, so a failure names the press and both its declarations.
             Assert.Equal(
                 (route, scopes, session),

@@ -110,7 +110,8 @@ public sealed record UnderWay(long Seq, IReadOnlyList<PressUnderWay> Presses);
 
 /// <summary>
 /// Every change a route makes, published on the kit's bus as <c>DAORIS.STATE_CHANGED</c> once the route has answered
-/// (STATEHUB1b, D169): the dispatcher's middleware, after <see cref="OffTheWindow"/>, reading what the route declares.
+/// (STATEHUB1b, D169): the dispatcher's middleware, after <see cref="OffTheWindow"/>, reading what the route declares, on the
+/// driver's module and the browser's (<see cref="Declared"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>Declared, never emitted by hand.</b> A handler that emitted its own change would be one more list somebody forgets
@@ -143,12 +144,18 @@ public static class StatePublisher
     /// <summary>The type of the event telling what is under way (STATEHUB1c).</summary>
     public const string UnderWayType = "UNDER_WAY";
 
-    /// <summary>The middleware over the driver's marks, publishing on <paramref name="bus"/>.</summary>
-    public static MessageMiddleware Middleware(IEventBus bus) => Middleware(bus, DriverModule.Declared);
+    /// <summary>
+    /// What a request's route declares it changes: the driver's marks, and the browser module's (BROWSERPUBLISH1). Any other
+    /// module's request declares nothing: a module is added here when its presses move what a window reads.
+    /// </summary>
+    public static StateChange? Declared(IpcRequest request) => DriverModule.Declared(request) ?? BrowserModule.Declared(request);
 
-    /// <summary>The middleware over the driver's marks, holding what is under way in <paramref name="underWay"/>, the loop's in the shell.</summary>
+    /// <summary>The middleware over the declared marks, publishing on <paramref name="bus"/>.</summary>
+    public static MessageMiddleware Middleware(IEventBus bus) => Middleware(bus, Declared);
+
+    /// <summary>The middleware over the declared marks, holding what is under way in <paramref name="underWay"/>, the loop's in the shell.</summary>
     public static MessageMiddleware Middleware(IEventBus bus, PressesUnderWay underWay) =>
-        Middleware(bus, DriverModule.Declared, underWay);
+        Middleware(bus, Declared, underWay);
 
     /// <summary>The middleware over <paramref name="declared"/>, what each request's route declares it changes.</summary>
     /// <param name="bus">Where it publishes.</param>

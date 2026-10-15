@@ -69,7 +69,16 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   HELP_APPLY: {
     scopes: ['sessions', 'quests', 'asks', 'driver', 'history', 'registry', 'plugins', 'harnesses', 'help', 'browser'],
   },
+  // The browser module's presses (BROWSERPUBLISH1), `DAORIS.BROWSER`'s, which the publisher reads beside the driver's.
+  ADD_FAVORITE: { scopes: ['browser'] },
+  REMOVE_FAVORITE: { scopes: ['browser'] },
+  SET_EXTENSIONS: { scopes: ['browser'] },
+  SET_BROWSER: { scopes: ['browser'] },
+  SET_LINKS: { scopes: ['browser'] },
 };
+
+/** The modules whose routes carry marks the publisher reads: the driver's, and the browser module's. */
+const PUBLISHING = new Set(['DAORIS.DRIVER', 'DAORIS.BROWSER']);
 
 type Invoke = (module: string, type: string, options?: { payload?: unknown }) => Promise<unknown>;
 
@@ -87,7 +96,7 @@ export function publishing(invoke: Invoke, hear: Hear): Invoke {
   const tell = (type: 'STATE_CHANGED' | 'UNDER_WAY', payload: unknown) => { setTimeout(() => hear(type, payload), 0); };
   const telling = () => tell('UNDER_WAY', { seq: ++seq, presses: [...underWay] });
   return async (module, type, options) => {
-    const declared = module === 'DAORIS.DRIVER' ? DECLARED[type] : undefined;
+    const declared = PUBLISHING.has(module) ? DECLARED[type] : undefined;
     if (!declared) return invoke(module, type, options);
     const named = declared.session ? (options?.payload as Record<string, unknown> | undefined)?.[declared.session] : undefined;
     const session = typeof named === 'string' && named.length > 0 ? named : undefined;

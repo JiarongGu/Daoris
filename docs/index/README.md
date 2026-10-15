@@ -34,12 +34,12 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 968 |
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 51 | 956 |
-| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 107 | 2056 |
+| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 107 | 2055 |
 | `src/Daoris.Web/src/app/App.test.tsx` | 50 | 966 |
 | `src/Daoris.Web/src/app/App.tsx` | 72 | 1302 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 48 | 975 |
 | `src/Daoris.Web/src/design/ui.tsx` | 79 | 1683 |
-| `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 72 | 1440 |
+| `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 73 | 1448 |
 | `src/Daoris.Web/src/menus/commands.ts` | 40 | 793 |
 | `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 81 | 1446 |
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 49 | 920 |
@@ -108,7 +108,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleConversationTests.cs` | 42 | 773 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleSessionsTests.cs` | 48 | 805 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/AgentsRoutes.cs` | 44 | 790 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/AgentsRoutes.cs` | 44 | 798 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 61 | 1072 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs` | 47 | 828 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 53 | 970 |
