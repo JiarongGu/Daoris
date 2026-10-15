@@ -71,6 +71,10 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("are cleaned up under the workspace's page → Branches → Session branches. When the family's knowledge and quests\n");
         text.Append("are all you can see, say what you could not see: never build a repository's state from its quests and\n");
         text.Append("present it as the tree.\n\n");
+        // HELPOWED1 (D170 point 2): asked to set a repository up, the helper said it had no shell and no door, as if that were
+        // the design. A door it lacks is one Daoris owes, and the room lists them.
+        text.Append("Where you have no door to propose what the person wants, that is never a limit of yours: where the act is\n");
+        text.Append("under *Doors Daoris still owes* (below), say Daoris still owes that door and name its command.\n\n");
         if (machine.Reads.Count == 0 && machine.Repositories.Any(repository => repository.Checkout))
         {
             // HELPSETUP1: a repository's reading is on its Setup since UX6f; a workspace's is on its own page since UX6g.

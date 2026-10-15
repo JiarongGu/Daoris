@@ -18,7 +18,8 @@ namespace Daoris.Driver.Tests;
 /// <para><b>Four answers.</b> A door names the kind and its door, held against <see cref="IHelpProposalKind.Doors"/>.
 /// An exemption is a principle: one of D89's own presses (a sign-in, a key, a discard), something that changes
 /// nothing, a viewer's own look, what an agent may do, or the person's act on the application itself (D139). A door owed is a door Ask Daoris should have, and says
-/// what it waits on. A quest's or a session's own act is its own conversation, which Ask Daoris reaches by a go to the
+/// what it waits on: a row of the room's <see cref="HelpRoomOwed"/>, which the helper reads as a door Daoris still owes
+/// (HELPOWED1, D170 point 2). A quest's or a session's own act is its own conversation, which Ask Daoris reaches by a go to the
 /// view it names (D161's ENTRY1 note).</para>
 /// </remarks>
 public sealed partial class HelpCoverageTests
@@ -31,8 +32,14 @@ public sealed partial class HelpCoverageTests
     /// <summary>Not Ask Daoris's to propose, for the reason given.</summary>
     private sealed record Exempt(string Reason) : Answer;
 
-    /// <summary>A door Ask Daoris should have, not built yet, and what it waits on.</summary>
-    private sealed record Owed(string Reason) : Answer;
+    /// <summary>
+    /// A door Ask Daoris should have, not built yet, and what it waits on: one of the room's own rows (HELPOWED1, D170 point 2),
+    /// so the room says owed exactly what this test holds owed, and a door built leaves both at once.
+    /// </summary>
+    private sealed record Owed(HelpOwedDoor Door) : Answer
+    {
+        public string Reason => Door.Reason;
+    }
 
     /// <summary>
     /// A quest's or a session's own act, done in its own place and conversation, which Ask Daoris reaches by a go to the view
@@ -45,21 +52,14 @@ public sealed partial class HelpCoverageTests
     private const string Key = "a key is the person's own, typed where it already is (D89).";
 
     /// <summary>Settings → Tools' *System* and *Use this version* (TOOLS7): the `tool` kind's `use` door, TOOLS8's.</summary>
-    private const string ToolUseOwed =
-        "it narrows what runs to the machine's own, or to a version the lists name, so Ask Daoris should propose it, judged "
-        + "against the lists as last fetched; that is the `tool` kind's `use` door, which TOOLS8 builds (D121 §4.3), and "
-        + "until then `daoris tool use` is the terminal's door.";
+    private static readonly Owed ToolUseOwed = new(HelpRoomOwed.ToolUse);
 
     /// <summary>
     /// A named workflow's version from a file, an import, or a kind of task, from the terminal (WORKFLOW1d, WORKFLOW1e; D157 point
     /// 13): Ask Daoris's `workflow` kind takes a whole version and its choice since WORKFLOW1h-b (`new`, `edit`, `use`); a change
     /// against a base, an import and a kind are WORKFLOW1h2's (the workflow design §8.1).
     /// </summary>
-    private const string WorkflowOwed =
-        "a version applied from a file, a workflow imported whole and a kind of task are changes to how work moves that the person "
-        + "applies, so Ask Daoris should propose them as the `workflow` kind's card, its part said first (D157 point 13, the "
-        + "workflow design §8, §4.7), which WORKFLOW1h2 builds; until then `daoris driver workflow` is its terminal's door, and every "
-        + "gate reads the version each run bound (WORKFLOW1f).";
+    private static readonly Owed WorkflowOwed = new(HelpRoomOwed.Workflow);
 
     private const string Rules =
         "what an agent may do is never proposed by an agent: the room is not handed `permission_propose` (HELP1c), "
@@ -92,19 +92,13 @@ public sealed partial class HelpCoverageTests
     /// LAYOUT7's <c>daoris-driver setup</c> (D117 §6.1), a verb of the headless host rather than the CLI's table: a door
     /// Ask Daoris owes, until LAYOUT8 builds the <c>setup</c> kind it is to take.
     /// </summary>
-    private static readonly Owed SetupDoor = new(
-        "setting a repository up publishes a quest to it and adds a rule its session needs, a widening the person applies "
-        + "as a card, so Ask Daoris should propose it; that waits on LAYOUT8's `setup` kind: the service's box and tool, the "
-        + "driver's judge against the same facts, and the card (D110).");
+    private static readonly Owed SetupDoor = new(HelpRoomOwed.Setup);
 
     /// <summary>
     /// WSSETUP5's <c>daoris-driver register</c> (D124 §3.1), a verb of the headless host: a door Ask Daoris owes, until WSSETUP7
     /// gives LAYOUT8's <c>setup</c> kind its <c>register</c> door (§4.5).
     /// </summary>
-    private static readonly Owed RegisterDoor = new(
-        "registering a repository from its line changes only what the line already says, so Ask Daoris should propose it and "
-        + "the person apply it; that waits on WSSETUP7's `register` door of LAYOUT8's `setup` kind, judged against the same "
-        + "line (D124 §4.5).");
+    private static readonly Owed RegisterDoor = new(HelpRoomOwed.Register);
 
     /// <summary>
     /// PAUSE1d's <c>daoris-driver ask --abandon</c> and <c>quest abandon</c> (D132 §7.2), verbs of the headless host: exempt, since
@@ -119,11 +113,7 @@ public sealed partial class HelpCoverageTests
     /// resume and stop, doors Ask Daoris owes until WSSETUP7 gives LAYOUT8's <c>setup</c> kind its <c>workspace</c>,
     /// <c>pause</c>, <c>resume</c> and <c>stop</c> doors, and the screen its route.
     /// </summary>
-    private static readonly Owed WorkspaceDoor = new(
-        "setting a workspace up writes a plan that publishes a quest to each repository in turn and adds a rule at the "
-        + "workspace's scope, a widening the person applies as a card, and pausing, resuming or stopping it changes only what "
-        + "the person already said, so Ask Daoris should propose each; that waits on WSSETUP7's `workspace`, `pause`, `resume` "
-        + "and `stop` doors of LAYOUT8's `setup` kind, judged against the same plan (D124 §4.5).");
+    private static readonly Owed WorkspaceDoor = new(HelpRoomOwed.Workspace);
 
     /// <summary>
     /// SESSUX1a's <c>useArchiveSessions</c> (D126 §7.3), the bridge hook Sessions' *Archive*, *Archive what ended…* and
@@ -277,10 +267,7 @@ public sealed partial class HelpCoverageTests
     /// EVID1b's <c>daoris-driver quest check</c> (D144 §5), a verb of the headless host: a door Ask Daoris owes, until EVID1c
     /// builds the check card beside the quest page's <i>Check again</i>.
     /// </summary>
-    private static readonly Owed CheckDoor = new(
-        "reading a done's evidence again posts a verdict that can lift its hold and publish what it held, a move the person "
-        + "applies as a card, so Ask Daoris should propose it; that is EVID1c's check card beside the quest page's Check again "
-        + "(D144 §5), and until then `daoris-driver quest check` is the terminal's door.");
+    private static readonly Owed CheckDoor = new(HelpRoomOwed.Check);
 
     /// <summary>
     /// XAGENT1f's <c>daoris-driver opinion ask</c> and <c>opinion stop</c> (D155 point 10; the second-agent design §9), verbs of the
@@ -473,14 +460,8 @@ public sealed partial class HelpCoverageTests
         ("asks", "useCloseAsk", null, new Exempt(
             "closing an ask ends it with the person's reason, which is their answer (D37), as abandoning one is exempt (D132 §7.4) "
             + "and *Decline…* is (D126 §7.3); Ask Daoris names the ask's page and never writes the reason.")),
-        ("asks", "useChooseAskReview", null, new Owed(
-            "an ask's review choice says how its work is shown to the person before it lands, a choice the person applies, so "
-            + "Ask Daoris should carry it when it proposes the ask; the `ask` door takes the sentence, workspace and why only, "
-            + "which ENTRY1c widens with the review and the kind, and until then the ask's page is its door (REVIEWENV1b).")),
-        ("asks", "useChooseAskWorkflow", null, new Owed(
-            "an ask's kind choice says which workflow its work follows (D157), a choice the person applies, here an intake's "
-            + "proposal applied from the ask's page (WORKFLOW1i-c); Ask Daoris should carry the kind when it proposes the ask, "
-            + "as the review choice is owed, and until then the ask's page is its door.")),
+        ("asks", "useChooseAskReview", null, new Owed(HelpRoomOwed.AskReview)),
+        ("asks", "useChooseAskWorkflow", null, new Owed(HelpRoomOwed.AskKind)),
 
         // Ask Daoris's own panel.
         ("help", "useStartHelp", null, HelpConversation),
@@ -601,14 +582,14 @@ public sealed partial class HelpCoverageTests
         ("workflow list", new Exempt("it reads the home's workflows and the presets built in, and changes nothing.")),
         ("workflow new", new Door("workflow", "new")),
         ("workflow edit", new Door("workflow", "edit")),
-        ("workflow apply", new Owed(WorkflowOwed)),
+        ("workflow apply", WorkflowOwed),
         ("workflow export", new Exempt(
             "it copies a workflow's file out, whole, to a new file or the terminal, for the person to carry, and changes nothing here.")),
-        ("workflow import", new Owed(WorkflowOwed)),
+        ("workflow import", WorkflowOwed),
         // WORKFLOW1e: which workflow work follows, and a workspace's kinds of task. WORKFLOW1h-b proposes the choice with a version
         // (the workflow design §8.1); a kind is owed to WORKFLOW1h2 (§8.3).
         ("workflow use", new Door("workflow", "use")),
-        ("workflow kind", new Owed(WorkflowOwed)),
+        ("workflow kind", WorkflowOwed),
         ("notify", new Door("setting", "notify")),
         ("intake", new Door("setting", "intake")),
         ("helper", new Door("setting", "helper")),
@@ -665,8 +646,8 @@ public sealed partial class HelpCoverageTests
         ("agents", "useRefreshHarnesses", null, new Exempt("it reads the roster again and changes nothing.")),
 
         // TOOLS7: Settings → Tools, answered as D121 §4.3 decides, its doors owed until TOOLS8 builds the `tool` kind.
-        ("tools", "useToolUse", "system", new Owed(ToolUseOwed)),
-        ("tools", "useToolUse", "managed", new Owed(ToolUseOwed)),
+        ("tools", "useToolUse", "system", ToolUseOwed),
+        ("tools", "useToolUse", "managed", ToolUseOwed),
         ("tools", "useToolUse", "file", new Exempt(
             "a program the person names runs as them on every call, so naming one stays their own press (D121 §4.3): a "
             + "helper that can invent a path must not be one press away from running it.")),
@@ -681,10 +662,7 @@ public sealed partial class HelpCoverageTests
         ("tools", "useToolLocation", "add", new Exempt(
             "a location is a source of programs with hashes of its own choosing, so naming one is the person's own trust and "
             + "their own press (D121 §4.3).")),
-        ("tools", "useToolLocation", "remove", new Owed(
-            "removing a location only narrows what is offered, so Ask Daoris should propose it, its card listing the versions "
-            + "it stops offering; that is the `tool` kind's `location` door, which TOOLS8 builds (D121 §4.3), and until then "
-            + "`daoris tool locations remove` is the terminal's door.")),
+        ("tools", "useToolLocation", "remove", new Owed(HelpRoomOwed.ToolLocation)),
         ("tools", "useToolPick", null, new Exempt("it is the system's file picker, for the person's own choice.")),
         ("agents", "useHarnessInput", null, new Exempt("it types into a running sign-in, the person's own words to it; " + SignIn)),
         ("agents", "useHarnessCancel", null, new Exempt("it stops a sign-in the person started, theirs to stop; " + SignIn)),
@@ -793,14 +771,11 @@ public sealed partial class HelpCoverageTests
     /// A form of a control answered for above that its door does not take yet: the same hook and action, another use
     /// of it, owed with what it waits on, and the terminal's spelling of it, which the room names meanwhile.
     /// </summary>
-    private static readonly (string Control, string Form, string Terminal, Answer Answer)[] Forms =
+    private static readonly (string Control, string Form, Answer Answer)[] Forms =
     [
         // LEFT3: the terminal's `--clear` made this the screen's and the terminal's both (D50), and Ask Daoris's next.
         ("agents: useHarnessAction profile-default", "clearing an account's default back to the tool's own home",
-            "daoris agent profile default <agent> <profile>|--clear", new Owed(
-                "a cleared default is a setting that undoes itself, so Ask Daoris should propose it; the `agent` kind's "
-                + "`default` door takes an account and no clear yet, which waits on the service's `agent_propose` taking "
-                + "one and the driver's judge applying it through `IHelpDoors.SetDefaultAccountAsync` with none.")),
+            new Owed(HelpRoomOwed.DefaultClear)),
     ];
 
     private static string Page => Path.Combine(HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Web", "src");
@@ -878,7 +853,39 @@ public sealed partial class HelpCoverageTests
     [Fact]
     public void Every_exemption_and_every_door_owed_says_why()
     {
-        var reasons = Verbs.Select(row => row.Answer).Concat(Controls.Select(row => row.Answer)).Concat(Local.Select(row => row.Answer))
+        var reasons = Answers()
+            .Select(answer => answer switch
+            {
+                Exempt exempt => exempt.Reason,
+                Owed owed => owed.Reason,
+                Conversation conversation => conversation.Reason,
+                _ => null,
+            })
+            .OfType<string>();
+
+        foreach (var reason in reasons)
+        {
+            Assert.True(reason.Length >= 40 && reason.EndsWith('.'), $"a reason is a sentence that says why: `{reason}`.");
+        }
+    }
+
+    /// <summary>
+    /// HELPOWED1 (D170 point 2): every door this test holds owed is a row of the room's <see cref="HelpRoomOwed"/>, and every row
+    /// there is owed here, so the helper says owed exactly what is owed: a door built leaves the room with its row.
+    /// </summary>
+    [Fact]
+    public void Every_door_owed_is_one_the_room_says_daoris_still_owes()
+    {
+        Same(
+            "doors owed",
+            HelpRoomOwed.All.Select(owed => owed.Act),
+            Answers().OfType<Owed>().Select(owed => owed.Door).Distinct().Select(door => door.Act));
+        Assert.All(Answers().OfType<Owed>(), owed => Assert.Contains(owed.Door, HelpRoomOwed.All));
+    }
+
+    /// <summary>Every answer this test gives: each table's rows, and each verb of the headless host answered on its own.</summary>
+    private static IEnumerable<Answer> Answers() =>
+        Verbs.Select(row => row.Answer).Concat(Controls.Select(row => row.Answer)).Concat(Local.Select(row => row.Answer))
             .Concat(Forms.Select(row => row.Answer))
             .Concat(Elsewhere.Select(row => row.Answer))
             .Concat(Starts.Select(row => row.Answer))
@@ -904,21 +911,7 @@ public sealed partial class HelpCoverageTests
             .Append(OpinionAskDoor)
             .Append(OpinionJudgementDoor)
             .Append(UpdateDoor)
-            .Append(RenameDoor)
-            .Select(answer => answer switch
-            {
-                Exempt exempt => exempt.Reason,
-                Owed owed => owed.Reason,
-                Conversation conversation => conversation.Reason,
-                _ => null,
-            })
-            .OfType<string>();
-
-        foreach (var reason in reasons)
-        {
-            Assert.True(reason.Length >= 40 && reason.EndsWith('.'), $"a reason is a sentence that says why: `{reason}`.");
-        }
-    }
+            .Append(RenameDoor);
 
     /// <summary>
     /// HELP10: WSR6's <c>daoris-driver trees sync</c> (D109), a verb of the headless host rather than the CLI's table, is
@@ -1445,22 +1438,23 @@ public sealed partial class HelpCoverageTests
     }
 
     /// <summary>
-    /// LEFT3: a form of a control is owed only while its control is answered for, as a door its kind takes, the CLI's
-    /// usage still spells its terminal door, and the room names that door so the helper can point at it meanwhile.
+    /// LEFT3: a form of a control is owed only while its control is answered for, as a door its kind takes, and the room names
+    /// its terminal door so the helper can point at it meanwhile: in its doors, and as a door Daoris still owes (HELPOWED1),
+    /// whose command its usage still spells (<see cref="HelpRoomOwedTests"/>).
     /// </summary>
     [Fact]
     public void Every_form_owed_is_of_a_door_answered_for_and_named_in_the_room()
     {
-        var usage = File.ReadAllText(Path.Combine(HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Cli", "src", "cli", "agent.ts"));
         var room = string.Join("\n", HelpRoomDoors.Doors.Select(door => door.Terminal));
 
-        foreach (var (control, form, terminal, answer) in Forms)
+        foreach (var (control, form, answer) in Forms)
         {
-            Assert.IsType<Owed>(answer);
+            var owed = Assert.IsType<Owed>(answer);
             Assert.IsType<Door>(Controls.Single(row => Control(row.Domain, row.Hook, row.Action) == control).Answer);
-            var spelled = terminal.Replace("daoris agent ", "", StringComparison.Ordinal);
-            Assert.True(usage.Contains(spelled, StringComparison.Ordinal), $"the CLI no longer spells `{terminal}` ({form}).");
-            Assert.True(room.Contains(terminal, StringComparison.Ordinal), $"the room's doors do not name `{terminal}` ({form}).");
+            foreach (var terminal in owed.Door.Terminal)
+            {
+                Assert.True(room.Contains(terminal, StringComparison.Ordinal), $"the room's doors do not name `{terminal}` ({form}).");
+            }
         }
     }
 
