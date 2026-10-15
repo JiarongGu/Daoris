@@ -54,8 +54,8 @@ function nameOf(t: TFunction, wait: Wait): string {
 
 /**
  * **What waits on the person, at the foot** (WAITFOOT1b, D168): above the session's box and outside the conversation's scroll,
- * where the person reads its last message, each open wait with the same press its head has. The owner, 2026-10-15: *"I'm
- * usually looking at the last message … currently missing the end access, so I have to scroll back to the top"*.
+ * where the person reads its last message, each open wait with the same press its head has, so none is a record's length
+ * above the words that raised it.
  *
  * @remarks
  * **The head's molecules, not copies** (D168 point 2): a go-ahead still open is `GoAheadList`'s, the work's line `Lands` with its

@@ -24,8 +24,7 @@ import { hasNote, noteBlocks, noteLines } from './noteLines';
 import { movedAt } from './rail';
 import { RunningIntake } from './RunningIntake';
 
-// The work's line, lifted into its own molecule so the foot's strip draws it too (WAITFOOT1b, D168); its shapes stay
-// importable from here, where the frame and the record took them from.
+// The work's line is its own molecule, which the foot's strip draws too (WAITFOOT1b, D168); its shapes are read from here too.
 export type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from './Lands';
 
 /**

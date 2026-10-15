@@ -68,8 +68,8 @@ function useAsking(ask?: WorkAsk): [boolean, (open: boolean) => void] {
  *
  * @remarks
  * **One molecule, two places** (WAITFOOT1b, D168): the session's head draws it, and so does the strip of what waits at the
- * foot, from the same props, so a press in either is the same press. Lifted out of `SessionHead` to be one. The frame holds
- * where its ask is open (`ask`), and whether a landing is on its way (`busy`), which holds *Accept…* in both.
+ * foot, from the same props, so a press in either is the same press. The frame holds where its ask is open (`ask`), and
+ * whether a landing is on its way (`busy`), which holds *Accept…* in both.
  */
 export function Lands({ session, lands, landing, planning, onReview, onLand, onSayRebase, onName, review, behind, opinion, ask, busy = false }: {
   /** The press that says the rebase words to the session, held by the frame (LANDSYNC1w). */
