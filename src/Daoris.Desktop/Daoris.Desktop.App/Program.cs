@@ -104,8 +104,16 @@ internal static class Program
             // The instruments' port (`npm run desktop`), honoured in development only: a published app
             // has none, so the page that holds the bridge is out of CDP's reach (D78 §3.1).
             DevToolsPort = int.TryParse(Environment.GetEnvironmentVariable(DevToolsVariable), out var port) ? port : 0,
-            Shell = new Shenora.Core.Ipc.ShellInfo { Name = "daoris-desktop", Capabilities = [] },
+            // The colour scheme's route is mounted below, and the kit asks that an app mounting it say so.
+            Shell = new Shenora.Core.Ipc.ShellInfo { Name = "daoris-desktop", Capabilities = [ShellCapability.ColorScheme] },
         });
+
+        // The viewer's chosen theme on the engine every window renders on (THEMESCHEME1): `UseWindows` registers the
+        // app's colour scheme, the engine applies it to Chromium's global context, which the main window's browser and
+        // each secondary window's take, and each window's page sets it to the viewer's choice over this route. So
+        // Chromium's own UI and `prefers-color-scheme` follow an explicit light or dark, and *System* still follows the OS.
+        // The in-app browser is a process of its own, which this does not reach.
+        builder.Services.AddShenoraColorScheme();
 
         // The kit's, the engine's and the modules' warnings and errors, into the same log.
         builder.Services.AddSingleton(log);

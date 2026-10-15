@@ -73,6 +73,28 @@ describe('SessionBox', () => {
     expect(onSend).toHaveBeenCalledWith('also cap it');
   });
 
+  /**
+   * SAIDBACK1b (D76): the words waiting on a record that ended or parked are listed above its box, each by its id, and are
+   * taken back or reworded there as a live queue's are; the reword goes as an edit, never as more words.
+   */
+  it('lists the words waiting on a record above its box, to remove or reword by their ids', async () => {
+    const onSend = vi.fn();
+    const onRemove = vi.fn().mockResolvedValue({ done: true });
+    const onEdit = vi.fn().mockResolvedValue({ done: true });
+    show({ box: { kind: 'say', mode: 'goOn' }, waiting: [{ id: 'w1', text: 'use the blue one', files: [] }], onSend, onRemove, onEdit });
+
+    expect(screen.getByRole('list', { name: 'waiting for the same session to go on with them' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Remove the waiting message: use the blue one' }));
+    expect(onRemove).toHaveBeenCalledWith('w1');
+    await userEvent.click(screen.getByRole('button', { name: 'Edit the waiting message: use the blue one' }));
+    const field = screen.getByLabelText('Message');
+    await userEvent.clear(field);
+    await userEvent.type(field, 'use the green one');
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(onEdit).toHaveBeenCalledWith('w1', 'use the green one');
+    expect(onSend).not.toHaveBeenCalled();
+  });
+
   /** D137 §2.1: words said as a session winds up wait for its record to end, and the box shows them waiting. */
   it('shows the words held while a session winds up above its box', () => {
     show({ box: { kind: 'say', mode: 'ending' }, ending: ['also cap it'] });

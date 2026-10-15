@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import type { NotePart } from '../data/api';
 import { Button, WaitingCard } from '../design/ui';
 import { Note } from './Note';
+import { InConversation } from './WaitAnchor';
 
 /**
  * A parked INTAKE, and where its answer is (INT4g).
@@ -26,7 +27,9 @@ import { Note } from './Note';
  * A molecule: it is handed the ask and the question and reports its door. Where nothing can act
  * (a story, a mirrored record) it is handed none, and still says where the answer lives.
  */
-export function AwaitingIntake({ ask, note, parts, onAnswer }: {
+export function AwaitingIntake({ ask, note, parts, onAnswer, onConversation }: {
+  /** The way to the message that asked, in the conversation, where it holds it (WAITFOOT1c): *In the conversation*. */
+  onConversation?: () => void;
   /** The ask this intake serves — the id the record's door opens. */
   ask: string;
   /** The intake's parked note: its English, shown as kept where it has no parts. */
@@ -43,7 +46,10 @@ export function AwaitingIntake({ ask, note, parts, onAnswer }: {
 
       <Note note={note} parts={parts} className="mt-1.5 text-body leading-relaxed" />
 
-      <p className="m-0 mt-2 text-small text-ink-faint">{t('work.intake.hint')}</p>
+      <p className="m-0 mt-2 flex flex-wrap items-center gap-x-2 text-small text-ink-faint">
+        <span>{t('work.intake.hint')}</span>
+        {onConversation && <InConversation onPress={onConversation} />}
+      </p>
 
       {onAnswer && (
         <div className="mt-2.5 flex flex-wrap gap-2">
