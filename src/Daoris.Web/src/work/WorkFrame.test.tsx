@@ -1705,6 +1705,25 @@ describe('starting and holding a conversation', () => {
     });
   });
 
+  /**
+   * SAIDBACK1b (D76): a parked conversation's composer lists the words waiting on its record as what the same session goes on
+   * with, never as waiting for a turn or a door, and offers each one's *Remove* by its id.
+   */
+  it('lists the words waiting on a parked conversation as what it goes on with', async () => {
+    SESSIONS = [{ ...CHAT, state: 'awaiting-person' }];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return STRUCTURED_ROSTER;
+      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [{ id: 'w1', text: 'use the blue one', files: [] }], taking: false };
+      if (type === 'SESSION_QUEUE_EDIT') return { done: true };
+      return DRIVER_STATE;
+    });
+
+    show('c0ffee11');
+    expect(await screen.findByRole('list', { name: 'waiting for the same session to go on with them' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Remove the waiting message: use the blue one' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE_EDIT', { payload: { session: 'c0ffee11', id: 'w1' } });
+  });
+
   // AGT6b (D98): one conversation's model and effort, as its agent offered them on the protocol door —
   // asked of the driver once, followed as news, and changed over it. The console's `/model`, typed as a
   // message, cut a turn short; this is its door.
@@ -2209,6 +2228,40 @@ describe('the box on every session that takes words', () => {
     expect(screen.getByText('keep the old flag for a release')).toBeInTheDocument();
   });
 
+  /**
+   * SAIDBACK1b (D76): the words waiting on a session that ended are listed above its box by their ids, taken back or reworded
+   * over the driver, and the list is read again from the queue the shell tells, where a reword's new id stands for the old.
+   */
+  it('lists the words waiting on a session that ended, and removes or rewords them over the driver', async () => {
+    driver(
+      { reaches: 'resume', queued: [{ id: 'w1', text: 'use the blue one', files: [] }, { id: 'w2', text: 'and the red', files: [] }] },
+      undefined,
+      { SESSION_QUEUE_EDIT: { done: true } },
+    );
+    show('s1a2b3c4');
+
+    expect(await screen.findByRole('list', { name: 'waiting for the same session to go on with them' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Remove the waiting message: use the blue one' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE_EDIT', { payload: { session: 's1a2b3c4', id: 'w1' } });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Edit the waiting message: and the red' }));
+    const box = screen.getByLabelText('Message');
+    await userEvent.clear(box);
+    await userEvent.type(box, 'use the green one');
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE_EDIT', {
+      payload: { session: 's1a2b3c4', id: 'w2', text: 'use the green one' },
+    });
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', expect.anything());
+
+    act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({
+      session: 's1a2b3c4', queued: [{ id: 'w3', text: 'use the green one', files: [] }], taking: false, reach: { reaches: 'resume' },
+    }));
+    expect(await screen.findByRole('button', { name: 'Remove the waiting message: use the green one' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Remove the waiting message: use the blue one' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove the waiting message: and the red' })).toBeNull();
+  });
+
   /** §3.2: a record going on with the person's words shows it, while its run opens with them. */
   it('shows a record going on with the person’s words as going on', async () => {
     SESSIONS = [{ ...DRIVEN, answer: 'also cap it' }];
@@ -2248,11 +2301,14 @@ describe('the box on every session that takes words', () => {
 
     await screen.findByLabelText('Message');
     await waitFor(() => expect(eventHandlers.has('DAORIS.SESSION_QUEUED')).toBe(true));
+    // Asked once by the reach and once by the list of what waits on the record (SAIDBACK1b), each on opening; never on a move.
+    const asked = invoke.mock.calls.filter(([, type]) => type === 'SESSION_QUEUE').length;
     act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 's1a2b3c4', queued: [], taking: false, reach: { why: 'superseded' } }));
 
     expect(await screen.findByText(/went on in a later session here, so write to that one\./)).toBeInTheDocument();
     expect(screen.queryByLabelText('Message')).toBeNull();
-    expect(invoke.mock.calls.filter(([, type]) => type === 'SESSION_QUEUE')).toHaveLength(1);
+    expect(invoke.mock.calls.filter(([, type]) => type === 'SESSION_QUEUE')).toHaveLength(asked);
+    expect(asked).toBeLessThanOrEqual(2);
   });
 
   /** Words a closed quest's session cannot go on with: two said, and the driver's line saying why. */

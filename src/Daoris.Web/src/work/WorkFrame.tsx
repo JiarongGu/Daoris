@@ -463,7 +463,11 @@ export function WorkFrame({
   const liveChats = (sessions.data ?? [])
     .filter((session) => session.kind === 'chat' && SESSION_ACTIVE.has(session.state))
     .map((session) => session.id);
-  const chatTurns = useChatTurns(talking || steerable ? [...liveChats, attended!.id] : liveChats);
+  // A driven session of this machine's that parked or ended, whose record the person's words may wait on (SAIDBACK1b): the
+  // driver lists them as its queue, each by its id, for the box's *Edit* and *Remove*.
+  const resting = Boolean(attended && here && !oneTurn && !conversation
+    && (attended.state === 'awaiting-person' || !SESSION_ACTIVE.has(attended.state)));
+  const chatTurns = useChatTurns(talking || steerable || resting ? [...liveChats, attended!.id] : liveChats);
   const turns = (talking && chatTurns[attended!.id]) || NO_TURNS;
   // What the driver holds for the attended driven session, and whether it hears anything at all.
   const held = steerable ? chatTurns[attended!.id] : undefined;
@@ -1838,6 +1842,8 @@ export function WorkFrame({
             draft={draft}
             onDraft={setDraft}
             queued={turns.queued}
+            // A parked conversation's waiting words are its record's, which it goes on with (SAIDBACK1b): no turn, no door.
+            queuedLabel={attended.state === 'awaiting-person' ? t('work.say.waiting') : undefined}
             taking={turns.taking}
             opening={turns.opening}
             // Only a door that can see a turn end can stop one; the roster says which (CONV3b).
@@ -1881,6 +1887,8 @@ export function WorkFrame({
             refusal={refusal?.session === attended.id ? refusal.text : null}
             held={held ? { queued: held.queued, taking: held.taking } : undefined}
             ending={ending?.session === attended.id ? ending.words : []}
+            // What waits on a park's or an ended session's record (SAIDBACK1b), as the driver lists it.
+            waiting={box.kind === 'say' ? chatTurns[attended.id]?.queued ?? [] : []}
             stopping={cancelTurn.isPending}
             // *Answer…* from its row, and *Send back…* from its review, put the focus here (D126 §3.1, D137 §5.1).
             focus={answerFocus?.session === attended.id ? answerFocus.at : 0}
