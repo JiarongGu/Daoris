@@ -681,7 +681,9 @@ replaces both folders whole.
 The same folder holds \`${DRIVER_LAUNCHERS[0]}\` and \`${DRIVER_LAUNCHERS[1]}\`, which run the driver's own verbs
 from \`${DRIVER_HOME.join('/')}/\` (it needs no Node): \`daoris-driver trees list|clean|land\`, \`sessions archive|take-back\`,
 \`history clear\` and \`update\`. They read the same home (\`DAORIS_HOME\`) the application and \`daoris\` do, so what the
-window's lists offer is at a terminal too (\`daoris driver\` says which verbs are which).
+window's lists offer is at a terminal too (\`daoris driver\` says which verbs are which). With no \`DAORIS_HOME\` they take
+this install's \`${HOME}/\`, and with no \`DAORIS_SERVICE_URL\` the service of the Daoris running on that home, by the
+address the application leaves there while it runs (D171); with Daoris not running, a verb that needs its service says so.
 
 ## Pinning it to the taskbar
 

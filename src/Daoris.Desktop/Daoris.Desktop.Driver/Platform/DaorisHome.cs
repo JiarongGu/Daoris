@@ -31,6 +31,63 @@ public static class DaorisHome
     /// <summary>The home from the process environment, or null.</summary>
     public static string? Resolve() => Resolve(Environment.GetEnvironmentVariable);
 
+    /// <summary>The file `desktop-publish` writes at an install's root, and nothing else does: the desktop's <c>InstallHome.Marker</c>.</summary>
+    public const string InstallMarker = "INSTALLED.md";
+
+    /// <summary>The folder the install's programs run from (D93), beside <see cref="InstallData"/>.</summary>
+    public const string InstallApp = "app";
+
+    /// <summary>The install's own home (D63), beside <see cref="InstallApp"/>.</summary>
+    public const string InstallData = "data";
+
+    /// <summary>
+    /// The install a program runs from (FINDDAORIS1, D171 point 1): the folder above the <c>app/</c> it runs in, however deep
+    /// (the desktop is <c>app/</c>, the driver host <c>app/daoris-driver/</c>), where that folder holds the marker. Null for a
+    /// workspace build, which is no install.
+    /// </summary>
+    public static string? InstallOf(string baseDirectory)
+    {
+        for (var directory = new DirectoryInfo(Path.TrimEndingDirectorySeparator(Path.GetFullPath(baseDirectory)));
+             directory?.Parent is { } parent;
+             directory = parent)
+        {
+            if (string.Equals(directory.Name, InstallApp, StringComparison.OrdinalIgnoreCase)
+                && System.IO.File.Exists(Path.Combine(parent.FullName, InstallMarker)))
+            {
+                return parent.FullName;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>The install's own <c>data/</c> for a program it carries, or null for a workspace build.</summary>
+    public static string? OfInstall(string baseDirectory) =>
+        InstallOf(baseDirectory) is { } install ? Path.Combine(install, InstallData) : null;
+
+    /// <summary>
+    /// The home a program finds with nobody to tell it (FINDDAORIS1, D171 point 1): the variable, which still wins (the dev
+    /// loop, a rehearsal, a second home), else its install's own <c>data/</c>, else none.
+    /// </summary>
+    public static string? Resolve(Func<string, string?> environment, string baseDirectory) =>
+        Resolve(environment) ?? OfInstall(baseDirectory);
+
+    /// <summary>
+    /// Take the install's home as this process's <c>DAORIS_HOME</c> where none is named (FINDDAORIS1), as the desktop does for
+    /// itself (D63): every file, the machine log and each process it starts then read the same machine. The home it set, or
+    /// null when one was named or this is no install.
+    /// </summary>
+    public static string? Adopt(Func<string, string?> environment, Action<string, string> setProcess, string baseDirectory)
+    {
+        if (Resolve(environment) is not null || OfInstall(baseDirectory) is not { } home) return null;
+        setProcess(Variable, home);
+        return home;
+    }
+
+    /// <summary>The same, on this process.</summary>
+    public static string? Adopt(string baseDirectory) =>
+        Adopt(Environment.GetEnvironmentVariable, (name, value) => Environment.SetEnvironmentVariable(name, value), baseDirectory);
+
     /// <summary>A file under the home, or null when there is no home.</summary>
     public static string? File(Func<string, string?> environment, string name) =>
         Resolve(environment) is { } home ? Path.Combine(home, name) : null;

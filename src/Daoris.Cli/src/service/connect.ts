@@ -182,7 +182,7 @@ export async function commandConnect({ root, argv, write }: CommandArgs): Promis
 
   // Read before anything is sent, --dry-run included: an unreadable file is refused naming each problem.
   const lanes = readLanes(root) ?? [];
-  const { url } = endpoint();
+  const { url } = await endpoint();
   const body = registration(root, manifest, name, url, flagValue(argv, '--workspace'), lanes);
   if (argv.includes('--dry-run')) {
     write(JSON.stringify(body, null, 2));

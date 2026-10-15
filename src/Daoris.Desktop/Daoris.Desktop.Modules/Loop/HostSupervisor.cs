@@ -257,21 +257,11 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
         }
     }
 
-    /// <summary>Whether a status body is a Daoris host's: an object naming its search tier.</summary>
-    internal static bool IsDaorisStatus(string body)
-    {
-        try
-        {
-            using var status = System.Text.Json.JsonDocument.Parse(body);
-            return status.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object
-                && status.RootElement.TryGetProperty("tier", out var tier)
-                && tier.ValueKind == System.Text.Json.JsonValueKind.String;
-        }
-        catch (System.Text.Json.JsonException)
-        {
-            return false;
-        }
-    }
+    /// <summary>
+    /// Whether a status body is a Daoris host's: an object naming its search tier. The driver's own reading, which a terminal
+    /// finding the running desktop's service asks too (FINDDAORIS1), so the two never disagree on what a Daoris host is.
+    /// </summary>
+    internal static bool IsDaorisStatus(string body) => RunningService.IsDaorisStatus(body);
 
     private HostLocation? Locate() =>
         locate is not null

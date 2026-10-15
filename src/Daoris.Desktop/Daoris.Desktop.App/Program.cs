@@ -12,6 +12,8 @@ using Shenora.Windows;
 //
 //   DAORIS_HOME            where every machine-local file lives (D63)          (an install: `data/` beside this exe, set here)
 //   DAORIS_SERVICE_URL     where the service is, which the page calls         (default: http://localhost:5177)
+//                          — left in $DAORIS_HOME/running.json while it runs, for a terminal the install's
+//                          launchers set nothing for (FINDDAORIS1, D171)
 //   DAORIS_DEVTOOLS_PORT   the engine's DevTools port, in development only     (absent: none)
 //   DAORIS_SERVICE_KEY     sent as a bearer token when set                     (absent: local trust, D21)
 //   DAORIS_DRIVER_CONFIG   the person's standing choices                       (default: $DAORIS_HOME/driver.json)

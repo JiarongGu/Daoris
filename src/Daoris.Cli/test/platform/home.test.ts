@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
-import { daorisHome, homeFile, HOME_VARIABLE, requireHomeFile } from '../../src/platform/home.ts';
-import { captureError } from '../_fixture.ts';
+import { daorisHome, homeFile, HOME_VARIABLE, installOf, requireHomeFile, THIS_INSTALL } from '../../src/platform/home.ts';
+import { captureError, makeFixture } from '../_fixture.ts';
 
 /**
  * Where every machine-local file lives (D63): one home, named by `DAORIS_HOME`, and no default under
@@ -15,6 +15,33 @@ test('the home is the variable and nothing else', () => {
   assert.equal(daorisHome({ DAORIS_HOME: 'D:/somewhere/data' }), 'D:/somewhere/data');
   assert.equal(daorisHome({}), null);
   assert.equal(daorisHome({ DAORIS_HOME: '   ' }), null);
+});
+
+/**
+ * 🔴 FINDDAORIS1 (D171 point 1): the install's launchers set no variable, so a `daoris` the install carries
+ * (`<install>/app/cli/node_modules/daoris/`) finds its home where it runs: the install's own `data` folder. The
+ * variable still wins, and a checkout is no install.
+ */
+test('a daoris the install carries finds the install’s data folder, and the variable still wins', () => {
+  const fx = makeFixture('home-install');
+  try {
+    fx.write('INSTALLED.md', '# Daoris — installed desktop\n');
+    const pkg = join(fx.root, 'app', 'cli', 'node_modules', 'daoris', 'src', 'platform');
+    assert.equal(installOf(pkg), fx.root);
+    assert.equal(daorisHome({}, installOf(pkg)), join(fx.root, 'data'));
+    assert.equal(daorisHome({ DAORIS_HOME: 'D:/somewhere/data' }, fx.root), 'D:/somewhere/data');
+    assert.equal(homeFile({}, 'driver.json', fx.root), join(fx.root, 'data', 'driver.json'));
+    assert.equal(requireHomeFile({}, 'driver.json', fx.root), join(fx.root, 'data', 'driver.json'));
+
+    // An `app` folder with no marker beside it is no install.
+    assert.equal(installOf(join(fx.root, 'elsewhere', 'app', 'cli')), null);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('this checkout is no install', () => {
+  assert.equal(THIS_INSTALL, null);
 });
 
 // 🔴 No default under the user profile — that is the decision, not an omission.

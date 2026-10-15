@@ -103,9 +103,10 @@ export async function commandImport({ root, argv, write }: CommandArgs): Promise
 
   // 🔴 A folder is a machine path, and it goes only to a service on this machine — the rule `connect`
   // keeps for a root (D47 §4). A shared deployment refused it anyway, but only after it arrived.
-  if (folder !== undefined && !isLocalService(endpoint().url)) {
+  const { url } = folder === undefined ? { url: '' } : await endpoint();
+  if (folder !== undefined && !isLocalService(url)) {
     throw new DaorisError(
-      `${endpoint().url} is not on this machine, and a folder here means nothing there — import a `
+      `${url} is not on this machine, and a folder here means nothing there — import a `
       + 'folder into this machine\'s own service; a deployment is fed by the machines that join it.');
   }
 
