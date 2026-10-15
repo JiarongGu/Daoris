@@ -55,9 +55,10 @@ public sealed record StrayResult(string Folder, string Kind, bool Moved, string 
 /// make and remove themselves outside the repository's hold (an opinion's copy, a replay's tree); every tree git lists that is not a
 /// cut-off opening's; and everything, where git could not list the trees or the service did not say which sessions run.</para>
 ///
-/// <para><b>Judged, held, judged again.</b> As the session branches are (AUTOTIDY2a): judged before the hold, so a look with nothing
-/// to move holds nothing; then inside the repository's hold (<see cref="TreeLock"/>), which every start takes while it opens a tree,
-/// with the sessions asked again, each judged again and moved only where it is judged the same. A move is never cancelled halfway.</para>
+/// <para><b>Judged, held, judged again.</b> As the session branches are (AUTOTIDY2a): judged before the hold, the sessions asked only
+/// where something may go, so a look with nothing to move asks nothing more and holds nothing; then inside the repository's hold
+/// (<see cref="TreeLock"/>), which every start takes while it opens a tree, with the sessions asked again, each judged again and
+/// moved only where it is judged the same. A move is never cancelled halfway.</para>
 /// </remarks>
 internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, ContentHolds content)
 {
@@ -98,8 +99,11 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
         var (topCode, toplevel, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--show-toplevel"], ct).ConfigureAwait(false);
         if (topCode != 0 || !SamePath(toplevel.Trim(), root)) return [];
 
-        if (await BusyAsync(inUse, ct).ConfigureAwait(false) is not { } before) return [];
-        var (found, unread) = await FindAsync(root, trees, before, now, ct).ConfigureAwait(false);
+        // The sessions are asked only where something may go, so the common look, at a repository's trees alone, asks nothing more.
+        var (first, unread) = await FindAsync(root, trees, new HashSet<string>(), now, ct).ConfigureAwait(false);
+        if (first.Count == 0) return unread;
+        if (await BusyAsync(inUse, ct).ConfigureAwait(false) is not { } before) return unread;
+        var found = first.Where(each => !before.Contains(Normal(each.Folder))).ToList();
         if (found.Count == 0) return unread;
 
         using var hold = TreeLock.TryReplaying(context.Home, space, repository);
