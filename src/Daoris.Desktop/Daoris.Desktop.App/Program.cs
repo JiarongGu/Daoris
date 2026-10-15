@@ -179,6 +179,10 @@ internal static class Program
         // edits, read by `daoris-browser` each time it starts.
         builder.Services.AddIpcModule<BrowserModule>();
         builder.Services.AddSingleton(new PlatformAddress(serviceUrl));
+        // The main window's taskbar count (NOTIFY1b): the window is resolved as the page tells it, never as the module
+        // is made, since the window is made after the modules and maps one of its own.
+        builder.Services.AddSingleton<ShowWaiting>(sp => (count, description) =>
+            sp.GetRequiredService<MainForm>().ShowWaiting(count, description));
         builder.Services.AddIpcModule<WindowsModule>();
         // The page's own report into the machine log (LOG1b, D94): what is used and what fails on the
         // screen, taken only as the catalogue names it — the module is where no word gets through. And
