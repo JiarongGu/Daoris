@@ -1717,6 +1717,16 @@ fixture's `git checkout --quiet main` exited -1 (4294967295), a spawn failure, t
 and WORKFLOW1a's sightings above. Again at MIXAGENT1a-i's merge the same day (driver and page notes; no CLI file), with one
 branch-worker building beside it: the azure-devops plugin's case (`:250`) met its fixture's `git push --quiet origin …`
 exiting -1; `--rerun cli` on the open merge.
+Again in `merge-branch.test.ts` at AUTOTIDY2c and OPENCUT1's merge, 2026-10-16 (`5a18f8a`, the stale set with no worker
+building beside it): *--prune removes each merged branch with its worktree…* (`:2839`) met its scratch repository's
+`git branch --format=%(refname:short)` exiting -1 with nothing on stderr, a fifth file to show the git-spawn shape.
+`--rerun cli` on the same tree.
+*WEBGATE1 (2026-10-15/16):* the web gate's vitest run on every core failed three times on 20 s timeouts under the
+owner's window, the antivirus and the gate together; `vite.config.ts` now caps its workers at `'25%'`
+(`DAORIS_WEB_WORKERS` overrides). Capped, the first run was 6456/6456 in 214 s beside two workers and the deployment gate
+(241 s and five to ten timeouts uncapped), then four gate runs in a row passed with the window up and no timeout:
+6497 in 146 s (`36fb755`), 6522 in 122 s (`2b97bff`), 6527 in 186 s (`5145292`), 6534 in 241 s (`5a18f8a`), the
+gate's wall 3 m 16 s to 5 m 24 s.
 `OrphanedSessionTests.A_torn_driver_json_is_said_and_watched_never_the_end_of_the_loop` (driver, Process) failed in the
 full set on `19f72d0`, 2026-10-12 (819/820, 27 m 43 s), with no worker building beside it, and passed alone: not the
 test's assertion but its stand-in service's teardown, `HttpListenerException: An operation was attempted on a nonexistent

@@ -430,6 +430,9 @@ public sealed partial class HelpCoverageTests
             "it runs now the pass with the workspace's remote that the loop's next tick runs anyway (SYNC6b), and changes nothing "
             + "the person has not set; whether a workspace syncs is its remote's wiring, the person's own (D89). It is not the "
             + "`sync` kind's door, which brings branches up to date (D109).")),
+        ("app", "useSay", null, Own("sessions",
+            "the words an *Accept* on the Agents page sends to the session that proposed the rule tell that session its own "
+            + "proposal was kept (PROPOSEHERE1c), said to it as its box would (D137 §5.4)")),
 
         // Quests: a quest's own page, and the list's presses, in `quests/QuestsView` (STRUCT5c).
         ("quests", "usePublishQuest", null, Own("quests",
