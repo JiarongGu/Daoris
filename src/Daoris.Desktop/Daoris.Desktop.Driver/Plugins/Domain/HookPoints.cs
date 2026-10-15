@@ -12,6 +12,15 @@ public sealed record HookDecision(bool Allowed, string? Reason = null)
 /// The points a plugin may listen on, named here once. A handshake naming one this build lacks is said once and never
 /// asked there (PLUGHOOK1a, D148 point 8): a plugin that grew a point keeps the points this build has.
 /// </summary>
+/// <remarks>
+/// <b>A point added</b> (STATEHUB1g's list) goes last in <see cref="All"/>, and in the same commit: its frame in
+/// <see cref="HookFrames"/>; its call on <see cref="IHookChannel"/> (a default for the fakes), <see cref="HookPeer"/> and
+/// <see cref="HookProcess"/>; its kit entry and sample (<see cref="PluginKit"/>), its <c>ANSWERS</c> entry in the kit's
+/// <c>plugin.test.mjs.template</c> and its case in <see cref="PluginTrials"/>; where a failure there costs
+/// (<c>PluginsCommand.Cost</c>); Ask Daoris's sentence (<c>HelpRoomMakingAPlugin.PointSaid</c>, its goldens rewritten); the rows
+/// of <c>PluginKitTests</c> and the kit's list in the modules' <c>DriverModulePluginsTests</c>; the page's gloss
+/// (<c>plugins/PluginKit.tsx</c>) where its kind's does not say when it speaks; and <c>twins.md</c>'s answer row.
+/// </remarks>
 public static class HookPoints
 {
     /// <summary>A decision: one consideration the planner marked <i>Start</i>. The first hold in catalogue order ends the waterfall.</summary>
