@@ -832,6 +832,123 @@ public sealed class BranchTidyingProcessTests : IDisposable
         Assert.True(Directory.Exists(spoken.Path));
     }
 
+    /// <summary>
+    /// 🔴 AUTOTIDY2b: a tree whose own ignored <c>node_modules</c> holds paths past Windows' 260 characters, as an install leaves
+    /// one, goes by the look as any other tree: its folder moved aside whole, the deep file in it, git's record of the tree let
+    /// go, and fourteen days later the folder deleted, the deep file with it. On the owner's install such a tree's removal met
+    /// "Filename too long", and a purge that cannot delete keeps the folder for good.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_whose_paths_pass_260_characters_is_moved_aside_and_purged()
+    {
+        var root = await RepositoryAsync("engine");
+        await File.WriteAllTextAsync(Path.Combine(root, ".gitignore"), "*.db\nbuild/\nnode_modules/\n");
+        await GitAsync(root, "commit", "--quiet", "-am", "ignore the installed packages");
+        var landed = await LandedTreeAsync(new SessionTrees(_home), root);
+        var deep = Path.Combine([landed.Path, "node_modules", .. Enumerable.Repeat("a-package-folder-long-enough-to-matter", 7)]);
+        Directory.CreateDirectory(deep);
+        var file = Path.Combine(deep, "index.js");
+        await File.WriteAllTextAsync(file, "module.exports = {};\n");
+        Assert.True(file.Length > 260, $"{file.Length} characters");
+        _ledger.Register("engine", root);
+        using var log = Log();
+
+        var said = await new BranchTidying(_home).LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+
+        Assert.StartsWith(Removed(landed), Assert.Single(said), StringComparison.Ordinal);
+        var aside = Assert.Single(Directory.GetDirectories(Path.Combine(_home, "trees", ".tidied", "default", "engine")));
+        Assert.False(Directory.Exists(landed.Path));
+        Assert.True(File.Exists(Path.Combine(aside, Path.GetRelativePath(landed.Path, file))));
+        Assert.DoesNotContain(Path.GetFileName(landed.Path), await GitAsync(root, "worktree", "list", "--porcelain"), StringComparison.Ordinal);
+        Assert.DoesNotContain(landed.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
+
+        var later = await new BranchTidying(_home) { Clock = () => DateTimeOffset.UtcNow.AddDays(15) }
+            .LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+
+        Assert.StartsWith($"tidy  deleted the folder moved aside to {aside} on ", Assert.Single(later), StringComparison.Ordinal);
+        Assert.False(Directory.Exists(aside));
+        Assert.Single(Events("tidied.purged"));
+        Assert.Empty(Events("tidied.kept"));
+    }
+
+    /// <summary>
+    /// 🔴 AUTOTIDY2b, the row's own case: the branches Accept's landings made (D102's group) go by the look once the line holds
+    /// their work, after their sessions' branches, as the press takes them: one merged into the line, and one squash-merged, its
+    /// commits kept on a ref of their own. Each is said in the report by its name, and in the machine log by its session alone,
+    /// since its name carries the title's words. Every other stays, as the press finds it, saying nothing: one whose pull request
+    /// is still open, one checked out in a tree of the person's, one pushed and moved since, and one a session still working
+    /// leans on. The session branch of each the line holds goes first, its work on the line through the landing's branch.
+    /// </summary>
+    [Fact]
+    public async Task The_look_takes_the_landing_branches_the_line_holds_and_keeps_every_other()
+    {
+        var root = await RepositoryAsync("engine");
+        var origin = Path.Combine(_scratch, "engine-origin.git");
+        Directory.CreateDirectory(origin);
+        await GitAsync(origin, "init", "--quiet", "--bare", "-b", "main");
+        await GitAsync(root, "remote", "add", "origin", origin);
+        await GitAsync(root, "push", "--quiet", "-u", "origin", "main");
+        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"))
+            .Save(Path.Combine(_home, "driver.json"));
+        var trees = new SessionTrees(_home);
+
+        var merged = await LandingAsync(trees, root, new LandingSubject("s1", "q1", "Merged"));
+        await GitAsync(root, "merge", "--no-ff", "--no-edit", merged.Branch);
+        var squashed = await LandingAsync(trees, root, new LandingSubject("s2", "q2", "Squashed"));
+        await SquashAsync(root, squashed.Branch);
+        var open = await LandingAsync(trees, root, new LandingSubject("s3", "q3", "Open"));
+        var checkedOut = await LandingAsync(trees, root, new LandingSubject("s4", "q4", "Checked out"));
+        await SquashAsync(root, checkedOut.Branch);
+        await GitAsync(root, "worktree", "add", "--quiet", Path.Combine(_scratch, "elsewhere"), checkedOut.Branch);
+        var pushed = await LandingAsync(trees, root, new LandingSubject("s5", "q5", "Pushed"));
+        await GitAsync(root, "push", "--quiet", "-u", "origin", pushed.Branch);
+        await CommitOnAsync(root, pushed.Branch);
+        await SquashAsync(root, pushed.Branch);
+        var leaned = await LandingAsync(trees, root, new LandingSubject("s6", "q6", "Leaned on"));
+        await SquashAsync(root, leaned.Branch);
+        _ledger.Register("engine", root);
+        _ledger.Working("s-leaned", "engine", leaned.Tree.Path);
+        using var log = Log();
+
+        var said = await new BranchTidying(_home).LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+
+        var branches = await GitAsync(root, "branch", "--list");
+        foreach (var gone in new[] { merged, squashed })
+        {
+            Assert.DoesNotContain(gone.Branch, branches, StringComparison.Ordinal);
+            Assert.DoesNotContain(gone.Tree.Branch, branches, StringComparison.Ordinal);
+        }
+
+        foreach (var kept in new[] { open, checkedOut, pushed, leaned }) Assert.Contains(kept.Branch, branches, StringComparison.Ordinal);
+        foreach (var kept in new[] { open, leaned }) Assert.Contains(kept.Tree.Branch, branches, StringComparison.Ordinal);
+        foreach (var gone in new[] { checkedOut, pushed }) Assert.DoesNotContain(gone.Tree.Branch, branches, StringComparison.Ordinal);
+
+        var discarded = (await GitAsync(root, "for-each-ref", "--format=%(refname)", "refs/daoris/discarded/")).Trim();
+        Assert.Equal($"refs/daoris/discarded/{squashed.Branch}", discarded);
+        Assert.Equal(6, said.Count);
+        Assert.Contains($"tidy  engine: removed `{merged.Branch}`, a branch a landing made, since its work is on `main`.", said);
+        Assert.Contains(
+            $"tidy  engine: removed `{squashed.Branch}`, a branch a landing made, since its work is on `main` by content (each file it changed reads "
+            + $"the same there). {ContentHold.KeptAt(squashed.Branch, discarded)}",
+            said);
+        Assert.All(new[] { open, checkedOut, pushed, leaned }, kept => Assert.DoesNotContain(said, line => line.Contains(kept.Branch, StringComparison.Ordinal)));
+
+        var tidied = Events("branch.tidied");
+        Assert.Equal(6, tidied.Length);
+        var landings = tidied.Where(data => data.TryGetProperty("session", out _)).ToList();
+        Assert.Equal(
+            [("s1", LandedKind.Merged), ("s2", LandedKind.OnLine)],
+            landings.Select(data => (data.GetProperty("session").GetString(), data.GetProperty("kind").GetString())).Order());
+        Assert.All(landings, data => Assert.Equal(JsonValueKind.Null, data.GetProperty("branch").ValueKind));
+        Assert.Empty(Events("branch.kept"));
+        Assert.DoesNotContain("feature/", string.Join('\n', Directory.EnumerateFiles(Path.Combine(_home, MachineLog.Folder), "*.jsonl").SelectMany(StubFile.Lines)),
+            StringComparison.Ordinal);
+        var record = new LandedBranches(_home);
+        Assert.Equal(LandedKind.Merged, record.Landing("s1")!.RemovedAs);
+        Assert.Equal(LandedKind.OnLine, record.Landing("s2")!.RemovedAs);
+        Assert.Null(record.Landing("s3")!.GoneAt);
+    }
+
     /// <summary>A link at <paramref name="link"/> to <paramref name="target"/>: a junction on Windows, which needs no privilege.</summary>
     private static async Task JunctionAsync(string link, string target)
     {
@@ -887,6 +1004,31 @@ public sealed class BranchTidyingProcessTests : IDisposable
         var tree = await TreeWithWorkAsync(trees, root);
         await GitAsync(root, "merge", "--no-ff", "--no-edit", tree.Branch);
         return tree;
+    }
+
+    /// <summary>A session's tree with one commit, landed by Accept on a branch the record keeps (the branch form's rule).</summary>
+    private async Task<(TreeOpened Tree, string Branch)> LandingAsync(SessionTrees trees, string root, LandingSubject subject)
+    {
+        var tree = await TreeWithWorkAsync(trees, root);
+        var landed = await trees.LandAsync(tree.Path, subject);
+        Assert.True(landed.Landed, landed.Message);
+        return (tree, landed.Branch!);
+    }
+
+    /// <summary>A squash merge onto the checkout's own line, as a platform's "squash and merge" leaves it.</summary>
+    private static async Task SquashAsync(string root, string branch)
+    {
+        await GitAsync(root, "merge", "--squash", branch);
+        await GitAsync(root, "commit", "--quiet", "-m", $"{branch} (squashed)");
+    }
+
+    /// <summary>A commit on a branch nobody has checked out, through a worktree made and removed for it.</summary>
+    private async Task CommitOnAsync(string root, string branch)
+    {
+        var place = Path.Combine(_scratch, $"on-{Guid.NewGuid():N}"[..12]);
+        await GitAsync(root, "worktree", "add", "--quiet", place, branch);
+        await CommitAsync(place, "after-the-push.txt", "after the push\n", "after the push");
+        await GitAsync(root, "worktree", "remove", place);
     }
 
     /// <summary>A repository on <c>main</c> that ignores a database and a build's output, and holds a build's output itself.</summary>

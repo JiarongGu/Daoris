@@ -216,6 +216,59 @@ public sealed class BranchTidyingTests : IDisposable
         Assert.Contains("\"kind\":\"carried\",\"kept\":null", lines[2], StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// AUTOTIDY2b: a branch a landing made, taken by the look, is said in the report by its name and what proved its work is on
+    /// the line, and in the machine log by its session alone: its name, and the ref its commits are kept on, carry the title's
+    /// words, which the log never holds (the machine-log design §5). A removal that did not happen is said once, as a session
+    /// branch's is.
+    /// </summary>
+    [Fact]
+    public void A_landing_s_branch_is_said_by_name_in_the_report_and_by_its_session_in_the_log()
+    {
+        using var log = new MachineLog(_home, "driver", () => _now);
+        var tidying = new BranchTidying(_home);
+        const string Squashed = "feature/q2-fix-the-login";
+        const string Ref = "refs/daoris/discarded/" + Squashed;
+        var moved = new LandedResult(Landing("feature/q5-moved", LandedKind.OnLine, "main"), false, "it changed since the list, and is kept") { Session = "s5" };
+        var pass = Pass("engine") with
+        {
+            Landed =
+            [
+                new LandedResult(Landing("feature/q1-add-a-page", LandedKind.Merged, "main"), true, "removed") { Session = "s1" },
+                new LandedResult(Landing(Squashed, LandedKind.OnLine, "origin/main"), true, "removed") { Session = "s2", KeptRef = Ref },
+                new LandedResult(Landing("feature/q3-a-step", LandedKind.Inside, Squashed), true, "removed") { Session = "s3", KeptRef = Ref + "-2" },
+                new LandedResult(Landing("feature/q4-the-api", LandedKind.PullRequest, "origin/main"), true, "removed") { Session = "s4", KeptRef = Ref + "-3" },
+                moved,
+            ],
+        };
+
+        var said = tidying.Said([pass], log);
+        var again = tidying.Said([Pass("engine") with { Landed = [moved] }], log);
+
+        string Kept(string branch, string at) => $" Its commits stay at `{at}` until you delete that ref; `git branch {branch} {at}` brings the branch back.";
+        Assert.Equal(
+        [
+            "tidy  engine: removed `feature/q1-add-a-page`, a branch a landing made, since its work is on `main`.",
+            $"tidy  engine: removed `{Squashed}`, a branch a landing made, since its work is on `origin/main` by content (each file it changed reads the same there)."
+            + Kept(Squashed, Ref),
+            $"tidy  engine: removed `feature/q3-a-step`, a branch a landing made, since it is inside `{Squashed}`, whose work is on the line."
+            + Kept("feature/q3-a-step", Ref + "-2"),
+            "tidy  engine: removed `feature/q4-the-api`, a branch a landing made, since its pull request completed and its merge commit is on `origin/main`."
+            + Kept("feature/q4-the-api", Ref + "-3"),
+            "tidy  engine: `feature/q5-moved` stays, since it changed since the list.",
+        ], said);
+        Assert.Empty(again);
+        var lines = LogLines();
+        Assert.Equal(5, lines.Length);
+        Assert.All(lines, line => Assert.DoesNotContain("feature/", line, StringComparison.Ordinal));
+        Assert.Contains("\"branch\":null,\"tree\":false,\"folder\":null,\"on\":null,\"kind\":\"merged\",\"kept\":null,\"session\":\"s1\"", lines[0], StringComparison.Ordinal);
+        Assert.Contains("\"kind\":\"on-line\",\"kept\":null,\"session\":\"s2\"", lines[1], StringComparison.Ordinal);
+        Assert.Contains("\"kind\":\"inside\",\"kept\":null,\"session\":\"s3\"", lines[2], StringComparison.Ordinal);
+        Assert.Contains("\"kind\":\"pull-request\",\"kept\":null,\"session\":\"s4\"", lines[3], StringComparison.Ordinal);
+        Assert.Contains("\"event\":\"branch.kept\"", lines[4], StringComparison.Ordinal);
+        Assert.Contains("\"branch\":null,\"why\":\"refused\",\"session\":\"s5\"", lines[4], StringComparison.Ordinal);
+    }
+
     /// <summary>What holds a whole repository holds every session branch in it now, not only the empty ones (AUTOTIDY2a).</summary>
     [Fact]
     public void A_repository_held_says_its_session_branches_stay()
@@ -537,6 +590,10 @@ public sealed class BranchTidyingTests : IDisposable
 
     private static SweepItem Item(string branch, string? tree = null) =>
         new("engine", "default", branch, tree, SweepKind.Empty, 0, "main", null);
+
+    /// <summary>A branch a landing made, as the landed group's judgement leaves it (AUTOTIDY2b).</summary>
+    private static LandedItem Landing(string branch, string kind, string where) =>
+        new("engine", "default", branch, kind, where, [], null, null, 1);
 
     private static TidyPass Pass(string repository, params SweepResult[] results) =>
         new(results) { Repository = repository, Workspace = "default" };

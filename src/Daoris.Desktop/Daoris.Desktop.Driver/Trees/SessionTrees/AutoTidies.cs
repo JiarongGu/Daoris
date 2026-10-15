@@ -24,6 +24,12 @@ public sealed record TidyPass(IReadOnlyList<SweepResult> Results, string? Held =
 
     /// <summary>Which <see cref="TidyKept.Unread"/> held it (<see cref="TidyCause"/>); null for any other reason.</summary>
     public string? Cause { get; init; }
+
+    /// <summary>
+    /// What the clean-up's press path did with each branch a landing made that the look took (AUTOTIDY2b, D102's group), after
+    /// the session branches; those it would not take are the press's, and are not listed.
+    /// </summary>
+    public IReadOnlyList<LandedResult> Landed { get; init; } = [];
 }
 
 /// <summary>
