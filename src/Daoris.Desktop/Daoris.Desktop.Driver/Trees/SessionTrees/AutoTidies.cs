@@ -97,11 +97,13 @@ public static class TidyCause
 
 /// <summary>
 /// The look's own tidy of one repository (AUTOTIDY1; PART10l-ii, out of <c>SessionTrees.Auto.cs</c>): the pass that judges the
-/// repository's session branches, holds it, and hands what may go to the clean-up's press path. Over the trees' context, the
-/// follow's ledger, the replay's record tidying, the sweep, which takes the look's guards and set-aside itself, and the set-aside's
-/// judgement of what goes (<see cref="TreeSetAside"/>).
+/// repository's session branches and the branches its landings made, holds it, and hands what may go to the clean-up's press path.
+/// Over the trees' context, the follow's ledger, the replay's record tidying, the sweep, which takes the look's guards and
+/// set-aside itself, the set-aside's judgement of what goes (<see cref="TreeSetAside"/>), and the landed group's half of the
+/// clean-up (<see cref="LandedCleanups"/>, AUTOTIDY2b).
 /// </summary>
-internal sealed class AutoTidies(TreeContext context, TreeFollows follows, BranchReplays replays, TreeSweeps sweeps, TreeSetAside setAside)
+internal sealed class AutoTidies(
+    TreeContext context, TreeFollows follows, BranchReplays replays, TreeSweeps sweeps, TreeSetAside setAside, LandedCleanups cleanups)
 {
     /// <summary>
     /// The look's own tidy of one repository (AUTOTIDY1, D88's note; AUTOTIDY2a): every session branch, judged as the press's
@@ -158,7 +160,9 @@ internal sealed class AutoTidies(TreeContext context, TreeFollows follows, Branc
         var branches = refs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(branch => $"{repository}:{branch}")
             .ToHashSet(StringComparer.Ordinal);
-        if (branches.Count == 0) return Pass([]);
+        // The branches the repository's landings made and recorded (AUTOTIDY2b, D102's group), which the look takes after them.
+        var entries = LandedProofs.EntriesOf(context.Recorded.All(), repository);
+        if (branches.Count == 0 && entries.Count == 0) return Pass([]);
 
         // A list of the working trees git could not give is never "no tree here": nothing in the repository is judged this look.
         if (await context.Worktrees.ListAsync(root, ct).ConfigureAwait(false) is null) return Pass([], TidyKept.Unread, ListUnread, TidyCause.List);
@@ -167,21 +171,40 @@ internal sealed class AutoTidies(TreeContext context, TreeFollows follows, Branc
         // what stays is said from here, and only what may go holds the repository.
         var (before, unsaid) = await BusyAsync().ConfigureAwait(false);
         if (before is null) return Pass([], TidyKept.Sessions, unsaid);
-        var plan = await sweeps.SweepPlanAsync([(repository, space, root)], before, ct, branches, byItself: true).ConfigureAwait(false);
+        // AUTOTIDY2b: the landings' branches first, as their own proof finds them before any session branch leans on them: one whose
+        // work the line holds holds a session branch's work there too, so that session branch goes first, as the press takes it.
+        var landed = entries.Count == 0 ? [] : await cleanups.JudgeLandedAsync(root, repository, space, entries, [], stale: null, ct).ConfigureAwait(false);
+        var onLine = landed.Where(each => each.Line is not null).Select(each => new LineLanding(each.Item.Branch, each.Tip, each.Line!)).ToList();
+        var plan = branches.Count == 0 ? []
+            : await sweeps.SweepPlanAsync([(repository, space, root)], before, ct, branches, byItself: true, onLine).ConfigureAwait(false);
         var stays = plan.Where(item => !setAside.GoesByItself(item)).Select(item => new SweepResult(item, false, "kept")).ToList();
         var candidates = plan.Where(setAside.GoesByItself).Select(item => $"{repository}:{item.Branch}").ToHashSet(StringComparer.Ordinal);
-        if (candidates.Count == 0) return Pass(stays);
+        // Then each landing's branch the press would take, unless a session branch the look leaves leans on it (D102: those go first).
+        var leaning = plan.Where(item => !setAside.GoesByItself(item)).Select(item => item.Branch).ToList();
+        var forms = await LandedProofs.LineFormsAsync(root, line, ct).ConfigureAwait(false);
+        var landings = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var each in landed.Where(each => each.Item.Removable))
+        {
+            if (await LandedCleanups.LeanerAsync(root, each.Tip, leaning, forms, ct).ConfigureAwait(false) is null) landings.Add($"{repository}:{each.Item.Branch}");
+        }
+
+        if (candidates.Count == 0 && landings.Count == 0) return Pass(stays);
 
         using var hold = TreeLock.TryReplaying(context.Home, space, repository);
         if (hold is null) return Pass([], TidyKept.Starting);
         var (busy, unsaidNow) = await BusyAsync().ConfigureAwait(false);
         if (busy is null) return Pass([], TidyKept.Sessions, unsaidNow);
 
-        var results = await sweeps.SweepAsync([(repository, space, root)], busy, candidates, byItself: true, ct).ConfigureAwait(false);
+        var results = candidates.Count == 0 ? []
+            : await sweeps.SweepAsync([(repository, space, root)], busy, candidates, byItself: true, ct, onLine).ConfigureAwait(false);
         // The record of where session branches grew from drops what is gone (LAND3), as the press's does: after a removal, so not
         // cancelled either.
         if (results.Any(result => result.Removed)) await replays.ForgetGoneAsync(root, repository, CancellationToken.None).ConfigureAwait(false);
-        return Pass([.. stays, .. results]);
+        // The landings' branches after the session branches, by the press's own half (AUTOTIDY2b): each judged again against the
+        // session branches still standing, and again right before it goes, deleted only at the commit judged.
+        var gone = landings.Count == 0 ? []
+            : await cleanups.CleanLandedAsync([(repository, space, root)], landings, ct).ConfigureAwait(false);
+        return Pass([.. stays, .. results]) with { Landed = gone };
 
         // The trees sessions running or waiting name; none where the service did not say, with its words.
         async Task<(IReadOnlySet<string>? Busy, string? Why)> BusyAsync()

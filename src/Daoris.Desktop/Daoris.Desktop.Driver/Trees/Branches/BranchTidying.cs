@@ -245,11 +245,49 @@ public sealed class BranchTidying(string home)
                     lines.Add($"tidy  {pass.Repository}: `{item.Branch}` stays, since {Clause(clause!)}.");
                     log?.Warn("branch.kept", Kept(pass.Repository, pass.Workspace, item.Branch, why, why == TidyKept.Unread ? result.Cause ?? (item.Unread ? TidyCause.Judged : null) : null));
                 }
+
+                SayLanded(pass, log, met, lines);
             }
         }
 
         return lines;
     }
+
+    /// <summary>
+    /// What the look did with the branches the repository's landings made (AUTOTIDY2b): each removal, and each the removal of
+    /// which did not happen, said the first look it is met. The report names the branch; the machine log names it by its session
+    /// alone, and never the ref its commits stay at, since both carry the title's words (the machine-log design §5).
+    /// </summary>
+    private void SayLanded(TidyPass pass, MachineLog? log, HashSet<string> met, List<string> lines)
+    {
+        foreach (var result in pass.Landed)
+        {
+            var item = result.Item;
+            if (result.Removed)
+            {
+                lines.Add($"tidy  {pass.Repository}: removed `{item.Branch}`, a branch a landing made, {LandedWhy(item)}."
+                    + (result.KeptRef is { } kept ? $" {ContentHold.KeptAt(item.Branch, kept)}" : ""));
+                log?.Info("branch.tidied",
+                    ("repository", pass.Repository), ("workspace", pass.Workspace), ("branch", null), ("tree", false), ("folder", null),
+                    ("on", null), ("kind", item.Kind), ("kept", null), ("session", result.Session));
+                continue;
+            }
+
+            // A branch the look did not name is the press's (its own judgement keeps it), and says nothing.
+            if (result.Message == "kept" || !First(met, pass.Repository, item.Branch, TidyKept.Refused)) continue;
+            lines.Add($"tidy  {pass.Repository}: `{item.Branch}` stays, since {Clause(result.Message)}.");
+            log?.Warn("branch.kept", [.. Kept(pass.Repository, pass.Workspace, null, TidyKept.Refused, null), ("session", result.Session)]);
+        }
+    }
+
+    /// <summary>Why a landing's branch could go, by what proved its work is on the line, as the clean-up's list words it (AUTOTIDY2b).</summary>
+    private static string LandedWhy(LandedItem item) => item.Kind switch
+    {
+        LandedKind.OnLine => $"since its work is on `{item.Where}` by content (each file it changed reads the same there)",
+        LandedKind.Inside => $"since it is inside `{item.Where}`, whose work is on the line",
+        LandedKind.PullRequest => $"since its pull request completed and its merge commit is on `{item.Where}`",
+        _ => $"since its work is on `{item.Where}`",
+    };
 
     /// <summary>
     /// <c>branch.kept</c>'s data: the cause (AUTOTIDY1a2) is a field only where there is one, so what was read before it reads the same.
