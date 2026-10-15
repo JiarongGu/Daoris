@@ -221,6 +221,9 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
         }
 
         var (form, target) = await TargetAsync(parts, subject, ct).ConfigureAwait(false);
+        // ACCEPTALL1d (D87's 2026-10-15 amendment point 6): the press fetches the entry's line once, its parts all in one repository,
+        // and each part is judged against that fetch; a failed one is said once, in the entry's answer.
+        var notFetched = await FetchOnceAsync(parts, steps, ct).ConfigureAwait(false);
         var outcomes = new List<EntryPartLanding>(parts.Count);
         var landedOn = new List<string>();
         string? stopped = null;
@@ -240,7 +243,7 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
             }
 
             var landed = await lands.LandAsync(part.Tree, Joining(subject, part.Session, form, target), ct, inUse, AcceptedBy.Person, part.Gate,
-                joins: form == LandingForm.Branch).ConfigureAwait(false);
+                joins: form == LandingForm.Branch, fetched: true).ConfigureAwait(false);
             if (landed.Landed)
             {
                 landedOn.Add(part.Session);
@@ -257,7 +260,17 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
         var branch = outcomes.Select(outcome => outcome.Landing?.Branch).FirstOrDefault(each => each is not null) ?? target;
         var tried = outcomes.Where(outcome => outcome.Outcome is EntryPartOutcome.Landed or EntryPartOutcome.Refused).ToList();
         var allLanded = tried.Count > 0 && tried.All(outcome => outcome.Outcome == EntryPartOutcome.Landed);
-        return new EntryLanding(allLanded, EntryLandWords.Said(form, branch, outcomes), branch, outcomes);
+        return new EntryLanding(allLanded, EntryLandWords.Said(form, branch, outcomes) + notFetched, branch, outcomes);
+    }
+
+    /// <summary>The press's one fetch (point 6), from the first part it lands whose tree is here; its words where it failed, else null.</summary>
+    private async Task<string?> FetchOnceAsync(IReadOnlyList<EntryLandingPart> parts, IReadOnlyList<EntryStep> steps, CancellationToken ct)
+    {
+        var first = parts.Where((part, at) => steps[at].Lands && Directory.Exists(part.Tree)).FirstOrDefault();
+        if (first is null) return null;
+        var full = Path.GetFullPath(first.Tree);
+        var (workspace, repository) = context.OwnerOf(full);
+        return await syncs.FetchLineAsync(full, repository, workspace, ct).ConfigureAwait(false);
     }
 
     /// <summary>

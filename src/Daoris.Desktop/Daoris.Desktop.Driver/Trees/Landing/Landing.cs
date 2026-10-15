@@ -271,6 +271,17 @@ public sealed record AdvanceFacts(LandedBranch? Recorded, string Tip, string? Ch
 /// </summary>
 public static class LandingAdvance
 {
+    /// <summary>
+    /// What the session's work must grow from to move the branch on: the tip the record says was squashed, under a squash rule where
+    /// it says one (PROCESS1b-ii point 4), else the tip the branch was made or last moved at. 🔴 Work replayed onto the branch's tip (a
+    /// part joining its entry's branch, ACCEPTALL1b, or past what the line holds, LANDSYNC1) grows from that tip under a squash too
+    /// (ACCEPTALL1d, D87's 2026-10-15 amendment point 3): the squashed tip is another tree's, which the replay does not hold.
+    /// </summary>
+    /// <param name="squash">The rule squashes the work into one commit.</param>
+    /// <param name="replayed">The work was replayed onto the branch's tip, rather than being the session's own tip.</param>
+    public static string? GrewFrom(LandedBranch? recorded, bool squash, bool replayed) =>
+        squash && !replayed ? recorded?.Squashed ?? recorded?.Tip : recorded?.Tip;
+
     /// <summary>The refusal, in its code and its sentence, or null where the branch may move on.</summary>
     /// <param name="name">The branch the pattern names.</param>
     /// <param name="sessionBranch">The session's own branch, whose work would move it.</param>

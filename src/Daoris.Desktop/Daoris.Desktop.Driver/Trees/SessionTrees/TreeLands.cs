@@ -286,9 +286,13 @@ internal sealed class TreeLands(
     /// tree's work does not grow from its tip (a part that ran alongside, in a tree of its own), what neither the branch nor the line
     /// holds is replayed onto its tip, which then moves by D145 §3's fast-forward, and the tree follows. False lands as before.
     /// </param>
+    /// <param name="fetched">
+    /// The entry's Accept fetched the line once before its parts (ACCEPTALL1d, D87's 2026-10-15 amendment point 6), and said a failed
+    /// fetch once, so this part is judged against that fetch and fetches nothing. False: the person's press fetches, as before.
+    /// </param>
     internal async Task<TreeLanding> LandAsync(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
-        string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false)
+        string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false, bool fetched = false)
     {
         // One look (UIFREEZE1, PROC1d-i): the landing and its tidy ask git's guess at the line once.
         using var look = context.OneLook();
@@ -338,7 +342,7 @@ internal sealed class TreeLands(
 
         // LANDSYNC1 (D87's 2026-10-15 amendment): only what the line lacks lands. The person's press fetches the line once first
         // (point 6), a failed fetch said and judged against the last one; the look's automatic landing has no press and fetches nothing.
-        var (sync, fetched) = await syncs.JudgeAsync(full, repository, workspace, branchForm, fetch: acceptedBy != AcceptedBy.Auto, ct)
+        var (sync, notFetched) = await syncs.JudgeAsync(full, repository, workspace, branchForm, fetch: acceptedBy != AcceptedBy.Auto && !fetched, ct)
             .ConfigureAwait(false);
         var replaying = sync is { Held.HoldsNone: false } ? sync : null;
         if (replaying is { Held.Kept.Count: 0 })
@@ -348,7 +352,7 @@ internal sealed class TreeLands(
                 ? new(false, heldNow.NotLanded) { Refusal = AutoLandingCode.Carried, LeftOut = replaying.Held.LeftOut }
                 : new(false, $"`{replaying.Branch}` holds nothing `{replaying.OntoName}` lacks: the line already holds "
                     + $"{string.Join(", ", replaying.Held.LeftOut.Select(LandingSyncWords.Each))} — nothing to land.")
-                { Refusal = AutoLandingCode.Nothing, LeftOut = replaying.Held.LeftOut }, fetched);
+                { Refusal = AutoLandingCode.Nothing, LeftOut = replaying.Held.LeftOut }, notFetched);
         }
 
         // What a replay made, to move the session's tree to (point 7): a merge's here, a branch's from what it made.
@@ -359,13 +363,13 @@ internal sealed class TreeLands(
             if (replaying is not null)
             {
                 var (made, notMade) = await syncs.ReplayAsync(replaying, repository, workspace, replaying.Onto, replaying.Held.Kept, ct).ConfigureAwait(false);
-                if (notMade is not null) return Fetched(notMade, fetched);
+                if (notMade is not null) return Fetched(notMade, notFetched);
                 replayed = made;
             }
 
             var merged = await MergeAsync(path, ct, replayed).ConfigureAwait(false);
             landed = new(merged.Merged, merged.Message) { LeftOut = merged.Merged ? replayed?.LeftOut : null };
-            landed = Fetched(landed, fetched);
+            landed = Fetched(landed, notFetched);
         }
         else
         {
@@ -373,7 +377,7 @@ internal sealed class TreeLands(
                 BranchNamed(subject, landing.Rule, repository), handedOn: plugin is not null, ct,
                 entered: subject.EnteredName is not null, squash: landing.Rule.Squash ? subject : null, sync: replaying,
                 join: joins ? sync : null).ConfigureAwait(false);
-            landed = Fetched(branched.Landing, fetched);
+            landed = Fetched(branched.Landing, notFetched);
             replayed = landed.Landed ? branched.Replay : null;
             // ACCEPTALL1: a part that joined its entry's branch by a replay follows it as a replay onto the line does (point 7).
             if (replayed is not null && replaying is null && joins) replaying = sync;
@@ -678,9 +682,13 @@ internal sealed class TreeLands(
             // A chain's later done moves the chain's branch on (LAND2c, D149): only one Daoris made, as a fast-forward, or under
             // a squash by one more commit (PROCESS1b-ii point 4).
             var standsAt = standing.Trim();
+            // Under a squash the branch holds the session tip it squashed by content alone (PROCESS1b-ii point 4): work grown from that
+            // tip grows from the branch, and its commits up to it are on the branch already (ACCEPTALL1d).
+            var squashedTip = squash is null ? null : context.Recorded.Of(repository, name)?.Squashed;
+            var grown = squashedTip ?? standsAt;
             // ACCEPTALL1 (D167's amendment point 2): a part that ran alongside, its work not grown from the entry's branch, joins it by
             // the same replay as what the line partly holds; one grown from it still moves it by its own tip.
-            var onto = sync ?? (join is not null && !await IsAncestorAsync(root, standsAt, join.Tip, ct).ConfigureAwait(false) ? join : null);
+            var onto = sync ?? (join is not null && !await IsAncestorAsync(root, grown, join.Tip, ct).ConfigureAwait(false) ? join : null);
             if (onto is null)
             {
                 return await AdvanceAsync(root, repository, name, standsAt, branch, line, commits, handedOn, ct, against, squash).ConfigureAwait(false);
@@ -691,7 +699,9 @@ internal sealed class TreeLands(
             var lacking = new List<LandingCommit>();
             foreach (var commit in onto.Held.Kept)
             {
-                if (!await IsAncestorAsync(root, commit.Sha, standsAt, ct).ConfigureAwait(false)) lacking.Add(commit);
+                if (await IsAncestorAsync(root, commit.Sha, standsAt, ct).ConfigureAwait(false)) continue;
+                if (squashedTip is not null && await IsAncestorAsync(root, commit.Sha, squashedTip, ct).ConfigureAwait(false)) continue;
+                lacking.Add(commit);
             }
 
             var (onBranch, refusedOn) = await syncs.ReplayAsync(onto, repository, workspace, standsAt, lacking, ct, joining: sync is null ? name : null)
@@ -808,8 +818,8 @@ internal sealed class TreeLands(
             .ConfigureAwait(false);
         var head = replayed ?? headOut.Trim();
         // What the session's work must grow from: the tip the record says was squashed where it says one (point 4), else the tip
-        // the branch was made or last moved at, its commits the session's own.
-        var grewFrom = squash is not null ? recorded?.Squashed ?? recorded?.Tip : recorded?.Tip;
+        // the branch was made or last moved at, its commits the session's own; a replay onto that tip grows from it (ACCEPTALL1d).
+        var grewFrom = LandingAdvance.GrewFrom(recorded, squash is not null, replayed is not null);
 
         // Each fact read only where the one before it allowed an advance, in the order the refusals are said.
         string? checkedOut = null;
