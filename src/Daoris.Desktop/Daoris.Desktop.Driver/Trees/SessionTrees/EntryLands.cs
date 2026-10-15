@@ -221,6 +221,9 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
         }
 
         var (form, target) = await TargetAsync(parts, subject, ct).ConfigureAwait(false);
+        // ACCEPTALL1d (D87's 2026-10-15 amendment point 6): the press fetches the entry's line once, its parts all in one repository,
+        // and each part is judged against that fetch; a failed one is said once, in the entry's answer.
+        var notFetched = await FetchOnceAsync(parts, steps, ct).ConfigureAwait(false);
         var outcomes = new List<EntryPartLanding>(parts.Count);
         var landedOn = new List<string>();
         string? stopped = null;
@@ -240,7 +243,7 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
             }
 
             var landed = await lands.LandAsync(part.Tree, Joining(subject, part.Session, form, target), ct, inUse, AcceptedBy.Person, part.Gate,
-                joins: form == LandingForm.Branch).ConfigureAwait(false);
+                joins: form == LandingForm.Branch, fetched: true).ConfigureAwait(false);
             if (landed.Landed)
             {
                 landedOn.Add(part.Session);
@@ -257,42 +260,72 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
         var branch = outcomes.Select(outcome => outcome.Landing?.Branch).FirstOrDefault(each => each is not null) ?? target;
         var tried = outcomes.Where(outcome => outcome.Outcome is EntryPartOutcome.Landed or EntryPartOutcome.Refused).ToList();
         var allLanded = tried.Count > 0 && tried.All(outcome => outcome.Outcome == EntryPartOutcome.Landed);
-        return new EntryLanding(allLanded, EntryLandWords.Said(form, branch, outcomes), branch, outcomes);
+        return new EntryLanding(allLanded, EntryLandWords.Said(form, branch, outcomes) + notFetched, branch, outcomes);
+    }
+
+    /// <summary>The press's one fetch (point 6), from the first part it lands whose tree is here; its words where it failed, else null.</summary>
+    private async Task<string?> FetchOnceAsync(IReadOnlyList<EntryLandingPart> parts, IReadOnlyList<EntryStep> steps, CancellationToken ct)
+    {
+        var first = parts.Where((part, at) => steps[at].Lands && Directory.Exists(part.Tree)).FirstOrDefault();
+        if (first is null) return null;
+        var full = Path.GetFullPath(first.Tree);
+        var (workspace, repository) = context.OwnerOf(full);
+        return await syncs.FetchLineAsync(full, repository, workspace, ct).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Where the entry's parts land (point 1): under a branch rule, its one branch, named by the rule for the entry's first part (the
-    /// chain's first quest, as a chain's is), or, where that branch's pull request was merged or closed, the first of its successors
-    /// (<see cref="EntryLandings.Candidate"/>) that is free or stands open; under a merge rule, the line.
+    /// A part's own Accept, in its review (ACCEPTALL1b, D167's 2026-10-15 amendment point 2): the entry's Accept for that part alone, so
+    /// it lands as this entry's press would land it, under the entry's subject, on the entry's one branch (<see cref="BranchAsync"/>),
+    /// joining it where it ran alongside. Under a merge rule there is no branch to join, and it merges into the line as before.
+    /// </summary>
+    /// <param name="session">The part pressed: its landing records its own session.</param>
+    /// <param name="entry">What the entry is named for: its first part's subject, as <see cref="PlanAsync"/> is handed it.</param>
+    internal async Task<LandingSubject> JoinAsync(string tree, string session, LandingSubject entry, CancellationToken ct, WorkflowProcess? process)
+    {
+        var branch = await BranchAsync(tree, process, entry, ct).ConfigureAwait(false);
+        return Joining(entry, session, branch is null ? LandingForm.Merge : LandingForm.Branch, branch ?? "");
+    }
+
+    /// <summary>
+    /// Where the entry's parts land (point 1): under a branch rule, its one branch (<see cref="BranchAsync"/>); under a merge rule,
+    /// the line.
     /// </summary>
     private async Task<(string Form, string Target)> TargetAsync(IReadOnlyList<EntryLandingPart> parts, LandingSubject subject, CancellationToken ct)
     {
         var first = parts.FirstOrDefault(part => Directory.Exists(part.Tree)) ?? parts[0];
-        var full = Path.GetFullPath(first.Tree);
-        var (workspace, repository) = context.OwnerOf(full);
         var process = first.Gate?.Process;
+        if (await BranchAsync(first.Tree, process, subject, ct).ConfigureAwait(false) is { } branch) return (LandingForm.Branch, branch);
+        return (LandingForm.Merge, (await lands.PlanRuleAsync(first.Tree, subject, ct, process).ConfigureAwait(false)).Target);
+    }
+
+    /// <summary>
+    /// The entry's one branch (point 1), named by the rule for the entry's first part (the chain's first quest, as a chain's is), or,
+    /// where that branch's pull request was merged or closed, the first of its successors (<see cref="EntryLandings.Candidate"/>) that
+    /// is free or stands open. Null under a merge rule, which makes no branch.
+    /// </summary>
+    private async Task<string?> BranchAsync(string tree, WorkflowProcess? process, LandingSubject subject, CancellationToken ct)
+    {
+        var full = Path.GetFullPath(tree);
+        var (workspace, repository) = context.OwnerOf(full);
         var landing = process is { Named: true } named ? named.Landing : LandingRules.Choose(context.Config(), repository, workspace);
-        if (landing.Rule.Form != LandingForm.Branch)
-        {
-            return (LandingForm.Merge, (await lands.PlanRuleAsync(first.Tree, subject, ct, process).ConfigureAwait(false)).Target);
-        }
+        if (landing.Rule.Form != LandingForm.Branch) return null;
 
         var name = LandingRules.Branch(subject, landing.Rule, repository);
         var here = Directory.Exists(full) ? await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false) : null;
-        if (here is not { Code: 0 }) return (LandingForm.Branch, name);
+        if (here is not { Code: 0 }) return name;
         var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(here.CommonDir.Trim()))!;
         var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         for (var n = 1; n <= EntryLandings.Names; n++)
         {
             var candidate = EntryLandings.Candidate(name, n);
             // Free: the press makes it. Not Daoris's, or moved since it was landed on: the press refuses it, said, as a chain's is.
-            if (await CommitOfAsync(root, $"refs/heads/{candidate}", ct).ConfigureAwait(false) is not { } stands) return (LandingForm.Branch, candidate);
+            if (await CommitOfAsync(root, $"refs/heads/{candidate}", ct).ConfigureAwait(false) is not { } stands) return candidate;
             var recorded = context.Recorded.Of(repository, candidate);
-            if (recorded is null || !string.Equals(stands, recorded.Tip, StringComparison.OrdinalIgnoreCase)) return (LandingForm.Branch, candidate);
-            if (!await CompletedAsync(root, recorded, line, ct).ConfigureAwait(false)) return (LandingForm.Branch, candidate);
+            if (recorded is null || !string.Equals(stands, recorded.Tip, StringComparison.OrdinalIgnoreCase)) return candidate;
+            if (!await CompletedAsync(root, recorded, line, ct).ConfigureAwait(false)) return candidate;
         }
 
-        return (LandingForm.Branch, name);
+        return name;
     }
 
     /// <summary>Whether a recorded branch's pull request was merged or closed: the platform's kept word, else D102's proof on its tip.</summary>

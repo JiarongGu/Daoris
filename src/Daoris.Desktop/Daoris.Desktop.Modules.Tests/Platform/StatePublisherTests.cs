@@ -53,6 +53,30 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
         }
     }
 
+    /// <summary>A route that says which step it has reached (PRESSSTEP1), and waits for the test between them.</summary>
+    private sealed class Stepping : ModuleBase
+    {
+        private readonly TaskCompletionSource _gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _landing = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public override string ModuleName => "TEST.STEPS";
+
+        public void LetGate() => _gate.TrySetResult();
+
+        public void LetLanding() => _landing.TrySetResult();
+
+        protected override async Task<object?> RouteMessageAsync(IpcRequest request, IModuleContext context, CancellationToken cancellationToken)
+        {
+            PressSteps.Reach(PressSteps.Gate);
+            await _gate.Task;
+            PressSteps.Reach(PressSteps.Landing);
+            // Reached again: the same step tells nothing new.
+            PressSteps.Reach(PressSteps.Landing);
+            await _landing.Task;
+            return new { Done = true };
+        }
+    }
+
     private IMessageDispatcher Compose(IIpcModule module, Func<IpcRequest, StateChange?>? declared = null)
     {
         var services = new ServiceCollection();
@@ -192,6 +216,58 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
         Assert.Equal(6, Told().Count);
         Assert.Equal("""{"seq":6,"presses":[]}""", Told()[^1]);
         Assert.Equal(2, Changed().Count);
+    }
+
+    /// <summary>
+    /// PRESSSTEP1 (D169 point 3): the handler of a declared press says the step it has reached, and every window is told the press
+    /// whole with it, beside its route and session; the same step again tells nothing, and a step said outside a press (a read, or
+    /// no press at all) is said to nobody. The step ends with the press.
+    /// </summary>
+    [Fact]
+    public async Task A_press_says_the_step_it_has_reached()
+    {
+        var stepping = new Stepping();
+        var loop = Loop();
+        var dispatcher = Compose([stepping], request => new StateChange(StateScopes.Landing, "id"), loop.UnderWay);
+
+        PressSteps.Reach(PressSteps.Gate);
+        var pressing = Dispatch(dispatcher, stepping.ModuleName, "MOVE", new { id = "s1" });
+        await UntilAsync(() => Told().Count == 2);
+        Assert.Equal("""{"seq":2,"presses":[{"route":"MOVE","session":"s1","step":"gate"}]}""", Told()[^1]);
+        // A window opened now reads the step too.
+        Assert.Equal(2, loop.UnderWay.Now().Seq);
+
+        stepping.LetGate();
+        await UntilAsync(() => Told().Count == 3);
+        await Task.Delay(50);
+        Assert.Equal(3, Told().Count);
+        Assert.Equal("""{"seq":3,"presses":[{"route":"MOVE","session":"s1","step":"landing"}]}""", Told()[^1]);
+
+        stepping.LetLanding();
+        Assert.True((await pressing).Success);
+        await UntilAsync(() => Told().Count == 4);
+        Assert.Equal("""{"seq":4,"presses":[]}""", Told()[^1]);
+    }
+
+    /// <summary>
+    /// ACCEPTALL1e (D169 point 3): a press whose declaration names a payload field as its subject carries it, so an entry's or an
+    /// ask's Accept under way is shown by every window that shows that entry or ask; it names no session of its own.
+    /// </summary>
+    [Fact]
+    public async Task A_press_carries_the_entry_or_ask_its_declaration_names()
+    {
+        var held = new Held();
+        var dispatcher = Compose(held, request => request.Type == "LAND_ENTRY" ? new StateChange(StateScopes.Landing, null, "entry") : null);
+
+        var landing = Dispatch(dispatcher, held.ModuleName, "LAND_ENTRY", new { entry = "e-1", leaveOut = new[] { "s2" } });
+        await UntilAsync(() => Told().Count == 1);
+        Assert.Equal("""{"seq":1,"presses":[{"route":"LAND_ENTRY","subject":"e-1"}]}""", Told()[0]);
+
+        held.Let();
+        await landing;
+        await UntilAsync(() => Changed().Count == 1);
+        // The change is told whole, as ever: no word of the subject on the wire.
+        Assert.Equal("""{"scopes":["landing"]}""", Shape(Assert.Single(Changed())));
     }
 
     /// <summary>
@@ -499,23 +575,43 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
         var copied = PageDeclared();
 
         Assert.NotEmpty(copied);
-        foreach (var (route, scopes, session) in copied)
+        foreach (var (route, scopes, session, subject) in copied)
         {
             // The seam answers for the driver's routes and the browser module's, as the publisher reads both.
             var declared = StatePublisher.Declared(new IpcRequest { Id = "x", Module = DriverModule.Name, Type = route })
                 ?? StatePublisher.Declared(new IpcRequest { Id = "x", Module = BrowserModule.Name, Type = route });
             // The route with each side's words, so a failure names the press and both its declarations.
             Assert.Equal(
-                (route, scopes, session),
-                (route, string.Join(",", StatePublisher.Names(declared?.Scopes ?? StateScopes.None)), declared?.Session));
+                (route, scopes, session, subject),
+                (route, string.Join(",", StatePublisher.Names(declared?.Scopes ?? StateScopes.None)), declared?.Session, declared?.Subject));
         }
+    }
+
+    /// <summary>
+    /// PUBLISHTWIN2: the twin is two-way. A route that declares a change with no entry in the page's table is a press a test of the
+    /// page could make and never hear the change of, so every mark of the driver's and the browser module's is in it.
+    /// </summary>
+    [Fact]
+    public void Every_mark_has_an_entry_in_the_page_s_publishing_seam()
+    {
+        var copied = PageDeclared().Select(entry => entry.Route).ToHashSet(StringComparer.Ordinal);
+        string[] browser = ["ADD_FAVORITE", "REMOVE_FAVORITE", "SET_EXTENSIONS", "SET_BROWSER", "SET_LINKS"];
+
+        var marked = DriverModule.Routes
+            .Where(route => DriverModule.Declared(new IpcRequest { Id = "x", Module = DriverModule.Name, Type = route }) is { Scopes: not StateScopes.None })
+            .Concat(browser)
+            .Where(route => !copied.Contains(route))
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+        Assert.True(marked.Count == 0, "marks with no entry in test/publishing.ts's DECLARED: " + string.Join(", ", marked));
     }
 
     /// <summary>
     /// The page's publishing seam's table, each press as it names it: its route, its scopes joined in their order, and the field
     /// naming its session. Every route the table holds is read, or the test fails: one the pattern missed would go unchecked.
     /// </summary>
-    private static List<(string Route, string Scopes, string? Session)> PageDeclared()
+    private static List<(string Route, string Scopes, string? Session, string? Subject)> PageDeclared()
     {
         var text = File.ReadAllText(Path.Combine(SourceFiles.WorkspaceFolder(), "src", "Daoris.Web", "src", "test", "publishing.ts"));
         var start = text.IndexOf("export const DECLARED", StringComparison.Ordinal);
@@ -526,14 +622,15 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
             .Select(entry => (
                 entry.Groups["route"].Value,
                 string.Join(",", PageScope().Matches(entry.Groups["scopes"].Value).Select(scope => scope.Groups["scope"].Value)),
-                entry.Groups["session"].Success ? entry.Groups["session"].Value : null))
+                entry.Groups["session"].Success ? entry.Groups["session"].Value : null,
+                entry.Groups["subject"].Success ? entry.Groups["subject"].Value : null))
             .ToList();
         Assert.Equal(PageRoute().Matches(table).Count, copied.Count);
         return copied;
     }
 
-    /// <summary>One press in the seam's table: <c>ROUTE: { scopes: ['a', 'b'], session: 'id' }</c>, over one line or several.</summary>
-    [GeneratedRegex(@"\b(?<route>[A-Z][A-Z_]+):\s*\{\s*scopes:\s*\[(?<scopes>[^\]]*)\]\s*(?:,\s*session:\s*'(?<session>\w+)'\s*)?,?\s*\}")]
+    /// <summary>One press in the seam's table: <c>ROUTE: { scopes: ['a', 'b'], session: 'id', subject: 'entry' }</c>, over one line or several.</summary>
+    [GeneratedRegex(@"\b(?<route>[A-Z][A-Z_]+):\s*\{\s*scopes:\s*\[(?<scopes>[^\]]*)\]\s*(?:,\s*session:\s*'(?<session>\w+)'\s*)?(?:,\s*subject:\s*'(?<subject>\w+)'\s*)?,?\s*\}")]
     private static partial Regex PageEntry();
 
     /// <summary>A scope's word in a press's list.</summary>

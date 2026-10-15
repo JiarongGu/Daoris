@@ -87,5 +87,37 @@ public sealed class DriverModuleEntriesTests
         Assert.Equal(JsonValueKind.Null, parts[2].GetProperty("message").ValueKind);
     }
 
+    private static SessionRecord Record(string id, string? entry, int minute) =>
+        new(id, "engine", "completed") { Entry = entry, Created = new DateTimeOffset(2026, 10, 16, 9, minute, 0, TimeSpan.Zero) };
+
+    /// <summary>
+    /// ACCEPTALL1b (D167's amendment point 2): a part's own Accept is its entry's for that part alone, so <c>LANDING</c> and
+    /// <c>LAND_SESSION_TREE</c> name its landing for the entry's first part, oldest by its record's <c>created</c> then id.
+    /// </summary>
+    [Fact]
+    public void A_parts_own_accept_is_named_for_its_entrys_first_part()
+    {
+        IReadOnlyList<SessionRecord> records =
+        [
+            Record("s3", "ask:a3/engine", 3), Record("s1", "ask:a3/engine", 1), Record("s9", "ask:a9/engine", 0), Record("s2", "ask:a3/engine", 1),
+        ];
+
+        Assert.Equal("s1", TreesRoutes.EntryLead(records, "s3")?.Id);
+        Assert.Equal("s1", TreesRoutes.EntryLead(records, "s1")?.Id);
+        Assert.Equal("s1", TreesRoutes.EntryLead(records, "s2")?.Id);
+    }
+
+    /// <summary>A session with no entry, or its entry's only part, lands exactly as before: no entry leads it.</summary>
+    [Fact]
+    public void A_session_alone_in_its_entry_or_with_none_has_no_lead()
+    {
+        // A record from a host before the key is its own line of work (SESSONE1b), as is one the records no longer hold.
+        IReadOnlyList<SessionRecord> records = [Record("s1", "ask:a3/engine", 1), Record("s2", null, 2), Record("s3", null, 3)];
+
+        Assert.Null(TreesRoutes.EntryLead(records, "s1"));
+        Assert.Null(TreesRoutes.EntryLead(records, "s2"));
+        Assert.Null(TreesRoutes.EntryLead(records, "s4"));
+    }
+
     private static JsonElement Read(object wire) => JsonDocument.Parse(JsonSerializer.Serialize(wire, JsonSerializerOptions.Web)).RootElement;
 }

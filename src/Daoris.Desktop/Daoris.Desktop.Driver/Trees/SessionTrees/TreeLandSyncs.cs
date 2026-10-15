@@ -39,22 +39,36 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
         if (branch is "" or "HEAD") return (null, null);
         if ((await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch is not { } line) return (null, null);
 
-        string? fetched = null;
-        if (fetch)
-        {
-            var (failed, url) = await FetchAsync(root, line, ct).ConfigureAwait(false);
-            // No `origin` at all is nothing to fetch, and nothing to say: the line here is all there is.
-            if (failed is not null && url is not null)
-            {
-                fetched = LandingSyncWords.NotFetched(failed, await LastFetchAsync(root, line, ct).ConfigureAwait(false), ReachOf(url), DateTimeOffset.UtcNow);
-            }
-        }
-
+        var fetched = fetch ? await FetchedAsync(root, line, ct).ConfigureAwait(false) : null;
         var here = await CommitOfAsync(root, $"refs/heads/{line}", ct).ConfigureAwait(false);
         var onto = branchForm ? await LatestAsync(root, line, ct).ConfigureAwait(false) : here;
         if (onto is null || await CommitOfAsync(full, "HEAD", ct).ConfigureAwait(false) is not { } tip) return (null, fetched);
         if (await LineHolds.JudgeAsync(root, tip, onto, line, ct).ConfigureAwait(false) is not { } held) return (null, fetched);
         return (new LandSync(root, branch, line, onto, onto == here ? line : $"origin/{line}", tip, held), fetched);
+    }
+
+    /// <summary>
+    /// The press's one fetch of the line a tree's landing is judged against (point 6), for an entry's Accept, which fetches once before
+    /// its parts and judges each against it (ACCEPTALL1d): the same fetch <see cref="JudgeAsync"/> makes. Its words where it failed,
+    /// said once; null where it fetched, where there was nothing to fetch, or where the tree has no line to judge against.
+    /// </summary>
+    internal async Task<string?> FetchLineAsync(string full, string repository, string workspace, CancellationToken ct)
+    {
+        if (!context.Holds(full) || !Directory.Exists(full)) return null;
+        var tree = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
+        if (tree.Code != 0) return null;
+        var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(tree.CommonDir.Trim()))!;
+        if ((await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch is not { } line) return null;
+        return await FetchedAsync(root, line, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>D109's fetch of the line, and its words in WSR7's where it failed; null where it fetched or there is no `origin`.</summary>
+    private static async Task<string?> FetchedAsync(string root, string line, CancellationToken ct)
+    {
+        var (failed, url) = await FetchAsync(root, line, ct).ConfigureAwait(false);
+        // No `origin` at all is nothing to fetch, and nothing to say: the line here is all there is.
+        if (failed is null || url is null) return null;
+        return LandingSyncWords.NotFetched(failed, await LastFetchAsync(root, line, ct).ConfigureAwait(false), ReachOf(url), DateTimeOffset.UtcNow);
     }
 
     /// <summary>

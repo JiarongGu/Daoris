@@ -27,6 +27,13 @@ public sealed record TreesAsk(TreesLook Look)
     public bool Yes { get; init; }
 }
 
+/// <summary>What <c>daoris-driver trees land --entry &lt;id&gt; | --ask &lt;id&gt;</c> was asked (ACCEPTALL1e, D167's amendment, D50).</summary>
+/// <param name="IsAsk">The ask's one Accept (<c>--ask</c>, the page's <c>LAND_ASK</c>); else the entry's (<c>--entry</c>, <c>LAND_ENTRY</c>).</param>
+/// <param name="Id">The entry's key, or the ask's id.</param>
+/// <param name="LeaveOut">The parts the person leaves out (<c>--leave-out &lt;session&gt;</c>, once each), as the page sends them.</param>
+/// <param name="Plan">Says where the parts would land and does nothing.</param>
+public sealed record EntryLandAsk(bool IsAsk, string Id, IReadOnlySet<string> LeaveOut, bool Plan);
+
 /// <summary>The checkouts a look is handed, or why it is handed none.</summary>
 /// <param name="Repositories">The registry's rows the look takes, each with its checkout here.</param>
 /// <param name="Refusal">Why the words take nothing: a workspace the registry does not name. Null where they take what they name.</param>
@@ -106,6 +113,64 @@ public static class TreesCommand
         }
 
         return ask;
+    }
+
+    /// <summary>
+    /// What the words after <c>trees</c> ask of an entry's or an ask's Accept, or null with what is wrong with them (ACCEPTALL1e, D50):
+    /// <c>land (--entry &lt;id&gt; | --ask &lt;id&gt;) [--leave-out &lt;session&gt;]… [--plan]</c>, in any order, one of the two once. Every word is
+    /// read: a mistyped <c>--leave-out</c> would otherwise land the part the person meant to keep out.
+    /// </summary>
+    public static EntryLandAsk? ReadEntryLand(IReadOnlyList<string> args, out string? problem)
+    {
+        problem = null;
+        if (args is not ["land", ..])
+        {
+            problem = "`trees` reads `land` here.";
+            return null;
+        }
+
+        string? entry = null;
+        string? ask = null;
+        var leaveOut = new HashSet<string>(StringComparer.Ordinal);
+        var plan = false;
+        for (var at = 1; at < args.Count; at++)
+        {
+            switch (args[at])
+            {
+                case "--entry" when entry is null && ask is null && Name(args, at + 1) is { } named:
+                    entry = named;
+                    at++;
+                    break;
+                case "--ask" when entry is null && ask is null && Name(args, at + 1) is { } named:
+                    ask = named;
+                    at++;
+                    break;
+                case "--entry" or "--ask":
+                    problem = "`land` takes one `--entry <id>` or one `--ask <id>`.";
+                    return null;
+                case "--leave-out" when Name(args, at + 1) is { } part:
+                    leaveOut.Add(part);
+                    at++;
+                    break;
+                case "--leave-out":
+                    problem = "`--leave-out` takes a session to leave out.";
+                    return null;
+                case "--plan":
+                    plan = true;
+                    break;
+                default:
+                    problem = $"`{args[at]}` is not a word `trees land --entry|--ask` takes.";
+                    return null;
+            }
+        }
+
+        if (entry is null && ask is null)
+        {
+            problem = "`land` takes one `--entry <id>` or one `--ask <id>`.";
+            return null;
+        }
+
+        return new EntryLandAsk(ask is not null, (entry ?? ask)!, leaveOut, plan);
     }
 
     /// <summary>The repositories bringing up to date takes (D112): every one with <c>--all</c>, the one named, else those holding Daoris's branches.</summary>

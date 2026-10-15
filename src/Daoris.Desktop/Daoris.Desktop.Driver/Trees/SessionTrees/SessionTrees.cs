@@ -520,8 +520,13 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     /// <inheritdoc cref="TreeLands.LandAsync"/>
     public Task<TreeLanding> LandAsync(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
-        string acceptedBy = AcceptedBy.Person, LandingGate? gate = null) =>
-        Lands.LandAsync(path, subject, ct, inUse, acceptedBy, gate);
+        string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false) =>
+        Lands.LandAsync(path, subject, ct, inUse, acceptedBy, gate, joins);
+
+    /// <inheritdoc cref="EntryLands.JoinAsync"/>
+    public Task<LandingSubject> JoinEntryAsync(
+        string path, string session, LandingSubject entry, CancellationToken ct = default, WorkflowProcess? process = null) =>
+        Entries.JoinAsync(path, session, entry, ct, process);
 
     /// <inheritdoc cref="EntryLands.PlanAsync"/>
     public Task<EntryPlan> PlanEntryAsync(IReadOnlyList<EntryLandingPart> parts, LandingSubject subject, CancellationToken ct = default) =>

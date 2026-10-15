@@ -140,6 +140,7 @@ public static class DriverCommand
               first and deleted with --yes.
           trees [list | remove <path|session|branch> [--repository <name>] [--force]
                 | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>]
+                | land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]
                 | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]
                 | state <session|branch> [--repository <name>]
                 | sync [--repository <name>] [--workspace <name>] [--all] [--yes]]

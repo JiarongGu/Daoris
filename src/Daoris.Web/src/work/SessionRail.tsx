@@ -1,11 +1,11 @@
-import { Fragment, type ReactNode, useLayoutEffect, useRef, useState } from 'react';
+import { type ComponentProps, Fragment, type ReactNode, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HELP_REPOSITORY, type Quest, type Session } from '../data/api';
 import { useAsks, useOpinions, useQuests, useRegistry, useSessions } from '../data/queries';
 import { searchable } from '../lib/searchable';
 import {
   type SessionHit, useAskLanding, useChannelUnreads, useDriver, useLandAsk, useSessionEntries, useSessionGroups, useSessionOpenings,
-  useSessionSearch, useSessionWhere,
+  useSessionSearch, useSessionWhere, useUnderWaySubject,
 } from '../bridge/shell';
 import { askOfEntry, entryFacts, isIntakeEntry, listedSessions, nameOfEntry, type SessionEntry } from './entries';
 import { EntryAccept } from './EntryAccept';
@@ -216,14 +216,14 @@ export function SessionRail({
     if (offered < 2) return null;
     const open = askAsking === ask;
     return (
-      <EntryAccept
+      <AskAccept
+        ask={ask}
         scope="ask"
         offered={offered}
         open={open}
         onOpen={(opened) => setAskAsking(opened ? ask : null)}
         plans={open ? askPlan.data?.entries ?? null : null}
         reading={open && askPlan.isFetching && !askPlan.data}
-        busy={landAsk.isPending}
         // A part is named by its number in its own line of work's strip.
         numberOf={(session) => {
           const parts = askEntries(ask).find((entry) => entry.parts.some((part) => part.session === session))?.parts ?? [];
@@ -410,6 +410,14 @@ export function SessionRail({
       )}
     </nav>
   );
+}
+
+/**
+ * An ask's one Accept, waiting while its landing is under way in any window (ACCEPTALL1e): this window's own press, or the driver's
+ * telling of another's, read where the molecule is drawn, since a hook cannot be called where the list draws each ask.
+ */
+function AskAccept({ ask, ...accept }: { ask: string } & Omit<ComponentProps<typeof EntryAccept>, 'busy'>) {
+  return <EntryAccept {...accept} busy={useUnderWaySubject('LAND_ASK', ask)} />;
 }
 
 /**

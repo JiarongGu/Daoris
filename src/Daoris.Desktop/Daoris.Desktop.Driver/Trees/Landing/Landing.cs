@@ -271,6 +271,17 @@ public sealed record AdvanceFacts(LandedBranch? Recorded, string Tip, string? Ch
 /// </summary>
 public static class LandingAdvance
 {
+    /// <summary>
+    /// What the session's work must grow from to move the branch on: the tip the record says was squashed, under a squash rule where
+    /// it says one (PROCESS1b-ii point 4), else the tip the branch was made or last moved at. 🔴 Work replayed onto the branch's tip (a
+    /// part joining its entry's branch, ACCEPTALL1b, or past what the line holds, LANDSYNC1) grows from that tip under a squash too
+    /// (ACCEPTALL1d, D87's 2026-10-15 amendment point 3): the squashed tip is another tree's, which the replay does not hold.
+    /// </summary>
+    /// <param name="squash">The rule squashes the work into one commit.</param>
+    /// <param name="replayed">The work was replayed onto the branch's tip, rather than being the session's own tip.</param>
+    public static string? GrewFrom(LandedBranch? recorded, bool squash, bool replayed) =>
+        squash && !replayed ? recorded?.Squashed ?? recorded?.Tip : recorded?.Tip;
+
     /// <summary>The refusal, in its code and its sentence, or null where the branch may move on.</summary>
     /// <param name="name">The branch the pattern names.</param>
     /// <param name="sessionBranch">The session's own branch, whose work would move it.</param>
@@ -565,6 +576,34 @@ public static class LandingRules
     {
         var said = Noted.Of(code, lead).Then(" ", Noted.Said(message, NoteBy.Program));
         return new SessionEvent { Kind = SessionEventKind.Note, Text = said.Note, Parts = said.Parts };
+    }
+
+    /// <summary>
+    /// What a part's conversation keeps where the person left it out of its entry's Accept (ACCEPTALL1c, D167's 2026-10-15 amendment
+    /// point 3): the branch its line of work landed on, or the line it merged into, so its review says so and leads with Discard.
+    /// Machine-local, as every note there is; landing it later is a press of its own.
+    /// </summary>
+    public static SessionEvent LeftOutNote(string branch)
+    {
+        var said = Noted.Of(NoteCodes.LandingLeftOut,
+            $"the person left this part out when its line of work landed on `{branch}`: its work did not land there.", ("branch", branch));
+        return new SessionEvent { Kind = SessionEventKind.Note, Text = said.Note, Parts = said.Parts };
+    }
+
+    /// <summary>
+    /// Where a part's review reads it left out (ACCEPTALL1c): the branch the newest <see cref="LeftOutNote"/> names, while no acceptance
+    /// (<see cref="IsAcceptance"/>, a press of its own or a landing at done) came after it; null where none says it.
+    /// </summary>
+    public static string? LeftOutOf(IReadOnlyList<SessionEvent> events)
+    {
+        for (var at = events.Count - 1; at >= 0; at--)
+        {
+            if (events[at] is not { Kind: SessionEventKind.Note } note) continue;
+            if (note.Text is { } text && IsAcceptance(text)) return null;
+            if (note.Parts?.FirstOrDefault(part => part.Code == NoteCodes.LandingLeftOut.Code)?.Value("branch") is string branch) return branch;
+        }
+
+        return null;
     }
 
     /// <summary>How the conversation's note of a press opens: what the trace knows an acceptance by (TRACE1).</summary>
