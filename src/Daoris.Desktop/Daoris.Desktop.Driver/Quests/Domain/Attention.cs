@@ -3,6 +3,10 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>Why a person is being interrupted.</summary>
+/// <remarks>
+/// Read by name where it is delivered, so a new kind has two counterparts: the shell's <c>SessionNotifier</c> (its balloon's
+/// line where the event has no detail, and its icon) and the page's <c>ShellSignals</c> (its toast's tone).
+/// </remarks>
 public enum AttentionKind
 {
     /// <summary>A session stopped and can only be cleared by the person (D46's `awaiting-person`).</summary>
@@ -120,9 +124,9 @@ public sealed record AttentionEvent(
 /// use shows a chat left running and crashing silently, the fix is to feed its `onEnded` in — the
 /// repository is already remembered here.</para>
 ///
-/// <para><b>A conversation's answer is the fifth</b> (NOTIFY1a, the owner, 2026-10-15): the person said something and
-/// looked away, and the turn their words started has ended. That is the stream they are in, but not one they can watch
-/// while they do something else, so the window behind another said nothing until they looked. Told by the conversation's
+/// <para><b>A conversation's answer is the fifth</b> (NOTIFY1a): the person said something and looked away, and the turn
+/// their words started has ended. That is the stream they are in, but not one they can watch while they do something
+/// else: a window behind another says nothing until they look. Told by the conversation's
 /// runner as its turns move (<see cref="Asked"/>, <see cref="Turned"/>), never by the tick, and kept apart from the tick's
 /// half: the runner tells it from each conversation's own thread. Said once per turn's end the person's words started, after
 /// the last of them; never for a turn they stopped, nor one nobody's words started (a conversation taken up by itself, a
