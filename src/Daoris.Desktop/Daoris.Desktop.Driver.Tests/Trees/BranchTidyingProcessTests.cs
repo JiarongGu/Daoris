@@ -975,6 +975,164 @@ public sealed class BranchTidyingProcessTests : IDisposable
         Assert.DoesNotContain(Events("branch.tidied"), data => data.TryGetProperty("session", out _));
     }
 
+    /// <summary>
+    /// 🔴 AUTOTIDY2c, the owner's install of 2026-10-15: folders under a repository's trees that git lists no tree for (an empty
+    /// one a removed tree left, with its branch still here, and folders a session wrote beside its tree) are moved aside whole
+    /// once left quiet, said and logged, and the trees list names them moved aside. The branch whose folder that was goes in the
+    /// same look, never kept as unreadable. A tree stays, and so does a folder a running session names.
+    /// </summary>
+    [Fact]
+    public async Task Folders_under_the_trees_that_are_no_tree_are_moved_aside_and_listed_so()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var working = await TreeWithWorkAsync(trees, root);
+        var engine = Path.Combine(_home, "trees", "default", "engine");
+        var leftover = Path.Combine(engine, "s-1f315a22");
+        Directory.CreateDirectory(leftover);
+        await GitAsync(root, "branch", "daoris/s-1f315a22");
+        Directory.CreateDirectory(Path.Combine(engine, "devtools"));
+        await File.WriteAllTextAsync(Path.Combine(engine, "devtools", "tool.mjs"), "export {};\n");
+        Directory.CreateDirectory(Path.Combine(engine, ".tmp"));
+        var named = Path.Combine(engine, "scratch");
+        Directory.CreateDirectory(named);
+        _ledger.Register("engine", root);
+        _ledger.Working("s-running", "engine", named);
+        using var log = Log();
+
+        var said = await new BranchTidying(_home) { Clock = () => DateTimeOffset.UtcNow.AddHours(1) }
+            .LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+
+        var asides = Directory.GetDirectories(Path.Combine(_home, "trees", ".tidied", "default", "engine"));
+        string Aside(string name) => asides.Single(folder => Path.GetFileName(folder).StartsWith(name + "-", StringComparison.Ordinal));
+        Assert.Equal(3, asides.Length);
+        Assert.Equal("export {};\n", await File.ReadAllTextAsync(Path.Combine(Aside("devtools"), "tool.mjs")));
+        Assert.Equal(
+            new[] { "s-1f315a22", "devtools", ".tmp" }.Select(name =>
+                $"tidy  engine: `{name}`, a folder under its trees that git knows no tree in, was moved aside to {Aside(name)}, and goes once it is left untouched for 14 days.")
+            .Append("tidy  engine: removed `daoris/s-1f315a22`, which held nothing beyond `main`.")
+            .Order(StringComparer.Ordinal),
+            said.Order(StringComparer.Ordinal));
+        Assert.Equal([working.Path, named], Directory.GetDirectories(engine).Order(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase);
+        var branches = await GitAsync(root, "branch", "--list", "daoris/*");
+        Assert.DoesNotContain("daoris/s-1f315a22", branches, StringComparison.Ordinal);
+        Assert.Contains(working.Branch, branches, StringComparison.Ordinal);
+        var tidied = Events("branch.tidied");
+        Assert.Equal(4, tidied.Length);
+        var strays = tidied.Where(data => data.GetProperty("kind").GetString() == StrayKind.Folder).ToList();
+        Assert.Equal(3, strays.Count);
+        Assert.All(strays, data =>
+        {
+            Assert.Equal(JsonValueKind.Null, data.GetProperty("branch").ValueKind);
+            Assert.True(data.GetProperty("tree").GetBoolean());
+            Assert.StartsWith("trees/.tidied/default/engine/", data.GetProperty("folder").GetString(), StringComparison.Ordinal);
+        });
+        Assert.Empty(Events("branch.kept"));
+
+        var listed = await trees.ListAsync();
+
+        Assert.Equal(working.Branch, listed.Single(tree => tree.Path == working.Path).Branch);
+        Assert.Equal("(not a tree)", listed.Single(tree => tree.Path == named).Branch);
+        var moved = listed.Where(tree => tree.MovedAside is not null).ToList();
+        Assert.Equal(asides.Order(StringComparer.Ordinal), moved.Select(tree => tree.Path).Order(StringComparer.Ordinal));
+        Assert.All(moved, tree => Assert.Equal(("default", "engine", "(moved aside)"), (tree.Workspace, tree.Repository, tree.Branch)));
+    }
+
+    /// <summary>
+    /// A folder something wrote in lately may be one a start is making or a session is using: it waits, saying nothing, until it
+    /// has been left quiet (<see cref="TreeStrays.Quiet"/>), and is then moved aside.
+    /// </summary>
+    [Fact]
+    public async Task A_folder_written_in_lately_waits_for_a_later_look()
+    {
+        var root = await RepositoryAsync("engine");
+        var devtools = Path.Combine(_home, "trees", "default", "engine", "devtools");
+        Directory.CreateDirectory(devtools);
+        await File.WriteAllTextAsync(Path.Combine(devtools, "tool.mjs"), "export {};\n");
+        _ledger.Register("engine", root);
+
+        var now = await new BranchTidying(_home).LookAsync(_ledger.Client(), null, _closing.Token).WaitAsync(Bound);
+
+        Assert.Empty(now);
+        Assert.True(File.Exists(Path.Combine(devtools, "tool.mjs")));
+
+        var later = await new BranchTidying(_home) { Clock = () => DateTimeOffset.UtcNow + TreeStrays.Quiet + TimeSpan.FromMinutes(1) }
+            .LookAsync(_ledger.Client(), null, _closing.Token).WaitAsync(Bound);
+
+        Assert.StartsWith("tidy  engine: `devtools`, a folder under its trees that git knows no tree in, was moved aside to ", Assert.Single(later), StringComparison.Ordinal);
+        Assert.False(Directory.Exists(devtools));
+    }
+
+    /// <summary>
+    /// 🔴 OPENCUT1, the owner's install of 2026-10-15 (<c>s-0031408d</c>): a tree whose opening a kill cut off is locked, half
+    /// checked out, on a branch no record names. Where its lock is git's own from an add that never finished, or Daoris's naming a
+    /// process that no longer runs, the look lets go of the lock, moves its folder aside, lets git forget it and removes its
+    /// branch, which holds nothing of its own. A lock a person made, or one a Daoris process still running holds, keeps its tree.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_whose_opening_a_kill_cut_off_is_moved_aside_with_its_branch()
+    {
+        var root = await RepositoryAsync("engine");
+        var engine = Path.Combine(_home, "trees", "default", "engine");
+        var cut = Path.Combine(engine, "s-0031408d");
+        await GitAsync(root, "worktree", "add", "--quiet", "-b", "daoris/s-0031408d", cut, "main");
+        await GitAsync(root, "worktree", "lock", "--reason", TreeOpenings.GitsOwn, cut);
+        await GitAsync(cut, "rm", "--cached", "-r", "--quiet", ".");
+        var ended = Path.Combine(engine, "s-0e0ded00");
+        await GitAsync(root, "worktree", "add", "--quiet", "--lock", "--reason", TreeOpenings.LockReason(await EndedProcessAsync()), "-b", "daoris/s-0e0ded00", ended, "main");
+        var opening = Path.Combine(engine, "s-0be11000");
+        await GitAsync(root, "worktree", "add", "--quiet", "--lock", "--reason", TreeOpenings.LockReason(Environment.ProcessId), "-b", "daoris/s-0be11000", opening, "main");
+        var persons = Path.Combine(engine, "s-9e450000");
+        await GitAsync(root, "worktree", "add", "--quiet", "--lock", "--reason", "a person's", "-b", "daoris/s-9e450000", persons, "main");
+        _ledger.Register("engine", root);
+        using var log = Log();
+
+        var said = await new BranchTidying(_home).LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+
+        var asides = Directory.GetDirectories(Path.Combine(_home, "trees", ".tidied", "default", "engine"));
+        string Aside(string name) => asides.Single(folder => Path.GetFileName(folder).StartsWith(name + "-", StringComparison.Ordinal));
+        Assert.Equal(2, asides.Length);
+        Assert.True(File.Exists(Path.Combine(Aside("s-0031408d"), "README.md")));
+        Assert.Equal(
+            [
+                $"tidy  engine: removed `daoris/s-0031408d`, whose tree's opening was cut off: git's own lock from the start of its add was "
+                + $"left on it; its tree's folder was moved aside to {Aside("s-0031408d")}, and goes once it is left untouched for 14 days.",
+                $"tidy  engine: removed `daoris/s-0e0ded00`, whose tree's opening was cut off: the Daoris process that opened it no longer "
+                + $"runs; its tree's folder was moved aside to {Aside("s-0e0ded00")}, and goes once it is left untouched for 14 days.",
+            ],
+            said.Order(StringComparer.Ordinal));
+        var branches = await GitAsync(root, "branch", "--list", "daoris/*");
+        Assert.DoesNotContain("daoris/s-0031408d", branches, StringComparison.Ordinal);
+        Assert.DoesNotContain("daoris/s-0e0ded00", branches, StringComparison.Ordinal);
+        Assert.Contains("daoris/s-0be11000", branches, StringComparison.Ordinal);
+        Assert.Contains("daoris/s-9e450000", branches, StringComparison.Ordinal);
+        var worktrees = (await GitAsync(root, "worktree", "list", "--porcelain")).Replace('\\', '/');
+        Assert.DoesNotContain("s-0031408d", worktrees, StringComparison.Ordinal);
+        Assert.DoesNotContain("s-0e0ded00", worktrees, StringComparison.Ordinal);
+        Assert.Contains($"locked {TreeOpenings.LockReason(Environment.ProcessId)}", worktrees, StringComparison.Ordinal);
+        Assert.Contains("locked a person's", worktrees, StringComparison.Ordinal);
+        Assert.Equal(
+            ["daoris/s-0031408d", "daoris/s-0e0ded00"],
+            Events("branch.tidied").Where(data => data.GetProperty("kind").GetString() == StrayKind.Opening)
+                .Select(data => data.GetProperty("branch").GetString()).Order(StringComparer.Ordinal));
+        Assert.Empty(Events("branch.kept"));
+
+        var listed = await new SessionTrees(_home).ListAsync();
+
+        Assert.Equal(2, listed.Count(tree => tree.MovedAside is not null));
+        Assert.Equal(["daoris/s-0be11000", "daoris/s-9e450000"], listed.Where(tree => tree.MovedAside is null).Select(tree => tree.Branch).Order(StringComparer.Ordinal));
+    }
+
+    /// <summary>The id of a process that ran and ended: one an opening's lock may name, that no longer runs.</summary>
+    private static async Task<int> EndedProcessAsync()
+    {
+        using var process = System.Diagnostics.Process.Start(
+            new System.Diagnostics.ProcessStartInfo("git", "--version") { UseShellExecute = false, RedirectStandardOutput = true, CreateNoWindow = true })!;
+        await process.StandardOutput.ReadToEndAsync();
+        await process.WaitForExitAsync();
+        return process.Id;
+    }
+
     /// <summary>A link at <paramref name="link"/> to <paramref name="target"/>: a junction on Windows, which needs no privilege.</summary>
     private static async Task JunctionAsync(string link, string target)
     {

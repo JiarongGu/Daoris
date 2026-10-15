@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-16 — A start cut off inside `git worktree add` left a half tree and its branch for good (OPENCUT1)
+
+- **Symptom:** on the install, 2026-10-15: `trees/<workspace>/<repository>/s-0031408d`, half checked out (staged deletions),
+  locked, on a `daoris/s-*` branch no record named, from a start cut off as the old window closed (GOONTREE1's entry); listed
+  *(unreadable)* by `trees list`, kept by the look, and removed by hand.
+- **Root cause:** `SessionTrees.OpenAsync` deleted the branch only when `worktree add` answered with a failure. A cancel stops
+  git's process tree and throws, so nothing after the add ran: the branch git makes first, the folder, and git's own
+  `initializing` lock, which git removes only at the add's end, all stayed. A kill leaves the same, and the look kept such a tree:
+  locked (AUTOTIDY1's guard), dirty, and a branch that never moved.
+- **Fix:** D88's AUTOTIDY2c and OPENCUT1 note. The open holds its tree locked under a reason naming its process until where its
+  branch started is recorded, and anything that cuts it off undoes it (`TreeOpenings.UndoAsync`: the tree removed with
+  `--force --force`, what is left of the folder it made deleted, its branch deleted). A kill's leftover, locked by git's own reason
+  or by an ended process's, is moved aside by the look with its branch (`TreeStrays`).
+- **Verification:** `SessionTreesTests`' two OPENCUT1 tests (real git: a cancel once the tree is added, through the git-start
+  seam, and one while git still runs, held in a `post-checkout` hook) failed first on the branch left behind and no lock, then
+  passed; `BranchTidyingProcessTests.A_tree_whose_opening_a_kill_cut_off_is_moved_aside_with_its_branch` failed first (it did not
+  build), then passed. The rest of the `Process` half did not run in the branch.
+
 ## 2026-10-15 — A message to a session vanished behind the error when its send timed out (SENDLOST1b)
 
 - **Symptom:** the owner's, after *本机没有及时回应——驱动可能正忙。请稍后重试。*: *"and we don't have any message shown when this

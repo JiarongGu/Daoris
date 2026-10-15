@@ -304,6 +304,97 @@ public sealed class BranchTidyingTests : IDisposable
             line, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// AUTOTIDY2c: a folder under the trees that git knows no tree in, moved aside, is said with where it went, and logged as
+    /// <c>branch.tidied</c> with no branch, <c>tree</c> true, the folder it went to from the home, and <c>kind</c> <c>stray</c>.
+    /// </summary>
+    [Fact]
+    public void A_folder_moved_aside_is_said_and_logged_with_no_branch()
+    {
+        using var log = new MachineLog(_home, "driver", () => _now);
+        var folder = Path.Combine(_home, "trees", "default", "engine", "devtools");
+        var aside = Path.Combine(_home, "trees", ".tidied", "default", "engine", "devtools-20261009T090000000Z");
+
+        var said = new BranchTidying(_home).Said(
+            [Pass("engine") with { Strays = [new StrayResult(folder, StrayKind.Folder, true, "") { MovedTo = aside }] }], log);
+
+        Assert.Equal(
+            [$"tidy  engine: `devtools`, a folder under its trees that git knows no tree in, was moved aside to {aside}, and goes once it is left untouched for 14 days."],
+            said);
+        var line = Assert.Single(LogLines());
+        Assert.Contains("\"level\":\"info\",\"event\":\"branch.tidied\"", line, StringComparison.Ordinal);
+        Assert.Contains(
+            "\"repository\":\"engine\",\"workspace\":\"default\",\"branch\":null,\"tree\":true,"
+            + "\"folder\":\"trees/.tidied/default/engine/devtools-20261009T090000000Z\",\"on\":null,\"kind\":\"stray\",\"kept\":null",
+            line, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// OPENCUT1: a tree whose opening was cut off, moved aside with its branch removed, is said by its branch and why its lock was
+    /// a cut-off opening's, and logged as <c>branch.tidied</c> with that branch and <c>kind</c> <c>opening</c>.
+    /// </summary>
+    [Fact]
+    public void A_tree_whose_opening_was_cut_off_is_said_and_logged_by_its_branch()
+    {
+        using var log = new MachineLog(_home, "driver", () => _now);
+        var folder = Path.Combine(_home, "trees", "default", "engine", "s-0031408d");
+        var aside = Path.Combine(_home, "trees", ".tidied", "default", "engine", "s-0031408d-20261009T090000000Z");
+        var cut = new StrayResult(folder, StrayKind.Opening, true, "git's own lock from the start of its add was left on it")
+        {
+            MovedTo = aside, Branch = "daoris/s-0031408d",
+        };
+
+        var said = new BranchTidying(_home).Said([Pass("engine") with { Strays = [cut] }], log);
+
+        Assert.Equal(
+            [$"tidy  engine: removed `daoris/s-0031408d`, whose tree's opening was cut off: git's own lock from the start of its add was left on it; "
+             + $"its tree's folder was moved aside to {aside}, and goes once it is left untouched for 14 days."],
+            said);
+        Assert.Contains(
+            "\"branch\":\"daoris/s-0031408d\",\"tree\":true,\"folder\":\"trees/.tidied/default/engine/s-0031408d-20261009T090000000Z\","
+            + "\"on\":null,\"kind\":\"opening\",\"kept\":null",
+            Assert.Single(LogLines()), StringComparison.Ordinal);
+    }
+
+    /// <summary>A folder under the trees that could not be moved aside is said once by its code, with no branch, while it lasts.</summary>
+    [Fact]
+    public void A_folder_under_the_trees_kept_is_said_once_by_its_code()
+    {
+        using var log = new MachineLog(_home, "driver", () => _now);
+        var tidying = new BranchTidying(_home);
+        var busy = new StrayResult(
+            Path.Combine(_home, "trees", "default", "engine", "devtools"), StrayKind.Folder, false,
+            "something on this machine is using it, so it could not be moved aside (in use); a later look tries again") { Kept = TidyKept.Busy };
+
+        var said = tidying.Said([Pass("engine") with { Strays = [busy] }], log);
+        var again = tidying.Said([Pass("engine") with { Strays = [busy] }], log);
+
+        Assert.Equal(
+            ["tidy  engine: the folder `devtools` under its trees stays, since something on this machine is using it, so it could not be moved aside (in use); a later look tries again."],
+            said);
+        Assert.Empty(again);
+        var line = Assert.Single(LogLines());
+        Assert.Contains("\"event\":\"branch.kept\"", line, StringComparison.Ordinal);
+        Assert.Contains("\"branch\":null,\"why\":\"busy\"", line, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// OPENCUT1: a lock is an opening cut off only where it is git's own from an add, or Daoris's naming a process that no longer
+    /// runs; a person's lock, with any other reason or none, never is.
+    /// </summary>
+    [Theory]
+    [InlineData(TreeOpenings.GitsOwn, false, true)]
+    [InlineData("Daoris is opening this tree (process 4242)", false, true)]
+    [InlineData("Daoris is opening this tree (process 4242)", true, false)]
+    [InlineData("Daoris is opening this tree (process )", false, false)]
+    [InlineData("a person's", false, false)]
+    [InlineData(null, false, false)]
+    public void Only_an_opening_s_lock_no_running_process_holds_is_cut_off(string? reason, bool running, bool cutOff)
+    {
+        Assert.Equal(cutOff, TreeOpenings.CutOff(reason, process => process == 4242 && running));
+        Assert.Equal("Daoris is opening this tree (process 4242)", TreeOpenings.LockReason(4242));
+    }
+
     /// <summary>A last guard's keep is said once, by its own code: a tree in use (busy), a hidden change, a nested repository, a link.</summary>
     [Theory]
     [InlineData(TidyKept.Busy, "something on this machine is using its tree, so its folder could not be moved aside (in use); a later look tries again")]
