@@ -5,19 +5,41 @@
  * every press STATEHUB1h declared, whose hooks ask nothing again themselves since it.
  *
  * A copy of the routes' `[Publishes]` marks, which `StatePublisherTests` reads from this file and holds press by press to the
- * mark (PUBLISHTWIN1): change a press's scopes or session field on both sides, or that test fails. A press added here keeps
+ * mark (PUBLISHTWIN1), and every mark to a copy here (PUBLISHTWIN2): change a press's scopes or session field on both sides, or
+ * declare a route and leave it out here, and that test fails. A press added here keeps
  * this shape, `ROUTE: { scopes: [...], session: '...' }`, which the test reads.
  */
-export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; session?: string }>> = {
+export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; session?: string; subject?: string }>> = {
   LAND_SESSION_TREE: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'], session: 'id' },
-  // A line of work's one Accept and its ask's (ACCEPTALL1): every part's landing, so no one session's.
-  LAND_ENTRY: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
-  LAND_ASK: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
+  // A line of work's one Accept and its ask's (ACCEPTALL1): every part's landing, so no one session's; under way for its entry or
+  // its ask (ACCEPTALL1e).
+  LAND_ENTRY: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'], subject: 'entry' },
+  LAND_ASK: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'], subject: 'ask' },
   DISCARD_SESSION_TREE: { scopes: ['sessions', 'landing', 'diff', 'sweep', 'treesSync'], session: 'id' },
   HANDOFF: { scopes: ['handOff', 'sweep'], session: 'id' },
   SWEEP: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
   DISCARD_SESSION_BRANCH: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
   TREES_SYNC: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'] },
+  // The second opinion's presses, the landing's setting, the sessions' and work's moves, the rules' presses, a history clear and
+  // a sync (PUBLISHTWIN2: every mark has its copy here, held two ways by `StatePublisherTests`).
+  ASK_OPINION: { scopes: ['sessions', 'landing'], session: 'id' },
+  OPINION_ANYWAY: { scopes: ['sessions', 'landing'], session: 'id' },
+  OPINION_MYSELF: { scopes: ['sessions', 'landing'], session: 'id' },
+  STOP_OPINION: { scopes: ['sessions', 'landing'] },
+  SET_LANDING: { scopes: ['landing', 'lines'] },
+  START_CHAT: { scopes: ['sessions', 'driver'] },
+  SESSION_START_FROM: { scopes: ['sessions', 'driver'], session: 'id' },
+  SESSION_HAND_OVER: { scopes: ['sessions', 'driver'], session: 'id' },
+  STOP_SESSION: { scopes: ['sessions', 'driver'], session: 'id' },
+  RESOLVE_SESSION: { scopes: ['sessions', 'quests', 'driver'], session: 'id' },
+  SESSION_GO_ON_NEW: { scopes: ['sessions', 'driver'], session: 'id' },
+  WORK_PAUSE: { scopes: ['sessions', 'quests', 'asks', 'driver'] },
+  WORK_RESUME: { scopes: ['sessions', 'quests', 'asks', 'driver'] },
+  WORK_ABANDON: { scopes: ['sessions', 'quests', 'asks', 'driver'] },
+  RULE_ACTION: { scopes: ['rules'] },
+  RULE_PROPOSAL: { scopes: ['rules'] },
+  HISTORY_CLEAR: { scopes: ['sessions', 'quests', 'asks', 'driver', 'history'] },
+  SYNC_NOW: { scopes: ['sessions', 'quests', 'sync', 'registry'] },
   SESSION_ARCHIVE: { scopes: ['sessions'] },
   SESSION_INPUT: { scopes: ['sessions', 'help'], session: 'id' },
   SESSION_DELETE: { scopes: ['sessions', 'help'], session: 'id' },
@@ -94,16 +116,20 @@ export type Hear = (type: 'STATE_CHANGED' | 'UNDER_WAY', payload: unknown) => vo
  * answered as data among it and one thrown not. Each reaches `hear` on a later turn, as the kit's pump delivers it.
  */
 export function publishing(invoke: Invoke, hear: Hear): Invoke {
-  const underWay: { route: string; session?: string }[] = [];
+  const underWay: { route: string; session?: string; subject?: string }[] = [];
   let seq = 0;
   const tell = (type: 'STATE_CHANGED' | 'UNDER_WAY', payload: unknown) => { setTimeout(() => hear(type, payload), 0); };
   const telling = () => tell('UNDER_WAY', { seq: ++seq, presses: [...underWay] });
   return async (module, type, options) => {
     const declared = PUBLISHING.has(module) ? DECLARED[type] : undefined;
     if (!declared) return invoke(module, type, options);
-    const named = declared.session ? (options?.payload as Record<string, unknown> | undefined)?.[declared.session] : undefined;
-    const session = typeof named === 'string' && named.length > 0 ? named : undefined;
-    const press = session ? { route: type, session } : { route: type };
+    const field = (name?: string) => {
+      const named = name ? (options?.payload as Record<string, unknown> | undefined)?.[name] : undefined;
+      return typeof named === 'string' && named.length > 0 ? named : undefined;
+    };
+    const session = field(declared.session);
+    const subject = field(declared.subject);
+    const press = { route: type, ...(session ? { session } : {}), ...(subject ? { subject } : {}) };
     underWay.push(press);
     telling();
     try {

@@ -306,6 +306,11 @@ export const useLanding = (id: string | null, branch?: string | null) => {
       leftOut?: LeftOutCommit[] | null;
       lands?: LandsCommit[] | null;
       conflict?: LandingConflict | null;
+      /**
+       * The branch its line of work landed on where the person left this part out of its entry's Accept (ACCEPTALL1c, D167's
+       * 2026-10-15 amendment point 3), as its conversation keeps it; absent where none did, or nothing accepted it since.
+       */
+      leftOutOf?: string | null;
     }>('LANDING', { id, ...(named ? { branch: named } : {}) }),
     enabled: isAvailable && id !== null,
   });

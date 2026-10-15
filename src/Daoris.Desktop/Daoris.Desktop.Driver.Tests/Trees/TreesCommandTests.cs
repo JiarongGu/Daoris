@@ -203,6 +203,43 @@ public sealed class TreesCommandTests
             TreesCommand.Press(new TreesAsk(TreesLook.Clean) { Workspace = "R&D" }));
     }
 
+    /// <summary>
+    /// ACCEPTALL1e (D50's twin rule): an entry's one Accept and an ask's are a terminal's verb as they are the page's press: the
+    /// words name one or the other, the parts the person leaves out as the page sends them, and the plan before the press.
+    /// </summary>
+    [Theory]
+    [InlineData(new[] { "land", "--entry", "ask:a3/engine" }, false, "ask:a3/engine", new string[0], false)]
+    [InlineData(new[] { "land", "--ask", "a3" }, true, "a3", new string[0], false)]
+    [InlineData(new[] { "land", "--plan", "--ask", "a3" }, true, "a3", new string[0], true)]
+    [InlineData(new[] { "land", "--entry", "e1", "--leave-out", "s2", "--leave-out", "s3", "--leave-out", "s2" }, false, "e1", new[] { "s2", "s3" }, false)]
+    public void The_words_land_an_entry_or_an_ask(string[] args, bool isAsk, string id, string[] leaveOut, bool plan)
+    {
+        var asked = TreesCommand.ReadEntryLand(args, out var problem);
+
+        Assert.Null(problem);
+        Assert.NotNull(asked);
+        Assert.Equal((isAsk, id, plan), (asked.IsAsk, asked.Id, asked.Plan));
+        Assert.Equal(leaveOut.Order(), asked.LeaveOut.Order());
+    }
+
+    /// <summary>🔴 Every word is read: a mistyped <c>--leave-out</c> would land the part the person meant to leave out.</summary>
+    [Theory]
+    [InlineData(new[] { "land" }, "`land` takes one")]
+    [InlineData(new[] { "land", "--plan" }, "`land` takes one")]
+    [InlineData(new[] { "land", "--entry" }, "`land` takes one")]
+    [InlineData(new[] { "land", "--entry", "e1", "--ask", "a3" }, "`land` takes one")]
+    [InlineData(new[] { "land", "--entry", "e1", "--entry", "e2" }, "`land` takes one")]
+    [InlineData(new[] { "land", "--ask", "a3", "--leave-out" }, "`--leave-out`")]
+    [InlineData(new[] { "land", "--ask", "a3", "--leave-out", "--plan" }, "`--leave-out`")]
+    [InlineData(new[] { "land", "--ask", "a3", "--leaveout", "s2" }, "`--leaveout`")]
+    [InlineData(new[] { "land", "--ask", "a3", "s2" }, "`s2`")]
+    [InlineData(new[] { "clean", "--entry", "e1" }, "`land`")]
+    public void Anything_else_about_an_entry_is_the_usage(string[] args, string named)
+    {
+        Assert.Null(TreesCommand.ReadEntryLand(args, out var problem));
+        Assert.Contains(named, problem);
+    }
+
     private static string? Text(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 }

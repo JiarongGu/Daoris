@@ -176,6 +176,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // A press's note and a chat's settings (CONVNOTE2c): a landing's and a preface's sentence follow their lead as a program's words.
   'landing.person-accepted': { values: [] },
   'landing.person-handed': { values: [] },
+  // A part the person left out of its entry's Accept (ACCEPTALL1c): the branch its line of work landed on, or the line.
+  'landing.left-out': { values: ['branch'] },
   'chat.option-set': { values: ['option', 'chosen'] },
   'chat.told-where': { values: [] },
   // Words that did not reach an agent or were not taken (CONVNOTE2d1): the agent's or the service's words follow a lead.

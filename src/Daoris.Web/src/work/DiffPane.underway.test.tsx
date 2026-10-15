@@ -108,6 +108,26 @@ describe('a press under way, in the review', () => {
     expect(invoke.mock.calls.filter(([, type]) => type === 'LAND_SESSION_TREE')).toHaveLength(0);
   });
 
+  /** PRESSSTEP1: the driver says the landing is at its gate, and the review's press says so, then *Landing…* once it moves on. */
+  it('says Checking… while the driver says the landing is at its gate, and Landing… once it has moved on', async () => {
+    answer();
+    root();
+    await screen.findByRole('button', { name: 'Accept' });
+    const landing = { route: 'LAND_SESSION_TREE', session: 's1a2b3c4' };
+
+    told({ seq: 1, presses: [{ ...landing, step: 'gate' }] });
+    expect(await screen.findByRole('button', { name: 'Checking…' })).toBeDisabled();
+
+    told({ seq: 2, presses: [{ ...landing, step: 'landing' }] });
+    expect(await screen.findByRole('button', { name: 'Landing…' })).toBeDisabled();
+
+    // A step the page has no word for is the plain *Landing…*, and the press's end puts Accept back.
+    told({ seq: 3, presses: [{ ...landing, step: 'replaying' }] });
+    expect(await screen.findByRole('button', { name: 'Landing…' })).toBeDisabled();
+    told({ seq: 4, presses: [] });
+    expect(await screen.findByRole('button', { name: 'Accept' })).toBeEnabled();
+  });
+
   it('holds its Discard while another window discards its tree', async () => {
     answer();
     root();

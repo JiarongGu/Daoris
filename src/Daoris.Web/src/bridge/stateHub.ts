@@ -70,8 +70,12 @@ export function stateChanged(client: QueryClient, change: StateChanged | null | 
   }
 }
 
-/** One press the driver has not answered yet (STATEHUB1c, D169 point 7): its route, and the session its payload named. */
-export type PressUnderWay = { route: string; session?: string };
+/**
+ * One press the driver has not answered yet (STATEHUB1c, D169 point 7): its route, and the session its payload named; the entry
+ * or ask it is for where it names one (ACCEPTALL1e), and the step its handler says it has reached (PRESSSTEP1), each added beside
+ * the first two and absent where there is none.
+ */
+export type PressUnderWay = { route: string; session?: string; subject?: string; step?: string };
 
 /** What the driver last told under way, whole, and its number, so a telling the bus delivered late changes nothing. */
 type UnderWay = { seq: number | null; presses: PressUnderWay[] };
@@ -81,9 +85,14 @@ const NOTHING: UnderWay = { seq: null, presses: [] };
 /** The presses a telling names; a press of any other shape is none, and a telling with no list is no telling. */
 const pressesOf = (value: unknown): PressUnderWay[] | null => (Array.isArray(value)
   ? value.flatMap((each: unknown) => {
-    const press = each as { route?: unknown; session?: unknown } | null;
+    const press = each as { route?: unknown; session?: unknown; subject?: unknown; step?: unknown } | null;
     if (typeof press?.route !== 'string') return [];
-    return [typeof press.session === 'string' ? { route: press.route, session: press.session } : { route: press.route }];
+    return [{
+      route: press.route,
+      ...(typeof press.session === 'string' ? { session: press.session } : {}),
+      ...(typeof press.subject === 'string' ? { subject: press.subject } : {}),
+      ...(typeof press.step === 'string' ? { step: press.step } : {}),
+    }];
   })
   : null);
 
@@ -125,6 +134,37 @@ export function useUnderWay(route: string, session: string | null): boolean {
     predicate: (mutation) => session !== null && sessionPressed(mutation.state.variables) === session,
   });
   return session !== null && (own > 0 || told.presses.some((press) => press.route === route && press.session === session));
+}
+
+/**
+ * The step the driver says a press of `route` for `session` has reached (PRESSSTEP1), or null where none is under way or its
+ * handler has said none. Another window's press, or this one's, since the driver tells every window. The page words each step.
+ */
+export function useUnderWayStep(route: string, session: string | null): string | null {
+  const told = useTold();
+  if (session === null) return null;
+  return told.presses.find((press) => press.route === route && press.session === session)?.step ?? null;
+}
+
+/** The entry or ask a press of this window's was sent for, as `LAND_ENTRY` and `LAND_ASK` name it. */
+function subjectPressed(variables: unknown): string | null {
+  const named = variables as { entry?: unknown; ask?: unknown } | null | undefined;
+  if (typeof named?.entry === 'string') return named.entry;
+  return typeof named?.ask === 'string' ? named.ask : null;
+}
+
+/**
+ * Whether a press of `route` for this entry or ask (`LAND_ENTRY`'s `entry`, `LAND_ASK`'s `ask`) is under way (ACCEPTALL1e), read
+ * alike by every view of it in every window: this window's own press from its send, another's from the driver's telling, which
+ * carries the entry or the ask the declaration names. No entry or ask attended is nothing under way.
+ */
+export function useUnderWaySubject(route: string, subject: string | null): boolean {
+  const told = useTold();
+  const own = useIsMutating({
+    mutationKey: [route],
+    predicate: (mutation) => subject !== null && subjectPressed(mutation.state.variables) === subject,
+  });
+  return subject !== null && (own > 0 || told.presses.some((press) => press.route === route && press.subject === subject));
 }
 
 /**

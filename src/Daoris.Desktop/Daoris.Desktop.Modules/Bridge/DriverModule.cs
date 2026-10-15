@@ -205,7 +205,7 @@ public sealed class DriverModule : ModuleBase
                     routes.Add((route.Type, method.GetParameters().Length == 1
                         ? Now(method.CreateDelegate<Func<T, IpcRequest, object?>>())
                         : Later(method.CreateDelegate<Func<T, IpcRequest, CancellationToken, Task<object?>>>()),
-                        publishes.TryGetValue(route.Type, out var declared) ? new StateChange(declared.Changes, declared.Session) : null));
+                        publishes.TryGetValue(route.Type, out var declared) ? new StateChange(declared.Changes, declared.Session, declared.Subject) : null));
                 }
             }
 
@@ -255,4 +255,7 @@ internal sealed class PublishesAttribute(string route, StateScopes changes) : At
 
     /// <summary>The payload's field naming the session the change was about, where it is one session's.</summary>
     public string? Session { get; set; }
+
+    /// <summary>The payload's field naming the entry or ask the press is for, where it is no one session's (ACCEPTALL1e).</summary>
+    public string? Subject { get; set; }
 }
