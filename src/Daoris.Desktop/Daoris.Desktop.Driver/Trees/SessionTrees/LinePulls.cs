@@ -11,16 +11,17 @@ namespace Daoris.Driver;
 internal static class LinePulls
 {
     /// <summary>What pulling the line would do, and whether the line is checked out in the repository's own checkout.</summary>
+    /// <param name="refs">The judgement's refs (PROC1d-ii); null asks git.</param>
     internal static async Task<(LinePull Pull, bool InRoot)> JudgePullAsync(
-        string root, string repository, string workspace, string? line, string? fetched, CancellationToken ct)
+        string root, string repository, string workspace, string? line, string? fetched, CancellationToken ct, RefSnapshot? refs = null)
     {
         LinePull Pull(string kind, string? from = null, string? to = null, int commits = 0, string? detail = null) =>
             new(repository, workspace, line, kind, from, to, commits, fetched, detail);
 
         if (line is null) return (Pull(PullKind.NoLine), false);
-        var remote = await CommitOfAsync(root, $"refs/remotes/origin/{line}", ct).ConfigureAwait(false);
+        var remote = await CommitOfAsync(root, $"refs/remotes/origin/{line}", ct, refs).ConfigureAwait(false);
         if (remote is null) return (Pull(PullKind.NoRemote), false);
-        var local = await CommitOfAsync(root, $"refs/heads/{line}", ct).ConfigureAwait(false);
+        var local = await CommitOfAsync(root, $"refs/heads/{line}", ct, refs).ConfigureAwait(false);
         if (local is null) return (Pull(PullKind.NoLocal, to: remote), false);
         if (local == remote) return (Pull(PullKind.UpToDate, local, remote), false);
 

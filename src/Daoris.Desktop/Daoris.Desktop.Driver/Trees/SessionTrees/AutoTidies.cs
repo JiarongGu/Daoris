@@ -151,17 +151,23 @@ internal sealed class AutoTidies(
         // The line here, read with no fetch: the local branch, else origin's copy as this checkout last saw it. One look for the
         // pass (UIFREEZE1): the judgement before the hold and the press's path inside it ask git the checkout's line once.
         using var look = context.OneLook();
+        // The refs read once for the judgement before the hold (PROC1d-ii); the press's path inside it reads its own again.
+        var refs = RefSnapshot.Take(root);
         var line = (await context.LineAsync(root, repository, space, ct).ConfigureAwait(false)).Branch;
-        var against = line is null ? null : await ComparableAsync(root, line, ct).ConfigureAwait(false);
+        var against = line is null ? null : await ComparableAsync(root, line, ct, refs).ConfigureAwait(false);
         if (against is null) return Pass([]);
         // Every session branch (AUTOTIDY2a): the press takes landed, content-held and carried ones the line need not hold, so the
-        // look no longer asks git for those the line holds alone.
-        var (code, refs, err) = await WorkingTree.GitAsync(
-            root, ["for-each-ref", "--format=%(refname:short)", "refs/heads/daoris/"], ct).ConfigureAwait(false);
-        if (code != 0) return Pass([], TidyKept.Unread, FirstLine(err), TidyCause.Refs);
-        var branches = refs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(branch => $"{repository}:{branch}")
-            .ToHashSet(StringComparer.Ordinal);
+        // look no longer asks git for those the line holds alone. Where the refs could not be read at once, git's own words say why.
+        var sessions = await refs.BranchesAsync(TreeFollows.SessionPrefix, ct).ConfigureAwait(false);
+        if (sessions is null)
+        {
+            var (code, output, err) = await WorkingTree.GitAsync(
+                root, ["for-each-ref", "--format=%(refname:short)", "refs/heads/daoris/"], ct).ConfigureAwait(false);
+            if (code != 0) return Pass([], TidyKept.Unread, FirstLine(err), TidyCause.Refs);
+            sessions = output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        }
+
+        var branches = sessions.Select(branch => $"{repository}:{branch}").ToHashSet(StringComparer.Ordinal);
         // The branches the repository's landings made and recorded (AUTOTIDY2b, D102's group), which the look takes after them.
         var entries = LandedProofs.EntriesOf(context.Recorded.All(), repository);
         if (branches.Count == 0 && entries.Count == 0) return Pass([]);
@@ -175,7 +181,7 @@ internal sealed class AutoTidies(
         if (before is null) return Pass([], TidyKept.Sessions, unsaid);
         // AUTOTIDY2b: the landings' branches first, as their own proof finds them before any session branch leans on them: one whose
         // work the line holds holds a session branch's work there too, so that session branch goes first, as the press takes it.
-        var landed = entries.Count == 0 ? [] : await cleanups.JudgeLandedAsync(root, repository, space, entries, [], stale: null, ct).ConfigureAwait(false);
+        var landed = entries.Count == 0 ? [] : await cleanups.JudgeLandedAsync(root, repository, space, entries, [], stale: null, ct, refs).ConfigureAwait(false);
         var onLine = landed.Where(each => each.Line is not null).Select(each => new LineLanding(each.Item.Branch, each.Tip, each.Line!)).ToList();
         var plan = branches.Count == 0 ? []
             : await sweeps.SweepPlanAsync([(repository, space, root)], before, ct, branches, byItself: true, onLine).ConfigureAwait(false);
@@ -183,7 +189,7 @@ internal sealed class AutoTidies(
         var candidates = plan.Where(setAside.GoesByItself).Select(item => $"{repository}:{item.Branch}").ToHashSet(StringComparer.Ordinal);
         // Then each landing's branch the press would take, unless a session branch the look leaves leans on it (D102: those go first).
         var leaning = plan.Where(item => !setAside.GoesByItself(item)).Select(item => item.Branch).ToList();
-        var forms = await LandedProofs.LineFormsAsync(root, line, ct).ConfigureAwait(false);
+        var forms = await LandedProofs.LineFormsAsync(root, line, ct, refs).ConfigureAwait(false);
         var landings = new HashSet<string>(StringComparer.Ordinal);
         foreach (var each in landed.Where(each => each.Item.Removable))
         {

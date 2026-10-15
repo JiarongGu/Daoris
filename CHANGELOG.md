@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- When a conversation answers what you said while Daoris's window is behind another, Windows tells you so, as *engine — a
+  conversation answered you*; a click opens it. Nothing is said while you are looking at a Daoris window (the page shows it
+  instead), for a turn you stopped, or while notifications are off.
 - What waits on you in a session is shown once on the screen. The strip at its foot steps aside while the session's top, where
   every wait stands, is wholly in view, and comes back as you scroll it away; it stays while an ask is open in it or you are
   working in it. Where the conversation raised a wait, a small mark replaces the line of words: its tip says what waits on you

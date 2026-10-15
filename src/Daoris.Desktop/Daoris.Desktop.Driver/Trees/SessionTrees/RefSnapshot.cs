@@ -1,0 +1,214 @@
+namespace Daoris.Driver;
+
+/// <summary>
+/// One checkout's branches and origin's copies of them, read with one git start (PROC1d-ii): where each points, what it points
+/// at, and its upstream. <c>rev-parse --verify</c> was 389 of PROC1a's 1278 product starts, each a branch's tip, a form of the
+/// line or an upstream asked one at a time; a judgement takes one of these and hands it to the reads that ask (an optional
+/// parameter, null asking git as before), so a judgement reads a repository's refs once.
+/// </summary>
+/// <remarks>
+/// <para>🔴 <b>Never stale across a write.</b> It is read at its first question, not when taken, so one taken before a fetch is
+/// read after it; and every git this flow starts that may move a ref or an upstream (<see cref="MayWrite"/>) drops each snapshot
+/// the flow holds, through <see cref="WorkingTree"/>'s one runner, so the next question reads again. A write in a flow beside
+/// it drops nothing of it: that is news from another moment, as the person's own git is, and what guards against it is what
+/// always did, the judgement again right before an act and the delete only at the commit judged (D88).</para>
+/// <para><b>It answers only what git would.</b> A revision that is not a full name under <c>refs/heads/</c> or
+/// <c>refs/remotes/origin/</c>, a name only case tells from one it holds (git finds a loose ref so named on a disk blind to
+/// case), a commit asked of a ref that is no commit, an upstream asked of a branch it does not hold (its configuration may
+/// outlive it), and everything where its own read failed, it does not answer: git is asked, as before.</para>
+/// <para>Take it in an <c>async</c> method, at the start of a judgement: the flow holds it until that method returns.</para>
+/// </remarks>
+internal sealed class RefSnapshot
+{
+    /// <summary>What <c>for-each-ref</c> prints of each ref, a space apart: no ref name holds a space.</summary>
+    internal const string Format = "%(refname) %(objectname) %(objecttype) %(upstream) %(upstream:short)";
+
+    private const string Heads = "refs/heads/";
+    private const string Origin = "refs/remotes/origin/";
+
+    // The snapshots this flow holds: an async local, so a write drops this flow's and never a neighbour's.
+    private static readonly AsyncLocal<RefSnapshot[]?> Held = new();
+
+    private readonly Func<CancellationToken, Task<string?>> _read;
+    private readonly object _gate = new();
+    private Task<Refs?>? _refs;
+
+    private RefSnapshot(Func<CancellationToken, Task<string?>> read) => _read = read;
+
+    /// <summary>One ref as it was read.</summary>
+    internal sealed record Entry(string Name, string Object, string Type, string? Upstream, string? UpstreamShort);
+
+    /// <summary>A read's refs by their full names, in git's order, and the same names blind to case.</summary>
+    internal sealed class Refs(List<Entry> entries)
+    {
+        internal IReadOnlyList<Entry> Entries { get; } = entries;
+
+        internal Dictionary<string, Entry> ByName { get; } = entries.ToDictionary(entry => entry.Name, StringComparer.Ordinal);
+
+        internal HashSet<string> Blind { get; } = entries.Select(entry => entry.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>A snapshot of <paramref name="root"/>'s refs for this flow. Nothing is started until it is first asked.</summary>
+    internal static RefSnapshot Take(string root) => Take(ct => ReadAsync(root, ct));
+
+    /// <summary>The test seam: a snapshot whose read is <paramref name="read"/> (its output, or null where git could not give it).</summary>
+    internal static RefSnapshot Take(Func<CancellationToken, Task<string?>> read)
+    {
+        var taken = new RefSnapshot(read);
+        Held.Value = Held.Value is { } held ? [.. held, taken] : [taken];
+        return taken;
+    }
+
+    /// <summary>The one start: every branch here and every copy of origin's, with what each points at and its upstream.</summary>
+    internal static async Task<string?> ReadAsync(string root, CancellationToken ct)
+    {
+        var (code, output, _) = await WorkingTree.GitAsync(
+            root, ["for-each-ref", $"--format={Format}", "refs/heads", "refs/remotes/origin"], ct).ConfigureAwait(false);
+        return code == 0 ? output : null;
+    }
+
+    /// <summary>The read's refs; null where a line is not the five fields asked for, so nothing is answered from a read half understood.</summary>
+    internal static Refs? Parse(string output)
+    {
+        var entries = new List<Entry>();
+        foreach (var line in output.Split('\n'))
+        {
+            var row = line.TrimEnd('\r');
+            if (row.Trim().Length == 0) continue;
+            var fields = row.Split(' ');
+            if (fields.Length != 5 || fields[0].Length == 0 || fields[1].Length == 0 || fields[2].Length == 0) return null;
+            entries.Add(new Entry(fields[0], fields[1], fields[2], Empty(fields[3]), Empty(fields[4])));
+        }
+
+        return new Refs(entries);
+
+        static string? Empty(string field) => field.Length == 0 ? null : field;
+    }
+
+    /// <summary>Drop what was read: the next question reads again.</summary>
+    internal void Invalidate()
+    {
+        lock (_gate) _refs = null;
+    }
+
+    /// <summary>A ref may have moved: every snapshot this flow holds is dropped.</summary>
+    internal static void Wrote()
+    {
+        foreach (var each in Held.Value ?? []) each.Invalidate();
+    }
+
+    /// <summary>What <see cref="WorkingTree"/>'s runner calls after each git it ran: a write drops this flow's snapshots.</summary>
+    internal static void Ran(IReadOnlyList<string> arguments)
+    {
+        if (MayWrite(arguments)) Wrote();
+    }
+
+    /// <summary>
+    /// Whether a git may move a ref or an upstream: every command but the reads named here, so a command this does not know
+    /// costs a read again and never a stale answer.
+    /// </summary>
+    internal static bool MayWrite(IReadOnlyList<string> arguments)
+    {
+        var at = 0;
+        // git's own options before the command: `-c name=value`, `-C path`, `--no-pager`.
+        while (at < arguments.Count && arguments[at].StartsWith('-'))
+        {
+            at += arguments[at] is "-c" or "-C" ? 2 : 1;
+        }
+
+        if (at >= arguments.Count) return true;
+        var rest = arguments.Skip(at + 1).ToList();
+        return arguments[at] switch
+        {
+            "rev-parse" or "for-each-ref" or "merge-base" or "rev-list" or "diff" or "log" or "show" or "status" or "cat-file"
+                or "ls-files" or "ls-tree" or "show-ref" or "name-rev" or "describe" or "blame" or "check-ignore" or "check-attr"
+                or "cherry" or "ls-remote" or "version" => false,
+            "worktree" => rest.FirstOrDefault() != "list",
+            "branch" => !rest.Any(ListsBranches) || rest.Any(MovesBranches),
+            "symbolic-ref" => rest.Any(each => each is "-d" or "--delete" or "-m") || rest.Count(each => !each.StartsWith('-')) != 1,
+            "config" => !rest.Any(each => each is "--get" or "--get-all" or "--get-regexp" or "--get-urlmatch" or "--list" or "-l"),
+            "remote" => rest.FirstOrDefault() is not ("get-url" or "-v"),
+            _ => true,
+        };
+
+        static bool ListsBranches(string each) =>
+            each is "--list" or "-l" or "--contains" or "--no-contains" or "--merged" or "--no-merged" or "--points-at" or "--show-current";
+
+        static bool MovesBranches(string each) =>
+            each is "-d" or "-D" or "--delete" or "-m" or "-M" or "--move" or "-c" or "-C" or "--copy" or "-f" or "--force"
+                or "-u" or "--unset-upstream" or "-t" or "--track" or "--no-track" or "--edit-description" or "--create-reflog"
+            || each.StartsWith("--set-upstream-to", StringComparison.Ordinal) || each.StartsWith("--track=", StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The commit <paramref name="reference"/> points at, as <c>rev-parse --verify --quiet &lt;ref&gt;^{commit}</c> answers:
+    /// null where there is no such ref. Not <c>Known</c> where git must be asked.
+    /// </summary>
+    internal async Task<(bool Known, string? Commit)> CommitAsync(string reference, CancellationToken ct)
+    {
+        var (known, entry) = await LookAsync(reference, ct).ConfigureAwait(false);
+        if (!known) return (false, null);
+        if (entry is null) return (true, null);
+        return entry.Type == "commit" ? (true, entry.Object) : (false, null);
+    }
+
+    /// <summary>Whether <paramref name="reference"/> is here, as <c>rev-parse --verify --quiet &lt;ref&gt;</c> answers; null where git must be asked.</summary>
+    internal async Task<bool?> HasAsync(string reference, CancellationToken ct)
+    {
+        var (known, entry) = await LookAsync(reference, ct).ConfigureAwait(false);
+        return known ? entry is not null : null;
+    }
+
+    /// <summary>
+    /// <paramref name="branch"/>'s upstream as <c>&lt;branch&gt;@{upstream}</c> resolves it, in full and as
+    /// <c>--abbrev-ref</c> shortens it: both null where it has none git can follow. Not <c>Known</c> where the branch is not
+    /// here or the read failed, since its configuration may still name one.
+    /// </summary>
+    internal async Task<(bool Known, string? Full, string? Short)> UpstreamAsync(string branch, CancellationToken ct)
+    {
+        var (known, entry) = await LookAsync(Heads + branch, ct).ConfigureAwait(false);
+        return known && entry is not null ? (true, entry.Upstream, entry.UpstreamShort) : (false, null, null);
+    }
+
+    /// <summary>The branches under <c>refs/heads/&lt;prefix&gt;</c> by their names under <c>refs/heads/</c>, in git's order; null where the read failed.</summary>
+    internal async Task<IReadOnlyList<string>?> BranchesAsync(string prefix, CancellationToken ct)
+    {
+        if (await RefsAsync(ct).ConfigureAwait(false) is not { } refs) return null;
+        return [.. refs.Entries.Where(entry => entry.Name.StartsWith(Heads + prefix, StringComparison.Ordinal)).Select(entry => entry.Name[Heads.Length..])];
+    }
+
+    private async Task<(bool Known, Entry? Entry)> LookAsync(string reference, CancellationToken ct)
+    {
+        if (!Covers(reference) || await RefsAsync(ct).ConfigureAwait(false) is not { } refs) return (false, null);
+        if (refs.ByName.TryGetValue(reference, out var entry)) return (true, entry);
+        return refs.Blind.Contains(reference) ? (false, null) : (true, null);
+    }
+
+    /// <summary>A full ref name it read: under <c>refs/heads/</c> or <c>refs/remotes/origin/</c>, and nothing git would read as more than a name.</summary>
+    private static bool Covers(string reference)
+    {
+        var under = reference.StartsWith(Heads, StringComparison.Ordinal) ? Heads
+            : reference.StartsWith(Origin, StringComparison.Ordinal) ? Origin
+            : null;
+        if (under is null || reference.Length == under.Length) return false;
+        return reference.IndexOfAny([' ', '~', '^', ':', '?', '*', '[', '\\', '\t', '\n']) < 0
+               && !reference.Contains("..", StringComparison.Ordinal)
+               && !reference.Contains("@{", StringComparison.Ordinal)
+               && !reference.Contains("//", StringComparison.Ordinal)
+               && !reference.EndsWith('/') && !reference.EndsWith('.')
+               && !reference.EndsWith(".lock", StringComparison.Ordinal);
+    }
+
+    private Task<Refs?> RefsAsync(CancellationToken ct)
+    {
+        lock (_gate)
+        {
+            // A read that threw or was cancelled is read again; one git could not give stays unread for this snapshot.
+            if (_refs is { } read && !read.IsFaulted && !read.IsCanceled) return read;
+            return _refs = LoadAsync(ct);
+        }
+    }
+
+    private async Task<Refs?> LoadAsync(CancellationToken ct) =>
+        await _read(ct).ConfigureAwait(false) is { } output ? Parse(output) : null;
+}
