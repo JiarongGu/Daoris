@@ -1787,6 +1787,8 @@ describe('starting and holding a conversation', () => {
     });
 
     show('c0ffee11');
+    // Folded to one line with its count inside the answer box's frame (WAITFOOT2c), a press opens it.
+    await userEvent.click(await screen.findByRole('button', { name: 'Show them' }));
     expect(await screen.findByRole('list', { name: 'waiting for the same session to go on with them' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Remove the waiting message: use the blue one' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE_EDIT', { payload: { session: 'c0ffee11', id: 'w1' } });
@@ -2663,6 +2665,8 @@ describe('clearing a parked session', () => {
       });
     });
     expect(screen.queryByRole('list', { name: UNANSWERED })).toBeNull();
+    // Folded to a line with its count (WAITFOOT2c); a press lists the words.
+    await userEvent.click(screen.getByRole('button', { name: 'Show them' }));
     expect(screen.getByRole('list', { name: 'waiting for the same session to go on with them' })).toHaveTextContent(words);
     expect(inputs()).toHaveLength(1);
   });
@@ -4985,7 +4989,8 @@ describe('a park\'s go-aheads', () => {
     // Outside the conversation's scroll, above the box, as Ask Daoris's note row is.
     expect(screen.getByRole('main').contains(strip)).toBe(false);
     expect(strip.compareDocumentPosition(screen.getByLabelText('Message'))).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(strip).toHaveTextContent('It asked you a question: answer it in the box below.');
+    // The box right below is the park's answer door, so no line over it says so (WAITFOOT2c).
+    expect(strip).not.toHaveTextContent('answer it in the box below');
     expect(screen.getByRole('region', { name: 'Go-aheads it asked' })).toBeInTheDocument();
 
     const second = within(strip).getAllByRole('listitem')[1]!;
