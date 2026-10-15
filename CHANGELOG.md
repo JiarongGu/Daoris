@@ -10,6 +10,15 @@ with the version and date at release.
   holds, by the address it leaves in that home. With Daoris not running, a verb that needs its service says so and names the
   `Daoris.exe` to start. The variables still win. Opening Daoris again while it runs now opens another main window of the
   same Daoris, which hears every press the first one does, rather than only bringing the first one forward.
+- The review says before the press what *Accept* will do and why it would be refused: it lands the session's own branch as
+  it stands, adds to a branch that already stands, or names the refusal (a branch somebody else made, one moved since or
+  checked out elsewhere) and offers no *Accept* then, as the line's and the ask's *Accept* do for each part; a part's own
+  *Accept* waits while its line lands it. Every door that lands one session (the review, `trees land`, the landing at done)
+  puts a line's part on the line's branch. *Bring up to date* replays only what the line lacks and says what it leaves
+  out, and a session or conversation going on in an older tree starts from the line, told so. A chain step that merged the
+  line reviews only its own changes, and a session's *Details* say how its work is committed and lands. Helpers sit under
+  the session they serve, *Ask another agent…* asks one from a session's page, and an agent's ask for a helper waits on you
+  where every wait does, with *Let it ask* and *Not now*.
 - An agent's ask for a helper that waits on your yes now offers *Not now* (暂不) beside *Let it ask*: no helper is started
   for it, and its session's timeline says you said no. It is one of the session's waits too, at the foot of its conversation
   as at its head, and *What needs you* lists it with the same two presses and a door to the session that asked.
