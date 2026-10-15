@@ -240,6 +240,31 @@ describe('the composer', () => {
   });
 
   /**
+   * SENDLOST1b: words on their way show the moment they are sent, as sending, apart from what waits behind a turn. Where the
+   * page stopped waiting on their send they say the machine has not answered yet, and offer no control: an edit or a removal
+   * of words the machine may still take would send them twice.
+   */
+  it('shows words on their way as sending, then as unanswered, apart from what waits and with no controls', () => {
+    const props = {
+      taking: true, onRemove: vi.fn(), onEdit: vi.fn(),
+      queued: [{ id: 'q1', text: 'and test it', files: [] }],
+    };
+    const sending = show({ ...props, going: { words: [{ text: 'and the line?', files: ['run.log'] }], late: false } });
+
+    const going = screen.getByRole('list', { name: 'sending…' });
+    expect(going.textContent).toBe('and the line?run.log');
+    expect(within(going).queryByRole('button')).toBeNull();
+    expect(screen.getByRole('list', { name: 'waiting for this turn to end' }).textContent).toContain('and test it');
+    sending.unmount();
+
+    show({ ...props, going: { words: [{ text: 'and the line?', files: [] }], late: true } });
+    const late = screen.getByRole('list', { name: 'The machine has not answered yet; it may still take them.' });
+    expect(late.textContent).toBe('and the line?');
+    expect(within(late).queryByRole('button')).toBeNull();
+    expect(screen.queryByRole('list', { name: 'sending…' })).toBeNull();
+  });
+
+  /**
    * ASKHIST1b: words waiting with a word wider than the box, a pasted URL as Ask Daoris's first words, stay inside it. Every
    * grid from them to the form bounds its column, or its widest word sets the width of the box and its presses too.
    */
