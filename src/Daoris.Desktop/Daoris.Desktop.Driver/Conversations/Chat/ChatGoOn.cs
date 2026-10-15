@@ -550,9 +550,12 @@ internal sealed class ChatGoOn
     private async Task<ChatStart> TakenBackAsync(PriorSession record, CancellationToken ct)
     {
         var line = new Noted(TakenBackBeforeGoingOn, []);
+        // As it ended (SAIDBACK1g): its own note, parts and flags, which the move to working cleared; the line is said in the
+        // conversation beside, never in place of what ended it.
+        var (state, note, interrupted, limit) = Continuations.PutBack(record, why: null);
         try
         {
-            await _context.Service.AdvanceAsync(record.Session, record.State, line, ct: ct).ConfigureAwait(false);
+            await _context.Service.AdvanceAsync(record.Session, state, note, ct: ct, interrupted: interrupted, limit: limit).ConfigureAwait(false);
         }
         catch (DriverException refused)
         {
