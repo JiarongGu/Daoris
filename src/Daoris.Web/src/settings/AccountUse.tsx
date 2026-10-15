@@ -242,7 +242,7 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
                 {row.used && scope.use.keep === row.name && <Pill tone="neutral">{t('harness.use.kept')}</Pill>}
                 {/* What passes it at a start, in the curve's words (SWITCH1d): over its curve, its limit reached, or credits. */}
                 {row.used && near && (
-                  <Tip content={saidLine(agent.accounts.find((each) => each.name === row.name)?.said)}>
+                  <Tip content={saidLine(agent.accounts.find((each) => each.name === row.name)?.said, { use: scope.use })}>
                     <span><Pill tone="neutral">{t(`harness.use.passed.${near.by}`)}</Pill></span>
                   </Tip>
                 )}

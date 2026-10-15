@@ -176,6 +176,8 @@
   "harness.window.weekly": "每周",
   "harness.window.minutes": "{{n}} 分钟",
   "harness.said.line": "{{age}}报告：{{what}}",
+  "harness.said.lineRead": "{{age}}读取：{{what}}",
+  "harness.said.over": "超出其{{window}}曲线此刻的 {{curve}}",
   "harness.said.join": "；",
   "harness.said.sentences": "",
   "harness.said.nothing": "尚未报告",

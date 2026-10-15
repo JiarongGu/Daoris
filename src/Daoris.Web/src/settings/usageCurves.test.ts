@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
 import { sentence } from '../locales/format';
+import { saidLine } from './accounts';
 import {
   curveNow, curveProblem, curveSentence, type CurveScope, type CurvePoint, tightestSaid, wholePoints,
 } from './usageCurves';
@@ -50,6 +51,25 @@ describe('the usage curve, as the driver and the terminal measure it', () => {
         .toEqual(expected);
     });
   }
+
+  /**
+   * SWITCH1d: the page's said line marks a window over its curve with the curve's value now, as the terminal's `saidLine` and
+   * the start's line do, each row's clause in the page's words, which name the session window *five-hour*.
+   */
+  for (const [name, switched, curve, said, , clause] of TABLE.tightest) {
+    it(`the said line: ${name}`, () => {
+      const windows = said.map(([window, used, reset]) => ({ window, used, reset, credits: false, seen: NOW.toISOString() }));
+      const line = saidLine({ seen: NOW.toISOString(), windows }, { use: scope(switched, curve), now: NOW });
+      if (clause === null) expect(line).not.toMatch(/over its/);
+      else expect(line.endsWith(`; ${clause.replace('its session curve', 'its five-hour curve')}`)).toBe(true);
+    });
+  }
+
+  it('leads the said line by where its newest reading came from', () => {
+    const seen = NOW.toISOString();
+    const read = { seen, windows: [{ window: 'session', used: 0.2, reset: '2026-10-13T13:00:00Z', credits: false, seen, source: 'read' as const }] };
+    expect(saidLine(read)).toMatch(/^read .+: 20% of its five-hour limit used/);
+  });
 
   it('says a number of points as a whole number, a half away from zero', () => {
     expect([wholePoints(0.5), wholePoints(-0.5), wholePoints(62.4)]).toEqual([1, -1, 62]);

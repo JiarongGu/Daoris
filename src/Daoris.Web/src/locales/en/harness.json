@@ -176,6 +176,8 @@
   "harness.window.weekly": "weekly",
   "harness.window.minutes": "{{n}}-minute",
   "harness.said.line": "said {{age}}: {{what}}",
+  "harness.said.lineRead": "read {{age}}: {{what}}",
+  "harness.said.over": "over its {{window}} curve's {{curve}}",
   "harness.said.join": "; ",
   "harness.said.sentences": " ",
   "harness.said.nothing": "nothing said yet",
