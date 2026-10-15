@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- Words you said to a session that ended, or that parked to ask you, can be taken back or reworded until it goes on with
+  them: `daoris-driver sessions take-back <id>` lists the words waiting with their ids, `sessions take-back <id> <word>` takes
+  one back, and `sessions reword <id> <word> "…"` puts new words in its place, so a finished quest's session need not go on
+  with words you no longer mean.
 - The window is on the desktop kit's 0.21.1. Opening Daoris while it is still closing now starts it once the closing one
   has gone, where that launch used to be lost.
 - Accepting a session's work lands only what its line lacks. Where the line already holds some of its commits (a pull request
