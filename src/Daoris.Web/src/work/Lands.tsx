@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Session } from '../data/api';
@@ -27,6 +28,8 @@ const NAME_PAUSE = 300;
 export type LandingPlan = {
   workflow?: import('../workflow/gate').WorkflowGateState | null;
   session?: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string;
+  /** The branch the press lands on already stands, an entry's or a chain's, so the press moves it on (ACCEPTALL1g). */
+  stands?: boolean;
   review?: ReviewWaits | null;
   /** The second opinion's gate where a level asks one (XAGENT1f), which the head draws before the review's (XAGENT1g). */
   opinion?: OpinionGateState | null;
@@ -35,6 +38,21 @@ export type LandingPlan = {
   lands?: LandsCommit[] | null;
   conflict?: LandingConflict | null;
 };
+
+/**
+ * Where Accept puts the work under a branch rule, said before the press (D87, D100): a new branch, or one that already stands, which
+ * the press moves on (ACCEPTALL1g, D167's 2026-10-15 amendment point 2, D145 §3): an entry's or a chain's, an earlier landing made.
+ */
+export function landsOnBranch(t: TFunction, plan: { target: string; plugin?: string | null; stands?: boolean | null }): string {
+  if (plan.stands) {
+    return plan.plugin
+      ? t('work.review.landsOnStandingPlugin', { branch: plan.target, plugin: plan.plugin })
+      : t('work.review.landsOnStanding', { branch: plan.target });
+  }
+  return plan.plugin
+    ? t('work.review.landsOnBranchPlugin', { branch: plan.target, plugin: plan.plugin })
+    : t('work.review.landsOnBranch', { branch: plan.target });
+}
 
 /** The review's gate as the head draws it (REVIEWENV1g): the set-up step's record where the frame holds it, and the presses. */
 export type HeadReview = { step?: Quest | null; served?: boolean | null; acts?: ReviewGateActs; busy?: boolean };
@@ -130,8 +148,7 @@ export function Lands({ session, lands, landing, planning, onReview, onLand, onS
   const unfinished = session.state !== 'completed';
   const where = !landing?.target ? null
     : landing.form === 'merge' ? t('work.review.landsOnLine', { line: landing.target })
-      : landing.plugin ? t('work.review.landsOnBranchPlugin', { branch: landing.target, plugin: landing.plugin })
-        : t('work.review.landsOnBranch', { branch: landing.target });
+      : landsOnBranch(t, { target: landing.target, plugin: landing.plugin, stands: landing.stands });
   return (
     <>
       <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">

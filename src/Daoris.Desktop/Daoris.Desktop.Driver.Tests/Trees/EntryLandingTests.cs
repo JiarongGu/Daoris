@@ -232,6 +232,31 @@ public sealed class EntryLandingTests : LandedFixture
     private static DateTimeOffset At(int minute) => new(2026, 10, 16, 9, minute, 0, TimeSpan.Zero);
 
     /// <summary>
+    /// ACCEPTALL1g (D167's amendment point 2, D145 §3): the plan says whether the branch Accept lands on already stands. Before the
+    /// entry's first landing its branch is one the press makes; after it, the next part's plan names the same branch, standing, which
+    /// its press moves on, so the review stops promising a new branch there.
+    /// </summary>
+    [Fact]
+    public async Task The_plan_says_the_entrys_branch_already_stands_once_a_part_landed_on_it()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        var second = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "a.txt", "a\n", "the first part");
+        await CommitAsync(second.Path, "b.txt", "b\n", "the second part");
+
+        var lead = await trees.JoinEntryAsync(first.Path, "s1a2b3c4", Subject);
+        Assert.False((await trees.PlanAsync(first.Path, lead)).Stands);
+        var once = await trees.LandAsync(first.Path, lead, joins: true);
+        Assert.True(once.Landed, once.Message);
+
+        var plan = await trees.PlanAsync(second.Path, await trees.JoinEntryAsync(second.Path, "s5e6f7a8", Subject));
+
+        Assert.Equal((Branch, true), (plan.Target, plan.Stands));
+    }
+
+    /// <summary>
     /// ACCEPTALL1d (D87's amendment point 3): under a squash rule a part that ran alongside joins the entry's branch by one more squashed
     /// commit. Its work replayed onto the branch's tip grows from that tip, not from the first part's squashed one, so it is not refused.
     /// </summary>

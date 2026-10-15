@@ -57,8 +57,11 @@ internal static class TreesConsole
     /// <summary>What accepting a session would do, in one line — who pushes it where a plugin does, and what would refuse it (D100).</summary>
     internal static string Planned(string session, LandingPlan plan)
     {
-        var line = $"trees: accepting `{session}` would {(plan.Form == LandingForm.Branch ? "put its work on the branch" : "merge its work into")} `{plan.Target}` ({plan.Source})";
-        if (plan.Plugin is { } plugin) line += $", then plugin `{plugin}` would push it and open the pull request";
+        // ACCEPTALL1g: a branch that already stands (an entry's or a chain's) is moved on, and its pull request grows, as the review says.
+        var line = plan.Stands
+            ? $"trees: accepting `{session}` would add its work to `{plan.Target}`, a branch that already stands, moving it on ({plan.Source})"
+            : $"trees: accepting `{session}` would {(plan.Form == LandingForm.Branch ? "put its work on the branch" : "merge its work into")} `{plan.Target}` ({plan.Source})";
+        if (plan.Plugin is { } plugin) line += plan.Stands ? $", then plugin `{plugin}` would push it to grow its pull request" : $", then plugin `{plugin}` would push it and open the pull request";
         line += ".";
         // LAND2b: the rule's switch lands it at its quest's done with no press, and a plugin it cannot use does not stop the branch.
         if (plan.AutoAccept) line += " The rule accepts automatically, so its quest's done lands it with no press.";

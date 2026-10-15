@@ -53,6 +53,12 @@ internal sealed class TreeLands(
         var plan = await PlanRuleAsync(path, subject, ct, process).ConfigureAwait(false);
         if (process?.LandingCannot is not null || plan.Target.Length == 0) return plan;
         var full = Path.GetFullPath(path);
+        // ACCEPTALL1g: whether the branch already stands, so the review says the press moves it on rather than promising a new one.
+        if (plan is { Form: LandingForm.Branch, Own: false } && Directory.Exists(full))
+        {
+            plan = plan with { Stands = await CommitOfAsync(full, $"refs/heads/{plan.Target}", ct).ConfigureAwait(false) is not null };
+        }
+
         var (workspace, repository) = context.OwnerOf(full);
         var (sync, _) = await syncs.JudgeAsync(full, repository, workspace, plan.Form == LandingForm.Branch, fetch: false, ct).ConfigureAwait(false);
         if (sync is null || sync.Held.HoldsNone) return plan;

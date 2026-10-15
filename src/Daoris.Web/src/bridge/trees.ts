@@ -295,6 +295,11 @@ export const useLanding = (id: string | null, branch?: string | null) => {
     placeholderData: named ? keepPreviousData : undefined,
     queryFn: () => call<{
       session: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string; review?: ReviewWaits | null;
+      /**
+       * The branch the press lands on already stands (ACCEPTALL1g): an entry's or a chain's, which the press moves on instead of
+       * making it. False or absent (an older host) is a branch the press makes.
+       */
+      stands?: boolean;
       /** How many paths the tree holds uncommitted (REVIEWDIRTY1): 0 where clean, absent from an older host. */
       uncommitted?: number;
       opinion?: OpinionGate | null;

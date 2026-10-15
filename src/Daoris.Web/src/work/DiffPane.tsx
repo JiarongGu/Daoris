@@ -17,6 +17,7 @@ import type { DiscardOffer } from './groups';
 import { HeldDiscardAsk, HeldDiscardButton, heldDiscardable } from './HeldDiscard';
 import { type Answered, InlineConfirm } from './InlineConfirm';
 import { LandedNote } from './LandedNote';
+import { landsOnBranch } from './Lands';
 import { LeftOutLines, RebaseAsk } from './LandingSync';
 import type { DiffLayout } from './PatchView';
 import { opinionHolds, opinionState } from './opinion';
@@ -354,11 +355,10 @@ export function DiffPane({
       )}
       {/* Where a press sends the work, before it is pressed (D87) — and who pushes it where a plugin
           does (D100). A shell older than the rule answers no form, and the pane then claims nothing. */}
+      {/* A branch that already stands, an entry's or a chain's, is moved on, not made (ACCEPTALL1g). */}
       {!said && canAccept && landing.data?.form === 'branch' && landing.data.target && (
         <p className="m-0 text-small text-ink-faint">
-          <Inline text={landing.data.plugin
-            ? t('work.review.landsOnBranchPlugin', { branch: landing.data.target, plugin: landing.data.plugin })
-            : t('work.review.landsOnBranch', { branch: landing.data.target })} />
+          <Inline text={landsOnBranch(t, { target: landing.data.target, plugin: landing.data.plugin, stands: landing.data.stands })} />
         </p>
       )}
       {/* What the press leaves out because the line holds it, and what it replays (LANDSYNC1), said before it. */}

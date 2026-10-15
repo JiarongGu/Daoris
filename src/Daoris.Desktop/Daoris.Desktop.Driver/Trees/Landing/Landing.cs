@@ -140,6 +140,14 @@ public sealed record LandingPlan(string Form, string Target, string Source, stri
     public bool Own { get; init; }
 
     /// <summary>
+    /// The branch the press lands on already stands in the repository (ACCEPTALL1g, D167's 2026-10-15 amendment point 2): an entry's or
+    /// a chain's branch an earlier landing made, which the press moves on (D145 §3) instead of making it; one Daoris did not make, or
+    /// that moved since it landed on it, is refused by the press, said there as before. False for a branch the press would make, for
+    /// the tree's own branch (<see cref="Own"/>), and under a merge rule.
+    /// </summary>
+    public bool Stands { get; init; }
+
+    /// <summary>
     /// The tree's commits the line already holds, which the press would leave out, oldest first (LANDSYNC1, D87's 2026-10-15
     /// amendment point 4): judged against the line as last fetched, since the plan reaches no network. Null where the line holds
     /// none of them, and the press lands the tree as before.
