@@ -247,6 +247,7 @@ export const TextOnlyDoorStillRunning: Story = { args: { turns: [], live: true }
 
 // WAITFOOT1c (D168 point 4): the blocks that raised what waits on the person say so, with *To the wait*: a go-ahead's call
 // (folded in its run, so its run's line says it), the question the park asked, and the work at the end of the turn that did it.
+// WAITFOOT2b: each mark a quiet glyph, *To the wait* and what waits its name, what waits from here its tip.
 const ASKED_TARGET = ev({ kind: 'user', origin: 'target', text: 'You are the engine repository\'s agent. Take quest #q1 — "Set the dashboard\'s target".' });
 const ASKED_CALL = ev({
   kind: 'tool', id: 'g1', title: 'go_ahead_ask', status: 'completed',

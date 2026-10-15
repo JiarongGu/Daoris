@@ -125,6 +125,17 @@ export const WorkToAccept: Story = { args: { session: session(), lands: LANDS, l
 /** The same in 中文 and dark. */
 export const WorkToAcceptDarkChinese: Story = { ...WorkToAccept, decorators: [chinese, dark] };
 
+/**
+ * WAITFOOT2a: the head's waits are on screen, so the strip stands aside and only the box is drawn here, each wait in the head
+ * alone.
+ */
+export const AsideWhileTheHeadIsOnScreen: Story = { args: { ...ParkedWithAGoAhead.args, aside: true } };
+
+/** WAITFOOT2a: on screen or not, the strip stays up while *Accept…* is asking in it. */
+export const AsideButAsking: Story = {
+  args: { ...WorkToAccept.args, workAsk: { open: true, onOpen: nothing }, aside: true },
+};
+
 /** *Accept…* asking at the foot, the frame holding its ask here. */
 export const AcceptAsking: Story = {
   args: { ...WorkToAccept.args, workAsk: { open: true, onOpen: nothing } },

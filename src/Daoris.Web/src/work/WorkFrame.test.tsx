@@ -4905,10 +4905,9 @@ describe('a park\'s go-aheads', () => {
       .map((said) => said.closest<HTMLElement>('[data-block]')).find(Boolean)!;
     await waitFor(() => expect(words.className).toContain('outline-accent'));
 
-    // And back: the call says what waits from it, and *To the wait* leads to its line at the foot.
+    // And back: the call's mark names what waits from it, and *To the wait* leads to its line at the foot.
     const block = call.closest<HTMLElement>('[data-block]')!;
-    expect(block).toHaveTextContent('Waiting on you from here: go-ahead #1');
-    await userEvent.click(within(block).getByRole('button', { name: 'To the wait' }));
+    await userEvent.click(within(block).getByRole('button', { name: 'To the wait: go-ahead #1' }));
     await waitFor(() => expect(within(strip).getAllByRole('listitem')[0]).toHaveFocus());
 
     // Away and back, the press is spent: the strip drawn again takes no focus and outlines nothing.
@@ -4923,6 +4922,40 @@ describe('a park\'s go-aheads', () => {
     const again = await screen.findByRole('region', { name: '3 waiting on you' });
     expect(within(again).getAllByRole('listitem')[0]).not.toHaveFocus();
     expect(within(again).getAllByRole('listitem')[0]!.className).not.toContain('outline-accent');
+  });
+
+  // WAITFOOT2b (D168's WAITFOOT2 note): while the head's waits are on screen the strip stands aside, so *To the wait* leads there.
+  it('leads a raising block\'s *To the wait* to the head\'s line while the head is on screen', async () => {
+    const watched = watchScreen();
+    try {
+      const asked = '2026-09-02T00:30:00Z';
+      invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_HISTORY' ? {
+        session: 'g0ah3ad0', earlier: false, latest: 4, events: [
+          { seq: 1, at: asked, kind: 'user', origin: 'target', text: 'Your target is the quest…' },
+          {
+            seq: 2, at: asked, kind: 'tool', id: 'g1', title: 'ask for a go-ahead', status: 'completed',
+            input: JSON.stringify({ kind: 'write', on: 'production', act: 'dashboard configuration', why: 'The tile reads its target from it.' }),
+          },
+          { seq: 3, at: asked, kind: 'message', id: 'm2', text: 'I need go-aheads 1 and 2 before I can finish.' },
+          { seq: 4, at: asked, kind: 'turn', stopReason: 'end_turn' },
+        ],
+      } : DRIVER_STATE));
+      show('g0ah3ad0');
+      const call = await screen.findByText('ask for a go-ahead');
+      await waitFor(() => expect(watched.observers()).not.toHaveLength(0));
+      watched.show(true);
+      expect(screen.queryByRole('region', { name: '3 waiting on you' })).toBeNull();
+
+      const block = call.closest<HTMLElement>('[data-block]')!;
+      await userEvent.click(within(block).getByRole('button', { name: 'To the wait: go-ahead #1' }));
+      const line = within(screen.getByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem')[0]!;
+      await waitFor(() => expect(line).toHaveFocus());
+      expect(line.className).toContain('outline-accent');
+      // The strip stays aside: the line it would have led to is the one on screen.
+      expect(screen.queryByRole('region', { name: '3 waiting on you' })).toBeNull();
+    } finally {
+      watched.restore();
+    }
   });
 });
 

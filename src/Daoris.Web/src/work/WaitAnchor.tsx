@@ -1,7 +1,7 @@
 import { type FocusEvent, type RefObject, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { Button } from '../design/ui';
+import { Button, Icon, Tip } from '../design/ui';
 import type { AnchorWait } from './anchors';
 import type { Wait } from './waits';
 
@@ -76,15 +76,21 @@ export function InConversation({ onPress }: { onPress: () => void }) {
 }
 
 /**
- * The line under a block that raised a wait (WAITFOOT1c, D168 point 4): what waits on the person from here, in the waiting hue,
- * and *To the wait*, which takes them to its line at the foot, where it is answered. Props only.
+ * The mark under a block that raised a wait (WAITFOOT1c, D168 point 4): a quiet glyph in the waiting hue, *To the wait* and what
+ * waits its name, and what waits on the person from here its tip (WAITFOOT2b: a line of words under the block was one more copy
+ * of the wait on the screen). Its press takes the person to the wait's line, in the head or at the foot, where it is answered.
+ * Props only.
  */
 export function WaitMark({ waits, onPress }: { waits: readonly Wait[]; onPress: () => void }) {
   const { t } = useTranslation();
+  const names = waits.map((wait) => waitName(t, wait)).join(' · ');
   return (
-    <p className="m-0 mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 border-l-[3px] border-st-open pl-2 text-small text-ink-open">
-      <span className="min-w-0">{t('work.wait.raised', { names: waits.map((wait) => waitName(t, wait)).join(' · ') })}</span>
-      <Button variant="ghost" className="px-2 py-0.5 text-small" onClick={onPress}>{t('work.wait.toWait')}</Button>
-    </p>
+    <div className="mt-1 flex">
+      <Tip content={t('work.wait.raised', { names })}>
+        <Button variant="ghost" aria-label={t('work.wait.toWait', { names })} onClick={onPress} className="h-6 w-6 justify-center px-0 text-ink-open">
+          <Icon name="answer" size={13} />
+        </Button>
+      </Tip>
+    </div>
   );
 }
