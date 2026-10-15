@@ -224,14 +224,3 @@ export function SessionConversation({
     </>
   );
 }
-
-/** The key of the last thing the agent said, where it said anything. */
-function lastWords(turns: readonly Turn[]): string | undefined {
-  for (let turn = turns.length - 1; turn >= 0; turn -= 1) {
-    const items = turns[turn]!.items;
-    for (let item = items.length - 1; item >= 0; item -= 1) {
-      if (items[item]!.kind === 'message') return items[item]!.key;
-    }
-  }
-  return undefined;
-}
