@@ -242,11 +242,11 @@ export const useTrustFolder = () => {
 };
 
 /**
- * One mutation shape for the standing choices: edit the file, and the loop looks now, not at the poll. The window that pressed
- * writes the state it was answered; the route publishes the change, and every window's state hub asks the driver's state and
- * what is read under its key again (STATEHUB1h, D169).
+ * One mutation shape for the standing choices, these and the rules' (`bridge/lines.ts`): edit the file, and the loop looks now,
+ * not at the poll. The window that pressed writes the state it was answered; the route publishes the change, and every window's
+ * state hub asks the driver's state and what is read under its key again (STATEHUB1h, D169).
  */
-function useDriverChange<TVariables extends Record<string, unknown>>(type: string) {
+export function useDriverChange<TVariables extends Record<string, unknown>>(type: string) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (variables: TVariables) => call<DriverState>(type, variables),

@@ -11,7 +11,7 @@ import type { RepositoryReview, ReviewChange } from '../settings/Reviews';
 import type { BranchDiscard, LandedBranch, SweepBranch } from '../settings/Sweep';
 import type { LinePull, RebaseBranch, SyncInclude, SyncPlan, SyncRepository } from '../settings/Sync';
 import { call, lookBound, pressBound } from './call';
-import type { DriverState } from './driver';
+import { type DriverState, useDriverChange } from './driver';
 
 // Whether a look or a press ended because the page stopped waiting (WSR7): the section says so where it was asked.
 export { stoppedWaiting } from './call';
@@ -241,27 +241,18 @@ export const useTreesSync = (workspace?: string) =>
       }>('TREES_SYNC', workspace === undefined ? { only } : { only, workspace }, { timeoutMs: pressBound(only.length) }),
   });
 
-/**
- * One shape for the standing choices over a repository's or a workspace's rules: the answer is the driver's state, written
- * where it is read; what each repository resolves to, and every plan and gate that reads it, move with it, which the route
- * publishes and the state hub asks again in every window (STATEHUB1h, D169).
- */
-function useRuleChange<TChange extends Record<string, unknown>>(type: string) {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (change: TChange) => call<DriverState>(type, change),
-    onSuccess: (state) => client.setQueryData(keys.driver, state),
-  });
-}
+// The standing choices over a repository's or a workspace's rules are the driver's own shape (`useDriverChange`): the answer is
+// the driver's state, written where it is read; what each repository resolves to, and every plan and gate that reads it, move
+// with it, which the route publishes and the state hub asks again in every window (STATEHUB1h, D169).
 
 /** Set a repository's line or a workspace's, or clear it with no branch — the file `daoris driver line` edits (D50). */
-export const useSetLine = () => useRuleChange<LineChange>('SET_LINE');
+export const useSetLine = () => useDriverChange<LineChange>('SET_LINE');
 
 /**
  * Set the language a repository's sessions write to the person in, or a workspace's, or clear it with no language (LANG1c) —
  * the file `daoris driver language` edits (D50). A code the driver's table does not hold is its refusal, its sentence verbatim.
  */
-export const useSetLanguage = () => useRuleChange<LanguageChange>('SET_LANGUAGE');
+export const useSetLanguage = () => useDriverChange<LanguageChange>('SET_LANGUAGE');
 
 /**
  * Change where a repository's work is reviewed before it lands, or a workspace's (REVIEWENV1a, D154 point 2): the twins' edit,
@@ -269,23 +260,23 @@ export const useSetLanguage = () => useRuleChange<LanguageChange>('SET_LANGUAGE'
  * reaches, and the answer's `reviewed` says what was found. A refusal is the driver's sentence, verbatim. The landing's gate
  * reads the rule since REVIEWENV1c.
  */
-export const useSetReview = () => useRuleChange<ReviewChange>('SET_REVIEW');
+export const useSetReview = () => useDriverChange<ReviewChange>('SET_REVIEW');
 
 /**
  * Change which other agent reads a repository's work before it lands, or a workspace's (XAGENT1a, D155 point 3): the twins'
  * edit, over the file `daoris driver opinion` edits (D50). A refusal is the driver's sentence, verbatim.
  */
-export const useSetOpinion = () => useRuleChange<OpinionChange>('SET_OPINION');
+export const useSetOpinion = () => useDriverChange<OpinionChange>('SET_OPINION');
 
 /**
  * Change how a repository's work is committed, or a workspace's (DOORS1b, D164's amendment points 1 and 3): the twins' edit, over
  * the file `daoris driver commits` edits (D50). A refusal is the driver's sentence, verbatim. Driven sessions and conversations
  * are told the rule at their start (PROCESS1d).
  */
-export const useSetCommits = () => useRuleChange<CommitChange>('SET_COMMITS');
+export const useSetCommits = () => useDriverChange<CommitChange>('SET_COMMITS');
 
 /**
  * Change what a helper a repository's agent asks for does, or a workspace's (DOORS1b, D163 point 3): the twins' edit, over the
  * file `daoris driver helpers` edits (D50). A refusal is the driver's sentence, verbatim.
  */
-export const useSetHelpers = () => useRuleChange<HelperChange>('SET_HELPERS');
+export const useSetHelpers = () => useDriverChange<HelperChange>('SET_HELPERS');
