@@ -271,8 +271,9 @@ The shell reads the catalogue when it starts and on every tick: a **declared har
 roster and the adapter set as a configuration of the ACP door, and a plugin that **speaks** gets a
 process of its own, started with the loop and stopped with it. The driver asks those processes at
 its points — `quest/consider` before a start costs anything (a hold is the quest's own sitting
-reason, and a plugin that cannot decide holds too, naming itself), `session/ended` after — and
-every line one writes reaches the console under `plugin:<id>`, over the bridge and nowhere else.
+reason, and a plugin that cannot decide holds too, naming itself), `session/ended` after, and
+`state/changed` as each change the windows hear is published (STATEHUB1g, D169 point 9: queued, so no press waits on
+a plugin) — and every line one writes reaches the console under `plugin:<id>`, over the bridge and nowhere else.
 `daoris plugin list|add|update|remove|enable|disable` is the terminal door; the Settings page's Plugins
 card is the other — the same rows, the same `plugins.json`, Remove naming what a plugin kept. Since
 PLUG9 (c, d; D103) each row carries its `source` (a folder, the install's offer, or none recorded, from

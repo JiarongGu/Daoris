@@ -63,6 +63,9 @@ public static class PluginKit
         "engine", "default", SampleRoot, "feature/0fda18-expose-a-streaming-budget", "main",
         "https://example.test/example-org/engine/pull/7", "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a");
 
+    /// <summary>A change, as the kit's samples say it (STATEHUB1g): what a session's landing moved, as accepting it declares.</summary>
+    public static readonly StateChangedFrame SampleChange = new(["sessions", "landing", "diff", "handOff", "sweep", "treesSync"], ["s1a2b3c4"]);
+
     private static readonly JsonSerializerOptions Pretty = new()
     {
         WriteIndented = true,
@@ -152,6 +155,24 @@ public static class PluginKit
                 pullRequest: null,
                 message: `${id} does not read pull requests yet.`,
               }),
+            """),
+        new(
+            HookPoints.StateChanged,
+            "observation",
+            "Once something the driver holds has changed (a press in a window, or a terminal's `daoris-driver trees` verb, has "
+            + "answered), every plugin that listens here is told what moved: `scopes`, the families of state that changed, in the "
+            + "screen's words, and `sessions`, the sessions it was about, or null where it was not one session's. Never what it is "
+            + "now, and never the press's answer, which was given before any plugin heard. Changes come one at a time, in order, "
+            + $"and no more than {HookSet.ChangesWaiting} wait while a plugin is slow, the oldest going first. Nothing said here "
+            + "changes anything.",
+            "`{}`. The answer is not read, but it is waited for.",
+            "the driver would say so on its console and go on; the press it told of has already answered",
+            HookPeer.DefaultPatience,
+            Sample(HookFrames.Changed(SampleChange)),
+            """
+              // An observation, once something the driver holds has changed: frame.scopes names what moved, frame.sessions
+              // which sessions it was about (null is any). Nothing said here changes anything; answer {} promptly.
+              'state/changed': (frame) => ({}),
             """),
     ];
 

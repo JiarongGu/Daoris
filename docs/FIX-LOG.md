@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-16 — A session request taken by two loops at once could be lost unread (REQTAKE1)
+
+- **Symptom:** STATEHUB1e's worker, taking `.told` notes as `SessionRequests.TakeAt` takes a request (rename aside, read,
+  remove), lost one note in twenty in `PressesToldTests` when two loops took at once; its read came back empty after its rename
+  had succeeded. Requests (stop, say, take-back) used the same take, so a person's stop or words could be dropped silently.
+- **Root cause:** on Windows `File.Move` (`MoveFileEx`) opens the file for `DELETE`, sharing read, write and delete, and then
+  renames through that handle. When loop B has opened it so and loop A's rename lands first, A's rename succeeds (B shares delete)
+  and B's handle follows the file to A's name. While B's handle is open, A's read (`File.ReadAllText`, sharing read only) is
+  refused with a sharing violation; `Read` swallowed it as null and `TakeAt` removed what it had moved, unread. B's rename then
+  met a file pending deletion, or gone, and returned null too: neither loop honoured the request. The rename itself was never
+  the fault; the take's assumption that a rename that succeeded left the file at its name, readable, was.
+- **Fix:** `TakeAt` reads what it moved aside until it is not refused (twenty tries, ten milliseconds apart), returns null where
+  the file is gone, since the loop whose rename moved it on has it, and removes only what it read. A read still refused after the
+  tries puts the file back for the next look (`PutBack`); a newer request for the session in its place replaces it, as `Write`
+  does. `Read` and the new `Parse` are split so the take tells a refusal from a file that does not read. D126's REQTAKE1 note.
+- **Verification:** `SessionRequestsTests.A_take_whose_read_is_refused_leaves_the_request_for_the_next_look` holds the file as
+  a rename in progress does (open for read and write, sharing read, write and delete) and takes it: it failed first, both takes
+  null and the folder empty, then passed. `Two_loops_taking_twenty_at_once_honour_each_exactly_once` (two watches on threads of
+  their own) passed in three plain runs before the fix, and passes after it: the race did not reproduce on its own here. On Linux, where a
+  rename is whole and nothing refuses a read, the first test's take succeeds while held, which the test allows.
+
 ## 2026-10-16 — A start cut off inside `git worktree add` left a half tree and its branch for good (OPENCUT1)
 
 - **Symptom:** on the install, 2026-10-15: `trees/<workspace>/<repository>/s-0031408d`, half checked out (staged deletions),

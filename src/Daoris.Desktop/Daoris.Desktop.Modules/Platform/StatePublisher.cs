@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Daoris.Driver;
 using Shenora.Core.Events;
 using Shenora.Core.Ipc;
 
@@ -122,8 +123,8 @@ public sealed record UnderWay(long Seq, IReadOnlyList<PressUnderWay> Presses);
 /// landing refused for a conflict fetched the line its plan reads against, and a list out of date is read again. A refusal
 /// thrown as an error is not: the driver refused before it acted.</para>
 ///
-/// <para><b>Not awaited.</b> The bus runs its subscribers (each window's pump, later a plugin's observer) without the press's
-/// answer waiting on any of them; a subscriber's failure is the bus's to isolate.</para>
+/// <para><b>Not awaited.</b> The bus runs its subscribers (each window's pump, and the plugins' observation, <see cref="Observe"/>)
+/// without the press's answer waiting on any of them; a subscriber's failure is the bus's to isolate.</para>
 ///
 /// <para><b>Shell-only</b> (D47): the bus is this machine's, forwarded to its windows and to nothing else.</para>
 ///
@@ -191,6 +192,41 @@ public static class StatePublisher
                 bus.Emit(Module, UnderWayType, underWay.End(press));
             }
         };
+    }
+
+    /// <summary>
+    /// The plugins' observation of the pipeline (STATEHUB1g, D169 point 9): each <c>STATE_CHANGED</c> on <paramref name="bus"/>,
+    /// handed to <paramref name="tell"/> as the plugins' frame. Beside the pipeline, never in it: the bus does not wait for its
+    /// subscribers, the change is published once the press has answered, and <paramref name="tell"/> (the loop's hook set's)
+    /// only queues it, so no plugin holds, changes or refuses an answer. Dispose to stop.
+    /// </summary>
+    public static IDisposable Observe(IEventBus bus, Action<StateChangedFrame> tell) =>
+        bus.Subscribe(Module, Type, message =>
+        {
+            if (message.Payload is StateChanged changed) tell(new StateChangedFrame(changed.Scopes, changed.Sessions));
+            return Task.CompletedTask;
+        });
+
+    /// <summary>
+    /// The change a press another process told makes (STATEHUB1e, D169 point 8): what the window's press of its route declares, with
+    /// the session where the declaration names one, so a terminal's press reads in a window as the window's does. Null where the
+    /// route declares nothing (a read, or a route no mark has).
+    /// </summary>
+    public static StateChanged? Told(PressTold press) => Told(press, DriverModule.Declared);
+
+    /// <summary>The change <paramref name="press"/> makes by <paramref name="declared"/>, what each request's route declares.</summary>
+    public static StateChanged? Told(PressTold press, Func<IpcRequest, StateChange?> declared) =>
+        declared(new IpcRequest { Id = "told", Module = DriverModule.Name, Type = press.Route }) is { Scopes: not StateScopes.None } change
+            ? new StateChanged(Names(change.Scopes), change.Session is not null && press.Session is { Length: > 0 } session ? [session] : null)
+            : null;
+
+    /// <summary>
+    /// A press another process told, published on <paramref name="bus"/> as a window's press of its route is (STATEHUB1e): what the
+    /// shell's loop does with each its request watch hears. Not awaited, as the publisher's own is not.
+    /// </summary>
+    public static void Publish(IEventBus bus, PressTold press)
+    {
+        if (Told(press) is { } changed) bus.Emit(Module, Type, changed);
     }
 
     /// <summary>The scopes' names on the wire, in the page's words and in their declared order.</summary>

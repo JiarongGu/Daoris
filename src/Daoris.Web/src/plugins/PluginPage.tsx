@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { Button, Inline, PathText, Pill, Prose } from '../design/ui';
-import { type KitPoint, type PluginTrialResult, TrialReport } from './PluginKit';
+import { type KitPoint, type PluginTrialResult, pointGloss, TrialReport } from './PluginKit';
 import { PluginSourceLine, PluginUpdatePlan, type PluginUpdatePlanShown, updatable } from './PluginUpdate';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
@@ -39,11 +39,11 @@ export function PointRows({ points, kitPoints }: { points: string[]; kitPoints?:
   return (
     <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
       {points.map((point) => {
-        const kind = kitPoints?.find((known) => known.name === point)?.kind;
+        const known = kitPoints?.find((each) => each.name === point);
         return (
           <li key={point} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-small">
             <code className="font-mono text-meta text-ink">{point}</code>
-            {kind && <span className="text-ink-soft">{t(`plugin.kit.kind.${kind}`, { defaultValue: kind })}</span>}
+            {known?.kind && <span className="text-ink-soft">{pointGloss(t, known)}</span>}
           </li>
         );
       })}

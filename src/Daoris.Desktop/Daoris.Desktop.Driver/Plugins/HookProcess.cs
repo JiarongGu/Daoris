@@ -153,6 +153,8 @@ public sealed class HookProcess : IHookChannel
 
     public Task<PullRequestState> StateAsync(object payload, CancellationToken ct) => _peer.StateAsync(payload, ct);
 
+    public Task ChangedAsync(object payload, CancellationToken ct) => _peer.ChangedAsync(payload, ct);
+
     /// <summary>Shutdown said, a moment given, and then the process is ended — a plugin that will not leave is left no choice.</summary>
     public async ValueTask DisposeAsync()
     {

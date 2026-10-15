@@ -1,9 +1,22 @@
+import type { TFunction } from 'i18next';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, CheckField, Inline, MonoWell, Pill, Prose } from '../design/ui';
 
 /** A point a new plugin may speak on (PLUG8): the driver's, with what kind of question it is. */
 export type KitPoint = { name: string; kind: string };
+
+/**
+ * The points whose gloss is their own, not their kind's (STATEHUB1g): a gloss says when a point speaks, and `state/changed` is an
+ * observation that speaks at another time than `session/ended`.
+ */
+const OWN_GLOSS: Record<string, string> = { 'state/changed': 'plugin.kit.kind.stateChanged' };
+
+/** A point's gloss, in the kit and on a plugin's page: its own where it has one, else its kind's, else the kind as the driver says it. */
+export const pointGloss = (t: TFunction, point: KitPoint): string =>
+  Object.hasOwn(OWN_GLOSS, point.name)
+    ? t(OWN_GLOSS[point.name])
+    : t(`plugin.kit.kind.${point.kind}`, { defaultValue: point.kind });
 
 /** A new plugin as the form sends it: `daoris-driver plugins new <id> --point <p>… --in <folder>`. */
 export type NewPlugin = { id: string; points: string[]; folder: string };
@@ -98,7 +111,7 @@ export function PluginKitCard({ points, busy, made, trial, onPick, onMake, onTry
               {points.map((point) => (
                 <CheckField
                   key={point.name}
-                  label={`${point.name} — ${t(`plugin.kit.kind.${point.kind}`, { defaultValue: point.kind })}`}
+                  label={`${point.name} — ${pointGloss(t, point)}`}
                   checked={chosen.includes(point.name)}
                   onChange={(on) => setChosen((was) => (on ? [...was, point.name] : was.filter((name) => name !== point.name)))}
                   disabled={busy}
