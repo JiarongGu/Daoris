@@ -287,6 +287,8 @@ internal sealed class TreeLands(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
         string acceptedBy = AcceptedBy.Person, LandingGate? gate = null)
     {
+        // One look (UIFREEZE1, PROC1d-i): the landing and its tidy ask git's guess at the line once.
+        using var look = context.OneLook();
         var full = Path.GetFullPath(path);
         // SQUASHTIDY1f: the head's own judgement, asked first, since a second opinion or a review of work already on the line
         // lands nothing either.

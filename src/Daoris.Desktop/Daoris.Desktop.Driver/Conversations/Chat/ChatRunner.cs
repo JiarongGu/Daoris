@@ -74,6 +74,9 @@ public sealed class ChatRunner : IDisposable
 
     private readonly CurveMove _curve;
 
+    // What the conversations' turns are judged by (NOTIFY1a): the person's words, their stops and each turn's end.
+    private readonly AttentionWatch _answers = new();
+
     // Ask Daoris's conversations, the helpers' words and an ended chat's going-on: classes over the context too (PART10h). The
     // go-on holds the runner and reads the other two.
     private readonly ChatHelp _help;
@@ -275,6 +278,12 @@ public sealed class ChatRunner : IDisposable
     /// queued, since they are in no record until they are sent, and offers a stop while a turn runs.
     /// </summary>
     public event Action<string, ChatQueue>? QueueChanged;
+
+    /// <summary>
+    /// A conversation answered the person (NOTIFY1a): the turn their words started ended, judged by <see cref="AttentionWatch"/>
+    /// as its turns move. Told from the conversation's thread; the shell says it as it says the tick's attention.
+    /// </summary>
+    public event Action<AttentionEvent>? Answered;
 
     /// <summary>
     /// A conversation's model and effort, as its agent offers them, each time they change (AGT6b, D98): as
@@ -779,6 +788,9 @@ public sealed class ChatRunner : IDisposable
                 judged = queue.LastTurnEnded;
                 _curve.Due(sessionId, config, onEnded);
             }
+
+            // A turn the person's words started has ended (NOTIFY1a): judged last, so a listener's failure moves nothing above.
+            if (_answers.Turned(sessionId, place.Name, queue) is { } answered) Answered?.Invoke(answered);
         }
         // A conversation going on hands its words to the native door only once its process is tracked, so a word the person
         // says meanwhile goes after them; the protocol door waits for its session to open anyway (MSG1c).
@@ -815,7 +827,12 @@ public sealed class ChatRunner : IDisposable
         // The person's words a conversation goes on with are its first turn (MSG1c, D137 §2.2), queued before any word said
         // to it once it runs.
         var first = goOn is null ? null : new ChatMessage(goOn.Ask.Prompt, []) { GoesOn = goOn.Ask };
-        if (first is not null) (chat?.Turns ?? native?.Turns)?.Say(first);
+        if (first is not null)
+        {
+            // Their words, so the turn's end they start is an answer they wait on (NOTIFY1a).
+            _answers.Asked(sessionId);
+            (chat?.Turns ?? native?.Turns)?.Say(first);
+        }
 
         // What the conversation consumed counts toward the account it ran as (USAGE1), as a driven
         // session's does: at its end, at its high-water mark, where the door reported one.
@@ -957,6 +974,8 @@ public sealed class ChatRunner : IDisposable
 
         if (_context.Turned.TryGetValue(sessionId, out var chat))
         {
+            // Before it is taken, so even a turn that ends at once is the answer the person waits on (NOTIFY1a).
+            _answers.Asked(sessionId);
             var reach = chat.Turns.Take(said);
             reaches = Spelled(reach);
             return reach is not null;
@@ -1010,7 +1029,13 @@ public sealed class ChatRunner : IDisposable
     /// <exception cref="DriverException">The conversation's door carries only text, so it has no turn to stop.</exception>
     public Task<TurnStop> CancelTurnAsync(string sessionId)
     {
-        if (_context.Turned.TryGetValue(sessionId, out var chat)) return chat.Turns.StopAsync();
+        if (_context.Turned.TryGetValue(sessionId, out var chat))
+        {
+            // The turn ends on the person's own press: no answer to tell them of (NOTIFY1a).
+            _answers.Stopped(sessionId);
+            return chat.Turns.StopAsync();
+        }
+
         if (_context.Talking.TryGetValue(sessionId, out var adapter))
         {
             throw new DriverException(
@@ -1288,6 +1313,8 @@ public sealed class ChatRunner : IDisposable
             // Nothing waiting will be sent now, and the page is told its queue emptied.
             chat?.Turns.Gone();
             native?.Gone();
+            // Last, so the queue told empty above judges nothing it still waited on (NOTIFY1a).
+            _answers.Forget(sessionId);
         });
         try
         {

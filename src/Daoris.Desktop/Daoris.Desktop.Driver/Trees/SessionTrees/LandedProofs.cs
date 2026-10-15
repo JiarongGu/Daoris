@@ -31,25 +31,29 @@ internal static class LandedProofs
                                   && !entry.Branch.StartsWith("daoris/", StringComparison.Ordinal))];
 
     /// <summary>The session branches (<c>daoris/…</c>) this checkout holds, by their short names; none where git could not say.</summary>
-    internal static async Task<IReadOnlyList<string>> SessionBranchesAsync(string root, CancellationToken ct)
+    /// <param name="refs">The judgement's refs (PROC1d-ii), where it holds them; null asks git.</param>
+    internal static async Task<IReadOnlyList<string>> SessionBranchesAsync(string root, CancellationToken ct, RefSnapshot? refs = null)
     {
-        var (code, refs, _) = await WorkingTree.GitAsync(
+        if (refs is not null && await refs.BranchesAsync(TreeFollows.SessionPrefix, ct).ConfigureAwait(false) is { } held) return held;
+        var (code, output, _) = await WorkingTree.GitAsync(
             root, ["for-each-ref", "--format=%(refname:short)", "refs/heads/daoris/"], ct).ConfigureAwait(false);
-        return code != 0 ? [] : refs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return code != 0 ? [] : output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     }
 
     /// <summary>
     /// The line in both its forms (D86) that this checkout has: its own branch, and origin's copy — a
     /// platform's squash merge reaches the second before anyone pulls it into the first.
     /// </summary>
-    internal static async Task<IReadOnlyList<LineForm>> LineFormsAsync(string root, string? line, CancellationToken ct)
+    /// <param name="refs">The judgement's refs (PROC1d-ii), where it holds them; null asks git.</param>
+    internal static async Task<IReadOnlyList<LineForm>> LineFormsAsync(string root, string? line, CancellationToken ct, RefSnapshot? refs = null)
     {
         var forms = new List<LineForm>();
         if (line is null) return forms;
         foreach (var (reference, name) in new[] { ($"refs/heads/{line}", line), ($"refs/remotes/origin/{line}", $"origin/{line}") })
         {
-            var (code, _, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], ct).ConfigureAwait(false);
-            if (code == 0) forms.Add(new LineForm(name, reference));
+            var there = refs is null ? null : await refs.HasAsync(reference, ct).ConfigureAwait(false);
+            there ??= (await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], ct).ConfigureAwait(false)).Code == 0;
+            if (there == true) forms.Add(new LineForm(name, reference));
         }
 
         return forms;
@@ -129,12 +133,11 @@ internal static class LandedProofs
     }
 
     /// <summary>The landed branch's tip where it stands holding the commit the landing recorded (D102's rule), else null.</summary>
-    internal static async Task<string?> StandingTipAsync(string root, LandedBranch entry, CancellationToken ct)
+    /// <param name="refs">The judgement's refs (PROC1d-ii), where it holds them; null asks git.</param>
+    internal static async Task<string?> StandingTipAsync(string root, LandedBranch entry, CancellationToken ct, RefSnapshot? refs = null)
     {
-        var (code, tip, _) = await WorkingTree.GitAsync(
-            root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{entry.Branch}^{{commit}}"], ct).ConfigureAwait(false);
-        if (code != 0) return null;
-        var (ours, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", entry.Tip, tip.Trim()], ct).ConfigureAwait(false);
-        return ours == 0 ? tip.Trim() : null;
+        if (await TreeRefs.CommitOfAsync(root, $"refs/heads/{entry.Branch}", ct, refs).ConfigureAwait(false) is not { } tip) return null;
+        var (ours, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", entry.Tip, tip], ct).ConfigureAwait(false);
+        return ours == 0 ? tip : null;
     }
 }

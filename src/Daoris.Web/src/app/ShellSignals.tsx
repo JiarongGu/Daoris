@@ -104,8 +104,9 @@ export function ShellSignals({ notify, onAttend }: {
 
   /**
    * What is worth interrupting the person for (SURF5b): a session that parked, or one that ended
-   * without them asking; and a quest parked on its failed sessions (SESSUX1i), which waits on their
-   * *Try again* as a park waits on their answer. The same event the shell turns into an OS balloon
+   * without them asking; a quest parked on its failed sessions (SESSUX1i), which waits on their
+   * *Try again* as a park waits on their answer; and a conversation that answered their words
+   * (NOTIFY1a), news as an ending is. The same event the shell turns into an OS balloon
    * while nobody is looking at the window — so this is the half for when somebody IS, and the two
    * never both fire because the shell tests the foreground before raising one.
    *
@@ -118,7 +119,7 @@ export function ShellSignals({ notify, onAttend }: {
       if (!item?.headline) return;
       notify(
         item.detail ? `${item.headline}: ${item.detail}` : item.headline,
-        // A park is the one that is WAITING on somebody; an ending is news.
+        // A park is the one that is WAITING on somebody; an ending, or an answer, is news.
         item.kind === 'Parked' || item.kind === 'QuestParked' ? 'error' : 'ok');
       void client.invalidateQueries({ queryKey: keys.allSessions });
     });

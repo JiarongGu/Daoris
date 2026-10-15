@@ -22,18 +22,21 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
     /// <paramref name="onto"/> — and the landed branches whose work reached the line, which go instead.
     /// </summary>
     /// <param name="asked">The look's asks (PLUGHOOK1c), for each landed row to say why it was not asked; null at the press, which asks nothing.</param>
+    /// <param name="refs">The refs the caller's judgement read (PROC1d-ii); null takes this judgement's own.</param>
     internal async Task<(List<RebaseJudged> Branches, List<LandedItem> Deletes)> JudgeBranchesAsync(
         string root, string repository, string workspace, string? line, string? onto, HashSet<string> busy, CancellationToken ct,
-        IReadOnlyList<StateAnswer>? asked = null)
+        IReadOnlyList<StateAnswer>? asked = null, RefSnapshot? refs = null)
     {
+        // One read of the refs for every branch judged here (PROC1d-ii); a write in this flow drops it.
+        refs ??= RefSnapshot.Take(root);
         var worktrees = await WorktreesAsync(root, ct).ConfigureAwait(false);
         var judged = new List<RebaseJudged>();
-        foreach (var branch in await LandedProofs.SessionBranchesAsync(root, ct).ConfigureAwait(false))
+        foreach (var branch in await LandedProofs.SessionBranchesAsync(root, ct, refs).ConfigureAwait(false))
         {
             var grown = context.Grown.Of(repository, branch);
             judged.Add(await JudgeReplayAsync(
                 root, repository, workspace, branch, landed: false, worktrees.GetValueOrDefault(branch), grown?.From, grown?.GrewFrom,
-                pushedOnRecord: false, line, onto, busy, ct).ConfigureAwait(false));
+                pushedOnRecord: false, line, onto, busy, ct, refs).ConfigureAwait(false));
         }
 
         var deletes = new List<LandedItem>();
@@ -43,7 +46,7 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
         // The session branches that stay as they are after the press: a replayed one shares only the line's commits.
         var staying = judged.Where(each => !each.Item.Replays).Select(each => each.Item.Branch).ToList();
         var config = asked is null ? null : context.Config();
-        foreach (var landed in await cleanups.JudgeLandedAsync(root, repository, workspace, entries, staying, stale: null, ct).ConfigureAwait(false))
+        foreach (var landed in await cleanups.JudgeLandedAsync(root, repository, workspace, entries, staying, stale: null, ct, refs).ConfigureAwait(false))
         {
             // What its pull request's answer was, and why the look did not ask where it would have (PLUGHOOK1c, design §2.5).
             var item = asked is null ? landed.Item : landed.Item with { NotAsked = cleanups.NotAskedOf(landed.Item, asked, config!) };
@@ -60,7 +63,7 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
             {
                 LandedKind.Differs => await JudgeReplayAsync(
                     root, repository, workspace, item.Branch, landed: true, worktrees.GetValueOrDefault(item.Branch), entry.From, null,
-                    entry.Pushed, line, onto, busy, ct).ConfigureAwait(false),
+                    entry.Pushed, line, onto, busy, ct, refs).ConfigureAwait(false),
                 LandedKind.CheckedOut => new RebaseJudged(Left(RebaseKind.CheckedOut)),
                 LandedKind.AheadOfRemote => new RebaseJudged(Left(RebaseKind.Pushed, item.Commits)),
                 _ => new RebaseJudged(Left(RebaseKind.Unknown, detail: item.Detail)),
@@ -85,15 +88,16 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
     /// waits, since replaying only its own would lose the work it builds on. With no record (a tree opened before
     /// Daoris kept one), the newest commit of it whose work reads on the line, else where it leaves the line.</para>
     /// </remarks>
+    /// <param name="refs">The judgement's refs (PROC1d-ii); null asks git.</param>
     internal async Task<RebaseJudged> JudgeReplayAsync(
         string root, string repository, string workspace, string branch, bool landed, string? tree, string? grow, string? grewFrom,
-        bool pushedOnRecord, string? line, string? onto, HashSet<string> busy, CancellationToken ct)
+        bool pushedOnRecord, string? line, string? onto, HashSet<string> busy, CancellationToken ct, RefSnapshot? refs = null)
     {
         RebaseJudged Item(string kind, string? tip = null, string? cut = null, string? cutBy = null, int commits = 0, string? detail = null) =>
             new(new RebaseItem(repository, workspace, branch, landed, kind, line, cut is null ? null : TextBounds.ShortCommit(cut, 8), cutBy,
                 grewFrom, commits, detail), tip, tree, cut);
 
-        var tip = await CommitOfAsync(root, $"refs/heads/{branch}", ct).ConfigureAwait(false);
+        var tip = await CommitOfAsync(root, $"refs/heads/{branch}", ct, refs).ConfigureAwait(false);
         if (tip is null) return Item(RebaseKind.Unknown, detail: "the branch is gone");
         if (onto is null) return Item(RebaseKind.Unknown, tip, detail: line is null ? "no line is set and git names none" : $"there is no `{line}` here, nor `origin/{line}`");
 
@@ -108,7 +112,7 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
         }
 
         if (await IsAncestorAsync(root, onto, tip, ct).ConfigureAwait(false)) return Item(RebaseKind.UpToDate, tip);
-        if (pushedOnRecord || await OnRemoteAsync(root, branch, ct).ConfigureAwait(false)) return Item(RebaseKind.Pushed, tip);
+        if (pushedOnRecord || await OnRemoteAsync(root, branch, ct, refs).ConfigureAwait(false)) return Item(RebaseKind.Pushed, tip);
 
         var (baseCode, baseOut, baseErr) = await WorkingTree.GitAsync(root, ["merge-base", tip, onto], ct).ConfigureAwait(false);
         if (baseCode != 0) return Item(RebaseKind.Unknown, tip, detail: $"git found no point where it left the line: {FirstLine(baseErr)}");

@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-15 — A message to a session vanished behind the error when its send timed out (SENDLOST1b)
+
+- **Symptom:** the owner's, after *本机没有及时回应——驱动可能正忙。请稍后重试。*: *"and we don't have any message shown when this
+  happens (not even my message)"*. SENDLOST1 had kept such words in Ask Daoris only.
+- **Root cause:** the frame's two presses, `onSend` for a chat's composer and `onSay` for every other box at a session's foot,
+  read the bridge's `TIMEOUT` as a send that failed: the words went back in the box under a toast of the error though the
+  driver might still take them, so a second press could say them twice; and from the press to the answer they showed nowhere,
+  the composer having let go of them.
+- **Fix:** D137's SENDLOST1b note. The words show at once in a list of their own above the box (`Composer`'s `going`); a timeout
+  keeps them, saying the machine has not answered yet, with nothing put back; the session's queue or record settles them
+  (`work/sending.ts`, `SentSettler`), and a chat that ended without them gives them back, said so.
+- **Verification:** `WorkFrame.test.tsx`'s five SENDLOST1b tests, one per door, and one each in `Composer.test.tsx` and
+  `SessionBox.test.tsx`, all failing first. Not seen on the installed window, and no real timeout met.
+
 ## 2026-10-15 — An accepted session's plan read stale after a tab switch, and never in another window (STATEHUB1b)
 
 - **Symptom:** the owner's, on the install: *"the 采纳 status does not read properly when switching tab"*. After *Accept…*
@@ -1928,6 +1942,23 @@ by `48c315b`'s times. A class marked so is run alone with the second file: the f
 that matches no test fails nothing. *Owed:* neither half has run on the new split; the branch paused before its runs. Each run
 goes here with its wall, sha, test counts and machine state, against PROC1a's projection of about 47 minutes under a full
 set's load.
+
+**PROC1d-i (2026-10-15): a look over a sync, an update, a landing and a tidy.** `TreeContext.OneLook` now opens at the top of
+`SyncPlanAsync`, `SyncAsync`, `UpdateTreeAsync`, `LandAsync` and `TidyHeldAsync`, and `WorkingTree.Started` (an async local,
+null in production) counts the product's git starts. Counted by `TreeSyncStartsTests` over a sync plan of three session
+branches: 2 guesses of the line and 44 starts before, 1 and 42 after (each guess is 1 to 3 starts); the remaining starts are
+PROC1d-ii to -iv. Ran green once each: that class, `TreeSyncTests`, `TreeSyncLineTests`, `TreeUpdateTests`, `SweepLineProcessTests`.
+
+**PROC1d-ii (2026-10-15): a judgement reads a checkout's refs once.** A `RefSnapshot`, one `for-each-ref` of `refs/heads` and
+`refs/remotes/origin` with each ref's object, type and upstream, read at its first question, answers a branch's tip, the line's
+forms, where the line stands, whether a branch is on its remote and what it holds that its remote lacks; every git the flow starts
+that may move a ref drops it (D88's PROC1d-ii note). Counted by `TreeSyncStartsTests` over the same sync plan of three session
+branches: 42 starts before, 29 after; `rev-parse --verify` 8 before, 1 after (the line's guess, `WorkingTree.DefaultBranchAsync`);
+the snapshot's read is 1. What is left is `merge-base` and `rev-list` per branch (PROC1d-iv), `worktree list` twice (PROC1d-iii),
+`status --porcelain` per tree, and the line's guess and fetch. Ran green once each, one at a time after the deployment rerun
+freed the machine (wall seconds, tests): `TreeSyncStartsTests` 80 (5), `TreeSyncTests` 69 (1), `TreeSyncStepTests` 84 (2),
+`TreeSyncReplayTests` 87 (5), `TreeSyncLineTests` 80 (4), `LandedProofTests` 69 (4), `LandedKeepTests` 122 (6), `SweepTests` 57 (11),
+`ContentProofLossTests` 254 (17), `PullRequestStateTests` 573 (9) and `BranchTidyingProcessTests` 563 (26, `process.runsettings`).
 
 ## TEST1 (open): a Node process on Windows aborts with 0xC0000409 (since 2026-09-21)
 

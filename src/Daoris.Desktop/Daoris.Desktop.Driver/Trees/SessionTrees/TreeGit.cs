@@ -13,10 +13,17 @@ internal static class TreeGit
     /// The reference git compares <paramref name="branch"/> by here, by its full name: the local branch, else origin's copy,
     /// else null — a line this checkout has nowhere. Never the short name (AUTOTIDY1): git reads a tag of that name first.
     /// </summary>
-    internal static async Task<string?> ComparableAsync(string root, string branch, CancellationToken ct)
+    internal static async Task<string?> ComparableAsync(string root, string branch, CancellationToken ct, RefSnapshot? refs = null)
     {
         foreach (var reference in new[] { $"refs/heads/{branch}", $"refs/remotes/origin/{branch}" })
         {
+            // PROC1d-ii: from the judgement's refs where they hold the answer.
+            if (refs is not null && await refs.HasAsync(reference, ct).ConfigureAwait(false) is { } there)
+            {
+                if (there) return reference;
+                continue;
+            }
+
             var (code, _, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], ct).ConfigureAwait(false);
             if (code == 0) return reference;
         }
