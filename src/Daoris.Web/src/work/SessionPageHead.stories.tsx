@@ -4,6 +4,7 @@ import i18n from '../locales/i18n';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
 import type { Session } from '../data/api';
+import { AskHelper } from './AskHelper';
 import { HandOverAsk, type HandOverRoster } from './HandOverAsk';
 import { HandOverOfferLine } from './HandOverOfferLine';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
@@ -356,6 +357,27 @@ export const HandOverRefusedChinese: Story = {
     ),
   },
   decorators: [at(596), chinese],
+};
+
+// ——— *Ask another agent…* (MIXAGENT2b, D163 point 2): the helper's ask under the head, the question and the agent left to Daoris;
+// at 680 px of window, in English, 中文 and dark.
+
+/** A conversation's ask: what a helper does, the question, which agent, *Ask* waiting for a question, and *Never mind*. */
+export const AskHelperAsking: Story = {
+  args: {
+    session: A_CONVERSATION, title: 'Cap the hydration per frame', shown: 'completed',
+    acts: ['handOver', 'askHelper', 'openFolder', 'terminal', 'detach', 'archive', 'delete', 'copy'],
+    asking: <AskHelper from="claude-code" roster={ROSTER} onAsk={() => {}} onClose={() => {}} />,
+  },
+  decorators: [at(596)],
+};
+export const AskHelperAskingChinese: Story = {
+  args: { ...AskHelperAsking.args, title: '限制每帧的水合工作量' },
+  decorators: [at(596), chinese],
+};
+export const AskHelperAskingDark: Story = {
+  args: { ...AskHelperAsking.args },
+  decorators: [at(596), (Story) => <InTheme theme="dark"><Story /></InTheme>],
 };
 
 // ——— Daoris's offer to hand over (MIXAGENT1b-ii, D163): the line under the head where nothing else is asked, near the limit and

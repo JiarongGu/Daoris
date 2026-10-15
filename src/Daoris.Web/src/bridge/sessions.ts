@@ -6,6 +6,7 @@ import { searchable } from '../lib/searchable';
 import type { SessionEvent } from '../work/conversation';
 import type { SessionEntry } from '../work/entries';
 import type { SessionGroupName, SessionGrouping } from '../work/groups';
+import type { HelperAskRow } from '../work/HelperAsks';
 import type { NewSessionAnswer } from '../work/say';
 import type { SessionWhere } from '../work/SessionRow';
 import { call } from './call';
@@ -248,6 +249,80 @@ export const useGoOnNew = () => useMutation({
       why: typeof answer?.why === 'string' ? answer.why : null,
       message: typeof answer?.message === 'string' ? answer.message : '',
     };
+  },
+});
+
+/** What *Ask another agent…* answered (MIXAGENT2b, D163): the ask's id where it was written, else why not by its code, and the driver's sentence. */
+export type HelperAsked = { asked: string | null; why: string | null; message: string };
+
+/** What the person's yes to an agent's ask answered (MIXAGENT2b): whether the ask has it, else why not by its code. */
+export type HelperApproved = { approved: boolean; why: string | null; message: string };
+
+const word = (value: unknown): string | null => (typeof value === 'string' && value ? value : null);
+
+/**
+ * *Ask another agent…* (MIXAGENT2b, D163 point 2; the mixed-agents design §3): the person's own ask of a helper for a session, the
+ * file `daoris-driver sessions helper` writes, for the driver's next look to take. The question as written and the agent the person
+ * named, none where Daoris chooses. Read field by field, so a refusal keeps its code for the page to word. The sessions and the
+ * driver are asked again by the state hub (D169), and with the sessions the session's asks, which sit under their key.
+ */
+export const useAskHelper = () => useMutation({
+  mutationFn: async (ask: { session: string; question: string; agent?: string | null }): Promise<HelperAsked> => {
+    const answer = await call<{ asked?: unknown; why?: unknown; message?: unknown } | null>('SESSION_HELPER_ASK', {
+      id: ask.session, question: ask.question, ...(ask.agent ? { agent: ask.agent } : {}),
+    });
+    return { asked: word(answer?.asked), why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '' };
+  },
+});
+
+/** The asks a session made of helpers, under the sessions' key, so whatever asks the records again asks these too. */
+const helpersKey = (session: string) => ['sessions', 'helpers', session] as const;
+
+/** The rows an answer holds, read defensively: one with no id or no question is left out rather than guessed at. */
+const readHelpers = (answer: unknown): HelperAskRow[] => {
+  const rows = (answer as { helpers?: unknown } | null)?.helpers;
+  if (!Array.isArray(rows)) return [];
+  return rows.filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === 'object')
+    .filter((row) => word(row.id) !== null && typeof row.question === 'string')
+    .map((row) => ({
+      id: row.id as string,
+      question: row.question as string,
+      agent: word(row.agent),
+      askedBy: word(row.askedBy) ?? 'agent',
+      at: typeof row.at === 'string' ? row.at : '',
+      state: word(row.state),
+      code: word(row.code),
+      helper: word(row.helper),
+      startedOn: word(row.startedOn),
+    }));
+};
+
+/**
+ * The asks a session made of helpers (MIXAGENT2b), oldest first, each as the driver's look left it, read off this machine's own
+ * files: shell-only, and asked only for a session of this machine's. Its page lists them, with the person's yes where an agent's
+ * ask waits on it. A look moves them on its own; its record's change, a helper started or an answer handed, asks them again.
+ */
+export const useSessionHelpers = (session: string | null | undefined) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: helpersKey(session ?? ''),
+    queryFn: async () => readHelpers(await call<unknown>('SESSION_HELPERS', { id: session })),
+    enabled: isAvailable && Boolean(session),
+    refetchOnWindowFocus: false,
+  });
+};
+
+/**
+ * The person's yes to an agent's ask under the `helpers` rule's `ask` (MIXAGENT2b, D163 point 3; design §5): the `approved` state
+ * the driver's look reads, by the session and the ask. A refusal is the answer, by its code. The sessions and the driver are asked
+ * again by the state hub (D169).
+ */
+export const useApproveHelper = () => useMutation({
+  mutationFn: async (yes: { session: string; ask: string }): Promise<HelperApproved> => {
+    const answer = await call<{ approved?: unknown; why?: unknown; message?: unknown } | null>('SESSION_HELPER_APPROVE', {
+      session: yes.session, ask: yes.ask,
+    });
+    return { approved: answer?.approved === true, why: word(answer?.why), message: typeof answer?.message === 'string' ? answer.message : '' };
   },
 });
 
