@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A rule a session proposed after it was refused something now waits on you in that session, at its top and at its foot, with
+  what it would change and why: *Allow…* asks once, *Decline* is one press, and *In the conversation* shows the call that
+  proposed it. Allowed there, the session is told the rule is allowed now and goes on with it; a session that takes no words
+  says so instead. In What needs you, allowing one now says *Allowed* (已允许), as its press reads.
 - After a session's work is accepted (采纳), its *Accept…* and the plan beside it read anew wherever they are shown, in
   every open window and when you switch back to a tab, where an old plan used to stand until the driver's next change. The
   same holds after discarding a session's tree, handing a branch to its plugin, a press on a second opinion, the clean-up,
