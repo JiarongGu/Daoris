@@ -1935,6 +1935,17 @@ null in production) counts the product's git starts. Counted by `TreeSyncStartsT
 branches: 2 guesses of the line and 44 starts before, 1 and 42 after (each guess is 1 to 3 starts); the remaining starts are
 PROC1d-ii to -iv. Ran green once each: that class, `TreeSyncTests`, `TreeSyncLineTests`, `TreeUpdateTests`, `SweepLineProcessTests`.
 
+**PROC1d-ii (2026-10-15): a judgement reads a checkout's refs once.** A `RefSnapshot`, one `for-each-ref` of `refs/heads` and
+`refs/remotes/origin` with each ref's object, type and upstream, read at its first question, answers a branch's tip, the line's
+forms, where the line stands, whether a branch is on its remote and what it holds that its remote lacks; every git the flow starts
+that may move a ref drops it (D88's PROC1d-ii note). Counted by `TreeSyncStartsTests` over the same sync plan of three session
+branches: 42 starts before, 29 after; `rev-parse --verify` 8 before, 1 after (the line's guess, `WorkingTree.DefaultBranchAsync`);
+the snapshot's read is 1. What is left is `merge-base` and `rev-list` per branch (PROC1d-iv), `worktree list` twice (PROC1d-iii),
+`status --porcelain` per tree, and the line's guess and fetch. Ran green once each, one at a time after the deployment rerun
+freed the machine (wall seconds, tests): `TreeSyncStartsTests` 80 (5), `TreeSyncTests` 69 (1), `TreeSyncStepTests` 84 (2),
+`TreeSyncReplayTests` 87 (5), `TreeSyncLineTests` 80 (4), `LandedProofTests` 69 (4), `LandedKeepTests` 122 (6), `SweepTests` 57 (11),
+`ContentProofLossTests` 254 (17), `PullRequestStateTests` 573 (9) and `BranchTidyingProcessTests` 563 (26, `process.runsettings`).
+
 ## TEST1 (open): a Node process on Windows aborts with 0xC0000409 (since 2026-09-21)
 
 **Symptom.** A Node process dies with `worker process exited unexpectedly (code=3221226505)`, Windows `__fastfail`: no
