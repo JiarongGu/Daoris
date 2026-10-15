@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- What waits on you in a session is shown once on the screen. The strip at its foot steps aside while the session's top, where
+  every wait stands, is wholly in view, and comes back as you scroll it away; it stays while an ask is open in it or you are
+  working in it. Where the conversation raised a wait, a small mark replaces the line of words: its tip says what waits on you
+  from there, and pressing it takes you to that wait, at the top when the top is in view.
 - A rule a session proposed after it was refused something now waits on you in that session, at its top and at its foot, with
   what it would change and why: *Allow…* asks once, *Decline* is one press, and *In the conversation* shows the call that
   proposed it. Allowed there, the session is told the rule is allowed now and goes on with it; a session that takes no words
