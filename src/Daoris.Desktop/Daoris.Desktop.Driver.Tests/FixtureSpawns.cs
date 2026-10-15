@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// path, each start through <see cref="GitFixture"/> or <see cref="LandedFixture"/> appends one tab-separated line there:
 /// when it began (UTC), how long <c>Process.Start</c> took, how long it ran to its exit, its runner and its arguments. The
 /// product's own starts are then a git trace's starts less these (<c>GIT_TRACE2_EVENT</c> on the same run). Unset, nothing
-/// is written. The numbers it gave are FIX-LOG's FLAKE1 entry (PROC1a).
+/// is written. What it measured is in FLAKE1's FIX-LOG entry (PROC1a).
 /// </remarks>
 internal static class FixtureSpawns
 {
