@@ -41,7 +41,7 @@ import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from '..
 import { ShellSignals } from './ShellSignals';
 import {
   logEvent, useConsidered, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
-  useRules, useSayUpdate, useSessionGroups, useShowReviewAgain, useSyncNow, useUntrusted, useUpdateState,
+  useRules, useSayUpdate, useSessionGroups, useShowReviewAgain, useSyncNow, useTaskbarCount, useUntrusted, useUpdateState,
 } from '../bridge/shell';
 import { byTool } from '../agents/tools';
 import { UpdateBanner } from '../update/UpdateBanner';
@@ -438,6 +438,8 @@ export function App() {
   const waiting = needsAPerson(
     running.data ?? [], outstanding.data ?? [], registry.data ?? [], asks.data ?? [], untrusted.data ?? [],
     proposals, considered.data ?? [], sessionGroups.data ?? [], accountsKnown).length;
+  // The same count on the window's taskbar button and in its title (NOTIFY1b), so it is seen with the window behind others.
+  useTaskbarCount(waiting, t('nav.waiting', { count: waiting }));
   const sessionsWaiting = waitingInSessions(running.data ?? [], considered.data ?? []);
   // Where this circle stands with its remote (SYNC6b), from this machine's own host — so a browser on
   // the machine reads it too, and it says for itself whether the circle is wired. Before it answers,

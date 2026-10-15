@@ -42,7 +42,11 @@ public sealed class WindowsModuleTests : Bridge
 
     private readonly Windows _windows = new();
 
-    private WindowsModule Module() => new(Bus, _windows, new PlatformAddress(Service));
+    /// <summary>What the main window was told to wear on its taskbar button (NOTIFY1b).</summary>
+    private readonly List<(int Count, string? Description)> _badges = [];
+
+    private WindowsModule Module() => new(Bus, _windows, new PlatformAddress(Service),
+        badge: (count, description) => _badges.Add((count, description)));
 
     [Fact]
     public async Task The_monitor_opens_at_its_own_route_into_the_same_bundle()
@@ -140,6 +144,56 @@ public sealed class WindowsModuleTests : Bridge
 
         Assert.Contains("WINDOW_UNKNOWN", refusal);
         Assert.Empty(_windows.Themed);
+    }
+
+    /// <summary>
+    /// NOTIFY1b: the main window's page tells its frame how much waits on the person (Overview's *What needs you*), for
+    /// the taskbar button's overlay and the window's title, with the words a screen reader says in the page's language.
+    /// </summary>
+    [Fact]
+    public async Task The_main_windows_page_tells_its_taskbar_button_what_waits()
+    {
+        var told = await AnswerAsync(Module(), "SET_BADGE", new { count = 3, description = "3 waiting on you" });
+
+        Assert.True(told.GetProperty("applied").GetBoolean());
+        Assert.Equal((3, "3 waiting on you"), _badges.Single());
+    }
+
+    [Fact]
+    public async Task Nothing_waiting_takes_the_badge_off_and_a_count_below_none_is_none()
+    {
+        await AnswerAsync(Module(), "SET_BADGE", new { count = 0 });
+        await AnswerAsync(Module(), "SET_BADGE", new { count = -2, description = "" });
+
+        Assert.Equal([(0, null), (0, null)], _badges);
+    }
+
+    /// <summary>A host with no main window (a test, a headless composition) has no button to badge, and says so.</summary>
+    [Fact]
+    public async Task A_host_with_no_window_to_badge_answers_that_it_did_not()
+    {
+        var told = await AnswerAsync(
+            new WindowsModule(Bus, _windows, new PlatformAddress(Service)), "SET_BADGE", new { count = 2 });
+
+        Assert.False(told.GetProperty("applied").GetBoolean());
+    }
+
+    /// <summary>
+    /// The overlay is a small icon, so past nine it says *9+*; the title has the room the page's own badge has, and
+    /// past ninety-nine says *99+* as that badge does (`ui.tsx`). Nothing waiting is the plain name and no overlay.
+    /// </summary>
+    [Theory]
+    [InlineData(0, null, "Daoris (道衍)")]
+    [InlineData(1, "1", "(1) Daoris (道衍)")]
+    [InlineData(9, "9", "(9) Daoris (道衍)")]
+    [InlineData(10, "9+", "(10) Daoris (道衍)")]
+    [InlineData(99, "9+", "(99) Daoris (道衍)")]
+    [InlineData(100, "9+", "(99+) Daoris (道衍)")]
+    [InlineData(-1, null, "Daoris (道衍)")]
+    public void The_badge_and_the_title_say_the_count_as_their_room_allows(int count, string? label, string title)
+    {
+        Assert.Equal(label, WaitingBadge.Label(count));
+        Assert.Equal(title, WaitingBadge.Title(count));
     }
 
     /// <summary>
