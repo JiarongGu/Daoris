@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- What waits on you in a session is at its foot too, above the box you type in, so you need not scroll back to its top: its
+  question (answered in the box), a go-ahead still open with *Approve* and *Refuse*, its work's *Accept…*, the words asking it
+  to rebase, the second opinion's and the review's presses, and a branch to discard, each the same press as in its head, an
+  ask opened in one place closing the other. Several fold to one line; *To the top* takes you to the head.
 - A session no longer thanks you for accepting when you type "accept": it says its work waits for *Accept…* on its page and
   where that is, and when it asks you to approve a rule it proposed, it names the Agents page's *Proposals*. In What needs you,
   the act on a rule an agent proposed reads *Allow…* (允许…), no longer the same *Accept…* (采纳…) as landing a session's work.
