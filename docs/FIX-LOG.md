@@ -1881,6 +1881,17 @@ whichever host makes it. *Four classes four at once in one host* (`LandedReviewT
 from 72 to about 47 minutes under the full set's load and from about 37 to about 24 on a quiet machine; ten minutes needs
 fewer starts and the serial classes shortened as well. The rows that follow are PROC1's split in the backlog.
 
+**The driver's Process half runs as two (PROC1b, PROC1c, 2026-10-15; a note on MOD8's rule).** A Process class that starts
+git and nothing a neighbour's load could fail also carries `Parallel=Git` (`Category.cs` says which may, `CategoryTests`
+holds the trait and the environment), and gate `driver-process-git` runs those classes four at once in one host
+(`git.process.runsettings`), after `driver-process`, which runs the rest one at a time (`process.runsettings`, now filtered
+`Parallel!=Git`). Marked: 37 classes, 328 of the half's 908 listed tests; `SessionTreesTests` waits for AUTOTIDY2b's merge,
+and `LandingPluginTests` stays serial for its 3-second patience. `TreeSyncTests` is four classes of 185, 138, 137 and 117 s
+by `48c315b`'s times. A class marked so is run alone with the second file: the first's filter now leaves it out, and a run
+that matches no test fails nothing. *Owed:* neither half has run on the new split; the branch paused before its runs. Each run
+goes here with its wall, sha, test counts and machine state, against PROC1a's projection of about 47 minutes under a full
+set's load.
+
 ## TEST1 (open): a Node process on Windows aborts with 0xC0000409 (since 2026-09-21)
 
 **Symptom.** A Node process dies with `worker process exited unexpectedly (code=3221226505)`, Windows `__fastfail`: no
