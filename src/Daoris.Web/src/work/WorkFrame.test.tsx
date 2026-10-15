@@ -2295,6 +2295,22 @@ describe('the box on every session that takes words', () => {
     expect(screen.queryByLabelText('Message')).toBeNull();
   });
 
+  /**
+   * HANDWORDS1-ii (D165's HANDWORDS1-i note): a conversation handed over or moved names the one it went on in by that record's
+   * title, and *Open session* attends it.
+   */
+  it('names the conversation a moved one went on in by its title, and attends it', async () => {
+    const old = { ...CHAT, state: 'completed' };
+    SESSIONS = [old, { ...CHAT, id: 'c2c2c2c2', from: 'c0ffee11', fromWhy: 'curve', fromBy: 'daoris' }];
+    driver({}, undefined, { SESSION_QUEUE: { session: 'c0ffee11', queued: [], taking: false, why: 'continued', to: 'c2c2c2c2' } });
+    const { onSelect } = show('c0ffee11');
+
+    const line = await screen.findByText('This conversation went on in Chat.');
+    expect(screen.queryByText(/say it to that one/)).toBeNull();
+    fireEvent.click(within(line.parentElement!).getByRole('button', { name: 'Open session' }));
+    expect(onSelect).toHaveBeenCalledWith('c2c2c2c2');
+  });
+
   it('draws the line under a teammate’s record without asking the driver', async () => {
     SESSIONS = [{ ...ENDED, id: 'person@machine-b/s1a2b3c4' }];
     driver({ reaches: 'resume' });

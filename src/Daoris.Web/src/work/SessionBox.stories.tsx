@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as Tooltip from '@radix-ui/react-tooltip';
+import type { Session } from '../data/api';
+import { chinese } from '../design/storyLanguage';
 import { NATIVE_WORDS_LIMIT } from './say';
 import { SessionBox } from './SessionBox';
 
@@ -96,6 +98,27 @@ export const LineSuperseded: Story = { args: { box: { kind: 'line', why: 'supers
 
 /** A conversation handed over or moved, naming the one it went on in (HANDWORDS1). */
 export const LineContinued: Story = { args: { box: { kind: 'line', why: 'continued', to: 'c4d5e6f7' } } };
+
+/**
+ * HANDWORDS1-ii: where the frame holds the conversation it went on in, the line names it by its title and *Open session*
+ * attends it: moved by the curve to another account at the end of its turn.
+ */
+export const LineContinuedTitled: Story = {
+  args: {
+    box: { kind: 'line', why: 'continued', to: 'c4d5e6f7' },
+    continued: { session: { id: 'c4d5e6f7' } as Session, title: 'Tidy the release notes' },
+    onOpenSession: () => {},
+  },
+};
+
+/** The same in 中文, the title as its record keeps it. */
+export const LineContinuedTitledChinese: Story = {
+  args: {
+    ...LineContinuedTitled.args,
+    continued: { session: { id: 'c4d5e6f7' } as Session, title: '整理发布说明' },
+  },
+  decorators: [chinese],
+};
 
 /** A record the service no longer has. */
 export const LineNotFound: Story = { args: { box: { kind: 'line', why: 'not-found' } } };
