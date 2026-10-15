@@ -102,7 +102,8 @@ sessions take the same roles once the trial says which split works (MODELROLE1).
      long halves** (GATE5): the driver's and the modules' `Process` halves and the deployment rehearsal
      never run at a merge, and every run and `--plan` says each is in the full set before staging. It
      prints why each gate runs or is skipped. `--full` runs every gate `daoris.gates.json` declares and
-     every rehearsal the release workflow adds. Each gate's whole log goes to
+     every rehearsal the release workflow adds. The light gates run beside the serial Process lane
+     (GATELANES1); add `--one-at-a-time` on a loaded machine. Each gate's whole log goes to
      `local/scratch/merge-<branch>/`; a Process half also leaves a `.trx` there, with its ten slowest
      classes printed after it (PROC1). The lane report names lanes by id and title. Look harder at the
      diff of a branch that crossed lanes or touched the steward's records.
