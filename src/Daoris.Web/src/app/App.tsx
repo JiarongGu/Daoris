@@ -65,6 +65,7 @@ import type { Attention } from '../work/AttentionRow';
 import { needsAPerson, waitingInSessions } from '../work/attention';
 import { ActivityBar, AppStrip, type DriverPresence, StatusBar } from '../work/frame';
 import { useWindowChrome } from './windowChrome';
+import { useSplashLift } from './splash';
 import {
   type Command, type CommandDoors, type CommandState, commandTable, type FrameIntent, listOf, MENUS, paletteCommands, shortcutGroups,
   type View, VIEWS,
@@ -217,6 +218,8 @@ export function App() {
   // The window this page is the chrome of (SURF7). In a browser `present` is false and the strip is
   // simply a strip: no caption room, no drag, nothing to command.
   const chrome = useWindowChrome();
+  // And its splash, held until this first screen has its data (SPLASHDATA1).
+  useSplashLift();
 
   const status = useStatus();
   const repositories = useRepositories();

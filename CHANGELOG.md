@@ -5,6 +5,13 @@ with the version and date at release.
 
 ## Unreleased
 
+- A part's own *Accept* now lands on its line of work's one branch, as the line's *Accept* does; a part you leave out of
+  the line's *Accept* says so in its review, with *Discard tree* first; and under a squash rule a line's later parts are
+  squashed onto its branch, fetching the line once. While work lands, its *Accept* says *Checking…* (检查中…) at the gate,
+  then *Landing…*, and a line's or an ask's *Accept* shows it in every open window; `daoris-driver trees land --entry` or
+  `--ask` lands them from a terminal. The window now opens in the theme you chose, from its first frame, and the splash stays
+  until the first screen has its data (at most ten seconds). A word you take back never reaches a session that goes on in a
+  new one, and withdrawing a stop or words from a terminal says truly whether the loop took them first.
 - One *Accept* lands a whole line of work: under a session's parts, *Accept all N parts…* lands them on one branch in the
   order they were made, and in the list grouped by ask, *Accept the ask's N parts…* lands every repository's, each answered on
   its own. Before it lands, its plan says where and in what order, and names a part a later one superseded, which you may

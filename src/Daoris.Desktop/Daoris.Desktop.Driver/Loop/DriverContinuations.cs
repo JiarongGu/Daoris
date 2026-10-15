@@ -150,34 +150,57 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         // A helper's answer (MIXAGENT2a-ii) is another agent's claim too: said as its, never as the person's.
         var helper = park.Helpers.Count > 0;
         var persons = park.Waiting.Any(word => word.Persons);
-
-        // 🔴 SAIDBACK1d (D137 §2.4): the words are read from the record as late as the prompt is built, not taken from the look,
-        // so a word taken back or reworded since goes as it now is, or not at all. Narrowed, not closed: the ledger's move to
-        // working follows the spawn (HoldAsync), and a failed spawn before it hands the words on (below), so the take-back
-        // door still refuses only once the record runs.
-        var words = Continuations.HandedAfterMove(park.Waiting, await ReadAgainAsync(service, sessionId, ct).ConfigureAwait(false));
-        if (words.Count == 0)
-        {
-            starting?.Dispose();
-            return (new StartRun(
-                $"held  #{quest.Id} → {quest.To}: every word waiting on session {sessionId} was taken back before it went on; nothing is sent.",
-                false), null, false);
-        }
-
-        // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words; what its start did with its
-        // tree against the line first after them (LANDSYNC2), since that is where its next commit goes.
-        var after = await ResumedAfterAsync(service, quest, sessionId, target.Language, ct).ConfigureAwait(false);
-        var resume = new ResumeAsk(
-            kept.Conversation, words,
-            Continuations.OpeningNoted(adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons, helper),
-            inSync is { Length: > 0 } told ? after.Length == 0 ? told : $"{told}\n\n{after}" : after,
-            files: word => ChatFiles.Kept(home, sessionId, word.Files));
         var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
 
+        // 🔴 SAIDBACK1e (D137 §2.4): the ledger's move to working comes before the words are read and the run is spawned, so a
+        // word taken back between the look and the move never goes (Continuations.HandedAfterMove). A park's note is replaced
+        // while it works; an ended record's keeps what ended it and says it goes on (MSG1b), with another agent's findings where
+        // those are all it goes on with (XAGENT1e), never "your words".
+        var workingNote = park.Parked ? Continuations.WorkingNoted
+            : findings && !persons ? Continuations.GoingOnWithFindingsNoted
+            : helper && !persons ? Continuations.GoingOnWithHelperNoted
+            : Continuations.GoingOnNoted;
+        try
+        {
+            await service.AdvanceAsync(sessionId, "working", workingNote, transcript: transcript, ct: ct).ConfigureAwait(false);
+        }
+        catch (DriverException refused)
+        {
+            starting?.Dispose();
+            // Every word taken back before it moved: an ended record with none waiting does not move (MSG1a), and nothing holds it.
+            if (await ReadAgainAsync(service, sessionId, ct).ConfigureAwait(false) is { Running: false, Waiting.Count: 0 })
+            {
+                return (TakenBackFirst(quest, sessionId), null, false);
+            }
+
+            // The person stopped or answered it, or another run took it up, between the look and here: the next look reads it as
+            // it now is.
+            return (new StartRun($"held  #{quest.Id} → {quest.To}: {refused.Message}", false, null, refused.Message), null, false);
+        }
+
+        // The ledger holds its tree again (LEFT2).
+        starting?.Dispose();
+
+        ResumeAsk? resume = null;
+        // Whether its process started: a failure before then started no run, so the record goes back with its words (SAIDBACK1e).
+        var spawned = false;
         // The stop made of it before a close cut its conclusion off, told as its run lets go (FLAKE3).
         SessionStop? stoppedFirst = null;
         try
         {
+            // Every word waiting once it moved, as the move left them (SAIDBACK1d): none can be taken back from a record that runs.
+            var words = Continuations.HandedAfterMove(park.Waiting, await ReadAgainAsync(service, sessionId, ct).ConfigureAwait(false));
+            if (words.Count == 0) return await PutBackAsync(quest, park, agent, why: null).ConfigureAwait(false);
+
+            // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words; what its start did with
+            // its tree against the line first after them (LANDSYNC2), since that is where its next commit goes.
+            var after = await ResumedAfterAsync(service, quest, sessionId, target.Language, ct).ConfigureAwait(false);
+            resume = new ResumeAsk(
+                kept.Conversation, words,
+                Continuations.OpeningNoted(adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons, helper),
+                inSync is { Length: > 0 } told ? after.Length == 0 ? told : $"{told}\n\n{after}" : after,
+                files: word => ChatFiles.Kept(home, sessionId, word.Files));
+
             // The protocol door resumes on its wire, from the same spawn a start has; the native door is run on the
             // conversation it kept.
             var prepared = adapter.Wire == SessionWire.Acp
@@ -215,23 +238,24 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 // as any run's is (TOOL6c with ANSWER1a).
                 said: _driver.Said(adapter, selection, sessionId),
                 resume: resume,
-                // A park's note is replaced while it works; an ended record's keeps what ended it and says it goes on (MSG1b),
-                // with another agent's findings where those are all it goes on with (XAGENT1e), never "your words".
-                workingNote: park.Parked ? Continuations.WorkingNoted
-                    : findings && !persons ? Continuations.GoingOnWithFindingsNoted
-                    : helper && !persons ? Continuations.GoingOnWithHelperNoted
-                    : Continuations.GoingOnNoted,
                 goOn: GoOnWith(adapter, target, selection, rules.File, handed),
                 // BGWAIT1b: a resumed run waits on its own background work as a start does, by the same judgement; where its
                 // quest was closed as the look planned it, never (D83, D105 §3, D137 §2.3).
                 waitsOnBackground: Driver.WaitsOnBackground(service, quest, sessionId, resumed: true),
-                working: () => starting?.Dispose(),
                 stopMade: stop => stoppedFirst = stop,
+                movedFirst: true,
+                spawned: () => spawned = true,
                 conclude: (exitCode, used, turnFailed, ended) =>
                     ConcludeResumedAsync(quest, park, adapter, selection, resume, workTree, transcript, before, exitCode, used, turnFailed, ended,
                         openedAt, ct))
                 .ConfigureAwait(false);
             return (run, refusedWhy, resume.Spoken);
+        }
+        catch (Exception error) when (!spawned && !(error is OperationCanceledException && ct.IsCancellationRequested))
+        {
+            // 🔴 No run started (SAIDBACK1e): the record the move took up goes back with its words, never `failed` with them, and
+            // they are handed on as when its conversation could not be resumed, as a failed spawn handed them on before the move.
+            return await PutBackAsync(quest, park, agent, ContinueWhy.Of(ContinueWhy.Refused)).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -254,18 +278,18 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                     $"{closed.State}  session {sessionId} (#{quest.Id} → {quest.To}) [resumed its conversation]: {closed.Note}",
                     true,
                     new SessionEnded(sessionId, quest.To, closed.State, ByPerson: first.ByPerson, closed.Note, Quest: quest.Id, Adapter: agent)),
-                    null, resume.Spoken);
+                    null, resume?.Spoken ?? false);
             }
 
             return (new StartRun(
                 $"stopped  session {sessionId} (#{quest.Id} → {quest.To}): the driver was stopped.",
                 true,
-                new SessionEnded(sessionId, quest.To, "stopped", ByPerson: true, Quest: quest.Id, Adapter: agent)), null, resume.Spoken);
+                new SessionEnded(sessionId, quest.To, "stopped", ByPerson: true, Quest: quest.Id, Adapter: agent)), null, resume?.Spoken ?? false);
         }
         catch (Exception error)
         {
-            // Failed after it was working: a failure, which the strikes bound. Failed before, the record is still parked or
-            // ended, and refuses that move, so the words are handed on as any fallback hands them.
+            // Failed once its process started: a failure, which the strikes bound. Where the ledger refuses that move, the record
+            // moved on first; a park is ended as a fallback ends it where the ledger takes that, and its words handed on.
             try
             {
                 await service.AdvanceAsync(sessionId, "failed", Observation.Failure(error.Message), ct: CancellationToken.None).ConfigureAwait(false);
@@ -275,7 +299,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 var reason = ContinueWhy.Of(ContinueWhy.Refused);
                 if (await EndParkAsync(park, reason, agent, CancellationToken.None).ConfigureAwait(false) is null)
                 {
-                    return (null, reason, resume.Spoken);
+                    return (null, reason, resume?.Spoken ?? false);
                 }
             }
             catch (Exception)
@@ -286,7 +310,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             return (new StartRun(
                 $"failed  session {sessionId} (#{quest.Id} → {quest.To}): {error.Message}",
                 true,
-                new SessionEnded(sessionId, quest.To, "failed", ByPerson: false, error.Message, Quest: quest.Id, Adapter: agent)), null, resume.Spoken);
+                new SessionEnded(sessionId, quest.To, "failed", ByPerson: false, error.Message, Quest: quest.Id, Adapter: agent)), null, resume?.Spoken ?? false);
         }
         finally
         {
@@ -456,6 +480,47 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                     ByPerson: stop is { ByPerson: true }, conclusion.Note,
                     Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile)), null);
     }
+
+    /// <summary>
+    /// The record the move to working took up goes back where no run of it started (SAIDBACK1e, D137 §2.4), its words waiting on
+    /// it again, as <see cref="Continuations.PutBack"/> says. A run that could not start is a resume refused (<paramref name="why"/>):
+    /// the machine log says so, and the caller hands the words on as any fallback does, or marks them where nothing carries them
+    /// on. Every word taken back first (no reason): nothing is sent and nothing holds it. Where the ledger will not move it back,
+    /// its refusal holds the start, and the next look reads the record as it now is.
+    /// </summary>
+    private async Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> PutBackAsync(
+        QuestView quest, PriorSession park, string agent, ContinueReason? why)
+    {
+        var (state, note, interrupted, limit) = Continuations.PutBack(park, why);
+        try
+        {
+            // Never cancelled: a record left working with no run is the orphan sweep's to end, its words with it.
+            await _context.Service.AdvanceAsync(park.Session, state, note, ct: CancellationToken.None, interrupted: interrupted, limit: limit)
+                .ConfigureAwait(false);
+        }
+        catch (Exception refused) when (refused is DriverException or HttpRequestException)
+        {
+            return (new StartRun(
+                $"held  #{quest.Id} → {quest.To}: session {park.Session} could not be put back as it was: {refused.Message}",
+                false, null, refused.Message), null, false);
+        }
+
+        if (why is null) return (TakenBackFirst(quest, park.Session), null, false);
+        _context.Service.AccountSaid(Took(park, agent, why));
+        return (null, why, false);
+    }
+
+    /// <summary>
+    /// The record a fallback goes on from, its words as they stand now (SAIDBACK1f, <see cref="Continuations.HandedOn"/>): the
+    /// look's words may have been taken back since, and one taken back must never reach an agent.
+    /// </summary>
+    internal async Task<PriorSession> HandedOnRecordAsync(PriorSession look, CancellationToken ct) =>
+        look.Parked ? look : Continuations.HandedOn(look, await ReadAgainAsync(_context.Service, look.Session, ct).ConfigureAwait(false));
+
+    /// <summary>The look's line where every word waiting on the record was taken back before it went on (SAIDBACK1d, SAIDBACK1e).</summary>
+    internal static StartRun TakenBackFirst(QuestView quest, string session) => new(
+        $"held  #{quest.Id} → {quest.To}: every word waiting on session {session} was taken back before it went on; nothing is sent.",
+        false);
 
     /// <summary>The record as it stands now, or null where it cannot be read: the look's words are then what there is (SAIDBACK1d).</summary>
     private static async Task<PriorSession?> ReadAgainAsync(ServiceClient service, string sessionId, CancellationToken ct)
