@@ -6,9 +6,10 @@ import { useRegistry } from '../data/queries';
 import { useScope } from '../data/scope';
 import { SessionConsole } from '../work/SessionConsole';
 import {
-  useAccountUse, useAccounts, useHarnessAction, useHarnesses, useRefreshHarnesses, useRuleAction, useRuleProposal, useRules,
+  useAccountUse, useAccounts, useHarnessAction, useHarnesses, useRefreshHarnesses, useRuleAction, useRules,
   useSetAgentSettings, useUsage,
 } from '../bridge/shell';
+import { useRuleAnswer } from '../work/ruleAnswer';
 import { SignIn } from './SignIn';
 import { byTool, type Tool } from './tools';
 import { failure, type Notify, useErrorNotify } from '../design/ui';
@@ -158,7 +159,8 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, ins
   const accountUse = useAccountUse();
   const rules = useRules();
   const ruleAct = useRuleAction();
-  const settle = useRuleProposal();
+  // A proposal's answer, its one owner (PROPOSEHERE1b): *What needs you* and the session's conversation press the same.
+  const ruleAnswer = useRuleAnswer({ notify });
   const registry = useRegistry('machine');
   // The workspace the window looks at: the one chosen, or the only one there is, as the application's circle (ACCTUX4c).
   const chosenScope = useScope();
@@ -169,7 +171,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, ins
   const door = tool.doors[0]!.harness;
   const product = tool.product ?? tool.name;
   const use = agentOf(accounts.data, tool.name);
-  const busy = acting || act.isPending || accountUse.isPending || ruleAct.isPending || settle.isPending;
+  const busy = acting || act.isPending || accountUse.isPending || ruleAct.isPending || ruleAnswer.busy;
   // The new account this agent's sign-in kept, waiting on its name and its lists (UX7b): the add flow's step 3.
   const addedHere = added && added.harness === door ? added : null;
   // A key added here asks the same question (the UX7 design §4.5, ACCTUX3): by its id and its key's handle, held while the
@@ -293,14 +295,10 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, ins
         },
         onError,
       }),
+      // This card's press is *Accept*, whatever the proposal does, so its sentence says it so.
       onAnswer: (id, accept) => {
         const proposal = rules.data?.proposals?.find((one) => one.id === id);
-        settle.mutate({ id, accept }, {
-          onSuccess: () => notify(t(accept ? 'settings.rules.proposals.accepted' : 'settings.rules.proposals.declined', {
-            change: proposal ? proposalChange(proposal) : `#${id}`,
-          })),
-          onError,
-        });
+        ruleAnswer.settled(id, accept, proposal ? proposalChange(proposal) : `#${id}`, 'accept').then((said) => notify(said), onError);
       },
     },
   };

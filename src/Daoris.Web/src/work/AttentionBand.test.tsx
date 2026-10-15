@@ -318,7 +318,8 @@ describe('What needs you on a machine', () => {
     expect(asked()).not.toContain('RULE_PROPOSAL');
     await userEvent.click(within(row).getByRole('button', { name: 'Allow' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', { payload: { id: 'p0000002', accept: true } }));
-    expect(notify).toHaveBeenCalledWith('Accepted: allow WebFetch for every session on this machine. Sessions started from now on are handed it.');
+    // Said as it was pressed, *Allow* (PROPOSEHERE1b): the conversation's card answers through the same owner.
+    expect(notify).toHaveBeenCalledWith('Allowed: allow WebFetch for every session on this machine. Sessions started from now on are handed it.');
   });
 
   it('declines a widening in one press', async () => {

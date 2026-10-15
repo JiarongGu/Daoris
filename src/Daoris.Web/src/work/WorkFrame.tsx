@@ -11,7 +11,7 @@ import {
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useSessionDiff,
-  useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun,
+  useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules,
 } from '../bridge/shell';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
 import { opinionAsked, opinionHolds } from './opinion';
@@ -24,7 +24,9 @@ import type { Session } from '../data/api';
 import type { HeadLink, HeadOpinion, HeadReview, WorkAsk } from './SessionHead';
 import { type WaitProps, WaitStrip } from './WaitStrip';
 import { type AnchorWait, anchorOf, waitEvents } from './anchors';
-import { waitsOf } from './waits';
+import type { RuleAsk } from './ProposedRules';
+import { useRuleAnswer } from './ruleAnswer';
+import { rulesAsked, waitsOf } from './waits';
 import { sayDiscard } from '../settings/Sweep';
 import { doorOf, toolOf } from '../agents/tools';
 import { agentOf, machineScope, workspaceScope } from '../settings/accounts';
@@ -638,6 +640,10 @@ export function WorkFrame({
   // park's answer, a session that ended, or one winding up. A send that did not arrive gives the words back to the box, as
   // a message does (REV3).
   const say = useSay();
+  // The rules agents proposed (PERM2, D74), the band's own read, and their answer's one owner: the attended session's own open
+  // ones are a wait where the person talks to it (PROPOSEHERE1b, D168 point 2). The machine's file, so a browser has none.
+  const ruleState = useRules();
+  const ruleAnswer = useRuleAnswer({ notify });
   const onSay = (text: string) => {
     if (!attended || !text || box.kind === 'none' || box.kind === 'line' || box.kind === 'chat') return;
     const session = attended.id;
@@ -1306,6 +1312,16 @@ export function WorkFrame({
     // The go-aheads it asked, answerable only where this machine can answer the park (KNOWUSE1a2).
     goAheads,
     onGoAhead: here ? onGoAhead : undefined,
+    // The rules it proposed (PROPOSEHERE1b): settled through the band's own door, then, on an *Allow*, the session told so as its
+    // next turn, which is composed with the rule. One that takes no words now (its box's line, an intake) is not told, and says so.
+    rules: {
+      proposals: ruleState.data?.proposals,
+      onAnswer: here
+        ? (proposal, accept, answered) => ruleAnswer.answer(proposal, accept, answered, intake || box.kind === 'line' ? null : attended.id)
+        : undefined,
+      busy: ruleAnswer.busy,
+      heard: !intake && box.kind !== 'line',
+    },
     // Its review, wherever the review stands (SESS2 H4): the move beside unlanded work.
     onReview: () => openView('review'),
     // LAND4: commits its tree holds, offered to land beside what it left; the press is the review's Accept, its sentence said
@@ -1351,6 +1367,14 @@ export function WorkFrame({
     open: workAsk?.session === attended.id && workAsk.at === at,
     onOpen: (open) => setWorkAsk((was) => (open
       ? { session: attended.id, at }
+      : was?.session === attended.id && was.at === at ? null : was)),
+  } : undefined);
+  // And a rule's *Allow…* (PROPOSEHERE1b), by the proposal it asks about: open in the head or at the foot, never both.
+  const [ruleAsk, setRuleAsk] = useState<{ session: string; id: string; at: 'head' | 'foot' } | null>(null);
+  const ruleAskAt = (at: 'head' | 'foot'): RuleAsk | undefined => (attended ? {
+    open: ruleAsk?.session === attended.id && ruleAsk.at === at ? ruleAsk.id : null,
+    onOpen: (id) => setRuleAsk((was) => (id !== null
+      ? { session: attended.id, id, at }
       : was?.session === attended.id && was.at === at ? null : was)),
   } : undefined);
   // *To the top* from the strip (D168 point 1): the record's head, where every wait stands with its reading, the focus with it.
@@ -1703,6 +1727,7 @@ export function WorkFrame({
             // What waits on the person, and every press on it: the strip at the foot is handed the same (D168 point 3).
             {...waits}
             workAsk={workAskAt('head')}
+            ruleAsk={ruleAskAt('head')}
             toEvent={toEvent}
             quest={quest}
             opening={attended ? openings[attended.id] : null}
@@ -1780,7 +1805,10 @@ export function WorkFrame({
                   onUsage={onUsage}
                   onWaiting={onWaiting}
                   // Each wait's raising event, and the way between them (WAITFOOT1c, D168 point 4).
-                  waits={waits ? { waits: standing, goAheads: waits.goAheads, opinion: opinionAsked(waits.landing)?.opinion ?? null } : undefined}
+                  waits={waits ? {
+                    waits: standing, goAheads: waits.goAheads, opinion: opinionAsked(waits.landing)?.opinion ?? null,
+                    proposals: rulesAsked(waits.rules?.proposals, attended.id),
+                  } : undefined}
                   onAnchors={(session, state) => setAnchored({ session, ...state })}
                   onToWait={(wait) => {
                     const anchor = anchorOf(wait);
@@ -1820,6 +1848,7 @@ export function WorkFrame({
             // The box below takes the park's answer: a driven park's answer box, or a parked chat's composer.
             answerBelow={answerBelow}
             workAsk={workAskAt('foot')}
+            ruleAsk={ruleAskAt('foot')}
             onTop={toTop}
             toEvent={toEvent}
             seek={toWait?.session === attended.id ? toWait : null}
