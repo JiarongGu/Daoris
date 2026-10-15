@@ -39,6 +39,20 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
         string earlier, string adapter, DriverConfig config, HelpMachine machine,
         Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
     {
+        var placed = await PlaceHelpFromAsync(earlier, adapter, config, ct).ConfigureAwait(false);
+        return placed.SessionId is null
+            ? new(null, placed.Message)
+            : await runner.RunHelpAsync(placed, config, _ => Task.FromResult<HelpMachine?>(machine), onEnded, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The part of <see cref="StartHelpFromAsync"/> a person's press waits for (HELPSTART1b): the room's running conversation set
+    /// aside, the new one placed as <see cref="ChatRunner.PlaceHelpAsync"/> places one, and the earlier one's words kept for it.
+    /// The room is read and the agent spawned after, by <see cref="ChatRunner.RunHelpAsync"/>, off the request. A conversation
+    /// not placed comes back with a null id and the sentence why; its message is what the finished start says.
+    /// </summary>
+    public async Task<HelpPlaced> PlaceHelpFromAsync(string earlier, string adapter, DriverConfig config, CancellationToken ct = default)
+    {
         if (context.Closing) return new(null, "the application is closing, so no conversation starts now.");
 
         var kept = new HelpConversations(context.Home);
@@ -51,8 +65,8 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
 
         if (await SetAsideHelpAsync(null, ct).ConfigureAwait(false) is { } answering) return new(null, $"{HeldWords.AnsweringWhy(answering)}.");
 
-        var start = await runner.StartHelpAsync(adapter, config, machine, onEnded, ct).ConfigureAwait(false);
-        if (start.SessionId is not { } id) return start;
+        var placed = await runner.PlaceHelpAsync(adapter, config, ct).ConfigureAwait(false);
+        if (placed.SessionId is not { } id) return placed;
 
         try
         {
@@ -62,10 +76,10 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {
-            return new(id, $"Ask Daoris `{id}` opened, but conversation `{earlier}`'s words could not be kept for it: {error.Message}");
+            return placed with { Message = $"Ask Daoris `{id}` opened, but conversation `{earlier}`'s words could not be kept for it: {error.Message}" };
         }
 
-        return new(id, $"Ask Daoris `{id}` opened from conversation `{earlier}`: its words go with your first message.");
+        return placed with { Message = $"Ask Daoris `{id}` opened from conversation `{earlier}`: its words go with your first message." };
     }
 
     /// <summary>

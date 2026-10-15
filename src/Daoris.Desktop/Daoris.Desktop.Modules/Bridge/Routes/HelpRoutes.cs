@@ -154,11 +154,13 @@ public sealed class HelpRoutes(DriverContext context)
         var at = DateTimeOffset.UtcNow;
         var kept = _loop.SessionsLooked.Within(HelpRoomLookLog.Recent, at);
         var sessions = kept;
+        var times = new LookTimes();
         if (sessions is null)
         {
             try
             {
-                sessions = await SessionGroups.LookAsync(service, config, _context.Door(config), _loop.Look.Latest, _loop.Home, null, cancellationToken).ConfigureAwait(false);
+                sessions = await SessionGroups.LookAsync(
+                    service, config, _context.Door(config), _loop.Look.Latest, _loop.Home, null, cancellationToken, times: times).ConfigureAwait(false);
                 _loop.SessionsLooked.Keep(sessions, at);
             }
             catch (DriverException)
@@ -168,7 +170,7 @@ public sealed class HelpRoutes(DriverContext context)
         }
 
         sessions = sessions is null ? null : sessions with { Waits = _loop.Look.Waits };
-        HelpRoomLookLog.Said(_loop.Log, looking.Elapsed, sessions is not null, kept: kept is not null);
+        HelpRoomLookLog.Said(_loop.Log, looking.Elapsed, sessions is not null, kept: kept is not null, times: times);
 
         // What each workspace keeps of finished work (HIST1f-c), the workspaces `daoris-driver history` reads; null where the
         // service could not be read, and the room says so.
@@ -1015,15 +1017,26 @@ public sealed class HelpRoutes(DriverContext context)
         var id = await HelpConversationOfAsync(PayloadHelper.GetRequiredValue<string>(request.Payload, "id"), cancellationToken)
             .ConfigureAwait(false);
         var chat = _loop.Chat ?? throw NotReady();
-        var service = _loop.Service ?? throw NotReady();
-        var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
-        var machine = await HelpMachineAsync(service, config, snapshot, cancellationToken).ConfigureAwait(false);
-        var start = await chat.StartHelpFromAsync(
-            id, helper, config, machine, onEnded: (session, state) => DriverLoop.Ended(_events, session, state),
-            ct: cancellationToken).ConfigureAwait(false);
+        _ = _loop.Service ?? throw NotReady();
 
-        _loop.Nudge();
-        return new { start.SessionId, start.Message, From = id };
+        // Placed as START_HELP places one (HELPSTART1b): answered once the record is open and the earlier words kept; the room is
+        // read through the loop's DescribeHelp and the agent spawned after, off the request, so a slow room cannot pass the page's bound.
+        var starting = _loop.HelpStarting;
+        await starting.Placing.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var place = await chat.PlaceHelpFromAsync(id, helper, config, cancellationToken).ConfigureAwait(false);
+            if (place.SessionId is not { } placedId) return new { SessionId = (string?)null, place.Message, From = id };
+
+            starting.Placed(placedId);
+            _ = Task.Run(() => RunPlacedAsync(chat, place, config));
+            _loop.Nudge();
+            return new { SessionId = placedId, place.Message, From = id };
+        }
+        finally
+        {
+            starting.Placing.Release();
+        }
     }
 
     /// <summary>

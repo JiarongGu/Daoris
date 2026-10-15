@@ -704,26 +704,34 @@ public static class SessionGroups
     /// </param>
     public static async Task<SessionLook> LookAsync(
         ServiceClient service, DriverConfig config, SessionWire door, IReadOnlyList<Consideration>? lastLook, string home,
-        IReadOnlyCollection<string>? only = null, CancellationToken ct = default, Func<string?, string?, CoolingEntry?>? coolingOf = null)
+        IReadOnlyCollection<string>? only = null, CancellationToken ct = default, Func<string?, string?, CoolingEntry?>? coolingOf = null,
+        LookTimes? times = null)
     {
-        var records = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
-        var quests = await service.EveryQuestAsync(ct).ConfigureAwait(false);
-        var considered = await VerdictsAsync(service, config, door, lastLook, ct).ConfigureAwait(false);
+        // Each step timed where the caller asked (HELPROOM1); a look nobody times runs its steps as they are.
+        var asked = times is not null;
+        times ??= new LookTimes();
+        var records = await times.TimeAsync("records", () => service.SessionRecordsJsonAsync(ct)).ConfigureAwait(false);
+        var quests = await times.TimeAsync("quests", () => service.EveryQuestAsync(ct)).ConfigureAwait(false);
+        var considered = await times.TimeAsync("verdicts", () => VerdictsAsync(service, config, door, lastLook, ct)).ConfigureAwait(false);
         var trees = new SessionTrees(home);
-        var look = SessionLook.From(records, quests, considered, config.ForgivenAt) with
+        var look = times.Time("marks", () =>
         {
-            Archived = new SessionArchive(home).Marks(),
-        };
-        // What each quest's last session here could not go on with (MSG1f2), read as the planner's snapshot reads it.
-        look = look with { Unable = new GoOnMarks(home).For(look.LastRun.Values) };
-        look = look with { Kept = new SessionDeletion(home).Kept(look.Records) };
+            var gathered = SessionLook.From(records, quests, considered, config.ForgivenAt) with
+            {
+                Archived = new SessionArchive(home).Marks(),
+            };
+            // What each quest's last session here could not go on with (MSG1f2), read as the planner's snapshot reads it.
+            gathered = gathered with { Unable = new GoOnMarks(home).For(gathered.LastRun.Values) };
+            return gathered with { Kept = new SessionDeletion(home).Kept(gathered.Records) };
+        });
         // MSG1f3: what holds words the planner cannot see, a chat's runner and a cool-off a fresh plan missed. The home's roster
         // is built only where a record asks it, since most looks hold no words waiting.
         var roster = new Lazy<Func<string?, string?, CoolingEntry?>>(() => CoolingOn(home));
-        look = Waiting(
+        look = times.Time("waiting", () => Waiting(
             look, records, home, config.Adapter, fresh: lastLook is null,
-            coolingOf ?? ((adapter, profile) => roster.Value(adapter, profile)), TimeZoneInfo.Local);
-        return await JudgeAsync(look, trees.Holds, trees.WorkAsync, only, ct).ConfigureAwait(false);
+            coolingOf ?? ((adapter, profile) => roster.Value(adapter, profile)), TimeZoneInfo.Local));
+        if (asked) times.Trees = TreesToJudge(look, trees.Holds, only).Count;
+        return await times.TimeAsync("trees", () => JudgeAsync(look, trees.Holds, trees.WorkAsync, only, ct)).ConfigureAwait(false);
     }
 
     /// <summary>
