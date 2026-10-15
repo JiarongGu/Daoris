@@ -287,40 +287,59 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
         var branch = $"daoris/{name}";
         var path = Path.Combine(TreesRoot, workspace, repository, name);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        // OPENCUT1: a folder that was there before the add is never this open's to delete.
+        var ours = !Directory.Exists(path);
 
-        // 🔴 Long paths (2026-09-27): a tree's prefix is longer than the root's, so a repository whose
-        // deepest file fits under its root can cross Windows' 260 characters here. The first real
-        // workspace did, and every tick's `worktree add` failed. `WorkingTree.GitAsync` says
-        // `core.longpaths` on every call since, removal and status included (2026-09-28).
-        var (code, _, stderr) = await WorkingTree.GitAsync(
-            root, ["worktree", "add", "-b", branch, path, start], ct)
-            .ConfigureAwait(false);
-        if (code != 0)
-        {
-            // 🔴 `worktree add -b` makes the branch before it checks anything out, so a failure used to
-            // leave one behind on every tick: sixteen on the first real workspace. It is this call's own,
-            // made a moment ago under a name nothing else uses, so it goes, and the repository is left
-            // as it was found.
-            await WorkingTree.GitAsync(root, ["branch", "-D", branch], ct).ConfigureAwait(false);
-            throw new DriverException(
-                $"could not open a session tree for `{repository}` — git said: {Failure(stderr)}");
-        }
-
-        // Where the branch started (WSR6), the moment it exists: bringing it up to date after the line moves cuts
-        // here, so a chain's step replays only its own commits once the step before's are on the line.
         string? unrecorded = null;
-        var (headCode, head, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct)
-            .ConfigureAwait(false);
-        if (headCode == 0)
+        try
         {
-            try
+            // 🔴 Long paths (2026-09-27): a tree's prefix is longer than the root's, so a repository whose
+            // deepest file fits under its root can cross Windows' 260 characters here. The first real
+            // workspace did, and every tick's `worktree add` failed. `WorkingTree.GitAsync` says
+            // `core.longpaths` on every call since, removal and status included (2026-09-28).
+            // OPENCUT1: locked while it opens, the lock's reason naming this process, so a later look tells an open a kill cut
+            // off from a person's lock (TreeStrays); let go of below, once where its branch started is recorded.
+            var (code, _, stderr) = await WorkingTree.GitAsync(
+                root, ["worktree", "add", "--lock", "--reason", TreeOpenings.LockReason(Environment.ProcessId), "-b", branch, path, start], ct)
+                .ConfigureAwait(false);
+            if (code != 0)
             {
-                Grown.Record(new GrownBranch(repository, workspace, branch, line.Branch, head.Trim(), grewFrom, DateTimeOffset.UtcNow));
+                throw new DriverException(
+                    $"could not open a session tree for `{repository}` — git said: {Failure(stderr)}");
             }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+
+            // Where the branch started (WSR6), the moment it exists: bringing it up to date after the line moves cuts
+            // here, so a chain's step replays only its own commits once the step before's are on the line.
+            var (headCode, head, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct)
+                .ConfigureAwait(false);
+            if (headCode == 0)
             {
-                unrecorded = error.Message;
+                try
+                {
+                    Grown.Record(new GrownBranch(repository, workspace, branch, line.Branch, head.Trim(), grewFrom, DateTimeOffset.UtcNow));
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                {
+                    unrecorded = error.Message;
+                }
             }
+
+            var (unlocked, _, unlockErr) = await WorkingTree.GitAsync(root, ["worktree", "unlock", path], ct).ConfigureAwait(false);
+            if (unlocked != 0)
+            {
+                throw new DriverException(
+                    $"could not open a session tree for `{repository}` — git would not let go of the lock it opened it under: {Failure(unlockErr)}");
+            }
+        }
+        catch
+        {
+            // 🔴 `worktree add -b` makes the branch before it checks anything out, so a failure used to leave one behind on
+            // every tick: sixteen on the first real workspace. And a cancel as the app closed cut an open off inside the add,
+            // leaving a half-checked-out tree, locked, and its branch (OPENCUT1, `s-0031408d`). Whatever cut it off, the branch
+            // and the tree are this call's own, made a moment ago under a name nothing else uses and handed to nobody, so they
+            // go, and the repository is left as it was found. A kill leaves them for the look (TreeStrays).
+            await TreeOpenings.UndoAsync(root, path, branch, ours).ConfigureAwait(false);
+            throw;
         }
 
         // What it grew from as a fact (LANG1a): the branch it started at, never the sentence spelling it for a person.
