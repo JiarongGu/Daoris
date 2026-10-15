@@ -486,6 +486,9 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("CHANNEL_READ", "", null)]
     [InlineData("ASKS_ELSEWHERE", "", null)]
     [InlineData("REGISTRY_REFRESH", "registry", null)]
+    // LAYOUT8: a set-up's press publishes one ask, whose quest it becomes, and adds the repository's rule; its plan reads.
+    [InlineData("SETUP_PRESS", "quests,asks,rules", null)]
+    [InlineData("SETUP_PLAN", "", null)]
     [InlineData("TOOLS_USE", "tools", null)]
     [InlineData("TOOLS_DOWNLOAD", "tools", null)]
     [InlineData("TOOLS_DELETE", "tools", null)]
@@ -502,7 +505,8 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("HELP_PIN", "sessions,help", "id")]
     [InlineData("HELP_START_FROM", "sessions,help", "id")]
     [InlineData("HELP_DISMISS", "help", null)]
-    [InlineData("HELP_APPLY", "sessions,quests,asks,driver,history,registry,plugins,harnesses,help,browser", null)]
+    // LAYOUT8: a set-up's Apply adds the repository's rule, so an Apply may move the rules too.
+    [InlineData("HELP_APPLY", "sessions,quests,asks,driver,rules,history,registry,plugins,harnesses,help,browser", null)]
     [InlineData("HELP_PROPOSALS", "", null)]
     [InlineData("HELP_CONVERSATIONS", "", null)]
     [InlineData("STOP_TASK", "", null)]

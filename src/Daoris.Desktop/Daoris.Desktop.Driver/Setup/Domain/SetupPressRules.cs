@@ -86,8 +86,11 @@ public static partial class SetupPressRules
             ? major
             : null;
 
-    /// <summary>Whether <c>daoris --version</c> printed a version: numbers and dots, as the CLI prints its own.</summary>
-    internal static bool IsVersion(string? version) => version is not null && DaorisVersion().IsMatch(version.Trim());
+    /// <summary>
+    /// Whether <c>daoris --version</c> printed a version: numbers and dots, as the CLI prints its own. Public since LAYOUT8, so
+    /// the screen's plan says a version only where one was answered, as the terminal's does.
+    /// </summary>
+    public static bool IsVersion(string? version) => version is not null && DaorisVersion().IsMatch(version.Trim());
 
     private static string Said(string? text)
     {

@@ -54,6 +54,7 @@ public sealed class HelpProposalBox(string? home)
         ("pause", "pause_propose"),
         ("clear", "clear_propose"),
         ("workflow", "workflow_propose"),
+        ("setup", "setup_propose"),
     ];
 
     private readonly HelpProposalFile file = new(home);
@@ -147,4 +148,8 @@ public sealed class HelpProposalBox(string? home)
         string? scope, string? workflow, int? baseVersion, string? steps, bool choose,
         string? changes, string? kind, string? import, string why, string? session, DateTimeOffset at, string? name = null) =>
         new HelpWorkflowProposalWriter(file).Propose(scope, workflow, baseVersion, steps, choose, changes, kind, import, why, session, at, name);
+
+    /// <inheritdoc cref="HelpSetupProposalWriter.Propose"/>
+    public (string? Id, string Message) ProposeSetup(string repository, string why, string? session, DateTimeOffset at) =>
+        new HelpSetupProposalWriter(file).Propose(repository, why, session, at);
 }

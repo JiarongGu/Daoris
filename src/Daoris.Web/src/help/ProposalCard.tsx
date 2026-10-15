@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { ago } from '../locales/format';
+import { SetupPlanFacts, type SetupShown } from '../projects/SetUpForAgents';
 import { RequirementItem } from '../quests/Requirements';
 import { Button, Inline } from '../design/ui';
 
@@ -39,7 +40,7 @@ export type HelpProposal = {
   id: string;
   /** A move to a workspace (`repository`, ENTRY1d1) has no card of its own: its sentence, Apply and Not now. */
   /** Archiving or unarchiving sessions (`session`, SESSUX1h2a) is the generic card too, with its command. */
-  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'hand' | 'browser' | 'sync' | 'accept' | 'repository' | 'session' | 'pause' | 'clear' | 'workflow';
+  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'hand' | 'browser' | 'sync' | 'accept' | 'repository' | 'session' | 'pause' | 'clear' | 'workflow' | 'setup';
   describe: string;
   terminal: string;
   why: string;
@@ -50,6 +51,8 @@ export type HelpProposal = {
   accept?: HelpAcceptShown | null;
   /** A workflow version (`workflow`, WORKFLOW1h-a): drawn as the design's card (WORKFLOW1h-d). */
   workflow?: HelpWorkflowShown | null;
+  /** A repository set up for every agent (`setup`, LAYOUT8): the press's plan, as the repository's page shows it. */
+  setup?: SetupShown | null;
 };
 
 /**
@@ -246,6 +249,9 @@ function SyncApart({ apart }: { apart: string[] }) {
  *
  * **A workflow version reads in the design's order** (WORKFLOW1h-d, §8.2): *Your part* first, then the steps' diff, the acts that
  * become standing, what is needed first and who it applies to. A draft (needs present) offers only *Not now*.
+ *
+ * **A set-up shows its plan first** (LAYOUT8, D170 point 1): what was read on the repository's line, the rule its press adds
+ * and the quest's whole text, drawn as the repository's page draws them before its own press (`SetupPlanFacts`).
  */
 export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: {
   proposal: HelpProposal;
@@ -263,6 +269,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
   const accepting = proposal.kind === 'accept';
   const departures = accepting ? proposal.accept?.departures ?? [] : [];
   const workflow = proposal.kind === 'workflow' ? proposal.workflow ?? null : null;
+  const setup = proposal.kind === 'setup' ? proposal.setup ?? null : null;
   // A draft (WORKFLOW1h-b): what is still needed leaves no Apply, only Not now.
   const draft = workflow !== null && workflow.needs.length > 0;
 
@@ -277,12 +284,14 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
             : proposal.kind === 'plugin' ? 'help.proposal.titlePlugin'
               : handing ? 'help.proposal.titleHand'
                 : syncing ? 'help.proposal.titleSync'
-                  : accepting ? 'help.proposal.titleAccept' : workflow ? 'help.proposal.titleWorkflow' : 'help.proposal.title')}
+                  : accepting ? 'help.proposal.titleAccept' : workflow ? 'help.proposal.titleWorkflow'
+                    : proposal.kind === 'setup' ? 'help.proposal.titleSetup' : 'help.proposal.title')}
       </p>
       {workflow
         ? <WorkflowChange workflow={workflow} />
         : <p className="m-0 mt-1 text-small text-ink"><Inline text={proposal.describe} /></p>}
       {plugin && <PluginRuns plugin={plugin} />}
+      {setup && <SetupPlanFacts plan={setup} />}
       {departures.length > 0 && (
         <ol aria-label={t('help.proposal.departures')} className="m-0 mt-2 grid list-none gap-2.5 p-0">
           {departures.map((departure) => (

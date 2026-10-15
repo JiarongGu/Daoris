@@ -54,6 +54,23 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("quest_publish", tool == "quest_publish" ? "quest_publish " + text : text);
     }
 
+    /// <summary>
+    /// LAYOUT8: the set-up tool says it only proposes the press, which publishes one quest to the repository's own session and
+    /// adds the rule its session needs, and that Daoris never writes into the repository; a repository is named, never a folder.
+    /// </summary>
+    [Fact]
+    public void The_setup_tool_says_it_proposes_the_press_and_never_writes_into_the_repository()
+    {
+        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "setup_propose").Select(d => d.Text));
+
+        Assert.Contains("Ask Daoris only", text);
+        Assert.Contains("one quest", text);
+        Assert.Contains("its own session", text);
+        Assert.Contains("rule", text);
+        Assert.Contains("never writes into the repository", text);
+        Assert.Contains("never its folder", text);
+    }
+
     /// <summary>WORKFLOW1h-a: the workflow tool says it only proposes, wants whole steps, and names the parts not proposed yet.</summary>
     [Fact]
     public void The_workflow_tool_says_it_only_proposes_whole_steps()
