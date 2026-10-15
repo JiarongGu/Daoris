@@ -36,6 +36,11 @@ export type SendingTo = {
    * meanwhile (D137 §2.4, USERSHOWN1), so its end says nothing of them.
    */
   endedChat: boolean;
+  /**
+   * The driver now says nothing takes words for it (the box became the line, SENDLOST1c). Said after a send the page stopped
+   * waiting on, it is the driver's refusal arriving late: words its record does not hold never arrived.
+   */
+  refused?: boolean;
 };
 
 /** Whether a session holds words sent to it: waiting in its queue, or said in its record since they were sent. */
@@ -86,7 +91,7 @@ export function useSettled(
   giveBack: (sent: Sent) => void,
 ) {
   const { to, queued, late, settle } = sending;
-  const ended = to?.endedChat === true;
+  const ended = to?.endedChat === true || to?.refused === true;
   useEffect(() => {
     if (late.length === 0) return;
     const arrived = late.filter((each) => holds(each, queued, record.events));

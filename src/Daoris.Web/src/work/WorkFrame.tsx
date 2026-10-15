@@ -503,14 +503,19 @@ export function WorkFrame({
   // only while some wait). A chat that ended without them gives them back, said so; a driven session keeps words once they
   // arrive.
   const sending = useSending(attended && here && !oneTurn
-    ? { id: attended.id, queued: chatTurns[attended.id]?.queued, endedChat: conversation && !live }
+    ? { id: attended.id, queued: chatTurns[attended.id]?.queued, endedChat: conversation && !live, refused: box.kind === 'line' }
     : null);
   const giveBackSent = (sent: Sent) => {
     setDraft((was) => [sent.words.text, was.trim()].filter(Boolean).join('\n\n'));
     if (sent.words.files.length > 0) {
       notify(t('work.composer.filesNotSent', { count: 1, names: sent.words.files.join(', ') }), 'error');
     }
-    setRefusal({ session: sent.session, text: t('work.composer.notSent') });
+    // SENDLOST1c: where the driver's refusal came after the page stopped waiting, the box is now a line, so the words are
+    // said under it as well as kept for the box.
+    setRefusal({
+      session: sent.session,
+      text: box.kind === 'line' ? t('work.composer.notSentLine', { text: sent.words.text }) : t('work.composer.notSent'),
+    });
   };
   const taking = Object.fromEntries(Object.entries(chatTurns).map(([id, held]) => [id, held.taking]));
   // When each live chat's last turn ended here (RAIL2): its *moved*, which its record never says.
