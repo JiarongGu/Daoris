@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- While a session's work lands, its review says *Landing…* (落地中…) wherever it is shown: after *Accept…* at the session's top,
+  after switching tabs and back, and in every other open window, where it offered *Accept* again before. So too its *Discard
+  tree* waits while its tree is discarded, and its hand-off says *Handing off…* while its branch is handed to its plugin.
 - A press in one window — a session's stop, archive or delete, a work's pause, a rule, a plugin, a sync, a history clear —
   now shows in every open window at once, as an Accept already did.
 - A message you send in Sessions no longer vanishes on a busy machine. In a conversation, and in the box at the foot of any
