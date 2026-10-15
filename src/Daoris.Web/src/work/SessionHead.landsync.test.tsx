@@ -29,11 +29,13 @@ const REPLAYS = [{ commit: '2b3c4d5e', subject: 'more of the work' }, { commit: 
 const PLAN = { session: 's1a2b3c4', form: 'branch', target: 'feature/delta', leftOut: LEFT, lands: REPLAYS };
 const CONFLICT = { says: 'CONFLICT (content): Merge conflict in CHANGELOG.md.', words: 'Rebase your work onto `main`.' };
 
+const sayRebase = vi.fn(async () => true);
+
 function head(landing: unknown) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
-      <SessionHead session={session()} lands={LANDS} onLand={vi.fn()} onName={vi.fn()} landing={landing as never} />
+      <SessionHead session={session()} lands={LANDS} onLand={vi.fn()} onName={vi.fn()} onSayRebase={sayRebase} landing={landing as never} />
     </QueryClientProvider>,
   );
 }
