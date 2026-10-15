@@ -23,9 +23,13 @@ internal sealed class TreeSweeps(
     /// Judged for the look's own tidy (AUTOTIDY2a): an ignored path only the tree holds does not make it <c>dirty</c>, since the
     /// look moves the tree's folder aside rather than deleting it. The press's list and the press keep it <c>dirty</c>.
     /// </param>
+    /// <param name="landings">
+    /// For the look's own tidy (AUTOTIDY2b): the branches landings made whose work the line holds, through which a landed session
+    /// branch's work is on the line too. Null for the press's list and the press, which take a landed branch wherever it is.
+    /// </param>
     internal async Task<IReadOnlyList<SweepItem>> SweepPlanAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
-        CancellationToken ct = default, IReadOnlySet<string>? only = null, bool byItself = false)
+        CancellationToken ct = default, IReadOnlySet<string>? only = null, bool byItself = false, IReadOnlyList<LineLanding>? landings = null)
     {
         var busy = new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);
         var items = new List<SweepItem>();
@@ -58,7 +62,7 @@ internal sealed class TreeSweeps(
             {
                 items.Add((await JudgeAsync(
                     root, repository, RemoteTarget.Workspace(workspace), branch, worktrees.GetValueOrDefault(branch), line, busy, carriers, ct,
-                    follows.MovedOnTo(listed, RemoteTarget.Workspace(workspace), repository, branch), byItself)
+                    follows.MovedOnTo(listed, RemoteTarget.Workspace(workspace), repository, branch), byItself, landings)
                     .ConfigureAwait(false)).Item);
             }
         }
@@ -89,9 +93,10 @@ internal sealed class TreeSweeps(
     /// awaited to its end whatever <paramref name="ct"/> says, so a closing loop never lets go of the repository's hold while
     /// git is still removing. Cancellation is heard between branches.
     /// </remarks>
+    /// <param name="landings">The look's (AUTOTIDY2b): the branches landings made whose work the line holds, as <see cref="SweepPlanAsync"/> takes them.</param>
     internal async Task<IReadOnlyList<SweepResult>> SweepAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
-        IReadOnlySet<string>? only, bool byItself, CancellationToken ct)
+        IReadOnlySet<string>? only, bool byItself, CancellationToken ct, IReadOnlyList<LineLanding>? landings = null)
     {
         var known = repositories.ToList();
         // One look at each checkout's line for the list and every item after it, the look's own tidy's as the person's (UIFREEZE1).
@@ -99,7 +104,7 @@ internal sealed class TreeSweeps(
         var busy = new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);
         Func<SweepItem, bool> goes = byItself ? setAside.GoesByItself : item => item.Removable;
         var results = new List<SweepResult>();
-        foreach (var item in await SweepPlanAsync(known, inUse, ct, only, byItself).ConfigureAwait(false))
+        foreach (var item in await SweepPlanAsync(known, inUse, ct, only, byItself, landings).ConfigureAwait(false))
         {
             if (only is not null && !only.Contains($"{item.Repository}:{item.Branch}"))
             {
@@ -126,7 +131,7 @@ internal sealed class TreeSweeps(
             // removed, for the record of it (PLUGHOOK1a, design §2.5).
             var (now, judged) = await JudgeAsync(
                     root, item.Repository, item.Workspace, item.Branch, worktrees.GetValueOrDefault(item.Branch), line, busy, carriers, ct,
-                    follows.MovedOnTo(listed, item.Workspace, item.Repository, item.Branch), byItself)
+                    follows.MovedOnTo(listed, item.Workspace, item.Repository, item.Branch), byItself, landings)
                 .ConfigureAwait(false);
             if (!goes(now) || judged is null)
             {
@@ -241,9 +246,11 @@ internal sealed class TreeSweeps(
     /// </summary>
     /// <param name="carriers">The completed pull requests the record keeps that carried work here (PLUGHOOK1a); a branch they carried goes.</param>
     /// <param name="byItself">For the look's own tidy (AUTOTIDY2a): an ignored path only the tree holds is no keep, since the look moves the folder aside.</param>
+    /// <param name="landings">For the look's own tidy (AUTOTIDY2b): the branches landings made whose work the line holds.</param>
     private async Task<(SweepItem Item, string? Tip)> JudgeAsync(
         string root, string repository, string workspace, string branch, string? tree, string? line,
-        HashSet<string> busy, IReadOnlyList<PullRequestCarrier> carriers, CancellationToken ct, string? treeOn = null, bool byItself = false)
+        HashSet<string> busy, IReadOnlyList<PullRequestCarrier> carriers, CancellationToken ct, string? treeOn = null, bool byItself = false,
+        IReadOnlyList<LineLanding>? landings = null)
     {
         // The ignored paths its tree shares with the checkout, on every row once read (AUTOTIDY1). Whether it made commits since it
         // grew, on every row once its tip is read (AUTOTIDY2a): a tree that never moved is a conversation's place (D137), whatever its kind.
@@ -325,6 +332,9 @@ internal sealed class TreeSweeps(
             root, ["rev-list", "--count", tip, "--not", against ?? "HEAD"], ct).ConfigureAwait(false);
         // AUTOTIDY2a: for the look, the form of the line that holds it, which it names; none where only a branch of the person's does.
         var onLine = byItself ? await LineHoldingAsync(root, line, tip, ct).ConfigureAwait(false) : null;
+        // AUTOTIDY2b: or the form a landing's branch that holds it was proven on: the line holds this work through that branch, which
+        // the look takes after this one, as the press does. Waiting for the line by ancestry, a squash merge would keep both.
+        if (byItself && onLine is null) onLine = await LandingHoldingAsync(root, tip, landings, ct).ConfigureAwait(false);
         return (Item(SweepKind.Landed, int.TryParse(count.Trim(), out var n) ? n : 0, onLine ?? where) with { OnLine = onLine is not null }, tip);
     }
 
@@ -346,4 +356,28 @@ internal sealed class TreeSweeps(
     /// <summary>Whether a content proof's holder is a form of the line (<see cref="LandedProofs.LineFormsAsync"/>'s names), not a branch of the person's.</summary>
     private static bool IsLineForm(string where, string? line) =>
         line is not null && (where == line || where == $"origin/{line}");
+
+    /// <summary>
+    /// The form of the line a landing's branch holding <paramref name="tip"/> was proven on (AUTOTIDY2b), the first that holds it;
+    /// null where none does, or git could not say.
+    /// </summary>
+    private static async Task<string?> LandingHoldingAsync(string root, string tip, IReadOnlyList<LineLanding>? landings, CancellationToken ct)
+    {
+        foreach (var landing in landings ?? [])
+        {
+            var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", tip, landing.Tip], ct).ConfigureAwait(false);
+            if (code == 0) return landing.Line;
+        }
+
+        return null;
+    }
 }
+
+/// <summary>
+/// A branch a landing made whose work the line holds (AUTOTIDY2b): D102's proof found it on <paramref name="Line"/> by content or
+/// by ancestry, or its pull request's completed merge is there. A session branch whose commits it holds has its work on the line
+/// through it, so the look takes that session branch before it, as the press does, and neither waits on the other.
+/// </summary>
+/// <param name="Tip">The commit it was judged at.</param>
+/// <param name="Line">The form of the line its proof named (<c>main</c>, <c>origin/main</c>).</param>
+internal sealed record LineLanding(string Branch, string Tip, string Line);
