@@ -422,8 +422,10 @@ Indexing the whole family takes **~500 ms for 408 entries** into a 7 MB database
 it; the **database** is what persists. Every session in every repository on this machine spawns over
 the same file (`knowledge.db` under the Daoris home — `DAORIS_HOME`, which the installed desktop sets
 for the account, D63), which is how a quest published from one repository's session is waiting when
-another repository's session starts. With no home and no `DAORIS_KNOWLEDGE_DB`, the host says so on
-stderr and exits 2 rather than opening a database under the user profile.
+another repository's session starts. A host the install carries (`app/daoris-knowledge/`,
+`app/daoris-knowledge-http/`), started with no `DAORIS_HOME` — a person's own agent's `.mcp.json`, a terminal — takes the
+install's own `data/` as its home, as the driver host does (SERVICEHOME2, D171 point 1). Elsewhere, with no home and no
+`DAORIS_KNOWLEDGE_DB`, the host says so on stderr and exits 2 rather than opening a database under the user profile.
 
 **An older build never touches a newer index, and works with the rest of the store** (KSCHEMA1). The index's schema has
 a version (`user_version`): an older one is rebuilt when it opens, as before. A newer one, which only a newer Daoris
@@ -590,7 +592,7 @@ Configuration is by environment, and every variable is optional — the defaults
 
 | | |
 |---|---|
-| `DAORIS_HOME` | The Daoris home (D63) — every default below that names a file derives from it. Unset, and with the file's own variable unset too, a host refuses rather than defaulting under the profile |
+| `DAORIS_HOME` | The Daoris home (D63) — every default below that names a file derives from it. Unset, a host the install carries takes the install's own `data/` (SERVICEHOME2); elsewhere, with the file's own variable unset too, a host refuses rather than defaulting under the profile |
 | `DAORIS_KNOWLEDGE_ROOT` | Where the repositories are. Default: the folder containing this workspace |
 | `DAORIS_KNOWLEDGE_DB` | Where the index lives. Default: `$DAORIS_HOME/knowledge.db` |
 | `DAORIS_KNOWLEDGE_REPOSITORY` | The one checkout a workspace's own server serves (ORIENT1c): the bootstrap registers it alone, and each process re-reads it at its first use and once its reading is a minute old. Not a folder, and a host refuses to start. Unset: the folder of repositories, read once |

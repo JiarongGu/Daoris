@@ -24,7 +24,7 @@ export const HOME_SENTENCE =
 
 type Env = Record<string, string | undefined>;
 
-/** The file `desktop-publish` writes at an install's root, and nothing else does (the driver's `DaorisHome.InstallMarker`). */
+/** The file `desktop-publish` writes at an install's root, and nothing else does (the driver's and the service's `DaorisHome.InstallMarker`). */
 export const INSTALL_MARKER = 'INSTALLED.md';
 
 /** The folder an install's programs run from (D93), and its home beside it (D63). */
