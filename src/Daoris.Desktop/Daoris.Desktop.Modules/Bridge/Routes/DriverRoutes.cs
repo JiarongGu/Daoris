@@ -22,6 +22,14 @@ public sealed class DriverRoutes(DriverContext context)
     [DriverRoute("STATE")]
     private object? GetState(IpcRequest request) => State(_loop);
 
+    /// <summary>
+    /// What is under way (STATEHUB1c2, D169's STATEHUB1c2 note): the presses the publisher holds, whole and numbered as its last
+    /// <c>UNDER_WAY</c> telling, for a window opened or reloaded mid-press, which heard none of them; the window keeps whichever
+    /// is newer. A read: it declares nothing, is never under way, and tells nothing.
+    /// </summary>
+    [DriverRoute("UNDER_WAY")]
+    private object? GetUnderWay(IpcRequest request) => _loop.UnderWay.Now();
+
     [DriverRoute("SET_DRIVABLE")]
     [Publishes("SET_DRIVABLE", StateScopes.Driver)]
     private object? SetDrivable(IpcRequest request)

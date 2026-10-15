@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Daoris.Driver;
 using Microsoft.Extensions.DependencyInjection;
 using Shenora;
@@ -15,7 +16,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// Composed as the shell composes its dispatcher (the kit's <c>UseMessageDispatcher</c>, the middleware in its application
 /// slot), over the kit's real bus, which the bridge's base subscribes to: so what is asserted is the event a window receives.
 /// </remarks>
-public sealed class StatePublisherTests : DriverModuleBridge
+public sealed partial class StatePublisherTests : DriverModuleBridge
 {
     private static readonly JsonSerializerOptions Wire = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
@@ -59,6 +60,16 @@ public sealed class StatePublisherTests : DriverModuleBridge
         services.AddSingleton(module);
         services.UseMessageDispatcher((_, dispatcher) => dispatcher.Use(
             declared is null ? StatePublisher.Middleware(Bus) : StatePublisher.Middleware(Bus, declared)));
+        return services.BuildServiceProvider().GetRequiredService<IMessageDispatcher>();
+    }
+
+    /// <summary>The modules, over the publisher's list <paramref name="underWay"/>, as the shell composes it over its loop's.</summary>
+    private IMessageDispatcher Compose(IEnumerable<IIpcModule> modules, Func<IpcRequest, StateChange?> declared, PressesUnderWay underWay)
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<IEventBus>(Bus);
+        foreach (var module in modules) services.AddSingleton(module);
+        services.UseMessageDispatcher((_, dispatcher) => dispatcher.Use(StatePublisher.Middleware(Bus, declared, underWay)));
         return services.BuildServiceProvider().GetRequiredService<IMessageDispatcher>();
     }
 
@@ -181,6 +192,44 @@ public sealed class StatePublisherTests : DriverModuleBridge
         Assert.Equal(6, Told().Count);
         Assert.Equal("""{"seq":6,"presses":[]}""", Told()[^1]);
         Assert.Equal(2, Changed().Count);
+    }
+
+    /// <summary>
+    /// STATEHUB1c2 (D169's STATEHUB1c2 note): a window opened, or a page reloaded, while a press runs has heard none of its
+    /// tellings, so it reads the list the publisher holds, the loop's, through the driver's route: whole, numbered as the last
+    /// telling, so the window keeps whichever is newer. The read is no press: never under way, and it tells nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_window_opened_mid_press_reads_what_is_under_way_through_the_driver_s_route()
+    {
+        var held = new Held();
+        var loop = Loop();
+        var dispatcher = Compose(
+            [held, new DriverModule(Bus, loop)],
+            request => request.Module == held.ModuleName ? Declared(request) : DriverModule.Declared(request),
+            loop.UnderWay);
+        async Task<string> Read()
+        {
+            var read = await Dispatch(dispatcher, DriverModule.Name, "UNDER_WAY");
+            Assert.True(read.Success);
+            return JsonSerializer.Serialize(read.Data, Wire);
+        }
+
+        Assert.Equal("""{"seq":0,"presses":[]}""", await Read());
+
+        var moving = Dispatch(dispatcher, held.ModuleName, "MOVE", new { id = "s1" });
+        await UntilAsync(() => Told().Count == 1);
+        Assert.Equal("""{"seq":1,"presses":[{"route":"MOVE","session":"s1"}]}""", await Read());
+
+        held.Let();
+        await moving;
+        await UntilAsync(() => Told().Count == 2);
+        Assert.Equal("""{"seq":2,"presses":[]}""", await Read());
+
+        await Task.Delay(50);
+        // Three reads told nothing and changed nothing: only the press did.
+        Assert.Equal(2, Told().Count);
+        Assert.Single(Changed());
     }
 
     /// <summary>
@@ -316,6 +365,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("RETRY_QUEST", "sessions,driver", null)]
     [InlineData("SHOW_REVIEW_AGAIN", "driver", null)]
     [InlineData("STATE", "", null)]
+    [InlineData("UNDER_WAY", "", null)]
     [InlineData("NUDGE", "", null)]
     [InlineData("SET_LINE", "driver", null)]
     [InlineData("SET_LANGUAGE", "driver", null)]
@@ -392,4 +442,59 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [Fact]
     public void Only_the_driver_s_requests_are_read_against_its_marks() =>
         Assert.Null(DriverModule.Declared(new IpcRequest { Id = "x", Module = "DAORIS.WINDOWS", Type = "LAND_SESSION_TREE" }));
+
+    /// <summary>
+    /// PUBLISHTWIN1: the page's tests press the driver through a seam that publishes what each press declares, as this publisher
+    /// does (<c>src/Daoris.Web/src/test/publishing.ts</c>'s <c>DECLARED</c>, STATEHUB1f), a copy of the marks in another language
+    /// with no compiler between them. Each press it names declares here what it says there, scope for scope in the wire's order,
+    /// with the same session field, so a mark changed on one side alone fails.
+    /// </summary>
+    [Fact]
+    public void The_page_s_publishing_seam_copies_each_press_s_mark()
+    {
+        var copied = PageDeclared();
+
+        Assert.NotEmpty(copied);
+        foreach (var (route, scopes, session) in copied)
+        {
+            var declared = DriverModule.Declared(new IpcRequest { Id = "x", Module = DriverModule.Name, Type = route });
+            // The route with each side's words, so a failure names the press and both its declarations.
+            Assert.Equal(
+                (route, scopes, session),
+                (route, string.Join(",", StatePublisher.Names(declared?.Scopes ?? StateScopes.None)), declared?.Session));
+        }
+    }
+
+    /// <summary>
+    /// The page's publishing seam's table, each press as it names it: its route, its scopes joined in their order, and the field
+    /// naming its session. Every route the table holds is read, or the test fails: one the pattern missed would go unchecked.
+    /// </summary>
+    private static List<(string Route, string Scopes, string? Session)> PageDeclared()
+    {
+        var text = File.ReadAllText(Path.Combine(SourceFiles.WorkspaceFolder(), "src", "Daoris.Web", "src", "test", "publishing.ts"));
+        var start = text.IndexOf("export const DECLARED", StringComparison.Ordinal);
+        Assert.True(start >= 0, "the page's publishing seam names no DECLARED table");
+        var table = text[start..text.IndexOf("\n};", start, StringComparison.Ordinal)];
+
+        var copied = PageEntry().Matches(table)
+            .Select(entry => (
+                entry.Groups["route"].Value,
+                string.Join(",", PageScope().Matches(entry.Groups["scopes"].Value).Select(scope => scope.Groups["scope"].Value)),
+                entry.Groups["session"].Success ? entry.Groups["session"].Value : null))
+            .ToList();
+        Assert.Equal(PageRoute().Matches(table).Count, copied.Count);
+        return copied;
+    }
+
+    /// <summary>One press in the seam's table: <c>ROUTE: { scopes: ['a', 'b'], session: 'id' }</c>, over one line or several.</summary>
+    [GeneratedRegex(@"\b(?<route>[A-Z][A-Z_]+):\s*\{\s*scopes:\s*\[(?<scopes>[^\]]*)\]\s*(?:,\s*session:\s*'(?<session>\w+)'\s*)?,?\s*\}")]
+    private static partial Regex PageEntry();
+
+    /// <summary>A scope's word in a press's list.</summary>
+    [GeneratedRegex(@"'(?<scope>\w+)'")]
+    private static partial Regex PageScope();
+
+    /// <summary>A route's key at the start of a line of the table, however its value is written.</summary>
+    [GeneratedRegex(@"^\s*[A-Z][A-Z_]+:", RegexOptions.Multiline)]
+    private static partial Regex PageRoute();
 }

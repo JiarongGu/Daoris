@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import { type QueryClient, type QueryKey, skipToken, useIsMutating, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useShenoraEvent } from '@shenora/react';
+import { useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from '../data/queries';
+import { readUnderWay } from './driver';
 import { HELP_HISTORY, HELP_PROPOSALS } from './help';
 import { ALL_HISTORY } from './history';
 import { treesSyncScopeKey } from './lines';
@@ -129,11 +131,26 @@ export function useUnderWay(route: string, session: string | null): boolean {
  * The page's half of the driver's state as events (D169): every `STATE_CHANGED` the shell forwards, at one place, and what is
  * under way (`UNDER_WAY`, STATEHUB1c), kept at the root so a view mounted later reads it. Mounted by `ShellSignals` in both roots,
  * so every window of the desktop hears it; a plain browser has no bus, and polls as before.
+ *
+ * A window opened, or a page reloaded, while a press runs heard none of its tellings (STATEHUB1c2), so the hub reads the driver's
+ * list each time it mounts, and keeps it as it keeps a telling: by its number, so a telling heard before the answer, or after,
+ * is kept over it where it is newer. A list the driver could not answer leaves what was told.
  */
 export function useStateHub() {
   const client = useQueryClient();
+  const { isAvailable } = useShenora();
   useShenoraEvent<StateChanged>('DAORIS', 'STATE_CHANGED', (change) => stateChanged(client, change));
   useShenoraEvent<{ seq?: unknown; presses?: unknown }>('DAORIS', 'UNDER_WAY', (told) => underWay(client, told));
+  useEffect(() => {
+    if (!isAvailable) return;
+    void (async () => {
+      try {
+        underWay(client, await readUnderWay());
+      } catch {
+        // Nothing read: what was told stands, and the next telling says the rest.
+      }
+    })();
+  }, [client, isAvailable]);
   // The root's own read of it: what was told stays while no view of it is mounted, as long as the press it names may run.
   useTold();
 }

@@ -259,6 +259,49 @@ describe('the state hub (UNDER_WAY)', () => {
     expect(read('LAND_SESSION_TREE', 's1')).toEqual(['under way', 'under way']);
   });
 
+  /**
+   * A window opened, or a page reloaded, while a press runs (STATEHUB1c2): it heard none of the tellings, so the hub reads the
+   * driver's list as it mounts, and the press shows before the driver tells anything again.
+   */
+  it('a hub mounted mid-press reads what is under way from the driver, with no telling heard', async () => {
+    invoke.mockImplementation(async (module: string, type: string) =>
+      (module === 'DAORIS.DRIVER' && type === 'UNDER_WAY' ? { seq: 7, presses: [LANDING_S1] } : {}));
+
+    const { read } = views();
+
+    await waitFor(() => expect(read('LAND_SESSION_TREE', 's1')).toEqual(['under way', 'under way']));
+    expect(read('LAND_SESSION_TREE', 's2')).toEqual(['still']);
+    expect(read('DISCARD_SESSION_TREE', 's1')).toEqual(['still']);
+  });
+
+  /** The read and the tellings race on the bus; the newest by its number is kept, whichever reached the window first. */
+  it('keeps a telling newer than what it read, heard before the read answered', async () => {
+    let answer: (value: unknown) => void = () => {};
+    invoke.mockImplementation((_module: string, type: string) =>
+      (type === 'UNDER_WAY' ? new Promise((resolve) => { answer = resolve; }) : Promise.resolve({})));
+    const { read } = views();
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'UNDER_WAY', {}));
+
+    // The landing ended after the driver read its list for this window, and its telling arrived first.
+    told({ seq: 8, presses: [] });
+    await act(async () => answer({ seq: 7, presses: [LANDING_S1] }));
+    await settled();
+
+    expect(read('LAND_SESSION_TREE', 's1')).toEqual(['still', 'still']);
+  });
+
+  it('reads it again each time it mounts, as a page reloaded does', async () => {
+    invoke.mockImplementation(async () => ({ seq: 1, presses: [] }));
+    const first = views();
+    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
+    first.unmount();
+
+    views();
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(2));
+    expect(invoke.mock.calls.map(([module, type]) => `${module} ${type}`)).toEqual(['DAORIS.DRIVER UNDER_WAY', 'DAORIS.DRIVER UNDER_WAY']);
+  });
+
   it('a telling of any other shape changes nothing, and a press of any other shape is none', async () => {
     const { read } = views();
     told({ seq: 1, presses: [LANDING_S1] });

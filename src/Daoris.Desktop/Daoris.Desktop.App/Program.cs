@@ -205,12 +205,14 @@ internal static class Program
         // Then a Daoris route leaves the window's thread at its first wait (UIFREEZE1): after the stall watch, which still
         // times and names the part before it, so the window is never where a route's git fan-out goes on.
         // And what a route declares it changed reaches every window as STATE_CHANGED once it has answered (STATEHUB1b, D169):
-        // innermost, so it publishes off the window's thread and only what the route itself answered.
+        // innermost, so it publishes off the window's thread and only what the route itself answered. What is under way it holds
+        // in the loop's list, which the driver's UNDER_WAY route reads (STATEHUB1c2).
         builder.Services.UseMessageDispatcher((sp, dispatcher) => dispatcher
             .Use(RefusalLog.Middleware(log))
             .Use(sp.GetRequiredService<UiStallWatch>().Middleware)
             .Use(OffTheWindow.Middleware)
-            .Use(StatePublisher.Middleware(sp.GetRequiredService<Shenora.Core.Events.IEventBus>())));
+            .Use(StatePublisher.Middleware(
+                sp.GetRequiredService<Shenora.Core.Events.IEventBus>(), sp.GetRequiredService<DriverLoop>().UnderWay)));
 
         // The loop starts with the app, not with the window: the driver watches whether or not the
         // person is looking, which is the whole point of a driver.

@@ -182,6 +182,12 @@ export const useDriverReady = () => {
 };
 
 /**
+ * What is under way as the driver holds it (STATEHUB1c2, D169's STATEHUB1c2 note): its presses, whole and numbered as its last
+ * `UNDER_WAY` telling, which the state hub reads as it mounts. A read: it declares nothing and tells nothing.
+ */
+export const readUnderWay = () => call<{ seq?: unknown; presses?: unknown } | null>('UNDER_WAY');
+
+/**
  * Why each open quest is sitting, in the driver's own words, as of its last tick (D46 §3). Written
  * by the tick (`ShellSignals`) and never fetched — the driver says it and nothing else knows — so
  * this query only ever answers what the last tick put there. Empty in a browser, where no tick

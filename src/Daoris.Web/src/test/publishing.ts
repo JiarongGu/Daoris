@@ -3,6 +3,10 @@
  * through the state hub, as a window does, since the hooks ask nothing again themselves. What each press declares it changes is
  * D169's tables, held route by route by the modules' `StatePublisherTests`; the presses the tests make are named here, and
  * every press STATEHUB1h declared, whose hooks ask nothing again themselves since it.
+ *
+ * A copy of the routes' `[Publishes]` marks, which `StatePublisherTests` reads from this file and holds press by press to the
+ * mark (PUBLISHTWIN1): change a press's scopes or session field on both sides, or that test fails. A press added here keeps
+ * this shape, `ROUTE: { scopes: [...], session: '...' }`, which the test reads.
  */
 export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; session?: string }>> = {
   LAND_SESSION_TREE: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'], session: 'id' },
@@ -14,6 +18,11 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SESSION_ARCHIVE: { scopes: ['sessions'] },
   SESSION_INPUT: { scopes: ['sessions'], session: 'id' },
   END_CHAT: { scopes: ['sessions'], session: 'id' },
+  // The plugins' presses (STATEHUB1d), which the Plugins view's tests publish.
+  PLUGIN_ACTION: { scopes: ['plugins', 'harnesses'] },
+  PLUGIN_UPDATE: { scopes: ['plugins', 'harnesses'] },
+  PLUGIN_INSTALL: { scopes: ['plugins', 'harnesses'] },
+  PLUGIN_ADD: { scopes: ['plugins', 'harnesses'] },
   // The remaining presses (STATEHUB1h): the standing choices, a go-ahead, a turn stopped and a word taken back, and what the
   // accounts, agents, asks, across, registry, tools and help domains press.
   SET_DRIVABLE: { scopes: ['driver'] },
