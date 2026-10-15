@@ -267,6 +267,7 @@
   "projects.tidied.title": "Cleaned up on its own",
   "projects.tidied.done": "Cleaned up {{when}}",
   "projects.tidied.kept": "Left in place {{when}}",
+  "projects.tidied.landing": "A landing's branch, for session {{session}}",
   "projects.tidied.aside": "Its tree's folder was set aside",
   "projects.tidied.why.unread": "unreadable",
   "projects.tidied.why.refused": "refused",

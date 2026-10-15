@@ -34,9 +34,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 968 |
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 51 | 956 |
-| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 105 | 2030 |
+| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 107 | 2056 |
 | `src/Daoris.Web/src/app/App.test.tsx` | 50 | 966 |
-| `src/Daoris.Web/src/app/App.tsx` | 71 | 1297 |
+| `src/Daoris.Web/src/app/App.tsx` | 72 | 1302 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 48 | 975 |
 | `src/Daoris.Web/src/design/ui.tsx` | 79 | 1683 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 72 | 1438 |
@@ -78,7 +78,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/SessionsCommandTests.cs` | 45 | 890 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/SessionsSayCommandTests.cs` | 46 | 943 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/TraceTests.cs` | 41 | 691 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/BranchTidyingProcessTests.cs` | 62 | 1100 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/BranchTidyingProcessTests.cs` | 73 | 1258 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/SessionGroupsTests.cs` | 64 | 1104 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/HarnessRoster.cs` | 97 | 1686 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/HarnessSettings.cs` | 49 | 944 |
@@ -177,7 +177,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-09-21-working-surface-components.md` | 53 | 353 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |
 | `docs/2026-09-26-ux5-screen-audit.md` | 46 | 141 |
-| `docs/2026-09-30-machine-log-design.md` | 51 | 493 |
+| `docs/2026-09-30-machine-log-design.md` | 52 | 493 |
 | `docs/2026-10-01-account-rotation-design.md` | 52 | 613 |
 | `docs/2026-10-01-agent-layout-design.md` | 59 | 790 |
 | `docs/2026-10-01-development-documents-design.md` | 62 | 825 |
@@ -199,4 +199,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-second-agent-design.md` | 57 | 769 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
-| `src/Daoris.Desktop/README.md` | 74 | 441 |
+| `src/Daoris.Desktop/README.md` | 74 | 443 |

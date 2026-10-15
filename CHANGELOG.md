@@ -8,6 +8,9 @@ with the version and date at release.
 - While a session's work lands, its review says *Landing…* (落地中…) wherever it is shown: after *Accept…* at the session's top,
   after switching tabs and back, and in every other open window, where it offered *Accept* again before. So too its *Discard
   tree* waits while its tree is discarded, and its hand-off says *Handing off…* while its branch is handed to its plugin.
+- Allowing a rule a session proposed from What needs you, or accepting it on the Agents page, now tells that session so, as
+  allowing it in its conversation does, so it goes on instead of sitting idle. And a branch Daoris cleaned up that a landing
+  made reads *A landing's branch, for session …* in the Branches tab's *Cleaned up on its own*, not a bare repository row.
 - Answering a session that parked is one box: the words waiting on it fold to one line with their count, *Show them* opens them
   to edit or remove, and the strip at the foot no longer says "answer it in the box below" over that box. A conversation that
   answers you while you are reading it in a window in front no longer also toasts.
@@ -86,6 +89,12 @@ with the version and date at release.
   work, with the session branch that grew them: a squash merge no longer leaves both until *Clean up*. One whose pull request is
   still open, one checked out somewhere, one you pushed and moved since, and one a running session still works from stay. A tree
   whose installed packages hold paths past Windows' 260 characters is moved aside and deleted fourteen days later like any other.
+- Folders beside a repository's session trees that are no tree, an empty one a removed tree left, a tree half removed, or one a
+  session wrote next to its own (`devtools`, `.tmp`), are now moved aside by themselves once nothing has written in them for ten
+  minutes, and deleted fourteen days later like a tree's; `daoris-driver trees list` names them *(not a tree)* until then, and
+  each folder moved aside *(moved aside)* with the day. A session's start cut off as the app closes no longer leaves a
+  half-made tree and branch behind: a cancel undoes it at once, and one a crash cut off is moved aside, its branch removed, by a
+  later look. A folder a running session names stays, and so does a tree you locked.
 - An ask's page has a *Channel* (频道), where its sessions and you talk: their messages and Daoris's lines about its quests
   (published, taken, done, declined, waiting on your yes) in your language, an open question marked, and a box to write to
   everyone on the ask or one of its repositories, answering a message if you choose. A session on an ask has the same channel

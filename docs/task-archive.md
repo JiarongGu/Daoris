@@ -14938,6 +14938,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 **Outcome** 2026-10-16: the seven hooks ask nothing again themselves; their tests mount the state hub over a mocked shell that publishes what each press declares and tells it under way (`test/publishing.ts`), and ten tests that went red with the invalidations gone are green that way. Detail: D169's STATEHUB1c note; the commits.
 
+## AUTOTIDY2c — stray folders and a half-removed tree are named and moved aside (2026-10-16, D88)
+
+> - [ ] **AUTOTIDY2c — stray folders and a half-removed tree are named and moved aside** (driver; after AUTOTIDY2a; the owner's ask of 2026-10-15, the archive's AUTOTIDY2a). Folders a session wrote at the trees root (`trees/<workspace>/<repo>/devtools`, `.tmp`) and a half-removed tree are listed *(unreadable)* forever by `SessionTrees.ListAsync`. They are named and moved aside, as the look moves a tree's folder (`TreeLeftovers.EmptyFoldersGone` the exemplar). Contract: D88's AUTOTIDY1 note (the move aside). Proof: `BranchTidying` cases over real git, the list naming them, the decision's amendment.
+
+**Outcome** 2026-10-16: the look moves aside, before a repository's session branches, each folder under its trees that git lists no tree in once nothing was written in it for ten minutes (`TreeStrays`), said and logged as `branch.tidied` `kind` `stray`; a folder a running or waiting session names, a link, and an opinion's copy or a replay's tree stay. `trees list` names a folder with no `.git` *(not a tree)* and each folder moved aside *(moved aside)* with the day. Not on the window; the `Process` classes ran only their new tests in the branch. Detail: D88's AUTOTIDY2c and OPENCUT1 note; the commits.
+
+## OPENCUT1 — a tree's open cut off mid-`worktree add` leaves nothing (2026-10-16, D88)
+
+> - [ ] **OPENCUT1 — a tree's open cut off mid-`worktree add` leaves nothing** (driver; after AUTOTIDY2). `SessionTrees.OpenAsync` (~295-307) runs `worktree add -b`; a non-zero exit deletes the branch, but a cancel or the app's close throws or dies first, leaving a half-checked-out folder (staged deletions, a lock) and an unrecorded `daoris/s-*` branch (`Grown.Record` runs after the add): seen as `s-0031408d` on 2026-10-15. Catch the cancellation and remove the half folder, prune, delete the branch; a kill's leftover is found by the look (a `daoris/s-*` branch with no record and no clean folder). Proof: a cancelled open after the branch exists leaves nothing.
+
+**Outcome** 2026-10-16: the open holds its tree locked under a reason naming its process until its start is recorded, and anything that cuts it off undoes it (`TreeOpenings.UndoAsync`: `worktree remove --force --force`, the rest of its own folder deleted, that tree's record alone let go of in place of a prune, its branch deleted). A kill's leftover, locked by git's `initializing` or by an ended process's reason, is moved aside by the look with its branch, `branch.tidied` `kind` `opening`; a person's lock keeps its tree. Detail: D88's AUTOTIDY2c and OPENCUT1 note; the fix log's OPENCUT1 entry; the commits. On Opus, with AUTOTIDY2c: 177 tool calls.
 ## WAITFOOT2c — a park's answer box and its waiting words are one box (2026-10-16, D168)
 
 > - [ ] **WAITFOOT2c — a park's answer box and its waiting words are one box** (web; D168's WAITFOOT2 note; the owner, 2026-10-15: *"a lot of duplicated options and message boxes"*). SAIDBACK1b's waiting list stands above a park's answer box as a box of its own (`SessionBox.tsx:92-114`), and the strip's *answer it in the box below* line (`WaitStrip.tsx`, `questionBelow`) is drawn right over that box. Fold the waiting list to one line with its count inside the box's frame, and draw no *box below* line where the box is right under the strip. Proof: SessionBox and frame tests; stories; an installed shot of a parked session in both languages.
@@ -14949,3 +14960,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NOTIFY1c — no toast for the conversation already on screen** (web). The page toasts a conversation's answer even while the person reads that very conversation in a window in front (the balloon is quiet then): `ShellSignals` does not know which session is attended; skip the toast for it. SURF5b, D126. Proof: a `ShellSignals` test with that session attended.
 
 **Outcome** 2026-10-16: `ShellSignals` is handed the session attended on this window's Sessions view (`attended`) and says no toast for a kind `Answered` of that session while the document is visible; every other kind, every other session and a hidden window keep their toast, and the sessions are refetched as before. On Sonnet, with WAITFOOT2c: 89 tool calls. Detail: the driver design's open question 5, its NOTIFY1c note.
+
+## PROPOSEHERE1c — an Allow from the band tells the session too (2026-10-16, D74)
+
+> - [ ] **PROPOSEHERE1c — an Allow from the band tells the session too** (web). An *Allow* in What needs you or on the Agents page changes the rules, but the session that proposed it never hears, so it can sit idle as on 2026-10-15: where the proposal names a session the list holds, say the same words to it (`work.wait.rule.said`, `work/ruleAnswer.ts`'s tell). D74's PROPOSEHERE1b note (left out), D168. Proof: a band test with a proposal by a listed session.
+
+**Outcome** 2026-10-16: an *Allow* in What needs you and an *Accept* on the Agents page tell the session that proposed the rule, with the conversation's own words, once the rule is kept (`ruleHearing` and `settled`'s hearing in `work/ruleAnswer.ts`); an intake takes no words, so the sentence says it is not told, and a proposal naming no listed session tells none. The band presses the say hook; the Agents place is handed the door by `App.tsx`, since its view may not import it. Detail: D74's PROPOSEHERE1c note.
+
+## TIDIEDLANDING1 — a landing's branch tidied away says so (2026-10-16, D88)
+
+> - [ ] **TIDIEDLANDING1 — a landing's branch tidied away says so** (web). A `branch.tidied` line with `session` and no `branch` (AUTOTIDY2b: a landing branch's name carries the quest title's words, which the log never holds) shows on the Branches tab's *Cleaned up on its own* as a bare repository row: say it was a landing's branch, en and zh. D88's AUTOTIDY2b note, the machine-log design §4, `WorkspaceTidied.tsx`. Proof: a `WorkspaceTidied` test with such a line.
+
+**Outcome** 2026-10-16: such a line's row reads *A landing's branch, for session …* (落地的分支，会话 …), with the session's name where the sessions list holds it, else its id (`WorkspaceTidied`'s `titles`, fed by `WorkspaceView`). On Sonnet, with PROPOSEHERE1c: 120 tool calls. Detail: D88's TIDIEDLANDING1 note.

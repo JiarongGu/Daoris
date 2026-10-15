@@ -45,6 +45,8 @@ const ENDED = Array.from({ length: 7 }, (_, at) => ({
   ...base, id: `r3v13w0${at}`, quest: null, repository: 'engine', kind: 'chat', state: 'completed',
   updated: `2026-10-01T1${at}:00:00Z`,
 }));
+/** An intake, the one kind of record that names an ask: it takes no words (INT4b). */
+const INTAKE = { ...base, id: 'i4t4k300', quest: null, repository: 'engine', kind: 'chat', state: 'completed', ask: 'a1', updated: '2026-10-01T09:30:00Z' };
 const QUESTS = [{
   id: 'q1', from: 'game', to: 'engine', title: 'Expose a streaming budget', body: 'a per-frame cap.', status: 'Taken',
   filed: '2026-09-30T09:00:00Z', updated: '2026-10-01T09:00:00Z', workspace: 'default',
@@ -99,7 +101,7 @@ function respond(url: string): Response {
     return Response.json([{ repository: 'engine', workspace: 'default', registered: true, adopted: true, owns: [], accepts: [], packs: [] }]);
   }
   // The live list holds none of the ended sessions; the list with the ended ones holds them all.
-  if (url.startsWith('/api/sessions')) return Response.json(url.includes('includeClosed=true') ? ENDED : []);
+  if (url.startsWith('/api/sessions')) return Response.json(url.includes('includeClosed=true') ? [...ENDED, INTAKE] : []);
   if (url.startsWith('/api/quests')) return Response.json(QUESTS);
   return Response.json([]);
 }
@@ -124,6 +126,7 @@ function start({ considered = [], untrusted = [], proposals = [], groups = [], w
     }
     if (type === 'RETRY_QUEST') return { drivable: [], holds: [], trees: [], running: [], notify: false, strikes: 3, forgiven: {}, retried: { quest: 'q1', did: 'marked' } };
     if (type === 'TRUST_FOLDER') return { folder: HOLD.folder, key: 'k', changed: true, verified: true, message: 'Trusted `C:/somewhere/engine` for the agent.' };
+    if (type === 'SESSION_INPUT') return { sent: true };
     if (type === 'RULE_PROPOSAL') return { path: 'permissions.json', defaults: [], scopes: [], proposals: [{ ...WIDENING, state: request?.payload?.accept ? 'accepted' : 'declined' }] };
     return {};
   });
@@ -320,6 +323,41 @@ describe('What needs you on a machine', () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', { payload: { id: 'p0000002', accept: true } }));
     // Said as it was pressed, *Allow* (PROPOSEHERE1b): the conversation's card answers through the same owner.
     expect(notify).toHaveBeenCalledWith('Allowed: allow WebFetch for every session on this machine. Sessions started from now on are handed it.');
+  });
+
+  /** PROPOSEHERE1c: an *Allow* here tells the session that proposed the rule, as the conversation's own does (PROPOSEHERE1b). */
+  const allow = async () => {
+    const row = await screen.findByRole('listitem', { name: 'allow WebFetch for every session on this machine' });
+    await userEvent.click(within(row).getByRole('button', { name: 'Allow…' }));
+    await userEvent.click(within(row).getByRole('button', { name: 'Allow' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', { payload: { id: 'p0000002', accept: true } }));
+  };
+  const said = () => invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT');
+
+  it('tells the session that proposed the rule once it is allowed', async () => {
+    const notify = vi.fn();
+    start({ proposals: [{ ...WIDENING, session: 'r3v13w01' }] }, { notify });
+    await allow();
+
+    await waitFor(() => expect(said()).toEqual([['DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: 'r3v13w01', text: 'The rule you proposed is allowed now: allow WebFetch for every session on this machine. Go on with what you needed it for.' },
+    }]]));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Session r3v13w01 is told the rule is allowed, and goes on.', 'ok'));
+  });
+
+  it('tells no session the list does not hold', async () => {
+    start({ proposals: [{ ...WIDENING, session: 'gone0000' }] });
+    await allow();
+    expect(said()).toEqual([]);
+  });
+
+  it('says an intake is not told, since it takes no words', async () => {
+    const notify = vi.fn();
+    start({ proposals: [{ ...WIDENING, session: 'i4t4k300' }] }, { notify });
+    await allow();
+
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('Session i4t4k300 takes no words now, so it is not told')));
+    expect(said()).toEqual([]);
   });
 
   it('declines a widening in one press', async () => {
