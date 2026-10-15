@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A word you take back is never sent: a conversation that goes on just as you take back its only word now stays as it ended,
+  saying so, and `sessions take-back` or `reword` in a terminal, while Daoris runs, is shown in the open conversation at once.
+  A helper's or a reviewer's conversation no longer offers acts that would send it words it refuses, and rewording a waiting
+  message keeps the box's length limit, the words staying in the box.
 - Words you sent a session whose box then became its line, because the session no longer takes words, now come back to the
   box with a line under it saying they did not go, where before they stayed *not answered yet* until you opened the page
   again. Starting Ask Daoris from an earlier conversation opens at once, as a new one does, rather than waiting for the

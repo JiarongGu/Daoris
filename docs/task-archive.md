@@ -15008,24 +15008,26 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **STRAYOTHERS1 — a killed opinion pass's or replay's leftover is tidied** (driver). The look never moves `o-` (opinion copies) or `r-` (replay trees) folders, made outside the repository's hold, so a killed pass's leftover stays: let their own flows clean stale ones, or let the look take them under a guard. D88's AUTOTIDY2c note. Proof: a Process test with a stale `o-` clone and a stale detached `r-` tree.
 
-**Outcome** 2026-10-16: the next opinion's pass and the next replay in a tree of its own move aside, as they start, the copy or replay's tree a killed one left in that repository's trees, once the process it names no longer runs and nothing in it was written for ten minutes (`PassLeftovers`); a pass now names its process in its replay tree's lock or its copy's `.git`, and a replay's tree is removed whatever its token says. Not on the window. On Opus, with TIDIEDLINK1. Detail: D88's STRAYOTHERS1 note; the commits.
+**Outcome** 2026-10-16: the next opinion's pass and the next replay in a tree of its own move aside, as they start, the copy or replay's tree a killed one left in that repository's trees, once the process it names no longer runs and nothing in it was written for ten minutes (`PassLeftovers`); a pass now names its process in its replay tree's lock or its copy's `.git`, and a replay's tree is removed whatever its token says. Not on the window. On Opus, with TIDIEDLINK1: 151 tool calls. Detail: D88's STRAYOTHERS1 note; the commits.
 
 ## TIDIEDLINK1 — the purge of a moved-aside folder takes its links as links (2026-10-16, D88)
 
 > - [ ] **TIDIEDLINK1 — the purge of a moved-aside folder takes its links as links** (driver). A moved-aside folder holding a junction (npm workspaces or pnpm under `node_modules`) is kept by the purge forever as `linked`; .NET's recursive delete removes a link without following it, so decide whether links under a build folder are deleted as links. D88's AUTOTIDY1 note. Proof: a Process test where a junction under `node_modules` is purged and its target stays.
 
 **Outcome** 2026-10-16: decided and built: a link under a build folder goes with its folder as a link, its target untouched; a link elsewhere keeps its folder `linked` as before. The purge deletes with its own walk that never follows a link, and keeps a folder reached through one. Not on the window. On Opus, with STRAYOTHERS1. Detail: D88's TIDIEDLINK1 note; the commits.
+
 ## STATEHUB1c2 — a window opened mid-press reads what is under way (2026-10-16, D169)
 
 > - [ ] **STATEHUB1c2 — a window opened mid-press reads what is under way** (modules/web; D169 point 7, its STATEHUB1c note). `DAORIS.UNDER_WAY` is told only as a press starts and ends, so a window opened, or a page reloaded, while a landing runs shows no *落地中…*, and no view says which step a press has reached. Give the publisher's current list a route the hub reads on connect, and the step where the driver knows it. Proof: a `StatePublisherTests` row for the route; a `stateHub` test that a hub mounted mid-press reads it.
 
-**Outcome** 2026-10-16: the publisher holds what is under way in the loop's list (`DriverLoop.UnderWay`), and the driver answers it whole at `UNDER_WAY`, numbered as its last telling, a read that declares and tells nothing (`StatePublisherTests`); the state hub reads it each time it mounts and keeps the newer of it and any telling by number, so a window opened or reloaded mid-press says *落地中…* (`stateHub.test`). No step is carried: no press reports one, so it is a row. On Opus, with PUBLISHTWIN1. Detail: D169's STATEHUB1c2 note; the commits.
+**Outcome** 2026-10-16: the publisher holds what is under way in the loop's list (`DriverLoop.UnderWay`), and the driver answers it whole at `UNDER_WAY`, numbered as its last telling, a read that declares and tells nothing (`StatePublisherTests`); the state hub reads it each time it mounts and keeps the newer of it and any telling by number, so a window opened or reloaded mid-press says *落地中…* (`stateHub.test`). No step is carried: no press reports one, so it is a row. On Opus, with PUBLISHTWIN1: 171 tool calls. Detail: D169's STATEHUB1c2 note; the commits.
 
 ## PUBLISHTWIN1 — the page's publishing table is read from the routes (2026-10-16, D169)
 
 > - [ ] **PUBLISHTWIN1 — the page's publishing table is read from the routes** (web/modules tests). `test/publishing.ts`'s `DECLARED` and `PluginsView.test`'s `PUBLISHES` copy by hand what each route's `[Publishes]` declares, so a mark changed on one side passes the other's tests. Read the marks from the modules' source as the twins do, or have one side's test compare against the other. D169's STATEHUB1c and STATEHUB1h notes. Proof: a mark changed on one side alone fails a test.
 
 **Outcome** 2026-10-16: `StatePublisherTests` reads `DECLARED` from the page's source and holds each press it names to its route's mark, scopes in the wire's order and session field; the Plugins view's tests publish from `DECLARED`, which gained the four plugin presses, and their `PUBLISHES` is gone. A mark changed alone (`HANDOFF` given `Sessions`) and the copy changed alone (`PLUGIN_INSTALL` without `harnesses`) each failed that test, and were reverted. On Opus, with STATEHUB1c2. Detail: D169's PUBLISHTWIN1 note; `twins.md`; the commits.
+
 ## WITHDRAWNLINE1 — one withdrawn note for every door (2026-10-16, D137)
 
 > - [ ] **WITHDRAWNLINE1 — one withdrawn note for every door** (driver/modules). Modules' `SessionWords.TakeBackAsync` writes QUEUEEDIT1a's `withdrawn` event by hand, duplicating `ChatTurns.WithdrawnLine` (internal): make the note public in the driver library and use it. QUEUEEDIT1a. Proof: `DriverModuleConversationTests`' take-back row holds.
@@ -15042,15 +15044,34 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **SAIDBACK1d — a driven resume hands its run the words the move to working returned** (driver). Check that the run is handed the words the ledger's move returned, not those its look read, so a word taken back between the look and the move is never sent. D137 MSG1b. Proof: a continuation test with a word taken back between the two.
 
-**Outcome** 2026-10-16: checked, and not right. The chat go-on re-read the record after the move but fell back to the look's words when that read held none, so a chat's only word taken back in the gap was still sent: `Continuations.HandedAfterMove` now hands the record's words as the move left them, and with none the record is put back as it ended with a line saying so (`ChatGoOnTests`, two rows, seen failing first). The quest-driven resume spawns its run before the ledger's move, so it only re-reads the record as late as its prompt is built, which narrows the gap and does not close it: proposed as SAIDBACK1e. On Sonnet. Detail: D137's SAIDBACK1c/1d note.
+**Outcome** 2026-10-16: checked, and not right. The chat go-on re-read the record after the move but fell back to the look's words when that read held none, so a chat's only word taken back in the gap was still sent: `Continuations.HandedAfterMove` now hands the record's words as the move left them, and with none the record is put back as it ended with a line saying so (`ChatGoOnTests`, two rows, seen failing first). The quest-driven resume spawns its run before the ledger's move, so it only re-reads the record as late as its prompt is built, which narrows the gap and does not close it: proposed as SAIDBACK1e. On Sonnet, with WITHDRAWNLINE1 and SAIDBACK1c: 120 tool calls. Detail: D137's SAIDBACK1c/1d note.
+
 ## PROC1d-iii — `worktree list` once per judgement; the paired rev-parse merged (2026-10-16, D88)
 
 > - [ ] **PROC1d-iii — `worktree list` once per judgement; the paired rev-parse merged** (driver). `worktree list --porcelain` was 47 starts (`TreeWorktrees.EntriesAsync`, static and uncached, asked again per removable in the sweep), and `--git-common-dir` and `--abbrev-ref HEAD` are asked as pairs in `TreeLandSyncs`, `TreeLands`, `TreeUpdates`, `TreeRemovals` and `TreeWorkReads`. Read the list once per judgement, invalidated by the worktree writers, and ask the pair as one `rev-parse --path-format=absolute --git-common-dir --abbrev-ref HEAD`. `ListFails` must still make a list null. Contract: UIFREEZE1; the PROC1d pack. Proof: `TreeSyncStartsTests`' count lowered, and the trees classes' times beside PROC1a's.
 
-**Outcome** 2026-10-16: a judgement's `RefSnapshot` holds the checkout's working trees beside its refs, dropped with them by any write in the flow, so a sync plan lists them once (29 starts → 28 over three session branches); the sweep's per-removal list stays, as D88's judgement again. `TreeGit.CommonDirAndBranchAsync` asks the pair as one start at the five places, the two asks again where it fails. `RefSnapshotTests` gained three fast tests; `TreeSyncStartsTests`' bound and its new case are owed their Process run. On Opus. Detail: D88's PROC1d-iii note; FIX-LOG's FLAKE1 entry, "PROC1d-iii"; the commits.
+**Outcome** 2026-10-16: a judgement's `RefSnapshot` holds the checkout's working trees beside its refs, dropped with them by any write in the flow, so a sync plan lists them once (29 starts → 28 over three session branches); the sweep's per-removal list stays, as D88's judgement again. `TreeGit.CommonDirAndBranchAsync` asks the pair as one start at the five places, the two asks again where it fails. `RefSnapshotTests` gained three fast tests; `TreeSyncStartsTests`' bound and its new case are owed their Process run. On Opus, with PROC1f: 161 tool calls. Detail: D88's PROC1d-iii note; FIX-LOG's FLAKE1 entry, "PROC1d-iii"; the commits.
 
 ## PROC1f — the last git-only classes join the parallel half (2026-10-16, no decision)
 
 > - [ ] **PROC1f — the last git-only classes join the parallel half** (driver tests; after AUTOTIDY2b). `SessionTreesTests` (git-only, under 35 s) takes `[Trait(Category.Parallel, Category.Git)]`; `LandingPluginTests`' 3-second-patience case moves to a serial class of its own, so its other eight tests (about 82 s) join. Proof: `CategoryTests` green; the git half's listing gains them; the 3-second case stays serial.
 
 **Outcome** 2026-10-16: `SessionTreesTests` (16) and `LandingPluginTests` (8, its helpers now `LandingPluginFixture`) carry `Parallel=Git`; `LandingPluginPatienceTests` holds the three-second case, serial. `CategoryTests` green; the git half lists 359 (334 before), the serial half 568 (592 before). Their Process runs are owed. On Opus. Detail: FIX-LOG's FLAKE1 entry, "PROC1f"; `Category.cs`.
+
+## NOTIFY1d — the balloon's choice is tested (2026-10-16, D50)
+
+> - [ ] **NOTIFY1d — the balloon's choice is tested** (modules/App). `SessionNotifier` picks the body line and icon by kind and nothing tests it (the App has no test project): move the choice into the modules, as NOTIFY1b did with `WaitingBadge`. Proof: a modules test per kind.
+
+**Outcome** 2026-10-16: `SessionBalloon.Body` and `SessionBalloon.Icon` (with `BalloonIcon`, since the modules cannot name `ToolTipIcon`) choose the balloon's line and icon in the modules, and `SessionNotifier` maps the icon; `SessionBalloonTests` holds a case per kind, a verbatim detail and a blank one, seen failing first. No visible change. On Sonnet, with HELPERACTS1 and REWORDBOUND1: 38 tool calls. Detail: `Modules/Windows/SessionBalloon.cs`.
+
+## HELPERACTS1 — a helper's and a reviewer's page offer no word-taking acts (2026-10-16, D163)
+
+> - [ ] **HELPERACTS1 — a helper's and a reviewer's page offer no word-taking acts** (web). `offeredActs` (`work/acts.ts`) still offers *Go on with another agent…* and other acts that take words on a helper's or reviewer's conversation, whose records refuse words and resume (D163's MIXAGENT2a-i note); narrow them by `isHelper`/`isOpinion`. Proof: acts.test cases for both.
+
+**Outcome** 2026-10-16: `offeredActs` withholds *Answer*, *Go on with another agent…*, the pauses, the resumes and *Try again* from a helper's and a reviewer's records; *Stop*, *Copy*, *Delete* and the other acts that take no words stay. One `acts.test` case covers both kinds on both doors, ended and parked, seen failing first. On Sonnet, with NOTIFY1d. Detail: `work/acts.ts`.
+
+## REWORDBOUND1 — a reword keeps the box's bound (2026-10-16, D137)
+
+> - [ ] **REWORDBOUND1 — a reword keeps the box's bound** (web). A reword through *Edit* skips the box's `accepts` check, so on the native door it can exceed the command line's 32,767-character bound new words are refused at. D137 §2.4. Proof: a `SessionBox`/`Composer` test where an over-long reword is refused and the text stays in the box.
+
+**Outcome** 2026-10-16: the composer's reword path asks the box's `accepts` as a send does, and an over-long reword stays in the box, still editing, with nothing sent (`Composer.test`, seen failing first). On Sonnet, with NOTIFY1d. Detail: `work/Composer.tsx`.
