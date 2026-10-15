@@ -399,10 +399,10 @@ describe('settling one where it stands', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Decline' }));
     expect(acts.declineRule).toHaveBeenCalledWith(RULE);
-    await userEvent.click(screen.getByRole('button', { name: 'Accept…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Allow…' }));
     expect(screen.getByText(/It widens what agents may do: allow WebFetch for every session on this machine/)).toBeInTheDocument();
     expect(acts.acceptRule).not.toHaveBeenCalled();
-    await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Allow' }));
     expect(acts.acceptRule).toHaveBeenCalledWith(RULE, answeredByAct);
   });
 
@@ -583,7 +583,7 @@ describe('an ask under the row answers inside itself', () => {
         await userEvent.click(await screen.findByRole('option', { name: 'tools' }));
       },
     },
-    { name: 'accept-rule', item: RULE, open: 'Accept…', move: 'Accept', handler: 'acceptRule' },
+    { name: 'accept-rule', item: RULE, open: 'Allow…', move: 'Allow', handler: 'acceptRule' },
     { name: 'let-run', item: LET_IN, open: 'Let account-4 run work…', move: "Add to work's list", handler: 'letRun' },
     {
       name: 'not-yet', item: SET_UP, open: 'Not yet…', move: 'Send not yet', handler: 'notYet',
