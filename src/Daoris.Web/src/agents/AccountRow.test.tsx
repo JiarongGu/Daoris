@@ -18,7 +18,7 @@ import { CLAUDE_USE, DOORS, READ } from './agentsFixtures';
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 const nothing = () => {};
 const ACTS: AgentActs = {
-  onReadAgain: nothing, onReadOne: nothing, onSignInNew: nothing, onAddKey: nothing, onReplaceKey: nothing, onSignIn: nothing, onTryNow: nothing, onDefault: nothing,
+  onReadAgain: nothing, onReadOne: nothing, onReadNow: nothing, onSignInNew: nothing, onAddKey: nothing, onReplaceKey: nothing, onSignIn: nothing, onTryNow: nothing, onDefault: nothing,
   onRemove: nothing, onRename: nothing, onJoin: nothing, onAddedAnswer: nothing, onSaveSettings: nothing, onDoor: nothing, onPin: nothing,
   scope: { onOrder: nothing, onUse: nothing, onInherit: nothing },
   rules: { onSwitchDefault: nothing, onRemove: nothing, onAdd: nothing, onAnswer: nothing },
@@ -251,6 +251,24 @@ describe('an account’s windows, a cell each (ACCTUX4)', () => {
     );
     expect(barOf(cellOf(document.body, 'session')!)!.className).toContain('bg-warn');
     expect(barOf(cellOf(document.body, 'weekly')!)!.className).toContain('bg-ink-soft');
+  });
+
+  /**
+   * SWITCH1d (the switch design §5): a window against its curve now, said after its share; one over its curve says so in the ink
+   * and wears the warning hue, one under it says what its curve allows in the soft ink.
+   */
+  it('says a window against its curve, and wears the warning hue where it is over it', () => {
+    const under = { ...SESSION_88, curve: 'its curve allows 90% now', over: false };
+    const over = { ...SESSION_88, window: 'weekly', name: 'weekly', used: 0.62, reading: '62% used', curve: 'over its curve\'s 46% now', over: true };
+    render(<ul><AccountRow name="spare" state={signedIn} runs="work" menu={[]} usage={{ cells: [under, over], notes: [] }} /></ul>);
+    const session = cellOf(document.body, 'session')!;
+    const weekly = cellOf(document.body, 'weekly')!;
+    expect(session.textContent).toMatch(/^five-hour.*88% used, its curve allows 90% now.*resets 15:00/);
+    expect(within(session).getByText(/its curve allows 90% now/).className).toContain('text-ink-soft');
+    expect(barOf(session)!.className).toContain('bg-ink-soft');
+    expect(within(weekly).getByText(/over its curve's 46% now/).className).toContain('text-ink');
+    expect(within(weekly).getByText(/over its curve's 46% now/).className).not.toContain('text-ink-soft');
+    expect(barOf(weekly)!.className).toContain('bg-warn');
   });
 
   it('says what is the account’s and no window’s under its cells: a reset unknown, since when it is offered again', () => {

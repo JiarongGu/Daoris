@@ -4,7 +4,7 @@ import { chinese } from '../design/storyLanguage';
 import type { AgentActs } from './AgentPage';
 import { AgentMainNotice, AgentPage } from './AgentPage';
 import {
-  AHEAD_USE, CLAUDE_TOOL, CLAUDE_USE, CODEX_OWN_TOOL, CODEX_OWN_USE, CODEX_READ_TOOL, CODEX_READ_USE, CODEX_TOOL, CODEX_USE, DSH_TOOL,
+  AHEAD_USE, CLAUDE_TOOL, CLAUDE_USE, CODEX_OWN_TOOL, CURVE_USE, CODEX_OWN_USE, CODEX_READ_TOOL, CODEX_READ_USE, CODEX_TOOL, CODEX_USE, DSH_TOOL,
   INSTALL_TOOL, INSTALL_USE, INSTALL_WORKSPACES, READ, READINGS_TOOL, READINGS_USE, RULES, USAGE, WORKSPACES,
 } from './agentsFixtures';
 
@@ -14,7 +14,8 @@ import {
 // it may do*; an agent with one account and no settings Daoris knows; Codex's own sign-in with its windows read (CODEXUSE3);
 // Codex's accounts read, in the same window cells as Claude Code's (ACCTUX4), at each width and in 中文; one not installed; an API key; what each row knows (ACCTUX1), in both themes; the same read without a pointer (ACCTUX2), each
 // row's explanation opened, at 680 px and the main area's 400 px floor in both themes; Claude Code's pace warning on the
-// account the next start takes, said as *ahead of its pace* and never near (USAGEREAD3b), in both themes and in 中文; a key
+// account the next start takes, said as *ahead of its pace* and never near (USAGEREAD3b), in both themes and in 中文; each
+// window against its curve with *Read now* (SWITCH1d), in both themes and in 中文; a key
 // added asking its name and lists,
 // and a key refused in its field (ACCTUX3), at the same widths; and the main area with no page. Each at
 // the main area's two widths: the frame's 52rem, and the 680 px window's main area, where rows stack. Above the accounts,
@@ -23,7 +24,7 @@ import {
 
 const nothing = () => {};
 const ACTS: AgentActs = {
-  onReadAgain: nothing, onReadOne: nothing, onSignInNew: nothing, onAddKey: nothing, onReplaceKey: nothing, onSignIn: nothing, onTryNow: nothing, onDefault: nothing,
+  onReadAgain: nothing, onReadOne: nothing, onReadNow: nothing, onSignInNew: nothing, onAddKey: nothing, onReplaceKey: nothing, onSignIn: nothing, onTryNow: nothing, onDefault: nothing,
   onRemove: nothing, onRename: nothing, onJoin: nothing, onAddedAnswer: nothing, onSaveSettings: nothing, onDoor: nothing, onPin: nothing,
   scope: { onOrder: nothing, onUse: nothing, onInherit: nothing },
   rules: { onSwitchDefault: nothing, onRemove: nothing, onAdd: nothing, onAnswer: nothing },
@@ -176,6 +177,21 @@ export const AheadOfPaceDark: Story = { args: AheadOfPace.args, decorators: [dar
 
 /** The same in 中文. */
 export const AheadOfPaceChinese: Story = { args: AheadOfPace.args, decorators: [chinese] };
+
+/**
+ * SWITCH1d (the switch design §5): each window against its curve now and where its reading came from, read from Claude Code or
+ * said by a session, with *Read now* beside *Read again*: the week over its curve says so in the ink and the warning hue.
+ */
+export const AgainstTheCurve: Story = { args: { tool: READINGS_TOOL, use: CURVE_USE, workspaces: ['work'], usage: [] } };
+
+/** The same in dark. */
+export const AgainstTheCurveDark: Story = { args: AgainstTheCurve.args, decorators: [dark] };
+
+/** The same in 中文. */
+export const AgainstTheCurveChinese: Story = { args: AgainstTheCurve.args, decorators: [chinese] };
+
+/** *Read now* on its way. */
+export const ReadingNow: Story = { args: { ...AgainstTheCurve.args, readingNow: true } };
 
 const narrow: Decorator = (Story) => <div className="w-[37rem] max-w-full"><Story /></div>;
 /** The main area's floor, 400 px beside an open list and side bar (UXFIX2c). */

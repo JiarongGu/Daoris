@@ -376,6 +376,88 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.False(Agent(answer, "dsh").GetProperty("speaks").GetBoolean());
     }
 
+    /// <summary>
+    /// SWITCH1d (D165 point 1; the switch design §5): each window answers where its reading came from, <c>read</c> from the
+    /// agent's own answer or <c>said</c> by a session's frame, so the screen says which; each scope answers its switch and its
+    /// curve as written, the smart switch and no curve where nothing is set, beside the old names an older page reads; and each
+    /// agent says whether its accounts' use is read by asking it, which the screen's <i>Read now</i> needs.
+    /// </summary>
+    [Fact]
+    public async Task Each_window_answers_its_source_and_each_scope_its_switch_and_curve()
+    {
+        Accounts("claude-code", "account-1", "account-2");
+        Wiring("""
+            {
+              "rotation": { "claude-code": ["account-1", "account-2"] },
+              "workspaceRotation": { "own": { "claude-code": ["account-2"] } },
+              "workspaceRotationUse": {
+                "own": { "claude-code": { "switch": "curve", "curve": { "weekly": [[0, 30], [50, 70], [100, 100]] } } }
+              }
+            }
+            """);
+        AccountWindows.Said(
+            Home, "claude-code", "account-1", [new WindowReading("session", 0.4, Now.AddHours(2))], Now, null, source: AccountWindows.SourceRead);
+        AccountWindows.Said(Home, "claude-code", "account-2", [new WindowReading("weekly", 0.2, Now.AddDays(4))], Now, "s2");
+
+        var answer = await AnswerAsync(Module(), "ACCOUNTS");
+        var claude = Agent(answer, "claude-code");
+
+        string? Source(string account) =>
+            Account(claude, account).GetProperty("said").GetProperty("windows").EnumerateArray().Single().GetProperty("source").GetString();
+        Assert.Equal("read", Source("account-1"));
+        Assert.Equal("said", Source("account-2"));
+
+        var machine = Scope(claude, null).GetProperty("use");
+        Assert.Equal("smart", machine.GetProperty("switch").GetString());
+        Assert.Empty(machine.GetProperty("curve").EnumerateObject());
+        var own = Scope(claude, "own").GetProperty("use");
+        Assert.Equal("curve", own.GetProperty("switch").GetString());
+        Assert.Equal("[[0,30],[50,70],[100,100]]", own.GetProperty("curve").GetProperty("weekly").GetRawText());
+        Assert.False(own.GetProperty("curve").TryGetProperty("session", out _));
+        // The old names, still answered as derived for a page that reads them.
+        Assert.True(own.GetProperty("early").GetBoolean());
+        Assert.Equal(90, own.GetProperty("near").GetInt32());
+
+        Assert.True(claude.GetProperty("reads").GetBoolean());
+        Assert.True(Agent(answer, "codex").GetProperty("reads").GetBoolean());
+        Assert.False(Agent(answer, "dsh").GetProperty("reads").GetBoolean());
+    }
+
+    // ---------------------------------------------------------------- ACCOUNTS_READ: Read now
+
+    /// <summary>
+    /// SWITCH1d (the switch design §1.2): the screen's <i>Read now</i>, and its read as it opens, ask each account's agent its use
+    /// only where the reading is older than its question's floor, so an account read within it is asked nothing and keeps its
+    /// reading. Answered with the door it was asked through.
+    /// </summary>
+    [Fact]
+    public async Task Read_now_asks_no_account_read_within_the_floor_and_keeps_its_reading()
+    {
+        Accounts("claude-code", "account-1");
+        AccountWindows.Said(
+            Home, "claude-code", "account-1", [new WindowReading("session", 0.4, Now.AddHours(2))], DateTimeOffset.UtcNow, null,
+            source: AccountWindows.SourceRead);
+        var before = File.ReadAllText(AccountWindows.PathOf(Home));
+
+        var answer = await AnswerAsync(Module(), "ACCOUNTS_READ", new { harness = "claude-code" });
+
+        Assert.Equal("claude-code", answer.GetProperty("harness").GetString());
+        Assert.Equal(before, File.ReadAllText(AccountWindows.PathOf(Home)));
+    }
+
+    /// <summary>An agent whose accounts are asked nothing reads nothing; a name that is no agent of Daoris's is refused.</summary>
+    [Fact]
+    public async Task Read_now_reads_nothing_for_an_agent_asked_nothing_and_refuses_one_with_no_accounts()
+    {
+        Accounts("dsh", "account-1");
+
+        var answer = await AnswerAsync(Module(), "ACCOUNTS_READ", new { harness = "dsh" });
+
+        Assert.Equal("dsh", answer.GetProperty("harness").GetString());
+        Assert.False(File.Exists(AccountWindows.PathOf(Home)));
+        await RefusalAsync(Module(), "ACCOUNTS_READ", new { harness = "not-an-agent" });
+    }
+
     // ---------------------------------------------------------------- ACCOUNT_USE: the list
 
     /// <summary>D125 §3.1, D130 §3.1: a list written whole, the machine's or a workspace's, in the person's order; none clears it.</summary>

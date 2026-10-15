@@ -302,6 +302,42 @@ export const AHEAD_USE: AgentAccounts = {
   })),
 };
 
+/**
+ * SWITCH1d (the switch design §5): each window against the smart curve now, read from Claude Code, which *Read now* asks again:
+ * `Gmail`'s week at 62% with two-sevenths of it gone, over its curve's 49%; `account-2`'s five-hour window said by a session at
+ * 40%, its curve allowing 90%.
+ */
+export const CURVE_USE: AgentAccounts = {
+  ...READINGS_USE,
+  reads: true,
+  accounts: READINGS_USE.accounts.map((account) => {
+    if (account.name === 'Gmail') {
+      return {
+        ...account,
+        said: {
+          seen: minutesFrom(-2),
+          windows: [
+            { window: 'session', used: 0.34, reset: minutesFrom(3 * 60), credits: false, seen: minutesFrom(-2), source: 'read' as const },
+            { window: 'weekly', used: 0.62, reset: minutesFrom(5 * 24 * 60), credits: false, seen: minutesFrom(-2), source: 'read' as const },
+          ],
+        },
+      };
+    }
+    if (account.name === 'account-2') {
+      return {
+        ...account,
+        cooling: null,
+        said: {
+          seen: minutesFrom(-25),
+          windows: [{ window: 'session', used: 0.4, reset: minutesFrom(2 * 60), credits: false, seen: minutesFrom(-25), source: 'said' as const }],
+        },
+      };
+    }
+    return account;
+  }),
+  scopes: READINGS_USE.scopes.map((scope) => ({ ...scope, use: { ...scope.use, switch: 'smart' as const, curve: {} } })),
+};
+
 /** Daoris's four defaults on, one rule of the person's for every session, one proposal waiting. */
 export const RULES: AgentRulesState = {
   path: 'C:/somewhere/data/permissions.json',

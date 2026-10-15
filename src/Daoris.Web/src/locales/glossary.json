@@ -185,7 +185,7 @@
       "budget": { "en": 20, "zh": 8 },
       "case": "sentence",
       "keys": [
-        "agents.read.again",
+        "agents.read.again", "agents.read.now",
         "agents.add.open", "agents.add.new", "agents.add.join", "agents.add.notNow", "agents.act.read", "agents.act.signInTo",
         "agents.act.place", "agents.rename.save",
         "update.whenIdle", "update.now", "update.notNow",

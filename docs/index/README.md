@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (142)
+## Files over 40 KB (144)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -33,8 +33,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 968 |
-| `src/Daoris.Web/src/agents/AgentPage.tsx` | 51 | 956 |
-| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 107 | 2055 |
+| `src/Daoris.Web/src/agents/AgentPage.tsx` | 52 | 973 |
+| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 110 | 2114 |
+| `src/Daoris.Web/src/agents/agents.test.ts` | 41 | 682 |
 | `src/Daoris.Web/src/app/App.test.tsx` | 50 | 966 |
 | `src/Daoris.Web/src/app/App.tsx` | 72 | 1305 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 48 | 975 |
@@ -47,8 +48,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 55 | 1039 |
 | `src/Daoris.Web/src/work/SessionHead.test.tsx` | 60 | 1155 |
 | `src/Daoris.Web/src/work/SessionRail.test.tsx` | 50 | 997 |
-| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 286 | 5408 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 116 | 2099 |
+| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 287 | 5424 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 116 | 2104 |
 | `src/Daoris.Web/src/work/attention.test.ts` | 42 | 857 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 52 | 1002 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 877 |
@@ -65,7 +66,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ToolInstallTests.cs` | 41 | 726 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ToolResourcesTests.cs` | 40 | 559 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Conversations/ChatGoOnTests.cs` | 43 | 847 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 108 | 1731 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 108 | 1733 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs` | 53 | 784 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/empty.md` | 43 | 311 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/full.md` | 48 | 362 |
@@ -109,6 +110,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
+| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleAccountsTests.cs` | 41 | 724 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleConversationTests.cs` | 42 | 773 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleSessionsTests.cs` | 48 | 805 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/AgentsRoutes.cs` | 44 | 798 |
@@ -176,7 +178,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `.claude/knowledge/twins.md` | 77 | 140 |
-| `docs/2026-09-19-platform-ux.md` | 64 | 673 |
+| `docs/2026-09-19-platform-ux.md` | 64 | 675 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 53 | 353 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |
@@ -203,4 +205,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-second-agent-design.md` | 57 | 769 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
-| `src/Daoris.Desktop/README.md` | 76 | 451 |
+| `src/Daoris.Desktop/README.md` | 77 | 451 |

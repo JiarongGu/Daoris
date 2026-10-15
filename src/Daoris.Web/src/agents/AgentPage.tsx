@@ -8,7 +8,7 @@ import {
 import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
 import { PageHead, ViewMain } from '../work/ViewMain';
 import {
-  type AccountScope, type AgentAccounts, cannotLeave, machineScope, ownLine, workspaceScope,
+  type AccountScope, type AgentAccounts, cannotLeave, machineScope, ownLine, useOf, workspaceScope,
 } from '../settings/accounts';
 import { AccountSettingsForm, AccountSettingsSummary } from '../settings/AccountSettings';
 import { type AccountChoice, type ScopeActs, ScopeEditor, WorkspaceScope } from '../settings/AccountUse';
@@ -57,6 +57,8 @@ export type AgentActs = {
   onReadAgain: () => void;
   /** An account's own *Read*, from its row or its ⋯: that account alone (ROSTER1). */
   onReadOne: (account: string) => void;
+  /** *Read now*: each account's use read again where its reading is older than a minute, no sign-in asked (SWITCH1d). */
+  onReadNow: () => void;
   /** A sign-in that makes a new account (D66 §3), step 2 of *Add an account…*. */
   onSignInNew: () => void;
   /** A key added as a new account (AGT3), told back to its field (ACCTUX3): it closes once the key is kept. */
@@ -104,12 +106,13 @@ export type AgentActs = {
  *   accounts of Daoris's own. Adding an agent adds a row to the list and this page to it, never a screen.
  * - **A door is a property, never a second roster** (D53, D57 §c): *Ways in* lists each door and its version; the accounts
  *   are the agent's.
- * - **Nothing is read when it opens** (§5.3): each account says its last known state and when it was read, and *Read* or
- *   *Read again* asks on the press.
+ * - **No sign-in is asked when it opens** (§5.3): each account says its last known state and when it was read, and *Read* or
+ *   *Read again* asks on the press. Its use is read as it opens where a reading is older than a minute, and at *Read now*, by
+ *   the organism (SWITCH1d; D165 point 1, which spends nothing), and each window is drawn against its scope's curve.
  * - **Explanation folds** (D152 §4.4): your own sign-in's paragraph is its row's ⓘ, the plans and terms one line that opens.
  */
 export function AgentPage({
-  tool, use, rules, usage, workspaces, inView = null, adapter, part, reading = false, busy = false, settingsBusy = false, signingIn = null,
+  tool, use, rules, usage, workspaces, inView = null, adapter, part, reading = false, readingNow = false, busy = false, settingsBusy = false, signingIn = null,
   signInPanel, signInNewPanel, added = null, doorRunning = null, doorConsole, acts, onOpenPlugin, onAnchored, now,
 }: {
   tool: Tool;
@@ -129,6 +132,8 @@ export function AgentPage({
   part?: AgentPart | null;
   /** *Read again* is on its way. */
   reading?: boolean;
+  /** *Read now*, or the read as the page opened, is on its way (SWITCH1d). */
+  readingNow?: boolean;
   /** An act on the agent is on its way: one at a time, by construction. */
   busy?: boolean;
   settingsBusy?: boolean;
@@ -478,7 +483,10 @@ export function AgentPage({
     // end, so each reset the agent reported is said in its window's cell, and one Daoris chose the length of says the reset is
     // unknown (ACCTUX1). The session's and the week's cells are on every sign-in whose agent speaks, unknown until read
     // (ACCTUX4); a key's are drawn only where it said something, since a key has no window its agent was heard to keep.
-    const usage = usageCells(facts, state, { fixed: Boolean(use?.speaks) && !account.key, now });
+    // Each window against the curve of the list it is measured by, and where its reading came from (SWITCH1d).
+    const usage = usageCells(facts, state, {
+      fixed: Boolean(use?.speaks) && !account.key, now, use: use ? useOf(use, account.name) : undefined, product,
+    });
     return (
       <AccountRow
         key={account.home}
@@ -615,6 +623,14 @@ export function AgentPage({
             <SectionTitle>{t('harness.accounts')}</SectionTitle>
             <span className="ml-auto flex items-baseline gap-2 text-meta text-ink-faint">
               {latest && <span>{t('agents.read.at', { when: clockOf(latest, now) })}</span>}
+              {/* Each account's use, asked of its agent with no prompt (SWITCH1d): no sign-in, so beside *Read again*. */}
+              {tool.present && use?.reads && (
+                <Tip content={t('agents.read.nowTip', { agent: product })}>
+                  <Button variant="ghost" disabled={readingNow || busy} aria-busy={readingNow || undefined} onClick={acts.onReadNow}>
+                    {t('agents.read.now')}
+                  </Button>
+                </Tip>
+              )}
               {tool.present && (
                 <Tip content={t('agents.read.againTip', { agent: product })}>
                   <Button variant="ghost" disabled={reading || busy} aria-busy={reading || undefined} onClick={acts.onReadAgain}>
@@ -650,7 +666,8 @@ export function AgentPage({
                 // What its agent last said of its windows, where a press asked its own server (CODEXUSE3), in the cells an
                 // account's row draws (ACCTUX4); else only that a cool-off Daoris chose the length of has no known reset
                 // (ACCTUX1). No unknown cells where nothing was said: Claude Code's own sign-in is never read.
-                usage={usageCells({ said: ownSaid(use) }, own, { now })}
+                // No curve: no list holds your own sign-in, so no switch measures it.
+                usage={usageCells({ said: ownSaid(use) }, own, { now, product })}
                 act={actOf(own.state === 'cooling' || own.state === 'unknown' ? accountAct(own, { signsIn: false, present: tool.present, runs: 1 }) : null, null, ownLabel)}
                 menu={ownMenu}
                 now={now}
