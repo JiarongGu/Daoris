@@ -4,6 +4,7 @@ import type { TFunction } from 'i18next';
 import type { GoAhead, Session } from '../data/api';
 import { type GoAheadAnswer, GoAheadList } from '../asks/GoAheadList';
 import { Button } from '../design/ui';
+import type { QuestClose, Resolution } from './AwaitingPerson';
 import type { LineBehind } from './diff';
 import type { DiscardOffer, LandOffer } from './groups';
 import type { Answered } from './InlineConfirm';
@@ -18,9 +19,10 @@ import { type Wait, WORK_WAITS, waitsOf } from './waits';
 export type WaitProps = {
   session: Session;
   resolving?: boolean;
-  /** Present where a parked session's moves can be pressed here: the strip reads it only to know the park is the person's. */
-  onResolve?: unknown;
-  onAnswerSession?: unknown;
+  /** A parked session's moves, the head's card's (D56): the strip reads it only to know the park is the person's here. */
+  onResolve?: (state: Resolution, note: string | null, close?: QuestClose, answered?: Answered) => void;
+  /** And its answer's door where no box below takes it: the card's too. */
+  onAnswerSession?: (answer: string | null) => void;
   onAnswerAsk?: (ask: string) => void;
   goAheads?: GoAhead[];
   onGoAhead?: GoAheadAnswer;

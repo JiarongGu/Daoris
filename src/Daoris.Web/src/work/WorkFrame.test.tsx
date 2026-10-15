@@ -2657,8 +2657,11 @@ describe('clearing a parked session', () => {
       </QueryClientProvider>,
     );
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Answer ask #0fda18' }));
+    // The head's card, in the main area; the strip at the foot offers the same door (WAITFOOT1b, D168).
+    await userEvent.click(await within(screen.getByRole('main')).findByRole('button', { name: 'Answer ask #0fda18' }));
     expect(onAnswerAsk).toHaveBeenCalledWith('0fda18');
+    await userEvent.click(within(screen.getByRole('region', { name: 'Waiting on you' })).getByRole('button', { name: 'Answer ask #0fda18' }));
+    expect(onAnswerAsk).toHaveBeenCalledTimes(2);
     expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     expect(screen.queryByLabelText('Message')).toBeNull();
@@ -3685,8 +3688,10 @@ describe('acting on what a session landed', () => {
     const notify = vi.fn();
 
     show('s1a2b3c4', notify);
-    await userEvent.click(await screen.findByRole('button', { name: 'Accept…' }));
-    expect(screen.getByText('in its tree s-4e6837ed')).toBeTruthy();
+    // The head's, in the main area: the strip at the foot draws the same line (WAITFOOT1b, D168).
+    const head = within(screen.getByRole('main'));
+    await userEvent.click(await head.findByRole('button', { name: 'Accept…' }));
+    expect(head.getByText('in its tree s-4e6837ed')).toBeTruthy();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', expect.anything());
     const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
     await within(ask).findByText(/on a new branch/);
@@ -3699,7 +3704,7 @@ describe('acting on what a session landed', () => {
 
     // A refusal is the driver's sentence, said inside the ask, which stays open.
     landed = { session: 's1a2b3c4', done: false, message: 'the session\'s tree has uncommitted work — 2 path(s) — which a branch would leave behind.' };
-    await userEvent.click(await screen.findByRole('button', { name: 'Accept…' }));
+    await userEvent.click(await head.findByRole('button', { name: 'Accept…' }));
     await userEvent.click(within(screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' })).getByRole('button', { name: 'Accept' }));
     expect(await within(screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' })).findByRole('alert'))
       .toHaveTextContent('which a branch would leave behind.');
@@ -3727,7 +3732,7 @@ describe('acting on what a session landed', () => {
     });
 
     show('s1a2b3c4', vi.fn());
-    await userEvent.click(await screen.findByRole('button', { name: 'Accept…' }));
+    await userEvent.click(await within(screen.getByRole('main')).findByRole('button', { name: 'Accept…' }));
     const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
     const field = await within(ask).findByRole('textbox', { name: 'Branch name' });
     expect(field).toHaveAttribute('placeholder', 'feature/delta');
@@ -3744,6 +3749,42 @@ describe('acting on what a session landed', () => {
     await vi.waitFor(() => expect(within(ask).getByRole('button', { name: 'Accept' })).toBeEnabled());
     await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', { payload: { id: 's1a2b3c4', branch: 'mine/x' }, timeoutMs: 6 * 60_000 });
+  });
+
+  /**
+   * WAITFOOT1b (D168 point 3): *Accept…* stands in the head and in the strip at the foot, one press, and its ask is open in one
+   * of them at a time: opening it in one puts the other down, a branch name typed there with it.
+   */
+  it('opens the work\'s ask in one place at a time, the head\'s or the foot\'s', async () => {
+    SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_GROUPS') {
+        return { sessions: [{ session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false,
+          lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
+      }
+      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace' };
+      if (type === 'SESSION_DIFF') return DIFF;
+      return DRIVER_STATE;
+    });
+    const asks = () => screen.queryAllByRole('group', { name: 'accept daoris/s-4e6837ed' });
+
+    show('s1a2b3c4', vi.fn());
+    const strip = await screen.findByRole('region', { name: 'Waiting on you' });
+    const presses = await screen.findAllByRole('button', { name: 'Accept…' });
+    expect(presses).toHaveLength(2);
+    const head = presses.find((press) => !strip.contains(press))!;
+
+    await userEvent.click(within(strip).getByRole('button', { name: 'Accept…' }));
+    expect(asks()).toHaveLength(1);
+    expect(strip.contains(asks()[0]!)).toBe(true);
+    await userEvent.type(within(asks()[0]!).getByRole('textbox', { name: 'Branch name' }), 'mine/x');
+
+    await userEvent.click(head);
+    expect(asks()).toHaveLength(1);
+    expect(strip.contains(asks()[0]!)).toBe(false);
+    expect(within(strip).getByRole('button', { name: 'Accept…' })).toBeInTheDocument();
+    // The name typed at the foot went with its ask.
+    expect(within(asks()[0]!).getByRole('textbox', { name: 'Branch name' })).toHaveValue('');
   });
 
   /**
@@ -3778,7 +3819,9 @@ describe('acting on what a session landed', () => {
     const notify = vi.fn();
 
     show('s1a2b3c4', notify);
-    const gate = await screen.findByRole('region', { name: 'Second opinion' });
+    // The head's, in the main area: the strip at the foot draws the same gate (WAITFOOT1b, D168).
+    const head = within(screen.getByRole('main'));
+    const gate = await head.findByRole('region', { name: 'Second opinion' });
     expect(gate).toHaveTextContent('1 finding by Codex (OpenAI) is disputed');
     await within(gate).findByText('Drops the last row.');
     expect(gate).toHaveTextContent('Rejected by the working session: The bound is exclusive.');
@@ -3788,7 +3831,7 @@ describe('acting on what a session landed', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ASK_OPINION', { payload: { id: 's1a2b3c4' } });
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('A second opinion on session s1a2b3c4\'s work is asked.'));
 
-    await userEvent.click(screen.getByRole('button', { name: 'Accept…' }));
+    await userEvent.click(head.getByRole('button', { name: 'Accept…' }));
     const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
     expect(ask).toHaveTextContent('Accepting answers what the second opinion left unsettled: 1 disputed finding.');
     await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
@@ -3820,10 +3863,12 @@ describe('acting on what a session landed', () => {
     const notify = vi.fn();
 
     show('s1a2b3c4', notify);
-    await userEvent.click(await screen.findByRole('button', { name: 'Discard branch…' }));
+    // The head's, in the main area: the strip at the foot draws the same line (WAITFOOT1b, D168).
+    const head = within(screen.getByRole('main'));
+    await userEvent.click(await head.findByRole('button', { name: 'Discard branch…' }));
     expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'LANDING', expect.anything());
-    expect(screen.getByText('in its tree s-4e6837ed')).toBeTruthy();
+    expect(head.getByText('in its tree s-4e6837ed')).toBeTruthy();
     const ask = screen.getByRole('group', { name: 'discard daoris/s-4e6837ed' });
     expect(ask).toHaveTextContent(`Its commits stay at ${kept} until you delete that ref`);
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'DISCARD_SESSION_TREE', expect.anything());
@@ -4657,5 +4702,40 @@ describe('a park\'s go-aheads', () => {
     expect(screen.queryByRole('region', { name: 'Go-aheads it asked' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
     expect(asksRead()).toBe(0);
+  });
+
+  /**
+   * WAITFOOT1b (D168): the person reads the conversation's foot, where the park's question is, so what waits on them stands
+   * there too, above the box and outside the conversation's scroll, answered through the head's one door; the head's stay.
+   */
+  it('answers a go-ahead from the strip at the foot through the same door, the head\'s list still there', async () => {
+    const notify = vi.fn();
+    show('g0ah3ad0', notify);
+    const strip = await screen.findByRole('region', { name: '3 waiting on you' });
+    // Outside the conversation's scroll, above the box, as Ask Daoris's note row is.
+    expect(screen.getByRole('main').contains(strip)).toBe(false);
+    expect(strip.compareDocumentPosition(screen.getByLabelText('Message'))).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(strip).toHaveTextContent('It asked you a question: answer it in the box below.');
+    expect(screen.getByRole('region', { name: 'Go-aheads it asked' })).toBeInTheDocument();
+
+    const second = within(strip).getAllByRole('listitem')[1]!;
+    await userEvent.click(within(second).getByRole('button', { name: 'Approve' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_AHEAD', {
+      payload: { id: 'g0ah3ad0', ask: 'a5k001', number: 2, approved: true },
+    }));
+    expect(notify).toHaveBeenCalledWith("Approved go-ahead #2; the same session goes on with it at the driver's next look.");
+  });
+
+  it('takes the person from the strip to the head\'s waits at the top', async () => {
+    show('g0ah3ad0');
+    const strip = await screen.findByRole('region', { name: '3 waiting on you' });
+    const main = screen.getByRole('main');
+    main.scrollTop = 900;
+
+    await userEvent.click(within(strip).getByRole('button', { name: 'To the top' }));
+    expect(main.scrollTop).toBe(0);
+    // The focus goes with the person, to the record's head, where every wait stands.
+    expect(document.activeElement).toHaveAttribute('data-record-head');
   });
 });

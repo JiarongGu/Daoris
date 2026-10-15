@@ -228,7 +228,8 @@ export function SessionHead({
   const noted = hasNote({ note: session.note, parts: session.noteParts });
 
   return (
-    <header className="grid gap-2.5">
+    // Where the foot's *To the top* puts the focus (WAITFOOT1b, D168 point 1): every wait stands here with its reading.
+    <header data-record-head tabIndex={-1} className="grid gap-2.5 outline-none">
       {/* `running` counts a park as alive; a parked intake is AwaitingIntake's, below. */}
       {running && !parked && intake && <RunningIntake ask={session.ask!} onOpen={onAnswerAsk} />}
       {answered && <AnsweredPark answer={session.answer!} />}

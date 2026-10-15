@@ -18,7 +18,7 @@ import type { DiscardOffer, LandOffer } from './groups';
 import { type PartFacts, PartsStrip } from './PartsStrip';
 import type { Relations } from './relations';
 import type { LineBehind } from './diff';
-import { type HeadLink, type HeadOpinion, type HeadReview, type LandingPlan, SessionHead } from './SessionHead';
+import { type HeadLink, type HeadOpinion, type HeadReview, type LandingPlan, SessionHead, type WorkAsk } from './SessionHead';
 import { SessionRelations } from './SessionRelations';
 import { SessionTimeline } from './SessionTimeline';
 
@@ -55,8 +55,12 @@ export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
-  opinion, continues, helps, parts, channel,
+  opinion, continues, helps, parts, channel, workAsk, workBusy,
 }: {
+  /** Passed straight through to the head: where its work's ask is open, the frame's, the head's or the foot's (D168 point 3). */
+  workAsk?: WorkAsk;
+  /** And a landing or a discard of its work on its way, pressed in either place. */
+  workBusy?: boolean;
   /**
    * Its entry's parts (SESSONE1c, D167 point 5): under the head, a strip of every record of the line of work it belongs to, the
    * one shown marked, so the page's acts stay the part shown's and a press shows another. Absent where it is a record alone,
@@ -217,6 +221,8 @@ export function AttendedSession({
         opinion={opinion}
         discards={discards}
         onDiscardTree={onDiscardTree}
+        workAsk={workAsk}
+        workBusy={workBusy}
       />
       {parts && <PartsStrip {...parts} />}
       {/* Every stop a door (the study's §5: "every stop pressable"): a session attends, a quest opens.
