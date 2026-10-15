@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// about the arguments, the format, or the parse.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class WorkingTreeProvenanceTests : IDisposable
 {
     private readonly GitTree _tree = new("worktree");

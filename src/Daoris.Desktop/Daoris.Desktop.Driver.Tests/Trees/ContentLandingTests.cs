@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// half; nothing reaches a network.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class ContentLandingTests : LandedFixture
 {
     private static readonly LandingSubject Subject = new("s1a2b3c4", "0fda18", "Fix the gap");

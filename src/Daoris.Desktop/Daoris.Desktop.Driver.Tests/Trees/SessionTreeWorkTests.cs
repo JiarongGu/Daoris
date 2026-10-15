@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// suite's Process half; the reader over a judgement handed in is <see cref="SessionGroupsTests"/>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class SessionTreeWorkTests : IDisposable
 {
     private readonly string _scratch;

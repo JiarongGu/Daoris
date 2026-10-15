@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// commit does stays. Real git in a scratch repository, so this is the suite's Process half; nothing reaches a network.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class ContentOfferTests : LandedFixture
 {
     private static readonly DateTimeOffset T0 = new(2026, 10, 9, 9, 0, 0, TimeSpan.Zero);
