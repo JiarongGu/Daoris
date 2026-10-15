@@ -36,7 +36,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 51 | 956 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 105 | 2030 |
 | `src/Daoris.Web/src/app/App.test.tsx` | 50 | 966 |
-| `src/Daoris.Web/src/app/App.tsx` | 71 | 1295 |
+| `src/Daoris.Web/src/app/App.tsx` | 71 | 1297 |
 | `src/Daoris.Web/src/design/ui.test.tsx` | 48 | 975 |
 | `src/Daoris.Web/src/design/ui.tsx` | 79 | 1683 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 71 | 1422 |
@@ -199,4 +199,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-second-agent-design.md` | 57 | 769 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
-| `src/Daoris.Desktop/README.md` | 73 | 432 |
+| `src/Daoris.Desktop/README.md` | 73 | 437 |
