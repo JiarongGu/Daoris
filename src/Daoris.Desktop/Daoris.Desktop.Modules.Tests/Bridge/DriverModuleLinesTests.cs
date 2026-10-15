@@ -275,6 +275,24 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// LANDSYNC3b (D87's 2026-10-16 note): a plan's replay row carries how many commits the line already holds, which the replay
+    /// leaves out beside the ones it carries, so the Updates list says it as `trees sync` does; a row with none left out says 0.
+    /// The list's row and the press's are the same projection.
+    /// </summary>
+    [Fact]
+    public void A_plans_replay_row_carries_what_it_leaves_out_that_the_line_holds()
+    {
+        var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        var item = new RebaseItem("engine", "aurora", "daoris/s-3c4d5e6f", false, RebaseKind.Replay, "main", "abcd1234", CutBy.Line, null, 2, null);
+
+        var row = JsonSerializer.SerializeToElement(LinesRoutes.RebaseRow(item with { LeftOut = 1 }), camel);
+        var none = JsonSerializer.SerializeToElement(LinesRoutes.RebaseRow(item), camel);
+
+        Assert.Equal((2, 1, true), (row.GetProperty("commits").GetInt32(), row.GetProperty("leftOut").GetInt32(), row.GetProperty("replays").GetBoolean()));
+        Assert.Equal(0, none.GetProperty("leftOut").GetInt32());
+    }
+
+    /// <summary>
     /// A failed or superseded attempt's branch discarded from the page (LAND3b, D102's LAND3 note) is the terminal's
     /// `trees remove &lt;branch&gt; --repository &lt;name&gt; --force`: it reads the registry's checkout and the sessions in
     /// use, so before the driver is up it is the cold-start sentence, and a discard that names no branch or no repository
