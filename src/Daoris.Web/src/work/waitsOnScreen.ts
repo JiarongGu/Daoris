@@ -16,13 +16,15 @@ type Watching = { observer: IntersectionObserver; sections: readonly Element[]; 
  * @remarks
  * Whole, not touched: a section half under the pinned head may hold its press in the half that is not seen, and while it does the
  * strip stands. A section taller than the box is never whole, so the strip stands beside it, as it did before. With no observer
- * (a test's DOM) and with no section drawn, never: the strip stands as it always did.
+ * (a test's DOM) and with no section drawn, `false`: the strip stands as it always did. `null` from the moment sections are first
+ * watched until the observer's first word, a frame later, so a session whose head is on screen as it opens never flashes its
+ * strip; once told, a section added or the pinned head grown keeps the last word until the next.
  *
  * The sections and the pinned head's height are the page's, read after each drawing; the observer is made again only when the
  * one or the other changed.
  */
-export function useWaitsOnScreen(scroller: RefObject<HTMLElement | null>): boolean {
-  const [onScreen, setOnScreen] = useState(false);
+export function useWaitsOnScreen(scroller: RefObject<HTMLElement | null>): boolean | null {
+  const [onScreen, setOnScreen] = useState<boolean | null>(false);
   const watching = useRef<Watching | null>(null);
   useEffect(() => {
     const root = scroller.current;
@@ -45,6 +47,7 @@ export function useWaitsOnScreen(scroller: RefObject<HTMLElement | null>): boole
     }, { root, rootMargin: margin, threshold: [0, WHOLE] });
     for (const section of sections) observer.observe(section);
     watching.current = { observer, sections, margin };
+    if (!was) setOnScreen(null);
   });
   useEffect(() => () => {
     watching.current?.observer.disconnect();

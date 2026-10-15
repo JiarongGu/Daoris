@@ -3859,9 +3859,10 @@ describe('acting on what a session landed', () => {
         return DRIVER_STATE;
       });
       show('s1a2b3c4', vi.fn());
-      const strip = await screen.findByRole('region', { name: 'Waiting on you' });
+      await screen.findAllByRole('button', { name: 'Accept…' });
       await waitFor(() => expect(watched.observers()).not.toHaveLength(0));
       watched.show(false);
+      const strip = screen.getByRole('region', { name: 'Waiting on you' });
       await userEvent.click(within(strip).getByRole('button', { name: 'Accept…' }));
       await userEvent.click(screen.getByRole('main'));
 
@@ -4832,8 +4833,8 @@ describe('a park\'s go-aheads', () => {
       const [watching] = watched.observers();
       expect(watching!.root).toBe(screen.getByRole('main'));
       expect(watching!.rootMargin).toMatch(/^-\d+px 0px 0px 0px$/);
-      // Not yet told: the strip stands, as it does where nothing can tell.
-      expect(screen.getByRole('region', { name: '3 waiting on you' })).toBeInTheDocument();
+      // Not yet told, the strip waits for the observer's word rather than flash over a head that may be on screen.
+      expect(screen.queryByRole('region', { name: '3 waiting on you' })).toBeNull();
 
       watched.show(true);
       expect(screen.queryByRole('region', { name: '3 waiting on you' })).toBeNull();
@@ -5077,11 +5078,11 @@ describe('a session\'s rule proposal', () => {
     const strip = await screen.findByRole('region', { name: 'Waiting on you' });
     const call = await screen.findByText('permission_propose');
     const block = call.closest<HTMLElement>('[data-block]')!;
-    await waitFor(() => expect(block).toHaveTextContent('Waiting on you from here: a rule it proposed'));
+    const mark = await within(block).findByRole('button', { name: 'To the wait: a rule it proposed' });
 
     await userEvent.click(within(within(strip).getByRole('listitem')).getByRole('button', { name: 'In the conversation' }));
     await waitFor(() => expect(block.className).toContain('outline-accent'));
-    await userEvent.click(within(block).getByRole('button', { name: 'To the wait' }));
+    await userEvent.click(mark);
     await waitFor(() => expect(within(strip).getByRole('listitem')).toHaveFocus());
   });
 });

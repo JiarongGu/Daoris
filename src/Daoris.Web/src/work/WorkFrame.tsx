@@ -1822,7 +1822,7 @@ export function WorkFrame({
                     const anchor = anchorOf(wait);
                     if (!anchor) return;
                     // To the head's line while it is on screen, where the strip stands aside (WAITFOOT2b), else the strip's.
-                    const at = waitsOnScreen ? 'head' : 'foot';
+                    const at = waitsOnScreen === true ? 'head' : 'foot';
                     setToWait((was) => ({ session: attended.id, wait: anchor, n: (was?.n ?? 0) + 1, at }));
                   }}
                   // Where the person's words went, a door to that session; and words that cannot go on here, one press
@@ -1863,7 +1863,8 @@ export function WorkFrame({
             onTop={toTop}
             toEvent={toEvent}
             seek={seekAt('foot')}
-            aside={waitsOnScreen}
+            // Not yet told is aside too, for the frame the observer takes to say: no strip flashed over a head on screen.
+            aside={waitsOnScreen !== false}
           />
         )}
 
