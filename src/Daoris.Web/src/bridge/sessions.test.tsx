@@ -58,8 +58,12 @@ describe('the sessions domain', () => {
     await waitFor(() => expect(result.current.data).toEqual([]));
   });
 
-  /** An archive names the sessions and which way, and afterwards the sessions, their groups among them, are asked again. */
-  it('archives on DAORIS.DRIVER and asks the sessions again', async () => {
+  /**
+   * An archive names the sessions and which way. The sessions, their groups among them, are asked again by the driver's
+   * `STATE_CHANGED`, in every window (STATEHUB1d, D169 point 6); the hook asks them too, without cancelling the hub's read,
+   * only until `SessionRail`'s tests hear the hub (STATEHUB1f).
+   */
+  it('archives on DAORIS.DRIVER and asks the sessions again without cancelling the hub’s read', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const invalidate = vi.spyOn(client, 'invalidateQueries');
     invoke.mockImplementation(async () => ({ archived: [{ session: 's1', at: '2026-10-02T09:00:00Z' }], kept: [] }));
@@ -69,7 +73,7 @@ describe('the sessions domain', () => {
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_ARCHIVE', { payload: { ids: ['s1'], archived: true } });
     expect(answer.archived.map((mark) => mark.session)).toEqual(['s1']);
-    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions }));
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions }, { cancelRefetch: false });
   });
 
   /**
@@ -119,10 +123,11 @@ describe('the sessions domain', () => {
   });
 
   /**
-   * SESSUX1f (D126 §5.4): a delete names the session alone, the sessions are asked again, and each refusal reaches the
-   * person in the catalogue, naming what kept it; which named it, and the archive's codes asked of a delete, by context.
+   * SESSUX1f (D126 §5.4): a delete names the session alone, and each refusal reaches the person in the catalogue, naming
+   * what kept it; which named it, and the archive's codes asked of a delete, by context. The sessions are asked again by the
+   * state hub (STATEHUB1d).
    */
-  it('deletes on DAORIS.DRIVER by its id and asks the sessions again, and says each refusal in the catalogue', async () => {
+  it('deletes on DAORIS.DRIVER by its id, leaves the sessions to the state hub, and says each refusal in the catalogue', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const invalidate = vi.spyOn(client, 'invalidateQueries');
     invoke.mockImplementation(async () => ({ deleted: 's1', removed: ['record'] }));
@@ -130,7 +135,7 @@ describe('the sessions domain', () => {
 
     expect(await result.current.mutateAsync('s1')).toEqual({ deleted: 's1', removed: ['record'] });
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DELETE', { payload: { id: 's1' } });
-    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions }));
+    expect(invalidate).not.toHaveBeenCalled();
 
     const refusal = (code: string, parameters: Record<string, string>) => Object.assign(new Error(code), { code, parameters });
     try {
@@ -180,7 +185,7 @@ describe('the sessions domain', () => {
   /**
    * MSG1g2 (D137 §2.2): *Go on in a new session* names the session alone, and its answer is read field by field, so a
    * refusal keeps its code and a shell older than the route answers no choice kept; the sessions and the driver are asked
-   * again, since the loop takes the choice up at its next look.
+   * again by the state hub (STATEHUB1d), since the loop takes the choice up at its next look.
    */
   it('asks a new session of DAORIS.DRIVER by the session’s id, and reads its answer defensively', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -190,7 +195,7 @@ describe('the sessions domain', () => {
 
     expect(await result.current.mutateAsync('s1')).toEqual({ sent: false, why: 'closed', message: '#q1 has closed' });
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_ON_NEW', { payload: { id: 's1' } });
-    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions }));
+    expect(invalidate).not.toHaveBeenCalled();
 
     invoke.mockImplementation(async () => ({ sent: true, why: null, message: 'it goes on in a new session' }));
     expect(await result.current.mutateAsync('s1')).toEqual({ sent: true, why: null, message: 'it goes on in a new session' });

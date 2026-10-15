@@ -25,23 +25,18 @@ import { call } from './call';
  *
  * It lands on the driver rather than on the service because the process and the record must move
  * together: this machine lets the process go, and only then does the record say it ended.
+ *
+ * The sessions, the quests and the driver are asked again by the route's `STATE_CHANGED`, in every window (STATEHUB1d,
+ * D169), as every press below that moves a session is.
  */
-export const useResolveSession = () => {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (move: { id: string; state: 'completed' | 'declined' | 'stopped'; note?: string }) =>
-      call<{ session: string; state: string; message: string }>('RESOLVE_SESSION', {
-        id: move.id,
-        state: move.state,
-        ...(move.note ? { note: move.note } : {}),
-      }),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: keys.allSessions });
-      void client.invalidateQueries({ queryKey: keys.allQuests });
-      void client.invalidateQueries({ queryKey: keys.driver });
-    },
-  });
-};
+export const useResolveSession = () => useMutation({
+  mutationFn: (move: { id: string; state: 'completed' | 'declined' | 'stopped'; note?: string }) =>
+    call<{ session: string; state: string; message: string }>('RESOLVE_SESSION', {
+      id: move.id,
+      state: move.state,
+      ...(move.note ? { note: move.note } : {}),
+    }),
+});
 
 /**
  * What the driver answered a stop: whether it ended anything, and whether what it ended was an
@@ -60,16 +55,9 @@ export const stopNotice = (answer: StopAnswer) =>
       : answer.elsewhere ? 'quests.session.runElsewhere'
         : 'quests.session.notRunning';
 
-export const useStopSession = () => {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => call<StopAnswer>('STOP_SESSION', { id }),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: keys.allSessions });
-      void client.invalidateQueries({ queryKey: keys.driver });
-    },
-  });
-};
+export const useStopSession = () => useMutation({
+  mutationFn: (id: string) => call<StopAnswer>('STOP_SESSION', { id }),
+});
 
 /**
  * What the person first said in each of these sessions (RAIL1): a conversation's identity, as
@@ -213,16 +201,19 @@ export type ArchiveAnswer = {
  * Each session is judged by where the host places it as it is asked: a live one, one waiting on you and one with work to
  * review are refused, since archive never hides what needs the person. Asked of one session, the refusal is the answer;
  * asked of several, as *Archive what ended*'s second press asks, the rest are archived and each kept one comes back with
- * its code.
+ * its code. The sessions, their groups among them, are asked again by the state hub (STATEHUB1d).
+ *
+ * @remarks
+ * **And by the hook, for now**: `SessionRail`'s tests, in another branch's lane during STATEHUB1d, press it with no hub
+ * mounted, as STATEHUB1b kept four such for STATEHUB1f, which removes this with them. Without cancelling a read under way,
+ * so where the hub's event came first its read is not asked twice.
  */
 export const useArchiveSessions = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (move: { ids: readonly string[]; archived: boolean }) =>
       call<ArchiveAnswer>('SESSION_ARCHIVE', { ids: [...new Set(move.ids)], archived: move.archived }),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: keys.allSessions });
-    },
+    onSuccess: () => void client.invalidateQueries({ queryKey: keys.allSessions }, { cancelRefetch: false }),
   });
 };
 
@@ -235,17 +226,11 @@ export type DeleteAnswer = { deleted: string; removed?: string[]; stayed?: strin
 /**
  * *Delete…* (SESSUX1f, D126 §5.4): a conversation that served no quest, its record through the ledger and what this
  * machine kept of it, by its id alone. Each refusal is a code the catalogue says, naming what kept it. The sessions,
- * their groups among them, are asked again.
+ * their groups among them, are asked again by the state hub (STATEHUB1d).
  */
-export const useDeleteSession = () => {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => call<DeleteAnswer>('SESSION_DELETE', { id }),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: keys.allSessions });
-    },
-  });
-};
+export const useDeleteSession = () => useMutation({
+  mutationFn: (id: string) => call<DeleteAnswer>('SESSION_DELETE', { id }),
+});
 
 /**
  * *Open folder* (SESSUX1d, D126 §3.5): the folder a session worked in, its own tree or its repository's checkout, opened
@@ -261,25 +246,18 @@ export const useOpenSessionFolder = () => useMutation({
  * new session at the driver's next look, handed them, without that conversation. By the session's id alone: the driver
  * judges it and keeps the person's choice, the door `daoris-driver sessions go-on-new` calls too (D50). Read field by field,
  * so a refusal keeps its code for the page to word, and a shell older than the route answers no choice kept. The sessions
- * and the driver are asked again, since the loop takes the choice up at its next look.
+ * and the driver are asked again by the state hub (STATEHUB1d), since the loop takes the choice up at its next look.
  */
-export const useGoOnNew = () => {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string): Promise<NewSessionAnswer> => {
-      const answer = await call<{ sent?: boolean; why?: string | null; message?: string } | null>('SESSION_GO_ON_NEW', { id });
-      return {
-        sent: answer?.sent === true,
-        why: typeof answer?.why === 'string' ? answer.why : null,
-        message: typeof answer?.message === 'string' ? answer.message : '',
-      };
-    },
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: keys.allSessions });
-      void client.invalidateQueries({ queryKey: keys.driver });
-    },
-  });
-};
+export const useGoOnNew = () => useMutation({
+  mutationFn: async (id: string): Promise<NewSessionAnswer> => {
+    const answer = await call<{ sent?: boolean; why?: string | null; message?: string } | null>('SESSION_GO_ON_NEW', { id });
+    return {
+      sent: answer?.sent === true,
+      why: typeof answer?.why === 'string' ? answer.why : null,
+      message: typeof answer?.message === 'string' ? answer.message : '',
+    };
+  },
+});
 
 /** Where a search found its words: the session, the event it began at, whose words, and a window of them. */
 export type SessionHit = { session: string; seq: number; kind: string; snippet: string };

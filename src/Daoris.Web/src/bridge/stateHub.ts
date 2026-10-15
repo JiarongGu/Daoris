@@ -1,6 +1,7 @@
 import { type QueryClient, type QueryKey, useQueryClient } from '@tanstack/react-query';
 import { useShenoraEvent } from '@shenora/react';
 import { keys } from '../data/queries';
+import { ALL_HISTORY } from './history';
 import { treesSyncScopeKey } from './lines';
 
 /**
@@ -27,6 +28,20 @@ const scopes = new Map<string, (sessions: string[] | null) => QueryKey[]>([
   ['treesSync', () => [treesSyncScopeKey]],
   // Each repository's rules, and the Current workflow drawn from them, which sits under their key.
   ['lines', () => [keys.lines]],
+  // The rest of the routes (STATEHUB1d, D169 point 10): each family its hooks asked again by hand before.
+  // The quests, with each quest's and ask's work, which sits under their key.
+  ['quests', () => [keys.allQuests]],
+  ['asks', () => [keys.allAsks]],
+  // The driver's state and everything read under its key: its standing choices, the lines, the plans, the lists.
+  ['driver', () => [keys.driver]],
+  ['rules', () => [keys.rules]],
+  // Every clear's plan, whatever it was asked of.
+  ['history', () => [ALL_HISTORY]],
+  ['sync', () => [keys.allSync]],
+  ['registry', () => [keys.allRegistry]],
+  ['plugins', () => [keys.plugins]],
+  // The agents' roster, with what each start would run on and the accounts, which sit under its key.
+  ['harnesses', () => [keys.harnesses]],
 ]);
 
 const words = (value: unknown): string[] =>

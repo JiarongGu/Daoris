@@ -1,18 +1,19 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { act, render, waitFor } from '@testing-library/react';
 import { type QueryKey, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // What a press changed reaches every window as `STATE_CHANGED` (STATEHUB1b, D169): the hub is the one place a scope becomes
 // the page's queries asked again, in every window alike.
 
-const { eventHandlers } = vi.hoisted(() => ({
+const { eventHandlers, invoke } = vi.hoisted(() => ({
   // The push channel's seam: handlers land here by "module.type", and a test fires them as the host.
   eventHandlers: new Map<string, (payload: unknown) => void>(),
+  invoke: vi.fn(),
 }));
 
 vi.mock('@shenora/react', () => ({
   isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke: vi.fn() }),
+  getBridge: () => ({ isAvailable: true, invoke }),
   useShenora: () => ({ isAvailable: true, bridge: {} }),
   useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
     eventHandlers.set(`${module}.${type}`, handler);
@@ -20,8 +21,15 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { keys } from '../data/queries';
+import { useHarnesses } from './agents';
+import { useDriver } from './driver';
+import { historyKey, useHistoryPlan } from './history';
 import { treesSyncScopeKey } from './lines';
+import { usePlugins } from './plugins';
+import { useRules } from './rules';
+import { useSessionGroups } from './sessions';
 import { useStateHub } from './stateHub';
+import { useWorkPlan, workKey } from './work';
 
 function Hub() {
   useStateHub();
@@ -95,5 +103,66 @@ describe('the state hub (STATE_CHANGED)', () => {
     changed({ scopes: 'landing' });
 
     expect(invalidate).not.toHaveBeenCalled();
+  });
+
+  /**
+   * The rest of the routes (STATEHUB1d, D169 point 10): each scope they added asks again the family its hooks used to ask by
+   * hand, every key under it, and nothing of another family.
+   */
+  const families: [scope: string, held: QueryKey[]][] = [
+    ['quests', [keys.allQuests, workKey({ scope: 'quest', id: 'q1' })]],
+    ['asks', [keys.allAsks]],
+    // The driver's state and everything read under its key: the lines, the plans, the clean-up's list.
+    ['driver', [keys.driver, keys.lines, keys.landing('s1'), keys.sweep]],
+    ['rules', [keys.rules]],
+    ['history', [historyKey({ scope: 'workspace', id: 'aurora' }), historyKey({ scope: 'quest', id: 'q1' })]],
+    ['sync', [keys.sync('*'), keys.sync('aurora')]],
+    ['registry', [keys.registry(null), keys.registry('aurora')]],
+    ['plugins', [keys.plugins]],
+    // The agents this machine can run, what each start would run on and the accounts, all under the roster's key.
+    ['harnesses', [keys.harnesses, keys.allStarts, keys.accounts]],
+  ];
+
+  it.each(families)('%s asks its own family again and no other', (scope, family) => {
+    const others = families.filter(([other]) => other !== scope).flatMap(([, held]) => held)
+      .filter((key) => !family.some((own) => own.every((part, at) => key[at] === part)));
+    const { invalid } = holding(...family, ...others, keys.allSessions);
+
+    changed({ scopes: [scope] });
+
+    for (const key of family) expect(invalid(key)).toBe(true);
+    for (const key of [...others, keys.allSessions]) expect(invalid(key)).toBe(false);
+  });
+
+  /**
+   * The proof the row asks of each domain: an event alone, with no press in this window (a second window's, or another
+   * view's), asks the view's own data again, through the query the view already holds.
+   */
+  const views: [scope: string, what: string, useView: () => unknown, route: string][] = [
+    ['sessions', 'the session list', () => useSessionGroups(), 'SESSION_GROUPS'],
+    ['quests', 'a quest’s work', () => useWorkPlan({ scope: 'quest', id: 'q1' }), 'WORK_PLAN'],
+    ['driver', 'the driver’s state', () => useDriver(), 'STATE'],
+    ['rules', 'the rules', () => useRules(), 'RULES'],
+    ['history', 'a workspace’s history', () => useHistoryPlan({ scope: 'workspace', id: 'aurora' }), 'HISTORY_PLAN'],
+    ['plugins', 'the plugins', () => usePlugins(), 'PLUGINS'],
+    ['harnesses', 'the agents', () => useHarnesses(), 'HARNESSES'],
+  ];
+
+  it.each(views)('%s: an event alone asks %s again', async (scope, _what, useView, route) => {
+    invoke.mockReset();
+    invoke.mockImplementation(async () => ({}));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    function View() {
+      useStateHub();
+      useView();
+      return null;
+    }
+    render(<QueryClientProvider client={client}><View /></QueryClientProvider>);
+    const asked = () => invoke.mock.calls.filter(([, type]) => type === route).length;
+    await waitFor(() => expect(asked()).toBe(1));
+
+    act(() => changed({ scopes: [scope] }));
+
+    await waitFor(() => expect(asked()).toBe(2));
   });
 });

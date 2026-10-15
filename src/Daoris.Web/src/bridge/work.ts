@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
 import type { AbandonAnswer, PauseAnswer, ResumeAnswer, WorkPlan, WorkTarget } from '../work/pausing';
@@ -67,44 +67,24 @@ export const useWorkPlan = (target: WorkTarget | null, { enabled = true }: { ena
   };
 };
 
-/** Everything a move on a work changes: its quests (the plan among them), the asks, the sessions and the driver's state. */
-function useInvalidateWork() {
-  const client = useQueryClient();
-  return () => {
-    void client.invalidateQueries({ queryKey: keys.allQuests });
-    void client.invalidateQueries({ queryKey: keys.allAsks });
-    void client.invalidateQueries({ queryKey: keys.allSessions });
-    void client.invalidateQueries({ queryKey: keys.driver });
-  };
-}
+// Everything a move on a work changes, its quests (the plan among them), the asks, the sessions and the driver's state, is
+// asked again by the route's `STATE_CHANGED`, in every window (STATEHUB1d, D169): the hooks below ask nothing by hand.
 
 /** *Pause…*'s press (`WORK_PAUSE`, design §2.1): what it stopped, and what it could not reach. */
-export const usePauseWork = () => {
-  const invalidate = useInvalidateWork();
-  return useMutation({
-    mutationFn: (target: WorkTarget) => call<PauseAnswer>('WORK_PAUSE', named(target), { timeoutMs: WORK_BOUND }),
-    onSuccess: invalidate,
-  });
-};
+export const usePauseWork = () => useMutation({
+  mutationFn: (target: WorkTarget) => call<PauseAnswer>('WORK_PAUSE', named(target), { timeoutMs: WORK_BOUND }),
+});
 
 /** *Resume*'s press (`WORK_RESUME`, design §2.4): what it released, and what still holds each quest. */
-export const useResumeWork = () => {
-  const invalidate = useInvalidateWork();
-  return useMutation({
-    mutationFn: (target: WorkTarget) => call<ResumeAnswer>('WORK_RESUME', named(target), { timeoutMs: WORK_BOUND }),
-    onSuccess: invalidate,
-  });
-};
+export const useResumeWork = () => useMutation({
+  mutationFn: (target: WorkTarget) => call<ResumeAnswer>('WORK_RESUME', named(target), { timeoutMs: WORK_BOUND }),
+});
 
 /**
  * *Abandon…*'s second press (`WORK_ABANDON`, design §3.1, §3.4): exactly the pieces its first press listed, with the
  * person's reason, each judged again by the host as it goes.
  */
-export const useAbandonWork = () => {
-  const invalidate = useInvalidateWork();
-  return useMutation({
-    mutationFn: ({ target, reason, pieces }: { target: WorkTarget; reason: string; pieces: readonly string[] }) =>
-      call<AbandonAnswer>('WORK_ABANDON', { ...named(target), reason, pieces: [...pieces] }, { timeoutMs: WORK_BOUND }),
-    onSuccess: invalidate,
-  });
-};
+export const useAbandonWork = () => useMutation({
+  mutationFn: ({ target, reason, pieces }: { target: WorkTarget; reason: string; pieces: readonly string[] }) =>
+    call<AbandonAnswer>('WORK_ABANDON', { ...named(target), reason, pieces: [...pieces] }, { timeoutMs: WORK_BOUND }),
+});

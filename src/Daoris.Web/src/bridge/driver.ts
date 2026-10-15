@@ -342,13 +342,17 @@ export type SyncNowReport = { workspace: string; problem?: string | null; notes:
  * `daoris-driver sync --workspace <name>` is the other door to the same pass (D50). Shell-only,
  * because the pass that feeds a checkout's registration and knowledge asks git, and only the machine
  * with the checkout can.
+ *
+ * A pass that answers, a wall in its report among them, is published by its route, and the state hub asks where each circle
+ * stands, the quests, the sessions and the registry again in every window (STATEHUB1d, D169).
  */
 export const useSyncNow = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (workspace: string) => call<SyncNowReport>('SYNC_NOW', { workspace }),
-    onSettled: () => {
-      // A pass can move all of these, and a wall still recorded when it tried.
+    onError: () => {
+      // A pass refused as an error publishes nothing (D169 point 5), and one that failed part way may have recorded where it
+      // stood: this window, which pressed it, asks again itself.
       void client.invalidateQueries({ queryKey: keys.allSync });
       void client.invalidateQueries({ queryKey: keys.allQuests });
       void client.invalidateQueries({ queryKey: keys.allSessions });
