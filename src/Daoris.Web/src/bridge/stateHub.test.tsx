@@ -22,13 +22,16 @@ vi.mock('@shenora/react', () => ({
 
 import { keys } from '../data/queries';
 import { useHarnesses } from './agents';
+import { useBrowserSettings } from './browser';
 import { useDriver } from './driver';
+import { HELP_HISTORY, HELP_PROPOSALS, useHelpConversations } from './help';
 import { historyKey, useHistoryPlan } from './history';
 import { treesSyncScopeKey } from './lines';
 import { usePlugins } from './plugins';
 import { useRules } from './rules';
 import { useSessionGroups } from './sessions';
 import { useStateHub, useUnderWay } from './stateHub';
+import { ALL_TOOLS, useTools } from './tools';
 import { useLandSessionTree } from './trees';
 import { useWorkPlan, workKey } from './work';
 
@@ -118,10 +121,16 @@ describe('the state hub (STATE_CHANGED)', () => {
     ['rules', [keys.rules]],
     ['history', [historyKey({ scope: 'workspace', id: 'aurora' }), historyKey({ scope: 'quest', id: 'q1' })]],
     ['sync', [keys.sync('*'), keys.sync('aurora')]],
-    ['registry', [keys.registry(null), keys.registry('aurora')]],
+    // The workspaces and repositories registered: the registry and the repositories the service lists (STATEHUB1h).
+    ['registry', [keys.registry(null), keys.registry('aurora'), keys.repositories(null), keys.repositories('aurora')]],
     ['plugins', [keys.plugins]],
     // The agents this machine can run, what each start would run on and the accounts, all under the roster's key.
     ['harnesses', [keys.harnesses, keys.allStarts, keys.accounts]],
+    // The remaining presses' families (STATEHUB1h): the tools, with what a switch of git would change; Ask Daoris's history and
+    // what each conversation proposed; the browser's settings.
+    ['tools', [[...ALL_TOOLS, 'list', false], [...ALL_TOOLS, 'git', 'system', '', '']]],
+    ['help', [[...HELP_HISTORY, ''], [...HELP_HISTORY, 'pinned'], [...HELP_PROPOSALS, 's1']]],
+    ['browser', [keys.browserSettings]],
   ];
 
   it.each(families)('%s asks its own family again and no other', (scope, family) => {
@@ -147,6 +156,9 @@ describe('the state hub (STATE_CHANGED)', () => {
     ['history', 'a workspace’s history', () => useHistoryPlan({ scope: 'workspace', id: 'aurora' }), 'HISTORY_PLAN'],
     ['plugins', 'the plugins', () => usePlugins(), 'PLUGINS'],
     ['harnesses', 'the agents', () => useHarnesses(), 'HARNESSES'],
+    ['tools', 'the tools', () => useTools(), 'TOOLS_LIST'],
+    ['help', 'Ask Daoris’s history', () => useHelpConversations(''), 'HELP_CONVERSATIONS'],
+    ['browser', 'the browser’s settings', () => useBrowserSettings(), 'STATE'],
   ];
 
   it.each(views)('%s: an event alone asks %s again', async (scope, _what, useView, route) => {

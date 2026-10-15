@@ -463,8 +463,10 @@ describe('Ask Daoris, with an agent named', () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     client.setQueryData(keys.driver, { drivable: ['engine'], holds: [], trees: [], helperAdapter: HELPER });
     client.setQueryData(keys.sessions(HELP.repository, true, null), []);
+    // The window's hub hears what each opening published (STATEHUB1h): the sessions it opened one among.
     const hosts = (count: number) => (
       <QueryClientProvider client={client}>
+        <Hub />
         <Tooltip.Provider>
           {['side', 'quick'].slice(0, count).map((host) => <AskDaoris key={host} onGo={vi.fn()} onClose={vi.fn()} />)}
         </Tooltip.Provider>
