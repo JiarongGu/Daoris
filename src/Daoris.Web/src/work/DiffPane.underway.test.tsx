@@ -50,14 +50,14 @@ function Hub() {
   return null;
 }
 
-/** The window's root with the hub, and the review shown or not, as a tab switch shows it. */
-function root() {
+/** The window's root with the hub, and the review shown or not, as a tab switch shows it; a part's names its line of work. */
+function root(line: { entry?: string; ask?: string } = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const Window = ({ shown }: { shown: boolean }) => (
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
         <Hub />
-        {shown && <DiffPane session="s1a2b3c4" hasTree onSendBack={vi.fn()} />}
+        {shown && <DiffPane session="s1a2b3c4" hasTree onSendBack={vi.fn()} entry={line.entry} ask={line.ask} />}
       </Tooltip.Provider>
     </QueryClientProvider>
   );
@@ -126,6 +126,31 @@ describe('a press under way, in the review', () => {
     expect(await screen.findByRole('button', { name: 'Landing…' })).toBeDisabled();
     told({ seq: 4, presses: [] });
     expect(await screen.findByRole('button', { name: 'Accept' })).toBeEnabled();
+  });
+
+  /**
+   * ACCEPTALL1h (D169's ACCEPTALL1e note): a part's own *Accept* holds while its line of work's one Accept, or its ask's, lands it,
+   * from this window or another, read by the entry's and the ask's subject; another entry's or ask's press holds nothing.
+   */
+  it('holds a part’s Accept while its line of work’s or its ask’s landing is under way, and not for another’s', async () => {
+    answer();
+    root({ entry: 'ask:a3/engine', ask: 'a3' });
+    await screen.findByRole('button', { name: 'Accept' });
+
+    told({ seq: 1, presses: [{ route: 'LAND_ENTRY', subject: 'ask:a3/game' }, { route: 'LAND_ASK', subject: 'a9' }] });
+    await act(() => new Promise((resolve) => { setTimeout(resolve, 0); }));
+    expect(screen.getByRole('button', { name: 'Accept' })).toBeEnabled();
+
+    told({ seq: 2, presses: [{ route: 'LAND_ENTRY', subject: 'ask:a3/engine' }] });
+    expect(await screen.findByRole('button', { name: 'Landing…' })).toBeDisabled();
+    told({ seq: 3, presses: [] });
+    expect(await screen.findByRole('button', { name: 'Accept' })).toBeEnabled();
+
+    told({ seq: 4, presses: [{ route: 'LAND_ASK', subject: 'a3' }] });
+    expect(await screen.findByRole('button', { name: 'Landing…' })).toBeDisabled();
+    told({ seq: 5, presses: [] });
+    expect(await screen.findByRole('button', { name: 'Accept' })).toBeEnabled();
+    expect(invoke.mock.calls.filter(([, type]) => type === 'LAND_SESSION_TREE')).toHaveLength(0);
   });
 
   it('holds its Discard while another window discards its tree', async () => {
