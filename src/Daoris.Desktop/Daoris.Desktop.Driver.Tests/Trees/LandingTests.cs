@@ -495,6 +495,57 @@ public sealed class LandingTests : IDisposable
     }
 
     /// <summary>
+    /// STANDSREFUSE1 (D167's ACCEPTALL1g note, D145 §3): the plan says the refusal a standing branch would meet, in the press's own
+    /// sentence, before the press: one Daoris did not make, one moved since it landed on it, and one a working tree has checked out.
+    /// One it may move on says none, and still stands.
+    /// </summary>
+    [Fact]
+    public async Task The_plan_says_the_refusal_a_standing_branch_would_meet_before_the_press()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        var trees = new SessionTrees(_home);
+        const string chain = "feature/q1-fix-the-gap";
+
+        // Somebody's branch of the pattern's name: the press refuses it, and the plan says so first.
+        await GitAsync(root, "branch", "feature/q0-fix-the-gap");
+        var theirsTree = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(theirsTree.Path, "theirs.txt", "work for a branch somebody made", "work for theirs");
+        var notOurs = await trees.PlanAsync(theirsTree.Path, new LandingSubject("s0", "q0", "Fix the gap"));
+        Assert.True(notOurs.Stands);
+        Assert.Contains("Daoris does not move a branch it did not make", notOurs.Problem);
+        Assert.StartsWith(notOurs.Problem!, (await trees.LandAsync(theirsTree.Path, new LandingSubject("s0", "q0", "Fix the gap"))).Message);
+
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "work.txt", "the first session's work", "the first work");
+        Assert.True((await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "Fix the gap"))).Landed);
+        var tip = (await GitAsync(root, "rev-parse", chain)).Trim();
+        var next = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch);
+        await CommitAsync(next.Path, "next.txt", "the next step", "the next step");
+        var subject = new LandingSubject("s3", "q1", "Fix the gap");
+
+        // Daoris's own, at its recorded tip and checked out nowhere: it moves on, and nothing is said against it.
+        var mayMove = await trees.PlanAsync(next.Path, subject);
+        Assert.Equal((chain, true, (string?)null), (mayMove.Target, mayMove.Stands, mayMove.Problem));
+
+        // Somebody moved it since its landing.
+        var tree = (await GitAsync(root, "rev-parse", $"{tip}^{{tree}}")).Trim();
+        var theirs = (await GitAsync(root, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture",
+            "commit-tree", tree, "-p", tip, "-m", "somebody's commit")).Trim();
+        await GitAsync(root, "update-ref", $"refs/heads/{chain}", theirs);
+        Assert.Contains("moved since Daoris landed on it", (await trees.PlanAsync(next.Path, subject)).Problem);
+
+        // Checked out in a working tree of the person's.
+        await GitAsync(root, "update-ref", $"refs/heads/{chain}", tip);
+        var elsewhere = Path.Combine(_scratch, "elsewhere");
+        await GitAsync(root, "worktree", "add", "--quiet", elsewhere, chain);
+        var checkedOut = await trees.PlanAsync(next.Path, subject);
+        Assert.Contains("is checked out at", checkedOut.Problem);
+        Assert.StartsWith(checkedOut.Problem!, (await trees.LandAsync(next.Path, subject)).Message);
+        Assert.Equal(tip, (await GitAsync(root, "rev-parse", chain)).Trim());
+    }
+
+    /// <summary>
     /// D149 point 3: a chain's branch whose pull request was merged — every commit on the line, or, after a squash, every file it
     /// changed reading there as it left it — is not moved on, since commits added now would ride no pull request.
     /// </summary>

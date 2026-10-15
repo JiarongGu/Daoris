@@ -95,6 +95,22 @@ describe.each(['en', 'zh'] as const)('where the review says Accept puts the work
     expect(await where(SAYS[language].made)).toBeInTheDocument();
   });
 
+  /**
+   * STANDSREFUSE1 (D167's ACCEPTALL1g note): a standing branch the press would refuse (one Daoris did not make, one moved since,
+   * one checked out elsewhere) is said by the plan before the press, in the press's words, and *Accept*, which could only be
+   * refused, is not offered as a press.
+   */
+  it('says the refusal a standing branch would meet before the press, and holds Accept', async () => {
+    await i18n.changeLanguage(language);
+    const refusal = '`feature/0fda18-fix-the-gap` is already a branch in `engine`, and Daoris does not move a branch it did not make. '
+      + 'Rename or delete it there, or change the pattern with `daoris driver landing`.';
+    answer({ ...PLAN, stands: true, problem: refusal });
+    pane();
+
+    expect(await screen.findByText(/Daoris does not move a branch it did not make/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: language === 'en' ? 'Accept' : '采纳' })).toBeDisabled();
+  });
+
   /** TREEFOLLOWWEB1 (D164's TREEFOLLOW1 note): a tree its agent moved onto a branch of its own lands that branch as it stands. */
   it('says the session’s own branch lands as it stands, and promises no new branch', async () => {
     await i18n.changeLanguage(language);

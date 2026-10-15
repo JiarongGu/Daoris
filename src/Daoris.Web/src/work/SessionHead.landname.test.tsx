@@ -80,6 +80,8 @@ describe("the head's land ask names a branch", () => {
       landing={{ ...BRANCH, target: 'main', problem: 'a branch named `main` stands, which Daoris did not make.' }} />);
     expect(within(ask()).getByRole('textbox', { name: 'Branch name' })).toHaveAttribute('placeholder', 'feature/delta');
     expect(ask()).toHaveTextContent('which Daoris did not make.');
+    // STANDSREFUSE1: a press the plan says would be refused is held, its sentence saying why.
+    expect(within(ask()).getByRole('button', { name: 'Accept' })).toBeDisabled();
   });
 
   it('puts the name down with the ask, so the plan is the rule’s again', async () => {

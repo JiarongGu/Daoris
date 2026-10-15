@@ -233,7 +233,8 @@ export function Lands({ session, lands, landing, planning, onReview, onLand, onS
             </>
           )}
           meanIt={t('work.head.landMeanIt')}
-          ready={typed === asked && !planning}
+          // Held while the plan says the press would be refused (D100, STANDSREFUSE1): its sentence above says why.
+          ready={typed === asked && !planning && !landing?.problem}
           onConfirm={(answered) => onLand?.(answered, answers, typed || null)}
           onClose={putDown}
         >

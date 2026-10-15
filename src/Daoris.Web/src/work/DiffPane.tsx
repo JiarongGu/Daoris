@@ -163,6 +163,9 @@ export function DiffPane({
   // nothing it answers, so the head's *Accept…*, which lists a dispute or the commits nobody read, is the press that answers them.
   const opinionWaits = opinionHolds(landing.data);
   const canAccept = plannable && !workflow && !waits && !opinionWaits;
+  // What the plan says a press would be refused with now (D100): a plugin that cannot land, a name, or a standing branch the press
+  // may not move on (STANDSREFUSE1, D167's ACCEPTALL1g note).
+  const refusedNow = landing.data?.problem || null;
   // LANDSYNC1 (D87's 2026-10-15 amendment point 5): a replay onto the line that conflicts, as the plan tried it or the press was refused
   // for it, until the plan is read again after the press. In Accept's place, the words its session is asked to rebase with.
   const [pressed, setPressed] = useState<{ session: string; conflict: LandingConflict; at: number } | null>(null);
@@ -379,9 +382,10 @@ export function DiffPane({
       {/* What the press leaves out because the line holds it, and what it replays (LANDSYNC1), said before it. */}
       {!said && canAccept && <LeftOutLines leftOut={landing.data?.leftOut} lands={landing.data?.lands} />}
       {conflict && <RebaseAsk key={session} conflict={conflict} onSay={(text) => say.mutateAsync({ id: session, text }).then((answer) => answer.sent)} />}
-      {!said && canAccept && landing.data?.problem && (
+      {/* The sentence a press would be refused with now (D100), a standing branch's among them (STANDSREFUSE1): Accept waits on it. */}
+      {!said && canAccept && refusedNow && (
         <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
-          {t('work.review.landingProblem', { problem: landing.data.problem })}
+          <Inline text={t('work.review.landingProblem', { problem: refusedNow })} />
         </p>
       )}
       {/* Said before the press, which stays open: its own refusal still answers (D164 point 4, REVIEWDIRTY1). */}
@@ -428,7 +432,8 @@ export function DiffPane({
         {canAccept && !conflict && (
           <Button
             variant={leftOutOf ? 'default' : 'primary'}
-            disabled={landsNow}
+            // A press that could only be refused is not offered (UX5 U66): the sentence above says why (STANDSREFUSE1).
+            disabled={landsNow || Boolean(refusedNow)}
             onClick={() => {
               const at = landing.dataUpdatedAt;
               act(land.mutateAsync(session).then((result) => {
