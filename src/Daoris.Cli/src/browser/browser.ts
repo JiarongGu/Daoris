@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import { flagValue, operands } from '../platform/args.ts';
 import { DaorisError, type ExitCode } from '../platform/errors.ts';
 import { readJsonObject, writeJsonAtomic } from '../platform/fsx.ts';
-import { HOME_SENTENCE, daorisHome } from '../platform/home.ts';
+import { HOME_SENTENCE, daorisHome, homeEntry } from '../platform/home.ts';
 import type { CommandArgs } from '../platform/types.ts';
 
 /**
@@ -21,7 +21,7 @@ export const FAVORITES_FILE = join('browser', 'favorites.json');
 export interface Favorite { url: string; title: string }
 
 export function favoritesFile(home: string): string {
-  return join(home, FAVORITES_FILE);
+  return homeEntry(home, 'browser-favorites');
 }
 
 /** `host:port`, `host:port/path` — a colon that is a port, not a scheme. `InAppBrowser.LooksLikeHostAndPort`'s twin. */
@@ -185,7 +185,7 @@ export type BrowserChoice = 'daoris' | 'edge';
 export type LinksSetting = 'system' | 'daoris';
 
 export function settingsFile(home: string): string {
-  return join(home, SETTINGS_FILE);
+  return homeEntry(home, 'browser-settings');
 }
 
 /** The settings, or the defaults with why a file that was there gave none. */

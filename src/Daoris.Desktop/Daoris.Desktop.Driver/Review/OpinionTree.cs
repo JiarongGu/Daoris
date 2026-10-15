@@ -35,8 +35,8 @@ public static class OpinionTree
 
     /// <summary>A new copy's folder for <paramref name="repository"/> in <paramref name="workspace"/>, the default one where none is named.</summary>
     public static string PathFor(string home, string? workspace, string repository) =>
-        Path.Combine(
-            home, "trees", workspace is { } named && !string.IsNullOrWhiteSpace(named) ? named.Trim() : RemoteTarget.DefaultWorkspace,
+        DaorisHome.Entry(
+            home, HomeEntry.Trees, workspace is { } named && !string.IsNullOrWhiteSpace(named) ? named.Trim() : RemoteTarget.DefaultWorkspace,
             repository.Trim(), Prefix + Guid.NewGuid().ToString("N")[..8]);
 
     /// <summary>

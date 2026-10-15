@@ -33,7 +33,7 @@ public sealed class RemotesModule(IEventBus events, DriverLoop loop) : ModuleBas
     /// </summary>
     private static string Path =>
         // With no home there is no map to edit, and the home's own sentence says what to set (D63).
-        RemoteTarget.ResolvePath() ?? DaorisHome.Require("remotes.json");
+        RemoteTarget.ResolvePath() ?? DaorisHome.Require(HomeEntry.Remotes);
 
     protected override Task<object?> RouteMessageAsync(
         IpcRequest request, IModuleContext context, CancellationToken cancellationToken)
