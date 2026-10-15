@@ -1929,6 +1929,12 @@ that matches no test fails nothing. *Owed:* neither half has run on the new spli
 goes here with its wall, sha, test counts and machine state, against PROC1a's projection of about 47 minutes under a full
 set's load.
 
+**PROC1d-i (2026-10-15): a look over a sync, an update, a landing and a tidy.** `TreeContext.OneLook` now opens at the top of
+`SyncPlanAsync`, `SyncAsync`, `UpdateTreeAsync`, `LandAsync` and `TidyHeldAsync`, and `WorkingTree.Started` (an async local,
+null in production) counts the product's git starts. Counted by `TreeSyncStartsTests` over a sync plan of three session
+branches: 2 guesses of the line and 44 starts before, 1 and 42 after (each guess is 1 to 3 starts); the remaining starts are
+PROC1d-ii to -iv. Ran green once each: that class, `TreeSyncTests`, `TreeSyncLineTests`, `TreeUpdateTests`, `SweepLineProcessTests`.
+
 ## TEST1 (open): a Node process on Windows aborts with 0xC0000409 (since 2026-09-21)
 
 **Symptom.** A Node process dies with `worker process exited unexpectedly (code=3221226505)`, Windows `__fastfail`: no
