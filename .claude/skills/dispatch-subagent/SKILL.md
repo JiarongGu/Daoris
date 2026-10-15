@@ -159,11 +159,12 @@ sessions take the same roles once the trial says which split works (MODELROLE1).
 8. **Measure the batch.** `node tools/subagent-usage.mjs <the harness's transcripts folder for this
    repository> --since <the batch's first day>` prints each agent type and model's turns and its context
    at the start, at the first edit and at the end. Feed the hand-back's *pack's gaps* into the next pack.
-9. **A second reviewer of another maker, where the owner has granted one** (the private notes name it and how it runs,
-   read-only, in its own detached worktree). Regularly, not once: each new decision or design document before a worker
-   builds on it; each merge batch's diff while its gates run; the backlog's order, stale rows and gaps at least daily.
-   Its words are findings, never facts: verify each against the code, then route it as a fix, a row or a decision note,
-   and say which were dropped and why. It runs remotely, so it costs nothing beside the gates.
+9. **Ask an agent of another maker for a different opinion, on your own initiative, where the owner has granted one**
+   (the private notes name it and how it runs, read-only, in its own detached worktree). Not a step every batch passes
+   through, but a habit: reach for it whenever a second view would help, such as a decision or a design before it is
+   built on, a choice between two shapes, a defect whose cause will not show, or the backlog's order. Its words are
+   findings, never facts: verify each against the code, then route it as a fix, a row or a decision note, and say which
+   were dropped and why. It runs remotely, so it costs nothing beside the gates.
 
 ## Why
 
