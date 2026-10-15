@@ -529,6 +529,53 @@ public sealed class BranchTidyingProcessTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 TIDIEDLINK1, D88's note: a folder moved aside whose build folder holds links, as npm's workspaces and pnpm leave under
+    /// <c>node_modules</c>, is deleted after its wait with each link taken as a link: what one points at outside the folder stays,
+    /// every file in it as it was, and one pointing inside goes with the folder. A link anywhere else keeps its folder, said as
+    /// before, and what it points at is untouched.
+    /// </summary>
+    [Fact]
+    public async Task The_purge_takes_a_link_under_a_build_folder_as_a_link_and_keeps_a_folder_with_one_elsewhere()
+    {
+        var engine = Path.Combine(_home, "trees", ".tidied", "default", "engine");
+        var moved = DateTimeOffset.UtcNow.AddMinutes(1);
+        var stamp = moved.ToString("yyyyMMdd'T'HHmmssfff'Z'", System.Globalization.CultureInfo.InvariantCulture);
+        var outside = Path.Combine(_scratch, "elsewhere", "web");
+        Directory.CreateDirectory(outside);
+        await File.WriteAllTextAsync(Path.Combine(outside, "index.js"), "module.exports = 'the target';\n");
+        File.SetAttributes(Path.Combine(outside, "index.js"), FileAttributes.ReadOnly);
+        var built = Path.Combine(engine, $"s-0b0117a0-{stamp}");
+        Directory.CreateDirectory(Path.Combine(built, "packages", "ui"));
+        await File.WriteAllTextAsync(Path.Combine(built, "packages", "ui", "index.js"), "export {};\n");
+        await File.WriteAllTextAsync(Path.Combine(built, "README.md"), "# engine\n");
+        // A read-only file, as git's objects are: cleared before its delete, as before.
+        File.SetAttributes(Path.Combine(built, "README.md"), FileAttributes.ReadOnly);
+        await JunctionAsync(Path.Combine(built, "node_modules", "@fixture", "web"), outside);
+        await JunctionAsync(Path.Combine(built, "node_modules", "ui"), Path.Combine(built, "packages", "ui"));
+        var data = Path.Combine(_scratch, "elsewhere", "data");
+        Directory.CreateDirectory(data);
+        await File.WriteAllTextAsync(Path.Combine(data, "notes.md"), "the person's\n");
+        var linked = Path.Combine(engine, $"s-0d47a000-{stamp}");
+        Directory.CreateDirectory(linked);
+        await JunctionAsync(Path.Combine(linked, "data"), data);
+
+        var purged = new SessionTrees(_home).PurgeSetAside(moved.AddDays(15), BranchTidying.SetAsideFor);
+
+        Assert.Equal(2, purged.Count);
+        Assert.True(purged.Single(each => each.Folder == built).Purged, purged.Single(each => each.Folder == built).Kept);
+        Assert.False(Directory.Exists(built));
+        Assert.Equal("module.exports = 'the target';\n", await File.ReadAllTextAsync(Path.Combine(outside, "index.js")));
+        Assert.True(File.GetAttributes(Path.Combine(outside, "index.js")).HasFlag(FileAttributes.ReadOnly));
+        var kept = purged.Single(each => each.Folder == linked);
+        Assert.False(kept.Purged);
+        Assert.Equal(SetAsideKept.Linked, kept.Code);
+        Assert.Equal("it holds a link, at data", kept.Kept);
+        Assert.True(Directory.Exists(Path.Combine(linked, "data")));
+        Assert.Equal("the person's\n", await File.ReadAllTextAsync(Path.Combine(data, "notes.md")));
+        File.SetAttributes(Path.Combine(outside, "index.js"), FileAttributes.Normal);
+    }
+
+    /// <summary>
     /// 🔴 A look closed in the middle of a removal finishes it before it lets go of the repository: the token is cancelled as the
     /// branch is about to be deleted, the repository is still held then, and the delete still runs to its end.
     /// </summary>

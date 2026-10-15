@@ -15009,3 +15009,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STRAYOTHERS1 — a killed opinion pass's or replay's leftover is tidied** (driver). The look never moves `o-` (opinion copies) or `r-` (replay trees) folders, made outside the repository's hold, so a killed pass's leftover stays: let their own flows clean stale ones, or let the look take them under a guard. D88's AUTOTIDY2c note. Proof: a Process test with a stale `o-` clone and a stale detached `r-` tree.
 
 **Outcome** 2026-10-16: the next opinion's pass and the next replay in a tree of its own move aside, as they start, the copy or replay's tree a killed one left in that repository's trees, once the process it names no longer runs and nothing in it was written for ten minutes (`PassLeftovers`); a pass now names its process in its replay tree's lock or its copy's `.git`, and a replay's tree is removed whatever its token says. Not on the window. On Opus, with TIDIEDLINK1. Detail: D88's STRAYOTHERS1 note; the commits.
+
+## TIDIEDLINK1 — the purge of a moved-aside folder takes its links as links (2026-10-16, D88)
+
+> - [ ] **TIDIEDLINK1 — the purge of a moved-aside folder takes its links as links** (driver). A moved-aside folder holding a junction (npm workspaces or pnpm under `node_modules`) is kept by the purge forever as `linked`; .NET's recursive delete removes a link without following it, so decide whether links under a build folder are deleted as links. D88's AUTOTIDY1 note. Proof: a Process test where a junction under `node_modules` is purged and its target stays.
+
+**Outcome** 2026-10-16: decided and built: a link under a build folder goes with its folder as a link, its target untouched; a link elsewhere keeps its folder `linked` as before. The purge deletes with its own walk that never follows a link, and keeps a folder reached through one. Not on the window. On Opus, with STRAYOTHERS1. Detail: D88's TIDIEDLINK1 note; the commits.
