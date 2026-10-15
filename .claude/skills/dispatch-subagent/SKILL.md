@@ -149,6 +149,10 @@ sessions take the same roles once the trial says which split works (MODELROLE1).
    **Scan what you staged first** (`daoris-devkit scan`): records written after the gates, and every records
    commit made outside a merge, are the one change no universal gate reads before it is committed. A
    backlog row quoting a window's caption put a private name into history that way (2026-10-08).
+   **Then remove the worker's worktree and branch**, in the same sitting: `git worktree remove <path>` (no `--force`: it
+   refuses a tree with uncommitted work) and `git branch -d <branch>` (it refuses one main lacks); a worktree the harness
+   locked for an agent that has finished is `git worktree unlock`ed first. What made them cleans them up: 43 subagent
+   worktrees had piled up by 2026-10-15, the same leftover the owner had to clear by hand from Daoris's own sessions.
 8. **Measure the batch.** `node tools/subagent-usage.mjs <the harness's transcripts folder for this
    repository> --since <the batch's first day>` prints each agent type and model's turns and its context
    at the start, at the first edit and at the end. Feed the hand-back's *pack's gaps* into the next pack.
