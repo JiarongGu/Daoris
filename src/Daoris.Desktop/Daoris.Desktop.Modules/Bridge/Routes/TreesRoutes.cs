@@ -466,11 +466,14 @@ public sealed class TreesRoutes(DriverLoop loop)
         }
 
         var questId = await service.SessionQuestAsync(id, cancellationToken);
+        // ACCEPTALL1b (D167's 2026-10-15 amendment point 2): a part of an entry with others is its entry's Accept for that part alone,
+        // named for the entry's first part as ENTRY_LANDING names it; a session with no entry, or its entry's only part, as before.
+        var lead = EntryLead(await service.SessionRecordsAsync(cancellationToken), id);
+        var named = lead?.Id ?? id;
         // Named for the chain's first quest (WSR5): a chain lands from its last step.
         var subject = await LandingRules.SubjectAsync(
-            id, questId, quest => service.FindQuestAsync(quest, cancellationToken),
-            _loop.Events.Openings([id]).GetValueOrDefault(id));
-        subject = Entering(subject, request);
+            named, lead is null ? questId : lead.Quest, quest => service.FindQuestAsync(quest, cancellationToken),
+            _loop.Events.Openings([named]).GetValueOrDefault(named));
         // A rule's plugin says its lines on the console under its name, as a hook's do (D64 §4, D100); what the
         // landing did with it goes to the machine log and the loop's record of its health (PLUGUI1d).
         var trees = new SessionTrees(_loop.Home, new LandingPlugins(
@@ -479,6 +482,10 @@ public sealed class TreesRoutes(DriverLoop loop)
         // The landing gate (XAGENT1f, REVIEWENV1c): the second opinion, then the review. What holds the press says so before it,
         // and the press refuses it.
         var gate = await trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, cancellationToken);
+        // On the entry's one branch, joining it where this part ran alongside; a name the person entered still lands as entered.
+        if (lead is not null) subject = await trees.JoinEntryAsync(tree, id, subject, cancellationToken, gate.Process);
+        subject = Entering(subject, request);
+        var joins = subject.EntryBranch is not null && subject.EnteredName is null;
 
         if (request.Type == "LANDING")
         {
@@ -503,7 +510,8 @@ public sealed class TreesRoutes(DriverLoop loop)
         gate = await new OpinionPresses(_loop.Home, service).PressedAsync(id, gate, Optional(request, "answers"), tree, questId, cancellationToken);
 
         // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds (LAND3).
-        var landed = await trees.LandAsync(tree, subject, cancellationToken, async token => await LinesRoutes.InUseAsync(service, token), gate: gate);
+        var landed = await trees.LandAsync(tree, subject, cancellationToken, async token => await LinesRoutes.InUseAsync(service, token), gate: gate,
+            joins: joins);
         // Kept where the conversation is kept, so the landing and the plugin's word outlast the press (D100).
         if (landed.Landed) _loop.Events.Keep(id, LandingRules.Note(landed), line => _loop.Output.Append(id, line));
         if (_loop.Log is { } log && LandingGateWords.Held(id, trees.Owner(tree), gate, landed, ReviewDoors.Screen) is { } held)
@@ -525,6 +533,20 @@ public sealed class TreesRoutes(DriverLoop loop)
             LeftOut = LeftOut(landed.LeftOut),
             Conflict = Conflict(landed.Conflict),
         };
+    }
+
+    /// <summary>
+    /// The part a session's own Accept is named for (ACCEPTALL1b, D167's 2026-10-15 amendment point 2): its entry's first, the records
+    /// sharing its key oldest first by <c>created</c> then id, as <see cref="SessionEntries.Read"/> orders an entry's parts. Null where
+    /// the session has no record here or is its entry's only part: it lands as before.
+    /// </summary>
+    public static SessionRecord? EntryLead(IReadOnlyList<SessionRecord> records, string session)
+    {
+        if (records.FirstOrDefault(record => record.Id == session) is not { } own) return null;
+        var parts = records.Where(record => string.Equals(record.EntryKey, own.EntryKey, StringComparison.Ordinal))
+            .OrderBy(record => record.Created).ThenBy(record => record.Id, StringComparer.Ordinal)
+            .ToList();
+        return parts.Count > 1 ? parts[0] : null;
     }
 
     /// <summary>A landing's left-out commits on the wire (LANDSYNC1): short id, subject, why, and the line's commit with its patch.</summary>

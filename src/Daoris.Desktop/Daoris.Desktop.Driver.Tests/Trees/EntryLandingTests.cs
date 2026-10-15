@@ -147,4 +147,39 @@ public sealed class EntryLandingTests : LandedFixture
         Assert.Equal($"{Branch}-2", landed.Branch);
         Assert.Equal("the second part", (await GitAsync(root, "log", "--format=%s", $"main..{Branch}-2")).Trim());
     }
+
+    /// <summary>
+    /// ACCEPTALL1b (D167's amendment point 2): a part's own Accept, in its review, is its entry's Accept for that part alone. Two parts
+    /// that ran alongside, each accepted from its own review, land on the entry's one branch: the second joins it as the entry's press would.
+    /// </summary>
+    [Fact]
+    public async Task An_alongside_parts_own_accept_advances_the_entrys_branch()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        var second = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "a.txt", "a\n", "the first part");
+        await CommitAsync(second.Path, "b.txt", "b\n", "the second part");
+
+        var lead = await trees.JoinEntryAsync(first.Path, "s1a2b3c4", Subject);
+        var once = await trees.LandAsync(first.Path, lead, joins: true);
+        Assert.True(once.Landed, once.Message);
+        Assert.Equal(Branch, once.Branch);
+
+        var joined = await trees.JoinEntryAsync(second.Path, "s5e6f7a8", Subject);
+        Assert.Equal(("s5e6f7a8", Branch), (joined.Session, joined.EntryBranch));
+        Assert.Equal(Branch, (await trees.PlanAsync(second.Path, joined)).Target);
+
+        var landed = await trees.LandAsync(second.Path, joined, joins: true);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal(Branch, landed.Branch);
+        Assert.NotNull(landed.AdvancedFrom);
+        Assert.Contains("since its work ran alongside its entry's earlier parts", landed.Message);
+        Assert.Equal("the second part\nthe first part", (await GitAsync(root, "log", "--format=%s", $"main..{Branch}")).Trim());
+        var tip = (await GitAsync(root, "rev-parse", Branch)).Trim();
+        Assert.Equal(tip, (await GitAsync(second.Path, "rev-parse", "HEAD")).Trim());
+        Assert.Equal(tip, trees.Recorded.Of("engine", Branch)!.Tip);
+    }
 }
