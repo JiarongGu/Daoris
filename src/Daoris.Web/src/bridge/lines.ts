@@ -131,7 +131,7 @@ const treesSyncAskedKey = (workspace: string | null) => ['driver', 'trees-sync-a
  * Which repositories hold Daoris's branches, and which have a checkout and hold none (D112): the machine's reading, each
  * row naming its workspace, which a workspace's page filters to its own and Ask Daoris's sync card counts whole.
  */
-const treesSyncScopeKey = ['driver', 'trees-sync-scope'] as const;
+export const treesSyncScopeKey = ['driver', 'trees-sync-scope'] as const;
 
 /** What a look was asked to take beyond the repositories holding Daoris's branches, and how many it takes in all where known. */
 export type SyncAsked = { include: SyncInclude; count: number | null };
