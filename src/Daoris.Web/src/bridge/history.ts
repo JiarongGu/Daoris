@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
-import { keys } from '../data/queries';
 import {
   type HistoryClearAnswer, historyPayload, historyPlanOf, type HistoryTarget, type HistoryUnitName,
 } from '../work/history';
@@ -60,8 +59,12 @@ export const useHistoryPlan = (target: HistoryTarget | null, { enabled = true }:
 /**
  * The second press (`HISTORY_CLEAR`, design §5 step 2): exactly the units the first press listed, each judged again by the
  * driver as it goes. A workspace's press with no unit takes its left-over files and, where it keeps no ask, its intake's
- * room. What it took leaves the quests, the asks and the sessions, so each is asked again; and every plan, which is stale
- * whether the press went or was refused for a unit that changed since the list.
+ * room. What it took leaves the quests, the asks and the sessions, and every plan is stale: the route's `STATE_CHANGED`
+ * asks each again, in every window (STATEHUB1d, D169).
+ *
+ * @remarks
+ * The plans are asked again here too, without cancelling the hub's read: a press refused for a unit that changed since the
+ * list is an error, which publishes nothing (D169 point 5), and its plan is stale all the same.
  */
 export const useClearHistory = () => {
   const client = useQueryClient();
@@ -72,12 +75,6 @@ export const useClearHistory = () => {
         { ...historyPayload(target), units: units.map(({ kind, id }) => ({ kind, id })) },
         { timeoutMs: HISTORY_BOUND },
       ),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: keys.allQuests });
-      void client.invalidateQueries({ queryKey: keys.allAsks });
-      void client.invalidateQueries({ queryKey: keys.allSessions });
-      void client.invalidateQueries({ queryKey: keys.driver });
-    },
-    onSettled: () => void client.invalidateQueries({ queryKey: ALL_HISTORY }),
+    onSettled: () => void client.invalidateQueries({ queryKey: ALL_HISTORY }, { cancelRefetch: false }),
   });
 };

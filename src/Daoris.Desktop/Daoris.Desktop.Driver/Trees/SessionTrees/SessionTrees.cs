@@ -31,8 +31,21 @@ public sealed record TreeMerge(bool Merged, string Message);
 /// <param name="Path">Where it is.</param>
 /// <param name="Workspace">Whose circle, read from the layout Daoris itself chose.</param>
 /// <param name="Repository">Whose repository, same.</param>
-/// <param name="Branch">The session branch checked out in it.</param>
-public sealed record SessionTree(string Path, string Workspace, string Repository, string Branch);
+/// <param name="Branch">
+/// The session branch checked out in it; <see cref="NotATree"/> for a folder with no link to a repository, and
+/// <see cref="SetAside"/> for a folder the look moved aside.
+/// </param>
+public sealed record SessionTree(string Path, string Workspace, string Repository, string Branch)
+{
+    /// <summary>What a folder with no <c>.git</c> is listed as (AUTOTIDY2c): no tree, which the look moves aside once it is left quiet.</summary>
+    public const string NotATree = "(not a tree)";
+
+    /// <summary>What a folder the look moved aside is listed as (AUTOTIDY1, AUTOTIDY2c), until the purge deletes it.</summary>
+    public const string SetAside = "(moved aside)";
+
+    /// <summary>When the look moved it aside, read from its name; null for anything not moved aside.</summary>
+    public DateTimeOffset? MovedAside { get; init; }
+}
 
 /// <summary>
 /// The worktree half of D51: a repository may have more than one working tree, and the extra ones are
@@ -85,6 +98,8 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     private TreeRemovals? _removals;
     private TreeSweeps? _sweeps;
     private AutoTidies? _autoTidy;
+    private TreeStrays? _strays;
+    private PassLeftovers? _leftovers;
     private LandedCleanups? _cleanups;
     private BranchJudging? _judging;
     private TreeSync? _sync;
@@ -111,7 +126,7 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     private TreeHandOffs HandOffs => _handOffs ??= new(_context);
 
     /// <summary>A judged branch replayed, and the grown record's tidying (WSR6).</summary>
-    private BranchReplays Replays => _replays ??= new(_context);
+    private BranchReplays Replays => _replays ??= new(_context, Leftovers);
 
     /// <summary>Where a session tree's review is measured from (REVIEWBASE1).</summary>
     private ReviewRanges Ranges => _ranges ??= new(_context);
@@ -131,8 +146,14 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     /// <summary>The session branches' half of the clean-up, for the person's press and the look's own (D88, AUTOTIDY1).</summary>
     private TreeSweeps Sweeps => _sweeps ??= new(_context, Asks, Content, Follows, Squashes, SetAsides);
 
-    /// <summary>The look's own tidy of one repository (AUTOTIDY1).</summary>
-    private AutoTidies AutoTidy => _autoTidy ??= new(_context, Follows, Replays, Sweeps, SetAsides);
+    /// <summary>The look's own tidy of one repository (AUTOTIDY1), the landings' branches with it (AUTOTIDY2b).</summary>
+    private AutoTidies AutoTidy => _autoTidy ??= new(_context, Follows, Replays, Sweeps, SetAsides, Cleanups);
+
+    /// <summary>The look's own tidy of the folders under a repository's trees that are no tree of its own (AUTOTIDY2c, OPENCUT1).</summary>
+    private TreeStrays Strays => _strays ??= new(_context, SetAsides, Content);
+
+    /// <summary>What a killed opinion's or replay's pass left under a repository's trees, moved aside by the next (STRAYOTHERS1).</summary>
+    private PassLeftovers Leftovers => _leftovers ??= new(_context, SetAsides);
 
     /// <summary>The clean-up's list and press, and each landed branch judged (D88, WSR5).</summary>
     private LandedCleanups Cleanups => _cleanups ??= new(_context, Asks, Content, Replays, Sweeps);
@@ -287,40 +308,59 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
         var branch = $"daoris/{name}";
         var path = Path.Combine(TreesRoot, workspace, repository, name);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        // OPENCUT1: a folder that was there before the add is never this open's to delete.
+        var ours = !Directory.Exists(path);
 
-        // 🔴 Long paths (2026-09-27): a tree's prefix is longer than the root's, so a repository whose
-        // deepest file fits under its root can cross Windows' 260 characters here. The first real
-        // workspace did, and every tick's `worktree add` failed. `WorkingTree.GitAsync` says
-        // `core.longpaths` on every call since, removal and status included (2026-09-28).
-        var (code, _, stderr) = await WorkingTree.GitAsync(
-            root, ["worktree", "add", "-b", branch, path, start], ct)
-            .ConfigureAwait(false);
-        if (code != 0)
-        {
-            // 🔴 `worktree add -b` makes the branch before it checks anything out, so a failure used to
-            // leave one behind on every tick: sixteen on the first real workspace. It is this call's own,
-            // made a moment ago under a name nothing else uses, so it goes, and the repository is left
-            // as it was found.
-            await WorkingTree.GitAsync(root, ["branch", "-D", branch], ct).ConfigureAwait(false);
-            throw new DriverException(
-                $"could not open a session tree for `{repository}` — git said: {Failure(stderr)}");
-        }
-
-        // Where the branch started (WSR6), the moment it exists: bringing it up to date after the line moves cuts
-        // here, so a chain's step replays only its own commits once the step before's are on the line.
         string? unrecorded = null;
-        var (headCode, head, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct)
-            .ConfigureAwait(false);
-        if (headCode == 0)
+        try
         {
-            try
+            // 🔴 Long paths (2026-09-27): a tree's prefix is longer than the root's, so a repository whose
+            // deepest file fits under its root can cross Windows' 260 characters here. The first real
+            // workspace did, and every tick's `worktree add` failed. `WorkingTree.GitAsync` says
+            // `core.longpaths` on every call since, removal and status included (2026-09-28).
+            // OPENCUT1: locked while it opens, the lock's reason naming this process, so a later look tells an open a kill cut
+            // off from a person's lock (TreeStrays); let go of below, once where its branch started is recorded.
+            var (code, _, stderr) = await WorkingTree.GitAsync(
+                root, ["worktree", "add", "--lock", "--reason", TreeOpenings.LockReason(Environment.ProcessId), "-b", branch, path, start], ct)
+                .ConfigureAwait(false);
+            if (code != 0)
             {
-                Grown.Record(new GrownBranch(repository, workspace, branch, line.Branch, head.Trim(), grewFrom, DateTimeOffset.UtcNow));
+                throw new DriverException(
+                    $"could not open a session tree for `{repository}` — git said: {Failure(stderr)}");
             }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+
+            // Where the branch started (WSR6), the moment it exists: bringing it up to date after the line moves cuts
+            // here, so a chain's step replays only its own commits once the step before's are on the line.
+            var (headCode, head, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct)
+                .ConfigureAwait(false);
+            if (headCode == 0)
             {
-                unrecorded = error.Message;
+                try
+                {
+                    Grown.Record(new GrownBranch(repository, workspace, branch, line.Branch, head.Trim(), grewFrom, DateTimeOffset.UtcNow));
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                {
+                    unrecorded = error.Message;
+                }
             }
+
+            var (unlocked, _, unlockErr) = await WorkingTree.GitAsync(root, ["worktree", "unlock", path], ct).ConfigureAwait(false);
+            if (unlocked != 0)
+            {
+                throw new DriverException(
+                    $"could not open a session tree for `{repository}` — git would not let go of the lock it opened it under: {Failure(unlockErr)}");
+            }
+        }
+        catch
+        {
+            // 🔴 `worktree add -b` makes the branch before it checks anything out, so a failure used to leave one behind on
+            // every tick: sixteen on the first real workspace. And a cancel as the app closed cut an open off inside the add,
+            // leaving a half-checked-out tree, locked, and its branch (OPENCUT1, `s-0031408d`). Whatever cut it off, the branch
+            // and the tree are this call's own, made a moment ago under a name nothing else uses and handed to nobody, so they
+            // go, and the repository is left as it was found. A kill leaves them for the look (TreeStrays).
+            await TreeOpenings.UndoAsync(root, path, branch, ours).ConfigureAwait(false);
+            throw;
         }
 
         // What it grew from as a fact (LANG1a): the branch it started at, never the sentence spelling it for a person.
@@ -393,7 +433,8 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
 
     /// <summary>
     /// Every session tree on this machine, read from the layout itself — the directory is the
-    /// registry, the same argument the credential profiles made (D49 §4).
+    /// registry, the same argument the credential profiles made (D49 §4). Then each folder the look moved aside
+    /// (AUTOTIDY1, AUTOTIDY2c), with when, until the purge deletes it.
     /// </summary>
     public async Task<IReadOnlyList<SessionTree>> ListAsync(CancellationToken ct = default)
     {
@@ -405,17 +446,42 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
         foreach (var repository in Directory.EnumerateDirectories(workspace))
         foreach (var tree in Directory.EnumerateDirectories(repository))
         {
-            var (code, branch, _) = await WorkingTree.GitAsync(
-                tree, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
+            // AUTOTIDY2c: a folder with no link to a repository is no tree, and git asked in it would answer for whatever
+            // repository holds the home.
+            var (code, branch, _) = Path.Exists(Path.Combine(tree, ".git"))
+                ? await WorkingTree.GitAsync(tree, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false)
+                : (1, SessionTree.NotATree, "");
             found.Add(new(
                 tree,
                 Path.GetFileName(workspace),
                 Path.GetFileName(repository),
-                code == 0 ? branch.Trim() : "(unreadable)"));
+                code == 0 ? branch.Trim() : branch == SessionTree.NotATree ? branch : "(unreadable)"));
+        }
+
+        var aside = SetAsides.SetAsideRoot;
+        if (!Directory.Exists(aside)) return found;
+        foreach (var workspace in Directory.EnumerateDirectories(aside))
+        foreach (var repository in Directory.EnumerateDirectories(workspace))
+        foreach (var folder in Directory.EnumerateDirectories(repository))
+        {
+            found.Add(new(folder, Path.GetFileName(workspace), Path.GetFileName(repository), SessionTree.SetAside)
+            {
+                MovedAside = TreeSetAside.MovedAt(Path.GetFileName(folder)),
+            });
         }
 
         return found;
     }
+
+    /// <inheritdoc cref="TreeStrays.TidyAsync"/>
+    public Task<IReadOnlyList<StrayResult>> TidyStraysAsync(
+        string root, string repository, string? workspace, Func<CancellationToken, Task<IReadOnlySet<string>>> inUse, DateTimeOffset now,
+        CancellationToken ct = default) =>
+        Strays.TidyAsync(root, repository, workspace, inUse, now, ct);
+
+    /// <inheritdoc cref="PassLeftovers.ClearCopies"/>
+    internal IReadOnlyList<string> ClearPassCopies(string trees, DateTimeOffset now, Func<int, bool>? running = null) =>
+        Leftovers.ClearCopies(trees, now, running ?? TreeOpenings.Running);
 
     /// <summary>
     /// Where a tree on <paramref name="branch"/> grows from: the branch itself where this checkout has

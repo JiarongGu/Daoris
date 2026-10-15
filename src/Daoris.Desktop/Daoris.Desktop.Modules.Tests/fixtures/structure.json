@@ -21,6 +21,7 @@
     "DriverModuleHandOverTests.cs": "Bridge",
     "DriverModuleHelpersTests.cs": "Bridge",
     "DriverModuleHelpHistoryTests.cs": "Bridge",
+    "DriverModuleHelpStartTests.cs": "Bridge",
     "DriverModuleHelpTests.cs": "Bridge",
     "DriverModuleHistoryTests.cs": "Bridge",
     "DriverModuleLandNameTests.cs": "Bridge",
@@ -89,6 +90,7 @@
     "DriverLoopChatTakenUpTests.cs": "Loop",
     "DriverLoopLockTests.cs": "Loop",
     "DriverLoopQueuedTests.cs": "Loop",
+    "HelpStartingTests.cs": "Loop",
     "HostSupervisorTests.cs": "Loop",
     "LastLinesTests.cs": "Loop",
     "SessionWordsTerminalTests.cs": "Loop",
@@ -101,6 +103,7 @@
     "RefusalCatalogueTests.cs": "Platform",
     "RefusalLogTests.cs": "Platform",
     "RegistryModuleTests.cs": "Platform",
-    "RemotesModuleTests.cs": "Platform"
+    "RemotesModuleTests.cs": "Platform",
+    "StatePublisherTests.cs": "Platform"
   }
 }

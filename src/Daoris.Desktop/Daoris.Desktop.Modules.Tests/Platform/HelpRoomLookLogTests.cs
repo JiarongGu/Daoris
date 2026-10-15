@@ -37,6 +37,37 @@ public sealed class HelpRoomLookLogTests : IDisposable
         Assert.Contains("\"ms\":120", line);
         Assert.Contains("\"slow\":false", line);
         Assert.Contains("\"read\":true", line);
+        Assert.Contains("\"kept\":false", line);
+    }
+
+    /// <summary>HELPSTART1: a room that read the look kept from the last half-minute says so, so its milliseconds read as no look.</summary>
+    [Fact]
+    public void A_look_kept_from_a_moment_ago_says_kept()
+    {
+        using var log = new MachineLog(_home, "driver");
+        HelpRoomLookLog.Said(log, TimeSpan.FromMilliseconds(1), read: true, kept: true);
+
+        var line = Assert.Single(Lines());
+        Assert.Contains("\"kept\":true", line);
+        Assert.Contains("\"read\":true", line);
+    }
+
+    /// <summary>HELPROOM1: the line names each step's milliseconds and how many trees the git check was asked about.</summary>
+    [Fact]
+    public async Task A_look_says_the_time_of_each_of_its_steps()
+    {
+        using var log = new MachineLog(_home, "driver");
+        var times = new LookTimes { Trees = 3 };
+        await times.TimeAsync("records", async () => { await Task.Delay(5); return 0; });
+        times.Time("trees", () => 1);
+
+        HelpRoomLookLog.Said(log, TimeSpan.FromMilliseconds(120), read: true, times: times);
+
+        var line = Assert.Single(Lines());
+        Assert.Contains("\"recordsMs\":", line);
+        Assert.Contains("\"treesMs\":", line);
+        Assert.Contains("\"trees\":3", line);
+        Assert.DoesNotContain("\"questsMs\"", line);
     }
 
     [Fact]

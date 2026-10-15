@@ -16,7 +16,10 @@ public sealed class SessionsRoutes(DriverContext context)
     private readonly DriverLoop _loop = context.Loop;
     private readonly OpenFolder? _openFolder = context.OpenFolder;
 
+    // What a session's own presses change (STATEHUB1d, D169): its record among the sessions, and the driver's state its loop,
+    // nudged, reads again; a resolve moves its quest too.
     [DriverRoute("STOP_SESSION")]
+    [Publishes("STOP_SESSION", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> StopSessionAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -64,6 +67,7 @@ public sealed class SessionsRoutes(DriverContext context)
     /// closed its own quest, and this one means a person decided it was done.</para>
     /// </remarks>
     [DriverRoute("RESOLVE_SESSION")]
+    [Publishes("RESOLVE_SESSION", StateScopes.Sessions | StateScopes.Quests | StateScopes.Driver, Session = "id")]
     private async Task<object?> ResolveAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -99,6 +103,7 @@ public sealed class SessionsRoutes(DriverContext context)
     // them on. What cannot is `sent: false` with its code, for the page to word, and the driver's sentence beside it. The
     // page's press is a later row.
     [DriverRoute("SESSION_GO_ON_NEW")]
+    [Publishes("SESSION_GO_ON_NEW", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SessionGoOnNewAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -255,6 +260,7 @@ public sealed class SessionsRoutes(DriverContext context)
     /// (D48 §6).</para>
     /// </remarks>
     [DriverRoute("SESSION_ARCHIVE")]
+    [Publishes("SESSION_ARCHIVE", StateScopes.Sessions)]
     private async Task<object?> SessionArchiveAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var archive = PayloadHelper.GetRequiredValue<bool>(request.Payload, "archived");
@@ -287,10 +293,14 @@ public sealed class SessionsRoutes(DriverContext context)
     {
         var service = _loop.Service ?? throw NotReady();
         var config = DriverConfig.Load(_loop.ConfigPath);
+        // When it began, which its records are as old as.
+        var at = DateTimeOffset.UtcNow;
         var look = await SessionGroups.LookAsync(service, config, _context.Door(config), _loop.Look.Latest, _loop.Home, only, cancellationToken)
             .ConfigureAwait(false);
         // The cool-offs the loop's last look held starts on (MSG1f2): what a record whose words one holds says, its reset.
         look = look with { Waits = _loop.Look.Waits };
+        // A look at every session is kept with its time, for Ask Daoris's room to read where it is recent (HELPSTART1).
+        if (only is null) _loop.SessionsLooked.Keep(look, at);
         return (look, SessionGroups.Read(look, only));
     }
 
@@ -309,6 +319,7 @@ public sealed class SessionsRoutes(DriverContext context)
     /// log with no word of it.</para>
     /// </remarks>
     [DriverRoute("SESSION_DELETE")]
+    [Publishes("SESSION_DELETE", StateScopes.Sessions, Session = "id")]
     private async Task<object?> SessionDeleteAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");

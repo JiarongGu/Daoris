@@ -12,9 +12,10 @@ import { call, toolLookBound } from './call';
 /**
  * The tools' own query keys, under a root of their own rather than the driver's: the driver's state is asked again on
  * every tick, and the list with versions starts each program. Kept here, as Ask Daoris's proposals keep theirs, so
- * this domain's change touches no shared file.
+ * this domain's change touches no shared file. The root is what the state hub asks again when a tools press publishes
+ * (STATEHUB1h, D169): the list, and what a switch of git would change.
  */
-const TOOLS = ['tools'] as const;
+export const ALL_TOOLS = ['tools'] as const;
 const toolsList = (ask: boolean) => ['tools', 'list', ask] as const;
 const gitSwitch = (target: GitTarget) => ['tools', 'git', target.way, target.version ?? '', target.file ?? ''] as const;
 
@@ -51,24 +52,21 @@ export const useTools = ({ ask = false }: { ask?: boolean } = {}) => {
  * The screen's half of `daoris tool use <tool> system|managed|file` (D50): the system's and a named file are written at
  * once, a named file only once it answers a version; managed downloads a version that is not here, then switches, and
  * is followed as a download is.
+ *
+ * Every press here that writes what the list reads is published by its route, and the state hub asks the tools again in
+ * every window (STATEHUB1h, D169): the hooks ask nothing again themselves.
  */
-export const useToolUse = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useToolUse = () =>
+  useMutation({
     mutationFn: (use: { tool: string; action: 'system' | 'managed' | 'file'; version?: string; file?: string }) =>
       call<ToolStart>('TOOLS_USE', use),
-    onSuccess: () => void client.invalidateQueries({ queryKey: TOOLS }),
   });
-};
 
 /** *Download* (§4.1): fetched and verified, nothing switching. Answered once it has started; its end is `TOOLS_ENDED`. */
-export const useToolDownload = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useToolDownload = () =>
+  useMutation({
     mutationFn: (target: { tool: string; version: string }) => call<ToolStart>('TOOLS_DOWNLOAD', target),
-    onSuccess: () => void client.invalidateQueries({ queryKey: TOOLS }),
   });
-};
 
 /** The person's stop of a tool's download. `stopped: false` is an answer: nothing ran to stop. */
 export const useToolStop = () =>
@@ -77,37 +75,29 @@ export const useToolStop = () =>
   });
 
 /** *Delete* (§3.6): a downloaded version nothing uses, removed with its folder. */
-export const useToolDelete = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useToolDelete = () =>
+  useMutation({
     mutationFn: (target: { tool: string; version: string }) =>
       call<{ tool: string; version: string }>('TOOLS_DELETE', target),
-    onSuccess: () => void client.invalidateQueries({ queryKey: TOOLS }),
   });
-};
 
 /**
  * *Look for updates* (§3.7): each location fetched on the person's press. It waits as long as the shell may look,
  * a look's bound for each location (`hostBounds`, WSR7), since the bridge's own thirty seconds is one location's.
+ * The copy each location's look keeps is what the list offers, so its route publishes the tools (STATEHUB1h).
  */
-export const useToolsLook = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useToolsLook = () =>
+  useMutation({
     mutationFn: (locations: number) =>
       call<{ looks: ToolLookShown[] }>('TOOLS_LOOK', undefined, { timeoutMs: toolLookBound(locations) }),
-    onSuccess: () => void client.invalidateQueries({ queryKey: TOOLS }),
   });
-};
 
 /** A resource location added or removed (§3.3): the screen's half of `daoris tool locations add|remove`. */
-export const useToolLocation = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useToolLocation = () =>
+  useMutation({
     mutationFn: (change: { action: 'add' | 'remove'; address: string }) =>
       call<{ address: string; added?: boolean; removed?: boolean }>('TOOLS_LOCATION', change),
-    onSuccess: () => void client.invalidateQueries({ queryKey: TOOLS }),
   });
-};
 
 /**
  * What a switch of git to `target` changes (§4.1), asked of both gits before the switch applies; null asks nothing.
@@ -139,7 +129,7 @@ export const useToolsEnded = (handler: (ended: ToolEndShown) => void) => {
   useShenoraEvent('DAORIS', 'TOOLS_ENDED', (payload) => {
     const ended = payload as ToolEndShown | undefined;
     if (!ended?.tool) return;
-    void client.invalidateQueries({ queryKey: TOOLS });
+    void client.invalidateQueries({ queryKey: ALL_TOOLS });
     handler(ended);
   });
 };

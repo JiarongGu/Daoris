@@ -56,7 +56,8 @@ internal sealed class TreeSquashes(TreeContext context)
     /// </summary>
     /// <param name="cwd">A working tree of the repository: the session's own, or the registered root.</param>
     /// <param name="tip">The session branch's commit, read once by the caller.</param>
-    internal async Task<LandedBranch?> SquashedHolderAsync(string cwd, string repository, string tip, CancellationToken ct)
+    /// <param name="refs">The judgement's refs (PROC1d-ii); null asks git.</param>
+    internal async Task<LandedBranch?> SquashedHolderAsync(string cwd, string repository, string tip, CancellationToken ct, RefSnapshot? refs = null)
     {
         var squashed = context.Recorded.All()
             .Where(entry => entry.Squashed is not null && string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))
@@ -73,7 +74,7 @@ internal sealed class TreeSquashes(TreeContext context)
         foreach (var entry in squashed)
         {
             var (under, _, _) = await WorkingTree.GitAsync(cwd, ["merge-base", "--is-ancestor", tip, entry.Squashed!], ct).ConfigureAwait(false);
-            if (under == 0 && await LandedProofs.StandingTipAsync(cwd, entry, ct).ConfigureAwait(false) is not null) return entry;
+            if (under == 0 && await LandedProofs.StandingTipAsync(cwd, entry, ct, refs).ConfigureAwait(false) is not null) return entry;
         }
 
         return null;

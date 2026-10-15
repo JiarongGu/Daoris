@@ -5,6 +5,75 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-16 — A start cut off inside `git worktree add` left a half tree and its branch for good (OPENCUT1)
+
+- **Symptom:** on the install, 2026-10-15: `trees/<workspace>/<repository>/s-0031408d`, half checked out (staged deletions),
+  locked, on a `daoris/s-*` branch no record named, from a start cut off as the old window closed (GOONTREE1's entry); listed
+  *(unreadable)* by `trees list`, kept by the look, and removed by hand.
+- **Root cause:** `SessionTrees.OpenAsync` deleted the branch only when `worktree add` answered with a failure. A cancel stops
+  git's process tree and throws, so nothing after the add ran: the branch git makes first, the folder, and git's own
+  `initializing` lock, which git removes only at the add's end, all stayed. A kill leaves the same, and the look kept such a tree:
+  locked (AUTOTIDY1's guard), dirty, and a branch that never moved.
+- **Fix:** D88's AUTOTIDY2c and OPENCUT1 note. The open holds its tree locked under a reason naming its process until where its
+  branch started is recorded, and anything that cuts it off undoes it (`TreeOpenings.UndoAsync`: the tree removed with
+  `--force --force`, what is left of the folder it made deleted, its branch deleted). A kill's leftover, locked by git's own reason
+  or by an ended process's, is moved aside by the look with its branch (`TreeStrays`).
+- **Verification:** `SessionTreesTests`' two OPENCUT1 tests (real git: a cancel once the tree is added, through the git-start
+  seam, and one while git still runs, held in a `post-checkout` hook) failed first on the branch left behind and no lock, then
+  passed; `BranchTidyingProcessTests.A_tree_whose_opening_a_kill_cut_off_is_moved_aside_with_its_branch` failed first (it did not
+  build), then passed. The rest of the `Process` half did not run in the branch.
+
+## 2026-10-15 — A message to a session vanished behind the error when its send timed out (SENDLOST1b)
+
+- **Symptom:** the owner's, after *本机没有及时回应——驱动可能正忙。请稍后重试。*: *"and we don't have any message shown when this
+  happens (not even my message)"*. SENDLOST1 had kept such words in Ask Daoris only.
+- **Root cause:** the frame's two presses, `onSend` for a chat's composer and `onSay` for every other box at a session's foot,
+  read the bridge's `TIMEOUT` as a send that failed: the words went back in the box under a toast of the error though the
+  driver might still take them, so a second press could say them twice; and from the press to the answer they showed nowhere,
+  the composer having let go of them.
+- **Fix:** D137's SENDLOST1b note. The words show at once in a list of their own above the box (`Composer`'s `going`); a timeout
+  keeps them, saying the machine has not answered yet, with nothing put back; the session's queue or record settles them
+  (`work/sending.ts`, `SentSettler`), and a chat that ended without them gives them back, said so.
+- **Verification:** `WorkFrame.test.tsx`'s five SENDLOST1b tests, one per door, and one each in `Composer.test.tsx` and
+  `SessionBox.test.tsx`, all failing first. Not seen on the installed window, and no real timeout met.
+
+## 2026-10-15 — An accepted session's plan read stale after a tab switch, and never in another window (STATEHUB1b)
+
+- **Symptom:** the owner's, on the install: *"the 采纳 status does not read properly when switching tab"*. After *Accept…*
+  (采纳…) the head and the review went on showing the plan from before the press when the view was shown again; a second
+  window showed it until the driver's next change.
+- **Root cause:** a press refreshed only what its own hook invalidated, in the window that pressed. `useLandSessionTree`
+  invalidated the sessions, the review, the hand-off and the clean-up's list after a done landing, never the plan
+  (`keys.landing`, read again only on a conflict), and the plan is kept fresh for fifteen seconds (`main.tsx`), so a remount
+  read the cached plan. `DRIVER_TICK`, which asks the driver's key again, comes only when the loop saw a change of its own,
+  which a landing need not be; and nothing reached another window or a press made outside the page.
+- **Fix:** D169. A route declares what it changes beside its mark (`[Publishes]`), `StatePublisher` raises `STATE_CHANGED`
+  after a successful answer, and `bridge/stateHub.ts`, mounted by `ShellSignals` in both roots, asks every plan again (a
+  landing moves the line each plan is judged against) with the rest the route declares, in every window.
+- **Verify:** `ShellSignals.test.tsx` (*a landing done in another window reads anew here, shown or mounted again, from the
+  event alone*, with the application's fifteen-second freshness) failed with no hub mounted, then passed; `stateHub.test.tsx`;
+  `StatePublisherTests` (the declared table, and the event raised only after the route answered). Not seen on the installed
+  window from this branch; the terminal's presses and a press in flight are STATEHUB1e and STATEHUB1c.
+## 2026-10-15 — Ask Daoris lost the person's first words on a loaded machine (HELPSTART1, SENDLOST1)
+
+- **Symptom:** the owner's, on the install: a message to Ask Daoris showed *本机没有及时回应——驱动可能正忙。请稍后重试。*
+  (`errors.TIMEOUT`) and vanished from the page, the person's words included, though the driver had opened conversation
+  `2b751dcf` for them (`message.sent` 06:42:19, `help.room.look` 24.9 s at 06:42:38, `session.started` 06:42:39).
+- **Root cause:** two. `START_HELP` answered only after the whole room was read, its session look judging every tree with git
+  (24.9 s under load), then the agent spawned: past the bridge's 30 s bound, so the page's opening ahead stopped waiting. The
+  send's own `START_HELP` then timed out too; read from the code, not the log, it met a record open whose process was not yet
+  held, so it read the whole room again. And the page gave words that did not arrive back to the box they were written in (the new conversation's): once the list
+  showed the conversation the driver had opened, the panel drew that one's box instead, so the words sat in a box nobody saw.
+- **Fix:** `START_HELP` answers once the record is placed (`ChatRunner.PlaceHelpAsync`), and reads the room and spawns the agent
+  off the request (`RunHelpAsync`, `HelpRoutes.RunPlacedAsync`); a second press is handed the one starting, and words said to it
+  meanwhile wait in `HelpStarting` as its queue. The room reads a whole Sessions look under 30 s old (`SessionsLooked`). The page
+  keeps words whose send or start timed out, saying the machine has not answered yet, never back in the box to send twice, and
+  gives words that never arrived back to the box drawn now (`AskConversation.tsx`'s `box`).
+- **Verification:** `DriverModuleHelpStartTests` (the press answered while the room's reading was held; failed first, the route
+  reading the room itself), `HelpChatTests`' placed tests (Process half, alone), and `AskDaoris.test.tsx`'s three SENDLOST1 tests,
+  which failed first; the modules fast half and the web suite pass. Not covered: a session's box and a chat's composer
+  (SENDLOST1b); why the look itself took 24.9 s (proposed, HELPROOM1).
+
 ## 2026-10-15 — Words that could not go on left a fresh tree and branch at every look (GOONTREE1)
 
 - **Symptom:** the owner's, on the install: words waiting on a closed quest's last session whose tree had been removed made a
@@ -1648,6 +1717,16 @@ fixture's `git checkout --quiet main` exited -1 (4294967295), a spawn failure, t
 and WORKFLOW1a's sightings above. Again at MIXAGENT1a-i's merge the same day (driver and page notes; no CLI file), with one
 branch-worker building beside it: the azure-devops plugin's case (`:250`) met its fixture's `git push --quiet origin …`
 exiting -1; `--rerun cli` on the open merge.
+Again in `merge-branch.test.ts` at AUTOTIDY2c and OPENCUT1's merge, 2026-10-16 (`5a18f8a`, the stale set with no worker
+building beside it): *--prune removes each merged branch with its worktree…* (`:2839`) met its scratch repository's
+`git branch --format=%(refname:short)` exiting -1 with nothing on stderr, a fifth file to show the git-spawn shape.
+`--rerun cli` on the same tree.
+*WEBGATE1 (2026-10-15/16):* the web gate's vitest run on every core failed three times on 20 s timeouts under the
+owner's window, the antivirus and the gate together; `vite.config.ts` now caps its workers at `'25%'`
+(`DAORIS_WEB_WORKERS` overrides). Capped, the first run was 6456/6456 in 214 s beside two workers and the deployment gate
+(241 s and five to ten timeouts uncapped), then four gate runs in a row passed with the window up and no timeout:
+6497 in 146 s (`36fb755`), 6522 in 122 s (`2b97bff`), 6527 in 186 s (`5145292`), 6534 in 241 s (`5a18f8a`), the
+gate's wall 3 m 16 s to 5 m 24 s.
 `OrphanedSessionTests.A_torn_driver_json_is_said_and_watched_never_the_end_of_the_loop` (driver, Process) failed in the
 full set on `19f72d0`, 2026-10-12 (819/820, 27 m 43 s), with no worker building beside it, and passed alone: not the
 test's assertion but its stand-in service's teardown, `HttpListenerException: An operation was attempted on a nonexistent
@@ -1842,6 +1921,90 @@ asserted after the old one's last line; both classes passed 3 runs of 3 alone, t
 **And merging DEDUP9c** (2026-10-14), with one branch building beside it: `tools/fsx.test.mjs`'s *with a merge open the
 snapshot is the commit-to-be* failed with `spawnSync git EPERM` on its scratch repository and passed in the gate's rerun:
 the git-held-files kind of 2026-10-07's sightings again.
+
+**Where the driver's Process half spends its time (PROC1a, 2026-10-15).** Measured on main at `2995958` with the
+fixtures' off-by-default count (`FixtureSpawns`, `DAORIS_TEST_GIT_SPAWNS`) and `GIT_TRACE2_EVENT` on single runs of single
+classes; the machine is 22 logical processors, Windows 11, git 2.53.0.windows.3, a third-party antivirus's real-time
+protection on, the installed window not running, and another worktree's driver tests (and up to 35 node processes at
+peak) beside every run. *The half is git starts, one at a time.* The full set's run at `48c315b` (901 tests) took 72 m 20 s;
+its tests' durations sum to 4331 s and its first start to last end is 4332 s, so nothing overlapped. Read for node, a stub,
+a tick, a clock bound, a listener and an environment variable set or read, 31 classes are git only, 261 tests and 2737 s:
+`TreeSyncTests`, `LandedProofTests`, `LandedKeepTests`, `ContentProofLossTests`, `LineHoldsLandingTests`, `SweepTests`,
+`LandedReviewTests`, `TreeUpdateTests`, `ContentHeldTests`, `LandedBranchTests`, `ReviewBaseTests`, `LandingTidyTests`,
+`ContentOfferTests`, `ContentLandingTests`, `LandingSquashTests`, `GitBranchesTests`, `ReviewLandingTests`,
+`OpinionLandingTests`, `SessionTreesTests`, `SessionTreeWorkTests`, `SessionTreeOnlyHereTests`, `TreeDiffTests`,
+`TreeMergeTests`, `GitReadsTests`, `SweepLineProcessTests`, `CanonicalLineTests`, `EvidenceGitTests`,
+`WorkingTreeProvenanceTests`, `TreeFilesTests`, `RegistrationLineProcessTests` and `SetupLineProcessTests` (several keep
+their own git runner, two talk to an in-process stand-in, and two read the clock with minutes to spare:
+`TreeSyncTests.cs:275`, `WorkingTreeProvenanceTests.cs:26`). Five mix node hooks into git (`PullRequestStateTests`, `LandingTests`, `HandOffTests`, `AutoLandingTests`,
+`LandingPluginTests`): 89 tests, 924 s. The other 66 classes hold 551 tests and 670 s. *Starts per test:* in
+`TreeUpdateTests` (11 tests) 539 git processes the tests started themselves, 197 the fixture's and 342 the product's, and 226
+more that git started; in eight traced top tests 1426, 148 the fixture's (10%) and 1278 the product's, the most in
+`TreeSyncTests.After_a_squash_merged_pull_request…` (517, 42 the fixture's) and `With_no_record_of_where_it_started…` (402,
+25). The product's starts are mostly ref reads: `rev-parse --verify` 389, `diff --no-ext-diff` 132, `merge-base
+--is-ancestor` 130, `symbolic-ref --short` 89, `rev-list --count` 77, `worktree list` 47, `rev-parse --show-toplevel` 38,
+`--path-format` 30 and `--abbrev-ref` 30. The fixture's own git was 24% of `TreeUpdateTests`' time, 14% of `TreeSyncTests`'
+and 15% of four other classes', about half of it making repositories (`init`, `config`, the first commit, `remote add`, the
+first push). *A start's cost* moves with the load beside it: a fixture git ran 193 ms from its start to its exit at 40–50%
+CPU, 465 ms beside a spiking neighbour and 720 ms at 85%, its `Process.Start` alone 21, 105 and 171 ms; so `TreeSyncTests`
+took 1439 s alone where the full set gave it 578 s, and `TreeUpdateTests` 157 s against 132 s. A git trace on the same
+class tripled its time (457 s), so trace counts and timings come from separate runs. *Bare starts* (`git --version`, 40 from
+a .NET 10 host after three warm-up starts; seconds for all 40): one at a time 3.9 quiet, 5.5–6.9 at 33–56% CPU, 9.1–11.5
+under a neighbour's full run; four tasks in one host 1.5, 1.8–3.7 and 5.0; two hosts of two 1.9 and 6.1; four hosts of one
+2.5 and 4.9; eight tasks in one host 2.1–2.9 with `Process.Start` averaging 230–376 ms as they queue on the runtime's one
+start lock; two hosts of four 1.8. So the per-host lock is not what binds at four: past about four at once every start slows,
+whichever host makes it. *Four classes four at once in one host* (`LandedReviewTests`, `LandedBranchTests`,
+`ContentHeldTests`, `ReviewBaseTests`; 33 tests, `MaxParallelThreads` 4): 281 s against 1175 s one at a time just before
+(two of the four spiked then; 466 s in the full set), each test about 1.85 times slower and the longest class
+(`LandedBranchTests`, 276 s) the wall; all passed. Read at about 2.2 times the throughput, the git-only classes take the half
+from 72 to about 47 minutes under the full set's load and from about 37 to about 24 on a quiet machine; ten minutes needs
+fewer starts and the serial classes shortened as well. The rows that follow are PROC1's split in the backlog.
+
+**The driver's Process half runs as two (PROC1b, PROC1c, 2026-10-15; a note on MOD8's rule).** A Process class that starts
+git and nothing a neighbour's load could fail also carries `Parallel=Git` (`Category.cs` says which may, `CategoryTests`
+holds the trait and the environment), and gate `driver-process-git` runs those classes four at once in one host
+(`git.process.runsettings`), after `driver-process`, which runs the rest one at a time (`process.runsettings`, now filtered
+`Parallel!=Git`). Marked: 37 classes, 328 of the half's 908 listed tests; `SessionTreesTests` waits for AUTOTIDY2b's merge,
+and `LandingPluginTests` stays serial for its 3-second patience. `TreeSyncTests` is four classes of 185, 138, 137 and 117 s
+by `48c315b`'s times. A class marked so is run alone with the second file: the first's filter now leaves it out, and a run
+that matches no test fails nothing. *Owed:* neither half has run on the new split; the branch paused before its runs. Each run
+goes here with its wall, sha, test counts and machine state, against PROC1a's projection of about 47 minutes under a full
+set's load.
+
+**PROC1d-i (2026-10-15): a look over a sync, an update, a landing and a tidy.** `TreeContext.OneLook` now opens at the top of
+`SyncPlanAsync`, `SyncAsync`, `UpdateTreeAsync`, `LandAsync` and `TidyHeldAsync`, and `WorkingTree.Started` (an async local,
+null in production) counts the product's git starts. Counted by `TreeSyncStartsTests` over a sync plan of three session
+branches: 2 guesses of the line and 44 starts before, 1 and 42 after (each guess is 1 to 3 starts); the remaining starts are
+PROC1d-ii to -iv. Ran green once each: that class, `TreeSyncTests`, `TreeSyncLineTests`, `TreeUpdateTests`, `SweepLineProcessTests`.
+
+**PROC1d-ii (2026-10-15): a judgement reads a checkout's refs once.** A `RefSnapshot`, one `for-each-ref` of `refs/heads` and
+`refs/remotes/origin` with each ref's object, type and upstream, read at its first question, answers a branch's tip, the line's
+forms, where the line stands, whether a branch is on its remote and what it holds that its remote lacks; every git the flow starts
+that may move a ref drops it (D88's PROC1d-ii note). Counted by `TreeSyncStartsTests` over the same sync plan of three session
+branches: 42 starts before, 29 after; `rev-parse --verify` 8 before, 1 after (the line's guess, `WorkingTree.DefaultBranchAsync`);
+the snapshot's read is 1. What is left is `merge-base` and `rev-list` per branch (PROC1d-iv), `worktree list` twice (PROC1d-iii),
+`status --porcelain` per tree, and the line's guess and fetch. Ran green once each, one at a time after the deployment rerun
+freed the machine (wall seconds, tests): `TreeSyncStartsTests` 80 (5), `TreeSyncTests` 69 (1), `TreeSyncStepTests` 84 (2),
+`TreeSyncReplayTests` 87 (5), `TreeSyncLineTests` 80 (4), `LandedProofTests` 69 (4), `LandedKeepTests` 122 (6), `SweepTests` 57 (11),
+`ContentProofLossTests` 254 (17), `PullRequestStateTests` 573 (9) and `BranchTidyingProcessTests` 563 (26, `process.runsettings`).
+
+**PROC1d-iii (2026-10-16): the working trees once a judgement, and a tree's common dir with its branch in one start.** A
+judgement's `RefSnapshot` holds `worktree list` beside the refs (D88's PROC1d-iii note), so a sync plan lists a repository's
+trees once where its pull and its branches each listed them. `TreeGit.CommonDirAndBranchAsync` asks `rev-parse
+--path-format=absolute --git-common-dir --abbrev-ref HEAD` once where a landing's merge, its branch, its sync judgement and its
+tidy, a removal, an update and a held tree's discard asked the two in turn; where the one fails (a branch with no commit yet, a
+folder git does not know) the two are asked as before, so each answer and each failure is the one they gave. The update reads its
+branch with `symbolic-ref`, so it takes the one start's only as a plain name or a detached `HEAD` and asks `symbolic-ref` for
+anything else. Counted from code: a sync plan over three session branches 29 starts → 28 (`TreeSyncStartsTests`' bound, its
+`worktree list` held at one), one start fewer at each of the other sites and two at a landing that tidies (its own and its
+removal's). *Owed:* `TreeSyncStartsTests` (6, one new: the one start answers as the two did, on a branch, detached and in the
+checkout) has not run on this; its wall goes here beside PROC1d-ii's 80 s.
+
+**PROC1f (2026-10-16): the last git-only classes join the four-at-once half.** `SessionTreesTests` (16 tests) and
+`LandingPluginTests` (8, its helpers now `LandingPluginFixture`) carry `Parallel=Git`; the plugin that never answers, timed out at
+three seconds of patience, is `LandingPluginPatienceTests`, run one at a time. Listed on this branch with each file: the git half
+359 tests (334 before, plus `TreeSyncStartsTests`' new one), the serial half 568 (592 before). *Owed:* those three classes' runs,
+each alone with its file, and their walls here.
 
 ## TEST1 (open): a Node process on Windows aborts with 0xC0000409 (since 2026-09-21)
 

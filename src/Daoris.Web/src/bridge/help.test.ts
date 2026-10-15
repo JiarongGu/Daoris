@@ -1,18 +1,30 @@
 import { createElement, type ReactNode } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, renderHook } from '@testing-library/react';
+import { type QueryKey, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
-
-vi.mock('@shenora/react', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@shenora/react')>()),
-  getBridge: () => ({ invoke, isAvailable: true }),
+const { invoke, heard } = vi.hoisted(() => ({
+  invoke: vi.fn(),
+  // The state hub's ear (STATEHUB1h, D169): what the mocked shell publishes after a press reaches it, as the kit's pump would.
+  heard: new Map<string, (payload: unknown) => void>(),
 }));
+
+vi.mock('@shenora/react', async (importOriginal) => {
+  const { publishing } = await import('../test/publishing');
+  const published = publishing(invoke, (type, payload) => heard.get(type)?.(payload));
+  return {
+    ...(await importOriginal<typeof import('@shenora/react')>()),
+    getBridge: () => ({ invoke: published, isAvailable: true }),
+    useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
+      if (module === 'DAORIS') heard.set(type, handler);
+    },
+  };
+});
 
 import type { HelpProposal } from '../help/ProposalCard';
 import { keys } from '../data/queries';
-import { settleBound, useSettleHelp, type HelpSettled } from './help';
+import { HELP_PROPOSALS, settleBound, useSettleHelp, type HelpSettled } from './help';
+import { useStateHub } from './stateHub';
 
 /**
  * WSR7: Ask Daoris's sync card fetches on its first Apply and replays on its second, each as long as the screen's own
@@ -95,54 +107,67 @@ describe('what settling a proposal writes to the machine log', () => {
 });
 
 /**
- * ENTRY1d1: a move to a workspace changes the registry, so an Apply reads it again at once, as the Manage drawer's own
- * *Move to workspace* does, rather than waiting for the driver's watch to say it moved.
+ * What an Apply or a Not now changed is published by its route (STATEHUB1h, D169), and the window's state hub asks it again, as
+ * every other window's does; the hook asks nothing again itself. Each family below is one the hook used to ask by hand.
  */
 describe('what an Apply reads again', () => {
-  it('reads the registry again, which a move to a workspace changed', async () => {
+  /** A client holding an answer under each key, the hub mounted beside the hook as `ShellSignals` mounts it, and an Apply made. */
+  async function settled(settle: { id: string; apply: boolean }, ...held: QueryKey[]) {
     invoke.mockReset();
     invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? { message: 'Applied.', applied: true } : undefined));
     const client = new QueryClient();
-    const invalidated = vi.spyOn(client, 'invalidateQueries');
+    for (const key of held) client.setQueryData(key, { held: true });
     const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
-    const { result } = renderHook(() => useSettleHelp(), { wrapper });
+    const { result } = renderHook(() => { useStateHub(); return useSettleHelp(); }, { wrapper });
 
-    await act(async () => { await result.current.mutateAsync({ id: 'p12', apply: true }); });
+    await act(async () => { await result.current.mutateAsync(settle); });
 
-    const keys = invalidated.mock.calls.map(([filters]) => filters?.queryKey);
-    expect(keys).toContainEqual(['registry']);
-    expect(keys).toContainEqual(['repositories']);
+    return (key: QueryKey) => client.getQueryState(key)?.isInvalidated ?? false;
+  }
+
+  /**
+   * ENTRY1d1: a move to a workspace changes the registry, so an Apply reads it again at once, as the Manage drawer's own
+   * *Move to workspace* does, rather than waiting for the driver's watch to say it moved.
+   */
+  it('reads the registry again, which a move to a workspace changed', async () => {
+    const invalid = await settled({ id: 'p12', apply: true }, keys.registry(null), keys.repositories(null));
+
+    await waitFor(() => expect(invalid(keys.registry(null))).toBe(true));
+    expect(invalid(keys.repositories(null))).toBe(true);
   });
 
   // WORKFLOW1h-d: a workflow card's Apply saved a version, so the workflow tabs (a repository's Current, a run's place),
   // which sit under the driver's key, are read again at once.
   it('reads the workflow tabs again, which a saved workflow version changed', async () => {
-    invoke.mockReset();
-    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? { message: 'Applied.', applied: true } : undefined));
-    const client = new QueryClient();
-    const invalidated = vi.spyOn(client, 'invalidateQueries');
-    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
-    const { result } = renderHook(() => useSettleHelp(), { wrapper });
+    const tabs = [keys.workflow('repository', 'engine'), keys.workflowRun('quest', 'q1')];
+    const invalid = await settled({ id: 'p22', apply: true }, ...tabs);
 
-    await act(async () => { await result.current.mutateAsync({ id: 'p22', apply: true }); });
-
-    const reread = invalidated.mock.calls.map(([filters]) => filters?.queryKey as readonly string[]);
-    for (const tab of [keys.workflow('repository', 'engine'), keys.workflowRun('quest', 'q1')]) {
-      expect(reread.some((key) => key.every((part, at) => tab[at] === part))).toBe(true);
-    }
+    await waitFor(() => { for (const tab of tabs) expect(invalid(tab)).toBe(true); });
   });
 
   // HIST1f-a: a clear card's Apply removed history, so the history plan is read again, as the Clear history press does.
   it('reads the history plan again, which a clear changed', async () => {
-    invoke.mockReset();
-    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? { message: 'Applied.', applied: true } : undefined));
-    const client = new QueryClient();
-    const invalidated = vi.spyOn(client, 'invalidateQueries');
-    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
-    const { result } = renderHook(() => useSettleHelp(), { wrapper });
+    const plan = ['history', 'workspace', 'aurora'];
+    const invalid = await settled({ id: 'p20', apply: true }, plan);
 
-    await act(async () => { await result.current.mutateAsync({ id: 'p20', apply: true }); });
+    await waitFor(() => expect(invalid(plan)).toBe(true));
+  });
 
-    expect(invalidated.mock.calls.map(([filters]) => filters?.queryKey)).toContainEqual(['history']);
+  // And the rest an Apply's doors may move, each read again as the hook read it by hand before (HELP6, PLUG9, HELP10).
+  it('reads the proposals, the sessions, quests and asks, the agents, the plugins and the browser’s settings again', async () => {
+    const moved = [[...HELP_PROPOSALS, 's1'], keys.allSessions, keys.allQuests, keys.allAsks, keys.harnesses, keys.plugins,
+      keys.browserSettings, keys.sweep];
+    const invalid = await settled({ id: 'p30', apply: true }, ...moved);
+
+    await waitFor(() => { for (const key of moved) expect(invalid(key)).toBe(true); });
+  });
+
+  // A Not now settles the proposal and nothing else.
+  it('reads only the proposals again after a Not now', async () => {
+    const invalid = await settled({ id: 'p31', apply: false }, [...HELP_PROPOSALS, 's1'], keys.driver, keys.allSessions);
+
+    await waitFor(() => expect(invalid([...HELP_PROPOSALS, 's1'])).toBe(true));
+    expect(invalid(keys.driver)).toBe(false);
+    expect(invalid(keys.allSessions)).toBe(false);
   });
 });

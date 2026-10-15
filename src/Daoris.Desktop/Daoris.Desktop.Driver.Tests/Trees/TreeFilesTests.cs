@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Fixtures live under the repository's gitignored `_fixtures/`, never OS temp.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class TreeFilesTests : IDisposable
 {
     private readonly string _scratch;

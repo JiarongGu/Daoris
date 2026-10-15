@@ -9,6 +9,7 @@ import { ExternalLink } from '../design/links';
 import { store, stored } from '../lib/stored';
 import {
   type LandingConflict, useDiscardSessionTree, useHandOff, useHandOffPress, useLandSessionTree, useLanding, useReadingSince, useSay, useSessionDiff,
+  useUnderWay,
 } from '../bridge/shell';
 import { Button, EmptyState, Inline, SESSION_ACTIVE } from '../design/ui';
 import { reviewBranch, reviewKnown } from './diff';
@@ -161,6 +162,13 @@ export function DiffPane({
   // or not a tree is still here, since a tidy removes it and the branch stands.
   const handOff = useHandOff(session);
   const hand = useHandOffPress();
+  // What is under way for this session, whichever view or window pressed it (STATEHUB1c, D169 point 7): the head's landing reads
+  // *Landing…* here too, and so does a review remounted by a tab switch mid-press. Never this component's own press alone.
+  const underWay = {
+    land: useUnderWay('LAND_SESSION_TREE', session),
+    discard: useUnderWay('DISCARD_SESSION_TREE', session),
+    hand: useUnderWay('HANDOFF', session),
+  };
   const handable = handOff.data?.branch && handOff.data.plugin ? handOff.data : null;
 
   // Per-reader, per-session, and never written down: which files this person has opened and which
@@ -367,7 +375,7 @@ export function DiffPane({
         {canAccept && !conflict && (
           <Button
             variant="primary"
-            disabled={land.isPending}
+            disabled={underWay.land}
             onClick={() => {
               const at = landing.dataUpdatedAt;
               act(land.mutateAsync(session).then((result) => {
@@ -376,7 +384,7 @@ export function DiffPane({
               }));
             }}
           >
-            {land.isPending ? t('work.review.accepting') : t('work.review.accept')}
+            {underWay.land ? t('work.review.accepting') : t('work.review.accept')}
           </Button>
         )}
 
@@ -385,10 +393,10 @@ export function DiffPane({
         {handable && (
           <Button
             // A press that could only be refused is not offered (UX5 U66): the sentence above says why.
-            disabled={hand.isPending || Boolean(handable.problem)}
+            disabled={underWay.hand || Boolean(handable.problem)}
             onClick={() => act(hand.mutateAsync(session))}
           >
-            {hand.isPending ? t('work.review.handing') : t('work.review.hand', { plugin: handable.plugin })}
+            {underWay.hand ? t('work.review.handing') : t('work.review.hand', { plugin: handable.plugin })}
           </Button>
         )}
 
@@ -401,7 +409,7 @@ export function DiffPane({
             <Button
               // The next move where nothing is beyond the line, so it leads (REVIEWBASE4); beside *Accept*, it stays quiet.
               variant={nothingBeyond ? 'primary' : 'ghost'}
-              disabled={discard.isPending}
+              disabled={underWay.discard}
               // Unforced. A tree with nothing to lose is simply removed; one holding uncommitted
               // work or unmerged commits comes back REFUSED with the sentence naming what would go —
               // and that refusal is what arms the second press.
@@ -423,7 +431,7 @@ export function DiffPane({
           label={t('work.review.discardTitle')}
           says={<p className="m-0 text-small text-ink-soft">{said}</p>}
           meanIt={t('work.review.discardMeanIt')}
-          busy={discard.isPending}
+          busy={underWay.discard}
           onConfirm={forceDiscard}
           onClose={() => setConfirmingDiscard(false)}
         />

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The driver's Process half's git-only classes (PROC1b, PROC1c): the Process classes that start git and
+  nothing a neighbour's load could fail carry Parallel=Git beside Category=Process, and run four at once
+  in one host. process.runsettings runs every other Process class one at a time. The driver's
+  Category.cs says which classes may carry the trait, and its CategoryTests holds them to it.
+
+  Four, in one host: PROC1a measured the half as git starts made one at a time, four classes at once at
+  about 2.2 times the throughput, and no gain from eight in one host or from a second host past four at
+  once, since every start slows past about four whichever host makes it (FLAKE1's FIX-LOG entry). A class
+  is xUnit's unit of parallel work, so the longest class is this run's wall.
+
+  The name ends in process.runsettings on purpose: the merge tool reads a gate run with such a file as a
+  Process half (isProcessGate), so this one too keeps its trx and re-runs a failed test alone. Its filter
+  is in the file for the same reason as the other's: VSTest ANDs it with the one the re-run adds.
+-->
+<RunSettings>
+  <RunConfiguration>
+    <TestCaseFilter>Category=Process&amp;Parallel=Git</TestCaseFilter>
+  </RunConfiguration>
+  <xUnit>
+    <ParallelizeTestCollections>true</ParallelizeTestCollections>
+    <MaxParallelThreads>4</MaxParallelThreads>
+  </xUnit>
+</RunSettings>

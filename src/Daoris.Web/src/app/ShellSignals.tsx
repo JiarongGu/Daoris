@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { sentence } from '../locales/format';
 import { keys } from '../data/queries';
-import { useDriverReady } from '../bridge/shell';
+import { useDriverReady, useStateHub } from '../bridge/shell';
 import { type AccountWaitTick, type Consideration, type TrustHold, newsFrom } from '../data/signals';
 import type { Notify } from '../design/ui';
 
@@ -15,8 +15,13 @@ type Tick = { events?: string[]; considered?: Consideration[]; untrusted?: Trust
  * browser keeps its polling and never mounts a transport. Renders nothing; costs nothing where no
  * host answers.
  */
-export function ShellSignals({ notify, onAttend }: {
+export function ShellSignals({ notify, onAttend, attended }: {
   notify: Notify;
+  /**
+   * The session this window shows on its Sessions view now (NOTIFY1c), so an answer from that very conversation is not toasted
+   * over the page that already shows it. Absent or null: no session is open here, and every toast is said.
+   */
+  attended?: string | null;
   /**
    * A session the shell is asking the page to attend (SURF5b) — the person clicked an OS
    * notification. Absent where nothing can act on it, which is every window but the application's.
@@ -93,6 +98,9 @@ export function ShellSignals({ notify, onAttend }: {
   // The driver's service is up (LOOK2a): what it refused while it came up is asked again now, not at the first tick.
   useDriverReady();
 
+  // What a press changed, wherever it was pressed (STATEHUB1b, D169): asked again here at the one place, in every window.
+  useStateHub();
+
   // A failure the driver names is worded from the catalogue, in the reader's language (UX5 U30): a
   // refused connection toasted the .NET socket's own words. Anything else keeps the driver's.
   useShenoraEvent<{ message?: string; code?: string }>('DAORIS', 'DRIVER_ERROR', (error) => {
@@ -101,8 +109,9 @@ export function ShellSignals({ notify, onAttend }: {
 
   /**
    * What is worth interrupting the person for (SURF5b): a session that parked, or one that ended
-   * without them asking; and a quest parked on its failed sessions (SESSUX1i), which waits on their
-   * *Try again* as a park waits on their answer. The same event the shell turns into an OS balloon
+   * without them asking; a quest parked on its failed sessions (SESSUX1i), which waits on their
+   * *Try again* as a park waits on their answer; and a conversation that answered their words
+   * (NOTIFY1a), news as an ending is. The same event the shell turns into an OS balloon
    * while nobody is looking at the window — so this is the half for when somebody IS, and the two
    * never both fire because the shell tests the foreground before raising one.
    *
@@ -110,13 +119,19 @@ export function ShellSignals({ notify, onAttend }: {
    * writes (D24): it is composed once in `AttentionWatch` so a toast here and a line on a headless
    * machine cannot drift.
    */
-  useShenoraEvent<{ headline?: string; detail?: string; kind?: string }>(
+  useShenoraEvent<{ headline?: string; detail?: string; kind?: string; session?: string }>(
     'DAORIS', 'SESSION_ATTENTION', (item) => {
       if (!item?.headline) return;
-      notify(
-        item.detail ? `${item.headline}: ${item.detail}` : item.headline,
-        // A park is the one that is WAITING on somebody; an ending is news.
-        item.kind === 'Parked' || item.kind === 'QuestParked' ? 'error' : 'ok');
+      // NOTIFY1c: a conversation's answer to the one the person is reading, in a window in front, is already on their page,
+      // so a toast over it is noise. Only that kind: a park or an ending of the attended session still interrupts.
+      const reading = item.kind === 'Answered' && attended != null && item.session === attended
+        && typeof document !== 'undefined' && document.visibilityState === 'visible';
+      if (!reading) {
+        notify(
+          item.detail ? `${item.headline}: ${item.detail}` : item.headline,
+          // A park is the one that is WAITING on somebody; an ending, or an answer, is news.
+          item.kind === 'Parked' || item.kind === 'QuestParked' ? 'error' : 'ok');
+      }
       void client.invalidateQueries({ queryKey: keys.allSessions });
     });
 

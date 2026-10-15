@@ -25,6 +25,7 @@ public sealed class RulesRoutes(DriverLoop loop)
     // The screen's half of `daoris agent rules allow|ask|deny|remove|default` (D50): an edit to
     // the same file, answered with the state after it. A refusal is the driver's own sentence.
     [DriverRoute("RULE_ACTION")]
+    [Publishes("RULE_ACTION", StateScopes.Rules)]
     private async Task<object?> RuleActionAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
@@ -57,6 +58,7 @@ public sealed class RulesRoutes(DriverLoop loop)
     // The screen's half of `daoris agent rules accept|decline` (PERM2, D74): the person's answer
     // to an agent's proposal. 🔴 The only way a widening an agent proposed ever applies.
     [DriverRoute("RULE_PROPOSAL")]
+    [Publishes("RULE_PROPOSAL", StateScopes.Rules)]
     private async Task<object?> RuleProposalAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;

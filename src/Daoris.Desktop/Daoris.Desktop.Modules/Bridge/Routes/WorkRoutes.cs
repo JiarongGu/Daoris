@@ -24,6 +24,12 @@ public sealed class WorkRoutes(DriverContext context)
     private readonly DriverLoop _loop = context.Loop;
 
     /// <summary>
+    /// What a move on a work changes (STATEHUB1d, D169): its quests, the plan of the work among them, its ask, the sessions it
+    /// stopped, released or archived, and the driver's state its loop, nudged, reads again. About no one session.
+    /// </summary>
+    private const StateScopes Moves = StateScopes.Sessions | StateScopes.Quests | StateScopes.Asks | StateScopes.Driver;
+
+    /// <summary>
     /// The work and what a pause and an abandon would do with each piece, why an abandon keeps what it keeps, and its own pause
     /// and last abandon here (design §1, §2.1, §3.2, §4.2). The abandon's half is the first press: <c>abandon.pieces</c> is
     /// what the second press sends back.
@@ -118,6 +124,7 @@ public sealed class WorkRoutes(DriverContext context)
     /// from fixed lists; an abandon with nothing listed is said, never refused (D48 §6).
     /// </summary>
     [DriverRoute("WORK_ABANDON")]
+    [Publishes("WORK_ABANDON", Moves)]
     private async Task<object?> WorkAbandonAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var (scope, id) = WorkNamed(request);
@@ -200,6 +207,7 @@ public sealed class WorkRoutes(DriverContext context)
     /// refused (D48 §6).
     /// </summary>
     [DriverRoute("WORK_PAUSE")]
+    [Publishes("WORK_PAUSE", Moves)]
     private async Task<object?> WorkPauseAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var (scope, id) = WorkNamed(request);
@@ -222,6 +230,7 @@ public sealed class WorkRoutes(DriverContext context)
     /// planner's verdict. A resume of what is not paused is said, never refused (D48 §6).
     /// </summary>
     [DriverRoute("WORK_RESUME")]
+    [Publishes("WORK_RESUME", Moves)]
     private async Task<object?> WorkResumeAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var (scope, id) = WorkNamed(request);

@@ -62,6 +62,8 @@
   "help.ended": "This conversation has ended. A message starts a new one.",
   "help.notSent": "Ask Daoris ended before this reached it. It is back in the box: send it again to start a new conversation.",
   "help.opening": "opening Ask Daoris…",
+  "help.sending": "sending…",
+  "help.unanswered": "The machine has not answered yet; it may still take them.",
   "help.none": "This machine lacks nothing Ask Daoris knows to look for.",
   "help.command": "or `{{command}}`",
   "help.starter.waiting": "{{count}} session is waiting on you.",

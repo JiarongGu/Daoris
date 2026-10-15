@@ -10,18 +10,28 @@ import type { Session } from '../data/api';
 // is served from the cache while a live one's reads again behind the last answer; and leaving stops the wait without
 // throwing away what the host answers after.
 
-const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
-
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke }),
-  useShenora: () => ({ isAvailable: true, bridge: {} }),
-  useShenoraEvent: () => {},
+const { invoke, heard } = vi.hoisted(() => ({
+  invoke: vi.fn(),
+  // The state hub's ear (STATEHUB1f, D169): what the mocked shell publishes after a press reaches it, as the kit's pump would.
+  heard: new Map<string, (payload: unknown) => void>(),
 }));
+
+vi.mock('@shenora/react', async () => {
+  const { publishing } = await import('../test/publishing');
+  const published = publishing(invoke, (type, payload) => heard.get(type)?.(payload));
+  return {
+    isShenoraAvailable: () => true,
+    getBridge: () => ({ isAvailable: true, invoke: published }),
+    useShenora: () => ({ isAvailable: true, bridge: {} }),
+    useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
+      if (module === 'DAORIS') heard.set(type, handler);
+    },
+  };
+});
 
 import '../locales/i18n';
 import { keys } from '../data/queries';
-import { useDiscardSessionBranch, useSweep, useTreesSync } from '../bridge/shell';
+import { useDiscardSessionBranch, useStateHub, useSweep, useTreesSync } from '../bridge/shell';
 import { DiffPane } from './DiffPane';
 
 const ENDED: Session = {
@@ -74,10 +84,17 @@ function answering(diff: () => unknown) {
 
 const newClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
+/** The window's state hub, as `ShellSignals` mounts it: what a press moved is asked again here, never by the press's hook. */
+function Hub() {
+  useStateHub();
+  return null;
+}
+
 function pane(client: QueryClient, record: Session = ENDED) {
   return (
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
+        <Hub />
         <DiffPane session={record.id} record={record} title="Fix the report header" hasTree />
       </Tooltip.Provider>
     </QueryClientProvider>
@@ -289,7 +306,8 @@ describe('the review while git reads (REVIEW4)', () => {
 
   /**
    * A kept answer stands until something moves the tree: the clean-up removes trees and bringing up to date replays
-   * them, so either press reads every kept review again rather than leaving acts on a tree that is gone.
+   * them, so either press reads every kept review again rather than leaving acts on a tree that is gone. The state hub asks it,
+   * from what the route declares it changed, as in every window (STATEHUB1f, D169 point 6).
    */
   const presses: [name: string, route: string, press: () => { mutateAsync: (only: string[]) => Promise<unknown> }][] = [
     ['the clean-up', 'SWEEP', () => useSweep()],

@@ -240,6 +240,31 @@ describe('the composer', () => {
   });
 
   /**
+   * SENDLOST1b: words on their way show the moment they are sent, as sending, apart from what waits behind a turn. Where the
+   * page stopped waiting on their send they say the machine has not answered yet, and offer no control: an edit or a removal
+   * of words the machine may still take would send them twice.
+   */
+  it('shows words on their way as sending, then as unanswered, apart from what waits and with no controls', () => {
+    const props = {
+      taking: true, onRemove: vi.fn(), onEdit: vi.fn(),
+      queued: [{ id: 'q1', text: 'and test it', files: [] }],
+    };
+    const sending = show({ ...props, going: { words: [{ text: 'and the line?', files: ['run.log'] }], late: false } });
+
+    const going = screen.getByRole('list', { name: 'sending…' });
+    expect(going.textContent).toBe('and the line?run.log');
+    expect(within(going).queryByRole('button')).toBeNull();
+    expect(screen.getByRole('list', { name: 'waiting for this turn to end' }).textContent).toContain('and test it');
+    sending.unmount();
+
+    show({ ...props, going: { words: [{ text: 'and the line?', files: [] }], late: true } });
+    const late = screen.getByRole('list', { name: 'The machine has not answered yet; it may still take them.' });
+    expect(late.textContent).toBe('and the line?');
+    expect(within(late).queryByRole('button')).toBeNull();
+    expect(screen.queryByRole('list', { name: 'sending…' })).toBeNull();
+  });
+
+  /**
    * ASKHIST1b: words waiting with a word wider than the box, a pasted URL as Ask Daoris's first words, stay inside it. Every
    * grid from them to the form bounds its column, or its widest word sets the width of the box and its presses too.
    */
@@ -614,6 +639,21 @@ describe('the composer, waiting messages with an id', () => {
     expect(send).not.toHaveBeenCalled();
     expect(screen.queryByText(/Editing a waiting message/)).not.toBeInTheDocument();
     expect(box()).toHaveValue('half a thought');
+  });
+
+  /** REWORDBOUND1 (D137 §2.4): a reword is words the door takes too, so the box's own bound refuses it as it refuses a send. */
+  it('refuses a reword the door could not take, keeping the text and the edit in the box', async () => {
+    const edit = vi.fn().mockResolvedValue({ done: true });
+    show({ taking: true, onRemove: vi.fn(), onEdit: edit, accepts: (text: string) => text.length <= 20, queued: WAITING });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Edit the waiting message: then commit' }));
+    await userEvent.clear(box());
+    await userEvent.type(box(), 'then commit and push everything');
+    await userEvent.click(screen.getByRole('button', { name: 'Queue' }));
+
+    expect(edit).not.toHaveBeenCalled();
+    expect(box()).toHaveValue('then commit and push everything');
+    expect(screen.getByText(/Editing a waiting message/)).toBeInTheDocument();
   });
 
   it('leaves the message as it was when Escape cancels the edit', async () => {

@@ -45,6 +45,13 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     /// </summary>
     public Func<SessionRequest, CancellationToken, Task<WordsHeld>>? Say { get; init; }
 
+    /// <summary>
+    /// A loop's half of a terminal's <c>sessions take-back</c> (SAIDBACK1c, D137 §2.4), answered beside the request in the say's
+    /// shape: <see cref="WordsHeld.Sent"/> is that the word was taken back, a refusal's code is <see cref="WordsHeld.Why"/>. A
+    /// loop on a registry has <see cref="LoopWords"/>'s by default, which keeps no note; the host hands one that does. Null takes none.
+    /// </summary>
+    public Func<SessionRequest, CancellationToken, Task<WordsHeld>>? TakeBack { get; init; }
+
     /// <summary>A loop's watch over its own registry, looking every <paramref name="every"/> (a second) until it is disposed.</summary>
     /// <param name="service">The loop's service once it answers; null before, when a request that needs the ledger waits.</param>
     /// <param name="clock">What a request's age is measured against; the real clock unless a test hands its own.</param>
@@ -56,7 +63,9 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     {
         _hears = id => processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase) || processes.InboxOf(id) is not null;
         _aliveHere = processes.AliveOnThisMachine;
-        Say = new LoopWords(processes, service).HoldAsync;
+        var words = new LoopWords(processes, service);
+        Say = words.HoldAsync;
+        TakeBack = words.TakeBackAsync;
         _watching = WatchAsync(every ?? TimeSpan.FromSeconds(1));
     }
 
@@ -101,7 +110,13 @@ public sealed class SessionRequestWatch : IAsyncDisposable
             {
                 if (pending.Move == SessionMove.Say)
                 {
-                    if (await SayAsync(pending, ct).ConfigureAwait(false) is { } said) honoured.Add(said);
+                    if (await SayAsync(pending, Say, ct).ConfigureAwait(false) is { } said) honoured.Add(said);
+                    continue;
+                }
+
+                if (pending.Move == SessionMove.TakeBack)
+                {
+                    if (await SayAsync(pending, TakeBack, ct).ConfigureAwait(false) is { } back) honoured.Add(back);
                     continue;
                 }
 
@@ -155,9 +170,10 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     /// it for the door that asked, a failure included, so the asker is never left to wait out its time for an answer that will
     /// not come. Null where it is not this loop's, or another loop took it first.
     /// </summary>
-    private async Task<SessionRequest?> SayAsync(SessionRequest pending, CancellationToken ct)
+    private async Task<SessionRequest?> SayAsync(
+        SessionRequest pending, Func<SessionRequest, CancellationToken, Task<WordsHeld>>? say, CancellationToken ct)
     {
-        if (Say is not { } say) return null;
+        if (say is null) return null;
 
         // Not this registry's: another process here runs it, which its own loop answers, or the record's half waits for a service.
         if (!_hears(pending.Session) && (_aliveHere(pending.Session) || _service() is null)) return null;

@@ -10,6 +10,10 @@ namespace Daoris.Desktop;
 /// a retry; the intake's and Ask Daoris's agents; a folder's trust; a nudge; and *Sync now*. Each standing
 /// choice is an edit to `driver.json` and a nudge, the file the terminal's `daoris driver` edits (D50).
 /// </summary>
+/// <remarks>
+/// Each standing choice changes the driver's state every window shows, and declares it (STATEHUB1h, D169): the pressing window
+/// writes the state it was answered, and every window reads it again. A nudge declares nothing: the tick says what it moved.
+/// </remarks>
 public sealed class DriverRoutes(DriverContext context)
 {
     private readonly DriverContext _context = context;
@@ -18,7 +22,16 @@ public sealed class DriverRoutes(DriverContext context)
     [DriverRoute("STATE")]
     private object? GetState(IpcRequest request) => State(_loop);
 
+    /// <summary>
+    /// What is under way (STATEHUB1c2, D169's STATEHUB1c2 note): the presses the publisher holds, whole and numbered as its last
+    /// <c>UNDER_WAY</c> telling, for a window opened or reloaded mid-press, which heard none of them; the window keeps whichever
+    /// is newer. A read: it declares nothing, is never under way, and tells nothing.
+    /// </summary>
+    [DriverRoute("UNDER_WAY")]
+    private object? GetUnderWay(IpcRequest request) => _loop.UnderWay.Now();
+
     [DriverRoute("SET_DRIVABLE")]
+    [Publishes("SET_DRIVABLE", StateScopes.Driver)]
     private object? SetDrivable(IpcRequest request)
     {
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
@@ -28,6 +41,7 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     [DriverRoute("SET_HOLD")]
+    [Publishes("SET_HOLD", StateScopes.Driver)]
     private object? SetHold(IpcRequest request)
     {
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
@@ -39,6 +53,7 @@ public sealed class DriverRoutes(DriverContext context)
     // Session trees (D51): the desktop's half of the standing opt-in, over the same file
     // `daoris driver trees <repo> on|off` edits — two editors, one truth (D50).
     [DriverRoute("SET_TREES")]
+    [Publishes("SET_TREES", StateScopes.Driver)]
     private object? SetTrees(IpcRequest request)
     {
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
@@ -51,6 +66,7 @@ public sealed class DriverRoutes(DriverContext context)
     // file `daoris driver standing <repo> "…"|--clear` edits — one truth, two doors (D50). No words clears it; blank words or
     // words past the bound are the driver's refusal.
     [DriverRoute("SET_STANDING")]
+    [Publishes("SET_STANDING", StateScopes.Driver)]
     private object? SetStanding(IpcRequest request)
     {
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
@@ -62,6 +78,7 @@ public sealed class DriverRoutes(DriverContext context)
     // Whether this machine interrupts the person at all (SURF5b). The same file
     // `daoris driver notify on|off` edits — one truth, two doors (D50).
     [DriverRoute("SET_NOTIFY")]
+    [Publishes("SET_NOTIFY", StateScopes.Driver)]
     private object? SetNotify(IpcRequest request)
     {
         var notify = PayloadHelper.GetRequiredValue<bool>(request.Payload, "notify");
@@ -72,6 +89,7 @@ public sealed class DriverRoutes(DriverContext context)
     // How many failed sessions park a quest (DRV6/D58), and the person's way back in. Both
     // edit what `daoris driver strikes|retry` edits — one truth, two doors (D50).
     [DriverRoute("SET_STRIKES")]
+    [Publishes("SET_STRIKES", StateScopes.Driver)]
     private object? SetStrikes(IpcRequest request)
     {
         var strikes = PayloadHelper.GetRequiredValue<int>(request.Payload, "strikes");
@@ -82,6 +100,7 @@ public sealed class DriverRoutes(DriverContext context)
     // How long an account cools when its agent names no time (TOOL4g, D125 §2.2, §6): whole minutes, at least one, the same
     // `cooloff` `daoris driver cooloff <minutes>` edits — one truth, two doors (D50). Less than one is the driver's refusal.
     [DriverRoute("SET_COOLOFF")]
+    [Publishes("SET_COOLOFF", StateScopes.Driver)]
     private object? SetCoolOff(IpcRequest request)
     {
         var minutes = Number(request, "minutes")
@@ -91,8 +110,10 @@ public sealed class DriverRoutes(DriverContext context)
     }
 
     // Which harness answers asks with an intake session (INT4b), or null for none — the same
-    // file `daoris driver intake <adapter>|off` edits: one truth, two doors (D50).
+    // file `daoris driver intake <adapter>|off` edits: one truth, two doors (D50). What an intake in each circle would run on
+    // moves with it, which the roster's key holds.
     [DriverRoute("SET_INTAKE")]
+    [Publishes("SET_INTAKE", StateScopes.Driver | StateScopes.Harnesses)]
     private object? SetIntake(IpcRequest request)
     {
         var adapter = Optional(request, "adapter");
@@ -103,6 +124,7 @@ public sealed class DriverRoutes(DriverContext context)
     // The agent Ask Daoris runs on (HELP1, D89), or null for none — the same file
     // `daoris driver helper <adapter>|off` edits: one truth, two doors (D50).
     [DriverRoute("SET_HELPER")]
+    [Publishes("SET_HELPER", StateScopes.Driver)]
     private object? SetHelper(IpcRequest request)
     {
         var adapter = Optional(request, "adapter");
@@ -112,8 +134,10 @@ public sealed class DriverRoutes(DriverContext context)
 
     // The person's grant of a folder the driver is holding for the harness's trust (D73) — the
     // screen's half of `daoris agent trust`. Only a pair this machine's last tick held is
-    // granted, in the file that tick read; the terminal is the door that names any folder.
+    // granted, in the file that tick read; the terminal is the door that names any folder. The holds themselves are the tick's
+    // to tell again, as it looks at once.
     [DriverRoute("TRUST_FOLDER")]
+    [Publishes("TRUST_FOLDER", StateScopes.Driver)]
     private object? TrustFolder(IpcRequest request)
     {
         var folder = PayloadHelper.GetRequiredValue<string>(request.Payload, "folder");
@@ -150,9 +174,11 @@ public sealed class DriverRoutes(DriverContext context)
     /// <remarks>
     /// The verdict is the loop's last look where it has looked, and a fresh plan where it has not (another loop holds the
     /// home, DRV8a), as Sessions' groups read it, so the press and the list cannot disagree. The answer is still the state,
-    /// which the page's toast reads the strikes from, with <c>retried</c> saying what was done.
+    /// which the page's toast reads the strikes from, with <c>retried</c> saying what was done. What it writes moves the verdict
+    /// Sessions' groups read, so it declares the sessions with the state (STATEHUB1h).
     /// </remarks>
     [DriverRoute("RETRY_QUEST")]
+    [Publishes("RETRY_QUEST", StateScopes.Sessions | StateScopes.Driver)]
     private async Task<object?> RetryQuestAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var quest = PayloadHelper.GetRequiredValue<string>(request.Payload, "quest").Trim().TrimStart('#');
@@ -196,9 +222,11 @@ public sealed class DriverRoutes(DriverContext context)
     /// step's newest set-up served to its tab again, the tab opened where the person closed it and brought forward where the
     /// set-up left it, with no session and no model. Refused in the driver's words wherever it would show anything but that build
     /// at the rule's address. Answers the state, with what was said. The verdict is never a route here: it is the person's alone,
-    /// beside the browser and never inside it (REVIEWENV1g).
+    /// beside the browser and never inside it (REVIEWENV1g). A tab served again is what every window's chip reads off the
+    /// state (<c>inReview</c>'s <c>served</c>), so it declares the state (STATEHUB1h).
     /// </summary>
     [DriverRoute("SHOW_REVIEW_AGAIN")]
+    [Publishes("SHOW_REVIEW_AGAIN", StateScopes.Driver)]
     private async Task<object?> ShowReviewAgainAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var quest = PayloadHelper.GetRequiredValue<string>(request.Payload, "quest").Trim().TrimStart('#');
@@ -222,8 +250,10 @@ public sealed class DriverRoutes(DriverContext context)
 
     // *Sync now* (SYNC6b): the tick's own pass for one circle, through the loop's own set —
     // `daoris-driver sync` is the other door to the same pass (D50). What it says comes back
-    // in the driver's words; a circle with no remote is its refusal, mapped above.
+    // in the driver's words; a circle with no remote is its refusal, mapped above. A pass can move where each circle stands,
+    // the quests and sessions it fed, and the registry, and a wall it hit is answered as its report (STATEHUB1d, D169).
     [DriverRoute("SYNC_NOW")]
+    [Publishes("SYNC_NOW", StateScopes.Sessions | StateScopes.Quests | StateScopes.Sync | StateScopes.Registry)]
     private async Task<object?> SyncNowAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var workspace = RemoteTarget.Workspace(

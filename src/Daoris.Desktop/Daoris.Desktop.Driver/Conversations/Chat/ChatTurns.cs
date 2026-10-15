@@ -118,11 +118,10 @@ internal sealed class ChatTurns(
     /// The line a driven session's record keeps of a held word the person took back or reworded (QUEUEEDIT1a): its code, which
     /// the page words as <c>work.conversation.withdrawn</c>, and the word's id, so the page settles the word it showed waiting.
     /// </summary>
-    public static SessionEvent Withdrawn(string word) =>
-        new() { Kind = SessionEventKind.Note, Text = WithdrawnLine, Words = [word], Code = SessionEventCodes.Withdrawn };
+    public static SessionEvent Withdrawn(string word) => SessionNotes.Withdrawn(word);
 
     /// <summary>The driver's English for <see cref="Withdrawn"/>.</summary>
-    public const string WithdrawnLine = "— taken back before it was sent.";
+    public const string WithdrawnLine = SessionNotes.WithdrawnLine;
 
     /// <summary>
     /// Take back or reword one word that still waits (QUEUEEDIT1a): with no <paramref name="text"/> it is removed, with some its

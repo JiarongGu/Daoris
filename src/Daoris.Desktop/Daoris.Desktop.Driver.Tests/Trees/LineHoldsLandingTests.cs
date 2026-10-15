@@ -11,6 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// repository, so this is the suite's Process half; nothing reaches a network (an <c>origin</c> is a bare repository beside it).
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class LineHoldsLandingTests : LandedFixture
 {
     private static readonly LandingSubject Subject = new("s1a2b3c4", "0fda18", "Fix the gap");

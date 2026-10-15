@@ -93,6 +93,28 @@ public sealed class DriverLoopQueuedTests : DriverModuleBridge
         Assert.Equal("resume", queue.GetProperty("reaches").GetString());
     }
 
+    /// <summary>
+    /// SAIDBACK1b (D76): the person's words waiting on a record ride the queue it tells, each by its id, so a page following the
+    /// queue keeps listing them as the record moves, where an empty list would take them off the box above.
+    /// </summary>
+    [Fact]
+    public async Task A_records_waiting_words_ride_the_queue_it_tells()
+    {
+        var record = Record("s1", "working");
+        record["said"] = new JsonArray(new JsonObject
+        {
+            ["id"] = "w1", ["text"] = "use the blue one", ["at"] = "2026-10-15T08:00:00+00:00", ["files"] = new JsonArray(), ["reopens"] = true,
+        });
+        var (loop, service) = await UpAsync(record);
+
+        service.State("s1", "completed");
+        await loop.Service!.AdvanceAsync("s1", "completed", note: "the quest reached done.");
+
+        var told = await QueuedAsync("s1", queued => Reaches(queued) == "resume");
+        var word = Assert.Single(told.GetProperty("Queued").EnumerateArray());
+        Assert.Equal(("w1", "use the blue one"), (word.GetProperty("Id").GetString(), word.GetProperty("Text").GetString()));
+    }
+
     private static string? Reaches(JsonElement queued) =>
         queued.TryGetProperty("Reach", out var reach) && reach.ValueKind == JsonValueKind.Object
         && reach.TryGetProperty("Reaches", out var reaches) && reaches.ValueKind == JsonValueKind.String

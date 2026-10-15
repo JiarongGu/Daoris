@@ -37,9 +37,22 @@ public sealed record WordsAnswer(bool Sent, string? Reaches, string? Why)
     /// <summary>The service's sentence beside its refusal, which a terminal prints for a code it does not word itself.</summary>
     public string? Message { get; init; }
 
+    /// <summary>
+    /// The person's words waiting on its record (SAIDBACK1b, D137 §2.4), where the record was read: what the queue lists when
+    /// nothing here holds the session, so the composer's *Edit* and *Remove* reach them. Null where the record was not read (a
+    /// session running here, or nothing known); empty on a record that runs again, whose run is taking them.
+    /// </summary>
+    public IReadOnlyList<WaitingWord>? Waiting { get; init; }
+
     /// <summary>Nothing takes them, for this reason.</summary>
     public static WordsAnswer Refused(string why, string? message = null) => new(false, null, why) { Message = message };
 }
+
+/// <summary>
+/// One of the person's words waiting on a record (SAIDBACK1b, D137 §2.4), as the queue lists it: the id the record gave it, which
+/// a take-back names it by, its words and its files' names.
+/// </summary>
+public sealed record WaitingWord(string Id, string Text, IReadOnlyList<string> Files);
 
 /// <summary>
 /// The person's words to a session of this machine's, whatever its state (MSG1d, D137 §2): a running session hears them at
@@ -241,6 +254,9 @@ public sealed class SessionWords : IDisposable
     {
         if (_loop.Processes.InboxOf(id) is { State.Taking: true } inbox) return new(true, Spelled(inbox.Reach), null);
 
+        // Ask Daoris's conversation still starting (HELPSTART1): a word waits for its door, which opens with it as its first turn.
+        if (_loop.HelpStarting.Queue(id) is not null) return new(true, null, null);
+
         if (_loop.Processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase) && _loop.Processes.RefusesInput(id) is null)
         {
             // A conversation this machine runs (D49 §3): a word goes into the running turn where its agent takes words at its
@@ -265,9 +281,11 @@ public sealed class SessionWords : IDisposable
         {
             if (await ReadAsync(id, ct).ConfigureAwait(false) is not { } read) return new(false, null, null);
             if (read.Record is not { } record) return WordsAnswer.Refused(WordsNever.NotFound);
+            // The person's words waiting on it, which the queue lists where nothing here holds it (SAIDBACK1b).
+            var waiting = WaitingOn(read.Json, id);
             // Being handed over or moved (HANDWORDS1): a word said now is held for the take, as SayAsync holds it.
-            if (TakeWaits(record)) return new(true, "resume", null);
-            return Never(record, read) ?? new(true, "resume", null);
+            if (TakeWaits(record)) return new(true, "resume", null) { Waiting = waiting };
+            return (Never(record, read) ?? new(true, "resume", null)) with { Waiting = waiting };
         }
         catch (Exception error) when (Unanswered(error))
         {
@@ -295,6 +313,13 @@ public sealed class SessionWords : IDisposable
         }
 
         if (id.Contains('/')) return WordsAnswer.Refused("teammate");
+
+        // Ask Daoris's conversation placed and still starting (HELPSTART1): its words wait for its door, as its queue, opening.
+        if (_loop.HelpStarting.Hold(id, text, files, preface))
+        {
+            Tell(id);
+            return new(true, null, null);
+        }
 
         var running = _loop.Processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase);
         var refuses = _loop.Processes.RefusesInput(id);
@@ -338,6 +363,76 @@ public sealed class SessionWords : IDisposable
         return holding
             ? await HoldForTakeAsync(id, word, ct).ConfigureAwait(false)
             : await KeepOrHoldAsync(id, word, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Take back one of the person's words waiting on a parked or ended record, or reword it (SAIDBACK1b, D76), through the
+    /// service's take-back door (SAIDBACK1a): what <c>SESSION_QUEUE_EDIT</c> falls back to once nothing here holds the word.
+    /// Done, the conversation settles the old word with the withdrawn line (QUEUEEDIT1a) and shows a reword's new words as the
+    /// person's under their new id, as <see cref="Show"/> shows words kept. Whatever the service answers, the queue is told again
+    /// (<see cref="Tell"/>), so a list the page showed stale, a word a terminal took back meanwhile, is read anew.
+    /// </summary>
+    /// <returns>
+    /// <see cref="QueueEdit.Done"/>; or <see cref="QueueEdit.Taken"/> where nothing holds the word for this machine: no service
+    /// yet, a word no longer on the record, a record that runs again or is gone, or a host without the door, as before it.
+    /// </returns>
+    /// <exception cref="DriverException">The service's refusal, in its sentence (what never goes on); or a service that did not answer.</exception>
+    public async Task<QueueEdit> TakeBackAsync(string id, string word, string? text, CancellationToken ct)
+    {
+        if (await TakeBackToServiceAsync(id, word, text, ct).ConfigureAwait(false) is not { } answer) return QueueEdit.Taken;
+        if (!answer.Done)
+        {
+            return answer.Why is null or "taken" or WordsNever.NotFound ? QueueEdit.Taken : throw new DriverException(answer.Message);
+        }
+
+        return QueueEdit.Done;
+    }
+
+    /// <summary>
+    /// A terminal's <c>sessions take-back</c> (SAIDBACK1c, D137 §2.4): the shell's half, handed to its request watch as
+    /// <see cref="SessionRequestWatch.TakeBack"/>, so the withdrawn note is written in the record of the conversation this shell
+    /// holds, which the page may have open. Answered in the say's shape: sent is done, a refusal's code is <c>why</c>.
+    /// </summary>
+    public async Task<WordsHeld> HoldTakeBackAsync(SessionRequest request, CancellationToken ct)
+    {
+        if (request.Word is not { Length: > 0 } word) return WordsHeld.Failed("a take-back names the word to take back.");
+        var back = await TakeBackToServiceAsync(request.Session, word, request.Text, ct).ConfigureAwait(false);
+        if (back is null) return WordsHeld.Failed(NotUp);
+        if (back.Done) return new WordsHeld(true, null, null) { Word = back.Word?.Id, Message = back.Message };
+        return back.Why is { } why ? WordsHeld.Refused(why, back.Message) : WordsHeld.Failed(back.Message);
+    }
+
+    /// <summary>
+    /// The service's take-back door asked, the queue told again whatever it answers, and, where it is done, the conversation
+    /// settled and a reword's new words shown. Null where there is no service yet.
+    /// </summary>
+    private async Task<TakeBackAnswer?> TakeBackToServiceAsync(string id, string word, string? text, CancellationToken ct)
+    {
+        if (_loop.Service is not { } service) return null;
+
+        TakeBackAnswer answer;
+        try
+        {
+            answer = await service.TakeBackAsync(id, word, text, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (Unanswered(error))
+        {
+            throw new DriverException($"the service did not answer for session `{id}`, so word `{word}` was not taken back: {error.Message}");
+        }
+
+        Tell(id);
+        if (!answer.Done) return answer;
+
+        // QUEUEEDIT1a's line, by its code, which the page words; the one note shape every door keeps (WITHDRAWNLINE1).
+        _loop.Output.Append(id, $"— the person took back word {word} before the session took it.");
+        _loop.Events.Keep(id, SessionNotes.Withdrawn(word), null);
+        if (answer.Word is { } kept)
+        {
+            _loop.Output.Append(id, $"— the person said, which the same session goes on with: {kept.Text}");
+            _loop.Events.Keep(id, LoopWords.Shown(kept, "screen"), line => _loop.Output.Append(id, line));
+        }
+
+        return answer;
     }
 
     /// <summary>
@@ -817,6 +912,8 @@ public sealed class SessionWords : IDisposable
                 Reaches = "resume",
                 Door = word.Door,
             }, line => _loop.Output.Append(id, line));
+            // The record's waiting words are the queue's now (SAIDBACK1b): told again, so the box's list offers this one too.
+            Tell(id);
         }
 
         _loop.Nudge();
@@ -846,14 +943,42 @@ public sealed class SessionWords : IDisposable
         var json = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
         var records = SessionRecords.Parse(json);
         var record = records.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
-        return new Read(record, WordsNever.LastHere(json, record?.Quest), WordsNever.ContinuedIn(records, id));
+        return new Read(record, WordsNever.LastHere(json, record?.Quest), WordsNever.ContinuedIn(records, id), json);
     }
 
     /// <summary>
     /// A record as read, the session its quest last ran in here (D79's reading), and the conversation it went on in (HANDWORDS1),
-    /// each null for none.
+    /// each null for none; and the records' answer it was read from, whose words waiting only the queue reads (SAIDBACK1b).
     /// </summary>
-    private sealed record Read(SessionRecord? Record, string? Last, string? Next);
+    private sealed record Read(SessionRecord? Record, string? Last, string? Next, string Json);
+
+    /// <summary>
+    /// The person's words waiting on this record (SAIDBACK1b, D137 §2.4), from the records' answer, in the order said. None on a
+    /// record that runs again (queued, starting, working), whose run is already taking them; and never another agent's words
+    /// waiting there, a second opinion's findings (<c>by</c>) or a helper's answer (<c>helper</c>), which are not the person's to
+    /// take back or reword. A word without its id or its words is skipped, as the driver's client skips it.
+    /// </summary>
+    internal static IReadOnlyList<WaitingWord> WaitingOn(string json, string id)
+    {
+        using var document = JsonDocument.Parse(json);
+        if (document.RootElement.ValueKind != JsonValueKind.Array) return [];
+        foreach (var record in document.RootElement.EnumerateArray())
+        {
+            if (!string.Equals(Text(record, "id"), id, StringComparison.Ordinal)) continue;
+            if (Text(record, "state") is "queued" or "starting" or "working") return [];
+            return
+            [
+                .. Items(record, "said")
+                    .Where(word => NonEmpty(word, "by") is null && NonEmpty(word, "helper") is null)
+                    .Select(word => NonEmpty(word, "id") is { } said && Text(word, "text") is { } text
+                        ? new WaitingWord(said, text, Strings(word, "files"))
+                        : null)
+                    .OfType<WaitingWord>(),
+            ];
+        }
+
+        return [];
+    }
 
     /// <summary>A driven inbox's reach in the wire's spelling, as the record's events spell it (D136).</summary>
     private static string? Spelled(DrivenReach? reach) => reach switch

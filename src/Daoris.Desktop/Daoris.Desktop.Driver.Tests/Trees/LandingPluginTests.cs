@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json;
 using Daoris.Driver;
 
@@ -10,41 +9,13 @@ namespace Daoris.Desktop.Driver.Tests;
 /// runs neither. A plugin that fails never undoes the branch.
 /// </summary>
 /// <remarks>
-/// 🔴 <b>Nothing here reaches a network.</b> `origin` is a bare repository under the scratch folder,
-/// and the plugin that pushes pushes there.
+/// Nothing here reaches a network (<see cref="LandingPluginFixture"/>). The plugin that never answers is
+/// <see cref="LandingPluginPatienceTests"/>'.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
-public sealed class LandingPluginTests : IDisposable
+[Trait(Category.Parallel, Category.Git)]
+public sealed class LandingPluginTests : LandingPluginFixture
 {
-    private const string Id = "example.lands";
-
-    private readonly string _scratch;
-    private readonly string _home;
-
-    public LandingPluginTests()
-    {
-        _scratch = Path.Combine(RepoRoot(), "_fixtures", "landing-plugin", Guid.NewGuid().ToString("N")[..8]);
-        _home = Path.Combine(_scratch, "daoris-home");
-        Directory.CreateDirectory(_home);
-    }
-
-    public void Dispose()
-    {
-        // A real plugin's process stands in its folder a moment after it is told to go (FLAKE1).
-        for (var attempt = 0; Directory.Exists(_scratch); attempt++)
-        {
-            try
-            {
-                Directory.Delete(_scratch, recursive: true);
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-            {
-                if (attempt >= 20) return;
-                Thread.Sleep(250);
-            }
-        }
-    }
-
     /// <summary>
     /// A real plugin, started as a landing starts one: it sees the branch already made, pushes it to
     /// origin, and answers with the pull request — and all of it is said where the landing is said.
@@ -55,7 +26,7 @@ public sealed class LandingPluginTests : IDisposable
         var (root, origin) = await RepositoryWithOriginAsync("engine");
         InstallRealPlugin();
         Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true, Plugin: Id));
-        var trees = new SessionTrees(_home);
+        var trees = new SessionTrees(Home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
 
@@ -78,7 +49,7 @@ public sealed class LandingPluginTests : IDisposable
         Assert.False(Directory.Exists(opened.Path));
 
         // What the plugin was told, and that the branch was already there when it was.
-        var told = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(_home, "plugins", ".data", Id, "landed.json"))).RootElement;
+        var told = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(Home, "plugins", ".data", Id, "landed.json"))).RootElement;
         Assert.True(told.GetProperty("branchExisted").GetBoolean());
         var frame = told.GetProperty("frame");
         Assert.Equal(branch, frame.GetProperty("branch").GetString());
@@ -105,7 +76,7 @@ public sealed class LandingPluginTests : IDisposable
         var asked = 0;
         Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Id));
         InstallManifest();
-        var trees = new SessionTrees(_home, Plugins(_ => { asked++; return Answer(true, null, "pushed"); }));
+        var trees = new SessionTrees(Home, Plugins(_ => { asked++; return Answer(true, null, "pushed"); }));
         var opened = await trees.OpenAsync(root, "engine", "aurora");
 
         var nothing = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
@@ -126,7 +97,7 @@ public sealed class LandingPluginTests : IDisposable
     {
         var (root, _) = await RepositoryWithOriginAsync("engine");
         Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Id));
-        var trees = new SessionTrees(_home);
+        var trees = new SessionTrees(Home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
 
@@ -135,7 +106,7 @@ public sealed class LandingPluginTests : IDisposable
         Assert.Contains("not installed", missing.Message);
 
         InstallManifest();
-        PluginState.Disable(_home, Id);
+        PluginState.Disable(Home, Id);
         var off = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
         Assert.False(off.Landed);
         Assert.Contains($"daoris plugin enable {Id}", off.Message);
@@ -157,8 +128,8 @@ public sealed class LandingPluginTests : IDisposable
         var (root, _) = await RepositoryWithOriginAsync("engine");
         InstallManifest();
         Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Id));
-        var trees = new SessionTrees(_home, how == "will-not-start"
-            ? new LandingPlugins(_home, start: (_, _, _) => throw new DriverException($"plugin `{Id}`'s hook process could not start — `node`: not found"))
+        var trees = new SessionTrees(Home, how == "will-not-start"
+            ? new LandingPlugins(Home, start: (_, _, _) => throw new DriverException($"plugin `{Id}`'s hook process could not start — `node`: not found"))
             : Plugins(_ => how == "throws"
                 ? throw new DriverException($"plugin `{Id}` did not answer `hook/work/land` within 1s.")
                 : Answer(false, null, "gh is not signed in — run `gh auth login`.")));
@@ -177,32 +148,13 @@ public sealed class LandingPluginTests : IDisposable
         Assert.Contains("The branch stands", landed.Message);
     }
 
-    /// <summary>A real process that never answers is a timeout, and the branch stands.</summary>
-    [Fact]
-    public async Task A_plugin_that_never_answers_times_out_and_the_branch_stands()
-    {
-        var (root, _) = await RepositoryWithOriginAsync("engine");
-        InstallRealPlugin(silent: true);
-        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Id));
-        var trees = new SessionTrees(_home, new LandingPlugins(_home, patience: TimeSpan.FromSeconds(3)));
-        var opened = await trees.OpenAsync(root, "engine", "aurora");
-        await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
-
-        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
-
-        Assert.True(landed.Landed, landed.Message);
-        Assert.True(landed.Plugin!.Failed);
-        Assert.Contains("did not answer `hook/work/land`", landed.Message);
-        Assert.NotEmpty((await GitAsync(root, "branch", "--list", "feature/0fda18-fix")).Trim());
-    }
-
     /// <summary>The review says who pushes before the press, and what stands in the way when something does.</summary>
     [Fact]
     public async Task The_plan_names_the_plugin_and_its_problem_before_the_press()
     {
         var (root, _) = await RepositoryWithOriginAsync("engine");
         Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Id), workspace: true);
-        var trees = new SessionTrees(_home);
+        var trees = new SessionTrees(Home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
 
         var missing = await trees.PlanAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix"));
@@ -227,121 +179,5 @@ public sealed class LandingPluginTests : IDisposable
         Assert.Equal(["landing.person-accepted", null], note.Parts!.Select(part => part.Code).ToArray());
         Assert.Equal(("put the work on `feature/x`. Plugin `example.lands`: pushed it.", NoteBy.Program), (note.Parts![1].Words, note.Parts![1].By));
         NoteAssert.Holds(note.Text, note.Parts);
-    }
-
-    // ——— a plugin, faked
-
-    private sealed class FakeLander(Func<object, PluginLanding> land) : IHookChannel
-    {
-        public IReadOnlyList<string> Points => [HookPoints.Land];
-        public bool Alive => true;
-        public Task<HookDecision> ConsiderAsync(object payload, CancellationToken ct) => Task.FromResult(HookDecision.Allow);
-        public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;
-        public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) => Task.FromResult(land(payload));
-        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-    }
-
-    private static PluginLanding Answer(bool pushed, string? pullRequest, string message) => new(Id, pushed, pullRequest, message);
-
-    private LandingPlugins Plugins(Func<object, PluginLanding> land) =>
-        new(_home, start: (_, _, _) => Task.FromResult<IHookChannel>(new FakeLander(land)));
-
-    private void InstallManifest() => Install("""{ "id": "example.lands", "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": ["work/land"] } }""");
-
-    /// <summary>
-    /// A plugin that answers the way a real one does: it records what it was told and whether the
-    /// branch was already there, pushes to origin (a bare repository beside the test), and answers.
-    /// </summary>
-    private void InstallRealPlugin(bool silent = false)
-    {
-        InstallManifest();
-        File.WriteAllText(Path.Combine(_home, "plugins", Id, "land.mjs"), $$"""
-            import { spawnSync } from 'node:child_process';
-            import { mkdirSync, writeFileSync } from 'node:fs';
-            import { join } from 'node:path';
-            import { createInterface } from 'node:readline';
-            const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
-            const silent = {{(silent ? "true" : "false")}};
-            for await (const line of createInterface({ input: process.stdin })) {
-              const frame = JSON.parse(line);
-              if (frame.method === 'initialize') {
-                send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, points: frame.params.points } });
-              } else if (frame.method === 'hook/work/land') {
-                if (silent) continue;
-                const p = frame.params;
-                const existed = spawnSync('git', ['rev-parse', '--verify', '--quiet', 'refs/heads/' + p.branch], { cwd: p.root }).status === 0;
-                const data = process.env.DAORIS_PLUGIN_DATA;
-                mkdirSync(data, { recursive: true });
-                writeFileSync(join(data, 'landed.json'), JSON.stringify({ branchExisted: existed, frame: p }));
-                const pushed = spawnSync('git', ['push', '--quiet', '-u', 'origin', p.branch], { cwd: p.root }).status === 0;
-                send({ jsonrpc: '2.0', id: frame.id, result: { pushed, pullRequest: 'https://example.test/example-org/engine/pull/7', message: 'pushed it to origin and opened the pull request.' } });
-              } else if (frame.method === 'shutdown') {
-                process.exit(0);
-              }
-            }
-            """);
-    }
-
-    private void Install(string manifest)
-    {
-        var folder = Path.Combine(_home, "plugins", Id);
-        Directory.CreateDirectory(folder);
-        File.WriteAllText(Path.Combine(folder, "plugin.json"), manifest);
-    }
-
-    private void Rule(LandingRule rule, bool workspace = false) =>
-        (workspace ? DriverConfig.Empty.WithWorkspaceLanding("aurora", rule) : DriverConfig.Empty.WithLanding("engine", rule))
-            .Save(Path.Combine(_home, "driver.json"));
-
-    /// <summary>A repository whose `origin` is a bare repository beside it — somewhere a push lands without leaving the machine.</summary>
-    private async Task<(string Root, string Origin)> RepositoryWithOriginAsync(string name)
-    {
-        var origin = Path.Combine(_scratch, $"{name}-origin.git");
-        Directory.CreateDirectory(origin);
-        await GitAsync(origin, "init", "--quiet", "--bare", "-b", "main");
-
-        var root = Path.Combine(_scratch, name);
-        Directory.CreateDirectory(root);
-        await GitAsync(root, "init", "--quiet", "-b", "main");
-        await GitAsync(root, "config", "user.email", "fixture@example.test");
-        await GitAsync(root, "config", "user.name", "Fixture");
-        await CommitAsync(root, "README.md", $"# {name}", "first");
-        await GitAsync(root, "remote", "add", "origin", origin);
-        return (root, origin);
-    }
-
-    private static async Task CommitAsync(string tree, string file, string content, string message)
-    {
-        await File.WriteAllTextAsync(Path.Combine(tree, file), content + "\n");
-        await GitAsync(tree, "add", "-A");
-        await GitAsync(tree, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "-m", message);
-    }
-
-    private static async Task<string> GitAsync(string cwd, params string[] arguments)
-    {
-        var info = new ProcessStartInfo
-        {
-            FileName = "git",
-            WorkingDirectory = cwd,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-        };
-        foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var process = Process.Start(info)!;
-        var stdout = await process.StandardOutput.ReadToEndAsync();
-        await process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync();
-        return stdout;
-    }
-
-    private static string RepoRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git")))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory?.FullName ?? AppContext.BaseDirectory;
     }
 }

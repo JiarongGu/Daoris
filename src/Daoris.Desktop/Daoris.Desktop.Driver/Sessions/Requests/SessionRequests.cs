@@ -25,7 +25,14 @@ public static class SessionMove
     /// </summary>
     public const string Say = "say";
 
-    public static bool Known(string move) => move is Stop or Finish or Decline or Say;
+    /// <summary>
+    /// A word waiting on a parked or ended record taken back, or with the request's text reworded, from a terminal (SAIDBACK1c,
+    /// D137 §2.4): taken by the loop that holds the home, which keeps the withdrawn note in its own record of the conversation.
+    /// Keyed and answered as a say is.
+    /// </summary>
+    public const string TakeBack = "take-back";
+
+    public static bool Known(string move) => move is Stop or Finish or Decline or Say or TakeBack;
 }
 
 /// <summary>Who asked, as the machine log's <c>door</c> names a door: a word, never a sentence.</summary>
@@ -78,6 +85,9 @@ public sealed record SessionRequest(string Session, string Move, DateTimeOffset 
     /// not replaced by them, and its answer is found beside it. Null for a move, which is one per session.
     /// </summary>
     public string? Key { get; init; }
+
+    /// <summary>A take-back's word: the id it waits under on the record (SAIDBACK1c); null for any other move.</summary>
+    public string? Word { get; init; }
 }
 
 /// <summary>
@@ -329,6 +339,7 @@ public sealed partial class SessionRequests(string home)
                     ? [.. files.EnumerateArray().Where(name => name.ValueKind == JsonValueKind.String).Select(name => name.GetString()!)]
                     : [],
                 Key = Text("key"),
+                Word = Text("takeBackWord"),
             };
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
@@ -385,6 +396,7 @@ public sealed partial class SessionRequests(string home)
         }
 
         if (request.Key is not null) writer.WriteString("key", request.Key);
+        if (request.Word is not null) writer.WriteString("takeBackWord", request.Word);
         writer.WriteEndObject();
     });
 

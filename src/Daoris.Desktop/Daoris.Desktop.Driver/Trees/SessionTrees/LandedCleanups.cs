@@ -71,7 +71,17 @@ public sealed record LandedItem(
 }
 
 /// <summary>What the clean-up did with one landed branch, in the driver's words.</summary>
-public sealed record LandedResult(LandedItem Item, bool Removed, string Message);
+public sealed record LandedResult(LandedItem Item, bool Removed, string Message)
+{
+    /// <summary>
+    /// The session whose work the landing carried, from the record (AUTOTIDY2b): what the look's machine log names the branch by,
+    /// since the branch's own name carries the title's words. Null where the record no longer holds it.
+    /// </summary>
+    public string? Session { get; init; }
+
+    /// <summary>Removed though not merged (SQUASHTIDY1e): the ref its commits were kept on, for the look's report (AUTOTIDY2b); null where none was kept.</summary>
+    public string? KeptRef { get; init; }
+}
 
 /// <summary>The clean-up's whole list (D88, WSR5): the session branches, then the branches landings made.</summary>
 public sealed record SweepPlan(IReadOnlyList<SweepItem> Sessions, IReadOnlyList<LandedItem> Landed);
@@ -218,9 +228,16 @@ internal sealed class LandedCleanups(
             var stale = new List<string>();
             var removed = new List<string>();
             var proven = new List<LandedItem>();
+            // The session each branch's newest landing carried (AUTOTIDY2b), read before a removal makes the entry a trace: what the
+            // look's machine log names a removal by, since the branch's own name carries the title's words.
+            var sessions = LandedProofs.EntriesOf(context.Recorded.All(), repository)
+                .GroupBy(entry => entry.Branch, StringComparer.Ordinal)
+                .ToDictionary(group => group.Key, group => group.MaxBy(entry => entry.LandedAt)!.Session, StringComparer.Ordinal);
+            // The refs read once for the judgement over the whole set, and afresh for each judgement again (PROC1d-ii).
+            var refs = RefSnapshot.Take(root);
             var first = await JudgeLandedAsync(
                 root, repository, workspace, LandedProofs.EntriesOf(context.Recorded.All(), repository),
-                await LandedProofs.SessionBranchesAsync(root, ct).ConfigureAwait(false), stale, ct).ConfigureAwait(false);
+                await LandedProofs.SessionBranchesAsync(root, ct, refs).ConfigureAwait(false), stale, ct, refs).ConfigureAwait(false);
 
             // Inside first: each is proven through a branch still standing.
             foreach (var judged in first.OrderBy(each => each.Item.Kind == LandedKind.Inside ? 0 : 1))
@@ -229,20 +246,22 @@ internal sealed class LandedCleanups(
                 var key = $"{repository}:{item.Branch}";
                 var named = only?.Contains(key) == true;
                 if (only is not null && !named) continue;
+                var session = sessions.GetValueOrDefault(item.Branch);
                 if (!item.Removable)
                 {
-                    results.Add(new(item, false, named ? ChangedSince : "kept"));
+                    results.Add(new(item, false, named ? ChangedSince : "kept") { Session = session });
                     continue;
                 }
 
+                var fresh = RefSnapshot.Take(root);
                 var again = await JudgeLandedAsync(
                     root, repository, workspace,
                     LandedProofs.EntriesOf(context.Recorded.All(), repository).Where(entry => !removed.Contains(entry.Branch)).ToList(),
-                    await LandedProofs.SessionBranchesAsync(root, ct).ConfigureAwait(false), stale: null, ct).ConfigureAwait(false);
+                    await LandedProofs.SessionBranchesAsync(root, ct, fresh).ConfigureAwait(false), stale: null, ct, fresh).ConfigureAwait(false);
                 var now = again.FirstOrDefault(each => each.Item.Branch == item.Branch);
                 if (now is null || !now.Item.Removable || now.Tip != judged.Tip)
                 {
-                    results.Add(new(now?.Item ?? item, false, ChangedSince));
+                    results.Add(new(now?.Item ?? item, false, ChangedSince) { Session = session });
                     continue;
                 }
 
@@ -257,7 +276,7 @@ internal sealed class LandedCleanups(
                     var (reference, why) = await ContentHolds.KeepDiscardedAsync(root, item.Branch, now.Tip, CancellationToken.None).ConfigureAwait(false);
                     if (reference is null)
                     {
-                        results.Add(new(now.Item, false, $"Daoris could not keep its commits on a ref of their own ({why}), so it is kept"));
+                        results.Add(new(now.Item, false, $"Daoris could not keep its commits on a ref of their own ({why}), so it is kept") { Session = session });
                         continue;
                     }
 
@@ -277,7 +296,11 @@ internal sealed class LandedCleanups(
 
                 results.Add(kept is null
                     ? new(now.Item, true, keptAt is null ? "removed" : $"{Sentence("removed")} {ContentHold.KeptAt(item.Branch, keptAt)}")
-                    : new(now.Item, false, kept == ContentHolds.MovedSince ? ChangedSince : kept));
+                    {
+                        Session = session,
+                        KeptRef = keptAt,
+                    }
+                    : new(now.Item, false, kept == ContentHolds.MovedSince ? ChangedSince : kept) { Session = session });
             }
 
             // Gone, or no longer the landing's: never judged again — the name may be the person's now — and kept as a
@@ -292,7 +315,15 @@ internal sealed class LandedCleanups(
     private const string ChangedSince = "it changed since the list, and is kept";
 
     /// <summary>A landed branch as judged, and the commit it was judged at — the one a removal must still find.</summary>
-    internal sealed record Judged(LandedItem Item, string Tip);
+    internal sealed record Judged(LandedItem Item, string Tip)
+    {
+        /// <summary>
+        /// The form of the line its own proof found its work on (AUTOTIDY2b): on the line by content, merged, or its pull request's
+        /// completed merge, before anything that keeps the branch itself is asked. Null where its proof did not find it there; a
+        /// branch inside another is found through that one.
+        /// </summary>
+        internal string? Line { get; init; }
+    }
 
     /// <summary>
     /// Judge every recorded branch of one repository (WSR5): each by content against the line, then those
@@ -300,27 +331,27 @@ internal sealed class LandedCleanups(
     /// </summary>
     /// <param name="staying">The session branches that stay: a landed branch one of them leans on stays too.</param>
     /// <param name="stale">Where a branch that is gone, or no longer the landing's, is named for the record to forget; null to only look.</param>
+    /// <param name="refs">The refs the caller's judgement read (PROC1d-ii); null takes this judgement's own, so each judgement again reads afresh.</param>
     internal async Task<List<Judged>> JudgeLandedAsync(
         string root, string repository, string workspace, IReadOnlyList<LandedBranch> entries, IReadOnlyCollection<string> staying,
-        List<string>? stale, CancellationToken ct)
+        List<string>? stale, CancellationToken ct, RefSnapshot? refs = null)
     {
+        // One read of the refs and the working trees for every branch judged here (PROC1d-ii, -iii); a write in this flow drops it.
+        refs ??= RefSnapshot.Take(root);
         // A list git could not give is never "no tree here" (AUTOTIDY1): every branch is then kept as one checked out.
-        var worktrees = await context.Worktrees.ReadAsync(root, ct).ConfigureAwait(false);
+        var worktrees = await context.Worktrees.ReadAsync(root, ct, refs).ConfigureAwait(false);
         var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
-        var forms = await LandedProofs.LineFormsAsync(root, line, ct).ConfigureAwait(false);
+        var forms = await LandedProofs.LineFormsAsync(root, line, ct, refs).ConfigureAwait(false);
 
         var judged = new List<(LandedBranch Entry, string Tip, LandedProofs.Proof Proof, string? Keep, int Ahead, PullRequestVerdict? Verdict)>();
         foreach (var entry in entries)
         {
-            var (tipCode, tipOut, _) = await WorkingTree.GitAsync(
-                root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{entry.Branch}^{{commit}}"], ct).ConfigureAwait(false);
-            if (tipCode != 0)
+            if (await TreeRefs.CommitOfAsync(root, $"refs/heads/{entry.Branch}", ct, refs).ConfigureAwait(false) is not { } tip)
             {
                 stale?.Add(entry.Branch);
                 continue;
             }
 
-            var tip = tipOut.Trim();
             // 🔴 A person's own branch is never judged: one that took the recorded name since does not hold the
             // commit the landing made it at, whatever its files say.
             var (ours, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", entry.Tip, tip], ct).ConfigureAwait(false);
@@ -346,7 +377,7 @@ internal sealed class LandedCleanups(
             {
                 keep = LandedKind.CheckedOut;
             }
-            else if (proof.Kind != LandedKind.Merged && await AheadOfRemoteAsync(root, entry.Branch, tip, ct).ConfigureAwait(false) is { } lacking)
+            else if (proof.Kind != LandedKind.Merged && await AheadOfRemoteAsync(root, entry.Branch, tip, ct, refs).ConfigureAwait(false) is { } lacking)
             {
                 // Merged would lose nothing — every commit is on the line — so only that outranks a move since the push.
                 ahead = lacking;
@@ -399,7 +430,10 @@ internal sealed class LandedCleanups(
                     StateCode = verdict is { Clears: false } ? verdict.Code : null,
                     AskFailed = entry.PullRequestAskFailed,
                 },
-                tip));
+                tip)
+            {
+                Line = proof.Kind is LandedKind.OnLine or LandedKind.Merged or LandedKind.PullRequest ? proof.Where : null,
+            });
         }
 
         return items;
@@ -410,17 +444,24 @@ internal sealed class LandedCleanups(
     /// upstream, else <c>origin/&lt;branch&gt;</c> — or null where it has none: never pushed, or its remote
     /// branch deleted and pruned since.
     /// </summary>
-    private static async Task<int?> AheadOfRemoteAsync(string root, string branch, string tip, CancellationToken ct)
+    /// <param name="refs">The judgement's refs (PROC1d-ii), where they hold the upstream and origin's copy; null asks git.</param>
+    internal static async Task<int?> AheadOfRemoteAsync(string root, string branch, string tip, CancellationToken ct, RefSnapshot? refs = null)
     {
+        // Its upstream as `<branch>@{upstream}` resolves it: none, or one whose ref is gone, falls to origin's copy.
+        var upstream = refs is null ? default : await refs.UpstreamAsync(branch, ct).ConfigureAwait(false);
         string? remote = null;
-        foreach (var candidate in new[] { $"{branch}@{{upstream}}", $"refs/remotes/origin/{branch}" })
+        if (!upstream.Known)
         {
-            var (code, sha, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{candidate}^{{commit}}"], ct).ConfigureAwait(false);
-            if (code != 0) continue;
-            remote = sha.Trim();
-            break;
+            var (code, sha, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{branch}@{{upstream}}^{{commit}}"], ct)
+                .ConfigureAwait(false);
+            if (code == 0) remote = sha.Trim();
+        }
+        else if (upstream.Full is not null)
+        {
+            remote = await TreeRefs.CommitOfAsync(root, upstream.Full, ct, refs).ConfigureAwait(false);
         }
 
+        remote ??= await TreeRefs.CommitOfAsync(root, $"refs/remotes/origin/{branch}", ct, refs).ConfigureAwait(false);
         if (remote is null) return null;
         var (countCode, count, _) = await WorkingTree.GitAsync(root, ["rev-list", "--count", tip, "--not", remote], ct).ConfigureAwait(false);
         // A count git could not make keeps the branch: an empty answer is not "nothing ahead".
@@ -429,9 +470,10 @@ internal sealed class LandedCleanups(
 
     /// <summary>
     /// A session branch that stays and shares commits with this one that the line does not hold: D88 counts
-    /// this branch as holding them, so removing it would leave that session's work looking unlanded.
+    /// this branch as holding them, so removing it would leave that session's work looking unlanded. The look asks it of the
+    /// session branches it leaves (AUTOTIDY2b).
     /// </summary>
-    private static async Task<string?> LeanerAsync(
+    internal static async Task<string?> LeanerAsync(
         string root, string tip, IReadOnlyCollection<string> staying, IReadOnlyList<LandedProofs.LineForm> forms, CancellationToken ct)
     {
         foreach (var session in staying)

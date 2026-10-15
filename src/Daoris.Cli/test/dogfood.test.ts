@@ -405,33 +405,47 @@ test('every .NET test project is run by a declared gate', () => {
 });
 
 /**
- * One level further in again (MOD8). A desktop suite runs as two gates: the tests that start real
+ * One level further in again (MOD8, PROC1c). A desktop suite runs as gates: the tests that start real
  * processes or run real ticks carry the `Process` category, a subagent's worktree runs the rest, and
- * the parent runs these one class at a time, by a run settings file. The test above counts a suite as
- * reached by either half, so losing the Process half would leave those tests run by no gate while
- * every check stayed green.
+ * the parent runs these by run settings files: one class at a time, and the classes that also carry
+ * `Parallel=Git` four at once, by a second file. The test above counts a suite as reached by any half,
+ * so losing a Process half would leave its tests run by no gate while every check stayed green.
  */
-test('a suite gated without its Process tests has a gate that runs them, one class at a time', () => {
+test('a suite gated without its Process tests has gates that run them: one class at a time, and its git-only classes four at once', () => {
   const gates = JSON.parse(readText(join(repoRoot, 'daoris.gates.json'))) as {
     gates: { name: string; run: string }[];
   };
   const fast = gates.gates
     .map((gate) => /^dotnet test (\S+) --filter Category!=Process$/.exec(gate.run)?.[1])
     .filter((target): target is string => target !== undefined);
-  const serial = gates.gates
+  const halves = gates.gates
     .map((gate) => /^dotnet test (\S+) --settings (\S+)$/.exec(gate.run))
     .filter((half): half is RegExpExecArray => half !== null)
     .map(([, target, settings]) => ({ target: target!, settings: readText(join(repoRoot, settings!)) }));
+  const filtered = (target: string, filter: string) =>
+    halves.find((half) => half.target === target && half.settings.includes(`<TestCaseFilter>${filter}</TestCaseFilter>`));
 
   assert.ok(fast.length >= 2, `${fast.length} gates leave the Process category out — this test has stopped reading the gates`);
+  let marking = 0;
   for (const target of fast) {
-    const half = serial.find((gate) => gate.target === target);
-    assert.ok(half, `${target} is gated without its Process tests, and no gate runs them`);
-    assert.match(half.settings, /<TestCaseFilter>Category=Process<\/TestCaseFilter>/,
-      `${target}'s settings gate does not run the Process tests`);
-    assert.match(half.settings, /<ParallelizeTestCollections>false<\/ParallelizeTestCollections>/,
+    const serial = filtered(target, 'Category=Process&amp;Parallel!=Git');
+    assert.ok(serial, `${target} is gated without its Process tests, and no gate runs them one class at a time`);
+    assert.match(serial.settings, /<ParallelizeTestCollections>false<\/ParallelizeTestCollections>/,
       `${target}'s Process tests are gated in parallel — load is what fails them (FLAKE1)`);
+
+    // PROC1b: a suite that marks a class to run four at once has the gate that runs those, and only four.
+    const marks = listFiles(join(repoRoot, target), (name) => name.endsWith('.cs'))
+      .some((file) => /\[Trait\(Category\.Parallel, Category\.Git\)\]/.test(readText(join(repoRoot, target, file))));
+    if (!marks) continue;
+    marking += 1;
+    const parallel = filtered(target, 'Category=Process&amp;Parallel=Git');
+    assert.ok(parallel, `${target} marks classes Parallel=Git, and no gate runs them`);
+    assert.match(parallel.settings, /<ParallelizeTestCollections>true<\/ParallelizeTestCollections>/,
+      `${target}'s git-only classes are gated one at a time — PROC1b marked them to run four at once`);
+    assert.match(parallel.settings, /<MaxParallelThreads>4<\/MaxParallelThreads>/,
+      `${target}'s git-only classes run other than four at once — PROC1a measured no gain past four, and a start slows for every process past it`);
   }
+  assert.ok(marking >= 1, 'no suite marks a class Parallel=Git — this test has stopped reading the traits');
 });
 
 /**

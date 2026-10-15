@@ -212,6 +212,14 @@ public static class Continuations
     /// </summary>
     public const string GoingOn = "It goes on with your words in its own conversation, in the tree it worked in.";
 
+    /// <summary>
+    /// The words a run that goes on is handed (SAIDBACK1d, D137 §2.4): the record's as it stands once the ledger's move is made,
+    /// which no take-back can change after (the door refuses a record that runs), never those the look read, since a word
+    /// taken back or reworded between the two must not go. The look's only where the record could not be read again.
+    /// </summary>
+    internal static IReadOnlyList<SaidWordView> HandedAfterMove(IReadOnlyList<SaidWordView> look, PriorSession? now) =>
+        now is null ? look : now.Waiting;
+
     /// <summary><see cref="GoingOn"/> with its code (LANG1a).</summary>
     public static Noted GoingOnNoted => Noted.Of(NoteCodes.WorkingGoesOn, GoingOn);
 

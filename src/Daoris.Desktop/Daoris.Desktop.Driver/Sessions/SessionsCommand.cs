@@ -1184,7 +1184,21 @@ public static class SessionsCommand
             return 0;
         }
 
-        var answer = await world.Service.TakeBackAsync(id, word, ask.Verb == "reword" ? ask.Text : null, ct).ConfigureAwait(false);
+        var text = ask.Verb == "reword" ? ask.Text : null;
+        if (world.LoopRuns())
+        {
+            // SAIDBACK1c: the loop that holds the home writes the note into its own record of the conversation, which a page may
+            // have open; so it is asked through the request folder, as a say is. One that takes none in time is withdrawn, and
+            // the service judges it here, with nothing written.
+            var held = await AskLoopTakeBackAsync(world, id, word, text, ct).ConfigureAwait(false);
+            if (held is not null)
+            {
+                output.WriteLine($"sessions: {held.Message}");
+                return held.Sent ? 0 : held.Why is null ? 2 : 1;
+            }
+        }
+
+        var answer = await world.Service.TakeBackAsync(id, word, text, ct).ConfigureAwait(false);
         if (answer.Done && !world.LoopRuns())
         {
             var events = new SessionEvents(Path.Combine(world.Home, "sessions"));
@@ -1201,6 +1215,34 @@ public static class SessionsCommand
             var line = string.Join(' ', text.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
             return line.Length <= 100 ? line : line[..99] + "…";
         }
+    }
+
+    /// <summary>
+    /// A take-back asked of the loops on this home and waited for (SAIDBACK1c), as <see cref="AskLoopAsync"/> waits for a say:
+    /// the loop's answer, or null where none took it in time, when it is withdrawn so no loop acts on it after the verb went to
+    /// the service itself. A loop that took it is waited for until it answers, within <see cref="SessionsWorld.Answer"/>, since the
+    /// word is gone by then and asking the service again would only say it is no longer there.
+    /// </summary>
+    private static async Task<WordsHeld?> AskLoopTakeBackAsync(
+        SessionsWorld world, string id, string word, string? text, CancellationToken ct)
+    {
+        var requests = new SessionRequests(world.Home);
+        var request = new SessionRequest(id, SessionMove.TakeBack, DateTimeOffset.UtcNow)
+        {
+            Text = text, Word = word, Key = SessionRequests.NewKey(),
+        };
+        requests.Write(request);
+
+        var waited = Stopwatch.StartNew();
+        WordsHeld? held = null;
+        while (held is null && waited.Elapsed < world.Wait)
+        {
+            await Task.Delay(world.Poll, ct).ConfigureAwait(false);
+            held = requests.AnswerOf(request);
+        }
+
+        if (held is null && !requests.Withdraw(request)) held = await AnsweredAsync(world, requests, request, ct).ConfigureAwait(false);
+        return held is null ? null : held with { Message = held.Message ?? (held.Sent ? $"took word `{word}` back." : $"word `{word}` was not taken back.") };
     }
 
     // ——— Go on in a new session (MSG1g, D137 §2.2): the screen's press, at a terminal.
