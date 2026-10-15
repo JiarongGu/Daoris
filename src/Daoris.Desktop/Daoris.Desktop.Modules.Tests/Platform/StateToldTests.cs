@@ -47,6 +47,24 @@ public sealed class StateToldTests : DriverModuleBridge
         Assert.Equal("""{"scopes":["sessions","landing","diff","handOff","sweep","treesSync"],"sessions":["s1a2b3c4"]}""", Shape(changed.Payload));
     }
 
+    /// <summary>
+    /// ACCEPTALL1e: an entry's or an ask's landing from a terminal (<c>trees land --entry|--ask</c>) is told as the window's Accept of it
+    /// is: every part's landing's scopes, about no one session, so an open window reads each plan and review again.
+    /// </summary>
+    [Theory]
+    [InlineData(PressesTold.LandEntry)]
+    [InlineData(PressesTold.LandAsk)]
+    public async Task An_entry_or_an_ask_landed_by_another_process_publishes_every_parts_landing(string route)
+    {
+        Assert.True(new PressesTold(Home).Tell(new PressTold(route, null, DateTimeOffset.UtcNow)));
+        await using var watch = Watch();
+
+        Assert.Single(watch.Hear());
+
+        await UntilAsync(() => Changed().Count == 1);
+        Assert.Equal("""{"scopes":["sessions","landing","diff","handOff","sweep","treesSync"]}""", Shape(Assert.Single(Changed()).Payload));
+    }
+
     [Fact]
     public void Each_press_a_terminal_tells_publishes_what_the_window_s_press_of_its_route_publishes()
     {
