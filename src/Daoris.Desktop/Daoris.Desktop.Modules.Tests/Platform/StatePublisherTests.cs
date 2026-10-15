@@ -512,6 +512,26 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// PUBLISHTWIN2: the twin is two-way. A route that declares a change with no entry in the page's table is a press a test of the
+    /// page could make and never hear the change of, so every mark of the driver's and the browser module's is in it.
+    /// </summary>
+    [Fact]
+    public void Every_mark_has_an_entry_in_the_page_s_publishing_seam()
+    {
+        var copied = PageDeclared().Select(entry => entry.Route).ToHashSet(StringComparer.Ordinal);
+        string[] browser = ["ADD_FAVORITE", "REMOVE_FAVORITE", "SET_EXTENSIONS", "SET_BROWSER", "SET_LINKS"];
+
+        var marked = DriverModule.Routes
+            .Where(route => DriverModule.Declared(new IpcRequest { Id = "x", Module = DriverModule.Name, Type = route }) is { Scopes: not StateScopes.None })
+            .Concat(browser)
+            .Where(route => !copied.Contains(route))
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+        Assert.True(marked.Count == 0, "marks with no entry in test/publishing.ts's DECLARED: " + string.Join(", ", marked));
+    }
+
+    /// <summary>
     /// The page's publishing seam's table, each press as it names it: its route, its scopes joined in their order, and the field
     /// naming its session. Every route the table holds is read, or the test fails: one the pattern missed would go unchecked.
     /// </summary>
