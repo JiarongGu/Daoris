@@ -92,6 +92,7 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     private TreeWorkReads? _work;
     private OnlyHereProof? _onlyHere;
     private TreeTidies? _tidies;
+    private TreeLandSyncs? _syncs;
     private TreeLands? _lands;
 
     /// <summary>Where each session tree's work is, and the branch the layout names for it (TREEFOLLOW1).</summary>
@@ -154,8 +155,11 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     /// <summary>A landing's tidy of the other session branches its work holds, and the person's door for one (LAND3).</summary>
     private TreeTidies Tidies => _tidies ??= new(_context, Asks, Content, Replays, Squashes, Removals);
 
+    /// <summary>A landing in sync with its line: the fetch, the replay of what the line lacks, the tree's follow (LANDSYNC1).</summary>
+    private TreeLandSyncs Syncs => _syncs ??= new(_context, Replays);
+
     /// <summary>The landing: its plan, the merge, the branch form and its advance, and the rule's tidy (WSR1, D87, D100).</summary>
-    private TreeLands Lands => _lands ??= new(_context, Follows, WorkReads, Removals, Tidies);
+    private TreeLands Lands => _lands ??= new(_context, Follows, WorkReads, Removals, Tidies, Syncs);
 
     /// <summary>
     /// The test seam (SQUASHTIDY1c): run with the branch's name between a judgement and the delete it cleared, where a test

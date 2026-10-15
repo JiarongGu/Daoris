@@ -7,6 +7,13 @@ with the version and date at release.
 
 - The window is on the desktop kit's 0.21.1. Opening Daoris while it is still closing now starts it once the closing one
   has gone, where that launch used to be lost.
+- Accepting a session's work lands only what its line lacks. Where the line already holds some of its commits (a pull request
+  squash-merged, a cherry-pick), the review and the session's *Accept…* name the commits left out and why, and the press replays
+  only the rest onto the line in a tree of Daoris's own, so the next pull request carries no second copy; the session's tree then
+  moves to what landed. Where that replay conflicts, nothing is made: the review names the files and offers *Ask it to rebase*,
+  which sends the session the words to replay its own commits onto the line. The press fetches the line first, and a fetch that
+  fails is said, with when origin was last fetched, without stopping the landing. `daoris-driver trees land <session> --plan`
+  says the same.
 - The window no longer freezes for minutes while the Sessions page's clean-up list is read: its git work goes on away from
   the window's thread, at most four programs start at once, and each repository's line is asked of git once per list.
 - An ask's page has a *Channel* (频道), where its sessions and you talk: their messages and Daoris's lines about its quests

@@ -125,7 +125,46 @@ public sealed record LandingPlan(string Form, string Target, string Source, stri
     /// session branch, where the branch form makes the one the pattern names.
     /// </summary>
     public bool Own { get; init; }
+
+    /// <summary>
+    /// The tree's commits the line already holds, which the press would leave out, oldest first (LANDSYNC1, D87's 2026-10-15
+    /// amendment point 4): judged against the line as last fetched, since the plan reaches no network. Null where the line holds
+    /// none of them, and the press lands the tree as before.
+    /// </summary>
+    public IReadOnlyList<LeftOutCommit>? LeftOut { get; init; }
+
+    /// <summary>What the press would replay onto the line, oldest first, beside <see cref="LeftOut"/>; null where that is null.</summary>
+    public IReadOnlyList<LandingCommit>? Lands { get; init; }
+
+    /// <summary>
+    /// Where replaying <see cref="Lands"/> onto the line conflicts now (a trial that writes no ref and no tree), and the words that
+    /// would ask the session to rebase: the press would be refused. Null where it replays cleanly, or nothing is left out.
+    /// </summary>
+    public LandingConflict? Conflict { get; init; }
 }
+
+/// <summary>Why a landing leaves a commit out (LANDSYNC1, D87's 2026-10-15 amendment points 1 and 2).</summary>
+public static class LeftOutWhy
+{
+    /// <summary>The run from where the tree left the line whose work reads on the line by content (WSR6's walk): a squash of several.</summary>
+    public const string Content = "content";
+
+    /// <summary>A commit the line gained since has its patch id (what <c>git cherry</c> marks <c>-</c>): a one-commit squash or a cherry-pick.</summary>
+    public const string Patch = "patch";
+
+    /// <summary>Kept, and found empty by the replay: its changes are already on the line.</summary>
+    public const string Empty = "empty";
+}
+
+/// <summary>One commit a landing leaves out, and why (<see cref="LeftOutWhy"/>).</summary>
+/// <param name="On">The line's commit with the same patch, for <see cref="LeftOutWhy.Patch"/> where git paired one; else null.</param>
+public sealed record LeftOutCommit(string Sha, string Subject, string Why, string? On = null);
+
+/// <summary>
+/// A replay onto the line that conflicts (LANDSYNC1, D87's amendment point 5): git's <c>CONFLICT</c> lines, and the words the review
+/// offers to say to the session, asking it to replay its own commits onto the line, keeping only what the line lacks.
+/// </summary>
+public sealed record LandingConflict(string Says, string Words);
 
 /// <summary>What came of a press. A refusal is an answer, as the merge door's are, and names what the person would do.</summary>
 /// <param name="Plugin">What the rule's plugin answered once the branch was made (D100) — null where no plugin was spoken to.</param>
@@ -155,6 +194,15 @@ public sealed record TreeLanding(
     /// session's work fast-forwarded it. Null for a branch made new, and for every merge.
     /// </summary>
     public string? AdvancedFrom { get; init; }
+
+    /// <summary>
+    /// What the landing left out because the line holds it, and what its replay found empty, oldest first (LANDSYNC1, D87's
+    /// 2026-10-15 amendment point 4). Null where the line held none of the tree's commits and it landed them as made.
+    /// </summary>
+    public IReadOnlyList<LeftOutCommit>? LeftOut { get; init; }
+
+    /// <summary>The replay's conflict, where that refused the landing (D87's amendment point 5); null otherwise.</summary>
+    public LandingConflict? Conflict { get; init; }
 }
 
 /// <summary>

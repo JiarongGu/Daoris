@@ -355,6 +355,8 @@ internal static class TreesConsole
                     // How it lands, by the process the gate read (WORKFLOW1f): a named workflow's landing step, or the rule.
                     var plan = await landing.PlanAsync(tree, subject, process: gate.Process).ConfigureAwait(false);
                     Console.WriteLine(Planned(session, plan));
+                    // LANDSYNC1: what the press would leave out because the line holds it, judged against the last fetch.
+                    foreach (var line in LandingSyncWords.Plan(plan)) Console.WriteLine(line);
                     // SQUASHTIDY1f: work the line holds by content, which the press refuses, said before it in the press's own sentence.
                     if (await landing.DiscardOfferAsync(tree).ConfigureAwait(false) is { } carried) Console.WriteLine($"trees: {carried.NotLanded}");
                     // What the gate says before the press (the second-agent design §8.6, the review design §3.5): what holds it, or

@@ -227,6 +227,69 @@ internal sealed class BranchReplays(TreeContext context)
         }
     }
 
+    /// <summary>What a landing's replay made (LANDSYNC1): the new tip, or null and git's words, and whether those name a conflict.</summary>
+    internal sealed record KeptReplay(string? Now, string Words, bool Conflict);
+
+    /// <summary>
+    /// The commits a landing keeps replayed onto <paramref name="onto"/>, in order, in a tree of Daoris's own made for it under the
+    /// trees home and removed after (LANDSYNC1, D87's 2026-10-15 amendment point 2): <see cref="ReplayAsideAsync"/>'s shape, one
+    /// <c>git rebase --onto</c> per stretch of <paramref name="commits"/> it keeps, each onto the last one's new tip. A commit that
+    /// becomes empty is dropped by git as WSR6's replay drops one; a conflict aborts it, and nothing is moved.
+    /// </summary>
+    /// <param name="commits">Every commit beyond the line, oldest first, which <paramref name="kept"/> is a subset of.</param>
+    internal async Task<KeptReplay> ReplayKeptAsideAsync(
+        string root, string workspace, string repository, string onto, IReadOnlyList<LandingCommit> commits, IReadOnlyList<LandingCommit> kept,
+        CancellationToken ct)
+    {
+        if (kept.Count == 0) return new(onto, "", false);
+        var keeps = kept.Select(each => each.Sha).ToHashSet(StringComparer.Ordinal);
+        var stretches = new List<(string From, string To)>();
+        string? first = null;
+        string? last = null;
+        foreach (var commit in commits)
+        {
+            if (keeps.Contains(commit.Sha))
+            {
+                first ??= commit.Sha;
+                last = commit.Sha;
+                continue;
+            }
+
+            if (first is not null) stretches.Add(($"{first}^", last!));
+            first = null;
+        }
+
+        if (first is not null) stretches.Add(($"{first}^", last!));
+
+        var aside = Path.Combine(context.TreesRoot, workspace, repository, $"r-{Guid.NewGuid().ToString("N")[..8]}");
+        Directory.CreateDirectory(Path.GetDirectoryName(aside)!);
+        var (added, _, addErr) = await WorkingTree.GitAsync(root, ["worktree", "add", "--quiet", "--detach", aside, stretches[0].To], ct).ConfigureAwait(false);
+        if (added != 0) return new(null, $"Daoris could not make a tree to replay it in: {Failure(addErr)}", false);
+        try
+        {
+            var current = onto;
+            for (var at = 0; at < stretches.Count; at++)
+            {
+                if (at > 0)
+                {
+                    var (moved, _, moveErr) = await WorkingTree.GitAsync(aside, ["switch", "--quiet", "--detach", stretches[at].To], ct).ConfigureAwait(false);
+                    if (moved != 0) return new(null, $"git would not take up its next commits to replay: {Failure(moveErr)}", false);
+                }
+
+                var (failed, words) = await RebaseInAsync(aside, current, stretches[at].From, ct).ConfigureAwait(false);
+                if (failed) return new(null, words, words.StartsWith("CONFLICT", StringComparison.Ordinal));
+                current = await CommitOfAsync(aside, "HEAD", ct).ConfigureAwait(false) ?? current;
+            }
+
+            return new(current, "", false);
+        }
+        finally
+        {
+            // Daoris's own tree, made a moment ago for this one replay and holding nothing of anyone's, as WSR6's is.
+            await WorkingTree.GitAsync(root, ["worktree", "remove", "--force", aside], ct).ConfigureAwait(false);
+        }
+    }
+
     /// <summary>The record forgets session branches that are gone, so a name is never judged by a start it no longer has.</summary>
     internal async Task ForgetGoneAsync(string root, string repository, CancellationToken ct)
     {

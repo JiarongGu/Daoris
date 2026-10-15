@@ -40,20 +40,23 @@ public static class SyncWords
                 + string.Join(", ", reason.Select(pull => $"{pull.Repository} ({LastFetched(pull.LastFetch, now)})")));
         }
 
-        if (failed.Any(pull => pull.Reach == "ssh"))
-        {
-            said.Add("  To reach an origin over SSH, the git Daoris runs (the one on the path) needs a key its own ssh reads, "
-                + "or `core.sshCommand` naming an ssh that has one: a Git client with its own git and ssh does not lend them.");
-        }
-
-        if (failed.Any(pull => pull.Reach is "https" or "http"))
-        {
-            said.Add("  To reach an origin over HTTPS, the git Daoris runs needs a credential helper that answers without asking, "
-                + "since Daoris's fetch never prompts.");
-        }
-
+        if (failed.Any(pull => pull.Reach == "ssh")) said.Add($"  {Reaching("ssh")}");
+        if (failed.Any(pull => pull.Reach is "https" or "http")) said.Add($"  {Reaching("https")}");
         return said;
     }
+
+    /// <summary>
+    /// What the git Daoris runs needs to reach an origin by <paramref name="reach"/> (WSR7): over SSH a key, over HTTPS a helper that
+    /// answers without asking; null for any other way. A landing whose fetch failed says it too (LANDSYNC1).
+    /// </summary>
+    public static string? Reaching(string? reach) => reach switch
+    {
+        "ssh" => "To reach an origin over SSH, the git Daoris runs (the one on the path) needs a key its own ssh reads, "
+            + "or `core.sshCommand` naming an ssh that has one: a Git client with its own git and ssh does not lend them.",
+        "https" or "http" => "To reach an origin over HTTPS, the git Daoris runs needs a credential helper that answers without asking, "
+            + "since Daoris's fetch never prompts.",
+        _ => null,
+    };
 
     /// <summary>When a repository last heard from origin, in words: `last fetched 2 days ago`, or `never fetched`.</summary>
     public static string LastFetched(DateTimeOffset? at, DateTimeOffset now)
