@@ -17,6 +17,8 @@ export type EntryAcceptPart = {
   conflict?: LandingConflict | null;
   /** The gate's sentence where a gate holds it; a gate on one part holds its whole line of work (D167's amendment point 4). */
   held?: string | null;
+  /** What its own Accept would be refused for (a standing branch somebody else made, a plugin's trouble), which holds the line's press too (STANDSREFUSE1b). */
+  problem?: string | null;
   /** The earlier part whose tree it shares, whose landing carries it. */
   sameTreeAs?: string | null;
   /** A later part that redid its work (point 3): replayed after it, it conflicts or adds nothing. */
@@ -72,8 +74,11 @@ export function EntryAccept({ scope, offered, open, onOpen, plans, reading = fal
 
   const read = !reading && plans ? plans : null;
   // A gate on a kept part of a line of work holds all of it (point 4); under an ask, only its own repository's.
-  const heldOf = (plan: EntryAcceptPlan) => plan.parts.some((part) => part.held && !leaving.has(part.session));
+  // A part that would be refused holds it the same way (STANDSREFUSE1b), unless the person leaves that part out.
+  const heldOf = (plan: EntryAcceptPlan) => plan.parts.some((part) => (part.held || part.problem) && !leaving.has(part.session));
+  const gated = (plan: EntryAcceptPlan) => plan.parts.some((part) => part.held && !leaving.has(part.session));
   const blocked = scope === 'entry' && read !== null && read.some(heldOf);
+  const blockedByGate = read !== null && read.some(gated);
   const toggle = (session: string) => setLeaving((now) => {
     const next = new Set(now);
     if (next.has(session)) next.delete(session); else next.add(session);
@@ -96,11 +101,12 @@ export function EntryAccept({ scope, offered, open, onOpen, plans, reading = fal
               name={name}
               leaving={leaving}
               onLeave={toggle}
-              held={scope === 'ask' && heldOf(plan)}
+              held={scope === 'ask' && gated(plan)}
+              refused={scope === 'ask' && !gated(plan) && heldOf(plan)}
             />
           ))}
           {blocked && (
-            <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">{t('work.accept.heldAll')}</p>
+            <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">{t(blockedByGate ? 'work.accept.heldAll' : 'work.accept.problemAll')}</p>
           )}
         </div>
       )}
@@ -114,7 +120,7 @@ export function EntryAccept({ scope, offered, open, onOpen, plans, reading = fal
 }
 
 /** One entry's plan in words: where its parts land, then each part's own lines, a superseded part with its choice. */
-function PlanLines({ t, plan, named, name, leaving, onLeave, held }: {
+function PlanLines({ t, plan, named, name, leaving, onLeave, held, refused }: {
   t: TFunction;
   plan: EntryAcceptPlan;
   /** Under an ask: its repository is said first. */
@@ -124,6 +130,8 @@ function PlanLines({ t, plan, named, name, leaving, onLeave, held }: {
   onLeave: (session: string) => void;
   /** Under an ask, a gate holds a part of this entry, so its repository's work stays. */
   held: boolean;
+  /** Under an ask, a part would be refused (and none is gated), so its repository's work stays. */
+  refused: boolean;
 }) {
   const count = plan.parts.filter((part) => !part.sameTreeAs && !leaving.has(part.session)).length;
   return (
@@ -148,6 +156,9 @@ function PlanLines({ t, plan, named, name, leaving, onLeave, held }: {
               {part.held && (
                 <span className="border-l-[3px] border-warn pl-2"><Inline text={t('work.accept.held', { part: part_, says: part.held })} /></span>
               )}
+              {part.problem && (
+                <span className="border-l-[3px] border-warn pl-2"><Inline text={t('work.accept.problem', { part: part_, says: part.problem })} /></span>
+              )}
               {part.superseded && (
                 <>
                   <span>
@@ -167,6 +178,7 @@ function PlanLines({ t, plan, named, name, leaving, onLeave, held }: {
         })}
       </ul>
       {held && <p className="m-0 border-l-[3px] border-warn pl-2">{t('work.accept.heldAsk', { repository: plan.repository })}</p>}
+      {refused && <p className="m-0 border-l-[3px] border-warn pl-2">{t('work.accept.problemAsk', { repository: plan.repository })}</p>}
     </div>
   );
 }
