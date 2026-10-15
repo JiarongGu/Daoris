@@ -8,8 +8,11 @@ namespace Daoris.Driver;
 /// <c>SessionTrees.Sync.cs</c>), and the grown record's tidying after: over the trees' context, whose trees home a replay made
 /// aside lives under and whose records say where each branch now grows from.
 /// </summary>
-internal sealed class BranchReplays(TreeContext context)
+internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers)
 {
+    /// <summary>What a replay's own tree's folder name starts with, beside a session tree's <c>s-</c> and an opinion's copy's <c>o-</c>.</summary>
+    internal const string Prefix = "r-";
+
     /// <summary>A branch the press replayed: where it was, where it went, and where its own commits started.</summary>
     internal sealed record Replayed(string OldTip, string NewTip, string Cut);
 
@@ -210,10 +213,8 @@ internal sealed class BranchReplays(TreeContext context)
     private async Task<(string? Commit, string Words)> ReplayAsideAsync(
         string root, string workspace, string repository, string tip, string onto, string upstream, CancellationToken ct)
     {
-        var aside = Path.Combine(context.TreesRoot, workspace, repository, $"r-{Guid.NewGuid().ToString("N")[..8]}");
-        Directory.CreateDirectory(Path.GetDirectoryName(aside)!);
-        var (added, _, addErr) = await WorkingTree.GitAsync(root, ["worktree", "add", "--quiet", "--detach", aside, tip], ct).ConfigureAwait(false);
-        if (added != 0) return (null, $"Daoris could not make a tree to replay it in: {Failure(addErr)}");
+        var (aside, notMade) = await OpenAsideAsync(root, workspace, repository, tip, ct).ConfigureAwait(false);
+        if (aside is null) return (null, notMade);
         try
         {
             var (failed, words) = await RebaseInAsync(aside, onto, upstream, ct).ConfigureAwait(false);
@@ -221,11 +222,43 @@ internal sealed class BranchReplays(TreeContext context)
         }
         finally
         {
-            // Daoris's own tree, made a moment ago for this one replay and holding nothing of anyone's: its commits
-            // are in the repository, so removing it with --force loses nothing.
-            await WorkingTree.GitAsync(root, ["worktree", "remove", "--force", aside], ct).ConfigureAwait(false);
+            await CloseAsideAsync(root, aside).ConfigureAwait(false);
         }
     }
+
+    /// <summary>
+    /// A tree of Daoris's own for one replay, under the trees home, detached at <paramref name="at"/> (WSR6, LANDSYNC1): what a
+    /// replay a kill cut off left in the repository's trees moved aside first (<see cref="PassLeftovers"/>, STRAYOTHERS1), then the
+    /// tree added locked under words naming this process for as long as the replay runs, so the next replay tells a tree in use
+    /// from a leftover. Its path, or null and git's words.
+    /// </summary>
+    private async Task<(string? Aside, string Words)> OpenAsideAsync(string root, string workspace, string repository, string at, CancellationToken ct)
+    {
+        var trees = Path.Combine(context.TreesRoot, workspace, repository);
+        try
+        {
+            await leftovers.ClearReplaysAsync(root, trees, DateTimeOffset.UtcNow, TreeOpenings.Running, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+        {
+            // A leftover that could not be cleared is the next replay's to try again, never a reason to refuse this one.
+        }
+
+        var aside = Path.Combine(trees, $"{Prefix}{Guid.NewGuid().ToString("N")[..8]}");
+        Directory.CreateDirectory(trees);
+        var (added, _, addErr) = await WorkingTree.GitAsync(
+            root, ["worktree", "add", "--quiet", "--detach", "--lock", "--reason", PassLeftovers.HeldBy(Environment.ProcessId), aside, at], ct)
+            .ConfigureAwait(false);
+        return added == 0 ? (aside, "") : (null, $"Daoris could not make a tree to replay it in: {Failure(addErr)}");
+    }
+
+    /// <summary>
+    /// A replay's own tree removed, its lock with it (<c>--force</c> twice), whatever the replay's token says, since a tree left
+    /// locked by a process that still runs would wait for that process to end (STRAYOTHERS1). Daoris's own tree, made a moment ago
+    /// for this one replay and holding nothing of anyone's: its commits are in the repository, so removing it loses nothing.
+    /// </summary>
+    private static Task CloseAsideAsync(string root, string aside) =>
+        WorkingTree.GitAsync(root, ["worktree", "remove", "--force", "--force", aside], CancellationToken.None);
 
     /// <summary>What a landing's replay made (LANDSYNC1): the new tip, or null and git's words, and whether those name a conflict.</summary>
     internal sealed record KeptReplay(string? Now, string Words, bool Conflict);
@@ -261,10 +294,8 @@ internal sealed class BranchReplays(TreeContext context)
 
         if (first is not null) stretches.Add(($"{first}^", last!));
 
-        var aside = Path.Combine(context.TreesRoot, workspace, repository, $"r-{Guid.NewGuid().ToString("N")[..8]}");
-        Directory.CreateDirectory(Path.GetDirectoryName(aside)!);
-        var (added, _, addErr) = await WorkingTree.GitAsync(root, ["worktree", "add", "--quiet", "--detach", aside, stretches[0].To], ct).ConfigureAwait(false);
-        if (added != 0) return new(null, $"Daoris could not make a tree to replay it in: {Failure(addErr)}", false);
+        var (aside, notMade) = await OpenAsideAsync(root, workspace, repository, stretches[0].To, ct).ConfigureAwait(false);
+        if (aside is null) return new(null, notMade, false);
         try
         {
             var current = onto;
@@ -286,7 +317,7 @@ internal sealed class BranchReplays(TreeContext context)
         finally
         {
             // Daoris's own tree, made a moment ago for this one replay and holding nothing of anyone's, as WSR6's is.
-            await WorkingTree.GitAsync(root, ["worktree", "remove", "--force", aside], ct).ConfigureAwait(false);
+            await CloseAsideAsync(root, aside).ConfigureAwait(false);
         }
     }
 

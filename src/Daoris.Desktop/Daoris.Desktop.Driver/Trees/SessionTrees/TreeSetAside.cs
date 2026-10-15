@@ -216,12 +216,17 @@ internal sealed class TreeSetAside(TreeContext context)
 
     /// <summary>
     /// The folders the look moved aside that have waited <paramref name="after"/> (AUTOTIDY1): each deleted where nothing in it
-    /// was written after it was moved, and kept, saying why, where something was, or where it holds a link or cannot be read.
+    /// was written after it was moved, and kept, saying why, where something was, or where it holds a link outside a build folder,
+    /// is reached through one, or cannot be read.
     /// </summary>
     /// <remarks>
-    /// A path past Windows' 260 characters, as a tree's own <c>node_modules</c> holds one, is read and deleted as any other
+    /// <para>A path past Windows' 260 characters, as a tree's own <c>node_modules</c> holds one, is read and deleted as any other
     /// (AUTOTIDY2b, proven over a deep tree): .NET hands Windows such a path in its extended form, as git's <c>core.longpaths</c>
-    /// does for the tree's own record.
+    /// does for the tree's own record.</para>
+    ///
+    /// <para><b>Links</b> (TIDIEDLINK1, D88's note): a link under a build folder (<see cref="TreeScratch.UnderBuildFolder"/>), as
+    /// npm's workspaces and pnpm make under <c>node_modules</c>, goes with its folder as a link, its own entry alone; what it points
+    /// at stays wherever it is. Nothing here ever reads, clears or deletes through a link (<see cref="DeleteNeverFollowing"/>).</para>
     /// </remarks>
     /// <param name="now">What time it is, against the moment in each folder's name.</param>
     internal IReadOnlyList<SetAside> PurgeSetAside(DateTimeOffset now, TimeSpan after)
@@ -236,16 +241,11 @@ internal sealed class TreeSetAside(TreeContext context)
             (string Code, string Sentence)? kept;
             try
             {
-                kept = WrittenSince(folder, moved);
-                if (kept is null)
-                {
-                    foreach (var file in Directory.EnumerateFiles(folder, "*", new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = 0 }))
-                    {
-                        File.SetAttributes(file, FileAttributes.Normal);
-                    }
-
-                    Directory.Delete(folder, recursive: true);
-                }
+                // A link on the way to it, the folder itself included, makes it somewhere else: never walked into (TIDIEDLINK1).
+                kept = context.Worktrees.LinkBelowTreesRoot(folder) is { } link
+                    ? (SetAsideKept.Linked, $"it is reached through a link, at {link}")
+                    : WrittenSince(folder, moved);
+                if (kept is null) DeleteNeverFollowing(folder);
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
@@ -258,7 +258,11 @@ internal sealed class TreeSetAside(TreeContext context)
         return results;
     }
 
-    /// <summary>Why a folder moved aside is kept: something in it written after <paramref name="moved"/>, or a link in it; null where neither.</summary>
+    /// <summary>
+    /// Why a folder moved aside is kept: something in it written after <paramref name="moved"/>, or a link in it outside a build
+    /// folder; null where neither. A link under a build folder is a package manager's, which goes as a link (TIDIEDLINK1): its own
+    /// write is read, never what it points at, and it is never walked into.
+    /// </summary>
     private static (string Code, string Sentence)? WrittenSince(string folder, DateTimeOffset moved)
     {
         var options = new EnumerationOptions { IgnoreInaccessible = false, AttributesToSkip = 0, RecurseSubdirectories = false };
@@ -269,17 +273,49 @@ internal sealed class TreeSetAside(TreeContext context)
             foreach (var entry in new DirectoryInfo(at).EnumerateFileSystemInfos("*", options))
             {
                 var named = Path.GetRelativePath(folder, entry.FullName).Replace('\\', '/');
-                if (entry.Attributes.HasFlag(FileAttributes.ReparsePoint)) return (SetAsideKept.Linked, $"it holds a link, at {named}");
+                var link = entry.Attributes.HasFlag(FileAttributes.ReparsePoint);
+                if (link && !TreeScratch.UnderBuildFolder(named)) return (SetAsideKept.Linked, $"it holds a link, at {named}");
                 if (entry.LastWriteTimeUtc > moved.UtcDateTime)
                 {
                     return (SetAsideKept.Written, $"something in it was written after it was moved aside: {named}");
                 }
 
-                if (entry is DirectoryInfo directory) pending.Push(directory.FullName);
+                if (entry is DirectoryInfo directory && !link) pending.Push(directory.FullName);
             }
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// <paramref name="folder"/> deleted with everything in it, never following a link (TIDIEDLINK1): a link goes as a link, its own
+    /// entry alone, so what it points at stays wherever it is; a read-only file, as git's objects are, is made writable first, and
+    /// only a file that is one. A folder or file that cannot be deleted throws, and what was deleted before it stays deleted.
+    /// </summary>
+    private static void DeleteNeverFollowing(string folder)
+    {
+        var options = new EnumerationOptions { IgnoreInaccessible = false, AttributesToSkip = 0, RecurseSubdirectories = false };
+        foreach (var entry in new DirectoryInfo(folder).EnumerateFileSystemInfos("*", options).ToList())
+        {
+            if (entry.Attributes.HasFlag(FileAttributes.ReparsePoint))
+            {
+                // Windows takes a junction or a folder's link off with the folder call, which removes the link and never reaches
+                // into it; elsewhere a link to a folder is a file to unlink.
+                if (entry is DirectoryInfo && OperatingSystem.IsWindows()) Directory.Delete(entry.FullName, recursive: false);
+                else File.Delete(entry.FullName);
+            }
+            else if (entry is DirectoryInfo inner)
+            {
+                DeleteNeverFollowing(inner.FullName);
+            }
+            else
+            {
+                if (entry.Attributes.HasFlag(FileAttributes.ReadOnly)) entry.Attributes &= ~FileAttributes.ReadOnly;
+                entry.Delete();
+            }
+        }
+
+        Directory.Delete(folder, recursive: false);
     }
 }
 
@@ -295,7 +331,10 @@ public static class SetAsideKept
     /// <summary>Something in it was written after it was moved aside: a late write it was moved to keep.</summary>
     public const string Written = "written";
 
-    /// <summary>It holds a link, which a delete is never asked to follow.</summary>
+    /// <summary>
+    /// It holds a link outside a build folder, or is reached through one, which a delete is never asked to follow; a link under a
+    /// build folder goes with it as a link (TIDIEDLINK1).
+    /// </summary>
     public const string Linked = "linked";
 
     /// <summary>It could not be read, or deleted.</summary>

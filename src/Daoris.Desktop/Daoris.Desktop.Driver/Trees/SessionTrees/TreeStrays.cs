@@ -52,7 +52,8 @@ public sealed record StrayResult(string Folder, string Kind, bool Moved, string 
 /// commit judged where every commit on it is held by another ref.</para>
 ///
 /// <para><b>What stays.</b> A folder a session running or waiting names, or a review shows from; a link; the folders other flows
-/// make and remove themselves outside the repository's hold (an opinion's copy, a replay's tree); every tree git lists that is not a
+/// make and remove themselves outside the repository's hold (an opinion's copy, a replay's tree), whose next pass moves aside what
+/// a killed one left (<see cref="PassLeftovers"/>, STRAYOTHERS1); every tree git lists that is not a
 /// cut-off opening's; and everything, where git could not list the trees or the service did not say which sessions run.</para>
 ///
 /// <para><b>Judged, held, judged again.</b> As the session branches are (AUTOTIDY2a): judged before the hold, the sessions asked only
@@ -70,9 +71,10 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
 
     /// <summary>
     /// What the folders start with that other flows make under a repository's trees and remove themselves, outside the repository's
-    /// hold: an opinion's copy (<see cref="OpinionTree.Prefix"/>) and a replay's tree (<see cref="BranchReplays"/>'s <c>r-</c>).
+    /// hold: an opinion's copy (<see cref="OpinionTree.Prefix"/>) and a replay's tree (<see cref="BranchReplays.Prefix"/>). What a
+    /// killed pass of theirs left, the next pass of its kind moves aside (<see cref="PassLeftovers"/>, STRAYOTHERS1).
     /// </summary>
-    private static readonly string[] OthersOwn = [OpinionTree.Prefix, "r-"];
+    private static readonly string[] OthersOwn = [OpinionTree.Prefix, BranchReplays.Prefix];
 
     /// <summary>A folder judged to go: what it is, and for a cut-off opening its branch, the commit judged, its lock's reason and why.</summary>
     private sealed record Found(string Folder, string Kind, string? Branch = null, string? Tip = null, string? Reason = null, string? Clause = null);
@@ -246,9 +248,9 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
     /// <summary>
     /// Whether anything in <paramref name="folder"/>, the folder itself included, was written or made after <paramref name="since"/>:
     /// read from the folders, hidden ones included, never following a link, and stopping at the first. A folder that cannot be
-    /// read throws.
+    /// read throws. A pass's leftover is judged by it too (<see cref="PassLeftovers"/>).
     /// </summary>
-    private static bool WrittenSince(string folder, DateTimeOffset since)
+    internal static bool WrittenSince(string folder, DateTimeOffset since)
     {
         var at = since.UtcDateTime;
         var top = new DirectoryInfo(folder);
