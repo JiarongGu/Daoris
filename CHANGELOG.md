@@ -23,6 +23,10 @@ with the version and date at release.
   session to change it. A tree holding only ignored files (installed dependencies, a build's output, a session's own logs) goes
   too: its folder is moved aside for fourteen days, as before. Uncommitted or untracked work, a session still running or waiting,
   words you said to a session that ended, and a tree whose branch never moved keep it.
+- The branches *Accept…* made (`feature/…`) now go by themselves too, once their pull request merged or the line holds their
+  work, with the session branch that grew them: a squash merge no longer leaves both until *Clean up*. One whose pull request is
+  still open, one checked out somewhere, one you pushed and moved since, and one a running session still works from stay. A tree
+  whose installed packages hold paths past Windows' 260 characters is moved aside and deleted fourteen days later like any other.
 - An ask's page has a *Channel* (频道), where its sessions and you talk: their messages and Daoris's lines about its quests
   (published, taken, done, declined, waiting on your yes) in your language, an open question marked, and a box to write to
   everyone on the ask or one of its repositories, answering a message if you choose. A session on an ask has the same channel

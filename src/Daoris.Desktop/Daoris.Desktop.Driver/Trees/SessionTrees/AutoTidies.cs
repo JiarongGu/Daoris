@@ -109,7 +109,9 @@ internal sealed class AutoTidies(
     /// The look's own tidy of one repository (AUTOTIDY1, D88's note; AUTOTIDY2a): every session branch, judged as the press's
     /// list judges it against the line read here with no fetch, and those <see cref="TreeSetAside.GoesByItself"/> takes removed
     /// by the clean-up's own press (<see cref="TreeSweeps"/>), judged again right before each goes, and deleted only while it is
-    /// the commit judged.
+    /// the commit judged. Then the branches the repository's landings made and recorded (AUTOTIDY2b, D102's group), each the
+    /// press would take that no session branch the look leaves leans on, by the press's own half
+    /// (<see cref="LandedCleanups.CleanLandedAsync"/>): their proof is the line's, or a completed pull request's kept answer.
     /// </summary>
     /// <remarks>
     /// <para>🔴 <b>Held alone, the sessions asked inside the hold</b>: a fresh tree a start just opened is an empty branch with

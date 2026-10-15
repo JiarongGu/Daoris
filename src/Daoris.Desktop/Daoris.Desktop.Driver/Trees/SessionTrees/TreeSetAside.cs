@@ -187,6 +187,11 @@ internal sealed class TreeSetAside(TreeContext context)
     /// The folders the look moved aside that have waited <paramref name="after"/> (AUTOTIDY1): each deleted where nothing in it
     /// was written after it was moved, and kept, saying why, where something was, or where it holds a link or cannot be read.
     /// </summary>
+    /// <remarks>
+    /// A path past Windows' 260 characters, as a tree's own <c>node_modules</c> holds one, is read and deleted as any other
+    /// (AUTOTIDY2b, proven over a deep tree): .NET hands Windows such a path in its extended form, as git's <c>core.longpaths</c>
+    /// does for the tree's own record.
+    /// </remarks>
     /// <param name="now">What time it is, against the moment in each folder's name.</param>
     internal IReadOnlyList<SetAside> PurgeSetAside(DateTimeOffset now, TimeSpan after)
     {

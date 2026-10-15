@@ -5,8 +5,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// The look's own tidy of session branches (AUTOTIDY1, AUTOTIDY2a, D88's notes): a session branch the press would clear goes
 /// without a press, its tree only where it holds no uncommitted or untracked path, and the look says so in its report and the
-/// machine log. Held by the watch across its looks, since each look's driver is built fresh: what it already said, and when it
-/// last looked.
+/// machine log; and after them each branch a landing made that the press would clear (AUTOTIDY2b). Held by the watch across its
+/// looks, since each look's driver is built fresh: what it already said, and when it last looked.
 /// </summary>
 /// <remarks>
 /// <para><b>The press's path, not a second one.</b> Each repository is tidied by <see cref="SessionTrees.TidyEmptyAsync"/>,
