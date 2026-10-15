@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+
 namespace Daoris.Driver;
 
 /// <summary>Why a person is being interrupted.</summary>
@@ -22,6 +24,12 @@ public enum AttentionKind
     /// <see cref="AttentionEvent.Quest"/> the quest.
     /// </summary>
     QuestParked,
+
+    /// <summary>
+    /// A conversation answered the person (NOTIFY1a): a turn their own words started has ended, and nothing more of theirs
+    /// waits. <see cref="AttentionEvent.Session"/> is the conversation, which a notification opens.
+    /// </summary>
+    Answered,
 }
 
 /// <param name="State">The state it ended in, for <see cref="AttentionKind.Ended"/>; null for a park.</param>
@@ -58,6 +66,9 @@ public sealed record AttentionEvent(
             1 => "1 failed session",
             var count => $"{count} failed sessions",
         },
+        // Ask Daoris's room is no repository the person knows by name (NOTIFY1a): its answer is said by the room's.
+        AttentionKind.Answered when Repository == HelpRoom.Repository => "Ask Daoris answered you",
+        AttentionKind.Answered => $"{Repository} — a conversation answered you",
         _ => $"{Repository} — a session {State}",
     };
 
@@ -108,10 +119,22 @@ public sealed record AttentionEvent(
 /// mechanism; this paragraph is the intent, so the next reader can tell one from the other. If real
 /// use shows a chat left running and crashing silently, the fix is to feed its `onEnded` in — the
 /// repository is already remembered here.</para>
+///
+/// <para><b>A conversation's answer is the fifth</b> (NOTIFY1a, the owner, 2026-10-15): the person said something and
+/// looked away, and the turn their words started has ended. That is the stream they are in, but not one they can watch
+/// while they do something else, so the window behind another said nothing until they looked. Told by the conversation's
+/// runner as its turns move (<see cref="Asked"/>, <see cref="Turned"/>), never by the tick, and kept apart from the tick's
+/// half: the runner tells it from each conversation's own thread. Said once per turn's end the person's words started, after
+/// the last of them; never for a turn they stopped, nor one nobody's words started (a conversation taken up by itself, a
+/// hand-over's briefing), which is also why a window come up mid-conversation owes nothing.</para>
 /// </remarks>
 public sealed class AttentionWatch
 {
     private Dictionary<string, string>? _seen;
+
+    // Each conversation's turns as this watch judged them (NOTIFY1a), by session: whether the person spoke since its last
+    // answer, and the turn's end it was last judged at. Told from the conversations' threads, so each is locked on its own.
+    private readonly ConcurrentDictionary<string, Turns> _turns = new(StringComparer.OrdinalIgnoreCase);
 
     // The waits already said, by account, with the cool-off each was for (TOOL4d): a wait lasts every look until its
     // reset, and a look that planned no start says nothing of it, so the cool-off — not the look — is what is said once. A
@@ -229,6 +252,52 @@ public sealed class AttentionWatch
         var said = _waits.TryGetValue(account, out var was) && was == what;
         _waits[account] = what;
         return !said;
+    }
+
+    /// <summary>The person's own words went to a conversation (NOTIFY1a): the turn's end they start is one they wait on.</summary>
+    public void Asked(string sessionId)
+    {
+        var turns = _turns.GetOrAdd(sessionId, _ => new Turns());
+        lock (turns) turns.Asked = true;
+    }
+
+    /// <summary>The person stopped a conversation's turn (NOTIFY1a): the end it comes to is their press, never an answer.</summary>
+    public void Stopped(string sessionId)
+    {
+        if (!_turns.TryGetValue(sessionId, out var turns)) return;
+        lock (turns) turns.Asked = false;
+    }
+
+    /// <summary>A conversation is over here (NOTIFY1a): what it was waited on for goes with it.</summary>
+    public void Forget(string sessionId) => _turns.TryRemove(sessionId, out _);
+
+    /// <summary>
+    /// Whether a conversation's turns, as its runner just told them, are an answer worth saying (NOTIFY1a): a turn's end not
+    /// judged yet, nothing running or waiting after it, and the person's words since the last answer. Null otherwise.
+    /// </summary>
+    /// <remarks>
+    /// The turn's end is the one the usage curve judges (<see cref="CurveMove.TurnJustEnded"/>, SWITCH1c-ii): words queued
+    /// behind a turn keep the conversation taking, so the end between them is not one, and the last one's is.
+    /// </remarks>
+    public AttentionEvent? Turned(string sessionId, string repository, ChatQueue queue)
+    {
+        var turns = _turns.GetOrAdd(sessionId, _ => new Turns());
+        lock (turns)
+        {
+            if (!CurveMove.TurnJustEnded(queue, turns.Judged)) return null;
+            turns.Judged = queue.LastTurnEnded;
+            if (!turns.Asked) return null;
+            turns.Asked = false;
+        }
+
+        return new AttentionEvent(AttentionKind.Answered, sessionId, repository);
+    }
+
+    private sealed class Turns
+    {
+        public bool Asked;
+
+        public DateTimeOffset? Judged;
     }
 }
 
