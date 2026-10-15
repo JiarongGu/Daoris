@@ -224,6 +224,13 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   kind, process id and start time, and since when) before it ticks, as a terminal's `daoris-driver
   drive` does. Where a headless loop holds it, the window says so once on `DRIVER_ERROR` and its loop
   starts the moment that lock frees; the host, the page and the conversations carry on meanwhile.
+- **A terminal finds it** (FINDDAORIS1, D171 point 1). Once the service answers, held or adopted, the loop leaves
+  `<home>/running.json` (`RunningAddress`: the address, its process id and start time), and takes it away first thing at
+  the close. A `daoris-driver` or `daoris` the install carries reads it where no `DAORIS_SERVICE_URL` is set
+  (`RunningService`), and takes the install's `data/` where no `DAORIS_HOME` is.
+- **One instance per install, and a second launch is another main window** (ONEINSTANCE1, D171 point 2). The kit's
+  single-instance guard keeps a second process from starting and hands its launch over; `SecondLaunch` opens `main:<n>`
+  once the service answers, frameless as the main window is, and its page tells its frame the theme by that name.
 - 🔴 **A diff confirms the tree it was given** (`rev-parse --show-toplevel`): git searches upward, and
   would otherwise answer for the repository above it.
 

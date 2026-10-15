@@ -10,10 +10,10 @@ namespace Daoris.Desktop;
 /// another main window a later launch opened (ONEINSTANCE1, D171 point 2).
 /// </summary>
 /// <remarks>
-/// <para><b>Native chrome, deliberately.</b> The main window is frameless because its app strip IS
-/// the title bar (SURF7); this one is not, because <c>WindowCommandModule</c> targets one form and
-/// its module name is reserved and singular. Hand-rolling a second dispatcher so a utility window
-/// could lose its close button's OS behaviour is a lot of machinery for a loss.</para>
+/// <para><b>Native chrome, deliberately, for a utility window.</b> The main window is frameless because its
+/// app strip IS the title bar (SURF7); a monitor or a detached session is not: it is a utility, and OS chrome
+/// is what a utility should wear (D55 §b). Another main window is frameless as the main one is
+/// (<see cref="Options"/> has why it can be).</para>
 ///
 /// <para><b>Its page on the same engine, the same dispatcher and the same bus</b> (D92): a
 /// <c>ChromiumView</c> bridges its page's IPC itself, on this window's own thread. Requests go to the same

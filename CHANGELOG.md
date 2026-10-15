@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris-driver` and `daoris` from an install's `app/bin/`, in a terminal of your own with nothing set, now find the Daoris
+  that runs: its home is the install's `data/` when `DAORIS_HOME` names none, and its service is the one the running window
+  holds, by the address it leaves in that home. With Daoris not running, a verb that needs its service says so and names the
+  `Daoris.exe` to start. The variables still win. Opening Daoris again while it runs now opens another main window of the
+  same Daoris, which hears every press the first one does, rather than only bringing the first one forward.
 - An agent's ask for a helper that waits on your yes now offers *Not now* (暂不) beside *Let it ask*: no helper is started
   for it, and its session's timeline says you said no. It is one of the session's waits too, at the foot of its conversation
   as at its head, and *What needs you* lists it with the same two presses and a door to the session that asked.
