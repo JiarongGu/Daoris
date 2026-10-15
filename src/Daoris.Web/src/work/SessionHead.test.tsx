@@ -1095,3 +1095,37 @@ describe('the way from the head\'s waits to the conversation', () => {
     expect(screen.queryByRole('button', { name: 'In the conversation' })).toBeNull();
   });
 });
+
+/** PROPOSEHERE1b (D168 point 2, D74): the rules the session proposed stand in its head, whatever its state, with their presses. */
+describe('the rules a session proposed', () => {
+  const RULE = {
+    id: 'r1', state: 'waiting' as const, action: 'add' as const, scope: 'repository' as const, name: 'engine', list: 'allow' as const,
+    rule: 'Bash(git branch -D:*)', why: 'Auto mode refused the branch delete you asked for.', session: 's1a2b3c4',
+    proposed: '2026-09-21T11:00:00Z',
+  };
+
+  it('shows its own open ones with Allow… and Decline, the same door the strip presses, and leads each to its call', async () => {
+    const onAnswer = vi.fn();
+    const toEvent = { rules: { r1: vi.fn() } };
+    render(
+      <SessionHead
+        session={session({ state: 'completed' })} toEvent={toEvent}
+        rules={{ proposals: [RULE, { ...RULE, id: 'r2', session: 'o7h3r000' }, { ...RULE, id: 'r3', state: 'applied' }], onAnswer }}
+      />,
+    );
+    const section = screen.getByRole('region', { name: 'Rules it proposed' });
+    const items = within(section).getAllByRole('listitem');
+    expect(items).toHaveLength(1);
+    expect(items[0]).toHaveTextContent('allow Bash(git branch -D:*) for repository engine');
+
+    await userEvent.click(within(items[0]!).getByRole('button', { name: 'Decline' }));
+    expect(onAnswer).toHaveBeenCalledWith(RULE, false, { done: expect.any(Function), refused: expect.any(Function) });
+    await userEvent.click(within(items[0]!).getByRole('button', { name: 'In the conversation' }));
+    expect(toEvent.rules.r1).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows none where it proposed none still open', () => {
+    render(<SessionHead session={session()} rules={{ proposals: [{ ...RULE, state: 'declined' }], onAnswer: vi.fn() }} />);
+    expect(screen.queryByRole('region', { name: 'Rules it proposed' })).toBeNull();
+  });
+});

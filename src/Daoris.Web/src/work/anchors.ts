@@ -14,10 +14,10 @@ export const ANCHOR_BOUND_MS = 10 * 60_000;
 
 /**
  * A wait the conversation can show the raising event of (WAITFOOT1c, D168 point 4): a park's question (an intake's too), the work
- * to land (*Accept…* or the rebase words), the second opinion handed to the session, and each go-ahead by its number. A review's
- * gate and a discard the line holds are raised by no event of the session's.
+ * to land (*Accept…* or the rebase words), the second opinion handed to the session, each go-ahead by its number, and each rule
+ * proposal by its id (PROPOSEHERE1b). A review's gate and a discard the line holds are raised by no event of the session's.
  */
-export type AnchorWait = 'question' | 'work' | 'opinion' | `goAhead:${number}`;
+export type AnchorWait = 'question' | 'work' | 'opinion' | `goAhead:${number}` | `rule:${string}`;
 
 /** The anchor a wait is found by, or null for one with no raising event. */
 export function anchorOf(wait: Wait): AnchorWait | null {
@@ -28,6 +28,7 @@ export function anchorOf(wait: Wait): AnchorWait | null {
     case 'rebase': return 'work';
     case 'opinion': return 'opinion';
     case 'goAhead': return `goAhead:${wait.number}`;
+    case 'rule': return `rule:${wait.id}`;
     default: return null;
   }
 }
@@ -116,7 +117,7 @@ export type ProposalFacts = Pick<RuleProposal, 'action' | 'scope' | 'rule' | 'de
 /**
  * A rule proposal is raised by its `permission_propose` call where the call's input names what the proposal file names: its
  * action, its scope and its rule (a default's id), nearest when it was proposed, within the bound. None where no call says so:
- * a proposal's id is not the call's. PROPOSEHERE1b draws the proposal as a wait; this is its anchor.
+ * a proposal's id is not the call's. The proposal is a wait (PROPOSEHERE1b); this is its anchor.
  */
 export function proposalKey(turns: readonly Turn[], proposal: ProposalFacts): string | undefined {
   const named = proposal.action === 'default' ? text(proposal.default) : text(proposal.rule);
@@ -135,6 +136,8 @@ export type AnchorAsks = {
   goAheads?: readonly GoAhead[] | null;
   /** The opinion the landing's gate names (`OpinionGate.opinion`). */
   opinion?: string | null;
+  /** The rules it proposed that wait on the person, as the frame read them (PROPOSEHERE1b): what each call is joined on. */
+  proposals?: readonly (ProposalFacts & { id: string })[] | null;
 };
 
 /**
@@ -164,6 +167,11 @@ export function anchorsOf(
       key = goAhead ? goAheadKey(turns, goAhead, asks.session) : undefined;
       older = earlier && Boolean(goAhead) && (Number.isNaN(begins) || goAhead!.asked.some((request) => request.session === asks.session
         && time(request.at) <= begins + ANCHOR_BOUND_MS));
+    } else if (wait.kind === 'rule') {
+      // As a go-ahead's: proposed after the page began, its call would be on it, so where it is not found here it has none.
+      const proposal = asks.proposals?.find((row) => row.id === wait.id);
+      key = proposal ? proposalKey(turns, proposal) : undefined;
+      older = earlier && Boolean(proposal) && (Number.isNaN(begins) || time(proposal!.proposed) <= begins + ANCHOR_BOUND_MS);
     } else if (anchor === 'question') key = lastWords(turns);
     else if (anchor === 'work') key = workKey(turns);
     else if (anchor === 'opinion') {
@@ -197,6 +205,8 @@ export type WaitEvents = {
   opinion?: () => void;
   /** Each go-ahead's, by its number. */
   goAheads?: Readonly<Record<number, () => void>>;
+  /** Each rule proposal's, by its id (PROPOSEHERE1b). */
+  rules?: Readonly<Record<string, () => void>>;
 };
 
 /** The presses for the anchored waits, each showing its own; undefined where none is anchored. */
@@ -204,10 +214,13 @@ export function waitEvents(anchored: readonly AnchorWait[], show: (wait: AnchorW
   if (anchored.length === 0) return undefined;
   const events: WaitEvents = {};
   const goAheads: Record<number, () => void> = {};
+  const rules: Record<string, () => void> = {};
   for (const anchor of anchored) {
     if (anchor.startsWith('goAhead:')) goAheads[Number(anchor.slice('goAhead:'.length))] = () => show(anchor);
+    else if (anchor.startsWith('rule:')) rules[anchor.slice('rule:'.length)] = () => show(anchor);
     else events[anchor as 'question' | 'work' | 'opinion'] = () => show(anchor);
   }
   if (Object.keys(goAheads).length > 0) events.goAheads = goAheads;
+  if (Object.keys(rules).length > 0) events.rules = rules;
   return events;
 }

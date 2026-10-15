@@ -29,6 +29,7 @@
   "work.attention.act.acceptRule": "Allow…",
   "work.attention.act.allowRule": "Allow",
   "work.attention.act.declineRule": "Decline",
+  "work.attention.allowedRule": "Allowed: {{change}}. Sessions started from now on are handed it.",
   "work.attention.ask.approve": "Every session on ask #{{id}} is handed your yes for this act at its next start.",
   "work.attention.ask.refuse": "Every session on ask #{{id}} is handed your no at its next start, and one that asks for this act again is told not to do it.",
   "work.attention.ask.acceptRule": "It widens what agents may do: {{change}}. Sessions started from now on are handed it.",

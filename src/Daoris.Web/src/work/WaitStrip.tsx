@@ -11,8 +11,9 @@ import type { DiscardOffer, LandOffer } from './groups';
 import type { Answered } from './InlineConfirm';
 import type { SayRebase } from './LandingSync';
 import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from './Lands';
+import { ProposedRules, type RuleAsk, type RuleWaits } from './ProposedRules';
 import { InConversation, waitName } from './WaitAnchor';
-import { type Wait, WORK_WAITS, waitsOf } from './waits';
+import { rulesAsked, type Wait, WORK_WAITS, waitsOf } from './waits';
 
 /**
  * What the frame hands both the session's head and the strip at its foot (WAITFOOT1b, D168 point 3): every wait's press and its
@@ -28,6 +29,11 @@ export type WaitProps = {
   onAnswerAsk?: (ask: string) => void;
   goAheads?: GoAhead[];
   onGoAhead?: GoAheadAnswer;
+  /**
+   * The rules it proposed that the person still answers (PROPOSEHERE1b, D74): the machine's proposals as the shell read them,
+   * the answer's door, its pending, and whether the session takes words now. Absent where nothing reads the rules (a browser).
+   */
+  rules?: RuleWaits | null;
   lands?: LandOffer | null;
   landing?: LandingPlan | null;
   planning?: boolean;
@@ -58,8 +64,9 @@ const SOUGHT = 'rounded-control outline-2 outline-offset-2 outline-accent/60';
  * above the words that raised it.
  *
  * @remarks
- * **The head's molecules, not copies** (D168 point 2): a go-ahead still open is `GoAheadList`'s, the work's line `Lands` with its
- * *Accept…*, the rebase words and the gates, a discard the line holds `Discards`, each handed what the head is handed. A park's
+ * **The head's molecules, not copies** (D168 point 2): a go-ahead still open is `GoAheadList`'s, a rule the session proposed
+ * `ProposedRules`' (PROPOSEHERE1b), the work's line `Lands` with its *Accept…*, the rebase words and the gates, a discard the line
+ * holds `Discards`, each handed what the head is handed. A park's
  * question is named and not answered here: the box below is its answer's one door (FIX-LOG 2026-09-29), and its *Finish…* and
  * *Decline…* stay its card's (D56). A hand-over offer is the pinned page head's, already on screen.
  *
@@ -69,11 +76,13 @@ const SOUGHT = 'rounded-control outline-2 outline-offset-2 outline-accent/60';
  * Several fold to one line naming them; *To the top* takes the person to the head's waits. Nothing waits, nothing is drawn.
  * A molecule: no hook beyond its own fold.
  */
-export function WaitStrip({ answerBelow = false, workAsk, onTop, seek, ...props }: WaitProps & {
+export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, ...props }: WaitProps & {
   /** The foot's box takes the park's answer: a driven park's answer box, or a parked chat's composer. */
   answerBelow?: boolean;
   /** Where the work's ask is open, the frame's, so it is open here or in the head (D168 point 3). */
   workAsk?: WorkAsk;
+  /** Where a rule's *Allow…* is open, the frame's, so it is open here or in the head (D168 point 3). */
+  ruleAsk?: RuleAsk;
   /** Scroll the session's head, where every wait stands with its reading, into view. */
   onTop?: () => void;
   /**
@@ -98,10 +107,14 @@ export function WaitStrip({ answerBelow = false, workAsk, onTop, seek, ...props 
   }, [seek?.n]);
   useEffect(() => {
     if (!focusing.current || !seek) return;
+    // A proposal's id is the driver's, found by its value rather than spelled into a selector.
+    const rule = seek.wait.startsWith('rule:') ? seek.wait.slice('rule:'.length) : null;
     const line = seek.wait.startsWith('goAhead:')
       ? `[data-go-ahead="${seek.wait.slice('goAhead:'.length)}"]`
       : `[data-wait="${seek.wait === 'opinion' ? 'work' : seek.wait}"]`;
-    const drawn = section.current?.querySelector<HTMLElement>(line);
+    const drawn = rule !== null
+      ? [...(section.current?.querySelectorAll<HTMLElement>('[data-rule]') ?? [])].find((each) => each.dataset.rule === rule)
+      : section.current?.querySelector<HTMLElement>(line);
     if (!drawn) return;
     focusing.current = false;
     drawn.focus();
@@ -112,6 +125,7 @@ export function WaitStrip({ answerBelow = false, workAsk, onTop, seek, ...props 
   const question = waits.find((wait) => wait.kind === 'question');
   const intake = waits.find((wait): wait is Extract<Wait, { kind: 'intake' }> => wait.kind === 'intake');
   const open = new Set(waits.filter((wait) => wait.kind === 'goAhead').map((wait) => (wait as { number: number }).number));
+  const ruled = new Set(waits.filter((wait) => wait.kind === 'rule').map((wait) => (wait as { id: string }).id));
   const work = waits.some((wait) => WORK_WAITS.has(wait.kind));
   const discard = waits.some((wait) => wait.kind === 'discard');
   // Never pluralised by `count`: in Chinese one is `other` too, and one wait is said without its number.
@@ -173,6 +187,20 @@ export function WaitStrip({ answerBelow = false, workAsk, onTop, seek, ...props 
                   lead={t('work.awaiting.goAheads')}
                   inConversation={toEvent?.goAheads}
                   marked={sought?.startsWith('goAhead:') ? Number(sought.slice('goAhead:'.length)) : undefined}
+                />
+              </div>
+            )}
+            {ruled.size > 0 && props.rules && (
+              <div className="grid gap-1">
+                <ProposedRules
+                  proposals={rulesAsked(props.rules.proposals, session.id).filter((proposal) => ruled.has(proposal.id))}
+                  busy={props.rules.busy}
+                  onAnswer={props.rules.onAnswer}
+                  heard={props.rules.heard}
+                  lead={t('work.wait.rule.lead')}
+                  inConversation={toEvent?.rules}
+                  marked={sought?.startsWith('rule:') ? sought.slice('rule:'.length) : undefined}
+                  ask={ruleAsk}
                 />
               </div>
             )}
