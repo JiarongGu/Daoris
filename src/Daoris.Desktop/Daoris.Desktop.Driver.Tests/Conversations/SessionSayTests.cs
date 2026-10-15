@@ -77,6 +77,64 @@ public sealed class SessionSayTests
         Assert.Contains("has no door for words to a session that is not running (404)", said.Message);
     }
 
+    /// <summary>
+    /// SAIDBACK1a (D137 §2.4): a word waiting on a record is taken back, or reworded, through the take-back door by its id; a
+    /// reword's new word comes back with its new id. No text sends none.
+    /// </summary>
+    [Fact]
+    public async Task A_word_is_taken_back_or_reworded_through_the_take_back_door()
+    {
+        var standIn = new StandIn(HttpStatusCode.OK, """
+            {"done":true,"message":"Reworded word `w1` on session `s1`: the new words wait last, as `w2`.",
+             "session":{"id":"s1","state":"completed"},
+             "said":{"id":"w2","text":"use the green one","at":"2026-10-15T09:00:00+00:00","files":["notes.md"],"reopens":true}}
+            """);
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(standIn));
+
+        var reworded = await service.TakeBackAsync("s1", "w1", "use the green one");
+        var back = await service.TakeBackAsync("s1", "w1");
+
+        Assert.Equal((true, "Reworded word `w1` on session `s1`: the new words wait last, as `w2`.", (string?)null),
+            (reworded.Done, reworded.Message, reworded.Why));
+        Assert.Equal(("w2", "use the green one"), (reworded.Word!.Id, reworded.Word.Text));
+        Assert.Equal(2, standIn.Heard.Count);
+        Assert.Equal(("POST", "/api/sessions/s1/take-back"), (standIn.Heard[0].Method, standIn.Heard[0].Path));
+        using var sent = JsonDocument.Parse(standIn.Heard[0].Body);
+        Assert.Equal(("w1", "use the green one"), (sent.RootElement.GetProperty("word").GetString(), sent.RootElement.GetProperty("text").GetString()));
+        Assert.True(back.Done);
+        using var bare = JsonDocument.Parse(standIn.Heard[1].Body);
+        Assert.False(bare.RootElement.TryGetProperty("text", out _));
+    }
+
+    /// <summary>
+    /// SAIDBACK1a: a word a session took already answers <c>taken</c>, never an error; what never goes on is the say door's word
+    /// beside its sentence; and a host from before the door says so, with no word.
+    /// </summary>
+    [Theory]
+    [InlineData(HttpStatusCode.OK, """{"done":false,"why":"taken","message":"Word `w1` no longer waits on session `s1`."}""", "taken", "Word `w1` no longer waits on session `s1`.")]
+    [InlineData(HttpStatusCode.Conflict, """{"error":"Session `s1` stood down.","refusal":"stood-down"}""", "stood-down", "Session `s1` stood down.")]
+    [InlineData(HttpStatusCode.NotFound, """{"error":"No session `s1`.","refusal":"not-found"}""", "not-found", "No session `s1`.")]
+    public async Task A_take_back_not_done_is_answered_by_its_word(HttpStatusCode status, string body, string why, string message)
+    {
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new StandIn(status, body)));
+
+        var back = await service.TakeBackAsync("s1", "w1");
+
+        Assert.Equal((false, why, message), (back.Done, back.Why, back.Message));
+        Assert.Null(back.Word);
+    }
+
+    [Fact]
+    public async Task A_host_without_the_take_back_door_says_so()
+    {
+        using var older = new ServiceClient("http://stand-in", null, new HttpClient(new StandIn(HttpStatusCode.NotFound, "")));
+
+        var back = await older.TakeBackAsync("s1", "w1");
+
+        Assert.Equal((false, (string?)null), (back.Done, back.Why));
+        Assert.Contains("has no door for taking back words a session has not taken (404)", back.Message);
+    }
+
     /// <summary>A service standing in: each request recorded, then answered with the one status and body it was given.</summary>
     private sealed class StandIn(HttpStatusCode status, string body) : HttpMessageHandler
     {

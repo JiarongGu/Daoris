@@ -179,6 +179,14 @@ public sealed partial class HelpCoverageTests
         + "where the box is and names `daoris-driver sessions say` (D137 §5.4).");
 
     /// <summary>
+    /// SAIDBACK1a's <c>daoris-driver sessions take-back</c> and <c>sessions reword</c> (D137 §2.4), verbs of the headless host:
+    /// exempt, since the words taken back or put in their place are the person's own (D133 §1), as saying them is.
+    /// </summary>
+    private static readonly Exempt TakeBackDoor = new(
+        "taking back or rewording words a session has not taken yet moves the person's own words (D133 §1), as saying them does, "
+        + "so Ask Daoris proposes none; it can name `daoris-driver sessions take-back` and `sessions reword` (D137 §2.4).");
+
+    /// <summary>
     /// SESSONE2c's <c>daoris-driver ask channel</c> post and the page's <c>CHANNEL_POST</c> (D167 points 6 to 8): exempt, since the
     /// words posted are the person's own, which every session on the ask then reads as theirs (D133 §1). <c>CHANNEL_READ</c> is
     /// no press: a read of the records that changes nothing.
@@ -858,6 +866,7 @@ public sealed partial class HelpCoverageTests
             .Append(SessionsStopVerb)
             .Append(AbandonDoor)
             .Append(SayDoor)
+            .Append(TakeBackDoor)
             .Append(ChannelPostDoor)
             .Append(GoOnNewDoor)
             .Append(StartFromDoor)
@@ -1035,6 +1044,20 @@ public sealed partial class HelpCoverageTests
             && door.Screen.Contains("box", StringComparison.Ordinal)
             && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
         Assert.Contains("D133", SayDoor.Reason);
+    }
+
+    /// <summary>
+    /// SAIDBACK1a: the headless host's <c>sessions take-back</c> and <c>sessions reword</c> are exempt from Ask Daoris while its
+    /// usage spells them: the person's own words, moved by the person, with no kind of either name to take them.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_take_back_and_reword_are_exempt_as_the_person_s_words()
+    {
+        Assert.Contains("sessions take-back <id> [<word>]  ·  sessions reword <id> <word> \"…\"", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("take-back"));
+        Assert.Null(HelpProposalKinds.Find("reword"));
+        Assert.Contains("D133", TakeBackDoor.Reason);
+        Assert.Contains("D137", TakeBackDoor.Reason);
     }
 
     /// <summary>
