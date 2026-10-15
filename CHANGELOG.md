@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris no longer loses your message on a busy machine. It opens at once and reads the machine while your first words wait,
+  shown as *opening Ask Daoris…*; words you send show at once as *sending…*, and where the machine is slow to answer they stay,
+  saying it has not answered yet (本机尚未回应), rather than vanishing behind an error. Nothing goes back in the box to be sent
+  twice; words that never arrived come back there, said so.
 - A session no longer thanks you for accepting when you type "accept": it says its work waits for *Accept…* on its page and
   where that is, and when it asks you to approve a rule it proposed, it names the Agents page's *Proposals*. In What needs you,
   the act on a rule an agent proposed reads *Allow…* (允许…), no longer the same *Accept…* (采纳…) as landing a session's work.

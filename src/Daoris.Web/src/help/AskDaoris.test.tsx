@@ -187,6 +187,39 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
+   * HELPSTART1: the driver answers the press once the conversation is placed, `starting`, its record still `queued` while the
+   * room is read. The words go to it at once and show once, as it opening, from the driver's own queue.
+   */
+  it('hands the first words to a conversation the driver answers as starting, shown once as it opens', async () => {
+    const words = 'what is a workspace?';
+    const placed = { ...HELP, state: 'queued' };
+    bridge({ sessionId: HELP.id, message: 'Ask Daoris `h1e1p000` is starting.' });
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      if (type === 'START_HELP') {
+        SESSIONS = [placed];
+        return { sessionId: HELP.id, message: 'Ask Daoris `h1e1p000` is starting.', running: false, starting: true };
+      }
+      if (type === 'SESSION_QUEUE') return { session: HELP.id, queued: [{ text: words, files: [] }], taking: false, opening: true };
+      return answered(module, type, ...rest);
+    });
+    show();
+
+    await waitFor(() => expect(starts()).toBe(1));
+    const box = await screen.findByLabelText('Message');
+    await userEvent.type(box, words);
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: HELP.id, text: words },
+    }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE', { payload: { id: HELP.id } }));
+    await waitFor(() => expect(screen.getAllByText(words, { ignore: 'script, style, h3' })).toHaveLength(1));
+    expect(screen.getByText('opening Ask Daoris…')).toBeInTheDocument();
+    expect(starts()).toBe(1);
+  });
+
+  /**
    * SENDLOST1: on a loaded machine the page stopped waiting on Ask Daoris's start (the bridge's TIMEOUT) and the person's
    * first words vanished, though the driver went on to open the conversation. They stay shown, saying the machine has not
    * answered yet, nothing put back in the box to send twice, and go once to the conversation the list next shows.

@@ -24,7 +24,8 @@ public sealed class HelpRoutes(DriverContext context)
     //
     // HELPSTART1 (D89's note): answered once the conversation is placed, its record open, with `starting`; the room is read and
     // its agent spawned after, off the request, its end told as the conversation's events. On a loaded machine the room's
-    // reading took 26 s and the page stops waiting at 30 (SENDLOST1). One placed and still starting is handed to the next press.
+    // session look alone took 24.9 s, and the page stops waiting at 30 (SENDLOST1). One placed and still starting is handed to
+    // the next press.
     [DriverRoute("START_HELP")]
     private async Task<object?> StartHelpAsync(IpcRequest request, CancellationToken cancellationToken)
     {

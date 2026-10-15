@@ -5,6 +5,26 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-15 — Ask Daoris lost the person's first words on a loaded machine (HELPSTART1, SENDLOST1)
+
+- **Symptom:** the owner's, on the install: a message to Ask Daoris showed *本机没有及时回应——驱动可能正忙。请稍后重试。*
+  (`errors.TIMEOUT`) and vanished from the page, the person's words included, though the driver had opened conversation
+  `2b751dcf` for them (`message.sent` 06:42:19, `help.room.look` 24.9 s at 06:42:38, `session.started` 06:42:39).
+- **Root cause:** two. `START_HELP` answered only after the whole room was read, its session look judging every tree with git
+  (24.9 s under load), then the agent spawned: past the bridge's 30 s bound, so the page's opening ahead stopped waiting. The
+  send's own `START_HELP` then timed out too; read from the code, not the log, it met a record open whose process was not yet
+  held, so it read the whole room again. And the page gave words that did not arrive back to the box they were written in (the new conversation's): once the list
+  showed the conversation the driver had opened, the panel drew that one's box instead, so the words sat in a box nobody saw.
+- **Fix:** `START_HELP` answers once the record is placed (`ChatRunner.PlaceHelpAsync`), and reads the room and spawns the agent
+  off the request (`RunHelpAsync`, `HelpRoutes.RunPlacedAsync`); a second press is handed the one starting, and words said to it
+  meanwhile wait in `HelpStarting` as its queue. The room reads a whole Sessions look under 30 s old (`SessionsLooked`). The page
+  keeps words whose send or start timed out, saying the machine has not answered yet, never back in the box to send twice, and
+  gives words that never arrived back to the box drawn now (`AskConversation.tsx`'s `box`).
+- **Verification:** `DriverModuleHelpStartTests` (the press answered while the room's reading was held; failed first, the route
+  reading the room itself), `HelpChatTests`' placed tests (Process half, alone), and `AskDaoris.test.tsx`'s three SENDLOST1 tests,
+  which failed first; the modules fast half and the web suite pass. Not covered: a session's box and a chat's composer
+  (SENDLOST1b); why the look itself took 24.9 s (proposed, HELPROOM1).
+
 ## 2026-10-15 — Words that could not go on left a fresh tree and branch at every look (GOONTREE1)
 
 - **Symptom:** the owner's, on the install: words waiting on a closed quest's last session whose tree had been removed made a

@@ -10,8 +10,8 @@ namespace Daoris.Desktop;
 /// </summary>
 /// <remarks>
 /// <b>One at a time</b>, as the room holds one conversation: <see cref="Placing"/> lets one press place it while a second waits,
-/// then hands that one the conversation placed rather than placing another. Held in this process only: a shell that closes
-/// with words here ends the record it placed, and the page that sent them still shows them.
+/// then hands that one the conversation placed rather than placing another. Held in this process only, as a conversation's own
+/// queue is: words held here when the shell closes go with it, as words waiting on a turn do.
 /// </remarks>
 public sealed class HelpStarting
 {
