@@ -19,10 +19,10 @@ import type { DiscardOffer } from './groups';
 export const heldDiscardable = (discards: DiscardOffer, onDiscard?: (answered: Answered) => void): boolean =>
   Boolean(onDiscard && discards.keptAt);
 
-/** *Discard branch…*: the first press, which opens the ask. */
-export function HeldDiscardButton({ onAsk, className }: { onAsk: () => void; className?: string }) {
+/** *Discard branch…*: the first press, which opens the ask; held while a discard pressed elsewhere is on its way (D168). */
+export function HeldDiscardButton({ onAsk, className, disabled = false }: { onAsk: () => void; className?: string; disabled?: boolean }) {
   const { t } = useTranslation();
-  return <Button variant="danger" className={className} onClick={onAsk}>{t('settings.sweep.discard')}</Button>;
+  return <Button variant="danger" className={className} disabled={disabled} onClick={onAsk}>{t('settings.sweep.discard')}</Button>;
 }
 
 /** The ask under it: the branch named, the driver's sentence saying where its commits stay, and the press, unforced. */

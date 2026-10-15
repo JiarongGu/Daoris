@@ -18,7 +18,7 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => {},
 }));
 
-import { BackToBottom, SessionConversation, type TailState } from './SessionConversation';
+import { type AnchorState, BackToBottom, SessionConversation, type TailState } from './SessionConversation';
 
 const at = '2026-09-28T00:00:00Z';
 const target = { seq: 1, at, kind: 'user', origin: 'target', text: 'Your target is the quest…' };
@@ -135,5 +135,82 @@ describe('the way back to the tail', () => {
     expect(press.className).not.toMatch(/sticky|absolute|fixed/);
     fireEvent.click(press);
     expect(toTail).toHaveBeenCalledOnce();
+  });
+});
+
+/**
+ * WAITFOOT1c (D168 point 4): the jump the organism kept to itself is the frame's to press. It tells its host which waits it holds
+ * the raising event of, or may hold on a page before, and shows one when pressed: loading the pages before until it is held, as
+ * the jump to an event does, then outlined. The block that raised it says so, with *To the wait*.
+ */
+describe('the way to the event a wait was raised by', () => {
+  const WHY = 'The tile reads its target from the dashboard configuration.';
+  const ASKED = JSON.stringify({ kind: 'write', on: 'production', act: 'dashboard configuration', why: WHY });
+  const goAhead = {
+    number: 3, kind: 'write', on: 'production', act: 'dashboard configuration', state: 'asked' as const,
+    asked: [{ session: 's1', quest: 'q1', at, why: WHY }],
+  };
+  const waits = {
+    waits: [{ kind: 'question' as const, below: true }, { kind: 'goAhead' as const, number: 3 }],
+    goAheads: [goAhead],
+  };
+
+  function draw(pages: (before?: number) => unknown, props: { onAnchors?: (session: string, anchors: AnchorState) => void; onToWait?: () => void } = {}) {
+    invoke.mockImplementation(async (_module: string, type: string, body?: { payload?: { before?: number } }) => {
+      if (type === 'SESSION_HISTORY') return pages(body?.payload?.before);
+      if (type === 'HARNESSES') return { harnesses: [] };
+      return {};
+    });
+    const scroller = createRef<HTMLDivElement>();
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <Tooltip.Provider>
+          <div ref={scroller}>
+            <SessionConversation session="s1" live={false} scroller={scroller} waits={waits} {...props} />
+          </div>
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+  }
+
+  it('tells its host the waits it holds the raising event of, and outlines one when pressed', async () => {
+    const onAnchors = vi.fn();
+    const onToWait = vi.fn();
+    draw(() => ({
+      session: 's1', earlier: false, latest: 5, events: [
+        target,
+        call(2, 'g1', { title: 'go_ahead_ask', status: 'completed', input: ASKED }),
+        said(3, 'm1', 'Which of the two should I keep?'),
+        { seq: 4, at, kind: 'turn', stopReason: 'end_turn' },
+      ],
+    }), { onAnchors, onToWait });
+
+    const words = await screen.findByText('Which of the two should I keep?');
+    await waitFor(() => expect(onAnchors).toHaveBeenLastCalledWith('s1', expect.objectContaining({ anchored: ['question', 'goAhead:3'] })));
+    // The block that raised it says so, and its press goes to the wait.
+    const block = words.closest<HTMLElement>('[data-block]')!;
+    await userEvent.click(within(block).getByRole('button', { name: 'To the wait' }));
+    expect(onToWait).toHaveBeenCalledWith({ kind: 'question', below: true });
+
+    act(() => (onAnchors.mock.lastCall![1] as AnchorState).show('question'));
+    await waitFor(() => expect(block.className).toContain('outline-accent'));
+    // The call is shown out of its fold, and outlined.
+    act(() => (onAnchors.mock.lastCall![1] as AnchorState).show('goAhead:3'));
+    await waitFor(() => expect(screen.getByText('go_ahead_ask').closest('[data-block]')!.className).toContain('outline-accent'));
+  });
+
+  it('loads the pages before until it holds the call a go-ahead was asked by', async () => {
+    const onAnchors = vi.fn();
+    draw((before) => (before
+      // Its own call id: the newest page's `g1` is another call.
+      ? { session: 's1', events: [target, call(2, 'a1', { title: 'go_ahead_ask', status: 'completed', input: ASKED })], earlier: false, latest: 301 }
+      : { session: 's1', events: NEWEST, earlier: true, latest: 301, opening: target }), { onAnchors });
+
+    await screen.findByText('Clean. Now the full gates.');
+    await waitFor(() => expect(onAnchors).toHaveBeenLastCalledWith('s1', expect.objectContaining({ anchored: ['question', 'goAhead:3'] })));
+    act(() => (onAnchors.mock.lastCall![1] as AnchorState).show('goAhead:3'));
+
+    await waitFor(() => expect(screen.getByText('go_ahead_ask').closest('[data-block]')!.className).toContain('outline-accent'));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HISTORY', { payload: { id: 's1', before: 300 } });
   });
 });
