@@ -101,6 +101,7 @@ internal static class HelpProposalKinds
         new HelpPauseProposals(),
         new HelpClearProposals(),
         new HelpWorkflowProposals(),
+        new HelpSetupProposals(),
     ];
 
     /// <summary>The class that judges a kind, matched exactly as the file spells it; null for a kind none judges.</summary>

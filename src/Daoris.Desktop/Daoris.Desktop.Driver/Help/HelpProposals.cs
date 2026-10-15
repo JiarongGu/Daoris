@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>One of Ask Daoris's proposals, as the connector wrote it (HELP1c, D89; HELP6; PLUG9; WSR5b; HELP10).</summary>
-/// <param name="Kind">Which kind it is, one <see cref="HelpProposalKinds"/> registers: `setting`, `ask`, `agent`, `delete`, `account`, `go`, `plugin`, `hand`, `browser`, `sync`, `accept`, `repository`, `session`, `pause`, `clear` or `workflow`.</param>
+/// <param name="Kind">Which kind it is, one <see cref="HelpProposalKinds"/> registers: `setting`, `ask`, `agent`, `delete`, `account`, `go`, `plugin`, `hand`, `browser`, `sync`, `accept`, `repository`, `session`, `pause`, `clear`, `workflow` or `setup`.</param>
 /// <param name="Door">Which of its kind's changes it is, as that kind's class says: a `daoris driver` verb for a setting, `update` or `pin` for an agent, and so on.</param>
 /// <param name="Target">What the change is for, as its kind's class says: a repository, an agent, a record's id, a view, a plugin, a session or a branch.</param>
 /// <param name="Value">What it is set to, where its kind takes one: a setting's value, a pin's version, a hand-off's plugin, a move's workspace.</param>
@@ -253,6 +253,15 @@ public sealed record HelpMachineFacts(
     /// </summary>
     public IReadOnlyList<(string Repository, string? Workspace, string? Root)> Registered { get; init; } = [];
 
+    // The setup kind's.
+
+    /// <summary>
+    /// What a press would do for each repository a set-up proposal names (LAYOUT8), <see cref="SetupPress.PlanAsync"/>'s plan as
+    /// <c>daoris-driver setup &lt;repository&gt; --plan</c> prints it, refusals and all: what a set-up proposal is judged by and
+    /// what its Apply presses. Read only for one, since a plan reads the line with git and asks the doctrine tool its version.
+    /// </summary>
+    public IReadOnlyList<SetupPlan> Setups { get; init; } = [];
+
     // The workflow kind's.
 
     /// <summary>
@@ -359,6 +368,14 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
     /// </summary>
     public IReadOnlyList<string>? Sessions { get; init; }
 
+    // The setup kind's.
+
+    /// <summary>
+    /// For a set-up the press would publish (LAYOUT8): the press's own plan, what the card shows (what was read on the line, the
+    /// rule and the quest's whole text) and what Apply presses; null for a refusal and for every other kind.
+    /// </summary>
+    public SetupPlan? Setup { get; init; }
+
     // The sync kind's.
 
     /// <summary>What a sync card shows (HELP10); null for every other kind.</summary>
@@ -395,7 +412,7 @@ public sealed record HelpApplied(bool Applied, string Told)
 public interface IHelpDoors :
     IHelpAcceptDoors, IHelpAccountDoors, IHelpAgentDoors, IHelpAskDoors, IHelpBrowserDoors, IHelpClearDoors,
     IHelpDeleteDoors, IHelpHandDoors, IHelpPauseDoors, IHelpPluginDoors, IHelpRepositoryDoors, IHelpSessionDoors,
-    IHelpSettingDoors, IHelpSyncDoors
+    IHelpSettingDoors, IHelpSetupDoors, IHelpSyncDoors
 {
 }
 

@@ -25,6 +25,24 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
+    /// LAYOUT8 (D170 point 1): a repository is set up by the press's own door, proposed by name: one quest to its own session and
+    /// the rule its session needs, refused in `--plan`'s words, and never a shell or a write into the repository. The owner's
+    /// helper could only name the terminal command; now it proposes the press.
+    /// </summary>
+    [Fact]
+    public void The_room_says_how_a_set_up_is_proposed_and_what_it_never_does()
+    {
+        var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("- `setup_propose`: set a repository registered here up for every agent, as `daoris-driver setup <repository>`", proposes);
+        Assert.Contains("one quest to that repository's own session", proposes);
+        Assert.Contains("a rule letting its sessions run the doctrine tool", proposes);
+        Assert.Contains("Its card shows what was read on its line and the quest's whole text", proposes);
+        Assert.Contains("Daoris never writes into the repository", proposes);
+        Assert.Contains("never run it yourself", proposes);
+    }
+
+    /// <summary>
     /// HELP10: WSR6's *Bring up to date* (D109) is proposed, and the room says its card's two presses: the look, which is
     /// the person's and fetches, and the Apply, on the rows the look listed only.
     /// </summary>

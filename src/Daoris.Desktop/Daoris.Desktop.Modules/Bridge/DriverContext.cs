@@ -49,6 +49,17 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     public string OffersFolder => Offers ?? PluginOffers.FolderFor(Loop.Home, AppContext.BaseDirectory);
 
     /// <summary>
+    /// The world a set-up press reads (LAYOUT8), over the service a request was handed: null is the real one, which reads each
+    /// line with git and starts <c>node</c> and <c>daoris</c> for their versions, as the terminal's press does; a test names a
+    /// stand-in, since the fast half starts no process (MOD8). Set by <see cref="DriverModule"/>'s initializer, as
+    /// <see cref="Offers"/> is, so a domain reads it at each request.
+    /// </summary>
+    public Func<ServiceClient, ISetupWorld>? SetupWorlds { get; set; }
+
+    /// <summary>The set-up press's world over <paramref name="service"/>: the one named, else the real one under the home.</summary>
+    public ISetupWorld SetupWorldOf(ServiceClient service) => SetupWorlds?.Invoke(service) ?? new SetupWorld(service, Loop.Home);
+
+    /// <summary>
     /// A standing choice: an edit to <c>driver.json</c> under the home and a nudge, because the file is the truth and the loop
     /// re-reads it every tick, the same file the terminal's verbs edit (D50).
     /// </summary>
