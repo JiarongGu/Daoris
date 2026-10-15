@@ -13,6 +13,9 @@ with the version and date at release.
   what it would change and why: *Allow…* asks once, *Decline* is one press, and *In the conversation* shows the call that
   proposed it. Allowed there, the session is told the rule is allowed now and goes on with it; a session that takes no words
   says so instead. In What needs you, allowing one now says *Allowed* (已允许), as its press reads.
+- While something waits on you, Daoris's taskbar button shows how many as a number on its icon (*9+* past nine), and the
+  window's title leads with it, as *(3) Daoris (道衍)*, when you hover the button or switch windows with Alt-Tab. It is the
+  count Overview's *What needs you* shows, and it goes when nothing waits.
 - After a session's work is accepted (采纳), its *Accept…* and the plan beside it read anew wherever they are shown, in
   every open window and when you switch back to a tab, where an old plan used to stand until the driver's next change. The
   same holds after discarding a session's tree, handing a branch to its plugin, a press on a second opinion, the clean-up,
