@@ -14,6 +14,8 @@ const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => {
   // Every hook listening to an event hears it, as in the shell: each hook's latest handler is kept,
   // told apart by its source, since a render hands over a new closure each time. One handler per
   // event name meant a second listener (the console's, CONSOLE3a) silenced the first (the tabs').
+  // 🔴 Two mounted instances of one hook share a source, so here only the last rendered hears: the frame's own second
+  // reading of a record (SENDLOST1b's `SentSettler`) is mounted only while words wait on it, never beside every conversation.
   const byName = new Map<string, Map<string, (payload: unknown) => void>>();
   return {
     invoke: vi.fn(),
