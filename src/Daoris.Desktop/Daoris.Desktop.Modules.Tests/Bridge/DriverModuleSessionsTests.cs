@@ -652,6 +652,23 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.Equal(JsonValueKind.Null, bare.GetProperty("discards").ValueKind);
     }
 
+    /// <summary>
+    /// TREEFOLLOWWEB2 (D164's TREEFOLLOW1 note): a row's <c>work</c> names the branch a moved tree is on, so the head names it once
+    /// the tree offers nothing and the clean-up's <c>daoris/</c> branch is gone; null where the tree is on its session branch.
+    /// </summary>
+    [Fact]
+    public void A_groups_row_names_the_branch_its_moved_tree_is_on()
+    {
+        var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        var moved = new SessionGrouping("m0ved000", SessionGroup.Ended, "completed") { Work = new TreeWork(0, 0) { Branch = "feature/x-fix" } };
+
+        var row = JsonSerializer.SerializeToElement(SessionsRoutes.Grouped(moved), camel);
+        var own = JsonSerializer.SerializeToElement(SessionsRoutes.Grouped(moved with { Work = new TreeWork(1, 0) }), camel);
+
+        Assert.Equal("feature/x-fix", row.GetProperty("work").GetProperty("branch").GetString());
+        Assert.Equal(JsonValueKind.Null, own.GetProperty("work").GetProperty("branch").ValueKind);
+    }
+
     /// <summary>SESSUX1g (D126 §7.4): an archive from the screen is counted in the machine log as the screen's, with no session named.</summary>
     [Fact]
     public async Task An_archive_from_the_screen_is_counted_in_the_log_as_the_screens()

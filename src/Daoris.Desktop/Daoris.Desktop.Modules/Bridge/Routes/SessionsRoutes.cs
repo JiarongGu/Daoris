@@ -371,7 +371,7 @@ public sealed class SessionsRoutes(DriverContext context)
         row.Strikes,
         row.Awaits,
         row.AwaitsOf,
-        Work = row.Work is { } work ? new { work.Commits, work.Uncommitted } : null,
+        Work = row.Work is { } work ? new { work.Commits, work.Uncommitted, work.Branch } : null,
         // SESSUX1b (D126 §2.2): its stop holds its quest here, which its line says.
         row.HoldsQuest,
         // PAUSE1b (D132 §6.1): whose pause holds its quest, which its line says and whose *Resume* stands in *Try again*'s place.

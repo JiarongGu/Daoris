@@ -57,7 +57,7 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
 
 export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
-  chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, onDiscardBranch, discardingBranch,
+  chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
   opinion, continues, helps, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek,
 }: {
@@ -151,6 +151,8 @@ export function AttendedSession({
   onQuest?: (quest: Quest) => void;
   /** The branch its own tree left, as the clean-up judged it (SESS1 S10) — the head's. */
   branch?: SweepBranch | null;
+  /** The branch a moved tree is on (TREEFOLLOWWEB2), passed straight to the head. */
+  ownBranch?: string | null;
   /** Passed straight through to the head: that branch discarded once its tree is gone (LAND3b), told back to its ask. */
   onDiscardBranch?: (answered: Answered) => void;
   /** That discard is on its way. */
@@ -215,6 +217,7 @@ export function AttendedSession({
         onAnswerAsk={onAnswerAsk}
         onAnswerSession={onAnswerSession}
         branch={branch}
+        ownBranch={ownBranch}
         onReview={onReview}
         onDiscardBranch={onDiscardBranch}
         discardingBranch={discardingBranch}

@@ -102,6 +102,30 @@ describe('the attended session\'s head', () => {
   });
 
   /**
+   * TREEFOLLOWWEB2 (D164's TREEFOLLOW1 note): a tree the agent moved onto a branch of its own is named by the branch the driver's
+   * `work` carries, once the clean-up lists none (it lists `daoris/` branches, and the tidy removed that one); the clean-up's row,
+   * where it has one, still says whether the work landed.
+   */
+  it("names a moved tree's branch where the clean-up has no row", async () => {
+    const { rerender } = render(<SessionHead session={session({ state: 'completed' })} ownBranch="feature/x-fix" />);
+    expect(screen.getByText('Its work')).toBeInTheDocument();
+    expect(screen.getByText('feature/x-fix')).toBeInTheDocument();
+
+    rerender(<SessionHead session={session({ state: 'completed' })} ownBranch="feature/x-fix" branch={{
+      repository: 'engine', workspace: 'default', branch: 'feature/x-fix', hasTree: false,
+      kind: 'landed', commits: 3, where: 'main', removable: true,
+    }} />);
+    expect(screen.getByText('landed on main')).toBeInTheDocument();
+    expect(screen.getAllByText('feature/x-fix')).toHaveLength(1);
+
+    await i18n.changeLanguage('zh');
+    rerender(<SessionHead session={session({ state: 'completed' })} ownBranch="feature/x-fix" />);
+    expect(screen.getByText('它的工作')).toBeInTheDocument();
+    expect(screen.getByText('feature/x-fix')).toBeInTheDocument();
+    await i18n.changeLanguage('en');
+  });
+
+  /**
    * UXFIX4b: the branch its tree left was cut to one line with nothing to read the rest by. It is shown whole as a branch
    * row's name is (UXFIX4), wrapping after its separators on the line's own row, which wraps already.
    */

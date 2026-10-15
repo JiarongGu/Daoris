@@ -1302,6 +1302,8 @@ export function WorkFrame({
   // What its own tree offers to land, whatever its ending (LAND4), as the driver's reader said it, and where accepting would
   // put it: the review's own plan, asked only where there is something to land, under the review's key.
   const lands = attended && here && grouping?.lands ? grouping.lands : null;
+  // The branch a moved tree is on (TREEFOLLOWWEB2): the head names it where the clean-up lists no `daoris/<folder>` row for it.
+  const ownBranch = attended && here ? grouping?.work?.branch ?? null : null;
   // LANDNAME1b: the branch name typed in the head's land ask, so its plan is asked again with it and a refusal shows first.
   const [landName, setLandName] = useState('');
   const landing = useLanding(lands ? attended!.id : null, landName);
@@ -1868,6 +1870,7 @@ export function WorkFrame({
             onSession={(session) => attend(session.id)}
             onQuest={onOpenQuest ? (row) => onOpenQuest(row.id) : undefined}
             branch={branch}
+            ownBranch={ownBranch}
             // Only this machine's own record: the clean-up's list is this machine's, and so is the branch it names.
             // Told back to its ask (UXFIX2): a branch kept, or a refusal, is said inside it.
             onDiscardBranch={branch && here

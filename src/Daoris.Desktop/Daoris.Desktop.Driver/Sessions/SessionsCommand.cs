@@ -340,6 +340,7 @@ public static class SessionsCommand
                     writer.WriteStartObject("work");
                     if (work.Commits is { } commits) writer.WriteNumber("commits", commits); else writer.WriteNull("commits");
                     if (work.Uncommitted is { } uncommitted) writer.WriteNumber("uncommitted", uncommitted); else writer.WriteNull("uncommitted");
+                    writer.WriteString("branch", work.Branch);
                     writer.WriteEndObject();
                 }
                 else
