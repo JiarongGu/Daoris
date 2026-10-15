@@ -23,6 +23,8 @@ import { useReviewActs } from './reviewActs';
 import type { Session } from '../data/api';
 import type { HeadLink, HeadOpinion, HeadReview, WorkAsk } from './SessionHead';
 import { type WaitProps, WaitStrip } from './WaitStrip';
+import { type AnchorWait, anchorOf, waitEvents } from './anchors';
+import { waitsOf } from './waits';
 import { sayDiscard } from '../settings/Sweep';
 import { doorOf, toolOf } from '../agents/tools';
 import { agentOf, machineScope, workspaceScope } from '../settings/accounts';
@@ -41,7 +43,7 @@ import { TerminalView } from './TerminalView';
 import { failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../design/ui';
 import type { FrameIntent } from '../menus/commands';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
-import { SessionConversation } from './SessionConversation';
+import { type AnchorState, SessionConversation } from './SessionConversation';
 import type { Usage } from './conversation';
 import { isHelper, isIntake, isOpinion, linkedSessions, ownTree, sessionOrigin, sessionTitle } from './identity';
 import { doorLabel } from '../agents/tools';
@@ -1329,6 +1331,14 @@ export function WorkFrame({
     onDiscardTree: discardHeld,
     workBusy: land.isPending || discardTree.isPending,
   } : null;
+  // WAITFOOT1c (D168 point 4): the waits that stand where the strip draws them, and the events that raised them, which the
+  // conversation finds and tells; the way to each is handed to the head and the strip alike, and a raising block's *To the wait*
+  // leads to its line at the foot.
+  const answerBelow = answering || (talking && box.kind === 'chat');
+  const standing = attended && here && waits ? waitsOf({ ...waits, answerBelow }) : [];
+  const [anchored, setAnchored] = useState<(AnchorState & { session: string }) | null>(null);
+  const toEvent = attended && anchored?.session === attended.id ? waitEvents(anchored.anchored, anchored.show) : undefined;
+  const [toWait, setToWait] = useState<{ session: string; wait: AnchorWait; n: number } | null>(null);
   // Where the work's ask (*Accept…*, *Discard branch…*) is open: in the head or at the foot, never both (D168 point 3).
   const [workAsk, setWorkAsk] = useState<{ session: string; at: 'head' | 'foot' } | null>(null);
   const workAskAt = (at: 'head' | 'foot'): WorkAsk | undefined => (attended ? {
@@ -1687,6 +1697,7 @@ export function WorkFrame({
             // What waits on the person, and every press on it: the strip at the foot is handed the same (D168 point 3).
             {...waits}
             workAsk={workAskAt('head')}
+            toEvent={toEvent}
             quest={quest}
             opening={attended ? openings[attended.id] : null}
             taking={attended ? taking[attended.id] : undefined}
@@ -1762,6 +1773,13 @@ export function WorkFrame({
                   scroller={centre}
                   onUsage={onUsage}
                   onWaiting={onWaiting}
+                  // Each wait's raising event, and the way between them (WAITFOOT1c, D168 point 4).
+                  waits={waits ? { waits: standing, goAheads: waits.goAheads, opinion: opinionAsked(waits.landing)?.opinion ?? null } : undefined}
+                  onAnchors={(session, state) => setAnchored({ session, ...state })}
+                  onToWait={(wait) => {
+                    const anchor = anchorOf(wait);
+                    if (anchor) setToWait((was) => ({ session: attended.id, wait: anchor, n: (was?.n ?? 0) + 1 }));
+                  }}
                   // Where the person's words went, a door to that session; and words that cannot go on here, one press
                   // that starts a conversation with them, where a chat can start here (MSG1f, D137 §3.1, §2.2).
                   onSession={(id) => attend(id)}
@@ -1794,9 +1812,11 @@ export function WorkFrame({
             key={attended.id}
             {...waits}
             // The box below takes the park's answer: a driven park's answer box, or a parked chat's composer.
-            answerBelow={answering || (talking && box.kind === 'chat')}
+            answerBelow={answerBelow}
             workAsk={workAskAt('foot')}
             onTop={toTop}
+            toEvent={toEvent}
+            seek={toWait?.session === attended.id ? toWait : null}
           />
         )}
 

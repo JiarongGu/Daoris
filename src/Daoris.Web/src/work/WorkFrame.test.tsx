@@ -4738,4 +4738,53 @@ describe('a park\'s go-aheads', () => {
     // The focus goes with the person, to the record's head, where every wait stands.
     expect(document.activeElement).toHaveAttribute('data-record-head');
   });
+
+  /**
+   * WAITFOOT1c (D168 point 4): each wait leads to the event in the conversation that raised it, from the head and from the strip,
+   * and the event leads back to its wait at the foot. A go-ahead's call is joined on its input, never its title; one whose call
+   * the conversation does not hold has no such press.
+   */
+  it('goes between each wait, the event that raised it and back', async () => {
+    const asked = '2026-09-02T00:30:00Z';
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_GO_AHEAD') return { message: 'Go-ahead answered.', sent: true, reaches: 'resume' };
+      if (type === 'SESSION_HISTORY') {
+        return {
+          session: 'g0ah3ad0', earlier: false, latest: 5, events: [
+            { seq: 1, at: asked, kind: 'user', origin: 'target', text: 'Your target is the quest…' },
+            { seq: 2, at: asked, kind: 'message', id: 'm1', text: 'The tile needs its target set.' },
+            {
+              seq: 3, at: asked, kind: 'tool', id: 'g1', title: 'ask for a go-ahead', status: 'completed',
+              input: JSON.stringify({ kind: 'write', on: 'production', act: 'dashboard configuration', why: 'The tile reads its target from it.' }),
+            },
+            { seq: 4, at: asked, kind: 'message', id: 'm2', text: 'I need go-aheads 1 and 2 before I can finish.' },
+            { seq: 5, at: asked, kind: 'turn', stopReason: 'end_turn' },
+          ],
+        };
+      }
+      return DRIVER_STATE;
+    });
+    show('g0ah3ad0');
+    const strip = await screen.findByRole('region', { name: '3 waiting on you' });
+    const call = await screen.findByText('ask for a go-ahead');
+
+    // From the strip: go-ahead 1's call, outlined; go-ahead 2 asked by no call this conversation holds has no such press.
+    const [first, second] = within(strip).getAllByRole('listitem');
+    expect(within(second!).queryByRole('button', { name: 'In the conversation' })).toBeNull();
+    await userEvent.click(within(first!).getByRole('button', { name: 'In the conversation' }));
+    await waitFor(() => expect(call.closest('[data-block]')!.className).toContain('outline-accent'));
+
+    // From the head: the park's card, to its last words.
+    const card = screen.getByText('This one is waiting on you').closest('section')!;
+    await userEvent.click(within(card).getByRole('button', { name: 'In the conversation' }));
+    const words = screen.getAllByText('I need go-aheads 1 and 2 before I can finish.')
+      .map((said) => said.closest<HTMLElement>('[data-block]')).find(Boolean)!;
+    await waitFor(() => expect(words.className).toContain('outline-accent'));
+
+    // And back: the call says what waits from it, and *To the wait* leads to its line at the foot.
+    const block = call.closest<HTMLElement>('[data-block]')!;
+    expect(block).toHaveTextContent('Waiting on you from here: go-ahead #1');
+    await userEvent.click(within(block).getByRole('button', { name: 'To the wait' }));
+    await waitFor(() => expect(within(strip).getAllByRole('listitem')[0]).toHaveFocus());
+  });
 });
