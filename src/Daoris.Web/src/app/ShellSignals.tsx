@@ -15,8 +15,13 @@ type Tick = { events?: string[]; considered?: Consideration[]; untrusted?: Trust
  * browser keeps its polling and never mounts a transport. Renders nothing; costs nothing where no
  * host answers.
  */
-export function ShellSignals({ notify, onAttend }: {
+export function ShellSignals({ notify, onAttend, attended }: {
   notify: Notify;
+  /**
+   * The session this window shows on its Sessions view now (NOTIFY1c), so an answer from that very conversation is not toasted
+   * over the page that already shows it. Absent or null: no session is open here, and every toast is said.
+   */
+  attended?: string | null;
   /**
    * A session the shell is asking the page to attend (SURF5b) — the person clicked an OS
    * notification. Absent where nothing can act on it, which is every window but the application's.
@@ -114,13 +119,19 @@ export function ShellSignals({ notify, onAttend }: {
    * writes (D24): it is composed once in `AttentionWatch` so a toast here and a line on a headless
    * machine cannot drift.
    */
-  useShenoraEvent<{ headline?: string; detail?: string; kind?: string }>(
+  useShenoraEvent<{ headline?: string; detail?: string; kind?: string; session?: string }>(
     'DAORIS', 'SESSION_ATTENTION', (item) => {
       if (!item?.headline) return;
-      notify(
-        item.detail ? `${item.headline}: ${item.detail}` : item.headline,
-        // A park is the one that is WAITING on somebody; an ending, or an answer, is news.
-        item.kind === 'Parked' || item.kind === 'QuestParked' ? 'error' : 'ok');
+      // NOTIFY1c: a conversation's answer to the one the person is reading, in a window in front, is already on their page,
+      // so a toast over it is noise. Only that kind: a park or an ending of the attended session still interrupts.
+      const reading = item.kind === 'Answered' && attended != null && item.session === attended
+        && typeof document !== 'undefined' && document.visibilityState === 'visible';
+      if (!reading) {
+        notify(
+          item.detail ? `${item.headline}: ${item.detail}` : item.headline,
+          // A park is the one that is WAITING on somebody; an ending, or an answer, is news.
+          item.kind === 'Parked' || item.kind === 'QuestParked' ? 'error' : 'ok');
+      }
       void client.invalidateQueries({ queryKey: keys.allSessions });
     });
 
