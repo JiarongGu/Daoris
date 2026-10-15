@@ -38,7 +38,8 @@ public sealed class PluginRecordWiringTests : DriverModuleBridge
             })
             .ToList();
 
-        Assert.Equal(3, built.Count(call => call.Kind == "LandingPlugins"));
+        // The trees domain's two, Ask Daoris's, and an entry's or an ask's Accept (ACCEPTALL1).
+        Assert.Equal(4, built.Count(call => call.Kind == "LandingPlugins"));
         Assert.Contains(built, call => call is { Kind: "HookSet", File: "DriverLoop.cs" });
         Assert.All(built, call => Assert.True(
             Regex.IsMatch(call.Call, @"\blog:\s") && Regex.IsMatch(call.Call, @"\bhealth:\s"),
