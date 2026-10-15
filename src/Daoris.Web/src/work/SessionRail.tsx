@@ -180,6 +180,15 @@ export function SessionRail({
     if (linked.continues) continues[session.id] = titleOf(linked.continues);
     if (linked.helps) helps[session.id] = titleOf(linked.helps);
   }
+  // The work each helper and reviewer serves (MIXAGENT3a-ii, closing XAGENT1g4d): the list draws it under that work's row where
+  // that row is drawn. The same two joins: a helper's own `serves`, and the reviewer's opinion's `working`.
+  const serving: Record<string, string> = {};
+  for (const opinion of opinions.data ?? []) {
+    if (byId.has(opinion.session)) serving[opinion.session] = opinion.working;
+  }
+  for (const session of sessions.data ?? []) {
+    if (session.serves) serving[session.id] = session.serves;
+  }
 
   // What a search may find: everything the list holds, or only what is running where the rail is live.
   const pool = live ? (sessions.data ?? []).filter((session) => SESSION_ACTIVE.has(session.state)) : (sessions.data ?? []);
@@ -405,6 +414,7 @@ export function SessionRail({
           askNames={askNames}
           unread={unreads}
           askAccept={askAccept}
+          serving={serving}
           {...acts}
         />
       )}

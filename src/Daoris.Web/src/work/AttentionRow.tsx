@@ -19,7 +19,7 @@ import { TrustAsk } from './TrustAsk';
 export type AttentionKind =
   | 'parked' | 'parked-quest' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
-  | 'review' | 'opinion';
+  | 'review' | 'opinion' | 'helper';
 
 /**
  * One thing that is waiting on a person, as Overview's band shows it.
@@ -64,7 +64,10 @@ export type Attention = {
   setUp?: SetUpRef;
   /** A `set-up` row's set-up is local, so Daoris serves it and *Show it again* can. */
   local?: boolean;
-  /** The session that said a `set-up` row's set-up, which a *not yet*'s words go to; null for the person's own. */
+  /**
+   * The session that said a `set-up` row's set-up, which a *not yet*'s words go to; null for the person's own. For a `helper`
+   * row, the session that asked, whose ask its yes and no answer and whose page its door opens (MIXAGENT2c).
+   */
   session?: string | null;
   /** An `opinion` row's work and its gate (XAGENT1g): what its presses act on, and whether a press of the person's is coming. */
   opinion?: OpinionWait;
@@ -137,6 +140,8 @@ export type AttentionActs = {
   opinionAgain?: (item: Attention) => void;
   /** *Go on anyway…* at a second opinion's gate, with the person's words where they gave any (XAGENT1g). */
   opinionAnyway?: (item: Attention, words: string | undefined, answered: Answered) => void;
+  /** An agent's ask for a helper said yes or no to (MIXAGENT2c, D163 point 3): its session's page's own presses. */
+  helper?: (item: Attention, yes: boolean) => void;
 };
 
 /** Which handler each act needs. */
@@ -158,6 +163,8 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'show-again': 'showAgain',
   'opinion-again': 'opinionAgain',
   'opinion-anyway': 'opinionAnyway',
+  'let-ask': 'helper',
+  'not-now': 'helper',
 };
 
 /** The kinds that wait in a circle rather than in a repository. */
@@ -249,6 +256,7 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
     else if (act === 'reviewed') acts.reviewed?.(item);
     else if (act === 'show-again') acts.showAgain?.(item);
     else if (act === 'opinion-again') acts.opinionAgain?.(item);
+    else if (act === 'let-ask' || act === 'not-now') acts.helper?.(item, act === 'let-ask');
   };
   const label = (act: AttentionActId, account?: string): string => {
     switch (act) {
@@ -276,6 +284,8 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       // The second opinion's own words, as its gate says them (XAGENT1g).
       case 'opinion-again': return t(item.opinion?.opinion.state === 'unavailable' ? 'opinion.act.tryAgain' : 'opinion.act.askAgain');
       case 'opinion-anyway': return t('opinion.act.anyway');
+      case 'let-ask': return t('work.helper.approve');
+      case 'not-now': return t('work.helper.decline');
     }
   };
 

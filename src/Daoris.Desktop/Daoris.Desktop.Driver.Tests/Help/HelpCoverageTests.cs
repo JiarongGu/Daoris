@@ -224,14 +224,25 @@ public sealed partial class HelpCoverageTests
         + "`daoris-driver sessions hand-over` and the page's *Go on with another agent…* (its head's ⋯, which asks under the head).");
 
     /// <summary>
-    /// MIXAGENT2a-ii's <c>daoris-driver sessions helper</c> (D163 point 2), a verb of the headless host: exempt, since it is the
-    /// person's own ask of another agent, which spends that agent's allowance on a question about their work; whether an agent
-    /// may ask for one is the person's rule (<c>helpers</c>), set elsewhere. The page's press is MIXAGENT2b's row.
+    /// MIXAGENT2a-ii's <c>daoris-driver sessions helper</c> (D163 point 2), a verb of the headless host, and MIXAGENT2b's page press
+    /// (<c>useAskHelper</c>, *Ask another agent…*): exempt, since it is the person's own ask of another agent, which spends that
+    /// agent's allowance on a question about their work; whether an agent may ask for one is the person's rule (<c>helpers</c>),
+    /// set elsewhere.
     /// </summary>
     private static readonly Exempt HelperAskDoor = new(
         "asking another agent to read a session's work and answer a question spends that agent's allowance on the person's own "
         + "question (D163), which stays the person's to ask (D133 §1), so Ask Daoris proposes none; it can name "
-        + "`daoris-driver sessions helper` and the screen's press once the page has it.");
+        + "`daoris-driver sessions helper` and the page's *Ask another agent…* (its head's ⋯, which asks under the head).");
+
+    /// <summary>
+    /// MIXAGENT2b's *Let it ask* (<c>useApproveHelper</c>) and HELPERNO1's *Not now* (<c>useDeclineHelper</c>): the person's yes
+    /// or no to an agent's ask for a helper that waits on it under the <c>helpers</c> rule's <c>ask</c> (D163 point 3). Exempt,
+    /// since it is their word on that one ask, given where it waits; what an agent's ask does at all is the rule, a door already.
+    /// </summary>
+    private static readonly Exempt HelperAnswerDoor = new(
+        "a yes or a no to an agent's ask for a helper is the person's word on that one ask, which spends another agent's "
+        + "allowance or does not (D163 point 3), given where it waits, on the session's page or What needs you; what an agent's ask "
+        + "does at all is the person's `helpers` rule, the `setting` kind's `helpers` door, so Ask Daoris proposes no single answer.");
 
     /// <summary>
     /// TRACE1's <c>daoris-driver trace</c> (D143), a verb of the headless host: exempt, since it reads the records back to an ask
@@ -534,6 +545,10 @@ public sealed partial class HelpCoverageTests
         ("work", "useGoOnNew", null, GoOnNewDoor),
         ("work", "useStartFrom", null, StartFromDoor),
         ("work", "useHandOver", null, HandOverDoor),
+        // MIXAGENT2b (D163 points 2 and 3): *Ask another agent…* and the person's yes to an agent's ask; HELPERNO1: their no.
+        ("work", "useAskHelper", null, HelperAskDoor),
+        ("work", "useApproveHelper", null, HelperAnswerDoor),
+        ("work", "useDeclineHelper", null, HelperAnswerDoor),
         // SESSONE2c (D167 points 6 to 8): the ask's channel, posted to from the ask's page and a session's panel, and its mark.
         ("asks", "usePostChannel", null, ChannelPostDoor),
         ("work", "usePostChannel", null, ChannelPostDoor),

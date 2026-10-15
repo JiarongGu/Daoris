@@ -10,6 +10,18 @@ with the version and date at release.
   *Apply* publishes that one quest to the repository's own session, as `daoris-driver setup <repository>` does. The same press is
   on the repository's page: *Set up for agents* (为智能体配置) under its adoption steps shows the plan first, every reason it
   cannot go yet with what fixes it, then *Set it up*. Daoris still writes nothing into the repository.
+- The review says before the press what *Accept* will do and why it would be refused: it lands the session's own branch as
+  it stands, adds to a branch that already stands, or names the refusal (a branch somebody else made, one moved since or
+  checked out elsewhere) and offers no *Accept* then, as the line's and the ask's *Accept* do for each part; a part's own
+  *Accept* waits while its line lands it. Every door that lands one session (the review, `trees land`, the landing at done)
+  puts a line's part on the line's branch. *Bring up to date* replays only what the line lacks and says what it leaves
+  out, and a session or conversation going on in an older tree starts from the line, told so. A chain step that merged the
+  line reviews only its own changes, and a session's *Details* say how its work is committed and lands. Helpers sit under
+  the session they serve, *Ask another agent…* asks one from a session's page, and an agent's ask for a helper waits on you
+  where every wait does, with *Let it ask* and *Not now*.
+- An agent's ask for a helper that waits on your yes now offers *Not now* (暂不) beside *Let it ask*: no helper is started
+  for it, and its session's timeline says you said no. It is one of the session's waits too, at the foot of its conversation
+  as at its head, and *What needs you* lists it with the same two presses and a door to the session that asked.
 - A part's own *Accept* now lands on its line of work's one branch, as the line's *Accept* does; a part you leave out of
   the line's *Accept* says so in its review, with *Discard tree* first; and under a squash rule a line's later parts are
   squashed onto its branch, fetching the line once. While work lands, its *Accept* says *Checking…* (检查中…) at the gate,

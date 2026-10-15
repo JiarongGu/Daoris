@@ -3195,6 +3195,45 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
+   * MIXAGENT2b (D163 points 2 and 3; the mixed-agents design §3, §5): the session's asks of helpers stand in its head under
+   * *Helpers*, an agent's that waits on the person with *Let it ask*, which sends `SESSION_HELPER_APPROVE`; *Ask another agent…*
+   * folds into the head's ⋯ and asks under the head, its *Ask* sending `SESSION_HELPER_ASK` with the question, the agent left to
+   * Daoris, and the ask closes once it is on file.
+   */
+  it('lists a session’s asks of helpers with the person’s yes, and asks another agent from the head', async () => {
+    SESSIONS = [{ ...CHAT, state: 'completed' }];
+    const helpers = [{
+      id: 'a1', question: 'Is the cap right?', agent: null, askedBy: 'agent', at: '2026-10-16T09:00:00Z', state: 'waiting', code: null,
+      helper: null, startedOn: null,
+    }];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return TWO_AGENTS;
+      if (type === 'SESSION_HELPERS') return { helpers };
+      if (type === 'SESSION_HELPER_APPROVE') return { approved: true, why: null, message: 'yes' };
+      if (type === 'SESSION_HELPER_ASK') return { asked: 'a2', why: null, message: 'asked' };
+      return DRIVER_STATE;
+    });
+    show('c0ffee11');
+
+    const asks = await screen.findByRole('region', { name: 'Helpers' });
+    expect(within(asks).getByText('The agent asked · waits for your yes')).toBeInTheDocument();
+    const user = userEvent.setup();
+    await user.click(within(asks).getByRole('button', { name: 'Let it ask' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HELPER_APPROVE', { payload: { session: 'c0ffee11', ask: 'a1' } });
+
+    const acts = within(screen.getByRole('group', { name: 'Session actions' }));
+    acts.getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(await screen.findByRole('menuitem', { name: 'Ask another agent…' }));
+    const ask = await screen.findByRole('group', { name: 'ask another agent' });
+    await user.type(within(ask).getByRole('textbox', { name: 'Your question' }), 'Which test covers the loader?');
+    await user.click(within(ask).getByRole('button', { name: 'Ask' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HELPER_ASK', { payload: { id: 'c0ffee11', question: 'Which test covers the loader?' } });
+    await waitFor(() => expect(screen.queryByRole('group', { name: 'ask another agent' })).toBeNull());
+  });
+
+  /**
    * MIXAGENT1b-ii (D163 point 3): when the conversation's own account is near its limit by its scope's near, a line under the head
    * offers *Go on with codex (team)* and *Choose…*; the press asks `SESSION_HAND_OVER` with the reason `near` as Daoris's, *Choose…*
    * opens the ask with that choice made, and *Not now* puts it down for the run. Nothing is taken without the press.

@@ -22,6 +22,7 @@ import { isIntake, sessionOrigin, sessionTitle } from './identity';
 import type { SayRebase } from './LandingSync';
 import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from './Lands';
 import { Note } from './Note';
+import { HelperAsks, type HelperWaits, openAsks, waitsOnWord } from './HelperAsks';
 import { hasNote, noteBlocks, noteLines } from './noteLines';
 import { processCommitsSays, processLandingSays, type SessionProcess } from './process';
 import { ProposedRules, type RuleAsk, type RuleWaits } from './ProposedRules';
@@ -98,8 +99,13 @@ export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
-  continues, helps, onOpenSession, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek,
+  continues, helps, onOpenSession, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers,
 }: {
+  /**
+   * The helpers it asked for (MIXAGENT2b, D163), the frame's: its asks as the driver's look left them, the agents' names, the
+   * person's yes and a door to each helper. Absent, a browser or a teammate's record, none is drawn.
+   */
+  helpers?: HelperWaits | null;
   /**
    * The wait a raising block's *To the wait* leads to while the head's waits are on screen (WAITFOOT2b, D168's WAITFOOT2 note),
    * counted so the same one pressed again is shown again: its line takes the focus, outlined, as the strip's does.
@@ -331,6 +337,20 @@ export function SessionHead({
             marked={sought?.startsWith('rule:') ? sought.slice('rule:'.length) : undefined}
             ask={ruleAsk}
           />
+        </section>
+      )}
+
+      {/* The helpers it asked for that are still on their way (MIXAGENT2b, D163): an agent's ask that waits on the person's yes
+          says so here, with the yes and the no. A settled one is said where it settled, in the conversation and the timeline.
+          Marked a wait's section while one waits on the person's word (MIXAGENT2c), so the strip stands aside for it too. */}
+      {helpers && openAsks(helpers.asks).length > 0 && (
+        <section
+          aria-labelledby={`helpers-${session.id}`}
+          data-wait-section={helpers.onApprove && helpers.asks.some(waitsOnWord) ? '' : undefined}
+          className="grid gap-1"
+        >
+          <h3 id={`helpers-${session.id}`} className="m-0 text-small font-semibold">{t('work.helper.heading')}</h3>
+          <HelperAsks {...helpers} asks={openAsks(helpers.asks)} />
         </section>
       )}
 

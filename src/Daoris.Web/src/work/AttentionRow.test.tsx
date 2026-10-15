@@ -110,7 +110,7 @@ const everyAct = (): Required<AttentionActs> => ({
   publish: vi.fn(), retry: vi.fn(), answer: vi.fn(), trust: vi.fn(),
   acceptDeparture: vi.fn(), acceptRule: vi.fn(), declineRule: vi.fn(),
   signIn: vi.fn(), read: vi.fn(), letRun: vi.fn(), reviewed: vi.fn(), notYet: vi.fn(), showAgain: vi.fn(),
-  opinionAgain: vi.fn(), opinionAnyway: vi.fn(),
+  opinionAgain: vi.fn(), opinionAnyway: vi.fn(), helper: vi.fn(),
 });
 
 describe('a row in what needs you', () => {
@@ -404,6 +404,23 @@ describe('settling one where it stands', () => {
     expect(acts.acceptRule).not.toHaveBeenCalled();
     await userEvent.click(screen.getByRole('button', { name: 'Allow' }));
     expect(acts.acceptRule).toHaveBeenCalledWith(RULE, answeredByAct);
+  });
+
+  /** MIXAGENT2c: an agent's ask for a helper is said yes or no to in one press each, as its session's page does. */
+  it('lets an agent’s ask for a helper go, or says not now, in one press each', async () => {
+    const HELPER: Attention = {
+      id: 'a1', kind: 'helper', title: 'Which test covers the loader?', where: 'engine', since: '2026-09-21T11:00:00Z',
+      detail: 'Fix the loader asked for another agent’s help. Nothing is asked until you let it.', session: 'c0nv0001',
+    };
+    const acts = everyAct();
+    render(<AttentionRow item={HELPER} acts={acts} onOpen={vi.fn()} />);
+
+    expect(screen.getByText('an agent asks for a helper')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Let it ask' }));
+    expect(acts.helper).toHaveBeenLastCalledWith(HELPER, true);
+    await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
+    expect(acts.helper).toHaveBeenLastCalledWith(HELPER, false);
+    expect(screen.getByRole('button', { name: /Open/ })).toBeInTheDocument();
   });
 
   /** A press already on its way is not offered twice. */

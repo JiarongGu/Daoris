@@ -258,6 +258,53 @@ export function sessionsByRepository(
   };
 }
 
+/** A row the list draws as its own, with the helpers and reviewers drawn under it (MIXAGENT3a-ii); `id` is its session's. */
+export type NestedRow = { id: string; session: Session; under: Session[] };
+
+/**
+ * Each helper and reviewer drawn under the row of the work it serves (MIXAGENT3a-ii, the mixed-agents design §4; closing
+ * XAGENT1g4d): `groups` are the rows an arrangement draws, in its order, and `serving` names, for each helper and reviewer the
+ * rail joined, the session whose work it serves (a helper's `serves`, a reviewer's opinion's `working`).
+ *
+ * @remarks
+ * - **Moved, never copied.** A row drawn under another leaves its own group, so no work has two rows, and a group it leaves
+ *   empty is the caller's to leave out. Each group keeps its own rows in its order; what is drawn under a row keeps the order
+ *   the list drew it in.
+ * - **Its own place where its parent is not drawn**: a session the list does not hold, or does not draw (archived and hidden),
+ *   and where the person must act on it (`keepOwn`), so nothing that waits on them is folded under something else.
+ * - **The row that stands for it** (`standsFor`): one row per line of work (D167), so a helper of a part that does not lead is
+ *   drawn under its entry's row. A helper and a reviewer keep entries of their own (the co-working design §1.2).
+ * - **One level**, as a helper cannot ask for a helper (D163 point 2): a row drawn under another holds none, and whatever
+ *   names it keeps its own place.
+ */
+export function nestServing(
+  groups: readonly (readonly Session[])[],
+  serving: Readonly<Record<string, string>>,
+  { standsFor = (id) => id, keepOwn = () => false }: { standsFor?: (id: string) => string; keepOwn?: (id: string) => boolean } = {},
+): NestedRow[][] {
+  const drawn = groups.flat();
+  const ids = new Set(drawn.map((row) => row.id));
+  const parentOf = new Map<string, string>();
+  for (const row of drawn) {
+    const served = serving[row.id];
+    if (!served || keepOwn(row.id)) continue;
+    const parent = standsFor(served);
+    if (parent !== row.id && ids.has(parent)) parentOf.set(row.id, parent);
+  }
+  for (const [child, parent] of [...parentOf]) {
+    if (parentOf.has(parent)) parentOf.delete(child);
+  }
+
+  const under = new Map<string, Session[]>();
+  for (const row of drawn) {
+    const parent = parentOf.get(row.id);
+    if (parent) under.set(parent, [...(under.get(parent) ?? []), row]);
+  }
+  return groups.map((group) => group
+    .filter((row) => !parentOf.has(row.id))
+    .map((row) => ({ id: row.id, session: row, under: under.get(row.id) ?? [] })));
+}
+
 /** How many ended sessions a group lists before its *Show N more* (D126 §4.4). */
 export const ENDED_SHOWN = 12;
 

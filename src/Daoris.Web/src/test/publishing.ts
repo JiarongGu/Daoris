@@ -44,6 +44,11 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SESSION_INPUT: { scopes: ['sessions', 'help'], session: 'id' },
   SESSION_DELETE: { scopes: ['sessions', 'help'], session: 'id' },
   END_CHAT: { scopes: ['sessions'], session: 'id' },
+  // A helper asked of a session, and the person's yes to an agent's ask (MIXAGENT2b): files the loop's next look takes; and
+  // their no (HELPERNO1), the ask refused and its note written at once.
+  SESSION_HELPER_ASK: { scopes: ['sessions', 'driver'], session: 'id' },
+  SESSION_HELPER_APPROVE: { scopes: ['sessions', 'driver'], session: 'session' },
+  SESSION_HELPER_DECLINE: { scopes: ['sessions', 'driver'], session: 'session' },
   // The plugins' presses (STATEHUB1d), which the Plugins view's tests publish.
   PLUGIN_ACTION: { scopes: ['plugins', 'harnesses'] },
   PLUGIN_UPDATE: { scopes: ['plugins', 'harnesses'] },
