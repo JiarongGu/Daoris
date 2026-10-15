@@ -4,9 +4,11 @@ import { HELP_REPOSITORY, type Quest, type Session } from '../data/api';
 import { useAsks, useOpinions, useQuests, useRegistry, useSessions } from '../data/queries';
 import { searchable } from '../lib/searchable';
 import {
-  type SessionHit, useChannelUnreads, useDriver, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionSearch, useSessionWhere,
+  type SessionHit, useAskLanding, useChannelUnreads, useDriver, useLandAsk, useSessionEntries, useSessionGroups, useSessionOpenings,
+  useSessionSearch, useSessionWhere,
 } from '../bridge/shell';
-import { askOfEntry, entryFacts, listedSessions, nameOfEntry, type SessionEntry } from './entries';
+import { askOfEntry, entryFacts, isIntakeEntry, listedSessions, nameOfEntry, type SessionEntry } from './entries';
+import { EntryAccept } from './EntryAccept';
 import { sentence } from '../locales/format';
 import { Button, Icon, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../design/ui';
 import { cn } from '../lib/cn';
@@ -202,6 +204,48 @@ export function SessionRail({
   }));
   const placed = new Map((groupings ?? []).map((row) => [row.session, row]));
 
+  // ACCEPTALL1 (D167's 2026-10-15 amendment point 4): an ask's one Accept, under its heading in the list by ask, where its lines of
+  // work hold more than one part with work to land. Its plan reads git for every part, so it is asked only once its ask is open.
+  const [askAsking, setAskAsking] = useState<string | null>(null);
+  const askPlan = useAskLanding(askAsking, askAsking !== null);
+  const landAsk = useLandAsk();
+  const askEntries = (ask: string) => (entries ?? []).filter((entry) => askOfEntry(entry) === ask && !isIntakeEntry(entry));
+  const askOffered = (ask: string) => askEntries(ask).flatMap((entry) => entry.parts).filter((part) => placed.get(part.session)?.lands).length;
+  const askAccept = drawn === 'ask' && !live ? (ask: string) => {
+    const offered = askOffered(ask);
+    if (offered < 2) return null;
+    const open = askAsking === ask;
+    return (
+      <EntryAccept
+        scope="ask"
+        offered={offered}
+        open={open}
+        onOpen={(opened) => setAskAsking(opened ? ask : null)}
+        plans={open ? askPlan.data?.entries ?? null : null}
+        reading={open && askPlan.isFetching && !askPlan.data}
+        busy={landAsk.isPending}
+        // A part is named by its number in its own line of work's strip.
+        numberOf={(session) => {
+          const parts = askEntries(ask).find((entry) => entry.parts.some((part) => part.session === session))?.parts ?? [];
+          return parts.findIndex((part) => part.session === session) + 1 || null;
+        }}
+        // Told back to its ask: every repository landed, or each one's sentence, a refusal holding only its own (point 4).
+        onLand={(leaveOut, answered) => landAsk.mutate({ ask, parts: offered, leaveOut }, {
+          onSuccess: (result) => {
+            const said = result.repositories.map((each) => `${each.repository}: ${each.message}`).join('\n');
+            if (!result.done) {
+              answered.refused(said || t('work.accept.nothing'));
+              return;
+            }
+            notify(said);
+            answered.done();
+          },
+          onError: (error) => answered.refused(sentence(error)),
+        })}
+      />
+    );
+  } : undefined;
+
   // What decides each row's acts: its record, where the reader placed it, its checkout, where its work is (D126 §3.1).
   const factsFor = (session: Session) => ({
     session,
@@ -360,6 +404,7 @@ export function SessionRail({
           entries={entries}
           askNames={askNames}
           unread={unreads}
+          askAccept={askAccept}
           {...acts}
         />
       )}

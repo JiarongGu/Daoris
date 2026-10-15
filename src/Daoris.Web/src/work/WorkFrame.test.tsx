@@ -4000,6 +4000,56 @@ describe('acting on what a session landed', () => {
   });
 
   /**
+   * ACCEPTALL1 (D167's 2026-10-15 amendment, the owner's *"I cannot accept for 2 sessions/quests at the same time"*): where more
+   * than one part of the attended line of work offers work to land, its page offers one Accept under the Parts strip; the plan is
+   * read only once its ask opens, and the press lands the entry.
+   */
+  it('offers one Accept for every part of a line of work that has work to land', async () => {
+    const tree = (name: string) => `C:\\somewhere\\.daoris\\trees\\default\\engine\\${name}`;
+    SESSIONS = [
+      { ...IN_A_TREE, state: 'completed', tree: tree('s-1a2b3c4') },
+      { ...IN_A_TREE, id: 's5e6f7a8', quest: 'abc124', state: 'completed', tree: tree('s-5e6f7a8'), created: '2026-09-02T02:00:00Z', updated: '2026-09-02T03:00:00Z' },
+    ];
+    const lands = (name: string) => ({ branch: `daoris/${name}`, tree: name, commits: 1, uncommitted: 0 });
+    const part = (session: string, quest: string) => ({ session, quest, shown: 'completed', group: 'review', began: 'opened', after: null, askedBy: null });
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_GROUPS') {
+        return {
+          sessions: [
+            { session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-1a2b3c4') },
+            { session: 's5e6f7a8', group: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-5e6f7a8') },
+          ],
+          entries: [{ entry: 'ask:a3/engine', origin: 'ask:a3', repository: 'engine', group: 'review', leading: 's5e6f7a8',
+            parts: [part('s1a2b3c4', 'abc123'), part('s5e6f7a8', 'abc124')] }],
+        };
+      }
+      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/a3', source: 'workspace' };
+      if (type === 'ENTRY_LANDING') {
+        return { entry: 'ask:a3/engine', repository: 'engine', form: 'branch', target: 'feature/a3',
+          parts: [{ session: 's1a2b3c4', target: 'feature/a3' }, { session: 's5e6f7a8', target: 'feature/a3' }] };
+      }
+      if (type === 'LAND_ENTRY') return { entry: 'ask:a3/engine', repository: 'engine', done: true, message: 'Landed 2 part(s) on `feature/a3`.', parts: [] };
+      if (type === 'SESSION_DIFF') return DIFF;
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+
+    show('s1a2b3c4', notify);
+    const main = within(screen.getByRole('main'));
+    const press = await main.findByRole('button', { name: 'Accept all 2 parts…' });
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'ENTRY_LANDING', expect.anything());
+
+    await userEvent.click(press);
+    const ask = screen.getByRole('group', { name: 'accept every part of this line of work' });
+    expect(await within(ask).findByText('Lands 2 parts on feature/a3, one after another, in the order they ran.')).toBeInTheDocument();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ENTRY_LANDING', { payload: { entry: 'ask:a3/engine' } });
+
+    await userEvent.click(within(ask).getByRole('button', { name: 'Accept all' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_ENTRY', { payload: { entry: 'ask:a3/engine' }, timeoutMs: expect.any(Number) });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Landed 2 part(s) on `feature/a3`.'));
+  });
+
+  /**
    * STATEHUB1c (D169 point 7, the owner's 2026-10-15 采纳): a landing pressed in the head was the head's alone, so the review
    * offered *Accept* while it ran. Under way, every view of the session says so: the review's *Accept* reads *Landing…* and
    * waits, as it would for its own press, until the landing answers.

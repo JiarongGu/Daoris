@@ -510,6 +510,11 @@ public sealed partial class HelpCoverageTests
             "a go-ahead a parked session asked is answered on the session's own page (KNOWUSE1a2, D135 §2)")),
         ("work", "useLandSessionTree", null, Own("sessions",
             "landing a session's work is the person's verdict on it (D154 point 8), pressed at its review")),
+        // ACCEPTALL1 (D167's 2026-10-15 amendment): a line of work's one Accept, and an ask's, each part's landing the person's verdict.
+        ("work", "useLandEntry", null, Own("sessions",
+            "landing a line of work's parts is the person's verdict on them (D154 point 8), pressed under its Parts strip")),
+        ("work", "useLandAsk", null, Own("sessions",
+            "landing an ask's lines of work is the person's verdict on each (D154 point 8), pressed under its heading in Sessions' list by ask")),
         ("work", "useReviewVerdict", null, Own("quests",
             "a review's verdict is the person's on the work they were shown (D154 point 8), given at the quest's review "
             + "(REVIEWENV1g)")),

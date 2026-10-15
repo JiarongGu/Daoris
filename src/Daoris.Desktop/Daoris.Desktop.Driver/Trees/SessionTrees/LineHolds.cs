@@ -80,7 +80,7 @@ internal static class LineHolds
     /// </summary>
     /// <remarks>Objects only: it writes no ref, no tree on disk and no index, so the plan stays a look.</remarks>
     internal static async Task<string?> TrialAsync(string root, string onto, IReadOnlyList<LandingCommit> kept, CancellationToken ct) =>
-        (await TrialTreeAsync(root, onto, kept, ct).ConfigureAwait(false)).Conflicts;
+        kept.Count == 0 ? null : (await TrialTreeAsync(root, onto, kept, ct).ConfigureAwait(false)).Conflicts;
 
     /// <summary>
     /// <see cref="TrialAsync"/>'s trial, with the tree it ends at where it replays cleanly: what an entry's Accept compares to read a
