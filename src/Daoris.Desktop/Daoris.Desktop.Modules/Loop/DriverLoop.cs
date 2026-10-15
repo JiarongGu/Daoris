@@ -541,20 +541,7 @@ public sealed class DriverLoop(
                 var attend = attention.Observe(report, read);
                 if (ticked.Notify)
                 {
-                    foreach (var item in attend)
-                    {
-                        await eventBus.EmitAsync("DAORIS", "SESSION_ATTENTION", new
-                        {
-                            Kind = item.Kind.ToString(),
-                            item.Session,
-                            item.Repository,
-                            item.State,
-                            item.Headline,
-                            item.Detail,
-                            // The quest a park names (SESSUX1i); null for a session's own news.
-                            item.Quest,
-                        }).ConfigureAwait(false);
-                    }
+                    foreach (var item in attend) await AttendAsync(item).ConfigureAwait(false);
                 }
 
                 // Forwarded when the tick has something to say: it did something, or what it says
@@ -662,6 +649,42 @@ public sealed class DriverLoop(
     }
 
     /// <summary>
+    /// A conversation answered the person (NOTIFY1a, <see cref="ChatRunner.Answered"/>): told as the tick's attention is, while
+    /// the machine's notifications are on. Public so the tests hold what the page and the shell are told.
+    /// </summary>
+    /// <remarks>
+    /// The switch is read from the machine's choices at each answer, since a conversation's turn ends outside any look. One that
+    /// does not read errs toward saying it, as the shell's notifier does.
+    /// </remarks>
+    public Task AnsweredAsync(AttentionEvent item)
+    {
+        bool notify;
+        try
+        {
+            notify = DriverConfig.Load(ConfigPath).Notify;
+        }
+        catch (DriverConfigUnreadableException)
+        {
+            notify = true;
+        }
+
+        return notify ? AttendAsync(item) : Task.CompletedTask;
+    }
+
+    /// <summary>What is worth interrupting the person for (SURF5b), in the one shape the shell's notifier and the page's toast read.</summary>
+    private Task AttendAsync(AttentionEvent item) => eventBus.EmitAsync("DAORIS", "SESSION_ATTENTION", new
+    {
+        Kind = item.Kind.ToString(),
+        item.Session,
+        item.Repository,
+        item.State,
+        item.Headline,
+        item.Detail,
+        // The quest a park names (SESSUX1i); null for a session's own news.
+        item.Quest,
+    });
+
+    /// <summary>
     /// The loop's service, handed to the routes, and the page told (LOOK2a): until now every route that reads the
     /// service refused *still coming up*, and from now it answers.
     /// </summary>
@@ -734,6 +757,8 @@ public sealed class DriverLoop(
                 if (reach is null) Words.Tell(session);
             };
             chat.TakenUpEnded += (session, state) => _ = Ended(eventBus, session, state);
+            // A conversation that answered the person (NOTIFY1a), judged by the runner as its turns move: told as the tick's attention.
+            chat.Answered += item => _ = AnsweredAsync(item);
             // A hand-over's or a curve move's take is over (HANDWORDS1): the words held while it was taken go to the conversation
             // that continues it, and what a word said to the old one now would do is told again.
             chat.TakeEnded += Words.OnTakeEnded;
