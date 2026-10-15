@@ -300,6 +300,11 @@ export const useLanding = (id: string | null, branch?: string | null) => {
        * making it. False or absent (an older host) is a branch the press makes.
        */
       stands?: boolean;
+      /**
+       * The target is the branch the session's own agent moved its tree onto (TREEFOLLOW1), which the press lands as it stands and
+       * makes no other (TREEFOLLOWWEB1). Absent from an older host, read as a branch the rule names.
+       */
+      own?: boolean;
       /** How many paths the tree holds uncommitted (REVIEWDIRTY1): 0 where clean, absent from an older host. */
       uncommitted?: number;
       opinion?: OpinionGate | null;

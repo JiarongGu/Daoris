@@ -47,12 +47,16 @@ const SAYS = {
     stands: 'Accepting adds this work to feature/0fda18-fix-the-gap, a branch that already stands, moving it on for you to push to grow its pull request. Nothing is merged.',
     standsPlugin: 'Accepting adds this work to feature/0fda18-fix-the-gap, a branch that already stands, moving it on; then the plugin example.lands pushes it to grow its pull request. Nothing is merged.',
     made: 'Accepting puts this work on a new branch, feature/0fda18-fix-the-gap, for you to push and open a pull request from. Nothing is merged.',
+    own: 'Accepting lands feature/x, the session\'s own branch, as it stands, for you to push and open a pull request from. No other branch is made, and nothing is merged.',
+    ownPlugin: 'Accepting lands feature/x, the session\'s own branch, as it stands; then the plugin example.lands pushes it and opens the pull request. No other branch is made, and nothing is merged.',
     newBranch: /new branch/,
   },
   zh: {
     stands: '采纳会把这份工作加到已有的分支 feature/0fda18-fix-the-gap 上，使它前移，由你推送以扩充它的拉取请求。不会合并任何内容。',
     standsPlugin: '采纳会把这份工作加到已有的分支 feature/0fda18-fix-the-gap 上，使它前移，随后由插件 example.lands 推送，扩充它的拉取请求。不会合并任何内容。',
     made: '采纳会把这份工作放到新分支 feature/0fda18-fix-the-gap 上，由你推送并从它发起拉取请求。不会合并任何内容。',
+    own: '采纳会按原样落地会话自己的分支 feature/x，由你推送并从它发起拉取请求。不会另建分支，也不会合并任何内容。',
+    ownPlugin: '采纳会按原样落地会话自己的分支 feature/x，随后由插件 example.lands 推送并发起拉取请求。不会另建分支，也不会合并任何内容。',
     newBranch: /新分支/,
   },
 } as const;
@@ -89,5 +93,23 @@ describe.each(['en', 'zh'] as const)('where the review says Accept puts the work
     pane();
 
     expect(await where(SAYS[language].made)).toBeInTheDocument();
+  });
+
+  /** TREEFOLLOWWEB1 (D164's TREEFOLLOW1 note): a tree its agent moved onto a branch of its own lands that branch as it stands. */
+  it('says the session’s own branch lands as it stands, and promises no new branch', async () => {
+    await i18n.changeLanguage(language);
+    answer({ ...PLAN, target: 'feature/x', own: true });
+    pane();
+
+    expect(await where(SAYS[language].own)).toBeInTheDocument();
+    expect(screen.queryByText(SAYS[language].newBranch)).toBeNull();
+  });
+
+  it('says so with the plugin that pushes it', async () => {
+    await i18n.changeLanguage(language);
+    answer({ ...PLAN, target: 'feature/x', own: true, plugin: 'example.lands' });
+    pane();
+
+    expect(await where(SAYS[language].ownPlugin)).toBeInTheDocument();
   });
 });

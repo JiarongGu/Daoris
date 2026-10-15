@@ -97,6 +97,20 @@ describe("the head's land ask names a branch", () => {
     expect(within(ask()).queryByRole('textbox')).toBeNull();
   });
 
+  /**
+   * TREEFOLLOWWEB1 (D164's TREEFOLLOW1 note): a tree its agent moved onto a branch of its own lands that branch as it stands, which
+   * the ask says, naming the branch the head's line names; a name entered has nowhere to go, so no field is offered.
+   */
+  it('says the session’s own branch lands as it stands, and offers no field for a name', async () => {
+    const own = { branch: 'feature/x', tree: 's-1a2b3c4', commits: 2, uncommitted: 0 };
+    render(<SessionHead session={session()} lands={own} onLand={vi.fn()} onName={vi.fn()} landing={{ ...BRANCH, target: 'feature/x', own: true }} />);
+    expect(screen.getByText('feature/x')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Accept…' }));
+    const asked = screen.getByRole('group', { name: 'accept feature/x' });
+    expect(asked).toHaveTextContent("Accepting lands feature/x, the session's own branch, as it stands");
+    expect(within(asked).queryByRole('textbox')).toBeNull();
+  });
+
   it('says its words in Chinese, and the name stays as typed', async () => {
     await i18n.changeLanguage('zh');
     render(<SessionHead session={session()} lands={LANDS} onLand={vi.fn()} onName={vi.fn()} landing={BRANCH} />);

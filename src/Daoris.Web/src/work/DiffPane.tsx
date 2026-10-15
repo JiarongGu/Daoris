@@ -367,10 +367,13 @@ export function DiffPane({
       )}
       {/* Where a press sends the work, before it is pressed (D87) — and who pushes it where a plugin
           does (D100). A shell older than the rule answers no form, and the pane then claims nothing. */}
-      {/* A branch that already stands, an entry's or a chain's, is moved on, not made (ACCEPTALL1g). */}
+      {/* A branch that already stands, an entry's or a chain's, is moved on, not made (ACCEPTALL1g); the session's own lands as it
+          stands (TREEFOLLOWWEB1). */}
       {!said && canAccept && landing.data?.form === 'branch' && landing.data.target && (
         <p className="m-0 text-small text-ink-faint">
-          <Inline text={landsOnBranch(t, { target: landing.data.target, plugin: landing.data.plugin, stands: landing.data.stands })} />
+          <Inline text={landsOnBranch(t, {
+            target: landing.data.target, plugin: landing.data.plugin, stands: landing.data.stands, own: landing.data.own,
+          })} />
         </p>
       )}
       {/* What the press leaves out because the line holds it, and what it replays (LANDSYNC1), said before it. */}
