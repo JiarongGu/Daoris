@@ -64,7 +64,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpTests.cs` | 111 | 2071 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ToolInstallTests.cs` | 41 | 726 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/ToolResourcesTests.cs` | 40 | 559 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Conversations/ChatGoOnTests.cs` | 43 | 847 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Conversations/ChatGoOnTests.cs` | 45 | 869 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 108 | 1731 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/Proposals/HelpSettingProposalsTests.cs` | 53 | 784 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/empty.md` | 43 | 311 |
