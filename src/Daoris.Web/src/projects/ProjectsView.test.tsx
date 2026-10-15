@@ -16,15 +16,21 @@ const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   eventHandlers: new Map<string, (payload: unknown) => void>(),
 }));
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
-  useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
-  useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
-    eventHandlers.set(`${module}.${type}`, handler);
-  },
-}));
+vi.mock('@shenora/react', async () => {
+  // What a press moved reaches the state hub as the shell publishes it (STATEHUB1f, D169), where a test mounts the hub.
+  const { publishing } = await import('../test/publishing');
+  const published = publishing(invoke, (type, payload) => eventHandlers.get(`DAORIS.${type}`)?.(payload));
+  return {
+    isShenoraAvailable: () => true,
+    getBridge: () => ({ isAvailable: true, invoke: published, notifyReady }),
+    useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+    useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
+      eventHandlers.set(`${module}.${type}`, handler);
+    },
+  };
+});
 
+import { useStateHub } from '../bridge/stateHub';
 import { code } from '../test/code';
 import { DRIVER_STATE, REGISTRY, REPOSITORIES, respond, serviceCalls, show, WIRING } from '../test/shellHarness';
 import {
@@ -33,6 +39,12 @@ import {
 
 const CHOSEN = 'daoris.list.projects.chosen';
 const TAB = 'daoris.list.projects.tab';
+
+/** The window's state hub, as `ShellSignals` mounts it: what a press moved is asked again here, never by the press's hook. */
+function Hub() {
+  useStateHub();
+  return null;
+}
 
 afterEach(() => window.localStorage.clear());
 
@@ -674,7 +686,7 @@ describe("a workspace's page (UX6g)", () => {
       DISCARD_SESSION_BRANCH: { repository: 'engine', branch: 'daoris/s-failed', done: true, message: 'removed the session branch `daoris/s-failed` from `engine`.' },
     });
     const notify = vi.fn();
-    show(<ProjectsView notify={notify} />);
+    show(<><Hub /><ProjectsView notify={notify} /></>);
     await chooseWorkspace('aurora');
     await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
 

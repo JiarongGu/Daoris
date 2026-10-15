@@ -201,20 +201,13 @@ export type ArchiveAnswer = {
  * Each session is judged by where the host places it as it is asked: a live one, one waiting on you and one with work to
  * review are refused, since archive never hides what needs the person. Asked of one session, the refusal is the answer;
  * asked of several, as *Archive what ended*'s second press asks, the rest are archived and each kept one comes back with
- * its code. The sessions, their groups among them, are asked again by the state hub (STATEHUB1d).
- *
- * @remarks
- * And by the hook until STATEHUB1f, without cancelling the hub's read: `SessionRail`'s tests press it with no hub mounted
- * (D169's STATEHUB1d note).
+ * its code. The sessions, their groups among them, are asked again by the state hub alone (STATEHUB1d, STATEHUB1f).
  */
-export const useArchiveSessions = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useArchiveSessions = () =>
+  useMutation({
     mutationFn: (move: { ids: readonly string[]; archived: boolean }) =>
       call<ArchiveAnswer>('SESSION_ARCHIVE', { ids: [...new Set(move.ids)], archived: move.archived }),
-    onSuccess: () => void client.invalidateQueries({ queryKey: keys.allSessions }, { cancelRefetch: false }),
   });
-};
 
 /**
  * What a delete answered (SESSUX1f, D126 §5.4): the session, what went by name, and what the disk would not let go of by

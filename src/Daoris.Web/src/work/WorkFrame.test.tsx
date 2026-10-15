@@ -35,16 +35,22 @@ const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => {
   };
 });
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
-  useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
-  useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
-    eventHandlers.set(`${module}.${type}`, handler);
-  },
-}));
+vi.mock('@shenora/react', async () => {
+  // What a press moved reaches the frame's state hub as the shell publishes it (STATEHUB1f, D169), never the press's hook.
+  const { publishing } = await import('../test/publishing');
+  const published = publishing(invoke, (type, payload) => eventHandlers.get(`DAORIS.${type}`)?.(payload));
+  return {
+    isShenoraAvailable: () => true,
+    getBridge: () => ({ isAvailable: true, invoke: published, notifyReady }),
+    useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+    useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
+      eventHandlers.set(`${module}.${type}`, handler);
+    },
+  };
+});
 
 import i18n from '../locales/i18n';
+import { useStateHub } from '../bridge/stateHub';
 import { ContextMenus } from '../menus/ContextMenu';
 import type { OpenGroup } from '../app/opener';
 import { menuActs, rightClick } from '../test/contextMenu';
@@ -144,12 +150,19 @@ function carried() {
   };
 }
 
+/** The window's state hub, as `ShellSignals` mounts it beside the frame: what a press moved is asked again here. */
+function Hub() {
+  useStateHub();
+  return null;
+}
+
 /** The frame with the application's selection held for it, as `App` holds it. */
 function show(selected: string | null = null, notify: (text: string) => void = () => {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const onSelect = vi.fn();
   const view = render(
     <QueryClientProvider client={client}>
+      <Hub />
       <Tooltip.Provider>
         <WorkFrame selected={selected} onSelect={onSelect} notify={notify} />
       </Tooltip.Provider>
@@ -172,6 +185,7 @@ function going(group: OpenGroup) {
   }
   render(
     <QueryClientProvider client={client}>
+      <Hub />
       <Tooltip.Provider>
         <Going />
       </Tooltip.Provider>
@@ -2098,6 +2112,7 @@ describe('starting and holding a conversation', () => {
 
     view.rerender(
       <QueryClientProvider client={view.client}>
+        <Hub />
         <Tooltip.Provider>
           <WorkFrame selected="decaf222" onSelect={view.onSelect} notify={() => {}} />
         </Tooltip.Provider>
@@ -2107,6 +2122,7 @@ describe('starting and holding a conversation', () => {
 
     view.rerender(
       <QueryClientProvider client={view.client}>
+        <Hub />
         <Tooltip.Provider>
           <WorkFrame selected="c0ffee11" onSelect={view.onSelect} notify={() => {}} />
         </Tooltip.Provider>
@@ -4780,6 +4796,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
     const { rerender, client, onSelect } = show('s1a2b3c4');
     const attend = (id: string) => rerender(
       <QueryClientProvider client={client}>
+        <Hub />
         <Tooltip.Provider><WorkFrame selected={id} onSelect={onSelect} notify={() => {}} /></Tooltip.Provider>
       </QueryClientProvider>,
     );
@@ -5128,6 +5145,7 @@ describe('a park\'s go-aheads', () => {
     // Away and back, the press is spent: the strip drawn again takes no focus and outlines nothing.
     const attend = (selected: string) => view.rerender(
       <QueryClientProvider client={view.client}>
+        <Hub />
         <Tooltip.Provider><WorkFrame selected={selected} onSelect={view.onSelect} notify={() => {}} /></Tooltip.Provider>
       </QueryClientProvider>,
     );
