@@ -200,6 +200,28 @@ public static class StatePublisher
             return Task.CompletedTask;
         });
 
+    /// <summary>
+    /// The change a press another process told makes (STATEHUB1e, D169 point 8): what the window's press of its route declares, with
+    /// the session where the declaration names one, so a terminal's press reads in a window as the window's does. Null where the
+    /// route declares nothing (a read, or a route no mark has).
+    /// </summary>
+    public static StateChanged? Told(PressTold press) => Told(press, DriverModule.Declared);
+
+    /// <summary>The change <paramref name="press"/> makes by <paramref name="declared"/>, what each request's route declares.</summary>
+    public static StateChanged? Told(PressTold press, Func<IpcRequest, StateChange?> declared) =>
+        declared(new IpcRequest { Id = "told", Module = DriverModule.Name, Type = press.Route }) is { Scopes: not StateScopes.None } change
+            ? new StateChanged(Names(change.Scopes), change.Session is not null && press.Session is { Length: > 0 } session ? [session] : null)
+            : null;
+
+    /// <summary>
+    /// A press another process told, published on <paramref name="bus"/> as a window's press of its route is (STATEHUB1e): what the
+    /// shell's loop does with each its request watch hears. Not awaited, as the publisher's own is not.
+    /// </summary>
+    public static void Publish(IEventBus bus, PressTold press)
+    {
+        if (Told(press) is { } changed) bus.Emit(Module, Type, changed);
+    }
+
     /// <summary>The scopes' names on the wire, in the page's words and in their declared order.</summary>
     public static IReadOnlyList<string> Names(StateScopes scopes) =>
     [

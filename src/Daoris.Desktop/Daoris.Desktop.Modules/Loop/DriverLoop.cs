@@ -501,6 +501,9 @@ public sealed class DriverLoop(
             Say = Words.HoldAsync,
             // SAIDBACK1c: and `sessions take-back` (the withdrawn note is written in the conversation's record here).
             TakeBack = Words.HoldTakeBackAsync,
+            // STATEHUB1e (D169 point 8): a terminal's `trees` press, told here, reaches every window as the window's press would,
+            // and the plugins at `state/changed` with it.
+            Told = press => StatePublisher.Publish(eventBus, press),
         };
 
         // A plugin's word goes to the console under `plugin:<id>` (D49 §2, D64 §4) — the same buffer
