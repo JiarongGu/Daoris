@@ -101,6 +101,11 @@ with the version and date at release.
   each folder moved aside *(moved aside)* with the day. A session's start cut off as the app closes no longer leaves a
   half-made tree and branch behind: a cancel undoes it at once, and one a crash cut off is moved aside, its branch removed, by a
   later look. A folder a running session names stays, and so does a tree you locked.
+- What a second opinion's pass or a replay left in a repository's trees when Daoris was closed or crashed mid-way (an `o-` copy,
+  an `r-` tree) is now moved aside by the next pass of its kind in that repository, once no running Daoris holds it and nothing
+  has written in it for ten minutes, and deleted fourteen days later like a tree's. A folder moved aside whose `node_modules`
+  (or another build folder) holds links, as npm workspaces and pnpm leave, is now deleted after its fourteen days, each link
+  removed as a link and what it points at untouched; a folder holding a link anywhere else still stays for you to look at.
 - An ask's page has a *Channel* (频道), where its sessions and you talk: their messages and Daoris's lines about its quests
   (published, taken, done, declined, waiting on your yes) in your language, an open question marked, and a box to write to
   everyone on the ask or one of its repositories, answering a message if you choose. A session on an ask has the same channel
