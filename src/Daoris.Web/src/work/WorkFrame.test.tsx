@@ -4764,7 +4764,7 @@ describe('a park\'s go-aheads', () => {
       }
       return DRIVER_STATE;
     });
-    show('g0ah3ad0');
+    const view = show('g0ah3ad0');
     const strip = await screen.findByRole('region', { name: '3 waiting on you' });
     const call = await screen.findByText('ask for a go-ahead');
 
@@ -4786,5 +4786,18 @@ describe('a park\'s go-aheads', () => {
     expect(block).toHaveTextContent('Waiting on you from here: go-ahead #1');
     await userEvent.click(within(block).getByRole('button', { name: 'To the wait' }));
     await waitFor(() => expect(within(strip).getAllByRole('listitem')[0]).toHaveFocus());
+
+    // Away and back, the press is spent: the strip drawn again takes no focus and outlines nothing.
+    const attend = (selected: string) => view.rerender(
+      <QueryClientProvider client={view.client}>
+        <Tooltip.Provider><WorkFrame selected={selected} onSelect={view.onSelect} notify={() => {}} /></Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+    attend('n0th3r00');
+    await waitFor(() => expect(screen.queryByRole('region', { name: '3 waiting on you' })).toBeNull());
+    attend('g0ah3ad0');
+    const again = await screen.findByRole('region', { name: '3 waiting on you' });
+    expect(within(again).getAllByRole('listitem')[0]).not.toHaveFocus();
+    expect(within(again).getAllByRole('listitem')[0]!.className).not.toContain('outline-accent');
   });
 });

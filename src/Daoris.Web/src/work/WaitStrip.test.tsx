@@ -145,6 +145,16 @@ describe('the strip of what waits on the person, at the foot', () => {
     expect(item.className).not.toContain('outline-accent');
   });
 
+  it('shows the same wait again when it is led to again, though its line was folded since', async () => {
+    const props = { session: parked, onResolve: vi.fn(), answerBelow: true, goAheads: GO_AHEADS, onGoAhead: vi.fn(), onTop: vi.fn() };
+    const { rerender } = render(<WaitStrip {...props} seek={{ wait: 'goAhead:2', n: 1 }} />);
+    expect(within(strip()).getByRole('listitem')).toHaveFocus();
+
+    await userEvent.click(within(strip()).getByRole('button', { name: 'Fold' }));
+    rerender(<WaitStrip {...props} seek={{ wait: 'goAhead:2', n: 2 }} />);
+    expect(within(strip()).getByRole('listitem')).toHaveFocus();
+  });
+
   it('speaks the active catalogue', async () => {
     await i18n.changeLanguage('zh');
     try {

@@ -88,19 +88,24 @@ export function WaitStrip({ answerBelow = false, workAsk, onTop, seek, ...props 
   const section = useRef<HTMLElement>(null);
   const { session, toEvent } = props;
   const waits = waitsOf({ ...props, answerBelow });
+  // A press owes its line the focus until the line is drawn: in the strip only once the fold opens.
+  const focusing = useRef(false);
   useEffect(() => {
     if (!seek) return;
     setFolded(false);
     setSought(seek.wait);
+    focusing.current = true;
   }, [seek?.n]);
-  // Drawn unfolded first, then focused: its line is in the strip only once the fold opens.
   useEffect(() => {
-    if (!seek || sought !== seek.wait) return;
+    if (!focusing.current || !seek) return;
     const line = seek.wait.startsWith('goAhead:')
       ? `[data-go-ahead="${seek.wait.slice('goAhead:'.length)}"]`
       : `[data-wait="${seek.wait === 'opinion' ? 'work' : seek.wait}"]`;
-    section.current?.querySelector<HTMLElement>(line)?.focus();
-  }, [sought, seek?.n]);
+    const drawn = section.current?.querySelector<HTMLElement>(line);
+    if (!drawn) return;
+    focusing.current = false;
+    drawn.focus();
+  });
   if (waits.length === 0) return null;
   const several = waits.length > 1;
   const shut = several && folded;

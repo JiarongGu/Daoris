@@ -1339,6 +1339,8 @@ export function WorkFrame({
   const [anchored, setAnchored] = useState<(AnchorState & { session: string }) | null>(null);
   const toEvent = attended && anchored?.session === attended.id ? waitEvents(anchored.anchored, anchored.show) : undefined;
   const [toWait, setToWait] = useState<{ session: string; wait: AnchorWait; n: number } | null>(null);
+  // Spent once the person attends another: the strip drawn again on coming back takes no focus from it.
+  useEffect(() => { setToWait(null); }, [attended?.id]);
   // Where the work's ask (*Accept…*, *Discard branch…*) is open: in the head or at the foot, never both (D168 point 3).
   const [workAsk, setWorkAsk] = useState<{ session: string; at: 'head' | 'foot' } | null>(null);
   const workAskAt = (at: 'head' | 'foot'): WorkAsk | undefined => (attended ? {
