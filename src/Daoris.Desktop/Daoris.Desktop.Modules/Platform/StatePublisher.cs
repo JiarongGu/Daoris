@@ -128,7 +128,9 @@ public sealed record UnderWay(long Seq, IReadOnlyList<PressUnderWay> Presses);
 ///
 /// <para><b>And what is under way</b> (STATEHUB1c, D169 point 7): a declared press, from its dispatch until it answers or
 /// throws, told whole as <c>UNDER_WAY</c> at each change, so *落地中…* is shown by every view and window, not only the
-/// component that pressed. Not the kit's request tracker, which names no session (D169's STATEHUB1c note).</para>
+/// component that pressed. Not the kit's request tracker, which names no session (D169's STATEHUB1c note). The list is held where
+/// the driver's <c>UNDER_WAY</c> route reads it (<see cref="PressesUnderWay"/>, the loop's in the shell), so a window opened or
+/// reloaded mid-press reads it whole as it mounts (STATEHUB1c2).</para>
 /// </remarks>
 public static class StatePublisher
 {
@@ -144,11 +146,18 @@ public static class StatePublisher
     /// <summary>The middleware over the driver's marks, publishing on <paramref name="bus"/>.</summary>
     public static MessageMiddleware Middleware(IEventBus bus) => Middleware(bus, DriverModule.Declared);
 
+    /// <summary>The middleware over the driver's marks, holding what is under way in <paramref name="underWay"/>, the loop's in the shell.</summary>
+    public static MessageMiddleware Middleware(IEventBus bus, PressesUnderWay underWay) =>
+        Middleware(bus, DriverModule.Declared, underWay);
+
     /// <summary>The middleware over <paramref name="declared"/>, what each request's route declares it changes.</summary>
-    public static MessageMiddleware Middleware(IEventBus bus, Func<IpcRequest, StateChange?> declared)
+    /// <param name="bus">Where it publishes.</param>
+    /// <param name="declared">What each request's route declares it changes.</param>
+    /// <param name="underWay">Where it holds what is under way; one of its own where none is handed, which nothing reads.</param>
+    public static MessageMiddleware Middleware(IEventBus bus, Func<IpcRequest, StateChange?> declared, PressesUnderWay? underWay = null)
     {
-        // What this pipeline has under way: one per composed dispatcher, as the shell composes one.
-        var underWay = new Presses();
+        // What this pipeline has under way: one per composed dispatcher, as the shell composes one over its loop.
+        underWay ??= new PressesUnderWay();
         return async (request, next, _) =>
         {
             if (declared(request) is not { Scopes: not StateScopes.None } change)
@@ -189,37 +198,6 @@ public static class StatePublisher
     public static StateChanged Event(StateChange change, IpcRequest request) =>
         new(Names(change.Scopes), SessionOf(change, request) is { } session ? [session] : null);
 
-    /// <summary>
-    /// The presses under way, in dispatch order, each change numbered under the same lock, so the telling is whole and the
-    /// newest is known whatever order the bus delivers it in.
-    /// </summary>
-    private sealed class Presses
-    {
-        private readonly Lock _gate = new();
-        private readonly List<(object Press, PressUnderWay Told)> _underWay = [];
-        private long _seq;
-
-        public UnderWay Begin(object press, PressUnderWay told)
-        {
-            lock (_gate)
-            {
-                _underWay.Add((press, told));
-                return Telling();
-            }
-        }
-
-        public UnderWay End(object press)
-        {
-            lock (_gate)
-            {
-                _underWay.RemoveAll(each => ReferenceEquals(each.Press, press));
-                return Telling();
-            }
-        }
-
-        private UnderWay Telling() => new(++_seq, [.. _underWay.Select(each => each.Told)]);
-    }
-
     private static string? SessionOf(StateChange change, IpcRequest request) =>
         change.Session is { } field
         && request.Payload is { ValueKind: JsonValueKind.Object } payload
@@ -228,4 +206,51 @@ public static class StatePublisher
         && named.GetString() is { Length: > 0 } session
             ? session
             : null;
+}
+
+/// <summary>
+/// The presses under way, in dispatch order, each change numbered under the same lock, so the telling is whole and the newest is
+/// known whatever order the bus delivers it in (STATEHUB1c). <see cref="StatePublisher"/> writes it; the shell's is the loop's
+/// (<see cref="DriverLoop.UnderWay"/>), which the driver's <c>UNDER_WAY</c> route reads for a window opened mid-press (STATEHUB1c2).
+/// </summary>
+/// <remarks>
+/// No step: each press runs as one call, and none reports where it has reached (D169's STATEHUB1c2 note). A step a route comes to
+/// know is a field added to <see cref="PressUnderWay"/>, never a change to one there (D169 point 3).
+/// </remarks>
+public sealed class PressesUnderWay
+{
+    private readonly Lock _gate = new();
+    private readonly List<(object Press, PressUnderWay Told)> _underWay = [];
+    private long _seq;
+
+    /// <summary><paramref name="press"/> is under way: the telling it makes.</summary>
+    public UnderWay Begin(object press, PressUnderWay told)
+    {
+        lock (_gate)
+        {
+            _underWay.Add((press, told));
+            return Telling(++_seq);
+        }
+    }
+
+    /// <summary><paramref name="press"/> answered or threw: the telling it makes.</summary>
+    public UnderWay End(object press)
+    {
+        lock (_gate)
+        {
+            _underWay.RemoveAll(each => ReferenceEquals(each.Press, press));
+            return Telling(++_seq);
+        }
+    }
+
+    /// <summary>What is under way now, numbered as the last telling: a read, which tells nothing and numbers nothing new.</summary>
+    public UnderWay Now()
+    {
+        lock (_gate)
+        {
+            return Telling(_seq);
+        }
+    }
+
+    private UnderWay Telling(long seq) => new(seq, [.. _underWay.Select(each => each.Told)]);
 }

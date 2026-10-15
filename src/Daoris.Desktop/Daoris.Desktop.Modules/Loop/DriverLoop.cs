@@ -90,6 +90,12 @@ public sealed class DriverLoop(
         Path.GetDirectoryName(Path.GetFullPath(DriverConfig.ResolvePath()))!);
 
     /// <summary>
+    /// The presses under way (STATEHUB1c2, D169 point 7), the driver's to hold rather than a component's: the shell's
+    /// <see cref="StatePublisher"/> writes it, and the <c>UNDER_WAY</c> route reads it.
+    /// </summary>
+    public PressesUnderWay UnderWay { get; } = new();
+
+    /// <summary>
     /// Conversations, once the loop is up (D49 §3) — null before the host answers, because a chat
     /// needs the service that holds its record. The control surface says so rather than failing
     /// obscurely: "not yet" is a state a person can wait out.

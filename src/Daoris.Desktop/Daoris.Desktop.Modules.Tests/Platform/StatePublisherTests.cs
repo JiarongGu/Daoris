@@ -62,6 +62,16 @@ public sealed class StatePublisherTests : DriverModuleBridge
         return services.BuildServiceProvider().GetRequiredService<IMessageDispatcher>();
     }
 
+    /// <summary>The modules, over the publisher's list <paramref name="underWay"/>, as the shell composes it over its loop's.</summary>
+    private IMessageDispatcher Compose(IEnumerable<IIpcModule> modules, Func<IpcRequest, StateChange?> declared, PressesUnderWay underWay)
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<IEventBus>(Bus);
+        foreach (var module in modules) services.AddSingleton(module);
+        services.UseMessageDispatcher((_, dispatcher) => dispatcher.Use(StatePublisher.Middleware(Bus, declared, underWay)));
+        return services.BuildServiceProvider().GetRequiredService<IMessageDispatcher>();
+    }
+
     private static Task<IpcResponse> Dispatch(IMessageDispatcher dispatcher, string module, string type, object? payload = null) =>
         dispatcher.DispatchAsync(
             new IpcRequest
@@ -181,6 +191,44 @@ public sealed class StatePublisherTests : DriverModuleBridge
         Assert.Equal(6, Told().Count);
         Assert.Equal("""{"seq":6,"presses":[]}""", Told()[^1]);
         Assert.Equal(2, Changed().Count);
+    }
+
+    /// <summary>
+    /// STATEHUB1c2 (D169's STATEHUB1c2 note): a window opened, or a page reloaded, while a press runs has heard none of its
+    /// tellings, so it reads the list the publisher holds, the loop's, through the driver's route: whole, numbered as the last
+    /// telling, so the window keeps whichever is newer. The read is no press: never under way, and it tells nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_window_opened_mid_press_reads_what_is_under_way_through_the_driver_s_route()
+    {
+        var held = new Held();
+        var loop = Loop();
+        var dispatcher = Compose(
+            [held, new DriverModule(Bus, loop)],
+            request => request.Module == held.ModuleName ? Declared(request) : DriverModule.Declared(request),
+            loop.UnderWay);
+        async Task<string> Read()
+        {
+            var read = await Dispatch(dispatcher, DriverModule.Name, "UNDER_WAY");
+            Assert.True(read.Success);
+            return JsonSerializer.Serialize(read.Data, Wire);
+        }
+
+        Assert.Equal("""{"seq":0,"presses":[]}""", await Read());
+
+        var moving = Dispatch(dispatcher, held.ModuleName, "MOVE", new { id = "s1" });
+        await UntilAsync(() => Told().Count == 1);
+        Assert.Equal("""{"seq":1,"presses":[{"route":"MOVE","session":"s1"}]}""", await Read());
+
+        held.Let();
+        await moving;
+        await UntilAsync(() => Told().Count == 2);
+        Assert.Equal("""{"seq":2,"presses":[]}""", await Read());
+
+        await Task.Delay(50);
+        // Three reads told nothing and changed nothing: only the press did.
+        Assert.Equal(2, Told().Count);
+        Assert.Single(Changed());
     }
 
     /// <summary>
@@ -316,6 +364,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("RETRY_QUEST", "sessions,driver", null)]
     [InlineData("SHOW_REVIEW_AGAIN", "driver", null)]
     [InlineData("STATE", "", null)]
+    [InlineData("UNDER_WAY", "", null)]
     [InlineData("NUDGE", "", null)]
     [InlineData("SET_LINE", "driver", null)]
     [InlineData("SET_LANGUAGE", "driver", null)]
