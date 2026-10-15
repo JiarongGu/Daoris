@@ -534,7 +534,8 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     /// landing at done. A part of an entry with others (<see cref="EntryAccepts.EntryLead"/>) is its entry's Accept for that part alone:
     /// named for the entry's first part (its chain's first quest), its own session recorded, on the entry's branch
     /// (<see cref="JoinEntryAsync"/>), which <see cref="LandingSubject.Joins"/> then lands on. Otherwise the session's own subject, the
-    /// chain's first quest (WSR5), as before. A merge rule makes no branch to join; a TREEFOLLOW1 tree still lands as its own branch.
+    /// chain's first quest (WSR5), as before. A merge rule makes no branch to join; a TREEFOLLOW1 tree still lands as its own branch, and
+    /// is named for its own quest and title (TREEFOLLOWNAME1).
     /// </summary>
     /// <param name="quest">The session's own quest, null for a conversation.</param>
     /// <param name="records">The service's session records, which say the session's entry and its parts.</param>
@@ -548,7 +549,11 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
         var lead = EntryAccepts.EntryLead(records, session);
         var named = lead?.Id ?? session;
         var subject = await LandingRules.SubjectAsync(named, lead is null ? quest : lead.Quest, find, opening(named)).ConfigureAwait(false);
-        return lead is null ? subject : await JoinEntryAsync(path, session, subject, ct, process).ConfigureAwait(false);
+        if (lead is null) return subject;
+        var joined = await JoinEntryAsync(path, session, subject, ct, process).ConfigureAwait(false);
+        // TREEFOLLOWNAME1: a tree on a branch of its own lands as that branch, so it is named for its own quest, not its entry's first part's.
+        if (joined.EntryBranch is null || !await Entries.FollowsOwnAsync(path, ct).ConfigureAwait(false)) return joined;
+        return joined.NamedFor(await LandingRules.SubjectAsync(session, quest, find, opening(session)).ConfigureAwait(false));
     }
 
     /// <inheritdoc cref="EntryLands.PlanAsync"/>

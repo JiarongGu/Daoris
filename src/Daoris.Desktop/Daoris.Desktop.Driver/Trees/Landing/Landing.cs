@@ -108,6 +108,14 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
     /// <summary>The request's links, searched last for a ticket's key (PROCESS1b-i), each as given; null where it carries none.</summary>
     public IReadOnlyList<string>? Links { get; init; }
 
+    /// <summary>
+    /// This subject, named for a part's own quest and title (TREEFOLLOWNAME1): a part on a branch of its own lands as that branch, so
+    /// its landing record and its plugin's pull request carry its own words, not the entry's first part's. The session, the entry's
+    /// branch and a name entered stay as they are.
+    /// </summary>
+    public LandingSubject NamedFor(LandingSubject own) =>
+        this with { Quest = own.Quest, Title = own.Title, Name = own.Name, Body = own.Body, Links = own.Links };
+
     /// <summary>The branch pattern's <c>{slug}</c>: the quest's name in the words git takes, its title where it has no other.</summary>
     public string Slug => LandingRules.Slug(Name ?? Title);
 

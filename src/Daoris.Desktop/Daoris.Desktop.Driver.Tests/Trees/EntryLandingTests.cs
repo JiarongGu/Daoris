@@ -229,6 +229,33 @@ public sealed class EntryLandingTests : LandedFixture
         Assert.Equal("s1a2b3c4", Assert.Single(record.Advances).Session);
     }
 
+    /// <summary>
+    /// TREEFOLLOWNAME1 (D167's note): a part whose tree is on a branch of its own lands as that branch, so its landing record carries
+    /// its own quest and title, at the entry's press and at the part's own door alike; the entry's other part keeps the entry's.
+    /// </summary>
+    [Fact]
+    public async Task A_part_on_its_own_branch_is_recorded_for_its_own_quest_and_title()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        var second = await trees.OpenAsync(root, "engine", "aurora");
+        await GitAsync(second.Path, "checkout", "-b", "mine/second-fix");
+        await CommitAsync(first.Path, "a.txt", "a\n", "the first part");
+        await CommitAsync(second.Path, "b.txt", "b\n", "the second part");
+        var firstOwn = new LandingSubject("s1a2b3c4", "0fda18", "Fix the gap");
+        var secondOwn = new LandingSubject("s5e6f7a8", "1b2c3d", "Check the gap");
+        EntryLandingPart[] parts = [new("s1a2b3c4", first.Path) { Own = firstOwn }, new("s5e6f7a8", second.Path) { Own = secondOwn }];
+
+        var landed = await trees.LandEntryAsync(parts, firstOwn, Kept);
+
+        Assert.True(landed.Landed, landed.Message);
+        var entryRecord = trees.Recorded.Of("engine", Branch)!;
+        Assert.Equal(("0fda18", "Fix the gap"), (entryRecord.Quest, entryRecord.Title));
+        var ownRecord = trees.Recorded.Of("engine", "mine/second-fix")!;
+        Assert.Equal(("s5e6f7a8", "1b2c3d", "Check the gap"), (ownRecord.Session, ownRecord.Quest, ownRecord.Title));
+    }
+
     private static DateTimeOffset At(int minute) => new(2026, 10, 16, 9, minute, 0, TimeSpan.Zero);
 
     /// <summary>

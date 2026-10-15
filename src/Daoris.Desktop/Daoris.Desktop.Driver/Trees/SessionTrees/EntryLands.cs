@@ -14,6 +14,12 @@ public sealed record EntryLandingPart(string Session, string Tree)
 {
     /// <summary>The landing gate its door read for this part (<see cref="SessionTrees.GateAsync"/>); null is a door that asked none.</summary>
     public LandingGate? Gate { get; init; }
+
+    /// <summary>
+    /// What the part is named for on its own (TREEFOLLOWNAME1): its own quest and title, which name its landing where its tree is on a
+    /// branch of its own (TREEFOLLOW1) and so lands as that branch. Null where the door gave none: the entry's subject names it.
+    /// </summary>
+    public LandingSubject? Own { get; init; }
 }
 
 /// <summary>
@@ -166,7 +172,8 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
             }
 
             planned.Add(new EntryPartPlan(part.Session,
-                await lands.PlanAsync(part.Tree, Joining(subject, part.Session, form, target), ct, part.Gate?.Process).ConfigureAwait(false)));
+                await lands.PlanAsync(part.Tree, Joining(await NamedAsync(part, subject, form, ct).ConfigureAwait(false), part.Session, form, target), ct,
+                    part.Gate?.Process).ConfigureAwait(false)));
             var full = Path.GetFullPath(part.Tree);
             var (workspace, repository) = context.OwnerOf(full);
             var (sync, _) = await syncs.JudgeAsync(full, repository, workspace, form == LandingForm.Branch, fetch: false, ct).ConfigureAwait(false);
@@ -242,7 +249,8 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
                 continue;
             }
 
-            var landed = await lands.LandAsync(part.Tree, Joining(subject, part.Session, form, target), ct, inUse, AcceptedBy.Person, part.Gate,
+            var landed = await lands.LandAsync(part.Tree, Joining(await NamedAsync(part, subject, form, ct).ConfigureAwait(false), part.Session, form, target),
+                ct, inUse, AcceptedBy.Person, part.Gate,
                 joins: form == LandingForm.Branch, fetched: true).ConfigureAwait(false);
             if (landed.Landed)
             {
@@ -335,6 +343,20 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
         var proof = await LandedProofs.ProveAsync(root, recorded.Tip, line, await LandedProofs.LineFormsAsync(root, line, ct).ConfigureAwait(false), ct)
             .ConfigureAwait(false);
         return proof.Kind is LandedKind.Merged or LandedKind.OnLine;
+    }
+
+    /// <summary>
+    /// What one part's landing is named for (TREEFOLLOWNAME1): the entry's subject, unless the tree is on a branch of its own under a
+    /// branch rule (TREEFOLLOW1), which lands as that branch and so carries the part's own quest and title.
+    /// </summary>
+    internal async Task<LandingSubject> NamedAsync(EntryLandingPart part, LandingSubject entry, string form, CancellationToken ct) =>
+        form == LandingForm.Branch && part.Own is { } own && await FollowsOwnAsync(part.Tree, ct).ConfigureAwait(false) ? entry.NamedFor(own) : entry;
+
+    /// <summary>Whether a tree is on a branch of its own (TREEFOLLOW1), as <see cref="TreeLands.PlanRuleAsync"/> reads it.</summary>
+    internal async Task<bool> FollowsOwnAsync(string tree, CancellationToken ct)
+    {
+        var full = Path.GetFullPath(tree);
+        return Directory.Exists(full) && context.Holds(full) && await TreeFollows.OwnBranchOfAsync(full, ct).ConfigureAwait(false) is not null;
     }
 
     /// <summary>The subject one part lands as: the entry's, for its own session, on the entry's branch.</summary>
