@@ -147,9 +147,22 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         var helper = park.Helpers.Count > 0;
         var persons = park.Waiting.Any(word => word.Persons);
 
+        // 🔴 SAIDBACK1d (D137 §2.4): the words are read from the record as late as the prompt is built, not taken from the look,
+        // so a word taken back or reworded since goes as it now is, or not at all. Narrowed, not closed: the ledger's move to
+        // working follows the spawn (HoldAsync), and a failed spawn before it hands the words on (below), so the take-back
+        // door still refuses only once the record runs.
+        var words = Continuations.HandedAfterMove(park.Waiting, await ReadAgainAsync(service, sessionId, ct).ConfigureAwait(false));
+        if (words.Count == 0)
+        {
+            starting?.Dispose();
+            return (new StartRun(
+                $"held  #{quest.Id} → {quest.To}: every word waiting on session {sessionId} was taken back before it went on; nothing is sent.",
+                false), null, false);
+        }
+
         // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words.
         var resume = new ResumeAsk(
-            kept.Conversation, park.Waiting,
+            kept.Conversation, words,
             Continuations.OpeningNoted(adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons, helper),
             await ResumedAfterAsync(service, quest, sessionId, target.Language, ct).ConfigureAwait(false),
             files: word => ChatFiles.Kept(home, sessionId, word.Files));
@@ -436,6 +449,20 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                     sessionId, quest.To, conclusion.State,
                     ByPerson: stop is { ByPerson: true }, conclusion.Note,
                     Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile)), null);
+    }
+
+    /// <summary>The record as it stands now, or null where it cannot be read: the look's words are then what there is (SAIDBACK1d).</summary>
+    private static async Task<PriorSession?> ReadAgainAsync(ServiceClient service, string sessionId, CancellationToken ct)
+    {
+        try
+        {
+            return await service.RecordAsync(sessionId, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
+        {
+            return null;
+        }
     }
 
     /// <summary>

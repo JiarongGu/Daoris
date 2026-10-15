@@ -15003,3 +15003,21 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **TIDIEDSTRAY1 — a stray folder or a cut-off opening set aside says which** (web). A `branch.tidied` line of kind `stray` or `opening` shows on the Branches tab only as *folder set aside*: say it was a folder under the trees that was no tree, or an opening cut off, in en and zh. D88's AUTOTIDY2c and OPENCUT1 note, the machine-log design §4. Proof: a `WorkspaceTidied` test per kind.
 
 **Outcome** 2026-10-16: the Branches tab's *Cleaned up on its own* row reads *A folder under the trees that was no tree was set aside* for `stray` and *An opening that was cut off: its tree was set aside* for `opening` (en and zh), any other kind as before; a `WorkspaceTidied` test per kind. On Sonnet, with SENDLOST1c. Detail: D88's TIDIEDSTRAY1 note; `WorkspaceTidied.tsx`.
+
+## WITHDRAWNLINE1 — one withdrawn note for every door (2026-10-16, D137)
+
+> - [ ] **WITHDRAWNLINE1 — one withdrawn note for every door** (driver/modules). Modules' `SessionWords.TakeBackAsync` writes QUEUEEDIT1a's `withdrawn` event by hand, duplicating `ChatTurns.WithdrawnLine` (internal): make the note public in the driver library and use it. QUEUEEDIT1a. Proof: `DriverModuleConversationTests`' take-back row holds.
+
+**Outcome** 2026-10-16: `ChatTurns` is internal, so the note moved to a public `SessionNotes.Withdrawn(word)` and `SessionNotes.WithdrawnLine` in the driver library (`SessionEvents.cs`); `ChatTurns` delegates to it and Modules' `SessionWords.TakeBackAsync` uses it. The take-back row now also asserts each note's text is the library's. On Sonnet. Detail: D137's SAIDBACK1c/1d note.
+
+## SAIDBACK1c — a terminal take-back reaches the loop that holds the home (2026-10-16, D137)
+
+> - [ ] **SAIDBACK1c — a terminal take-back reaches the loop that holds the home** (driver). With a loop holding the home, `sessions take-back` writes no `withdrawn` note, so the conversation still shows the word waiting: reach the loop through the request folder, as `sessions say` does. D137 §2.4, QUEUEEDIT1a. Proof: a `SessionsSayCommandTests` row with a loop.
+
+**Outcome** 2026-10-16: with a loop on the home `sessions take-back` and `reword` write a `take-back` request (`SessionMove.TakeBack`, the word in `SessionRequest.Word`) and wait for the loop's answer as a say does; the loop's `SessionRequestWatch.TakeBack` (the headless host's `LoopWords.TakeBackAsync`, the desktop's `SessionWords.HoldTakeBackAsync`) asks the service and writes the `withdrawn` note and a reword's new words in its own record. A loop that answers nothing in time is withdrawn and the verb goes to the service as before. Two `SessionsSayCommandTests` rows (a take-back and a reword through a loop; a refusal writes no note), seen failing first. On Sonnet. Detail: D137's SAIDBACK1c/1d note.
+
+## SAIDBACK1d — a driven resume hands its run the words the move to working returned (2026-10-16, D137)
+
+> - [ ] **SAIDBACK1d — a driven resume hands its run the words the move to working returned** (driver). Check that the run is handed the words the ledger's move returned, not those its look read, so a word taken back between the look and the move is never sent. D137 MSG1b. Proof: a continuation test with a word taken back between the two.
+
+**Outcome** 2026-10-16: checked, and not right. The chat go-on re-read the record after the move but fell back to the look's words when that read held none, so a chat's only word taken back in the gap was still sent: `Continuations.HandedAfterMove` now hands the record's words as the move left them, and with none the record is put back as it ended with a line saying so (`ChatGoOnTests`, two rows, seen failing first). The quest-driven resume spawns its run before the ledger's move, so it only re-reads the record as late as its prompt is built, which narrows the gap and does not close it: proposed as SAIDBACK1e. On Sonnet. Detail: D137's SAIDBACK1c/1d note.
