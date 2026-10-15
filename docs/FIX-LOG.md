@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-16 — Under a squash rule a part joining its entry's branch was refused as grown apart (ACCEPTALL1d)
+
+- **Symptom:** under a branch rule that squashes (PROCESS1b-ii), an entry's Accept landed its first part as one squashed commit and
+  refused every later part that ran alongside: the advance's refusal (`exists`) said its work does not grow from the tip. ACCEPTALL1b's own
+  Accept for a part would have refused the same part's later work too, since it now joins the entry's branch.
+- **Root cause:** `TreeLands.AdvanceAsync` judged growth from the record's `Squashed` tip whenever the rule squashes. That tip is the
+  first part's own session tip, the tree the squash was made from; a later part's work replayed onto the branch (ACCEPTALL1's join, or
+  LANDSYNC1's replay past what the line holds) grows from the branch's squash commit, the record's `Tip`, never from it. Whether a
+  part joins at all was judged from the branch's tip, which under a squash no session tip descends from, so the same part's own later
+  work was replayed too, and refused the same way.
+- **Fix:** `LandingAdvance.GrewFrom` answers the recorded tip where a replay was made, and the squashed tip only where the session's own
+  tip moves the branch; `BranchAsync` judges joining from the squashed tip under a squash and leaves the commits up to it out of a
+  replay, since the branch holds them by content. D87's ACCEPTALL1d note.
+- **Verification:** `LandingChainTests.A_replayed_advance_grows_from_the_branchs_tip_under_a_squash_too` (the table: red before the
+  function, green after). `EntryLandingTests`' two squash cases (Process) are written and owed to the serial run.
+
 ## 2026-10-16 — A session request taken by two loops at once could be lost unread (REQTAKE1)
 
 - **Symptom:** STATEHUB1e's worker, taking `.told` notes as `SessionRequests.TakeAt` takes a request (rename aside, read,
