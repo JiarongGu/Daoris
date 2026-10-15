@@ -28,7 +28,7 @@ vi.mock('@shenora/react', async () => {
 
 import { keys } from '../data/queries';
 import { useAccountUse } from './accounts';
-import { useHarnessAction, useSetAgentSettings } from './agents';
+import { useHarnessAction, useRefreshHarnesses, useSetAgentSettings } from './agents';
 import { useSetReadAcross, useSetWriteAcross } from './across';
 import { channelKey, usePostChannel } from './asks';
 import { useParkGoAhead } from './conversation';
@@ -56,6 +56,8 @@ const presses: [hook: string, usePress: () => Press, variables: unknown, family:
   ['useHarnessAction', useHarnessAction, { harness: 'claude-code', action: 'profile-rename', profile: 'work' },
     [keys.harnesses, keys.accounts]],
   ['useSetAgentSettings', useSetAgentSettings, { harness: 'claude-code', profile: 'work', model: 'opus' }, [keys.harnesses]],
+  // HARNESSREFRESH1: *Read again* moved the roster, the starts an account's reading lets through and the accounts, which sit under it.
+  ['useRefreshHarnesses', useRefreshHarnesses, { agent: 'claude-code', profile: 'work' }, [keys.harnesses, keys.allStarts, keys.accounts]],
   ['usePostChannel', usePostChannel, { ask: 'a1', post: { text: 'hi' } }, [channelKey('a1')]],
   ['useParkGoAhead', useParkGoAhead, { id: 's1', ask: 'a1', number: 1, approved: true }, [keys.allSessions, keys.allAsks]],
   ['useToolUse', useToolUse, { tool: 'git', action: 'system' }, [[...ALL_TOOLS, 'list', false]]],

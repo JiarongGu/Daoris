@@ -50,6 +50,7 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SESSION_QUEUE_EDIT: { scopes: ['sessions'], session: 'session' },
   ACCOUNT_USE: { scopes: ['harnesses'] },
   HARNESS_ACTION: { scopes: ['harnesses'] },
+  HARNESSES_REFRESH: { scopes: ['harnesses'] },
   SET_AGENT_SETTINGS: { scopes: ['harnesses'] },
   CHANNEL_POST: { scopes: ['asks'] },
   CHANNEL_MARK: { scopes: ['asks'] },

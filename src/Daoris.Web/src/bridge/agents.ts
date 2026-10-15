@@ -204,28 +204,19 @@ export const useHarnessCancel = () =>
  * or with `agent` that agent's accounts alone, one at a time, and its own sign-in, or with `profile` too that one account
  * alone (ROSTER1). Never asked by a look, a timer or a view opening: only this press reads an account's state.
  *
- * It asks again here what it moved, since no event tells it (STATEHUB1h, D169): the route answers the roster's read too, so it
- * declares nothing, and another window reads what it moved the next time its roster is asked.
+ * Its own route, which declares the agents (HARNESSREFRESH1, D169): the roster's read (`HARNESSES`) declares nothing, since a read
+ * that published would make every window read again without end. The state hub asks the roster again in every window, with the
+ * starts a looked-at account lets through (AGT3b) and the accounts' files, which a press reads windows into (CODEXUSE1,
+ * CODEXUSE3), all under its key; so this asks nothing again itself.
  */
-export const useRefreshHarnesses = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useRefreshHarnesses = () =>
+  useMutation({
     mutationFn: (target?: { agent?: string; profile?: string }) =>
-      call<HarnessRoster>('HARNESSES', {
-        refresh: true,
+      call<HarnessRoster>('HARNESSES_REFRESH', {
         ...(target?.agent ? { agent: target.agent } : {}),
         ...(target?.agent && target.profile ? { profile: target.profile } : {}),
       }),
-    onSuccess: (roster) => {
-      client.setQueryData(keys.harnesses, roster);
-      // Looking again also lets a refused account through (AGT3b), which changes what a start takes.
-      void client.invalidateQueries({ queryKey: keys.allStarts });
-      // And a press reads windows its agent's own server answers, an account's and the own sign-in's (CODEXUSE1,
-      // CODEXUSE3), into the accounts' files: said once it answers, not at the next tick.
-      void client.invalidateQueries({ queryKey: keys.accounts });
-    },
   });
-};
 
 /**
  * An account's own model and effort (AGT6, D98): keys in the tool's own settings file under that

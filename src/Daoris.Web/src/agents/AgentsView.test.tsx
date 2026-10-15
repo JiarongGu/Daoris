@@ -130,8 +130,9 @@ describe('the Agents place', () => {
     const asked = () => invoke.mock.calls.filter(([, type]) => type === 'HARNESSES' || type === 'HARNESS_ACTION');
     expect(asked()).toEqual([['DAORIS.DRIVER', 'HARNESSES', {}]]);
 
+    // Its own route (HARNESSREFRESH1): the roster's read never carries the press, so it can stay a read that publishes nothing.
     await userEvent.click(screen.getByRole('button', { name: 'Read again' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESSES', { payload: { refresh: true, agent: 'claude-code' } });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESSES_REFRESH', { payload: { agent: 'claude-code' } });
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.anything());
   });
 
@@ -143,8 +144,8 @@ describe('the Agents place', () => {
     await userEvent.click(within(await more('work')).getByRole('menuitem', { name: 'Read again' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith(
-      'DAORIS.DRIVER', 'HARNESSES', { payload: { refresh: true, agent: 'claude-code', profile: 'work' } }));
-    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESSES', { payload: { refresh: true, agent: 'claude-code' } });
+      'DAORIS.DRIVER', 'HARNESSES_REFRESH', { payload: { agent: 'claude-code', profile: 'work' } }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESSES_REFRESH', { payload: { agent: 'claude-code' } });
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.anything());
   });
 
@@ -193,7 +194,7 @@ describe('the Agents place', () => {
     const spare = await screen.findByRole('listitem', { name: 'spare' });
     await userEvent.click(within(spare).getByRole('button', { name: 'Read spare' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith(
-      'DAORIS.DRIVER', 'HARNESSES', { payload: { refresh: true, agent: 'claude-code', profile: 'spare' } }));
+      'DAORIS.DRIVER', 'HARNESSES_REFRESH', { payload: { agent: 'claude-code', profile: 'spare' } }));
 
     const work = screen.getByRole('listitem', { name: 'work' });
     expect(within(work).queryByRole('button', { name: 'Read work' })).toBeNull();
@@ -1909,13 +1910,11 @@ describe('how accounts are used', () => {
     expect(within(work).queryByText(/% used/)).toBeNull();
     expect(within(work).getAllByText('unknown')).toHaveLength(2);
 
-    // The press reads its windows again, so the accounts' files are asked again once it answers, not at the next tick.
-    const accountsAsked = () => invoke.mock.calls.filter(([, type]) => type === 'ACCOUNTS').length;
-    const before = accountsAsked();
+    // The press reads its windows again; the accounts' files are asked again by the state hub, which the route's mark feeds
+    // (`stateHub.presses.test`), not by the hook (HARNESSREFRESH1).
     await userEvent.click(within(await more('Your own sign-in')).getByRole('menuitem', { name: 'Read again' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith(
-      'DAORIS.DRIVER', 'HARNESSES', { payload: { refresh: true, agent: 'claude-code' } }));
-    await waitFor(() => expect(accountsAsked()).toBeGreaterThan(before));
+      'DAORIS.DRIVER', 'HARNESSES_REFRESH', { payload: { agent: 'claude-code' } }));
   });
 
   /** TOOL6e: each scope says which account its next start takes and why, with what holds the others. */

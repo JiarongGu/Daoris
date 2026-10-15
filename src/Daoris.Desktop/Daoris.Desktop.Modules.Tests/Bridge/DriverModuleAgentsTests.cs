@@ -201,7 +201,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         Assert.Equal(JsonValueKind.Null, stub.GetProperty("profiles")[0].GetProperty("read").ValueKind);
         Assert.Equal(JsonValueKind.Null, stub.GetProperty("ownRead").ValueKind);
 
-        stub = (await AnswerAsync(module, "HARNESSES", new { refresh = true, agent = "stub" })).GetProperty("harnesses").EnumerateArray()
+        stub = (await AnswerAsync(module, "HARNESSES_REFRESH", new { agent = "stub" })).GetProperty("harnesses").EnumerateArray()
             .Single(h => h.GetProperty("harness").GetString() == "stub");
         Assert.Equal(JsonValueKind.String, stub.GetProperty("profiles")[0].GetProperty("read").ValueKind);
         Assert.Equal(JsonValueKind.String, stub.GetProperty("ownRead").ValueKind);
@@ -211,7 +211,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     [Fact]
     public async Task Reading_an_agent_this_machine_has_no_door_onto_is_refused()
     {
-        var refusal = await RefusalAsync(Module(), "HARNESSES", new { refresh = true, agent = "not-an-agent" });
+        var refusal = await RefusalAsync(Module(), "HARNESSES_REFRESH", new { agent = "not-an-agent" });
 
         Assert.Contains("not-an-agent", refusal);
     }
@@ -269,7 +269,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         await AnswerAsync(module, "HARNESSES");
         Assert.False(File.Exists(asked), "a read of the roster asked an account");
 
-        var stub = Stub(await AnswerAsync(module, "HARNESSES", new { refresh = true, agent = "stub", profile = "out" }));
+        var stub = Stub(await AnswerAsync(module, "HARNESSES_REFRESH", new { agent = "stub", profile = "out" }));
 
         Assert.Equal(["out"], File.ReadAllLines(asked));
         Assert.Equal("out", Account(stub, "out").GetProperty("login").GetString());
@@ -289,7 +289,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     {
         var asked = Asking();
 
-        var refusal = await RefusalAsync(Module(), "HARNESSES", new { refresh = true, agent = "stub", profile = "typo" });
+        var refusal = await RefusalAsync(Module(), "HARNESSES_REFRESH", new { agent = "stub", profile = "typo" });
 
         Assert.Contains("`typo`", refusal);
         Assert.Contains("out, work", refusal);
@@ -305,7 +305,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     {
         var asked = Asking();
         var module = Module();
-        await AnswerAsync(module, "HARNESSES", new { refresh = true, agent = "stub", profile = "work" });
+        await AnswerAsync(module, "HARNESSES_REFRESH", new { agent = "stub", profile = "work" });
 
         await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "profile-default", profile = "work" });
         await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "profile-default", profile = "work", workspace = "aurora" });

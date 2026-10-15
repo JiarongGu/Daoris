@@ -349,7 +349,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     /// choices, a go-ahead, a turn stopped and a word taken back, and what the accounts, agents, asks, across, registry, tools
     /// and help domains press, each the families its hook asked again by hand, or the window wrote its own answer into. The
     /// looks beside them, the workflow domain's every route, and the presses whose change an event already tells whole or no
-    /// window reads declare nothing; the roster's *Read again* shares its route with the roster's read, so it declares nothing.
+    /// window reads declare nothing; the roster's read declares nothing, and *Read again* is its own route, which does (HARNESSREFRESH1).
     /// </summary>
     [Theory]
     [InlineData("SET_DRIVABLE", "driver", null)]
@@ -389,6 +389,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("HARNESS_INPUT", "", null)]
     [InlineData("HARNESS_CANCEL", "", null)]
     [InlineData("HARNESSES", "", null)]
+    [InlineData("HARNESSES_REFRESH", "harnesses", null)]
     [InlineData("STARTS", "", null)]
     [InlineData("USAGE", "", null)]
     [InlineData("CHANNEL_POST", "asks", null)]
