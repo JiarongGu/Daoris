@@ -13,6 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and nothing is written to the repository but by the fixture's own steps: the read asks git and the disk, and writes nothing.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class EvidenceGitTests : IDisposable
 {
     private readonly string _scratch;

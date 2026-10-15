@@ -8,6 +8,19 @@ namespace Daoris.Driver;
 public sealed record ChatStart(string? SessionId, string Message);
 
 /// <summary>
+/// Ask Daoris's conversation placed (HELPSTART1, <see cref="ChatRunner.PlaceHelpAsync"/>): its record open in the room's folder,
+/// its agent and account chosen, nothing spawned yet.
+/// </summary>
+/// <param name="SessionId">The record's id — null when nothing was placed, and <paramref name="Message"/> says why.</param>
+/// <param name="Message">The ledger's sentence, or why nothing was placed.</param>
+public sealed record HelpPlaced(string? SessionId, string Message)
+{
+    internal ISessionAdapter? Adapter { get; init; }
+
+    internal HarnessSelection? Selection { get; init; }
+}
+
+/// <summary>
 /// A conversation with an agent in one repository (D49 §3) — the session D46 built, entered by a
 /// person instead of planned from a quest.
 /// </summary>
@@ -60,6 +73,9 @@ public sealed class ChatRunner : IDisposable
     private readonly ChatHandOver _handOver;
 
     private readonly CurveMove _curve;
+
+    // What the conversations' turns are judged by (NOTIFY1a): the person's words, their stops and each turn's end.
+    private readonly AttentionWatch _answers = new();
 
     // Ask Daoris's conversations, the helpers' words and an ended chat's going-on: classes over the context too (PART10h). The
     // go-on holds the runner and reads the other two.
@@ -159,6 +175,10 @@ public sealed class ChatRunner : IDisposable
         get => _help.DescribeHelp;
         set => _help.DescribeHelp = value;
     }
+
+    /// <summary>Place a new Ask Daoris conversation from an earlier one's words, its room read and agent spawned after (HELPSTART1b, <see cref="ChatHelp.PlaceHelpFromAsync"/>).</summary>
+    public Task<HelpPlaced> PlaceHelpFromAsync(string earlier, string adapter, DriverConfig config, CancellationToken ct = default) =>
+        _help.PlaceHelpFromAsync(earlier, adapter, config, ct);
 
     /// <summary>Start a new Ask Daoris conversation from an earlier one's words (ASKHIST1, <see cref="ChatHelp.StartHelpFromAsync"/>).</summary>
     public Task<ChatStart> StartHelpFromAsync(
@@ -262,6 +282,12 @@ public sealed class ChatRunner : IDisposable
     /// queued, since they are in no record until they are sent, and offers a stop while a turn runs.
     /// </summary>
     public event Action<string, ChatQueue>? QueueChanged;
+
+    /// <summary>
+    /// A conversation answered the person (NOTIFY1a): the turn their words started ended, judged by <see cref="AttentionWatch"/>
+    /// as its turns move. Told from the conversation's thread; the shell says it as it says the tick's attention.
+    /// </summary>
+    public event Action<AttentionEvent>? Answered;
 
     /// <summary>
     /// A conversation's model and effort, as its agent offers them, each time they change (AGT6b, D98): as
@@ -472,6 +498,20 @@ public sealed class ChatRunner : IDisposable
         string adapter, DriverConfig config, HelpMachine machine,
         Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
     {
+        var placed = await PlaceHelpAsync(adapter, config, ct).ConfigureAwait(false);
+        return placed.SessionId is null
+            ? new(null, placed.Message)
+            : await RunHelpAsync(placed, config, _ => Task.FromResult<HelpMachine?>(machine), onEnded, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Place Ask Daoris's conversation (HELPSTART1, D89's note): its agent resolved, its account chosen and its record opened in
+    /// the room's folder, which is the same folder for every conversation, so nothing is read or written yet. What the person's
+    /// press waits for; <see cref="RunHelpAsync"/> reads the machine, writes the room and spawns the agent after.
+    /// </summary>
+    /// <exception cref="DriverException">The agent names no harness this machine knows.</exception>
+    public async Task<HelpPlaced> PlaceHelpAsync(string adapter, DriverConfig config, CancellationToken ct = default)
+    {
         var resolved = _harnesses.Adapters.Resolve(adapter);
         if (!resolved.Interactive)
         {
@@ -486,26 +526,67 @@ public sealed class ChatRunner : IDisposable
         var selection = await _harnesses.SelectAsync(resolved.Name, config, null, null, StartKind.Conversation, ct).ConfigureAwait(false);
         if (!selection.Allowed) return new(null, selection.Refusal!);
 
-        string room;
-        try
-        {
-            room = HelpRoom.Prepare(_home, machine);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return new(null, $"Ask Daoris's room could not be written — {error.Message}");
-        }
-
         var (sessionId, message) = await _service
-            .OpenHelpAsync(resolved.Name, room, selection.Version, selection.Profile, ct)
+            .OpenHelpAsync(resolved.Name, HelpRoom.PathOf(_home), selection.Version, selection.Profile, ct)
             .ConfigureAwait(false);
         if (sessionId is null) return new(null, message);
 
         // Ask Daoris's opening rotates like a start, on the machine's order (TOOL4f, D125 §3.2), and says so first.
         RotatedOpening.Say(_service, _events, sessionId, resolved.Name, selection, carried: null);
+        return new(sessionId, message) { Adapter = resolved, Selection = selection };
+    }
 
-        return await RunAsync(sessionId, message, resolved, selection, config, HelpPlace(room, machine.Reads), onEnded, ct)
-            .ConfigureAwait(false);
+    /// <summary>
+    /// Run Ask Daoris's conversation placed by <see cref="PlaceHelpAsync"/> (HELPSTART1): the machine read, the room written from
+    /// it, then the agent spawned as any conversation's. A reading or a room that fails ends the record <c>failed</c> saying why,
+    /// so a conversation the person was handed says what became of it rather than waiting at <c>queued</c>.
+    /// </summary>
+    /// <param name="machine">The machine as the room says it; null where it could not be read.</param>
+    public async Task<ChatStart> RunHelpAsync(
+        HelpPlaced placed, DriverConfig config, Func<CancellationToken, Task<HelpMachine?>> machine,
+        Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
+    {
+        if (placed is not { SessionId: { } sessionId, Adapter: { } resolved, Selection: { } selection }) return new(null, placed.Message);
+
+        // A start being made, as a start from a conversation's words is: no go-on takes it up meanwhile, and a closing waits for it.
+        var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _context.GoingOn.TryAdd(sessionId, going.Task);
+        try
+        {
+            HelpMachine read;
+            string room;
+            try
+            {
+                read = await machine(ct).ConfigureAwait(false)
+                       ?? throw new DriverException("this machine could not be read for it: the service is not answering yet");
+                room = HelpRoom.Prepare(_home, read);
+            }
+            catch (Exception error)
+            {
+                var cancelled = error is OperationCanceledException && ct.IsCancellationRequested;
+                var why = $"Ask Daoris's room could not be written — {error.Message}";
+                await Conclude(
+                    sessionId, "failed",
+                    cancelled ? Noted.Of(NoteCodes.ChatCancelled, "the request that started it was cancelled before its process started.") : Observation.Failure(why),
+                    onEnded).ConfigureAwait(false);
+                if (cancelled) throw;
+                return new(null, why);
+            }
+
+            if (_context.Closing)
+            {
+                await Conclude(sessionId, "failed", Observation.Failure("the application closed before its agent started."), onEnded).ConfigureAwait(false);
+                return new(null, "the application is closing, so no conversation starts now.");
+            }
+
+            return await RunAsync(sessionId, placed.Message, resolved, selection, config, HelpPlace(room, read.Reads), onEnded, ct)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            _context.GoingOn.TryRemove(new KeyValuePair<string, Task>(sessionId, going.Task));
+            going.TrySetResult();
+        }
     }
 
     /// <summary>
@@ -711,6 +792,9 @@ public sealed class ChatRunner : IDisposable
                 judged = queue.LastTurnEnded;
                 _curve.Due(sessionId, config, onEnded);
             }
+
+            // A turn the person's words started has ended (NOTIFY1a): judged last, so a listener's failure moves nothing above.
+            if (_answers.Turned(sessionId, place.Name, queue) is { } answered) Answered?.Invoke(answered);
         }
         // A conversation going on hands its words to the native door only once its process is tracked, so a word the person
         // says meanwhile goes after them; the protocol door waits for its session to open anyway (MSG1c).
@@ -747,7 +831,12 @@ public sealed class ChatRunner : IDisposable
         // The person's words a conversation goes on with are its first turn (MSG1c, D137 §2.2), queued before any word said
         // to it once it runs.
         var first = goOn is null ? null : new ChatMessage(goOn.Ask.Prompt, []) { GoesOn = goOn.Ask };
-        if (first is not null) (chat?.Turns ?? native?.Turns)?.Say(first);
+        if (first is not null)
+        {
+            // Their words, so the turn's end they start is an answer they wait on (NOTIFY1a).
+            _answers.Asked(sessionId);
+            (chat?.Turns ?? native?.Turns)?.Say(first);
+        }
 
         // What the conversation consumed counts toward the account it ran as (USAGE1), as a driven
         // session's does: at its end, at its high-water mark, where the door reported one.
@@ -889,6 +978,8 @@ public sealed class ChatRunner : IDisposable
 
         if (_context.Turned.TryGetValue(sessionId, out var chat))
         {
+            // Before it is taken, so even a turn that ends at once is the answer the person waits on (NOTIFY1a).
+            _answers.Asked(sessionId);
             var reach = chat.Turns.Take(said);
             reaches = Spelled(reach);
             return reach is not null;
@@ -942,7 +1033,13 @@ public sealed class ChatRunner : IDisposable
     /// <exception cref="DriverException">The conversation's door carries only text, so it has no turn to stop.</exception>
     public Task<TurnStop> CancelTurnAsync(string sessionId)
     {
-        if (_context.Turned.TryGetValue(sessionId, out var chat)) return chat.Turns.StopAsync();
+        if (_context.Turned.TryGetValue(sessionId, out var chat))
+        {
+            // The turn ends on the person's own press: no answer to tell them of (NOTIFY1a).
+            _answers.Stopped(sessionId);
+            return chat.Turns.StopAsync();
+        }
+
         if (_context.Talking.TryGetValue(sessionId, out var adapter))
         {
             throw new DriverException(
@@ -1220,6 +1317,8 @@ public sealed class ChatRunner : IDisposable
             // Nothing waiting will be sent now, and the page is told its queue emptied.
             chat?.Turns.Gone();
             native?.Gone();
+            // Last, so the queue told empty above judges nothing it still waited on (NOTIFY1a).
+            _answers.Forget(sessionId);
         });
         try
         {

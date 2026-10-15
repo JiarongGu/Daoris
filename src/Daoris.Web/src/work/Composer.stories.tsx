@@ -70,8 +70,18 @@ export const WaitingAlreadySent: Story = {
   args: { ...WaitingWithControls.args, onRemove: async () => ({ done: false }) },
 };
 
+/** SENDLOST1b: words on their way show at once, as sending, apart from what waits behind the turn, and with no controls. */
+export const WordsSending: Story = {
+  args: { ...TurnRunning.args, going: { words: [{ text: 'and the line under the chart?', files: [] }], late: false } },
+};
+
+/** SENDLOST1b: the page stopped waiting on their send; they stay, saying the machine may still take them. */
+export const WordsUnanswered: Story = {
+  args: { ...TurnRunning.args, going: { words: [{ text: 'and the line under the chart?', files: [] }], late: true } },
+};
+
 /** The stop was asked for; the button holds until the driver answers. */
-export const StoppingTheTurn: Story = { args: { taking: true, stoppable: true, stopping: true, onStopTurn: () => {} } };
+export const StoppingTheTurn: Story ={ args: { taking: true, stoppable: true, stopping: true, onStopTurn: () => {} } };
 
 /**
  * Files attached (CONV4c): chips above the box a person can take back off, going with the next send.

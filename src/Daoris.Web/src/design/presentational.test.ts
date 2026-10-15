@@ -64,6 +64,9 @@ const ORGANISMS = new Set<string>([
   // The one owner of the second opinion's presses (XAGENT1g, D155 point 10): it holds the bridge's hooks, so the gate and What
   // needs you, which each press them, hold none.
   './work/opinionActs.ts',
+  // The one owner of the answer to an agent's rule proposal (PROPOSEHERE1b, D74's note): it holds the bridge's hook, so the
+  // Agents page's card, What needs you and a session's conversation, which each press it, hold none.
+  './work/ruleAnswer.ts',
   './work/WorkFrame.tsx',
   // Ask Daoris's organism (HELP1): it reads the machine, so the panel and the starters do not.
   './help/AskDaoris.tsx',

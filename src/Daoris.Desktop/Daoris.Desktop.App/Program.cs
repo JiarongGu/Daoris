@@ -104,8 +104,16 @@ internal static class Program
             // The instruments' port (`npm run desktop`), honoured in development only: a published app
             // has none, so the page that holds the bridge is out of CDP's reach (D78 §3.1).
             DevToolsPort = int.TryParse(Environment.GetEnvironmentVariable(DevToolsVariable), out var port) ? port : 0,
-            Shell = new Shenora.Core.Ipc.ShellInfo { Name = "daoris-desktop", Capabilities = [] },
+            // The colour scheme's route is mounted below, and the kit asks that an app mounting it say so.
+            Shell = new Shenora.Core.Ipc.ShellInfo { Name = "daoris-desktop", Capabilities = [ShellCapability.ColorScheme] },
         });
+
+        // The viewer's chosen theme on the engine every window renders on (THEMESCHEME1): `UseWindows` registers the
+        // app's colour scheme, the engine applies it to Chromium's global context, which the main window's browser and
+        // each secondary window's take, and each window's page sets it to the viewer's choice over this route. So
+        // Chromium's own UI and `prefers-color-scheme` follow an explicit light or dark, and *System* still follows the OS.
+        // The in-app browser is a process of its own, which this does not reach.
+        builder.Services.AddShenoraColorScheme();
 
         // The kit's, the engine's and the modules' warnings and errors, into the same log.
         builder.Services.AddSingleton(log);
@@ -171,6 +179,10 @@ internal static class Program
         // edits, read by `daoris-browser` each time it starts.
         builder.Services.AddIpcModule<BrowserModule>();
         builder.Services.AddSingleton(new PlatformAddress(serviceUrl));
+        // The main window's taskbar count (NOTIFY1b): the window is resolved as the page tells it, never as the module
+        // is made, since the window is made after the modules and maps one of its own.
+        builder.Services.AddSingleton<ShowWaiting>(sp => (count, description) =>
+            sp.GetRequiredService<MainForm>().ShowWaiting(count, description));
         builder.Services.AddIpcModule<WindowsModule>();
         // The page's own report into the machine log (LOG1b, D94): what is used and what fails on the
         // screen, taken only as the catalogue names it — the module is where no word gets through. And
@@ -192,10 +204,13 @@ internal static class Program
         // so every module's answer passes it. Registered before Build, whose own call is a TryAdd.
         // Then a Daoris route leaves the window's thread at its first wait (UIFREEZE1): after the stall watch, which still
         // times and names the part before it, so the window is never where a route's git fan-out goes on.
+        // And what a route declares it changed reaches every window as STATE_CHANGED once it has answered (STATEHUB1b, D169):
+        // innermost, so it publishes off the window's thread and only what the route itself answered.
         builder.Services.UseMessageDispatcher((sp, dispatcher) => dispatcher
             .Use(RefusalLog.Middleware(log))
             .Use(sp.GetRequiredService<UiStallWatch>().Middleware)
-            .Use(OffTheWindow.Middleware));
+            .Use(OffTheWindow.Middleware)
+            .Use(StatePublisher.Middleware(sp.GetRequiredService<Shenora.Core.Events.IEventBus>())));
 
         // The loop starts with the app, not with the window: the driver watches whether or not the
         // person is looking, which is the whole point of a driver.

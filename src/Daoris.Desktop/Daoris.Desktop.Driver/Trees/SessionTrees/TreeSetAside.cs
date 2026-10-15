@@ -141,29 +141,20 @@ internal sealed class TreeSetAside(TreeContext context)
     /// On Windows a folder whose files something holds open cannot be renamed: the tree is in use, and stays (<c>busy</c>), for
     /// a later look. Where git will not let go of the record, the folder is put back. Called with a token nothing cancels.
     /// </remarks>
-    internal async Task<(bool Gone, string? To, string? Code, string Sentence)> MoveAsideAsync(string root, SweepItem item, CancellationToken ct)
+    internal Task<(bool Gone, string? To, string? Code, string Sentence)> MoveAsideAsync(string root, SweepItem item, CancellationToken ct) =>
+        MoveAsideAsync(root, item.Tree!, item.Workspace, item.Repository, ct);
+
+    /// <inheritdoc cref="MoveAsideAsync(string, SweepItem, CancellationToken)"/>
+    internal async Task<(bool Gone, string? To, string? Code, string Sentence)> MoveAsideAsync(
+        string root, string treePath, string workspace, string repository, CancellationToken ct)
     {
-        var tree = Path.TrimEndingDirectorySeparator(Path.GetFullPath(item.Tree!));
+        var tree = Path.TrimEndingDirectorySeparator(Path.GetFullPath(treePath));
         string? to = null;
         if (Directory.Exists(tree))
         {
-            var name = Path.GetFileName(tree);
-            to = Path.Combine(SetAsideRoot, item.Workspace, item.Repository, $"{name}-{DateTimeOffset.UtcNow.ToString(SetAsideStamp, CultureInfo.InvariantCulture)}");
-            try
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(to)!);
-                if (context.Worktrees.LinkBelowTreesRoot(Path.GetDirectoryName(to)!) is not null)
-                {
-                    return (false, null, TidyKept.Linked, "the folder it would be moved aside into is reached through a link under the trees home");
-                }
-
-                Directory.Move(tree, to);
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-            {
-                return (false, null, TidyKept.Busy,
-                    $"something on this machine is using its tree, so its folder could not be moved aside ({error.Message.Trim()}); a later look tries again");
-            }
+            var moved = MoveFolderAside(tree, workspace, repository, "its tree", "its folder");
+            if (moved.Code is { } kept) return (false, null, kept, moved.Sentence);
+            to = moved.To;
         }
 
         var (code, _, err) = await WorkingTree.GitAsync(root, ["worktree", "remove", tree], ct).ConfigureAwait(false);
@@ -184,9 +175,54 @@ internal sealed class TreeSetAside(TreeContext context)
     }
 
     /// <summary>
+    /// A folder under the trees home moved aside, in one rename on the same volume, into <see cref="SetAsideRoot"/> under its
+    /// workspace and repository, named for the moment it moved (AUTOTIDY1; AUTOTIDY2c, a folder that is no tree): where it went,
+    /// or why it stays, as the machine log's code and a clause. A refused rename is a folder something uses (<c>busy</c>).
+    /// </summary>
+    /// <param name="what">What something is using, in the clause: <c>its tree</c>, or the folder itself.</param>
+    /// <param name="whose">What could not be moved, in the clause: <c>its folder</c>, or the folder itself.</param>
+    internal (string? To, string? Code, string Sentence) MoveFolderAside(
+        string folder, string workspace, string repository, string what = "it", string whose = "it")
+    {
+        var name = Path.GetFileName(Path.TrimEndingDirectorySeparator(folder));
+        var to = Path.Combine(SetAsideRoot, workspace, repository, $"{name}-{DateTimeOffset.UtcNow.ToString(SetAsideStamp, CultureInfo.InvariantCulture)}");
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(to)!);
+            if (context.Worktrees.LinkBelowTreesRoot(Path.GetDirectoryName(to)!) is not null)
+            {
+                return (null, TidyKept.Linked, "the folder it would be moved aside into is reached through a link under the trees home");
+            }
+
+            Directory.Move(folder, to);
+            return (to, null, "");
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return (null, TidyKept.Busy,
+                $"something on this machine is using {what}, so {whose} could not be moved aside ({error.Message.Trim()}); a later look tries again");
+        }
+    }
+
+    /// <summary>When a folder moved aside was moved, read from its name (<c>&lt;name&gt;-&lt;moment&gt;</c>); null where its name says none.</summary>
+    internal static DateTimeOffset? MovedAt(string name)
+    {
+        var dash = name.LastIndexOf('-');
+        return dash >= 0 && DateTimeOffset.TryParseExact(
+            name[(dash + 1)..], SetAsideStamp, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var moved)
+            ? moved
+            : null;
+    }
+
+    /// <summary>
     /// The folders the look moved aside that have waited <paramref name="after"/> (AUTOTIDY1): each deleted where nothing in it
     /// was written after it was moved, and kept, saying why, where something was, or where it holds a link or cannot be read.
     /// </summary>
+    /// <remarks>
+    /// A path past Windows' 260 characters, as a tree's own <c>node_modules</c> holds one, is read and deleted as any other
+    /// (AUTOTIDY2b, proven over a deep tree): .NET hands Windows such a path in its extended form, as git's <c>core.longpaths</c>
+    /// does for the tree's own record.
+    /// </remarks>
     /// <param name="now">What time it is, against the moment in each folder's name.</param>
     internal IReadOnlyList<SetAside> PurgeSetAside(DateTimeOffset now, TimeSpan after)
     {
@@ -196,15 +232,7 @@ internal sealed class TreeSetAside(TreeContext context)
         foreach (var repository in Directory.EnumerateDirectories(workspace))
         foreach (var folder in Directory.EnumerateDirectories(repository))
         {
-            var name = Path.GetFileName(folder);
-            var dash = name.LastIndexOf('-');
-            if (dash < 0 || !DateTimeOffset.TryParseExact(
-                    name[(dash + 1)..], SetAsideStamp, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var moved))
-            {
-                continue;
-            }
-
-            if (now - moved < after) continue;
+            if (MovedAt(Path.GetFileName(folder)) is not { } moved || now - moved < after) continue;
             (string Code, string Sentence)? kept;
             try
             {

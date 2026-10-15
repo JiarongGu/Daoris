@@ -41,9 +41,10 @@ import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from '..
 import { ShellSignals } from './ShellSignals';
 import {
   logEvent, useConsidered, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
-  useRules, useSayUpdate, useSessionGroups, useShowReviewAgain, useSyncNow, useUntrusted, useUpdateState,
+  useRules, useSayUpdate, useSessionGroups, useShowReviewAgain, useSyncNow, useTaskbarCount, useUntrusted, useUpdateState,
 } from '../bridge/shell';
 import { byTool } from '../agents/tools';
+import { useSay } from '../bridge/conversation';
 import { UpdateBanner } from '../update/UpdateBanner';
 import { LinkOpener } from '../design/links';
 import { BrowserDoor } from '../work/BrowserDoor';
@@ -332,7 +333,11 @@ export function App() {
   // The Agents place (UX6e, D150 §5): held on every view, as Plugins is; it reads the roster the frame holds and the
   // accounts' files, and opening it asks no account. A sign-in started there outlives leaving it (SIGNIN1).
   const agentsPane = lists.pane('agents');
+  // The words to the session that proposed a rule an *Accept* on the page kept (PROPOSEHERE1c): the Agents place is handed the
+  // door, its own view pressing no say hook (the driver's `HelpCoverageTests` follows what a place's view imports).
+  const sayToSession = useSay();
   const agents = useAgentsView({
+    say: (session, text) => sayToSession.mutateAsync({ id: session, text }),
     active: view === 'agents',
     chosen: agentsPane.chosen,
     onChoose: (item) => lists.choose('agents', item),
@@ -438,6 +443,8 @@ export function App() {
   const waiting = needsAPerson(
     running.data ?? [], outstanding.data ?? [], registry.data ?? [], asks.data ?? [], untrusted.data ?? [],
     proposals, considered.data ?? [], sessionGroups.data ?? [], accountsKnown).length;
+  // The same count on the window's taskbar button and in its title (NOTIFY1b), so it is seen with the window behind others.
+  useTaskbarCount(waiting, t('nav.waiting', { count: waiting }));
   const sessionsWaiting = waitingInSessions(running.data ?? [], considered.data ?? []);
   // Where this circle stands with its remote (SYNC6b), from this machine's own host — so a browser on
   // the machine reads it too, and it says for itself whether the circle is wired. Before it answers,
@@ -1286,7 +1293,7 @@ export function App() {
       <ContextMenus doors={contextDoors} shell={chrome.present} />
       {/* A notification is a door (design §4): clicking the OS balloon lands on that session
           rather than on whatever was last open. */}
-      <ShellSignals notify={notify} onAttend={openInWork} />
+      <ShellSignals notify={notify} onAttend={openInWork} attended={view === 'sessions' ? attending : null} />
     </div>
     </MainOffer.Provider>
     </LinkOpener.Provider>

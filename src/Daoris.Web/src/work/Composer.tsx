@@ -18,6 +18,24 @@ import { type SessionOption, SessionOptions } from './SessionOptions';
  */
 export type MentionSource = { files: string[] | null; unlisted: number; refusal: string | null };
 
+/** One row of words above the box: waiting behind a turn, or on their way (SENDLOST1b). */
+const WORDS_ROW = 'flex items-start gap-2 rounded-control border border-dashed border-line-strong px-2.5 py-1 text-small text-ink-soft';
+
+/** A message's words above the box, with its files' names. */
+function Words({ message }: { message: ChatMessage }) {
+  return (
+    <span className="min-w-0 flex-1">
+      <span className="line-clamp-2 whitespace-pre-wrap wrap-anywhere">{message.text}</span>
+      {message.files.length > 0 && (
+        <span className="mt-0.5 flex min-w-0 items-center gap-1 text-meta text-ink-faint">
+          <Icon name="attach" size={11} className="shrink-0" />
+          <span className="truncate">{message.files.join(', ')}</span>
+        </span>
+      )}
+    </span>
+  );
+}
+
 /**
  * The input a person talks to a session through (SES2), with its **two distinct endings** and, since
  * CONV4b, the **turn's own stop** beside them.
@@ -72,8 +90,19 @@ export function Composer({
   live, sending = false, refusal, endings = true, draft, onDraft, carried, onCarry,
   queued = [], queuedLabel, taking = false, opening = false, stoppable = false, stopping = false, mentions, onMentioning, context, placeholder,
   attachments = true, sendLabel, stopTurnLabel, stopTurnTip, offered, optionsBusy = false, onOption, onSend, onFinish, onStop, onStopTurn,
-  focus = 0, accepts, onRemove, onEdit,
+  focus = 0, accepts, onRemove, onEdit, going, fold = false,
 }: {
+  /**
+   * Fold the waiting words to one line with their count, open to the list on a press (WAITFOOT2c): a park's answer box and
+   * the words waiting on it read as one box. The words on their way (`going`) are never folded.
+   */
+  fold?: boolean;
+  /**
+   * Words on their way to the session (SENDLOST1b), in the order sent: shown the moment they are sent, as sending, until it
+   * holds them. `late` where the page stopped waiting on their send (the bridge's TIMEOUT): the machine has not answered yet
+   * and may still take them, so they offer no control, as an edit or a removal of them would say them twice.
+   */
+  going?: { words: ChatMessage[]; late: boolean };
   /**
    * Take a waiting message back out, by its id (QUEUEEDIT1b). Answers whether it was still waiting: `done: false` is a
    * turn having it already, said in words. Absent, no waiting message offers a control.
@@ -154,6 +183,7 @@ export function Composer({
 }) {
   const { t } = useTranslation();
   const waitingLabel = useId();
+  const goingLabel = useId();
   const [own, setOwn] = useState('');
   const text = draft ?? own;
   const setText = onDraft ?? setOwn;
@@ -167,6 +197,7 @@ export function Composer({
   // A waiting message being reworded (QUEUEEDIT1b): its words are in the box, and what the box held is kept for after.
   const [editing, setEditing] = useState<{ id: string; stash: string } | null>(null);
   const [taken, setTaken] = useState(false);
+  const [listed, setListed] = useState(false);
   // A list that moved on under the edit (the word went, or its id changed) ends the edit: its id would name nothing.
   const stale = editing !== null && !queued.some((message) => message.id === editing.id);
   useEffect(() => {
@@ -336,22 +367,30 @@ export function Composer({
 
       {live && queued.length > 0 && (
         <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
-          <span id={waitingLabel} className="text-meta text-ink-faint">{queuedLabel ?? t(taking && !opening ? 'work.composer.queued' : 'work.composer.opening')}</span>
+          {/* Folded (WAITFOOT2c): one line with the count, so a park's answer is one box; a press opens the list. */}
+          {fold ? (
+            <div className="flex min-w-0 items-center gap-2 text-meta text-ink-faint">
+              <span className="shrink-0 font-semibold text-ink-soft">{t('work.composer.waitCount', { n: queued.length })}</span>
+              <span id={waitingLabel} className="min-w-0 truncate">{queuedLabel ?? t(taking && !opening ? 'work.composer.queued' : 'work.composer.opening')}</span>
+              <Button
+                type="button" variant="ghost" aria-expanded={listed}
+                onClick={() => setListed(!listed)}
+                className="ml-auto h-6 shrink-0 px-1.5 text-meta"
+              >
+                {t(listed ? 'work.composer.waitHide' : 'work.composer.waitShow')}
+              </Button>
+            </div>
+          ) : (
+            <span id={waitingLabel} className="text-meta text-ink-faint">{queuedLabel ?? t(taking && !opening ? 'work.composer.queued' : 'work.composer.opening')}</span>
+          )}
+          {(!fold || listed) && (
           <ol aria-labelledby={waitingLabel} className="m-0 grid list-none grid-cols-[minmax(0,1fr)] gap-1 p-0">
             {queued.map((message, index) => (
               <li
                 key={`${index}:${message.text}`}
-                className="flex items-start gap-2 rounded-control border border-dashed border-line-strong px-2.5 py-1 text-small text-ink-soft"
+                className={WORDS_ROW}
               >
-                <span className="min-w-0 flex-1">
-                  <span className="line-clamp-2 whitespace-pre-wrap wrap-anywhere">{message.text}</span>
-                  {message.files.length > 0 && (
-                    <span className="mt-0.5 flex min-w-0 items-center gap-1 text-meta text-ink-faint">
-                      <Icon name="attach" size={11} className="shrink-0" />
-                      <span className="truncate">{message.files.join(', ')}</span>
-                    </span>
-                  )}
-                </span>
+                <Words message={message} />
                 {message.id && (onRemove || onEdit) && (
                   <span className="flex shrink-0 items-center gap-1">
                     {onEdit && (
@@ -379,7 +418,26 @@ export function Composer({
               </li>
             ))}
           </ol>
-          {taken && <p role="status" className="m-0 text-small text-ink-soft">{t('work.composer.taken')}</p>}
+          )}
+          {taken &&<p role="status" className="m-0 text-small text-ink-soft">{t('work.composer.taken')}</p>}
+        </div>
+      )}
+
+      {/* Words on their way (SENDLOST1b), nearest the box they left, and shown whatever the session does meanwhile: the
+          frame lets them go once the session holds them, or puts them back in the box. No control: they are not the
+          driver's to take back yet. */}
+      {going && going.words.length > 0 && (
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
+          <span id={goingLabel} className="text-meta text-ink-faint">
+            {t(going.late ? 'work.composer.unanswered' : 'work.composer.sending')}
+          </span>
+          <ol aria-labelledby={goingLabel} className="m-0 grid list-none grid-cols-[minmax(0,1fr)] gap-1 p-0">
+            {going.words.map((message, index) => (
+              <li key={`${index}:${message.text}`} className={WORDS_ROW}>
+                <Words message={message} />
+              </li>
+            ))}
+          </ol>
         </div>
       )}
 

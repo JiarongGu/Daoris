@@ -126,7 +126,11 @@ internal static class TreesConsole
 
                 foreach (var tree in listed)
                 {
-                    Console.WriteLine($"  {tree.Workspace}/{tree.Repository}  {tree.Branch}");
+                    // AUTOTIDY2c: a folder the look moved aside is listed so, with when, until the purge deletes it.
+                    Console.WriteLine(tree.MovedAside is { } moved
+                        ? $"  {tree.Workspace}/{tree.Repository}  {tree.Branch} on {moved.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)}, "
+                          + $"deleted once it is left untouched for {BranchTidying.SetAsideFor.TotalDays:0} days"
+                        : $"  {tree.Workspace}/{tree.Repository}  {tree.Branch}");
                     Console.WriteLine($"    {tree.Path}");
                 }
 

@@ -75,15 +75,14 @@ internal sealed class ContentHolds(TreeContext context)
     /// <param name="tip">The branch's tip as an object id, read once by the caller, which deletes only while the branch is still it.</param>
     /// <param name="line">The repository's line, or null where none is set and git names none.</param>
     /// <param name="notHolders">The branches that may not hold its work: those a landing made and recorded here.</param>
+    /// <param name="refs">The judgement's refs (PROC1d-ii), the repository's whichever tree <paramref name="cwd"/> is; null asks git.</param>
     internal static async Task<ContentHold?> HeldByContentAsync(
-        string cwd, string tip, string? line, IReadOnlySet<string> notHolders, CancellationToken ct)
+        string cwd, string tip, string? line, IReadOnlySet<string> notHolders, CancellationToken ct, RefSnapshot? refs = null)
     {
         var forms = new List<(string Name, string Id)>();
-        foreach (var form in await LandedProofs.LineFormsAsync(cwd, line, ct).ConfigureAwait(false))
+        foreach (var form in await LandedProofs.LineFormsAsync(cwd, line, ct, refs).ConfigureAwait(false))
         {
-            var (formCode, formId, _) = await WorkingTree.GitAsync(cwd, ["rev-parse", "--verify", "--quiet", $"{form.Ref}^{{commit}}"], ct)
-                .ConfigureAwait(false);
-            if (formCode == 0) forms.Add((form.Name, formId.Trim()));
+            if (await TreeRefs.CommitOfAsync(cwd, form.Ref, ct, refs).ConfigureAwait(false) is { } formId) forms.Add((form.Name, formId));
         }
 
         if (forms.Count == 0) return null;
@@ -112,10 +111,10 @@ internal sealed class ContentHolds(TreeContext context)
 
         if (changed is null) return null;
         // Newest first: a cherry-pick is a recent commit, so the holder is usually found before the rest are compared.
-        var (refsCode, refs, _) = await WorkingTree.GitAsync(
+        var (refsCode, byDate, _) = await WorkingTree.GitAsync(
             cwd, ["for-each-ref", "--sort=-committerdate", "--format=%(objectname) %(refname)", "refs/heads/"], ct).ConfigureAwait(false);
         if (refsCode != 0) return null;
-        foreach (var row in refs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        foreach (var row in byDate.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
             var space = row.IndexOf(' ');
             if (space <= 0) continue;

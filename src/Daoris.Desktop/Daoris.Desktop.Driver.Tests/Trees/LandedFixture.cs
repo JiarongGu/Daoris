@@ -154,12 +154,15 @@ public abstract class LandedFixture : IDisposable
             RedirectStandardError = true,
         };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
+        var (beganUtc, began) = (DateTime.UtcNow, Stopwatch.GetTimestamp());
         using var process = Process.Start(info)!;
+        var started = Stopwatch.GetTimestamp();
         // Both reads start before the wait: a child that fills the pipe nobody reads waits on it forever (TESTGIT1).
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();
         await stderr;
+        if (FixtureSpawns.On) FixtureSpawns.Note("LandedFixture", beganUtc, began, started, arguments);
         return await stdout;
     }
 

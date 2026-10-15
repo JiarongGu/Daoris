@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // The shell's push channel: ticks, attention and endings become toasts and refetches. Moved from
 // `shell.test.tsx` with MOD3: tests follow their code.
@@ -24,6 +24,7 @@ vi.mock('@shenora/react', () => ({
 import { OverviewView } from '../overview/OverviewView';
 import { ShellSignals } from './ShellSignals';
 import { keys } from '../data/queries';
+import { useLanding } from '../bridge/trees';
 import { respond, show } from '../test/shellHarness';
 
 describe('the shell push channel (ShellSignals)', () => {
@@ -206,6 +207,59 @@ describe('the shell push channel (ShellSignals)', () => {
     expect(notify).toHaveBeenCalledWith('tools — a session failed', 'ok');
   });
 
+  /**
+   * NOTIFY1a: a conversation that answered the person is news they wait on, never a demand: the driver's own sentence, in
+   * the ending's tone, and the sessions asked again so its row shows the turn's end.
+   */
+  it('a conversation that answered is news in the driver\'s own words', () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    const notify = vi.fn();
+    show(<ShellSignals notify={notify} />, client);
+
+    eventHandlers.get('DAORIS.SESSION_ATTENTION')!({
+      kind: 'Answered', session: 'c1a2b3c4', repository: 'engine', headline: 'engine — a conversation answered you',
+    });
+
+    expect(notify).toHaveBeenCalledWith('engine — a conversation answered you', 'ok');
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions });
+  });
+
+  /**
+   * NOTIFY1c: the conversation the person is reading in a window in front already shows its answer, so its toast says nothing
+   * new; every other session's answer, every other kind and a hidden window keep theirs.
+   */
+  it('skips the answered toast for the conversation attended in a window in front, and only that', () => {
+    const notify = vi.fn();
+    show(<ShellSignals notify={notify} attended="c1a2b3c4" />);
+    const answered = (session: string) => eventHandlers.get('DAORIS.SESSION_ATTENTION')!({
+      kind: 'Answered', session, repository: 'engine', headline: 'engine — a conversation answered you',
+    });
+
+    answered('c1a2b3c4');
+    expect(notify).not.toHaveBeenCalled();
+
+    answered('c9z9z9z9');
+    expect(notify).toHaveBeenCalledWith('engine — a conversation answered you', 'ok');
+
+    // A park of the attended session still demands them: only an answer is news the page already shows.
+    notify.mockClear();
+    eventHandlers.get('DAORIS.SESSION_ATTENTION')!({ kind: 'Parked', session: 'c1a2b3c4', headline: 'engine — a session needs you' });
+    expect(notify).toHaveBeenCalledWith('engine — a session needs you', 'error');
+  });
+
+  it('keeps the answered toast while the window is hidden, though its conversation is the attended one', () => {
+    const notify = vi.fn();
+    const visibility = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    try {
+      show(<ShellSignals notify={notify} attended="c1a2b3c4" />);
+      eventHandlers.get('DAORIS.SESSION_ATTENTION')!({ kind: 'Answered', session: 'c1a2b3c4', headline: 'engine — a conversation answered you' });
+      expect(notify).toHaveBeenCalledWith('engine — a conversation answered you', 'ok');
+    } finally {
+      visibility.mockRestore();
+    }
+  });
+
   /** An older shell, or a reworded payload: the console must tolerate any shape (SES1's rule). */
   it('an attention event with nothing to say is not a blank toast', () => {
     const notify = vi.fn();
@@ -232,6 +286,43 @@ describe('the shell push channel (ShellSignals)', () => {
 
     expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions });
     expect(notify).not.toHaveBeenCalled();
+  });
+
+  /**
+   * STATEHUB1 (D169): the 采纳 a tab switch read stale. A landing pressed in another window, or anywhere but this view, reaches
+   * this window as the driver's event alone, with no press of this client's; the plan is asked again where it is shown, and a
+   * view mounted again after it (a tab switched back) reads the new plan rather than the one its cache held as fresh.
+   */
+  it('a landing done in another window reads anew here, shown or mounted again, from the event alone', async () => {
+    // As the application's client keeps an answer fresh (main.tsx): a remount alone would not ask again.
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 15_000 } } });
+    let target = 'main';
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      type === 'LANDING' ? { session: 's1a2b3c4', form: 'merge', target } : {});
+    function Plan() {
+      const plan = useLanding('s1a2b3c4');
+      return <p>{plan.data ? `lands in ${plan.data.target}` : 'reading'}</p>;
+    }
+    function Window({ showing }: { showing: boolean }) {
+      return <><ShellSignals notify={() => {}} />{showing && <Plan />}</>;
+    }
+
+    const view = show(<Window showing />, client);
+    expect(await screen.findByText('lands in main')).toBeInTheDocument();
+
+    // Another window accepted it: only the driver's event reaches this one.
+    target = 'release';
+    eventHandlers.get('DAORIS.STATE_CHANGED')!({ scopes: ['sessions', 'landing', 'diff'], sessions: ['s1a2b3c4'] });
+    expect(await screen.findByText('lands in release')).toBeInTheDocument();
+
+    // The tab switched away, the line moved again by a press elsewhere, and the tab switched back.
+    view.rerender(<QueryClientProvider client={client}><Window showing={false} /></QueryClientProvider>);
+    target = 'next';
+    eventHandlers.get('DAORIS.STATE_CHANGED')!({ scopes: ['landing'] });
+    view.rerender(<QueryClientProvider client={client}><Window showing /></QueryClientProvider>);
+    expect(await screen.findByText('lands in next')).toBeInTheDocument();
+
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', expect.anything());
   });
 
   /** A notification is a door (design §4): clicking it names the session to attend. */

@@ -385,4 +385,131 @@ public sealed class AttentionTests
 
         Assert.Equal(parked, events.Any(e => e.Kind == AttentionKind.Parked));
     }
+
+    private static readonly DateTimeOffset Ended1 = new(2026, 10, 15, 9, 0, 0, TimeSpan.Zero);
+
+    private static readonly DateTimeOffset Ended2 = Ended1.AddMinutes(2);
+
+    /// <summary>A conversation's turns as its runner tells them: one running, or none with the last one's end.</summary>
+    private static ChatQueue Running(DateTimeOffset? last = null, params string[] queued) =>
+        new(true, [.. queued.Select(text => new ChatMessage(text, []))], last);
+
+    private static ChatQueue Idle(DateTimeOffset last) => new(false, [], last);
+
+    /// <summary>
+    /// NOTIFY1a: the person said something to a conversation and looked away; the turn their words started has ended, and
+    /// that answer is what they wait on. Said with the driver's own sentence (D24), and nothing beside it.
+    /// </summary>
+    [Fact]
+    public void A_conversation_that_answers_the_person_s_words_is_worth_saying()
+    {
+        var watch = new AttentionWatch();
+        watch.Asked("c1");
+
+        Assert.Null(watch.Turned("c1", "engine", Running()));
+        var answered = watch.Turned("c1", "engine", Idle(Ended1));
+
+        Assert.NotNull(answered);
+        Assert.Equal(
+            (AttentionKind.Answered, "c1", "engine", "engine — a conversation answered you", (string?)null),
+            (answered.Kind, answered.Session, answered.Repository, answered.Headline, answered.Detail));
+    }
+
+    /// <summary>
+    /// A turn's end nobody's words started — a conversation taken up by itself, a hand-over's briefing, one the window came up
+    /// beside — is no answer to anybody: a watch that has not heard the person since says nothing.
+    /// </summary>
+    [Fact]
+    public void A_turn_s_end_the_person_s_words_did_not_start_says_nothing()
+    {
+        var watch = new AttentionWatch();
+
+        Assert.Null(watch.Turned("c1", "engine", Idle(Ended1)));
+        Assert.Null(watch.Turned("c1", "engine", Running(Ended1)));
+        Assert.Null(watch.Turned("c1", "engine", Idle(Ended2)));
+    }
+
+    /// <summary>
+    /// Said once per turn: the same end told again (a queue's other change) is not a second answer, and the next turn's end
+    /// is one only if the person spoke again.
+    /// </summary>
+    [Fact]
+    public void An_answer_is_said_once_and_the_next_needs_the_person_s_words_again()
+    {
+        var watch = new AttentionWatch();
+        watch.Asked("c1");
+        watch.Turned("c1", "engine", Running());
+        Assert.NotNull(watch.Turned("c1", "engine", Idle(Ended1)));
+
+        Assert.Null(watch.Turned("c1", "engine", Idle(Ended1)));
+        watch.Turned("c1", "engine", Running(Ended1));
+        Assert.Null(watch.Turned("c1", "engine", Idle(Ended2)));
+
+        watch.Asked("c1");
+        watch.Turned("c1", "engine", Running(Ended2));
+        Assert.NotNull(watch.Turned("c1", "engine", Idle(Ended2.AddMinutes(1))));
+    }
+
+    /// <summary>
+    /// Words the person queued behind a running turn are answered by the turn that takes them: the end between the two is not
+    /// what they wait on, and the last one's is said once.
+    /// </summary>
+    [Fact]
+    public void Words_queued_behind_a_turn_are_answered_at_the_last_turn_s_end()
+    {
+        var watch = new AttentionWatch();
+        watch.Asked("c1");
+        watch.Turned("c1", "engine", Running());
+        watch.Asked("c1");
+        watch.Turned("c1", "engine", Running(null, "And the tests."));
+
+        Assert.Null(watch.Turned("c1", "engine", Running(Ended1)));
+        Assert.Single(new[] { watch.Turned("c1", "engine", Idle(Ended2)) }.OfType<AttentionEvent>());
+    }
+
+    /// <summary>
+    /// A turn the person stopped ends on their own press: telling them it answered is telling them what they just did, as an
+    /// end they asked for never is (SURF5b).
+    /// </summary>
+    [Fact]
+    public void A_turn_the_person_stopped_is_no_answer()
+    {
+        var watch = new AttentionWatch();
+        watch.Asked("c1");
+        watch.Turned("c1", "engine", Running());
+        watch.Stopped("c1");
+
+        Assert.Null(watch.Turned("c1", "engine", Idle(Ended1)));
+    }
+
+    /// <summary>Each conversation is its own: the person's words to one are no answer awaited from another.</summary>
+    [Fact]
+    public void The_person_s_words_are_waited_on_from_the_conversation_they_went_to()
+    {
+        var watch = new AttentionWatch();
+        watch.Asked("c1");
+
+        Assert.Null(watch.Turned("c2", "engine", Idle(Ended1)));
+        Assert.NotNull(watch.Turned("c1", "engine", Idle(Ended1)));
+    }
+
+    /// <summary>A conversation that ended here is forgotten: what it was waited on for goes with it.</summary>
+    [Fact]
+    public void A_conversation_forgotten_is_waited_on_for_nothing()
+    {
+        var watch = new AttentionWatch();
+        watch.Asked("c1");
+        watch.Forget("c1");
+
+        Assert.Null(watch.Turned("c1", "engine", Idle(Ended1)));
+    }
+
+    /// <summary>Ask Daoris's room is no repository the person knows by its name: its answer is said by the room's.</summary>
+    [Fact]
+    public void Ask_Daoris_answering_says_so_by_its_own_name()
+    {
+        Assert.Equal(
+            "Ask Daoris answered you",
+            new AttentionEvent(AttentionKind.Answered, "h1", HelpRoom.Repository).Headline);
+    }
 }

@@ -5,6 +5,63 @@ with the version and date at release.
 
 ## Unreleased
 
+- Words you sent a session whose box then became its line, because the session no longer takes words, now come back to the
+  box with a line under it saying they did not go, where before they stayed *not answered yet* until you opened the page
+  again. Starting Ask Daoris from an earlier conversation opens at once, as a new one does, rather than waiting for the
+  machine to be read. And the Branches tab's *Cleaned up on its own* now says when a folder set aside was a folder under the
+  trees that was no tree, or an opening that was cut off.
+- While a session's work lands, its review says *Landing…* (落地中…) wherever it is shown: after *Accept…* at the session's top,
+  after switching tabs and back, and in every other open window, where it offered *Accept* again before. So too its *Discard
+  tree* waits while its tree is discarded, and its hand-off says *Handing off…* while its branch is handed to its plugin.
+- Allowing a rule a session proposed from What needs you, or accepting it on the Agents page, now tells that session so, as
+  allowing it in its conversation does, so it goes on instead of sitting idle. And a branch Daoris cleaned up that a landing
+  made reads *A landing's branch, for session …* in the Branches tab's *Cleaned up on its own*, not a bare repository row.
+- Answering a session that parked is one box: the words waiting on it fold to one line with their count, *Show them* opens them
+  to edit or remove, and the strip at the foot no longer says "answer it in the box below" over that box. A conversation that
+  answers you while you are reading it in a window in front no longer also toasts.
+- A press in one window — a session's stop, archive or delete, a work's pause, a rule, a plugin, a sync, a history clear, a
+  setting, an agent's account, a tool, a post in an ask's channel, an Ask Daoris proposal applied or a conversation renamed —
+  now shows in every open window at once, as an Accept already did.
+- A message you send in Sessions no longer vanishes on a busy machine. In a conversation, and in the box at the foot of any
+  session (telling one at work something, answering one that parked, or writing to one that ended), your words show at once as
+  *sending…*; where the machine is slow to answer they stay, saying it has not answered yet (本机尚未回应), rather than
+  vanishing behind an error, and go once the session holds them. Nothing goes back in the box to be sent twice; words a
+  conversation never took before it ended come back there, said so.
+- When a conversation answers what you said while Daoris's window is behind another, Windows tells you so, as *engine — a
+  conversation answered you*; a click opens it. Nothing is said while you are looking at a Daoris window (the page shows it
+  instead), for a turn you stopped, or while notifications are off.
+- What waits on you in a session is shown once on the screen. The strip at its foot steps aside while the session's top, where
+  every wait stands, is wholly in view, and comes back as you scroll it away; it stays while an ask is open in it or you are
+  working in it. Where the conversation raised a wait, a small mark replaces the line of words: its tip says what waits on you
+  from there, and pressing it takes you to that wait, at the top when the top is in view.
+- A rule a session proposed after it was refused something now waits on you in that session, at its top and at its foot, with
+  what it would change and why: *Allow…* asks once, *Decline* is one press, and *In the conversation* shows the call that
+  proposed it. Allowed there, the session is told the rule is allowed now and goes on with it; a session that takes no words
+  says so instead. In What needs you, allowing one now says *Allowed* (已允许), as its press reads.
+- While something waits on you, Daoris's taskbar button shows how many as a number on its icon (*9+* past nine), and the
+  window's title leads with it, as *(3) Daoris (道衍)*, when you hover the button or switch windows with Alt-Tab. It is the
+  count Overview's *What needs you* shows, and it goes when nothing waits.
+- After a session's work is accepted (采纳), its *Accept…* and the plan beside it read anew wherever they are shown, in
+  every open window and when you switch back to a tab, where an old plan used to stand until the driver's next change. The
+  same holds after discarding a session's tree, handing a branch to its plugin, a press on a second opinion, the clean-up,
+  bringing repositories up to date and saving how work lands.
+- Ask Daoris no longer loses your message on a busy machine. It opens at once and reads the machine while your first words wait,
+  shown as *opening Ask Daoris…*; words you send show at once as *sending…*, and where the machine is slow to answer they stay,
+  saying it has not answered yet (本机尚未回应), rather than vanishing behind an error. Nothing goes back in the box to be sent
+  twice; words that never arrived come back there, said so.
+- The words you said to a session that ended, or that parked to ask you, wait above its box with *Edit* and *Remove* until it
+  goes on with them, as words waiting behind a running turn do: remove one it no longer needs, or put new words in its place.
+- What waits on you in a session is at its foot too, above the box you type in, so you need not scroll back to its top: its
+  question (answered in the box), a go-ahead still open with *Approve* and *Refuse*, its work's *Accept…*, the words asking it
+  to rebase, the second opinion's and the review's presses, and a branch to discard, each the same press as in its head, an
+  ask opened in one place closing the other. Several fold to one line; *To the top* takes you to the head.
+- Each thing waiting on you in a session leads to where its conversation raised it: *In the conversation* on its head and at
+  its foot shows the question it asked, the call that asked a go-ahead, or the end of the turn whose work waits to be accepted,
+  outlined; that place says what waits on you from there, with *To the wait* back to it at the foot.
+- A theme you choose (light or dark, under Settings or View → Theme) now reaches the window's Chromium as well as the page:
+  its scrollbars and controls, its own pages, and what a page reads as the system's theme follow your choice in the main
+  window, the monitor and a detached session, where they followed Windows' setting before. *System* still follows Windows.
+  Daoris's browser keeps its own setting.
 - A session no longer thanks you for accepting when you type "accept": it says its work waits for *Accept…* on its page and
   where that is, and when it asks you to approve a rule it proposed, it names the Agents page's *Proposals*. In What needs you,
   the act on a rule an agent proposed reads *Allow…* (允许…), no longer the same *Accept…* (采纳…) as landing a session's work.
@@ -34,6 +91,16 @@ with the version and date at release.
   session to change it. A tree holding only ignored files (installed dependencies, a build's output, a session's own logs) goes
   too: its folder is moved aside for fourteen days, as before. Uncommitted or untracked work, a session still running or waiting,
   words you said to a session that ended, and a tree whose branch never moved keep it.
+- The branches *Accept…* made (`feature/…`) now go by themselves too, once their pull request merged or the line holds their
+  work, with the session branch that grew them: a squash merge no longer leaves both until *Clean up*. One whose pull request is
+  still open, one checked out somewhere, one you pushed and moved since, and one a running session still works from stay. A tree
+  whose installed packages hold paths past Windows' 260 characters is moved aside and deleted fourteen days later like any other.
+- Folders beside a repository's session trees that are no tree, an empty one a removed tree left, a tree half removed, or one a
+  session wrote next to its own (`devtools`, `.tmp`), are now moved aside by themselves once nothing has written in them for ten
+  minutes, and deleted fourteen days later like a tree's; `daoris-driver trees list` names them *(not a tree)* until then, and
+  each folder moved aside *(moved aside)* with the day. A session's start cut off as the app closes no longer leaves a
+  half-made tree and branch behind: a cancel undoes it at once, and one a crash cut off is moved aside, its branch removed, by a
+  later look. A folder a running session names stays, and so does a tree you locked.
 - An ask's page has a *Channel* (频道), where its sessions and you talk: their messages and Daoris's lines about its quests
   (published, taken, done, declined, waiting on your yes) in your language, an open question marked, and a box to write to
   everyone on the ask or one of its repositories, answering a message if you choose. A session on an ask has the same channel

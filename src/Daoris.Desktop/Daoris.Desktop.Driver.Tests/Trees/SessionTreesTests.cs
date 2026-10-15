@@ -305,6 +305,64 @@ public sealed class SessionTreesTests : IDisposable
     }
 
     /// <summary>
+    /// OPENCUT1: an open cut off once git has added its tree, by a cancel as the app's close cuts it, leaves nothing: no branch,
+    /// no folder, no record of a tree in git. While it opens, the tree is locked, and the lock's reason says who holds it.
+    /// </summary>
+    [Fact]
+    public async Task An_open_cancelled_once_its_tree_is_added_leaves_nothing_and_its_lock_said_who()
+    {
+        var root = await MakeRepositoryAsync("engine");
+        using var closing = new CancellationTokenSource();
+        string? lockSaid = null;
+        // The git right after `worktree add`, which reads the branch it made: the open is cut there.
+        WorkingTree.Started.Value = arguments =>
+        {
+            if (closing.IsCancellationRequested || arguments is not ["rev-parse", "--verify", "--quiet", var reference]
+                || !reference.StartsWith("refs/heads/daoris/s-", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            var locked = Path.Combine(root, ".git", "worktrees", reference["refs/heads/daoris/".Length..], "locked");
+            lockSaid = File.Exists(locked) ? File.ReadAllText(locked).TrimEnd('\n') : null;
+            closing.Cancel();
+        };
+        try
+        {
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => new SessionTrees(_home).OpenAsync(root, "engine", "aurora", closing.Token));
+        }
+        finally
+        {
+            WorkingTree.Started.Value = null;
+        }
+
+        Assert.Equal($"Daoris is opening this tree (process {Environment.ProcessId})", lockSaid);
+        await AssertNothingLeftAsync(root);
+    }
+
+    /// <summary>
+    /// OPENCUT1: an open cut off while git is still adding its tree, the branch made and the tree checked out, leaves nothing.
+    /// git runs <c>post-checkout</c> before its add returns, so a hook that waits holds git there while the open is cancelled.
+    /// </summary>
+    [Fact]
+    public async Task An_open_cancelled_while_git_is_still_adding_its_tree_leaves_nothing()
+    {
+        var root = await MakeRepositoryAsync("engine");
+        var ran = Path.Combine(_scratch, "post-checkout-ran");
+        await File.WriteAllTextAsync(
+            Path.Combine(root, ".git", "hooks", "post-checkout"), $"#!/bin/sh\necho ran > '{ran.Replace('\\', '/')}'\nsleep 120\n");
+        using var closing = new CancellationTokenSource();
+
+        var opening = new SessionTrees(_home).OpenAsync(root, "engine", "aurora", closing.Token);
+        await Poll.Until(() => File.Exists(ran) || opening.IsCompleted, () => "git never ran the hook", TimeSpan.FromMinutes(2));
+        Assert.Single((await GitAsync(root, "branch", "--list", "daoris/*")).Split('\n', StringSplitOptions.RemoveEmptyEntries));
+        await closing.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => opening);
+        await AssertNothingLeftAsync(root);
+    }
+
+    /// <summary>
     /// CHAIN2, the owner's answer: a chain's next step to the same repository starts ON the branch the
     /// step before it landed on, so a verify step sees the unmerged work it exists to check.
     /// </summary>
@@ -338,6 +396,17 @@ public sealed class SessionTreesTests : IDisposable
     }
 
     // ---------------------------------------------------------------------------------- fixtures
+
+    /// <summary>OPENCUT1: the repository as it was before the open: no session branch, no folder under its trees, no tree in git but the root.</summary>
+    private async Task AssertNothingLeftAsync(string root)
+    {
+        Assert.Equal("", (await GitAsync(root, "branch", "--list", "daoris/*")).Trim());
+        var folder = Path.Combine(_home, "trees", "aurora", "engine");
+        Assert.True(!Directory.Exists(folder) || Directory.GetFileSystemEntries(folder).Length == 0, "a folder is left under the trees");
+        Assert.Single((await GitAsync(root, "worktree", "list", "--porcelain")).Split('\n'), line => line.StartsWith("worktree ", StringComparison.Ordinal));
+        Assert.False(Directory.Exists(Path.Combine(root, ".git", "worktrees")) && Directory.GetDirectories(Path.Combine(root, ".git", "worktrees")).Length > 0,
+            "git keeps a record of a tree");
+    }
 
     private async Task<string> MakeRepositoryAsync(string name, string? under = null)
     {

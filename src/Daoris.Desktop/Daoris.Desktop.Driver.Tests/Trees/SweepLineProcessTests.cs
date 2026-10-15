@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// repository, and a frozen window's stack held seventeen such asks waiting on .NET's one process-start lock.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class SweepLineProcessTests : LandedFixture
 {
     [Fact]

@@ -21,6 +21,8 @@ export const keys = {
   untrusted: ['untrusted'] as const,
   /** The starts the last tick held on cooling accounts, an intake's among them (UX6d) — written by the tick, like `considered`. */
   waits: ['waits'] as const,
+  /** The presses the driver has not answered yet, as it last told them (STATEHUB1c) — written by the state hub, never fetched. */
+  underWay: ['underWay'] as const,
   /** Ask Daoris's conversation opened ahead of the person (HELP5) — kept by the page, never fetched. */
   helpReadied: ['help-readied'] as const,
   /** Where the install's update stands (UPDATE1, D139): asked once, then kept by the shell's `UPDATE_STATE`. */

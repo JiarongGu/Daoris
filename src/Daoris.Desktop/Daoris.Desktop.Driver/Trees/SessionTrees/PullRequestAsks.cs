@@ -76,7 +76,9 @@ internal sealed class PullRequestAsks(TreeContext context)
     {
         var rule = LandingRules.Choose(context.Config(), repository, workspace).Rule;
         var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
-        var forms = await LandedProofs.LineFormsAsync(root, line, ct).ConfigureAwait(false);
+        // The repository's refs read once for its entries (PROC1d-ii), and only where one is due.
+        var refs = RefSnapshot.Take(root);
+        IReadOnlyList<LandedProofs.LineForm>? forms = null;
         IReadOnlyList<string>? unlanded = null;
 
         var asks = new List<StateAsk>();
@@ -86,8 +88,9 @@ internal sealed class PullRequestAsks(TreeContext context)
             if (PullRequestAsking.PluginFor(entry, rule) is not { } plugin) continue;
             if (again is null)
             {
-                unlanded ??= await UnlandedSessionTipsAsync(root, ct).ConfigureAwait(false);
-                if (!await CouldRemoveAsync(root, entry, line, forms, unlanded, landedMayGo, ct).ConfigureAwait(false)) continue;
+                forms ??= await LandedProofs.LineFormsAsync(root, line, ct, refs).ConfigureAwait(false);
+                unlanded ??= await UnlandedSessionTipsAsync(root, ct, refs).ConfigureAwait(false);
+                if (!await CouldRemoveAsync(root, entry, line, forms, unlanded, landedMayGo, ct, refs).ConfigureAwait(false)) continue;
             }
 
             asks.Add(new StateAsk(entry, plugin,
@@ -158,9 +161,9 @@ internal sealed class PullRequestAsks(TreeContext context)
     /// </summary>
     private static async Task<bool> CouldRemoveAsync(
         string root, LandedBranch entry, string? line, IReadOnlyList<LandedProofs.LineForm> forms, IReadOnlyList<string> unlanded,
-        bool landedMayGo, CancellationToken ct)
+        bool landedMayGo, CancellationToken ct, RefSnapshot? refs = null)
     {
-        if (entry.GoneAt is null && landedMayGo && await LandedProofs.StandingTipAsync(root, entry, ct).ConfigureAwait(false) is { } tip)
+        if (entry.GoneAt is null && landedMayGo && await LandedProofs.StandingTipAsync(root, entry, ct, refs).ConfigureAwait(false) is { } tip)
         {
             var proof = await LandedProofs.ProveAsync(root, tip, line, forms, ct).ConfigureAwait(false);
             if (proof.Kind is not (LandedKind.OnLine or LandedKind.Merged)) return true;
@@ -179,10 +182,10 @@ internal sealed class PullRequestAsks(TreeContext context)
     }
 
     /// <summary>The tips of the session branches that stand here and hold commits no branch of the person's holds (D88).</summary>
-    private static async Task<IReadOnlyList<string>> UnlandedSessionTipsAsync(string root, CancellationToken ct)
+    private static async Task<IReadOnlyList<string>> UnlandedSessionTipsAsync(string root, CancellationToken ct, RefSnapshot? refs = null)
     {
         var tips = new List<string>();
-        foreach (var branch in await LandedProofs.SessionBranchesAsync(root, ct).ConfigureAwait(false))
+        foreach (var branch in await LandedProofs.SessionBranchesAsync(root, ct, refs).ConfigureAwait(false))
         {
             var (code, log, _) = await TreeFollows.UnlandedLogAsync(root, branch, ct).ConfigureAwait(false);
             if (code == 0 && !string.IsNullOrWhiteSpace(log)) tips.Add($"refs/heads/{branch}");
@@ -228,16 +231,18 @@ internal sealed class PullRequestAsks(TreeContext context)
     /// Every completed pull request of one repository that carried work here, by the kept answers alone (design §2.3): what a
     /// look lists and a press re-judges by, so what was listed is what goes. Nothing is asked.
     /// </summary>
-    internal async Task<IReadOnlyList<PullRequestCarrier>> CarriersAsync(string root, string repository, string? line, CancellationToken ct)
+    /// <param name="refs">The judgement's refs (PROC1d-ii); null asks git.</param>
+    internal async Task<IReadOnlyList<PullRequestCarrier>> CarriersAsync(
+        string root, string repository, string? line, CancellationToken ct, RefSnapshot? refs = null)
     {
         var carriers = new List<PullRequestCarrier>();
         var entries = context.Recorded.Entries()
             .Where(entry => Ours(entry, repository) && entry.PullRequestState?.State == PullRequestStates.Completed).ToList();
         if (entries.Count == 0) return carriers;
-        var forms = await LandedProofs.LineFormsAsync(root, line, ct).ConfigureAwait(false);
+        var forms = await LandedProofs.LineFormsAsync(root, line, ct, refs).ConfigureAwait(false);
         foreach (var entry in entries)
         {
-            var tip = entry.GoneAt is null ? await LandedProofs.StandingTipAsync(root, entry, ct).ConfigureAwait(false) : null;
+            var tip = entry.GoneAt is null ? await LandedProofs.StandingTipAsync(root, entry, ct, refs).ConfigureAwait(false) : null;
             var verdict = await VerdictAsync(root, line, forms, entry.PullRequestState!, tip, ct).ConfigureAwait(false);
             if (verdict.Carries) carriers.Add(new PullRequestCarrier(entry, entry.PullRequestState!.SourceCommit!, verdict.Clears ? tip : null));
         }

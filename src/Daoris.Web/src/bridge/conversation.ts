@@ -330,7 +330,6 @@ export const useEditQueued = (session: string | null) => {
  * verbs move text and nothing else (D24, `model-decoupling`).
  */
 export const useStartChat = () => {
-  const client = useQueryClient();
   return useMutation({
     // Every part after the repository is omittable, and omitted means something: the profile takes
     // the workspace's default, then the machine's, then the harness's own configuration home (D49
@@ -356,10 +355,8 @@ export const useStartChat = () => {
         ...(start.requestId ? { requestId: start.requestId } : {}),
       }));
     },
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: keys.allSessions });
-      void client.invalidateQueries({ queryKey: keys.driver });
-    },
+    // The sessions and the driver are asked again by the route's `STATE_CHANGED`, in every window (STATEHUB1d, D169), as
+    // they are for every press below that opens, ends or says words to a conversation.
   });
 };
 
@@ -479,16 +476,14 @@ export const useSendMessage = () =>
  * park's answer, a session that ended, or one winding up, all through `SESSION_INPUT`, which keeps a park's and an ended
  * record's words on the record and nudges the driver's loop (MSG1d). Words alone: the resumed run is handed no files.
  *
- * The sessions are asked again, so a park shows its answer and a record its words waiting.
+ * The sessions are asked again by the state hub alone (STATEHUB1d, STATEHUB1f), so a park shows its answer and a record its
+ * words waiting.
  */
-export const useSay = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useSay = () =>
+  useMutation({
     mutationFn: async (words: { id: string; text: string }) =>
       wordsOf(await call<unknown>('SESSION_INPUT', { id: words.id, text: words.text })),
-    onSuccess: () => void client.invalidateQueries({ queryKey: keys.allSessions }),
   });
-};
 
 /**
  * What a go-ahead answered on a park's page did (KNOWUSE1a2, GOAHEAD2b): the go-ahead's sentence, what became of the park,
@@ -503,8 +498,9 @@ export type GoAheadAnswered = WordsAnswer & { waits: boolean; message: string };
  * person's words are the go-ahead's, never the park's: the record keeps no words they did not write to it (D137). A
  * refused go-ahead answers nothing else, in the service's sentence.
  *
- * The sessions and the asks are asked again whatever came of it, since a park that could not be answered may still have
- * had its go-ahead answered.
+ * Its route publishes the sessions and the asks, which the state hub asks again in every window (STATEHUB1h, D169). One refused
+ * as an error publishes nothing (D169 point 5), yet a park that could not be sent on may still have had its go-ahead answered:
+ * this window, which pressed it, asks them again itself.
  */
 export const useParkGoAhead = () => {
   const client = useQueryClient();
@@ -517,7 +513,7 @@ export const useParkGoAhead = () => {
       const { message, waits } = (answered ?? {}) as { message?: unknown; waits?: unknown };
       return { ...wordsOf(answered), waits: waits === true, message: typeof message === 'string' ? message : '' };
     },
-    onSettled: () => {
+    onError: () => {
       void client.invalidateQueries({ queryKey: keys.allSessions });
       void client.invalidateQueries({ queryKey: keys.allAsks });
     },
@@ -548,17 +544,10 @@ const startedOf = (answer: unknown): StartedFrom => {
  * preface naming it, which is the agent's to read; then the words leave that session's record naming the new one, and its
  * conversation says where they went. What it refuses, it refuses before anything starts, by a code.
  */
-export const useStartFrom = () => {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: async (from: { session: string }): Promise<StartedFrom> =>
-      startedOf(await call<unknown>('SESSION_START_FROM', { id: from.session })),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: keys.allSessions });
-      void client.invalidateQueries({ queryKey: keys.driver });
-    },
-  });
-};
+export const useStartFrom = () => useMutation({
+  mutationFn: async (from: { session: string }): Promise<StartedFrom> =>
+    startedOf(await call<unknown>('SESSION_START_FROM', { id: from.session })),
+});
 
 /**
  * What *Go on with another agent…* did (MIXAGENT1b-i, D163): the conversation it opened, where it opened at once; whether the
@@ -583,31 +572,24 @@ const handedOf = (answer: unknown): HandedOver => {
  * ask for its turn's end. A refusal is the answer, by its code. Daoris's own offer (MIXAGENT1b-ii) names its reason, `near` or
  * `limit`, and is then asked as Daoris's (`askedBy`), the person's press on the offer; a press sends neither.
  */
-export const useHandOver = () => {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: async (over: {
-      session: string; agent: string; account?: string | null; why?: 'near' | 'limit';
-    }): Promise<HandedOver> =>
-      handedOf(await call<unknown>('SESSION_HAND_OVER', {
-        id: over.session, agent: over.agent, ...(over.account ? { account: over.account } : {}),
-        ...(over.why ? { why: over.why, askedBy: 'daoris' } : { why: 'press' }),
-      })),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: keys.allSessions });
-      void client.invalidateQueries({ queryKey: keys.driver });
-    },
-  });
-};
+export const useHandOver = () => useMutation({
+  mutationFn: async (over: {
+    session: string; agent: string; account?: string | null; why?: 'near' | 'limit';
+  }): Promise<HandedOver> =>
+    handedOf(await call<unknown>('SESSION_HAND_OVER', {
+      id: over.session, agent: over.agent, ...(over.account ? { account: over.account } : {}),
+      ...(over.why ? { why: over.why, askedBy: 'daoris' } : { why: 'press' }),
+    })),
+});
 
 /**
  * Finish a conversation: the harness gets end-of-input, says what it was going to say, and exits.
  * `useStopSession` is the other verb and means something else — the person cut it off.
+ *
+ * @remarks
+ * The sessions are asked again by the state hub alone (STATEHUB1d, STATEHUB1f).
  */
-export const useEndChat = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useEndChat = () =>
+  useMutation({
     mutationFn: (id: string) => call<{ ended: boolean }>('END_CHAT', { id }),
-    onSuccess: () => void client.invalidateQueries({ queryKey: keys.allSessions }),
   });
-};

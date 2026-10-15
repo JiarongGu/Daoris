@@ -47,6 +47,24 @@ describe('SessionBox', () => {
     expect(onEdit).toHaveBeenCalledWith('a1', 'cap it hard');
   });
 
+  /**
+   * SENDLOST1b: words on their way show above every box that takes words, the running door's, the park's answer, the box
+   * where the same session goes on and the one winding up, as sending or, once the page stopped waiting, as unanswered.
+   */
+  it('shows the words on their way above every box that takes words', () => {
+    const going = { words: [{ text: 'and the line?', files: [] }], late: true };
+    for (const box of [
+      { kind: 'steer' }, { kind: 'say', mode: 'answer' }, { kind: 'say', mode: 'goOn' }, { kind: 'say', mode: 'ending' },
+    ] as const) {
+      const { unmount } = show({ box, going, held: { queued: [], taking: true } });
+      expect(screen.getByRole('list', { name: 'The machine has not answered yet; it may still take them.' }))
+        .toHaveTextContent('and the line?');
+      unmount();
+    }
+    show({ box: { kind: 'say', mode: 'goOn' }, going: { ...going, late: false } });
+    expect(screen.getByRole('list', { name: 'sending…' })).toHaveTextContent('and the line?');
+  });
+
   /** D126 §3.1, D137 §5.1: on a parked session the box is the answer. */
   it('offers a parked session the answer', async () => {
     const onSend = vi.fn();
@@ -71,6 +89,48 @@ describe('SessionBox', () => {
     await userEvent.type(field, 'also cap it');
     await userEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(onSend).toHaveBeenCalledWith('also cap it');
+  });
+
+  /**
+   * SAIDBACK1b (D76): the words waiting on a record that ended or parked are listed above its box, each by its id, and are
+   * taken back or reworded there as a live queue's are; the reword goes as an edit, never as more words.
+   */
+  it('lists the words waiting on a record above its box, to remove or reword by their ids', async () => {
+    const onSend = vi.fn();
+    const onRemove = vi.fn().mockResolvedValue({ done: true });
+    const onEdit = vi.fn().mockResolvedValue({ done: true });
+    show({ box: { kind: 'say', mode: 'goOn' }, waiting: [{ id: 'w1', text: 'use the blue one', files: [] }], onSend, onRemove, onEdit });
+
+    expect(screen.getByRole('list', { name: 'waiting for the same session to go on with them' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Remove the waiting message: use the blue one' }));
+    expect(onRemove).toHaveBeenCalledWith('w1');
+    await userEvent.click(screen.getByRole('button', { name: 'Edit the waiting message: use the blue one' }));
+    const field = screen.getByLabelText('Message');
+    await userEvent.clear(field);
+    await userEvent.type(field, 'use the green one');
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(onEdit).toHaveBeenCalledWith('w1', 'use the green one');
+    expect(onSend).not.toHaveBeenCalled();
+  });
+
+  /**
+   * WAITFOOT2c (D168): a park's answer box and its waiting words are one box, so the words fold to one line with their count
+   * inside the box's frame, and open to *Edit* and *Remove* on a press.
+   */
+  it('folds the words waiting on a park to one line with their count, open to remove or reword', async () => {
+    const onRemove = vi.fn().mockResolvedValue({ done: true });
+    const waiting = [{ id: 'w1', text: 'use the blue one', files: [] }, { id: 'w2', text: 'and the red', files: [] }];
+    show({ box: { kind: 'say', mode: 'answer' }, waiting, onRemove, onEdit: vi.fn() });
+
+    expect(screen.getByText('2 said')).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'waiting for the same session to go on with them' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Remove the waiting message/ })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Show them' }));
+    expect(screen.getByRole('list', { name: 'waiting for the same session to go on with them' })).toHaveTextContent('use the blue one');
+    await userEvent.click(screen.getByRole('button', { name: 'Remove the waiting message: and the red' }));
+    expect(onRemove).toHaveBeenCalledWith('w2');
+    await userEvent.click(screen.getByRole('button', { name: 'Hide them' }));
+    expect(screen.queryByRole('list', { name: 'waiting for the same session to go on with them' })).toBeNull();
   });
 
   /** D137 §2.1: words said as a session winds up wait for its record to end, and the box shows them waiting. */

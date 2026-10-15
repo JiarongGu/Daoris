@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
 import type { KitPoint, NewPlugin, PluginTrialResult } from '../plugins/PluginKit';
@@ -69,51 +69,33 @@ export const usePlugins = ({ enabled = true }: { enabled?: boolean } = {}) => {
   });
 };
 
-/** The screen's half of `daoris plugin enable|disable|remove` (D50): a row, or the folder gone with the data named. */
-export const usePluginAction = () => {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (action: { id: string; action: 'enable' | 'disable' | 'remove' }) =>
-      call<{ id: string; action: string; data: string | null }>('PLUGIN_ACTION', action),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: keys.plugins });
-      // A declared harness came or went with it, so the roster is asked again too.
-      void client.invalidateQueries({ queryKey: keys.harnesses });
-    },
-  });
-};
+/**
+ * The screen's half of `daoris plugin enable|disable|remove` (D50): a row, or the folder gone with the data named. The
+ * catalogue, and the roster, since a declared harness came or went with it, are asked again by the route's `STATE_CHANGED`
+ * in every window (STATEHUB1d, D169), as for the update and the install below.
+ */
+export const usePluginAction = () => useMutation({
+  mutationFn: (action: { id: string; action: 'enable' | 'disable' | 'remove' }) =>
+    call<{ id: string; action: string; data: string | null }>('PLUGIN_ACTION', action),
+});
 
 /**
  * The screen's half of `daoris plugin update <id>` (PLUG9 c, D50): without `apply`, what an update would
  * change or why it cannot, for the row to show before the press; with it, the update, and the catalogue and
- * the roster asked again, since what the plugin declares may have changed.
+ * the roster asked again, since what the plugin declares may have changed. One route answers both, so the plan's
+ * press asks them again too.
  */
-export const usePluginUpdate = () => {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (target: { id: string; apply?: boolean }) => call<PluginUpdatePlanShown>('PLUGIN_UPDATE', target),
-    onSuccess: (plan) => {
-      if (!plan.applied) return;
-      void client.invalidateQueries({ queryKey: keys.plugins });
-      void client.invalidateQueries({ queryKey: keys.harnesses });
-    },
-  });
-};
+export const usePluginUpdate = () => useMutation({
+  mutationFn: (target: { id: string; apply?: boolean }) => call<PluginUpdatePlanShown>('PLUGIN_UPDATE', target),
+});
 
 /**
  * The screen's Install beside one of the install's own plugins (PLUG9 d): `daoris plugin add --offer <id>`'s
- * copy. Nothing runs at the press; the catalogue and the roster are asked again.
+ * copy. Nothing runs at the press; the catalogue and the roster are asked again by the state hub.
  */
-export const usePluginInstall = () => {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (offer: string) => call<{ id: string; name: string; version: string }>('PLUGIN_INSTALL', { offer }),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: keys.plugins });
-      void client.invalidateQueries({ queryKey: keys.harnesses });
-    },
-  });
-};
+export const usePluginInstall = () => useMutation({
+  mutationFn: (offer: string) => call<{ id: string; name: string; version: string }>('PLUGIN_INSTALL', { offer }),
+});
 
 /**
  * The screen's half of `daoris-driver plugins new` (PLUG8, D101): a plugin's folder written into the one

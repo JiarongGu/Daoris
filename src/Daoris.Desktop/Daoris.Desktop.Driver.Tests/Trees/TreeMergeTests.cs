@@ -17,6 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// self-consistent. Fixtures live under the repository's gitignored `_fixtures/`.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class TreeMergeTests : IDisposable
 {
     private readonly string _scratch;

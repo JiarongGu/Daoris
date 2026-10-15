@@ -119,8 +119,10 @@ public sealed class ToolsRoutes(DriverContext context)
     }
 
     // A way chosen on the screen, written to the file the terminal's `daoris tool use` writes. The system's and a named
-    // file answer at once; managed starts the driver's use, which downloads a version that is not here first.
+    // file answer at once; managed starts the driver's use, which downloads a version that is not here first. Each press that
+    // writes what the list reads declares the tools (STATEHUB1h, D169); an action's end is `TOOLS_ENDED`, as before.
     [DriverRoute("TOOLS_USE")]
+    [Publishes("TOOLS_USE", StateScopes.Tools)]
     private async Task<object?> ToolsUseAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var declared = DeclaredTool(PayloadHelper.GetRequiredValue<string>(request.Payload, "tool"));
@@ -171,11 +173,12 @@ public sealed class ToolsRoutes(DriverContext context)
 
     // Fetch and verify one version, nothing switching (§4.1 *Download*): answered once it has started.
     [DriverRoute("TOOLS_DOWNLOAD")]
+    [Publishes("TOOLS_DOWNLOAD", StateScopes.Tools)]
     private object? ToolsDownload(IpcRequest request) =>
         StartTool(DeclaredTool(PayloadHelper.GetRequiredValue<string>(request.Payload, "tool")), "download", Optional(request, "version"));
 
     // The person's stop. `stopped: false` is an answer: nothing ran to stop, and a stop that went nowhere must not look
-    // delivered. The action's end is the news either way.
+    // delivered. The action's end is the news either way, so the stop declares nothing.
     [DriverRoute("TOOLS_STOP")]
     private object? ToolsStop(IpcRequest request)
     {
@@ -185,6 +188,7 @@ public sealed class ToolsRoutes(DriverContext context)
 
     // A downloaded version nothing uses, removed (§3.6): the one in use refuses, and so does one the system holds.
     [DriverRoute("TOOLS_DELETE")]
+    [Publishes("TOOLS_DELETE", StateScopes.Tools)]
     private object? ToolsDelete(IpcRequest request)
     {
         var declared = DeclaredTool(PayloadHelper.GetRequiredValue<string>(request.Payload, "tool"));
@@ -209,8 +213,10 @@ public sealed class ToolsRoutes(DriverContext context)
     }
 
     // *Look for updates* (§3.7): each location fetched on the person's press, each bounded, its copy kept only when it
-    // reads. The page waits by `hostBounds`, as long as the look may take.
+    // reads. The page waits by `hostBounds`, as long as the look may take. Unlike a look that only fetches, the copy it keeps is
+    // what the list offers, so it declares the tools.
     [DriverRoute("TOOLS_LOOK")]
+    [Publishes("TOOLS_LOOK", StateScopes.Tools)]
     private async Task<object?> ToolsLookAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var looks = await ToolInstall.LookAsync(_loop.Home, ToolResources.Current, cancellationToken, log: _loop.Log);
@@ -223,6 +229,7 @@ public sealed class ToolsRoutes(DriverContext context)
     // A resource location added at the end of the person's, or removed (§3.3): the file the terminal's
     // `daoris tool locations add|remove` edits. Removing one leaves every version already downloaded.
     [DriverRoute("TOOLS_LOCATION")]
+    [Publishes("TOOLS_LOCATION", StateScopes.Tools)]
     private object? ToolsLocation(IpcRequest request)
     {
         var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
