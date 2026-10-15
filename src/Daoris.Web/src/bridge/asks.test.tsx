@@ -6,17 +6,29 @@ import type { ReactNode } from 'react';
 // An ask's channel, as hooks (SESSONE2c, D167): its read, the person's post and their mark, each one route of DAORIS.DRIVER,
 // which the page names only here (MOD3, MOD5).
 
-const { invoke, available } = vi.hoisted(() => ({ invoke: vi.fn(), available: { value: true } }));
-
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => available.value,
-  getBridge: () => ({ isAvailable: available.value, invoke }),
-  useShenora: () => ({ isAvailable: available.value }),
-  useShenoraEvent: () => undefined,
+const { invoke, available, heard } = vi.hoisted(() => ({
+  invoke: vi.fn(),
+  available: { value: true },
+  // The state hub's ear (STATEHUB1h, D169): what the mocked shell publishes after a press reaches it, as the kit's pump would.
+  heard: new Map<string, (payload: unknown) => void>(),
 }));
+
+vi.mock('@shenora/react', async () => {
+  const { publishing } = await import('../test/publishing');
+  const published = publishing(invoke, (type, payload) => heard.get(type)?.(payload));
+  return {
+    isShenoraAvailable: () => available.value,
+    getBridge: () => ({ isAvailable: available.value, invoke: published }),
+    useShenora: () => ({ isAvailable: available.value }),
+    useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
+      if (module === 'DAORIS') heard.set(type, handler);
+    },
+  };
+});
 
 import { keys } from '../data/queries';
 import { channelKey, elsewhereKey, useChannel, useElsewhereAsks, useChannelUnreads, useMarkChannel, usePostChannel } from './asks';
+import { useStateHub } from './stateHub';
 
 const wrapper = (client: QueryClient) => ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={client}>{children}</QueryClientProvider>
@@ -30,6 +42,7 @@ const CHANNEL = {
 describe('the asks domain', () => {
   afterEach(() => {
     invoke.mockReset();
+    heard.clear();
     available.value = true;
   });
 
@@ -112,17 +125,27 @@ describe('the asks domain', () => {
     expect(posted).toEqual({ posted: false, code: 'bad-to', message: null });
   });
 
-  it('asks the channel again after a post that was kept', async () => {
+  /**
+   * STATEHUB1h (D169): the post's route publishes the asks, whose key holds each channel, so the window's hub asks the channel
+   * again, as every other window's does; the hook asks nothing again itself.
+   */
+  it('asks the channel again after a post, through what its route publishes', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     client.setQueryData(channelKey('a1'), CHANNEL);
-    const spy = vi.spyOn(client, 'invalidateQueries');
     invoke.mockImplementation(async () => ({ posted: true, message: CHANNEL.items[0] }));
-    const { result } = renderHook(() => usePostChannel(), { wrapper: wrapper(client) });
+    const alone = renderHook(() => usePostChannel(), { wrapper: wrapper(client) });
 
-    await act(async () => { await result.current.mutateAsync({ ask: 'a1', post: { text: 'hi' } }); });
+    await act(async () => { await alone.result.current.mutateAsync({ ask: 'a1', post: { text: 'hi' } }); });
+    await act(() => new Promise((settled) => { setTimeout(settled, 10); }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CHANNEL_POST', { payload: { ask: 'a1', text: 'hi' } });
-    expect(spy).toHaveBeenCalledWith({ queryKey: channelKey('a1') });
+    // No hub mounted: nothing asks the channel again.
+    expect(client.getQueryState(channelKey('a1'))?.isInvalidated).toBe(false);
+
+    const { result } = renderHook(() => { useStateHub(); return usePostChannel(); }, { wrapper: wrapper(client) });
+    await act(async () => { await result.current.mutateAsync({ ask: 'a1', post: { text: 'hi again' } }); });
+
+    await waitFor(() => expect(client.getQueryState(channelKey('a1'))?.isInvalidated).toBe(true));
   });
 
   it('moves the person’s mark on CHANNEL_MARK and keeps the channel as it then reads', async () => {

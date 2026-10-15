@@ -39,9 +39,10 @@ public sealed class AsksRoutes(DriverLoop loop)
     /// <summary>
     /// The person's post: their words, to everyone or one of the ask's repositories (<c>to</c>), answering a message (<c>re</c>)
     /// or not. Their words, so every session on the ask reads them (D167 point 7). Answers <c>posted</c> with the message kept, or
-    /// the service's code where it refused.
+    /// the service's code where it refused. The channel sits under the asks' key, which it declares (STATEHUB1h, D169).
     /// </summary>
     [DriverRoute("CHANNEL_POST")]
+    [Publishes("CHANNEL_POST", StateScopes.Asks)]
     private async Task<object?> ChannelPostAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var ask = Asked(request);
@@ -53,9 +54,11 @@ public sealed class AsksRoutes(DriverLoop loop)
 
     /// <summary>
     /// The person's mark moved through a moment (<c>through</c>), or the newest item: what the page has shown them. A mark never
-    /// moves back. Answers the channel as it then reads.
+    /// moves back. Answers the channel as it then reads, and declares the asks (STATEHUB1h, D169): every window's unread count
+    /// falls with it.
     /// </summary>
     [DriverRoute("CHANNEL_MARK")]
+    [Publishes("CHANNEL_MARK", StateScopes.Asks)]
     private async Task<object?> ChannelMarkAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var ask = Asked(request);

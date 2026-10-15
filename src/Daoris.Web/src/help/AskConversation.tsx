@@ -186,6 +186,19 @@ export function useAskConversation(
   useEffect(() => {
     if (focusBox) setFocusBox(0);
   }, [focusBox]);
+  // A conversation started from an earlier one takes the focus in its box once the list holds it: the driver answers before the
+  // sessions the state hub asks again name it (STATEHUB1h, D169), and a box asked for before then would take nothing. Let go if
+  // the person chose another meanwhile.
+  const [focusWhenListed, setFocusWhenListed] = useState<string | null>(null);
+  useEffect(() => {
+    if (focusWhenListed === null) return;
+    if (chosen !== focusWhenListed) {
+      setFocusWhenListed(null);
+    } else if (picked?.id === focusWhenListed) {
+      setFocusWhenListed(null);
+      setFocusBox((was) => was + 1);
+    }
+  }, [focusWhenListed, chosen, picked?.id]);
   // Whether the reader left the conversation's tail, and the way back (ASKHIST1c): drawn in a strip above the box.
   const [tail, setTail] = useState<TailState | null>(null);
   // A conversation started from an earlier one, which says so until the person has spoken in it.
@@ -532,11 +545,11 @@ export function useAskConversation(
           setRefusal(answer.message);
           return;
         }
-        // Spoken in by the person's choice: never readied ahead, and shown from now on, its box taking the focus.
+        // Spoken in by the person's choice: never readied ahead, and shown from now on, its box taking the focus once listed.
         help.spoke(answer.sessionId);
         setStartedFrom({ session: answer.sessionId, title });
         choose(answer.sessionId);
-        setFocusBox((was) => was + 1);
+        setFocusWhenListed(answer.sessionId);
       },
       onError: (error) => {
         setHistoryRefusal(sentence(error));

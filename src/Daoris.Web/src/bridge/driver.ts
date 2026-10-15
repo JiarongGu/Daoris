@@ -223,7 +223,8 @@ export type TrustGranted = { folder: string; key: string; changed: boolean; veri
 /**
  * The person's grant of a folder the driver is holding (D73) — the screen's half of
  * `daoris agent trust … --yes`. The shell writes it only for a hold its last tick produced, in the
- * file that tick read, and the driver looks again at once.
+ * file that tick read, and the driver looks again at once. Its route publishes the driver's state, which the state hub asks
+ * again in every window (STATEHUB1h, D169).
  */
 export const useTrustFolder = () => {
   const client = useQueryClient();
@@ -236,13 +237,16 @@ export const useTrustFolder = () => {
         client.setQueryData<TrustHold[]>(keys.untrusted, (holds = []) =>
           holds.filter((held) => held.folder !== hold.folder || held.trustFile !== hold.trustFile));
       }
-      void client.invalidateQueries({ queryKey: keys.driver });
     },
   });
 };
 
-/** One mutation shape for the two toggles: edit the file, and the loop looks now, not at the poll. */
-function useDriverChange<TVariables extends Record<string, unknown>>(type: string) {
+/**
+ * One mutation shape for the standing choices, these and the rules' (`bridge/lines.ts`): edit the file, and the loop looks now,
+ * not at the poll. The window that pressed writes the state it was answered; the route publishes the change, and every window's
+ * state hub asks the driver's state and what is read under its key again (STATEHUB1h, D169).
+ */
+export function useDriverChange<TVariables extends Record<string, unknown>>(type: string) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (variables: TVariables) => call<DriverState>(type, variables),
@@ -305,18 +309,10 @@ export const useSetHelper = () => useDriverChange<{ adapter: string | null }>('S
 /**
  * Which agent answers an ask the declarations leave (INT4b), or null for none — the field `daoris
  * driver intake <agent>|off` edits (D50). What an intake in each circle would run on moves with it,
- * so that answer is asked again rather than left naming the agent before.
+ * so its route publishes the roster's key too, and that answer is asked again rather than left naming the agent before
+ * (STATEHUB1h, D169).
  */
-export const useSetIntake = () => {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (change: { adapter: string | null }) => call<DriverState>('SET_INTAKE', change),
-    onSuccess: (state) => {
-      client.setQueryData(keys.driver, state);
-      void client.invalidateQueries({ queryKey: keys.allStarts });
-    },
-  });
-};
+export const useSetIntake = () => useDriverChange<{ adapter: string | null }>('SET_INTAKE');
 
 /**
  * "Look now": a quest just published, or an ask just made, is looked at on the driver's next breath

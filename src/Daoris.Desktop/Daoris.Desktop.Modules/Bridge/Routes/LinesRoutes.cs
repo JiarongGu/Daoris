@@ -24,9 +24,17 @@ public sealed class LinesRoutes(DriverContext context)
     private const StateScopes Moves = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff | StateScopes.HandOff
         | StateScopes.Sweep | StateScopes.TreesSync;
 
+    /// <summary>
+    /// What a standing choice over a repository's or a workspace's rules changes (STATEHUB1h, D169): the driver's state it
+    /// answers, and under the driver's key what each repository resolves to, every plan and gate that reads it, and the Current
+    /// workflow drawn from it.
+    /// </summary>
+    private const StateScopes Chosen = StateScopes.Driver;
+
     // A repository's line, or a workspace's (WSR2), or either cleared with no branch — the same
     // file `daoris driver line` edits: one truth, two doors (D50).
     [DriverRoute("SET_LINE")]
+    [Publishes("SET_LINE", Chosen)]
     private object? SetLine(IpcRequest request)
     {
         var branch = Optional(request, "branch");
@@ -47,6 +55,7 @@ public sealed class LinesRoutes(DriverContext context)
     // same file `daoris driver language` edits: one truth, two doors (D50). A code the table does not hold is the driver's
     // refusal.
     [DriverRoute("SET_LANGUAGE")]
+    [Publishes("SET_LANGUAGE", Chosen)]
     private object? SetLanguage(IpcRequest request)
     {
         var language = Optional(request, "language");
@@ -461,6 +470,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// whose checkout lacks it, and whether it could be looked for at all (no checkout here).
     /// </remarks>
     [DriverRoute("SET_REVIEW")]
+    [Publishes("SET_REVIEW", Chosen)]
     private async Task<object?> SetReviewAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var edit = ReviewEditOf(request.Payload);
@@ -537,6 +547,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// <see cref="OpinionRules.Apply"/> before anything is written. It reads nothing else, so it waits for nothing.
     /// </summary>
     [DriverRoute("SET_OPINION")]
+    [Publishes("SET_OPINION", Chosen)]
     private object? SetOpinion(IpcRequest request)
     {
         var edit = OpinionRules.EditOf(request.Payload ?? default);
@@ -577,6 +588,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// <see cref="HelperRules.Apply"/> before anything is written. It reads nothing else, so it waits for nothing.
     /// </summary>
     [DriverRoute("SET_HELPERS")]
+    [Publishes("SET_HELPERS", Chosen)]
     private object? SetHelpers(IpcRequest request)
     {
         var edit = HelperRules.EditOf(request.Payload ?? default);
@@ -592,6 +604,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// <see cref="CommitRules.Apply"/> before anything is written. It reads nothing else, so it waits for nothing.
     /// </summary>
     [DriverRoute("SET_COMMITS")]
+    [Publishes("SET_COMMITS", Chosen)]
     private object? SetCommits(IpcRequest request)
     {
         var edit = CommitRules.EditOf(request.Payload ?? default);

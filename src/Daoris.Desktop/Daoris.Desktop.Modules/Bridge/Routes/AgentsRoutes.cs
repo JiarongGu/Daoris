@@ -22,7 +22,8 @@ public sealed class AgentsRoutes(DriverContext context)
     // sign-in say what was last read of them and when, the driver's report kept under the home, so a page
     // asking, the first time after a start included, asks no account (ROSTER1, D150 §5.3). `refresh` is
     // the person pressing *Read again*: every agent's, with `agent` one agent's accounts and its own
-    // sign-in, or with `profile` too that one account alone.
+    // sign-in, or with `profile` too that one account alone. It declares nothing (STATEHUB1h, D169): one route answers the
+    // roster's read and *Read again*, so a declaration would publish every window's read, which every window would read again.
     [DriverRoute("HARNESSES")]
     private async Task<object?> HarnessesAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -332,8 +333,10 @@ public sealed class AgentsRoutes(DriverContext context)
 
     // The person's explicit action on a harness (D49 §4): its own installer, its own updater,
     // its own login flow. Never automatic, never mid-session, never unasked — and streamed
-    // line by line through the console, because it is a process like any other.
+    // line by line through the console, because it is a process like any other. What it changed at once (a key, a name, a
+    // join, a default) is the roster's, which it declares; an action that runs on says its end as `HARNESS_ENDED` (STATEHUB1h).
     [DriverRoute("HARNESS_ACTION")]
+    [Publishes("HARNESS_ACTION", StateScopes.Harnesses)]
     private async Task<object?> HarnessActionAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
@@ -519,6 +522,7 @@ public sealed class AgentsRoutes(DriverContext context)
     // cleared and one left out is untouched. Never the tool's own configuration home, which the
     // roster says Daoris never touches, and never an account a setting would bring into being.
     [DriverRoute("SET_AGENT_SETTINGS")]
+    [Publishes("SET_AGENT_SETTINGS", StateScopes.Harnesses)]
     private object? SetAgentSettings(IpcRequest request)
     {
         var harness = PayloadHelper.GetRequiredValue<string>(request.Payload, "harness");

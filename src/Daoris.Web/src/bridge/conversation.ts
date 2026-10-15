@@ -498,8 +498,9 @@ export type GoAheadAnswered = WordsAnswer & { waits: boolean; message: string };
  * person's words are the go-ahead's, never the park's: the record keeps no words they did not write to it (D137). A
  * refused go-ahead answers nothing else, in the service's sentence.
  *
- * The sessions and the asks are asked again whatever came of it, since a park that could not be answered may still have
- * had its go-ahead answered.
+ * Its route publishes the sessions and the asks, which the state hub asks again in every window (STATEHUB1h, D169). One refused
+ * as an error publishes nothing (D169 point 5), yet a park that could not be sent on may still have had its go-ahead answered:
+ * this window, which pressed it, asks them again itself.
  */
 export const useParkGoAhead = () => {
   const client = useQueryClient();
@@ -512,7 +513,7 @@ export const useParkGoAhead = () => {
       const { message, waits } = (answered ?? {}) as { message?: unknown; waits?: unknown };
       return { ...wordsOf(answered), waits: waits === true, message: typeof message === 'string' ? message : '' };
     },
-    onSettled: () => {
+    onError: () => {
       void client.invalidateQueries({ queryKey: keys.allSessions });
       void client.invalidateQueries({ queryKey: keys.allAsks });
     },

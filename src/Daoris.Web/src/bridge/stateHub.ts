@@ -1,8 +1,10 @@
 import { type QueryClient, type QueryKey, skipToken, useIsMutating, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenoraEvent } from '@shenora/react';
 import { keys } from '../data/queries';
+import { HELP_HISTORY, HELP_PROPOSALS } from './help';
 import { ALL_HISTORY } from './history';
 import { treesSyncScopeKey } from './lines';
+import { ALL_TOOLS } from './tools';
 
 /**
  * What the driver says moved (STATEHUB1b, D169 point 3): the scopes, in its words, and the sessions the change was about where
@@ -38,10 +40,16 @@ const scopes = new Map<string, (sessions: string[] | null) => QueryKey[]>([
   // Every clear's plan, whatever it was asked of.
   ['history', () => [ALL_HISTORY]],
   ['sync', () => [keys.allSync]],
-  ['registry', () => [keys.allRegistry]],
+  // The workspaces and repositories registered: the registry, and the repositories the service lists from it (STATEHUB1h).
+  ['registry', () => [keys.allRegistry, keys.allRepositories]],
   ['plugins', () => [keys.plugins]],
   // The agents' roster, with what each start would run on and the accounts, which sit under its key.
   ['harnesses', () => [keys.harnesses]],
+  // The remaining presses (STATEHUB1h): the tools, with what a switch of git would change; Ask Daoris's history and what each
+  // conversation proposed; the browser's settings and favorites.
+  ['tools', () => [ALL_TOOLS]],
+  ['help', () => [HELP_HISTORY, HELP_PROPOSALS]],
+  ['browser', () => [keys.browserSettings]],
 ]);
 
 const words = (value: unknown): string[] =>

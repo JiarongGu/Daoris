@@ -24,16 +24,14 @@ export const useAcross = ({ enabled = true }: { enabled?: boolean } = {}) => {
 
 /**
  * Set a repository's reading or a workspace's, or clear it with no `read` — the file `daoris driver across …
- * read` edits (D50). Every repository's answer moves with it, so that is asked again.
+ * read` edits (D50). The answer is the driver's state, written where it is read; every repository's answer moves with it,
+ * under the driver's key, which the route publishes and the state hub asks again in every window (STATEHUB1h, D169).
  */
 export const useSetReadAcross = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (change: ReadChange) => call<DriverState>('SET_READ_ACROSS', change),
-    onSuccess: (state) => {
-      client.setQueryData(keys.driver, state);
-      void client.invalidateQueries({ queryKey: keys.across });
-    },
+    onSuccess: (state) => client.setQueryData(keys.driver, state),
   });
 };
 
@@ -42,9 +40,6 @@ export const useSetWriteAcross = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (change: WriteChange) => call<DriverState>('SET_WRITE_ACROSS', change),
-    onSuccess: (state) => {
-      client.setQueryData(keys.driver, state);
-      void client.invalidateQueries({ queryKey: keys.across });
-    },
+    onSuccess: (state) => client.setQueryData(keys.driver, state),
   });
 };
