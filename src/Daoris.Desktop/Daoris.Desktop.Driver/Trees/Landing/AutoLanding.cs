@@ -246,7 +246,7 @@ public sealed class AutoLandings(string home)
 
     private static readonly RecordList<AutoLanding> List = new(Gate, "due", Read, ToJson, Bounded);
 
-    public string FilePath => Path.Combine(home, "sessions", FileName);
+    public string FilePath => DaorisHome.Entry(home, HomeEntry.Sessions, FileName);
 
     /// <summary>Every entry, open and closed, in the order they became due.</summary>
     public IReadOnlyList<AutoLanding> All() => List.Read(FilePath);

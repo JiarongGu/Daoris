@@ -85,7 +85,7 @@ public static class RuleProposals
     /// <summary>Every readable proposal under the home, newest first. An unreadable file is left out.</summary>
     public static IReadOnlyList<RuleProposal> Load(string home)
     {
-        var folder = Path.Combine(home, Folder);
+        var folder = DaorisHome.Entry(home, HomeEntry.RuleProposals);
         if (!Directory.Exists(folder)) return [];
 
         var read = new List<RuleProposal>();
@@ -285,7 +285,7 @@ public static class RuleProposals
             ? scopes.GetValueOrDefault(name.Trim()) ?? RuleLists.Empty
             : throw new DriverException($"a {(change.Scope == RuleScope.Workspace ? "workspace" : "repository")} scope names the one it reaches.");
 
-    private static string PathOf(string home, string id) => Path.Combine(home, Folder, $"{id}.json");
+    private static string PathOf(string home, string id) => DaorisHome.Entry(home, HomeEntry.RuleProposals, $"{id}.json");
 
     private static RuleProposal? Parse(string path)
     {

@@ -26,9 +26,6 @@ public sealed record RunningEntry(string Url, int Pid, long Started);
 /// </remarks>
 public sealed class RunningAddress : IDisposable
 {
-    /// <summary>The file's name under the home.</summary>
-    public const string FileName = "running.json";
-
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
     private readonly string _path;
@@ -42,7 +39,7 @@ public sealed class RunningAddress : IDisposable
     }
 
     /// <summary>Where a home's address file is.</summary>
-    public static string PathIn(string home) => Path.Combine(home, FileName);
+    public static string PathIn(string home) => DaorisHome.Entry(home, HomeEntry.Running);
 
     /// <summary>
     /// Leave this process's address in <paramref name="home"/>, or null when it could not be written: the window runs either

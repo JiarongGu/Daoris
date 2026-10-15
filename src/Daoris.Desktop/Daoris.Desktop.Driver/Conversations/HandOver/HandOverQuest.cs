@@ -16,7 +16,7 @@ namespace Daoris.Driver;
 public sealed class HandedQuests(string home)
 {
     /// <summary>Where a quest's file is kept, or null for an id that is no quest's name (never a path out of the folder).</summary>
-    public string? PathOf(string quest) => Named(quest) ? Path.Combine(home, "handed", quest + ".json") : null;
+    public string? PathOf(string quest) => Named(quest) ? DaorisHome.Entry(home, HomeEntry.Handed, quest + ".json") : null;
 
     /// <summary>Keep the quest as handed, replacing any before. An id that is no quest's name keeps nothing.</summary>
     /// <exception cref="IOException">It could not be written: the asker is told, rather than told it was kept.</exception>
@@ -35,7 +35,7 @@ public sealed class HandedQuests(string home)
         var all = new Dictionary<string, HandedQuest>(StringComparer.OrdinalIgnoreCase);
 
         // What did not list is read at the next look.
-        foreach (var file in HandOverFiles.Leaves(Path.Combine(home, "handed"), "*.json").Order(StringComparer.Ordinal))
+        foreach (var file in HandOverFiles.Leaves(DaorisHome.Entry(home, HomeEntry.Handed),"*.json").Order(StringComparer.Ordinal))
         {
             var quest = Path.GetFileNameWithoutExtension(file);
             if (Read(quest) is { } handed) all[quest] = handed;

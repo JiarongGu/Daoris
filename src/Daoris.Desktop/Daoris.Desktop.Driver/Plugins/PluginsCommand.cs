@@ -84,7 +84,7 @@ public static class PluginsCommand
 
         if (!read.Logged)
         {
-            output.WriteLine($"plugins: no machine log on this machine — nothing has written under `{Path.Combine(Home(home), MachineLog.Folder)}` yet.");
+            output.WriteLine($"plugins: no machine log on this machine — nothing has written under `{DaorisHome.Entry(Home(home), HomeEntry.Logs)}` yet.");
             return 0;
         }
 

@@ -46,9 +46,6 @@ public sealed record DriverHolder(DriverKind Kind, int Pid, DateTimeOffset Since
 /// </remarks>
 public sealed class DriverLock : IDisposable
 {
-    /// <summary>The lock's name under the home.</summary>
-    public const string FileName = "driver.lock";
-
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
     private readonly string _path;
@@ -71,7 +68,7 @@ public sealed class DriverLock : IDisposable
     public DriverHolder? Beside { get; }
 
     /// <summary>Where a home's lock is.</summary>
-    public static string PathIn(string home) => Path.Combine(home, FileName);
+    public static string PathIn(string home) => DaorisHome.Entry(home, HomeEntry.DriverLock);
 
     /// <summary>
     /// Take the home for a loop, or null with the live driver that already holds it.

@@ -21,7 +21,7 @@ public sealed class GoOnMarks(string home)
     public const string Suffix = ".cannot.json";
 
     /// <summary>Where a session's mark is kept.</summary>
-    public string PathOf(string session) => Path.Combine(home, "sessions", session + Suffix);
+    public string PathOf(string session) => DaorisHome.Entry(home, HomeEntry.Sessions, session + Suffix);
 
     /// <summary>
     /// Mark these words as judged unable to go on, replacing any mark before. An id that is not a session's keeps nothing,

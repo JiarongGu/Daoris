@@ -127,7 +127,7 @@ public static class OpinionTree
             return $"{path} is not a second opinion's copy: {error.Message}";
         }
 
-        var trees = Path.GetFullPath(Path.Combine(home, "trees")) + Path.DirectorySeparatorChar;
+        var trees = Path.GetFullPath(DaorisHome.Entry(home, HomeEntry.Trees)) + Path.DirectorySeparatorChar;
         if (!full.StartsWith(trees, StringComparison.OrdinalIgnoreCase) || !Path.GetFileName(full).StartsWith(Prefix, StringComparison.Ordinal))
         {
             return $"{path} is not a second opinion's copy under {trees}, so it was not removed.";

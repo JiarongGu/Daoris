@@ -59,7 +59,7 @@ public static class ServiceHostLocator
 
         if (home is not null)
         {
-            var bin = Path.Combine(home, "bin");
+            var bin = DaorisHome.Entry(home, HomeEntry.Bin);
 
             // A binary someone placed here by hand — the most deliberate thing short of naming a path.
             var installed = Path.Combine(bin, ExecutableName);

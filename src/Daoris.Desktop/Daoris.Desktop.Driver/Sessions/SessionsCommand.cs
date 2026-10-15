@@ -60,7 +60,7 @@ public sealed record SessionsAsk(string Verb)
 public sealed record SessionsWorld(ServiceClient Service, string Home, DriverConfig Config, SessionWire Door, MachineLog? Log)
 {
     /// <summary>The markers every driver on the home leaves for a live process: whether something here runs a session.</summary>
-    public SessionProcesses Processes { get; init; } = new(Path.Combine(Home, "sessions"));
+    public SessionProcesses Processes { get; init; } = new(DaorisHome.Entry(Home, HomeEntry.SessionPids));
 
     /// <summary>How a delete removes a file from the home: the disk, or a test's that refuses a path as a held file does (SESSDEL1).</summary>
     public Action<string, bool> Remover { get; init; } = SessionHomeFiles.FromDisk;
@@ -483,7 +483,7 @@ public static class SessionsCommand
         }
 
         var quests = look.Quests.GroupBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase).ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
-        var openings = new SessionEvents(Path.Combine(world.Home, "sessions"))
+        var openings = new SessionEvents(DaorisHome.Entry(world.Home, HomeEntry.Sessions))
             .Openings(entries.Select(entry => entry.Leading).Where(SessionEventText.IsId));
         var placed = SessionGroups.Read(look).GroupBy(row => row.Session, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
         var now = DateTimeOffset.UtcNow;
@@ -986,7 +986,7 @@ public static class SessionsCommand
     private static async Task<int> GoesOnAsync(
         SessionsWorld world, SessionRecord record, string? word, Stopwatch waited, TextWriter output, CancellationToken ct)
     {
-        var events = new SessionEvents(Path.Combine(world.Home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(world.Home, HomeEntry.Sessions));
         var gone = false;
         while (word is not null)
         {
@@ -1076,7 +1076,7 @@ public static class SessionsCommand
         {
             if (!loop && said.Word is { } kept)
             {
-                new SessionEvents(Path.Combine(world.Home, "sessions")).Keep(record.Id, LoopWords.Shown(kept, RequestDoor.Terminal), null);
+                new SessionEvents(DaorisHome.Entry(world.Home, HomeEntry.Sessions)).Keep(record.Id, LoopWords.Shown(kept, RequestDoor.Terminal), null);
             }
 
             output.WriteLine(loop
@@ -1202,7 +1202,7 @@ public static class SessionsCommand
         var answer = await world.Service.TakeBackAsync(id, word, text, ct).ConfigureAwait(false);
         if (answer.Done && !world.LoopRuns())
         {
-            var events = new SessionEvents(Path.Combine(world.Home, "sessions"));
+            var events = new SessionEvents(DaorisHome.Entry(world.Home, HomeEntry.Sessions));
             events.Keep(id, ChatTurns.Withdrawn(word), null);
             if (answer.Word is { } kept) events.Keep(id, LoopWords.Shown(kept, RequestDoor.Terminal), null);
         }

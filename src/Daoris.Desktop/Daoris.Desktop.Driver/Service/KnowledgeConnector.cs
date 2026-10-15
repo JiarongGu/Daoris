@@ -150,7 +150,7 @@ public static class KnowledgeConnector
             candidates.Add(Path.Combine(baseDirectory, relative, ExecutableName));
         }
 
-        if (home is not null) candidates.Add(Path.Combine(home, "bin", ExecutableName));
+        if (home is not null) candidates.Add(DaorisHome.Entry(home, HomeEntry.Bin, ExecutableName));
 
         if (workspace is not null)
         {

@@ -42,5 +42,5 @@ public sealed class PluginHealth(Func<DateTimeOffset>? clock = null)
 
     /// <summary>The plugin's health from the machine log under <paramref name="home"/>: every day the log keeps (<see cref="PluginHealthRules.FromLog"/>).</summary>
     public static PluginHealthState FromLog(PluginEntry entry, string home) =>
-        PluginHealthRules.FromLog(entry, MachineLogReader.Read(Path.Combine(home, MachineLog.Folder), new LogFilter()).Lines);
+        PluginHealthRules.FromLog(entry, MachineLogReader.Read(DaorisHome.Entry(home, HomeEntry.Logs),new LogFilter()).Lines);
 }

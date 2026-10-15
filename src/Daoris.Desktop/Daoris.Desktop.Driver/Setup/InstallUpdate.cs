@@ -33,7 +33,7 @@ public static class InstallUpdate
         "an update is waiting for this machine's sessions to end: nothing new starts until it is installed and Daoris "
         + "starts again — Not now, or `daoris-driver update --cancel`, lets work start meanwhile.";
 
-    public static string PathOf(string home) => Path.Combine(home, FileName);
+    public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Update);
 
     /// <summary>
     /// The mode that holds for the build staged now: the request's, where it was said of this build or of whatever is

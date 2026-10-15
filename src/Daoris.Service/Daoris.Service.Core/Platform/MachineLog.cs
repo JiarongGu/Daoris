@@ -23,9 +23,6 @@ namespace Daoris.Knowledge;
 /// </remarks>
 public sealed class MachineLog : IDisposable
 {
-    /// <summary>The folder under the home.</summary>
-    public const string Folder = "logs";
-
     /// <summary>How many days of files are kept, today included.</summary>
     public const int KeptDays = 30;
 
@@ -56,7 +53,7 @@ public sealed class MachineLog : IDisposable
     public MachineLog(string? home, string source, Func<DateTimeOffset>? clock = null, long cap = CapBytes)
     {
         _home = string.IsNullOrEmpty(home) ? null : home;
-        _folder = _home is null ? null : Path.Combine(_home, Folder);
+        _folder = _home is null ? null : DaorisHome.Entry(_home, HomeEntry.Logs);
         _source = source;
         _clock = clock ?? (() => DateTimeOffset.UtcNow);
         _cap = cap;

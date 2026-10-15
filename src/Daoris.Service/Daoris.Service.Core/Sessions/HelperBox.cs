@@ -21,9 +21,6 @@ namespace Daoris.Knowledge;
 /// <param name="home">The home the files go under, or null when there is none: every ask is then refused.</param>
 public sealed class HelperBox(string? home)
 {
-    /// <summary>The folder under the home that holds a helper's three files per ask.</summary>
-    public const string Folder = "helpers";
-
     /// <summary>The longest question and answer kept, in characters: a helper's answer is one turn's, not a transcript.</summary>
     public const int MaxQuestion = 4000;
 
@@ -40,8 +37,8 @@ public sealed class HelperBox(string? home)
     /// <summary>The home the driver names on the connector it offers, else the account's (D63): where the rules live.</summary>
     public static HelperBox FromEnvironment() => new(RuleProposalBox.FromEnvironment().Home);
 
-    /// <summary>Where one ask's files are: <c>&lt;home&gt;/helpers/&lt;id&gt;.&lt;kind&gt;.json</c>.</summary>
-    public static string PathOf(string home, string id, string kind) => Path.Combine(home, Folder, $"{id}.{kind}.json");
+    /// <summary>Where one ask's files are: <c>&lt;home&gt;/helpers/&lt;id&gt;.&lt;kind&gt;.json</c>, the home's <see cref="HomeEntry.Helpers"/>.</summary>
+    public static string PathOf(string home, string id, string kind) => DaorisHome.Entry(home, HomeEntry.Helpers, $"{id}.{kind}.json");
 
     /// <summary>
     /// Write an ask for the session the connector names, or refuse it: answered as the sentence an agent reads.
@@ -93,7 +90,7 @@ public sealed class HelperBox(string? home)
         if (helper is not { Origin: null, Serves: not null }) return (false, $"Session `{named.Trim()}` is no helper: only a session the driver started to answer a question answers one.");
         if (Home is null) return (false, $"{Capital(DaorisHome.Sentence)} Nothing was kept.");
 
-        var folder = Path.Combine(Home, Folder);
+        var folder = DaorisHome.Entry(Home, HomeEntry.Helpers);
         var ask = Directory.Exists(folder)
             ? Directory.EnumerateFiles(folder, "*.state.json")
                 .Select(path => ReadState(Home, Path.GetFileName(path)[..^".state.json".Length]))

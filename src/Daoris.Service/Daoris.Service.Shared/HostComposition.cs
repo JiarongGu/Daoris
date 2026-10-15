@@ -43,7 +43,7 @@ internal static class HostComposition
     /// session on the machine — or null where there is no home, which a host refuses to start on
     /// rather than writing an index somewhere nobody pointed it.
     /// </summary>
-    public static string? DefaultDatabasePath() => DaorisHome.File("knowledge.db");
+    public static string? DefaultDatabasePath() => DaorisHome.File(HomeEntry.Knowledge);
 
     /// <summary>
     /// The folder above the workspace holding this binary, when there is one — the shared walk-up from

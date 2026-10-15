@@ -175,7 +175,7 @@ public sealed class LandedBranches(string home)
 
     private static readonly RecordList<LandedBranch> List = new(Gate, "branches", Read, ToJson, Bounded);
 
-    public string FilePath => Path.Combine(home, FileName);
+    public string FilePath => DaorisHome.Entry(home, HomeEntry.Landings);
 
     /// <summary>Every branch recorded that still stands, in the order they landed: what the clean-up, the hand-off and Ask Daoris act on.</summary>
     public IReadOnlyList<LandedBranch> All() => [.. Everything().Where(entry => entry.GoneAt is null)];

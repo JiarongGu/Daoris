@@ -759,7 +759,7 @@ public sealed class HistoryDesk(
             if (files?.Forget(quest) == false) questsKept.Add(quest);
         }
 
-        var askFiles = files?.For(AskDesk.Folder);
+        var askFiles = files?.For(HomeEntry.AskFiles);
         var asksKept = new List<string>();
         foreach (var ask in unit.Asks)
         {

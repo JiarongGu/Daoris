@@ -259,7 +259,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         if (record is { Running: true }) return null;
 
         var lastWords = record is { State: "completed" }
-            ? SessionLastWords.ParkedWords(_context.Events, helper, Path.Combine(_context.Home, "sessions", $"{helper}.log"))
+            ? SessionLastWords.ParkedWords(_context.Events, helper, DaorisHome.Entry(_context.Home, HomeEntry.Sessions, $"{helper}.log"))
             : null;
         return await SettleHelperAsync(ask, files, record?.State, lastWords, ct).ConfigureAwait(false);
     }
@@ -402,7 +402,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
             var (info, harnessNotice) = _driver.Prepare(adapter, target, selection);
             await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
 
-            var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
+            var transcript = DaorisHome.Entry(home, HomeEntry.Sessions, $"{sessionId}.log");
             Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
 
             // Its connector and nothing else, as a reviewer's is: no plugin's server, which could write where a helper may not.

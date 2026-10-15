@@ -137,7 +137,7 @@ public sealed partial class SessionRequests(string home)
 
     private const string Answered = ".answer.json";
 
-    public string Folder => Path.Combine(home, "sessions", "requests");
+    public string Folder => DaorisHome.Entry(home, HomeEntry.Requests);
 
     /// <summary>A fresh key for a say (MSG1e): enough of a random id that two said at once never share one.</summary>
     public static string NewKey() => Guid.NewGuid().ToString("N")[..12];
