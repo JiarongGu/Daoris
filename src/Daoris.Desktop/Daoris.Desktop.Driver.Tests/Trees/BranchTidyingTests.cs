@@ -216,6 +216,59 @@ public sealed class BranchTidyingTests : IDisposable
         Assert.Contains("\"kind\":\"carried\",\"kept\":null", lines[2], StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// AUTOTIDY2b: a branch a landing made, taken by the look, is said in the report by its name and what proved its work is on
+    /// the line, and in the machine log by its session alone: its name, and the ref its commits are kept on, carry the title's
+    /// words, which the log never holds (the machine-log design §5). A removal that did not happen is said once, as a session
+    /// branch's is.
+    /// </summary>
+    [Fact]
+    public void A_landing_s_branch_is_said_by_name_in_the_report_and_by_its_session_in_the_log()
+    {
+        using var log = new MachineLog(_home, "driver", () => _now);
+        var tidying = new BranchTidying(_home);
+        const string Squashed = "feature/q2-fix-the-login";
+        const string Ref = "refs/daoris/discarded/" + Squashed;
+        var moved = new LandedResult(Landing("feature/q5-moved", LandedKind.OnLine, "main"), false, "it changed since the list, and is kept") { Session = "s5" };
+        var pass = Pass("engine") with
+        {
+            Landed =
+            [
+                new LandedResult(Landing("feature/q1-add-a-page", LandedKind.Merged, "main"), true, "removed") { Session = "s1" },
+                new LandedResult(Landing(Squashed, LandedKind.OnLine, "origin/main"), true, "removed") { Session = "s2", KeptRef = Ref },
+                new LandedResult(Landing("feature/q3-a-step", LandedKind.Inside, Squashed), true, "removed") { Session = "s3", KeptRef = Ref + "-2" },
+                new LandedResult(Landing("feature/q4-the-api", LandedKind.PullRequest, "origin/main"), true, "removed") { Session = "s4", KeptRef = Ref + "-3" },
+                moved,
+            ],
+        };
+
+        var said = tidying.Said([pass], log);
+        var again = tidying.Said([Pass("engine") with { Landed = [moved] }], log);
+
+        string Kept(string branch, string at) => $" Its commits stay at `{at}` until you delete that ref; `git branch {branch} {at}` brings the branch back.";
+        Assert.Equal(
+        [
+            "tidy  engine: removed `feature/q1-add-a-page`, a branch a landing made, since its work is on `main`.",
+            $"tidy  engine: removed `{Squashed}`, a branch a landing made, since its work is on `origin/main` by content (each file it changed reads the same there)."
+            + Kept(Squashed, Ref),
+            $"tidy  engine: removed `feature/q3-a-step`, a branch a landing made, since it is inside `{Squashed}`, whose work is on the line."
+            + Kept("feature/q3-a-step", Ref + "-2"),
+            "tidy  engine: removed `feature/q4-the-api`, a branch a landing made, since its pull request completed and its merge commit is on `origin/main`."
+            + Kept("feature/q4-the-api", Ref + "-3"),
+            "tidy  engine: `feature/q5-moved` stays, since it changed since the list.",
+        ], said);
+        Assert.Empty(again);
+        var lines = LogLines();
+        Assert.Equal(5, lines.Length);
+        Assert.All(lines, line => Assert.DoesNotContain("feature/", line, StringComparison.Ordinal));
+        Assert.Contains("\"branch\":null,\"tree\":false,\"folder\":null,\"on\":null,\"kind\":\"merged\",\"kept\":null,\"session\":\"s1\"", lines[0], StringComparison.Ordinal);
+        Assert.Contains("\"kind\":\"on-line\",\"kept\":null,\"session\":\"s2\"", lines[1], StringComparison.Ordinal);
+        Assert.Contains("\"kind\":\"inside\",\"kept\":null,\"session\":\"s3\"", lines[2], StringComparison.Ordinal);
+        Assert.Contains("\"kind\":\"pull-request\",\"kept\":null,\"session\":\"s4\"", lines[3], StringComparison.Ordinal);
+        Assert.Contains("\"event\":\"branch.kept\"", lines[4], StringComparison.Ordinal);
+        Assert.Contains("\"branch\":null,\"why\":\"refused\",\"session\":\"s5\"", lines[4], StringComparison.Ordinal);
+    }
+
     /// <summary>What holds a whole repository holds every session branch in it now, not only the empty ones (AUTOTIDY2a).</summary>
     [Fact]
     public void A_repository_held_says_its_session_branches_stay()
@@ -249,6 +302,97 @@ public sealed class BranchTidyingTests : IDisposable
             "\"repository\":\"engine\",\"workspace\":\"default\",\"branch\":\"daoris/s-1a2b3c4d\",\"tree\":true,"
             + "\"folder\":\"trees/.tidied/default/engine/s-1a2b3c4d-20261009T090000000Z\"",
             line, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// AUTOTIDY2c: a folder under the trees that git knows no tree in, moved aside, is said with where it went, and logged as
+    /// <c>branch.tidied</c> with no branch, <c>tree</c> true, the folder it went to from the home, and <c>kind</c> <c>stray</c>.
+    /// </summary>
+    [Fact]
+    public void A_folder_moved_aside_is_said_and_logged_with_no_branch()
+    {
+        using var log = new MachineLog(_home, "driver", () => _now);
+        var folder = Path.Combine(_home, "trees", "default", "engine", "devtools");
+        var aside = Path.Combine(_home, "trees", ".tidied", "default", "engine", "devtools-20261009T090000000Z");
+
+        var said = new BranchTidying(_home).Said(
+            [Pass("engine") with { Strays = [new StrayResult(folder, StrayKind.Folder, true, "") { MovedTo = aside }] }], log);
+
+        Assert.Equal(
+            [$"tidy  engine: `devtools`, a folder under its trees that git knows no tree in, was moved aside to {aside}, and goes once it is left untouched for 14 days."],
+            said);
+        var line = Assert.Single(LogLines());
+        Assert.Contains("\"level\":\"info\",\"event\":\"branch.tidied\"", line, StringComparison.Ordinal);
+        Assert.Contains(
+            "\"repository\":\"engine\",\"workspace\":\"default\",\"branch\":null,\"tree\":true,"
+            + "\"folder\":\"trees/.tidied/default/engine/devtools-20261009T090000000Z\",\"on\":null,\"kind\":\"stray\",\"kept\":null",
+            line, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// OPENCUT1: a tree whose opening was cut off, moved aside with its branch removed, is said by its branch and why its lock was
+    /// a cut-off opening's, and logged as <c>branch.tidied</c> with that branch and <c>kind</c> <c>opening</c>.
+    /// </summary>
+    [Fact]
+    public void A_tree_whose_opening_was_cut_off_is_said_and_logged_by_its_branch()
+    {
+        using var log = new MachineLog(_home, "driver", () => _now);
+        var folder = Path.Combine(_home, "trees", "default", "engine", "s-0031408d");
+        var aside = Path.Combine(_home, "trees", ".tidied", "default", "engine", "s-0031408d-20261009T090000000Z");
+        var cut = new StrayResult(folder, StrayKind.Opening, true, "git's own lock from the start of its add was left on it")
+        {
+            MovedTo = aside, Branch = "daoris/s-0031408d",
+        };
+
+        var said = new BranchTidying(_home).Said([Pass("engine") with { Strays = [cut] }], log);
+
+        Assert.Equal(
+            [$"tidy  engine: removed `daoris/s-0031408d`, whose tree's opening was cut off: git's own lock from the start of its add was left on it; "
+             + $"its tree's folder was moved aside to {aside}, and goes once it is left untouched for 14 days."],
+            said);
+        Assert.Contains(
+            "\"branch\":\"daoris/s-0031408d\",\"tree\":true,\"folder\":\"trees/.tidied/default/engine/s-0031408d-20261009T090000000Z\","
+            + "\"on\":null,\"kind\":\"opening\",\"kept\":null",
+            Assert.Single(LogLines()), StringComparison.Ordinal);
+    }
+
+    /// <summary>A folder under the trees that could not be moved aside is said once by its code, with no branch, while it lasts.</summary>
+    [Fact]
+    public void A_folder_under_the_trees_kept_is_said_once_by_its_code()
+    {
+        using var log = new MachineLog(_home, "driver", () => _now);
+        var tidying = new BranchTidying(_home);
+        var busy = new StrayResult(
+            Path.Combine(_home, "trees", "default", "engine", "devtools"), StrayKind.Folder, false,
+            "something on this machine is using it, so it could not be moved aside (in use); a later look tries again") { Kept = TidyKept.Busy };
+
+        var said = tidying.Said([Pass("engine") with { Strays = [busy] }], log);
+        var again = tidying.Said([Pass("engine") with { Strays = [busy] }], log);
+
+        Assert.Equal(
+            ["tidy  engine: the folder `devtools` under its trees stays, since something on this machine is using it, so it could not be moved aside (in use); a later look tries again."],
+            said);
+        Assert.Empty(again);
+        var line = Assert.Single(LogLines());
+        Assert.Contains("\"event\":\"branch.kept\"", line, StringComparison.Ordinal);
+        Assert.Contains("\"branch\":null,\"why\":\"busy\"", line, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// OPENCUT1: a lock is an opening cut off only where it is git's own from an add, or Daoris's naming a process that no longer
+    /// runs; a person's lock, with any other reason or none, never is.
+    /// </summary>
+    [Theory]
+    [InlineData(TreeOpenings.GitsOwn, false, true)]
+    [InlineData("Daoris is opening this tree (process 4242)", false, true)]
+    [InlineData("Daoris is opening this tree (process 4242)", true, false)]
+    [InlineData("Daoris is opening this tree (process )", false, false)]
+    [InlineData("a person's", false, false)]
+    [InlineData(null, false, false)]
+    public void Only_an_opening_s_lock_no_running_process_holds_is_cut_off(string? reason, bool running, bool cutOff)
+    {
+        Assert.Equal(cutOff, TreeOpenings.CutOff(reason, process => process == 4242 && running));
+        Assert.Equal("Daoris is opening this tree (process 4242)", TreeOpenings.LockReason(4242));
     }
 
     /// <summary>A last guard's keep is said once, by its own code: a tree in use (busy), a hidden change, a nested repository, a link.</summary>
@@ -537,6 +681,10 @@ public sealed class BranchTidyingTests : IDisposable
 
     private static SweepItem Item(string branch, string? tree = null) =>
         new("engine", "default", branch, tree, SweepKind.Empty, 0, "main", null);
+
+    /// <summary>A branch a landing made, as the landed group's judgement leaves it (AUTOTIDY2b).</summary>
+    private static LandedItem Landing(string branch, string kind, string where) =>
+        new("engine", "default", branch, kind, where, [], null, null, 1);
 
     private static TidyPass Pass(string repository, params SweepResult[] results) =>
         new(results) { Repository = repository, Workspace = "default" };

@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the person's press, or by a tidy rule they set, and never otherwise. Real git throughout.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class SweepTests : IDisposable
 {
     private readonly string _scratch;

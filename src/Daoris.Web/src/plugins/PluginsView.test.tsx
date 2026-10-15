@@ -9,9 +9,11 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 // kit's drawer, each act landing on the driver's routes, and what the view remembers. The whole window, at its foot,
 // for the doors into the view: the activity bar's place and the Daoris menu.
 
-const { invoke, notifyReady } = vi.hoisted(() => ({
+const { invoke, notifyReady, hub } = vi.hoisted(() => ({
   invoke: vi.fn(),
   notifyReady: vi.fn(() => Promise.resolve()),
+  // The state hub's ear (STATEHUB1d, D169): what the mocked shell publishes after a press reaches it, as the kit's pump would.
+  hub: { heard: undefined as ((change: unknown) => void) | undefined },
 }));
 
 vi.mock('@shenora/react', async () => {
@@ -21,18 +23,22 @@ vi.mock('@shenora/react', async () => {
     isShenoraAvailable: () => true,
     getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
     useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
-    useShenoraEvent: () => {},
+    useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
+      if (module === 'DAORIS' && type === 'STATE_CHANGED') hub.heard = handler;
+    },
     useWindowMaximized: () => false,
   };
 });
 
 import '../locales/i18n';
 import { App } from '../app/App';
+import { useStateHub } from '../bridge/stateHub';
 import { AT_START } from '../help/setupGuide';
 import { WorkspaceScopeProvider } from '../data/scope';
 import { useListPanes } from '../work/listPanes';
 import { ViewFrame } from '../work/ViewFrame';
 import { useDoor } from '../test/door';
+import { DECLARED } from '../test/publishing';
 import { usePluginsView } from './PluginsView';
 
 const GATE = {
@@ -70,7 +76,14 @@ function wire() {
   invoke.mockImplementation(async (module: string, type: string, args?: { payload?: Record<string, unknown> }) => {
     if (module === 'DAORIS.DRIVER' && type === 'PLUGINS') return catalog;
     const route = routes[type];
-    if (route) return route(args?.payload ?? {});
+    if (route) {
+      const answered = route(args?.payload ?? {});
+      // What the plugin presses declare they change (`PluginsRoutes`), published once the route has answered, as `StatePublisher`
+      // does, so the view reads its catalogue again through the state hub, not the hook.
+      const declared = module === 'DAORIS.DRIVER' ? DECLARED[type] : undefined;
+      if (declared) setTimeout(() => hub.heard?.({ scopes: declared.scopes }), 0);
+      return answered;
+    }
     if (module === 'DAORIS.REMOTES') return { path: 'remotes.json', fromEnvironment: false, remotes: [] };
     if (module === 'DAORIS.DRIVER' && type === 'STATE') {
       return { drivable: [], holds: [], trees: [], running: [], notify: false, strikes: 3, forgiven: {} };
@@ -90,6 +103,8 @@ function Plugins({ notify, onAsk, door }: {
 }) {
   const lists = useListPanes();
   const [over, setOver] = useState(false);
+  // The application's `ShellSignals` mounts the state hub in every window; the view alone mounts it here.
+  useStateHub();
   useDoor(lists, 'plugins', door);
   const layout = usePluginsView({
     active: true, chosen: lists.pane('plugins').chosen, onChoose: (item) => lists.choose('plugins', item), notify, onAsk,
@@ -122,6 +137,7 @@ describe('the Plugins view', () => {
   afterEach(() => {
     cleanup();
     invoke.mockReset();
+    hub.heard = undefined;
     window.localStorage.clear();
   });
 
@@ -401,6 +417,7 @@ describe('the doors into the Plugins view', () => {
     cleanup();
     vi.unstubAllGlobals();
     invoke.mockReset();
+    hub.heard = undefined;
     window.localStorage.clear();
   });
 

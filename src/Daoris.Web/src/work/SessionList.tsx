@@ -78,10 +78,15 @@ type RowActs = {
  */
 export function SessionList({
   arrangement, rows, groupings, selected = null, archived = false, live = false, repositoryFacts, onSelect, actsFor, onAct,
-  entries, askNames = {}, unread = {},
+  entries, askNames = {}, unread = {}, askAccept,
 }: RowActs & {
   /** What is unread on each ask's channel, by its id (SESSONE2c, D167), said in the heading *by ask* draws; none where no driver says. */
   unread?: Readonly<Record<string, number>>;
+  /**
+   * An ask's one Accept under its heading *by ask* (ACCEPTALL1, D167's 2026-10-15 amendment), drawn by the rail, which holds its
+   * plan and press; null where the ask offers none. Not a row, so the list's arrows pass it by.
+   */
+  askAccept?: (ask: string) => ReactNode;
   arrangement: SessionArrangement;
   /** The reader's entries (SESSONE1c, D167): what *by ask* groups by. Absent, the list by ask is the list by state. */
   entries?: readonly SessionEntry[];
@@ -163,17 +168,21 @@ export function SessionList({
     const asks = sessionsByAsk(sessions, entries, { selected, archived });
     return (
       <>
-        {asks.map(({ ask, sessions: members }) => (
-          // What is unread on the ask's channel is said in its heading (SESSONE2c, D167): the person's count, not any session's.
-          <ListGroup
-            key={ask ?? 'none'}
-            title={ask === null
-              ? t('work.group.noAsk')
-              : `${askNames[ask] ?? `#${ask}`}${unread[ask] ? ` · ${t('asks.channel.unread', { count: unread[ask] })}` : ''}`}
-          >
-            {members.map((session) => row(session, true, false, true))}
-          </ListGroup>
-        ))}
+        {asks.map(({ ask, sessions: members }) => {
+          const accept = ask === null ? null : askAccept?.(ask);
+          return (
+            // What is unread on the ask's channel is said in its heading (SESSONE2c, D167): the person's count, not any session's.
+            <ListGroup
+              key={ask ?? 'none'}
+              title={ask === null
+                ? t('work.group.noAsk')
+                : `${askNames[ask] ?? `#${ask}`}${unread[ask] ? ` · ${t('asks.channel.unread', { count: unread[ask] })}` : ''}`}
+            >
+              {accept && <li className="grid justify-items-start gap-1 px-2.5 pb-1.5">{accept}</li>}
+              {members.map((session) => row(session, true, false, true))}
+            </ListGroup>
+          );
+        })}
         {asks.length === 0 && <p className="px-3 py-2 text-small text-ink-faint">{t('work.rail.empty.headline')}</p>}
       </>
     );

@@ -11,14 +11,18 @@ import type { SweepBranch } from '../settings/Sweep';
 import type { AccountNamer } from '../agents/tools';
 import type { QuestClose, Resolution } from './AwaitingPerson';
 import { HowItCameToBe, type TraceDoor } from './HowItCameToBe';
+import type { WaitEvents } from './anchors';
 import type { Answered } from './InlineConfirm';
 import type { SayRebase } from './LandingSync';
 import type { SessionEntry } from './entries';
+import { EntryAccept } from './EntryAccept';
 import type { DiscardOffer, LandOffer } from './groups';
 import { type PartFacts, PartsStrip } from './PartsStrip';
 import type { Relations } from './relations';
 import type { LineBehind } from './diff';
-import { type HeadLink, type HeadOpinion, type HeadReview, type LandingPlan, SessionHead } from './SessionHead';
+import type { RuleAsk, RuleWaits } from './ProposedRules';
+import type { Seek } from './WaitAnchor';
+import { type HeadLink, type HeadOpinion, type HeadReview, type LandingPlan, SessionHead, type WorkAsk } from './SessionHead';
 import { SessionRelations } from './SessionRelations';
 import { SessionTimeline } from './SessionTimeline';
 
@@ -55,8 +59,20 @@ export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind,
-  opinion, continues, helps, parts, channel,
+  opinion, continues, helps, parts, entryAccept, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek,
 }: {
+  /** Passed straight through to the head: the wait a raising block's *To the wait* leads to there (WAITFOOT2b). */
+  seek?: Seek | null;
+  /** Passed straight through to the head: the rules it proposed that the person still answers (PROPOSEHERE1b). */
+  rules?: RuleWaits | null;
+  /** And where a rule's *Allow…* is open, the frame's, the head's or the foot's (D168 point 3). */
+  ruleAsk?: RuleAsk;
+  /** Passed straight through to the head: where its work's ask is open, the frame's, the head's or the foot's (D168 point 3). */
+  workAsk?: WorkAsk;
+  /** And a landing or a discard of its work on its way, pressed in either place. */
+  workBusy?: boolean;
+  /** Passed straight through to the head: the way from each wait to the event that raised it (WAITFOOT1c, D168 point 4). */
+  toEvent?: WaitEvents;
   /**
    * Its entry's parts (SESSONE1c, D167 point 5): under the head, a strip of every record of the line of work it belongs to, the
    * one shown marked, so the page's acts stay the part shown's and a press shows another. Absent where it is a record alone,
@@ -68,6 +84,11 @@ export function AttendedSession({
     rows: Readonly<Record<string, PartFacts | undefined>>;
     onShow: (session: string) => void;
   };
+  /**
+   * Its line of work's one Accept (ACCEPTALL1, D167's 2026-10-15 amendment), where more than one of its parts offers work to land:
+   * the frame holds the plan and the press. Absent where one part or none does, whose own Accept is the head's.
+   */
+  entryAccept?: ComponentProps<typeof EntryAccept>;
   /**
    * Passed straight through to the head: the session it continues and the one a helper helps, where the frame holds them
    * (MIXAGENT3a-i). Its *Details* opens them with `onSession`.
@@ -217,8 +238,16 @@ export function AttendedSession({
         opinion={opinion}
         discards={discards}
         onDiscardTree={onDiscardTree}
+        workAsk={workAsk}
+        workBusy={workBusy}
+        toEvent={toEvent}
+        rules={rules}
+        ruleAsk={ruleAsk}
+        seek={seek}
       />
       {parts && <PartsStrip {...parts} />}
+      {/* One Accept for every part with work to land (ACCEPTALL1, D167's 2026-10-15 amendment), under the strip that lists them. */}
+      {entryAccept && <div className="grid justify-items-start gap-1"><EntryAccept {...entryAccept} /></div>}
       {/* Every stop a door (the study's §5: "every stop pressable"): a session attends, a quest opens.
           One line of stops by default, since the whole strip stood 350 to 450px between the head and
           the conversation, saying the head's title again (SESS2 H7); whole on a press. */}

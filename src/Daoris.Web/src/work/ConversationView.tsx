@@ -4,6 +4,7 @@ import { compact, elapsed, moment, span } from '../locales/format';
 import { cn } from '../lib/cn';
 import { Button, Dot, Icon, Inline, Tip } from '../design/ui';
 import type { NotePart } from '../data/api';
+import { turnEnd } from './anchors';
 import { CHANNEL_CLAIM_OPENING } from './channel';
 import { type Ask, type Block, CONVERSATION_CODES, type PlanEntry, runCount, segments, type Turn } from './conversation';
 import type { AccountNames } from './accountNames';
@@ -13,6 +14,14 @@ import { Note } from './Note';
 import { noteText } from './noteLines';
 import { type NewSessionAnswer, newSessionSaid, reasonOf, type ReasonValues } from './say';
 import { ToolCard } from './ToolCard';
+import { WaitMark } from './WaitAnchor';
+import type { Wait } from './waits';
+
+/**
+ * What waits on the person from each block that raised it, by its key, and the way to the wait (WAITFOOT1c, D168 point 4): the
+ * block carries the line. No way, no marks.
+ */
+const WaitMarks = createContext<{ marks?: Readonly<Record<string, readonly Wait[]>>; onToWait?: (wait: Wait) => void }>({});
 
 /**
  * Words a cooling account holds (MSG1g2, D137 §2.2): a resume asks for the account its record ran on, so while that account
@@ -72,13 +81,23 @@ const SaidDoors = createContext<Said>({ chat: false, reasons: {} });
  * - **Words a cooling account holds** (MSG1g2, D137 §2.2) say they wait for its reset, and under them
  *   *Go on in a new session* carries them on now, without this conversation's context; a driven
  *   session's alone, since nothing carries a chat's words on by itself.
+ * - **A block that raised what waits on the person says so** (WAITFOOT1c, D168 point 4), with *To the wait*: the question, a
+ *   go-ahead's call (on its run's line while folded), the work at its turn's end.
  *
  * A molecule: turns in, a press out. The organism above it holds the record.
  */
 export function ConversationView({
   turns, tree, structured, chat = false, live = false, turnRunning, loaded = true, earlier = false, onLoadEarlier,
-  reveal, toolbar, onSession, onStartFrom, reasons = {}, cooling, names,
+  reveal, toolbar, onSession, onStartFrom, reasons = {}, cooling, names, marks, onToWait,
 }: {
+  /**
+   * What waits on the person, by the key of the block that raised it (WAITFOOT1c, D168 point 4): a line under that block says
+   * so, with *To the wait*. A turn's end is keyed `turnEnd(turn)`, for the work it did; a call folded in a run is marked on the
+   * run's line until it is open.
+   */
+  marks?: Readonly<Record<string, readonly Wait[]>>;
+  /** Go to a wait's line where it is answered; absent, no block is marked. */
+  onToWait?: (wait: Wait) => void;
   /** What the person calls each account, by id (NOTENAME1): a driver's note that names one says the name, not the id. */
   names?: AccountNames;
   /**
@@ -150,28 +169,30 @@ export function ConversationView({
     // cap was half a maximized window).
     // A chat's words go on with the next word said to it, never by themselves at a reset (MSG1c), so its cool-off is not said.
     <SaidDoors.Provider value={{ chat, onSession, onStartFrom, reasons, cooling: chat ? undefined : cooling, names }}>
-      <section aria-label={t('work.conversation.label')} className="grid w-full grid-cols-[minmax(0,1fr)] gap-3">
-        {/* Pinned beneath the session's page header where one is pinned above it (SESSUX1d, D126 §3.2): the header says its
-            height on the main area as `--session-head`, and a window with none (a detached session) pins at the top. */}
-        {toolbar && (
-          <div className="sticky top-[calc(var(--session-head,0px)-0.75rem)] z-[9] -mx-1 border-b border-line bg-page px-1 pb-1.5 pt-3">
-            {toolbar}
-          </div>
-        )}
-        {/* Where the page began past the ask, the gap is inside its turn, after the ask (SESS1 S1). */}
-        {earlier && onLoadEarlier && !turns[0]?.gap && <Earlier onLoadEarlier={onLoadEarlier} />}
-        {turns.map((turn, index) => (
-          <TurnView
-            key={turn.key}
-            turn={turn}
-            tree={tree}
-            // Words waiting at the foot are no run of the agent's (MSG1f): nothing runs until its first prompt takes them.
-            running={(turnRunning ?? live) && index === turns.length - 1 && !turn.ended && !turn.waiting}
-            onLoadEarlier={earlier && turn.gap ? onLoadEarlier : undefined}
-            reveal={reveal}
-          />
-        ))}
-      </section>
+      <WaitMarks.Provider value={onToWait ? { marks, onToWait } : {}}>
+        <section aria-label={t('work.conversation.label')} className="grid w-full grid-cols-[minmax(0,1fr)] gap-3">
+          {/* Pinned beneath the session's page header where one is pinned above it (SESSUX1d, D126 §3.2): the header says its
+              height on the main area as `--session-head`, and a window with none (a detached session) pins at the top. */}
+          {toolbar && (
+            <div className="sticky top-[calc(var(--session-head,0px)-0.75rem)] z-[9] -mx-1 border-b border-line bg-page px-1 pb-1.5 pt-3">
+              {toolbar}
+            </div>
+          )}
+          {/* Where the page began past the ask, the gap is inside its turn, after the ask (SESS1 S1). */}
+          {earlier && onLoadEarlier && !turns[0]?.gap && <Earlier onLoadEarlier={onLoadEarlier} />}
+          {turns.map((turn, index) => (
+            <TurnView
+              key={turn.key}
+              turn={turn}
+              tree={tree}
+              // Words waiting at the foot are no run of the agent's (MSG1f): nothing runs until its first prompt takes them.
+              running={(turnRunning ?? live) && index === turns.length - 1 && !turn.ended && !turn.waiting}
+              onLoadEarlier={earlier && turn.gap ? onLoadEarlier : undefined}
+              reveal={reveal}
+            />
+          ))}
+        </section>
+      </WaitMarks.Provider>
     </SaidDoors.Provider>
   );
 }
@@ -185,14 +206,20 @@ function Earlier({ onLoadEarlier }: { onLoadEarlier: () => void }) {
   );
 }
 
-/** A block as the page holds it: named by its key, so a jump can find it, and marked when it is the one. */
-function Held({ id, reveal, children }: { id: string; reveal?: string; children: ReactNode }) {
+/**
+ * A block as the page holds it: named by its key, so a jump can find it, and marked when it is the one; with the line of what
+ * waits from it, where it raised a wait (WAITFOOT1c).
+ */
+function Held({ id, reveal, children }: { id: string; reveal?: string; children?: ReactNode }) {
+  const { marks, onToWait } = useContext(WaitMarks);
+  const raised = onToWait ? marks?.[id] : undefined;
   return (
     <div
       data-block={id}
       className={cn('min-w-0 scroll-mt-12', reveal === id && 'rounded-control outline-2 outline-offset-4 outline-accent/60')}
     >
       {children}
+      {raised && raised.length > 0 && <WaitMark waits={raised} onPress={() => onToWait!(raised[0]!)} />}
     </div>
   );
 }
@@ -206,6 +233,7 @@ function TurnView({ turn, tree, running, onLoadEarlier, reveal }: {
   onLoadEarlier?: () => void;
 }) {
   const { t } = useTranslation();
+  const { marks } = useContext(WaitMarks);
   // The run in hand stays open while the turn goes on, and where the session ended inside it.
   const parts = segments(turn.items, running || Boolean(turn.cut));
 
@@ -230,6 +258,8 @@ function TurnView({ turn, tree, running, onLoadEarlier, reveal }: {
         <p className="m-0 text-meta text-ink-faint">{t('work.conversation.ended', { reason: turn.ended })}</p>
       )}
       {turn.ended && <TurnMeter turn={turn} />}
+      {/* The work this turn did waits on the person (WAITFOOT1c): said at its end, where a jump to it lands. */}
+      {marks?.[turnEnd(turn.key)] && <Held id={turnEnd(turn.key)} reveal={reveal} />}
     </div>
   );
 }
@@ -563,6 +593,9 @@ function RunView({ items, open: startsOpen, tree, reveal }: {
   const [dismissed, setDismissed] = useState<string | undefined>();
   const holds = Boolean(reveal) && reveal !== dismissed && items.some((item) => item.key === reveal);
   const shown = open || holds;
+  // A wait a folded call raised is said on the run's line, so the fold never hides it (WAITFOOT1c); open, the call says it.
+  const { marks, onToWait } = useContext(WaitMarks);
+  const raised = !shown && onToWait && marks ? items.flatMap((item) => marks[item.key] ?? []) : [];
   const { tools, failed, thought } = runCount(items);
   const parts = [
     tools > 0 && t('work.conversation.tools', { count: tools }),
@@ -590,6 +623,7 @@ function RunView({ items, open: startsOpen, tree, reveal }: {
           <span className="text-ink-danger">{`· ${t('work.conversation.failed', { count: failed })}`}</span>
         )}
       </button>
+      {raised.length > 0 && <WaitMark waits={raised} onPress={() => onToWait!(raised[0]!)} />}
       {shown && items.map((item) => (
         <Held key={item.key} id={item.key} reveal={reveal}><BlockView block={item} tree={tree} /></Held>
       ))}

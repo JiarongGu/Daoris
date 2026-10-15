@@ -106,10 +106,12 @@ export type DefaultStanding = {
  * Never automatic and never mid-session (D49 §4): a tool that changed under a running loop is a
  * moving target nobody diffed. The output arrives as `SESSION_OUTPUT` under `<harness>:<action>`, so
  * the same console component renders it.
+ *
+ * What it changed at once (a key, a name, a join, a default: the roster and the accounts' files) is published by its route, and
+ * the state hub asks the roster's key again in every window (STATEHUB1h, D169); an action that runs on ends as `HARNESS_ENDED`.
  */
-export const useHarnessAction = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useHarnessAction = () =>
+  useMutation({
     mutationFn: (action: {
       harness: string;
       action: 'install' | 'update' | 'login' | 'login-new' | 'key-add' | 'key-replace' | 'pin' | 'unpin'
@@ -145,13 +147,7 @@ export const useHarnessAction = () => {
       /** For `profile-default`: what sessions there run as now (LOOK2c). Absent on a shell older than it. */
       default?: DefaultStanding;
     }>('HARNESS_ACTION', action),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: keys.harnesses });
-      // A join, a default and a rename change what the accounts' files say (ACCT1, ACCT2): the lists and the names.
-      void client.invalidateQueries({ queryKey: keys.accounts });
-    },
   });
-};
 
 /** How a process action ended — as news, after the request that started it was answered. */
 export type HarnessEnded = {
@@ -207,36 +203,29 @@ export const useHarnessCancel = () =>
  * Ask the tools again rather than answering from before — the person pressing *Read again* (UX6e, D150 §5.3): every agent,
  * or with `agent` that agent's accounts alone, one at a time, and its own sign-in, or with `profile` too that one account
  * alone (ROSTER1). Never asked by a look, a timer or a view opening: only this press reads an account's state.
+ *
+ * Its own route, which declares the agents (HARNESSREFRESH1, D169): the roster's read (`HARNESSES`) declares nothing, since a read
+ * that published would make every window read again without end. The state hub asks the roster again in every window, with the
+ * starts a looked-at account lets through (AGT3b) and the accounts' files, which a press reads windows into (CODEXUSE1,
+ * CODEXUSE3), all under its key; so this asks nothing again itself.
  */
-export const useRefreshHarnesses = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useRefreshHarnesses = () =>
+  useMutation({
     mutationFn: (target?: { agent?: string; profile?: string }) =>
-      call<HarnessRoster>('HARNESSES', {
-        refresh: true,
+      call<HarnessRoster>('HARNESSES_REFRESH', {
         ...(target?.agent ? { agent: target.agent } : {}),
         ...(target?.agent && target.profile ? { profile: target.profile } : {}),
       }),
-    onSuccess: (roster) => {
-      client.setQueryData(keys.harnesses, roster);
-      // Looking again also lets a refused account through (AGT3b), which changes what a start takes.
-      void client.invalidateQueries({ queryKey: keys.allStarts });
-      // And a press reads windows its agent's own server answers, an account's and the own sign-in's (CODEXUSE1,
-      // CODEXUSE3), into the accounts' files: said once it answers, not at the next tick.
-      void client.invalidateQueries({ queryKey: keys.accounts });
-    },
   });
-};
 
 /**
  * An account's own model and effort (AGT6, D98): keys in the tool's own settings file under that
  * account — the screen's half of `daoris agent settings`, over the same file (D50). Only the keys the
- * change names go on the wire: one left out is untouched, and null clears it. The roster is asked again
- * after, since it reads each account's file.
+ * change names go on the wire: one left out is untouched, and null clears it. The roster reads each account's file, so the
+ * route publishes it, and the state hub asks it again in every window (STATEHUB1h, D169).
  */
-export const useSetAgentSettings = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useSetAgentSettings = () =>
+  useMutation({
     mutationFn: ({ harness, profile, ...change }: { harness: string; profile: string } & AccountSettingsChange) =>
       call<AccountSettings & { harness: string; profile: string }>('SET_AGENT_SETTINGS', {
         harness, profile,
@@ -244,9 +233,7 @@ export const useSetAgentSettings = () => {
         ...('effort' in change ? { effort: change.effort ?? null } : {}),
         ...(change.perModel && Object.keys(change.perModel).length > 0 ? { perModel: change.perModel } : {}),
       }),
-    onSuccess: () => void client.invalidateQueries({ queryKey: keys.harnesses }),
   });
-};
 
 /** What a start in each of these workspaces would take (MAP1b). Desktop-only: it is this machine's. */
 export const useStarts = (workspaces: string[]) => {

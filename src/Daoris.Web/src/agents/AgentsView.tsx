@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from '../locales/format';
 import { useHarnessRun, WithHarnessRuns } from './harnessRuns';
-import { useRegistry } from '../data/queries';
+import { useRegistry, useSessions } from '../data/queries';
 import { useScope } from '../data/scope';
 import { SessionConsole } from '../work/SessionConsole';
 import {
-  useAccountUse, useAccounts, useHarnessAction, useHarnesses, useRefreshHarnesses, useRuleAction, useRuleProposal, useRules,
+  useAccountUse, useAccounts, useHarnessAction, useHarnesses, useRefreshHarnesses, useRuleAction, useRules,
   useSetAgentSettings, useUsage,
 } from '../bridge/shell';
+import { ruleHearing, useRuleAnswer } from '../work/ruleAnswer';
 import { SignIn } from './SignIn';
 import { byTool, type Tool } from './tools';
 import { failure, type Notify, useErrorNotify } from '../design/ui';
@@ -37,7 +38,7 @@ const DOOR_ACTIONS = ['install', 'update', 'pin', 'unpin'] as const;
  *
  * **Every act has its terminal twin** (D50): `daoris agent …`, named at the page's foot.
  */
-export function useAgentsView({ active, chosen, onChoose, notify, part = null, onAnchored, onOpenPlugin }: {
+export function useAgentsView({ active, chosen, onChoose, notify, part = null, onAnchored, onOpenPlugin, say }: {
   /** The view is in front. */
   active: boolean;
   /** The list's chosen item: an agent's id, which the application remembers (`daoris.list.agents.chosen`). */
@@ -50,6 +51,11 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
   onAnchored?: () => void;
   /** A door's *declared by plugin* opens that plugin in the Plugins place (PLUGUI1c2b). */
   onOpenPlugin?: (plugin: string) => void;
+  /**
+   * The words to a session (PROPOSEHERE1c), handed in by the application: an *Accept* on a proposal tells the session that
+   * proposed it. The bridge's say hook is pressed there, not here, so this place answers for no control it did not have.
+   */
+  say?: (session: string, text: string) => Promise<{ sent: boolean }>;
 }): ViewLayout {
   const { t } = useTranslation();
   const roster = useHarnesses();
@@ -112,6 +118,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
                 part={part}
                 onAnchored={onAnchored}
                 onOpenPlugin={onOpenPlugin}
+                say={say}
                 install={installing === chosenTool.name}
                 onInstallTaken={() => setInstalling(null)}
               />
@@ -137,8 +144,9 @@ export function useAgentsWaiting(): number {
  * The chosen agent's page and every act on it (UX6e): the organism under the page, inside the application's running
  * action (SIGNIN1), so a sign-in started here outlives leaving the place and its end is said wherever the person is.
  */
-function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, install = false, onInstallTaken }: {
+function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say, install = false, onInstallTaken }: {
   tool: Tool;
+  say?: (session: string, text: string) => Promise<{ sent: boolean }>;
   adapter?: string;
   notify: Notify;
   part?: AgentPart | null;
@@ -158,7 +166,10 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, ins
   const accountUse = useAccountUse();
   const rules = useRules();
   const ruleAct = useRuleAction();
-  const settle = useRuleProposal();
+  // A proposal's answer, its one owner (PROPOSEHERE1b): *What needs you* and the session's conversation press the same.
+  const ruleAnswer = useRuleAnswer({ notify });
+  // The session that proposed a rule is found in the list while a proposal names one and a door to it was handed (PROPOSEHERE1c).
+  const proposalSessions = useSessions(null, true, Boolean(say) && Array.isArray(rules.data?.proposals) && rules.data.proposals.some((one) => one.session));
   const registry = useRegistry('machine');
   // The workspace the window looks at: the one chosen, or the only one there is, as the application's circle (ACCTUX4c).
   const chosenScope = useScope();
@@ -169,7 +180,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, ins
   const door = tool.doors[0]!.harness;
   const product = tool.product ?? tool.name;
   const use = agentOf(accounts.data, tool.name);
-  const busy = acting || act.isPending || accountUse.isPending || ruleAct.isPending || settle.isPending;
+  const busy = acting || act.isPending || accountUse.isPending || ruleAct.isPending || ruleAnswer.busy;
   // The new account this agent's sign-in kept, waiting on its name and its lists (UX7b): the add flow's step 3.
   const addedHere = added && added.harness === door ? added : null;
   // A key added here asks the same question (the UX7 design §4.5, ACCTUX3): by its id and its key's handle, held while the
@@ -293,14 +304,12 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, ins
         },
         onError,
       }),
+      // This card's press is *Accept*, whatever the proposal does, so its sentence says it so.
       onAnswer: (id, accept) => {
         const proposal = rules.data?.proposals?.find((one) => one.id === id);
-        settle.mutate({ id, accept }, {
-          onSuccess: () => notify(t(accept ? 'settings.rules.proposals.accepted' : 'settings.rules.proposals.declined', {
-            change: proposal ? proposalChange(proposal) : `#${id}`,
-          })),
-          onError,
-        });
+        ruleAnswer.settled(
+          id, accept, proposal ? proposalChange(proposal) : `#${id}`, 'accept', ruleHearing(proposal, proposalSessions.data ?? [], say),
+        ).then((said) => notify(said), onError);
       },
     },
   };

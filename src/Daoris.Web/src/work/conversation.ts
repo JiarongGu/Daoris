@@ -589,6 +589,20 @@ const doorFailed = (event: SessionEvent): boolean =>
 export const firstAnswerWait = (turns: readonly Turn[]): string | undefined => turns[turns.length - 1]?.waitingSince;
 
 /**
+ * The key of the last thing the agent said, where it said anything: the jump to its last words (SESS1 S9), and what a parked
+ * session asked the person, since its card keeps that message whole (PARK1; WAITFOOT1c).
+ */
+export function lastWords(turns: readonly Turn[]): string | undefined {
+  for (let turn = turns.length - 1; turn >= 0; turn -= 1) {
+    const items = turns[turn]!.items;
+    for (let item = items.length - 1; item >= 0; item -= 1) {
+      if (items[item]!.kind === 'message') return items[item]!.key;
+    }
+  }
+  return undefined;
+}
+
+/**
  * The turns as a session that has ended leaves them (SESS1 S4): the last one, if the wire never said
  * it ended, was cut — and the calls it left open never finished, so they read *stopped*, never
  * *running* for good. The person's words still waiting never reached it (STEER1). A live session is

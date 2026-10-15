@@ -79,25 +79,21 @@ export const useElsewhereAsks = ({ enabled = true }: { enabled?: boolean } = {})
 
 /**
  * *Send* (`CHANNEL_POST`): the person's words, to one repository or everyone, answering a message or not. A refusal is an
- * answer with the service's code, which the section words, so it resolves rather than rejects; a kept message asks the
- * channel again.
+ * answer with the service's code, which the section words, so it resolves rather than rejects. Its route publishes the asks,
+ * whose key holds each channel, and the state hub asks them again in every window (STATEHUB1h, D169).
  */
-export const usePostChannel = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const usePostChannel = () =>
+  useMutation({
     mutationFn: async ({ ask, post }: { ask: string; post: ChannelPost }): Promise<ChannelPosted> => postedOf(await call<unknown>(
       'CHANNEL_POST',
       { ask, text: post.text, ...(post.to ? { to: post.to } : {}), ...(post.re ? { re: post.re } : {}) },
     )),
-    onSuccess: (posted, { ask }) => {
-      if (posted.posted) void client.invalidateQueries({ queryKey: channelKey(ask) });
-    },
   });
-};
 
 /**
  * The person's mark moved (`CHANNEL_MARK`) through the newest item they were shown. The answer is the channel as it then
- * reads, so the unread count falls at once, in the section and in the rows, without asking again.
+ * reads, so the unread count falls at once, in the section and in the rows, without asking again; its route publishes the
+ * asks, so every other window's count falls too (STATEHUB1h, D169).
  */
 export const useMarkChannel = () => {
   const client = useQueryClient();

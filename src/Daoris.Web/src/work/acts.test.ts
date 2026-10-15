@@ -156,6 +156,24 @@ describe('the acts a session is offered', () => {
     expect(offeredActs({ session: { ...chat, id: 'person@machine-b/c1' }, root: null }, 'row')).not.toContain('handOver');
   });
 
+  /** HELPERACTS1 (D163's MIXAGENT2a-i note): a helper's and a reviewer's records are refused words and resume, so no act takes any. */
+  it('offers a helper or a reviewer no act that takes words, and still its stop and what is not words', () => {
+    const chat = session({ quest: null, kind: 'chat', state: 'completed', tree: TREE });
+    const wordless = ['handOver', 'answer', 'retry', 'resumeQuest', 'resumeAsk', 'pauseQuest', 'pauseAsk'];
+    for (const other of [{ serves: 's9z8y7x6' }, { opinion: 'o1p2q3' }]) {
+      const ended = { session: { ...chat, ...other }, grouping: placed({ group: 'ended', shown: 'completed' }), root: ROOT };
+      for (const door of ['row', 'header'] as const) {
+        const acts = offeredActs(ended, door);
+        for (const act of wordless) expect(acts).not.toContain(act);
+      }
+      const parked = { session: { ...chat, ...other, state: 'awaiting-person' as const }, grouping: placed({ group: 'you', shown: 'parked' }), root: ROOT };
+      const acts = offeredActs(parked, 'row');
+      for (const act of wordless) expect(acts).not.toContain(act);
+      expect(acts).toContain('stop');
+      expect(acts).toContain('copy');
+    }
+  });
+
   it('names the hand-over by whether the conversation is working: go on, or stop and hand over', () => {
     expect(handOverLabel(session({ kind: 'chat', quest: null, state: 'working' }))).toBe('work.act.handOverStop');
     expect(handOverLabel(session({ kind: 'chat', quest: null, state: 'completed' }))).toBe('work.act.handOver');

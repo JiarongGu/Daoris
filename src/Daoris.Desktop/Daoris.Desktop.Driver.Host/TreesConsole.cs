@@ -28,6 +28,14 @@ internal static class TreesConsole
         _ => item.Kind,
     };
 
+    /// <summary>
+    /// What a press changed, told to the open windows (STATEHUB1e, D169 point 8): this process has no bus of the desktop's, so it leaves
+    /// a note in the request folder, and the shell's loop publishes the change the window's press of <paramref name="route"/> declares
+    /// at its next look. Told once the press has answered, whatever it answered; never a failure of the press.
+    /// </summary>
+    private static void Told(string home, string route, string? session = null) =>
+        new PressesTold(home).Tell(new PressTold(route, session, DateTimeOffset.UtcNow));
+
     /// <summary>The door offered beside a kept branch a failed or superseded attempt left (LAND3), or null.</summary>
     internal static string? Offered(SweepItem item) => SessionBranchDoors.RemovalOffered(item);
 
@@ -126,7 +134,11 @@ internal static class TreesConsole
 
                 foreach (var tree in listed)
                 {
-                    Console.WriteLine($"  {tree.Workspace}/{tree.Repository}  {tree.Branch}");
+                    // AUTOTIDY2c: a folder the look moved aside is listed so, with when, until the purge deletes it.
+                    Console.WriteLine(tree.MovedAside is { } moved
+                        ? $"  {tree.Workspace}/{tree.Repository}  {tree.Branch} on {moved.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)}, "
+                          + $"deleted once it is left untouched for {BranchTidying.SetAsideFor.TotalDays:0} days"
+                        : $"  {tree.Workspace}/{tree.Repository}  {tree.Branch}");
                     Console.WriteLine($"    {tree.Path}");
                 }
 
@@ -143,6 +155,7 @@ internal static class TreesConsole
                 var removal = LooksLikePath(named)
                     ? await trees.RemoveAsync(named, force).ConfigureAwait(false)
                     : await RemoveSessionBranchAsync(trees, named, Option(args, "--repository"), force).ConfigureAwait(false);
+                Told(home, LooksLikePath(named) ? PressesTold.DiscardTree : PressesTold.DiscardBranch);
                 Console.WriteLine($"trees: {removal.Message}");
                 // A refusal that preserves work is policy doing its job, not a tool error.
                 return removal.Removed ? 0 : 1;
@@ -201,6 +214,7 @@ internal static class TreesConsole
                 }
 
                 var done = await trees.CleanAsync(repositories, inUse).ConfigureAwait(false);
+                Told(home, PressesTold.Sweep);
                 foreach (var result in done.Sessions)
                 {
                     // A removal on content says where its commits stay (SQUASHTIDY1c); every other removal says nothing more.
@@ -272,6 +286,7 @@ internal static class TreesConsole
                     inUseNow: async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
                         .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
                         .ToHashSet(StringComparer.OrdinalIgnoreCase), scope: scope).ConfigureAwait(false);
+                Told(home, PressesTold.TreesSync);
                 foreach (var line in SyncWords.NotFetched([.. done.Lines.Select(result => result.Pull)], DateTimeOffset.UtcNow)) Console.WriteLine(line);
                 foreach (var result in done.Lines) Console.WriteLine($"  {(result.Moved ? "moved " : "stayed")}  {result.Pull.Repository}  {result.Message}");
                 foreach (var result in done.Rebases) Console.WriteLine($"  {(result.Replayed ? "moved " : "stayed")}  {result.Item.Repository}  {result.Message}");
@@ -373,6 +388,7 @@ internal static class TreesConsole
                 var landed = await landing.LandAsync(tree, subject, inUse: async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
                     .Select(each => each.Tree).OfType<string>().Where(each => each.Length > 0)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase), gate: gate).ConfigureAwait(false);
+                Told(home, PressesTold.Land, session);
                 Console.WriteLine($"trees: {landed.Message}");
                 if (log is not null && LandingGateWords.Held(session, landing.Owner(tree), gate, landed, ReviewDoors.Terminal) is { } held)
                 {
@@ -428,6 +444,7 @@ internal static class TreesConsole
                 }
 
                 var handed = await handing.HandAsync(root, entry, plugin).ConfigureAwait(false);
+                Told(home, PressesTold.HandOff, entry.Session);
                 Console.WriteLine($"trees: {handed.Message}");
                 // Kept where the conversation is kept, as the review's press keeps it (D100).
                 if (handed.Plugin is not null)

@@ -62,7 +62,9 @@ internal static class GitFixture
             info.StandardInputEncoding = Utf8;
         }
 
+        var (beganUtc, began) = (DateTime.UtcNow, Stopwatch.GetTimestamp());
         using var process = Process.Start(info) ?? throw new InvalidOperationException($"git did not start in {info.WorkingDirectory}");
+        var started = Stopwatch.GetTimestamp();
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
         if (input is not null)
@@ -72,7 +74,13 @@ internal static class GitFixture
         }
 
         await process.WaitForExitAsync().ConfigureAwait(false);
-        return new GitRun(await stdout.ConfigureAwait(false), process.ExitCode, await stderr.ConfigureAwait(false));
+        var run = new GitRun(await stdout.ConfigureAwait(false), process.ExitCode, await stderr.ConfigureAwait(false));
+        if (FixtureSpawns.On)
+        {
+            FixtureSpawns.Note("GitFixture", beganUtc, began, started, info.ArgumentList.Count > 0 ? info.ArgumentList : [info.Arguments]);
+        }
+
+        return run;
     }
 }
 

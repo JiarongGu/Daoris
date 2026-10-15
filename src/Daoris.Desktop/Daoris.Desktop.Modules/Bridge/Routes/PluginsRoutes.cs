@@ -21,6 +21,12 @@ public sealed class PluginsRoutes(DriverContext context)
     // which runs after the constructor built this class (PART10e).
     private string OffersFolder => _context.OffersFolder;
 
+    /// <summary>
+    /// What a plugin added, switched, updated or removed changes (STATEHUB1d, D169): the catalogue, and the agents' roster, since
+    /// a harness a plugin declares comes and goes with it. Making a plugin's folder and trying one install nothing, and declare nothing.
+    /// </summary>
+    private const StateScopes Installs = StateScopes.Plugins | StateScopes.Harnesses;
+
     // This machine's plugins (D64): the catalogue as the driver reads it, each with what it
     // declares, what it speaks on, whether it is running, and why it contributes nothing when
     // it does not. Machine paths ride this bridge like every path here.
@@ -165,6 +171,7 @@ public sealed class PluginsRoutes(DriverContext context)
     // PLUGIN_READ judged it. It adds and never replaces; the terminal's add is the one that replaces (§4.4).
     // 🔴 Nothing starts at the press; the loop starts what it runs at its next look.
     [DriverRoute("PLUGIN_ADD")]
+    [Publishes("PLUGIN_ADD", Installs)]
     private object? PluginAdd(IpcRequest request)
     {
         var folder = PayloadHelper.GetRequiredValue<string>(request.Payload, "folder");
@@ -227,8 +234,11 @@ public sealed class PluginsRoutes(DriverContext context)
     }
 
     // The screen's half of `daoris plugin update <id>` (PLUG9 c, D50): without `apply`, what an update
-    // would change, or why it cannot, for the row to show before the press; with it, the update.
+    // would change, or why it cannot, for the row to show before the press; with it, the update. One route for the plan and
+    // its press, so the plan publishes too (STATEHUB1d, D169): the catalogue and the roster read again for a press the person
+    // made, which splitting the route would spare.
     [DriverRoute("PLUGIN_UPDATE")]
+    [Publishes("PLUGIN_UPDATE", Installs)]
     private async Task<object?> PluginUpdateAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -253,6 +263,7 @@ public sealed class PluginsRoutes(DriverContext context)
     // The screen's Install beside one of the install's offers (PLUG9 d): `daoris plugin add --offer <id>`'s
     // copy, the offer recorded. 🔴 Nothing starts at the press; the loop starts it at its next look.
     [DriverRoute("PLUGIN_INSTALL")]
+    [Publishes("PLUGIN_INSTALL", Installs)]
     private async Task<object?> PluginInstallAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
@@ -265,6 +276,7 @@ public sealed class PluginsRoutes(DriverContext context)
     // The screen's half of `daoris plugin enable|disable|remove` (D50): a row in
     // `plugins.json`, or the install folder gone with the data folder named and kept.
     [DriverRoute("PLUGIN_ACTION")]
+    [Publishes("PLUGIN_ACTION", Installs)]
     private async Task<object?> PluginActionAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;

@@ -65,6 +65,21 @@ describe('the plugin kit card', () => {
     expect(screen.getByText(/An act, once a landing has made its branch/)).toBeInTheDocument();
   });
 
+  // STATEHUB1g: a gloss says when a point speaks, so the second observation says its own, not a session's end.
+  it('says when the state point speaks, apart from the other observation', () => {
+    draw({ points: [...POINTS, { name: 'state/changed', kind: 'observation' }] });
+
+    expect(screen.getByRole('checkbox', { name: /^state\/changed — An observation, once something the driver holds changes$/ })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /^session\/ended — An observation, after a session ends$/ })).toBeInTheDocument();
+  });
+
+  // KITGLOSS1 (D148 point 1): the fourth kind says when it speaks as the other three do, never the driver's raw word.
+  it('says when the query point speaks, in words rather than its kind', () => {
+    draw({ points: [...POINTS, { name: 'work/state', kind: 'query' }] });
+
+    expect(screen.getByRole('checkbox', { name: /^work\/state — A query, when git cannot tell whether a landed branch merged$/ })).toBeInTheDocument();
+  });
+
   // A zero-basis field never wraps its row, it only shrinks: with the side bar open the folder showed
   // two characters beside its two buttons (seen on the window). A floor makes the row wrap instead.
   it('keeps each field wide enough to read, wrapping its row rather than shrinking the field', () => {

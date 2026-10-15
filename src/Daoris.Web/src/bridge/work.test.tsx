@@ -97,10 +97,9 @@ describe('the work domain', () => {
       payload: { ask: 'a1', reason: 'It went the wrong way.', pieces: ['quest:q1', 'ask:a1'] },
     }));
 
-    // Each move changes what the quests, the asks, the sessions and the driver say: all asked again.
-    for (const key of [keys.allQuests, keys.allAsks, keys.allSessions, keys.driver]) {
-      expect(invalidated).toHaveBeenCalledWith({ queryKey: key });
-    }
+    // Each move changes what the quests, the asks, the sessions and the driver say, and the routes declare it: the state hub
+    // asks them again in every window (STATEHUB1d, D169 point 6), the hook none.
+    expect(invalidated).not.toHaveBeenCalled();
   });
 
   /** An abandon runs a sync pass and walks git per tree before it answers: the page waits as long as the host may work. */

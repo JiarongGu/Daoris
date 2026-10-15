@@ -13,6 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// for the checkout's root, through the registry door, and asks for the refresh once.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class RegistrationLineProcessTests : IDisposable
 {
     private readonly string _scratch = Path.Combine(RepoRoot(), "_fixtures", "registration-line", Guid.NewGuid().ToString("N")[..8]);

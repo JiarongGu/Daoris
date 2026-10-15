@@ -14,6 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Real git, as the other tree tests, and the service's quests stood in: nothing reaches a network or a harness.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class ReviewLandingTests : IDisposable
 {
     private readonly string _scratch;

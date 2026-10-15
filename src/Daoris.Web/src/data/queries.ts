@@ -21,6 +21,8 @@ export const keys = {
   untrusted: ['untrusted'] as const,
   /** The starts the last tick held on cooling accounts, an intake's among them (UX6d) — written by the tick, like `considered`. */
   waits: ['waits'] as const,
+  /** The presses the driver has not answered yet, as it last told them (STATEHUB1c) — written by the state hub, never fetched. */
+  underWay: ['underWay'] as const,
   /** Ask Daoris's conversation opened ahead of the person (HELP5) — kept by the page, never fetched. */
   helpReadied: ['help-readied'] as const,
   /** Where the install's update stands (UPDATE1, D139): asked once, then kept by the shell's `UPDATE_STATE`. */
@@ -59,6 +61,9 @@ export const keys = {
    */
   opinion: (session: string) => ['driver', 'landing', 'opinion', session] as const,
   opinionWaits: ['driver', 'landing', 'opinion-waits'] as const,
+  /** Where a line of work's one Accept, or an ask's, would land its parts (ACCEPTALL1): under the landings' key, asked again with them. */
+  entryLanding: (entry: string) => ['driver', 'landing', 'entry', entry] as const,
+  askLanding: (ask: string) => ['driver', 'landing', 'ask', ask] as const,
   /** Whether a session's landed branch can be handed to a landing plugin now (WSR5b). */
   handOff: (session: string) => ['driver', 'hand', session] as const,
   /** This machine's harnesses and the accounts they run as — shell-only too (D49 §4). */

@@ -110,14 +110,16 @@ internal static class TreeRefs
     }
 
     /// <summary>Where the line stands as the rest of Daoris reads it — the local branch, else origin's — as a commit, or null.</summary>
-    internal static async Task<string?> OntoAsync(string root, string? line, CancellationToken ct)
+    internal static async Task<string?> OntoAsync(string root, string? line, CancellationToken ct, RefSnapshot? refs = null)
     {
-        if (line is null || await ComparableAsync(root, line, ct).ConfigureAwait(false) is not { } name) return null;
-        return await CommitOfAsync(root, name, ct).ConfigureAwait(false);
+        if (line is null || await ComparableAsync(root, line, ct, refs).ConfigureAwait(false) is not { } name) return null;
+        return await CommitOfAsync(root, name, ct, refs).ConfigureAwait(false);
     }
 
-    internal static async Task<string?> CommitOfAsync(string root, string revision, CancellationToken ct)
+    /// <summary>The commit <paramref name="revision"/> names, or null; from <paramref name="refs"/> where it holds the answer (PROC1d-ii).</summary>
+    internal static async Task<string?> CommitOfAsync(string root, string revision, CancellationToken ct, RefSnapshot? refs = null)
     {
+        if (refs is not null && await refs.CommitAsync(revision, ct).ConfigureAwait(false) is { Known: true } read) return read.Commit;
         var (code, sha, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{revision}^{{commit}}"], ct).ConfigureAwait(false);
         return code == 0 ? sha.Trim() : null;
     }
@@ -135,9 +137,19 @@ internal static class TreeRefs
     /// Whether a branch is on a remote: a remote-tracking branch of its own name, as its upstream or on
     /// <c>origin</c>. An upstream a new branch borrowed from its start point (the line's) is not its own.
     /// </summary>
-    internal static async Task<bool> OnRemoteAsync(string root, string branch, CancellationToken ct)
+    internal static async Task<bool> OnRemoteAsync(string root, string branch, CancellationToken ct, RefSnapshot? refs = null)
     {
-        if (await CommitOfAsync(root, $"refs/remotes/origin/{branch}", ct).ConfigureAwait(false) is not null) return true;
+        if (await CommitOfAsync(root, $"refs/remotes/origin/{branch}", ct, refs).ConfigureAwait(false) is not null) return true;
+        // `--symbolic-full-name` answers only an upstream that is there: none configured, or one whose ref is gone, fails.
+        if (refs is not null && await refs.UpstreamAsync(branch, ct).ConfigureAwait(false) is { Known: true } read)
+        {
+            if (read.Full is null) return false;
+            if (await refs.HasAsync(read.Full, ct).ConfigureAwait(false) is { } there)
+            {
+                return there && read.Short!.EndsWith($"/{branch}", StringComparison.Ordinal);
+            }
+        }
+
         var (code, upstream, _) = await WorkingTree.GitAsync(
             root, ["rev-parse", "--abbrev-ref", "--symbolic-full-name", $"{branch}@{{upstream}}"], ct).ConfigureAwait(false);
         return code == 0 && upstream.Trim().EndsWith($"/{branch}", StringComparison.Ordinal);

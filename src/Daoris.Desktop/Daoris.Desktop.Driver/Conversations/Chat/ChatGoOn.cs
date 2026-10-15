@@ -356,7 +356,8 @@ internal sealed class ChatGoOn
         // Every word waiting once it moved: none can be kept on a record that works (the say door answers `running`), so the
         // list read now is whole, a word said while it was judged included.
         var now = await _context.ReadAgainAsync(sessionId, ct).ConfigureAwait(false);
-        var words = now is { Waiting.Count: > 0 } ? now.Waiting : record.Waiting;
+        var words = Continuations.HandedAfterMove(record.Waiting, now);
+        if (words.Count == 0) return await TakenBackAsync(record, ct).ConfigureAwait(false);
         // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words; the conversation's
         // rules already read its own files folder (CONV4c).
         var ask = new ResumeAsk(
@@ -417,7 +418,8 @@ internal sealed class ChatGoOn
         }
 
         var now = await _context.ReadAgainAsync(sessionId, ct).ConfigureAwait(false);
-        var words = now is { Waiting.Count: > 0 } ? now.Waiting : record.Waiting;
+        var words = Continuations.HandedAfterMove(record.Waiting, now);
+        if (words.Count == 0) return await TakenBackAsync(record, ct).ConfigureAwait(false);
         var ask = new ResumeAsk(
             kept.Conversation, words,
             Continuations.OpeningNoted(adapter.Name, selection.Version, record.HarnessVersion, answer: false),
@@ -539,6 +541,31 @@ internal sealed class ChatGoOn
         _context.Note(sessionId, held.Line);
         return new(null, held.Why);
     }
+
+    /// <summary>
+    /// Every word waiting was taken back between the look and the ledger's move (SAIDBACK1d): nothing goes on, so the record is
+    /// put back as it ended, not left working for a run that will never start, and its conversation says so. Where the ledger
+    /// will not move it back, the refusal is said and the next look reads it as it now is.
+    /// </summary>
+    private async Task<ChatStart> TakenBackAsync(PriorSession record, CancellationToken ct)
+    {
+        var line = new Noted(TakenBackBeforeGoingOn, []);
+        try
+        {
+            await _context.Service.AdvanceAsync(record.Session, record.State, line, ct: ct).ConfigureAwait(false);
+        }
+        catch (DriverException refused)
+        {
+            _context.Note(record.Session, $"{TakenBackBeforeGoingOn} {refused.Message}");
+            return new(null, refused.Message);
+        }
+
+        _context.Note(record.Session, line);
+        return new(null, TakenBackBeforeGoingOn);
+    }
+
+    /// <summary>The line a conversation keeps where the words it was to go on with were all taken back first (SAIDBACK1d).</summary>
+    public const string TakenBackBeforeGoingOn = "— the words waiting on it were taken back before it went on, so it stays as it ended.";
 
     /// <summary>Whether two paths name one folder, whatever their separators or a trailing one.</summary>
     private static bool SamePath(string a, string b) =>

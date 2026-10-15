@@ -10,5 +10,6 @@
   "nav.search": "Search",
   "nav.agents": "Agents",
   "nav.plugins": "Plugins",
-  "nav.settings": "Settings"
+  "nav.settings": "Settings",
+  "nav.waiting": "{{count}} waiting on you"
 }

@@ -352,17 +352,11 @@ export const useOpinionWaits = (enabled = true) => {
 
 /**
  * A press at the gate (XAGENT1f): the gate moved, so every landing's plan and gate is asked again, and the sessions, whose
- * reviewer a press may have started or stopped. Asked again whatever the driver said: a refusal reads the gate as it stands.
+ * reviewer a press may have started or stopped, whatever the driver said: a refusal reads the gate as it stands. The route
+ * declares both, and the state hub asks them again in every window (STATEHUB1b, D169).
  */
 function useOpinionChange<TVariables>(fn: (variables: TVariables) => Promise<OpinionPressed>) {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: fn,
-    onSettled: () => {
-      void client.invalidateQueries({ queryKey: keys.allLandings });
-      void client.invalidateQueries({ queryKey: keys.allSessions });
-    },
-  });
+  return useMutation({ mutationFn: fn });
 }
 
 /**
@@ -402,10 +396,16 @@ export type PluginLanding = { id: string; pushed: boolean; pullRequest?: string;
  *
  * Where *Accept…* was drawn with what the second opinion left unsettled, it sends back the gate's token (`answers`, XAGENT1f),
  * so the press answers what it showed; a gate that moved since answers nothing, and the door refuses in its sentence.
+ *
+ * What it moved is the route's to declare and the state hub's to ask again, in every window (STATEHUB1b, D169): every plan and
+ * gate (the line moved, or a refusal fetched it), the sessions, its review, its hand-off and the clean-up's list. Asked here
+ * alone, and never the plan after a done press, the plan read before it answered after a tab switch (STATEHUB1); the hook asks
+ * nothing itself, a conflict's plan among it (STATEHUB1f).
  */
-export const useLandSessionTree = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useLandSessionTree = () =>
+  useMutation({
+    // Keyed by its route, so every view of the session reads it under way, not only the one that pressed (STATEHUB1c).
+    mutationKey: ['LAND_SESSION_TREE'],
     mutationFn: (land: string | { id: string; answers?: string | null; branch?: string | null }) => {
       const { id, answers, branch } = typeof land === 'string' ? { id: land, answers: null, branch: null } : land;
       // LANDNAME1b: a name the person entered replaces the rule's whole name; blank sends none, so the payload is today's.
@@ -418,26 +418,7 @@ export const useLandSessionTree = () => {
       }>(
         'LAND_SESSION_TREE', { id, ...(answers ? { answers } : {}), ...(named ? { branch: named } : {}) }, { timeoutMs: pluginBound });
     },
-    onSettled: (result, _error, land) => {
-      // A press that answered the second opinion's gate, or was refused because it moved: every gate is read again (XAGENT1g).
-      if (typeof land !== 'string' && land.answers) void client.invalidateQueries({ queryKey: keys.allLandings });
-      // LANDSYNC1: the press fetched the line, so its plan is read again against what it fetched, and a conflict stands there.
-      if (result && !result.done && result.conflict) void client.invalidateQueries({ queryKey: keys.landing(result.session) });
-    },
-    onSuccess: (result) => {
-      // Only a merge that happened changes what a diff or a removal would say.
-      if (result.done) {
-        void client.invalidateQueries({ queryKey: keys.diff(result.session) });
-        void client.invalidateQueries({ queryKey: keys.allSessions });
-        // A branch just made may now be handed on (WSR5b) — its plugin failed, or the rule names none.
-        void client.invalidateQueries({ queryKey: keys.handOff(result.session) });
-        // LAND4: the clean-up's list said its branch held work no branch of the person's did, which a session's head reads
-        // once the reader offers nothing to land; it holds none now.
-        void client.invalidateQueries({ queryKey: keys.sweep });
-      }
-    },
   });
-};
 
 /**
  * Whether the branch this session's landing made can be handed to a landing plugin now (WSR5b): the
@@ -458,32 +439,24 @@ export const useHandOff = (id: string | null) => {
 
 /**
  * Hand a session's landed branch to its plugin (WSR5b): the plugin pushes and opens the pull request; a refusal is an
- * answer. The page waits as long as the plugin may (`pluginBound`, LEFT3), not the bridge's 30 seconds.
+ * answer. The page waits as long as the plugin may (`pluginBound`, LEFT3), not the bridge's 30 seconds. Its hand-off and the
+ * clean-up's list are asked again by the state hub, as the route declares them (STATEHUB1b, D169).
  */
-export const useHandOffPress = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useHandOffPress = () =>
+  useMutation({
+    mutationKey: ['HANDOFF'],
     mutationFn: (id: string) =>
       call<TreeAct & { branch?: string | null; plugin?: PluginLanding | null }>('HANDOFF', { id }, { timeoutMs: pluginBound }),
-    onSuccess: (result) => {
-      void client.invalidateQueries({ queryKey: keys.handOff(result.session) });
-      void client.invalidateQueries({ queryKey: keys.sweep });
-    },
   });
-};
 
-export const useDiscardSessionTree = () => {
-  const client = useQueryClient();
-  return useMutation({
+/**
+ * Discard a session's tree, its branch with it. Its review, the sessions, every plan and the clean-up's list, which the
+ * session's head reads what it left from (SQUASHTIDY1b), are asked again by the state hub, as the route declares them
+ * (STATEHUB1b, D169).
+ */
+export const useDiscardSessionTree = () =>
+  useMutation({
+    mutationKey: ['DISCARD_SESSION_TREE'],
     mutationFn: (act: { id: string; force?: boolean }) =>
       call<TreeAct>('DISCARD_SESSION_TREE', { id: act.id, ...(act.force ? { force: true } : {}) }),
-    onSuccess: (result) => {
-      if (result.done) {
-        void client.invalidateQueries({ queryKey: keys.diff(result.session) });
-        void client.invalidateQueries({ queryKey: keys.allSessions });
-        // Its branch went with its tree: the clean-up's list, which the session's head reads what it left from (SQUASHTIDY1b).
-        void client.invalidateQueries({ queryKey: keys.sweep });
-      }
-    },
   });
-};

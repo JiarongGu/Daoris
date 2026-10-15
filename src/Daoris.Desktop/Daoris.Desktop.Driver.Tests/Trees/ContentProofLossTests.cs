@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// scratch folder.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class ContentProofLossTests : LandedFixture
 {
     private static (string, string?, string?)[] Engine(string root) => [("engine", "aurora", root)];

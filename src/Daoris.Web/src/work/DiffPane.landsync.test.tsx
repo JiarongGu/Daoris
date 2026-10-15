@@ -8,16 +8,27 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 // what it replays, before the press; where replaying conflicts, the plan's trial or the press's refusal, Accept's place holds the words
 // its session is asked to rebase with, and one press says them through D137's say door.
 
-const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
-
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke }),
-  useShenora: () => ({ isAvailable: true, bridge: {} }),
-  useShenoraEvent: () => {},
+const { invoke, heard } = vi.hoisted(() => ({
+  invoke: vi.fn(),
+  // The state hub's ear (STATEHUB1f, D169): what the mocked shell publishes after a press reaches it, as the kit's pump would.
+  heard: new Map<string, (payload: unknown) => void>(),
 }));
 
+vi.mock('@shenora/react', async () => {
+  const { publishing } = await import('../test/publishing');
+  const published = publishing(invoke, (type, payload) => heard.get(type)?.(payload));
+  return {
+    isShenoraAvailable: () => true,
+    getBridge: () => ({ isAvailable: true, invoke: published }),
+    useShenora: () => ({ isAvailable: true, bridge: {} }),
+    useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
+      if (module === 'DAORIS') heard.set(type, handler);
+    },
+  };
+});
+
 import '../locales/i18n';
+import { useStateHub } from '../bridge/shell';
 import { DiffPane } from './DiffPane';
 
 const FILES = [{ path: 'notes.txt', status: 'added', added: 1, removed: 0, patch: '@@ -0,0 +1 @@\n+notes' }];
@@ -39,11 +50,18 @@ function answer(landing: () => unknown, pressed?: unknown) {
   });
 }
 
+/** The window's state hub, as `ShellSignals` mounts it: a refused landing's plan is asked again here (STATEHUB1f, D169). */
+function Hub() {
+  useStateHub();
+  return null;
+}
+
 function pane() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
+        <Hub />
         <DiffPane session="s1a2b3c4" hasTree onSendBack={vi.fn()} />
       </Tooltip.Provider>
     </QueryClientProvider>,

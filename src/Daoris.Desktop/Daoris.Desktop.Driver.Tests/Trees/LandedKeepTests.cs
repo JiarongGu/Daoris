@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// that stays.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class LandedKeepTests : LandedFixture
 {
     /// <summary>A branch checked out anywhere — the checkout's HEAD or a worktree of the person's — is kept, whatever the proof says.</summary>

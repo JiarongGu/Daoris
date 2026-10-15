@@ -32,17 +32,15 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
 
         // The main root, from git itself: the common dir is the main repository's .git, wherever the
         // registered root is — nothing here guesses a layout it does not own.
-        var (rootCode, commonDir, rootErr) = await WorkingTree.GitAsync(
-            full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct).ConfigureAwait(false);
-        if (rootCode != 0)
+        // With its branch, in one start (PROC1d-iii).
+        var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
+        if (here.Code != 0)
         {
-            return new(false, $"{path} is not a working tree git recognises: {FirstLine(rootErr)}");
+            return new(false, $"{path} is not a working tree git recognises: {FirstLine(here.Err)}");
         }
 
-        var root = Path.GetDirectoryName(commonDir.Trim())!;
-        var (_, branchOut, _) = await WorkingTree.GitAsync(
-            full, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
-        var branch = branchOut.Trim();
+        var root = Path.GetDirectoryName(here.CommonDir.Trim())!;
+        var branch = here.Branch.Trim();
         var detached = branch is "" or "HEAD";
         // The name a recovery ref is kept under: the branch, or for a detached tree the one its layout names.
         var named = detached ? follows.BranchOfTree(full)?.Branch ?? "HEAD" : branch;

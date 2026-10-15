@@ -49,6 +49,8 @@ internal sealed class TreeTidies(
         string root, string repository, string workspace, string landed, string? pressed,
         Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse, CancellationToken ct)
     {
+        // One look (UIFREEZE1, PROC1d-i): the held tidy and the carried one ask git's guess at the line once.
+        using var look = context.OneLook();
         var recorded = context.Grown.All()
             .Where(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))
             .Select(entry => entry.Branch)

@@ -29,6 +29,7 @@
   "work.attention.act.acceptRule": "允许…",
   "work.attention.act.allowRule": "允许",
   "work.attention.act.declineRule": "谢绝",
+  "work.attention.allowedRule": "已允许：{{change}}。此后启动的会话都会拿到它。",
   "work.attention.ask.approve": "需求 #{{id}} 上的每个会话下次开始时，都会拿到你对这件事的放行。",
   "work.attention.ask.refuse": "需求 #{{id}} 上的每个会话下次开始时，都会得知你不放行这件事；之后再问到它的会话会被告知不要去做。",
   "work.attention.ask.acceptRule": "它会放宽智能体可以做的事：{{change}}。此后启动的会话都会拿到它。",

@@ -113,10 +113,10 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
         try
         {
             var full = Path.GetFullPath(tree);
-            var (rootCode, commonDir, _) = await WorkingTree.GitAsync(
-                full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct).ConfigureAwait(false);
-            if (rootCode != 0) return null;
-            var root = Path.GetDirectoryName(commonDir.Trim())!;
+            // Its repository, and the branch the discard below names, in one start (PROC1d-iii).
+            var here = await TreeGit.CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
+            if (here.Code != 0) return null;
+            var root = Path.GetDirectoryName(here.CommonDir.Trim())!;
             var (workspace, repository) = context.OwnerOf(full);
             var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
             // TREEFOLLOW1: the branch its agent moved the tree onto holds its commits because it is where they are, not a copy.
@@ -136,8 +136,7 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
             if (stays is not null) return new HeldWork(held, null, stays);
 
             // The name the discard keeps its commits under: the tree's branch, or for a detached tree the one its layout names.
-            var (_, branchOut, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
-            var named = branchOut.Trim() is { Length: > 0 } branch and not "HEAD" ? branch : follows.BranchOfTree(full)?.Branch ?? "HEAD";
+            var named = here.Branch.Trim() is { Length: > 0 } branch and not "HEAD" ? branch : follows.BranchOfTree(full)?.Branch ?? "HEAD";
             return await DiscardedNameAsync(root, named, judged, ct).ConfigureAwait(false) is { } keeps
                 ? new HeldWork(held, keeps, null)
                 : new HeldWork(held, null, "every name for a ref to keep its commits at is taken");

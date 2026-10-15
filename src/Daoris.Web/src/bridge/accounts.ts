@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
 import type { AccountsAnswer, AccountUseChange } from '../settings/accounts';
@@ -26,10 +26,12 @@ export const useAccounts = () => {
  * the same file: `order`, a scope's list written whole (`daoris agent profile order`, none clearing it); `use`, how it is
  * used (`profile use`); `ready`, a cool-off ended early, *Try now* (`profile ready`, `own` for the tool's own sign-in); and
  * `inherit`, a workspace returned to this machine's accounts, its default, list and settings cleared at once.
+ *
+ * The lists, the cool-offs and what a start runs on (a workspace's default may go with its list, MAP1b) sit under the roster's
+ * key, which the route publishes and the state hub asks again in every window (STATEHUB1h, D169).
  */
-export const useAccountUse = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useAccountUse = () =>
+  useMutation({
     mutationFn: ({ harness, action, workspace, ...rest }: {
       harness: string;
       action: 'order' | 'use' | 'ready' | 'inherit';
@@ -42,10 +44,4 @@ export const useAccountUse = () => {
     } & AccountUseChange) =>
       call<{ harness: string; action: string; workspace?: string | null; profile?: string | null; ended?: boolean }>(
         'ACCOUNT_USE', { harness, action, ...(workspace ? { workspace } : {}), ...rest }),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: keys.accounts });
-      // A workspace's default may have gone with its list, and a start may run elsewhere now (MAP1b).
-      void client.invalidateQueries({ queryKey: keys.harnesses });
-    },
   });
-};
