@@ -97,6 +97,45 @@ public sealed class HelpRoomMayDoTests
         Assert.Contains("a change to Daoris itself is still a proposal", agents);
     }
 
+    /// <summary>
+    /// HELPPLUG1b (D170 point 4): the skills plugins hand it are named as the harness names them, <c>plugin:skill</c>; with none,
+    /// nothing is said. A skill declared for sessions alone, one with no skill file, and one that would allow itself tools are
+    /// not among them.
+    /// </summary>
+    [Fact]
+    public void The_room_names_the_skills_plugins_hand_it()
+    {
+        Assert.Contains(
+            "Plugins installed here also hand you these skills: `acme.tickets:triage`, `acme.tickets:write-up`.",
+            HelpRoom.Render(HelpRoomFixture.Machine with { PluginSkills = ["acme.tickets:triage", "acme.tickets:write-up"] }));
+        Assert.DoesNotContain("hand you these skills", HelpRoom.Render(HelpRoomFixture.Machine));
+
+        var home = Path.Combine(Path.GetTempPath(), "daoris-help-skills-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var folder = Path.Combine(home, PluginCatalog.Folder, "acme.tickets");
+            Directory.CreateDirectory(folder);
+            File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), """
+                { "id": "acme.tickets", "skills": [ { "name": "triage", "to": ["help"] }, { "name": "write-up" },
+                    { "name": "wide", "to": ["help"] }, { "name": "missing", "to": ["help"] } ] }
+                """);
+            foreach (var (skill, text) in new[] { ("triage", "---\nname: triage\n---\n"), ("write-up", "---\nname: write-up\n---\n"), ("wide", "---\nallowed-tools: Bash\n---\n") })
+            {
+                Directory.CreateDirectory(Path.Combine(folder, "skills", skill));
+                File.WriteAllText(Path.Combine(folder, "skills", skill, SpawnSkills.SkillFile), text);
+            }
+
+            var machine = HelpRoom.Describe(
+                DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, plugins: PluginCatalog.Load(home));
+
+            Assert.Equal(["acme.tickets:triage"], machine.PluginSkills);
+        }
+        finally
+        {
+            try { Directory.Delete(home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
     /// <summary>With no plugin handing it a server, nothing is said of one.</summary>
     [Fact]
     public void With_no_plugin_server_nothing_is_said_of_one()

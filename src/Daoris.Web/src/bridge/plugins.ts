@@ -2,7 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
 import type { KitPoint, NewPlugin, PluginTrialResult } from '../plugins/PluginKit';
-import type { HelpServerShown, PluginOfferShown } from '../plugins/catalog';
+import type { HelpServerShown, PluginOfferShown, SkillShown } from '../plugins/catalog';
 import type { PluginSourceShown, PluginUpdatePlanShown } from '../plugins/PluginUpdate';
 import { call } from './call';
 
@@ -46,6 +46,8 @@ export type PluginEntry = {
   iconProblem?: string | null;
   /** The servers it hands Ask Daoris, with what Ask Daoris may call on each (HELPPLUG1a, D170 point 3); an older shell sends none. */
   helpServers?: HelpServerShown[];
+  /** The skills it hands sessions or Ask Daoris, who each goes to, and why one is not handed (HELPPLUG1b); an older shell sends none. */
+  skills?: SkillShown[];
 };
 export type PluginCatalog = {
   folder: string;

@@ -68,6 +68,8 @@ public sealed class PluginsRoutes(DriverContext context)
                     Servers = plugin.Manifest.Servers.Select(s => s.Name).ToArray(),
                     // HELPPLUG1a (D170 point 3): what it hands Ask Daoris, and the tools it may call there, which its page says.
                     HelpServers = HelpServersOf(plugin.Manifest),
+                    // HELPPLUG1b (D170 point 4): the skills it hands, who to, and why one is not handed.
+                    Skills = SkillsOf(plugin.Manifest, plugin.Folder),
                     Hook = HookOf(plugin),
                     Listening = health.Listening,
                     // The loop's own record (D119 §2): the state, since when, and its failure while failing.
@@ -98,6 +100,7 @@ public sealed class PluginsRoutes(DriverContext context)
                     Points = offer.Manifest.Hooks?.Points ?? [],
                     Servers = offer.Manifest.Servers.Select(s => s.Name).ToArray(),
                     HelpServers = HelpServersOf(offer.Manifest),
+                    Skills = SkillsOf(offer.Manifest, offer.Folder),
                     offer.Needs,
                     offer.Installed,
                 };
@@ -416,6 +419,15 @@ public sealed class PluginsRoutes(DriverContext context)
     private static object[] HelpServersOf(PluginManifest manifest) =>
     [
         .. manifest.Servers.Where(server => server.HandedTo(PluginServerTo.Help)).Select(server => new { server.Name, server.Allow }),
+    ];
+
+    /// <summary>
+    /// The skills a plugin hands (HELPPLUG1b, D170 point 4), each with who it is handed to and, where it is not handed, why
+    /// (<see cref="SpawnSkills.Judge"/>), for its page to say. Empty for a refused plugin, which hands nothing.
+    /// </summary>
+    private static object[] SkillsOf(PluginManifest manifest, string folder) =>
+    [
+        .. manifest.Skills.Select(skill => new { skill.Name, skill.To, Problem = SpawnSkills.Judge(folder, skill.Name) }),
     ];
 
     /// <summary>

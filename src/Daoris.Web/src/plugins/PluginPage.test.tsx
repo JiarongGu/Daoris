@@ -204,6 +204,43 @@ describe("a plugin's page", () => {
     expect(screen.queryByRole('region', { name: 'Ask Daoris' })).toBeNull();
   });
 
+  /**
+   * HELPPLUG1b (D170 point 4): the page lists the skills a plugin hands, who each is handed to, and the driver's sentence for one
+   * it does not hand; one with no skills says nothing of them.
+   */
+  it('lists the skills it hands, who each goes to, and why one is not handed, in English and in 中文', async () => {
+    const skilled: PluginShown = {
+      ...PLUGIN,
+      skills: [
+        { name: 'triage', to: ['help'], problem: null },
+        { name: 'write-up', to: ['sessions', 'help'], problem: null },
+        { name: 'notes', to: ['sessions'], problem: 'its folder holds no `skills/notes/SKILL.md`, so it is not handed.' },
+      ],
+    };
+    const { unmount } = page({ plugin: skilled });
+    const section = screen.getByRole('region', { name: 'Skills' });
+    expect(within(section).getByText('triage')).toBeInTheDocument();
+    expect(within(section).getByText('handed to Ask Daoris')).toBeInTheDocument();
+    expect(within(section).getByText('handed to sessions and Ask Daoris')).toBeInTheDocument();
+    expect(within(section).getByText('handed to sessions')).toBeInTheDocument();
+    expect(section).toHaveTextContent('its folder holds no skills/notes/SKILL.md, so it is not handed.');
+    expect(section).toHaveTextContent('never into a repository');
+    unmount();
+
+    const { default: i18n } = await import('../locales/i18n');
+    await i18n.changeLanguage('zh');
+    try {
+      const shown = page({ plugin: skilled });
+      expect(within(screen.getByRole('region', { name: '技能' })).getByText('交给问道衍')).toBeInTheDocument();
+      shown.unmount();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+
+    page();
+    expect(screen.queryByRole('region', { name: 'Skills' })).toBeNull();
+  });
+
   /** A refused plugin's page: the driver's sentence leads, verbatim, and it has nothing to try (D119 §3.2). */
   it('leads with the driver\'s sentence for a refused plugin, on a warn rail', () => {
     page({ plugin: { ...PLUGIN, problem: 'needs plugin API 99, and this build speaks 1.', points: [], harnesses: [] } });

@@ -287,7 +287,7 @@ public sealed class PluginCatalog
             // Nothing of a refused plugin is taken — not a harness, not a hook, not a server, not a tool it would run
             // (PLUGTOOL1a). Its icon stays: it is how the person recognises the plugin the sentence is about, never something
             // the plugin contributes (D140 §3.1).
-            if (problem is not null) manifest = manifest with { Harnesses = [], Hooks = null, Servers = [], Tools = [], ToolsProblem = null };
+            if (problem is not null) manifest = manifest with { Harnesses = [], Hooks = null, Servers = [], Skills = [], Tools = [], ToolsProblem = null };
 
             entries.Add(new(manifest, folder, Path.Combine(root, DataFolder, manifest.Id), enabled, problem));
         }
@@ -473,7 +473,7 @@ public sealed class PluginCatalog
 
                     // HELPPLUG1a (D170 point 3): who it is handed to, sessions where it says none, and the tools Ask Daoris may
                     // call, only where it is handed to Ask Daoris. Twin: `plugins.ts`, the same rules and words in the same order.
-                    var to = DestinationsOf(row, name, out var toProblem);
+                    var to = DestinationsOf(row, $"server `{name}`", out var toProblem);
                     if (toProblem is not null) return (PluginManifest.Empty(id), toProblem);
                     var allow = AllowedOf(row, name, out var allowProblem);
                     if (allowProblem is not null) return (PluginManifest.Empty(id), allowProblem);
@@ -483,6 +483,30 @@ public sealed class PluginCatalog
                     }
 
                     servers.Add(new PluginServer(name, command, environment) { To = to, Allow = allow });
+                }
+            }
+
+            // HELPPLUG1b (D170 point 4): the skills it hands, each a folder `skills/<name>` beside the manifest, and who to. Twin:
+            // `plugins.ts`, the same rules and words in the same order; a problem refuses the plugin, as a server's does.
+            var skills = new List<PluginSkill>();
+            if (root.TryGetProperty("skills", out var carried))
+            {
+                if (carried.ValueKind != JsonValueKind.Array) return (PluginManifest.Empty(id), "`skills` must be an array.");
+                foreach (var row in carried.EnumerateArray())
+                {
+                    var name = row.ValueKind == JsonValueKind.Object && row.TryGetProperty("name", out var named) && named.ValueKind == JsonValueKind.String
+                        ? named.GetString()!
+                        : null;
+                    if (name is null || !PluginSkill.NameShape.IsMatch(name))
+                    {
+                        return (PluginManifest.Empty(id),
+                            "a declared skill needs a `name` — lowercase letters, digits and dashes; its folder is `skills/<name>` beside the manifest.");
+                    }
+
+                    if (skills.Any(skill => skill.Name == name)) return (PluginManifest.Empty(id), $"skill `{name}` is declared twice.");
+                    var to = DestinationsOf(row, $"skill `{name}`", out var toProblem);
+                    if (toProblem is not null) return (PluginManifest.Empty(id), toProblem);
+                    skills.Add(new PluginSkill(name) { To = to });
                 }
             }
 
@@ -508,6 +532,7 @@ public sealed class PluginCatalog
                 icon,
                 iconProblem)
             {
+                Skills = skills,
                 Tools = tools,
                 ToolsProblem = toolsProblem,
             }, null);
@@ -541,18 +566,19 @@ public sealed class PluginCatalog
     private static readonly Regex ToolName = new(@"^[A-Za-z0-9_-]{1,64}\z", RegexOptions.CultureInvariant);
 
     /// <summary>
-    /// A server's <c>to</c> (HELPPLUG1a): absent is sessions alone; otherwise a list naming each destination once, at least one,
-    /// and none but <see cref="PluginServerTo.All"/>.
+    /// A server's or a skill's <c>to</c> (HELPPLUG1a, HELPPLUG1b): absent is sessions alone; otherwise a list naming each
+    /// destination once, at least one, and none but <see cref="PluginServerTo.All"/>.
     /// </summary>
-    private static IReadOnlyList<string> DestinationsOf(JsonElement server, string name, out string? problem)
+    /// <param name="said">The declaration as its problem names it: "server `x`" or "skill `x`".</param>
+    private static IReadOnlyList<string> DestinationsOf(JsonElement declared, string said, out string? problem)
     {
         problem = null;
-        if (!server.TryGetProperty("to", out _)) return [PluginServerTo.Sessions];
-        var to = Strings(server, "to", text => text);
+        if (!declared.TryGetProperty("to", out _)) return [PluginServerTo.Sessions];
+        var to = Strings(declared, "to", text => text);
         if (to is not { Count: > 0 } || to.Distinct(StringComparer.Ordinal).Count() != to.Count
             || to.Any(each => !PluginServerTo.All.Contains(each, StringComparer.Ordinal)))
         {
-            problem = $"server `{name}`'s `to` must list who it is handed to, once each: `sessions`, `help` (Ask Daoris) or both.";
+            problem = $"{said}'s `to` must list who it is handed to, once each: `sessions`, `help` (Ask Daoris) or both.";
             return [];
         }
 

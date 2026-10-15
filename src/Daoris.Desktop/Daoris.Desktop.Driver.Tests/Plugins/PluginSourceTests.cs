@@ -214,6 +214,16 @@ public sealed class PluginSourceTests : IDisposable
         Assert.Empty(PluginChange.Between(was, was));
     }
 
+    /// <summary>HELPPLUG1b (D170 point 4): a skill handed to another destination is a change an update shows. Twin: the CLI's, the same words.</summary>
+    [Fact]
+    public void A_skill_handed_elsewhere_is_a_change_an_update_shows()
+    {
+        var (was, _) = PluginCatalog.Parse("acme.skills", """{ "id": "acme.skills", "skills": [ { "name": "triage" } ] }""");
+        var (now, _) = PluginCatalog.Parse("acme.skills", """{ "id": "acme.skills", "skills": [ { "name": "triage", "to": ["sessions", "help"] } ] }""");
+
+        Assert.Equal([new PluginChange("skills", "triage to sessions", "triage to sessions and help")], PluginChange.Between(was, now));
+    }
+
     [Fact]
     public void An_update_swaps_the_install_folder_whole_keeping_data_and_the_record()
     {

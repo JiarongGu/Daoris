@@ -6,7 +6,7 @@ import { type KitPoint, type PluginTrialResult, pointGloss, TrialReport } from '
 import { PluginSourceLine, PluginUpdatePlan, type PluginUpdatePlanShown, updatable } from './PluginUpdate';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
-import { type HelpServerShown, type PluginShown, pluginState, speaks, updateWaits } from './catalog';
+import { type HelpServerShown, type PluginShown, pluginState, type SkillShown, speaks, updateWaits } from './catalog';
 import { PluginIcon } from './PluginIcon';
 import { STATE_WORD } from './PluginList';
 
@@ -71,6 +71,39 @@ export function HelpServers({ servers }: { servers?: HelpServerShown[] }) {
         ))}
       </ul>
       <Body className="mt-1.5">{t('plugin.help.body')}</Body>
+    </PageSection>
+  );
+}
+
+/** Who a skill is handed to, by the words the page says it in (HELPPLUG1b). */
+function skillTo(to: string[]): string {
+  const sessions = to.includes('sessions');
+  const help = to.includes('help');
+  return sessions && help ? 'plugin.skills.to.both' : help ? 'plugin.skills.to.help' : 'plugin.skills.to.sessions';
+}
+
+/**
+ * **The skills a plugin hands** (HELPPLUG1b, D170 point 4): each in the mono face with who it is handed to, the driver's own
+ * sentence under one it does not hand, and a line saying each is copied into a session as it starts and never into a
+ * repository. None where it hands no skill.
+ */
+export function SkillRows({ skills }: { skills?: SkillShown[] }) {
+  const { t } = useTranslation();
+  if (!skills?.length) return null;
+  return (
+    <PageSection title={t('plugin.section.skills')}>
+      <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+        {skills.map((skill) => (
+          <li key={skill.name} className="flex flex-col gap-0.5 text-small">
+            <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+              <code className="font-mono text-meta text-ink">{skill.name}</code>
+              <span className="text-ink-soft">{t(skillTo(skill.to))}</span>
+            </span>
+            {skill.problem && <span className="text-ink-soft"><Inline text={skill.problem} /></span>}
+          </li>
+        ))}
+      </ul>
+      <Body className="mt-1.5">{t('plugin.skills.body')}</Body>
     </PageSection>
   );
 }
@@ -225,6 +258,7 @@ export function PluginPage({
       )}
 
       <HelpServers servers={plugin.helpServers} />
+      <SkillRows skills={plugin.skills} />
 
       <PageSection title={t('plugin.section.tests')}>
         <h3 className="m-0 mb-1.5 text-small font-medium text-ink-soft">{t('plugin.tests.trial')}</h3>

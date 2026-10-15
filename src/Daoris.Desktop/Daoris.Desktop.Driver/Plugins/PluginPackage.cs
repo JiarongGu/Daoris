@@ -198,6 +198,13 @@ public static class PluginPackageCommand
                 server.Allow.Count > 0 ? $"{server.Name} ({string.Join(", ", server.Allow)})" : server.Name))}");
         }
 
+        // HELPPLUG1b (D170 point 4): the skills it hands each, as the CLI's `describe` says them.
+        foreach (var (to, who) in new[] { (PluginServerTo.Sessions, "sessions"), (PluginServerTo.Help, "Ask Daoris") })
+        {
+            var skills = manifest.Skills.Where(skill => skill.HandedTo(to)).Select(skill => skill.Name).ToList();
+            if (skills.Count > 0) parts.Add($"hands {who} skill{(skills.Count == 1 ? "" : "s")} {string.Join(", ", skills)}");
+        }
+
         return parts.Count > 0 ? string.Join("; ", parts) : "declares nothing and speaks nothing";
     }
 }

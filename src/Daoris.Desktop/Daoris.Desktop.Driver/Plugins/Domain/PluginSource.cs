@@ -146,7 +146,7 @@ public sealed record PluginSource(string? Folder, string? Offer, PluginPackageOr
     });
 }
 
-/// <summary>One thing an update changes (PLUG9 c): `version`, `command`, `points`, `harnesses` or `servers`, each side as its manifest writes it; empty is none.</summary>
+/// <summary>One thing an update changes (PLUG9 c): `version`, `command`, `points`, `harnesses`, `servers` or (HELPPLUG1b) `skills`, each side as its manifest writes it; empty is none.</summary>
 public sealed record PluginChange(string What, string Was, string Now)
 {
     /// <summary>What an update changes, from what is installed to what the source now holds, each as written — the CLI's <c>changesBetween</c>.</summary>
@@ -159,10 +159,12 @@ public sealed record PluginChange(string What, string Was, string Now)
             ["points"] = string.Join(", ", manifest.Hooks?.Points ?? []),
             ["harnesses"] = string.Join("; ", manifest.Harnesses.Select(harness => $"{harness.Name} ({Line(harness.Command)})")),
             ["servers"] = string.Join("; ", manifest.Servers.Select(server => $"{server.Name} ({Line(server.Command)}){ServerTo(server)}")),
+            // HELPPLUG1b: each skill and who it is handed to. Twin: the CLI's `changesBetween`.
+            ["skills"] = string.Join("; ", manifest.Skills.Select(skill => $"{skill.Name} to {string.Join(" and ", skill.To)}")),
         };
         var before = Said(was);
         var after = Said(now);
-        return [.. new[] { "version", "command", "points", "harnesses", "servers" }
+        return [.. new[] { "version", "command", "points", "harnesses", "servers", "skills" }
             .Where(what => before[what] != after[what])
             .Select(what => new PluginChange(what, before[what], after[what]))];
     }

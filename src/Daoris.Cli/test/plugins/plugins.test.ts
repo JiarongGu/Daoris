@@ -353,6 +353,55 @@ test('a server\'s destination and the tools it allows are read by the twins\' ru
   }
 });
 
+// ——— A plugin's skills (HELPPLUG1b, D170 point 4): each a folder `skills/<name>` beside its manifest.
+
+const SKILL_NAME = 'a declared skill needs a `name` — lowercase letters, digits and dashes; its folder is `skills/<name>` beside the manifest.';
+const SKILL_TO = "skill `triage`'s `to` must list who it is handed to, once each: `sessions`, `help` (Ask Daoris) or both.";
+
+/**
+ * The rules, in order, for a manifest's `skills`; a problem refuses the plugin, as a server's do. Twin: the driver's
+ * `PluginCatalogTests.SkillDeclarations` holds the same rows, the same words, in the same order.
+ */
+const SKILL_DECLARATIONS: Array<[declared: string, problem: string | null, skills: string[]]> = [
+  ['', null, []],
+  [', "skills": [] ', null, []],
+  [', "skills": [ { "name": "triage" } ] ', null, ['triage:sessions']],
+  [', "skills": [ { "name": "triage", "to": ["help"] }, { "name": "write-up", "to": ["sessions", "help"] } ] ', null, ['triage:help', 'write-up:sessions+help']],
+  [', "skills": { "name": "triage" } ', '`skills` must be an array.', []],
+  [', "skills": [ "triage" ] ', SKILL_NAME, []],
+  [', "skills": [ { "name": "Triage" } ] ', SKILL_NAME, []],
+  [', "skills": [ { "name": "acme.triage" } ] ', SKILL_NAME, []],
+  [', "skills": [ { "name": "../up" } ] ', SKILL_NAME, []],
+  [', "skills": [ { "name": "triage" }, { "name": "triage", "to": ["help"] } ] ', 'skill `triage` is declared twice.', []],
+  [', "skills": [ { "name": "triage", "to": ["anyone"] } ] ', SKILL_TO, []],
+  [', "skills": [ { "name": "triage", "to": [] } ] ', SKILL_TO, []],
+];
+
+test('a plugin\'s skills are read by the twins\' rules (HELPPLUG1b)', () => {
+  for (const [declared, problem, skills] of SKILL_DECLARATIONS) {
+    const fx = makeFixture('plugins-skills');
+    plugin(fx.root, 'acme.skills', `{ "id": "acme.skills"${declared} }`);
+
+    const [entry] = readPlugins(fx.root).plugins;
+    assert.equal(entry!.problem, problem, declared);
+    assert.deepEqual(entry!.manifest.skills.map((skill) => `${skill.name}:${skill.to.join('+')}`), skills, declared);
+    fx.cleanup();
+  }
+});
+
+test('the list says which skills a plugin hands sessions and Ask Daoris (HELPPLUG1b)', () => {
+  const fx = makeFixture('plugins-skills-list');
+  plugin(fx.root, 'acme.skills', JSON.stringify({
+    id: 'acme.skills', skills: [{ name: 'triage', to: ['help'] }, { name: 'write-up', to: ['sessions', 'help'] }],
+  }));
+
+  const { code, out } = run(['list'], fx.root);
+  assert.equal(code, 0);
+  assert.match(out, /hands sessions skill write-up/);
+  assert.match(out, /hands Ask Daoris skills triage, write-up/);
+  fx.cleanup();
+});
+
 test('the list says what a plugin hands Ask Daoris beside what it hands sessions (HELPPLUG1a)', () => {
   const fx = makeFixture('plugins-server-to-list');
   plugin(fx.root, 'acme.tickets', JSON.stringify({

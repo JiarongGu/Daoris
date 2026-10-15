@@ -688,6 +688,7 @@ public sealed class ChatRunner : IDisposable
         Process process;
         string? rules = null;
         string? servers = null;
+        string? skills = null;
         object? meta = null;
         IReadOnlyList<AcpMcpServer> pluginServers = [];
         Noted? browserNotice = null;
@@ -720,6 +721,15 @@ public sealed class ChatRunner : IDisposable
                 foreach (var (name, value) in resolved.ToolsUpFront) info.Environment[name] = value;
             }
 
+            // HELPPLUG1b (D170 point 4): the skills plugins hand this conversation's destination, composed under the home and
+            // handed by the harness's own session-only door; the protocol door carries them beside its rules below.
+            IReadOnlyList<string> skillPlugins = [];
+            if (place.Plugins)
+            {
+                (skills, skillPlugins) = SpawnSkills.Hand(
+                    resolved, info, _home, sessionId, PluginCatalog.Load(_home, AdapterSet.Built().Names), place.ServersTo);
+            }
+
             // What the conversation's agent may do (PERM1, D72), handed by each door's own way: a flag on
             // the pipe, `session/new`'s `_meta` on the protocol door, now that a conversation there opens a
             // session (CONV3b).
@@ -730,7 +740,7 @@ public sealed class ChatRunner : IDisposable
                     _home, sessionId, place.Rules(file, sessionId), PermissionRules.HardDeny(file),
                     PermissionRules.GuardsTree(file) ? TreeGuard.For(_home, workTree, place.Also) : null);
                 if (rules is not null && resolved.Wire == SessionWire.Pipe) resolved.HandSettings(info, rules);
-                else if (rules is not null) meta = resolved.AcpSessionMeta(rules);
+                else if (rules is not null) meta = resolved.AcpSessionMeta(rules, skillPlugins);
             }
 
             // The plugins' servers, resolved once for both doors — with Daoris's own browser brought up
@@ -770,6 +780,7 @@ public sealed class ChatRunner : IDisposable
             // stranded where no stop and no sweep reaches it (REV3).
             SpawnSettings.Remove(rules);
             SpawnServers.Remove(servers);
+            SpawnSkills.Remove(skills);
             var cancelled = error is OperationCanceledException && ct.IsCancellationRequested;
             await Conclude(
                 sessionId, "failed",
@@ -874,7 +885,7 @@ public sealed class ChatRunner : IDisposable
 
         var watch = WatchAsync(
             sessionId, process, transcript, onEnded, Measured, rules, mapper, chat, native, servers, drivesBrowser, Said,
-            new Watched(resolved.Name, place.Keeps, goOn));
+            new Watched(resolved.Name, place.Keeps, goOn) { Skills = skills });
         _context.Watching[sessionId] = watch;
         _ = watch.ContinueWith(
             _ => _context.Watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);
@@ -1279,7 +1290,11 @@ public sealed class ChatRunner : IDisposable
     /// <param name="Adapter">The adapter it runs on, whose conversation id is kept for it.</param>
     /// <param name="Keeps">Whether its conversation's id is kept, so it can go on once it ended (<see cref="ChatPlace.Keeps"/>).</param>
     /// <param name="GoOn">The ended chat this run goes on with, or null for a new conversation.</param>
-    private sealed record Watched(string Adapter, bool Keeps, GoingOn? GoOn);
+    private sealed record Watched(string Adapter, bool Keeps, GoingOn? GoOn)
+    {
+        /// <summary>The plugins' skills composed for it (HELPPLUG1b, <see cref="SpawnSkills"/>), which go when the conversation does.</summary>
+        public string? Skills { get; init; }
+    }
 
     /// <summary>
     /// What a conversation's ending note adds where Daoris kept no id for its harness conversation (MSG1c, D137 §4.2): words
@@ -1422,6 +1437,7 @@ public sealed class ChatRunner : IDisposable
             _output?.Close(sessionId);
             SpawnSettings.Remove(rules);
             SpawnServers.Remove(servers);
+            SpawnSkills.Remove(watched.Skills);
         }
     }
 

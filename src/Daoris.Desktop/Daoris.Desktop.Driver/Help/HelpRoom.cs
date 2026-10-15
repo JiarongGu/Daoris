@@ -229,6 +229,9 @@ public sealed record HelpMachine
     /// <summary>The servers plugins hand it, each with the tools it may call there (HELPPLUG1a, D170 point 3), in catalogue order.</summary>
     public IReadOnlyList<HelpPluginServer> PluginServers { get; init; } = [];
 
+    /// <summary>The skills plugins hand it (HELPPLUG1b, D170 point 4), as the harness names them, <c>plugin:skill</c>.</summary>
+    public IReadOnlyList<string> PluginSkills { get; init; } = [];
+
     // The own-plugins section's.
 
     /// <summary>The install's own plugins not installed here and sound, which an add may name by id (PLUG9 d).</summary>

@@ -114,6 +114,11 @@ repository names one, and a scratch run redirects it with everything else.
   (letters, digits, `_` and `-`), which its spawn's rules allow as `mcp__<server>__<tool>` and nothing else. A bad `to` or
   `allow`, or an `allow` on a server not handed to Ask Daoris, refuses the plugin as a server's other problems do.)*
 
+- *(D170, HELPPLUG1b)* **`skills`** names the skills the plugin hands, each `{ "name": "<skill>", "to": [...] }`, its folder
+  `skills/<name>/` beside the manifest holding a `SKILL.md`; `to` as a server's. Daoris copies each for a session as it starts,
+  into a harness plugin under `<home>/spawn/`, and hands it by the harness's session-only door (`--plugin-dir`); never into a
+  repository. A skill declaring `allowed-tools` is handed nowhere.
+
 - *(D150, PLUGTOOL1a)* **`tools`** names the programs the plugin's process runs: each an `id`, a range of
   `versions`, `for` (why it runs it) and at most four `ready` checks. A problem there never refuses the plugin, and a tool
   is found and checked only at a trial or on a press. `docs/2026-10-04-ux6-redesign.md` §7.2 is its table.

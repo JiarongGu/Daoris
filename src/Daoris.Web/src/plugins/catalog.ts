@@ -6,6 +6,12 @@ import type { PluginSourceShown } from './PluginUpdate';
  */
 export type HelpServerShown = { name: string; allow: string[] };
 
+/**
+ * A skill a plugin hands (HELPPLUG1b, D170 point 4), as the driver's `PLUGINS` answers it: its name, who it is handed to
+ * (`sessions`, `help` or both), and the driver's sentence where it is not handed.
+ */
+export type SkillShown = { name: string; to: string[]; problem?: string | null };
+
 // The Plugins view's list and page as values (PLUGUI1b, D119 §3.1): a plugin's state, its group, and what the list's
 // chosen item names. Pure, so every machine a person could have is an argument, and the list, the strip and the page
 // read one answer.
@@ -27,6 +33,8 @@ export type PluginOfferShown = {
   servers: string[];
   /** The servers it would hand Ask Daoris (HELPPLUG1a); an older shell sends none. */
   helpServers?: HelpServerShown[];
+  /** The skills it would hand (HELPPLUG1b); an older shell sends none. */
+  skills?: SkillShown[];
   needs: string[];
   installed: boolean;
   /** Its declared icon as its own bytes (PLUGUI2, D140 §3.2), never a path; absent until the host answers it. */
@@ -70,6 +78,8 @@ export type PluginShown = {
   iconProblem?: string | null;
   /** The servers it hands Ask Daoris, with what Ask Daoris may call on each (HELPPLUG1a); an older shell sends none. */
   helpServers?: HelpServerShown[];
+  /** The skills it hands sessions or Ask Daoris (HELPPLUG1b); an older shell sends none. */
+  skills?: SkillShown[];
 };
 
 /** One of Daoris's own plugins the install carries (D103), with what its manifest declares and its README needs. */
@@ -85,6 +95,8 @@ export type OfferShown = {
   servers: string[];
   /** The servers it would hand Ask Daoris (HELPPLUG1a); an older shell sends none. */
   helpServers?: HelpServerShown[];
+  /** The skills it would hand (HELPPLUG1b); an older shell sends none. */
+  skills?: SkillShown[];
   needs: string[];
   installed: boolean;
   /** Its declared icon as its bytes (D140 §3.2); none from a shell older than PLUGUI2b. */

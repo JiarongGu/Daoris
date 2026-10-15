@@ -59,6 +59,25 @@ public sealed record PluginServer(
 }
 
 /// <summary>
+/// A skill a plugin hands (HELPPLUG1b, D170 point 4): its folder <c>skills/&lt;name&gt;</c> beside the manifest, holding a
+/// <c>SKILL.md</c>, and who it is handed to, as a server's <c>to</c> says it. Handed at spawn (<see cref="SpawnSkills"/>), never
+/// into a repository. Twin: the CLI's <c>PluginSkill</c>.
+/// </summary>
+/// <param name="Name">Its folder's name, as a harness names a skill: lowercase letters, digits and dashes.</param>
+public sealed record PluginSkill(string Name)
+{
+    /// <summary>A skill's name (HELPPLUG1b): lowercase letters, digits and dashes, at most 64. Twin: the CLI's <c>SKILL_NAME</c>.</summary>
+    public static readonly System.Text.RegularExpressions.Regex NameShape =
+        new(@"^[a-z0-9][a-z0-9-]{0,63}\z", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    /// <summary>Who it is handed to: <c>sessions</c>, <c>help</c> or both; absent in the manifest is sessions.</summary>
+    public IReadOnlyList<string> To { get; init; } = [PluginServerTo.Sessions];
+
+    /// <summary>Whether it is handed to <paramref name="to"/>.</summary>
+    public bool HandedTo(string to) => To.Contains(to, StringComparer.Ordinal);
+}
+
+/// <summary>
 /// Who a plugin's server is handed to (HELPPLUG1a, D170 point 3), as a manifest's <c>to</c> spells it. Twin: the CLI's
 /// <c>SERVER_TO</c>.
 /// </summary>
@@ -100,6 +119,9 @@ public sealed record PluginManifest(
 
     /// <summary>Why <c>tools</c> as a whole is not read, when it is not an array; never a reason to refuse the plugin.</summary>
     public string? ToolsProblem { get; init; }
+
+    /// <summary>The skills it hands sessions or Ask Daoris (HELPPLUG1b, D170 point 4); none for a refused plugin.</summary>
+    public IReadOnlyList<PluginSkill> Skills { get; init; } = [];
 
     /// <summary>The manifest of a plugin nothing can be taken from: an id, and nothing else.</summary>
     public static PluginManifest Empty(string id) => new(id, PluginCatalog.ApiVersion, id, "", "", [], null, []);

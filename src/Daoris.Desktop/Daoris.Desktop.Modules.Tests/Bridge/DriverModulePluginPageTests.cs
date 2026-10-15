@@ -92,6 +92,30 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     }
 
     /// <summary>
+    /// HELPPLUG1b (D170 point 4): the list answers each plugin's skills, who each is handed to, and why one is not handed, for
+    /// its page to say.
+    /// </summary>
+    [Fact]
+    public async Task The_list_answers_each_plugins_skills_who_each_is_handed_to_and_why_one_is_not()
+    {
+        var folder = Path.Combine(Home, "plugins", "acme.skills");
+        Directory.CreateDirectory(Path.Combine(folder, "skills", "triage"));
+        File.WriteAllText(Path.Combine(folder, "skills", "triage", "SKILL.md"), "---\nname: triage\n---\n");
+        File.WriteAllText(Path.Combine(folder, "plugin.json"), """
+            { "id": "acme.skills", "skills": [ { "name": "triage", "to": ["sessions", "help"] }, { "name": "missing" } ] }
+            """);
+        using var loop = Loop();
+        var module = new DriverModule(Bus, loop) { Offers = Path.Combine(Home, "no-offers") };
+
+        var skills = Row(await AnswerAsync(module, "PLUGINS"), "acme.skills").GetProperty("skills").EnumerateArray().ToList();
+
+        Assert.Equal(["triage", "missing"], skills.Select(skill => skill.GetProperty("name").GetString()));
+        Assert.Equal(["sessions", "help"], Strings(skills[0].GetProperty("to")));
+        Assert.Equal(JsonValueKind.Null, skills[0].GetProperty("problem").ValueKind);
+        Assert.Contains("`skills/missing/SKILL.md`", skills[1].GetProperty("problem").GetString());
+    }
+
+    /// <summary>
     /// P3 (D119 §4.1): the list answers what each plugin hands sessions and speaks on, which points its running process
     /// listens on, its health from the loop's own record, and whether its source declares something new. The list
     /// stays light: names, a command as written, a state, a word.

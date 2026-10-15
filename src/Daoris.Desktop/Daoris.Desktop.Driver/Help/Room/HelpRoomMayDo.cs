@@ -23,6 +23,10 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
             PluginServers = [.. sources.Plugins.Contributing.SelectMany(plugin => plugin.Manifest.Servers
                 .Where(server => server.HandedTo(PluginServerTo.Help))
                 .Select(server => new HelpPluginServer(plugin.Manifest.Id, server.Name, server.Allow)))],
+            // HELPPLUG1b: the skills its spawn is handed (SpawnSkills.Write), as the harness names them.
+            PluginSkills = [.. sources.Plugins.Contributing.SelectMany(plugin => plugin.Manifest.Skills
+                .Where(skill => skill.HandedTo(PluginServerTo.Help) && SpawnSkills.Judge(plugin.Folder, skill.Name) is null)
+                .Select(skill => $"{plugin.Manifest.Id}:{skill.Name}"))],
         };
     }
 
@@ -89,6 +93,12 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
             text.Append('\n');
             text.Append("What such a tool does outside Daoris is the plugin's own act, as the person who installed it;\n");
             text.Append("a change to Daoris itself is still a proposal, with the tool for its kind.\n\n");
+        }
+
+        // HELPPLUG1b (D170 point 4): the skills a plugin hands it, by the names the harness gives them.
+        if (machine.PluginSkills.Count > 0)
+        {
+            text.Append($"Plugins installed here also hand you these skills: {string.Join(", ", machine.PluginSkills.Select(skill => $"`{skill}`"))}.\n\n");
         }
 
         // HELPOWED1 (D170 point 2): asked to set a repository up, the helper said it had no shell and no door, as if that were

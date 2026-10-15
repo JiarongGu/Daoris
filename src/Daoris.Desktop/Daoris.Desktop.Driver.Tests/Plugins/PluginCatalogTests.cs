@@ -646,6 +646,46 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Equal(allow, server.Allow);
     }
 
+    // ——— A plugin's skills (HELPPLUG1b, D170 point 4): each a folder `skills/<name>` beside its manifest, for sessions,
+    // Ask Daoris, or both.
+
+    private const string SkillName =
+        "a declared skill needs a `name` — lowercase letters, digits and dashes; its folder is `skills/<name>` beside the manifest.";
+
+    /// <summary>
+    /// The rules, in order, for a manifest's <c>skills</c>; a problem refuses the plugin, as a server's do. Twin: the CLI's
+    /// <c>plugins.test.ts</c> holds the same rows, the same words, in the same order.
+    /// </summary>
+    public static TheoryData<string, string?, string[]> SkillDeclarations => new()
+    {
+        { "", null, [] },
+        { """, "skills": [] """, null, [] },
+        { """, "skills": [ { "name": "triage" } ] """, null, ["triage:sessions"] },
+        { """, "skills": [ { "name": "triage", "to": ["help"] }, { "name": "write-up", "to": ["sessions", "help"] } ] """, null, ["triage:help", "write-up:sessions+help"] },
+        { """, "skills": { "name": "triage" } """, "`skills` must be an array.", [] },
+        { """, "skills": [ "triage" ] """, SkillName, [] },
+        { """, "skills": [ { "name": "Triage" } ] """, SkillName, [] },
+        { """, "skills": [ { "name": "acme.triage" } ] """, SkillName, [] },
+        { """, "skills": [ { "name": "../up" } ] """, SkillName, [] },
+        { """, "skills": [ { "name": "triage" }, { "name": "triage", "to": ["help"] } ] """, "skill `triage` is declared twice.", [] },
+        { """, "skills": [ { "name": "triage", "to": ["anyone"] } ] """,
+            "skill `triage`'s `to` must list who it is handed to, once each: `sessions`, `help` (Ask Daoris) or both.", [] },
+        { """, "skills": [ { "name": "triage", "to": [] } ] """,
+            "skill `triage`'s `to` must list who it is handed to, once each: `sessions`, `help` (Ask Daoris) or both.", [] },
+    };
+
+    [Theory]
+    [MemberData(nameof(SkillDeclarations))]
+    public void A_plugins_skills_are_read_by_the_twins_rules(string declared, string? problem, string[] skills)
+    {
+        Plugin("acme.skills", $$"""{ "id": "acme.skills"{{declared}} }""");
+
+        var entry = Assert.Single(PluginCatalog.Load(_home).Plugins);
+
+        Assert.Equal(problem, entry.Problem);
+        Assert.Equal(skills, entry.Manifest.Skills.Select(skill => $"{skill.Name}:{string.Join("+", skill.To)}"));
+    }
+
     /// <summary>
     /// What a tick hands every session is the servers declared for sessions; Ask Daoris is handed only those declared for it,
     /// and allowed only the tools each declares, as the harness spells a server's tool (D170 point 3).

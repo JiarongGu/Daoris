@@ -10,7 +10,7 @@ import type { PluginUpdatePlanShown } from './PluginUpdate';
 import type { Answered } from '../work/InlineConfirm';
 import { ListMore } from '../work/ListPane';
 import type { ViewLayout } from '../work/ViewFrame';
-import { chosenOf, type HelpServerShown, type OfferShown, pluginGroups, type PluginShown } from './catalog';
+import { chosenOf, type HelpServerShown, type OfferShown, pluginGroups, type PluginShown, type SkillShown } from './catalog';
 import { OfferPage } from './OfferPage';
 import { PluginList, PluginStrip } from './PluginList';
 import { PluginMainNotice, PluginPage } from './PluginPage';
@@ -30,12 +30,18 @@ const helpServersOf = (raw: unknown): HelpServerShown[] =>
   list<HelpServerShown>(raw).filter((server) => typeof server?.name === 'string')
     .map((server) => ({ name: server.name, allow: list<string>(server.allow) }));
 
+/** The skills a plugin hands (HELPPLUG1b), each with who it goes to; none from an older shell. */
+const skillsOf = (raw: unknown): SkillShown[] =>
+  list<SkillShown>(raw).filter((skill) => typeof skill?.name === 'string')
+    .map((skill) => ({ name: skill.name, to: list<string>(skill.to), problem: typeof skill.problem === 'string' ? skill.problem : null }));
+
 function installedOf(raw: unknown): PluginShown[] {
   return list<PluginShown>(raw).map((plugin) => ({
     ...plugin,
     harnesses: list<string>(plugin.harnesses),
     points: list<string>(plugin.points),
     helpServers: helpServersOf(plugin.helpServers),
+    skills: skillsOf(plugin.skills),
   }));
 }
 function offersOf(raw: unknown): OfferShown[] {
@@ -45,6 +51,7 @@ function offersOf(raw: unknown): OfferShown[] {
     points: list<string>(offer.points),
     servers: list<string>(offer.servers),
     helpServers: helpServersOf(offer.helpServers),
+    skills: skillsOf(offer.skills),
     needs: list<string>(offer.needs),
   }));
 }
