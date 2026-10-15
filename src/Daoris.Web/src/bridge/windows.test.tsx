@@ -25,7 +25,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { setThemeChoice } from '../design/theme';
-import { useSecondaryWindowTheme } from './windows';
+import { useSecondaryWindowTheme, useTaskbarCount } from './windows';
 
 /**
  * WINDOW2: a secondary window's page tells its own frame which theme it is in, by the name it was
@@ -60,5 +60,41 @@ describe('a secondary window\'s caption (WINDOW2)', () => {
     expect(scheme).toHaveBeenLastCalledWith('light');
     act(() => setThemeChoice('system'));
     expect(scheme).toHaveBeenLastCalledWith('system');
+  });
+});
+
+/** NOTIFY1b: the main window's taskbar button counts what waits; the whole window's case is `sessionsBadge.test.tsx`. */
+describe('the taskbar\'s count (NOTIFY1b)', () => {
+  afterEach(() => {
+    invoke.mockReset();
+    window.history.replaceState(null, '', '/');
+  });
+
+  const told = () => invoke.mock.calls.filter(([, type]) => type === 'SET_BADGE');
+
+  it('tells the frame on arrival and when the count or its words change, and not otherwise', () => {
+    invoke.mockResolvedValue({ applied: true });
+    const { rerender } = renderHook(({ count, words }) => useTaskbarCount(count, words),
+      { initialProps: { count: 2, words: '2 waiting on you' } });
+
+    rerender({ count: 2, words: '2 waiting on you' });
+    rerender({ count: 0, words: '0 waiting on you' });
+    rerender({ count: 0, words: '0 个等你处理' });
+
+    expect(told().map(([, , request]) => request)).toEqual([
+      { payload: { count: 2, description: '2 waiting on you' } },
+      { payload: { count: 0, description: '0 waiting on you' } },
+      { payload: { count: 0, description: '0 个等你处理' } },
+    ]);
+  });
+
+  it('says nothing from a secondary window, and a frame that cannot be told is not a failure', async () => {
+    invoke.mockRejectedValue(new Error('NO_ROUTE'));
+    renderHook(() => useTaskbarCount(1, '1 waiting on you'));
+    window.history.replaceState(null, '', '/?window=session%3Aa1b2c3d4');
+    renderHook(() => useTaskbarCount(4, '4 waiting on you'));
+
+    expect(told()).toHaveLength(1);
+    await act(async () => {});
   });
 });
