@@ -68,6 +68,24 @@ export const ParkedWithAGoAheadChinese: Story = { ...ParkedWithAGoAhead, decorat
 /** The same in dark. */
 export const ParkedWithAGoAheadDark: Story = { ...ParkedWithAGoAhead, decorators: [dark] };
 
+/** PROPOSEHERE1b: a rule the session proposed after auto mode refused it, answered where the person reads (D74). */
+const RULE = {
+  id: 'r1', state: 'waiting' as const, action: 'add' as const, scope: 'repository' as const, name: 'engine', list: 'allow' as const,
+  rule: 'Bash(git branch -D:*)', why: 'Auto mode refused the local branch delete you asked for; this lets me run it.',
+  session: 's1a2b3c4', proposed: '2026-10-15T11:40:00Z',
+};
+
+/** A rule it proposed, *Allow…* asking once and *Decline* direct, with its call found in the conversation. */
+export const ARuleItProposed: Story = {
+  args: { session: session(), rules: { proposals: [RULE], onAnswer: nothing, heard: true }, toEvent: { rules: { r1: nothing } } },
+};
+
+/** The same in 中文, on a session that takes no words now: the card says it is not told. */
+export const ARuleItProposedUnheardChinese: Story = {
+  args: { ...ARuleItProposed.args, rules: { proposals: [RULE], onAnswer: nothing, heard: false } },
+  decorators: [chinese],
+};
+
 /** The same in dark and 中文. */
 export const ParkedWithAGoAheadDarkChinese: Story = { ...ParkedWithAGoAhead, decorators: [chinese, dark] };
 
