@@ -14,7 +14,8 @@ with the version and date at release.
 - Answering a session that parked is one box: the words waiting on it fold to one line with their count, *Show them* opens them
   to edit or remove, and the strip at the foot no longer says "answer it in the box below" over that box. A conversation that
   answers you while you are reading it in a window in front no longer also toasts.
-- A press in one window — a session's stop, archive or delete, a work's pause, a rule, a plugin, a sync, a history clear —
+- A press in one window — a session's stop, archive or delete, a work's pause, a rule, a plugin, a sync, a history clear, a
+  setting, an agent's account, a tool, a post in an ask's channel, an Ask Daoris proposal applied or a conversation renamed —
   now shows in every open window at once, as an Accept already did.
 - A message you send in Sessions no longer vanishes on a busy machine. In a conversation, and in the box at the foot of any
   session (telling one at work something, answering one that parked, or writing to one that ended), your words show at once as
