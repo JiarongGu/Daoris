@@ -1,5 +1,7 @@
 import type { GoAhead, Session } from '../data/api';
 import { answeredPark } from '../design/ui';
+import type { RuleProposal } from '../settings/AgentRules';
+import { OPEN_STATES } from '../settings/proposals';
 import { workflowHolds } from '../workflow/gate';
 import type { LineBehind } from './diff';
 import type { DiscardOffer, LandOffer } from './groups';
@@ -11,13 +13,15 @@ import { REVIEW_TONE, reviewHolds, reviewState } from './review';
 
 /**
  * What waits on the person in a session, one at a time (WAITFOOT1b, D168 point 2): its question, an intake's ask, each
- * go-ahead still open, and what its work offers them, *Accept…*, the rebase words, a gate in their hue, or a discard the line
- * holds. The foot's strip names them; the head draws the same.
+ * go-ahead still open, each rule it proposed that the person still answers (PROPOSEHERE1b), and what its work offers them,
+ * *Accept…*, the rebase words, a gate in their hue, or a discard the line holds. The foot's strip names them; the head draws
+ * the same.
  */
 export type Wait =
   | { kind: 'question'; below: boolean }
   | { kind: 'intake'; ask: string }
   | { kind: 'goAhead'; number: number }
+  | { kind: 'rule'; id: string }
   | { kind: 'accept' }
   | { kind: 'rebase' }
   | { kind: 'opinion' }
@@ -55,6 +59,16 @@ export function landingStands({ lands, landing, behind }: {
   return { review, workflow, second, opinionWaits, answers, acceptable, conflict };
 }
 
+/**
+ * The rules a session proposed that the person still answers (PROPOSEHERE1b, D74): its own proposals in an open state, found by
+ * the session the proposal file names. A pipe-door quest session files with none, so no session's are (D74's limits); an older
+ * shell, or one whose answer is no list, holds none.
+ */
+export function rulesAsked(proposals: unknown, session: string): RuleProposal[] {
+  if (!Array.isArray(proposals)) return [];
+  return (proposals as RuleProposal[]).filter((proposal) => proposal?.session === session && OPEN_STATES.has(proposal.state));
+}
+
 /** What the waits are read from: the props the frame hands the head, and whether the foot's box takes a park's answer. */
 export type WaitFacts = {
   session: Session;
@@ -65,6 +79,8 @@ export type WaitFacts = {
   onAnswerAsk?: unknown;
   goAheads?: GoAhead[];
   onGoAhead?: unknown;
+  /** The machine's rule proposals as the shell read them, and the door that answers them (PROPOSEHERE1b). */
+  rules?: { proposals?: unknown; onAnswer?: unknown } | null;
   lands?: LandOffer | null;
   landing?: LandingPlan | null;
   behind?: LineBehind | null;
@@ -95,6 +111,10 @@ export function waitsOf(facts: WaitFacts): Wait[] {
     for (const goAhead of facts.goAheads ?? []) {
       if (goAhead.state === 'asked') waits.push({ kind: 'goAhead', number: goAhead.number });
     }
+  }
+  // Whatever its state: a session refused something files the proposal and goes on, or ends its turn (PROPOSEHERE1b).
+  if (facts.rules?.onAnswer) {
+    for (const proposal of rulesAsked(facts.rules.proposals, session.id)) waits.push({ kind: 'rule', id: proposal.id });
   }
   if (facts.lands) {
     const stands = landingStands({ lands: facts.lands, landing: facts.landing, behind: facts.behind });

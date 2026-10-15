@@ -5,6 +5,17 @@ with the version and date at release.
 
 ## Unreleased
 
+- What waits on you in a session is shown once on the screen. The strip at its foot steps aside while the session's top, where
+  every wait stands, is wholly in view, and comes back as you scroll it away; it stays while an ask is open in it or you are
+  working in it. Where the conversation raised a wait, a small mark replaces the line of words: its tip says what waits on you
+  from there, and pressing it takes you to that wait, at the top when the top is in view.
+- A rule a session proposed after it was refused something now waits on you in that session, at its top and at its foot, with
+  what it would change and why: *Allow…* asks once, *Decline* is one press, and *In the conversation* shows the call that
+  proposed it. Allowed there, the session is told the rule is allowed now and goes on with it; a session that takes no words
+  says so instead. In What needs you, allowing one now says *Allowed* (已允许), as its press reads.
+- While something waits on you, Daoris's taskbar button shows how many as a number on its icon (*9+* past nine), and the
+  window's title leads with it, as *(3) Daoris (道衍)*, when you hover the button or switch windows with Alt-Tab. It is the
+  count Overview's *What needs you* shows, and it goes when nothing waits.
 - After a session's work is accepted (采纳), its *Accept…* and the plan beside it read anew wherever they are shown, in
   every open window and when you switch back to a tab, where an old plan used to stand until the driver's next change. The
   same holds after discarding a session's tree, handing a branch to its plugin, a press on a second opinion, the clean-up,

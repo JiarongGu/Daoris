@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { DiscardBranchAsk, type SweepBranch } from '../settings/Sweep';
@@ -9,6 +9,7 @@ import { ago, elapsed, sessionTool, stamp } from '../locales/format';
 import {
   answeredPark, Button, PathText, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
 } from '../design/ui';
+import { cn } from '../lib/cn';
 import { AnsweredPark } from './AnsweredPark';
 import { AwaitingIntake } from './AwaitingIntake';
 import { AwaitingPerson, type QuestClose, type Resolution } from './AwaitingPerson';
@@ -22,8 +23,11 @@ import type { SayRebase } from './LandingSync';
 import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from './Lands';
 import { Note } from './Note';
 import { hasNote, noteBlocks, noteLines } from './noteLines';
+import { ProposedRules, type RuleAsk, type RuleWaits } from './ProposedRules';
 import { movedAt } from './rail';
 import { RunningIntake } from './RunningIntake';
+import { leftFor, type Seek, SOUGHT, useSought } from './WaitAnchor';
+import { rulesAsked } from './waits';
 
 // The work's line is its own molecule, which the foot's strip draws too (WAITFOOT1b, D168); its shapes are read from here too.
 export type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from './Lands';
@@ -51,6 +55,9 @@ export type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from './Lands';
  * and *Refuse* where the frame can answer, and answering the last one open there sends the same session on, as on the
  * ask's page (GOAHEAD2b). They stay while it is parked, answered or not, so one still waiting can be answered before it
  * goes on.
+ *
+ * **The rules it proposed stand beneath them, whatever its state** (PROPOSEHERE1b, D74): a session refused something files a
+ * proposal and goes on or ends its turn, so its own open proposals are answered here, *Allow…* asking once, as at the foot.
  *
  * **It says how an ended session stands, in the record's note** (SESS2, reversing the rule that it
  * did not): the rule rested on *"the timeline below carries it"*, and since FRAME6 the timeline is in
@@ -90,8 +97,20 @@ export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, branch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
-  continues, helps, onOpenSession, workAsk, workBusy = false, toEvent,
+  continues, helps, onOpenSession, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek,
 }: {
+  /**
+   * The wait a raising block's *To the wait* leads to while the head's waits are on screen (WAITFOOT2b, D168's WAITFOOT2 note),
+   * counted so the same one pressed again is shown again: its line takes the focus, outlined, as the strip's does.
+   */
+  seek?: Seek | null;
+  /**
+   * The rules it proposed that the person still answers (PROPOSEHERE1b, D74), the frame's, handed to the foot's strip alike:
+   * the machine's proposals as the shell read them, the answer's door, its pending and whether the session takes words now.
+   */
+  rules?: RuleWaits | null;
+  /** Where a rule's *Allow…* is open, the frame's, so it is open in the head or at the foot, never both (D168 point 3). */
+  ruleAsk?: RuleAsk;
   /**
    * The way from each wait to the event in the conversation that raised it, where the conversation found one (WAITFOOT1c, D168
    * point 4): *In the conversation* on the park's card, each go-ahead and the work's line. The frame's, handed to the foot's
@@ -232,31 +251,41 @@ export function SessionHead({
   const intake = isIntake(session);
   const shown = shownState(session, taking);
   const noted = hasNote({ note: session.note, parts: session.noteParts });
+  const proposed = rulesAsked(rules?.proposals, session.id);
+  const own = useRef<HTMLElement>(null);
+  const { sought, letGo } = useSought(own, seek);
 
   return (
-    // Where the foot's *To the top* puts the focus (WAITFOOT1b, D168 point 1): every wait stands here with its reading.
-    <header data-record-head tabIndex={-1} className="grid gap-2.5 outline-none">
+    // Where the foot's *To the top* puts the focus (WAITFOOT1b, D168 point 1): every wait stands here with its reading. The
+    // outline a *To the wait* left goes once the person moves on from the head (WAITFOOT2b).
+    <header ref={own} data-record-head tabIndex={-1} className="grid gap-2.5 outline-none" onBlur={(event) => { if (leftFor(event)) letGo(); }}>
       {/* `running` counts a park as alive; a parked intake is AwaitingIntake's, below. */}
       {running && !parked && intake && <RunningIntake ask={session.ask!} onOpen={onAnswerAsk} />}
       {answered && <AnsweredPark answer={session.answer!} />}
+      {/* Each section a wait stands in is marked (WAITFOOT2a): the frame watches them, and the strip at the foot stands aside
+          while they are on screen. */}
       {waiting && intake && (onResolve || onAnswerAsk) && (
-        <AwaitingIntake ask={session.ask!} note={session.note} parts={session.noteParts} onAnswer={onAnswerAsk} onConversation={toEvent?.question} />
+        <div data-wait-section data-wait="question" tabIndex={-1} className={sought === 'question' ? SOUGHT : 'outline-none'}>
+          <AwaitingIntake ask={session.ask!} note={session.note} parts={session.noteParts} onAnswer={onAnswerAsk} onConversation={toEvent?.question} />
+        </div>
       )}
       {waiting && !intake && (onResolve || onAnswerSession) && (
-        // Keyed: a half-written decline reason belongs to the session it was written for, and it
-        // carried into the next parked one, ready to decline it with somebody else's reason (REV3).
-        <AwaitingPerson
-          key={session.id}
-          note={session.note}
-          parts={session.noteParts}
-          // The quest it serves, which its finish may close as the person's (QUESTCLOSE1): only its own, and a driven one's.
-          quest={session.kind !== 'chat' && quest && quest.id === session.quest ? quest : null}
-          pending={resolving}
-          onResolve={onResolve}
-          // A driven session parked to ask the person has no process left to message (STANDDOWN2).
-          onAnswer={session.quest ? onAnswerSession : undefined}
-          onConversation={toEvent?.question}
-        />
+        <div data-wait-section data-wait="question" tabIndex={-1} className={sought === 'question' ? SOUGHT : 'outline-none'}>
+          {/* Keyed: a half-written decline reason belongs to the session it was written for, and it
+              carried into the next parked one, ready to decline it with somebody else's reason (REV3). */}
+          <AwaitingPerson
+            key={session.id}
+            note={session.note}
+            parts={session.noteParts}
+            // The quest it serves, which its finish may close as the person's (QUESTCLOSE1): only its own, and a driven one's.
+            quest={session.kind !== 'chat' && quest && quest.id === session.quest ? quest : null}
+            pending={resolving}
+            onResolve={onResolve}
+            // A driven session parked to ask the person has no process left to message (STANDDOWN2).
+            onAnswer={session.quest ? onAnswerSession : undefined}
+            onConversation={toEvent?.question}
+          />
+        </div>
       )}
       {/* Nothing here can act — a browser, or a mirrored record from another machine — so the
           analysis is shown and the moves are not. Half a control is worse than none. */}
@@ -266,7 +295,7 @@ export function SessionHead({
         </WaitingCard>
       )}
       {parked && !intake && goAheads.length > 0 && (
-        <section aria-labelledby={`go-aheads-${session.id}`} className="grid gap-1">
+        <section data-wait-section aria-labelledby={`go-aheads-${session.id}`} className="grid gap-1">
           <h3 id={`go-aheads-${session.id}`} className="m-0 text-small font-semibold">{t('work.awaiting.goAheads')}</h3>
           <GoAheadList
             goAheads={goAheads}
@@ -274,6 +303,22 @@ export function SessionHead({
             onAnswer={onGoAhead}
             lead={t('work.awaiting.goAheadsLead')}
             inConversation={toEvent?.goAheads}
+            marked={sought?.startsWith('goAhead:') ? Number(sought.slice('goAhead:'.length)) : undefined}
+          />
+        </section>
+      )}
+      {proposed.length > 0 && (
+        <section data-wait-section aria-labelledby={`rules-${session.id}`} className="grid gap-1">
+          <h3 id={`rules-${session.id}`} className="m-0 text-small font-semibold">{t('work.wait.rule.title')}</h3>
+          <ProposedRules
+            proposals={proposed}
+            busy={rules?.busy}
+            onAnswer={rules?.onAnswer}
+            heard={rules?.heard}
+            lead={t('work.wait.rule.lead')}
+            inConversation={toEvent?.rules}
+            marked={sought?.startsWith('rule:') ? sought.slice('rule:'.length) : undefined}
+            ask={ruleAsk}
           />
         </section>
       )}
@@ -301,12 +346,17 @@ export function SessionHead({
       {/* Keyed by the branch: an ask to discard one session's branch never carries to another's (REV3's lesson). Commits
           its tree offers to land are the reader's to say (LAND4), keyed by the session for the same reason. */}
       {lands ? (
-        <Lands
-          key={session.id} session={session} lands={lands} landing={landing} planning={planning} onReview={onReview} onLand={onLand} onSayRebase={onSayRebase} onName={onName} review={review} behind={behind}
-          opinion={opinion} ask={workAsk} busy={workBusy} toEvent={toEvent}
-        />
+        // Spaced as the head spaces its own, since the line's parts were the head's before they were the section's.
+        <div data-wait-section data-wait="work" tabIndex={-1} className={cn('grid gap-2.5', sought === 'work' || sought === 'opinion' ? SOUGHT : 'outline-none')}>
+          <Lands
+            key={session.id} session={session} lands={lands} landing={landing} planning={planning} onReview={onReview} onLand={onLand} onSayRebase={onSayRebase} onName={onName} review={review} behind={behind}
+            opinion={opinion} ask={workAsk} busy={workBusy} toEvent={toEvent}
+          />
+        </div>
       ) : discards ? (
-        <Discards key={session.id} discards={discards} onReview={onReview} onDiscard={onDiscardTree} ask={workAsk} busy={workBusy} />
+        <div data-wait-section className="grid gap-2.5">
+          <Discards key={session.id} discards={discards} onReview={onReview} onDiscard={onDiscardTree} ask={workAsk} busy={workBusy} />
+        </div>
       ) : branch && (
         <Left key={branch.branch} branch={branch} onReview={onReview} onDiscard={onDiscardBranch} discarding={discardingBranch} />
       )}

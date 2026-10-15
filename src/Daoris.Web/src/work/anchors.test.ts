@@ -155,6 +155,23 @@ describe('a rule proposal', () => {
     ]);
     expect(proposalKey(turns, proposal)).toBeUndefined();
   });
+
+  // PROPOSEHERE1b: the proposal is a wait, anchored by its call.
+  const asks = { session: SESSION, waits: [{ kind: 'rule', id: 'r1' } as Wait], proposals: [{ id: 'r1', ...proposal }] };
+
+  it('anchors the wait the proposal is by its call', () => {
+    expect(anchorOf({ kind: 'rule', id: 'r1' })).toBe('rule:r1');
+    const turns = turnsOf([target, call(2, 20, { title: 'permission_propose', input: JSON.stringify(input) }), ended(3)]);
+    expect(anchorsOf(turns, asks).held).toEqual({ 'rule:r1': 'e2' });
+    // A wait whose proposal the frame does not hand has none.
+    expect(anchorsOf(turns, { ...asks, proposals: [] }, { earlier: true })).toEqual({ held: {}, earlier: [] });
+  });
+
+  it('may be on an earlier page only where it was proposed before the page begins', () => {
+    const page = turnsOf([said(50, 'I proposed the rule.', 30), ended(51, 31)]);
+    expect(anchorsOf(page, asks, { earlier: true, from: at(30) }).earlier).toEqual(['rule:r1']);
+    expect(anchorsOf(page, asks, { earlier: true, from: at(5) }).earlier).toEqual([]);
+  });
 });
 
 describe('the waits with no raising event', () => {
@@ -187,5 +204,14 @@ describe('the marks and the ways', () => {
     expect(events.opinion).toBeUndefined();
     expect(events.goAheads![4]).toBeUndefined();
     expect(waitEvents([], () => {})).toBeUndefined();
+    // A rule proposal's, by its id (PROPOSEHERE1b).
+    const rules = waitEvents(['rule:r1'], (wait) => shown.push(wait))!;
+    rules.rules!.r1!();
+    expect(shown.at(-1)).toBe('rule:r1');
+    expect(rules.goAheads).toBeUndefined();
+  });
+
+  it('marks a rule proposal\'s call with its wait', () => {
+    expect(marksOf([{ kind: 'rule', id: 'r1' }], { 'rule:r1': 'e2' })).toEqual({ e2: [{ kind: 'rule', id: 'r1' }] });
   });
 });

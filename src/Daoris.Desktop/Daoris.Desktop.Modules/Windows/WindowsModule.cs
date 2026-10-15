@@ -31,7 +31,9 @@ public sealed class WindowsModule(
     IEventBus events, ISecondaryWindows windows, PlatformAddress platform,
     // Daoris's own browser (D78): a window the person opens to sign in and to watch. Null where the
     // host carries none, which is only a test that does not care.
-    Daoris.Driver.IInAppBrowser? browser = null)
+    Daoris.Driver.IInAppBrowser? browser = null,
+    // The main window's taskbar button and title (NOTIFY1b). Null where there is no main window to badge.
+    ShowWaiting? badge = null)
     : ModuleBase(events: events)
 {
     public override string ModuleName => "DAORIS.WINDOWS";
@@ -72,6 +74,17 @@ public sealed class WindowsModule(
                 var name = Known(PayloadHelper.GetRequiredValue<string>(request.Payload, "name"));
                 var dark = PayloadHelper.GetRequiredValue<bool>(request.Payload, "dark");
                 return Task.FromResult<object?>(new { Applied = windows.SetTheme(name, dark) });
+            }
+
+            // The main window's page telling its frame how much waits on the person (NOTIFY1b): Overview's *What needs
+            // you*, worn as the taskbar button's overlay and in the title. The main window only, so no name: a secondary
+            // window's page never sends it. A count below none is none, and blank words are none.
+            case "SET_BADGE":
+            {
+                var count = Math.Max(0, PayloadHelper.GetRequiredValue<int>(request.Payload, "count"));
+                var description = PayloadHelper.GetOptionalValue<string>(request.Payload, "description");
+                badge?.Invoke(count, count > 0 && !string.IsNullOrWhiteSpace(description) ? description : null);
+                return Task.FromResult<object?>(new { Applied = badge is not null });
             }
 
             case "OPEN":

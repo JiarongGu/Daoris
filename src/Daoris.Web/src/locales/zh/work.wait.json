@@ -15,7 +15,16 @@
   "work.wait.name.opinion": "第二意见",
   "work.wait.name.review": "审阅",
   "work.wait.name.discard": "待丢弃的分支",
+  "work.wait.name.rule": "它提议的规则",
+  "work.wait.rule.title": "它提议的规则",
+  "work.wait.rule.lead": "它提议更改智能体可以做的事。在你允许之前，什么都不会改变。",
+  "work.wait.rule.proposed": "{{ago}} 提议",
+  "work.wait.rule.tells": "允许后，这个会话会得到告知并继续。",
+  "work.wait.rule.unheard": "它现在不接收消息，所以不会得到告知；此后启动的会话会拿到这条规则。",
+  "work.wait.rule.said": "你提议的规则现在已允许：{{change}}。请继续做你需要它来做的事。",
+  "work.wait.rule.told": "已告知会话 {{session}} 规则已允许，它会继续。",
+  "work.wait.rule.untold": "已允许，但会话 {{session}} 没有接收这些话：请你自己告诉它继续。",
   "work.wait.inConversation": "在对话中查看",
   "work.wait.raised": "由此等你处理：{{names}}",
-  "work.wait.toWait": "到等待处"
+  "work.wait.toWait": "到等待处：{{names}}"
 }

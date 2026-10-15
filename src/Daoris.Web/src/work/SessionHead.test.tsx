@@ -1094,4 +1094,62 @@ describe('the way from the head\'s waits to the conversation', () => {
     render(<SessionHead session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()} lands={LANDS} landing={PLAN} onLand={vi.fn()} />);
     expect(screen.queryByRole('button', { name: 'In the conversation' })).toBeNull();
   });
+
+  /**
+   * WAITFOOT2 (D168's WAITFOOT2 note): each section a wait stands in is marked, for the frame to watch; and while the head is on
+   * screen, where the strip stands aside, a raising block's *To the wait* leads here: the line takes the focus, outlined.
+   */
+  it('marks the sections its waits stand in, and shows the one a raising block leads to', () => {
+    const props = { session: session(parked), onResolve: vi.fn(), goAheads: ASKED, onGoAhead: vi.fn(), lands: LANDS, landing: PLAN, onLand: vi.fn() };
+    const { container, rerender } = render(<SessionHead {...props} />);
+    const sections = [...container.querySelectorAll('[data-wait-section]')];
+    expect(sections).toHaveLength(3);
+    expect(sections[0]).toHaveTextContent('This one is waiting on you');
+    expect(sections[1]).toBe(screen.getByRole('region', { name: 'Go-aheads it asked' }));
+    expect(sections[2]).toContainElement(screen.getByRole('button', { name: 'Accept…' }));
+
+    rerender(<SessionHead {...props} seek={{ wait: 'goAhead:2', n: 1 }} />);
+    const second = within(sections[1] as HTMLElement).getAllByRole('listitem')[1]!;
+    expect(second).toHaveFocus();
+    expect(second.className).toContain('outline-accent');
+
+    rerender(<SessionHead {...props} seek={{ wait: 'work', n: 2 }} />);
+    expect(sections[2]).toHaveFocus();
+    expect((sections[2] as HTMLElement).className).toContain('outline-accent');
+    expect(second.className).not.toContain('outline-accent');
+  });
+});
+
+/** PROPOSEHERE1b (D168 point 2, D74): the rules the session proposed stand in its head, whatever its state, with their presses. */
+describe('the rules a session proposed', () => {
+  const RULE = {
+    id: 'r1', state: 'waiting' as const, action: 'add' as const, scope: 'repository' as const, name: 'engine', list: 'allow' as const,
+    rule: 'Bash(git branch -D:*)', why: 'Auto mode refused the branch delete you asked for.', session: 's1a2b3c4',
+    proposed: '2026-09-21T11:00:00Z',
+  };
+
+  it('shows its own open ones with Allow… and Decline, the same door the strip presses, and leads each to its call', async () => {
+    const onAnswer = vi.fn();
+    const toEvent = { rules: { r1: vi.fn() } };
+    render(
+      <SessionHead
+        session={session({ state: 'completed' })} toEvent={toEvent}
+        rules={{ proposals: [RULE, { ...RULE, id: 'r2', session: 'o7h3r000' }, { ...RULE, id: 'r3', state: 'applied' }], onAnswer }}
+      />,
+    );
+    const section = screen.getByRole('region', { name: 'Rules it proposed' });
+    const items = within(section).getAllByRole('listitem');
+    expect(items).toHaveLength(1);
+    expect(items[0]).toHaveTextContent('allow Bash(git branch -D:*) for repository engine');
+
+    await userEvent.click(within(items[0]!).getByRole('button', { name: 'Decline' }));
+    expect(onAnswer).toHaveBeenCalledWith(RULE, false, { done: expect.any(Function), refused: expect.any(Function) });
+    await userEvent.click(within(items[0]!).getByRole('button', { name: 'In the conversation' }));
+    expect(toEvent.rules.r1).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows none where it proposed none still open', () => {
+    render(<SessionHead session={session()} rules={{ proposals: [{ ...RULE, state: 'declined' }], onAnswer: vi.fn() }} />);
+    expect(screen.queryByRole('region', { name: 'Rules it proposed' })).toBeNull();
+  });
 });

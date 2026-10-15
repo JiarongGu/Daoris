@@ -7,7 +7,7 @@ import {
 } from '../data/queries';
 import {
   retryNotice, useAccounts, useConsidered, useHarnessAction, useHarnesses, useNudge, useOpinionWaits, useRefreshHarnesses,
-  useRetryQuest, useRuleProposal, useRules, useSessionGroups, useTrustFolder, useUntrusted, useWaits,
+  useRetryQuest, useRules, useSessionGroups, useTrustFolder, useUntrusted, useWaits,
 } from '../bridge/shell';
 import { SignIn } from '../agents/SignIn';
 import { byTool } from '../agents/tools';
@@ -20,6 +20,7 @@ import { attentionKey, AttentionList, type AttentionDoors, AttentionRegion, Noth
 import { needsAPerson, rowRun } from './attention';
 import { useOpinionActs } from './opinionActs';
 import { useReviewActs } from './reviewActs';
+import { useRuleAnswer } from './ruleAnswer';
 import { runSessionOf } from '../workflow/run';
 
 export type { AttentionDoors } from './AttentionList';
@@ -121,7 +122,8 @@ function Band({ doors, notify, onSessions, onRun }: {
   const accept = useAcceptQuest();
   const retry = useRetryQuest();
   const trust = useTrustFolder();
-  const settle = useRuleProposal();
+  // A proposal's answer, its one owner (PROPOSEHERE1b): the session's conversation and the Agents page press the same.
+  const ruleAnswer = useRuleAnswer({ notify });
   const nudge = useNudge();
   const readOne = useRefreshHarnesses();
   const harnessAct = useHarnessAction();
@@ -229,10 +231,8 @@ function Band({ doors, notify, onSessions, onRun }: {
       if (hold) run(item, () => trust.mutateAsync(hold), (granted) => notify(granted.message, granted.verified ? 'ok' : 'error'), answered);
       else answered.done();
     },
-    acceptRule: (item, answered) => run(item, () => settle.mutateAsync({ id: item.id, accept: true }),
-      () => notify(t('settings.rules.proposals.accepted', { change: item.title })), answered),
-    declineRule: (item) => run(item, () => settle.mutateAsync({ id: item.id, accept: false }),
-      () => notify(t('settings.rules.proposals.declined', { change: item.title }))),
+    acceptRule: (item, answered) => run(item, () => ruleAnswer.settled(item.id, true, item.title), (said) => notify(said), answered),
+    declineRule: (item) => run(item, () => ruleAnswer.settled(item.id, false, item.title), (said) => notify(said)),
     // The agent's own sign-in through its account-owning door, as its page starts it (SIGNIN1): its end is said wherever the
     // person is, and the roster read again then, which reads that account (ROSTER1).
     signIn: (item, account) => {

@@ -3,6 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../locales/i18n';
 import type { GoAhead, Session } from '../data/api';
+import type { RuleProposal } from '../settings/AgentRules';
 import { STEP_SHOWN } from './reviewFixtures';
 import { WaitStrip } from './WaitStrip';
 
@@ -153,6 +154,90 @@ describe('the strip of what waits on the person, at the foot', () => {
     await userEvent.click(within(strip()).getByRole('button', { name: 'Fold' }));
     rerender(<WaitStrip {...props} seek={{ wait: 'goAhead:2', n: 2 }} />);
     expect(within(strip()).getByRole('listitem')).toHaveFocus();
+  });
+
+  // PROPOSEHERE1b (D168 point 2, D74): a rule the session proposed is a wait, answered through the head's own door.
+  const RULE: RuleProposal = {
+    id: 'r1', state: 'waiting', action: 'add', scope: 'repository', name: 'engine', list: 'allow', rule: 'Bash(git branch -D:*)',
+    why: 'Auto mode refused the branch delete you asked for.', session: 's1a2b3c4', proposed: '2026-09-21T11:00:00Z',
+  };
+
+  it('answers a rule the session proposed through the head\'s own door, and shows none of another session\'s', async () => {
+    const onAnswer = vi.fn((_proposal: RuleProposal, _accept: boolean, told: { done: () => void }) => told.done());
+    const onOpen = vi.fn();
+    const rules = { proposals: [RULE, { ...RULE, id: 'r2', session: 'o7h3r000' }], onAnswer };
+    const { rerender } = render(<WaitStrip session={session()} rules={rules} ruleAsk={{ open: null, onOpen }} onTop={vi.fn()} />);
+    expect(strip()).toHaveAccessibleName('Waiting on you');
+    const items = within(strip()).getAllByRole('listitem');
+    expect(items).toHaveLength(1);
+    expect(items[0]).toHaveTextContent('allow Bash(git branch -D:*) for repository engine');
+
+    await userEvent.click(within(items[0]!).getByRole('button', { name: 'Decline' }));
+    expect(onAnswer).toHaveBeenCalledWith(RULE, false, { done: expect.any(Function), refused: expect.any(Function) });
+    // *Allow…* is open in one place at a time: the frame's (D168 point 3).
+    await userEvent.click(within(items[0]!).getByRole('button', { name: 'Allow…' }));
+    expect(onOpen).toHaveBeenCalledWith('r1');
+    rerender(<WaitStrip session={session()} rules={rules} ruleAsk={{ open: 'r1', onOpen }} onTop={vi.fn()} />);
+    expect(within(strip()).getByRole('group', { name: 'Allow…' })).toBeInTheDocument();
+  });
+
+  it('folds naming a rule it proposed, and shows the one a raising block leads to', async () => {
+    const props = { session: parked, onResolve: vi.fn(), answerBelow: true, rules: { proposals: [RULE], onAnswer: vi.fn() }, onTop: vi.fn() };
+    const { rerender } = render(<WaitStrip {...props} toEvent={{ rules: { r1: vi.fn() } }} />);
+    await userEvent.click(within(strip()).getByRole('button', { name: 'Fold' }));
+    expect(strip()).toHaveTextContent('its question · a rule it proposed');
+
+    rerender(<WaitStrip {...props} toEvent={{ rules: { r1: vi.fn() } }} seek={{ wait: 'rule:r1', n: 1 }} />);
+    const item = within(strip()).getByRole('listitem');
+    expect(item).toHaveFocus();
+    expect(item.className).toContain('outline-accent');
+  });
+
+  it('has no rule\'s line where nothing can answer it', () => {
+    const { container } = render(<WaitStrip session={session()} rules={{ proposals: [RULE] }} onTop={vi.fn()} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  /**
+   * WAITFOOT2a (D168's WAITFOOT2 note): the owner found each wait drawn two and three times at once, so while the head's waits
+   * are on screen the strip stands aside; never from under an ask open in it, nor from under the person's focus.
+   */
+  it('stands aside while the head\'s waits are on screen', () => {
+    const props = { session: parked, onResolve: vi.fn(), answerBelow: true, goAheads: GO_AHEADS, onGoAhead: vi.fn(), onTop: vi.fn() };
+    const { rerender } = render(<WaitStrip {...props} aside />);
+    expect(screen.queryByRole('region', { name: /waiting on you/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
+
+    rerender(<WaitStrip {...props} aside={false} />);
+    expect(within(strip()).getByRole('button', { name: 'Approve' })).toBeInTheDocument();
+  });
+
+  it('stays while its own ask is open, though the head\'s waits came on screen', () => {
+    const props = { session: session(), lands: LANDS, landing: PLAN, onLand: vi.fn(), onTop: vi.fn() };
+    const { rerender } = render(<WaitStrip {...props} workAsk={{ open: true, onOpen: vi.fn() }} aside />);
+    const ask = within(strip()).getByRole('group', { name: 'accept daoris/s-1a2b3c4' });
+    expect(ask).toBeInTheDocument();
+
+    // Put down with the focus in it, which says no blur as it goes: the strip reads the focus again.
+    within(ask).getAllByRole('button')[0]!.focus();
+    expect(ask).toContainElement(document.activeElement as HTMLElement);
+    rerender(<WaitStrip {...props} workAsk={{ open: false, onOpen: vi.fn() }} aside />);
+    expect(screen.queryByRole('region', { name: /waiting on you/i })).toBeNull();
+
+    rerender(<WaitStrip {...props} rules={{ proposals: [RULE], onAnswer: vi.fn() }} ruleAsk={{ open: 'r1', onOpen: vi.fn() }} aside />);
+    expect(within(strip()).getByRole('group', { name: 'Allow…' })).toBeInTheDocument();
+  });
+
+  it('stays while the person is in it, and stands aside once they leave', async () => {
+    const props = { session: parked, onResolve: vi.fn(), answerBelow: true, goAheads: GO_AHEADS, onGoAhead: vi.fn(), onTop: vi.fn() };
+    const { rerender } = render(<><button type="button">elsewhere</button><WaitStrip {...props} seek={{ wait: 'goAhead:2', n: 1 }} /></>);
+    expect(within(strip()).getByRole('listitem')).toHaveFocus();
+
+    rerender(<><button type="button">elsewhere</button><WaitStrip {...props} seek={{ wait: 'goAhead:2', n: 1 }} aside /></>);
+    expect(within(strip()).getByRole('listitem')).toHaveFocus();
+
+    await userEvent.click(screen.getByRole('button', { name: 'elsewhere' }));
+    expect(screen.queryByRole('region', { name: /waiting on you/i })).toBeNull();
   });
 
   it('speaks the active catalogue', async () => {
