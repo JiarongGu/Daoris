@@ -390,7 +390,8 @@ public sealed class TreesRoutes(DriverLoop loop)
     /// refusal that names what would be lost, so the page asks, shows that sentence, and only then
     /// sends `force`. Destroying work is never a side effect of tidying (D51 rule 7).</para>
     /// </remarks>
-    [DriverRoute("DISCARD_SESSION_TREE")]
+    [DriverRoute("DISCARD_SESSION_TREE", Session = "id",
+        Changes = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff | StateScopes.Sweep | StateScopes.TreesSync)]
     private async Task<object?> DiscardTreeAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -434,7 +435,9 @@ public sealed class TreesRoutes(DriverLoop loop)
     /// A refusal is an answer, as the merge door's are.
     /// </remarks>
     [DriverRoute("LANDING")]
-    [DriverRoute("LAND_SESSION_TREE")]
+    // The line a landing merged into is what every session's plan judges against (LANDSYNC1), so `landing` is every plan's.
+    [DriverRoute("LAND_SESSION_TREE", Session = "id", Changes = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff
+        | StateScopes.HandOff | StateScopes.Sweep | StateScopes.TreesSync)]
     private async Task<object?> LandAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -571,10 +574,10 @@ public sealed class TreesRoutes(DriverLoop loop)
     /// judgement no agent has made. Each answers the gate as it then stands, in <see cref="Opinion"/>'s shape.
     /// </remarks>
     [DriverRoute("OPINION_GATE")]
-    [DriverRoute("ASK_OPINION")]
-    [DriverRoute("OPINION_ANYWAY")]
-    [DriverRoute("OPINION_MYSELF")]
-    [DriverRoute("STOP_OPINION")]
+    [DriverRoute("ASK_OPINION", Session = "id", Changes = StateScopes.Sessions | StateScopes.Landing)]
+    [DriverRoute("OPINION_ANYWAY", Session = "id", Changes = StateScopes.Sessions | StateScopes.Landing)]
+    [DriverRoute("OPINION_MYSELF", Session = "id", Changes = StateScopes.Sessions | StateScopes.Landing)]
+    [DriverRoute("STOP_OPINION", Changes = StateScopes.Sessions | StateScopes.Landing)]
     private async Task<object?> OpinionPressAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
@@ -740,7 +743,7 @@ public sealed class TreesRoutes(DriverLoop loop)
     /// tidied away; a repository with no checkout here is answered in the same sentence form.
     /// </remarks>
     [DriverRoute("HANDOFF_PLAN")]
-    [DriverRoute("HANDOFF")]
+    [DriverRoute("HANDOFF", Session = "id", Changes = StateScopes.HandOff | StateScopes.Sweep)]
     private async Task<object?> HandOffAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");

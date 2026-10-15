@@ -68,7 +68,10 @@ public sealed class DriverModule : ModuleBase
     /// </summary>
     public IHelpDoors HelpDoors(ServiceClient? service) => HelpRoutes.Doors(_context, service);
 
-    public override string ModuleName => "DAORIS.DRIVER";
+    /// <summary>The module's name on the bridge, which the page's calls and <see cref="Declared"/> read.</summary>
+    public const string Name = "DAORIS.DRIVER";
+
+    public override string ModuleName => Name;
 
     /// <summary>
     /// Route, and let the driver's own refusals reach the person.
@@ -107,6 +110,13 @@ public sealed class DriverModule : ModuleBase
 
     /// <summary>Every route this module answers, by name: what the page's bridge may call (MOD5).</summary>
     public static IReadOnlyCollection<string> Routes => Table.Keys;
+
+    /// <summary>
+    /// What a request's route declares a successful answer changed (STATEHUB1b, D169 point 2), read off its mark: null for a
+    /// read, a route nobody declared, or a request to another module. <see cref="StatePublisher"/> publishes it.
+    /// </summary>
+    public static StateChange? Declared(IpcRequest request) =>
+        request.Module == Name && request.Type is { } type && Table.TryGetValue(type, out var route) ? route.Change : null;
 
     /// <summary>
     /// The domains this module answers for, one line each, in alphabetical order (PART10d, D166): a domain's handler class and
@@ -148,21 +158,24 @@ public sealed class DriverModule : ModuleBase
         var table = new Dictionary<string, Handler>(StringComparer.Ordinal);
         for (var place = 0; place < Domains.Length; place++)
         {
-            foreach (var (route, answer) in Domains[place].Routes) table.Add(route, new Handler(place, answer));
+            foreach (var (route, answer, change) in Domains[place].Routes) table.Add(route, new Handler(place, answer, change));
         }
 
         return table.ToFrozenDictionary(StringComparer.Ordinal);
     }
 
-    /// <summary>A route's entry in the table: its domain's place in <see cref="Domains"/>, and the handler over that domain's instance.</summary>
-    private readonly record struct Handler(int Domain, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer);
+    /// <summary>
+    /// A route's entry in the table: its domain's place in <see cref="Domains"/>, the handler over that domain's instance, and
+    /// what its mark declares a successful answer changed (D169), null for a read.
+    /// </summary>
+    private readonly record struct Handler(int Domain, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change);
 
     /// <summary>One line of <see cref="Domains"/>: how a domain's handler class is built over the context, and the routes that class marks.</summary>
     private sealed class Domain(
         Func<DriverContext, object> build,
-        IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer)> routes)
+        IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change)> routes)
     {
-        public IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer)> Routes => routes;
+        public IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change)> Routes => routes;
 
         public object Build(DriverContext context) => build(context);
 
@@ -173,14 +186,15 @@ public sealed class DriverModule : ModuleBase
         /// </summary>
         public static Domain Of<T>(Func<DriverContext, T> build) where T : class
         {
-            var routes = new List<(string, Func<object, IpcRequest, CancellationToken, Task<object?>>)>();
+            var routes = new List<(string, Func<object, IpcRequest, CancellationToken, Task<object?>>, StateChange?)>();
             foreach (var method in typeof(T).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic))
             {
                 foreach (var route in method.GetCustomAttributes<DriverRouteAttribute>())
                 {
                     routes.Add((route.Type, method.GetParameters().Length == 1
                         ? Now(method.CreateDelegate<Func<T, IpcRequest, object?>>())
-                        : Later(method.CreateDelegate<Func<T, IpcRequest, CancellationToken, Task<object?>>>())));
+                        : Later(method.CreateDelegate<Func<T, IpcRequest, CancellationToken, Task<object?>>>()),
+                        route.Changes == StateScopes.None ? null : new StateChange(route.Changes, route.Session)));
                 }
             }
 
@@ -202,8 +216,19 @@ public sealed class DriverModule : ModuleBase
 /// A route is added in its domain's class by marking its handler, so no central switch is edited per route.
 /// </summary>
 /// <param name="type">The route's name, as the page's bridge sends it.</param>
+/// <remarks>
+/// A route that changes the driver's state says so on its mark (STATEHUB1b, D169 point 2): <see cref="Changes"/>, and
+/// <see cref="Session"/> where the change is one session's. <see cref="StatePublisher"/> publishes it after a successful answer,
+/// so no handler emits its own. A read says nothing.
+/// </remarks>
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
 internal sealed class DriverRouteAttribute(string type) : Attribute
 {
     public string Type { get; } = type;
+
+    /// <summary>What a successful answer changed, as the page's query families; none for a read.</summary>
+    public StateScopes Changes { get; set; }
+
+    /// <summary>The payload's field naming the session the change was about, where it is one session's.</summary>
+    public string? Session { get; set; }
 }
