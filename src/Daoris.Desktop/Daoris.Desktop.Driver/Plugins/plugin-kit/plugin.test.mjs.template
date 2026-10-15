@@ -228,7 +228,10 @@ test('it answers the handshake, one frame at every point it declares, and leaves
   }
 
   child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'shutdown' })}\n`);
-  const left = await Promise.race([gone.then(() => true), new Promise((resolveWait) => setTimeout(() => resolveWait(false), GRACE))]);
+  // The grace bounds a plugin that stays; once the plugin has left, its timer goes too, or it holds the run open for the whole grace.
+  let grace;
+  const left = await Promise.race([gone.then(() => true), new Promise((resolveWait) => { grace = setTimeout(() => resolveWait(false), GRACE); })]);
+  clearTimeout(grace);
   assert.ok(left, `it did not leave within ${GRACE / 1000}s of \`shutdown\` — the driver ends a plugin that stays`);
   assert.deepEqual(noise, [],
     `it wrote ${noise.length} line(s) on stdout that are not frames, first \`${noise[0]}\` — stdout is the wire: say anything else on stderr`);
