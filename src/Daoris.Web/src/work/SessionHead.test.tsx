@@ -1058,3 +1058,40 @@ describe('a park\'s go-aheads', () => {
     await i18n.changeLanguage('en');
   });
 });
+
+/**
+ * WAITFOOT1c (D168 point 4): each of the head's waits whose raising event the conversation holds leads to it, *In the
+ * conversation*; one with none found has no such press.
+ */
+describe('the way from the head\'s waits to the conversation', () => {
+  const parked: Partial<Session> = { state: 'awaiting-person', note: 'Which of the two should I keep?' };
+  const LANDS = { branch: 'daoris/s-1a2b3c4', tree: 's-1a2b3c4', commits: 2, uncommitted: 0 };
+  const PLAN = { session: 's1a2b3c4', form: 'merge', target: 'main' };
+
+  it('leads the park\'s card, each go-ahead and the work to the event that raised each', async () => {
+    const toEvent = { question: vi.fn(), work: vi.fn(), goAheads: { 2: vi.fn() } };
+    render(
+      <SessionHead
+        session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()}
+        lands={LANDS} landing={PLAN} onLand={vi.fn()} toEvent={toEvent}
+      />,
+    );
+
+    await userEvent.click(within(screen.getByText('This one is waiting on you').closest('section')!).getByRole('button', { name: 'In the conversation' }));
+    expect(toEvent.question).toHaveBeenCalledTimes(1);
+
+    const [first, second] = within(screen.getByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem');
+    // Go-ahead 1's call was not found: it has no such press.
+    expect(within(first!).queryByRole('button', { name: 'In the conversation' })).toBeNull();
+    await userEvent.click(within(second!).getByRole('button', { name: 'In the conversation' }));
+    expect(toEvent.goAheads[2]).toHaveBeenCalledTimes(1);
+
+    await userEvent.click(within(screen.getByRole('button', { name: 'Accept…' }).parentElement!).getByRole('button', { name: 'In the conversation' }));
+    expect(toEvent.work).toHaveBeenCalledTimes(1);
+  });
+
+  it('has no such press where nothing was found', () => {
+    render(<SessionHead session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()} lands={LANDS} landing={PLAN} onLand={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: 'In the conversation' })).toBeNull();
+  });
+});

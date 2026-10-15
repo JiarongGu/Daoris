@@ -1,0 +1,21 @@
+{
+  "work.wait.title": "等你处理",
+  "work.wait.several": "{{n}} 项等你处理",
+  "work.wait.fold": "收起",
+  "work.wait.show": "展开",
+  "work.wait.top": "到顶部",
+  "work.wait.questionBelow": "它向你提了一个问题：在下面的框里回答它。",
+  "work.wait.questionTop": "它向你提了一个问题：到顶部阅读并回答它。",
+  "work.wait.intake": "它的受理会话问了你；答复在它的需求上。",
+  "work.wait.name.question": "它的问题",
+  "work.wait.name.intake": "需求 #{{ask}}",
+  "work.wait.name.goAhead": "放行 #{{number}}",
+  "work.wait.name.accept": "待采纳的工作",
+  "work.wait.name.rebase": "待请它变基",
+  "work.wait.name.opinion": "第二意见",
+  "work.wait.name.review": "审阅",
+  "work.wait.name.discard": "待丢弃的分支",
+  "work.wait.inConversation": "在对话中查看",
+  "work.wait.raised": "由此等你处理：{{names}}",
+  "work.wait.toWait": "到等待处"
+}

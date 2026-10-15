@@ -3,6 +3,7 @@ import type { CaptionButtonRect } from '@shenora/react';
 import { WindowCommands, useShenora, useWindowMaximized } from '@shenora/react';
 import { CAPTION_ATTRIBUTE, CAPTION_SLOTS } from '../work/caption';
 import { effectiveDark, subscribeTheme } from '../design/theme';
+import { useEngineTheme } from '../bridge/shell';
 
 export { CAPTION_ATTRIBUTE, CAPTION_SLOTS, type CaptionSlot } from '../work/caption';
 
@@ -60,7 +61,8 @@ export function captionRects(container: HTMLElement | null): CaptionButtonRect[]
  *
  * **The theme is pushed, not polled.** Without it a runtime light↔dark switch leaves the DWM border
  * and the caption buttons in the old theme, because those are painted natively and never see the
- * page's CSS.
+ * page's CSS. The engine is told the viewer's choice too, for Chromium's own UI (`useEngineTheme`,
+ * THEMESCHEME1).
  */
 export function useWindowChrome() {
   const commands = useRef<WindowCommands | undefined>(undefined);
@@ -70,6 +72,7 @@ export function useWindowChrome() {
   // driver's answer arrives a round-trip later. Reserving it late would shift the strip's contents
   // sideways once, which is the one thing reserving the room early was meant to avoid.
   const { isAvailable } = useShenora();
+  useEngineTheme();
 
   const window_ = () => (commands.current ??= new WindowCommands());
 

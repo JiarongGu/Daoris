@@ -196,6 +196,7 @@
   "work.steer.sending": "正在停止这一轮：你补充的内容接着送达。",
   "work.say.placeholder": "写给它——同一个会话会带着你的话继续",
   "work.say.heldEnding": "暂存到这次运行结束——之后同一个会话会带着它们继续",
+  "work.say.waiting": "等待同一个会话带着它们继续",
   "work.say.tooLong": "这个智能体的接入方式一次最多接收 {{count}} 个字符；请缩短，或分几次发送。",
   "work.say.cannot": "它无法在这个会话里继续，因为{{why}}。",
   "work.say.startChat": "用这些话开始对话",

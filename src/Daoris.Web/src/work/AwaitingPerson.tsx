@@ -4,6 +4,7 @@ import type { NotePart, Quest } from '../data/api';
 import { Button, Segmented, WaitingCard } from '../design/ui';
 import { type Answered, InlineConfirm } from './InlineConfirm';
 import { Note } from './Note';
+import { InConversation } from './WaitAnchor';
 
 /** What the ledger lets a person do from `awaiting-person` — and nothing this surface invented. */
 export type Resolution = 'completed' | 'declined' | 'stopped';
@@ -47,7 +48,9 @@ export type QuestClose = { as: 'done'; note: string | null };
  * A molecule: it is handed the note and reports a move, so a parked session with a three-paragraph
  * analysis and one with none are both reachable by passing them.
  */
-export function AwaitingPerson({ note, parts, quest = null, pending = false, onResolve, onAnswer }: {
+export function AwaitingPerson({ note, parts, quest = null, pending = false, onResolve, onAnswer, onConversation }: {
+  /** The way to the message that asked, in the conversation, where it holds it (WAITFOOT1c): *In the conversation*. */
+  onConversation?: () => void;
   /** The session's note: its English, shown as kept where it has no parts. */
   note?: string | null;
   /**
@@ -88,7 +91,10 @@ export function AwaitingPerson({ note, parts, quest = null, pending = false, onR
 
       <Note note={note} parts={parts} className="mt-1.5 text-body leading-relaxed" />
 
-      <p className="m-0 mt-2 text-small text-ink-faint">{t('work.awaiting.hint')}</p>
+      <p className="m-0 mt-2 flex flex-wrap items-center gap-x-2 text-small text-ink-faint">
+        <span>{t('work.awaiting.hint')}</span>
+        {onConversation && <InConversation onPress={onConversation} />}
+      </p>
 
       {answering && onAnswer
         ? (

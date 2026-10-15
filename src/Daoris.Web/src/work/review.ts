@@ -35,6 +35,22 @@ export type ReviewWaits = {
   says?: string | null;
 };
 
+/**
+ * The hue a state wears: the person's (open) where it waits on their look, taken's while a step works, neutral otherwise. The
+ * gate draws it, and the foot's strip names the gate as a wait on the person where it is open (D168 point 2).
+ */
+export const REVIEW_TONE: Readonly<Record<ReviewState, 'open' | 'taken' | 'done' | 'neutral'>> = {
+  'not-shown': 'open',
+  'being-set-up': 'taken',
+  shown: 'open',
+  'not-yet': 'taken',
+  'not-held': 'open',
+  unread: 'neutral',
+  reviewed: 'done',
+  skipped: 'neutral',
+  none: 'neutral',
+};
+
 /** The gate on a landing's plan where it holds the work; null where nothing waits for a review, as a plan from before says. */
 export const reviewHolds = (landing: { review?: ReviewWaits | null } | null | undefined): ReviewWaits | null =>
   landing?.review && !LETS_GO.has(reviewState(landing.review.state)) ? landing.review : null;
