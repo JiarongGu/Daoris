@@ -11,11 +11,26 @@ internal sealed class TreeWorktrees(TreeContext context)
     /// <summary>What a kept branch says when git could not list the working trees.</summary>
     internal const string ListUnread = "git could not list the repository's working trees";
 
-    /// <summary>Every working tree git lists for the checkout at <paramref name="root"/>, or null where git could not list them.</summary>
-    internal static async Task<IReadOnlyList<WorktreeEntry>?> EntriesAsync(string root, CancellationToken ct)
+    /// <summary>
+    /// Every working tree git lists for the checkout at <paramref name="root"/>, or null where git could not list them. Where the
+    /// judgement holds <paramref name="refs"/>, the list is the one it read for them (PROC1d-iii), so a judgement lists once.
+    /// </summary>
+    internal static Task<IReadOnlyList<WorktreeEntry>?> EntriesAsync(string root, CancellationToken ct, RefSnapshot? refs = null) =>
+        refs?.WorktreesAsync(ct) ?? ListedAsync(root, ct);
+
+    /// <summary>The one start: <c>worktree list --porcelain</c>, as git printed it, or null where git could not list them.</summary>
+    internal static async Task<string?> PorcelainAsync(string root, CancellationToken ct)
     {
         var (code, porcelain, _) = await WorkingTree.GitAsync(root, ["worktree", "list", "--porcelain"], ct).ConfigureAwait(false);
-        if (code != 0) return null;
+        return code == 0 ? porcelain : null;
+    }
+
+    private static async Task<IReadOnlyList<WorktreeEntry>?> ListedAsync(string root, CancellationToken ct) =>
+        await PorcelainAsync(root, ct).ConfigureAwait(false) is { } porcelain ? Parse(porcelain) : null;
+
+    /// <summary>The working trees <c>worktree list --porcelain</c> printed: each one's path, branch and lock.</summary>
+    internal static IReadOnlyList<WorktreeEntry> Parse(string porcelain)
+    {
         var entries = new List<WorktreeEntry>();
         string? path = null;
         string? branch = null;
@@ -41,17 +56,17 @@ internal sealed class TreeWorktrees(TreeContext context)
         return entries;
     }
 
-    /// <summary>The same list, by this instance, which a test may make fail.</summary>
-    internal Task<IReadOnlyList<WorktreeEntry>?> ListAsync(string root, CancellationToken ct) =>
-        context.ListFails?.Invoke(root) == true ? Task.FromResult<IReadOnlyList<WorktreeEntry>?>(null) : EntriesAsync(root, ct);
+    /// <summary>The same list, by this instance, which a test may make fail, whatever the judgement's <paramref name="refs"/> hold.</summary>
+    internal Task<IReadOnlyList<WorktreeEntry>?> ListAsync(string root, CancellationToken ct, RefSnapshot? refs = null) =>
+        context.ListFails?.Invoke(root) == true ? Task.FromResult<IReadOnlyList<WorktreeEntry>?>(null) : EntriesAsync(root, ct, refs);
 
     /// <summary>Which tree each branch is checked out in, or null where git could not list them: each caller keeps what it judged.</summary>
-    internal async Task<Dictionary<string, string>?> ReadAsync(string root, CancellationToken ct) =>
-        await ListAsync(root, ct).ConfigureAwait(false) is { } entries ? ByBranch(entries) : null;
+    internal async Task<Dictionary<string, string>?> ReadAsync(string root, CancellationToken ct, RefSnapshot? refs = null) =>
+        await ListAsync(root, ct, refs).ConfigureAwait(false) is { } entries ? ByBranch(entries) : null;
 
     /// <summary>Which tree each branch is checked out in; a list git could not give is the door's refusal, never an empty list.</summary>
-    internal static async Task<Dictionary<string, string>> WorktreesAsync(string root, CancellationToken ct) =>
-        await EntriesAsync(root, ct).ConfigureAwait(false) is { } entries
+    internal static async Task<Dictionary<string, string>> WorktreesAsync(string root, CancellationToken ct, RefSnapshot? refs = null) =>
+        await EntriesAsync(root, ct, refs).ConfigureAwait(false) is { } entries
             ? ByBranch(entries)
             : throw new DriverException($"git could not list the working trees of the checkout at {root}, so nothing there was judged.");
 

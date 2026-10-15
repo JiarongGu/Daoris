@@ -58,21 +58,30 @@ internal sealed class TreeUpdates(
         facts = facts with { Uncommitted = await StatusPathsAsync(full, ct).ConfigureAwait(false) };
         if (facts.First() is not null) return Refused(facts);
 
+        // The repository's own checkout, whose line is the repository's (as the review reads it, REVIEWBASE1), and the tree's
+        // branch, in one start (PROC1d-iii). Its branch is taken where that start gave a plain name or a detached HEAD; anything
+        // else (no commit yet, or a name git had to tell from another) is asked as before, so the name is the one it was.
+        var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
         string? branch;
-        try
+        if (here.Once && here.Branch.Trim() is var named
+            && !named.StartsWith("heads/", StringComparison.Ordinal) && !named.StartsWith("refs/", StringComparison.Ordinal))
         {
-            branch = await WorkingTree.BranchAsync(full, ct).ConfigureAwait(false);
+            branch = named == "HEAD" ? null : named;
         }
-        catch (DriverException error)
+        else
         {
-            return new(false, TreeUpdateWords.Left(facts, RebaseKind.Unknown, null, error.Message));
+            try
+            {
+                branch = await WorkingTree.BranchAsync(full, ct).ConfigureAwait(false);
+            }
+            catch (DriverException error)
+            {
+                return new(false, TreeUpdateWords.Left(facts, RebaseKind.Unknown, null, error.Message));
+            }
         }
 
-        // The repository's own checkout, whose line is the repository's (as the review reads it, REVIEWBASE1).
-        var (rootCode, commonDir, rootErr) = await WorkingTree.GitAsync(full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct)
-            .ConfigureAwait(false);
-        if (rootCode != 0) return new(false, TreeUpdateWords.Left(facts, RebaseKind.Unknown, null, Failure(rootErr)));
-        var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(commonDir.Trim()))!;
+        if (here.Code != 0) return new(false, TreeUpdateWords.Left(facts, RebaseKind.Unknown, null, Failure(here.Err)));
+        var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(here.CommonDir.Trim()))!;
         var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         facts = facts with { Line = line, Branch = branch, NoLine = line is null };
         if (facts.First() is not null) return Refused(facts);

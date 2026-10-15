@@ -12,9 +12,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// Fixtures live under the repository's gitignored `_fixtures/` — the family's own scratch rule —
 /// except the path-length test's, which needs a root shorter than the checkout's (MOD8). Each test
-/// makes its own repository, so nothing here is order-dependent.
+/// makes its own repository, so nothing here is order-dependent, and it starts git alone (a git hook the
+/// cut-off open waits in included): it runs four at once with the git-only classes (PROC1f).
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class SessionTreesTests : IDisposable
 {
     private readonly string _scratch;

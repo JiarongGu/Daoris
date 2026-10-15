@@ -1988,6 +1988,24 @@ freed the machine (wall seconds, tests): `TreeSyncStartsTests` 80 (5), `TreeSync
 `TreeSyncReplayTests` 87 (5), `TreeSyncLineTests` 80 (4), `LandedProofTests` 69 (4), `LandedKeepTests` 122 (6), `SweepTests` 57 (11),
 `ContentProofLossTests` 254 (17), `PullRequestStateTests` 573 (9) and `BranchTidyingProcessTests` 563 (26, `process.runsettings`).
 
+**PROC1d-iii (2026-10-16): the working trees once a judgement, and a tree's common dir with its branch in one start.** A
+judgement's `RefSnapshot` holds `worktree list` beside the refs (D88's PROC1d-iii note), so a sync plan lists a repository's
+trees once where its pull and its branches each listed them. `TreeGit.CommonDirAndBranchAsync` asks `rev-parse
+--path-format=absolute --git-common-dir --abbrev-ref HEAD` once where a landing's merge, its branch, its sync judgement and its
+tidy, a removal, an update and a held tree's discard asked the two in turn; where the one fails (a branch with no commit yet, a
+folder git does not know) the two are asked as before, so each answer and each failure is the one they gave. The update reads its
+branch with `symbolic-ref`, so it takes the one start's only as a plain name or a detached `HEAD` and asks `symbolic-ref` for
+anything else. Counted from code: a sync plan over three session branches 29 starts → 28 (`TreeSyncStartsTests`' bound, its
+`worktree list` held at one), one start fewer at each of the other sites and two at a landing that tidies (its own and its
+removal's). *Owed:* `TreeSyncStartsTests` (6, one new: the one start answers as the two did, on a branch, detached and in the
+checkout) has not run on this; its wall goes here beside PROC1d-ii's 80 s.
+
+**PROC1f (2026-10-16): the last git-only classes join the four-at-once half.** `SessionTreesTests` (16 tests) and
+`LandingPluginTests` (8, its helpers now `LandingPluginFixture`) carry `Parallel=Git`; the plugin that never answers, timed out at
+three seconds of patience, is `LandingPluginPatienceTests`, run one at a time. Listed on this branch with each file: the git half
+359 tests (334 before, plus `TreeSyncStartsTests`' new one), the serial half 568 (592 before). *Owed:* those three classes' runs,
+each alone with its file, and their walls here.
+
 ## TEST1 (open): a Node process on Windows aborts with 0xC0000409 (since 2026-09-21)
 
 **Symptom.** A Node process dies with `worker process exited unexpectedly (code=3221226505)`, Windows `__fastfail`: no

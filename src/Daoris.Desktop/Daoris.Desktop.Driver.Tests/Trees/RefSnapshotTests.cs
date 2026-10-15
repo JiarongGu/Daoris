@@ -32,10 +32,25 @@ public sealed class RefSnapshotTests
         $"refs/remotes/origin/HEAD {Origin} commit  ",
         $"refs/remotes/origin/main {Origin} commit  ") + "\n";
 
+    private int _listed;
+    private string? _trees = Trees();
+
+    /// <summary>What <c>worktree list --porcelain</c> prints: the checkout on the line, a session's tree, a locked one detached.</summary>
+    private static string Trees(string branch = "daoris/aurora-1") => string.Join('\n',
+        $"worktree {Tree("engine")}", $"HEAD {Main}", "branch refs/heads/main", "",
+        $"worktree {Tree("one")}", $"HEAD {Work}", $"branch refs/heads/{branch}", "",
+        $"worktree {Tree("two")}", $"HEAD {Main}", "detached", "locked being opened", "") + "\n";
+
+    private static string Tree(string name) => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "trees", name));
+
     private RefSnapshot Take() => RefSnapshot.Take(_ =>
     {
         Interlocked.Increment(ref _reads);
         return Task.FromResult(_output);
+    }, _ =>
+    {
+        Interlocked.Increment(ref _listed);
+        return Task.FromResult(_trees);
     });
 
     private static readonly CancellationToken None = CancellationToken.None;
@@ -274,5 +289,62 @@ public sealed class RefSnapshotTests
 
         Assert.Empty(started);
         Assert.Equal(1, _reads);
+    }
+
+    /// <summary>
+    /// PROC1d-iii: the working trees are read once for a judgement, as its refs are (`worktree list` was 47 of PROC1a's product
+    /// starts), and a write in its flow drops them with the refs, so the next question lists them as they are now.
+    /// </summary>
+    [Fact]
+    public async Task The_working_trees_are_listed_once_a_judgement_and_again_after_a_write()
+    {
+        var refs = Take();
+        Assert.Equal(0, _listed);
+
+        var listed = await TreeWorktrees.EntriesAsync("unused", None, refs);
+        Assert.Equal(
+            [(Tree("engine"), "main", false, null), (Tree("one"), "daoris/aurora-1", false, null), (Tree("two"), null, true, "being opened")],
+            listed!.Select(entry => (entry.Path, entry.Branch, entry.Locked, entry.LockReason)));
+        Assert.Equal(Tree("one"), (await TreeWorktrees.WorktreesAsync("unused", None, refs))["daoris/aurora-1"]);
+        RefSnapshot.Ran(["worktree", "list", "--porcelain"]);
+        Assert.NotNull(await TreeWorktrees.EntriesAsync("unused", None, refs));
+        Assert.Equal(1, _listed);
+        Assert.Equal(0, _reads);
+
+        _trees = Trees("daoris/aurora-2");
+        RefSnapshot.Ran(["worktree", "remove", Tree("one")]);
+
+        Assert.Equal(Tree("one"), (await TreeWorktrees.WorktreesAsync("unused", None, refs))["daoris/aurora-2"]);
+        Assert.Equal(2, _listed);
+    }
+
+    /// <summary>A list git could not give is asked again at the next question, as each caller asked it before: never an empty list.</summary>
+    [Fact]
+    public async Task A_list_git_could_not_give_is_asked_again()
+    {
+        _trees = null;
+        var refs = Take();
+
+        Assert.Null(await TreeWorktrees.EntriesAsync("unused", None, refs));
+        await Assert.ThrowsAsync<DriverException>(() => TreeWorktrees.WorktreesAsync("unused", None, refs));
+        Assert.Equal(2, _listed);
+
+        _trees = Trees();
+        Assert.NotNull(await TreeWorktrees.EntriesAsync("unused", None, refs));
+        Assert.NotNull(await TreeWorktrees.EntriesAsync("unused", None, refs));
+        Assert.Equal(3, _listed);
+    }
+
+    /// <summary>The test seam that makes a list fail (AUTOTIDY1) still makes it null where the judgement holds one.</summary>
+    [Fact]
+    public async Task A_list_the_seam_fails_is_null_whatever_the_snapshot_holds()
+    {
+        var refs = Take();
+        var context = new TreeContext("unused", new LandingPlugins("unused")) { ListFails = _ => true };
+        Assert.NotNull(await TreeWorktrees.EntriesAsync("unused", None, refs));
+
+        Assert.Null(await context.Worktrees.ListAsync("unused", None, refs));
+        Assert.Null(await context.Worktrees.ReadAsync("unused", None, refs));
+        Assert.Equal(1, _listed);
     }
 }

@@ -53,9 +53,48 @@ public sealed class TreeSyncStartsTests : TreeSyncFixture
         // PROC1d-ii: a branch's tip, the line's forms and an upstream come from one read of the refs per judgement, so asking
         // git for one ref at a time is left only to the line's guess (`rev-parse --verify refs/heads/main`), whatever N is.
         Assert.True(starts.Count(each => each.StartsWith("rev-parse --verify", StringComparison.Ordinal)) <= 1, report);
+        // PROC1d-iii: the working trees are listed once for the repository's judgement, with its refs (twice before).
+        Assert.True(starts.Count(each => each.StartsWith("worktree list", StringComparison.Ordinal)) == 1, report);
         // Over three session branches: 44 starts before the look (two guesses of the line), 42 after it, 29 with the refs read once
-        // per judgement (8 `rev-parse --verify` before, 1 after); PROC1d-iii and -iv cut the rest.
-        Assert.True(starts.Count is > 0 and <= 29, report);
+        // per judgement (8 `rev-parse --verify` before, 1 after), 28 with the working trees listed once; PROC1d-iv cuts the rest.
+        Assert.True(starts.Count is > 0 and <= 28, report);
+    }
+
+    /// <summary>
+    /// A tree's repository and its branch are one git start (PROC1d-iii): a landing, a removal and an update each asked git for
+    /// the common dir and then for the branch. Their answers are what the two asks answered, on a branch, detached and in the
+    /// repository's own checkout.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_s_repository_and_branch_are_one_start_and_answer_as_the_two_asks_did()
+    {
+        var (root, _) = await RepositoryWithOriginAsync("engine");
+        var tree = await new SessionTrees(Home).OpenAsync(root, "engine", "aurora");
+        var detached = await new SessionTrees(Home).OpenAsync(root, "engine", "aurora");
+        await GitAsync(detached.Path, "checkout", "--quiet", "--detach");
+
+        foreach (var at in new[] { tree.Path, detached.Path, root })
+        {
+            var (_, commonDir, _) = await WorkingTree.GitAsync(at, ["rev-parse", "--path-format=absolute", "--git-common-dir"], CancellationToken.None);
+            var (_, branch, _) = await WorkingTree.GitAsync(at, ["rev-parse", "--abbrev-ref", "HEAD"], CancellationToken.None);
+            var starts = new List<string>();
+            WorkingTree.Started.Value = arguments => { lock (starts) starts.Add(string.Join(' ', arguments)); };
+            TreeGit.CommonDirAndBranch here;
+            try
+            {
+                here = await TreeGit.CommonDirAndBranchAsync(at, CancellationToken.None);
+            }
+            finally
+            {
+                WorkingTree.Started.Value = null;
+            }
+
+            Assert.Equal((0, commonDir.Trim(), branch.Trim(), true), (here.Code, here.CommonDir.Trim(), here.Branch.Trim(), here.Once));
+            Assert.Single(starts);
+        }
+
+        Assert.Equal("HEAD", (await TreeGit.CommonDirAndBranchAsync(detached.Path, CancellationToken.None)).Branch.Trim());
+        Assert.Equal(tree.Branch, (await TreeGit.CommonDirAndBranchAsync(tree.Path, CancellationToken.None)).Branch.Trim());
     }
 
     /// <summary>

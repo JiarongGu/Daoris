@@ -27,9 +27,9 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
         string root, string repository, string workspace, string? line, string? onto, HashSet<string> busy, CancellationToken ct,
         IReadOnlyList<StateAnswer>? asked = null, RefSnapshot? refs = null)
     {
-        // One read of the refs for every branch judged here (PROC1d-ii); a write in this flow drops it.
+        // One read of the refs and the working trees for every branch judged here (PROC1d-ii, -iii); a write in this flow drops it.
         refs ??= RefSnapshot.Take(root);
-        var worktrees = await WorktreesAsync(root, ct).ConfigureAwait(false);
+        var worktrees = await WorktreesAsync(root, ct, refs).ConfigureAwait(false);
         var judged = new List<RebaseJudged>();
         foreach (var branch in await LandedProofs.SessionBranchesAsync(root, ct, refs).ConfigureAwait(false))
         {

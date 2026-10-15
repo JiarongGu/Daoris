@@ -4,7 +4,9 @@ namespace Daoris.Driver;
 /// One checkout's branches and origin's copies of them, read with one git start (PROC1d-ii): where each points, what it points
 /// at, and its upstream. <c>rev-parse --verify</c> was 389 of PROC1a's 1278 product starts, each a branch's tip, a form of the
 /// line or an upstream asked one at a time; a judgement takes one of these and hands it to the reads that ask (an optional
-/// parameter, null asking git as before), so a judgement reads a repository's refs once.
+/// parameter, null asking git as before), so a judgement reads a repository's refs once. Its working trees, which branch each
+/// holds, are one more start kept the same way (PROC1d-iii): <c>worktree list</c> was 47 of those starts, asked by each part
+/// of a judgement in turn.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>Never stale across a write.</b> It is read at its first question, not when taken, so one taken before a fetch is
@@ -30,10 +32,13 @@ internal sealed class RefSnapshot
     private static readonly AsyncLocal<RefSnapshot[]?> Held = new();
 
     private readonly Func<CancellationToken, Task<string?>> _read;
+    private readonly Func<CancellationToken, Task<string?>>? _list;
     private readonly object _gate = new();
     private Task<Refs?>? _refs;
+    private Task<IReadOnlyList<WorktreeEntry>?>? _trees;
 
-    private RefSnapshot(Func<CancellationToken, Task<string?>> read) => _read = read;
+    private RefSnapshot(Func<CancellationToken, Task<string?>> read, Func<CancellationToken, Task<string?>>? list) =>
+        (_read, _list) = (read, list);
 
     /// <summary>One ref as it was read.</summary>
     internal sealed record Entry(string Name, string Object, string Type, string? Upstream, string? UpstreamShort);
@@ -48,13 +53,16 @@ internal sealed class RefSnapshot
         internal HashSet<string> Blind { get; } = entries.Select(entry => entry.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
 
-    /// <summary>A snapshot of <paramref name="root"/>'s refs for this flow. Nothing is started until it is first asked.</summary>
-    internal static RefSnapshot Take(string root) => Take(ct => ReadAsync(root, ct));
+    /// <summary>A snapshot of <paramref name="root"/>'s refs and working trees for this flow. Nothing is started until it is first asked.</summary>
+    internal static RefSnapshot Take(string root) => Take(ct => ReadAsync(root, ct), ct => TreeWorktrees.PorcelainAsync(root, ct));
 
-    /// <summary>The test seam: a snapshot whose read is <paramref name="read"/> (its output, or null where git could not give it).</summary>
-    internal static RefSnapshot Take(Func<CancellationToken, Task<string?>> read)
+    /// <summary>
+    /// The test seam: a snapshot whose read is <paramref name="read"/> and whose list of the working trees is <paramref name="list"/>
+    /// (each one's output, or null where git could not give it). Without a list, the trees are asked of git as before.
+    /// </summary>
+    internal static RefSnapshot Take(Func<CancellationToken, Task<string?>> read, Func<CancellationToken, Task<string?>>? list = null)
     {
-        var taken = new RefSnapshot(read);
+        var taken = new RefSnapshot(read, list);
         Held.Value = Held.Value is { } held ? [.. held, taken] : [taken];
         return taken;
     }
@@ -88,7 +96,7 @@ internal sealed class RefSnapshot
     /// <summary>Drop what was read: the next question reads again.</summary>
     internal void Invalidate()
     {
-        lock (_gate) _refs = null;
+        lock (_gate) (_refs, _trees) = (null, null);
     }
 
     /// <summary>A ref may have moved: every snapshot this flow holds is dropped.</summary>
@@ -175,6 +183,25 @@ internal sealed class RefSnapshot
     {
         if (await RefsAsync(ct).ConfigureAwait(false) is not { } refs) return null;
         return [.. refs.Entries.Where(entry => entry.Name.StartsWith(Heads + prefix, StringComparison.Ordinal)).Select(entry => entry.Name[Heads.Length..])];
+    }
+
+    /// <summary>
+    /// The working trees git lists for this checkout (PROC1d-iii), read at the first question and kept with the refs, so a
+    /// write in the flow drops both; null where git could not list them, which the next question asks again, as each caller
+    /// asked before: a list never read is never an empty one (AUTOTIDY1). Null for the task itself where this snapshot has no
+    /// list to read, and the caller asks git.
+    /// </summary>
+    internal Task<IReadOnlyList<WorktreeEntry>?>? WorktreesAsync(CancellationToken ct)
+    {
+        if (_list is not { } list) return null;
+        lock (_gate)
+        {
+            if (_trees is { } read && !read.IsFaulted && !read.IsCanceled && !(read.IsCompletedSuccessfully && read.Result is null)) return read;
+            return _trees = ListAsync(list, ct);
+        }
+
+        static async Task<IReadOnlyList<WorktreeEntry>?> ListAsync(Func<CancellationToken, Task<string?>> list, CancellationToken ct) =>
+            await list(ct).ConfigureAwait(false) is { } porcelain ? TreeWorktrees.Parse(porcelain) : null;
     }
 
     private async Task<(bool Known, Entry? Entry)> LookAsync(string reference, CancellationToken ct)
