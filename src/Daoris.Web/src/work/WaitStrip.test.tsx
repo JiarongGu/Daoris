@@ -103,6 +103,48 @@ describe('the strip of what waits on the person, at the foot', () => {
     expect(onTop).toHaveBeenCalledTimes(1);
   });
 
+  // WAITFOOT1c (D168 point 4): each line leads to the event in the conversation that raised it, where one was found, and the
+  // raising block's *To the wait* leads back to its line.
+  it('leads each wait to the event in the conversation that raised it, where one was found', async () => {
+    const toEvent = { question: vi.fn(), work: vi.fn(), goAheads: { 2: vi.fn() } };
+    render(
+      <WaitStrip
+        session={parked} onResolve={vi.fn()} answerBelow goAheads={GO_AHEADS} onGoAhead={vi.fn()}
+        lands={LANDS} landing={PLAN} onLand={vi.fn()} toEvent={toEvent} onTop={vi.fn()}
+      />,
+    );
+
+    await userEvent.click(within(screen.getByText(/It asked you a question/).closest('p')!).getByRole('button', { name: 'In the conversation' }));
+    expect(toEvent.question).toHaveBeenCalledTimes(1);
+    await userEvent.click(within(within(strip()).getByRole('listitem')).getByRole('button', { name: 'In the conversation' }));
+    expect(toEvent.goAheads[2]).toHaveBeenCalledTimes(1);
+    await userEvent.click(within(within(strip()).getByRole('button', { name: 'Accept…' }).parentElement!).getByRole('button', { name: 'In the conversation' }));
+    expect(toEvent.work).toHaveBeenCalledTimes(1);
+  });
+
+  it('has no such press where no raising event was found', () => {
+    render(<WaitStrip session={parked} onResolve={vi.fn()} answerBelow goAheads={GO_AHEADS} onGoAhead={vi.fn()} onTop={vi.fn()} />);
+    expect(within(strip()).queryByRole('button', { name: 'In the conversation' })).toBeNull();
+  });
+
+  it('shows the wait a raising block leads to: unfolded, focused and outlined', async () => {
+    const props = { session: parked, onResolve: vi.fn(), answerBelow: true, goAheads: GO_AHEADS, onGoAhead: vi.fn(), onTop: vi.fn() };
+    const { rerender } = render(<WaitStrip {...props} />);
+    await userEvent.click(within(strip()).getByRole('button', { name: 'Fold' }));
+    expect(within(strip()).queryByRole('listitem')).toBeNull();
+
+    rerender(<WaitStrip {...props} seek={{ wait: 'goAhead:2', n: 1 }} />);
+    const item = within(strip()).getByRole('listitem');
+    expect(item).toHaveFocus();
+    expect(item.className).toContain('outline-accent');
+
+    rerender(<WaitStrip {...props} seek={{ wait: 'question', n: 2 }} />);
+    const line = screen.getByText(/It asked you a question/).closest('p')!;
+    expect(line).toHaveFocus();
+    expect(line.className).toContain('outline-accent');
+    expect(item.className).not.toContain('outline-accent');
+  });
+
   it('speaks the active catalogue', async () => {
     await i18n.changeLanguage('zh');
     try {

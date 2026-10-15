@@ -13,6 +13,8 @@ import { OpinionGate, type OpinionGateActs, unsettledWords } from './OpinionGate
 import type { FileOpen } from './preview';
 import { reviewState, type ReviewWaits } from './review';
 import { ReviewGate, type ReviewGateActs } from './ReviewGate';
+import type { WaitEvents } from './anchors';
+import { InConversation } from './WaitAnchor';
 import { landingStands } from './waits';
 
 /** How long a typed branch name rests before the landing plan is asked with it (LANDNAME1b). */
@@ -71,7 +73,12 @@ function useAsking(ask?: WorkAsk): [boolean, (open: boolean) => void] {
  * foot, from the same props, so a press in either is the same press. The frame holds where its ask is open (`ask`), and
  * whether a landing is on its way (`busy`), which holds *Accept…* in both.
  */
-export function Lands({ session, lands, landing, planning, onReview, onLand, onSayRebase, onName, review, behind, opinion, ask, busy = false }: {
+export function Lands({ session, lands, landing, planning, onReview, onLand, onSayRebase, onName, review, behind, opinion, ask, busy = false, toEvent }: {
+  /**
+   * The way to the event in the conversation that raised the work's wait and the second opinion's, where it holds them
+   * (WAITFOOT1c, D168 point 4): *In the conversation* on the work's line and under the gate.
+   */
+  toEvent?: Pick<WaitEvents, 'work' | 'opinion'>;
   /** The press that says the rebase words to the session, held by the frame (LANDSYNC1w). */
   onSayRebase?: SayRebase;
   behind?: LineBehind | null;
@@ -138,6 +145,7 @@ export function Lands({ session, lands, landing, planning, onReview, onLand, onS
           </Button>
         )}
         {onReview && <Button className="px-2 py-0.5 text-small" onClick={onReview}>{t('work.head.review')}</Button>}
+        {toEvent?.work && <InConversation onPress={toEvent.work} />}
       </p>
       {onLand && !asking && conflict && onSayRebase && <RebaseAsk key={session.id} conflict={conflict} onSay={onSayRebase} />}
       {workflow && <WorkflowHold gate={workflow} />}
@@ -153,6 +161,8 @@ export function Lands({ session, lands, landing, planning, onReview, onLand, onS
           onOpenFile={opinion?.onOpenFile}
         />
       )}
+      {/* Where its findings were handed to the session (WAITFOOT1c): the turn they were handed as. */}
+      {second && toEvent?.opinion && <p className="m-0"><InConversation onPress={toEvent.opinion} /></p>}
       {waits && (
         <ReviewGate
           environment={waits.environment ?? ''}

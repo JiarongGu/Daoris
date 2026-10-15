@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GoAhead, Session } from '../data/api';
+import { cn } from '../lib/cn';
+import type { AnchorWait, WaitEvents } from './anchors';
 import { type GoAheadAnswer, GoAheadList } from '../asks/GoAheadList';
 import { Button } from '../design/ui';
 import type { QuestClose, Resolution } from './AwaitingPerson';
@@ -9,7 +11,7 @@ import type { DiscardOffer, LandOffer } from './groups';
 import type { Answered } from './InlineConfirm';
 import type { SayRebase } from './LandingSync';
 import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from './Lands';
-import { waitName } from './WaitAnchor';
+import { InConversation, waitName } from './WaitAnchor';
 import { type Wait, WORK_WAITS, waitsOf } from './waits';
 
 /**
@@ -40,7 +42,15 @@ export type WaitProps = {
   onDiscardTree?: (answered: Answered) => void;
   /** A landing or a discard of its work is on its way, pressed in either place. */
   workBusy?: boolean;
+  /**
+   * The way from each wait to the event in the conversation that raised it, where the conversation found one (WAITFOOT1c, D168
+   * point 4): *In the conversation* on the head's sections and the strip's lines alike.
+   */
+  toEvent?: WaitEvents;
 };
+
+/** The outline a line wears once a raising block's *To the wait* led to it, as the conversation outlines a revealed block. */
+const SOUGHT = 'rounded-control outline-2 outline-offset-2 outline-accent/60';
 
 /**
  * **What waits on the person, at the foot** (WAITFOOT1b, D168): above the session's box and outside the conversation's scroll,
@@ -59,18 +69,38 @@ export type WaitProps = {
  * Several fold to one line naming them; *To the top* takes the person to the head's waits. Nothing waits, nothing is drawn.
  * A molecule: no hook beyond its own fold.
  */
-export function WaitStrip({ answerBelow = false, workAsk, onTop, ...props }: WaitProps & {
+export function WaitStrip({ answerBelow = false, workAsk, onTop, seek, ...props }: WaitProps & {
   /** The foot's box takes the park's answer: a driven park's answer box, or a parked chat's composer. */
   answerBelow?: boolean;
   /** Where the work's ask is open, the frame's, so it is open here or in the head (D168 point 3). */
   workAsk?: WorkAsk;
   /** Scroll the session's head, where every wait stands with its reading, into view. */
   onTop?: () => void;
+  /**
+   * The wait a raising block's *To the wait* leads to (WAITFOOT1c), counted so the same one pressed again is shown again: the
+   * strip unfolds, and its line takes the focus, outlined.
+   */
+  seek?: { wait: AnchorWait; n: number } | null;
 }) {
   const { t } = useTranslation();
   const [folded, setFolded] = useState(false);
-  const { session } = props;
+  const [sought, setSought] = useState<AnchorWait | null>(null);
+  const section = useRef<HTMLElement>(null);
+  const { session, toEvent } = props;
   const waits = waitsOf({ ...props, answerBelow });
+  useEffect(() => {
+    if (!seek) return;
+    setFolded(false);
+    setSought(seek.wait);
+  }, [seek?.n]);
+  // Drawn unfolded first, then focused: its line is in the strip only once the fold opens.
+  useEffect(() => {
+    if (!seek || sought !== seek.wait) return;
+    const line = seek.wait.startsWith('goAhead:')
+      ? `[data-go-ahead="${seek.wait.slice('goAhead:'.length)}"]`
+      : `[data-wait="${seek.wait === 'opinion' ? 'work' : seek.wait}"]`;
+    section.current?.querySelector<HTMLElement>(line)?.focus();
+  }, [sought, seek?.n]);
   if (waits.length === 0) return null;
   const several = waits.length > 1;
   const shut = several && folded;
@@ -83,7 +113,13 @@ export function WaitStrip({ answerBelow = false, workAsk, onTop, ...props }: Wai
   const title = several ? t('work.wait.several', { n: waits.length }) : t('work.wait.title');
 
   return (
-    <section aria-label={title} className="shrink-0 border-t border-line bg-page">
+    <section
+      ref={section}
+      aria-label={title}
+      className="shrink-0 border-t border-line bg-page"
+      // The outline goes once the person moves on from the line it led to.
+      onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setSought(null); }}
+    >
       {/* Bounded, so a long gate never pushes the conversation off the window: the strip scrolls in itself. */}
       <div className="grid max-h-[40vh] grid-cols-[minmax(0,1fr)] gap-2 overflow-y-auto px-4 py-2">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
@@ -101,14 +137,26 @@ export function WaitStrip({ answerBelow = false, workAsk, onTop, ...props }: Wai
         {!shut && (
           <>
             {question?.kind === 'question' && (
-              <p className="m-0 text-small text-ink-soft">{t(question.below ? 'work.wait.questionBelow' : 'work.wait.questionTop')}</p>
+              <p
+                data-wait="question"
+                tabIndex={-1}
+                className={cn('m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small text-ink-soft', sought === 'question' ? SOUGHT : 'outline-none')}
+              >
+                <span>{t(question.below ? 'work.wait.questionBelow' : 'work.wait.questionTop')}</span>
+                {toEvent?.question && <InConversation onPress={toEvent.question} />}
+              </p>
             )}
             {intake && (
-              <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small text-ink-soft">
+              <p
+                data-wait="question"
+                tabIndex={-1}
+                className={cn('m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small text-ink-soft', sought === 'question' ? SOUGHT : 'outline-none')}
+              >
                 <span>{t('work.wait.intake')}</span>
                 <Button variant="primary" className="px-2 py-0.5 text-small" onClick={() => props.onAnswerAsk?.(intake.ask)}>
                   {t('work.intake.answer', { ask: intake.ask })}
                 </Button>
+                {toEvent?.question && <InConversation onPress={toEvent.question} />}
               </p>
             )}
             {open.size > 0 && (
@@ -118,25 +166,34 @@ export function WaitStrip({ answerBelow = false, workAsk, onTop, ...props }: Wai
                   busy={props.resolving}
                   onAnswer={props.onGoAhead}
                   lead={t('work.awaiting.goAheads')}
+                  inConversation={toEvent?.goAheads}
+                  marked={sought?.startsWith('goAhead:') ? Number(sought.slice('goAhead:'.length)) : undefined}
                 />
               </div>
             )}
             {work && props.lands && (
-              <Lands
-                session={session}
-                lands={props.lands}
-                landing={props.landing}
-                planning={props.planning}
-                onReview={props.onReview}
-                onLand={props.onLand}
-                onSayRebase={props.onSayRebase}
-                onName={props.onName}
-                review={props.review}
-                behind={props.behind}
-                opinion={props.opinion}
-                ask={workAsk}
-                busy={props.workBusy}
-              />
+              <div
+                data-wait="work"
+                tabIndex={-1}
+                className={cn('grid gap-2', sought === 'work' || sought === 'opinion' ? SOUGHT : 'outline-none')}
+              >
+                <Lands
+                  session={session}
+                  lands={props.lands}
+                  landing={props.landing}
+                  planning={props.planning}
+                  onReview={props.onReview}
+                  onLand={props.onLand}
+                  onSayRebase={props.onSayRebase}
+                  onName={props.onName}
+                  review={props.review}
+                  behind={props.behind}
+                  opinion={props.opinion}
+                  ask={workAsk}
+                  busy={props.workBusy}
+                  toEvent={toEvent}
+                />
+              </div>
             )}
             {discard && props.discards && (
               <Discards discards={props.discards} onReview={props.onReview} onDiscard={props.onDiscardTree} ask={workAsk} busy={props.workBusy} />

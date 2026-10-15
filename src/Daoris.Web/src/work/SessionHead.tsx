@@ -13,6 +13,7 @@ import { AnsweredPark } from './AnsweredPark';
 import { AwaitingIntake } from './AwaitingIntake';
 import { AwaitingPerson, type QuestClose, type Resolution } from './AwaitingPerson';
 import { type DetailRow, DetailsFold } from './DetailsFold';
+import type { WaitEvents } from './anchors';
 import type { Answered } from './InlineConfirm';
 import type { LineBehind } from './diff';
 import type { DiscardOffer, LandOffer } from './groups';
@@ -89,8 +90,14 @@ export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, branch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
-  continues, helps, onOpenSession, workAsk, workBusy = false,
+  continues, helps, onOpenSession, workAsk, workBusy = false, toEvent,
 }: {
+  /**
+   * The way from each wait to the event in the conversation that raised it, where the conversation found one (WAITFOOT1c, D168
+   * point 4): *In the conversation* on the park's card, each go-ahead and the work's line. The frame's, handed to the foot's
+   * strip alike.
+   */
+  toEvent?: WaitEvents;
   /**
    * Where the ask of its work's line (*Accept…*, *Discard branch…*) is open, the frame's, so it is open in the head or in the
    * foot's strip, never both (WAITFOOT1b, D168 point 3). Absent, the line holds its own.
@@ -233,7 +240,7 @@ export function SessionHead({
       {running && !parked && intake && <RunningIntake ask={session.ask!} onOpen={onAnswerAsk} />}
       {answered && <AnsweredPark answer={session.answer!} />}
       {waiting && intake && (onResolve || onAnswerAsk) && (
-        <AwaitingIntake ask={session.ask!} note={session.note} parts={session.noteParts} onAnswer={onAnswerAsk} />
+        <AwaitingIntake ask={session.ask!} note={session.note} parts={session.noteParts} onAnswer={onAnswerAsk} onConversation={toEvent?.question} />
       )}
       {waiting && !intake && (onResolve || onAnswerSession) && (
         // Keyed: a half-written decline reason belongs to the session it was written for, and it
@@ -248,6 +255,7 @@ export function SessionHead({
           onResolve={onResolve}
           // A driven session parked to ask the person has no process left to message (STANDDOWN2).
           onAnswer={session.quest ? onAnswerSession : undefined}
+          onConversation={toEvent?.question}
         />
       )}
       {/* Nothing here can act — a browser, or a mirrored record from another machine — so the
@@ -265,6 +273,7 @@ export function SessionHead({
             busy={resolving}
             onAnswer={onGoAhead}
             lead={t('work.awaiting.goAheadsLead')}
+            inConversation={toEvent?.goAheads}
           />
         </section>
       )}
@@ -294,7 +303,7 @@ export function SessionHead({
       {lands ? (
         <Lands
           key={session.id} session={session} lands={lands} landing={landing} planning={planning} onReview={onReview} onLand={onLand} onSayRebase={onSayRebase} onName={onName} review={review} behind={behind}
-          opinion={opinion} ask={workAsk} busy={workBusy}
+          opinion={opinion} ask={workAsk} busy={workBusy} toEvent={toEvent}
         />
       ) : discards ? (
         <Discards key={session.id} discards={discards} onReview={onReview} onDiscard={onDiscardTree} ask={workAsk} busy={workBusy} />
