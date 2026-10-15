@@ -8,20 +8,29 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 // HELP1a (D89): Ask Daoris's conversation, with the bridge mocked as present — the panel exists only in
 // the shell, since most of what it reads is this machine's (D47 §4).
 
-const { invoke, notifyReady } = vi.hoisted(() => ({
+const { invoke, notifyReady, heard } = vi.hoisted(() => ({
   invoke: vi.fn(),
   notifyReady: vi.fn(() => Promise.resolve()),
+  // The state hub's ear (STATEHUB1f, D169): what the mocked shell publishes after a press reaches it, as the kit's pump would.
+  heard: new Map<string, (payload: unknown) => void>(),
 }));
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
-  useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
-  useShenoraEvent: () => {},
-}));
+vi.mock('@shenora/react', async () => {
+  const { publishing } = await import('../test/publishing');
+  const published = publishing(invoke, (type, payload) => heard.get(type)?.(payload));
+  return {
+    isShenoraAvailable: () => true,
+    getBridge: () => ({ isAvailable: true, invoke: published, notifyReady }),
+    useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+    useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
+      if (module === 'DAORIS') heard.set(type, handler);
+    },
+  };
+});
 
 import i18n from '../locales/i18n';
 import { keys } from '../data/queries';
+import { useStateHub } from '../bridge/stateHub';
 import { code } from '../test/code';
 import { AskDaoris } from './AskDaoris';
 import type { HelpWhere } from './where';
@@ -71,10 +80,17 @@ function bridge(start: { sessionId: string | null; message: string } = { session
 /** How many times the page asked the driver to open Ask Daoris's conversation. */
 const starts = () => invoke.mock.calls.filter(([, type]) => type === 'START_HELP').length;
 
+/** The window's state hub, as `ShellSignals` mounts it: the sessions a finished conversation moved are asked again here. */
+function Hub() {
+  useStateHub();
+  return null;
+}
+
 function show(where?: Omit<HelpWhere, 'session'>, attending: string | null = null, onGo = vi.fn()) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
+      <Hub />
       <Tooltip.Provider>
         <AskDaoris where={where} attending={attending} onGo={onGo} onClose={vi.fn()} />
       </Tooltip.Provider>
@@ -187,6 +203,164 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
+   * HELPSTART1: the driver answers the press once the conversation is placed, `starting`, its record still `queued` while the
+   * room is read. The words go to it at once and show once, as it opening, from the driver's own queue.
+   */
+  it('hands the first words to a conversation the driver answers as starting, shown once as it opens', async () => {
+    const words = 'what is a workspace?';
+    const placed = { ...HELP, state: 'queued' };
+    bridge({ sessionId: HELP.id, message: 'Ask Daoris `h1e1p000` is starting.' });
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      if (type === 'START_HELP') {
+        SESSIONS = [placed];
+        return { sessionId: HELP.id, message: 'Ask Daoris `h1e1p000` is starting.', running: false, starting: true };
+      }
+      if (type === 'SESSION_QUEUE') return { session: HELP.id, queued: [{ text: words, files: [] }], taking: false, opening: true };
+      return answered(module, type, ...rest);
+    });
+    show();
+
+    await waitFor(() => expect(starts()).toBe(1));
+    const box = await screen.findByLabelText('Message');
+    await userEvent.type(box, words);
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: HELP.id, text: words },
+    }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE', { payload: { id: HELP.id } }));
+    await waitFor(() => expect(screen.getAllByText(words, { ignore: 'script, style, h3' })).toHaveLength(1));
+    expect(screen.getByText('opening Ask Daoris…')).toBeInTheDocument();
+    expect(starts()).toBe(1);
+  });
+
+  /**
+   * SENDLOST1: on a loaded machine the page stopped waiting on Ask Daoris's start (the bridge's TIMEOUT) and the person's
+   * first words vanished, though the driver went on to open the conversation. They stay shown, saying the machine has not
+   * answered yet, nothing put back in the box to send twice, and go once to the conversation the list next shows.
+   */
+  it('keeps the first words when the machine stops answering, and gives them once to the conversation the list then shows', async () => {
+    const words = 'why did my message vanish?';
+    bridge();
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      // The one opened ahead could not; the send's own is still at work when the page stops waiting for it.
+      if (type === 'START_HELP' && starts() === 1) return { sessionId: null, message: 'not yet' };
+      if (type === 'START_HELP') throw Object.assign(new Error('timed out'), { code: 'TIMEOUT' });
+      return answered(module, type, ...rest);
+    });
+    let listed: () => void = () => {};
+    const late = new Promise<void>((resolve) => { listed = resolve; });
+    let holding = false;
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      if (holding && String(input).startsWith('/api/sessions')) await late;
+      return respond(String(input));
+    }));
+    show();
+
+    const box = await screen.findByLabelText('Message');
+    await waitFor(() => expect(starts()).toBe(1));
+    await userEvent.type(box, words);
+    holding = true;
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    await waitFor(() => expect(starts()).toBe(2));
+    expect(await screen.findByText('The machine has not answered yet; it may still take them.')).toBeInTheDocument();
+    expect(screen.getByText(words)).toBeInTheDocument();
+    expect((screen.getByLabelText('Message') as HTMLTextAreaElement).value).toBe('');
+    expect(screen.queryByText(/did not answer in time/)).toBeNull();
+
+    // The list's next read holds the conversation the driver opened: the words go to it, once.
+    SESSIONS = [HELP];
+    await act(async () => { listed(); });
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: HELP.id, text: words },
+    }));
+    expect(invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT')).toHaveLength(1);
+    expect(starts()).toBe(2);
+  });
+
+  /**
+   * SENDLOST1: words to the conversation running show the moment they are sent, as sending. A send the page stopped waiting
+   * on keeps them, saying the machine has not answered yet — never back in the box to be sent twice — until the
+   * conversation's own record holds them.
+   */
+  it('shows words as sending, keeps them when their send times out, and lets them go once the record holds them', async () => {
+    const words = 'and the line?';
+    SESSIONS = [HELP];
+    bridge();
+    const answered = invoke.getMockImplementation()!;
+    let stop: () => void = () => {};
+    let recorded = false;
+    let read: () => void = () => {};
+    const reading = new Promise<void>((resolve) => { read = resolve; });
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      if (type === 'SESSION_INPUT') {
+        return new Promise((_, reject) => {
+          stop = () => { recorded = true; reject(Object.assign(new Error('timed out'), { code: 'TIMEOUT' })); };
+        });
+      }
+      if (type === 'SESSION_HISTORY' && recorded) {
+        await reading;
+        return {
+          session: HELP.id, earlier: false, latest: 1,
+          events: [{ seq: 1, at: new Date().toISOString(), kind: 'user', origin: 'person', text: words }],
+        };
+      }
+      return answered(module, type, ...rest);
+    });
+    show();
+
+    const box = await screen.findByLabelText('Message');
+    await screen.findByRole('button', { name: 'New conversation' });
+    await userEvent.type(box, words);
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(await screen.findByText('sending…')).toBeInTheDocument();
+    expect(screen.getByText(words)).toBeInTheDocument();
+
+    await act(async () => { stop(); });
+    expect(await screen.findByText('The machine has not answered yet; it may still take them.')).toBeInTheDocument();
+    expect(screen.getByText(words)).toBeInTheDocument();
+    expect((screen.getByLabelText('Message') as HTMLTextAreaElement).value).toBe('');
+    expect(screen.queryByText(/did not answer in time/)).toBeNull();
+
+    await act(async () => { read(); });
+    await waitFor(() => expect(screen.queryByText('The machine has not answered yet; it may still take them.')).toBeNull());
+    expect(invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT')).toHaveLength(1);
+  });
+
+  /**
+   * SENDLOST1: words whose send timed out to a conversation that then ended without them never arrived: they go back in the
+   * box, said so, for the person to send again.
+   */
+  it('gives words back once their conversation ended without them', async () => {
+    const words = 'are you there?';
+    SESSIONS = [HELP];
+    // Once it ended, the next opens ahead (HELP5), under an id of its own.
+    bridge({ sessionId: 'n3xt0000', message: 'opened' });
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      if (type === 'SESSION_INPUT') {
+        SESSIONS = [{ ...HELP, state: 'failed' }];
+        throw Object.assign(new Error('timed out'), { code: 'TIMEOUT' });
+      }
+      return answered(module, type, ...rest);
+    });
+    show();
+
+    const box = await screen.findByLabelText('Message');
+    await screen.findByRole('button', { name: 'New conversation' });
+    await userEvent.type(box, words);
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(await screen.findByText(/Ask Daoris ended before this reached it/)).toBeInTheDocument();
+    await waitFor(() => expect((screen.getByLabelText('Message') as HTMLTextAreaElement).value).toBe(words));
+    expect(invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT')).toHaveLength(1);
+  });
+
+  /**
    * HELP5: the agent's spawn and its protocol session took seconds after the person pressed send. The
    * conversation opens as the panel shows instead: once, however often the panel draws, and once under
    * React's development double-mount. Nobody has spoken in it yet, so the panel goes on showing what it
@@ -289,8 +463,10 @@ describe('Ask Daoris, with an agent named', () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     client.setQueryData(keys.driver, { drivable: ['engine'], holds: [], trees: [], helperAdapter: HELPER });
     client.setQueryData(keys.sessions(HELP.repository, true, null), []);
+    // The window's hub hears what each opening published (STATEHUB1h): the sessions it opened one among.
     const hosts = (count: number) => (
       <QueryClientProvider client={client}>
+        <Hub />
         <Tooltip.Provider>
           {['side', 'quick'].slice(0, count).map((host) => <AskDaoris key={host} onGo={vi.fn()} onClose={vi.fn()} />)}
         </Tooltip.Provider>
@@ -899,12 +1075,16 @@ describe('Ask Daoris’s history', () => {
 
     expect(await screen.findByText('This conversation has ended. Write to go on in it: it remembers what was said.')).toBeInTheDocument();
     await userEvent.type(screen.getByLabelText('Message'), 'and a remote?');
+    const listed = () => invoke.mock.calls.filter(([, type]) => type === 'HELP_CONVERSATIONS').length;
+    const before = listed();
     await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
       payload: { id: EARLIER.id, text: 'and a remote?' },
     }));
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: expect.objectContaining({ id: 'n3xt0000' }) });
+    // The word said declares the history (HELPHISTORYHUB1), so the state hub lists it again, not the conversation's own ask.
+    await waitFor(() => expect(listed()).toBeGreaterThan(before));
   });
 
   /** The newest that ended still starts a new conversation by default, as before; *Go on in it* chooses it. */
@@ -979,8 +1159,12 @@ describe('Ask Daoris’s history', () => {
 
     await menu();
     await user.click(await screen.findByRole('menuitem', { name: 'Delete…' }));
+    const listed = () => invoke.mock.calls.filter(([, type]) => type === 'HELP_CONVERSATIONS').length;
+    const before = listed();
     await user.click(await screen.findByRole('button', { name: 'Delete conversation' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DELETE', { payload: { id: EARLIER.id } }));
+    // The delete declares the history (HELPHISTORYHUB1): the state hub lists it again, the conversation asks nothing by hand.
+    await waitFor(() => expect(listed()).toBeGreaterThan(before));
   });
 });
 

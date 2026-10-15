@@ -9,20 +9,29 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 // (components plan §2). The bridge is mocked as present, because the Work frame is desktop-only
 // (D55) and the group header's driver facts exist nowhere else; one case takes it away, as a browser has none.
 
-const { invoke, notifyReady, bridge } = vi.hoisted(() => ({
+const { invoke, notifyReady, bridge, heard } = vi.hoisted(() => ({
   invoke: vi.fn(),
   notifyReady: vi.fn(() => Promise.resolve()),
   bridge: { available: true },
+  // The state hub's ear (STATEHUB1f, D169): what the mocked shell publishes after a press reaches it, as the kit's pump would.
+  heard: new Map<string, (payload: unknown) => void>(),
 }));
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => bridge.available,
-  getBridge: () => ({ isAvailable: bridge.available, invoke, notifyReady }),
-  useShenora: () => ({ isAvailable: bridge.available, bridge: { notifyReady } }),
-  useShenoraEvent: () => {},
-}));
+vi.mock('@shenora/react', async () => {
+  const { publishing } = await import('../test/publishing');
+  const published = publishing(invoke, (type, payload) => heard.get(type)?.(payload));
+  return {
+    isShenoraAvailable: () => bridge.available,
+    getBridge: () => ({ isAvailable: bridge.available, invoke: published, notifyReady }),
+    useShenora: () => ({ isAvailable: bridge.available, bridge: { notifyReady } }),
+    useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
+      if (module === 'DAORIS') heard.set(type, handler);
+    },
+  };
+});
 
 import type { OpenGroup } from '../app/opener';
+import { useStateHub } from '../bridge/stateHub';
 import { SessionRail } from './SessionRail';
 
 const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
@@ -624,10 +633,17 @@ describe('the session rail by state', () => {
       invoke.mockImplementation(async (module: string, type: string, options?: { payload?: Record<string, unknown> }) =>
         (type === 'SESSION_ARCHIVE' ? archive(options?.payload ?? {}) : drive(module, type)));
 
+    /** The window's state hub, as `ShellSignals` mounts it: the sessions an archive moved are asked again here (STATEHUB1f). */
+    function Hub() {
+      useStateHub();
+      return null;
+    }
+
     const rail = (props: Partial<Parameters<typeof SessionRail>[0]> & { notify?: (text: string, kind?: string) => void } = {}) => {
       const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
       return render(
         <QueryClientProvider client={client}>
+          <Hub />
           <Tooltip.Provider><SessionRail notify={() => {}} {...props} /></Tooltip.Provider>
         </QueryClientProvider>,
       );

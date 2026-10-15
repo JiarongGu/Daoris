@@ -20,7 +20,9 @@ public sealed record OpinionTreeOpened(string Path, string Tip);
 /// reviewer to it. <c>o-</c> beside a session tree's <c>s-</c>.</para>
 ///
 /// <para><b>Removed whatever happened</b>, read-only objects cleared first, which a recursive delete refuses on Windows. A folder
-/// something still holds is said, never left silently.</para>
+/// something still holds is said, never left silently. A copy a kill left names the process whose pass it was, in its own
+/// <c>.git</c>; the next pass in that repository moves it aside once that process is gone and the copy was left quiet
+/// (<see cref="PassLeftovers"/>, STRAYOTHERS1).</para>
 ///
 /// <para>A top file, not the Domain's (FLAT1b-ii): making and removing a copy runs git and clears a folder, so the type holds I/O.</para>
 /// </remarks>
@@ -48,7 +50,18 @@ public static class OpinionTree
         string home, string root, string repository, string? workspace, string tip, CancellationToken ct = default)
     {
         var path = PathFor(home, workspace, repository);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        var trees = Path.GetDirectoryName(path)!;
+        try
+        {
+            // STRAYOTHERS1: a copy a killed pass left here goes aside first, once no running process holds it and it was left quiet.
+            new SessionTrees(home).ClearPassCopies(trees, DateTimeOffset.UtcNow);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // A leftover that could not be cleared is the next pass's to try again, never a reason to hold this one.
+        }
+
+        Directory.CreateDirectory(trees);
 
         var (cloned, _, cloneError) = await WorkingTree.GitAsync(
             root, ["clone", "--no-hardlinks", "--no-checkout", "--quiet", "--", Path.GetFullPath(root), path], ct).ConfigureAwait(false);
@@ -56,6 +69,19 @@ public static class OpinionTree
         {
             await RemoveAsync(home, path).ConfigureAwait(false);
             throw new DriverException($"could not make a copy of `{repository}` for a second opinion — git said: {Failure(cloneError)}");
+        }
+
+        // The copy names the process whose pass it is (STRAYOTHERS1), so a later pass tells a copy in use from one a kill left.
+        try
+        {
+            await File.WriteAllTextAsync(
+                Path.Combine(path, ".git", PassLeftovers.CopyHolder), PassLeftovers.HeldBy(Environment.ProcessId) + "\n", CancellationToken.None)
+                .ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            await RemoveAsync(home, path).ConfigureAwait(false);
+            throw new DriverException($"could not make a copy of `{repository}` for a second opinion: {error.Message}");
         }
 
         // Its one remote goes, and with it every branch the person's repository had: the copy has nowhere configured to push.

@@ -48,9 +48,11 @@ describe('the driver domain', () => {
 
   /**
    * *Sync now* (SYNC6b) is the tick's own pass for one circle, run by the shell's driver loop — so it
-   * lands on DAORIS.DRIVER naming the circle, and afterwards where it stands is asked again.
+   * lands on DAORIS.DRIVER naming the circle. A pass that answers is published by the route (STATEHUB1d, D169), so the state
+   * hub asks where it stands again in every window; one refused as an error publishes nothing (D169 point 5), and the hook
+   * asks again itself, since a pass that failed part way may have recorded where it stood.
    */
-  it('Sync now lands on DAORIS.DRIVER naming the circle, and the standing refetches', async () => {
+  it('Sync now lands on DAORIS.DRIVER naming the circle, and the standing refetches after a failure', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const invalidate = vi.spyOn(client, 'invalidateQueries');
     invoke.mockImplementation(async () => ({ workspace: 'aurora', problem: null, notes: [] }));
@@ -62,6 +64,10 @@ describe('the driver domain', () => {
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SYNC_NOW', { payload: { workspace: 'aurora' } });
     expect(report.notes).toEqual([]);
+    expect(invalidate).not.toHaveBeenCalled();
+
+    invoke.mockImplementation(async () => { throw Object.assign(new Error('no remote'), { code: 'DRIVER_REFUSED' }); });
+    await expect(result.current.mutateAsync('aurora')).rejects.toThrow('no remote');
     await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSync }));
   });
 

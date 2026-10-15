@@ -87,6 +87,13 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
     public string? EnteredName => string.IsNullOrWhiteSpace(Entered) ? null : Entered.Trim();
 
     /// <summary>
+    /// The branch an entry's Accept lands this part on (ACCEPTALL1, D167's 2026-10-15 amendment point 1): the entry's one branch,
+    /// named once for its first part, so its parts land together. Null names it by the rule for this subject, as before; a name the
+    /// person entered still comes first, and a tree on a branch of its own still lands as that branch (TREEFOLLOW1).
+    /// </summary>
+    public string? EntryBranch { get; init; }
+
+    /// <summary>
     /// The request's body (PROCESS1b-i), where a ticket's key is searched after the title: the quest's, null where it is blank or
     /// there is no quest. A conversation's words are its opening, its <see cref="Title"/>.
     /// </summary>

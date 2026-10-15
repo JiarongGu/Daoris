@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// it; the plugin is faked on its channel, answering by branch as its platform would, so nothing reaches a network.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class PullRequestStateTests : LandedFixture
 {
     private const string Plugin = "acme.asks";
@@ -223,6 +224,42 @@ public sealed class PullRequestStateTests : LandedFixture
         Assert.Equal("", (await GitAsync(root, "branch", "--list", carried.Branch)).Trim());
         var entry = trees.Recorded.Landing("s1")!;
         Assert.Equal((carried.Branch, CarriedBy.CleanUp), (Assert.Single(entry.Carried).Branch, entry.Carried[0].By));
+    }
+
+    /// <summary>
+    /// AUTOTIDY2b: the watch's look takes a landing's branch whose pull request completed by squash, on the answer a list kept,
+    /// though the line changed its file since, so D102's proof by content cannot see it: its session's branch first, whose work
+    /// is on the line through it, its tree's folder moved aside; then the landing's branch, its commits kept on a ref of their
+    /// own, and the record keeping what proved it. The look asks no plugin.
+    /// </summary>
+    [Fact]
+    public async Task The_look_takes_a_landing_s_branch_a_kept_answer_completed()
+    {
+        var (root, origin) = await RepositoryWithOriginAsync("engine");
+        var trees = Trees();
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(tree.Path, "merged.txt", "merged\n", "merged");
+        var landing = await trees.LandAsync(tree.Path, new LandingSubject("s1", "q1", "Merged"));
+        Assert.True(landing.Landed, landing.Message);
+        var source = (await GitAsync(root, "rev-parse", landing.Branch!)).Trim();
+        var merge = await SquashOnPlatformAsync(origin, landing.Branch!, then: ("merged.txt", "changed on the line since\n"));
+        await GitAsync(root, "fetch", "--quiet", "--prune", "origin");
+        _answers[landing.Branch!] = () => Completed(merge, source);
+        await trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>());
+        var asked = _asked;
+
+        var pass = await trees.TidyEmptyAsync(root, "engine", "aurora", NoneRunning);
+
+        Assert.Equal(asked, _asked);
+        var session = Assert.Single(pass.Results, result => result.Removed);
+        Assert.Equal((tree.Branch, SweepKind.Landed, "origin/main"), (session.Item.Branch, session.Item.Kind, session.Item.Where));
+        Assert.NotNull(session.MovedTo);
+        var removed = Assert.Single(pass.Landed, result => result.Removed);
+        Assert.Equal((landing.Branch, LandedKind.PullRequest, "s1"), (removed.Item.Branch, removed.Item.Kind, removed.Session));
+        Assert.Equal($"refs/daoris/discarded/{landing.Branch}", removed.KeptRef);
+        Assert.Equal("", (await GitAsync(root, "branch", "--list", landing.Branch!, tree.Branch)).Trim());
+        var trace = trees.Recorded.Landing("s1")!;
+        Assert.Equal((LandedKind.PullRequest, "origin/main"), (trace.RemovedAs, trace.RemovedOn));
     }
 
     /// <summary>

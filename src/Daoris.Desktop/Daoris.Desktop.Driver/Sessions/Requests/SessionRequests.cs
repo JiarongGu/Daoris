@@ -25,7 +25,14 @@ public static class SessionMove
     /// </summary>
     public const string Say = "say";
 
-    public static bool Known(string move) => move is Stop or Finish or Decline or Say;
+    /// <summary>
+    /// A word waiting on a parked or ended record taken back, or with the request's text reworded, from a terminal (SAIDBACK1c,
+    /// D137 §2.4): taken by the loop that holds the home, which keeps the withdrawn note in its own record of the conversation.
+    /// Keyed and answered as a say is.
+    /// </summary>
+    public const string TakeBack = "take-back";
+
+    public static bool Known(string move) => move is Stop or Finish or Decline or Say or TakeBack;
 }
 
 /// <summary>Who asked, as the machine log's <c>door</c> names a door: a word, never a sentence.</summary>
@@ -78,6 +85,9 @@ public sealed record SessionRequest(string Session, string Move, DateTimeOffset 
     /// not replaced by them, and its answer is found beside it. Null for a move, which is one per session.
     /// </summary>
     public string? Key { get; init; }
+
+    /// <summary>A take-back's word: the id it waits under on the record (SAIDBACK1c); null for any other move.</summary>
+    public string? Word { get; init; }
 }
 
 /// <summary>
@@ -91,8 +101,10 @@ public sealed record SessionRequest(string Session, string Move, DateTimeOffset 
 /// moves its record. A file under the home is what every Daoris process on this machine already shares, as the process
 /// markers are (<see cref="SessionProcesses"/>), and it needs no port and no service.</para>
 ///
-/// <para><b>Taken once.</b> A loop takes a request by renaming it, which only one rename can do; two loops honouring at
-/// once act on it once. The door that asked withdraws it when nothing took it in time, so a late loop never acts on an
+/// <para><b>Taken once.</b> A loop takes a request by renaming it, and reads and removes it only where it is still under the
+/// name it was moved to: on Windows a rename another loop had already begun moves it on from under the first (REQTAKE1), so
+/// the loop whose name it ends under has it. Two loops honouring at once act on it once, and never neither. The door that
+/// asked withdraws it when nothing took it in time, so a late loop never acts on an
 /// answer the person was already told did not come. A request nobody took for <see cref="Lifetime"/> is dropped by any
 /// loop that looks, so one left by a door that died does not wait for ever.</para>
 ///
@@ -109,6 +121,12 @@ public sealed partial class SessionRequests(string home)
     public static readonly TimeSpan Lifetime = TimeSpan.FromMinutes(1);
 
     private const string Taking = ".taking";
+
+    /// <summary>
+    /// How often a take reads what it moved aside before putting it back (REQTAKE1): what refuses it is another loop's rename,
+    /// for the moment it moves it, so twenty tries ten milliseconds apart is ample.
+    /// </summary>
+    private const int ReadTries = 20;
 
     private const string Answered = ".answer.json";
 
@@ -196,7 +214,7 @@ public sealed partial class SessionRequests(string home)
 
     /// <summary>
     /// Take a session's request, once: renamed aside, read and removed. Null when another loop took it first or its asker
-    /// withdrew it.
+    /// withdrew it, or when what was moved aside could not be read, which is put back for the next look (REQTAKE1).
     /// </summary>
     public SessionRequest? Take(string session) => TakeAt(PathOf(session));
 
@@ -215,9 +233,52 @@ public sealed partial class SessionRequests(string home)
             return null;
         }
 
-        var request = Read(taking);
-        Remove(taking);
-        return request;
+        // 🔴 REQTAKE1 (FIX-LOG 2026-10-16): on Windows another loop's rename opens the file, letting it be moved, a moment before
+        // it moves it. This rename succeeds under that handle, the handle then moves the file on from this name, and while it is
+        // open a read is refused. A take that removed what it could not read lost the request unread, and the other loop's move
+        // then found it deleted. So a refused read is tried again, a file gone was moved on by the loop that has it, and only
+        // what was read is removed.
+        for (var attempt = 1; ; attempt++)
+        {
+            string text;
+            try
+            {
+                text = File.ReadAllText(taking);
+            }
+            catch (Exception error) when (error is FileNotFoundException or DirectoryNotFoundException)
+            {
+                return null;
+            }
+            catch (Exception error) when (attempt < ReadTries && error is IOException or UnauthorizedAccessException)
+            {
+                Thread.Sleep(10);
+                continue;
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                PutBack(taking, path);
+                return null;
+            }
+
+            Remove(taking);
+            return Parse(text);
+        }
+    }
+
+    /// <summary>
+    /// What a take moved aside and could not read, put back for the next look. Where a newer request for the session now stands in
+    /// its place, that one replaces it, as a request nobody took is replaced.
+    /// </summary>
+    private static void PutBack(string taking, string path)
+    {
+        try
+        {
+            File.Move(taking, path);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            if (File.Exists(path)) Remove(taking);
+        }
     }
 
     /// <summary>Withdraw a session's request while nobody has taken it; false when it was taken, or never written.</summary>
@@ -310,7 +371,20 @@ public sealed partial class SessionRequests(string home)
     {
         try
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            return Parse(File.ReadAllText(path));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>One request, or null where the text does not read as one.</summary>
+    private static SessionRequest? Parse(string text)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object) return null;
             string? Text(string name) =>
@@ -329,9 +403,10 @@ public sealed partial class SessionRequests(string home)
                     ? [.. files.EnumerateArray().Where(name => name.ValueKind == JsonValueKind.String).Select(name => name.GetString()!)]
                     : [],
                 Key = Text("key"),
+                Word = Text("takeBackWord"),
             };
         }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
+        catch (JsonException)
         {
             return null;
         }
@@ -385,6 +460,7 @@ public sealed partial class SessionRequests(string home)
         }
 
         if (request.Key is not null) writer.WriteString("key", request.Key);
+        if (request.Word is not null) writer.WriteString("takeBackWord", request.Word);
         writer.WriteEndObject();
     });
 

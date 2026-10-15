@@ -289,6 +289,51 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 SAIDBACK1d (D137 §2.4): the words a run is handed are those the record holds once the ledger's move is made, never
+    /// those the look read. The only word was taken back between the two: nothing is sent, the record is put back as it ended
+    /// (not failed by a run that never should have started), and its conversation says so. Before the fix the look's word was
+    /// handed to a run, which here failed at its spawn.
+    /// </summary>
+    [Fact]
+    public async Task A_word_taken_back_between_the_look_and_the_move_is_never_handed_to_the_run()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "talk", _root).Say("w1", "Also log the port.");
+        ledger.WhenWorking = session => session["said"] = new JsonArray();
+        new HarnessConversations(_home).Keep("c1", "talk", "conv-c1");
+        var events = Events;
+        using var runner = Runner(ledger, events);
+
+        events.Append("c1", Shown("w1", "Also log the port."));
+
+        var back = await NoteAsync(events, "c1", e => e.Text?.Contains("taken back before it went on") == true);
+        Assert.Equal(["working", "completed"], ledger.Moves("c1"));
+        Assert.Equal("completed", ledger.State("c1"));
+        Assert.Empty(ledger.Said("c1"));
+        Assert.Null(back.Words);
+    }
+
+    /// <summary>
+    /// SAIDBACK1d: a word taken back or reworded between the look and the move is read as the move left the record: the words
+    /// handed are the record's now, a reword's new words included, never the look's.
+    /// </summary>
+    [Fact]
+    public void The_words_handed_are_the_records_after_the_move_and_the_looks_only_where_it_cannot_be_read()
+    {
+        var first = new SaidWordView("w1", "Use the blue one.", DateTimeOffset.UtcNow, [], true);
+        var second = new SaidWordView("w2", "And another.", DateTimeOffset.UtcNow, [], true);
+        var reworded = new SaidWordView("w3", "Use the green one.", DateTimeOffset.UtcNow, [], true);
+        PriorSession Now(params SaidWordView[] words) => ServiceClient.ReadRecord(
+            $$"""[{"id":"c1","repository":"engine","state":"working","kind":"chat","said":[{{string.Join(',', words.Select(word => $$"""{"id":"{{word.Id}}","text":"{{word.Text}}","at":"2026-10-03T09:00:00Z","files":[],"reopens":true}"""))}}]}]""",
+            "c1")!;
+
+        Assert.Equal(["w2"], Continuations.HandedAfterMove([first, second], Now(second)).Select(word => word.Id));
+        Assert.Equal(["w2", "w3"], Continuations.HandedAfterMove([first, second], Now(second, reworded)).Select(word => word.Id));
+        Assert.Empty(Continuations.HandedAfterMove([first], Now()));
+        Assert.Equal(["w1", "w2"], Continuations.HandedAfterMove([first, second], null).Select(word => word.Id));
+    }
+
+    /// <summary>
     /// MIXAGENT2a-iii: an ended conversation goes on with a helper's answer through its own going-on, and says so as the driven
     /// quest's does (D163): the ledger's note and the opening name a helper's answer where it is all that waits, "your words" only
     /// where the person's wait too, and never "your words" for a claim of another agent.
@@ -508,6 +553,12 @@ internal sealed class ChatLedger : HttpMessageHandler
     /// <summary>Where set, the ledger refuses the move out of an ended state with this sentence (D51's tree, held by another).</summary>
     public string? Busy { get; set; }
 
+    /// <summary>
+    /// Where set, called as a record moves to working, still inside the ledger's lock: what a take-back landing between the look
+    /// and the move does to the record's words (SAIDBACK1d).
+    /// </summary>
+    public Action<JsonObject>? WhenWorking { get; set; }
+
     /// <summary>How many times the records were read.</summary>
     public int Reads { get; private set; }
 
@@ -723,6 +774,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                     }
 
                     session["state"] = to;
+                    if (to == "working") WhenWorking?.Invoke(session);
                     if (JsonNode.Parse(body!)!["note"]?.GetValue<string>() is { } note)
                     {
                         session["note"] = note;

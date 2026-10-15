@@ -923,6 +923,13 @@ public static class WorkingTree
         return (info, null);
     }
 
+    /// <summary>
+    /// The test seam (PROC1d-i): called with the arguments of each git this flow starts through <see cref="GitAsync(string, IReadOnlyList{string}, CancellationToken)"/>,
+    /// so a test counts the product's starts. Null in production; an async local, so classes running in parallel never see
+    /// each other's starts. A callback must be safe to call from several threads, as a flow's fetches run side by side.
+    /// </summary>
+    internal static readonly AsyncLocal<Action<IReadOnlyList<string>>?> Started = new();
+
     // Internal rather than private since D51: SessionTrees asks git the same way for the same reason —
     // one process-spawning implementation, not two that differ in encoding or error shape.
     internal static Task<(int Code, string Stdout, string Stderr)> GitAsync(
@@ -938,6 +945,7 @@ public static class WorkingTree
         string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string>? environment, TimeSpan? timeout,
         CancellationToken ct)
     {
+        Started.Value?.Invoke(arguments);
         var (info, refusal) = GitStart(root, arguments, DaorisHome.Resolve());
         // A git the person chose that cannot run is git's answer, said in the resolution's words (TOOLS5): never PATH's.
         if (info is null) return (-1, "", refusal!);
@@ -958,6 +966,11 @@ public static class WorkingTree
         catch (Exception error) when (error is not OperationCanceledException)
         {
             return (-1, "", error.Message);
+        }
+        finally
+        {
+            // PROC1d-ii: a git that may have moved a ref, finished, stopped or failed, drops the refs this flow read at once.
+            RefSnapshot.Ran(arguments);
         }
     }
 

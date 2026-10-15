@@ -127,7 +127,7 @@ public sealed class StartWiringRouteTests : Bridge
         Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "stub", "stale"));
         new HarnessSettings().WithDefault("stub", "stale").Save(HarnessSettingsPath);
         var module = Module();
-        await AnswerAsync(module, "HARNESSES", new { refresh = true, agent = "stub", profile = "stale" });
+        await AnswerAsync(module, "HARNESSES_REFRESH", new { agent = "stub", profile = "stale" });
 
         var answer = await AnswerAsync(module, "STARTS", new { workspaces = new[] { "default" } });
 

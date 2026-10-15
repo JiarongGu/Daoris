@@ -82,6 +82,8 @@ const ANSWERS = {
     // A word for how it merged that the driver has no word for is read as none, never refused.
     return null;
   },
+  // An observation's answer is not read (STATEHUB1g): any result will do, and {} is the one to send.
+  'state/changed': () => null,
 };
 
 /** The handshake's answer, read by the driver's rules and the kit's one more: every declared point is listened on. */

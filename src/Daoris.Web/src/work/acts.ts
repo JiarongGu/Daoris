@@ -1,7 +1,7 @@
 import type { Quest, Session } from '../data/api';
 import { answeredPark, type IconName, type MenuAct, SESSION_ACTIVE } from '../design/ui';
 import type { SessionGrouping } from './groups';
-import { isHelp, isIntake, sessionOrigin } from './identity';
+import { isHelp, isHelper, isIntake, isOpinion, sessionOrigin } from './identity';
 import { askOf, type WorkTarget } from './pausing';
 import type { SessionWhere } from './SessionRow';
 
@@ -119,18 +119,21 @@ export function offeredActs(facts: ActFacts, door: 'row' | 'header'): SessionAct
   const live = SESSION_ACTIVE.has(session.state);
   const pausedBy = grouping?.pausedBy ?? null;
   const offered = new Set<SessionActId>();
+  // HELPERACTS1: a helper's and a reviewer's records are refused words and resume (D163, MIXAGENT2a-i), so no act that takes words.
+  const wordless = isHelper(session) || isOpinion(session);
 
   if (here) {
-    if (door === 'row' && session.state === 'awaiting-person' && !answeredPark(session) && !intake) offered.add('answer');
+    if (door === 'row' && session.state === 'awaiting-person' && !answeredPark(session) && !intake && !wordless) offered.add('answer');
     if (live) offered.add('stop');
     // A conversation of this machine's own: not an intake, Ask Daoris's, nor a quest's session, each of which has its own door.
-    if (session.kind === 'chat' && !session.quest && !intake && !isHelp(session)) offered.add('handOver');
-    const driven = live && Boolean(session.quest) && session.kind !== 'chat' && !intake && !isHelp(session);
+    if (session.kind === 'chat' && !session.quest && !intake && !isHelp(session) && !wordless) offered.add('handOver');
+    const driven = live && Boolean(session.quest) && session.kind !== 'chat' && !intake && !isHelp(session) && !wordless;
     if (driven && !pausedBy) {
       offered.add('pauseQuest');
       if (askOf(facts.quest)) offered.add('pauseAsk');
     }
-    if (pausedBy) offered.add(pausedBy.scope === 'ask' ? 'resumeAsk' : 'resumeQuest');
+    if (wordless) { /* nothing to resume or try again: the record takes no words */ }
+    else if (pausedBy) offered.add(pausedBy.scope === 'ask' ? 'resumeAsk' : 'resumeQuest');
     else if (grouping?.shown === 'parked' || (session.state === 'stopped' && grouping?.holdsQuest)) offered.add('retry');
     if (!intake && !isHelp(session)
       && (grouping?.group === 'review' || Boolean(where?.landed) || (Boolean(session.tree) && !where?.treeGone))) {

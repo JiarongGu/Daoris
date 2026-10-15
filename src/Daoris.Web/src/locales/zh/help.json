@@ -62,6 +62,8 @@
   "help.ended": "这段对话已结束。发一条消息即开始新的对话。",
   "help.notSent": "消息送达之前问道衍已结束。它已放回输入框：再发一次即开始新的对话。",
   "help.opening": "正在打开问道衍…",
+  "help.sending": "正在发送…",
+  "help.unanswered": "本机尚未回应；它仍可能收下这些话。",
   "help.none": "本机没有问道衍知道要找的缺项。",
   "help.command": "或 `{{command}}`",
   "help.starter.waiting": "{{count}} 个会话在等你。",

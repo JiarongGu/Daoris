@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// a deletion and both paths of a rename included — must read on the line as the branch left it.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class LandedProofTests : LandedFixture
 {
     [Fact]

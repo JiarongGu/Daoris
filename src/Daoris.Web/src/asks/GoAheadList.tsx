@@ -2,8 +2,10 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GoAhead } from '../data/api';
 import { ago } from '../locales/format';
+import { cn } from '../lib/cn';
 import { Button, Pill } from '../design/ui';
 import { type Answered, Refused } from '../work/InlineConfirm';
+import { InConversation } from '../work/WaitAnchor';
 
 /** A yes or no to a go-ahead: its number, the answer, the person's words if any, and how the answer ended (UXFIX2b3b). */
 export type GoAheadAnswer = (number: number, approved: boolean, words: string | undefined, answered: Answered) => void;
@@ -32,9 +34,16 @@ const KINDS = new Set(['write', 'release', 'push', 'sign-in', 'run']);
  * The same list stands on a parked session's page (KNOWUSE1a2), the go-aheads that session asked, where answering the
  * last one open sends the session on (GOAHEAD2b): its lead says so there, handed in as `lead`.
  */
-export function GoAheadList({ goAheads, busy = false, onAnswer, lead }: {
+export function GoAheadList({ goAheads, busy = false, onAnswer, lead, inConversation, marked }: {
   goAheads: GoAhead[];
   busy?: boolean;
+  /**
+   * The way to each go-ahead's call in the session's conversation, by its number, where the conversation found it (WAITFOOT1c,
+   * D168 point 4): *In the conversation* on its item. Absent, none.
+   */
+  inConversation?: Readonly<Record<number, () => void>>;
+  /** The go-ahead a raising block's *To the wait* led to (WAITFOOT1c): outlined. */
+  marked?: number;
   /**
    * The person's yes or no to go-ahead `number`, with their words where they gave any, and how to tell the item how it ended
    * (UXFIX2b3b); absent where there is no door.
@@ -49,9 +58,11 @@ export function GoAheadList({ goAheads, busy = false, onAnswer, lead }: {
       <p className="m-0 mb-2 text-small text-ink-soft">{lead ?? t('asks.goAhead.lead')}</p>
       <ul className="m-0 grid list-none gap-3 p-0">
         {goAheads.map((goAhead) => (
-          <GoAheadItem key={goAhead.number} goAhead={goAhead} busy={busy} onAnswer={onAnswer} kindWord={
-            KINDS.has(goAhead.kind) ? t(`asks.goAhead.kind.${goAhead.kind}`) : goAhead.kind
-          } />
+          <GoAheadItem
+            key={goAhead.number} goAhead={goAhead} busy={busy} onAnswer={onAnswer}
+            kindWord={KINDS.has(goAhead.kind) ? t(`asks.goAhead.kind.${goAhead.kind}`) : goAhead.kind}
+            onConversation={inConversation?.[goAhead.number]} marked={marked === goAhead.number}
+          />
         ))}
       </ul>
     </>
@@ -63,11 +74,13 @@ export function GoAheadList({ goAheads, busy = false, onAnswer, lead }: {
  * destructive edit), so they wait in place and a refused answer is said beside this item (UXFIX2b3b), the words kept and
  * both presses pressable again.
  */
-function GoAheadItem({ goAhead, kindWord, busy, onAnswer }: {
+function GoAheadItem({ goAhead, kindWord, busy, onAnswer, onConversation, marked = false }: {
   goAhead: GoAhead;
   kindWord: string;
   busy: boolean;
   onAnswer?: GoAheadAnswer;
+  onConversation?: () => void;
+  marked?: boolean;
 }) {
   const { t } = useTranslation();
   const [changing, setChanging] = useState(false);
@@ -111,12 +124,21 @@ function GoAheadItem({ goAhead, kindWord, busy, onAnswer }: {
   };
 
   return (
-    <li ref={item} tabIndex={-1} className="grid gap-1 rounded-control border border-line bg-raised px-3 py-2 outline-none">
+    <li
+      ref={item}
+      tabIndex={-1}
+      data-go-ahead={goAhead.number}
+      className={cn(
+        'grid gap-1 rounded-control border border-line bg-raised px-3 py-2',
+        marked ? 'outline-2 outline-offset-2 outline-accent/60' : 'outline-none',
+      )}
+    >
       <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
         <span className="font-mono text-meta text-ink-faint">#{goAhead.number}</span>
         <Pill tone={GO_AHEAD_TONE[goAhead.state]}>{t(`asks.goAhead.state.${goAhead.state}`)}</Pill>
         <span className="text-body font-semibold">{t('asks.goAhead.act', { kind: kindWord, on: goAhead.on })}</span>
         <span className="min-w-0 break-words text-body">“{goAhead.act}”</span>
+        {onConversation && <span className="ml-auto"><InConversation onPress={onConversation} /></span>}
       </p>
       {first && <p className="m-0 text-small text-ink-soft">{first.why}</p>}
       <p className="m-0 font-mono text-meta text-ink-faint">

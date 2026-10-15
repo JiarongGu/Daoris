@@ -12,6 +12,15 @@ public sealed record HookDecision(bool Allowed, string? Reason = null)
 /// The points a plugin may listen on, named here once. A handshake naming one this build lacks is said once and never
 /// asked there (PLUGHOOK1a, D148 point 8): a plugin that grew a point keeps the points this build has.
 /// </summary>
+/// <remarks>
+/// <b>A point added</b> (STATEHUB1g's list) goes last in <see cref="All"/>, and in the same commit: its frame in
+/// <see cref="HookFrames"/>; its call on <see cref="IHookChannel"/> (a default for the fakes), <see cref="HookPeer"/> and
+/// <see cref="HookProcess"/>; its kit entry and sample (<see cref="PluginKit"/>), its <c>ANSWERS</c> entry in the kit's
+/// <c>plugin.test.mjs.template</c> and its case in <see cref="PluginTrials"/>; where a failure there costs
+/// (<c>PluginsCommand.Cost</c>); Ask Daoris's sentence (<c>HelpRoomMakingAPlugin.PointSaid</c>, its goldens rewritten); the rows
+/// of <c>PluginKitTests</c> and the kit's list in the modules' <c>DriverModulePluginsTests</c>; the page's gloss
+/// (<c>plugins/PluginKit.tsx</c>) where its kind's does not say when it speaks; and <c>twins.md</c>'s answer row.
+/// </remarks>
 public static class HookPoints
 {
     /// <summary>A decision: one consideration the planner marked <i>Start</i>. The first hold in catalogue order ends the waterfall.</summary>
@@ -34,11 +43,31 @@ public static class HookPoints
     /// </summary>
     public const string State = "work/state";
 
-    public static readonly IReadOnlyList<string> All = [QuestConsider, SessionEnded, Land, State];
+    /// <summary>
+    /// An observation (STATEHUB1g, D169 point 9): what a press, or a terminal's verb, changed of what the driver holds, as the
+    /// shell's bus told every window. Contained, as <see cref="SessionEnded"/> is, and told off the press's path: the press has
+    /// answered before any plugin hears, and nothing a plugin says or fails to say holds, changes or refuses that answer.
+    /// </summary>
+    public const string StateChanged = "state/changed";
 
-    /// <summary>The points the driver loop asks at — a plugin that speaks on none of them is not kept running beside it.</summary>
-    public static readonly IReadOnlyList<string> Loop = [QuestConsider, SessionEnded];
+    /// <summary>Every point, in the order they were added: a point is additive, so a new one goes last (PLUGHOOK1a).</summary>
+    public static readonly IReadOnlyList<string> All = [QuestConsider, SessionEnded, Land, State, StateChanged];
+
+    /// <summary>
+    /// The points the driver loop's set speaks at — a plugin that speaks on none of them is not kept running beside it. The
+    /// shell's loop tells <see cref="StateChanged"/> from its bus; a headless loop has no bus, so it starts such a plugin and
+    /// tells it nothing (D169's STATEHUB1g note).
+    /// </summary>
+    public static readonly IReadOnlyList<string> Loop = [QuestConsider, SessionEnded, StateChanged];
 }
+
+/// <summary>
+/// What <see cref="HookPoints.StateChanged"/> is told (STATEHUB1g): the shell's <c>STATE_CHANGED</c>, as every window hears it
+/// (D169 point 3). What moved, never what it is now: no words, no answer, no machine path.
+/// </summary>
+/// <param name="Scopes">The families of state that moved, in the screen's words (<c>sessions</c>, <c>landing</c>, …).</param>
+/// <param name="Sessions">The sessions the change was about, or null where it was not one session's: any.</param>
+public sealed record StateChangedFrame(IReadOnlyList<string> Scopes, IReadOnlyList<string>? Sessions);
 
 /// <summary>
 /// What each point is sent, built in one place (PLUG8): the loop and the landing send these, and the
@@ -101,5 +130,15 @@ public static class HookFrames
         line = frame.Line,
         pullRequest = frame.PullRequest,
         pushedTip = frame.PushedTip,
+    };
+
+    /// <summary>
+    /// <see cref="HookPoints.StateChanged"/>: what moved (STATEHUB1g), the event's own two fields, <c>sessions</c> null where the
+    /// change was about no one session.
+    /// </summary>
+    public static object Changed(StateChangedFrame frame) => new
+    {
+        scopes = frame.Scopes.ToArray(),
+        sessions = frame.Sessions?.ToArray(),
     };
 }

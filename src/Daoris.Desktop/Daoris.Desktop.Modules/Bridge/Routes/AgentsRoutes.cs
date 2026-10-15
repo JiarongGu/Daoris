@@ -20,13 +20,22 @@ public sealed class AgentsRoutes(DriverContext context)
 
     // This machine's harnesses, and the accounts they run as (D49 §4). Each account and the tool's own
     // sign-in say what was last read of them and when, the driver's report kept under the home, so a page
-    // asking, the first time after a start included, asks no account (ROSTER1, D150 §5.3). `refresh` is
-    // the person pressing *Read again*: every agent's, with `agent` one agent's accounts and its own
-    // sign-in, or with `profile` too that one account alone.
+    // asking, the first time after a start included, asks no account (ROSTER1, D150 §5.3). It is a read and
+    // declares nothing, so a window's read is never published, which every window would read again without end.
     [DriverRoute("HARNESSES")]
-    private async Task<object?> HarnessesAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> HarnessesAsync(IpcRequest request, CancellationToken cancellationToken) =>
+        ReadHarnessesAsync(request, refresh: false, cancellationToken);
+
+    // The person pressing *Read again* (HARNESSREFRESH1, D169): every agent's accounts, with `agent` one agent's accounts and
+    // its own sign-in, or with `profile` too that one account alone. Its own route so it can declare what it moved, which the
+    // read above must not: it answers the roster as the read does, and every window asks its roster again.
+    [DriverRoute("HARNESSES_REFRESH")]
+    [Publishes("HARNESSES_REFRESH", StateScopes.Harnesses)]
+    private Task<object?> RefreshHarnessesAsync(IpcRequest request, CancellationToken cancellationToken) =>
+        ReadHarnessesAsync(request, refresh: true, cancellationToken);
+
+    private async Task<object?> ReadHarnessesAsync(IpcRequest request, bool refresh, CancellationToken cancellationToken)
     {
-        var refresh = Flag(request, "refresh");
         var agent = refresh ? Optional(request, "agent") : null;
         var account = agent is null ? null : Optional(request, "profile");
 
@@ -332,8 +341,10 @@ public sealed class AgentsRoutes(DriverContext context)
 
     // The person's explicit action on a harness (D49 §4): its own installer, its own updater,
     // its own login flow. Never automatic, never mid-session, never unasked — and streamed
-    // line by line through the console, because it is a process like any other.
+    // line by line through the console, because it is a process like any other. What it changed at once (a key, a name, a
+    // join, a default) is the roster's, which it declares; an action that runs on says its end as `HARNESS_ENDED` (STATEHUB1h).
     [DriverRoute("HARNESS_ACTION")]
+    [Publishes("HARNESS_ACTION", StateScopes.Harnesses)]
     private async Task<object?> HarnessActionAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
@@ -519,6 +530,7 @@ public sealed class AgentsRoutes(DriverContext context)
     // cleared and one left out is untouched. Never the tool's own configuration home, which the
     // roster says Daoris never touches, and never an account a setting would bring into being.
     [DriverRoute("SET_AGENT_SETTINGS")]
+    [Publishes("SET_AGENT_SETTINGS", StateScopes.Harnesses)]
     private object? SetAgentSettings(IpcRequest request)
     {
         var harness = PayloadHelper.GetRequiredValue<string>(request.Payload, "harness");

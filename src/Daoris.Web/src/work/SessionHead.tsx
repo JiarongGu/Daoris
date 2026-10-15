@@ -1,40 +1,36 @@
-import { useEffect, useRef, useState } from 'react';
-
-/** How long a typed branch name rests before the landing plan is asked with it (LANDNAME1b). */
-const NAME_PAUSE = 300;
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { workflowHolds } from '../workflow/gate';
-import { WorkflowHold } from '../workflow/WorkflowHold';
 import { DiscardBranchAsk, type SweepBranch } from '../settings/Sweep';
 import type { GoAhead, Quest, Session } from '../data/api';
 import type { AccountNamer } from '../agents/tools';
 import { type GoAheadAnswer, GoAheadList } from '../asks/GoAheadList';
 import { ago, elapsed, sessionTool, stamp } from '../locales/format';
 import {
-  answeredPark, Button, Inline, PathText, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
+  answeredPark, Button, PathText, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
 } from '../design/ui';
+import { cn } from '../lib/cn';
 import { AnsweredPark } from './AnsweredPark';
 import { AwaitingIntake } from './AwaitingIntake';
 import { AwaitingPerson, type QuestClose, type Resolution } from './AwaitingPerson';
 import { type DetailRow, DetailsFold } from './DetailsFold';
-import { type Answered, InlineConfirm } from './InlineConfirm';
+import type { WaitEvents } from './anchors';
+import type { Answered } from './InlineConfirm';
 import type { LineBehind } from './diff';
 import type { DiscardOffer, LandOffer } from './groups';
-import { HeldDiscardAsk, HeldDiscardButton, heldDiscardable } from './HeldDiscard';
 import { isIntake, sessionOrigin, sessionTitle } from './identity';
-import { type LandingConflict, type LandsCommit, type LeftOutCommit, LeftOutLines, RebaseAsk, type SayRebase } from './LandingSync';
+import type { SayRebase } from './LandingSync';
+import { Discards, type HeadOpinion, type HeadReview, type LandingPlan, Lands, type WorkAsk } from './Lands';
 import { Note } from './Note';
 import { hasNote, noteBlocks, noteLines } from './noteLines';
-import {
-  acceptAnswers, type OpinionDetail, type OpinionGate as OpinionGateState, opinionAsked, opinionHolds, opinionState,
-} from './opinion';
-import { OpinionGate, type OpinionGateActs, unsettledWords } from './OpinionGate';
-import type { FileOpen } from './preview';
+import { ProposedRules, type RuleAsk, type RuleWaits } from './ProposedRules';
 import { movedAt } from './rail';
-import { reviewHolds, reviewState, type ReviewWaits } from './review';
-import { ReviewGate, type ReviewGateActs } from './ReviewGate';
 import { RunningIntake } from './RunningIntake';
+import { leftFor, type Seek, SOUGHT, useSought } from './WaitAnchor';
+import { rulesAsked } from './waits';
+
+// The work's line is its own molecule, which the foot's strip draws too (WAITFOOT1b, D168); its shapes are read from here too.
+export type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from './Lands';
 
 /**
  * The attended session's record (design §3): what it is, where it runs, what it ran as, and — when
@@ -59,6 +55,9 @@ import { RunningIntake } from './RunningIntake';
  * and *Refuse* where the frame can answer, and answering the last one open there sends the same session on, as on the
  * ask's page (GOAHEAD2b). They stay while it is parked, answered or not, so one still waiting can be answered before it
  * goes on.
+ *
+ * **The rules it proposed stand beneath them, whatever its state** (PROPOSEHERE1b, D74): a session refused something files a
+ * proposal and goes on or ends its turn, so its own open proposals are answered here, *Allow…* asking once, as at the foot.
  *
  * **It says how an ended session stands, in the record's note** (SESS2, reversing the rule that it
  * did not): the rule rested on *"the timeline below carries it"*, and since FRAME6 the timeline is in
@@ -98,8 +97,33 @@ export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, branch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
-  continues, helps, onOpenSession,
+  continues, helps, onOpenSession, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek,
 }: {
+  /**
+   * The wait a raising block's *To the wait* leads to while the head's waits are on screen (WAITFOOT2b, D168's WAITFOOT2 note),
+   * counted so the same one pressed again is shown again: its line takes the focus, outlined, as the strip's does.
+   */
+  seek?: Seek | null;
+  /**
+   * The rules it proposed that the person still answers (PROPOSEHERE1b, D74), the frame's, handed to the foot's strip alike:
+   * the machine's proposals as the shell read them, the answer's door, its pending and whether the session takes words now.
+   */
+  rules?: RuleWaits | null;
+  /** Where a rule's *Allow…* is open, the frame's, so it is open in the head or at the foot, never both (D168 point 3). */
+  ruleAsk?: RuleAsk;
+  /**
+   * The way from each wait to the event in the conversation that raised it, where the conversation found one (WAITFOOT1c, D168
+   * point 4): *In the conversation* on the park's card, each go-ahead and the work's line. The frame's, handed to the foot's
+   * strip alike.
+   */
+  toEvent?: WaitEvents;
+  /**
+   * Where the ask of its work's line (*Accept…*, *Discard branch…*) is open, the frame's, so it is open in the head or in the
+   * foot's strip, never both (WAITFOOT1b, D168 point 3). Absent, the line holds its own.
+   */
+  workAsk?: WorkAsk;
+  /** A landing or a discard of its work is on its way, pressed here or at the foot: the line's press waits for it (D168). */
+  workBusy?: boolean;
   /**
    * Open the quest it serves (HEAD2c): the door beside the request as written in *Details*. Absent where nothing can open
    * it, and then the request is shown with no door.
@@ -227,29 +251,41 @@ export function SessionHead({
   const intake = isIntake(session);
   const shown = shownState(session, taking);
   const noted = hasNote({ note: session.note, parts: session.noteParts });
+  const proposed = rulesAsked(rules?.proposals, session.id);
+  const own = useRef<HTMLElement>(null);
+  const { sought, letGo } = useSought(own, seek);
 
   return (
-    <header className="grid gap-2.5">
+    // Where the foot's *To the top* puts the focus (WAITFOOT1b, D168 point 1): every wait stands here with its reading. The
+    // outline a *To the wait* left goes once the person moves on from the head (WAITFOOT2b).
+    <header ref={own} data-record-head tabIndex={-1} className="grid gap-2.5 outline-none" onBlur={(event) => { if (leftFor(event)) letGo(); }}>
       {/* `running` counts a park as alive; a parked intake is AwaitingIntake's, below. */}
       {running && !parked && intake && <RunningIntake ask={session.ask!} onOpen={onAnswerAsk} />}
       {answered && <AnsweredPark answer={session.answer!} />}
+      {/* Each section a wait stands in is marked (WAITFOOT2a): the frame watches them, and the strip at the foot stands aside
+          while they are on screen. */}
       {waiting && intake && (onResolve || onAnswerAsk) && (
-        <AwaitingIntake ask={session.ask!} note={session.note} parts={session.noteParts} onAnswer={onAnswerAsk} />
+        <div data-wait-section data-wait="question" tabIndex={-1} className={sought === 'question' ? SOUGHT : 'outline-none'}>
+          <AwaitingIntake ask={session.ask!} note={session.note} parts={session.noteParts} onAnswer={onAnswerAsk} onConversation={toEvent?.question} />
+        </div>
       )}
       {waiting && !intake && (onResolve || onAnswerSession) && (
-        // Keyed: a half-written decline reason belongs to the session it was written for, and it
-        // carried into the next parked one, ready to decline it with somebody else's reason (REV3).
-        <AwaitingPerson
-          key={session.id}
-          note={session.note}
-          parts={session.noteParts}
-          // The quest it serves, which its finish may close as the person's (QUESTCLOSE1): only its own, and a driven one's.
-          quest={session.kind !== 'chat' && quest && quest.id === session.quest ? quest : null}
-          pending={resolving}
-          onResolve={onResolve}
-          // A driven session parked to ask the person has no process left to message (STANDDOWN2).
-          onAnswer={session.quest ? onAnswerSession : undefined}
-        />
+        <div data-wait-section data-wait="question" tabIndex={-1} className={sought === 'question' ? SOUGHT : 'outline-none'}>
+          {/* Keyed: a half-written decline reason belongs to the session it was written for, and it
+              carried into the next parked one, ready to decline it with somebody else's reason (REV3). */}
+          <AwaitingPerson
+            key={session.id}
+            note={session.note}
+            parts={session.noteParts}
+            // The quest it serves, which its finish may close as the person's (QUESTCLOSE1): only its own, and a driven one's.
+            quest={session.kind !== 'chat' && quest && quest.id === session.quest ? quest : null}
+            pending={resolving}
+            onResolve={onResolve}
+            // A driven session parked to ask the person has no process left to message (STANDDOWN2).
+            onAnswer={session.quest ? onAnswerSession : undefined}
+            onConversation={toEvent?.question}
+          />
+        </div>
       )}
       {/* Nothing here can act — a browser, or a mirrored record from another machine — so the
           analysis is shown and the moves are not. Half a control is worse than none. */}
@@ -259,13 +295,30 @@ export function SessionHead({
         </WaitingCard>
       )}
       {parked && !intake && goAheads.length > 0 && (
-        <section aria-labelledby={`go-aheads-${session.id}`} className="grid gap-1">
+        <section data-wait-section aria-labelledby={`go-aheads-${session.id}`} className="grid gap-1">
           <h3 id={`go-aheads-${session.id}`} className="m-0 text-small font-semibold">{t('work.awaiting.goAheads')}</h3>
           <GoAheadList
             goAheads={goAheads}
             busy={resolving}
             onAnswer={onGoAhead}
             lead={t('work.awaiting.goAheadsLead')}
+            inConversation={toEvent?.goAheads}
+            marked={sought?.startsWith('goAhead:') ? Number(sought.slice('goAhead:'.length)) : undefined}
+          />
+        </section>
+      )}
+      {proposed.length > 0 && (
+        <section data-wait-section aria-labelledby={`rules-${session.id}`} className="grid gap-1">
+          <h3 id={`rules-${session.id}`} className="m-0 text-small font-semibold">{t('work.wait.rule.title')}</h3>
+          <ProposedRules
+            proposals={proposed}
+            busy={rules?.busy}
+            onAnswer={rules?.onAnswer}
+            heard={rules?.heard}
+            lead={t('work.wait.rule.lead')}
+            inConversation={toEvent?.rules}
+            marked={sought?.startsWith('rule:') ? sought.slice('rule:'.length) : undefined}
+            ask={ruleAsk}
           />
         </section>
       )}
@@ -293,12 +346,17 @@ export function SessionHead({
       {/* Keyed by the branch: an ask to discard one session's branch never carries to another's (REV3's lesson). Commits
           its tree offers to land are the reader's to say (LAND4), keyed by the session for the same reason. */}
       {lands ? (
-        <Lands
-          key={session.id} session={session} lands={lands} landing={landing} planning={planning} onReview={onReview} onLand={onLand} onSayRebase={onSayRebase} onName={onName} review={review} behind={behind}
-          opinion={opinion}
-        />
+        // Spaced as the head spaces its own, since the line's parts were the head's before they were the section's.
+        <div data-wait-section data-wait="work" tabIndex={-1} className={cn('grid gap-2.5', sought === 'work' || sought === 'opinion' ? SOUGHT : 'outline-none')}>
+          <Lands
+            key={session.id} session={session} lands={lands} landing={landing} planning={planning} onReview={onReview} onLand={onLand} onSayRebase={onSayRebase} onName={onName} review={review} behind={behind}
+            opinion={opinion} ask={workAsk} busy={workBusy} toEvent={toEvent}
+          />
+        </div>
       ) : discards ? (
-        <Discards key={session.id} discards={discards} onReview={onReview} onDiscard={onDiscardTree} />
+        <div data-wait-section className="grid gap-2.5">
+          <Discards key={session.id} discards={discards} onReview={onReview} onDiscard={onDiscardTree} ask={workAsk} busy={workBusy} />
+        </div>
       ) : branch && (
         <Left key={branch.branch} branch={branch} onReview={onReview} onDiscard={onDiscardBranch} discarding={discardingBranch} />
       )}
@@ -480,225 +538,6 @@ function Left({ branch, onReview, onDiscard, discarding = false }: {
       {/* Open until the discard answers, a branch the driver kept said inside it (UXFIX2). */}
       {discardable && asking && (
         <DiscardBranchAsk branch={branch} busy={discarding} onDiscard={onDiscard!} onClose={() => setAsking(false)} />
-      )}
-    </>
-  );
-}
-
-/**
- * Where accepting a session's work would put it (D87, D100): the driver's `LANDING` answer, which the review reads too; and the
- * review's gate while it holds the work (REVIEWENV1c), absent where nothing waits for a review.
- */
-export type LandingPlan = {
-  workflow?: import('../workflow/gate').WorkflowGateState | null;
-  session?: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string;
-  review?: ReviewWaits | null;
-  /** The second opinion's gate where a level asks one (XAGENT1f), which the head draws before the review's (XAGENT1g). */
-  opinion?: OpinionGateState | null;
-  /** What the press leaves out because the line holds it, what it replays, and a conflict it would be refused for (LANDSYNC1). */
-  leftOut?: LeftOutCommit[] | null;
-  lands?: LandsCommit[] | null;
-  conflict?: LandingConflict | null;
-};
-
-/** The review's gate as the head draws it (REVIEWENV1g): the set-up step's record where the frame holds it, and the presses. */
-export type HeadReview = { step?: Quest | null; served?: boolean | null; acts?: ReviewGateActs; busy?: boolean };
-
-/**
- * The second opinion as the head draws it (XAGENT1g): its findings beside their answers where the frame read them, the presses,
- * and the side bar's preview a finding's place opens.
- */
-export type HeadOpinion = {
-  detail?: OpinionDetail | null; acts?: OpinionGateActs; busy?: boolean; onOpenFile?: (open: FileOpen) => void;
-};
-
-/**
- * What its own tree offers to land, and its press (LAND4, D102's LAND4 note): the commits no branch of the person's holds,
- * on its branch in its tree, with *Review* where the review can open and *Accept…*, which asks once under the line. The ask
- * says where accepting puts the work by the repository's rule, what would refuse it now, the uncommitted work a landing
- * refuses, and for a session that did not finish that only what it committed lands. The move is the review's Accept, in
- * the primary's hue: a landing destroys nothing. Open until the landing answers, a refusal said inside it (UXFIX2).
- */
-function Lands({ session, lands, landing, planning, onReview, onLand, onSayRebase, onName, review, behind, opinion }: {
-  /** The press that says the rebase words to the session, held by the frame (LANDSYNC1w). */
-  onSayRebase?: SayRebase;
-  behind?: LineBehind | null;
-  /** The plan shown is the previous name's while the entered one is read (LANDNAME1b). */
-  planning?: boolean;
-  session: Session;
-  lands: LandOffer;
-  landing?: LandingPlan | null;
-  onReview?: () => void;
-  onLand?: (answered: Answered, answers?: string | null, branch?: string | null) => void;
-  onName?: (name: string) => void;
-  review?: HeadReview | null;
-  opinion?: HeadOpinion | null;
-}) {
-  const { t } = useTranslation();
-  const [asking, setAsking] = useState(false);
-  // LANDNAME1b: a branch name entered here replaces the rule's whole name; the frame asks the plan again with it. The rule's own
-  // name is kept from the plan while none is entered, as the field's placeholder.
-  const [entered, setEntered] = useState('');
-  // The name the plan was last asked with: the plan reads git, so it is asked after a pause or on blur, not per keystroke. The
-  // press waits for the plan of exactly the typed name, so a refusal of it is never skipped by a fast press.
-  const [asked, setAsked] = useState('');
-  const typed = entered.trim();
-  const rule = useRef<string | null>(null);
-  if (!typed && landing?.form === 'branch' && landing.target) rule.current = landing.target;
-  const ask = (name: string) => {
-    setAsked(name);
-    onName?.(name);
-  };
-  useEffect(() => {
-    if (typed === asked) return undefined;
-    const pause = window.setTimeout(() => ask(typed), NAME_PAUSE);
-    return () => window.clearTimeout(pause);
-  }, [typed, asked]);
-  const putDown = () => {
-    setAsking(false);
-    setEntered('');
-    ask('');
-  };
-  // While the review's gate holds the work (REVIEWENV1g, design §3.1), *Review in `<environment>`* stands where *Accept…*
-  // would, in the gate's state, and no *Accept…* is offered: the landing door would refuse it.
-  const waits = reviewHolds(landing);
-  const workflow = workflowHolds(landing);
-  // The second opinion's gate comes first (XAGENT1g, the second-agent design §7): while it holds, no *Accept…*, unless *Accept…*
-  // is the press that answers it, drawn with the token it sends back (§8.2–§8.3).
-  const second = opinionAsked(landing);
-  const opinionWaits = opinionHolds(landing);
-  const answers = opinionWaits && acceptAnswers(opinionWaits) ? opinionWaits.answers ?? null : null;
-  // Nothing beyond the line, committed or not, is nothing to land (REVIEWBASE5): the review's own condition, REVIEWBASE4.
-  const nothingBeyond = behind?.ahead === 0 && !(typeof lands.uncommitted === 'number' && lands.uncommitted > 0);
-  const acceptable = !workflow && !waits && !nothingBeyond && (!opinionWaits || answers !== null);
-  // LANDSYNC1 (D87's 2026-10-15 amendment point 5): replaying the work onto the line conflicts, so in *Accept…*'s place, the words its
-  // session is asked to rebase with; *Accept…* comes back once the tree changes and the plan reads it again.
-  const conflict = acceptable ? landing?.conflict ?? null : null;
-  // A session that did not finish lands what it committed before it ended (LAND4); one finished, at a checkpoint or by
-  // itself, lands its work.
-  const unfinished = session.state !== 'completed';
-  const where = !landing?.target ? null
-    : landing.form === 'merge' ? t('work.review.landsOnLine', { line: landing.target })
-      : landing.plugin ? t('work.review.landsOnBranchPlugin', { branch: landing.target, plugin: landing.plugin })
-        : t('work.review.landsOnBranch', { branch: landing.target });
-  return (
-    <>
-      <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
-        <span className="text-ink-faint">{t('work.head.itsWork')}</span>
-        <span className="text-ink-open">{t('work.head.landed.not', { count: lands.commits })}</span>
-        <PathText path={lands.branch} className="min-w-0 text-meta text-ink-faint" />
-        <span className="text-ink-faint">{t('work.head.inTree', { tree: lands.tree })}</span>
-        {onLand && !asking && acceptable && !conflict && (
-          <Button variant="primary" className="px-2 py-0.5 text-small" onClick={() => setAsking(true)}>{t('work.head.accept')}</Button>
-        )}
-        {onReview && <Button className="px-2 py-0.5 text-small" onClick={onReview}>{t('work.head.review')}</Button>}
-      </p>
-      {onLand && !asking && conflict && onSayRebase && <RebaseAsk key={session.id} conflict={conflict} onSay={onSayRebase} />}
-      {workflow && <WorkflowHold gate={workflow} />}
-      {second && (
-        <OpinionGate
-          gate={second}
-          detail={opinion?.detail ?? null}
-          acts={opinion?.acts}
-          busy={opinion?.busy}
-          // A press of the person's answers a dispute here: *Accept…*, or D154's *Reviewed* while its look holds the work.
-          pressComing={Boolean(!workflow && ((onLand && acceptable) || waits))}
-          working={session.id}
-          onOpenFile={opinion?.onOpenFile}
-        />
-      )}
-      {waits && (
-        <ReviewGate
-          environment={waits.environment ?? ''}
-          state={reviewState(waits.state)}
-          step={review?.step ?? null}
-          stepId={waits.quest ?? null}
-          served={review?.served ?? null}
-          said={waits.says ?? null}
-          acts={review?.acts}
-          busy={review?.busy}
-        />
-      )}
-      {onLand && asking && acceptable && (
-        <InlineConfirm
-          tone="primary"
-          block
-          label={t('work.head.landTitle', { branch: lands.branch })}
-          says={(
-            <>
-              <p className="m-0 text-small text-ink-soft"><Inline text={where ?? t('work.head.landReading')} /></p>
-              {/* What it leaves out because the line holds it, and what it replays (LANDSYNC1), said before the press. */}
-              <LeftOutLines leftOut={landing?.leftOut} lands={landing?.lands} />
-              {/* What the press answers, shown in it (the second-agent design §8.2–§8.3): making it is the person's answer. */}
-              {answers && opinionWaits && (
-                <p className="m-0 border-l-[3px] border-st-open pl-2 text-small text-ink-soft">
-                  {t('opinion.accept.answers', { unsettled: unsettledWords(t, opinionState(opinionWaits.state), opinionWaits) })}
-                </p>
-              )}
-              {landing?.problem && (
-                <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
-                  <Inline text={t('work.review.landingProblem', { problem: landing.problem })} />
-                </p>
-              )}
-              {typeof lands.uncommitted === 'number' && lands.uncommitted > 0 && (
-                <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
-                  {t('work.head.landUncommitted', { count: lands.uncommitted })}
-                </p>
-              )}
-              {unfinished && <p className="m-0 text-small text-ink-soft">{t('work.head.landUnfinished')}</p>}
-            </>
-          )}
-          meanIt={t('work.head.landMeanIt')}
-          ready={typed === asked && !planning}
-          onConfirm={(answered) => onLand?.(answered, answers, typed || null)}
-          onClose={putDown}
-        >
-          {rule.current && (
-            <label className="flex min-w-0 flex-1 basis-64 flex-col gap-1 text-small text-ink-soft">
-              <input
-                aria-label={t('work.head.landName')}
-                placeholder={rule.current}
-                value={entered}
-                onChange={(event) => setEntered(event.target.value)}
-                onBlur={() => { if (typed !== asked) ask(typed); }}
-                className="min-h-[1.9rem] min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
-              />
-              <span>{t('work.head.landNameHint', { branch: rule.current })}</span>
-            </label>
-          )}
-        </InlineConfirm>
-      )}
-    </>
-  );
-}
-
-/**
- * What its own tree offers where the line holds its commits by content (SQUASHTIDY1b, D102's note): the driver's sentence where
- * *Accept…* would be, its branch and tree, *Review*, and *Discard branch…* where an unforced discard would go now. The ask says
- * the driver's sentence naming the ref the commits stay at; the press is the review's Discard, unforced, and its tree goes
- * with the branch. Open until the discard answers, a refusal said inside it (UXFIX2). The driver's words are content here, as
- * the review's own sentence is (`DiffPane`'s `said`), so no catalogue words them again. The press and its ask are
- * `HeldDiscard`'s, which the review offers in *Accept*'s place too (SQUASHTIDY1f).
- */
-function Discards({ discards, onReview, onDiscard }: {
-  discards: DiscardOffer;
-  onReview?: () => void;
-  onDiscard?: (answered: Answered) => void;
-}) {
-  const { t } = useTranslation();
-  const [asking, setAsking] = useState(false);
-  const discardable = heldDiscardable(discards, onDiscard);
-  return (
-    <>
-      <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
-        <span className="min-w-0 text-ink-soft"><Inline text={discards.says} /></span>
-        <PathText path={discards.branch} className="min-w-0 text-meta text-ink-faint" />
-        <span className="text-ink-faint">{t('work.head.inTree', { tree: discards.tree })}</span>
-        {discardable && !asking && <HeldDiscardButton className="px-2 py-0.5 text-small" onAsk={() => setAsking(true)} />}
-        {onReview && <Button className="px-2 py-0.5 text-small" onClick={onReview}>{t('work.head.review')}</Button>}
-      </p>
-      {discardable && asking && (
-        <HeldDiscardAsk branch={discards.branch} keptAt={discards.keptAt!} onDiscard={onDiscard!} onClose={() => setAsking(false)} />
       )}
     </>
   );

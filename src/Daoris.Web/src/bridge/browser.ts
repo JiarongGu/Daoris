@@ -47,7 +47,10 @@ export const useBrowserSettings = () => {
   });
 };
 
-/** An edit to the browser's files. Each answers with the whole state, as the remotes' do. */
+/**
+ * An edit to the browser's files. Each answers with the whole state, as the remotes' do, which this window writes at once; the
+ * route declares the browser (BROWSERPUBLISH1, D169), so every other window asks it again through the state hub.
+ */
 function useBrowserChange<TVariables extends Record<string, unknown>>(type: string) {
   const client = useQueryClient();
   return useMutation({

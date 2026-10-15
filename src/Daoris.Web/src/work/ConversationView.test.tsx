@@ -962,3 +962,78 @@ describe('ConversationView', () => {
     expect(screen.getByText(/doesn't want to proceed/)).toBeTruthy();
   });
 });
+
+/**
+ * WAITFOOT1c (D168 point 4): the block that raised a wait carries a line saying what waits from it, with *To the wait*; the owner,
+ * 2026-10-15, found the waits "not really referencing where the wait is for".
+ */
+describe('the waits a block raised', () => {
+  /**
+   * WAITFOOT2b (D168's WAITFOOT2 note): a quiet mark, its words its name and its tip, since the owner found the waits drawn two
+   * and three times at once, and a line of words under the block was one more of them.
+   */
+  it('marks the block that raised a wait, with a way to the wait', async () => {
+    const question = ev({ kind: 'message', text: 'Which of the two should I keep?' });
+    const onToWait = vi.fn();
+    view([ev({ kind: 'user', origin: 'target', text: 'Your target…' }), question, ev({ kind: 'turn', stopReason: 'end_turn' })], {
+      marks: { [`e${question.seq}`]: [{ kind: 'question', below: true }] }, onToWait,
+    });
+
+    const block = screen.getByText('Which of the two should I keep?').closest<HTMLElement>('[data-block]')!;
+    // No line of words: the mark is a glyph, its words are what it is called and what its tip says.
+    expect(within(block).queryByText(/Waiting on you from here/)).toBeNull();
+    const mark = within(block).getByRole('button', { name: 'To the wait: its question' });
+    expect(mark).not.toHaveTextContent(/\S/);
+    await userEvent.hover(mark);
+    expect((await screen.findAllByText('Waiting on you from here: its question')).length).toBeGreaterThan(0);
+    await userEvent.click(mark);
+    expect(onToWait).toHaveBeenCalledWith({ kind: 'question', below: true });
+  });
+
+  it('marks a call in a folded run on the run\'s line, and on the call once it is open', async () => {
+    const asked = ev({ kind: 'tool', id: 'g1', title: 'go_ahead_ask', status: 'completed' });
+    view([
+      ev({ kind: 'user', origin: 'target', text: 'Your target…' }),
+      ev({ kind: 'tool', id: 'r1', title: 'Read the dashboard', status: 'completed' }),
+      asked,
+      ev({ kind: 'message', text: 'Waiting on go-ahead #3.' }),
+      ev({ kind: 'turn', stopReason: 'end_turn' }),
+    ], { marks: { [`e${asked.seq}`]: [{ kind: 'goAhead', number: 3 }] }, onToWait: vi.fn() });
+
+    expect(screen.queryByText('go_ahead_ask')).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'To the wait: go-ahead #3' })).toHaveLength(1);
+    await userEvent.click(screen.getByRole('button', { name: /2 tool calls/ }));
+    // Open, the mark is the call's own, said once.
+    const block = screen.getByText('go_ahead_ask').closest<HTMLElement>('[data-block]')!;
+    expect(within(block).getByRole('button', { name: 'To the wait: go-ahead #3' })).toBeTruthy();
+    expect(screen.getAllByRole('button', { name: 'To the wait: go-ahead #3' })).toHaveLength(1);
+  });
+
+  it('marks the end of the turn that did the work, which a reveal outlines', () => {
+    const asked = ev({ kind: 'user', origin: 'target', text: 'Your target…' });
+    view([asked, ev({ kind: 'message', text: 'Done: two commits.' }), ev({ kind: 'turn', stopReason: 'end_turn' })], {
+      marks: { [`end-e${asked.seq}`]: [{ kind: 'accept' }] }, onToWait: vi.fn(), reveal: `end-e${asked.seq}`,
+    });
+
+    const end = screen.getByRole('button', { name: 'To the wait: its work to accept' }).closest<HTMLElement>('[data-block]')!;
+    expect(end.dataset.block).toBe(`end-e${asked.seq}`);
+    expect(end.className).toContain('outline-accent');
+  });
+
+  it('draws no mark where nothing leads to the wait', () => {
+    const question = ev({ kind: 'message', text: 'Which one?' });
+    view([question], { marks: { [`e${question.seq}`]: [{ kind: 'question', below: true }] } });
+    expect(screen.queryByRole('button', { name: /To the wait/ })).toBeNull();
+  });
+
+  it('says its mark in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      const question = ev({ kind: 'message', text: '两个留哪一个？' });
+      view([question], { marks: { [`e${question.seq}`]: [{ kind: 'goAhead', number: 2 }] }, onToWait: vi.fn() });
+      expect(screen.getByRole('button', { name: '到等待处：放行 #2' })).toBeTruthy();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+});

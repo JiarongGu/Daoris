@@ -24,7 +24,21 @@ namespace Daoris.Desktop;
 /// </remarks>
 public sealed class BrowserModule(IEventBus events) : ModuleBase(events: events)
 {
-    public override string ModuleName => "DAORIS.BROWSER";
+    /// <summary>The module's name, as the page's bridge addresses it.</summary>
+    public const string Name = "DAORIS.BROWSER";
+
+    public override string ModuleName => Name;
+
+    /// <summary>
+    /// What a request's route declares a successful answer changed (BROWSERPUBLISH1, D169 point 2): each edit of the browser's
+    /// files moves what every window's Settings → Browser and its link opener read, so <see cref="StatePublisher"/> publishes
+    /// <see cref="StateScopes.Browser"/> for it, as it does for the driver's marks. <c>STATE</c> is a read and declares nothing,
+    /// and so is a request to another module.
+    /// </summary>
+    public static StateChange? Declared(IpcRequest request) =>
+        request.Module == Name && request.Type is "ADD_FAVORITE" or "REMOVE_FAVORITE" or "SET_EXTENSIONS" or "SET_BROWSER" or "SET_LINKS"
+            ? new StateChange(StateScopes.Browser)
+            : null;
 
     /// <summary>The home, resolved per call: the person may edit the files by hand between calls.</summary>
     public static string Home => Path.GetDirectoryName(DaorisHome.Require("browser"))!;

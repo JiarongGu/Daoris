@@ -13,6 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// scratch folder, and the only push is the test's own, to it.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class HandOffTests : LandedFixture
 {
     private const string Id = "example.lands";

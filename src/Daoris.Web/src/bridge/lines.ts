@@ -11,7 +11,7 @@ import type { RepositoryReview, ReviewChange } from '../settings/Reviews';
 import type { BranchDiscard, LandedBranch, SweepBranch } from '../settings/Sweep';
 import type { LinePull, RebaseBranch, SyncInclude, SyncPlan, SyncRepository } from '../settings/Sync';
 import { call, lookBound, pressBound } from './call';
-import type { DriverState } from './driver';
+import { type DriverState, useDriverChange } from './driver';
 
 // Whether a look or a press ended because the page stopped waiting (WSR7): the section says so where it was asked.
 export { stoppedWaiting } from './call';
@@ -44,17 +44,14 @@ export const useLines = () => {
 
 /**
  * Set how work lands in a repository or a workspace, or clear it with no form — the file `daoris driver
- * landing` edits (D50). Every repository's answer moves with it, so that is asked again.
+ * landing` edits (D50). Its answer is the driver's state, written where it is read; every repository's rules and every plan
+ * move with it, which the state hub asks again, as the route declares them (STATEHUB1b, D169).
  */
 export const useSetLanding = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (change: LandingChange) => call<DriverState>('SET_LANDING', change),
-    onSuccess: (state) => {
-      client.setQueryData(keys.driver, state);
-      void client.invalidateQueries({ queryKey: keys.lines });
-      void client.invalidateQueries({ queryKey: keys.allLandings });
-    },
+    onSuccess: (state) => client.setQueryData(keys.driver, state),
   });
 };
 
@@ -74,49 +71,33 @@ export const useSweepPlan = () => {
   });
 };
 
-/** The clean-up's press: only the branches the list showed to go, each judged again by the driver. */
-export const useSweep = () => {
-  const client = useQueryClient();
-  return useMutation({
+/**
+ * The clean-up's press: only the branches the list showed to go, each judged again by the driver. What it moved (the list, the
+ * sessions, the reviews kept until something moves their tree (REVIEW4), and which repositories hold Daoris's branches, D112)
+ * the state hub asks again, as the route declares it (STATEHUB1b, D169), and the hook nothing itself (STATEHUB1f).
+ */
+export const useSweep = () =>
+  useMutation({
     mutationFn: (only: string[]) =>
       call<{
         results: { branch: SweepBranch; removed: boolean; message: string }[];
         landed?: { branch: LandedBranch; removed: boolean; message: string }[];
         removed: number;
       }>('SWEEP', { only }),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: keys.sweep });
-      void client.invalidateQueries({ queryKey: keys.allSessions });
-      // A tree removed: an ended session's review is kept until something moves its tree (REVIEW4), and this did.
-      void client.invalidateQueries({ queryKey: keys.allDiffs });
-      // A session branch gone may leave its repository holding nothing of Daoris's (D112).
-      void client.invalidateQueries({ queryKey: treesSyncScopeKey });
-    },
   });
-};
 
 /**
  * Discard a failed or superseded attempt's session branch, its commits with it and its tree where it is still here (LAND3b,
  * D102's LAND3 note): the screen's half of `daoris-driver trees remove <branch> --repository <name> --force`. Always
  * forced, since the page asks once, naming the branch and its commits, before it sends; a branch the driver kept is an
- * answer with its sentence. The list is asked again either way, since a branch gone already is a list out of date.
+ * answer with its sentence. What it moved is asked again either way, since a branch gone already is a list out of date: the
+ * state hub's, as the route declares it, as after the clean-up (STATEHUB1b, D169), and never the hook's own (STATEHUB1f).
  */
-export const useDiscardSessionBranch = () => {
-  const client = useQueryClient();
-  return useMutation({
+export const useDiscardSessionBranch = () =>
+  useMutation({
     mutationFn: ({ repository, branch }: { repository: string; branch: string }) =>
       call<BranchDiscard>('DISCARD_SESSION_BRANCH', { repository, branch, force: true }),
-    onSuccess: (result) => {
-      void client.invalidateQueries({ queryKey: keys.sweep });
-      if (!result.done) return;
-      void client.invalidateQueries({ queryKey: keys.allSessions });
-      // A tree removed with its branch: a kept review is read again (REVIEW4), as after the clean-up.
-      void client.invalidateQueries({ queryKey: keys.allDiffs });
-      // A session branch gone may leave its repository holding nothing of Daoris's (D112).
-      void client.invalidateQueries({ queryKey: treesSyncScopeKey });
-    },
   });
-};
 
 /**
  * Where the last look at bringing repositories up to date is kept (WSR6): one per workspace, so a workspace's page never
@@ -131,7 +112,7 @@ const treesSyncAskedKey = (workspace: string | null) => ['driver', 'trees-sync-a
  * Which repositories hold Daoris's branches, and which have a checkout and hold none (D112): the machine's reading, each
  * row naming its workspace, which a workspace's page filters to its own and Ask Daoris's sync card counts whole.
  */
-const treesSyncScopeKey = ['driver', 'trees-sync-scope'] as const;
+export const treesSyncScopeKey = ['driver', 'trees-sync-scope'] as const;
 
 /** What a look was asked to take beyond the repositories holding Daoris's branches, and how many it takes in all where known. */
 export type SyncAsked = { include: SyncInclude; count: number | null };
@@ -244,13 +225,13 @@ export const useTreesSyncPlan = (workspace?: string) => {
 
 /**
  * The press: only the rows the list showed, each judged again by the driver, which does not fetch again. The
- * branches it moved or deleted change the clean-up's list, the sessions' trees and which repositories hold Daoris's
- * branches, so those are asked again. It waits for each row's replay, one after another (WSR7). Asked for a workspace,
+ * branches it moved or deleted change the clean-up's list, the sessions' trees, what a kept review reads (REVIEW4), every
+ * plan judged against a line, and which repositories hold Daoris's branches, so the state hub asks those again, as the
+ * route declares them (STATEHUB1b, D169). It waits for each row's replay, one after another (WSR7). Asked for a workspace,
  * the driver judges that workspace's checkouts alone (BRSCOPE1), as its look did.
  */
-export const useTreesSync = (workspace?: string) => {
-  const client = useQueryClient();
-  return useMutation({
+export const useTreesSync = (workspace?: string) =>
+  useMutation({
     mutationFn: (only: string[]) =>
       call<{
         lines: { line: LinePull; moved: boolean; message: string }[];
@@ -258,108 +239,44 @@ export const useTreesSync = (workspace?: string) => {
         deletes: { branch: LandedBranch; removed: boolean; message: string }[];
         changed: number;
       }>('TREES_SYNC', workspace === undefined ? { only } : { only, workspace }, { timeoutMs: pressBound(only.length) }),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: keys.sweep });
-      void client.invalidateQueries({ queryKey: keys.allSessions });
-      // A tree replayed or a branch deleted moves what a kept review reads (REVIEW4).
-      void client.invalidateQueries({ queryKey: keys.allDiffs });
-      void client.invalidateQueries({ queryKey: treesSyncScopeKey });
-    },
   });
-};
 
-/**
- * Set a repository's line or a workspace's, or clear it with no branch — the file `daoris driver
- * line` edits (D50). What every repository's line is moves with it, so that answer is asked again.
- */
-export const useSetLine = () => {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (change: LineChange) => call<DriverState>('SET_LINE', change),
-    onSuccess: (state) => {
-      client.setQueryData(keys.driver, state);
-      void client.invalidateQueries({ queryKey: keys.lines });
-    },
-  });
-};
+// The standing choices over a repository's or a workspace's rules are the driver's own shape (`useDriverChange`): the answer is
+// the driver's state, written where it is read; what each repository resolves to, and every plan and gate that reads it, move
+// with it, which the route publishes and the state hub asks again in every window (STATEHUB1h, D169).
+
+/** Set a repository's line or a workspace's, or clear it with no branch — the file `daoris driver line` edits (D50). */
+export const useSetLine = () => useDriverChange<LineChange>('SET_LINE');
 
 /**
  * Set the language a repository's sessions write to the person in, or a workspace's, or clear it with no language (LANG1c) —
- * the file `daoris driver language` edits (D50). What each repository resolves to moves with it, so the lines are asked again.
- * A code the driver's table does not hold is its refusal, its sentence verbatim.
+ * the file `daoris driver language` edits (D50). A code the driver's table does not hold is its refusal, its sentence verbatim.
  */
-export const useSetLanguage = () => {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (change: LanguageChange) => call<DriverState>('SET_LANGUAGE', change),
-    onSuccess: (state) => {
-      client.setQueryData(keys.driver, state);
-      void client.invalidateQueries({ queryKey: keys.lines });
-    },
-  });
-};
+export const useSetLanguage = () => useDriverChange<LanguageChange>('SET_LANGUAGE');
 
 /**
  * Change where a repository's work is reviewed before it lands, or a workspace's (REVIEWENV1a, D154 point 2): the twins' edit,
  * over the file `daoris driver review` edits (D50). An environment put has its procedure looked for in the checkouts it
- * reaches, and the answer's `reviewed` says what was found. What each repository resolves to moves with it, so the lines are
- * asked again. A refusal is the driver's sentence, verbatim. The landing's gate reads the rule since REVIEWENV1c.
+ * reaches, and the answer's `reviewed` says what was found. A refusal is the driver's sentence, verbatim. The landing's gate
+ * reads the rule since REVIEWENV1c.
  */
-export const useSetReview = () => {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (change: ReviewChange) => call<DriverState>('SET_REVIEW', change),
-    onSuccess: (state) => {
-      client.setQueryData(keys.driver, state);
-      void client.invalidateQueries({ queryKey: keys.lines });
-    },
-  });
-};
+export const useSetReview = () => useDriverChange<ReviewChange>('SET_REVIEW');
 
 /**
  * Change which other agent reads a repository's work before it lands, or a workspace's (XAGENT1a, D155 point 3): the twins'
- * edit, over the file `daoris driver opinion` edits (D50). What each repository resolves to moves with it, so the lines are
- * asked again. A refusal is the driver's sentence, verbatim. Declared only: nothing reads it yet.
+ * edit, over the file `daoris driver opinion` edits (D50). A refusal is the driver's sentence, verbatim.
  */
-export const useSetOpinion = () => {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (change: OpinionChange) => call<DriverState>('SET_OPINION', change),
-    onSuccess: (state) => {
-      client.setQueryData(keys.driver, state);
-      void client.invalidateQueries({ queryKey: keys.lines });
-    },
-  });
-};
+export const useSetOpinion = () => useDriverChange<OpinionChange>('SET_OPINION');
 
 /**
  * Change how a repository's work is committed, or a workspace's (DOORS1b, D164's amendment points 1 and 3): the twins' edit, over
- * the file `daoris driver commits` edits (D50). What each repository resolves to moves with it, so the lines are asked again. A
- * refusal is the driver's sentence, verbatim. Driven sessions and conversations are told the rule at their start (PROCESS1d).
+ * the file `daoris driver commits` edits (D50). A refusal is the driver's sentence, verbatim. Driven sessions and conversations
+ * are told the rule at their start (PROCESS1d).
  */
-export const useSetCommits = () => {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (change: CommitChange) => call<DriverState>('SET_COMMITS', change),
-    onSuccess: (state) => {
-      client.setQueryData(keys.driver, state);
-      void client.invalidateQueries({ queryKey: keys.lines });
-    },
-  });
-};
+export const useSetCommits = () => useDriverChange<CommitChange>('SET_COMMITS');
 
 /**
  * Change what a helper a repository's agent asks for does, or a workspace's (DOORS1b, D163 point 3): the twins' edit, over the
- * file `daoris driver helpers` edits (D50). What each repository resolves to moves with it, so the lines are asked again. A
- * refusal is the driver's sentence, verbatim.
+ * file `daoris driver helpers` edits (D50). A refusal is the driver's sentence, verbatim.
  */
-export const useSetHelpers = () => {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: (change: HelperChange) => call<DriverState>('SET_HELPERS', change),
-    onSuccess: (state) => {
-      client.setQueryData(keys.driver, state);
-      void client.invalidateQueries({ queryKey: keys.lines });
-    },
-  });
-};
+export const useSetHelpers = () => useDriverChange<HelperChange>('SET_HELPERS');

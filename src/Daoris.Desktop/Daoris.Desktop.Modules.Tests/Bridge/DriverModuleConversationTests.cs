@@ -371,6 +371,168 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// SAIDBACK1b (D76, D137 §2.4): the person's words waiting on a record that ended or parked are its queue, each by the id
+    /// the record gave it, so the composer's *Edit* and *Remove* reach them. Never another agent's words waiting there (a second
+    /// opinion's findings, a helper's answer), and none on a record that runs again, whose run is already taking them.
+    /// </summary>
+    [Theory]
+    [InlineData("completed")]
+    [InlineData("awaiting-person")]
+    public async Task The_persons_words_waiting_on_a_record_that_ended_or_parked_are_its_queue(string state)
+    {
+        var ledger = new Ledger
+        {
+            Records = Records(
+                Waiting(
+                    "s1", state, Word("w1", "use the blue one", files: "\"plan.md\""), Word("w2", "the findings", mark: ",\"by\":\"o1\""),
+                    Word("w3", "a helper's answer", mark: ",\"helper\":\"h1\"")),
+                WaitingIn("q2", "s2", "working", Word("w4", "on its way"))),
+        };
+        var (_, module) = await UpAsync(ledger);
+
+        var queue = await AnswerAsync(module, "SESSION_QUEUE", new { id = "s1" });
+        var running = await AnswerAsync(module, "SESSION_QUEUE", new { id = "s2" });
+
+        var word = Assert.Single(queue.GetProperty("queued").EnumerateArray());
+        Assert.Equal(
+            ("w1", "use the blue one", "plan.md"),
+            (word.GetProperty("id").GetString(), word.GetProperty("text").GetString(), Assert.Single(word.GetProperty("files").EnumerateArray()).GetString()));
+        Assert.False(queue.GetProperty("taking").GetBoolean());
+        Assert.Equal("resume", queue.GetProperty("reaches").GetString());
+        Assert.Empty(running.GetProperty("queued").EnumerateArray());
+    }
+
+    /// <summary>
+    /// SAIDBACK1b (D76): a word waiting on a record, which nothing here holds, is taken back or reworded through the service's
+    /// take-back door (SAIDBACK1a). The conversation settles the old word with QUEUEEDIT1a's withdrawn line and shows a reword's
+    /// new words as the person's under their new id, and the queue is told again, whole, with the record's words as they stand.
+    /// </summary>
+    [Fact]
+    public async Task A_word_waiting_on_a_record_is_taken_back_or_reworded_through_the_service()
+    {
+        var ledger = new Ledger { Records = Records(Waiting("s1", "completed", Word("w1", "use the blue one"), Word("w2", "and the red"))) };
+        ledger.TakeBack = (id, body) =>
+        {
+            using var asked = JsonDocument.Parse(body);
+            if (!asked.RootElement.TryGetProperty("text", out _))
+            {
+                ledger.Records = Records(Waiting(id, "completed", Word("w2", "and the red")));
+                return (HttpStatusCode.OK, $$$"""{"done":true,"message":"Took word `w1` back from session `{{{id}}}`: 1 still wait.","session":{"id":"{{{id}}}","state":"completed"}}""");
+            }
+
+            ledger.Records = Records(Waiting(id, "completed", Word("w3", "use the green one")));
+            return (HttpStatusCode.OK, $$$"""
+                {"done":true,"message":"Reworded word `w2` on session `{{{id}}}`.","session":{"id":"{{{id}}}","state":"completed"},
+                 "said":{{{Word("w3", "use the green one")}}}}
+                """);
+        };
+        var (loop, module) = await UpAsync(ledger);
+
+        var removed = await AnswerAsync(module, "SESSION_QUEUE_EDIT", new { session = "s1", id = "w1" });
+        var reworded = await AnswerAsync(module, "SESSION_QUEUE_EDIT", new { session = "s1", id = "w2", text = "use the green one" });
+
+        Assert.True(removed.GetProperty("done").GetBoolean());
+        Assert.True(reworded.GetProperty("done").GetBoolean());
+        Assert.Equal(
+            [("/api/sessions/s1/take-back", "w1", null), ("/api/sessions/s1/take-back", "w2", "use the green one")],
+            ledger.Posts.Select(post =>
+            {
+                using var said = JsonDocument.Parse(post.Body);
+                var text = said.RootElement.TryGetProperty("text", out var words) ? words.GetString() : null;
+                return (post.Path, said.RootElement.GetProperty("word").GetString(), text);
+            }));
+        var shown = loop.Events.Page("s1").Events;
+        Assert.Equal(
+            [(SessionEventKind.Note, SessionEventCodes.Withdrawn, "w1"), (SessionEventKind.Note, SessionEventCodes.Withdrawn, "w2")],
+            shown.Where(each => each.Kind == SessionEventKind.Note).Select(each => (each.Kind, each.Code, Assert.Single(each.Words!))));
+        // WITHDRAWNLINE1: one note shape for every door: the library's, the one the driver's terminal keeps.
+        Assert.All(
+            shown.Where(each => each.Kind == SessionEventKind.Note),
+            each => Assert.Equal(SessionNotes.Withdrawn(each.Words![0]).Text, each.Text));
+        var renamed = Assert.Single(shown, each => each.Kind == SessionEventKind.User);
+        Assert.Equal(("w3", "use the green one", "resume", "screen"), (renamed.Id, renamed.Text, renamed.Reaches, renamed.Door));
+        await UntilAsync(() => QueuedWords("s1") is ["w3"]);
+    }
+
+    /// <summary>
+    /// SAIDBACK1b: a word the service no longer holds is <c>taken</c>, an answer and never an error, as a live queue's is: gone
+    /// from the record, or the record itself gone. The page is told the queue again, so a list it showed stale is read anew.
+    /// </summary>
+    [Theory]
+    [InlineData(HttpStatusCode.OK, """{"done":false,"why":"taken","message":"Word `w1` no longer waits on session `s1`."}""")]
+    [InlineData(HttpStatusCode.NotFound, """{"error":"No session `s1`.","refusal":"not-found"}""")]
+    public async Task A_word_the_service_no_longer_holds_answers_taken(HttpStatusCode status, string answer)
+    {
+        var ledger = new Ledger { Records = Records(Record("s1", "completed")) };
+        ledger.TakeBack = (_, _) => (status, answer);
+        var (_, module) = await UpAsync(ledger);
+
+        var edit = await AnswerAsync(module, "SESSION_QUEUE_EDIT", new { session = "s1", id = "w1" });
+
+        Assert.Equal((false, "taken"), (edit.GetProperty("done").GetBoolean(), edit.GetProperty("why").GetString()));
+        Assert.Equal("/api/sessions/s1/take-back", Assert.Single(ledger.Posts).Path);
+        await UntilAsync(() => QueuedWords("s1") is []);
+    }
+
+    /// <summary>SAIDBACK1b: what never goes on refuses a take-back in the service's sentence, and the old word stays shown.</summary>
+    [Fact]
+    public async Task A_take_back_the_service_refuses_is_refused_in_its_sentence()
+    {
+        var ledger = new Ledger { Records = Records(Waiting("s1", "completed", Word("w1", "use the blue one"))) };
+        ledger.TakeBack = (_, _) => (HttpStatusCode.Conflict, """{"error":"Session `s1` stood down: #q1 is someone else's.","refusal":"stood-down"}""");
+        var (loop, module) = await UpAsync(ledger);
+
+        var refusal = await RefusalAsync(module, "SESSION_QUEUE_EDIT", new { session = "s1", id = "w1" });
+
+        Assert.Contains(Refusals.DriverRefused, refusal);
+        Assert.Contains("Session `s1` stood down: #q1 is someone else's.", refusal);
+        Assert.Empty(loop.Events.Page("s1").Events);
+    }
+
+    /// <summary>SAIDBACK1b: before the loop's service answers, nothing holds a record's words for this machine: <c>taken</c>.</summary>
+    [Fact]
+    public async Task A_word_asked_back_before_the_loop_is_up_answers_taken()
+    {
+        var edit = await AnswerAsync(Module(), "SESSION_QUEUE_EDIT", new { session = "s1", id = "w1" });
+
+        Assert.Equal((false, "taken"), (edit.GetProperty("done").GetBoolean(), edit.GetProperty("why").GetString()));
+    }
+
+    /// <summary>
+    /// SAIDBACK1b: words kept on a record that ended are told in its queue at once, so the box's list offers *Edit* and *Remove*
+    /// on them without the page asking again.
+    /// </summary>
+    [Fact]
+    public async Task Words_kept_on_a_record_that_ended_are_told_in_its_queue()
+    {
+        var ledger = new Ledger { Records = Records(Record("s1", "completed")) };
+        ledger.Say = id =>
+        {
+            ledger.Records = Records(Waiting(id, "completed", Word("w1", "also the changelog")));
+            return (HttpStatusCode.OK, Kept(id));
+        };
+        var (_, module) = await UpAsync(ledger);
+
+        await AnswerAsync(module, "SESSION_INPUT", new { id = "s1", text = "also the changelog" });
+
+        await UntilAsync(() => QueuedWords("s1") is ["w1"]);
+    }
+
+    /// <summary>The ids of the words in the last <c>SESSION_QUEUED</c> told for this session, or null where none was told.</summary>
+    private string[]? QueuedWords(string session)
+    {
+        string[]? last = null;
+        foreach (var message in Raised.Where(m => m.Type == "SESSION_QUEUED"))
+        {
+            var payload = JsonSerializer.SerializeToElement(message.Payload);
+            if (payload.GetProperty("Session").GetString() != session) continue;
+            last = [.. payload.GetProperty("Queued").EnumerateArray().Select(word => word.GetProperty("Id").GetString()!)];
+        }
+
+        return last;
+    }
+
+    /// <summary>
     /// MSG1d (D136, D137 §5.3): a word to a driven session whose inbox is open is held there as before, and the answer says
     /// when it reaches the session: at its next step where the door sends words during a turn.
     /// </summary>
@@ -520,6 +682,16 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     private static string Record(string id, string state, string quest = "q1") =>
         $$"""{"id":"{{id}}","repository":"engine","state":"{{state}}","quest":"{{quest}}","kind":"driven","created":"2026-10-03T08:00:00Z"}""";
 
+    /// <summary>A driven record of quest #q1, or another, with these words waiting on it (MSG1a's <c>said</c>) as the service answers them.</summary>
+    private static string Waiting(string id, string state, params string[] said) => WaitingIn("q1", id, state, said);
+
+    private static string WaitingIn(string quest, string id, string state, params string[] said) =>
+        $$"""{"id":"{{id}}","repository":"engine","state":"{{state}}","quest":"{{quest}}","kind":"driven","created":"2026-10-03T08:00:00Z","said":[{{string.Join(",", said)}}]}""";
+
+    /// <summary>One word as the service answers it on a record (MSG1a), with another agent's mark where one is named.</summary>
+    private static string Word(string id, string text, string files = "", string mark = "") =>
+        $$"""{"id":"{{id}}","text":"{{text}}","at":"2026-10-15T08:00:00+00:00","files":[{{files}}],"reopens":true{{mark}}}""";
+
     /// <summary>A conversation's record, continuing <paramref name="from"/> where one is named (MIXAGENT1a-iii's <c>from</c>).</summary>
     private static string Chat(string id, string state, string? from = null)
     {
@@ -545,7 +717,14 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
         /// <summary>The records the service answers; a test moves them on as a take would (HANDWORDS1).</summary>
         public string Records { get; set; } = "[]";
 
-        public Func<string, (HttpStatusCode Status, string Body)> Say { get; init; } = id => (HttpStatusCode.OK, Kept(id));
+        public Func<string, (HttpStatusCode Status, string Body)> Say { get; set; } = id => (HttpStatusCode.OK, Kept(id));
+
+        /// <summary>
+        /// The take-back door (SAIDBACK1a) by the session and the body posted: a word no longer waiting, as the service answers
+        /// one, unless a test answers otherwise (and moves <see cref="Records"/> on as the service would).
+        /// </summary>
+        public Func<string, string, (HttpStatusCode Status, string Body)> TakeBack { get; set; } = (id, _) =>
+            (HttpStatusCode.OK, $$"""{"done":false,"why":"taken","message":"No word of that id waits on session `{{id}}`."}""");
 
         /// <summary>Every write but a move: what the person's words were posted to.</summary>
         public IReadOnlyList<(string Method, string Path, string Body)> Posts
@@ -571,6 +750,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
                 ("GET", ["api", "sessions"]) => (HttpStatusCode.OK, Records),
                 ("POST", ["api", "sessions", var id, "state"]) => Moved(Uri.UnescapeDataString(id), JsonDocument.Parse(body).RootElement.GetProperty("state").GetString()),
                 ("POST", ["api", "sessions", var id, "say"]) => Heard(path, body, Say(Uri.UnescapeDataString(id))),
+                ("POST", ["api", "sessions", var id, "take-back"]) => Heard(path, body, TakeBack(Uri.UnescapeDataString(id), body)),
                 ("POST", _) => Heard(path, body, (HttpStatusCode.OK, """{"kept":true,"message":"Kept."}""")),
                 _ => (HttpStatusCode.NotFound, ""),
             };

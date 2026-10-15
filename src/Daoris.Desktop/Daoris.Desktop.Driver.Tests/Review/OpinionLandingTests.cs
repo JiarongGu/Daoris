@@ -16,6 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// or a harness.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class OpinionLandingTests : IDisposable
 {
     private readonly string _scratch;

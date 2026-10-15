@@ -31,12 +31,11 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
         string full, string repository, string workspace, bool branchForm, bool fetch, CancellationToken ct)
     {
         if (!context.Holds(full) || !Directory.Exists(full)) return (null, null);
-        var (rootCode, commonDir, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct)
-            .ConfigureAwait(false);
-        if (rootCode != 0) return (null, null);
-        var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(commonDir.Trim()))!;
-        var (_, branchOut, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
-        var branch = branchOut.Trim();
+        // Its repository and its branch, one start (PROC1d-iii).
+        var tree = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
+        if (tree.Code != 0) return (null, null);
+        var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(tree.CommonDir.Trim()))!;
+        var branch = tree.Branch.Trim();
         if (branch is "" or "HEAD") return (null, null);
         if ((await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch is not { } line) return (null, null);
 
@@ -63,14 +62,19 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
     /// tree's tip and the replay's only files the line brought may differ, or, where <paramref name="onto"/> is a branch the landing
     /// advances, files that branch or the line brought. A conflict refuses with the rebase words; any other failure refuses in git's.
     /// </summary>
+    /// <param name="joining">
+    /// The entry's branch a part that ran alongside is joining (ACCEPTALL1), where nothing the line holds made it replay: a conflict
+    /// is then with the entry's earlier work on that branch, and said so. Null for a replay onto the line, or past what it holds.
+    /// </param>
     internal async Task<(LandReplay? Replay, TreeLanding? Refused)> ReplayAsync(
-        LandSync sync, string repository, string workspace, string onto, IReadOnlyList<LandingCommit> kept, CancellationToken ct)
+        LandSync sync, string repository, string workspace, string onto, IReadOnlyList<LandingCommit> kept, CancellationToken ct,
+        string? joining = null)
     {
         var made = await replays.ReplayKeptAsideAsync(sync.Root, workspace, repository, onto, sync.Held.Commits, kept, ct).ConfigureAwait(false);
         if (made.Now is not { } now)
         {
             return (null, made.Conflict
-                ? Conflicted(sync, made.Words)
+                ? joining is not null ? EntryLandWords.Conflicted(joining, made.Words) : Conflicted(sync, made.Words)
                 : new TreeLanding(false, $"Nothing was landed: replaying its own commits onto `{sync.OntoName}` failed: {made.Words} Nothing was made, "
                     + "and the tree and its branch are as they were.") { Refusal = AutoLandingCode.Refused, LeftOut = sync.Held.LeftOut });
         }

@@ -14,6 +14,8 @@ const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => {
   // Every hook listening to an event hears it, as in the shell: each hook's latest handler is kept,
   // told apart by its source, since a render hands over a new closure each time. One handler per
   // event name meant a second listener (the console's, CONSOLE3a) silenced the first (the tabs').
+  // 🔴 Two mounted instances of one hook share a source, so here only the last rendered hears: the frame's own second
+  // reading of a record (SENDLOST1b's `SentSettler`) is mounted only while words wait on it, never beside every conversation.
   const byName = new Map<string, Map<string, (payload: unknown) => void>>();
   return {
     invoke: vi.fn(),
@@ -33,19 +35,26 @@ const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => {
   };
 });
 
-vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
-  useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
-  useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
-    eventHandlers.set(`${module}.${type}`, handler);
-  },
-}));
+vi.mock('@shenora/react', async () => {
+  // What a press moved reaches the frame's state hub as the shell publishes it (STATEHUB1f, D169), never the press's hook.
+  const { publishing } = await import('../test/publishing');
+  const published = publishing(invoke, (type, payload) => eventHandlers.get(`DAORIS.${type}`)?.(payload));
+  return {
+    isShenoraAvailable: () => true,
+    getBridge: () => ({ isAvailable: true, invoke: published, notifyReady }),
+    useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+    useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
+      eventHandlers.set(`${module}.${type}`, handler);
+    },
+  };
+});
 
 import i18n from '../locales/i18n';
+import { useStateHub } from '../bridge/stateHub';
 import { ContextMenus } from '../menus/ContextMenu';
 import type { OpenGroup } from '../app/opener';
 import { menuActs, rightClick } from '../test/contextMenu';
+import { watchScreen } from '../test/onScreen';
 import { WorkFrame } from './WorkFrame';
 import { DiffPane } from './DiffPane';
 
@@ -115,6 +124,13 @@ const RUNNING_INTAKE = { ...PARKED_INTAKE, id: 'r7n8t7k6', state: 'working', not
 
 let SESSIONS: unknown[] = [DRIVEN];
 
+/** Every `SESSION_INPUT` the page sent, in order (SENDLOST1b: a send the page stopped waiting on is never said twice). */
+const inputs = () => invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT');
+/** What words on their way say once the page stopped waiting on their send (SENDLOST1b). */
+const UNANSWERED = 'The machine has not answered yet; it may still take them.';
+/** The bridge's own end of a call the page stopped waiting on (`stoppedWaiting`). */
+const timedOut = () => Object.assign(new Error('The driver did not answer in time.'), { code: 'TIMEOUT' });
+
 function respond(url: string): Response {
   if (url.startsWith('/api/sessions')) return Response.json(SESSIONS);
   if (url.startsWith('/api/quests')) return Response.json(QUESTS);
@@ -134,12 +150,19 @@ function carried() {
   };
 }
 
+/** The window's state hub, as `ShellSignals` mounts it beside the frame: what a press moved is asked again here. */
+function Hub() {
+  useStateHub();
+  return null;
+}
+
 /** The frame with the application's selection held for it, as `App` holds it. */
 function show(selected: string | null = null, notify: (text: string) => void = () => {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const onSelect = vi.fn();
   const view = render(
     <QueryClientProvider client={client}>
+      <Hub />
       <Tooltip.Provider>
         <WorkFrame selected={selected} onSelect={onSelect} notify={notify} />
       </Tooltip.Provider>
@@ -162,6 +185,7 @@ function going(group: OpenGroup) {
   }
   render(
     <QueryClientProvider client={client}>
+      <Hub />
       <Tooltip.Provider>
         <Going />
       </Tooltip.Provider>
@@ -1580,6 +1604,64 @@ describe('starting and holding a conversation', () => {
   });
 
   /**
+   * SENDLOST1b: on a loaded machine the page stopped waiting on a chat's send (the bridge's TIMEOUT): the person's words
+   * vanished behind the error, though the driver may still take them. They show the moment they are sent, as sending; a send
+   * the page stopped waiting on keeps them, saying the machine has not answered yet, with nothing put back in the box to send
+   * twice, until the conversation's queue holds them.
+   */
+  it('shows a chat\'s words as sending, keeps them when the send times out, and lets them go once its queue holds them', async () => {
+    SESSIONS = [CHAT];
+    let stop: () => void = () => {};
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return STRUCTURED_ROSTER;
+      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [], taking: true };
+      if (type === 'SESSION_INPUT') return new Promise((_, reject) => { stop = () => reject(timedOut()); });
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show('c0ffee11', notify);
+
+    const box = await screen.findByLabelText('Message');
+    await userEvent.type(box, 'and the line?{Enter}');
+    expect(await screen.findByRole('list', { name: 'sending…' })).toHaveTextContent('and the line?');
+
+    await act(async () => { stop(); });
+    expect(await screen.findByRole('list', { name: UNANSWERED })).toHaveTextContent('and the line?');
+    expect(box).toHaveValue('');
+    expect(notify).not.toHaveBeenCalledWith(expect.anything(), 'error');
+
+    // The driver took them after all: they wait behind the turn as any word does, and are not said twice.
+    await act(async () => {
+      eventHandlers.get('DAORIS.SESSION_QUEUED')!({
+        session: 'c0ffee11', queued: [{ id: 'q1', text: 'and the line?', files: [] }], taking: true,
+      });
+    });
+    expect(screen.queryByRole('list', { name: UNANSWERED })).toBeNull();
+    expect(screen.getByRole('list', { name: 'waiting for this turn to end' })).toHaveTextContent('and the line?');
+    expect(inputs()).toHaveLength(1);
+  });
+
+  /** SENDLOST1b: words whose send timed out to a chat that then ended without them never arrived, so they come back, said so. */
+  it('gives a chat\'s words back, said so, once the conversation ended without them', async () => {
+    SESSIONS = [CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_INPUT') {
+        SESSIONS = [{ ...CHAT, state: 'completed' }];
+        throw timedOut();
+      }
+      return DRIVER_STATE;
+    });
+    show('c0ffee11');
+
+    await userEvent.type(await screen.findByLabelText('Message'), 'are you there?{Enter}');
+
+    expect(await screen.findByText('The conversation ended before this reached it. It is back in the box.')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue('are you there?'));
+    expect(screen.queryByRole('list', { name: UNANSWERED })).toBeNull();
+    expect(inputs()).toHaveLength(1);
+  });
+
+  /**
    * Finishing and stopping are different verbs and mean different things: end-of-input lets the
    * harness wind up, a stop cuts it off and the record says the person did.
    */
@@ -1703,6 +1785,27 @@ describe('starting and holding a conversation', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE_EDIT', {
       payload: { session: 'c0ffee11', id: 'q1', text: 'and then test it twice' },
     });
+  });
+
+  /**
+   * SAIDBACK1b (D76): a parked conversation's composer lists the words waiting on its record as what the same session goes on
+   * with, never as waiting for a turn or a door, and offers each one's *Remove* by its id.
+   */
+  it('lists the words waiting on a parked conversation as what it goes on with', async () => {
+    SESSIONS = [{ ...CHAT, state: 'awaiting-person' }];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return STRUCTURED_ROSTER;
+      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [{ id: 'w1', text: 'use the blue one', files: [] }], taking: false };
+      if (type === 'SESSION_QUEUE_EDIT') return { done: true };
+      return DRIVER_STATE;
+    });
+
+    show('c0ffee11');
+    // Folded to one line with its count inside the answer box's frame (WAITFOOT2c), a press opens it.
+    await userEvent.click(await screen.findByRole('button', { name: 'Show them' }));
+    expect(await screen.findByRole('list', { name: 'waiting for the same session to go on with them' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Remove the waiting message: use the blue one' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE_EDIT', { payload: { session: 'c0ffee11', id: 'w1' } });
   });
 
   // AGT6b (D98): one conversation's model and effort, as its agent offered them on the protocol door —
@@ -2011,6 +2114,7 @@ describe('starting and holding a conversation', () => {
 
     view.rerender(
       <QueryClientProvider client={view.client}>
+        <Hub />
         <Tooltip.Provider>
           <WorkFrame selected="decaf222" onSelect={view.onSelect} notify={() => {}} />
         </Tooltip.Provider>
@@ -2020,6 +2124,7 @@ describe('starting and holding a conversation', () => {
 
     view.rerender(
       <QueryClientProvider client={view.client}>
+        <Hub />
         <Tooltip.Provider>
           <WorkFrame selected="c0ffee11" onSelect={view.onSelect} notify={() => {}} />
         </Tooltip.Provider>
@@ -2074,6 +2179,40 @@ describe('starting and holding a conversation', () => {
     // It stops listening as it ends: the box goes.
     await act(async () => { eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 's1a2b3c4', queued: [], taking: false, listening: false }); });
     expect(screen.queryByLabelText('Message')).toBeNull();
+  });
+
+  /**
+   * SENDLOST1b: words to a working driven session's running door show as sending; a send the page stopped waiting on keeps
+   * them, saying the machine has not answered yet, with no error and nothing back in the box, until the driver holds them.
+   */
+  it('keeps words to a working driven session whose send timed out, until the driver holds them behind its turn', async () => {
+    let stop: () => void = () => {};
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_QUEUE') return { session: 's1a2b3c4', queued: [], taking: true, listening: true };
+      if (type === 'SESSION_INPUT') return new Promise((_, reject) => { stop = () => reject(timedOut()); });
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show('s1a2b3c4', notify);
+
+    const box = await screen.findByLabelText('Message');
+    await userEvent.type(box, 'the budget is in level.json');
+    await userEvent.click(screen.getByRole('button', { name: 'Queue' }));
+    expect(await screen.findByRole('list', { name: 'sending…' })).toHaveTextContent('the budget is in level.json');
+
+    await act(async () => { stop(); });
+    expect(await screen.findByRole('list', { name: UNANSWERED })).toHaveTextContent('the budget is in level.json');
+    expect(box).toHaveValue('');
+    expect(notify).not.toHaveBeenCalledWith(expect.anything(), 'error');
+
+    await act(async () => {
+      eventHandlers.get('DAORIS.SESSION_QUEUED')!({
+        session: 's1a2b3c4', queued: [{ id: 'said-1', text: 'the budget is in level.json', files: [] }], taking: true, listening: true,
+      });
+    });
+    expect(screen.queryByRole('list', { name: UNANSWERED })).toBeNull();
+    expect(screen.getByRole('list', { name: 'waiting for this turn to end' })).toHaveTextContent('the budget is in level.json');
+    expect(inputs()).toHaveLength(1);
   });
 
   it('offers no box to a driven session the driver says nothing could hear', async () => {
@@ -2209,6 +2348,116 @@ describe('the box on every session that takes words', () => {
     expect(screen.getByText('keep the old flag for a release')).toBeInTheDocument();
   });
 
+  /**
+   * SENDLOST1b: words to a session that ended, whose send the page stopped waiting on, stay above its box saying the machine
+   * has not answered yet, with no error and nothing back in the box, until its record holds them.
+   */
+  it('keeps words to a session that ended whose send timed out, until its record holds them', async () => {
+    const words = 'also say so in the release notes';
+    let stop: () => void = () => {};
+    let recorded = false;
+    let read: () => void = () => {};
+    const reading = new Promise<void>((resolve) => { read = resolve; });
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_QUEUE') return { session: 's1a2b3c4', queued: [], taking: false, reaches: 'resume' };
+      if (type === 'SESSION_INPUT') {
+        return new Promise((_, reject) => { stop = () => { recorded = true; reject(timedOut()); }; });
+      }
+      if (type === 'SESSION_HISTORY' && recorded) {
+        await reading;
+        return {
+          session: 's1a2b3c4', earlier: false, latest: 1,
+          events: [{ seq: 1, at: new Date().toISOString(), kind: 'user', origin: 'person', text: words }],
+        };
+      }
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show('s1a2b3c4', notify);
+
+    const box = await screen.findByLabelText('Message');
+    await userEvent.type(box, words);
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByRole('list', { name: 'sending…' })).toHaveTextContent(words);
+
+    await act(async () => { stop(); });
+    expect(await screen.findByRole('list', { name: UNANSWERED })).toHaveTextContent(words);
+    expect(box).toHaveValue('');
+    expect(notify).not.toHaveBeenCalledWith(expect.anything(), 'error');
+
+    await act(async () => { read(); });
+    await waitFor(() => expect(screen.queryByRole('list', { name: UNANSWERED })).toBeNull());
+    expect(screen.getByLabelText('Message')).toHaveValue('');
+    expect(inputs()).toHaveLength(1);
+  });
+
+  /**
+   * SENDLOST1c: the page stopped waiting on a send, and the driver then says nothing takes words (the box becomes the line):
+   * the words are not left *not answered yet*, they are said not to have gone and are kept for the box.
+   */
+  it('says words whose send timed out did not go when the reach turns to a code, and keeps them', async () => {
+    const words = 'also say so in the release notes';
+    let stop: () => void = () => {};
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_QUEUE') return { session: 's1a2b3c4', queued: [], taking: false, reaches: 'resume' };
+      if (type === 'SESSION_INPUT') return new Promise((_, reject) => { stop = () => reject(timedOut()); });
+      if (type === 'SESSION_HISTORY') return { session: 's1a2b3c4', earlier: false, latest: 0, events: [] };
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show('s1a2b3c4', notify);
+
+    const box = await screen.findByLabelText('Message');
+    await userEvent.type(box, words);
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await act(async () => { stop(); });
+    expect(await screen.findByRole('list', { name: UNANSWERED })).toHaveTextContent(words);
+
+    // The shell tells the session's reach live: nothing takes words for it now.
+    await act(async () => {
+      eventHandlers.get('DAORIS.SESSION_QUEUED')!({
+        session: 's1a2b3c4', queued: [], taking: false, listening: false, reach: { why: 'stood-down' },
+      });
+    });
+    expect(await screen.findByText(/did not go/)).toHaveTextContent(words);
+    expect(screen.queryByRole('list', { name: UNANSWERED })).toBeNull();
+    expect(inputs()).toHaveLength(1);
+  });
+
+  /**
+   * SAIDBACK1b (D76): the words waiting on a session that ended are listed above its box by their ids, taken back or reworded
+   * over the driver, and the list is read again from the queue the shell tells, where a reword's new id stands for the old.
+   */
+  it('lists the words waiting on a session that ended, and removes or rewords them over the driver', async () => {
+    driver(
+      { reaches: 'resume', queued: [{ id: 'w1', text: 'use the blue one', files: [] }, { id: 'w2', text: 'and the red', files: [] }] },
+      undefined,
+      { SESSION_QUEUE_EDIT: { done: true } },
+    );
+    show('s1a2b3c4');
+
+    expect(await screen.findByRole('list', { name: 'waiting for the same session to go on with them' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Remove the waiting message: use the blue one' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE_EDIT', { payload: { session: 's1a2b3c4', id: 'w1' } });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Edit the waiting message: and the red' }));
+    const box = screen.getByLabelText('Message');
+    await userEvent.clear(box);
+    await userEvent.type(box, 'use the green one');
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE_EDIT', {
+      payload: { session: 's1a2b3c4', id: 'w2', text: 'use the green one' },
+    });
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', expect.anything());
+
+    act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({
+      session: 's1a2b3c4', queued: [{ id: 'w3', text: 'use the green one', files: [] }], taking: false, reach: { reaches: 'resume' },
+    }));
+    expect(await screen.findByRole('button', { name: 'Remove the waiting message: use the green one' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Remove the waiting message: use the blue one' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove the waiting message: and the red' })).toBeNull();
+  });
+
   /** §3.2: a record going on with the person's words shows it, while its run opens with them. */
   it('shows a record going on with the person’s words as going on', async () => {
     SESSIONS = [{ ...DRIVEN, answer: 'also cap it' }];
@@ -2248,11 +2497,14 @@ describe('the box on every session that takes words', () => {
 
     await screen.findByLabelText('Message');
     await waitFor(() => expect(eventHandlers.has('DAORIS.SESSION_QUEUED')).toBe(true));
+    // Asked once by the reach and once by the list of what waits on the record (SAIDBACK1b), each on opening; never on a move.
+    const asked = invoke.mock.calls.filter(([, type]) => type === 'SESSION_QUEUE').length;
     act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 's1a2b3c4', queued: [], taking: false, reach: { why: 'superseded' } }));
 
     expect(await screen.findByText(/went on in a later session here, so write to that one\./)).toBeInTheDocument();
     expect(screen.queryByLabelText('Message')).toBeNull();
-    expect(invoke.mock.calls.filter(([, type]) => type === 'SESSION_QUEUE')).toHaveLength(1);
+    expect(invoke.mock.calls.filter(([, type]) => type === 'SESSION_QUEUE')).toHaveLength(asked);
+    expect(asked).toBeLessThanOrEqual(2);
   });
 
   /** Words a closed quest's session cannot go on with: two said, and the driver's line saying why. */
@@ -2429,6 +2681,43 @@ describe('clearing a parked session', () => {
       payload: { id: 'p4rk3d00', text: 'go ahead with the PUT' },
     }));
     expect(vi.mocked(fetch)).not.toHaveBeenCalledWith('/api/sessions/p4rk3d00/answer', expect.anything());
+  });
+
+  /**
+   * SENDLOST1b: a park's answer whose send the page stopped waiting on stays above its box, saying the machine has not
+   * answered yet, never said answered and never back in the box, until the words waiting on its record list it.
+   */
+  it('keeps a park\'s answer whose send timed out, until the words waiting on its record list it', async () => {
+    const words = 'go ahead with the PUT';
+    let stop: () => void = () => {};
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_QUEUE') return { session: 'p4rk3d00', queued: [], taking: false, reaches: 'resume' };
+      if (type === 'SESSION_INPUT') return new Promise((_, reject) => { stop = () => reject(timedOut()); });
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show('p4rk3d00', notify);
+
+    const box = await screen.findByLabelText('Message');
+    await userEvent.type(box, words);
+    await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
+    expect(await screen.findByRole('list', { name: 'sending…' })).toHaveTextContent(words);
+
+    await act(async () => { stop(); });
+    expect(await screen.findByRole('list', { name: UNANSWERED })).toHaveTextContent(words);
+    expect(box).toHaveValue('');
+    expect(notify).not.toHaveBeenCalled();
+
+    await act(async () => {
+      eventHandlers.get('DAORIS.SESSION_QUEUED')!({
+        session: 'p4rk3d00', queued: [{ id: 'said-1', text: words, files: [] }], taking: false, reaches: 'resume',
+      });
+    });
+    expect(screen.queryByRole('list', { name: UNANSWERED })).toBeNull();
+    // Folded to a line with its count (WAITFOOT2c); a press lists the words.
+    await userEvent.click(screen.getByRole('button', { name: 'Show them' }));
+    expect(screen.getByRole('list', { name: 'waiting for the same session to go on with them' })).toHaveTextContent(words);
+    expect(inputs()).toHaveLength(1);
   });
 
   /**
@@ -2657,8 +2946,11 @@ describe('clearing a parked session', () => {
       </QueryClientProvider>,
     );
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Answer ask #0fda18' }));
+    // The head's card, in the main area; the strip at the foot offers the same door (WAITFOOT1b, D168).
+    await userEvent.click(await within(screen.getByRole('main')).findByRole('button', { name: 'Answer ask #0fda18' }));
     expect(onAnswerAsk).toHaveBeenCalledWith('0fda18');
+    await userEvent.click(within(screen.getByRole('region', { name: 'Waiting on you' })).getByRole('button', { name: 'Answer ask #0fda18' }));
+    expect(onAnswerAsk).toHaveBeenCalledTimes(2);
     expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     expect(screen.queryByLabelText('Message')).toBeNull();
@@ -3685,8 +3977,10 @@ describe('acting on what a session landed', () => {
     const notify = vi.fn();
 
     show('s1a2b3c4', notify);
-    await userEvent.click(await screen.findByRole('button', { name: 'Accept…' }));
-    expect(screen.getByText('in its tree s-4e6837ed')).toBeTruthy();
+    // The head's, in the main area: the strip at the foot draws the same line (WAITFOOT1b, D168).
+    const head = within(screen.getByRole('main'));
+    await userEvent.click(await head.findByRole('button', { name: 'Accept…' }));
+    expect(head.getByText('in its tree s-4e6837ed')).toBeTruthy();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', expect.anything());
     const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
     await within(ask).findByText(/on a new branch/);
@@ -3699,10 +3993,95 @@ describe('acting on what a session landed', () => {
 
     // A refusal is the driver's sentence, said inside the ask, which stays open.
     landed = { session: 's1a2b3c4', done: false, message: 'the session\'s tree has uncommitted work — 2 path(s) — which a branch would leave behind.' };
-    await userEvent.click(await screen.findByRole('button', { name: 'Accept…' }));
+    await userEvent.click(await head.findByRole('button', { name: 'Accept…' }));
     await userEvent.click(within(screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' })).getByRole('button', { name: 'Accept' }));
     expect(await within(screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' })).findByRole('alert'))
       .toHaveTextContent('which a branch would leave behind.');
+  });
+
+  /**
+   * ACCEPTALL1 (D167's 2026-10-15 amendment, the owner's *"I cannot accept for 2 sessions/quests at the same time"*): where more
+   * than one part of the attended line of work offers work to land, its page offers one Accept under the Parts strip; the plan is
+   * read only once its ask opens, and the press lands the entry.
+   */
+  it('offers one Accept for every part of a line of work that has work to land', async () => {
+    const tree = (name: string) => `C:\\somewhere\\.daoris\\trees\\default\\engine\\${name}`;
+    SESSIONS = [
+      { ...IN_A_TREE, state: 'completed', tree: tree('s-1a2b3c4') },
+      { ...IN_A_TREE, id: 's5e6f7a8', quest: 'abc124', state: 'completed', tree: tree('s-5e6f7a8'), created: '2026-09-02T02:00:00Z', updated: '2026-09-02T03:00:00Z' },
+    ];
+    const lands = (name: string) => ({ branch: `daoris/${name}`, tree: name, commits: 1, uncommitted: 0 });
+    const part = (session: string, quest: string) => ({ session, quest, shown: 'completed', group: 'review', began: 'opened', after: null, askedBy: null });
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_GROUPS') {
+        return {
+          sessions: [
+            { session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-1a2b3c4') },
+            { session: 's5e6f7a8', group: 'review', shown: 'completed', archived: false, teammate: false, lands: lands('s-5e6f7a8') },
+          ],
+          entries: [{ entry: 'ask:a3/engine', origin: 'ask:a3', repository: 'engine', group: 'review', leading: 's5e6f7a8',
+            parts: [part('s1a2b3c4', 'abc123'), part('s5e6f7a8', 'abc124')] }],
+        };
+      }
+      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/a3', source: 'workspace' };
+      if (type === 'ENTRY_LANDING') {
+        return { entry: 'ask:a3/engine', repository: 'engine', form: 'branch', target: 'feature/a3',
+          parts: [{ session: 's1a2b3c4', target: 'feature/a3' }, { session: 's5e6f7a8', target: 'feature/a3' }] };
+      }
+      if (type === 'LAND_ENTRY') return { entry: 'ask:a3/engine', repository: 'engine', done: true, message: 'Landed 2 part(s) on `feature/a3`.', parts: [] };
+      if (type === 'SESSION_DIFF') return DIFF;
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+
+    show('s1a2b3c4', notify);
+    const main = within(screen.getByRole('main'));
+    const press = await main.findByRole('button', { name: 'Accept all 2 parts…' });
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'ENTRY_LANDING', expect.anything());
+
+    await userEvent.click(press);
+    const ask = screen.getByRole('group', { name: 'accept every part of this line of work' });
+    expect(await within(ask).findByText('Lands 2 parts on feature/a3, one after another, in the order they ran.')).toBeInTheDocument();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ENTRY_LANDING', { payload: { entry: 'ask:a3/engine' } });
+
+    await userEvent.click(within(ask).getByRole('button', { name: 'Accept all' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_ENTRY', { payload: { entry: 'ask:a3/engine' }, timeoutMs: expect.any(Number) });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Landed 2 part(s) on `feature/a3`.'));
+  });
+
+  /**
+   * STATEHUB1c (D169 point 7, the owner's 2026-10-15 采纳): a landing pressed in the head was the head's alone, so the review
+   * offered *Accept* while it ran. Under way, every view of the session says so: the review's *Accept* reads *Landing…* and
+   * waits, as it would for its own press, until the landing answers.
+   */
+  it('holds the review’s Accept as Landing… while the head’s landing is under way', async () => {
+    SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
+    let landed: (answer: unknown) => void = () => {};
+    invoke.mockImplementation((_module: string, type: string) => {
+      if (type === 'SESSION_GROUPS') {
+        return Promise.resolve({ sessions: [{ session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false,
+          lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] });
+      }
+      if (type === 'LANDING') return Promise.resolve({ session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace' });
+      if (type === 'LAND_SESSION_TREE') return new Promise((resolve) => { landed = resolve; });
+      if (type === 'SESSION_DIFF') return Promise.resolve(DIFF);
+      return Promise.resolve(DRIVER_STATE);
+    });
+
+    show('s1a2b3c4', vi.fn());
+    await userEvent.click(await within(screen.getByRole('main')).findByRole('button', { name: 'Accept…' }));
+    const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
+    await vi.waitFor(() => expect(within(ask).getByRole('button', { name: 'Accept' })).toBeEnabled());
+    await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
+
+    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    const review = within(await screen.findByRole('tabpanel'));
+    await review.findByText('src/chunk.ts');
+    expect(await review.findByRole('button', { name: 'Landing…' })).toBeDisabled();
+    expect(review.queryByRole('button', { name: 'Accept' })).toBeNull();
+
+    await act(async () => landed({ session: 's1a2b3c4', done: true, message: 'put its work on `feature/delta` — 1 commit(s).' }));
+    await vi.waitFor(() => expect(review.queryByRole('button', { name: 'Landing…' })).toBeNull());
   });
 
   /**
@@ -3727,7 +4106,7 @@ describe('acting on what a session landed', () => {
     });
 
     show('s1a2b3c4', vi.fn());
-    await userEvent.click(await screen.findByRole('button', { name: 'Accept…' }));
+    await userEvent.click(await within(screen.getByRole('main')).findByRole('button', { name: 'Accept…' }));
     const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
     const field = await within(ask).findByRole('textbox', { name: 'Branch name' });
     expect(field).toHaveAttribute('placeholder', 'feature/delta');
@@ -3744,6 +4123,76 @@ describe('acting on what a session landed', () => {
     await vi.waitFor(() => expect(within(ask).getByRole('button', { name: 'Accept' })).toBeEnabled());
     await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', { payload: { id: 's1a2b3c4', branch: 'mine/x' }, timeoutMs: 6 * 60_000 });
+  });
+
+  /**
+   * WAITFOOT1b (D168 point 3): *Accept…* stands in the head and in the strip at the foot, one press, and its ask is open in one
+   * of them at a time: opening it in one puts the other down, a branch name typed there with it.
+   */
+  it('opens the work\'s ask in one place at a time, the head\'s or the foot\'s', async () => {
+    SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_GROUPS') {
+        return { sessions: [{ session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false,
+          lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
+      }
+      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace' };
+      if (type === 'SESSION_DIFF') return DIFF;
+      return DRIVER_STATE;
+    });
+    const asks = () => screen.queryAllByRole('group', { name: 'accept daoris/s-4e6837ed' });
+
+    show('s1a2b3c4', vi.fn());
+    const strip = await screen.findByRole('region', { name: 'Waiting on you' });
+    const presses = await screen.findAllByRole('button', { name: 'Accept…' });
+    expect(presses).toHaveLength(2);
+    const head = presses.find((press) => !strip.contains(press))!;
+
+    await userEvent.click(within(strip).getByRole('button', { name: 'Accept…' }));
+    expect(asks()).toHaveLength(1);
+    expect(strip.contains(asks()[0]!)).toBe(true);
+    await userEvent.type(within(asks()[0]!).getByRole('textbox', { name: 'Branch name' }), 'mine/x');
+
+    await userEvent.click(head);
+    expect(asks()).toHaveLength(1);
+    expect(strip.contains(asks()[0]!)).toBe(false);
+    expect(within(strip).getByRole('button', { name: 'Accept…' })).toBeInTheDocument();
+    // The name typed at the foot went with its ask.
+    expect(within(asks()[0]!).getByRole('textbox', { name: 'Branch name' })).toHaveValue('');
+  });
+
+  // WAITFOOT2a: the strip stands aside while the head's waits are on screen, never from under an ask open in it.
+  it('keeps the strip up while the work\'s ask is open in it, though the head came on screen', async () => {
+    const watched = watchScreen();
+    try {
+      SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
+      invoke.mockImplementation(async (_module: string, type: string) => {
+        if (type === 'SESSION_GROUPS') {
+          return { sessions: [{ session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false,
+            lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
+        }
+        if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace' };
+        if (type === 'SESSION_DIFF') return DIFF;
+        return DRIVER_STATE;
+      });
+      show('s1a2b3c4', vi.fn());
+      await screen.findAllByRole('button', { name: 'Accept…' });
+      await waitFor(() => expect(watched.observers()).not.toHaveLength(0));
+      watched.show(false);
+      const strip = screen.getByRole('region', { name: 'Waiting on you' });
+      await userEvent.click(within(strip).getByRole('button', { name: 'Accept…' }));
+      await userEvent.click(screen.getByRole('main'));
+
+      watched.show(true);
+      expect(within(strip).getByRole('group', { name: 'accept daoris/s-4e6837ed' })).toBeInTheDocument();
+      // Put down, and the person gone from it, the strip stands aside: the head's *Accept…* is the one on screen.
+      await userEvent.click(within(strip).getByRole('button', { name: 'Never mind' }));
+      await userEvent.click(screen.getByRole('main'));
+      expect(screen.queryByRole('region', { name: 'Waiting on you' })).toBeNull();
+      expect(screen.getAllByRole('button', { name: 'Accept…' })).toHaveLength(1);
+    } finally {
+      watched.restore();
+    }
   });
 
   /**
@@ -3778,7 +4227,9 @@ describe('acting on what a session landed', () => {
     const notify = vi.fn();
 
     show('s1a2b3c4', notify);
-    const gate = await screen.findByRole('region', { name: 'Second opinion' });
+    // The head's, in the main area: the strip at the foot draws the same gate (WAITFOOT1b, D168).
+    const head = within(screen.getByRole('main'));
+    const gate = await head.findByRole('region', { name: 'Second opinion' });
     expect(gate).toHaveTextContent('1 finding by Codex (OpenAI) is disputed');
     await within(gate).findByText('Drops the last row.');
     expect(gate).toHaveTextContent('Rejected by the working session: The bound is exclusive.');
@@ -3788,7 +4239,7 @@ describe('acting on what a session landed', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ASK_OPINION', { payload: { id: 's1a2b3c4' } });
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('A second opinion on session s1a2b3c4\'s work is asked.'));
 
-    await userEvent.click(screen.getByRole('button', { name: 'Accept…' }));
+    await userEvent.click(head.getByRole('button', { name: 'Accept…' }));
     const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
     expect(ask).toHaveTextContent('Accepting answers what the second opinion left unsettled: 1 disputed finding.');
     await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
@@ -3820,10 +4271,12 @@ describe('acting on what a session landed', () => {
     const notify = vi.fn();
 
     show('s1a2b3c4', notify);
-    await userEvent.click(await screen.findByRole('button', { name: 'Discard branch…' }));
+    // The head's, in the main area: the strip at the foot draws the same line (WAITFOOT1b, D168).
+    const head = within(screen.getByRole('main'));
+    await userEvent.click(await head.findByRole('button', { name: 'Discard branch…' }));
     expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'LANDING', expect.anything());
-    expect(screen.getByText('in its tree s-4e6837ed')).toBeTruthy();
+    expect(head.getByText('in its tree s-4e6837ed')).toBeTruthy();
     const ask = screen.getByRole('group', { name: 'discard daoris/s-4e6837ed' });
     expect(ask).toHaveTextContent(`Its commits stay at ${kept} until you delete that ref`);
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'DISCARD_SESSION_TREE', expect.anything());
@@ -4430,6 +4883,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
     const { rerender, client, onSelect } = show('s1a2b3c4');
     const attend = (id: string) => rerender(
       <QueryClientProvider client={client}>
+        <Hub />
         <Tooltip.Provider><WorkFrame selected={id} onSelect={onSelect} notify={() => {}} /></Tooltip.Provider>
       </QueryClientProvider>,
     );
@@ -4657,5 +5111,298 @@ describe('a park\'s go-aheads', () => {
     expect(screen.queryByRole('region', { name: 'Go-aheads it asked' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
     expect(asksRead()).toBe(0);
+  });
+
+  /**
+   * WAITFOOT1b (D168): the person reads the conversation's foot, where the park's question is, so what waits on them stands
+   * there too, above the box and outside the conversation's scroll, answered through the head's one door; the head's stay.
+   */
+  it('answers a go-ahead from the strip at the foot through the same door, the head\'s list still there', async () => {
+    const notify = vi.fn();
+    show('g0ah3ad0', notify);
+    const strip = await screen.findByRole('region', { name: '3 waiting on you' });
+    // Outside the conversation's scroll, above the box, as Ask Daoris's note row is.
+    expect(screen.getByRole('main').contains(strip)).toBe(false);
+    expect(strip.compareDocumentPosition(screen.getByLabelText('Message'))).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    // The box right below is the park's answer door, so no line over it says so (WAITFOOT2c).
+    expect(strip).not.toHaveTextContent('answer it in the box below');
+    expect(screen.getByRole('region', { name: 'Go-aheads it asked' })).toBeInTheDocument();
+
+    const second = within(strip).getAllByRole('listitem')[1]!;
+    await userEvent.click(within(second).getByRole('button', { name: 'Approve' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_AHEAD', {
+      payload: { id: 'g0ah3ad0', ask: 'a5k001', number: 2, approved: true },
+    }));
+    expect(notify).toHaveBeenCalledWith("Approved go-ahead #2; the same session goes on with it at the driver's next look.");
+  });
+
+  /**
+   * WAITFOOT2a (D168's WAITFOOT2 note): the owner, 2026-10-15, found "a lot of duplicated options and message boxes": each wait
+   * in the head and again in the strip. The strip stands aside while the head's waits are wholly on screen, and stands again
+   * once any of them leaves it, so no press is ever out of sight.
+   */
+  it('draws each go-ahead once while the head\'s waits are on screen, and at the foot too once they are not', async () => {
+    const watched = watchScreen();
+    try {
+      show('g0ah3ad0');
+      const head = await screen.findByRole('region', { name: 'Go-aheads it asked' });
+      // Watched where the record scrolls, below the page head pinned at its top.
+      await waitFor(() => expect(watched.observers().flatMap((one) => one.targets)).toContain(head));
+      const [watching] = watched.observers();
+      expect(watching!.root).toBe(screen.getByRole('main'));
+      expect(watching!.rootMargin).toMatch(/^-\d+px 0px 0px 0px$/);
+      // Not yet told, the strip waits for the observer's word rather than flash over a head that may be on screen.
+      expect(screen.queryByRole('region', { name: '3 waiting on you' })).toBeNull();
+
+      watched.show(true);
+      expect(screen.queryByRole('region', { name: '3 waiting on you' })).toBeNull();
+      expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(2);
+      expect(head.contains(screen.getAllByRole('button', { name: 'Approve' })[0]!)).toBe(true);
+
+      watched.show(false);
+      expect(screen.getByRole('region', { name: '3 waiting on you' })).toBeInTheDocument();
+
+      // Half of one on screen is not on screen: its press may be the half that is not.
+      watched.show((section) => (section === head ? 0.5 : 1));
+      expect(screen.getByRole('region', { name: '3 waiting on you' })).toBeInTheDocument();
+    } finally {
+      watched.restore();
+    }
+  });
+
+  it('takes the person from the strip to the head\'s waits at the top', async () => {
+    show('g0ah3ad0');
+    const strip = await screen.findByRole('region', { name: '3 waiting on you' });
+    const main = screen.getByRole('main');
+    main.scrollTop = 900;
+
+    await userEvent.click(within(strip).getByRole('button', { name: 'To the top' }));
+    expect(main.scrollTop).toBe(0);
+    // The focus goes with the person, to the record's head, where every wait stands.
+    expect(document.activeElement).toHaveAttribute('data-record-head');
+  });
+
+  /**
+   * WAITFOOT1c (D168 point 4): each wait leads to the event in the conversation that raised it, from the head and from the strip,
+   * and the event leads back to its wait at the foot. A go-ahead's call is joined on its input, never its title; one whose call
+   * the conversation does not hold has no such press.
+   */
+  it('goes between each wait, the event that raised it and back', async () => {
+    const asked = '2026-09-02T00:30:00Z';
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_GO_AHEAD') return { message: 'Go-ahead answered.', sent: true, reaches: 'resume' };
+      if (type === 'SESSION_HISTORY') {
+        return {
+          session: 'g0ah3ad0', earlier: false, latest: 5, events: [
+            { seq: 1, at: asked, kind: 'user', origin: 'target', text: 'Your target is the quest…' },
+            { seq: 2, at: asked, kind: 'message', id: 'm1', text: 'The tile needs its target set.' },
+            {
+              seq: 3, at: asked, kind: 'tool', id: 'g1', title: 'ask for a go-ahead', status: 'completed',
+              input: JSON.stringify({ kind: 'write', on: 'production', act: 'dashboard configuration', why: 'The tile reads its target from it.' }),
+            },
+            { seq: 4, at: asked, kind: 'message', id: 'm2', text: 'I need go-aheads 1 and 2 before I can finish.' },
+            { seq: 5, at: asked, kind: 'turn', stopReason: 'end_turn' },
+          ],
+        };
+      }
+      return DRIVER_STATE;
+    });
+    const view = show('g0ah3ad0');
+    const strip = await screen.findByRole('region', { name: '3 waiting on you' });
+    const call = await screen.findByText('ask for a go-ahead');
+
+    // From the strip: go-ahead 1's call, outlined; go-ahead 2 asked by no call this conversation holds has no such press.
+    const [first, second] = within(strip).getAllByRole('listitem');
+    expect(within(second!).queryByRole('button', { name: 'In the conversation' })).toBeNull();
+    await userEvent.click(within(first!).getByRole('button', { name: 'In the conversation' }));
+    await waitFor(() => expect(call.closest('[data-block]')!.className).toContain('outline-accent'));
+
+    // From the head: the park's card, to its last words.
+    const card = screen.getByText('This one is waiting on you').closest('section')!;
+    await userEvent.click(within(card).getByRole('button', { name: 'In the conversation' }));
+    const words = screen.getAllByText('I need go-aheads 1 and 2 before I can finish.')
+      .map((said) => said.closest<HTMLElement>('[data-block]')).find(Boolean)!;
+    await waitFor(() => expect(words.className).toContain('outline-accent'));
+
+    // And back: the call's mark names what waits from it, and *To the wait* leads to its line at the foot.
+    const block = call.closest<HTMLElement>('[data-block]')!;
+    await userEvent.click(within(block).getByRole('button', { name: 'To the wait: go-ahead #1' }));
+    await waitFor(() => expect(within(strip).getAllByRole('listitem')[0]).toHaveFocus());
+
+    // Away and back, the press is spent: the strip drawn again takes no focus and outlines nothing.
+    const attend = (selected: string) => view.rerender(
+      <QueryClientProvider client={view.client}>
+        <Hub />
+        <Tooltip.Provider><WorkFrame selected={selected} onSelect={view.onSelect} notify={() => {}} /></Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+    attend('n0th3r00');
+    await waitFor(() => expect(screen.queryByRole('region', { name: '3 waiting on you' })).toBeNull());
+    attend('g0ah3ad0');
+    const again = await screen.findByRole('region', { name: '3 waiting on you' });
+    expect(within(again).getAllByRole('listitem')[0]).not.toHaveFocus();
+    expect(within(again).getAllByRole('listitem')[0]!.className).not.toContain('outline-accent');
+  });
+
+  // WAITFOOT2b (D168's WAITFOOT2 note): while the head's waits are on screen the strip stands aside, so *To the wait* leads there.
+  it('leads a raising block\'s *To the wait* to the head\'s line while the head is on screen', async () => {
+    const watched = watchScreen();
+    try {
+      const asked = '2026-09-02T00:30:00Z';
+      invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_HISTORY' ? {
+        session: 'g0ah3ad0', earlier: false, latest: 4, events: [
+          { seq: 1, at: asked, kind: 'user', origin: 'target', text: 'Your target is the quest…' },
+          {
+            seq: 2, at: asked, kind: 'tool', id: 'g1', title: 'ask for a go-ahead', status: 'completed',
+            input: JSON.stringify({ kind: 'write', on: 'production', act: 'dashboard configuration', why: 'The tile reads its target from it.' }),
+          },
+          { seq: 3, at: asked, kind: 'message', id: 'm2', text: 'I need go-aheads 1 and 2 before I can finish.' },
+          { seq: 4, at: asked, kind: 'turn', stopReason: 'end_turn' },
+        ],
+      } : DRIVER_STATE));
+      show('g0ah3ad0');
+      const call = await screen.findByText('ask for a go-ahead');
+      await waitFor(() => expect(watched.observers()).not.toHaveLength(0));
+      watched.show(true);
+      expect(screen.queryByRole('region', { name: '3 waiting on you' })).toBeNull();
+
+      const block = call.closest<HTMLElement>('[data-block]')!;
+      await userEvent.click(within(block).getByRole('button', { name: 'To the wait: go-ahead #1' }));
+      const line = within(screen.getByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem')[0]!;
+      await waitFor(() => expect(line).toHaveFocus());
+      expect(line.className).toContain('outline-accent');
+      // The strip stays aside: the line it would have led to is the one on screen.
+      expect(screen.queryByRole('region', { name: '3 waiting on you' })).toBeNull();
+    } finally {
+      watched.restore();
+    }
+  });
+});
+
+/**
+ * PROPOSEHERE1b (D168 point 2, D74): auto mode refused a driven session's local branch delete, and its `permission_propose`
+ * waited on the Agents page and the band while the person kept asking it in its conversation. Its own waiting proposals are a
+ * wait where they talk to it, in the head and at the foot; *Allow* settles it through the band's own door, then tells the
+ * session it is allowed, so its next turn, composed with the rule, goes on. A session that takes no words is said so instead.
+ */
+describe('a session\'s rule proposal', () => {
+  const RESTING = { ...DRIVEN, id: 'r3st1ng0', state: 'completed', updated: '2026-10-15T10:21:00Z' };
+  const proposed = '2026-10-15T10:20:00Z';
+  const MINE = {
+    id: 'p0000007', state: 'waiting', action: 'add', scope: 'repository', name: 'engine', list: 'allow',
+    rule: 'Bash(git branch -D:*)', why: 'Auto mode refused the local branch delete you asked for.', session: 'r3st1ng0', proposed,
+  };
+  const OTHERS = { ...MINE, id: 'p0000008', rule: 'Bash(git push:*)', session: 'o7h3r000' };
+  let reach: Record<string, unknown> = { reaches: 'resume' };
+  let proposals: Record<string, unknown>[] = [MINE, OTHERS];
+
+  beforeEach(() => {
+    SESSIONS = [RESTING];
+    reach = { reaches: 'resume' };
+    proposals = [MINE, OTHERS];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(async (_module: string, type: string, request?: { payload?: { id?: string; accept?: boolean } }) => {
+      if (type === 'RULES') return { path: 'C:/somewhere/.daoris/permissions.json', defaults: [], scopes: [], proposals };
+      if (type === 'RULE_PROPOSAL') {
+        proposals = proposals.map((one) => (one.id === request?.payload?.id
+          ? { ...one, state: request?.payload?.accept ? 'accepted' : 'declined' } : one));
+        return { path: 'C:/somewhere/.daoris/permissions.json', defaults: [], scopes: [], proposals };
+      }
+      if (type === 'SESSION_QUEUE') return reach;
+      if (type === 'SESSION_INPUT') return { sent: true, reaches: 'resume' };
+      if (type === 'SESSION_HISTORY') {
+        return {
+          session: 'r3st1ng0', earlier: false, latest: 4, events: [
+            { seq: 1, at: proposed, kind: 'user', text: 'Delete the merged branch and its worktree.' },
+            {
+              seq: 2, at: proposed, kind: 'tool', id: 't2', title: 'permission_propose', status: 'completed',
+              input: JSON.stringify({ action: 'add', scope: 'repository', list: 'allow', rule: 'Bash(git branch -D:*)', why: MINE.why }),
+            },
+            { seq: 3, at: proposed, kind: 'message', id: 'm3', text: 'I proposed a rule; once it is allowed I can delete it.' },
+            { seq: 4, at: proposed, kind: 'turn', stopReason: 'end_turn' },
+          ],
+        };
+      }
+      return DRIVER_STATE;
+    });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    eventHandlers.clear();
+  });
+
+  const said = () => invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT');
+
+  it('stands in its head and at the foot, and not another session\'s', async () => {
+    show('r3st1ng0');
+    const strip = await screen.findByRole('region', { name: 'Waiting on you' });
+    expect(within(strip).getByRole('listitem')).toHaveTextContent('allow Bash(git branch -D:*) for repository engine');
+    const head = screen.getByRole('region', { name: 'Rules it proposed' });
+    expect(within(head).getAllByRole('listitem')).toHaveLength(1);
+    expect(screen.queryByText(/Bash\(git push:\*\)/)).toBeNull();
+  });
+
+  it('allows it after asking once, then tells the session it is allowed, so its next turn goes on', async () => {
+    const notify = vi.fn();
+    show('r3st1ng0', notify);
+    const item = within(await screen.findByRole('region', { name: 'Waiting on you' })).getByRole('listitem');
+
+    await userEvent.click(within(item).getByRole('button', { name: 'Allow…' }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', expect.anything());
+    await userEvent.click(within(item).getByRole('button', { name: 'Allow' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', { payload: { id: 'p0000007', accept: true } }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: {
+        id: 'r3st1ng0',
+        text: 'The rule you proposed is allowed now: allow Bash(git branch -D:*) for repository engine. Go on with what you needed it for.',
+      },
+    }));
+    // Settled before it is said: the turn the words start is composed with the rule.
+    const order = invoke.mock.calls.map(([, type]) => type).filter((type) => type === 'RULE_PROPOSAL' || type === 'SESSION_INPUT');
+    expect(order).toEqual(['RULE_PROPOSAL', 'SESSION_INPUT']);
+    expect(notify).toHaveBeenCalledWith('Allowed: allow Bash(git branch -D:*) for repository engine. Sessions started from now on are handed it.');
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Session r3st1ng0 is told the rule is allowed, and goes on.', 'ok'));
+    // Settled, it waits no more.
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Rules it proposed' })).toBeNull());
+  });
+
+  it('declines it in one press, telling the session nothing', async () => {
+    const notify = vi.fn();
+    show('r3st1ng0', notify);
+    const head = await screen.findByRole('region', { name: 'Rules it proposed' });
+    await userEvent.click(within(head).getByRole('button', { name: 'Decline' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', { payload: { id: 'p0000007', accept: false } }));
+    expect(notify).toHaveBeenCalledWith('Declined: allow Bash(git branch -D:*) for repository engine. The rules are as they were.');
+    expect(said()).toEqual([]);
+  });
+
+  it('says on the card where the session takes no words, and allows it without telling it', async () => {
+    reach = { sent: false, why: 'stood-down' };
+    show('r3st1ng0');
+    const item = within(await screen.findByRole('region', { name: 'Waiting on you' })).getByRole('listitem');
+    await waitFor(() => expect(item).toHaveTextContent('It takes no words now, so it is not told'));
+
+    await userEvent.click(within(item).getByRole('button', { name: 'Allow…' }));
+    await userEvent.click(within(item).getByRole('button', { name: 'Allow' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', { payload: { id: 'p0000007', accept: true } }));
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Rules it proposed' })).toBeNull());
+    expect(said()).toEqual([]);
+  });
+
+  it('leads between the proposal and the call that raised it', async () => {
+    show('r3st1ng0');
+    const strip = await screen.findByRole('region', { name: 'Waiting on you' });
+    const call = await screen.findByText('permission_propose');
+    const block = call.closest<HTMLElement>('[data-block]')!;
+    const mark = await within(block).findByRole('button', { name: 'To the wait: a rule it proposed' });
+
+    await userEvent.click(within(within(strip).getByRole('listitem')).getByRole('button', { name: 'In the conversation' }));
+    await waitFor(() => expect(block.className).toContain('outline-accent'));
+    await userEvent.click(mark);
+    await waitFor(() => expect(within(strip).getByRole('listitem')).toHaveFocus());
   });
 });

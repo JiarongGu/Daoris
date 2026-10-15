@@ -22,10 +22,14 @@ namespace Daoris.Driver;
 /// say for a session this registry runs is this loop's; one for a session nothing on this machine runs is any loop's whose
 /// service answers, which keeps the words on the record, once, since a say is taken once; one another process here runs is
 /// left for that process's loop.</para>
+///
+/// <para><b>And what a terminal pressed</b> (STATEHUB1e, D169 point 8): a <c>trees</c> verb tells its press in the same folder
+/// (<see cref="PressesTold"/>), and the loop that hears them, the shell's, publishes it to its windows at the same look.</para>
 /// </remarks>
 public sealed class SessionRequestWatch : IAsyncDisposable
 {
     private readonly SessionRequests _requests;
+    private readonly PressesTold _told;
     private readonly Func<string, bool> _runsHere;
     private readonly Func<string, Noted?, bool> _stop;
     private readonly Func<ServiceClient?> _service;
@@ -45,6 +49,20 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     /// </summary>
     public Func<SessionRequest, CancellationToken, Task<WordsHeld>>? Say { get; init; }
 
+    /// <summary>
+    /// A loop's half of a terminal's <c>sessions take-back</c> (SAIDBACK1c, D137 §2.4), answered beside the request in the say's
+    /// shape: <see cref="WordsHeld.Sent"/> is that the word was taken back, a refusal's code is <see cref="WordsHeld.Why"/>. A
+    /// loop on a registry has <see cref="LoopWords"/>'s by default, which keeps no note; the host hands one that does. Null takes none.
+    /// </summary>
+    public Func<SessionRequest, CancellationToken, Task<WordsHeld>>? TakeBack { get; init; }
+
+    /// <summary>
+    /// What a loop does with a press a terminal told (STATEHUB1e, D169 point 8): the shell's publishes it to its windows as the
+    /// window's press of that route is published. Null takes none: a headless loop has no window, so it leaves each for a loop that
+    /// hears them, and drops only what nobody took in time (<see cref="PressesTold"/>).
+    /// </summary>
+    public Action<PressTold>? Told { get; init; }
+
     /// <summary>A loop's watch over its own registry, looking every <paramref name="every"/> (a second) until it is disposed.</summary>
     /// <param name="service">The loop's service once it answers; null before, when a request that needs the ledger waits.</param>
     /// <param name="clock">What a request's age is measured against; the real clock unless a test hands its own.</param>
@@ -56,7 +74,9 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     {
         _hears = id => processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase) || processes.InboxOf(id) is not null;
         _aliveHere = processes.AliveOnThisMachine;
-        Say = new LoopWords(processes, service).HoldAsync;
+        var words = new LoopWords(processes, service);
+        Say = words.HoldAsync;
+        TakeBack = words.TakeBackAsync;
         _watching = WatchAsync(every ?? TimeSpan.FromSeconds(1));
     }
 
@@ -78,6 +98,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         string home, Func<string, bool> runsHere, Func<string, Noted?, bool> stop, Func<ServiceClient?> service, Func<DateTimeOffset>? clock = null)
     {
         _requests = new SessionRequests(home);
+        _told = new PressesTold(home);
         _runsHere = runsHere;
         _stop = stop;
         _service = service;
@@ -101,7 +122,13 @@ public sealed class SessionRequestWatch : IAsyncDisposable
             {
                 if (pending.Move == SessionMove.Say)
                 {
-                    if (await SayAsync(pending, ct).ConfigureAwait(false) is { } said) honoured.Add(said);
+                    if (await SayAsync(pending, Say, ct).ConfigureAwait(false) is { } said) honoured.Add(said);
+                    continue;
+                }
+
+                if (pending.Move == SessionMove.TakeBack)
+                {
+                    if (await SayAsync(pending, TakeBack, ct).ConfigureAwait(false) is { } back) honoured.Add(back);
                     continue;
                 }
 
@@ -151,13 +178,32 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     }
 
     /// <summary>
+    /// One look at the presses a terminal told (STATEHUB1e): each taken once and handed to <see cref="Told"/>, oldest first, and what
+    /// was heard comes back. A loop with no <see cref="Told"/> takes none, and drops only what nobody took in time.
+    /// </summary>
+    public IReadOnlyList<PressTold> Hear()
+    {
+        var now = _clock();
+        if (Told is not { } told)
+        {
+            _told.Drop(now);
+            return [];
+        }
+
+        var heard = _told.Take(now);
+        foreach (var press in heard) told(press);
+        return heard;
+    }
+
+    /// <summary>
     /// A say (MSG1e), taken where it is this loop's and handed to <see cref="Say"/>; what became of the words is written beside
     /// it for the door that asked, a failure included, so the asker is never left to wait out its time for an answer that will
     /// not come. Null where it is not this loop's, or another loop took it first.
     /// </summary>
-    private async Task<SessionRequest?> SayAsync(SessionRequest pending, CancellationToken ct)
+    private async Task<SessionRequest?> SayAsync(
+        SessionRequest pending, Func<SessionRequest, CancellationToken, Task<WordsHeld>>? say, CancellationToken ct)
     {
-        if (Say is not { } say) return null;
+        if (say is null) return null;
 
         // Not this registry's: another process here runs it, which its own loop answers, or the record's half waits for a service.
         if (!_hears(pending.Session) && (_aliveHere(pending.Session) || _service() is null)) return null;
@@ -197,6 +243,8 @@ public sealed class SessionRequestWatch : IAsyncDisposable
                 try
                 {
                     await HonourAsync(_stopping.Token).ConfigureAwait(false);
+                    // STATEHUB1e: and what a terminal pressed, in the same folder at the same look.
+                    Hear();
                 }
                 catch (Exception error) when (error is IOException or UnauthorizedAccessException)
                 {

@@ -15,8 +15,9 @@ public sealed class RegistryRoutes(DriverLoop loop)
 
     // One repository registered from what its line declares, as `connect` would send it, through the loop's own client, so
     // its outcome reaches this machine's log as every follow's does. A refusal is an answer, as a landing's is: what the
-    // row says, and why nothing was registered.
+    // row says, and why nothing was registered. Either way it declares the registry (STATEHUB1h, D169).
     [DriverRoute("REGISTRY_REFRESH")]
+    [Publishes("REGISTRY_REFRESH", StateScopes.Registry)]
     private async Task<object?> RegistryRefreshAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");

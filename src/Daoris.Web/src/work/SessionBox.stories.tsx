@@ -50,6 +50,21 @@ export const EndedGoingOn: Story = {
   args: { box: { kind: 'say', mode: 'goOn' }, draft: 'also say so in the release notes', onDraft: () => {} },
 };
 
+/**
+ * SAIDBACK1b (D76): words waiting on a session that ended, the same session to go on with them, each with *Edit* and *Remove*
+ * until a session takes them: a closed quest's session's two words, one of them out of date.
+ */
+export const EndedWithWordsWaiting: Story = {
+  args: {
+    box: { kind: 'say', mode: 'goOn' },
+    waiting: [
+      { id: 'w1', text: 'use the blue palette for the charts', files: [] },
+      { id: 'w2', text: 'and say so in the release notes', files: ['notes.md'] },
+    ],
+    onRemove: async () => ({ done: true }), onEdit: async () => ({ done: true }),
+  },
+};
+
 /** Written to as its run wound up (D137 §2.1): the words wait for its record to end, then reopen it. */
 export const HeldWhileWindingUp: Story = {
   args: { box: { kind: 'say', mode: 'ending' }, ending: ['one more thing: keep the old flag for a release'] },
