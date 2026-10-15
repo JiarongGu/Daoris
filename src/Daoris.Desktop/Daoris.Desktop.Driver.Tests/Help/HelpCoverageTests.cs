@@ -727,6 +727,8 @@ public sealed partial class HelpCoverageTests
         ("projects", "useImportFolder", null, RepositoryAddGo),
         // ENTRY1d1 (D161's ENTRY1d note): a move needs no path, so the `repository` kind proposes it by name.
         ("projects", "useWireRepository", null, new Door("repository", "wire")),
+        // LAYOUT8 (D170 point 1): a not adopted repository's *Set up for agents*, the `setup` kind's door, as its terminal is.
+        ("projects", "useSetupPress", null, SetupDoor),
         ("projects", "useRetireRepository", null, new Exempt(
             "retiring takes a repository off this machine's registry and its entries out of the index, a removal, which stays "
             + "the person's own press (D89), as a plugin's removal does; registering it again is the person's Add repository, "

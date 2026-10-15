@@ -32,6 +32,7 @@ vi.mock('@shenora/react', async () => {
 
 import { useStateHub } from '../bridge/stateHub';
 import { code } from '../test/code';
+import { NEWBIE_SETUP } from './fixtures';
 import { DRIVER_STATE, REGISTRY, REPOSITORIES, respond, serviceCalls, show, WIRING } from '../test/shellHarness';
 import {
   chooseRepository, chooseWorkspace, openSetup, ProjectsView, repositoryList, repositoryMain, repositoryRow,
@@ -1419,6 +1420,38 @@ describe('an unadopted repository on this machine (INT3c)', () => {
   });
 
   /**
+   * LAYOUT8 (D117 §6.1, §6.5; D170 point 1): the press `daoris-driver setup <repository>` is, on the page, its plan first:
+   * nothing is read until the person asks, the plan is `--plan`'s twin, and the press asks the repository's own session.
+   */
+  it('sets one with a root here up for agents: its plan first, then the press, each on DAORIS.DRIVER', async () => {
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module !== 'DAORIS.DRIVER') return undefined;
+      if (type === 'HARNESSES') return roster('claude-code-acp');
+      if (type === 'SETUP_PLAN') return NEWBIE_SETUP;
+      if (type === 'SETUP_PRESS') {
+        return {
+          published: true, message: 'Asked as `#a1b2c3d4` in `default`.', askId: 'a1b2c3d4', questId: 'q1a2b3c4',
+          added: NEWBIE_SETUP.rules, plan: NEWBIE_SETUP,
+        };
+      }
+      return { ...DRIVER_STATE, adapter: 'claude-code-acp' };
+    });
+    show(<ProjectsView notify={() => {}} />);
+    const page = await chooseRepository('newbie');
+
+    const setUp = within(page).getByRole('heading', { name: 'Set up for agents' }).closest('section')!;
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SETUP_PLAN', expect.anything());
+    await userEvent.click(within(setUp).getByRole('button', { name: 'Show the plan' }));
+
+    expect(await within(setUp).findByText(NEWBIE_SETUP.title!)).toBeInTheDocument();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SETUP_PLAN', { payload: { repository: 'newbie' }, timeoutMs: 120_000 });
+    await userEvent.click(within(setUp).getByRole('button', { name: 'Set it up' }));
+
+    expect(await within(setUp).findByText(/its own session takes it at the next look/)).toBeInTheDocument();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SETUP_PRESS', { payload: { repository: 'newbie' }, timeoutMs: 120_000 });
+  });
+
+  /**
    * 🔴 UX5 U36: the group opened with an eight-line paragraph above its one row, read once and
    * scrolled past every visit after, the essay a settings page was before its rows (§4, `SettingRow`).
    * It leads with one line now, and the reasoning is on the info glyph, where a row keeps its why.
@@ -1439,6 +1472,8 @@ describe('an unadopted repository on this machine (INT3c)', () => {
     const page = await chooseRepository('elsewhere');
 
     expect(await within(page).findByText('Adoption steps')).toBeInTheDocument();
+    // No checkout here, so no set-up press (D117 §6.5): its own machine's driver can be asked.
+    expect(within(page).queryByRole('heading', { name: 'Set up for agents' })).toBeNull();
     await openSetup();
     expect(within(repositoryMain()).queryByRole('button', { name: 'Driving' })).toBeNull();
     expect(within(repositoryMain()).queryByLabelText('Drive on this machine')).toBeNull();
