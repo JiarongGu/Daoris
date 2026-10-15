@@ -9,10 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// runs neither. A plugin that fails never undoes the branch.
 /// </summary>
 /// <remarks>
-/// 🔴 <b>Nothing here reaches a network.</b> `origin` is a bare repository under the scratch folder,
-/// and the plugin that pushes pushes there. Git and one real plugin under a landing's default patience: these run four at once
-/// with the git-only classes (PROC1f); the plugin that never answers, timed out at three seconds, is
-/// <see cref="LandingPluginPatienceTests"/>', one at a time.
+/// Nothing here reaches a network (<see cref="LandingPluginFixture"/>). The plugin that never answers is
+/// <see cref="LandingPluginPatienceTests"/>'.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]

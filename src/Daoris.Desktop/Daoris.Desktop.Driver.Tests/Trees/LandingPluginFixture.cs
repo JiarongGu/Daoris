@@ -6,8 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// What a landing plugin's tests share (WSR4, D100): a home under the scratch folder, a repository whose <c>origin</c> is a bare one
 /// beside it, a branch rule naming the plugin, and the plugin itself, faked in process or a real one that pushes. Two classes take
-/// it (PROC1f): <see cref="LandingPluginTests"/>, which runs four at once with the git-only classes, and
-/// <see cref="LandingPluginPatienceTests"/>, whose three seconds of patience a neighbour's load could break.
+/// it (PROC1f): <see cref="LandingPluginTests"/>, four at once with the git-only classes, and <see cref="LandingPluginPatienceTests"/>,
+/// one at a time.
 /// </summary>
 /// <remarks>
 /// 🔴 <b>Nothing here reaches a network.</b> `origin` is a bare repository under the scratch folder,
