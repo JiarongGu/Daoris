@@ -59,6 +59,39 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     };
 
     /// <summary>
+    /// HELPPLUG1a (D170 point 3): the list answers, for each plugin and each offer, the servers it hands Ask Daoris with the
+    /// tools Ask Daoris may call there, for its page to say; one that hands it none answers an empty list.
+    /// </summary>
+    [Fact]
+    public async Task The_list_answers_what_each_plugin_hands_ask_daoris_and_the_tools_it_may_call()
+    {
+        var tickets = Path.Combine(Home, "plugins", "acme.tickets");
+        Directory.CreateDirectory(tickets);
+        File.WriteAllText(Path.Combine(tickets, "plugin.json"), """
+            { "id": "acme.tickets", "servers": [
+                { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search", "get_issue"] },
+                { "name": "docs", "command": ["docs"] } ] }
+            """);
+        var offers = Path.Combine(Home, "offers");
+        Directory.CreateDirectory(Path.Combine(offers, "acme.offered"));
+        File.WriteAllText(Path.Combine(offers, "acme.offered", "plugin.json"), """
+            { "id": "acme.offered", "servers": [ { "name": "wiki", "command": ["wiki"], "to": ["sessions", "help"] } ] }
+            """);
+        using var loop = Loop();
+        var module = new DriverModule(Bus, loop) { Offers = offers };
+
+        var answered = await AnswerAsync(module, "PLUGINS");
+
+        var help = Assert.Single(Row(answered, "acme.tickets").GetProperty("helpServers").EnumerateArray());
+        Assert.Equal("tickets", help.GetProperty("name").GetString());
+        Assert.Equal(["search", "get_issue"], Strings(help.GetProperty("allow")));
+        Assert.Equal(["tickets", "docs"], Strings(Row(answered, "acme.tickets").GetProperty("servers")));
+        var offered = Assert.Single(answered.GetProperty("offers").EnumerateArray().Single(o => o.GetProperty("id").GetString() == "acme.offered")
+            .GetProperty("helpServers").EnumerateArray());
+        Assert.Equal(("wiki", 0), (offered.GetProperty("name").GetString(), offered.GetProperty("allow").GetArrayLength()));
+    }
+
+    /// <summary>
     /// P3 (D119 §4.1): the list answers what each plugin hands sessions and speaks on, which points its running process
     /// listens on, its health from the loop's own record, and whether its source declares something new. The list
     /// stays light: names, a command as written, a state, a word.

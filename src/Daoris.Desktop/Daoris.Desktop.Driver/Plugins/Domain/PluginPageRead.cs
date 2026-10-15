@@ -15,11 +15,18 @@ public sealed record PageAgent(
     IReadOnlyList<string>? Install);
 
 /// <summary>
-/// A server a plugin hands every session, as written: its command, and its environment variables by NAME only
+/// A server a plugin hands, as written: its command, and its environment variables by NAME only
 /// (D119 §4.1), since a value may be a key. Whether it drives Daoris's browser, which is withheld where no shell
 /// answers (D78).
 /// </summary>
-public sealed record PageServer(string Name, IReadOnlyList<string> Command, IReadOnlyList<string> Environment, bool DrivesBrowser);
+public sealed record PageServer(string Name, IReadOnlyList<string> Command, IReadOnlyList<string> Environment, bool DrivesBrowser)
+{
+    /// <summary>Who it is handed to (HELPPLUG1a, D170 point 3): <c>sessions</c>, <c>help</c> (Ask Daoris) or both.</summary>
+    public IReadOnlyList<string> To { get; init; } = [PluginServerTo.Sessions];
+
+    /// <summary>The tools of it Ask Daoris may call, as the plugin declares them.</summary>
+    public IReadOnlyList<string> Allow { get; init; } = [];
+}
 
 /// <summary>A landing rule that names the plugin: a repository's or a workspace's, and its pattern.</summary>
 public sealed record PageRule(string Scope, string Name, string? Pattern);

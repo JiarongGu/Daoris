@@ -196,6 +196,24 @@ public sealed class PluginSourceTests : IDisposable
         Assert.Equal("// v1", File.ReadAllText(Path.Combine(Installed("acme.gate"), "gate.mjs")));
     }
 
+    /// <summary>
+    /// HELPPLUG1a (D170 point 3): a server handed to Ask Daoris, or allowed other tools there, is a change the person sees before
+    /// an update; one handed to sessions alone says it as before. Twin: the CLI's <c>plugin-sources.test.ts</c>, the same words.
+    /// </summary>
+    [Fact]
+    public void A_server_handed_to_ask_daoris_or_allowed_other_tools_there_is_a_change_an_update_shows()
+    {
+        var (was, _) = PluginCatalog.Parse("acme.tickets", """{ "id": "acme.tickets", "servers": [ { "name": "tickets", "command": ["tickets"] } ] }""");
+        var (now, _) = PluginCatalog.Parse("acme.tickets", """
+            { "id": "acme.tickets", "servers": [ { "name": "tickets", "command": ["tickets"], "to": ["sessions", "help"], "allow": ["search"] } ] }
+            """);
+
+        Assert.Equal(
+            [new PluginChange("servers", "tickets (tickets)", "tickets (tickets) to sessions and help allowing search")],
+            PluginChange.Between(was, now));
+        Assert.Empty(PluginChange.Between(was, was));
+    }
+
     [Fact]
     public void An_update_swaps_the_install_folder_whole_keeping_data_and_the_record()
     {

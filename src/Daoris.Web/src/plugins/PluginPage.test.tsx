@@ -173,6 +173,37 @@ describe("a plugin's page", () => {
     }
   });
 
+  /**
+   * HELPPLUG1a (D170 point 3): the page says what the plugin hands Ask Daoris, each server with what Ask Daoris may call on it,
+   * and that nothing called there changes Daoris itself; one that hands it nothing says nothing of it.
+   */
+  it('says what it hands Ask Daoris and what Ask Daoris may call there, in English and in 中文', async () => {
+    const handing: PluginShown = {
+      ...PLUGIN, helpServers: [{ name: 'tickets', allow: ['search', 'get_issue'] }, { name: 'docs', allow: [] }],
+    };
+    const { unmount } = page({ plugin: handing });
+    const section = screen.getByRole('region', { name: 'Ask Daoris' });
+    expect(within(section).getByText('tickets')).toBeInTheDocument();
+    expect(within(section).getByText('Ask Daoris may call search, get_issue')).toBeInTheDocument();
+    expect(within(section).getByText('Ask Daoris may call none of what it serves')).toBeInTheDocument();
+    expect(section).toHaveTextContent('a change to Daoris is still a proposal you apply');
+    unmount();
+
+    const { default: i18n } = await import('../locales/i18n');
+    await i18n.changeLanguage('zh');
+    try {
+      const shown = page({ plugin: handing });
+      const zh = screen.getByRole('region', { name: '问道衍' });
+      expect(within(zh).getByText('问道衍可以调用 search, get_issue')).toBeInTheDocument();
+      shown.unmount();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+
+    page();
+    expect(screen.queryByRole('region', { name: 'Ask Daoris' })).toBeNull();
+  });
+
   /** A refused plugin's page: the driver's sentence leads, verbatim, and it has nothing to try (D119 §3.2). */
   it('leads with the driver\'s sentence for a refused plugin, on a warn rail', () => {
     page({ plugin: { ...PLUGIN, problem: 'needs plugin API 99, and this build speaks 1.', points: [], harnesses: [] } });

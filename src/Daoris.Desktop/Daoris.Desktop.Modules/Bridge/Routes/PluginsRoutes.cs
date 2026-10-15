@@ -66,6 +66,8 @@ public sealed class PluginsRoutes(DriverContext context)
                     Points = plugin.Manifest.Hooks?.Points ?? [],
                     // What the catalogue takes, as the rows above: a refused plugin hands nothing and speaks nowhere.
                     Servers = plugin.Manifest.Servers.Select(s => s.Name).ToArray(),
+                    // HELPPLUG1a (D170 point 3): what it hands Ask Daoris, and the tools it may call there, which its page says.
+                    HelpServers = HelpServersOf(plugin.Manifest),
                     Hook = HookOf(plugin),
                     Listening = health.Listening,
                     // The loop's own record (D119 §2): the state, since when, and its failure while failing.
@@ -95,6 +97,7 @@ public sealed class PluginsRoutes(DriverContext context)
                     Harnesses = offer.Manifest.Harnesses.Select(h => h.Name).ToArray(),
                     Points = offer.Manifest.Hooks?.Points ?? [],
                     Servers = offer.Manifest.Servers.Select(s => s.Name).ToArray(),
+                    HelpServers = HelpServersOf(offer.Manifest),
                     offer.Needs,
                     offer.Installed,
                 };
@@ -405,6 +408,15 @@ public sealed class PluginsRoutes(DriverContext context)
 
     internal static object[] ChangesOf(IReadOnlyList<PluginChange> changes) =>
         [.. changes.Select(change => (object)new { change.What, change.Was, change.Now })];
+
+    /// <summary>
+    /// The servers a plugin hands Ask Daoris (HELPPLUG1a, D170 point 3), each with the tools it may call there, as the manifest
+    /// declares them, for its page to say. Empty for one that hands it none, and for a refused plugin, which hands nothing.
+    /// </summary>
+    private static object[] HelpServersOf(PluginManifest manifest) =>
+    [
+        .. manifest.Servers.Where(server => server.HandedTo(PluginServerTo.Help)).Select(server => new { server.Name, server.Allow }),
+    ];
 
     /// <summary>
     /// A taken plugin's hook for its row (PLUGUI1e): its command as its manifest writes it, the page's way, so `${plugin}`

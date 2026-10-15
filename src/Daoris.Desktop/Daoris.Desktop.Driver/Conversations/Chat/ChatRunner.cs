@@ -591,18 +591,27 @@ public sealed class ChatRunner : IDisposable
 
     /// <summary>
     /// Where Ask Daoris's conversation runs (HELP1a): its room, the room's allows and a read of its own files folder, and the
-    /// checkouts reading across lets it read (D107); no plugin's server; the agent's own asking mode; its tools up front.
+    /// checkouts reading across lets it read (D107); the agent's own asking mode; its tools up front.
     /// </summary>
     /// <remarks>
-    /// <b>Its conversation is kept</b> (ASKHIST1): the person goes back to an earlier one from its history, and words written to
-    /// one that ended go on in its own harness conversation by the id kept for it (D137 §2.2), as a repository's chat does.
+    /// <para><b>Its conversation is kept</b> (ASKHIST1): the person goes back to an earlier one from its history, and words written to
+    /// one that ended go on in its own harness conversation by the id kept for it (D137 §2.2), as a repository's chat does.</para>
+    ///
+    /// <para><b>A plugin's server reaches it only where the plugin declares it for Ask Daoris</b> (HELPPLUG1a, D170 point 3), and
+    /// its tools are allowed only as the plugin declares them. HELP1a handed it none, since a browser brought up for a tool it may
+    /// not use is a window for nothing; a server declared for it names the tools it may use.</para>
     /// </remarks>
-    internal ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads) =>
+    internal ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads) => HelpPlaceIn(_home, room, reads);
+
+    /// <inheritdoc cref="HelpPlace"/>
+    internal static ChatPlace HelpPlaceIn(string home, string room, IReadOnlyList<HelpRead> reads) =>
         new(
-            HelpRoom.Repository, room, (file, id) => HelpRoom.Rules(file, ChatFiles.Folder(_home, id), reads),
-            Plugins: false, ConnectorOnPipe: true, Posture: HelpRoom.Posture, ToolsUpFront: true)
+            HelpRoom.Repository, room,
+            (file, id) => HelpRoom.Rules(file, ChatFiles.Folder(home, id), reads, PluginCatalog.Load(home, AdapterSet.Built().Names).HelpAllows),
+            Plugins: true, ConnectorOnPipe: true, Posture: HelpRoom.Posture, ToolsUpFront: true)
         {
             Keeps = true,
+            ServersTo = PluginServerTo.Help,
         };
 
     /// <summary>What differs between a conversation in a repository and Ask Daoris's in its room (HELP1a).</summary>
@@ -627,6 +636,12 @@ public sealed class ChatRunner : IDisposable
         public IReadOnlyList<string> Also { get; init; } = [];
 
         /// <summary>
+        /// Whose plugins' servers it is handed, where <see cref="Plugins"/> hands any (HELPPLUG1a): a repository's conversation
+        /// those declared for sessions, Ask Daoris's those declared for it.
+        /// </summary>
+        public string ServersTo { get; init; } = PluginServerTo.Sessions;
+
+        /// <summary>
         /// Whether its harness conversation's id is kept for it (MSG1c, D137 §4.2), so the conversation goes on when the
         /// person writes to it after it ended: a repository's conversation, and since ASKHIST1 Ask Daoris's too.
         /// </summary>
@@ -643,12 +658,13 @@ public sealed class ChatRunner : IDisposable
     /// set: that holds the plugins' own agents, so a plugin declaring an agent and a server was refused as one this build
     /// carries, and its servers were withheld from every conversation.
     /// </remarks>
+    /// <param name="to">Whose servers: those declared for sessions, or for Ask Daoris (HELPPLUG1a).</param>
     internal static async Task<(IReadOnlyList<AcpMcpServer> Handed, Noted? Notice, bool Drives, IReadOnlyList<string> Drivers)> HandServersAsync(
-        string home, IInAppBrowser? browser, PluginLog plugins, string sessionId, CancellationToken ct)
+        string home, IInAppBrowser? browser, PluginLog plugins, string sessionId, CancellationToken ct, string to = PluginServerTo.Sessions)
     {
         var catalog = PluginCatalog.Load(home, AdapterSet.Built().Names);
-        var handed = await InAppBrowserServers.HandNotedAsync(catalog.Servers, browser, ct).ConfigureAwait(false);
-        plugins.Served(catalog, sessionId, handed.Handed);
+        var handed = await InAppBrowserServers.HandNotedAsync(catalog.ServersTo(to), browser, ct).ConfigureAwait(false);
+        plugins.Served(catalog, sessionId, handed.Handed, to);
         return handed;
     }
 
@@ -723,7 +739,7 @@ public sealed class ChatRunner : IDisposable
             {
                 IReadOnlyList<string> drivers;
                 (pluginServers, browserNotice, drivesBrowser, drivers) = await HandServersAsync(
-                    _home, _browser, _plugins, sessionId, ct).ConfigureAwait(false);
+                    _home, _browser, _plugins, sessionId, ct, place.ServersTo).ConfigureAwait(false);
                 // A new conversation's agent is told of the browser with its first message (BRWHINT1a); one going on resumes a
                 // conversation already told when it opened, so it is told nothing again.
                 if (goOn is null && InAppBrowserServers.Told(drivers) is { } line) _context.Browsers[sessionId] = line;

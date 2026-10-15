@@ -33,14 +33,46 @@ public sealed record PluginHarness(
 public sealed record PluginHooks(IReadOnlyList<string> Command, IReadOnlyList<string> Points);
 
 /// <summary>
-/// An MCP server a plugin hands to every session (D65 §1f) — a browser, a ticket system, whatever
-/// the session should be able to reach. Beside the knowledge host, never instead of it.
+/// An MCP server a plugin hands to sessions (D65 §1f) — a browser, a ticket system, whatever the session should be able to
+/// reach — and, where it says so, to Ask Daoris (D170 point 3). Beside the knowledge host, never instead of it.
 /// </summary>
 /// <param name="Name">What the agent calls it — tools arrive as `mcp__&lt;name&gt;__&lt;tool&gt;`. The knowledge host's name is refused.</param>
 /// <param name="Command">The program and its arguments, `${plugin}` already expanded.</param>
 /// <param name="Environment">What the server is started with, as declared.</param>
 public sealed record PluginServer(
-    string Name, IReadOnlyList<string> Command, IReadOnlyDictionary<string, string> Environment);
+    string Name, IReadOnlyList<string> Command, IReadOnlyDictionary<string, string> Environment)
+{
+    /// <summary>
+    /// Who it is handed to (HELPPLUG1a): <see cref="PluginServerTo.Sessions"/>, <see cref="PluginServerTo.Help"/> or both, as
+    /// declared; absent is sessions alone, as every server was before (INT1). Twin: the CLI's <c>PluginServer.to</c>.
+    /// </summary>
+    public IReadOnlyList<string> To { get; init; } = [PluginServerTo.Sessions];
+
+    /// <summary>
+    /// The tools of it Ask Daoris may call, by name, as the plugin declares them (D170 point 3); none where it declares none.
+    /// Only a server handed to Ask Daoris declares any. Twin: the CLI's <c>PluginServer.allow</c>.
+    /// </summary>
+    public IReadOnlyList<string> Allow { get; init; } = [];
+
+    /// <summary>Whether it is handed to <paramref name="to"/>.</summary>
+    public bool HandedTo(string to) => To.Contains(to, StringComparer.Ordinal);
+}
+
+/// <summary>
+/// Who a plugin's server is handed to (HELPPLUG1a, D170 point 3), as a manifest's <c>to</c> spells it. Twin: the CLI's
+/// <c>SERVER_TO</c>.
+/// </summary>
+public static class PluginServerTo
+{
+    /// <summary>Every session in a repository: driven, a conversation, an intake (INT1).</summary>
+    public const string Sessions = "sessions";
+
+    /// <summary>Ask Daoris, in its room (D170 point 3).</summary>
+    public const string Help = "help";
+
+    /// <summary>Each destination a manifest may name, in its order.</summary>
+    public static readonly IReadOnlyList<string> All = [Sessions, Help];
+}
 
 /// <summary>A plugin's manifest, as read — with everything a refused plugin would have contributed already removed.</summary>
 /// <param name="Icon">

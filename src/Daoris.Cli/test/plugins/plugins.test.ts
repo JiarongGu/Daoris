@@ -309,7 +309,66 @@ test('a server without a command is a malformed manifest naming the server', () 
   fx.cleanup();
 });
 
-// ——— Twin rule 4: disabled is a row, never a rename.
+// ——— Who a server is handed to (HELPPLUG1a, D170 point 3): sessions by default, Ask Daoris only where declared.
+
+const TO_PROBLEM = "server `tickets`'s `to` must list who it is handed to, once each: `sessions`, `help` (Ask Daoris) or both.";
+const ALLOW_PROBLEM = "server `tickets`'s `allow` must list the tools Ask Daoris may call, once each, by name: letters, digits, `_` and `-`.";
+const ALLOW_NOT_HANDED = 'server `tickets` allows tools in Ask Daoris but is not handed to it: its `to` must name `help`.';
+
+/**
+ * The rules, in order, for a server's `to` and `allow`; a problem refuses the plugin, as a server's other problems do. Twin:
+ * the driver's `PluginCatalogTests.ServerDestinations` holds the same rows, the same words, in the same order.
+ */
+const SERVER_DESTINATIONS: Array<[declared: string, problem: string | null, to: string[], allow: string[]]> = [
+  ['', null, ['sessions'], []],
+  [', "to": ["help"], "allow": ["search", "get_issue"] ', null, ['help'], ['search', 'get_issue']],
+  [', "to": ["sessions", "help"] ', null, ['sessions', 'help'], []],
+  [', "to": ["sessions"] ', null, ['sessions'], []],
+  [', "to": "help" ', TO_PROBLEM, [], []],
+  [', "to": [] ', TO_PROBLEM, [], []],
+  [', "to": ["everyone"] ', TO_PROBLEM, [], []],
+  [', "to": ["help", "help"] ', TO_PROBLEM, [], []],
+  [', "to": ["help"], "allow": "search" ', ALLOW_PROBLEM, [], []],
+  [', "to": ["help"], "allow": ["Bash(rm:*)"] ', ALLOW_PROBLEM, [], []],
+  [', "to": ["help"], "allow": ["search", "search"] ', ALLOW_PROBLEM, [], []],
+  [', "to": ["help"], "allow": [""] ', ALLOW_PROBLEM, [], []],
+  [', "allow": ["search"] ', ALLOW_NOT_HANDED, [], []],
+  [', "to": ["sessions"], "allow": ["search"] ', ALLOW_NOT_HANDED, [], []],
+];
+
+test('a server\'s destination and the tools it allows are read by the twins\' rules (HELPPLUG1a)', () => {
+  for (const [declared, problem, to, allow] of SERVER_DESTINATIONS) {
+    const fx = makeFixture('plugins-server-to');
+    plugin(fx.root, 'acme.tickets', `{ "id": "acme.tickets", "servers": [ { "name": "tickets", "command": ["tickets"]${declared} } ] }`);
+
+    const [entry] = readPlugins(fx.root).plugins;
+    assert.equal(entry!.problem, problem, declared);
+    if (problem !== null) {
+      assert.deepEqual(entry!.manifest.servers, [], declared);
+    } else {
+      const [server] = entry!.manifest.servers;
+      assert.deepEqual([server!.to, server!.allow], [to, allow], declared);
+    }
+    fx.cleanup();
+  }
+});
+
+test('the list says what a plugin hands Ask Daoris beside what it hands sessions (HELPPLUG1a)', () => {
+  const fx = makeFixture('plugins-server-to-list');
+  plugin(fx.root, 'acme.tickets', JSON.stringify({
+    id: 'acme.tickets',
+    servers: [
+      { name: 'tickets', command: ['tickets'], to: ['help'], allow: ['search'] },
+      { name: 'docs', command: ['docs'] },
+    ],
+  }));
+
+  const { code, out } = run(['list'], fx.root);
+  assert.equal(code, 0);
+  assert.match(out, /hands sessions docs/);
+  assert.match(out, /hands Ask Daoris tickets/);
+  fx.cleanup();
+});
 
 test('disabled is a row in plugins.json that stays one row per id', () => {
   const fx = makeFixture('plugins-state');

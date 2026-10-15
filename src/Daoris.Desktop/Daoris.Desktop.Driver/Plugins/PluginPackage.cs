@@ -188,7 +188,16 @@ public static class PluginPackageCommand
         var parts = new List<string>();
         if (manifest.Harnesses.Count > 0) parts.Add($"declares {string.Join(", ", manifest.Harnesses.Select(harness => harness.Name))}");
         if (manifest.Hooks is { } hooks) parts.Add($"speaks on {string.Join(", ", hooks.Points)}");
-        if (manifest.Servers.Count > 0) parts.Add($"hands sessions {string.Join(", ", manifest.Servers.Select(server => server.Name))}");
+        var sessions = manifest.Servers.Where(server => server.HandedTo(PluginServerTo.Sessions)).ToList();
+        if (sessions.Count > 0) parts.Add($"hands sessions {string.Join(", ", sessions.Select(server => server.Name))}");
+        // HELPPLUG1a (D170 point 3): what it hands Ask Daoris, and the tools it allows it there.
+        var help = manifest.Servers.Where(server => server.HandedTo(PluginServerTo.Help)).ToList();
+        if (help.Count > 0)
+        {
+            parts.Add($"hands Ask Daoris {string.Join(", ", help.Select(server =>
+                server.Allow.Count > 0 ? $"{server.Name} ({string.Join(", ", server.Allow)})" : server.Name))}");
+        }
+
         return parts.Count > 0 ? string.Join("; ", parts) : "declares nothing and speaks nothing";
     }
 }

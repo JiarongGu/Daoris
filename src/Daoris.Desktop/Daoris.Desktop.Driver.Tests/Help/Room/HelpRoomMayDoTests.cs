@@ -78,6 +78,59 @@ public sealed class HelpRoomMayDoTests
         Assert.DoesNotContain("switched off", agents);
     }
 
+    /// <summary>
+    /// HELPPLUG1a (D170 point 3): the servers plugins hand it are named, with the tools it may call on each, and what such a
+    /// tool does outside Daoris is the plugin's act; a change to Daoris itself is still a proposal.
+    /// </summary>
+    [Fact]
+    public void The_room_names_the_servers_plugins_hand_it_and_the_tools_it_may_call()
+    {
+        var agents = HelpRoom.Render(HelpRoomFixture.Machine with
+        {
+            PluginServers = [new("acme.tickets", "tickets", ["search", "get_issue"]), new("acme.docs", "docs", [])],
+        });
+
+        Assert.Contains("Plugins installed here hand you these servers", agents);
+        Assert.Contains("- `tickets` (plugin `acme.tickets`): `search`, `get_issue`", agents);
+        Assert.Contains("- `docs` (plugin `acme.docs`): none of its tools", agents);
+        Assert.Contains("the plugin's own act", agents);
+        Assert.Contains("a change to Daoris itself is still a proposal", agents);
+    }
+
+    /// <summary>With no plugin handing it a server, nothing is said of one.</summary>
+    [Fact]
+    public void With_no_plugin_server_nothing_is_said_of_one()
+    {
+        Assert.DoesNotContain("hand you these servers", HelpRoom.Render(HelpRoomFixture.Machine));
+    }
+
+    /// <summary>The servers it is handed are the catalogue's for Ask Daoris: a session's are not its, nor a plugin's switched off.</summary>
+    [Fact]
+    public void The_servers_it_is_handed_are_described_from_the_catalogue()
+    {
+        var home = Path.Combine(Path.GetTempPath(), "daoris-help-servers-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(home, PluginCatalog.Folder, "acme.tools"));
+            File.WriteAllText(Path.Combine(home, PluginCatalog.Folder, "acme.tools", PluginCatalog.ManifestName), """
+                { "id": "acme.tools", "servers": [
+                    { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search"] },
+                    { "name": "docs", "command": ["docs"] } ] }
+                """);
+
+            var machine = HelpRoom.Describe(
+                DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, plugins: PluginCatalog.Load(home));
+
+            var server = Assert.Single(machine.PluginServers);
+            Assert.Equal(("acme.tools", "tickets"), (server.Plugin, server.Server));
+            Assert.Equal(["search"], server.Tools);
+        }
+        finally
+        {
+            try { Directory.Delete(home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
     /// <summary>The checkouts it may read are the driver's own answer: each readable one, in every workspace.</summary>
     [Fact]
     public void The_checkouts_it_may_read_are_described_from_the_drivers_setting_and_registry()

@@ -97,10 +97,28 @@ public sealed class PluginCatalog
     /// <summary>
     /// Every server the contributing plugins hand to a session, in catalogue order, as the protocol
     /// door carries one (ACP4). The knowledge host is not among them: it is Daoris's own, offered
-    /// first by the driver, and a plugin may not declare its name.
+    /// first by the driver, and a plugin may not declare its name. Since HELPPLUG1a, the ones declared for sessions.
     /// </summary>
-    public IReadOnlyList<AcpMcpServer> Servers => Contributing
+    public IReadOnlyList<AcpMcpServer> Servers => ServersTo(PluginServerTo.Sessions);
+
+    /// <summary>The servers the contributing plugins hand Ask Daoris (HELPPLUG1a, D170 point 3): only those declared for it.</summary>
+    public IReadOnlyList<AcpMcpServer> HelpServers => ServersTo(PluginServerTo.Help);
+
+    /// <summary>
+    /// The rules that let Ask Daoris call the tools its servers' plugins declare (D170 point 3), each as the harness spells a
+    /// server's tool, <c>mcp__&lt;server&gt;__&lt;tool&gt;</c>, in catalogue order. Nothing else: a tool's name was held to its
+    /// shape when the manifest was read, so no rule but a server's tool can come of one.
+    /// </summary>
+    public IReadOnlyList<string> HelpAllows => Contributing
         .SelectMany(p => p.Manifest.Servers)
+        .Where(s => s.HandedTo(PluginServerTo.Help))
+        .SelectMany(s => s.Allow.Select(tool => $"mcp__{s.Name}__{tool}"))
+        .ToList();
+
+    /// <summary>The servers the contributing plugins hand <paramref name="to"/>, in catalogue order, as the protocol door carries one.</summary>
+    public IReadOnlyList<AcpMcpServer> ServersTo(string to) => Contributing
+        .SelectMany(p => p.Manifest.Servers)
+        .Where(s => s.HandedTo(to))
         .Select(s => new AcpMcpServer(s.Name, s.Command[0], s.Command.Skip(1).ToList(), s.Environment))
         .ToList();
 
@@ -453,7 +471,18 @@ public sealed class PluginCatalog
                         }
                     }
 
-                    servers.Add(new PluginServer(name, command, environment));
+                    // HELPPLUG1a (D170 point 3): who it is handed to, sessions where it says none, and the tools Ask Daoris may
+                    // call, only where it is handed to Ask Daoris. Twin: `plugins.ts`, the same rules and words in the same order.
+                    var to = DestinationsOf(row, name, out var toProblem);
+                    if (toProblem is not null) return (PluginManifest.Empty(id), toProblem);
+                    var allow = AllowedOf(row, name, out var allowProblem);
+                    if (allowProblem is not null) return (PluginManifest.Empty(id), allowProblem);
+                    if (allow.Count > 0 && !to.Contains(PluginServerTo.Help, StringComparer.Ordinal))
+                    {
+                        return (PluginManifest.Empty(id), $"server `{name}` allows tools in Ask Daoris but is not handed to it: its `to` must name `help`.");
+                    }
+
+                    servers.Add(new PluginServer(name, command, environment) { To = to, Allow = allow });
                 }
             }
 
@@ -503,5 +532,45 @@ public sealed class PluginCatalog
         }
 
         return items;
+    }
+
+    /// <summary>
+    /// A tool's name as Ask Daoris's rules may name it (HELPPLUG1a): letters, digits, <c>_</c> and <c>-</c>, as the harness names
+    /// a tool, so a rule made of one is a server's tool and never a command or a path. Twin: the CLI's <c>TOOL_NAME</c>.
+    /// </summary>
+    private static readonly Regex ToolName = new(@"^[A-Za-z0-9_-]{1,64}\z", RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// A server's <c>to</c> (HELPPLUG1a): absent is sessions alone; otherwise a list naming each destination once, at least one,
+    /// and none but <see cref="PluginServerTo.All"/>.
+    /// </summary>
+    private static IReadOnlyList<string> DestinationsOf(JsonElement server, string name, out string? problem)
+    {
+        problem = null;
+        if (!server.TryGetProperty("to", out _)) return [PluginServerTo.Sessions];
+        var to = Strings(server, "to", text => text);
+        if (to is not { Count: > 0 } || to.Distinct(StringComparer.Ordinal).Count() != to.Count
+            || to.Any(each => !PluginServerTo.All.Contains(each, StringComparer.Ordinal)))
+        {
+            problem = $"server `{name}`'s `to` must list who it is handed to, once each: `sessions`, `help` (Ask Daoris) or both.";
+            return [];
+        }
+
+        return to;
+    }
+
+    /// <summary>A server's <c>allow</c> (HELPPLUG1a): absent is none; otherwise a list of tool names, each once.</summary>
+    private static IReadOnlyList<string> AllowedOf(JsonElement server, string name, out string? problem)
+    {
+        problem = null;
+        if (!server.TryGetProperty("allow", out _)) return [];
+        var allow = Strings(server, "allow", text => text);
+        if (allow is null || allow.Distinct(StringComparer.Ordinal).Count() != allow.Count || allow.Any(tool => !ToolName.IsMatch(tool)))
+        {
+            problem = $"server `{name}`'s `allow` must list the tools Ask Daoris may call, once each, by name: letters, digits, `_` and `-`.";
+            return [];
+        }
+
+        return allow;
     }
 }

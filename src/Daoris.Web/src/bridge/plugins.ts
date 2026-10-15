@@ -2,7 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
 import type { KitPoint, NewPlugin, PluginTrialResult } from '../plugins/PluginKit';
-import type { PluginOfferShown } from '../plugins/catalog';
+import type { HelpServerShown, PluginOfferShown } from '../plugins/catalog';
 import type { PluginSourceShown, PluginUpdatePlanShown } from '../plugins/PluginUpdate';
 import { call } from './call';
 
@@ -44,6 +44,8 @@ export type PluginEntry = {
   icon?: string | null;
   /** Why its declared icon is not drawn, in the reader's sentence (D140 §3.1). */
   iconProblem?: string | null;
+  /** The servers it hands Ask Daoris, with what Ask Daoris may call on each (HELPPLUG1a, D170 point 3); an older shell sends none. */
+  helpServers?: HelpServerShown[];
 };
 export type PluginCatalog = {
   folder: string;

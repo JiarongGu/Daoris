@@ -149,10 +149,17 @@ public static class PluginsCommand
         foreach (var (server, index) in page.Servers.Select((server, index) => (server, index)))
         {
             var environment = server.Environment.Count > 0 ? $", environment {string.Join(", ", server.Environment)}" : "";
-            var handed = server.DrivesBrowser
-                ? "drives Daoris's browser, and is withheld where no shell answers"
-                : "handed to every session beside Daoris's own knowledge host";
-            Field(text, index == 0 ? "servers" : "", $"{server.Name}{taken}  `{string.Join(" ", server.Command)}`{environment}; {handed}");
+            var handed = new List<string>();
+            if (server.DrivesBrowser) handed.Add("drives Daoris's browser, and is withheld where no shell answers");
+            else if (server.To.Contains(PluginServerTo.Sessions, StringComparer.Ordinal)) handed.Add("handed to every session beside Daoris's own knowledge host");
+            // HELPPLUG1a (D170 point 3): what it hands Ask Daoris, and the tools it may call there.
+            if (server.To.Contains(PluginServerTo.Help, StringComparer.Ordinal))
+            {
+                handed.Add("handed to Ask Daoris, which may call "
+                    + (server.Allow.Count > 0 ? string.Join(", ", server.Allow) : "none of its tools"));
+            }
+
+            Field(text, index == 0 ? "servers" : "", $"{server.Name}{taken}  `{string.Join(" ", server.Command)}`{environment}; {string.Join("; ", handed)}");
         }
 
         Field(text, "tests", page.Tests.Count > 0 ? string.Join(", ", page.Tests) : "its folder carries none");

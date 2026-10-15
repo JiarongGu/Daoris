@@ -19,6 +19,10 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         {
             Reads = [.. AcrossRules.Readable(sources.Config, sources.Snapshot.Repositories)
                 .Select(checkout => new HelpRead(checkout.Repository, workspaceOf[checkout.Repository], checkout.Path))],
+            // HELPPLUG1a: the servers the catalogue hands it, as its spawn is handed them (PluginCatalog.HelpServers).
+            PluginServers = [.. sources.Plugins.Contributing.SelectMany(plugin => plugin.Manifest.Servers
+                .Where(server => server.HandedTo(PluginServerTo.Help))
+                .Select(server => new HelpPluginServer(plugin.Manifest.Id, server.Name, server.Allow)))],
         };
     }
 
@@ -71,6 +75,22 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("are cleaned up under the workspace's page → Branches → Session branches. When the family's knowledge and quests\n");
         text.Append("are all you can see, say what you could not see: never build a repository's state from its quests and\n");
         text.Append("present it as the tree.\n\n");
+        // HELPPLUG1a (D170 point 3): a plugin's server reaches it only where declared for it, and only its declared tools are
+        // allowed; what such a tool does outside Daoris is the plugin's, and Daoris itself still changes only by a proposal.
+        if (machine.PluginServers.Count > 0)
+        {
+            text.Append("Plugins installed here hand you these servers. Call only the tools listed for each; any other is refused:\n\n");
+            foreach (var server in machine.PluginServers)
+            {
+                var tools = server.Tools.Count > 0 ? string.Join(", ", server.Tools.Select(tool => $"`{tool}`")) : "none of its tools";
+                text.Append($"- `{server.Server}` (plugin `{server.Plugin}`): {tools}\n");
+            }
+
+            text.Append('\n');
+            text.Append("What such a tool does outside Daoris is the plugin's own act, as the person who installed it;\n");
+            text.Append("a change to Daoris itself is still a proposal, with the tool for its kind.\n\n");
+        }
+
         // HELPOWED1 (D170 point 2): asked to set a repository up, the helper said it had no shell and no door, as if that were
         // the design. A door it lacks is one Daoris owes, and the room lists them.
         text.Append("Where you have no door to propose what the person wants, that is never a limit of yours: where the act is\n");
@@ -90,3 +110,6 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
 
 /// <summary>A checkout Ask Daoris may read (D107): its repository, its workspace, and where it is.</summary>
 public sealed record HelpRead(string Name, string Workspace, string Path);
+
+/// <summary>A server a plugin hands Ask Daoris (HELPPLUG1a): the plugin, the server's name, and the tools it may call there.</summary>
+public sealed record HelpPluginServer(string Plugin, string Server, IReadOnlyList<string> Tools);

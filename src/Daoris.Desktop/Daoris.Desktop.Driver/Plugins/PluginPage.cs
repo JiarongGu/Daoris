@@ -57,7 +57,7 @@ public static class PluginPage
                 server.Name, server.Command,
                 // Names only: the value is read for nothing but whether it names the browser.
                 [.. server.Environment.Keys.Order(StringComparer.Ordinal)],
-                server.Command.Any(DrivesBrowser) || server.Environment.Values.Any(DrivesBrowser)))],
+                server.Command.Any(DrivesBrowser) || server.Environment.Values.Any(DrivesBrowser)) { To = server.To, Allow = server.Allow })],
             manifest.Hooks?.Points.Contains(HookPoints.Land, StringComparer.Ordinal) == true ? Landing(home, plugin, catalog) : null,
             Source(home, entry, offers),
             Count(entry.Data, CountBound, CountTime),

@@ -154,8 +154,31 @@ export interface PluginHarness {
 
 export interface PluginHooks { command: string[]; points: string[] }
 
-/** An MCP server a plugin hands to every session (D65 §1f) — beside the knowledge host, never in its place. */
-export interface PluginServer { name: string; command: string[]; env: Record<string, string> }
+/**
+ * Who a plugin's server is handed to (HELPPLUG1a, D170 point 3), as a manifest's `to` spells it: every session in a repository,
+ * and Ask Daoris. Twin: the driver's `PluginServerTo`.
+ */
+export const SERVER_TO = Object.freeze({ sessions: 'sessions', help: 'help' } as const);
+
+/**
+ * A tool's name as Ask Daoris's rules may name it (HELPPLUG1a): letters, digits, `_` and `-`, as the harness names a tool, so
+ * a rule made of one is a server's tool and never a command or a path. Twin: the driver's `PluginCatalog.ToolName`.
+ */
+const TOOL_NAME = /^[A-Za-z0-9_-]{1,64}$/;
+
+/**
+ * An MCP server a plugin hands to sessions (D65 §1f) — beside the knowledge host, never in its place — and, where it says so,
+ * to Ask Daoris (D170 point 3).
+ */
+export interface PluginServer {
+  name: string;
+  command: string[];
+  env: Record<string, string>;
+  /** Who it is handed to (HELPPLUG1a): `sessions`, `help` or both, as declared; absent is sessions alone, as before. */
+  to: string[];
+  /** The tools of it Ask Daoris may call, by name, as the plugin declares them; only a server handed to Ask Daoris has any. */
+  allow: string[];
+}
 
 export interface PluginManifest {
   id: string;
@@ -424,7 +447,24 @@ export function readManifest(folderName: string, folder: string, asWritten = fal
         }
         for (const [key, value] of Object.entries(declared as Record<string, string>)) env[key] = expand(value, base);
       }
-      servers.push({ name, command, env });
+      // HELPPLUG1a (D170 point 3): who it is handed to, sessions where it says none, and the tools Ask Daoris may call, only
+      // where it is handed to Ask Daoris. Twin: `PluginCatalog.cs`, the same rules and words in the same order.
+      const fields = row as Record<string, unknown>;
+      const to = fields.to === undefined ? [SERVER_TO.sessions] : fields.to;
+      const destinations: readonly string[] = Object.values(SERVER_TO);
+      if (!Array.isArray(to) || to.length === 0 || new Set(to).size !== to.length
+        || !to.every((each) => typeof each === 'string' && destinations.includes(each))) {
+        return { manifest: empty(id), problem: `server \`${name}\`'s \`to\` must list who it is handed to, once each: \`sessions\`, \`help\` (Ask Daoris) or both.` };
+      }
+      const allow = fields.allow === undefined ? [] : fields.allow;
+      if (!Array.isArray(allow) || new Set(allow).size !== allow.length
+        || !allow.every((tool) => typeof tool === 'string' && TOOL_NAME.test(tool))) {
+        return { manifest: empty(id), problem: `server \`${name}\`'s \`allow\` must list the tools Ask Daoris may call, once each, by name: letters, digits, \`_\` and \`-\`.` };
+      }
+      if (allow.length > 0 && !to.includes(SERVER_TO.help)) {
+        return { manifest: empty(id), problem: `server \`${name}\` allows tools in Ask Daoris but is not handed to it: its \`to\` must name \`help\`.` };
+      }
+      servers.push({ name, command, env, to: to as string[], allow: allow as string[] });
     }
   }
 
@@ -960,6 +1000,14 @@ export function placement(home: string, folder: string): string | null {
 const line = (command: readonly string[] | null | undefined): string =>
   (command ?? []).map((word) => (word.includes(' ') ? `"${word}"` : word)).join(' ');
 
+/**
+ * Who a server is handed to and what it allows Ask Daoris, as an update's change says it (HELPPLUG1a): nothing for a server
+ * handed to sessions alone, as every server was before, so an update that keeps one changes nothing. Twin: `PluginChange.ServerTo`.
+ */
+const serverTo = (server: PluginServer): string =>
+  (server.to.length === 1 && server.to[0] === SERVER_TO.sessions ? '' : ` to ${server.to.join(' and ')}`)
+  + (server.allow.length > 0 ? ` allowing ${server.allow.join(', ')}` : '');
+
 /** What an update changes, from what is installed to what the source now holds, each as written. */
 export function changesBetween(was: PluginManifest, now: PluginManifest): PluginChange[] {
   const said = (manifest: PluginManifest): Record<PluginChange['what'], string> => ({
@@ -967,7 +1015,7 @@ export function changesBetween(was: PluginManifest, now: PluginManifest): Plugin
     command: line(manifest.hooks?.command),
     points: (manifest.hooks?.points ?? []).join(', '),
     harnesses: manifest.harnesses.map((harness) => `${harness.name} (${line(harness.command)})`).join('; '),
-    servers: manifest.servers.map((server) => `${server.name} (${line(server.command)})`).join('; '),
+    servers: manifest.servers.map((server) => `${server.name} (${line(server.command)})${serverTo(server)}`).join('; '),
   });
   const before = said(was);
   const after = said(now);
@@ -1113,8 +1161,12 @@ function describe(manifest: PluginManifest): string {
     parts.push(`declares ${manifest.harnesses.map((h) => h.name).join(', ')}`);
   }
   if (manifest.hooks) parts.push(`speaks on ${manifest.hooks.points.join(', ')}`);
-  if (manifest.servers.length > 0) {
-    parts.push(`hands sessions ${manifest.servers.map((s) => s.name).join(', ')}`);
+  const sessions = manifest.servers.filter((s) => s.to.includes(SERVER_TO.sessions));
+  if (sessions.length > 0) parts.push(`hands sessions ${sessions.map((s) => s.name).join(', ')}`);
+  // HELPPLUG1a (D170 point 3): what it hands Ask Daoris, and the tools it allows it there.
+  const help = manifest.servers.filter((s) => s.to.includes(SERVER_TO.help));
+  if (help.length > 0) {
+    parts.push(`hands Ask Daoris ${help.map((s) => (s.allow.length > 0 ? `${s.name} (${s.allow.join(', ')})` : s.name)).join(', ')}`);
   }
   return parts.length > 0 ? parts.join('; ') : 'declares nothing and speaks nothing';
 }

@@ -6,7 +6,7 @@ import { type KitPoint, type PluginTrialResult, pointGloss, TrialReport } from '
 import { PluginSourceLine, PluginUpdatePlan, type PluginUpdatePlanShown, updatable } from './PluginUpdate';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
-import { type PluginShown, pluginState, speaks, updateWaits } from './catalog';
+import { type HelpServerShown, type PluginShown, pluginState, speaks, updateWaits } from './catalog';
 import { PluginIcon } from './PluginIcon';
 import { STATE_WORD } from './PluginList';
 
@@ -48,6 +48,30 @@ export function PointRows({ points, kitPoints }: { points: string[]; kitPoints?:
         );
       })}
     </ul>
+  );
+}
+
+/**
+ * **What a plugin hands Ask Daoris** (HELPPLUG1a, D170 point 3): each server in the mono face, with what Ask Daoris may call on
+ * it as the plugin declares it, and a line saying nothing called there changes Daoris itself. None where it hands nothing.
+ */
+export function HelpServers({ servers }: { servers?: HelpServerShown[] }) {
+  const { t } = useTranslation();
+  if (!servers?.length) return null;
+  return (
+    <PageSection title={t('plugin.section.help')}>
+      <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+        {servers.map((server) => (
+          <li key={server.name} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-small">
+            <code className="font-mono text-meta text-ink">{server.name}</code>
+            <span className="text-ink-soft">
+              {server.allow.length > 0 ? t('plugin.help.calls', { calls: server.allow.join(', ') }) : t('plugin.help.callsNone')}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <Body className="mt-1.5">{t('plugin.help.body')}</Body>
+    </PageSection>
   );
 }
 
@@ -199,6 +223,8 @@ export function PluginPage({
           <NameRows names={plugin.harnesses} />
         </PageSection>
       )}
+
+      <HelpServers servers={plugin.helpServers} />
 
       <PageSection title={t('plugin.section.tests')}>
         <h3 className="m-0 mb-1.5 text-small font-medium text-ink-soft">{t('plugin.tests.trial')}</h3>

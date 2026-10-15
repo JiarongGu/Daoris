@@ -84,13 +84,19 @@ public static class HelpRoom
     /// The checkouts reading across lets it read (D107): each a read and two read-only git commands by exact
     /// prefix, and nothing that writes. Anything else is asked in its mode, and refused (D52).
     /// </param>
-    public static RuleLists Rules(PermissionFile file, string kept, IReadOnlyList<HelpRead>? reads = null)
+    /// <param name="plugins">
+    /// The tools of the servers plugins hand it that it may call, as each plugin declares them (HELPPLUG1a, D170 point 3):
+    /// <see cref="PluginCatalog.HelpAllows"/>, each a server's tool and nothing else. The person's denies still win.
+    /// </param>
+    public static RuleLists Rules(
+        PermissionFile file, string kept, IReadOnlyList<HelpRead>? reads = null, IReadOnlyList<string>? plugins = null)
     {
         var composed = PermissionRules.Compose(file, workspace: null, repository: null);
         return new RuleLists(
             [
                 .. Allowed, PermissionRules.ReadRule(kept),
                 .. (reads ?? []).SelectMany(read => AcrossRules.ReadOnlyRules(new AcrossCheckout(read.Name, read.Path))),
+                .. plugins ?? [],
             ],
             [],
             composed.Deny);
@@ -219,6 +225,9 @@ public sealed record HelpMachine
 
     /// <summary>The checkouts it may read, by name; a path here is one reading across allows, and no other.</summary>
     public IReadOnlyList<HelpRead> Reads { get; init; } = [];
+
+    /// <summary>The servers plugins hand it, each with the tools it may call there (HELPPLUG1a, D170 point 3), in catalogue order.</summary>
+    public IReadOnlyList<HelpPluginServer> PluginServers { get; init; } = [];
 
     // The own-plugins section's.
 

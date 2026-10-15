@@ -158,7 +158,7 @@ public sealed record PluginChange(string What, string Was, string Now)
             ["command"] = Line(manifest.Hooks?.Command ?? []),
             ["points"] = string.Join(", ", manifest.Hooks?.Points ?? []),
             ["harnesses"] = string.Join("; ", manifest.Harnesses.Select(harness => $"{harness.Name} ({Line(harness.Command)})")),
-            ["servers"] = string.Join("; ", manifest.Servers.Select(server => $"{server.Name} ({Line(server.Command)})")),
+            ["servers"] = string.Join("; ", manifest.Servers.Select(server => $"{server.Name} ({Line(server.Command)}){ServerTo(server)}")),
         };
         var before = Said(was);
         var after = Said(now);
@@ -166,6 +166,15 @@ public sealed record PluginChange(string What, string Was, string Now)
             .Where(what => before[what] != after[what])
             .Select(what => new PluginChange(what, before[what], after[what]))];
     }
+
+    /// <summary>
+    /// Who a server is handed to and what it allows Ask Daoris, as an update's change says it (HELPPLUG1a): nothing for a
+    /// server handed to sessions alone, as every server was before, so an update that keeps one changes nothing. Twin: the
+    /// CLI's <c>serverTo</c>.
+    /// </summary>
+    private static string ServerTo(PluginServer server) =>
+        (server.To is [PluginServerTo.Sessions] ? "" : $" to {string.Join(" and ", server.To)}")
+        + (server.Allow.Count > 0 ? $" allowing {string.Join(", ", server.Allow)}" : "");
 
     /// <summary>A command as a terminal takes it: a word holding a space quoted, as the proposal card spells it.</summary>
     private static string Line(IEnumerable<string> command) =>

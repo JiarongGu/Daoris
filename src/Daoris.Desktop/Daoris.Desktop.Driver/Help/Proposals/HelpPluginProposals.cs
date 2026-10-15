@@ -250,7 +250,7 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
     private static HelpPluginView View(PluginManifest manifest) => new(
         manifest.Id, manifest.Name, manifest.Version, manifest.Hooks?.Command, manifest.Hooks?.Points ?? [],
         [.. manifest.Harnesses.Select(harness => new HelpPluginPart(harness.Name, harness.Command))],
-        [.. manifest.Servers.Select(server => new HelpPluginPart(server.Name, server.Command))]);
+        [.. manifest.Servers.Select(server => new HelpPluginPart(server.Name, server.Command) { To = server.To, Allow = server.Allow })]);
 
     /// <summary>What the plugin runs, said as its manifest writes it: its process and points, its harnesses, its servers.</summary>
     private static string Runs(HelpPluginView view)
@@ -262,8 +262,23 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
         }
 
         said.AddRange(view.Harnesses.Select(harness => $"It declares agent `{harness.Name}` (`{Line(harness.Command)}`)."));
-        said.AddRange(view.Servers.Select(server => $"It hands every session server `{server.Name}` (`{Line(server.Command)}`)."));
+        said.AddRange(view.Servers.Select(Handed));
         return said.Count > 0 ? string.Join(" ", said) : "It declares nothing and runs nothing.";
+    }
+
+    /// <summary>
+    /// A server as the card says it (HELPPLUG1a, D170 point 3): who it is handed to, and for Ask Daoris the tools it may call,
+    /// so the person sees before Apply what a plugin hands the helper.
+    /// </summary>
+    private static string Handed(HelpPluginPart server)
+    {
+        var sessions = server.To.Contains(PluginServerTo.Sessions, StringComparer.Ordinal);
+        var help = server.To.Contains(PluginServerTo.Help, StringComparer.Ordinal);
+        var who = sessions && help ? "every session and Ask Daoris" : help ? "Ask Daoris" : "every session";
+        var tools = !help ? ""
+            : server.Allow.Count > 0 ? $", allowing Ask Daoris {string.Join(", ", server.Allow.Select(tool => $"`{tool}`"))}"
+            : ", allowing Ask Daoris none of its tools";
+        return $"It hands {who} server `{server.Name}` (`{Line(server.Command)}`){tools}.";
     }
 
     /// <summary>The name and version a manifest gives beside its id, where it gives either.</summary>
@@ -312,8 +327,15 @@ public sealed record HelpPluginView(
     public bool Replaced { get; init; }
 }
 
-/// <summary>A harness a plugin declares, or a server it hands every session: its name, and the command that runs it.</summary>
-public sealed record HelpPluginPart(string Name, IReadOnlyList<string> Command);
+/// <summary>A harness a plugin declares, or a server it hands: its name, and the command that runs it.</summary>
+public sealed record HelpPluginPart(string Name, IReadOnlyList<string> Command)
+{
+    /// <summary>A server's: who it is handed to (HELPPLUG1a, D170 point 3), sessions where its manifest names none.</summary>
+    public IReadOnlyList<string> To { get; init; } = [PluginServerTo.Sessions];
+
+    /// <summary>A server's: the tools of it Ask Daoris may call, as its manifest declares them.</summary>
+    public IReadOnlyList<string> Allow { get; init; } = [];
+}
 
 public interface IHelpPluginDoors
 {

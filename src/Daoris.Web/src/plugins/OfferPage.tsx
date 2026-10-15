@@ -4,7 +4,7 @@ import type { KitPoint } from './PluginKit';
 import { ViewMain } from '../work/ViewMain';
 import type { OfferShown } from './catalog';
 import { PluginIcon } from './PluginIcon';
-import { Body, Lead, NameRows, PageHead, PageSection, PointRows } from './PluginPage';
+import { Body, HelpServers, Lead, NameRows, PageHead, PageSection, PointRows } from './PluginPage';
 
 /**
  * **One of Daoris's own plugins, not installed here** (D119 §3.2, D103): a header with its name, its version,
@@ -57,6 +57,8 @@ export function OfferPage({ offer, kitPoints, installing = false, onInstall }: {
       {offer.servers.length > 0 && (
         <PageSection title={t('plugin.section.servers')}><NameRows names={offer.servers} /></PageSection>
       )}
+      {/* HELPPLUG1a (D170 point 3): what it would hand Ask Daoris, said before Install. */}
+      <HelpServers servers={offer.helpServers} />
       {offer.needs.length > 0 && (
         <PageSection title={t('plugin.section.needs')}>
           <ul className="m-0 list-disc pl-5 text-small text-ink-soft">

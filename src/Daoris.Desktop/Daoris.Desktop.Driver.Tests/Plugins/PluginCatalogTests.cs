@@ -593,6 +593,84 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Empty(entry.Manifest.Servers);
     }
 
+    // ——— Who a server is handed to (HELPPLUG1a, D170 point 3): sessions by default, Ask Daoris only where declared.
+
+    private const string ToProblem =
+        "server `tickets`'s `to` must list who it is handed to, once each: `sessions`, `help` (Ask Daoris) or both.";
+
+    private const string AllowProblem =
+        "server `tickets`'s `allow` must list the tools Ask Daoris may call, once each, by name: letters, digits, `_` and `-`.";
+
+    private const string AllowNotHanded =
+        "server `tickets` allows tools in Ask Daoris but is not handed to it: its `to` must name `help`.";
+
+    /// <summary>
+    /// The rules, in order, for a server's <c>to</c> and <c>allow</c>; a problem refuses the plugin, as a server's other problems
+    /// do. Twin: the CLI's <c>plugins.test.ts</c> holds the same rows, the same words, in the same order.
+    /// </summary>
+    public static TheoryData<string, string?, string[], string[]> ServerDestinations => new()
+    {
+        { "", null, ["sessions"], [] },
+        { """, "to": ["help"], "allow": ["search", "get_issue"] """, null, ["help"], ["search", "get_issue"] },
+        { """, "to": ["sessions", "help"] """, null, ["sessions", "help"], [] },
+        { """, "to": ["sessions"] """, null, ["sessions"], [] },
+        { """, "to": "help" """, ToProblem, [], [] },
+        { """, "to": [] """, ToProblem, [], [] },
+        { """, "to": ["everyone"] """, ToProblem, [], [] },
+        { """, "to": ["help", "help"] """, ToProblem, [], [] },
+        { """, "to": ["help"], "allow": "search" """, AllowProblem, [], [] },
+        { """, "to": ["help"], "allow": ["Bash(rm:*)"] """, AllowProblem, [], [] },
+        { """, "to": ["help"], "allow": ["search", "search"] """, AllowProblem, [], [] },
+        { """, "to": ["help"], "allow": [""] """, AllowProblem, [], [] },
+        { """, "allow": ["search"] """, AllowNotHanded, [], [] },
+        { """, "to": ["sessions"], "allow": ["search"] """, AllowNotHanded, [], [] },
+    };
+
+    [Theory]
+    [MemberData(nameof(ServerDestinations))]
+    public void A_servers_destination_and_the_tools_it_allows_are_read_by_the_twins_rules(string declared, string? problem, string[] to, string[] allow)
+    {
+        Plugin("acme.tickets", $$"""{ "id": "acme.tickets", "servers": [ { "name": "tickets", "command": ["tickets"]{{declared}} } ] }""");
+
+        var entry = Assert.Single(PluginCatalog.Load(_home).Plugins);
+
+        Assert.Equal(problem, entry.Problem);
+        if (problem is not null)
+        {
+            Assert.Empty(entry.Manifest.Servers);
+            return;
+        }
+
+        var server = Assert.Single(entry.Manifest.Servers);
+        Assert.Equal(to, server.To);
+        Assert.Equal(allow, server.Allow);
+    }
+
+    /// <summary>
+    /// What a tick hands every session is the servers declared for sessions; Ask Daoris is handed only those declared for it,
+    /// and allowed only the tools each declares, as the harness spells a server's tool (D170 point 3).
+    /// </summary>
+    [Fact]
+    public void Sessions_are_handed_their_servers_and_ask_daoris_only_those_declared_for_it_with_their_tools()
+    {
+        Plugin("acme.tools", """
+            { "id": "acme.tools", "servers": [
+                { "name": "browser", "command": ["browser"] },
+                { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search", "get_issue"] },
+                { "name": "docs", "command": ["docs"], "to": ["sessions", "help"] } ] }
+            """);
+        Plugin("acme.off", """{ "id": "acme.off", "servers": [ { "name": "off", "command": ["off"], "to": ["help"], "allow": ["x"] } ] }""");
+        File.WriteAllText(Path.Combine(_home, PluginState.FileName), """{ "disabled": ["acme.off"] }""");
+
+        var catalog = PluginCatalog.Load(_home);
+
+        Assert.Equal(["browser", "docs"], catalog.Servers.Select(server => server.Name));
+        Assert.Equal(["tickets", "docs"], catalog.HelpServers.Select(server => server.Name));
+        Assert.Equal(["mcp__tickets__search", "mcp__tickets__get_issue"], catalog.HelpAllows);
+        Assert.Equal(catalog.Servers.Select(server => server.Name), catalog.ServersTo(PluginServerTo.Sessions).Select(server => server.Name));
+        Assert.Equal(catalog.HelpServers.Select(server => server.Name), catalog.ServersTo(PluginServerTo.Help).Select(server => server.Name));
+    }
+
     /// <summary>
     /// The pipe door's half: a harness that takes a file at spawn is handed one written under the
     /// home, in that harness's own shape — never in the repository, which is the whole reason it is

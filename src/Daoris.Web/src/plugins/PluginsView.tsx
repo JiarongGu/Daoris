@@ -10,7 +10,7 @@ import type { PluginUpdatePlanShown } from './PluginUpdate';
 import type { Answered } from '../work/InlineConfirm';
 import { ListMore } from '../work/ListPane';
 import type { ViewLayout } from '../work/ViewFrame';
-import { chosenOf, type OfferShown, pluginGroups, type PluginShown } from './catalog';
+import { chosenOf, type HelpServerShown, type OfferShown, pluginGroups, type PluginShown } from './catalog';
 import { OfferPage } from './OfferPage';
 import { PluginList, PluginStrip } from './PluginList';
 import { PluginMainNotice, PluginPage } from './PluginPage';
@@ -25,11 +25,17 @@ const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] :
  * A catalogue as an older or a stranger shell may answer it, read defensively (SES1's reason): a field it never sent is
  * an empty list, never a blank page.
  */
+/** What a plugin hands Ask Daoris (HELPPLUG1a), each server with what Ask Daoris may call on it; none from an older shell. */
+const helpServersOf = (raw: unknown): HelpServerShown[] =>
+  list<HelpServerShown>(raw).filter((server) => typeof server?.name === 'string')
+    .map((server) => ({ name: server.name, allow: list<string>(server.allow) }));
+
 function installedOf(raw: unknown): PluginShown[] {
   return list<PluginShown>(raw).map((plugin) => ({
     ...plugin,
     harnesses: list<string>(plugin.harnesses),
     points: list<string>(plugin.points),
+    helpServers: helpServersOf(plugin.helpServers),
   }));
 }
 function offersOf(raw: unknown): OfferShown[] {
@@ -38,6 +44,7 @@ function offersOf(raw: unknown): OfferShown[] {
     harnesses: list<string>(offer.harnesses),
     points: list<string>(offer.points),
     servers: list<string>(offer.servers),
+    helpServers: helpServersOf(offer.helpServers),
     needs: list<string>(offer.needs),
   }));
 }
