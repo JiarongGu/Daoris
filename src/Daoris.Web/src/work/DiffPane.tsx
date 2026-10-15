@@ -8,7 +8,7 @@ import { cn } from '../lib/cn';
 import { ExternalLink } from '../design/links';
 import { store, stored } from '../lib/stored';
 import {
-  type LandingConflict, useDiscardSessionTree, useHandOff, useHandOffPress, useLandSessionTree, useLanding, useReadingSince, useSessionDiff,
+  type LandingConflict, useDiscardSessionTree, useHandOff, useHandOffPress, useLandSessionTree, useLanding, useReadingSince, useSay, useSessionDiff,
 } from '../bridge/shell';
 import { Button, EmptyState, Inline, SESSION_ACTIVE } from '../design/ui';
 import { reviewBranch, reviewKnown } from './diff';
@@ -155,6 +155,7 @@ export function DiffPane({
   const conflict = canAccept
     ? (pressed && pressed.session === session && pressed.at === landing.dataUpdatedAt ? pressed.conflict : landing.data?.conflict ?? null)
     : null;
+  const say = useSay();
   const discard = useDiscardSessionTree();
   // The branch this session's landing made, handed to a landing plugin afterwards (WSR5b) — asked whether
   // or not a tree is still here, since a tidy removes it and the branch stands.
@@ -317,7 +318,7 @@ export function DiffPane({
       )}
       {/* What the press leaves out because the line holds it, and what it replays (LANDSYNC1), said before it. */}
       {!said && canAccept && <LeftOutLines leftOut={landing.data?.leftOut} lands={landing.data?.lands} />}
-      {conflict && <RebaseAsk key={session} session={session} conflict={conflict} />}
+      {conflict && <RebaseAsk key={session} conflict={conflict} onSay={(text) => say.mutateAsync({ id: session, text }).then((answer) => answer.sent)} />}
       {!said && canAccept && landing.data?.problem && (
         <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
           {t('work.review.landingProblem', { problem: landing.data.problem })}
