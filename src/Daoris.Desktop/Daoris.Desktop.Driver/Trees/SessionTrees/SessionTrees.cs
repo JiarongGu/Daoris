@@ -99,6 +99,7 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     private TreeSweeps? _sweeps;
     private AutoTidies? _autoTidy;
     private TreeStrays? _strays;
+    private PassLeftovers? _leftovers;
     private LandedCleanups? _cleanups;
     private BranchJudging? _judging;
     private TreeSync? _sync;
@@ -125,7 +126,7 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     private TreeHandOffs HandOffs => _handOffs ??= new(_context);
 
     /// <summary>A judged branch replayed, and the grown record's tidying (WSR6).</summary>
-    private BranchReplays Replays => _replays ??= new(_context);
+    private BranchReplays Replays => _replays ??= new(_context, Leftovers);
 
     /// <summary>Where a session tree's review is measured from (REVIEWBASE1).</summary>
     private ReviewRanges Ranges => _ranges ??= new(_context);
@@ -150,6 +151,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
 
     /// <summary>The look's own tidy of the folders under a repository's trees that are no tree of its own (AUTOTIDY2c, OPENCUT1).</summary>
     private TreeStrays Strays => _strays ??= new(_context, SetAsides, Content);
+
+    /// <summary>What a killed opinion's or replay's pass left under a repository's trees, moved aside by the next (STRAYOTHERS1).</summary>
+    private PassLeftovers Leftovers => _leftovers ??= new(_context, SetAsides);
 
     /// <summary>The clean-up's list and press, and each landed branch judged (D88, WSR5).</summary>
     private LandedCleanups Cleanups => _cleanups ??= new(_context, Asks, Content, Replays, Sweeps);
@@ -474,6 +478,10 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
         string root, string repository, string? workspace, Func<CancellationToken, Task<IReadOnlySet<string>>> inUse, DateTimeOffset now,
         CancellationToken ct = default) =>
         Strays.TidyAsync(root, repository, workspace, inUse, now, ct);
+
+    /// <inheritdoc cref="PassLeftovers.ClearCopies"/>
+    internal IReadOnlyList<string> ClearPassCopies(string trees, DateTimeOffset now, Func<int, bool>? running = null) =>
+        Leftovers.ClearCopies(trees, now, running ?? TreeOpenings.Running);
 
     /// <summary>
     /// Where a tree on <paramref name="branch"/> grows from: the branch itself where this checkout has

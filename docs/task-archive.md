@@ -15003,3 +15003,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **TIDIEDSTRAY1 — a stray folder or a cut-off opening set aside says which** (web). A `branch.tidied` line of kind `stray` or `opening` shows on the Branches tab only as *folder set aside*: say it was a folder under the trees that was no tree, or an opening cut off, in en and zh. D88's AUTOTIDY2c and OPENCUT1 note, the machine-log design §4. Proof: a `WorkspaceTidied` test per kind.
 
 **Outcome** 2026-10-16: the Branches tab's *Cleaned up on its own* row reads *A folder under the trees that was no tree was set aside* for `stray` and *An opening that was cut off: its tree was set aside* for `opening` (en and zh), any other kind as before; a `WorkspaceTidied` test per kind. On Sonnet, with SENDLOST1c. Detail: D88's TIDIEDSTRAY1 note; `WorkspaceTidied.tsx`.
+
+## STRAYOTHERS1 — a killed opinion pass's or replay's leftover is tidied (2026-10-16, D88)
+
+> - [ ] **STRAYOTHERS1 — a killed opinion pass's or replay's leftover is tidied** (driver). The look never moves `o-` (opinion copies) or `r-` (replay trees) folders, made outside the repository's hold, so a killed pass's leftover stays: let their own flows clean stale ones, or let the look take them under a guard. D88's AUTOTIDY2c note. Proof: a Process test with a stale `o-` clone and a stale detached `r-` tree.
+
+**Outcome** 2026-10-16: the next opinion's pass and the next replay in a tree of its own move aside, as they start, the copy or replay's tree a killed one left in that repository's trees, once the process it names no longer runs and nothing in it was written for ten minutes (`PassLeftovers`); a pass now names its process in its replay tree's lock or its copy's `.git`, and a replay's tree is removed whatever its token says. Not on the window. On Opus, with TIDIEDLINK1. Detail: D88's STRAYOTHERS1 note; the commits.
