@@ -20,6 +20,13 @@ with the version and date at release.
   says the same.
 - The window no longer freezes for minutes while the Sessions page's clean-up list is read: its git work goes on away from
   the window's thread, at most four programs start at once, and each repository's line is asked of git once per list.
+- Daoris now removes its own session branches by itself wherever *Clean up* would, once their work is on the line: a branch
+  whose work was merged into the line or its copy on origin, is on the line by content after a squash merge (its commits kept
+  on a ref, which the report names with how to bring the branch back), or was carried by a completed pull request, not only one
+  with nothing beyond the line. Work accepted onto a branch whose pull request has not merged yet stays, so you can still ask its
+  session to change it. A tree holding only ignored files (installed dependencies, a build's output, a session's own logs) goes
+  too: its folder is moved aside for fourteen days, as before. Uncommitted or untracked work, a session still running or waiting,
+  words you said to a session that ended, and a tree whose branch never moved keep it.
 - An ask's page has a *Channel* (频道), where its sessions and you talk: their messages and Daoris's lines about its quests
   (published, taken, done, declined, waiting on your yes) in your language, an open question marked, and a box to write to
   everyone on the ask or one of its repositories, answering a message if you choose. A session on an ask has the same channel

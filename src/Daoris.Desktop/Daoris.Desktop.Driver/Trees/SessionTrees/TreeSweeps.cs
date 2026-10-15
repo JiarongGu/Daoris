@@ -19,9 +19,13 @@ internal sealed class TreeSweeps(
     /// </summary>
     /// <param name="inUse">The trees sessions still running or waiting name — kept whatever they hold.</param>
     /// <param name="only">The branches to judge, as <c>repository:branch</c>; null for every one. The look's own tidy (AUTOTIDY1) judges its few.</param>
+    /// <param name="byItself">
+    /// Judged for the look's own tidy (AUTOTIDY2a): an ignored path only the tree holds does not make it <c>dirty</c>, since the
+    /// look moves the tree's folder aside rather than deleting it. The press's list and the press keep it <c>dirty</c>.
+    /// </param>
     internal async Task<IReadOnlyList<SweepItem>> SweepPlanAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
-        CancellationToken ct = default, IReadOnlySet<string>? only = null)
+        CancellationToken ct = default, IReadOnlySet<string>? only = null, bool byItself = false)
     {
         var busy = new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);
         var items = new List<SweepItem>();
@@ -54,7 +58,7 @@ internal sealed class TreeSweeps(
             {
                 items.Add((await JudgeAsync(
                     root, repository, RemoteTarget.Workspace(workspace), branch, worktrees.GetValueOrDefault(branch), line, busy, carriers, ct,
-                    follows.MovedOnTo(listed, RemoteTarget.Workspace(workspace), repository, branch))
+                    follows.MovedOnTo(listed, RemoteTarget.Workspace(workspace), repository, branch), byItself)
                     .ConfigureAwait(false)).Item);
             }
         }
@@ -74,10 +78,11 @@ internal sealed class TreeSweeps(
 
     /// <summary>
     /// The clean-up's one path, for both doors (AUTOTIDY1): the person's press takes every row the proof clears
-    /// (<see cref="SweepItem.Removable"/>) and removes its tree; the look's own tidy takes the empty alone
-    /// (<see cref="TreeSetAside.GoesByItself"/>), asks its last guards (<see cref="TreeSetAside.LastLookAsync"/>), and moves the
-    /// tree's folder aside rather than deleting it (<see cref="TreeSetAside.MoveAsideAsync"/>). The judgement, the judgement again,
-    /// and the delete at the commit judged are the same for both.
+    /// (<see cref="SweepItem.Removable"/>) and removes its tree; the look's own tidy takes the same kinds behind its guards
+    /// (<see cref="TreeSetAside.GoesByItself"/>, AUTOTIDY2a), judges a tree's own ignored paths as no keep, asks its last guards
+    /// (<see cref="TreeSetAside.LastLookAsync"/>), and moves the tree's folder aside rather than deleting it
+    /// (<see cref="TreeSetAside.MoveAsideAsync"/>). The judgement, the judgement again, the commits a content-held branch keeps on a
+    /// ref of their own, and the delete at the commit judged are the same for both.
     /// </summary>
     /// <remarks>
     /// 🔴 <b>A destructive step is never cancelled halfway</b> (AUTOTIDY1): once a branch's removal begins, each git command is
@@ -94,7 +99,7 @@ internal sealed class TreeSweeps(
         var busy = new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);
         Func<SweepItem, bool> goes = byItself ? setAside.GoesByItself : item => item.Removable;
         var results = new List<SweepResult>();
-        foreach (var item in await SweepPlanAsync(known, inUse, ct, only).ConfigureAwait(false))
+        foreach (var item in await SweepPlanAsync(known, inUse, ct, only, byItself).ConfigureAwait(false))
         {
             if (only is not null && !only.Contains($"{item.Repository}:{item.Branch}"))
             {
@@ -121,7 +126,7 @@ internal sealed class TreeSweeps(
             // removed, for the record of it (PLUGHOOK1a, design §2.5).
             var (now, judged) = await JudgeAsync(
                     root, item.Repository, item.Workspace, item.Branch, worktrees.GetValueOrDefault(item.Branch), line, busy, carriers, ct,
-                    follows.MovedOnTo(listed, item.Workspace, item.Repository, item.Branch))
+                    follows.MovedOnTo(listed, item.Workspace, item.Repository, item.Branch), byItself)
                 .ConfigureAwait(false);
             if (!goes(now) || judged is null)
             {
@@ -160,6 +165,9 @@ internal sealed class TreeSweeps(
                 var moved = await setAside.MoveAsideAsync(root, now, done).ConfigureAwait(false);
                 if (!moved.Gone)
                 {
+                    // AUTOTIDY2a: a content-held branch the look kept lets go of the ref it kept its commits on, as the press's
+                    // refused removal does, or each later look would keep another.
+                    await ContentHolds.DropKeptAsync(root, now.Branch, kept, judged, done).ConfigureAwait(false);
                     results.Add(new(now, false, moved.Sentence) { Kept = moved.Code });
                     continue;
                 }
@@ -208,6 +216,7 @@ internal sealed class TreeSweeps(
             results.Add(new(now, true, kept is null ? removed : $"{Sentence(removed)} {ContentHold.KeptAt(now.Branch, kept)}")
             {
                 MovedTo = movedTo,
+                KeptRef = kept,
             });
             if (now.CarriedBy is { } carrier)
             {
@@ -231,14 +240,17 @@ internal sealed class TreeSweeps(
     /// git could not read it.
     /// </summary>
     /// <param name="carriers">The completed pull requests the record keeps that carried work here (PLUGHOOK1a); a branch they carried goes.</param>
+    /// <param name="byItself">For the look's own tidy (AUTOTIDY2a): an ignored path only the tree holds is no keep, since the look moves the folder aside.</param>
     private async Task<(SweepItem Item, string? Tip)> JudgeAsync(
         string root, string repository, string workspace, string branch, string? tree, string? line,
-        HashSet<string> busy, IReadOnlyList<PullRequestCarrier> carriers, CancellationToken ct, string? treeOn = null)
+        HashSet<string> busy, IReadOnlyList<PullRequestCarrier> carriers, CancellationToken ct, string? treeOn = null, bool byItself = false)
     {
-        // The ignored paths its tree shares with the checkout, on every row once read (AUTOTIDY1): the look's own tidy keeps such a tree.
+        // The ignored paths its tree shares with the checkout, on every row once read (AUTOTIDY1). Whether it made commits since it
+        // grew, on every row once its tip is read (AUTOTIDY2a): a tree that never moved is a conversation's place (D137), whatever its kind.
         var shared = 0;
+        var worked = false;
         SweepItem Item(string kind, int commits = 0, string? where = null, string? detail = null) =>
-            new(repository, workspace, branch, tree, kind, commits, where, detail) { IgnoredShared = shared, TreeOn = treeOn };
+            new(repository, workspace, branch, tree, kind, commits, where, detail) { IgnoredShared = shared, TreeOn = treeOn, Worked = worked };
 
         if (tree is not null && busy.Contains(Normal(tree))) return (Item(SweepKind.InUse), null);
 
@@ -250,13 +262,16 @@ internal sealed class TreeSweeps(
             if (holds is null) return (Item(SweepKind.Dirty, detail: "git could not say what its tree holds") with { Unread = true }, null);
             shared = holds.Shared.Count;
             if (holds.Uncommitted.Count > 0) return (Item(SweepKind.Dirty, detail: $"{holds.Uncommitted.Count} path(s) uncommitted"), null);
-            if (holds.OwnSaid is { } own) return (Item(SweepKind.Dirty, detail: own), null);
+            // The press deletes the tree's folder, so what only it holds keeps it; the look moves the folder aside whole for
+            // fourteen days, so an ignored path, the tree's own scratch included, is kept there and keeps nothing (AUTOTIDY2a).
+            if (!byItself && holds.OwnSaid is { } own) return (Item(SweepKind.Dirty, detail: own), null);
         }
 
         var (tipCode, tipOut, tipErr) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}^{{commit}}"], ct)
             .ConfigureAwait(false);
         if (tipCode != 0) return (Item(SweepKind.Unlanded, detail: $"git could not tell: {FirstLine(tipErr)}") with { Unread = true }, null);
         var tip = tipOut.Trim();
+        worked = context.Grown.Of(repository, branch) is { } grown && !string.Equals(grown.From, tip, StringComparison.OrdinalIgnoreCase);
 
         var (code, log, err) = await TreeFollows.UnlandedLogAsync(root, tip, ct).ConfigureAwait(false);
         if (code != 0) return (Item(SweepKind.Unlanded, detail: $"git could not tell: {FirstLine(err)}") with { Unread = true }, null);
@@ -267,7 +282,12 @@ internal sealed class TreeSweeps(
             // is landed where that branch is, with no ref to keep.
             if (await squashes.SquashedHolderAsync(root, repository, tip, ct).ConfigureAwait(false) is { } squashedOn)
             {
-                return (Item(SweepKind.Landed, unlanded.Length, squashedOn.Branch, string.Join('\n', unlanded.Take(3))), tip);
+                // AUTOTIDY2a: the look's only once the line holds the branch the landing made, or the work by content.
+                var squashOnLine = byItself
+                    && (await LineHoldingAsync(root, line, $"refs/heads/{squashedOn.Branch}", ct).ConfigureAwait(false) is not null
+                        || (await ContentHolds.HeldByContentAsync(root, tip, line, content.LandedHere(repository), ct).ConfigureAwait(false)) is { } byContent
+                            && IsLineForm(byContent.Where, line));
+                return (Item(SweepKind.Landed, unlanded.Length, squashedOn.Branch, string.Join('\n', unlanded.Take(3))) with { OnLine = squashOnLine }, tip);
             }
 
             // PLUGHOOK1a: a squash left these commits on no branch of the person's, and a completed pull request carried them.
@@ -282,7 +302,8 @@ internal sealed class TreeSweeps(
             if ((tree is null || context.Holds(tree))
                 && await ContentHolds.HeldByContentAsync(root, tip, line, content.LandedHere(repository), ct).ConfigureAwait(false) is { } held)
             {
-                return (Item(SweepKind.Landed, unlanded.Length, held.Where, string.Join('\n', unlanded.Take(3))) with { HeldBy = held }, tip);
+                return (Item(SweepKind.Landed, unlanded.Length, held.Where, string.Join('\n', unlanded.Take(3)))
+                    with { HeldBy = held, OnLine = byItself && IsLineForm(held.Where, line) }, tip);
             }
 
             return (Item(SweepKind.Unlanded, unlanded.Length, detail: string.Join('\n', unlanded.Take(3))), tip);
@@ -292,12 +313,7 @@ internal sealed class TreeSweeps(
         if (against is not null)
         {
             var (_, ahead, _) = await WorkingTree.GitAsync(root, ["rev-list", "--count", $"{against}..{tip}"], ct).ConfigureAwait(false);
-            if (ahead.Trim() == "0")
-            {
-                // Whether it made commits since it grew (AUTOTIDY1): a tree that never moved is a conversation's place (D137).
-                var worked = context.Grown.Of(repository, branch) is { } grown && !string.Equals(grown.From, tip, StringComparison.OrdinalIgnoreCase);
-                return (Item(SweepKind.Empty, where: line) with { Worked = worked }, tip);
-            }
+            if (ahead.Trim() == "0") return (Item(SweepKind.Empty, where: line), tip);
         }
 
         // Where it landed, for the list: the first branch of the person's that holds its tip.
@@ -307,6 +323,27 @@ internal sealed class TreeSweeps(
             .FirstOrDefault(name => !name.StartsWith("daoris/", StringComparison.Ordinal) && !name.Contains("/daoris/", StringComparison.Ordinal));
         var (_, count, _) = await WorkingTree.GitAsync(
             root, ["rev-list", "--count", tip, "--not", against ?? "HEAD"], ct).ConfigureAwait(false);
-        return (Item(SweepKind.Landed, int.TryParse(count.Trim(), out var n) ? n : 0, where), tip);
+        // AUTOTIDY2a: for the look, the form of the line that holds it, which it names; none where only a branch of the person's does.
+        var onLine = byItself ? await LineHoldingAsync(root, line, tip, ct).ConfigureAwait(false) : null;
+        return (Item(SweepKind.Landed, int.TryParse(count.Trim(), out var n) ? n : 0, onLine ?? where) with { OnLine = onLine is not null }, tip);
     }
+
+    /// <summary>
+    /// The form of the line that holds <paramref name="commit"/> by ancestry (AUTOTIDY2a): the line's own branch, else origin's
+    /// copy, which a fetch brings a platform's merge to before anyone pulls it. Null where neither does, or git could not say.
+    /// </summary>
+    private static async Task<string?> LineHoldingAsync(string root, string? line, string commit, CancellationToken ct)
+    {
+        foreach (var form in await LandedProofs.LineFormsAsync(root, line, ct).ConfigureAwait(false))
+        {
+            var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", commit, form.Ref], ct).ConfigureAwait(false);
+            if (code == 0) return form.Name;
+        }
+
+        return null;
+    }
+
+    /// <summary>Whether a content proof's holder is a form of the line (<see cref="LandedProofs.LineFormsAsync"/>'s names), not a branch of the person's.</summary>
+    private static bool IsLineForm(string where, string? line) =>
+        line is not null && (where == line || where == $"origin/{line}");
 }

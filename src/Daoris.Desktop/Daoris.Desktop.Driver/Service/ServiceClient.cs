@@ -1619,6 +1619,28 @@ public sealed class ServiceClient : IDisposable
     public async Task<PriorSession?> RecordAsync(string id, CancellationToken ct = default) =>
         ReadRecord(await GetAsync(SessionRecords.Door, ct).ConfigureAwait(false), id);
 
+    /// <summary>
+    /// The trees of this machine's records the person's words wait on (AUTOTIDY2d, MSG1b, D137 §2.2): a record that ended or
+    /// parked with words a later run goes on with in its own tree, which the look's own tidy keeps as it keeps a session's in use.
+    /// </summary>
+    public async Task<IReadOnlyList<string>> WaitingTreesAsync(CancellationToken ct = default) =>
+        WaitingTrees(await GetAsync(SessionRecords.Door, ct).ConfigureAwait(false));
+
+    /// <summary><see cref="WaitingTreesAsync"/>'s trees among the answer's records; a teammate's is none here.</summary>
+    internal static IReadOnlyList<string> WaitingTrees(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        if (document.RootElement.ValueKind != JsonValueKind.Array) return [];
+        var trees = new List<string>();
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            if (session.ValueKind != JsonValueKind.Object || IsTeams(session)) continue;
+            if (Prior(session) is { WordsWaiting: true, Tree: { Length: > 0 } tree }) trees.Add(tree);
+        }
+
+        return trees;
+    }
+
     /// <summary>The record with this id among the answer's, read as <see cref="RecordAsync"/> reads it; a teammate's is none here.</summary>
     internal static PriorSession? ReadRecord(string json, string id)
     {

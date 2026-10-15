@@ -17,7 +17,8 @@ repository.
   was not taken: the starting lock and the carry-on's second lock sit between them.
 - **Verification:** `SessionMessagesTickTests.Words_that_cannot_go_on_because_the_tree_is_gone_leave_no_fresh_tree_behind`
   (Process half, real git) failed first on a new branch after the look, then passed; the fast half of the driver suite passes.
-  Not fixed: a start cut off inside `git worktree add` by a cancel or a kill can leave a half tree and branch (proposed row).
+  Not fixed: a start cut off inside `git worktree add` by a cancel or a kill can leave a half tree and branch (OPENCUT1).
+
 ## 2026-10-15 — The landing molecules reached the bridge (LANDSYNC1w)
 
 - **Symptom:** `design/presentational.test.ts` ("no presentational component reaches the service or the shell") failed on main

@@ -132,7 +132,7 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     private TreeSweeps Sweeps => _sweeps ??= new(_context, Asks, Content, Follows, Squashes, SetAsides);
 
     /// <summary>The look's own tidy of one repository (AUTOTIDY1).</summary>
-    private AutoTidies AutoTidy => _autoTidy ??= new(_context, Follows, Replays, Sweeps);
+    private AutoTidies AutoTidy => _autoTidy ??= new(_context, Follows, Replays, Sweeps, SetAsides);
 
     /// <summary>The clean-up's list and press, and each landed branch judged (D88, WSR5).</summary>
     private LandedCleanups Cleanups => _cleanups ??= new(_context, Asks, Content, Replays, Sweeps);
