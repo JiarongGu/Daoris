@@ -198,6 +198,48 @@ describe('the strip of what waits on the person, at the foot', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
+  /**
+   * WAITFOOT2a (D168's WAITFOOT2 note): the owner found each wait drawn two and three times at once, so while the head's waits
+   * are on screen the strip stands aside; never from under an ask open in it, nor from under the person's focus.
+   */
+  it('stands aside while the head\'s waits are on screen', () => {
+    const props = { session: parked, onResolve: vi.fn(), answerBelow: true, goAheads: GO_AHEADS, onGoAhead: vi.fn(), onTop: vi.fn() };
+    const { rerender } = render(<WaitStrip {...props} aside />);
+    expect(screen.queryByRole('region', { name: /waiting on you/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
+
+    rerender(<WaitStrip {...props} aside={false} />);
+    expect(within(strip()).getByRole('button', { name: 'Approve' })).toBeInTheDocument();
+  });
+
+  it('stays while its own ask is open, though the head\'s waits came on screen', () => {
+    const props = { session: session(), lands: LANDS, landing: PLAN, onLand: vi.fn(), onTop: vi.fn() };
+    const { rerender } = render(<WaitStrip {...props} workAsk={{ open: true, onOpen: vi.fn() }} aside />);
+    const ask = within(strip()).getByRole('group', { name: 'accept daoris/s-1a2b3c4' });
+    expect(ask).toBeInTheDocument();
+
+    // Put down with the focus in it, which says no blur as it goes: the strip reads the focus again.
+    within(ask).getAllByRole('button')[0]!.focus();
+    expect(ask).toContainElement(document.activeElement as HTMLElement);
+    rerender(<WaitStrip {...props} workAsk={{ open: false, onOpen: vi.fn() }} aside />);
+    expect(screen.queryByRole('region', { name: /waiting on you/i })).toBeNull();
+
+    rerender(<WaitStrip {...props} rules={{ proposals: [RULE], onAnswer: vi.fn() }} ruleAsk={{ open: 'r1', onOpen: vi.fn() }} aside />);
+    expect(within(strip()).getByRole('group', { name: 'Allow…' })).toBeInTheDocument();
+  });
+
+  it('stays while the person is in it, and stands aside once they leave', async () => {
+    const props = { session: parked, onResolve: vi.fn(), answerBelow: true, goAheads: GO_AHEADS, onGoAhead: vi.fn(), onTop: vi.fn() };
+    const { rerender } = render(<><button type="button">elsewhere</button><WaitStrip {...props} seek={{ wait: 'goAhead:2', n: 1 }} /></>);
+    expect(within(strip()).getByRole('listitem')).toHaveFocus();
+
+    rerender(<><button type="button">elsewhere</button><WaitStrip {...props} seek={{ wait: 'goAhead:2', n: 1 }} aside /></>);
+    expect(within(strip()).getByRole('listitem')).toHaveFocus();
+
+    await userEvent.click(screen.getByRole('button', { name: 'elsewhere' }));
+    expect(screen.queryByRole('region', { name: /waiting on you/i })).toBeNull();
+  });
+
   it('speaks the active catalogue', async () => {
     await i18n.changeLanguage('zh');
     try {
