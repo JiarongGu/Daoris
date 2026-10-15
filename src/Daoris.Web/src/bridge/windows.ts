@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { ColorScheme, getBridge, useShenora } from '@shenora/react';
 import { effectiveDark, subscribeTheme, themeChoice } from '../design/theme';
-import { secondaryWindow } from '../work/window';
+import { anotherMainWindow, secondaryWindow } from '../work/window';
 
 // This build's secondary windows (MOD3): opening one, and telling its frame the theme; telling the engine every window
 // renders on the viewer's choice (THEMESCHEME1); and telling the main window's taskbar button what waits (NOTIFY1b).
@@ -39,9 +39,7 @@ export function useSecondaryWindowTheme(name: string) {
   useEngineTheme();
   useEffect(() => {
     if (!isAvailable) return undefined;
-    const tell = () => {
-      void getBridge().invoke('DAORIS.WINDOWS', 'SET_THEME', { payload: { name, dark: effectiveDark() } }).catch(() => {});
-    };
+    const tell = () => tellFrameTheme(name);
     tell();
     const media = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-color-scheme: dark)') : null;
     media?.addEventListener('change', tell);
@@ -51,6 +49,18 @@ export function useSecondaryWindowTheme(name: string) {
       stop();
     };
   }, [isAvailable, name]);
+}
+
+/**
+ * Tell the window named `name` the theme this page is in, for the caption its frame paints (WINDOW2): a utility window's, and
+ * another main window's (ONEINSTANCE1), which the kit's `SET_THEME` does not reach. Fire and forget, as the theme is.
+ */
+export function tellFrameTheme(name: string) {
+  try {
+    void getBridge().invoke('DAORIS.WINDOWS', 'SET_THEME', { payload: { name, dark: effectiveDark() } }).catch(() => {});
+  } catch {
+    // No bridge at all: a browser has no frame to tell.
+  }
 }
 
 /**
@@ -66,7 +76,9 @@ export function useSecondaryWindowTheme(name: string) {
 export function useTaskbarCount(count: number, description: string) {
   const { isAvailable } = useShenora();
   useEffect(() => {
-    if (!isAvailable || secondaryWindow(globalThis.location?.search ?? '') !== null) return;
+    const search = globalThis.location?.search ?? '';
+    // The first main window's alone: another a later launch opened (ONEINSTANCE1) counts the same, and is no button of its own.
+    if (!isAvailable || secondaryWindow(search) !== null || anotherMainWindow(search) !== null) return;
     void getBridge().invoke('DAORIS.WINDOWS', 'SET_BADGE', { payload: { count, description } }).catch(() => {});
   }, [isAvailable, count, description]);
 }

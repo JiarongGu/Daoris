@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris-driver` and `daoris` from an install's `app/bin/`, in a terminal of your own with nothing set, now find the Daoris
+  that runs: its home is the install's `data/` when `DAORIS_HOME` names none, and its service is the one the running window
+  holds, by the address it leaves in that home. With Daoris not running, a verb that needs its service says so and names the
+  `Daoris.exe` to start. The variables still win. Opening Daoris again while it runs now opens another main window of the
+  same Daoris, which hears every press the first one does, rather than only bringing the first one forward.
 - The review says before the press what *Accept* will do and why it would be refused: it lands the session's own branch as
   it stands, adds to a branch that already stands, or names the refusal (a branch somebody else made, one moved since or
   checked out elsewhere) and offers no *Accept* then, as the line's and the ask's *Accept* do for each part; a part's own

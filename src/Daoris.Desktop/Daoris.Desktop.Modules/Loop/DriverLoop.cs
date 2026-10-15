@@ -399,6 +399,26 @@ public sealed class DriverLoop(
         _loop = Task.Run(RunAsync);
     }
 
+    /// <summary>The address this Daoris left in its home, or null before the service answered and after the stop.</summary>
+    private RunningAddress? _address;
+
+    private readonly object _announcing = new();
+
+    /// <summary>
+    /// Leave the service's address in the home, naming this process (FINDDAORIS1, D171 point 1): a terminal outside Daoris's
+    /// own panel is handed no variable, and a <c>daoris-driver</c> the install carries reads where the service is from here.
+    /// Once while it runs; <see cref="Stop"/> takes it away. Not written is not a failure: a terminal then says Daoris is not
+    /// running, and the window runs on.
+    /// </summary>
+    public void Announce()
+    {
+        lock (_announcing)
+        {
+            if (_address is not null || _stopping.IsCancellationRequested) return;
+            _address = RunningAddress.Write(Home, serviceUrl);
+        }
+    }
+
     private async Task RunAsync()
     {
         var ct = _stopping.Token;
@@ -428,6 +448,9 @@ public sealed class DriverLoop(
                 .ConfigureAwait(false);
             return;
         }
+
+        // The service answers, held or adopted: its address goes into the home for a terminal to find (FINDDAORIS1).
+        Announce();
 
         // The host is up and it is somebody else's, serving a page that is not this install's (case
         // study 4d). Said once, on the channel a person has to act on — like a parked session, it is
@@ -905,7 +928,14 @@ public sealed class DriverLoop(
     /// </summary>
     public void Stop()
     {
-        _stopping.Cancel();
+        // The address first, so a terminal stops finding a service this Daoris is about to let go (FINDDAORIS1).
+        lock (_announcing)
+        {
+            _stopping.Cancel();
+            _address?.Dispose();
+            _address = null;
+        }
+
         _words?.Dispose();
         try
         {

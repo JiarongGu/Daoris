@@ -96,22 +96,9 @@ public sealed class MainForm : OptimizedForm
             return null;
         };
 
-        // 🔴 The WINDOW's icon, which a WinForms form does not take from anywhere by itself: it opens
-        // wearing the framework's default unless told. Read from the `daoris.ico` the build copies
-        // beside this assembly (D92): the running executable is CEF's launcher now, and wears CEF's
-        // face, so the old reading of it would put Chromium's picture on the taskbar.
-        //
         // It also fixes the tray: `SessionNotifier` reads `window.Icon ?? SystemIcons.Application`,
         // so every balloon this app raised wore a generic Windows glyph until now.
-        try
-        {
-            var face = Path.Combine(AppContext.BaseDirectory, "daoris.ico");
-            if (File.Exists(face)) Icon = new Icon(face);
-        }
-        catch (Exception)
-        {
-            // A face is not worth failing to open a window over. The default is still a face.
-        }
+        if (Face() is { } face) Icon = face;
         MinimumSize = new Size(960, 600);
         CaptionButtonColors = CaptionColors(_palette);
 
@@ -222,7 +209,27 @@ public sealed class MainForm : OptimizedForm
         }
     }
 
-    private static CaptionButtonColors CaptionColors(ChromePalette palette) => new()
+    /// <summary>
+    /// 🔴 The WINDOW's icon, which a WinForms form does not take from anywhere by itself: it opens wearing the framework's
+    /// default unless told. Read from the `daoris.ico` the build copies beside this assembly (D92): the running executable is
+    /// CEF's launcher now, and wears CEF's face, so the old reading of it would put Chromium's picture on the taskbar. Null
+    /// where it cannot be read: a face is not worth failing to open a window over, and the default is still a face.
+    /// </summary>
+    internal static Icon? Face()
+    {
+        try
+        {
+            var face = Path.Combine(AppContext.BaseDirectory, "daoris.ico");
+            return File.Exists(face) ? new Icon(face) : null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>The caption buttons this window paints, in a palette's colours: another main window wears the same (ONEINSTANCE1).</summary>
+    internal static CaptionButtonColors CaptionColors(ChromePalette palette) => new()
     {
         Surface = palette.Surface,
         Hover = palette.Hover,
