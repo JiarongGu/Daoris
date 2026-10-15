@@ -44,6 +44,7 @@
   "plugin.kit.kind.decision": "A decision, before a planned start spends anything",
   "plugin.kit.kind.observation": "An observation, after a session ends",
   "plugin.kit.kind.act": "An act, once a landing has made its branch",
+  "plugin.kit.kind.query": "A query, when git cannot tell whether a landed branch merged",
   "plugin.kit.kind.stateChanged": "An observation, once something the driver holds changes",
   "plugin.kit.folder": "Make it in",
   "plugin.kit.folderPlaceholder": "a folder in your plugins repository",
