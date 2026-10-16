@@ -485,7 +485,7 @@ public sealed class AcpSession(
             inbox?.Attach(
                 CancelTurnAsync,
                 _takesWordsMidTurn ? words => SendPromptAsync(words.Prompt, words.Files, ct, sent: null, words) : null,
-                _steersNow ? words => SteeredAsync(words, ct) : null);
+                _steersNow ? words => SteeredAsync(words, ct, handBack: inbox is null ? null : inbox.HandBack) : null);
             Action? sent = inbox is null && prompted is null
                 ? null
                 : () =>
@@ -895,11 +895,18 @@ public sealed class AcpSession(
     /// </summary>
     /// <param name="who">What the English calls the one that refused: a conversation's runner says "conversation".</param>
     /// <returns>The adapter's outcome, or <c>refused</c> or <c>unreached</c>: never a stop reason, and never thrown.</returns>
-    internal async Task<string> SteeredAsync(ChatMessage words, CancellationToken ct, string who = "session")
+    /// <param name="handBack">
+    /// Where the steer was answered <c>promptRequired</c> (the turn ended between the press and the steer, STEER2d) the adapter
+    /// left the words to the client: this takes them back to be prompted next, and says whether it did. Said once, taken once
+    /// where they are finally taken, so nothing is noted when it did.
+    /// </param>
+    internal async Task<string> SteeredAsync(
+        ChatMessage words, CancellationToken ct, string who = "session", Func<ChatMessage, bool>? handBack = null)
     {
         try
         {
             var outcome = await SteerAsync(words, ct).ConfigureAwait(false);
+            if (outcome == "promptRequired" && handBack?.Invoke(words) == true) return outcome;
             if (outcome != "injected") NoteWords(WordsNotes.NeverReached(NotSteered(outcome)), words);
             return outcome;
         }

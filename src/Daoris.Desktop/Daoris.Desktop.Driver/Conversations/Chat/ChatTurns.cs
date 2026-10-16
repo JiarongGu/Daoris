@@ -245,6 +245,32 @@ internal sealed class ChatTurns(
     }
 
     /// <summary>
+    /// Words the agent answered <c>promptRequired</c> (STEER2d): the turn ended between the press and the steer, and the adapter
+    /// left them to the client. They go first among what waits, the person's choice, and are the next turn, taken there under
+    /// their own id since the record showed them said already. False once the conversation is finishing or gone: the caller says
+    /// they never reached the agent. The turn lasts until the steer is answered, so its pump is still running to take them.
+    /// </summary>
+    public bool HandBack(ChatMessage message)
+    {
+        bool start;
+        lock (_gate)
+        {
+            if (_finishing || _gone) return false;
+            _waiting.Insert(0, message);
+            start = !_pumping;
+            if (start)
+            {
+                _pumping = true;
+                _drained = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            }
+        }
+
+        if (start) _ = PumpAsync();
+        lock (_gate) Publish();
+        return true;
+    }
+
+    /// <summary>
     /// The person's *Send now* (STEER2a, D136's 2026-10-16 note), carried out by the door it has: with no turn running the words
     /// are the next turn at once; into a turn on the wire whose agent steers, they are steered at once (<c>now</c>) and the turn
     /// lasts until the steer is answered; on a door that takes words only at its next step they go there, said so; on a door

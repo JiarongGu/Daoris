@@ -1214,6 +1214,13 @@ public sealed class ChatRunner : IDisposable
             yield break;
         }
 
+        if (message.Said)
+        {
+            // Handed back after a steer found no turn running (STEER2d): said and told already, taken here.
+            yield return ChatMessage.Words(message);
+            yield break;
+        }
+
         if (ToldBrowser(message) is { } toldBrowser) yield return toldBrowser;
         if (ToldProcess(message) is { } toldProcess) yield return toldProcess;
         if (Told(message) is { } told) yield return told;
@@ -1788,7 +1795,7 @@ public sealed class ChatRunner : IDisposable
             if (Told(words) is { } told) _record(told);
             _line($"— the person sent now, which the conversation takes at once: {words.Text}");
             _record(ChatMessage.Words(words) with { Reaches = SendNowWhy.Spelled(TurnReach.Steered) });
-            return session.SteeredAsync(words, CancellationToken.None, "conversation");
+            return session.SteeredAsync(words, CancellationToken.None, "conversation", handBack: back => Turns.HandBack(back with { Said = true }));
         }
 
         /// <summary>
