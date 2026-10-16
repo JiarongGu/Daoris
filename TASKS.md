@@ -240,8 +240,10 @@ Co-working (D167, `docs/2026-10-14-co-working-design.md`; the owner's two tasks 
 - [ ] **MSG1h — Codex next-step words** (driver; after measured STEER3). Messages §8.
 - [ ] **MSG1i — native next-step words** (driver; after measured STEER3). Messages §8.
 - [ ] **MSG1j — installed message canary** (parent). Messages §8–§9; a–f installed per original record.
-- [ ] **STEER2 — Send now matches door** (all doors; after STEER1). Steering draft and queue-arrival explanation. D136 §4; measured proof.
-- [ ] **STEER3 — measure other steering** (driver). Native stream-json and Codex turn/steer before implementation. D136 §5; one-turn evidence.
+- [ ] **STEER2a — *Send now* in the driver, by the door it has** (driver/modules; D136's STEER2 note, points 1, 2 and 4; the owner, 2026-10-16: *"there is no way to force the message to go through"*). `SESSION_INPUT` `now: true` steers at `now` on a `promptQueueing` door, and on a turn-end door holds the words and stops the turn keeping them; `CANCEL_TURN` `keep: true` for a conversation. Proof: `AcpSteerTests`, `DrivenInboxTests`, the route test; the cut call closed at the turn's end.
+- [ ] **STEER2b — the composer's *Send now*, and where queued words arrive** (web; with STEER2a's contract; D136's STEER2 note, points 1 and 3). A second press beside *Queue* while a turn runs, on a conversation and a driven session; a queued word's line says when it arrives and carries no *Send now* on the next-step door. Proof: `Composer`/`WorkFrame`/`SessionBox` tests, both catalogues and the glossary.
+- [ ] **STEER2c — `sessions say --now`** (CLI/driver host; after STEER2a; D136's STEER2 note, point 5). The terminal's twin of *Send now*, saying what the door did. Proof: the say command's tests.
+- [ ] **STEER3 — measure other steering** (driver). Native stream-json and Codex turn/steer before implementation; also whether an empty steer at `now` folds words already queued on Claude Code's door. D136 §5 and its STEER2 note, point 3; one-turn evidence.
 - [ ] **ANSWER1d — installed same-record resume** (parent). One row and session.answered resumed=true. D131 §6; real run.
 - [ ] **DRIFT1e — follow-ups preserve requirements** (design first). Reopen parent corrections; closing notes are not requirements. D133 §5.
 - [ ] **PAUSE1g — installed pause/abandon** (parent; after a–f). Pause/resume same tree; abandon preserves landed work. D132 §12.
