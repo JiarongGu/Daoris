@@ -66,7 +66,7 @@ internal sealed class LoopContext(
     public SessionProcesses Processes { get; } = processes ?? new SessionProcesses();
 
     /// <summary>Where a session's structure is kept (D76 §2): the shell's shared record, or the home's own, with nobody watching.</summary>
-    public SessionEvents Events { get; } = events ?? new SessionEvents(Path.Combine(home, "sessions"));
+    public SessionEvents Events { get; } = events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
 
     public SessionOutput? Output { get; } = output;
 

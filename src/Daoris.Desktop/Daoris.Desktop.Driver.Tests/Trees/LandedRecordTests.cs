@@ -115,7 +115,7 @@ public sealed class LandedRecordTests : IDisposable
         landings.Record(Entry("feature/q1-fix", "s1"));
         landings.Removed("engine", "feature/q1-fix", LandedKind.Inside, "feature/q2-other");
 
-        var text = File.ReadAllText(Path.Combine(_home, LandedBranches.FileName));
+        var text = File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Landings));
         Assert.Contains("\"goneAt\"", text);
         Assert.Contains("\"removedAs\": \"inside\"", text);
         Assert.Contains("\"removedOn\": \"feature/q2-other\"", text);
@@ -123,7 +123,7 @@ public sealed class LandedRecordTests : IDisposable
         var again = new LandedBranches(_home).Landing("s1")!;
         Assert.Equal(LandedKind.Inside, again.RemovedAs);
 
-        File.WriteAllText(Path.Combine(_home, LandedBranches.FileName), """
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Landings), """
             { "branches": [ { "repository": "engine", "branch": "feature/q3", "tip": "abcd1234", "session": "s3",
                               "landedAt": "2026-09-30T12:00:00.0000000+00:00" } ] }
             """);
@@ -209,7 +209,7 @@ public sealed class LandedRecordTests : IDisposable
         });
         landings.Record(Entry("feature/q2-fix", "s2") with { AcceptedBy = AcceptedBy.Person, Rule = new LandedRule(null, false, LandingSource.Repository) });
 
-        var text = File.ReadAllText(Path.Combine(_home, LandedBranches.FileName));
+        var text = File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Landings));
         Assert.Contains("\"acceptedBy\": \"auto\"", text);
         Assert.Matches("\"rule\": \\{\\s*\"plugin\": \"acme.lands\",\\s*\"autoAccept\": true,\\s*\"source\": \"workspace\"", text);
 
@@ -224,7 +224,7 @@ public sealed class LandedRecordTests : IDisposable
         again.Removed("engine", "feature/q1-fix", LandedKind.Merged, "main");
         Assert.Equal(AcceptedBy.Auto, new LandedBranches(_home).Landing("s1")!.AcceptedBy);
 
-        File.WriteAllText(Path.Combine(_home, LandedBranches.FileName), """
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Landings), """
             { "branches": [ { "repository": "engine", "branch": "feature/q3", "tip": "abcd1234", "session": "s3",
                               "landedAt": "2026-09-30T12:00:00.0000000+00:00" } ] }
             """);
@@ -244,7 +244,7 @@ public sealed class LandedRecordTests : IDisposable
         var landings = new LandedBranches(_home);
         landings.Record(Entry("feature/q1-fix", "s1") with { Squashed = "sess0001" });
 
-        Assert.Matches("\"tip\": \"tip00001\",[\\s\\S]*\"squashed\": \"sess0001\"", File.ReadAllText(Path.Combine(_home, LandedBranches.FileName)));
+        Assert.Matches("\"tip\": \"tip00001\",[\\s\\S]*\"squashed\": \"sess0001\"", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Landings)));
         Assert.Equal("sess0001", new LandedBranches(_home).Of("engine", "feature/q1-fix")!.Squashed);
 
         landings.Advanced("engine", "feature/q1-fix", new LandedAdvance("tip00001", "tip00002", At, "s2") { Squashed = "sess0002" });
@@ -256,7 +256,7 @@ public sealed class LandedRecordTests : IDisposable
         Assert.Equal("sess0002", new LandedBranches(_home).Of("engine", "feature/q1-fix")!.Squashed);
 
         landings.Record(Entry("feature/q2-fix", "s4"));
-        Assert.DoesNotContain("\"squashed\"", File.ReadAllText(Path.Combine(_home, LandedBranches.FileName))
+        Assert.DoesNotContain("\"squashed\"", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Landings))
             .Split("feature/q2-fix")[1], StringComparison.Ordinal);
         Assert.Null(new LandedBranches(_home).Of("engine", "feature/q2-fix")!.Squashed);
     }
@@ -292,7 +292,7 @@ public sealed class LandedRecordTests : IDisposable
         landings.Carried(landings.Landing("s1")!, new CarriedBranch("daoris/s-1", "tip00001", At.AddHours(3), CarriedBy.Tidy));
         landings.Removed("engine", "feature/q1-fix", LandedKind.PullRequest, "origin/main");
 
-        var text = File.ReadAllText(Path.Combine(_home, LandedBranches.FileName));
+        var text = File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Landings));
         Assert.Contains("\"pullRequestState\": {", text);
         Assert.Contains("\"removedAs\": \"pull-request\"", text);
         Assert.Contains("\"carried\": [", text);
@@ -317,7 +317,7 @@ public sealed class LandedRecordTests : IDisposable
         Assert.Equal(answer, both.PullRequestState);
         Assert.Equal(PluginEvents.Unstartable, both.PullRequestAskFailed!.Code);
 
-        File.WriteAllText(Path.Combine(_home, LandedBranches.FileName), """
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Landings), """
             { "branches": [ { "repository": "engine", "branch": "feature/q3", "tip": "abcd1234", "session": "s3",
                               "landedAt": "2026-09-30T12:00:00.0000000+00:00",
                               "pullRequestState": { "state": "completed", "mergeCommit": "abc" } } ] }
@@ -408,7 +408,7 @@ public sealed class LandedRecordTests : IDisposable
     [Fact]
     public void A_tree_is_gone_where_nothing_or_only_an_empty_folder_is_left()
     {
-        var tree = Path.Combine(_home, "trees", "aurora", "engine", "s-1");
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees,"aurora", "engine", "s-1");
         Assert.True(TreeFolders.TreeGone(null));
         Assert.True(TreeFolders.TreeGone(tree));
         Directory.CreateDirectory(tree);

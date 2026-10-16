@@ -325,7 +325,7 @@ public sealed class ToolsRoutes(DriverContext context)
     private object? ToolsPick(IpcRequest request) =>
         _pickFile is null
             ? new { Can = false, File = (string?)null }
-            : new { Can = true, File = _pickFile(Optional(request, "title")) };
+            : new { Can = true, File = _pickFile(Optional(request, "title"), Optional(request, "window")) };
 
     /// <summary>
     /// A download or a use, started through the driver's actions (§3.6) and answered once it has started; a version

@@ -760,7 +760,7 @@ public static class SessionGroups
         var chats = new HashSet<string>(StringComparer.Ordinal);
         var held = new Dictionary<string, WordsHold>(StringComparer.Ordinal);
         var marks = new GoOnMarks(home);
-        var events = new SessionEvents(Path.Combine(home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
         foreach (var record in look.Records)
         {
             // Ask Daoris's own conversation among them (ASKHIST1): its runner takes its words up as a chat's.
@@ -818,7 +818,7 @@ public static class SessionGroups
     {
         var built = AdapterSet.Built();
         var adapters = built.WithPlugins(PluginCatalog.Load(home, built.Names));
-        var roster = new HarnessRoster(adapters, Path.Combine(home, "harnesses.json"));
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(home, HomeEntry.Harnesses));
         return (adapter, profile) => roster.CoolingOf(adapter ?? "", profile);
     }
 
@@ -1089,11 +1089,14 @@ public sealed class LastLook
 {
     private volatile Looked? _looked;
 
-    /// <summary>One look's verdicts and the cool-offs it held starts on, replaced together.</summary>
-    private sealed record Looked(IReadOnlyList<Consideration> Considered, IReadOnlyList<AccountWait> Waits);
+    /// <summary>One look's verdicts and the cool-offs it held starts on, replaced together, and when.</summary>
+    private sealed record Looked(IReadOnlyList<Consideration> Considered, IReadOnlyList<AccountWait> Waits, DateTimeOffset At);
 
     /// <summary>What the last look considered, in its order; null before any look, which is when a fresh plan is read instead.</summary>
     public IReadOnlyList<Consideration>? Latest => _looked?.Considered;
+
+    /// <summary>When the last look was recorded (WIRING1b: This Daoris's *when it last looked*); null before any look.</summary>
+    public DateTimeOffset? At => _looked?.At;
 
     /// <summary>
     /// The starts the last look held on a cooling account (TOOL4g): a record whose words such a start holds says its reset
@@ -1103,5 +1106,5 @@ public sealed class LastLook
 
     /// <param name="waits">The look's waits (<see cref="TickReport.Waits"/>); none where it held nothing on an account.</param>
     public void Record(IEnumerable<Consideration> considered, IEnumerable<AccountWait>? waits = null) =>
-        _looked = new Looked([.. considered], [.. waits ?? []]);
+        _looked = new Looked([.. considered], [.. waits ?? []], DateTimeOffset.UtcNow);
 }

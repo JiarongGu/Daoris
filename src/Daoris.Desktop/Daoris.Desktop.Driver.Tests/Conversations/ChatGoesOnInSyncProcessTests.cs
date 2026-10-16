@@ -44,7 +44,7 @@ public sealed class ChatGoesOnInSyncProcessTests : IDisposable
 
     private string[] HeardLines() => StubFile.Lines(Heard);
 
-    private SessionEvents Events => new(Path.Combine(_home, "sessions"));
+    private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     private string Seen(ChatLedger ledger, string id) => $"heard [{string.Join(" | ", HeardLines())}], state {ledger.State(id)}";
 
@@ -61,13 +61,13 @@ public sealed class ChatGoesOnInSyncProcessTests : IDisposable
         {
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
         };
-        config.Save(Path.Combine(_home, "driver.json"));
+        config.Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         var events = Events;
         using var client = ledger.Client();
         var adapters = AdapterSet.Built();
         using var runner = new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         var id = (await runner.StartAsync("engine", "acp-stub", config, ownTree: true)).SessionId!;
         await Poll.Until(() => ledger.State(id) == "working", () => Seen(ledger, id));

@@ -29,7 +29,7 @@ public sealed class UpdateModuleTests : Bridge
     private (UpdateModule Module, InstallUpdater Updater) Module(UpdateWork? work = null)
     {
         var updater = new InstallUpdater(
-            _install, DataHome, MachineLog.None, () => work ?? new UpdateWork(1, 0), relaunch: () => true, close: () => _closed++,
+            _install, DataHome, MachineLog.None, () => work ?? new UpdateWork(1, 0), relaunch: _ => Task.FromResult(true), close: () => _closed++,
             bus: Bus, clock: () => Now, pid: 1);
         return (new UpdateModule(updater), updater);
     }
@@ -40,7 +40,7 @@ public sealed class UpdateModuleTests : Bridge
         Stage("b1");
         var (module, updater) = Module();
         using var _ = updater;
-        updater.Look();
+        await updater.LookAsync();
 
         var state = await AnswerAsync(module, "STATE");
 
@@ -90,7 +90,7 @@ public sealed class UpdateModuleTests : Bridge
         StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.RolledBack, "b1", "0.0.2", null, Now, [], Reason: "exited"));
         var (module, updater) = Module();
         using var _ = updater;
-        updater.Started();
+        await updater.StartedAsync();
         Assert.Equal("rolled-back", (await AnswerAsync(module, "STATE")).GetProperty("outcome").GetProperty("phase").GetString());
 
         var state = await AnswerAsync(module, "DISMISS");
@@ -109,7 +109,7 @@ public sealed class UpdateModuleTests : Bridge
             SwapPhase.RolledBack, "b1", "0.0.2", "def5678", Now, [], Reason: "exited", Detail: "it ended before it came up."));
         var (module, updater) = Module();
         using var _ = updater;
-        updater.Started();
+        await updater.StartedAsync();
         Assert.Equal("rolled-back", (await AnswerAsync(module, "STATE")).GetProperty("last").GetProperty("phase").GetString());
 
         await AnswerAsync(module, "DISMISS");

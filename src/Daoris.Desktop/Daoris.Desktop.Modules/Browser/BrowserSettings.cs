@@ -55,7 +55,7 @@ public sealed record BrowserSettingsRead(string Extensions, string Browser, stri
 public static class BrowserSettings
 {
 
-    public static string FilePath(string home) => Path.Combine(home, "browser", "settings.json");
+    public static string FilePath(string home) => DaorisHome.Entry(home, HomeEntry.BrowserSettings);
 
     public static BrowserSettingsRead Read(string home)
     {

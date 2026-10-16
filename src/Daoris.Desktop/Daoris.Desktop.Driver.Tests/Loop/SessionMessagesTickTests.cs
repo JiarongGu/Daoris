@@ -46,7 +46,7 @@ public sealed class SessionMessagesTickTests : IDisposable
 
     private JsonObject[] Heard() => [.. StubFile.Lines(Log).Select(line => JsonNode.Parse(line)!.AsObject())];
 
-    private IReadOnlyList<SessionEvent> Events(string session) => new SessionEvents(Path.Combine(_home, "sessions")).After(session, 0).Events;
+    private IReadOnlyList<SessionEvent> Events(string session) => new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(session, 0).Events;
 
     /// <param name="command">What the protocol door runs in place of the stand-in agent: a file that is no program, so its spawn fails.</param>
     private Daoris.Driver.Driver Protocol(SaidStandIn service, string mode, SessionProcesses? processes = null, IReadOnlyList<string>? command = null)
@@ -63,7 +63,7 @@ public sealed class SessionMessagesTickTests : IDisposable
         };
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: processes ?? new SessionProcesses(),
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     /// <summary>
@@ -82,8 +82,8 @@ public sealed class SessionMessagesTickTests : IDisposable
         Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
         Assert.Equal(new HarnessConversation("acp-stub", "conv-s1"), new HarnessConversations(_home).Read("s1"));
 
-        Directory.CreateDirectory(Path.Combine(_home, "sessions"));
-        File.WriteAllText(Path.Combine(_home, "sessions", SessionArchive.FileName), """{"archived":[{"session":"s1","at":"2026-10-03T09:00:00Z"}]}""");
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Sessions,SessionArchive.FileName), """{"archived":[{"session":"s1","at":"2026-10-03T09:00:00Z"}]}""");
         Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
         Assert.Equal("w2", await service.SayAsync("s1", "And use 9090."));
         var before = service.Record("s1");
@@ -216,9 +216,9 @@ public sealed class SessionMessagesTickTests : IDisposable
     [Fact]
     public async Task Words_said_while_a_native_session_works_go_on_in_its_own_conversation_before_it_concludes()
     {
-        var profile = Path.Combine(_home, "harnesses", "claude-code", "work");
+        var profile = DaorisHome.Entry(_home, HomeEntry.AgentHomes, "claude-code", "work");
         Directory.CreateDirectory(profile);
-        File.WriteAllText(Path.Combine(_home, "harnesses.json"), """{"defaults":{"claude-code":"work"}}""");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Harnesses), """{"defaults":{"claude-code":"work"}}""");
         var taken = Path.Combine(_home, "taken.flag");
         var go = Path.Combine(_home, "go.flag");
         await using var service = SaidStandIn.Start(_repository);
@@ -234,7 +234,7 @@ public sealed class SessionMessagesTickTests : IDisposable
         };
         var driver = new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: processes,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         var tick = driver.RunOnceAsync();
         await Poll.Until(() => File.Exists(taken) && processes.InboxOf("s1") is not null, () => "the first run never took its quest", TimeSpan.FromSeconds(60));

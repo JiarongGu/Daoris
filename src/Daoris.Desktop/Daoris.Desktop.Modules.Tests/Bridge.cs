@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Driver;
 using Microsoft.Extensions.Logging.Abstractions;
 using Shenora.Core.Events;
 using Shenora.Core.Ipc;
@@ -32,9 +33,9 @@ public abstract class Bridge : IDisposable
         // Set BEFORE any module or loop exists — see the remarks above. The home first (D63): every
         // other default derives from it, so a file added under the home later is scratch already.
         Redirect("DAORIS_HOME", Home);
-        Redirect("DAORIS_DRIVER_CONFIG", Path.Combine(Home, "driver.json"));
-        Redirect("DAORIS_REMOTE_CONFIG", Path.Combine(Home, "remotes.json"));
-        Redirect("DAORIS_HARNESS_CONFIG", Path.Combine(Home, "harnesses.json"));
+        Redirect("DAORIS_DRIVER_CONFIG", DaorisHome.Entry(Home, HomeEntry.DriverConfig));
+        Redirect("DAORIS_REMOTE_CONFIG", DaorisHome.Entry(Home, HomeEntry.Remotes));
+        Redirect("DAORIS_HARNESS_CONFIG", DaorisHome.Entry(Home, HomeEntry.Harnesses));
         // The environment pair outranks the remotes FILE for the whole machine (D48 §5). A developer
         // with it set would otherwise change what these tests observe.
         Redirect("DAORIS_REMOTE_URL", null);
@@ -78,12 +79,12 @@ public abstract class Bridge : IDisposable
     /// <summary>This test's own `.daoris` — every file the modules touch lives under it.</summary>
     protected string Home { get; }
 
-    protected string DriverConfigPath => Path.Combine(Home, "driver.json");
+    protected string DriverConfigPath => DaorisHome.Entry(Home, HomeEntry.DriverConfig);
 
-    protected string RemotesPath => Path.Combine(Home, "remotes.json");
+    protected string RemotesPath => DaorisHome.Entry(Home, HomeEntry.Remotes);
 
     /// <summary>Where the harness wiring lands — which profile each harness runs as (D49 §4).</summary>
-    protected string HarnessSettingsPath => Path.Combine(Home, "harnesses.json");
+    protected string HarnessSettingsPath => DaorisHome.Entry(Home, HomeEntry.Harnesses);
 
     /// <summary>Set an environment variable for this test, restoring it afterwards.</summary>
     protected void Redirect(string name, string? value)

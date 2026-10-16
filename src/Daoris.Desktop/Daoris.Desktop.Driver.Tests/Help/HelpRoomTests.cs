@@ -32,7 +32,7 @@ public sealed class HelpRoomTests : IDisposable
     {
         var room = HelpRoom.Prepare(_home, Machine);
 
-        Assert.Equal(Path.Combine(_home, HelpRoom.Folder), room);
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.HelpRoom), room);
         var agents = File.ReadAllText(Path.Combine(room, "AGENTS.md"));
         // The circles and their repositories, each with how it is driven, its line and how its work lands.
         Assert.Contains("### Workspace `work`", agents);
@@ -160,8 +160,8 @@ public sealed class HelpRoomTests : IDisposable
     [Fact]
     public void Its_place_allows_a_plugins_tools_only_once_the_person_approved_them()
     {
-        Directory.CreateDirectory(Path.Combine(_home, PluginCatalog.Folder, "acme.tools"));
-        File.WriteAllText(Path.Combine(_home, PluginCatalog.Folder, "acme.tools", PluginCatalog.ManifestName), """
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.tools"));
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.tools", PluginCatalog.ManifestName), """
             { "id": "acme.tools", "servers": [
                 { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search"] },
                 { "name": "docs", "command": ["docs"] } ] }

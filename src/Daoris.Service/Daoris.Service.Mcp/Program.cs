@@ -153,6 +153,9 @@ builder.Services
     // The harness's client opens with the 2026-07-28 revision's probe, which this server predates: answered
     // method not found, so it falls back to initialize, and said at debug rather than warned (MCPDISCOVER1).
     .AnswerDiscoverProbe()
+    // Every call's lineage, as its harness wrote it in `_meta`, written for the driver to bind a native child to the session's
+    // part (FABRIC-C1a, D173): a child calls with this process's session, so the environment cannot tell it apart.
+    .RecordCallLineage(LineageFile.FromEnvironment())
     // Every class of tools, from the one list the tests read too (PART10a).
     .WithKnowledgeTools();
 

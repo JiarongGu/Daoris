@@ -17,7 +17,7 @@ public sealed class WorkspaceSetupWorld(ServiceClient service, string home) : IW
 {
     private readonly SetupWorld _press = new(service, home);
 
-    private readonly SessionEvents _records = new(Path.Combine(home, "sessions"));
+    private readonly SessionEvents _records = new(DaorisHome.Entry(home, HomeEntry.Sessions));
 
     private Task<IReadOnlyList<RegistrationRow>>? _rows;
 

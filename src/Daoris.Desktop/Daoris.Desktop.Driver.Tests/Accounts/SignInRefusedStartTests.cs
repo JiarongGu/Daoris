@@ -47,7 +47,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private string Settings => Path.Combine(_home, "harnesses.json");
+    private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
     /// <summary>A file that is there, so the agent is present by a look and nothing runs.</summary>
     private string Command => Path.Combine(_home, "agent-here");

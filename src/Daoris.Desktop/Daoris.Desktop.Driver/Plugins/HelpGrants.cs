@@ -24,8 +24,11 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class HelpGrants
 {
-    /// <summary>The file under the home.</summary>
+    /// <summary>The file's name, as a refusal says it.</summary>
     public const string FileName = "plugin-approvals.json";
+
+    /// <summary>Where a home's approvals are: the home's <c>plugin-approvals</c> entry (D172, HOMELAYOUT2).</summary>
+    public static string PathIn(string home) => DaorisHome.Entry(home, HomeEntry.PluginApprovals);
 
     /// <summary>The person approved its exact tools: it is handed, its reads and accepted writes allowed.</summary>
     public const string Approved = "approved";
@@ -97,7 +100,7 @@ public static class HelpGrants
                 $"no plugin `{plugin}` on this machine, switched on and sound, offers Ask Daoris a server `{server}`; `daoris-driver plugins show {plugin}` says what it offers.");
         if (Refusal(declared) is { } refusal) throw new DriverException($"`{server}` is not approved: {refusal}");
 
-        var approvals = Approvals(home) ?? (File.Exists(Path.Combine(home, FileName))
+        var approvals = Approvals(home) ?? (File.Exists(PathIn(home))
             ? throw new DriverException($"`{FileName}` under the home could not be read, so nothing was approved over it.")
             : []);
         var approval = new HelpApproval(entry!.Manifest.Id, declared.Name, declared.Allow, readsOnly ? [] : declared.Writes);
@@ -109,7 +112,7 @@ public static class HelpGrants
     /// <exception cref="DriverException">A file that does not read.</exception>
     public static void Withdraw(string home, string plugin, string server)
     {
-        if (!File.Exists(Path.Combine(home, FileName))) return;
+        if (!File.Exists(PathIn(home))) return;
         var approvals = Approvals(home)
             ?? throw new DriverException($"`{FileName}` under the home could not be read, so nothing was withdrawn from it.");
         Write(home, [.. approvals.Where(each => !Same(each, plugin, server))]);
@@ -121,7 +124,7 @@ public static class HelpGrants
     /// <summary>The approvals as the file holds them; empty with no file, null where it does not read.</summary>
     private static List<HelpApproval>? Approvals(string home)
     {
-        var path = Path.Combine(home, FileName);
+        var path = PathIn(home);
         if (!File.Exists(path)) return [];
         try
         {
@@ -156,7 +159,7 @@ public static class HelpGrants
     private static void Write(string home, IReadOnlyList<HelpApproval> approvals)
     {
         Directory.CreateDirectory(home);
-        JsonFile.Write(Path.Combine(home, FileName), new JsonObject
+        JsonFile.Write(PathIn(home), new JsonObject
         {
             ["help"] = new JsonArray([.. approvals.Select(approval => (JsonNode)new JsonObject
             {

@@ -45,7 +45,7 @@ public sealed class SessionBranches(string home)
 
     private static readonly RecordList<GrownBranch> List = new(Gate, "branches", Read, ToJson);
 
-    public string FilePath => Path.Combine(home, FileName);
+    public string FilePath => DaorisHome.Entry(home, HomeEntry.SessionBranches);
 
     /// <summary>Every branch recorded, in the order they were written.</summary>
     public IReadOnlyList<GrownBranch> All() => List.Read(FilePath);

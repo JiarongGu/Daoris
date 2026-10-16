@@ -168,7 +168,7 @@ public static class PermissionRules
     /// </summary>
     private static readonly Regex Shape = new(@"^[A-Za-z][A-Za-z0-9_-]*(\([^\r\n]+\))?\z", RegexOptions.CultureInvariant);
 
-    public static string PathOf(string home) => Path.Combine(home, FileName);
+    public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Permissions);
 
     /// <summary>
     /// What the harness's auto-mode classifier is told as hard denials (UNBLOCK4, D122 §3.7): the sentence
@@ -469,12 +469,17 @@ public static class SpawnSettings
     /// the same file, and the classifier reads it from this command-line tier.
     /// </param>
     /// <param name="guard">The tree guard for this session (PERM3), or null when it is switched off.</param>
-    public static string? Write(string home, string sessionId, RuleLists rules, IReadOnlyList<string> hardDeny, TreeGuardHook? guard = null)
+    /// <param name="lineage">
+    /// The lineage hook for this session (FABRIC-C1a), or null for none: on the connector's calls and each subagent's start and
+    /// stop, beside the guard, never instead of it.
+    /// </param>
+    public static string? Write(
+        string home, string sessionId, RuleLists rules, IReadOnlyList<string> hardDeny, TreeGuardHook? guard = null, LineageHook? lineage = null)
     {
         var told = hardDeny.Where(entry => entry != HarnessDefaults).Distinct(StringComparer.Ordinal).ToList();
-        if (rules.IsEmpty && guard is null && told.Count == 0) return null;
+        if (rules.IsEmpty && guard is null && lineage is null && told.Count == 0) return null;
 
-        var folder = Path.Combine(home, SpawnServers.Folder);
+        var folder = DaorisHome.Entry(home, HomeEntry.Spawn);
         Directory.CreateDirectory(folder);
         var path = Path.Combine(folder, $"{sessionId}.settings.json");
 
@@ -502,11 +507,12 @@ public static class SpawnSettings
         // 🔴 EXEC form — `args` present — so the harness spawns node directly with the script and the
         // tree as one argument each. Shell form would run the line through Git Bash or PowerShell on
         // Windows, and a path survives neither's quoting reliably.
-        if (guard is not null)
+        if (guard is not null || lineage is not null)
         {
-            document["hooks"] = new JsonObject
+            var before = new JsonArray();
+            if (guard is not null)
             {
-                ["PreToolUse"] = new JsonArray(new JsonObject
+                before.Add(new JsonObject
                 {
                     ["matcher"] = TreeGuard.Matcher,
                     ["hooks"] = new JsonArray(new JsonObject
@@ -518,8 +524,32 @@ public static class SpawnSettings
                         ["args"] = new JsonArray([guard.Script, guard.Tree, .. guard.Also.Select(also => (JsonNode)also)]),
                         ["timeout"] = 30,
                     }),
-                }),
-            };
+                });
+            }
+
+            var hooks = new JsonObject();
+            if (lineage is not null)
+            {
+                // FABRIC-C1a: which agent made each call to the connector, and each subagent's start and stop, appended to the
+                // session's lineage file. It decides nothing, so it is the guard's neighbour and never in its entry.
+                JsonArray Lineage() => new(new JsonObject
+                {
+                    ["type"] = "command",
+                    ["command"] = lineage.Node,
+                    ["args"] = new JsonArray(lineage.Script, lineage.File),
+                    ["timeout"] = 10,
+                });
+                before.Add(new JsonObject { ["matcher"] = ChildLineage.Matcher, ["hooks"] = Lineage() });
+                hooks["PreToolUse"] = before;
+                hooks["SubagentStart"] = new JsonArray(new JsonObject { ["hooks"] = Lineage() });
+                hooks["SubagentStop"] = new JsonArray(new JsonObject { ["hooks"] = Lineage() });
+            }
+            else
+            {
+                hooks["PreToolUse"] = before;
+            }
+
+            document["hooks"] = hooks;
         }
 
         JsonFile.Write(path, document);

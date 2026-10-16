@@ -660,6 +660,8 @@ export function useAskConversation(
   // What an Apply did beyond the driver's sentence (HELP6): a go opens its place through the starters'
   // door, and an update or a pin is followed by the Agents screen, its console and its end said there.
   const applied = (answer: HelpSettled) => {
+    // The plan moved since the card was drawn (HELPAPPLY1): nothing was applied, and the card is drawn again with the new plan.
+    if (answer.changed) setRefusal(answer.message);
     const door = answer.go ? placeDoor(answer.go) : null;
     if (door) onGo?.(door);
     if (answer.harnessAction) runs?.follow(answer.harnessAction.harness, answer.harnessAction.action);

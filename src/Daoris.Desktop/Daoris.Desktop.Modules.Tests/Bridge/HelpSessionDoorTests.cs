@@ -48,7 +48,7 @@ public sealed class HelpSessionDoorTests : DriverModuleBridge
 
         Assert.False(ok);
         Assert.Contains("`running1`", message);
-        Assert.False(File.Exists(Path.Combine(Home, "sessions", "archived.json")));
+        Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions,"archived.json")));
     }
 
     [Fact]

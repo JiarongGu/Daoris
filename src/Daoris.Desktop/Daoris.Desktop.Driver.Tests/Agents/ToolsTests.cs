@@ -44,7 +44,7 @@ public sealed class ToolsTests : IDisposable
 
     private string WholeFile => Path.Combine(_root, "bin", OperatingSystem.IsWindows() ? "git.exe" : "git");
 
-    private string ToolsFile => Path.Combine(Home, Tools.FileName);
+    private string ToolsFile => DaorisHome.Entry(Home, HomeEntry.Tools);
 
     public ToolsTests() => Directory.CreateDirectory(Home);
 
@@ -167,7 +167,7 @@ public sealed class ToolsTests : IDisposable
         Assert.Empty(read.Locations);
         Assert.Empty(read.Notes);
         Assert.False(File.Exists(ToolsFile));
-        Assert.False(Directory.Exists(Path.Combine(Home, Tools.Folder)));
+        Assert.False(Directory.Exists(DaorisHome.Entry(Home, HomeEntry.ToolVersions)));
     }
 
     // ── Rule 2's whole path: .NET's own `Path.IsPathFullyQualified` ────────────────────────────────
@@ -324,7 +324,7 @@ public sealed class ToolsTests : IDisposable
             Directory.CreateDirectory(named);
         }
 
-        var version = Path.Combine(Home, Tools.Folder, "gh", "2.62.0");
+        var version = DaorisHome.Entry(Home, HomeEntry.ToolVersions,"gh", "2.62.0");
         var managed = Path.Combine(version, Tools.Package, "gh_2.62.0", "bin", "gh.exe");
         if (record is not null)
         {
@@ -357,7 +357,7 @@ public sealed class ToolsTests : IDisposable
 
         Assert.Equal(
             new ToolResolution("git", ToolWay.Managed, "2.51.0", null, true,
-                $"Git is managed at 2.51.0, and that version is not downloaded ({Path.Combine(Home, Tools.Folder, "git", "2.51.0")}) "
+                $"Git is managed at 2.51.0, and that version is not downloaded ({DaorisHome.Entry(Home, HomeEntry.ToolVersions,"git", "2.51.0")}) "
                 + "— it never falls back to PATH. `daoris tool use git managed 2.51.0` downloads it, and `daoris tool use git system` "
                 + "runs the one on PATH"),
             Tools.Resolve(Home, "git", path: ""));
@@ -465,7 +465,7 @@ public sealed class ToolsTests : IDisposable
     /// <summary>A downloaded version as the resolution finds it: its record, naming an executable that is there.</summary>
     private void Downloaded(string tool, string version)
     {
-        var folder = Path.Combine(Home, Tools.Folder, tool, version);
+        var folder = DaorisHome.Entry(Home, HomeEntry.ToolVersions,tool, version);
         Directory.CreateDirectory(Path.Combine(folder, Tools.Package, "bin"));
         File.WriteAllText(Path.Combine(folder, Tools.Package, "bin", $"{tool}.exe"), tool);
         File.WriteAllText(Path.Combine(folder, Tools.Record), $$"""{"exe":"bin/{{tool}}.exe"}""");
@@ -491,7 +491,7 @@ public sealed class ToolsTests : IDisposable
         {
             Tools.UseManaged(Home, "gh", version);
             Same(after!, Parsed()["tools"]!["gh"]!);
-            Assert.Equal(Path.Combine(Home, Tools.Folder, "gh", version, Tools.Package, "bin", "gh.exe"), Tools.Resolve(Home, "gh", path: "").File);
+            Assert.Equal(DaorisHome.Entry(Home, HomeEntry.ToolVersions,"gh", version, Tools.Package, "bin", "gh.exe"), Tools.Resolve(Home, "gh", path: "").File);
         }
         else
         {

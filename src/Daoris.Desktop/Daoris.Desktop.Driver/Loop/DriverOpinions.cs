@@ -164,7 +164,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
             var (info, harnessNotice) = _driver.Prepare(adapter, target, selection);
             await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
 
-            var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
+            var transcript = DaorisHome.Entry(home, HomeEntry.Sessions, $"{sessionId}.log");
             Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
 
             // Its connector and nothing else (§5.4): no plugin's server, which could write where a reviewer may not. The

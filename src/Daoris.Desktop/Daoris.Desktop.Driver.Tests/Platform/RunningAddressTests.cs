@@ -41,7 +41,7 @@ public sealed class RunningAddressTests : IDisposable
         var text = File.ReadAllText(RunningAddress.PathIn(_home));
         Assert.Equal(JsonValueKind.Object, JsonDocument.Parse(text).RootElement.ValueKind);
         Assert.Equal(
-            [HomeIdentity.FileName, RunningAddress.FileName],
+            [HomeIdentity.FileName, Path.GetFileName(RunningAddress.PathIn(_home))],
             Directory.GetFiles(_home).Select(Path.GetFileName).Order(StringComparer.Ordinal));
     }
 
@@ -55,6 +55,60 @@ public sealed class RunningAddressTests : IDisposable
 
         Assert.Equal("http://localhost:5177", named!.Url);
         Assert.Null(named.Home);
+        Assert.Null(named.Pipe);
+    }
+
+    /// <summary>
+    /// RPC1a (the terminal RPC design §4.1, §6.3): once the instance serves its pipe, the file names it beside the rest, so a
+    /// client that reads one finds it served. Its name is the home's id and the Windows session's.
+    /// </summary>
+    [Fact]
+    public void It_names_the_pipe_its_instance_serves()
+    {
+        var id = HomeIdentity.Ensure(_home)!;
+        using var written = RunningAddress.Write(_home, "http://localhost:5177", PipeName.For(id, 3));
+
+        var named = RunningAddress.Read(_home);
+
+        Assert.Equal($"daoris-{id}-3", named!.Pipe);
+        Assert.Equal(id, named.Home);
+        Assert.Equal("http://localhost:5177", named.Url);
+    }
+
+    /// <summary>
+    /// The pipe's rows, held case for case by the CLI's twin (`running.test.ts`): a pipe is read only where its name is the
+    /// pipe of the home the file names, so a file naming another home's pipe, or something that is no pipe's name, names
+    /// none, and the rest of it still reads.
+    /// </summary>
+    [Theory]
+    [InlineData("\"daoris-0123456789abcdef0123456789abcdef-1\"", "daoris-0123456789abcdef0123456789abcdef-1")]
+    [InlineData("\"daoris-fedcba9876543210fedcba9876543210-1\"", null)]
+    [InlineData("\"daoris-0123456789abcdef0123456789abcdef-\"", null)]
+    [InlineData("\"daoris-0123456789abcdef0123456789abcdef-1x\"", null)]
+    [InlineData("\"\\\\\\\\.\\\\pipe\\\\daoris-0123456789abcdef0123456789abcdef-1\"", null)]
+    [InlineData("\"\"", null)]
+    [InlineData("7", null)]
+    [InlineData("null", null)]
+    public void A_pipe_is_read_only_where_it_is_the_named_home_s(string pipe, string? read)
+    {
+        File.WriteAllText(RunningAddress.PathIn(_home),
+            "{\"url\":\"http://localhost:5177\",\"pid\":1,\"started\":1,\"since\":\"2026-10-16T08:00:00+00:00\","
+            + $"\"home\":\"0123456789abcdef0123456789abcdef\",\"pipe\":{pipe}}}");
+
+        var named = RunningAddress.Read(_home);
+
+        Assert.Equal("http://localhost:5177", named!.Url);
+        Assert.Equal(read, named.Pipe);
+    }
+
+    /// <summary>A file naming no home names no pipe either: a pipe's name is checked against the home it is said to be.</summary>
+    [Fact]
+    public void A_file_naming_no_home_names_no_pipe()
+    {
+        File.WriteAllText(RunningAddress.PathIn(_home),
+            "{\"url\":\"http://localhost:5177\",\"pid\":1,\"started\":1,\"pipe\":\"daoris-0123456789abcdef0123456789abcdef-1\"}");
+
+        Assert.Null(RunningAddress.Read(_home)!.Pipe);
     }
 
     [Fact]

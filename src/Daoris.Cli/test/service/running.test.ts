@@ -26,10 +26,13 @@ function installed(name: string): Fixture & { data: string } {
   return Object.assign(fx, { data: join(fx.root, 'data') });
 }
 
-/** The address a desktop left in `home`, and the home's id (HOMEID1) unless `id` is null. */
-function leave(fx: Fixture, home: string, url: string, pid = process.pid, id: string | null = HOME_ID): void {
+/**
+ * The address a desktop left in `home`, and the home's id (HOMEID1) unless `id` is null; with `named`, the file's own fields
+ * beside the rest, as a desktop from RPC1a on writes its `home` and `pipe`.
+ */
+function leave(fx: Fixture, home: string, url: string, pid = process.pid, id: string | null = HOME_ID, named: Record<string, unknown> = {}): void {
   const under = home.slice(fx.root.length + 1);
-  fx.write(join(under, RUNNING_FILE), JSON.stringify({ url, pid, started: 1, since: '2026-10-16T08:00:00+00:00' }));
+  fx.write(join(under, RUNNING_FILE), JSON.stringify({ url, pid, started: 1, since: '2026-10-16T08:00:00+00:00', ...named }));
   if (id) fx.write(join(under, HOME_ID_FILE), JSON.stringify({ id, minted: '2026-10-16T08:00:00+00:00' }));
 }
 
@@ -158,6 +161,42 @@ test('an address is taken only where its status answers this home’s id', async
     leave(fx, fx.data, 'http://localhost:5181', 4242);
     const reused = await runningService(fx.data, fx.root, daoris(ANOTHER_ID).get, () => true);
     assert.ok('why' in reused && reused.why.includes('(pid 4242)') && reused.why.includes('another Daoris home'), JSON.stringify(reused));
+  } finally {
+    fx.cleanup();
+  }
+});
+
+/**
+ * RPC1a (the terminal RPC design §4.1, §6.3): once the running Daoris serves its pipe, the file names it as `pipe`, read only
+ * where it is the pipe of the home the file names (`daoris-<id>-<session>`). The driver's `RunningAddressTests` hold the same
+ * rows, case for case (`twins.md`).
+ */
+test('the address names the pipe its instance serves, read only where it is the named home’s', async () => {
+  const fx = installed('running-pipe');
+  try {
+    const rows: [unknown, string | null][] = [
+      [`daoris-${HOME_ID}-1`, `daoris-${HOME_ID}-1`],
+      [`daoris-${ANOTHER_ID}-1`, null],
+      [`daoris-${HOME_ID}-`, null],
+      [`daoris-${HOME_ID}-1x`, null],
+      [`\\\\.\\pipe\\daoris-${HOME_ID}-1`, null],
+      ['', null],
+      [7, null],
+      [null, null],
+    ];
+    for (const [pipe, read] of rows) {
+      leave(fx, fx.data, 'http://localhost:5181', process.pid, HOME_ID, { home: HOME_ID, pipe });
+      const found = await runningService(fx.data, fx.root, daoris().get, () => true);
+      assert.deepEqual(found, read ? { url: 'http://localhost:5181', pipe: read } : { url: 'http://localhost:5181' }, JSON.stringify(pipe));
+    }
+
+    // A file naming no home names no pipe either: a pipe's name is checked against the home it is said to be.
+    leave(fx, fx.data, 'http://localhost:5181', process.pid, HOME_ID, { pipe: `daoris-${HOME_ID}-1` });
+    assert.deepEqual(await runningService(fx.data, fx.root, daoris().get, () => true), { url: 'http://localhost:5181' });
+
+    // And the service's address is all `endpoint` hands on: a pipe changes nothing for a verb that asks the service.
+    leave(fx, fx.data, 'http://localhost:5181', process.pid, HOME_ID, { home: HOME_ID, pipe: `daoris-${HOME_ID}-1` });
+    assert.deepEqual(await endpoint({}, daoris().get, fx.root), { url: 'http://localhost:5181', key: null });
   } finally {
     fx.cleanup();
   }

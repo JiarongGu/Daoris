@@ -40,7 +40,7 @@ public sealed class RosterReadTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private string Settings => Path.Combine(_home, "harnesses.json");
+    private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
     private string Script => Path.Combine(_home, "agent.mjs");
 

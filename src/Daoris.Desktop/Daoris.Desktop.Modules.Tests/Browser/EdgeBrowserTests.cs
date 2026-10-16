@@ -1,3 +1,5 @@
+using Daoris.Driver;
+
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
@@ -16,7 +18,7 @@ public sealed class EdgeBrowserTests : Bridge
     {
         var home = Path.Combine(Root, "data");
 
-        Assert.Equal(Path.Combine(home, "browser", "edge"), EdgeBrowser.ProfileFolder(home));
+        Assert.Equal(DaorisHome.Entry(home, HomeEntry.BrowserEdge), EdgeBrowser.ProfileFolder(home));
         Assert.Contains($"--user-data-dir={EdgeBrowser.ProfileFolder(home)}", EdgeBrowser.Arguments(EdgeBrowser.ProfileFolder(home), 9422));
     }
 

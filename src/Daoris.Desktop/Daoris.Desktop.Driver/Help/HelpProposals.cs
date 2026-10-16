@@ -440,7 +440,7 @@ public interface IHelpDoors :
 /// </remarks>
 public static class HelpProposals
 {
-    public static string FolderOf(string home) => Path.Combine(home, "help", "proposals");
+    public static string FolderOf(string home) => DaorisHome.Entry(home, HomeEntry.HelpProposals);
 
     /// <summary>The proposals one conversation made that wait for the person, oldest first. A file that does not read is skipped.</summary>
     public static IReadOnlyList<HelpProposal> Pending(string home, string session)
@@ -477,6 +477,47 @@ public static class HelpProposals
         node["state"] = state;
         node["note"] = note;
         JsonFile.Write(path, node);
+    }
+
+    /// <summary>How long a claim is believed: a press longer than this is not one (a sync's replay is bounded far below it).</summary>
+    private static readonly TimeSpan ClaimLife = TimeSpan.FromHours(1);
+
+    /// <summary>
+    /// Claim a proposal for its Apply (HELPAPPLY1): a file made only if none is there, so of two Applies at once, from two windows,
+    /// one holds it and runs the proposal and the other gets null. Dispose lets it go, whether the proposal settled or stands for
+    /// another press. A claim older than <see cref="ClaimLife"/> was left by a run that died, and is taken over.
+    /// </summary>
+    public static IDisposable? Claim(string home, string id)
+    {
+        var path = Path.Combine(FolderOf(home), $"{Path.GetFileName(id)}.claim");
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            try
+            {
+                Directory.CreateDirectory(FolderOf(home));
+                var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.Read, 1, FileOptions.DeleteOnClose);
+                return stream;
+            }
+            catch (IOException) when (File.Exists(path))
+            {
+                try
+                {
+                    if (DateTime.UtcNow - File.GetLastWriteTimeUtc(path) < ClaimLife) return null;
+                    File.Delete(path);
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                {
+                    return null;
+                }
+            }
+            catch (UnauthorizedAccessException) when (File.Exists(path))
+            {
+                // A claim being deleted by the run that let it go: held, for this press.
+                return null;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>One proposal, found by its id, whatever its state — what Apply and Not now read.</summary>

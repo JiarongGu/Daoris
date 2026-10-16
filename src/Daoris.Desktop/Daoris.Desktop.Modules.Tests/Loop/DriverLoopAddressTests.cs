@@ -1,4 +1,8 @@
 using Daoris.Driver;
+using Microsoft.Extensions.DependencyInjection;
+using Shenora;
+using Shenora.Core.Events;
+using Shenora.Core.Ipc;
 
 namespace Daoris.Desktop.Modules.Tests;
 
@@ -54,6 +58,78 @@ public sealed class DriverLoopAddressTests : Bridge
         var down = run.IndexOf("if (!up)", StringComparison.Ordinal);
         var announced = run.IndexOf("Announce();", StringComparison.Ordinal);
         Assert.True(ensured > 0 && down > ensured && announced > down, $"ensured at {ensured}, down at {down}, announced at {announced}");
+    }
+
+    /// <summary>
+    /// RPC1a (the terminal RPC design §6.3): the pipe is named in the address only once it is served; a stop answers every new
+    /// hello <c>stopping</c>, lets the pipe's presses answer, and only then takes the address away, so no terminal finds the home
+    /// with no instance and acts alone while a press it sent still runs.
+    /// </summary>
+    [Fact]
+    public async Task A_stop_answers_stopping_lets_the_pipe_s_presses_answer_and_only_then_takes_the_address_away()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var press = new HeldModule("TEST.PRESS");
+        var services = new ServiceCollection();
+        services.AddSingleton<IEventBus>(Bus);
+        services.AddSingleton<IIpcModule>(press);
+        services.UseMessageDispatcher((_, _) => { });
+        using var provider = services.BuildServiceProvider();
+        var loop = Loop();
+        using var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home,
+            census: PipeCensus.Daoris.With("TEST.PRESS", "MOVE", PipeClass.Open));
+        loop.Pipe = pipe;
+
+        loop.Announce();
+        Assert.Null(RunningAddress.Read(Home)!.Pipe);
+        var name = pipe.Serve()!;
+        loop.AnnouncePipe(name);
+        Assert.Equal(name, RunningAddress.Read(Home)!.Pipe);
+
+        var id = HomeIdentity.Read(Home)!;
+        await using var client = await PipeClient.ConnectAsync(name);
+        await client.HelloAsync(id);
+        var pressed = await client.SendAsync("TEST.PRESS", "MOVE");
+        await press.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        var stopped = Task.Run(loop.Stop);
+        await UntilAsync(() => pipe.IsStopping);
+        await using (var late = await PipeClient.ConnectAsync(name))
+        {
+            Assert.Equal(InstancePipe.Stopping, (await late.HelloAsync(id)).GetProperty("error").GetProperty("code").GetString());
+        }
+
+        // The press still runs, so the address stays and the stop waits.
+        Assert.Equal(name, RunningAddress.Read(Home)!.Pipe);
+        Assert.False(stopped.IsCompleted);
+
+        press.Let.SetResult();
+        Assert.True((await client.AnswerAsync(pressed)).GetProperty("success").GetBoolean());
+        await stopped.WaitAsync(TimeSpan.FromSeconds(30));
+        Assert.False(File.Exists(RunningAddress.PathIn(Home)));
+    }
+
+    /// <summary>Held on the loop's source: the pipe is served once the loop holds the home, and named in the address after (§6.3).</summary>
+    [Fact]
+    public void The_loop_serves_the_pipe_once_it_holds_the_home_and_names_it_after()
+    {
+        var source = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Loop", "DriverLoop.cs"));
+        var run = source[source.IndexOf("private async Task RunAsync()", StringComparison.Ordinal)..];
+
+        var held = run.IndexOf("await HoldHomeAsync(ct)", StringComparison.Ordinal);
+        var served = run.IndexOf("Pipe?.Serve()", StringComparison.Ordinal);
+        var named = run.IndexOf("AnnouncePipe(", StringComparison.Ordinal);
+        Assert.True(held > 0 && served > held && named > served, $"held at {held}, served at {served}, named at {named}");
+    }
+
+    private static async Task UntilAsync(Func<bool> condition)
+    {
+        var patience = DateTime.UtcNow + TimeSpan.FromSeconds(15);
+        while (!condition())
+        {
+            Assert.True(DateTime.UtcNow < patience, "the condition never held");
+            await Task.Delay(25);
+        }
     }
 
     private static string SourceRoot()

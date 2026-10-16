@@ -38,8 +38,6 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class AccountWindows
 {
-    public const string FileName = "windows.json";
-
     /// <summary>The window a weekly limit's reset names, as the agent's table reads it.</summary>
     public const string Weekly = "weekly";
 
@@ -60,7 +58,7 @@ public static class AccountWindows
     private static readonly object Gate = new();
 
     /// <summary>Where the file is: beside <c>cooling.json</c>, under the home.</summary>
-    public static string PathOf(string home) => Path.Combine(home, FileName);
+    public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Windows);
 
     /// <summary>
     /// The next weekly reset after <paramref name="now"/> from one told as <paramref name="reset"/>: itself until it passes,

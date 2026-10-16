@@ -43,11 +43,11 @@ public sealed class TrustHoldTickTests : IDisposable
 
         // The account a session here runs as: a named profile, whose configuration home Daoris owns —
         // and whose own record has seen another folder, never this one.
-        var profile = Path.Combine(_home, "harnesses", "claude-code", "work");
+        var profile = DaorisHome.Entry(_home, HomeEntry.AgentHomes, "claude-code", "work");
         Directory.CreateDirectory(profile);
         _trustFile = Path.Combine(profile, ClaudeTrust.FileName);
         File.WriteAllText(_trustFile, """{"projects":{"D:/somewhere/else":{"hasTrustDialogAccepted":true}}}""");
-        File.WriteAllText(Path.Combine(_home, "harnesses.json"), """{"defaults":{"claude-code":"work"}}""");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Harnesses), """{"defaults":{"claude-code":"work"}}""");
     }
 
     public void Dispose()
@@ -82,7 +82,7 @@ public sealed class TrustHoldTickTests : IDisposable
     public async Task A_session_denied_its_connector_is_held_for_trust_again()
     {
         File.WriteAllText(
-            Path.Combine(_home, PermissionRules.FileName),
+            DaorisHome.Entry(_home, HomeEntry.Permissions),
             """{"machine":{"deny":["mcp__daoris-knowledge__quest_respond"]}}""");
         await using var service = StandInService.Start(_repository);
 
@@ -96,7 +96,7 @@ public sealed class TrustHoldTickTests : IDisposable
     {
         // The connector default switched off: the one case left in which trust decides whether the
         // session can take its quest at all.
-        File.WriteAllText(Path.Combine(_home, PermissionRules.FileName), """{"defaultsOff":["connector"]}""");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Permissions), """{"defaultsOff":["connector"]}""");
         await using var service = StandInService.Start(_repository);
         var driver = Driver(service);
 
@@ -133,7 +133,7 @@ public sealed class TrustHoldTickTests : IDisposable
         var adapters = AdapterSet.Built();
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     /// <summary>A stand-in for Claude Code: it answers its version and its login question, and nothing else.</summary>

@@ -26,7 +26,7 @@ public sealed class RotationTwinTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private string Wiring => Path.Combine(_home, "harnesses.json");
+    private string Wiring => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
     private HarnessSettings Read(string file)
     {

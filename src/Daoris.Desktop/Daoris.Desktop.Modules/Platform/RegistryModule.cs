@@ -23,7 +23,7 @@ namespace Daoris.Desktop;
 /// already exists, uncommitted, for that repository's own review (REV3 CLEAN1 corrected "never
 /// writes").</para>
 /// </remarks>
-public sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) : ModuleBase(events: events)
+public sealed class RegistryModule(IEventBus events, PickFolder pickFolder) : ModuleBase(events: events)
 {
     public override string ModuleName => "DAORIS.REGISTRY";
 
@@ -32,9 +32,11 @@ public sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) :
     {
         switch (request.Type)
         {
-            // Null is the person cancelling the dialog, which is an answer and not an error.
+            // Null is the person cancelling the dialog, which is an answer and not an error. The dialog is owned by the window
+            // whose page asked, which it names (MAINWINDOWS2c); a page that names none is the first main window's.
             case "PICK_FOLDER":
-                return Task.FromResult<object?>(pickFolder() is { } folder ? Inspect(folder) : null);
+                return Task.FromResult<object?>(
+                    pickFolder(PayloadHelper.GetOptionalValue<string>(request.Payload, "window")) is { } folder ? Inspect(folder) : null);
 
             // The person editing their own tracked file through a form instead of a text editor
             // (D48 §7). The manifest is inert data (D26), not doctrine — and doctrine stays unwritable

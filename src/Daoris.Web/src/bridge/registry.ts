@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { getBridge } from '@shenora/react';
+import { ownWindowName } from '../work/window';
 
 // The registry's machine half (MOD3): a folder the shell names, and a declaration written in place (D48 §7).
 
@@ -40,8 +41,12 @@ export type FolderInspection = {
  */
 export const usePickFolder = () =>
   useMutation({
-    mutationFn: () =>
-      getBridge().invoke<FolderInspection | null>('DAORIS.REGISTRY', 'PICK_FOLDER', { timeoutMs: Infinity }),
+    mutationFn: () => {
+      // The dialog is owned by the window this page is in (MAINWINDOWS2c); the first main window names none.
+      const window = ownWindowName(globalThis.location?.search ?? '');
+      return getBridge().invoke<FolderInspection | null>('DAORIS.REGISTRY', 'PICK_FOLDER',
+        window === null ? { timeoutMs: Infinity } : { payload: { window }, timeoutMs: Infinity });
+    },
   });
 
 /**

@@ -97,6 +97,8 @@ export type HelpSettled = {
   harnessAction?: { harness: string; action: 'update' | 'pin' } | null;
   /** The card still stands for another press: a sync card's look, which settles nothing (LEFT3). A host before it answers none. */
   stands?: boolean;
+  /** The plan is no longer the one the card showed (HELPAPPLY1): nothing was applied, `message` says what it is now, and the card stands. */
+  changed?: boolean;
 };
 
 /**
@@ -113,6 +115,15 @@ export const settleBound = (client: QueryClient, id: string): number | undefined
     ? pressBound(proposal.sync.rows.filter((row) => row.moves).length)
     : syncLookBound(client);
 };
+
+/**
+ * The revision of the plan the card for this proposal showed (HELPAPPLY1): an Apply carries it, and the host applies only a plan
+ * still that one. Undefined when the conversation holds no such card, which the host refuses for the card to be drawn again.
+ */
+export const shownRevision = (client: QueryClient, id: string): string | undefined =>
+  client.getQueriesData<HelpProposal[]>({ queryKey: HELP_PROPOSALS })
+    .flatMap(([, list]) => (Array.isArray(list) ? list : []))
+    .find((each) => each.id === id)?.revision;
 
 /** The history's key: every listing under it, so a change asks each again, a delete through Sessions' own hook among them. */
 export const HELP_HISTORY = ['help-conversations'] as const;
@@ -186,7 +197,8 @@ export const useSettleHelp = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (settle: { id: string; apply: boolean }) =>
-      call<HelpSettled>(settle.apply ? 'HELP_APPLY' : 'HELP_DISMISS', { id: settle.id },
+      call<HelpSettled>(settle.apply ? 'HELP_APPLY' : 'HELP_DISMISS',
+        settle.apply ? { id: settle.id, revision: shownRevision(client, settle.id) } : { id: settle.id },
         settle.apply ? { timeoutMs: settleBound(client, settle.id) } : undefined),
     // An Apply the page stopped waiting for may still be at work on the host: it is said, never pressed again.
     retry: false,

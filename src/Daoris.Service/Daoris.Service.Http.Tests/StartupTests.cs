@@ -81,6 +81,23 @@ public sealed class StartupTests
         Assert.Equal(200, (await host.GetAsync("/api/status")).Status);
     }
 
+    /// <summary>
+    /// The status names the host's version (WIRING1b, the this-Daoris design §3.6): the informational version the release
+    /// workflow stamps, as its machine log's `app.started` line says it, so This Daoris shows what the service is.
+    /// </summary>
+    [Fact]
+    public async Task The_status_names_the_hosts_version()
+    {
+        using var host = new DaorisHost(ServiceMode.Local);
+
+        var status = await host.GetAsync("/api/status");
+
+        var stamped = typeof(Daoris.Knowledge.Http.StatusResponse).Assembly
+            .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+            .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().Single().InformationalVersion;
+        Assert.Equal(stamped, status.Json.GetProperty("version").GetString());
+    }
+
     /// <summary>And a local host on the loopback starts, which is what makes the refusals above a judgement.</summary>
     [Fact]
     public async Task A_local_host_on_the_loopback_starts()

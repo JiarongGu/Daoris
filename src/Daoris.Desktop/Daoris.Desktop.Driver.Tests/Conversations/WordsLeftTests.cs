@@ -27,7 +27,7 @@ public sealed class WordsLeftTests : IDisposable
              "said":{"id":"w9","text":"stuck?","at":"2026-10-14T06:53:37+00:00","files":[],"reopens":true}}
             """);
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(standIn));
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         events.Keep("s1", ChatMessage.Words(new ChatMessage("stuck?", []) { Id = "said-1" }) with { Reaches = "next-step", Door = "screen" }, say: null);
 
         var kept = await WordsLeft.KeepAsync(service, events, "s1", [new ChatMessage("stuck?", []) { Id = "said-1" }], CancellationToken.None);
@@ -51,7 +51,7 @@ public sealed class WordsLeftTests : IDisposable
     {
         var standIn = new StandIn(HttpStatusCode.Conflict, """{"error":"Session `s1` stood down: quest `#q1` is someone else's.","refusal":"stood-down"}""");
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(standIn));
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
         var kept = await WordsLeft.KeepAsync(service, events, "s1", [new ChatMessage("stuck?", []) { Id = "said-1" }], CancellationToken.None);
 

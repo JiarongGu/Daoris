@@ -29,7 +29,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
     public SessionsOutliveTheirLookTests()
     {
         Directory.CreateDirectory(_home);
-        _ledger.Register("engine", Path.Combine(_home, "engine")).Register("tools", Path.Combine(_home, "tools"));
+        _ledger.Register("engine", Path.Combine(_home, "engine")).Register("tools", DaorisHome.Entry(_home, HomeEntry.ToolVersions));
     }
 
     public void Dispose()
@@ -878,7 +878,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         var runs = new StandInRuns(service, _ledger);
         var adapters = AdapterSet.Built();
         var driver = new Daoris.Driver.Driver(
-            service, config, adapters, _home, sync: sync, harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")))
+            service, config, adapters, _home, sync: sync, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Runner = runs.Runner,
             Stops = runs.Stops,
@@ -889,7 +889,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
 
     private (DriverWatch Watch, StandInRuns Runs) Watch(int pollSeconds = 1, RemoteSyncSet? sync = null)
     {
-        var config = Path.Combine(_home, "driver.json");
+        var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, $$"""
             { "drivable": ["engine", "tools"], "adapter": "stub", "cap": 3, "pollSeconds": {{pollSeconds}}, "trees": ["engine"] }
             """);
@@ -897,7 +897,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         var runs = new StandInRuns(service, _ledger);
         var watch = new DriverWatch(
             service, config, _home, new SessionProcesses(), sync,
-            harnesses: new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")))
+            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Runner = runs.Runner,
             Stops = runs.Stops,

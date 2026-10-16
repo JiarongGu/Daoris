@@ -32,8 +32,6 @@ public sealed record RotationProblem(string Account, bool Twice)
 /// </remarks>
 public static class HarnessKeys
 {
-    public const string FileName = "keys.json";
-
     /// <summary>The key's last four characters — every Anthropic key begins the same way.</summary>
     public static string Handle(string key) => key.Length > 4 ? $"…{key[^4..]}" : "…";
 
@@ -134,7 +132,7 @@ public static class HarnessKeys
     private static Dictionary<string, Dictionary<string, string>> Read(string home)
     {
         var keys = new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
-        var path = Path.Combine(home, FileName);
+        var path = DaorisHome.Entry(home, HomeEntry.Keys);
         if (!File.Exists(path)) return keys;
 
         try
@@ -163,7 +161,7 @@ public static class HarnessKeys
 
     private static void Write(string home, Dictionary<string, Dictionary<string, string>> keys)
     {
-        JsonFile.Write(Path.Combine(home, FileName), writer =>
+        JsonFile.Write(DaorisHome.Entry(home, HomeEntry.Keys), writer =>
         {
             writer.WriteStartObject();
             foreach (var (agent, held) in keys.OrderBy(e => e.Key, StringComparer.Ordinal))

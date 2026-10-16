@@ -1,7 +1,6 @@
 import { linkSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { ensureHomeId } from './home.ts';
+import { ensureHomeId, homeEntry } from './home.ts';
 
 /**
  * One writer per home (HOMELEASE1, the terminal RPC design §5): `<home>/home.lease`, the driver's lock (DRV8a's
@@ -23,6 +22,7 @@ import { ensureHomeId } from './home.ts';
  * design's §9. Until then they act as they always did.
  */
 
+/** The lease's name: the home's `home-lease` entry, which `homeEntry` places (D172, HOMELAYOUT2). */
 export const LEASE_FILE = 'home.lease';
 
 /** DRV8a's lock, which a build from before HOMELEASE1 still takes: read as that build's lease while its holder lives. */
@@ -88,8 +88,8 @@ export function processLives(pid: number): boolean {
 
 /** The live holder of `home`'s lease, or null when none holds it. */
 export function leaseHolder(home: string, lives: Lives = processLives): LeaseHolder | null {
-  for (const name of [LEASE_FILE, LEGACY_LOCK_FILE]) {
-    const seen = readText(join(home, name));
+  for (const name of ['home-lease', 'driver-lock'] as const) {
+    const seen = readText(homeEntry(home, name));
     const named = seen === null ? null : parse(seen);
     if (named && lives(named.pid)) return named;
   }
@@ -101,8 +101,8 @@ export function tryLease(
   home: string, kind: LeaseKind, what: string | null = null, lives: Lives = processLives,
 ): { lease: Lease } | { holder: LeaseHolder } {
   mkdirSync(home, { recursive: true });
-  const path = join(home, LEASE_FILE);
-  const legacy = leaseHolderIn(join(home, LEGACY_LOCK_FILE), lives);
+  const path = homeEntry(home, 'home-lease');
+  const legacy = leaseHolderIn(homeEntry(home, 'driver-lock'), lives);
   if (legacy) return { holder: legacy };
 
   for (let attempt = 0; attempt < 8; attempt++) {

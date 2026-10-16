@@ -24,7 +24,7 @@ public sealed class PluginToolsTests : IDisposable
 
     private string Plugin(string id, string? tools, string extra = "")
     {
-        var folder = Path.Combine(_home, PluginCatalog.Folder, id);
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,id);
         Directory.CreateDirectory(folder);
         var field = tools is null ? "" : $", \"tools\": {tools}";
         File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName),
@@ -177,7 +177,7 @@ public sealed class PluginToolsTests : IDisposable
     [Fact]
     public void A_refused_plugin_takes_no_tools_and_its_manifest_as_written_keeps_them()
     {
-        var folder = Path.Combine(_home, PluginCatalog.Folder, "acme.later");
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,"acme.later");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), """
             { "id": "acme.later", "tools": [{ "id": "gh" }], "harnesses": [ { "name": "claude-code", "command": ["claude"] } ] }

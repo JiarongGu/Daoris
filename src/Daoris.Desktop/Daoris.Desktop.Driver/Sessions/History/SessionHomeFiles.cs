@@ -26,7 +26,7 @@ public sealed record SessionFilesRemoved(
 /// </summary>
 /// <remarks>
 /// <para><b>What goes, by name</b>, in this order: its conversation, its transcript, its files (the whole
-/// <c>sessions/&lt;id&gt;/</c>), its harness conversation id, a leftover process marker, its go-on mark, its choice of a new
+/// <c>sessions/&lt;id&gt;/</c>, its native children's lineage among them, <see cref="ChildLineage"/>), its harness conversation id, a leftover process marker, its go-on mark, its choice of a new
 /// session, the spawn files a crash left, Ask Daoris's name and pin for it (ASKHIST1), its held words, its closed automatic
 /// landing and its archive mark. Until HIST1c the
 /// delete took the first five and the mark, and left the mark, the choice, the held words and the landing behind.</para>
@@ -112,9 +112,9 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     /// <summary>The home whose files these are.</summary>
     public string Home => home;
 
-    private string Sessions => Path.Combine(home, "sessions");
+    private string Sessions => DaorisHome.Entry(home, HomeEntry.Sessions);
 
-    private string SpawnFolder => Path.Combine(home, SpawnServers.Folder);
+    private string SpawnFolder => DaorisHome.Entry(home, HomeEntry.Spawn);
 
     private static HistoryBytes Beside(long bytes) => HistoryBytes.None with { Other = bytes };
 
@@ -258,7 +258,7 @@ public static class HeldWordsFile
 {
     public const string FileName = "held-words.json";
 
-    public static string PathOf(string home) => Path.Combine(home, "sessions", FileName);
+    public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Sessions, FileName);
 
     /// <summary>
     /// Drop every entry held for one of <paramref name="sessions"/>, keeping the rest as written; the file is removed once it

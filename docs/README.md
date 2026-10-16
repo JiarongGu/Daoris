@@ -80,9 +80,11 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-07-history-clearing-design.md` | Contract: clear local finished history | D153 |
 | `2026-10-08-review-environment-design.md` | Contract: setup and person's review verdict | D154/D155–D157 |
 | `2026-10-08-second-agent-design.md` | Contract: another maker's agent reviews | D155/D157 |
+| `model-roles.md` | Reference: which model, version and effort does which role, its evidence, the trials, and when to ask another maker | D174/D160; living, dated |
 | `2026-10-09-person-door-design.md` | Contract: person/driver authorization | D156; starter integration remains in TASKS |
 | `2026-10-09-workflow-design.md` | Contract: choices, versions and gates | D157 |
 | `2026-10-14-co-working-design.md` | Contract: one session per line of work, its records its parts; an ask's channel | D167; SESSONE rows in TASKS |
+| `2026-10-16-install-layout-design.md` | Contract: the Daoris folder's top folders, every home path placed, and the move into them | D172; HOMELAYOUT rows in TASKS |
 | `2026-10-16-terminal-rpc-design.md` | Contract: the running Daoris answers the terminal's verbs over a pipe into its own dispatcher; the census of what acts outside the loop; a home's identity and its one lease | D171 point 3; HOMEID1, HOMELEASE1 and RPC1 rows in TASKS |
 
 ## UI, browser, tools and plugin contracts
@@ -113,6 +115,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-04-plugin-hooks-design.md` | Contract: hook occasions and PR state | D148 |
 | `2026-10-04-ux6-redesign.md` | Contract: settings on their things | D150/D152 |
 | `2026-10-05-ux7-design.md` | Contract: menus, accounts and page heads | D152 |
+| `2026-10-16-this-daoris-design.md` | Contract: Settings → This Daoris, every wire and its source, every setting found, the wiring set up | D171's WIRING1a note; WIRING rows in TASKS |
 
 ## Studies and evidence
 
@@ -159,7 +162,7 @@ These retain their original dates, versions and measurement limits.
 | `2026-10-12-code-structure-design.md` | Contract: domain modules, a Domain for each one's model and rules (amended 2026-10-14), the structure gate and the moves | D166; STRUCT and FLAT rows in TASKS |
 | `2026-10-14-duplication-survey.md` | Evidence: duplicated code across the .NET modules, by cluster, with its drift | D166's note of 2026-10-14; DEDUP rows in TASKS |
 | `2026-10-14-partial-types-survey.md` | Evidence: the types split by hand across files, by shape, and the gate that holds them | D166's partial-type note; PART rows in TASKS |
-| `2026-10-17-fabric-contract-audit.md` | Evidence: each collaboration concept's store, writer and fabric primitive; Claude Code's and Codex's native children measured against a server | D173's FABRIC-C0 note; FABRIC rows in TASKS |
+| `2026-10-16-fabric-contract-audit.md` | Evidence: each collaboration concept's store, writer and fabric primitive; Claude Code's and Codex's native children measured against a server | D173's FABRIC-C0 note; FABRIC rows in TASKS |
 
 ## Records and generated indexes
 

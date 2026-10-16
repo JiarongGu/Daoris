@@ -111,7 +111,7 @@ public sealed class BranchTidyingLandingTests : BranchTidyingFixture
             landings.Select(data => (data.GetProperty("session").GetString(), data.GetProperty("kind").GetString())).Order());
         Assert.All(landings, data => Assert.Equal(JsonValueKind.Null, data.GetProperty("branch").ValueKind));
         Assert.Empty(Events("branch.kept"));
-        Assert.DoesNotContain("feature/", string.Join('\n', Directory.EnumerateFiles(Path.Combine(_home, MachineLog.Folder), "*.jsonl").SelectMany(StubFile.Lines)),
+        Assert.DoesNotContain("feature/", string.Join('\n', Directory.EnumerateFiles(DaorisHome.Entry(_home, HomeEntry.Logs), "*.jsonl").SelectMany(StubFile.Lines)),
             StringComparison.Ordinal);
         var record = new LandedBranches(_home);
         Assert.Equal(LandedKind.Merged, record.Landing("s1")!.RemovedAs);

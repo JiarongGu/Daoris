@@ -507,6 +507,15 @@ try
         return exit;
     }
 
+    // How this Daoris is wired, from a terminal (WIRING1b, D50): Settings → This Daoris is the other door to the same reader.
+    // Needs no service: a status door is asked only where an address is named or left in the home's address file.
+    if (args is ["wiring", .. var wiringArgs])
+    {
+        var exit = WiringCommand.Run(wiringArgs, WiringWorld.OfThisTerminal(DaorisHome.Resolve()), out var wiringSaid);
+        (exit == 2 ? Console.Error : Console.Out).Write(wiringSaid);
+        return exit;
+    }
+
     // The machine log from a terminal (LOG1c, D50): Settings → Logs is the other door to the same reading.
     if (args is ["logs", .. var logsArgs])
     {
@@ -576,13 +585,13 @@ try
     var started = DateTimeOffset.UtcNow;
     log.Info("app.started", ("mode", once ? "once" : untilIdle ? "until-idle" : "watch"));
     // Marked under the home, so the desktop sharing it can tell this host's sessions from orphans.
-    var processes = new SessionProcesses(Path.Combine(home, "sessions"));
+    var processes = new SessionProcesses(DaorisHome.Entry(home, HomeEntry.SessionPids));
 
     using var service = ServiceClient.FromEnvironment();
 
     // What this host runs and how long each part takes, into its log (LOG1b): the watcher hears the
     // client's opens and moves and the record's events, so the record is handed to every driver below.
-    var events = new SessionEvents(Path.Combine(home, "sessions"));
+    var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
     using var sessionLog = new SessionLog(log, service, events);
 
     // The watch, once it runs, so a terminal's words a loop keeps are taken up at once rather than at its next look (MSG1e).

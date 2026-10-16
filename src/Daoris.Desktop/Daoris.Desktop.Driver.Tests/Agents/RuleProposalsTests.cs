@@ -37,7 +37,7 @@ public sealed class RuleProposalsTests : IDisposable
         string? rule = null, string? defaultId = null, bool? on = null, string state = "proposed",
         string? session = "s1a2b3c4", string? ask = null)
     {
-        var folder = Path.Combine(_home, RuleProposals.Folder);
+        var folder = DaorisHome.Entry(_home, HomeEntry.RuleProposals);
         Directory.CreateDirectory(folder);
         var node = new JsonObject
         {
@@ -264,7 +264,7 @@ public sealed class RuleProposalsTests : IDisposable
     [InlineData("")]
     public void An_id_that_reaches_out_of_the_folder_is_no_proposal(string id)
     {
-        File.WriteAllText(Path.Combine(_home, "permissions.json"), """{"id":"x","change":{"action":"add"}}""");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Permissions), """{"id":"x","change":{"action":"add"}}""");
 
         var refusal = Assert.Throws<DriverException>(() => RuleProposals.Answer(_home, id, accept: true, null, At));
 
@@ -278,7 +278,7 @@ public sealed class RuleProposalsTests : IDisposable
     {
         Proposal("p0000001", "add", list: "deny", rule: "Bash(rm:*)");
         Proposal("p0000002", "add", list: "allow", rule: "WebFetch", session: null, ask: "a1b2c3");
-        File.WriteAllText(Path.Combine(_home, RuleProposals.Folder, "broken.json"), "{ not json");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.RuleProposals, "broken.json"), "{ not json");
 
         var read = RuleProposals.Load(_home);
 

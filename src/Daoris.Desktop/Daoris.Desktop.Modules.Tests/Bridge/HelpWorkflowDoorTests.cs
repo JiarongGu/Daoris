@@ -80,7 +80,7 @@ public sealed class HelpWorkflowDoorTests : DriverModuleBridge
         var module = await UpAsync(ledger);
         Propose(Merge);
 
-        var applied = await AnswerAsync(module, "HELP_APPLY", new { id = "p1a2b3c4" });
+        var applied = await ApplyShownAsync(module, "h1", "p1a2b3c4");
 
         Assert.True(applied.GetProperty("applied").GetBoolean());
         var version = Assert.Single(WorkflowStore.Load(Home, "docs-to-pr")!.Read.Versions);

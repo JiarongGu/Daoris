@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris-driver wiring` says how this Daoris is wired: its folder and each top folder as it runs (with what is still at an
+  old place and why), the service (its address and where it came from, its tier and version), who holds the home, each
+  settings file (whether it reads, what overrides it), every variable Daoris reads with where it came from, the versions,
+  and whether a new terminal finds this install's `daoris` and `daoris-driver`. `--measure` counts the folders' sizes first,
+  and `--json` prints it whole. A key is only ever *set*, or a deployment key's short prefix; never its value. The service's
+  status now names its version.
 - Switching accounts is in view on an agent's page. Each account's five-hour and weekly window says its use against its usage
   curve now (*its curve allows 45% now*, or *over its curve's 45% now*) and whether it was read from the agent or said by a
   session, and how long ago; the page reads each account's use as it opens where a reading is older than a minute, and at
@@ -159,8 +165,8 @@ with the version and date at release.
 - The window no longer freezes for minutes while the Sessions page's clean-up list is read: its git work goes on away from
   the window's thread, at most four programs start at once, and each repository's line is asked of git once per list. The
   clean-up list and the lines asked again while one is still being read wait for that one rather than reading it all again,
-  and every program Daoris starts (an agent, its sign-in or install, a plugin, the file manager) starts away from the
-  window's thread too.
+  and every program Daoris starts (an agent, its sign-in or install, a plugin, a terminal's shell, the file manager, the
+  launcher *Update now* restarts through) starts away from the window's thread too.
 - Daoris now removes its own session branches by itself wherever *Clean up* would, once their work is on the line: a branch
   whose work was merged into the line or its copy on origin, is on the line by content after a squash merge (its commits kept
   on a ref, which the report names with how to bring the branch back), or was carried by a completed pull request, not only one

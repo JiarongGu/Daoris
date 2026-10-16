@@ -9,7 +9,8 @@ import {
   currentPlatform, integrityOf, locationCopy, mergeResources, parseResources, platformFor, readLists, readResourceFile,
   type MergedResources, type ResourceList,
 } from '../../src/tools/resources.ts';
-import { TOOLS, TOOLS_FILE, TOOLS_FOLDER } from '../../src/tools/tools.ts';
+import { TOOLS, TOOLS_FOLDER } from '../../src/tools/tools.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import { driverRows as csharpRows, driverFile, driverTestFile } from '../_csharp.ts';
 import { makeFixture } from '../_fixture.ts';
 
@@ -410,9 +411,9 @@ test('the lists are the person’s locations in order, then the one built in bes
   const { fx, home } = scratchHome('resources-lists');
   const first = 'https://mirror.example/resources.json';
   const second = 'http://localhost:5177/resources.json';
-  writeFileSync(join(home, TOOLS_FILE), JSON.stringify({ locations: [first, second] }));
+  writeFileSync(homeEntry(home, 'tools'), JSON.stringify({ locations: [first, second] }));
   const firstText = listText('gh 2.63.0 win-x64 b mirror.example');
-  mkdirSync(join(home, ...LOCATIONS_FOLDER), { recursive: true });
+  mkdirSync(homeEntry(home, 'tool-versions', ...LOCATIONS_FOLDER.slice(1)), { recursive: true });
   writeFileSync(locationCopy(home, first), firstText);
   mkdirSync(join(fx.root, 'app'), { recursive: true });
   const builtInText = listText('gh 2.62.0 win-x64 a maker.example');

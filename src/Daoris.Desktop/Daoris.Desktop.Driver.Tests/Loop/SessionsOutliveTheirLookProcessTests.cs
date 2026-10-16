@@ -69,7 +69,7 @@ public sealed class SessionsOutliveTheirLookProcessTests : IDisposable
     public async Task A_shutdown_still_marks_every_running_session_interrupted()
     {
         var processes = new SessionProcesses();
-        var config = Path.Combine(_home, "driver.json");
+        var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, JsonSerializer.Serialize(new Dictionary<string, object>
         {
             ["drivable"] = new[] { "engine", "tools" },
@@ -82,7 +82,7 @@ public sealed class SessionsOutliveTheirLookProcessTests : IDisposable
         using var service = _ledger.Client();
         var watch = new DriverWatch(
             service, config, _home, processes, sync: null,
-            harnesses: new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
         using var closing = new CancellationTokenSource(TimeSpan.FromSeconds(120));
         _ledger.Publish("q1", "engine");
         var published = 0;
@@ -156,7 +156,7 @@ public sealed class SessionsOutliveTheirLookProcessTests : IDisposable
         var adapters = AdapterSet.Built();
         return new Daoris.Driver.Driver(
             _ledger.Client(), config, adapters, _home, processes: processes,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     /// <summary>The pipe door's stand-in: it answers the toolchain's two questions, then holds its turn.</summary>

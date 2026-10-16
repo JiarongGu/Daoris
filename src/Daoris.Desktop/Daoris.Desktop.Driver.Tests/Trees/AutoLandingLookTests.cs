@@ -34,15 +34,15 @@ public sealed class AutoLandingLookTests : IDisposable
     public async Task A_look_works_the_due_list_and_says_what_it_closed()
     {
         var due = new AutoLandings(_home);
-        due.Due(new AutoLanding("s8", "q8", "engine", "aurora", Path.Combine(_home, "trees", "aurora", "engine", "s-8"), At));
-        due.Due(new AutoLanding("s9", "q9", "tools", "aurora", Path.Combine(_home, "trees", "aurora", "tools", "s-9"), At));
+        due.Due(new AutoLanding("s8", "q8", "engine", "aurora", DaorisHome.Entry(_home, HomeEntry.Trees,"aurora", "engine", "s-8"), At));
+        due.Due(new AutoLanding("s9", "q9", "tools", "aurora", DaorisHome.Entry(_home, HomeEntry.Trees,"aurora", "tools", "s-9"), At));
         var config = DriverConfig.Empty
             .WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}"))
             .WithLanding("tools", new LandingRule(LandingForm.Branch, "feature/{quest}", AutoAccept: true));
 
         using var service = _ledger.Client();
         var driver = new Daoris.Driver.Driver(service, config, AdapterSet.Built(), _home,
-            harnesses: new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
         var look = await driver.TickAsync().WaitAsync(Bound);
 
         Assert.Contains(look.Events, line => line.StartsWith("landing  session s8 (#q8 → engine): its repository's rule no longer accepts automatically", StringComparison.Ordinal));

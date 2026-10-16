@@ -40,12 +40,12 @@ public sealed class HelpChatTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
         };
         var adapters = AdapterSet.Built();
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var usage = new SessionUsage(_home);
         var client = new ServiceClient(service.Url, null);
         var runner = new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")), usage: usage);
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)), usage: usage);
         return (runner, events, usage, client, config);
     }
 
@@ -240,8 +240,8 @@ public sealed class HelpChatTests : IDisposable
         var adapters = AdapterSet.Built();
         using var client = new ServiceClient(service.Url, null);
         using var runner = new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")),
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)),
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         var start = help
             ? await runner.StartHelpAsync(adapter, config, Machine)

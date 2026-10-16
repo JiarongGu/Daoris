@@ -52,7 +52,7 @@ public static class PluginOffers
             problem ??= PluginCatalog.RefusedByThisBuild(manifest, reserved);
             offers.Add(new PluginOffer(
                 name, path, manifest, problem, Needs(path),
-                PluginFolders.HasFile(Path.Combine(home, PluginCatalog.Folder, name, PluginCatalog.ManifestName))));
+                PluginFolders.HasFile(DaorisHome.Entry(home, HomeEntry.Plugins, name, PluginCatalog.ManifestName))));
         }
 
         return offers;

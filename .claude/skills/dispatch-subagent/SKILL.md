@@ -51,20 +51,24 @@ Orientation pack:
 <the scout's pack, as it came back, with any pointer you corrected marked>
 ```
 
-## Choosing the model (D160)
+## Choosing the model (D160, D174)
 
-Each role's model is its definition's `model:`, and the Agent call's `model` overrides it for one dispatch.
+Choose by role, never by a remembered name: the current model, version and effort for each role, its evidence, what is
+on trial and when to ask an agent of another maker are in [`docs/model-roles.md`](../../../docs/model-roles.md). Each
+role's model is its definition's `model:`, and the Agent call's `model` overrides it for one dispatch with the role's
+current entry.
 
-| Role | Model | Why |
-|---|---|---|
-| Parent: plan, review, merge | the session's | It holds the backlog and the merges |
-| `branch-scout` | Sonnet | Reading and locating; its context is handed back, not carried |
-| `branch-worker`, one lane, the pack names the change exactly (catalogue words, a rename, a refusal, a small fix) | Sonnet | The work is the pack's ranges |
-| `branch-worker`, design, UI, more than one lane, or a decision to write | Opus | The work is judgement |
+| Role in this skill | The reference's role |
+|---|---|
+| Parent: plan, review, merge | steward |
+| `branch-scout` | orient |
+| `branch-worker`, one lane, the pack names the change exactly | build-exact |
+| `branch-worker`, design, UI, more than one lane, a decision to write, deletion or concurrency | build-judgement |
+| A read of a design, a decision or a risky merge by another maker | decide-support or review |
 
-SUBLOAD1c compares each worker's merge (gates on the first run, review findings, what the window showed)
-and its cost with the runs before D160. Record each batch's numbers under D160's notes. Daoris's managed
-sessions take the same roles once the trial says which split works (MODELROLE1).
+Measure each batch (step 8) against the reference's targets, note the numbers under D160, and move the reference when
+they say so. A trial candidate takes one or two rows of its role in a batch. Daoris's managed sessions take the same roles
+once three batches hold the targets (MODELROLE1).
 
 ## The parent's half
 

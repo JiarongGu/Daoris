@@ -48,7 +48,7 @@ public sealed class AccountLimitHoldTests : IDisposable
     }
 
     private HarnessRoster Roster() =>
-        new(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")) { Clock = () => _now, Zone = Zone };
+        new(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now, Zone = Zone };
 
     private static DriverConfig Config => DriverConfig.Empty with
     {
@@ -223,7 +223,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         using var service = _ledger.Client();
         var lines = new List<AccountLine>();
         service.AccountLined += lines.Add;
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
         events.Append("s1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
         var driver = new Daoris.Driver.Driver(service, Config, AdapterSet.Built(), _home, harnesses: Roster(), events: events);
@@ -278,7 +278,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         var lines = new List<AccountLine>();
         service.AccountLined += lines.Add;
         var roster = Roster();
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
         using var runner = new ChatRunner(service, AdapterSet.Built(), _home, new SessionProcesses(), harnesses: roster, events: events);
         var acp = AdapterSet.Built().Resolve("acp-stub");
@@ -480,7 +480,7 @@ public sealed class AccountLimitHoldTests : IDisposable
     {
         using var log = new MachineLog(_home, "desktop", () => _now);
         using var service = _ledger.Client();
-        using var watch = new SessionLog(log, service, new SessionEvents(Path.Combine(_home, "sessions")), () => _now);
+        using var watch = new SessionLog(log, service, new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), () => _now);
         var seen = new LimitSeen("weekly", "weekly", Until, Stated: true, AssumedZone: false);
 
         service.AccountSaid(AccountLine.Limited("s1", "claude-code-acp", "account-1", seen, turn: 2, used: 370_104));
@@ -489,7 +489,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         service.AccountSaid(AccountLine.Waiting("claude-code", "gmail", null, Until, quests: 2, signedOut: ["account-1", "not a name", "account-2"]));
         service.AccountSaid(AccountLine.Waiting("claude-code", null, null, until: null, quests: 1, signedOut: ["account-1"]));
 
-        var lines = Directory.GetFiles(Path.Combine(_home, MachineLog.Folder)).SelectMany(StubFile.Lines)
+        var lines = Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs)).SelectMany(StubFile.Lines)
             .Select(line => JsonDocument.Parse(line).RootElement.Clone()).ToList();
         Assert.Equal(
             """{"session":"s1","adapter":"claude-code-acp","account":"account-1","hit":"weekly","window":"weekly","until":"2026-10-03T10:17:00Z","stated":true,"assumedZone":false,"turn":2,"used":370104}""",

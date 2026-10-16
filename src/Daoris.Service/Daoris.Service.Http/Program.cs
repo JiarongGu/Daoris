@@ -443,7 +443,9 @@ app.MapGet("/api/status", (ComposedService s, string? prove) => new StatusRespon
     // The proof of possession (PERSONDOOR1a, design §2.3): the shell hands its modules and the page the key only once the
     // host it started proves it holds it, so a process that took the port first never learns it. None without a key.
     Proof: string.IsNullOrEmpty(prove) ? null : personKey?.Prove(prove),
-    Home: homeId));
+    Home: homeId,
+    // What this host is (WIRING1b): This Daoris shows it beside the tier, and a terminal's `daoris-driver wiring` reads it too.
+    Version: HostVersion.Stamped));
 
 // Every cross-repository answer below takes `workspace` — the unit of sharing (D48 §4). Absent spans
 // every circle this deployment holds, which for a shared host is one by construction and for a local
@@ -2193,7 +2195,7 @@ static ChannelResponse ToChannel(string ask, string entry, ChannelRead read) =>
 
 static AskResponse ToAsk(Ask a, QuestFiles? files, bool machineLocal)
 {
-    var kept = files?.For(AskDesk.Folder);
+    var kept = files?.For(HomeEntry.AskFiles);
     return new(
         a.Id, a.Workspace, a.Sentence, a.State.ToString(), a.Tier, a.Asked, a.Updated, a.Asker, a.Note, a.Links,
         a.Attachments.Select(f => new QuestAttachmentResponse(

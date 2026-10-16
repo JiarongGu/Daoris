@@ -19,7 +19,7 @@ public sealed class HomeLeaseProcessTests : IDisposable
     private readonly string _home = Path.Combine(
         Path.GetTempPath(), "daoris-driver-lock-" + Guid.NewGuid().ToString("N")[..8]);
 
-    private string LeaseFile => Path.Combine(_home, HomeLease.FileName);
+    private string LeaseFile => DaorisHome.Entry(_home, HomeEntry.HomeLease);
 
     public HomeLeaseProcessTests() => Directory.CreateDirectory(_home);
 

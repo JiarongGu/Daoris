@@ -23,7 +23,7 @@ public sealed class HelpConversationsTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private SessionEvents Events => new(Path.Combine(_home, "sessions"));
+    private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     private static SessionRecord Help(string id, string state = "completed", DateTimeOffset? created = null) =>
         new(id, HelpRoom.Repository, state) { Kind = "chat", Created = created ?? Monday, Updated = created ?? Monday };
@@ -153,7 +153,7 @@ public sealed class HelpConversationsTests : IDisposable
         kept.Rename("h1", "Landing");
         kept.Pin("h1", true, Monday);
 
-        Assert.Equal(Path.Combine(_home, "sessions", "h1.help.json"), kept.PathOf("h1"));
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Sessions,"h1.help.json"), kept.PathOf("h1"));
         var bytes = File.ReadAllBytes(kept.PathOf("h1"));
         Assert.False(bytes.Length >= 3 && bytes[0] == 0xEF);
         var text = Encoding.UTF8.GetString(bytes);

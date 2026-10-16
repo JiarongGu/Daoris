@@ -544,7 +544,7 @@ public sealed class QuestExchangeTests : IAsyncLifetime
 
         Assert.Equal(QuestPublishRefusal.BadAttachment, outcome.Refusal);
         Assert.Contains($"at most {QuestExchange.MaxAttachments}", outcome.Message);
-        Assert.False(Directory.Exists(Path.Combine(_root + "-home", QuestFiles.Folder)));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_root + "-home", HomeEntry.QuestFiles)));
     }
 
     [Fact]

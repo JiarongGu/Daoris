@@ -21,7 +21,7 @@ public sealed class BranchTidyingTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private string HomeTree => Path.Combine(_home, "trees", "default", "engine", "s-1a2b3c4d");
+    private string HomeTree => DaorisHome.Entry(_home, HomeEntry.Trees,"default", "engine", "s-1a2b3c4d");
 
     private string OutsideTree => Path.Combine(Path.GetTempPath(), "a-checkout-of-the-persons", "engine");
 
@@ -187,7 +187,7 @@ public sealed class BranchTidyingTests : IDisposable
     {
         using var log = new MachineLog(_home, "driver", () => _now);
         var tidying = new BranchTidying(_home);
-        var aside = Path.Combine(_home, "trees", ".tidied", "default", "engine", "s-1-20261009T090000000Z");
+        var aside = DaorisHome.Entry(_home, HomeEntry.Trees,".tidied", "default", "engine", "s-1-20261009T090000000Z");
         var landed = Item("daoris/s-1", HomeTree) with { Kind = SweepKind.Landed, Commits = 2, Where = "origin/main", OnLine = true };
         var held = Item("daoris/s-2") with { Kind = SweepKind.Landed, Commits = 1, HeldBy = new ContentHold("main", Squash: true) };
         var carried = Item("daoris/s-3") with { Kind = SweepKind.Carried, Commits = 1, Where = "feature/q1-fix" };
@@ -288,7 +288,7 @@ public sealed class BranchTidyingTests : IDisposable
         using var log = new MachineLog(_home, "driver", () => _now);
         var tidying = new BranchTidying(_home);
         var empty = Item("daoris/s-1a2b3c4d", HomeTree);
-        var aside = Path.Combine(_home, "trees", ".tidied", "default", "engine", "s-1a2b3c4d-20261009T090000000Z");
+        var aside = DaorisHome.Entry(_home, HomeEntry.Trees,".tidied", "default", "engine", "s-1a2b3c4d-20261009T090000000Z");
 
         var said = tidying.Said([Pass("engine", new SweepResult(empty, true, "removed") { MovedTo = aside })], log);
 
@@ -312,8 +312,8 @@ public sealed class BranchTidyingTests : IDisposable
     public void A_folder_moved_aside_is_said_and_logged_with_no_branch()
     {
         using var log = new MachineLog(_home, "driver", () => _now);
-        var folder = Path.Combine(_home, "trees", "default", "engine", "devtools");
-        var aside = Path.Combine(_home, "trees", ".tidied", "default", "engine", "devtools-20261009T090000000Z");
+        var folder = DaorisHome.Entry(_home, HomeEntry.Trees,"default", "engine", "devtools");
+        var aside = DaorisHome.Entry(_home, HomeEntry.Trees,".tidied", "default", "engine", "devtools-20261009T090000000Z");
 
         var said = new BranchTidying(_home).Said(
             [Pass("engine") with { Strays = [new StrayResult(folder, StrayKind.Folder, true, "") { MovedTo = aside }] }], log);
@@ -337,8 +337,8 @@ public sealed class BranchTidyingTests : IDisposable
     public void A_tree_whose_opening_was_cut_off_is_said_and_logged_by_its_branch()
     {
         using var log = new MachineLog(_home, "driver", () => _now);
-        var folder = Path.Combine(_home, "trees", "default", "engine", "s-0031408d");
-        var aside = Path.Combine(_home, "trees", ".tidied", "default", "engine", "s-0031408d-20261009T090000000Z");
+        var folder = DaorisHome.Entry(_home, HomeEntry.Trees,"default", "engine", "s-0031408d");
+        var aside = DaorisHome.Entry(_home, HomeEntry.Trees,".tidied", "default", "engine", "s-0031408d-20261009T090000000Z");
         var cut = new StrayResult(folder, StrayKind.Opening, true, "git's own lock from the start of its add was left on it")
         {
             MovedTo = aside, Branch = "daoris/s-0031408d",
@@ -363,7 +363,7 @@ public sealed class BranchTidyingTests : IDisposable
         using var log = new MachineLog(_home, "driver", () => _now);
         var tidying = new BranchTidying(_home);
         var busy = new StrayResult(
-            Path.Combine(_home, "trees", "default", "engine", "devtools"), StrayKind.Folder, false,
+            DaorisHome.Entry(_home, HomeEntry.Trees,"default", "engine", "devtools"), StrayKind.Folder, false,
             "something on this machine is using it, so it could not be moved aside (in use); a later look tries again") { Kept = TidyKept.Busy };
 
         var said = tidying.Said([Pass("engine") with { Strays = [busy] }], log);
@@ -605,7 +605,7 @@ public sealed class BranchTidyingTests : IDisposable
     [Fact]
     public void A_tree_a_review_shows_from_is_in_use_whatever_folder_of_it_is_named()
     {
-        var trees = Path.Combine(_home, "trees");
+        var trees = DaorisHome.Entry(_home, HomeEntry.Trees);
         var served = Path.Combine(trees, "default", "engine", "s-1a2b3c4d", "app", "dist");
         var waiting = Path.Combine(trees, "tools", "studio", "s-5e6f7a8b");
         var checkout = Path.Combine(Path.GetTempPath(), "a-checkout", "engine");
@@ -645,10 +645,10 @@ public sealed class BranchTidyingTests : IDisposable
     public async Task A_record_ended_with_words_waiting_names_its_tree()
     {
         using var ledger = new StandInLedger();
-        var waiting = Path.Combine(_home, "trees", "default", "engine", "s-5e6f7a8b");
+        var waiting = DaorisHome.Entry(_home, HomeEntry.Trees,"default", "engine", "s-5e6f7a8b");
         ledger.Working("s-waiting", "engine", waiting, state: "completed");
         ledger.Working("s-done", "engine", HomeTree, state: "completed");
-        ledger.Working("s-running", "engine", Path.Combine(_home, "trees", "default", "engine", "s-9a8b7c6d"));
+        ledger.Working("s-running", "engine", DaorisHome.Entry(_home, HomeEntry.Trees,"default", "engine", "s-9a8b7c6d"));
         using var client = ledger.Client();
         Assert.NotNull((await client.SayAsync("s-waiting", "fix the review comment")).Word);
 
@@ -691,7 +691,7 @@ public sealed class BranchTidyingTests : IDisposable
 
     private string[] LogLines()
     {
-        var folder = Path.Combine(_home, MachineLog.Folder);
+        var folder = DaorisHome.Entry(_home, HomeEntry.Logs);
         return Directory.Exists(folder) ? [.. Directory.EnumerateFiles(folder, "*.jsonl").SelectMany(StubFile.Lines)] : [];
     }
 }

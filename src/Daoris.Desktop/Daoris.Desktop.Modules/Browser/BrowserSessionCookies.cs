@@ -49,7 +49,7 @@ public sealed class BrowserSessionCookies(string home, ICookieSeal seal)
     private byte[]? _kept;
 
     /// <summary>Where they are kept: beside the browser's profile, under the home.</summary>
-    public static string FilePath(string home) => System.IO.Path.Combine(home, "browser", "edge-session-cookies.bin");
+    public static string FilePath(string home) => DaorisHome.Entry(home, HomeEntry.EdgeCookies);
 
     /// <summary>Why the last <see cref="Load"/> restored nothing from a file that was there, or null.</summary>
     public string? Problem { get; private set; }

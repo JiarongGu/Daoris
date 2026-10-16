@@ -9,7 +9,11 @@ namespace Daoris.Driver;
 /// <param name="Pid">The desktop's process.</param>
 /// <param name="Started">That process's start time, in UTC ticks, so a process id used again is not taken for it.</param>
 /// <param name="Home">The home's id (HOMEID1, <see cref="HomeIdentity"/>), or null in a file written before it or where the home has none.</param>
-public sealed record RunningEntry(string Url, int Pid, long Started, string? Home = null);
+/// <param name="Pipe">
+/// The pipe the instance answers on (RPC1a, <see cref="PipeName"/>), or null before it serves one, in a file from before, or where
+/// the name is not the pipe of the home the file names.
+/// </param>
+public sealed record RunningEntry(string Url, int Pid, long Started, string? Home = null, string? Pipe = null);
 
 /// <summary>
 /// The address the running desktop leaves in its home (FINDDAORIS1, D171 point 1): a terminal outside Daoris's own panel is
@@ -27,9 +31,6 @@ public sealed record RunningEntry(string Url, int Pid, long Started, string? Hom
 /// </remarks>
 public sealed class RunningAddress : IDisposable
 {
-    /// <summary>The file's name under the home.</summary>
-    public const string FileName = "running.json";
-
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
     private readonly string _path;
@@ -43,13 +44,17 @@ public sealed class RunningAddress : IDisposable
     }
 
     /// <summary>Where a home's address file is.</summary>
-    public static string PathIn(string home) => Path.Combine(home, FileName);
+    public static string PathIn(string home) => DaorisHome.Entry(home, HomeEntry.Running);
 
     /// <summary>
     /// Leave this process's address in <paramref name="home"/>, or null when it could not be written: the window runs either
     /// way, and a terminal then says Daoris is not running rather than this start failing.
     /// </summary>
-    public static RunningAddress? Write(string home, string serviceUrl)
+    /// <param name="pipe">
+    /// The pipe this instance serves (RPC1a, the terminal RPC design §6.3), written only once it is served, so a client that
+    /// reads one finds it served; null names none.
+    /// </param>
+    public static RunningAddress? Write(string home, string serviceUrl, string? pipe = null)
     {
         try
         {
@@ -64,6 +69,7 @@ public sealed class RunningAddress : IDisposable
                 writer.WriteNumber("started", self.StartTime.ToUniversalTime().Ticks);
                 writer.WriteString("since", DateTimeOffset.UtcNow);
                 if (id is not null) writer.WriteString("home", id);
+                if (pipe is not null) writer.WriteString("pipe", pipe);
                 writer.WriteEndObject();
             });
             Directory.CreateDirectory(home);
@@ -95,21 +101,29 @@ public sealed class RunningAddress : IDisposable
         {
             using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
-            return root.ValueKind == JsonValueKind.Object
-                && root.TryGetProperty("url", out var url) && url.ValueKind == JsonValueKind.String
-                && url.GetString() is { Length: > 0 } address
-                && root.TryGetProperty("pid", out var pid) && pid.TryGetInt32(out var id)
-                && root.TryGetProperty("started", out var started) && started.TryGetInt64(out var ticks)
-                    ? new RunningEntry(address, id, ticks,
-                        root.TryGetProperty("home", out var named) && named.ValueKind == JsonValueKind.String
-                        && HomeIdentity.IsId(named.GetString()) ? named.GetString() : null)
-                    : null;
+            if (root.ValueKind != JsonValueKind.Object
+                || !root.TryGetProperty("url", out var url) || url.ValueKind != JsonValueKind.String
+                || url.GetString() is not { Length: > 0 } address
+                || !root.TryGetProperty("pid", out var pid) || !pid.TryGetInt32(out var id)
+                || !root.TryGetProperty("started", out var started) || !started.TryGetInt64(out var ticks))
+            {
+                return null;
+            }
+
+            var homeId = Text(root, "home") is { } named && HomeIdentity.IsId(named) ? named : null;
+            // RPC1a: a pipe is read only where it is the pipe of the home this file names (the CLI's `isPipeOf` holds the same rows).
+            var pipe = Text(root, "pipe") is { } served && PipeName.IsOf(served, homeId) ? served : null;
+            return new RunningEntry(address, id, ticks, homeId, pipe);
         }
         catch (JsonException)
         {
             return null;
         }
     }
+
+    /// <summary>The string <paramref name="root"/> holds in <paramref name="field"/>, or null where it holds none or another kind.</summary>
+    private static string? Text(JsonElement root, string field) =>
+        root.TryGetProperty(field, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
     /// <summary>Take the address away — only while the file still says what this one wrote.</summary>
     public void Dispose()

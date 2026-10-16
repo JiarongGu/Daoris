@@ -55,7 +55,7 @@ public static class TreeGuard
     /// <summary>The script under the home, written if absent or not as shipped; answers its path.</summary>
     public static string Install(string home)
     {
-        var folder = Path.Combine(home, Folder);
+        var folder = DaorisHome.Entry(home, HomeEntry.Hooks);
         var path = Path.Combine(folder, ScriptName);
         if (File.Exists(path) && File.ReadAllText(path) == Source) return path;
 

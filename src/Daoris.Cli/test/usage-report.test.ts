@@ -8,6 +8,7 @@ import {
   render, summarise,
   // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 } from '../../../tools/usage-report.mjs';
+import { homeEntry } from '../src/platform/home.ts';
 
 /**
  * The usage report (LOG1d, D94): an install's machine log, summarised for a development session — what
@@ -104,7 +105,7 @@ test('each line of the twin table is kept or skipped, as the driver\'s reader de
 /** A week on a machine, across three sources and two days, with the mistakes a real log holds. */
 function week(): string {
   const home = mkdtempSync(join(tmpdir(), 'daoris-usage-'));
-  const logs = join(home, 'logs');
+  const logs = homeEntry(home, 'logs');
   mkdirSync(logs);
   const file = (name: string, lines: string[]) => writeFileSync(join(logs, name), `${lines.join('\n')}\n`);
 
@@ -177,7 +178,7 @@ const since = new Date(NOW.getTime() - 7 * 86_400_000);
 
 test('the logs are every source\'s lines in the period, merged by time, with what could not be read counted', () => {
   withWeek((home) => {
-    const read = readLogs(join(home, 'logs'), { since });
+    const read = readLogs(homeEntry(home, 'logs'), { since });
 
     assert.equal(read.skipped, 1);
     assert.equal(read.lines.length, 43);
@@ -201,7 +202,7 @@ test('the median is the middle, or the two middles\' mean, and nothing is no med
 });
 
 function reportOf(home: string): Report {
-  const read = readLogs(join(home, 'logs'), { since });
+  const read = readLogs(homeEntry(home, 'logs'), { since });
   return summarise(read.lines, { from: since, to: NOW, skipped: read.skipped });
 }
 
@@ -297,7 +298,7 @@ test('the lifecycle: starts, stops, uptime and the versions each process ran', (
 
 test('the text report says each section, and never prints a message beyond the log\'s own cap', () => {
   withWeek((home) => {
-    const text: string = render(reportOf(home), join(home, 'logs'));
+    const text: string = render(reportOf(home), homeEntry(home, 'logs'));
 
     for (const heading of ['Lifecycle', 'Used most', 'Conversations and sessions', 'Refused', 'Failed']) {
       assert.match(text, new RegExp(`^${heading}$`, 'm'), heading);
@@ -335,7 +336,7 @@ test('an empty period says so in every section rather than printing nothing', ()
  */
 function asksWeek(): string {
   const home = mkdtempSync(join(tmpdir(), 'daoris-asks-'));
-  const logs = join(home, 'logs');
+  const logs = homeEntry(home, 'logs');
   mkdirSync(logs);
   const refused = (time: string, data: Record<string, unknown>) => line(time, 'desktop', 'info', 'permission.refused', data);
   writeFileSync(join(logs, '2026-09-29.desktop.jsonl'), `${[
@@ -351,7 +352,7 @@ function asksWeek(): string {
     refused('2026-09-29T09:14:00.000Z', { session: 's9', adapter: 'claude-code', tool: 'Edit', kind: 'edit', by: 'mode' }),
   ].join('\n')}\n`);
 
-  const proposals = join(home, 'proposals');
+  const proposals = homeEntry(home, 'rule-proposals');
   mkdirSync(proposals);
   const proposal = (name: string, body: Record<string, unknown>) =>
     writeFileSync(join(proposals, `${name}.json`), `${JSON.stringify(body)}\n`);
@@ -380,8 +381,8 @@ function withAsks(body: (home: string) => void) {
 }
 
 function asksOf(home: string): Report {
-  const read = readLogs(join(home, 'logs'), { since });
-  return summarise(read.lines, { from: since, to: NOW, skipped: read.skipped, proposals: readProposals(join(home, 'proposals')) });
+  const read = readLogs(homeEntry(home, 'logs'), { since });
+  return summarise(read.lines, { from: since, to: NOW, skipped: read.skipped, proposals: readProposals(homeEntry(home, 'rule-proposals')) });
 }
 
 test('asks per session: the mean, the median, the 90th percentile and the share with none, by adapter and repository', () => {
@@ -486,7 +487,7 @@ test('each proposal file is read or left out as the file\'s other readers decide
 test('the text report says the asks and the proposals, and never a proposal\'s words', () => {
   withAsks((home) => {
     const report = asksOf(home);
-    const text: string = render(report, join(home, 'logs'));
+    const text: string = render(report, homeEntry(home, 'logs'));
 
     assert.match(text, /^Asks$/m);
     assert.match(text, /sessions\s+4 started · 4 asks · mean 1 · median 0\.5 · 90th 3 · 50% with none/);
@@ -533,7 +534,7 @@ test('the runner reads the home\'s proposals beside its log', async () => {
  */
 function setupWeeks(): string {
   const home = mkdtempSync(join(tmpdir(), 'daoris-setups-'));
-  const logs = join(home, 'logs');
+  const logs = homeEntry(home, 'logs');
   mkdirSync(logs);
   const at = (time: string, event: string, data: Record<string, unknown>) => line(time, 'desktop', 'info', event, data);
   const started = (time: string, session: string, kind: string, repository: string, workspace: string, setup?: boolean) =>
@@ -663,7 +664,7 @@ test('each shape of a set-up line counts as its parse table says', () => {
 
 test('the text report says each set-up\'s cost and the parks by week, and none where there are none', () => {
   withSetups((report, home) => {
-    const text: string = render(report, join(home, 'logs'));
+    const text: string = render(report, homeEntry(home, 'logs'));
 
     assert.match(text, /^Set-ups$/m);
     assert.match(text, /started\s+3 — completed 2 · not ended 1/);
@@ -850,7 +851,7 @@ const ASKS = [
 /** The machine log beside the records: the starts this period holds (not s4's, before it) and the parks. */
 function outcomeHome(): string {
   const home = mkdtempSync(join(tmpdir(), 'daoris-outcomes-'));
-  const logs = join(home, 'logs');
+  const logs = homeEntry(home, 'logs');
   mkdirSync(logs);
   const at = (time: string, event: string, data: Record<string, unknown>) => line(time, 'desktop', 'info', event, data);
   const started = (time: string, session: string, adapter: string) =>
@@ -874,7 +875,7 @@ const RECORDS = { quests: QUESTS, questsUnread: null, sessions: SESSIONS, sessio
 function outcomesFor(records: unknown = RECORDS): Outcomes {
   const home = outcomeHome();
   try {
-    const read = readLogs(join(home, 'logs'), { since });
+    const read = readLogs(homeEntry(home, 'logs'), { since });
     return outcomesOf(records, read.lines, { from: since, to: NOW });
   } finally {
     rmSync(home, { recursive: true, force: true });
@@ -1179,8 +1180,8 @@ test('the runner reads the host it is named and reports the outcomes beside the 
 test('the text report says each quest\'s outcome, its sessions and what is not known, then the roll-ups with their counts', () => {
   const home = outcomeHome();
   try {
-    const read = readLogs(join(home, 'logs'), { since });
-    const text: string = render(summarise(read.lines, { from: since, to: NOW, skipped: read.skipped, records: RECORDS }), join(home, 'logs'));
+    const read = readLogs(homeEntry(home, 'logs'), { since });
+    const text: string = render(summarise(read.lines, { from: since, to: NOW, skipped: read.skipped, records: RECORDS }), homeEntry(home, 'logs'));
 
     assert.match(text, /^Outcomes\n {2}quests {9}6 — done 3 · declined 1 · open 1 · taken 1$/m);
     assert.match(text, /^ {2}q-first {5}engine {2}done in 2h 0m · first pass · 1 session · answers 0\n {22}s1 completed \[claude-code · work\]$/m);

@@ -20,6 +20,6 @@ internal static class OpinionConsole
         var home = DriverConfig.HomeOf(DriverConfig.ResolvePath());
         using var service = ServiceClient.FromEnvironment();
         return await OpinionCommand.RunAsync(
-            ask, new OpinionPresses(home, service), service, new SessionProcesses(Path.Combine(home, "sessions")), Console.Out).ConfigureAwait(false);
+            ask, new OpinionPresses(home, service), service, new SessionProcesses(DaorisHome.Entry(home, HomeEntry.SessionPids)), Console.Out).ConfigureAwait(false);
     }
 }

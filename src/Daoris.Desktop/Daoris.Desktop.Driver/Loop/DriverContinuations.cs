@@ -150,7 +150,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         // A helper's answer (MIXAGENT2a-ii) is another agent's claim too: said as its, never as the person's.
         var helper = park.Helpers.Count > 0;
         var persons = park.Waiting.Any(word => word.Persons);
-        var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
+        var transcript = DaorisHome.Entry(home, HomeEntry.Sessions, $"{sessionId}.log");
 
         // 🔴 SAIDBACK1e (D137 §2.4): the ledger's move to working comes before the words are read and the run is spawned, so a
         // word taken back between the look and the move never goes (Continuations.HandedAfterMove). A park's note is replaced
@@ -722,7 +722,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             var capture = adapter.StructuredOutput() is { } mapper
                 ? _driver.KeepingAsync(mapper, HarnessCapture.CaptureStructuredAsync(
                     process.StandardOutput, process.StandardError, transcript, sessionId, _context.Output, _context.Events, mapper,
-                    prompt: null, ct, opened: NativeWords.Opening(adapter.Name, words), append: true, said: said, own: own),
+                    prompt: null, ct, opened: NativeWords.Opening(adapter.Name, words), append: true, said: said, own: own,
+                    lineageHome: _context.Home),
                     sessionId, adapter.Name, resume: null)
                 : null;
             exitCode = await _driver.WaitAsync(process, ct).ConfigureAwait(false);

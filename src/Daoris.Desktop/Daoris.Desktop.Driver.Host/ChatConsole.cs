@@ -145,7 +145,7 @@ internal static class ChatConsole
 
         using var service = ServiceClient.FromEnvironment();
         // Marked under the home, so the desktop sharing it never takes this conversation for an orphan.
-        var processes = new SessionProcesses(Path.Combine(home, "sessions"));
+        var processes = new SessionProcesses(DaorisHome.Entry(home, HomeEntry.SessionPids));
 
         // The console IS the point here, so the buffer exists — and every line goes straight out. No
         // ring-buffer replay: a terminal already keeps what scrolled past.

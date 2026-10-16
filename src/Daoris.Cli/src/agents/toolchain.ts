@@ -49,7 +49,7 @@
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { daorisHome, requireHomeFile } from '../platform/home.ts';
+import { daorisHome, homeEntry, homePlaces, requireHomeFile } from '../platform/home.ts';
 import { commandOnTheSystem, commandThroughTools, handTools } from '../tools/tools.ts';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -145,7 +145,7 @@ export const PATH_VARIABLE = 'DAORIS_HARNESS_CONFIG';
 
 /** Where the wiring lives; the profile tree sits beside it. */
 export function harnessesPath(env: Record<string, string | undefined> = process.env): string {
-  return env[PATH_VARIABLE] ?? requireHomeFile(env, 'harnesses.json');
+  return env[PATH_VARIABLE] ?? requireHomeFile(env, 'harnesses');
 }
 
 /** The directory profiles live under — the Daoris home (D63). */
@@ -543,7 +543,7 @@ export function withDefault(
 
 /** Where a named profile's configuration home is. Daoris owns this location and nothing inside it. */
 export function profileHome(home: string, harness: string, profile: string): string {
-  return join(home, 'harnesses', safeName(harness, 'agent name'), safeName(profile, 'profile name'));
+  return homeEntry(home, 'agent-homes', safeName(harness, 'agent name'), safeName(profile, 'profile name'));
 }
 
 /**
@@ -570,7 +570,7 @@ export function resolveVersion(
 
 /** Where a managed version of a harness lives. Daoris owns this location, binary and all. */
 export function managedHome(home: string, harness: string, version: string): string {
-  return join(home, 'toolchain', safeName(harness, 'agent name'), safeName(version, 'version'));
+  return homeEntry(home, 'toolchain', safeName(harness, 'agent name'), safeName(version, 'version'));
 }
 
 /**
@@ -617,15 +617,17 @@ export function ownerOf(harness: string): string {
   return TOOLCHAINS[harness]?.accountOf ?? harness;
 }
 
-/** The profiles that exist — the directories that exist, sorted. There is no second register. */
+/**
+ * The profiles that exist — the directories that exist, sorted. There is no second register. Both places of the account homes
+ * are read, as a list of an entry's items is (D172 point 5, HOMELAYOUT2).
+ */
 export function profiles(home: string, harness: string): string[] {
-  const root = join(home, 'harnesses', safeName(harness, 'agent name'));
-  if (!existsSync(root)) return [];
-
-  return readdirSync(root, { withFileTypes: true })
+  const names = homePlaces(home, 'agent-homes', safeName(harness, 'agent name'))
+    .filter((root) => existsSync(root))
+    .flatMap((root) => readdirSync(root, { withFileTypes: true }))
     .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
-    .sort();
+    .map((entry) => entry.name);
+  return [...new Set(names)].sort();
 }
 
 /**
@@ -672,7 +674,7 @@ export function removeProfile(home: string, harness: string, profile: string): b
 type Keys = Record<string, Record<string, string>>;
 
 function keysPath(home: string): string {
-  return join(home, 'keys.json');
+  return homeEntry(home, 'keys');
 }
 
 function readKeys(home: string): Keys {
@@ -1228,6 +1230,9 @@ function endLines(
   return lines;
 }
 
+/** The switch's values as the page names them (`harness.use.switch.*`), for the terminal to say the same. */
+const SWITCH_WORDS: Record<RotationUse['switch'], string> = { smart: 'Smart', curve: 'My own curve', off: 'Off' };
+
 /**
  * How a scope's list is used, in the terminal's words (TOOL6a; D130 §3.2, §6, §16.6): each setting's label and value,
  * and a note for each thing the person should know — a default outside the list, a kept account that leaves driven work
@@ -1236,7 +1241,7 @@ function endLines(
  *
  * @remarks
  * 🔴 It states each setting as chosen, and claims nothing about the walk that reads it: *make the most of them* is §16.3's
- * walk, the driver's, whose steps `profile use` names (`nextStartLines`). *Switch before the limit* says what passes an
+ * walk, the driver's, whose steps `profile use` names (`nextStartLines`). *Switch accounts* says what passes an
  * account at a start (D165 point 2, the switch design §3, SWITCH1b-iii): its limit reached, usage credits, or its use over
  * its curve, the scope's own under `curve` and Daoris's smart curve otherwise, `off` included. Only where the agent says how
  * much of each window is used, on its door or asked of its own server (`windows`, TOOL6c, CODEXUSE1b); for any other agent
@@ -1254,9 +1259,12 @@ export function useLines(
     ['kept for conversations', use.keep === null ? 'none' : shown(use.keep)],
     // What passes an account at a start since SWITCH1b-ii's walk (the switch design §3): the words say what it does today,
     // never the agent's own pace warning (USAGEREAD3a) or one fixed percentage.
-    ['switch before the limit', !says
-      ? `${use.switch} — ${product}'s sessions here do not say how much of each window is used, so a start passes no account by its use`
-      : `${use.switch} — a start ${use.switch === 'off' ? 'still ' : ''}passes an account whose limit is reached, that draws on usage `
+    // SWITCHCLI1: the page's words (D165's SWITCH1d-c note): *Switch accounts*, with Smart, My own curve and Off, and the move
+    // a session makes at a turn's end.
+    ['switch accounts', !says
+      ? `${SWITCH_WORDS[use.switch]} — ${product}'s sessions here do not say how much of each window is used, so a start passes no account by its use`
+      : `${SWITCH_WORDS[use.switch]} — ${use.switch === 'off' ? 'no session moves at a turn\'s end; ' : 'a session moves at a turn\'s end when its use is over the curve; '}`
+        + `a start ${use.switch === 'off' ? 'still ' : ''}passes an account whose limit is reached, that draws on usage `
         + `credits, or whose use is over ${use.switch === 'curve' ? 'your curve, Daoris\'s smart curve on a window yours leaves out' : 'Daoris\'s smart curve'}`],
   ];
   const curve = curveLine(use);

@@ -20,7 +20,7 @@ public sealed class ChatRunnerTests : IDisposable
 
     private AdapterSet Declared()
     {
-        var folder = Path.Combine(_home, "plugins", "acme.agent");
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,"acme.agent");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"),
             """{ "id": "acme.agent", "harnesses": [ { "name": "acme-agent", "command": ["acme"] } ] }""");
@@ -51,10 +51,10 @@ public sealed class ChatRunnerTests : IDisposable
     public async Task A_harness_declared_after_the_runner_was_built_is_found_through_the_roster_s_live_set()
     {
         var built = AdapterSet.Built();
-        var roster = new HarnessRoster(built, Path.Combine(_home, "harnesses.json"));
+        var roster = new HarnessRoster(built, DaorisHome.Entry(_home, HomeEntry.Harnesses));
         using var service = new ServiceClient("http://127.0.0.1:1", null);
         var runner = new ChatRunner(service, built, _home, new SessionProcesses(), harnesses: roster);
-        var config = DriverConfig.Load(Path.Combine(_home, "driver.json"));
+        var config = DriverConfig.Load(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
 
         // Before the tick handed the roster the plugins: the driver's own refusal, naming what exists.
         var unknown = await Assert.ThrowsAsync<DriverException>(() =>
@@ -77,7 +77,7 @@ public sealed class ChatRunnerTests : IDisposable
     [Fact]
     public async Task A_plugin_that_also_declares_an_agent_hands_a_conversation_its_servers()
     {
-        var folder = Path.Combine(_home, "plugins", "acme.agent");
+        var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,"acme.agent");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), """
             { "id": "acme.agent",
@@ -92,8 +92,8 @@ public sealed class ChatRunnerTests : IDisposable
         var ledger = new ChatLedger().Register("engine", Path.Combine(_home, "engine"));
         using var client = ledger.Client();
         using var runner = new ChatRunner(
-            client, live, _home, new SessionProcesses(Path.Combine(_home, "sessions")),
-            harnesses: new HarnessRoster(live, Path.Combine(_home, "harnesses.json")));
+            client, live, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)),
+            harnesses: new HarnessRoster(live, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         var start = await runner.StartAsync("engine", "talk", DriverConfig.Empty);
 

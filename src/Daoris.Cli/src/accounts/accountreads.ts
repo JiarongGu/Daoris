@@ -34,8 +34,8 @@
 //
 // No HTTP route reaches it (D47 §4), and this module opens no socket and spawns nothing.
 
-import { join } from 'node:path';
 import { findName } from '../platform/casefold.ts';
+import { homeEntry } from '../platform/home.ts';
 import { isoMoment } from './cooling.ts';
 import { readJsonObject, writeTextAtomic } from '../platform/fsx.ts';
 
@@ -67,7 +67,7 @@ type Node = Record<string, unknown>;
 
 /** Where the file is: beside `cooling.json` and `windows.json`, under the home. */
 export function readsPath(home: string): string {
-  return join(home, READS_FILE);
+  return homeEntry(home, 'reads');
 }
 
 /** What was last read of `agent`'s accounts and its own sign-in (rule 1); nothing where nothing was. */
