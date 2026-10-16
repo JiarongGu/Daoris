@@ -1004,8 +1004,12 @@ public static class SystemWiring
         var folders = new JsonArray();
         foreach (var folder in listing.Folders)
         {
-            // The identity is what the press sends back: a folder made anew in the same place is not the one listed.
-            var row = new JsonObject { ["name"] = folder.Name, ["path"] = folder.Path, ["id"] = folder.Id, ["source"] = folder.Source, ["keeps"] = folder.Keeps };
+            // `by` is the session records that name it: why it is listed as Daoris's.
+            var row = new JsonObject
+            {
+                ["name"] = folder.Name, ["path"] = folder.Path, ["source"] = folder.Source, ["keeps"] = folder.Keeps,
+                ["by"] = new JsonArray([.. folder.By.Select(id => (JsonNode?)JsonValue.Create(id))]),
+            };
             var measure = reading?.Tool?.GetValueOrDefault(folder.Name);
             Fact(row, "bytes", measure?.Bytes, world.Home is { } home && world.Sizes.Measuring(home) ? "measuring" : "not-measured");
             row["partial"] = measure?.Partial ?? false;
@@ -1019,12 +1023,9 @@ public static class SystemWiring
         tool["present"] = ToolHomeLeftovers.ProjectsOf(world) is { } projects && Directory.Exists(projects);
         // Why nothing is listed where nothing can be (a link on the way, a home that is not the person's), and what was left out.
         tool["why"] = listing.Why;
-        // Folders listed with no press offered: the tool home and Daoris's folder are on different volumes (a rename cannot cross).
-        tool["pressWhy"] = listing.PressWhy;
         tool["caseInsensitive"] = listing.CaseInsensitive;
         tool["ambiguous"] = listing.Ambiguous;
         tool["uncertain"] = listing.Uncertain;
-        tool["recoveryDays"] = ToolHomeLeftovers.RecoveryDays;
         tool["folders"] = folders;
         return tool;
     }

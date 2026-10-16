@@ -49,6 +49,9 @@ Repositories. The desktop's seven menus share one command table, with shortcuts 
 Each Settings domain is `src/settings/<Name>Domain.tsx`, with its tests beside it, and
 `src/settings/domains.ts` lists them: the one place a domain is added, since the frame
 (`settings/SettingsView.tsx`) renders whichever one is chosen and names none itself (MOD4).
+*This Daoris* (`WiringDomain.tsx`) draws one read, `SYSTEM_WIRING`, as cards (`Wiring*.tsx`, molecules over props); its card
+*Left in your own tool home* (`WiringToolHome.tsx`, OWNSPACE2) lists the folders Daoris's session records show its sessions
+ran in, read-only: Daoris removes none of them yet, and the card says a person can by hand.
 
 **The design language is written down** — `docs/2026-09-19-platform-ux.md` (D41): the console shell
 (an activity bar, page headers, one primary action per view), the token system, the drawer as the single

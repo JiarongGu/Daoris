@@ -43,7 +43,7 @@ public sealed class DriverModuleSystemTests : DriverModuleBridge
     }
 
     [Fact]
-    public async Task The_wiring_lists_the_tool_home_s_folders_Daoris_made_and_the_press_removes_only_those()
+    public async Task The_wiring_lists_the_tool_home_s_folders_Daoris_made_and_the_route_removes_nothing()
     {
         var tree = DaorisHome.Entry(Home, HomeEntry.Trees, "main", "repo", "s-1");
         var mine = Project(tree);
@@ -58,43 +58,22 @@ public sealed class DriverModuleSystemTests : DriverModuleBridge
         // Listed by name alone: no size until a measure is asked, and its why is a field, not an absent one.
         Assert.Equal(JsonValueKind.Null, row.GetProperty("bytes").ValueKind);
 
-        var cleared = await AnswerAsync(module, "SYSTEM_TOOL_CLEAR", new
-        {
-            folders = new[]
-            {
-                new { name = Path.GetFileName(mine), id = row.GetProperty("id").GetString() },
-                new { name = Path.GetFileName(theirs), id = "x" },
-            },
-        });
-
-        var moved = Assert.Single(cleared.GetProperty("cleared").EnumerateArray());
-        Assert.Equal(Path.GetFileName(mine), moved.GetProperty("name").GetString());
-        Assert.True(Directory.Exists(moved.GetProperty("to").GetString()));
-        var kept = Assert.Single(cleared.GetProperty("kept").EnumerateArray());
-        Assert.Equal("not-listed", kept.GetProperty("why").GetString());
-        Assert.False(Directory.Exists(mine));
+        // Read-only: nothing here removes or moves a folder, the person's own or Daoris's.
+        Assert.True(Directory.Exists(mine));
         Assert.True(Directory.Exists(theirs));
+        Assert.DoesNotContain("SYSTEM_TOOL_CLEAR", DriverModule.Routes);
     }
 
     [Fact]
-    public async Task With_no_service_to_read_the_records_from_every_folder_is_kept_as_unread()
+    public async Task With_no_service_to_read_the_records_from_nothing_is_claimed_and_the_list_says_why()
     {
-        var help = Project(HelpRoom.PathOf(Home));
+        Project(HelpRoom.PathOf(Home));
         var module = WiredModule(new WiringSizes());
 
-        var row = Assert.Single((await AnswerAsync(module, "SYSTEM_WIRING")).GetProperty("toolHome").GetProperty("folders").EnumerateArray());
-        Assert.Equal("records-unread", row.GetProperty("keeps").GetString());
-        var cleared = await AnswerAsync(module, "SYSTEM_TOOL_CLEAR", new { folders = new[] { new { name = Path.GetFileName(help), id = row.GetProperty("id").GetString() } } });
+        var listed = (await AnswerAsync(module, "SYSTEM_WIRING")).GetProperty("toolHome");
 
-        Assert.Empty(cleared.GetProperty("cleared").EnumerateArray());
-        Assert.Equal("records-unread", Assert.Single(cleared.GetProperty("kept").EnumerateArray()).GetProperty("why").GetString());
-        Assert.True(Directory.Exists(help));
-    }
-
-    [Fact]
-    public async Task The_press_without_the_folders_its_list_held_is_refused()
-    {
-        Assert.NotNull(await RefusalAsync(WiredModule(new WiringSizes()), "SYSTEM_TOOL_CLEAR", new { }));
+        Assert.Empty(listed.GetProperty("folders").EnumerateArray());
+        Assert.Equal("records-unread", listed.GetProperty("why").GetString());
     }
 
     [Fact]

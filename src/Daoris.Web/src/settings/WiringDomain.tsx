@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { refusedNoRoute, useClearToolFolders, useOpenLogFolder, useSystemWiring, useUpdateState } from '../bridge/shell';
+import { refusedNoRoute, useOpenLogFolder, useSystemWiring, useUpdateState } from '../bridge/shell';
 import { failure, useErrorNotify } from '../design/ui';
-import { sentence } from '../locales/format';
 import type { StarterDoor } from '../help/starters';
 import { DomainLoading } from './DomainLoading';
 import type { SettingsDomainProps } from './domains';
@@ -48,8 +47,6 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const update = useUpdateState();
   // The one press of this page that opens a folder, the Machine log's own (LOG1c); the rest are WIRING1e's.
   const openLogs = useOpenLogFolder();
-  // The person's press after the list of what Daoris's sessions left in their own tool home (OWNSPACE2).
-  const clear = useClearToolFolders();
   const [busy, setBusy] = useState(false);
   const asked = useRef(false);
   const older = query.isError && refusedNoRoute(query.error);
@@ -106,26 +103,7 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
         })}
         onLog={() => onGo({ view: 'settings', section: 'logs' })}
       />
-      {wiring.toolHome && (
-        <WiringToolHome
-          toolHome={wiring.toolHome}
-          measuring={wiring.measuring}
-          onClear={(names, answered) => clear.mutate(names, {
-            onSuccess: (outcome) => {
-              // Where they went and for how long, then what stayed with why; what moved is the list's next read.
-              if (outcome.cleared.length > 0) {
-                const where = outcome.cleared[0]!.to.replace(/[\\/][^\\/]*$/, '');
-                notify(t('settings.daoris.toolHome.moved', { count: outcome.cleared.length, where, days: wiring.toolHome?.recoveryDays ?? 14 }));
-              }
-              if (outcome.kept.length > 0) {
-                notify(t('settings.daoris.toolHome.kept', { count: outcome.kept.length, why: [...new Set(outcome.kept.map((each) => t(`settings.daoris.toolHome.why.${each.why}`, { defaultValue: each.why })))].join(', ') }));
-              }
-              answered.done();
-            },
-            onError: (error) => answered.refused(sentence(error)),
-          })}
-        />
-      )}
+      {wiring.toolHome && <WiringToolHome toolHome={wiring.toolHome} measuring={wiring.measuring} />}
     </>
   );
 }

@@ -1,36 +1,30 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SystemWiring } from '../data/wiring';
-import { Button, PathText, Prose, SettingRow } from '../design/ui';
+import { PathText, Prose, SettingRow } from '../design/ui';
 import { moment, size } from '../locales/format';
-import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { Fact, Unread, WiringCard } from './WiringParts';
 
 /** The catalogue word for where the tool home was read from, in `settings.daoris.toolHome.from.*`. */
 const FROM_WORD = ['process', 'account', 'default'];
 
+/** How many session records a row names before it counts the rest. */
+const NAMED = 2;
+
 /**
  * What Daoris's sessions left in the person's own tool home (OWNSPACE2, D175 point 3, D88): the folders whose names equal a
- * working directory Daoris's own records hold, listed with their size and when they were last written, and moved aside for
- * fourteen days (never deleted) only by the person's press after the list. A folder a session may still use is listed and says
- * it stays; the person's own folders are never listed. Read-only until *Move these aside*, which asks first.
+ * working directory in which one of Daoris's own session records shows a session ran, listed with the records that name them,
+ * their size, when they were last written, and what would keep each from a removal. **Read-only: Daoris removes nothing here
+ * yet** (OWNSPACE2e hardens the press), so the card says they can be removed by hand. The person's own folders are never listed.
  *
  * @remarks
- * A molecule: drawn from props, so every state is reachable without a shell. The driver judges each folder again right before it
- * moves, so the press says what moved, where, and what stayed; the list is what the next read finds. Putting a folder back is not
- * on the page yet: the ask says where they go and for how long.
+ * A molecule: drawn from props, so every state is reachable without a shell.
  */
-export function WiringToolHome({ toolHome, measuring = false, onClear }: {
+export function WiringToolHome({ toolHome, measuring = false }: {
   toolHome: NonNullable<SystemWiring['toolHome']>;
   measuring?: boolean;
-  onClear: (folders: { name: string; id: string }[], answered: Answered) => void;
 }) {
   const { t, i18n } = useTranslation();
-  const [asking, setAsking] = useState(false);
   const { folders } = toolHome;
-  const movable = folders.filter((each) => each.keeps === null);
-  const counted = movable.every((each) => each.bytes !== null);
-  const total = movable.reduce((sum, each) => sum + (each.bytes ?? 0), 0);
   const left = toolHome.ambiguous + toolHome.uncertain;
   const whyKey = `settings.daoris.toolHome.listWhy.${toolHome.why}`;
   return (
@@ -51,10 +45,19 @@ export function WiringToolHome({ toolHome, measuring = false, onClear }: {
           {folders.length > 0 && (
             <ul className="m-0 grid list-none gap-1.5 p-0">
               {folders.map((each) => (
-                <li key={each.name} className="flex flex-wrap items-baseline gap-x-3 text-small text-ink-faint">
-                  <span className="font-mono text-ink-soft wrap-anywhere">{each.name}</span>
-                  <span>{each.bytes !== null ? size(each.bytes) : <Unread why={measuring && !each.bytesWhy ? 'measuring' : each.bytesWhy} />}</span>
-                  {each.newest && <span>{t('settings.daoris.toolHome.newest', { when: moment(each.newest) })}</span>}
+                <li key={each.name} className="grid gap-0.5 text-small text-ink-faint">
+                  <span className="flex flex-wrap items-baseline gap-x-3">
+                    <span className="font-mono text-ink-soft wrap-anywhere">{each.name}</span>
+                    <span>{each.bytes !== null ? size(each.bytes) : <Unread why={measuring && !each.bytesWhy ? 'measuring' : each.bytesWhy} />}</span>
+                    {each.newest && <span>{t('settings.daoris.toolHome.newest', { when: moment(each.newest) })}</span>}
+                  </span>
+                  {each.by.length > 0 && (
+                    <span>
+                      {t('settings.daoris.toolHome.by', {
+                        ids: each.by.slice(0, NAMED).join(', ') + (each.by.length > NAMED ? ` +${each.by.length - NAMED}` : ''),
+                      })}
+                    </span>
+                  )}
                   {each.keeps && <span className="text-ink-soft">{t(`settings.daoris.toolHome.keeps.${each.keeps}`, { defaultValue: each.keeps })}</span>}
                 </li>
               ))}
@@ -62,25 +65,7 @@ export function WiringToolHome({ toolHome, measuring = false, onClear }: {
           )}
           {left > 0 && <Prose className="text-small">{t('settings.daoris.toolHome.left', { count: left })}</Prose>}
           {toolHome.caseInsensitive && folders.length > 0 && <Prose className="text-small">{t('settings.daoris.toolHome.caseFolded')}</Prose>}
-          {toolHome.pressWhy && folders.length > 0 && (
-            <Prose className="text-small">{t(`settings.daoris.toolHome.pressWhy.${toolHome.pressWhy}`, { defaultValue: t('settings.daoris.why.unknown') })}</Prose>
-          )}
-          {movable.length > 0 && !toolHome.pressWhy && !asking && (
-            <p className="m-0">
-              <Button variant="ghost" onClick={() => setAsking(true)}>{t('settings.daoris.button.removeThese')}</Button>
-            </p>
-          )}
-          {movable.length > 0 && !toolHome.pressWhy && asking && (
-            <InlineConfirm
-              label={t('settings.daoris.toolHome.askTitle')}
-              says={t(counted ? 'settings.daoris.toolHome.askSays' : 'settings.daoris.toolHome.askSaysUncounted', {
-                count: movable.length, size: size(total), days: toolHome.recoveryDays,
-              })}
-              meanIt={t('settings.daoris.button.removeThem')}
-              onConfirm={(answered) => onClear(movable.map((each) => ({ name: each.name, id: each.id })), answered)}
-              onClose={() => setAsking(false)}
-            />
-          )}
+          {folders.length > 0 && <Prose className="text-small">{t('settings.daoris.toolHome.byHand')}</Prose>}
         </div>
       </SettingRow>
     </WiringCard>

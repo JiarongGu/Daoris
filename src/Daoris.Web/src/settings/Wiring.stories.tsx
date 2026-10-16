@@ -203,29 +203,29 @@ export const LogsUnmeasured: Story = { render: () => <WiringLogs logs={DEVELOPME
 /** A narrow main area. */
 export const LogsNarrow: Story = { render: () => <WiringLogs logs={WIRED.logs} onOpenFolder={none} onLog={none} />, decorators: narrow };
 
-/** What Daoris's sessions left in the person's own tool home (OWNSPACE2), read-only until *Remove these*. */
+/** What Daoris's sessions left in the person's own tool home (OWNSPACE2): a read-only list, the records that name each, what keeps it. */
 export const ToolHomeListed: Story = {
-  render: () => <WiringToolHome toolHome={WIRED.toolHome!} onClear={none} />, decorators: inTheme('light'),
+  render: () => <WiringToolHome toolHome={WIRED.toolHome!} />, decorators: inTheme('light'),
 };
 
 /** The same, in dark. */
 export const ToolHomeListedDark: Story = {
-  render: () => <WiringToolHome toolHome={WIRED.toolHome!} onClear={none} />, decorators: inTheme('dark'),
+  render: () => <WiringToolHome toolHome={WIRED.toolHome!} />, decorators: inTheme('dark'),
 };
 
 /** A walk under way: each size says Measuring… */
-export const ToolHomeMeasuring: Story = { render: () => <WiringToolHome toolHome={MEASURING.toolHome!} measuring onClear={none} /> };
+export const ToolHomeMeasuring: Story = { render: () => <WiringToolHome toolHome={MEASURING.toolHome!} measuring /> };
 
-/** Nothing of Daoris's is left there, so there is no press. */
-export const ToolHomeNothing: Story = { render: () => <WiringToolHome toolHome={DEVELOPMENT.toolHome!} onClear={none} /> };
+/** Nothing of Daoris's is left there. */
+export const ToolHomeNothing: Story = { render: () => <WiringToolHome toolHome={DEVELOPMENT.toolHome!} /> };
 
-/** The tool home is on another drive than Daoris's: the folders are listed and no press is offered. */
-export const ToolHomeOtherDrive: Story = {
-  render: () => <WiringToolHome toolHome={{ ...WIRED.toolHome!, pressWhy: 'other-volume' }} onClear={none} />,
+/** Daoris's session records could not be read: with no record of a session there, nothing is claimed. */
+export const ToolHomeRecordsUnread: Story = {
+  render: () => <WiringToolHome toolHome={{ ...WIRED.toolHome!, why: 'records-unread', folders: [] }} />,
 };
 
 /** A narrow main area: a long folder name breaks anywhere. */
-export const ToolHomeNarrow: Story = { render: () => <WiringToolHome toolHome={WIRED.toolHome!} onClear={none} />, decorators: narrow };
+export const ToolHomeNarrow: Story = { render: () => <WiringToolHome toolHome={WIRED.toolHome!} />, decorators: narrow };
 
 /** A shell older than the page: one line, and Driver's home row is its fallback. */
 export const Older: Story = { render: () => <WiringOlder /> };

@@ -32,7 +32,7 @@ internal sealed class TreeSetAside(TreeContext context)
     internal const string SetAsideFolder = ".tidied";
 
     /// <summary>How a folder moved aside is named after its tree: the tree's name, then the moment it was moved, in UTC.</summary>
-    internal const string SetAsideStamp = "yyyyMMdd'T'HHmmssfff'Z'";
+    private const string SetAsideStamp = "yyyyMMdd'T'HHmmssfff'Z'";
 
     /// <summary>Where the look's own tidy keeps the folders it moved aside: <c>trees/.tidied/&lt;workspace&gt;/&lt;repository&gt;/</c>.</summary>
     internal string SetAsideRoot => Path.Combine(context.TreesRoot, SetAsideFolder);

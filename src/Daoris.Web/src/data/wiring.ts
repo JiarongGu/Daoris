@@ -31,18 +31,12 @@ export interface WiringLocated { path: string | null; pathWhy: Why; from: 'varia
 /** A project folder Daoris's sessions left in the person's own tool home (OWNSPACE2): its name there, its size and newest file once measured. */
 export interface WiringToolFolder {
   name: string; path: string; bytes: number | null; bytesWhy: Why; partial: boolean; newest: string | null; newestWhy: Why;
-  /** The identity the list saw it with: the press sends it back, and a folder made anew in the same place is refused. */
-  id: string;
-  /** Which of Daoris's records named its working directory: `tree`, `help` or `intake`. */
+  /** Which kind of Daoris's working directory it was keyed by: `tree`, `help` or `intake`. */
   source: string;
-  /** Why it must stay: `session` (live or waiting), `resumable` (a conversation that goes on in this home), `records-unread`; null where it may move. */
+  /** The session records that name it: why it is listed as Daoris's. */
+  by: string[];
+  /** What would keep it from any removal: `session` (live or waiting), `resumable` (a conversation that goes on in this home), `record-unread`; null otherwise. */
   keeps: string | null;
-}
-
-/** What `SYSTEM_TOOL_CLEAR` did: each folder moved aside (where to) with its bytes, and each kept with why. */
-export interface WiringToolCleared {
-  cleared: { name: string; bytes: number; to: string }[];
-  kept: { name: string; why: string }[];
 }
 
 export interface SystemWiring {
@@ -92,10 +86,8 @@ export interface SystemWiring {
   toolHome?: {
     path: string | null; pathWhy: Why; from: 'process' | 'account' | 'default' | 'named' | null; present: boolean;
     // Why nothing is listed where nothing can be (`linked`, `no-tool-home`, …), the file system's case rule, the folders left out
-    // because their name is not proven Daoris's, and how long a moved folder is kept.
-    why: string | null; caseInsensitive: boolean; ambiguous: number; uncertain: number; recoveryDays: number;
-    // Why folders are listed with no press (`other-volume`: a rename cannot cross drives, and nothing is ever copied).
-    pressWhy?: string | null;
+    // because their name is not proven Daoris's. A list only: Daoris removes nothing here (OWNSPACE2e).
+    why: string | null; caseInsensitive: boolean; ambiguous: number; uncertain: number;
     folders: WiringToolFolder[];
   };
 }

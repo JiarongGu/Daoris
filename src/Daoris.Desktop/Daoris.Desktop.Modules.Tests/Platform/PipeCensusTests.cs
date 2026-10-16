@@ -63,8 +63,6 @@ public sealed class PipeCensusTests
     [InlineData("DAORIS.DRIVER", "DISCARD_SESSION_TREE", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "SWEEP", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "HISTORY_CLEAR", PipeClass.Person)]
-    // OWNSPACE2: removing what Daoris's sessions left in the person's own tool home is a delete, and the person's.
-    [InlineData("DAORIS.DRIVER", "SYSTEM_TOOL_CLEAR", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "SESSION_INPUT", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "OPINION_MYSELF", PipeClass.Person)]
     [InlineData("DAORIS.DRIVER", "SET_REVIEW", PipeClass.Person)]

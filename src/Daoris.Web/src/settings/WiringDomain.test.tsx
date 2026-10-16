@@ -399,8 +399,8 @@ describe('Settings → This Daoris', () => {
     expect(pressed.filter((name) => /^(Open folder|Copy terminal line|Put on my PATH|Change address)/.test(name ?? ''))).toEqual([]);
   });
 
-  // OWNSPACE2 (D175 point 3, D88): what Daoris's sessions left in the person's own tool home, listed and removed by the press.
-  it('lists the folders Daoris left in the person\'s own tool home, read-only until the press', async () => {
+  // OWNSPACE2 (D175 point 3, D88): what Daoris's sessions left in the person's own tool home, listed and nothing more (the press is OWNSPACE2e).
+  it('lists the folders Daoris left in the person\'s own tool home, read-only, with the records that name them', async () => {
     invoke.mockImplementation(shell(WIRED));
     open();
     const card = within(await screen.findByRole('region', { name: 'Left in your own tool home' }));
@@ -408,65 +408,27 @@ describe('Settings → This Daoris', () => {
     for (const each of WIRED.toolHome!.folders) expect(card.getByText(each.name)).toBeTruthy();
     expect(card.getByText('2.3 MB')).toBeTruthy();
     expect(card.getByText('D:/somewhere/person/.claude')).toBeTruthy();
-    // A folder a conversation may go on in is listed and says it stays; it is never offered to move.
-    expect(card.getByText('stays: a conversation that began here goes on here')).toBeTruthy();
+    // Why each is Daoris's (the records that name it) and what would keep it; a folder a conversation may go on in says so.
+    expect(card.getByText('named by q-1-s-1a2b3c4d')).toBeTruthy();
+    expect(card.getByText('named by help-1, help-2')).toBeTruthy();
+    expect(card.getByText('still in use: a conversation that began here goes on here')).toBeTruthy();
     expect(card.getByText(/named by CLAUDE_CONFIG_DIR|its usual place/)).toBeTruthy();
-    expect(card.getByRole('button', { name: 'Move these aside' })).toBeTruthy();
+    // Read-only: they can be removed by hand, and nothing here is a press that sends or changes anything.
+    expect(card.getByText(/does not remove these yet\. You can delete one by hand/)).toBeTruthy();
+    expect(card.queryAllByRole('button')).toEqual([]);
     expect(invoke.mock.calls.some(([, type]) => type === 'SYSTEM_TOOL_CLEAR')).toBe(false);
   });
 
-  it('moves aside exactly the folders listed as free to go, by name and identity, after an ask, and reads the wiring again', async () => {
-    const free = WIRED.toolHome!.folders.filter((each) => each.keeps === null);
-    const answered = { cleared: free.map((each) => ({ name: each.name, bytes: each.bytes, to: 'D:/somewhere/Daoris/trees/.tidied/tool-home/projects/x-20261016T120000000Z' })), kept: [] };
-    const notify = vi.fn();
-    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { measure?: boolean } }) =>
-      (type === 'SYSTEM_TOOL_CLEAR' ? answered : shell(WIRED)(module, type, request)));
-    show(<SettingsView notify={notify} section="wiring" onGo={vi.fn()} />);
-    const card = within(await screen.findByRole('region', { name: 'Left in your own tool home' }));
-
-    await userEvent.click(card.getByRole('button', { name: 'Move these aside' }));
-    // The ask says it is moved, for how long, and that nothing else is touched; nothing is sent until it is confirmed.
-    expect(card.getByText(/for 14 days/i)).toBeTruthy();
-    expect(card.getByText(/your own work is not touched/i)).toBeTruthy();
-    expect(invoke.mock.calls.some(([, type]) => type === 'SYSTEM_TOOL_CLEAR')).toBe(false);
-    const wirings = () => invoke.mock.calls.filter(([, type]) => type === 'SYSTEM_WIRING').length;
-    const before = wirings();
-    await userEvent.click(card.getByRole('button', { name: 'Move them aside' }));
-
-    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SYSTEM_TOOL_CLEAR', {
-      payload: { folders: free.map((each) => ({ name: each.name, id: each.id })) },
-    }));
-    await vi.waitFor(() => expect(wirings()).toBeGreaterThan(before));
-    // It says where they went and for how long, never that they were deleted.
-    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringMatching(/Moved aside: 1, to .*projects\. Daoris keeps them 14 days/)));
-  });
-
-  it('says a folder the driver kept, and why', async () => {
-    const notify = vi.fn();
-    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: { measure?: boolean } }) => (
-      type === 'SYSTEM_TOOL_CLEAR'
-        ? { cleared: [], kept: [{ name: WIRED.toolHome!.folders[0]!.name, why: 'in-use' }] }
-        : shell(WIRED)(module, type, request)));
-    show(<SettingsView notify={notify} section="wiring" onGo={vi.fn()} />);
-    const card = within(await screen.findByRole('region', { name: 'Left in your own tool home' }));
-
-    await userEvent.click(card.getByRole('button', { name: 'Move these aside' }));
-    await userEvent.click(card.getByRole('button', { name: 'Move them aside' }));
-
-    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringMatching(/stayed: 1.*written to lately/i)));
-  });
-
-  it('lists the folders but offers no press, and says why, where the tool home is on another drive than Daoris\'s', async () => {
-    invoke.mockImplementation(shell({ ...WIRED, toolHome: { ...WIRED.toolHome!, pressWhy: 'other-volume' } }));
+  it('says Daoris\'s session records could not be read, and lists nothing, when there is no record of use', async () => {
+    invoke.mockImplementation(shell({ ...WIRED, toolHome: { ...WIRED.toolHome!, why: 'records-unread', folders: [] } }));
     open();
     const card = within(await screen.findByRole('region', { name: 'Left in your own tool home' }));
 
-    for (const each of WIRED.toolHome!.folders) expect(card.getByText(each.name)).toBeTruthy();
-    expect(card.getByText(/different drive from Daoris's own folder.*Nothing is copied/)).toBeTruthy();
-    expect(card.queryByRole('button', { name: 'Move these aside' })).toBeNull();
+    expect(card.getByText(/session records could not be read/)).toBeTruthy();
+    expect(card.queryByText(WIRED.toolHome!.folders[0]!.name)).toBeNull();
   });
 
-  it('lists nothing and says why where the home named is not the person\'s own, and offers no press', async () => {
+  it('lists nothing and says why where the home named is not the person\'s own', async () => {
     const refused = { ...WIRED.toolHome!, path: null, pathWhy: 'inside-daoris', from: 'process' as const, why: 'no-tool-home', folders: [] };
     invoke.mockImplementation(shell({ ...WIRED, toolHome: refused }));
     open();
@@ -474,16 +436,15 @@ describe('Settings → This Daoris', () => {
 
     expect(card.getByText("Inside Daoris's own folder")).toBeTruthy();
     expect(card.getByText(/No own home is named here/)).toBeTruthy();
-    expect(card.queryByRole('button', { name: 'Move these aside' })).toBeNull();
   });
 
-  it('says there is nothing left, and offers no press, where the tool home holds none of Daoris\'s', async () => {
+  it('says there is nothing left where the tool home holds none of Daoris\'s', async () => {
     invoke.mockImplementation(shell(DEVELOPMENT));
     open();
     const card = within(await screen.findByRole('region', { name: 'Left in your own tool home' }));
 
     expect(card.getByText(/nothing of Daoris's is left/i)).toBeTruthy();
-    expect(card.queryByRole('button', { name: 'Move these aside' })).toBeNull();
+    expect(card.queryAllByRole('button')).toEqual([]);
   });
 
   it('draws no card from a shell older than the list', async () => {

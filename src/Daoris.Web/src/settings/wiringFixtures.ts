@@ -104,17 +104,17 @@ export const WIRED: SystemWiring = {
   logs: { path: `${HOME}/logs`, pathWhy: null, bytes: 96_000, bytesWhy: null, days: 30, newest: '2026-10-16T10:40:00Z', newestWhy: null, engineLog: true },
   toolHome: {
     path: 'D:/somewhere/person/.claude', pathWhy: null, from: 'default', present: true,
-    why: null, caseInsensitive: true, ambiguous: 0, uncertain: 0, recoveryDays: 14,
+    why: null, caseInsensitive: true, ambiguous: 0, uncertain: 0,
     folders: [
       {
         name: 'D--somewhere-Daoris-trees-main-repo-s-1a2b3c4d', path: 'D:/somewhere/person/.claude/projects/D--somewhere-Daoris-trees-main-repo-s-1a2b3c4d',
         bytes: 2_400_000, bytesWhy: null, partial: false, newest: '2026-10-15T18:00:00Z', newestWhy: null,
-        id: '1a2b-3c4d', source: 'tree', keeps: null,
+        source: 'tree', by: ['q-1-s-1a2b3c4d'], keeps: null,
       },
       {
         name: 'D--somewhere-Daoris-help', path: 'D:/somewhere/person/.claude/projects/D--somewhere-Daoris-help',
         bytes: 90_000, bytesWhy: null, partial: false, newest: '2026-10-14T09:30:00Z', newestWhy: null,
-        id: '5e6f-7a8b', source: 'help', keeps: 'resumable',
+        source: 'help', by: ['help-1', 'help-2'], keeps: 'resumable',
       },
     ],
   },

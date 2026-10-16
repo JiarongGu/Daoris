@@ -18,6 +18,9 @@ public sealed class SystemRoutes(DriverContext context)
     // `measuring`; the open asks no network, starts no program and walks no folder (the second opinion's point 3). Off the
     // window's thread, since the read looks at files (UIFREEZE1). The reader's own JSON is answered whole, so a null stays a
     // field: the bridge leaves a null out of an object it serializes.
+    //
+    // OWNSPACE2 (D175 point 3): its `toolHome` lists what Daoris's sessions left in the person's own tool home, read-only. There
+    // is no press: removing them is OWNSPACE2e's, hardened, and until then a person removes a folder by hand.
     [DriverRoute("SYSTEM_WIRING")]
     private async Task<object?> WiringAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -36,56 +39,15 @@ public sealed class SystemRoutes(DriverContext context)
         }, cancellationToken).ConfigureAwait(false);
     }
 
-    // OWNSPACE2 (D175 point 3, D88): the person's press after the list of what Daoris's sessions left in their own tool home. It
-    // moves aside, never deletes, exactly the `folders` sent (each a `name` and the `id` the list showed), each judged again
-    // inside the driver library: still provably Daoris's, the same folder, no session that may use it, nothing read short. It
-    // answers what moved, where, and what stayed with why; any other folder of the person's is never touched. A person's delete
-    // (the pipe census), so the page asks first. It declares nothing: what it moves is outside Daoris's state, and the page
-    // reads the wiring again itself.
-    [DriverRoute("SYSTEM_TOOL_CLEAR")]
-    private async Task<object?> ToolClearAsync(IpcRequest request, CancellationToken cancellationToken)
-    {
-        var folders = request.Payload is { ValueKind: JsonValueKind.Object } payload
-            && payload.TryGetProperty("folders", out var listed) && listed.ValueKind == JsonValueKind.Array
-                ? listed.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.Object).Select(each => new ToolAsk(
-                    Text(each, "name") ?? "", Text(each, "id") ?? "")).ToList()
-                : throw new DriverException("a clear sends the folders its list held: each folder's `name` and `id`.");
-        var world = await WorldWithOriginsAsync(cancellationToken).ConfigureAwait(false);
-        var fixedOrigins = _context.WiringWorldOf().ToolOrigins;
-        return await Task.Run(() =>
-        {
-            // The records are read again for each folder, just before it moves: a session may have resumed during the press. A
-            // world that names its origins (a test's) is read as it stands.
-            var outcome = ToolHomeLeftovers.Clear(world, folders, DateTimeOffset.UtcNow, new ToolClearOptions
-            {
-                OriginsNow = () => fixedOrigins ?? OriginsNowAsync(world.Home!, cancellationToken).GetAwaiter().GetResult(),
-            });
-            return (object?)new
-            {
-                cleared = outcome.Cleared.Select(done => new { name = done.Name, bytes = done.Bytes, to = done.To }).ToList(),
-                kept = outcome.Kept.Select(stays => new { name = stays.Name, why = stays.Why }).ToList(),
-            };
-        }, cancellationToken).ConfigureAwait(false);
-    }
-
-    private static string? Text(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
-
     /// <summary>
-    /// This window's world with the working directories Daoris's own records hold (OWNSPACE2): the service's session records read
-    /// now, each folder's owner and what keeps it. A service that does not answer is records unread, which keeps every folder.
-    /// A test's world that already names its origins is left as it is.
+    /// This window's world with the working directories Daoris's session records show a session ran in (OWNSPACE2): the
+    /// service's records read now. A service that does not answer is records unread, and with no record of use nothing is
+    /// claimed. A test's world that already names its origins is left as it is.
     /// </summary>
     private async Task<WiringWorld> WorldWithOriginsAsync(CancellationToken cancellationToken)
     {
         var world = _context.WiringWorldOf();
         if (world.ToolOrigins is not null || world.Home is not { } home) return world;
-        return world with { ToolOrigins = await OriginsNowAsync(home, cancellationToken).ConfigureAwait(false) };
-    }
-
-    /// <summary>Daoris's records read now: the service's session records, or none where it does not answer (everything then stays).</summary>
-    private async Task<IReadOnlyList<ToolOrigin>> OriginsNowAsync(string home, CancellationToken cancellationToken)
-    {
         string? json = null;
         if (_context.Loop.Service is { } service)
         {
@@ -99,6 +61,6 @@ public sealed class SystemRoutes(DriverContext context)
             }
         }
 
-        return await Task.Run(() => ToolHomeLeftovers.Origins(home, json), cancellationToken).ConfigureAwait(false);
+        return world with { ToolOrigins = await Task.Run(() => ToolHomeLeftovers.Origins(home, json), cancellationToken).ConfigureAwait(false) };
     }
 }
