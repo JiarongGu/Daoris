@@ -209,12 +209,13 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
     {
         var (code, refs, _) = await WorkingTree.GitAsync(root, ["for-each-ref", "--contains", tip, "--format=%(objectname) %(refname)"], ct).ConfigureAwait(false);
         if (code != 0) return null;
-        foreach (var row in refs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-        {
-            if (row.Split(' ', 2) is [var commit, var reference] && reference != $"refs/heads/{branch}") return (reference, commit);
-        }
-
-        return null;
+        var others = refs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(row => row.Split(' ', 2))
+            .Where(parts => parts.Length == 2 && parts[1] != $"refs/heads/{branch}")
+            .Select(parts => (Ref: parts[1], Commit: parts[0]))
+            .ToList();
+        // A branch of the person's first: another session branch may go in this same look, and the delete verifies the holder it names.
+        return others.Where(each => ContentHolds.PersonsRef(each.Ref)).Concat(others).Select(each => ((string, string)?)each).FirstOrDefault();
     }
 
     /// <summary>

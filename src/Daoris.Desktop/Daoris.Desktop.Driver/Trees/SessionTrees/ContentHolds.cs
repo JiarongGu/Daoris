@@ -270,8 +270,13 @@ internal sealed class ContentHolds(TreeContext context)
         if (found != 0) return null;
         var holders = Pairs(containing).Where(pair => pair.Ref != $"refs/heads/{branch}" && !pair.Ref.EndsWith("/HEAD", StringComparison.Ordinal)).ToList();
         // A form of the line that holds it is the proof's holder already; else the first ref the proof's rule admits.
+        // A form read at another commit is verified at the one the proof saw, and refuses there: never a second verify of one ref.
         if (holders.Any(forms.Contains)) return forms;
-        return holders.FirstOrDefault(pair => holder(pair.Ref)) is { Ref: not null } first ? [.. forms, first] : forms;
+        // A branch of the person's first: another session branch may go in the same pass, and the transaction verifies what it names.
+        var admitted = holders.Where(pair => holder(pair.Ref) && !forms.Any(form => form.Ref == pair.Ref)).ToList();
+        return admitted.Where(pair => PersonsRef(pair.Ref)).Concat(admitted).FirstOrDefault() is { Ref: not null } first
+            ? [.. forms, first]
+            : forms;
     }
 
     private static IEnumerable<(string Ref, string Commit)> Pairs(string listed) =>

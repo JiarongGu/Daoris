@@ -5,6 +5,28 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — The look's tidy could take a branch the line had stopped holding, and say a failed put-back worked (FABRIC-END4a)
+
+- **Symptom:** a second review of END4a's fixes, before it was staged (its merge was reverted): the delete's look-again caught two
+  tested races, but four callers passed it nothing to look at; a put-back git refused still read as "put back"; a tree list git
+  could not give after the delete read as clear; and while a branch was absent, another look, the branches page or a session's
+  checkout could observe the absence, which no put-back undoes. Beside it, the look's fallback memory and the effect's settle could
+  suppress a cleared blocker for good, or past one more deadline.
+- **Root cause:** `git update-ref -d <branch> <judged>` compares the branch alone, so whatever the proof rested on was looked at only
+  after the branch was gone, by callers that remembered to say what that was; and `GitAsync` wrote no standard input, so git's own
+  transaction was out of reach. The put-back ran `update-ref` and ignored its exit. The fallback's memory and the settle were keyed
+  on what a blocker's clearing need not change (two commits; a folder's and an index's times), and a settled wake still counted as
+  the chain's try.
+- **Fix:** `WorkingTree.GitAsync` writes git's input, and `ContentHolds.DeleteJudgedAsync` deletes with `update-ref --stdin`, a
+  `verify` for every ref the proof rested on beside the `delete`, so git refuses the whole under its locks; its snapshot is a
+  required argument every caller passes. The late checkout, which no ref says, is read again: an unread list is not clear, the
+  put-back's exit is read and a refusal said, and a recovery ref goes only in a transaction verifying the branch that holds its
+  commit. The memory and the settle judge again at the `refs` deadline, a deadline wake always tries, and a settled answer leaves
+  the chain's deadline unmoved. D173's FABRIC-END4a note, "After the second review", has the detail.
+- **Verification:** red first: `JudgedDeleteGitTests` (4), `TidyEffectGitTests` (the rewound row, the live tree's follow, the bound
+  on the memory) and `TidyEffectTests` (the settled wake, the live tree's trace, the reason); then green, with the driver's fast half
+  and the Git classes that reach the delete and the tidy.
+
 ## 2026-10-17 — The publish failed: the launcher compiled a driver file that named a type it did not carry (FABRIC-EVENT4)
 
 - **Symptom:** the merge gate's deployment rehearsal failed at its first check, `publish:desktop --service exits 0`, on main
