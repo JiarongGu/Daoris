@@ -678,9 +678,11 @@ public sealed class RemoteSyncTests
 /// <summary>
 /// The orchestration half, over a stub transport: the ORDER is a contract (registrations go first, so
 /// the remote knows who is joined before their records arrive — D47 §9), and a wall is reported and
-/// never thrown (records sync eventually; a dead tick would take the driver's whole look with it).
+/// never thrown (records sync eventually; a dead tick would take the driver's whole look with it). Its one process is git,
+/// over a real checkout; the transport is in process, and no case waits on a clock, so it runs four at once (PROC1g).
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class RemoteSyncRunTests : IDisposable
 {
     private const string Local = "http://localhost:5177";
