@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-16 — The plugin skills spawn tests started Claude Code with no Daoris account (HELPPLUG1c beside OWNSPACE1a)
+
+- **Symptom:** the merge gate at OWNSPACE1a, WIRING1c-i, HELPPLUG1c and STEER2a's merge: `IntakeTests`' and
+  `HelperProcessTests`' *handed a plugin's skills on either door* failed on both doors with `Assert.Single()` on an empty
+  collection, and again when run alone.
+- **Root cause:** HELPPLUG1c's two spawn tests were written beside OWNSPACE1a, so they start the real `claude-code` and
+  `claude-code-acp` adapters in a home with no Daoris account. Since OWNSPACE1a such a start walks the agent's Daoris accounts
+  and, with none, is held (`held.no-account`) before anything spawns: the tick's events said so for each door, and the stand-in
+  harness never ran. The reviewer's test of the same family is handed its selection and never walks, so it passed.
+- **Fix:** `SkillsSpawnProbe.SignIn` seeds the `claude-code/daoris` account in the test home, as OWNSPACE1a's chat classes
+  (`TurnStopTests`, `ChatAttachmentTests`) do; both tests call it. No product change.
+- **Verification:** each test red alone on both doors (the intake's with its events surfaced, naming the hold), then green;
+  `IntakeTests` 37 and `HelperProcessTests` 4 green as classes.
+
 ## 2026-10-16 — A start with no account named ran in the person's own tool home (OWNSPACE1a)
 
 - **Symptom:** the owner, 2026-10-16: the person's own Claude Code home held 28 project folders the install's sessions wrote
