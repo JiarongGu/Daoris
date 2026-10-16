@@ -80,6 +80,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-07-history-clearing-design.md` | Contract: clear local finished history | D153 |
 | `2026-10-08-review-environment-design.md` | Contract: setup and person's review verdict | D154/D155–D157 |
 | `2026-10-08-second-agent-design.md` | Contract: another maker's agent reviews | D155/D157 |
+| `model-roles.md` | Reference: which model, version and effort does which role, its evidence, the trials, and when to ask another maker | D174/D160; living, dated |
 | `2026-10-09-person-door-design.md` | Contract: person/driver authorization | D156; starter integration remains in TASKS |
 | `2026-10-09-workflow-design.md` | Contract: choices, versions and gates | D157 |
 | `2026-10-14-co-working-design.md` | Contract: one session per line of work, its records its parts; an ask's channel | D167; SESSONE rows in TASKS |
