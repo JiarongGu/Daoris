@@ -226,20 +226,31 @@ internal static class Program
             .Use(StatePublisher.Middleware(
                 sp.GetRequiredService<Shenora.Core.Events.IEventBus>(), sp.GetRequiredService<DriverLoop>().UnderWay)));
 
+        var version = typeof(Program).Assembly
+            .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+            .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion;
+
+        // The terminal's pipe (RPC1a, D171 point 3): a verb run in a terminal is this Daoris's client, its request run through the
+        // dispatcher composed above, which every window's page uses, so its press is the window's: the same handler, the same
+        // middleware, under way and heard in every window. The loop serves it once it holds the home and takes it down at its stop.
+        builder.Services.AddSingleton(sp => new InstancePipe(
+            sp.GetRequiredService<IMessageDispatcher>(), sp.GetRequiredService<Shenora.Core.Events.IEventBus>(),
+            sp.GetRequiredService<DriverLoop>().Home, log, version: version));
+
         // The loop starts with the app, not with the window: the driver watches whether or not the
         // person is looking, which is the whole point of a driver.
         builder.OnStarting(app =>
         {
-            log.Info("app.started",
-                ("version", typeof(Program).Assembly
-                    .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
-                    .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion),
-                ("installed", inInstallApp));
+            log.Info("app.started", ("version", version), ("installed", inInstallApp));
             var loop = app.Services.GetRequiredService<DriverLoop>();
             // Composed: a swap waiting for this start is confirmed here, so the launcher keeps this build (D139 §5), and
             // the last swap's outcome is said once. Then the drain watches what is staged, holding the loop's starts.
             var updater = app.Services.GetRequiredService<InstallUpdater>();
             loop.Draining = () => updater.Draining;
+            // An update's drain is a stop's beginning for the pipe too: a terminal is told Daoris is updating (§6.3).
+            var pipe = app.Services.GetRequiredService<InstancePipe>();
+            pipe.Draining = () => updater.Draining;
+            loop.Pipe = pipe;
             updater.Started();
             updater.Start();
             loop.Start();

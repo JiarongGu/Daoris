@@ -188,9 +188,13 @@ public sealed class InstancePipe : IDisposable
     /// <summary>The stop begins (§6.3): every new hello and every new press is refused <see cref="Stopping"/> from here.</summary>
     public void BeginStopping() => Interlocked.Exchange(ref _stopping, 1);
 
-    /// <summary>Wait up to <paramref name="within"/> for the presses under way to answer: false where one had not.</summary>
+    /// <summary>
+    /// Wait up to <paramref name="within"/> for the presses under way to answer, and each answer to be written to the terminal
+    /// waiting on it: false where one had not.
+    /// </summary>
     public bool Drain(TimeSpan within)
     {
+        var until = DateTime.UtcNow + within;
         Task[] running;
         lock (_gate)
         {
@@ -199,11 +203,24 @@ public sealed class InstancePipe : IDisposable
 
         try
         {
-            return Task.WaitAll(running, within);
+            if (!Task.WaitAll(running, within)) return false;
         }
         catch (AggregateException)
         {
-            return true;
+            // An answer is a response, never a fault: nothing to wait for here.
+        }
+
+        while (true)
+        {
+            bool answering;
+            lock (_gate)
+            {
+                answering = _connections.Any(each => each.Answering);
+            }
+
+            if (!answering) return true;
+            if (DateTime.UtcNow >= until) return false;
+            Thread.Sleep(10);
         }
     }
 
@@ -503,6 +520,9 @@ public sealed class InstancePipe : IDisposable
         private readonly Channel<string?> _lines = Channel.CreateUnbounded<string?>(new UnboundedChannelOptions { SingleReader = true });
         private int _underWay;
         private int _closed;
+
+        /// <summary>Whether a request on this connection has not been answered yet.</summary>
+        public bool Answering => Volatile.Read(ref _underWay) > 0;
 
         public async Task RunAsync()
         {

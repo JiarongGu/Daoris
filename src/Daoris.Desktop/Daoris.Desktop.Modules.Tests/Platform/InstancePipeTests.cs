@@ -1,5 +1,3 @@
-using System.IO.Pipes;
-using System.Text;
 using System.Text.Json;
 using Daoris.Driver;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,29 +21,6 @@ namespace Daoris.Desktop.Modules.Tests;
 public sealed class InstancePipeTests : Bridge
 {
     private static readonly JsonSerializerOptions Wire = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-
-    /// <summary>A module whose every route waits until the test lets it, and counts how often it ran.</summary>
-    private sealed class Held(string name) : ModuleBase
-    {
-        private int _ran;
-
-        public override string ModuleName => name;
-
-        public int Ran => Volatile.Read(ref _ran);
-
-        public TaskCompletionSource Let { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        protected override async Task<object?> RouteMessageAsync(IpcRequest request, IModuleContext context, CancellationToken cancellationToken)
-        {
-            var ran = Interlocked.Increment(ref _ran);
-            if (request.Type == "PROGRESS") context.Report(new IpcProgress(1, 2, "steps"), new IpcLabel("half way"));
-            Started.TrySetResult();
-            await Let.Task.WaitAsync(cancellationToken);
-            return new { Done = true, Said = $"pressed {request.Type} ({ran})" };
-        }
-    }
 
     /// <summary>What the test's press declares, as a route's mark does (D169 point 2).</summary>
     private static StateChange? Declared(IpcRequest request) =>
@@ -83,14 +58,14 @@ public sealed class InstancePipeTests : Bridge
     {
         if (!OperatingSystem.IsWindows()) return;
         using var log = new MachineLog(Home, "desktop");
-        var press = new Held("TEST.PRESS");
+        var press = new HeldModule("TEST.PRESS");
         var (dispatcher, underWay, services) = Compose(log, press);
         using var _ = services;
         using var pipe = Pipe(dispatcher, log);
         var name = pipe.Serve();
         Assert.Equal(PipeName.For(HomeId, System.Diagnostics.Process.GetCurrentProcess().SessionId), name);
 
-        await using var client = await Client.ConnectAsync(name!);
+        await using var client = await PipeClient.ConnectAsync(name!);
         var hello = await client.HelloAsync(HomeId);
         Assert.True(hello.GetProperty("success").GetBoolean(), hello.GetRawText());
         var said = hello.GetProperty("data");
@@ -135,14 +110,14 @@ public sealed class InstancePipeTests : Bridge
     {
         if (!OperatingSystem.IsWindows()) return;
         using var log = new MachineLog(Home, "desktop");
-        var driver = new Held(DriverModule.Name);
-        var windows = new Held("DAORIS.WINDOWS");
-        var elsewhere = new Held("TEST.ELSEWHERE");
+        var driver = new HeldModule(DriverModule.Name);
+        var windows = new HeldModule("DAORIS.WINDOWS");
+        var elsewhere = new HeldModule("TEST.ELSEWHERE");
         driver.Let.SetResult();
         var (dispatcher, _, services) = Compose(log, driver, windows, elsewhere);
         using var __ = services;
         using var pipe = Pipe(dispatcher, log);
-        await using var client = await Client.ConnectAsync(pipe.Serve()!);
+        await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
         await client.HelloAsync(HomeId);
 
         var person = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, "LAND_SESSION_TREE", new { id = "s1a2b3c4" }));
@@ -178,10 +153,10 @@ public sealed class InstancePipeTests : Bridge
     {
         if (!OperatingSystem.IsWindows()) return;
         using var log = new MachineLog(Home, "desktop");
-        var (dispatcher, _, services) = Compose(log, new Held("TEST.PRESS"));
+        var (dispatcher, _, services) = Compose(log, new HeldModule("TEST.PRESS"));
         using var __ = services;
         using var pipe = new InstancePipe(dispatcher, Bus, Home, log, PipeCensus.Daoris.With("TEST.NOWHERE", "LOOK", PipeClass.Open));
-        await using var client = await Client.ConnectAsync(pipe.Serve()!);
+        await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
         await client.HelloAsync(HomeId);
 
         var answer = await client.AnswerAsync(await client.SendAsync("TEST.NOWHERE", "LOOK"));
@@ -196,19 +171,19 @@ public sealed class InstancePipeTests : Bridge
     {
         if (!OperatingSystem.IsWindows()) return;
         using var log = new MachineLog(Home, "desktop");
-        var press = new Held("TEST.PRESS");
+        var press = new HeldModule("TEST.PRESS");
         var (dispatcher, underWay, services) = Compose(log, press);
         using var _ = services;
         using var pipe = Pipe(dispatcher, log);
         var name = pipe.Serve()!;
 
-        var lost = await Client.ConnectAsync(name);
+        var lost = await PipeClient.ConnectAsync(name);
         await lost.HelloAsync(HomeId);
         var id = await lost.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" });
         await press.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
         await lost.DisposeAsync();
 
-        await using var again = await Client.ConnectAsync(name);
+        await using var again = await PipeClient.ConnectAsync(name);
         await again.HelloAsync(HomeId);
         Assert.Equal("running", (await again.ResultAsync(id)).GetProperty("state").GetString());
         Assert.Equal("unknown", (await again.ResultAsync("never-sent")).GetProperty("state").GetString());
@@ -230,7 +205,7 @@ public sealed class InstancePipeTests : Bridge
     {
         if (!OperatingSystem.IsWindows()) return;
         using var log = new MachineLog(Home, "desktop");
-        var press = new Held("TEST.PRESS");
+        var press = new HeldModule("TEST.PRESS");
         var (dispatcher, _, services) = Compose(log, press);
         using var __ = services;
         string first;
@@ -238,8 +213,8 @@ public sealed class InstancePipeTests : Bridge
         using (var pipe = Pipe(dispatcher, log))
         {
             var name = pipe.Serve()!;
-            await using var one = await Client.ConnectAsync(name);
-            await using var two = await Client.ConnectAsync(name);
+            await using var one = await PipeClient.ConnectAsync(name);
+            await using var two = await PipeClient.ConnectAsync(name);
             await one.HelloAsync(HomeId);
             await two.HelloAsync(HomeId);
 
@@ -259,7 +234,7 @@ public sealed class InstancePipeTests : Bridge
 
         // The next instance on the home reads the lines the first left, for 24 hours (§6.1).
         using var next = Pipe(dispatcher, log);
-        await using var three = await Client.ConnectAsync(next.Serve()!);
+        await using var three = await PipeClient.ConnectAsync(next.Serve()!);
         await three.HelloAsync(HomeId);
         await three.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" }, id);
         Assert.Equal(first, (await three.AnswerAsync(id)).GetRawText());
@@ -276,7 +251,7 @@ public sealed class InstancePipeTests : Bridge
     {
         if (!OperatingSystem.IsWindows()) return;
         using var log = new MachineLog(Home, "desktop");
-        var press = new Held("TEST.PRESS");
+        var press = new HeldModule("TEST.PRESS");
         press.Let.SetResult();
         var (dispatcher, _, services) = Compose(log, press);
         using var __ = services;
@@ -289,7 +264,7 @@ public sealed class InstancePipeTests : Bridge
             + "not a line\n");
 
         using var pipe = Pipe(dispatcher, log);
-        await using var client = await Client.ConnectAsync(pipe.Serve()!);
+        await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
         await client.HelloAsync(HomeId);
 
         Assert.Equal("unknown", (await client.ResultAsync("begun-before")).GetProperty("state").GetString());
@@ -308,13 +283,13 @@ public sealed class InstancePipeTests : Bridge
     {
         if (!OperatingSystem.IsWindows()) return;
         using var log = new MachineLog(Home, "desktop");
-        var press = new Held("TEST.PRESS");
+        var press = new HeldModule("TEST.PRESS");
         press.Let.SetResult();
         var (dispatcher, _, services) = Compose(log, press);
         using var __ = services;
         using var pipe = Pipe(dispatcher, log);
         var name = pipe.Serve()!;
-        await using var before = await Client.ConnectAsync(name);
+        await using var before = await PipeClient.ConnectAsync(name);
         await before.HelloAsync(HomeId);
         var id = await before.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" });
         await before.AnswerAsync(id);
@@ -323,7 +298,7 @@ public sealed class InstancePipeTests : Bridge
         var updating = false;
         pipe.Draining = () => updating;
         updating = true;
-        await using (var during = await Client.ConnectAsync(name))
+        await using (var during = await PipeClient.ConnectAsync(name))
         {
             var refused = await during.HelloAsync(HomeId);
             Assert.Equal(InstancePipe.Stopping, Code(refused));
@@ -332,7 +307,7 @@ public sealed class InstancePipeTests : Bridge
 
         updating = false;
         pipe.BeginStopping();
-        await using (var after = await Client.ConnectAsync(name))
+        await using (var after = await PipeClient.ConnectAsync(name))
         {
             var refused = await after.HelloAsync(HomeId);
             Assert.Equal(InstancePipe.Stopping, Code(refused));
@@ -351,33 +326,33 @@ public sealed class InstancePipeTests : Bridge
     {
         if (!OperatingSystem.IsWindows()) return;
         using var log = new MachineLog(Home, "desktop");
-        var press = new Held("TEST.PRESS");
+        var press = new HeldModule("TEST.PRESS");
         var (dispatcher, _, services) = Compose(log, press);
         using var __ = services;
         using var pipe = Pipe(dispatcher, log);
         var name = pipe.Serve()!;
 
         // Anything before its hello closes the connection, unanswered and unrun.
-        await using (var rude = await Client.ConnectAsync(name))
+        await using (var rude = await PipeClient.ConnectAsync(name))
         {
             await rude.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" });
             Assert.Null(await rude.ReadAsync());
         }
 
-        await using (var older = await Client.ConnectAsync(name))
+        await using (var older = await PipeClient.ConnectAsync(name))
         {
             Assert.Equal(InstancePipe.WrongProtocol, Code(await older.HelloAsync(HomeId, protocol: 2)));
             Assert.Null(await older.ReadAsync());
         }
 
-        await using (var stranger = await Client.ConnectAsync(name))
+        await using (var stranger = await PipeClient.ConnectAsync(name))
         {
             Assert.Equal(InstancePipe.WrongHome, Code(await stranger.HelloAsync("fedcba9876543210fedcba9876543210")));
             Assert.Null(await stranger.ReadAsync());
         }
 
         // A line that is no request closes it too.
-        await using (var garbled = await Client.ConnectAsync(name))
+        await using (var garbled = await PipeClient.ConnectAsync(name))
         {
             await garbled.HelloAsync(HomeId);
             await garbled.SendLineAsync("not json");
@@ -393,17 +368,17 @@ public sealed class InstancePipeTests : Bridge
     {
         if (!OperatingSystem.IsWindows()) return;
         using var log = new MachineLog(Home, "desktop");
-        var (dispatcher, _, services) = Compose(log, new Held("TEST.PRESS"));
+        var (dispatcher, _, services) = Compose(log, new HeldModule("TEST.PRESS"));
         using var __ = services;
         using var pipe = Pipe(dispatcher, log, new PipeLimits { Hello = TimeSpan.FromMilliseconds(300), LineBytes = 4096 });
         var name = pipe.Serve()!;
 
-        await using (var silent = await Client.ConnectAsync(name))
+        await using (var silent = await PipeClient.ConnectAsync(name))
         {
             Assert.Null(await silent.ReadAsync());
         }
 
-        await using var endless = await Client.ConnectAsync(name);
+        await using var endless = await PipeClient.ConnectAsync(name);
         await endless.HelloAsync(HomeId);
         await endless.SendLineAsync(new string('x', 8192), end: false);
         Assert.Null(await endless.ReadAsync());
@@ -417,7 +392,7 @@ public sealed class InstancePipeTests : Bridge
         var (dispatcher, _, services) = Compose(log);
         using var __ = services;
         using var pipe = Pipe(dispatcher, log);
-        await using var client = await Client.ConnectAsync(pipe.Serve()!);
+        await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
         await client.HelloAsync(HomeId);
 
         var answer = await client.AnswerAsync(await client.SendAsync(InstancePipe.Module, "ROUTES"));
@@ -435,13 +410,13 @@ public sealed class InstancePipeTests : Bridge
     {
         if (!OperatingSystem.IsWindows()) return;
         using var log = new MachineLog(Home, "desktop");
-        var press = new Held("TEST.PRESS");
+        var press = new HeldModule("TEST.PRESS");
         var (dispatcher, _, services) = Compose(log, press);
         using var __ = services;
         using var pipe = Pipe(dispatcher, log);
         var name = pipe.Serve()!;
-        await using var client = await Client.ConnectAsync(name);
-        await using var other = await Client.ConnectAsync(name);
+        await using var client = await PipeClient.ConnectAsync(name);
+        await using var other = await PipeClient.ConnectAsync(name);
         await client.HelloAsync(HomeId);
         await other.HelloAsync(HomeId);
 
@@ -506,113 +481,4 @@ public sealed class InstancePipeTests : Bridge
         }
     }
 
-    /// <summary>A terminal's end of the pipe, as RPC1b's client will hold it: lines of JSON each way.</summary>
-    private sealed class Client : IAsyncDisposable
-    {
-        private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
-        private readonly NamedPipeClientStream _stream;
-        private readonly StreamReader _reader;
-        private readonly List<JsonElement> _notifications = [];
-
-        private Client(NamedPipeClientStream stream)
-        {
-            _stream = stream;
-            _reader = new StreamReader(stream, Utf8);
-        }
-
-        public static async Task<Client> ConnectAsync(string name)
-        {
-            var stream = new NamedPipeClientStream(".", name, PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
-            await stream.ConnectAsync(5000);
-            return new Client(stream);
-        }
-
-        public async Task<JsonElement> HelloAsync(string home, int protocol = 1)
-        {
-            var id = await SendAsync(InstancePipe.Module, "HELLO", new { protocol, home, client = "tests", version = "0" });
-            return await AnswerAsync(id);
-        }
-
-        public async Task<JsonElement> ResultAsync(string id)
-        {
-            var answer = await AnswerAsync(await SendAsync(InstancePipe.Module, "RESULT", new { id }));
-            Assert.True(answer.GetProperty("success").GetBoolean(), answer.GetRawText());
-            return answer.GetProperty("data");
-        }
-
-        public async Task<string> SendAsync(string module, string type, object? payload = null, string? id = null)
-        {
-            id ??= Guid.NewGuid().ToString();
-            await SendLineAsync(JsonSerializer.Serialize(new { id, module, type, payload }, Wire));
-            return id;
-        }
-
-        public async Task SendLineAsync(string line, bool end = true)
-        {
-            var bytes = Utf8.GetBytes(end ? line + "\n" : line);
-            try
-            {
-                await _stream.WriteAsync(bytes);
-                await _stream.FlushAsync();
-            }
-            catch (IOException)
-            {
-                // The far end closed first: what it answered is what is read next.
-            }
-        }
-
-        /// <summary>The next line, or null once the far end has closed.</summary>
-        public async Task<JsonElement?> ReadAsync()
-        {
-            try
-            {
-                var line = await _reader.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(15));
-                return line is null ? null : JsonDocument.Parse(line).RootElement.Clone();
-            }
-            catch (IOException)
-            {
-                return null;
-            }
-        }
-
-        /// <summary>The answer to <paramref name="id"/>, keeping what was told on the way.</summary>
-        public async Task<JsonElement> AnswerAsync(string id)
-        {
-            while (true)
-            {
-                var line = await ReadAsync() ?? throw new InvalidOperationException($"the pipe closed before it answered {id}");
-                if (line.GetProperty("category").GetString() == "notification")
-                {
-                    _notifications.Add(line);
-                    continue;
-                }
-
-                if (line.GetProperty("id").GetString() == id) return line;
-            }
-        }
-
-        /// <summary>The first notification told, waiting up to <paramref name="within"/>; null where none came.</summary>
-        public async Task<JsonElement?> NotificationAsync(TimeSpan within)
-        {
-            if (_notifications.Count > 0) return _notifications[0];
-            try
-            {
-                var line = await _reader.ReadLineAsync().WaitAsync(within);
-                if (line is null) return null;
-                var read = JsonDocument.Parse(line).RootElement.Clone();
-                if (read.GetProperty("category").GetString() == "notification") return read;
-                throw new InvalidOperationException($"an answer came where a notification was awaited: {line}");
-            }
-            catch (TimeoutException)
-            {
-                return null;
-            }
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            _reader.Dispose();
-            await _stream.DisposeAsync();
-        }
-    }
 }
