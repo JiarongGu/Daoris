@@ -677,9 +677,27 @@ public sealed class Driver(
     /// at a time, since a plugin's two minutes may outlast a look; what it says joins a later look's report. A due list or a
     /// service that does not answer is said, and its sessions are tried again at the next look: landing is never a dead look.
     /// </summary>
+    /// <remarks>
+    /// FABRIC-END7's review: only the process holding the home's lease selects or launches one (finding 2), as only it keeps an end
+    /// (<see cref="EndKeeping"/>): a loop beside it (<c>drive --share</c>) has its own guard and its own looks, so both could land one
+    /// entry and each call its plugin. The person's press is unchanged. <see cref="Woke"/> is spent only where the selection judged
+    /// with it (finding 3, <see cref="WokeSpent"/>).
+    /// </remarks>
     private async Task LandDueAsync(List<string> events, CancellationToken ct)
     {
-        if (Context.Runs.Landing) return;
+        if (!HomeLease.HeldHere(home))
+        {
+            // Not this process's to land: the lease holder's looks land it, and its wakes are this loop's to drop.
+            WokeSpent = true;
+            return;
+        }
+
+        if (Context.Runs.Landing)
+        {
+            LandingBusy = true;
+            return;
+        }
+
         try
         {
             // The rule's plugin says its lines on the console under its name, as at a press (D100), and what the landing did
@@ -689,8 +707,14 @@ public sealed class Driver(
                 new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => output?.Append($"plugin:{plugin}", line), pluginLog: Context.Hooks?.Log)),
                 Context.Events, service.LandingSaid);
             var (chosen, said) = await lander.ChooseAsync(config, ct, Woke).ConfigureAwait(false);
+            WokeSpent = true;
             events.AddRange(said);
-            if (chosen.Count > 0) Context.Runs.Beside(token => lander.LandAsync(chosen, token), ct);
+            if (chosen.Count > 0 && !Context.Runs.Beside(token => lander.LandAsync(chosen, token), ct, LandingEnded))
+            {
+                // A pass began meanwhile (looks run one at a time, so none should): what was chosen is chosen again after it.
+                WokeSpent = false;
+                LandingBusy = true;
+            }
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or IOException
                                           or UnauthorizedAccessException)

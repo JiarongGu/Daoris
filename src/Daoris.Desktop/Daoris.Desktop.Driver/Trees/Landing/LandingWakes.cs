@@ -161,12 +161,19 @@ public static class TreeTips
 
 /// <summary>
 /// The wakes the loop heard since its last look (FABRIC-END7), which the next look's landing looks at alone: kept from each topic's
-/// nudge, taken by the look, so a wake heard while a look runs is the next look's.
+/// nudge, taken by the look, so a wake heard while a look runs is the next look's. A wake is spent only where a landing judged with it
+/// (FABRIC-END7's review): a look that failed first, a selection that failed, or one left while a landing ran puts it back.
 /// </summary>
 public sealed class LandingWakes
 {
     private readonly object _gate = new();
     private List<LandingWake> _heard = [];
+
+    // A whole look whose landing judged nothing (FABRIC-END7's review): the next plan judges every entry in its place.
+    private bool _whole;
+
+    // Wakes put back while a landing still ran, which that landing's end offers again.
+    private bool _heldBack;
 
     /// <summary>A topic's wake, kept once until a look takes it.</summary>
     public void Hear(string topic, string subject)
@@ -184,7 +191,10 @@ public sealed class LandingWakes
     /// </summary>
     public IReadOnlyCollection<LandingWake>? For(bool whole) => Take(whole).Woke;
 
-    /// <summary>The wakes one look takes (FABRIC-END7's review), which go back unless its landing judged with them.</summary>
+    /// <summary>
+    /// The wakes one look takes (FABRIC-END7's review), which go back unless its landing judged with them. A whole look whose landing did
+    /// not judge is owed to the next plan, which then judges every entry.
+    /// </summary>
     public LandingTaken Take(bool whole)
     {
         List<LandingWake> taken;
@@ -192,6 +202,8 @@ public sealed class LandingWakes
         {
             taken = _heard;
             _heard = [];
+            whole |= _whole;
+            _whole = false;
         }
 
         return new LandingTaken(taken, whole);
@@ -199,15 +211,32 @@ public sealed class LandingWakes
 
     /// <summary>
     /// A look's landing did not judge with what it took (FABRIC-END7's review): its look failed first, the selection failed, or a landing
-    /// still ran.
+    /// still ran. The wakes go back ahead of those heard meanwhile, once each; a plan's session end goes back as a wake of its own; a whole
+    /// look's goes back as every entry.
     /// </summary>
     /// <param name="heldBack">A landing still ran: its end offers them again (<see cref="Reoffer"/>).</param>
     public void Unspent(LandingTaken taken, bool heldBack)
     {
+        lock (_gate)
+        {
+            List<LandingWake> back = [.. taken.Woke ?? taken.Heard];
+            foreach (var wake in _heard.Where(wake => !back.Contains(wake))) back.Add(wake);
+            _heard = back;
+            _whole |= taken.Whole;
+            _heldBack |= heldBack;
+        }
     }
 
-    /// <summary>Whether wakes were held back for a running landing's end, which then offers them again; asked once.</summary>
-    public bool Reoffer() => false;
+    /// <summary>Whether wakes were held back for a running landing's end, which then offers them again; true once for each hold.</summary>
+    public bool Reoffer()
+    {
+        lock (_gate)
+        {
+            var held = _heldBack;
+            _heldBack = false;
+            return held;
+        }
+    }
 
     /// <summary>
     /// The ref watch judged <paramref name="repository"/> (FABRIC-END3, <see cref="RefWatch.Heard"/>): its <c>refs</c> wake asked of

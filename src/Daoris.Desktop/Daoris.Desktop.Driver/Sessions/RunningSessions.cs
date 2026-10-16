@@ -106,12 +106,12 @@ public sealed class RunningSessions
         lock (_gate)
         {
             if (_landing is not null) return false;
-            _landing = Task.Run(() => KeepLandingAsync(pass, ct), CancellationToken.None);
+            _landing = Task.Run(() => KeepLandingAsync(pass, ct, ended), CancellationToken.None);
             return true;
         }
     }
 
-    private async Task KeepLandingAsync(Func<CancellationToken, Task<IReadOnlyList<string>>> pass, CancellationToken ct)
+    private async Task KeepLandingAsync(Func<CancellationToken, Task<IReadOnlyList<string>>> pass, CancellationToken ct, Action? ended)
     {
         IReadOnlyList<string> said;
         try
@@ -134,6 +134,14 @@ public sealed class RunningSessions
         }
 
         moved.TrySetResult();
+        try
+        {
+            ended?.Invoke();
+        }
+        catch (Exception error) when (error is ObjectDisposedException or InvalidOperationException)
+        {
+            // The loop that would hear it has closed: nothing is held back for a loop that is gone.
+        }
     }
 
     /// <summary>

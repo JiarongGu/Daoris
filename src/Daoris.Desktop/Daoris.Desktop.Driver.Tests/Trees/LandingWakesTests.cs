@@ -204,7 +204,8 @@ public sealed class LandingWakesTests : IDisposable
 
     /// <summary>
     /// FABRIC-END7's review: a look that fails before its landing judged anything puts the wakes it took back, so the hold a quest's
-    /// release woke is not left to the whole look. The stand-in's quest list does not answer, so the plan fails after it took them.
+    /// release woke is not left to the whole look. The stand-in's quest list does not answer, so the plan fails after it took them; the
+    /// start's whole look failed first, so the next plan owes every entry its judgement too.
     /// </summary>
     [Fact]
     public async Task A_look_that_fails_before_its_landing_puts_its_wakes_back()
@@ -214,7 +215,7 @@ public sealed class LandingWakesTests : IDisposable
         File.WriteAllText(config, """{ "drivable": ["engine"], "adapter": "stub", "pollSeconds": 600 }""");
         using var service = ledger.Client();
         using var stop = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        IReadOnlyCollection<LandingWake>? left = null;
+        LandingTaken? left = null;
         var failures = 0;
         DriverWatch? watch = null;
         watch = new DriverWatch(service, config, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.SessionPids)), sync: null,
@@ -227,7 +228,7 @@ public sealed class LandingWakesTests : IDisposable
                 if (++failures == 1) watch.Nudge(ChangeTopics.Ledger, "quests");
                 else
                 {
-                    left = watch.Landing.For(whole: false);
+                    left = watch.Landing.Take(whole: false);
                     stop.Cancel();
                 }
 
@@ -236,7 +237,8 @@ public sealed class LandingWakesTests : IDisposable
             stop.Token);
 
         Assert.Equal(2, failures);
-        Assert.Equal([new LandingWake(ChangeTopics.Ledger, "quests")], left!);
+        Assert.Equal([new LandingWake(ChangeTopics.Ledger, "quests")], left!.Heard);
+        Assert.True(left.Whole);
     }
 
     // ——— the refs' wake, found without git

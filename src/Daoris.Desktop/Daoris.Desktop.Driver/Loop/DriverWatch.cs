@@ -160,10 +160,33 @@ public sealed class DriverWatch(
     /// <summary>The wakes the landing has not judged with yet (FABRIC-END7), which a test reads.</summary>
     internal LandingWakes Landing => _landing;
 
-    private void Woken(Wake? wake)
+    /// <summary>
+    /// A look's landing did not judge with the wakes it took (FABRIC-END7's review): they go back, and where a landing still ran, its end
+    /// offers them again. A landing that ended before they went back found nothing held, so they are offered here.
+    /// </summary>
+    private void Unspent(LandingTaken taken, bool busy)
+    {
+        _landing.Unspent(taken, heldBack: busy);
+        if (busy && !Running.Landing) Reoffered();
+    }
+
+    /// <summary>
+    /// A landing pass ended (FABRIC-END7's review): the wakes held back while it ran wake a plan now, as a session's end does, rather than
+    /// wait for the next wake or the whole look. Nothing held back wakes nothing.
+    /// </summary>
+    private void Reoffered()
+    {
+        if (_landing.Reoffer()) Woken(LandingEnd, heard: false);
+    }
+
+    /// <summary>What <c>watch.looked</c> says woke a plan a landing's end offered its held wakes to: the ledger's sessions, as a session's end.</summary>
+    private static readonly Wake LandingEnd = new(ChangeTopics.Ledger, "sessions");
+
+    /// <param name="heard">False for a wake the landing already holds (<see cref="Reoffered"/>), which is not heard a second time.</param>
+    private void Woken(Wake? wake, bool heard = true)
     {
         if (wake is null) Interlocked.Exchange(ref _everything, 1);
-        else _landing.Hear(wake.Topic, wake.Subject);
+        else if (heard) _landing.Hear(wake.Topic, wake.Subject);
         Volatile.Write(ref _woke, wake);
         Interlocked.Increment(ref _nudges);
 
@@ -277,16 +300,25 @@ public sealed class DriverWatch(
         async Task<TickReport> LookAsync(LookPart part, CancellationToken token)
         {
             var draining = Draining?.Invoke() == true;
-            var report = await new Driver(
+            // FABRIC-END7's review: the wakes this look's landing judges with, put back unless it did judge with them.
+            var taken = _landing.Take(whole: part == LookPart.Look);
+            var driver = new Driver(
                     service, draining ? InstallUpdate.Drained(config) : config, AdapterSet.Built(), home, processes, sync, output,
                     _harnesses, usage, hooks, events, browser, Running)
-                { Runner = Runner, Stops = Stops, Log = Log, Reviews = Reviews, Part = part, Woke = _landing.For(whole: part == LookPart.Look) }
-                .TickAsync(token, failed: said =>
+                { Runner = Runner, Stops = Stops, Log = Log, Reviews = Reviews, Part = part, Woke = taken.Woke, LandingEnded = Reoffered };
+            try
+            {
+                var report = await driver.TickAsync(token, failed: said =>
                 {
                     carried.AddRange(said.Events);
                     carriedEnded.AddRange(said.Concluded);
                 }).ConfigureAwait(false);
-            return draining ? report with { Considerations = InstallUpdate.HeldFor(report.Considerations, config) } : report;
+                return draining ? report with { Considerations = InstallUpdate.HeldFor(report.Considerations, config) } : report;
+            }
+            finally
+            {
+                if (!driver.WokeSpent) Unspent(taken, driver.LandingBusy);
+            }
         }
 
         // What the sessions run on: the loop's own token, and cancelled by the loop itself when a failure
