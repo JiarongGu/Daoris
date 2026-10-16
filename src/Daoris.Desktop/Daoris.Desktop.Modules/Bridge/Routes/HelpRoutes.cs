@@ -262,34 +262,53 @@ public sealed class HelpRoutes(DriverContext context)
 
             // A clear's card holds the units it listed, once, so its Apply sends exactly those (HIST1f-c, design §5).
             HelpProposals.Drawn(_loop.Home, proposal, plan);
-            shown.Add(new
-            {
-                proposal.Id, proposal.Kind, plan.Describe, plan.Terminal, proposal.Why,
-                // What a plugin runs, as its manifest writes it (PLUG9), for the card to show before Apply.
-                Plugin = plan.Plugin is { } plugin
-                    ? new
-                    {
-                        plugin.Id, plugin.Name, plugin.Version, plugin.Command, plugin.Points,
-                        Harnesses = plugin.Harnesses.Select(part => new { part.Name, part.Command }).ToArray(),
-                        Servers = plugin.Servers.Select(part => new { part.Name, part.Command }).ToArray(),
-                        plugin.Copied, plugin.Problem,
-                        // An offer's requirement lines (PLUG9 d), and an update's changes (PLUG9 c).
-                        plugin.Needs, plugin.Replaced,
-                        Changes = PluginsRoutes.ChangesOf(plugin.Changes),
-                    }
-                    : null,
-                Sync = SyncShown(plan.Sync),
-                // An accept's departures (DRIFT1d2), for the card to show the person's words before the yes.
-                Accept = AcceptShown(plan.Accept),
-                // A workflow's version, as the card shows it (WORKFLOW1h-c), never the steps or the choice Apply carries.
-                Workflow = WorkflowShown(plan.Workflow),
-                // A set-up's plan (LAYOUT8), as the repository's page shows it before its press.
-                Setup = plan.Setup is { } setup ? SetupRoutes.Shown(setup) : null,
-            });
+            shown.Add(Card(proposal, plan).Card);
         }
 
         return new { Session = session, Proposals = shown.ToArray() };
     }
+
+    /// <summary>
+    /// A proposal's card as the page draws it, and the revision of the plan it shows (HELPAPPLY1): a digest of everything the card
+    /// says, so an Apply carrying it runs only what the person saw, and a machine that moved since asks again. The card's own
+    /// <c>revision</c> is that digest.
+    /// </summary>
+    internal static (string Revision, Dictionary<string, object?> Card) Card(HelpProposal proposal, HelpPlan plan)
+    {
+        var body = CardBody(proposal, plan);
+        var fields = System.Text.Json.JsonSerializer.SerializeToElement(
+            body, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
+        var revision = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(fields.GetRawText())))[..16].ToLowerInvariant();
+        var card = new Dictionary<string, object?>(StringComparer.Ordinal) { ["revision"] = revision };
+        foreach (var field in fields.EnumerateObject()) card[field.Name] = field.Value;
+        return (revision, card);
+    }
+
+    private static object CardBody(HelpProposal proposal, HelpPlan plan) =>
+        new
+        {
+            proposal.Id, proposal.Kind, plan.Describe, plan.Terminal, proposal.Why,
+            // What a plugin runs, as its manifest writes it (PLUG9), for the card to show before Apply.
+            Plugin = plan.Plugin is { } plugin
+                ? new
+                {
+                    plugin.Id, plugin.Name, plugin.Version, plugin.Command, plugin.Points,
+                    Harnesses = plugin.Harnesses.Select(part => new { part.Name, part.Command }).ToArray(),
+                    Servers = plugin.Servers.Select(part => new { part.Name, part.Command }).ToArray(),
+                    plugin.Copied, plugin.Problem,
+                    // An offer's requirement lines (PLUG9 d), and an update's changes (PLUG9 c).
+                    plugin.Needs, plugin.Replaced,
+                    Changes = PluginsRoutes.ChangesOf(plugin.Changes),
+                }
+                : null,
+            Sync = SyncShown(plan.Sync),
+            // An accept's departures (DRIFT1d2), for the card to show the person's words before the yes.
+            Accept = AcceptShown(plan.Accept),
+            // A workflow's version, as the card shows it (WORKFLOW1h-c), never the steps or the choice Apply carries.
+            Workflow = WorkflowShown(plan.Workflow),
+            // A set-up's plan (LAYOUT8), as the repository's page shows it before its press.
+            Setup = plan.Setup is { } setup ? SetupRoutes.Shown(setup) : null,
+        };
 
     /// <summary>
     /// What an accept card shows (DRIFT1d2), the page's <c>HelpAcceptShown</c>: the quest, and each departure its done
@@ -339,9 +358,27 @@ public sealed class HelpRoutes(DriverContext context)
         var proposal = HelpProposals.Find(_loop.Home, id)
             ?? throw new DriverException($"there is no proposal `#{id}` on this machine.");
         if (proposal.State != "proposed") throw new DriverException($"proposal `#{id}` is already {proposal.State}.");
+        // The card's revision (HELPAPPLY1): without one there is no card this Apply stands for.
+        var shown = PayloadHelper.GetOptionalValue<string>(request.Payload, "revision");
+        if (string.IsNullOrEmpty(shown)) throw new DriverException($"proposal `#{id}` was pressed with no card to stand for; its revision is missing, so it is drawn again.");
+
+        // One Apply at a time (HELPAPPLY1): a second window's press of the same card waits for nothing and runs nothing.
+        using var claim = HelpProposals.Claim(_loop.Home, id)
+            ?? throw new DriverException($"proposal `#{id}` is being applied already, from another window.");
+        // The winner may have settled it between the read above and the claim.
+        proposal = HelpProposals.Find(_loop.Home, id) ?? proposal;
+        if (proposal.State != "proposed") throw new DriverException($"proposal `#{id}` is already {proposal.State}.");
 
         var (config, facts) = await HelpFactsAsync(service, [proposal], cancellationToken).ConfigureAwait(false);
         var plan = HelpProposals.Plan(proposal, config, facts);
+        // The plan is judged again, and a refusal settles as before; but an allowed plan other than the one the card showed is not
+        // applied: the person is told what it is now and asks again from the card drawn anew (D170).
+        if (plan.Refusal is null && Card(proposal, plan).Revision != shown)
+        {
+            var changed = $"The plan for `#{id}` changed since this card was drawn, so nothing was applied. It now reads: {plan.Describe}. Look at the new card and press Apply on it.";
+            return new { Message = changed, Applied = false, Go = (object?)null, HarnessAction = (object?)null, Stands = true, Changed = true };
+        }
+
         // What it did, and an agent action's end once it comes, into the conversation that proposed it.
         void Say(string text)
         {
