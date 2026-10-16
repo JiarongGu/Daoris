@@ -117,7 +117,7 @@ public sealed class LandingWakesTests : IDisposable
         var root = Path.Combine(_home, name);
         Write(Path.Combine(Git(root), "HEAD"), "ref: refs/heads/main\n");
         Write(Path.Combine(Git(root), "refs", "heads", "main"), Tip + "\n");
-        var tree = Path.Combine(_home, "trees", name + "-t1");
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees, name + "-t1");
         var own = Path.Combine(Git(root), "worktrees", "t1");
         Write(Path.Combine(own, "HEAD"), "ref: refs/heads/daoris/s1\n");
         Write(Path.Combine(own, "commondir"), "../..\n");
