@@ -261,6 +261,103 @@ public sealed class DrivenInboxTests
         Assert.Equal(0, stopped);
     }
 
+    /// <summary>
+    /// 🔴 STEER2a (D136's 2026-10-16 note): *Send now* on a door whose agent steers hands the words to the running turn at once,
+    /// told with the reach <c>now</c>; nothing is held, nothing is stopped, and the inbox closes only once the steer is answered.
+    /// </summary>
+    [Fact]
+    public async Task Sending_now_on_a_door_that_steers_hands_the_words_to_the_running_turn_at_once()
+    {
+        var stopped = 0;
+        var steered = new List<string>();
+        var told = new List<(string? Id, DrivenReach Reach)>();
+        var answer = new TaskCompletionSource<string>();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.OnSaid((message, reach) => told.Add((message.Id, reach)));
+        inbox.Attach(
+            () => { stopped++; return Task.CompletedTask; },
+            _ => new TaskCompletionSource<string>().Task,
+            message => { steered.Add(message.Text); return answer.Task; });
+        inbox.Flow();
+
+        var now = await inbox.HoldNowAsync(Said("put MANGO after the words"));
+
+        Assert.Equal(new SentNow("now", true, null), now);
+        Assert.Equal(["put MANGO after the words"], steered);
+        Assert.Equal([("said-1", DrivenReach.Steered)], told);
+        Assert.Empty(inbox.State.Queued);
+        Assert.Equal(0, stopped);
+
+        var next = inbox.NextOrClose();
+        Assert.Same(answer.Task, next?.Steered);
+        answer.SetResult("injected");
+        Assert.Null(inbox.NextOrClose());
+    }
+
+    /// <summary>
+    /// STEER2a: before the session's first prompt is on the wire no turn runs to steer: the words are held for right after it,
+    /// as any word said then is, and the answer says why the press was not carried out.
+    /// </summary>
+    [Fact]
+    public async Task Sending_now_before_the_first_prompt_left_holds_the_words_and_says_why()
+    {
+        var steered = 0;
+        var inbox = new DrivenInbox(_ => { });
+
+        Assert.Equal(new SentNow(null, false, SendNowWhy.Opening), await inbox.HoldNowAsync(Said("said while it opened")));
+
+        inbox.Attach(() => Task.CompletedTask, _ => new TaskCompletionSource<string>().Task, _ => { steered++; return Task.FromResult("injected"); });
+        Assert.Equal(new SentNow("next-step", false, SendNowWhy.Opening), await inbox.HoldNowAsync(Said("said before it left")));
+
+        Assert.Equal(0, steered);
+        Assert.Equal(["said while it opened", "said before it left"], inbox.State.Queued.Select(m => m.Text));
+    }
+
+    /// <summary>
+    /// STEER2a (D90): on a door that takes words only at the turn's end, *Send now* holds the words as before and stops the turn
+    /// so they go next; nothing is withdrawn.
+    /// </summary>
+    [Fact]
+    public async Task Sending_now_on_a_turn_end_door_holds_the_words_and_stops_the_turn_so_they_go_next()
+    {
+        var stopped = 0;
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(() => { stopped++; return Task.CompletedTask; });
+
+        var now = await inbox.HoldNowAsync(Said("stop: the tests are in /spec"));
+
+        Assert.Equal(new SentNow("turn-end", true, null), now);
+        Assert.Equal(1, stopped);
+        Assert.Equal("stop: the tests are in /spec", inbox.TakeOrClose()?.Text);
+    }
+
+    /// <summary>
+    /// STEER2a: a door that can neither steer nor stop its turn keeping the session (the native door's run) holds the words as
+    /// before, and says so by its code; a next-step door whose agent never said it steers sends them at its next step, as said.
+    /// </summary>
+    [Fact]
+    public async Task Sending_now_where_the_door_has_no_way_holds_or_sends_the_words_as_before_and_says_why()
+    {
+        var holding = new DrivenInbox(_ => { });
+        holding.Attach(interrupt: null);
+        var sent = new List<string>();
+        var stopped = 0;
+        var sending = new DrivenInbox(_ => { });
+        sending.Attach(
+            () => { stopped++; return Task.CompletedTask; },
+            message => { sent.Add(message.Text); return new TaskCompletionSource<string>().Task; });
+        sending.Flow();
+
+        Assert.Equal(new SentNow("turn-end", false, SendNowWhy.NoInterrupt), await holding.HoldNowAsync(Said("one")));
+        Assert.Equal(new SentNow("next-step", false, SendNowWhy.NoInterrupt), await sending.HoldNowAsync(Said("two")));
+
+        Assert.Equal(["one"], holding.State.Queued.Select(m => m.Text));
+        Assert.Equal(["two"], sent);
+        Assert.Equal(0, stopped);
+        sending.Close();
+        Assert.Null(await sending.HoldNowAsync(Said("too late")));
+    }
+
     /// <summary>A word already sent is the session's, so closing hands back only what never left.</summary>
     [Fact]
     public void Closing_a_door_that_takes_words_mid_turn_hands_back_nothing_it_sent()

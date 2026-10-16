@@ -31,12 +31,15 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     private readonly object _gate = new();
     private readonly List<ChatMessage> _held = [];
     private readonly Queue<Task<string>> _sent = new();
+    // The steers *Send now* sent (STEER2a), each until the agent answered it: where it answered `injected` the words were taken.
+    private readonly Queue<Task<string>> _steered = new();
     private bool _closed;
     private bool _flowing;
     private int _said;
     private DrivenReach? _reach;
     private Func<Task>? _interrupt;
     private Func<ChatMessage, Task<string>>? _deliver;
+    private Func<ChatMessage, Task<string>>? _steer;
     private Action<ChatMessage, DrivenReach>? _told;
     private Action? _closing;
     private Action<ChatMessage>? _withdrawn;
@@ -75,12 +78,18 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     /// Sends one word as a prompt now and completes with its answer; null where the agent takes no prompt during a turn,
     /// and every word waits for the turn's end.
     /// </param>
-    public void Attach(Func<Task>? interrupt, Func<ChatMessage, Task<string>>? deliver = null)
+    /// <param name="steer">
+    /// The person's *Send now* on that door (STEER2a): steers one word into the running turn and completes with the agent's
+    /// outcome, the words taken where it is <c>injected</c>. Null where the agent never said it steers.
+    /// </param>
+    public void Attach(
+        Func<Task>? interrupt, Func<ChatMessage, Task<string>>? deliver = null, Func<ChatMessage, Task<string>>? steer = null)
     {
         lock (_gate)
         {
             _interrupt = interrupt;
             _deliver = deliver;
+            _steer = deliver is null ? null : steer;
             _reach = deliver is null ? DrivenReach.TurnEnd : DrivenReach.NextStep;
             if (_closed) return;
 
@@ -193,6 +202,54 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     }
 
     /// <summary>
+    /// The person's *Send now* (STEER2a, D136's 2026-10-16 note), carried out by the door it has. Where the agent steers and its
+    /// first prompt is on the wire, the words are steered into the running turn at once, told with the reach <c>now</c>. On a
+    /// door that holds words for the turn's end they are held as <see cref="Hold"/> holds them, and the turn is stopped so they
+    /// go next (D90). Where the door can do neither, or the first prompt has not left, they go as <see cref="Hold"/> sends
+    /// them, and the answer says why by its code. Null once the session has stopped taking any.
+    /// </summary>
+    /// <remarks>
+    /// The steer is answered by the run (<see cref="NextOrClose"/>), which closes nothing while one is on its way. The stop is
+    /// asked once the words are held, outside the lock, as <see cref="SendNowAsync"/> asks it.
+    /// </remarks>
+    public async Task<SentNow?> HoldNowAsync(ChatMessage message)
+    {
+        Func<Task>? interrupt = null;
+        SentNow now;
+        lock (_gate)
+        {
+            if (_closed) return null;
+            if (_reach == DrivenReach.NextStep && _flowing && _steer is { } steer)
+            {
+                var said = message with { Id = $"said-{++_said}" };
+                Tell(said, DrivenReach.Steered);
+                Steer(steer, said);
+                Publish();
+                return new SentNow(SendNowWhy.Spelled(DrivenReach.Steered), Now: true, Why: null);
+            }
+
+            var reach = _reach;
+            Hold(message);
+            if (reach is null || reach == DrivenReach.NextStep && !_flowing)
+            {
+                now = new SentNow(SendNowWhy.Spelled(reach), Now: false, SendNowWhy.Opening);
+            }
+            else if (reach == DrivenReach.TurnEnd && _interrupt is not null)
+            {
+                interrupt = _interrupt;
+                now = new SentNow(SendNowWhy.Spelled(reach), Now: true, Why: null);
+            }
+            else
+            {
+                now = new SentNow(SendNowWhy.Spelled(reach), Now: false, SendNowWhy.NoInterrupt);
+            }
+        }
+
+        if (interrupt is not null) await interrupt().ConfigureAwait(false);
+        return now;
+    }
+
+    /// <summary>
     /// Take another agent's words only where they reach the running turn (SESSONE2b, D155): on the door that takes words during
     /// a turn (STEER1), as <see cref="Hold"/> takes them. False on a door that holds words for the turn's end, where they would be
     /// prompted after it and extend the run, before the door is known, and once the session has stopped taking any.
@@ -217,7 +274,11 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         lock (_gate)
         {
             if (_closed) return null;
-            if (_sent.TryDequeue(out var answer))
+            if (_steered.TryDequeue(out var steered))
+            {
+                next = new DrivenNext(null, null) { Steered = steered };
+            }
+            else if (_sent.TryDequeue(out var answer))
             {
                 next = new DrivenNext(null, answer);
             }
@@ -255,7 +316,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
                 next = _held[0];
                 _held.RemoveAt(0);
             }
-            else if (_sent.Count > 0)
+            else if (_sent.Count > 0 || _steered.Count > 0)
             {
                 return null;
             }
@@ -286,7 +347,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
             if (_closed) return [];
             taken = [.. _held];
             _held.Clear();
-            if (taken.Count == 0 && _sent.Count == 0)
+            if (taken.Count == 0 && _sent.Count == 0 && _steered.Count == 0)
             {
                 _closed = true;
                 closing = _closing;
@@ -314,6 +375,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
             left = [.. _held];
             _held.Clear();
             _sent.Clear();
+            _steered.Clear();
             _closed = true;
             closing = _closing;
             Publish();
@@ -359,6 +421,23 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         // Observed here as well as by the run, which may have ended before it reads this one.
         _ = answer.ContinueWith(static sent => sent.Exception, TaskScheduler.Default);
         _sent.Enqueue(answer);
+    }
+
+    /// <summary>Steer one word into the running turn now (STEER2a), under the gate as <see cref="Send"/> sends; the run waits for its answer.</summary>
+    private void Steer(Func<ChatMessage, Task<string>> steer, ChatMessage message)
+    {
+        Task<string> answer;
+        try
+        {
+            answer = steer(message);
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            answer = Task.FromException<string>(error);
+        }
+
+        _ = answer.ContinueWith(static steered => steered.Exception, TaskScheduler.Default);
+        _steered.Enqueue(answer);
     }
 
     /// <summary>Tell the record what was said. Called under the gate, so told in order; a listener's failure is its own.</summary>
