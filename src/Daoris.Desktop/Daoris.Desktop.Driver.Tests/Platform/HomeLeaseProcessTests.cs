@@ -5,22 +5,23 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// One live driver loop per home (DRV8a, D104). A stray headless loop took a quest two seconds before the
-/// desktop's own: the quest lock held, but a second loop on one home is almost never meant.
+/// One live driver loop per home (DRV8a, D104), now the home's lease (HOMELEASE1). A stray headless loop took a quest two
+/// seconds before the desktop's own: the quest lock held, but a second loop on one home is almost never meant. The rows that
+/// start a process: an exited one's id, and a junction to the home made by <c>cmd</c>. The rest are <see cref="HomeLeaseTests"/>'.
 /// </summary>
 /// <remarks>
-/// A lock naming THIS test process is a live driver as far as any acquisition can tell — which is what a
+/// A lease naming THIS test process is a live driver as far as any acquisition can tell — which is what a
 /// loop elsewhere on the machine looks like, without spawning one.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
-public sealed class DriverLockTests : IDisposable
+public sealed class HomeLeaseProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(
         Path.GetTempPath(), "daoris-driver-lock-" + Guid.NewGuid().ToString("N")[..8]);
 
-    private string LockFile => Path.Combine(_home, "driver.lock");
+    private string LeaseFile => Path.Combine(_home, HomeLease.FileName);
 
-    public DriverLockTests() => Directory.CreateDirectory(_home);
+    public HomeLeaseProcessTests() => Directory.CreateDirectory(_home);
 
     public void Dispose()
     {
@@ -29,7 +30,7 @@ public sealed class DriverLockTests : IDisposable
 
     /// <summary>The file a live driver writes, by hand: the file is the contract (twins.md).</summary>
     private void Plant(string kind, int pid, long started, string since = "2026-09-30T08:02:13+00:00") =>
-        File.WriteAllText(LockFile, new JsonObject
+        File.WriteAllText(LeaseFile, new JsonObject
         {
             ["kind"] = kind, ["pid"] = pid, ["started"] = started, ["since"] = since,
         }.ToJsonString());
@@ -43,18 +44,18 @@ public sealed class DriverLockTests : IDisposable
     [Fact]
     public void A_free_home_is_taken_named_after_the_driver_and_let_go_on_release()
     {
-        var held = DriverLock.TryAcquire(_home, DriverKind.Headless, out var holder);
+        var held = HomeLease.TryAcquire(_home, LeaseKind.Headless, out var holder);
 
         Assert.NotNull(held);
         Assert.Null(holder);
         Assert.True(held!.Holds);
-        var named = DriverLock.HeldBy(_home);
-        Assert.Equal(DriverKind.Headless, named!.Kind);
+        var named = HomeLease.HeldBy(_home);
+        Assert.Equal(LeaseKind.Headless, named!.Kind);
         Assert.Equal(Environment.ProcessId, named.Pid);
 
         held.Dispose();
-        Assert.False(File.Exists(LockFile));
-        Assert.Null(DriverLock.HeldBy(_home));
+        Assert.False(File.Exists(LeaseFile));
+        Assert.Null(HomeLease.HeldBy(_home));
     }
 
     /// <summary>🔴 A home a live driver holds is refused, and the refusal names it: which door, its process, and since when.</summary>
@@ -63,13 +64,13 @@ public sealed class DriverLockTests : IDisposable
     {
         Plant("desktop", Environment.ProcessId, OurStart());
 
-        var held = DriverLock.TryAcquire(_home, DriverKind.Headless, out var holder);
+        var held = HomeLease.TryAcquire(_home, LeaseKind.Headless, out var holder);
 
         Assert.Null(held);
-        Assert.Equal(DriverKind.Desktop, holder!.Kind);
+        Assert.Equal(LeaseKind.Desktop, holder!.Kind);
         Assert.Equal(Environment.ProcessId, holder.Pid);
         Assert.Equal(DateTimeOffset.Parse("2026-09-30T08:02:13+00:00"), holder.Since);
-        var said = DriverLock.Refusal(_home, holder);
+        var said = HomeLease.Refusal(_home, holder);
         Assert.Contains("the desktop", said);
         Assert.Contains($"pid {Environment.ProcessId}", said);
         Assert.Contains("since", said);
@@ -80,48 +81,48 @@ public sealed class DriverLockTests : IDisposable
     [Fact]
     public void A_second_loop_on_a_held_home_is_refused_until_the_first_lets_go()
     {
-        using var first = DriverLock.TryAcquire(_home, DriverKind.Desktop, out _);
+        using var first = HomeLease.TryAcquire(_home, LeaseKind.Desktop, out _);
         Assert.NotNull(first);
 
-        Assert.Null(DriverLock.TryAcquire(_home, DriverKind.Headless, out var holder));
-        Assert.Equal(DriverKind.Desktop, holder!.Kind);
+        Assert.Null(HomeLease.TryAcquire(_home, LeaseKind.Headless, out var holder));
+        Assert.Equal(LeaseKind.Desktop, holder!.Kind);
 
         first!.Dispose();
-        using var second = DriverLock.TryAcquire(_home, DriverKind.Headless, out _);
+        using var second = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
         Assert.NotNull(second);
     }
 
     /// <summary>
-    /// `--share`, the rare deliberate case: beside a live driver it runs without the lock and says whose
-    /// home it shares — and letting go leaves the first driver's lock where it is.
+    /// `--share`, the rare deliberate case: beside a live driver it runs without the lease and says whose
+    /// home it shares — and letting go leaves the first driver's lease where it is.
     /// </summary>
     [Fact]
     public void Sharing_runs_beside_a_live_driver_and_leaves_its_lock_alone()
     {
         Plant("desktop", Environment.ProcessId, OurStart());
-        var before = File.ReadAllText(LockFile);
+        var before = File.ReadAllText(LeaseFile);
 
-        var beside = DriverLock.Share(_home, DriverKind.Headless);
+        var beside = HomeLease.Share(_home, LeaseKind.Headless, out _)!;
 
         Assert.False(beside.Holds);
-        Assert.Equal(DriverKind.Desktop, beside.Beside!.Kind);
+        Assert.Equal(LeaseKind.Desktop, beside.Beside!.Kind);
         beside.Dispose();
-        Assert.Equal(before, File.ReadAllText(LockFile));
+        Assert.Equal(before, File.ReadAllText(LeaseFile));
     }
 
     /// <summary>Sharing a home nobody drives takes it, so the next loop is told of this one.</summary>
     [Fact]
     public void Sharing_a_free_home_takes_it()
     {
-        using var shared = DriverLock.Share(_home, DriverKind.Headless);
+        using var shared = HomeLease.Share(_home, LeaseKind.Headless, out _)!;
 
         Assert.True(shared.Holds);
         Assert.Null(shared.Beside);
-        Assert.Equal(DriverKind.Headless, DriverLock.HeldBy(_home)!.Kind);
+        Assert.Equal(LeaseKind.Headless, HomeLease.HeldBy(_home)!.Kind);
     }
 
     /// <summary>
-    /// 🔴 A stale lock never blocks: its process gone, its process id now another process's (a start
+    /// 🔴 A stale lease never blocks: its process gone, its process id now another process's (a start
     /// time that does not match), or a file that does not read. Each is replaced by the loop that asks.
     /// </summary>
     [Theory]
@@ -139,29 +140,63 @@ public sealed class DriverLockTests : IDisposable
                 Plant("headless", Environment.ProcessId, OurStart() - TimeSpan.FromMinutes(5).Ticks);
                 break;
             default:
-                File.WriteAllText(LockFile, "{ \"kind\": \"headless\", \"pid\": ");
+                File.WriteAllText(LeaseFile, "{ \"kind\": \"headless\", \"pid\": ");
                 break;
         }
 
-        Assert.Null(DriverLock.HeldBy(_home));
-        using var held = DriverLock.TryAcquire(_home, DriverKind.Desktop, out var holder);
+        Assert.Null(HomeLease.HeldBy(_home));
+        using var held = HomeLease.TryAcquire(_home, LeaseKind.Desktop, out var holder);
 
         Assert.NotNull(held);
         Assert.Null(holder);
-        Assert.Equal(DriverKind.Desktop, DriverLock.HeldBy(_home)!.Kind);
+        Assert.Equal(LeaseKind.Desktop, HomeLease.HeldBy(_home)!.Kind);
     }
 
-    /// <summary>A release takes away only the lock it wrote — never one another driver has written since.</summary>
+    /// <summary>A release takes away only the lease it wrote — never one another driver has written since.</summary>
     [Fact]
     public void A_release_removes_only_the_lock_it_wrote()
     {
-        var held = DriverLock.TryAcquire(_home, DriverKind.Headless, out _);
+        var held = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
         Plant("desktop", Environment.ProcessId, OurStart());
 
         held!.Dispose();
 
-        Assert.True(File.Exists(LockFile));
-        Assert.Equal(DriverKind.Desktop, DriverLock.HeldBy(_home)!.Kind);
+        Assert.True(File.Exists(LeaseFile));
+        Assert.Equal(LeaseKind.Desktop, HomeLease.HeldBy(_home)!.Kind);
+    }
+
+    /// <summary>
+    /// 🔴 HOMELEASE1: a junction to the home is another path to the same folder, and meets the same lease and the same id. Made
+    /// by <c>cmd /c mklink /J</c>, which needs no elevation.
+    /// </summary>
+    [Fact]
+    public void A_junction_to_the_home_meets_the_same_lease()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var junction = _home + "-junction";
+        using (var made = Process.Start(new ProcessStartInfo("cmd", ["/c", "mklink", "/J", junction, _home])
+               {
+                   UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true,
+               })!)
+        {
+            made.StandardOutput.ReadToEnd();
+            made.WaitForExit();
+            Assert.Equal(0, made.ExitCode);
+        }
+
+        try
+        {
+            using var held = HomeLease.TryAcquire(_home, LeaseKind.Verb, out _, "trees clean");
+
+            Assert.Null(HomeLease.TryAcquire(junction, LeaseKind.Desktop, out var holder));
+            Assert.Equal("trees clean", holder!.What);
+            Assert.Equal(HomeIdentity.Read(_home), HomeIdentity.Read(junction));
+        }
+        finally
+        {
+            // A junction is removed as a directory, without its target's files.
+            Directory.Delete(junction);
+        }
     }
 
     /// <summary>A process id no process has any more: one this test started and waited out.</summary>

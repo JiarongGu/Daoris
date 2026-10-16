@@ -22,6 +22,11 @@
          and writes on the disk, and the swap. Each uses the base library alone; `StagedBuildTests` holds them. -->
     <Compile Include="..\Daoris.Desktop.Driver\Setup\StagedBuild.cs" Link="StagedBuild.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Setup\InstallSwap.cs" Link="InstallSwap.cs" />
+    <!-- The home's lease (HOMELEASE1, the terminal RPC design §5): the swap holds it while it replaces app/, so no verb the
+         install carries acts alone from a folder being replaced. With the home's id, which a lease records. Each uses the
+         base library alone; `HomeLeaseTests` holds them. -->
+    <Compile Include="..\Daoris.Desktop.Driver\Platform\HomeLease.cs" Link="HomeLease.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Platform\HomeIdentity.cs" Link="HomeIdentity.cs" />
   </ItemGroup>
 
 </Project>

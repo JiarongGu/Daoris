@@ -28,7 +28,7 @@ import { once } from 'node:events';
 import { join } from 'node:path';
 import { finished } from 'node:stream/promises';
 import { DaorisError, RefusalError } from '../platform/errors.ts';
-import { daorisHome, THIS_INSTALL } from '../platform/home.ts';
+import { daorisHome, homeId, isHomeId, THIS_INSTALL } from '../platform/home.ts';
 import type { Fetcher } from '../agents/channels.ts';
 
 const NO_SERVICE =
@@ -64,8 +64,10 @@ export const RUNNING_FILE = 'running.json';
 /**
  * The service the running desktop holds for `home` (FINDDAORIS1, D171 point 1), from the address it left there: taken only
  * while the process it names lives, the address is this machine's (a terminal's verbs send this machine's paths, D46), and
- * its status door answers as a Daoris host's, naming its search tier. Otherwise why not, in a sentence that says how to start
- * Daoris. The driver's `RunningService` holds the same contract in C#.
+ * its status door answers as this home's Daoris host: naming its search tier and this home's id (HOMEID1, `home.json`),
+ * asked with redirects off, since an address that sends its asker elsewhere has not answered. This CLI cannot read another
+ * process's start, so a process id the system gave to another process since lives to it: the id is what tells. Otherwise why
+ * not, in a sentence that says how to start Daoris. The driver's `RunningService` holds the same contract in C#.
  */
 export async function runningService(
   home: string, install: string, get: Get = fetch, lives: (pid: number) => boolean = processLives,
@@ -80,20 +82,32 @@ export async function runningService(
     };
   }
 
-  let daoris = false;
+  let answered: { home: string | null } | null = null;
   try {
-    const response = await get(`${entry.url}/api/status`, { method: 'GET', signal: AbortSignal.timeout(2_000) });
+    const response = await get(`${entry.url}/api/status`, { method: 'GET', redirect: 'manual', signal: AbortSignal.timeout(2_000) });
     const status: unknown = await response.json().catch(() => null);
-    daoris = response.ok && typeof status === 'object' && status !== null && typeof (status as Record<string, unknown>).tier === 'string';
+    if (response.ok && typeof status === 'object' && status !== null && typeof (status as Record<string, unknown>).tier === 'string') {
+      const named = (status as Record<string, unknown>).home;
+      answered = { home: isHomeId(named) ? named : null };
+    }
   } catch {
-    daoris = false;
+    answered = null;
   }
 
-  return daoris
-    ? { url: entry.url }
-    : {
+  if (!answered) {
+    return {
       why: `Daoris is running on ${home} (pid ${entry.pid}), and nothing answered as its service at ${entry.url}: run this `
         + `again once its window is up, or start it again (${start}).`,
+    };
+  }
+
+  const mine = homeId(home);
+  return mine && answered.home === mine
+    ? { url: entry.url }
+    : {
+      why: `Daoris is running on ${home} (pid ${entry.pid}), and the service at ${entry.url} answered as `
+        + `${answered.home ? "another Daoris home's" : "no Daoris home's"}, so nothing was sent to it: start Daoris on this home `
+        + `(${start}), or set DAORIS_SERVICE_URL to the service you mean.`,
     };
 }
 

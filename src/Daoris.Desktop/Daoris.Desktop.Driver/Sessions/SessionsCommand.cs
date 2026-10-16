@@ -78,10 +78,11 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     public TimeSpan Answer { get; init; } = DriverHttp.Timeout;
 
     /// <summary>
-    /// Whether a driver loop holds this home (DRV8a, <see cref="DriverLock.HeldBy"/>): where none does, nothing would take a
-    /// say up, so the verb keeps the words on the record itself (MSG1e, D137 §5.2).
+    /// Whether a driver loop holds this home (DRV8a, <see cref="HomeLease.HeldBy"/>): where none does, nothing would take a
+    /// say up, so the verb keeps the words on the record itself (MSG1e, D137 §5.2). A verb's or a migration's hold is no loop
+    /// (HOMELEASE1): only an instance's counts, and this verb's own lease among them never does.
     /// </summary>
-    public Func<bool> LoopRuns { get; init; } = () => DriverLock.HeldBy(Home) is not null;
+    public Func<bool> LoopRuns { get; init; } = () => HomeLease.HeldBy(Home) is { IsInstance: true };
 
     /// <summary>
     /// The cool-off a start on an adapter would read for an account, or null where it is ready (MSG1g's <c>go-on-new</c>): read

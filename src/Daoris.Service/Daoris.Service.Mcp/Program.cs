@@ -20,7 +20,8 @@ using ModelContextProtocol.Server;
 // published in one repository's session is waiting when another repository's session starts.
 //
 //   DAORIS_HOME            where every machine-local file lives (D63) — the installed desktop's own
-//                          `data/`, set for the account; with neither it nor the DB named, exit 2
+//                          `data/`, which a connector the install carries takes where none is named
+//                          (SERVICEHOME2); in a workspace build, with neither it nor the DB named, exit 2
 //   DAORIS_KNOWLEDGE_ROOT  where the repositories are      (default: the parent of this workspace)
 //   DAORIS_KNOWLEDGE_DB    where the index is kept         (default: $DAORIS_HOME/knowledge.db)
 //   DAORIS_REMOTE_CONFIG   the machine's remotes, by workspace (default: $DAORIS_HOME/remotes.json —
@@ -45,6 +46,12 @@ catch (IOException)
     // No console attached (the usual case when a client launches this) — the streams are already
     // byte pipes and need no re-encoding.
 }
+
+// A connector the install carries finds its home where it runs (SERVICEHOME2, D171 point 1): a person's own agent starts it
+// from its `.mcp.json` with no variable set, as the install's launchers set none, so where none is named it takes the
+// install's own `data/` as this process's home, as the desktop and the driver host do (D63), before the log, the index or
+// the quest files read one. A workspace build is no install, and still needs one named.
+DaorisHome.Adopt(AppContext.BaseDirectory);
 
 var builder = Host.CreateApplicationBuilder(args);
 
