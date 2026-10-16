@@ -3,6 +3,26 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
+/// Which part of the look a look runs (FABRIC-EVENT3a, the fabric events design §A3, §C5, §C6 link 5). The whole look's only
+/// further parts are the remote sync at its head and the lost-claim stop after it, so a wake defers those to the <c>look</c>
+/// topic's deadline and skips no judgement the whole look would have made.
+/// </summary>
+public enum LookPart
+{
+    /// <summary>
+    /// The <c>look</c> topic's: the remote sync and the lost-claim stop, then the local plan. At the topic's deadline
+    /// (<c>pollSeconds</c> after the last whole look), at the loop's start, after a failed look's pace, and on a plain nudge.
+    /// </summary>
+    Look,
+
+    /// <summary>
+    /// A wake's (a <c>ledger</c> family moved, a terminal's words kept, a session's end): the local plan alone, every part of the
+    /// look but the remote sync and the lost-claim stop, the sync after an ending it reports included.
+    /// </summary>
+    Plan,
+}
+
+/// <summary>
 /// The watch loop, owned once by the library — the headless host and the desktop shell both ran the
 /// same algorithm (re-read the config, tick, wait) as two copies, four six-argument constructions
 /// between them. Each host keeps only its reporting half: what a tick report BECOMES (console lines,
@@ -87,14 +107,15 @@ public sealed class DriverWatch(
     public BranchTidying? Tidying { get; init; }
 
     /// <summary>Look now rather than at the next poll — a control that just changed something should
-    /// not leave the person watching a countdown. A plain nudge carries no topic, and means everything.</summary>
+    /// not leave the person watching a countdown. A plain nudge carries no topic, and means everything: the whole look, the remote
+    /// sync first (FABRIC-EVENT3a).</summary>
     public void Nudge() => Woken(null);
 
     /// <summary>
     /// Look now, because <paramref name="topic"/>'s <paramref name="subject"/> moved (FABRIC-EVENT2, the design §A3): a wake from a
-    /// change source, never a value. The look is the whole look still, as a plain nudge's is, until the look is split into its
-    /// topics (FABRIC-EVENT3a); the topic and subject are what its <c>watch.looked</c> line says woke it. A subject is a name, never
-    /// a path.
+    /// change source, never a value. It runs the look's local plan alone (FABRIC-EVENT3a, §C6 link 5), and leaves the remote sync to
+    /// the <c>look</c> topic's deadline, unless that deadline came with it. The topic and subject are what its <c>watch.looked</c>
+    /// line says woke it. A subject is a name, never a path.
     /// </summary>
     public void Nudge(string topic, string subject) => Woken(new Wake(topic, subject));
 
@@ -109,8 +130,13 @@ public sealed class DriverWatch(
 
     private sealed record Wake(string Topic, string Subject);
 
+    // Whether a plain nudge came since the loop last took its nudges up (FABRIC-EVENT3a): set before the nudge is counted, so the look
+    // that counts it is whole, whatever topic's wake came after it and replaced `_woke`.
+    private int _everything;
+
     private void Woken(Wake? wake)
     {
+        if (wake is null) Interlocked.Exchange(ref _everything, 1);
         Volatile.Write(ref _woke, wake);
         Interlocked.Increment(ref _nudges);
 
@@ -183,6 +209,40 @@ public sealed class DriverWatch(
         Wake? woke = null;
         var counted = Volatile.Read(ref _nudges);
 
+        // The `look` topic's deadline (FABRIC-EVENT3a, the design §C5): `pollSeconds` after the last whole look ended, whatever woke
+        // the looks between, so a stream of wakes never holds the reconciliation, or the remote sync in it, back.
+        var whole = Stopwatch.GetTimestamp();
+
+        // The look is link 5 of the design §C6 (FABRIC-EVENT3a), on this loop's own chain: a wake is a `ledger` event, and runs the
+        // local plan alone; the `look` topic's deadline is its `timer(look)`, and runs the whole look, the remote sync first. The loop
+        // stays the topic's queue, as it was the look's: what wakes it during a look is one look after it, and its wait hears a
+        // session's end, which a change watch's pump does not, so the watch under the chain is never started.
+        await using var queue = new ChangeWatch();
+        var chain = new Chain(queue) { Log = Log };
+        TickReport? looked = null;
+        chain.Bind(ChainRanks.Plan, async (heard, token) =>
+        {
+            looked = await LookAsync(heard.Any(cause => cause.Key == Whole) ? LookPart.Look : LookPart.Plan, token).ConfigureAwait(false);
+            return new ChainFired(looked.Progressed ? 1 : 0, []);
+        });
+
+        // One look of the part link 5 heard, asked once whether an update drains, so the plan and what the report says of it
+        // agree (UPDATE1).
+        async Task<TickReport> LookAsync(LookPart part, CancellationToken token)
+        {
+            var draining = Draining?.Invoke() == true;
+            var report = await new Driver(
+                    service, draining ? InstallUpdate.Drained(config) : config, AdapterSet.Built(), home, processes, sync, output,
+                    _harnesses, usage, hooks, events, browser, Running)
+                { Runner = Runner, Stops = Stops, Log = Log, Reviews = Reviews, Part = part }
+                .TickAsync(token, failed: said =>
+                {
+                    carried.AddRange(said.Events);
+                    carriedEnded.AddRange(said.Concluded);
+                }).ConfigureAwait(false);
+            return draining ? report with { Considerations = InstallUpdate.HeldFor(report.Considerations, config) } : report;
+        }
+
         // What the sessions run on: the loop's own token, and cancelled by the loop itself when a failure
         // ends it, so no session outlives the loop that watches it (DEV3).
         using var sessions = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -193,6 +253,9 @@ public sealed class DriverWatch(
                 var nudged = Volatile.Read(ref _nudges);
                 var nudges = nudged - counted;
                 counted = nudged;
+                // Taken after the count, so a plain nudge the count missed still makes this look whole, and is looked at again.
+                var everything = Interlocked.Exchange(ref _everything, 0) == 1;
+                var part = by is "start" or "pace" || everything || Due(whole, config) ? LookPart.Look : LookPart.Plan;
                 var failed = false;
                 var began = Stopwatch.GetTimestamp();
                 try
@@ -214,18 +277,9 @@ public sealed class DriverWatch(
 
                     if (!followed) following ??= FollowEveryLineAsync(config, ct);
 
-                    // Asked once per look, so the plan and what the report says of it agree (UPDATE1).
-                    var draining = Draining?.Invoke() == true;
-                    var report = await new Driver(
-                            service, draining ? InstallUpdate.Drained(config) : config, AdapterSet.Built(), home, processes, sync, output,
-                            _harnesses, usage, hooks, events, browser, Running)
-                        { Runner = Runner, Stops = Stops, Log = Log, Reviews = Reviews }
-                        .TickAsync(sessions.Token, failed: part =>
-                        {
-                            carried.AddRange(part.Events);
-                            carriedEnded.AddRange(part.Concluded);
-                        }).ConfigureAwait(false);
-                    if (draining) report = report with { Considerations = InstallUpdate.HeldFor(report.Considerations, config) };
+                    looked = null;
+                    await chain.FireAsync([Cause(part, woke)], sessions.Token).ConfigureAwait(false);
+                    var report = looked ?? throw new InvalidOperationException("link 5 of the loop's chain never ran the look.");
                     if (carried.Count > 0 || carriedEnded.Count > 0)
                     {
                         report = report with { Events = [.. carried, .. report.Events], Concluded = [.. carriedEnded, .. report.Concluded] };
@@ -257,7 +311,7 @@ public sealed class DriverWatch(
 
                     if (tidying is null && tidy.Due) tidying = TidyAsync(tidy, ct);
 
-                    Looked(by, woke, nudges, began, failed: false);
+                    Looked(by, woke, part, nudges, began, failed: false);
                     await onReport(report, config).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -268,10 +322,13 @@ public sealed class DriverWatch(
                 catch (Exception error) when (onError is not null)
                 {
                     failed = true;
-                    Looked(by, woke, nudges, began, failed: true);
+                    Looked(by, woke, part, nudges, began, failed: true);
                     SayCarried();
                     await onError(error).ConfigureAwait(false);
                 }
+
+                // A whole look that failed was still the deadline's: the next comes a pace later, as it always did, not at once.
+                if (part == LookPart.Look) whole = Stopwatch.GetTimestamp();
 
                 // Interruptible four ways: cancellation ends the loop; the pace, a nudge and a session ending
                 // each end the wait — an ending at once, so a freed slot is used and the ending is said. Not
@@ -298,12 +355,13 @@ public sealed class DriverWatch(
                         continue;
                     }
 
+                    // Up to the `look` topic's deadline (FABRIC-EVENT3a), or the whole pace after a failed look, as it always was.
                     var pace = TimeSpan.FromSeconds(config.PollSeconds);
-                    var waiting = Stopwatch.GetTimestamp();
-                    await Running.NextAsync(pace, wait.Token, endings: !failed).ConfigureAwait(false);
+                    var left = failed ? pace : pace - Stopwatch.GetElapsedTime(whole);
+                    await Running.NextAsync(left > TimeSpan.Zero ? left : TimeSpan.Zero, wait.Token, endings: !failed).ConfigureAwait(false);
                     woke = Volatile.Read(ref _nudges) != nudged ? Volatile.Read(ref _woke) : null;
                     by = Volatile.Read(ref _nudges) != nudged ? "nudge"
-                        : failed || Stopwatch.GetElapsedTime(waiting) >= pace - Early ? "pace"
+                        : failed || Due(whole, config) ? "pace"
                         : "ended";
                 }
             }
@@ -328,17 +386,36 @@ public sealed class DriverWatch(
     /// <summary>How much sooner than its pace a wait may end and still be the pace's: a timer's own granularity.</summary>
     private static readonly TimeSpan Early = TimeSpan.FromMilliseconds(50);
 
+    /// <summary>What link 5 hears as the <c>look</c> topic's deadline: <c>timer(look)</c>, the whole look.</summary>
+    private static readonly string Whole = ChainEvents.TimerOf(ChangeTopics.Look);
+
+    /// <summary>Whether the <c>look</c> topic's deadline has come: <c>pollSeconds</c> since the last whole look ended, a timer's granularity allowed.</summary>
+    private static bool Due(long whole, DriverConfig config) =>
+        Stopwatch.GetElapsedTime(whole) >= TimeSpan.FromSeconds(config.PollSeconds) - Early;
+
+    /// <summary>
+    /// A look's cause on the loop's chain (FABRIC-EVENT3a): the <c>look</c> topic's <c>timer</c> for a whole look; otherwise a
+    /// <c>ledger</c> event naming what moved, its topic kept, since every wake the loop hears is a local fact the plan reads: a
+    /// ledger family, a terminal's words kept on its record, a session's end.
+    /// </summary>
+    private static ChainEvent Cause(LookPart part, Wake? woke) =>
+        part == LookPart.Look
+            ? ChainEvent.Timer(ChangeTopics.Look)
+            : new ChainEvent(ChainEvents.Ledger, woke?.Subject ?? "sessions", woke?.Topic ?? ChangeTopics.Ledger);
+
     /// <summary>
     /// The look, timed (FABRIC-EVENT2, the design §A2): <c>watch.looked</c> with its ms, what woke it (<c>start</c>, <c>pace</c>,
-    /// <c>ended</c> for a session's end, or <c>nudge</c> with the topic and subject a nudge carried, none for a plain one), how many
-    /// nudges it took up, and whether it failed. Up to the report, not the door's handling of it.
+    /// <c>ended</c> for a session's end, or <c>nudge</c> with the topic and subject a nudge carried, none for a plain one), the part
+    /// it ran (FABRIC-EVENT3a: <c>look</c> for the whole look, <c>plan</c> for a wake's local plan), how many nudges it took up, and
+    /// whether it failed. Up to the report, not the door's handling of it.
     /// </summary>
-    private void Looked(string by, Wake? woke, int nudges, long began, bool failed) =>
+    private void Looked(string by, Wake? woke, LookPart part, int nudges, long began, bool failed) =>
         Log?.Info("watch.looked",
             ("ms", (long)Stopwatch.GetElapsedTime(began).TotalMilliseconds),
             ("by", by),
             ("topic", woke?.Topic),
             ("subject", woke?.Subject),
+            ("part", part == LookPart.Look ? "look" : "plan"),
             ("nudges", nudges),
             ("failed", failed));
 
