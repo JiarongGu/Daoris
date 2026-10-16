@@ -295,7 +295,7 @@ public sealed class ChangeStream : IAsyncDisposable
         await _sampling.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            if (!_disposed) Sample();
+            if (!_disposed) await SampleHeldAsync().ConfigureAwait(false);
         }
         finally
         {
@@ -304,12 +304,12 @@ public sealed class ChangeStream : IAsyncDisposable
     }
 
     /// <summary>One sample: the counter, and each family's revision when it moved. Inside <c>_sampling</c>.</summary>
-    private void Sample()
+    private async Task SampleHeldAsync()
     {
         var now = Stopwatch.GetTimestamp();
         if (_observer is not { } observer)
         {
-            if (now >= _reopenAt) Reopen(now, "reconnected");
+            if (now >= _reopenAt) await ReopenAsync(now, "reconnected").ConfigureAwait(false);
             return;
         }
 
@@ -318,19 +318,20 @@ public sealed class ChangeStream : IAsyncDisposable
             if (_identityPace is { } identityPace && now >= _identityAt)
             {
                 _identityAt = now + Ticks(identityPace);
-                if (IdentityAtPath() is { Known: true } found && !string.Equals(found.Id, _identity, StringComparison.Ordinal))
+                if (await IdentityAtPathAsync().ConfigureAwait(false) is { Known: true } found
+                    && !string.Equals(found.Id, _identity, StringComparison.Ordinal))
                 {
                     Close();
-                    Reopen(now, "replaced");
+                    await ReopenAsync(now, "replaced").ConfigureAwait(false);
                     return;
                 }
             }
 
-            var version = Scalar(observer, "PRAGMA data_version;");
+            var version = await GatedAsync(observer, gate => Scalar(gate, "PRAGMA data_version;")).ConfigureAwait(false);
             if (version == _version) return;
 
             // The counter is kept only once the revisions read, so a read a writer held off is read again at the next sample.
-            var revisions = Revisions(observer);
+            var revisions = await GatedAsync(observer, Revisions).ConfigureAwait(false);
             _version = version;
             Interlocked.Increment(ref _seen);
 
@@ -361,7 +362,7 @@ public sealed class ChangeStream : IAsyncDisposable
     /// The observer opened, its identity and baseline read; a new epoch for every open but the first, said in the machine log
     /// with <paramref name="why"/> (<c>reconnected</c> after a lost read, <c>replaced</c> for another database at the path).
     /// </summary>
-    private void Reopen(long now, string why)
+    private async Task ReopenAsync(long now, string why)
     {
         SqliteConnection? observer = null;
         try
@@ -376,9 +377,8 @@ public sealed class ChangeStream : IAsyncDisposable
                 DefaultTimeout = 2,
             }.ToString());
             observer.Open();
-            var identity = Identity(observer);
-            var version = Scalar(observer, "PRAGMA data_version;");
-            var revisions = Revisions(observer);
+            var (identity, version, revisions) = await GatedAsync(
+                observer, gate => (Identity(gate), Scalar(gate, "PRAGMA data_version;"), Revisions(gate))).ConfigureAwait(false);
 
             (_observer, _identity, _version, _revisions) = (observer, identity, version, revisions);
             _identityAt = now + Ticks(_identityPace ?? TimeSpan.Zero);
@@ -413,11 +413,11 @@ public sealed class ChangeStream : IAsyncDisposable
     /// The file's identity: a stamp kept in it, written once by the first observer to find none. A different database at the
     /// path has its own, or none.
     /// </summary>
-    private static string Identity(SqliteConnection observer)
+    private static string Identity(ConnectionGate observer)
     {
         if (StampOf(observer) is { } stamp) return stamp;
 
-        using var write = observer.CreateCommand();
+        using var write = observer.Command();
         write.CommandText = """
             CREATE TABLE IF NOT EXISTS store_identity (one INTEGER PRIMARY KEY CHECK (one = 1), id TEXT NOT NULL);
             INSERT OR IGNORE INTO store_identity (one, id) VALUES (1, lower(hex(randomblob(16))));
@@ -426,11 +426,11 @@ public sealed class ChangeStream : IAsyncDisposable
         return StampOf(observer) ?? throw new InvalidOperationException("the store's identity was written and does not read");
     }
 
-    private static string? StampOf(SqliteConnection connection)
+    private static string? StampOf(ConnectionGate connection)
     {
         try
         {
-            using var read = connection.CreateCommand();
+            using var read = connection.Command();
             read.CommandText = "SELECT id FROM store_identity WHERE one = 1;";
             return read.ExecuteScalar() as string;
         }
@@ -442,7 +442,7 @@ public sealed class ChangeStream : IAsyncDisposable
     }
 
     /// <summary>The stamp of the database at the path now, read apart from the observer; unknown where a writer held it.</summary>
-    private (bool Known, string? Id) IdentityAtPath()
+    private async Task<(bool Known, string? Id)> IdentityAtPathAsync()
     {
         try
         {
@@ -454,7 +454,7 @@ public sealed class ChangeStream : IAsyncDisposable
                 DefaultTimeout = 2,
             }.ToString());
             probe.Open();
-            return (true, StampOf(probe));
+            return (true, await GatedAsync(probe, StampOf).ConfigureAwait(false));
         }
         catch (SqliteException held) when (held.SqliteErrorCode is Busy or Locked)
         {
@@ -467,20 +467,30 @@ public sealed class ChangeStream : IAsyncDisposable
         }
     }
 
-    private static long[] Revisions(SqliteConnection observer)
+    private static long[] Revisions(ConnectionGate observer)
     {
-        using var read = observer.CreateCommand();
+        using var read = observer.Command();
         read.CommandText = ChangeFamilies.Revisions;
         using var row = read.ExecuteReader();
         if (!row.Read()) throw new InvalidOperationException("the families' revisions read no row");
         return [.. Enumerable.Range(0, ChangeFamilies.All.Count).Select(row.GetInt64)];
     }
 
-    private static long Scalar(SqliteConnection connection, string sql)
+    private static long Scalar(ConnectionGate connection, string sql)
     {
-        using var read = connection.CreateCommand();
+        using var read = connection.Command();
         read.CommandText = sql;
         return Convert.ToInt64(read.ExecuteScalar(), CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>
+    /// Short reads on a connection of the stream's own, made through its gate as every command in the service is (SQLITETX1): only
+    /// the sampler uses it, under <c>_sampling</c>, so the gate is never waited on.
+    /// </summary>
+    private static Task<T> GatedAsync<T>(SqliteConnection connection, Func<ConnectionGate, T> read)
+    {
+        var gate = ConnectionGate.For(connection);
+        return gate.RunAsync(() => Task.FromResult(read(gate)), CancellationToken.None);
     }
 
     private static long Ticks(TimeSpan span) => (long)(span.TotalSeconds * Stopwatch.Frequency);
