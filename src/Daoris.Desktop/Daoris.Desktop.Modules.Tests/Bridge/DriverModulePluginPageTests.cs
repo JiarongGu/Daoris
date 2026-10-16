@@ -85,10 +85,52 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
         var help = Assert.Single(Row(answered, "acme.tickets").GetProperty("helpServers").EnumerateArray());
         Assert.Equal("tickets", help.GetProperty("name").GetString());
         Assert.Equal(["search", "get_issue"], Strings(help.GetProperty("allow")));
+        // D170's note: offered, and waiting for the person's approval.
+        Assert.Equal(HelpGrants.Waits, help.GetProperty("state").GetString());
+        Assert.Empty(help.GetProperty("writes").EnumerateArray());
         Assert.Equal(["tickets", "docs"], Strings(Row(answered, "acme.tickets").GetProperty("servers")));
         var offered = Assert.Single(answered.GetProperty("offers").EnumerateArray().Single(o => o.GetProperty("id").GetString() == "acme.offered")
             .GetProperty("helpServers").EnumerateArray());
         Assert.Equal(("wiki", 0), (offered.GetProperty("name").GetString(), offered.GetProperty("allow").GetArrayLength()));
+    }
+
+    /// <summary>
+    /// HELPPLUG1a's tightening (D170's note): <c>PLUGIN_ACTION</c>'s <c>help-approve</c>, <c>help-reads</c> and
+    /// <c>help-withdraw</c> are the person's approval of the exact tools a server offers Ask Daoris, the page's half of
+    /// <c>daoris-driver plugins approve|withdraw</c>; a generic execution tool is refused with its reason.
+    /// </summary>
+    [Fact]
+    public async Task The_page_approves_what_a_plugin_offers_ask_daoris_its_reads_only_or_withdraws_it()
+    {
+        var tickets = Path.Combine(Home, "plugins", "acme.tickets");
+        Directory.CreateDirectory(tickets);
+        File.WriteAllText(Path.Combine(tickets, "plugin.json"), """
+            { "id": "acme.tickets", "servers": [
+                { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search"], "writes": ["create_issue"] },
+                { "name": "shell", "command": ["shell"], "to": ["help"], "allow": ["run_command"] } ] }
+            """);
+        using var loop = Loop();
+        var module = new DriverModule(Bus, loop) { Offers = Path.Combine(Home, "no-offers") };
+        JsonElement Server(JsonElement answered, string name) =>
+            Row(answered, "acme.tickets").GetProperty("helpServers").EnumerateArray().Single(s => s.GetProperty("name").GetString() == name);
+
+        await AnswerAsync(module, "PLUGIN_ACTION", new { action = "help-reads", id = "acme.tickets", server = "tickets" });
+        var reads = Server(await AnswerAsync(module, "PLUGINS"), "tickets");
+        Assert.Equal(HelpGrants.Approved, reads.GetProperty("state").GetString());
+        Assert.Empty(reads.GetProperty("accepted").EnumerateArray());
+
+        await AnswerAsync(module, "PLUGIN_ACTION", new { action = "help-approve", id = "acme.tickets", server = "tickets" });
+        Assert.Equal(["create_issue"], Strings(Server(await AnswerAsync(module, "PLUGINS"), "tickets").GetProperty("accepted")));
+
+        await AnswerAsync(module, "PLUGIN_ACTION", new { action = "help-withdraw", id = "acme.tickets", server = "tickets" });
+        Assert.Equal(HelpGrants.Waits, Server(await AnswerAsync(module, "PLUGINS"), "tickets").GetProperty("state").GetString());
+
+        var shell = Server(await AnswerAsync(module, "PLUGINS"), "shell");
+        Assert.Equal(HelpGrants.Refused, shell.GetProperty("state").GetString());
+        Assert.Contains("`run_command`", shell.GetProperty("refusal").GetString());
+        var refused = await AskAsync(module, "PLUGIN_ACTION", new { action = "help-approve", id = "acme.tickets", server = "shell" });
+        Assert.False(refused.Success);
+        Assert.Contains("`run_command`", refused.Error!.Message);
     }
 
     /// <summary>

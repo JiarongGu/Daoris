@@ -176,8 +176,13 @@ export interface PluginServer {
   env: Record<string, string>;
   /** Who it is handed to (HELPPLUG1a): `sessions`, `help` or both, as declared; absent is sessions alone, as before. */
   to: string[];
-  /** The tools of it Ask Daoris may call, by name, as the plugin declares them; only a server handed to Ask Daoris has any. */
+  /** The tools of it that read, which Ask Daoris may call once the person approves them; only a server handed to Ask Daoris has any. */
   allow: string[];
+  /**
+   * The tools of it that change something outside Daoris (HELPPLUG1a's tightening, D170's note): never allowed silently, only
+   * as writes the person accepted. A tool is in `allow` or here, never both.
+   */
+  writes: string[];
 }
 
 /**
@@ -292,6 +297,16 @@ const empty = (id: string): PluginManifest => ({
   id, apiVersion: API_VERSION, name: id, version: '', description: '', harnesses: [], hooks: null, servers: [], skills: [],
   icon: null, iconProblem: null, tools: [], toolsProblem: null,
 });
+
+/** A server's `allow` or `writes` (HELPPLUG1a): absent is none; otherwise tool names, each once; null where it breaks that. */
+function toolNames(declared: unknown): string[] | null {
+  if (declared === undefined) return [];
+  if (!Array.isArray(declared) || new Set(declared).size !== declared.length
+    || !declared.every((tool) => typeof tool === 'string' && TOOL_NAME.test(tool))) {
+    return null;
+  }
+  return declared as string[];
+}
 
 /** Who a declaration is handed to (HELPPLUG1a, HELPPLUG1b): absent is sessions; otherwise each destination once, at least one. */
 function destinations(declared: unknown): string[] | null {
@@ -476,15 +491,23 @@ export function readManifest(folderName: string, folder: string, asWritten = fal
       if (to === null) {
         return { manifest: empty(id), problem: `server \`${name}\`'s \`to\` must list who it is handed to, once each: \`sessions\`, \`help\` (Ask Daoris) or both.` };
       }
-      const allow = fields.allow === undefined ? [] : fields.allow;
-      if (!Array.isArray(allow) || new Set(allow).size !== allow.length
-        || !allow.every((tool) => typeof tool === 'string' && TOOL_NAME.test(tool))) {
+      const allow = toolNames(fields.allow);
+      if (allow === null) {
         return { manifest: empty(id), problem: `server \`${name}\`'s \`allow\` must list the tools Ask Daoris may call, once each, by name: letters, digits, \`_\` and \`-\`.` };
       }
-      if (allow.length > 0 && !to.includes(SERVER_TO.help)) {
-        return { manifest: empty(id), problem: `server \`${name}\` allows tools in Ask Daoris but is not handed to it: its \`to\` must name \`help\`.` };
+      // HELPPLUG1a's tightening: the tools that change something outside Daoris, which are never allowed silently.
+      const writes = toolNames(fields.writes);
+      if (writes === null) {
+        return { manifest: empty(id), problem: `server \`${name}\`'s \`writes\` must list the tools that change something outside Daoris, once each, by name: letters, digits, \`_\` and \`-\`.` };
       }
-      servers.push({ name, command, env, to, allow: allow as string[] });
+      if ((allow.length > 0 || writes.length > 0) && !to.includes(SERVER_TO.help)) {
+        return { manifest: empty(id), problem: `server \`${name}\` names tools for Ask Daoris but is not handed to it: its \`to\` must name \`help\`.` };
+      }
+      const both = allow.find((tool) => writes.includes(tool));
+      if (both !== undefined) {
+        return { manifest: empty(id), problem: `server \`${name}\` names \`${both}\` in both \`allow\` and \`writes\`: a tool it hands Ask Daoris reads, or writes, never both.` };
+      }
+      servers.push({ name, command, env, to, allow, writes });
     }
   }
 
@@ -1047,7 +1070,8 @@ const line = (command: readonly string[] | null | undefined): string =>
  */
 const serverTo = (server: PluginServer): string =>
   (server.to.length === 1 && server.to[0] === SERVER_TO.sessions ? '' : ` to ${server.to.join(' and ')}`)
-  + (server.allow.length > 0 ? ` allowing ${server.allow.join(', ')}` : '');
+  + (server.allow.length > 0 ? ` allowing ${server.allow.join(', ')}` : '')
+  + (server.writes.length > 0 ? ` writing with ${server.writes.join(', ')}` : '');
 
 /** What an update changes, from what is installed to what the source now holds, each as written. */
 export function changesBetween(was: PluginManifest, now: PluginManifest): PluginChange[] {
@@ -1209,7 +1233,9 @@ function describe(manifest: PluginManifest): string {
   // HELPPLUG1a (D170 point 3): what it hands Ask Daoris, and the tools it allows it there.
   const help = manifest.servers.filter((s) => s.to.includes(SERVER_TO.help));
   if (help.length > 0) {
-    parts.push(`hands Ask Daoris ${help.map((s) => (s.allow.length > 0 ? `${s.name} (${s.allow.join(', ')})` : s.name)).join(', ')}`);
+    // Offered, since its tools reach Ask Daoris only once the person approves them (D170's note).
+    const tools = (s: PluginServer) => [...s.allow, ...s.writes.map((tool) => `${tool}, writes`)];
+    parts.push(`offers Ask Daoris ${help.map((s) => (tools(s).length > 0 ? `${s.name} (${tools(s).join('; ')})` : s.name)).join(', ')}`);
   }
   // HELPPLUG1b (D170 point 4): the skills it hands each. Twin: `PluginPackage.Describe`.
   for (const [to, who] of [[SERVER_TO.sessions, 'sessions'], [SERVER_TO.help, 'Ask Daoris']] as const) {

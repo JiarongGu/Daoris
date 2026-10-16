@@ -79,22 +79,31 @@ public sealed class HelpRoomMayDoTests
     }
 
     /// <summary>
-    /// HELPPLUG1a (D170 point 3): the servers plugins hand it are named, with the tools it may call on each, and what such a
-    /// tool does outside Daoris is the plugin's act; a change to Daoris itself is still a proposal.
+    /// HELPPLUG1a (D170 point 3, and its tightening): the servers plugins hand it, as the person approved them, are named with the
+    /// tools it may call on each, a write outside Daoris said as one the person accepted; what such a tool does is the plugin's
+    /// act, and a change to Daoris itself is still a proposal. One waiting for the person's approval is named as handed nothing.
     /// </summary>
     [Fact]
     public void The_room_names_the_servers_plugins_hand_it_and_the_tools_it_may_call()
     {
         var agents = HelpRoom.Render(HelpRoomFixture.Machine with
         {
-            PluginServers = [new("acme.tickets", "tickets", ["search", "get_issue"]), new("acme.docs", "docs", [])],
+            PluginServers =
+            [
+                new("acme.tickets", "tickets", ["search", "get_issue"]) { Writes = ["create_issue"] }, new("acme.docs", "docs", []),
+            ],
+            PluginServersWaiting = [new("acme.wiki", "wiki", ["lookup"])],
         });
 
-        Assert.Contains("Plugins installed here hand you these servers", agents);
-        Assert.Contains("- `tickets` (plugin `acme.tickets`): `search`, `get_issue`", agents);
+        Assert.Contains("Plugins installed here hand you these servers, as the person approved them", agents);
+        Assert.Contains(
+            "- `tickets` (plugin `acme.tickets`): reads with `search`, `get_issue`; changes things outside Daoris with `create_issue`, "
+            + "a write the person accepted", agents);
         Assert.Contains("- `docs` (plugin `acme.docs`): none of its tools", agents);
         Assert.Contains("the plugin's own act", agents);
         Assert.Contains("a change to Daoris itself is still a proposal", agents);
+        Assert.Contains("wait for the person's approval on the plugin's page", agents);
+        Assert.Contains("`wiki` (plugin `acme.wiki`)", agents);
     }
 
     /// <summary>
@@ -143,9 +152,12 @@ public sealed class HelpRoomMayDoTests
         Assert.DoesNotContain("hand you these servers", HelpRoom.Render(HelpRoomFixture.Machine));
     }
 
-    /// <summary>The servers it is handed are the catalogue's for Ask Daoris: a session's are not its, nor a plugin's switched off.</summary>
+    /// <summary>
+    /// The servers it is handed are the grants' (<see cref="HelpGrants"/>): a session's are not its, one the person has not
+    /// approved waits, and one approved with its writes says the writes accepted.
+    /// </summary>
     [Fact]
-    public void The_servers_it_is_handed_are_described_from_the_catalogue()
+    public void The_servers_it_is_handed_are_described_from_the_persons_approvals()
     {
         var home = Path.Combine(Path.GetTempPath(), "daoris-help-servers-" + Guid.NewGuid().ToString("N")[..8]);
         try
@@ -153,16 +165,22 @@ public sealed class HelpRoomMayDoTests
             Directory.CreateDirectory(Path.Combine(home, PluginCatalog.Folder, "acme.tools"));
             File.WriteAllText(Path.Combine(home, PluginCatalog.Folder, "acme.tools", PluginCatalog.ManifestName), """
                 { "id": "acme.tools", "servers": [
-                    { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search"] },
+                    { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search"], "writes": ["create_issue"] },
+                    { "name": "wiki", "command": ["wiki"], "to": ["help"], "allow": ["lookup"] },
                     { "name": "docs", "command": ["docs"] } ] }
                 """);
+            var catalog = PluginCatalog.Load(home);
+            HelpGrants.Approve(home, catalog, "acme.tools", "tickets", readsOnly: false);
 
             var machine = HelpRoom.Describe(
-                DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, plugins: PluginCatalog.Load(home));
+                DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, plugins: catalog,
+                grants: HelpGrants.Read(home, catalog));
 
             var server = Assert.Single(machine.PluginServers);
             Assert.Equal(("acme.tools", "tickets"), (server.Plugin, server.Server));
             Assert.Equal(["search"], server.Tools);
+            Assert.Equal(["create_issue"], server.Writes);
+            Assert.Equal("wiki", Assert.Single(machine.PluginServersWaiting).Server);
         }
         finally
         {

@@ -13,7 +13,7 @@ import type { ViewLayout } from '../work/ViewFrame';
 import { chosenOf, type HelpServerShown, type OfferShown, pluginGroups, type PluginShown, type SkillShown } from './catalog';
 import { OfferPage } from './OfferPage';
 import { PluginList, PluginStrip } from './PluginList';
-import { PluginMainNotice, PluginPage } from './PluginPage';
+import { type HelpPress, PluginMainNotice, PluginPage } from './PluginPage';
 
 /** The driver's word for a plugin this machine does not hold: read by its code, never by its sentence (D48 §6). */
 const UNKNOWN = 'PLUGIN_UNKNOWN';
@@ -26,9 +26,18 @@ const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] :
  * an empty list, never a blank page.
  */
 /** What a plugin hands Ask Daoris (HELPPLUG1a), each server with what Ask Daoris may call on it; none from an older shell. */
+const STATES = ['approved', 'waits', 'refused'] as const;
 const helpServersOf = (raw: unknown): HelpServerShown[] =>
   list<HelpServerShown>(raw).filter((server) => typeof server?.name === 'string')
-    .map((server) => ({ name: server.name, allow: list<string>(server.allow) }));
+    .map((server) => ({
+      name: server.name,
+      allow: list<string>(server.allow),
+      writes: list<string>(server.writes),
+      // A state this page does not know is read as waiting, never as approved.
+      state: STATES.includes(server.state as typeof STATES[number]) ? server.state : 'waits',
+      accepted: list<string>(server.accepted),
+      refusal: typeof server.refusal === 'string' ? server.refusal : null,
+    }));
 
 /** The skills a plugin hands (HELPPLUG1b), each with who it goes to; none from an older shell. */
 const skillsOf = (raw: unknown): SkillShown[] =>
@@ -128,6 +137,9 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
     onSuccess: () => notify(t(action === 'enable' ? 'plugin.enabled' : 'plugin.disabled', { id })),
     onError: failed,
   });
+  // HELPPLUG1a's tightening (D170's note): the person's approval of what a server offers Ask Daoris; the list is asked again
+  // by the route's STATE_CHANGED, as a switch is.
+  const helpOne = (id: string, server: string, action: HelpPress) => act.mutate({ id, action, server }, { onError: failed });
   // A refusal is said inside the ask, where *Remove plugin* was pressed (UXFIX2b1), not in a toast; a plugin the driver no
   // longer holds is the exception, since the page itself then says it has gone.
   const remove = (id: string, answered: Answered) => act.mutate({ id, action: 'remove' }, {
@@ -196,6 +208,7 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
             acting={act.isPending}
             asking={asking === shown.plugin.id}
             onSwitch={switchOne}
+            onHelp={helpOne}
             onTry={tryOne}
             onAskUpdate={askUpdate}
             onApplyUpdate={update}

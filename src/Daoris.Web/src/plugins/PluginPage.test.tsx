@@ -177,16 +177,23 @@ describe("a plugin's page", () => {
    * HELPPLUG1a (D170 point 3): the page says what the plugin hands Ask Daoris, each server with what Ask Daoris may call on it,
    * and that nothing called there changes Daoris itself; one that hands it nothing says nothing of it.
    */
-  it('says what it hands Ask Daoris and what Ask Daoris may call there, in English and in 中文', async () => {
+  it('says what it offers Ask Daoris and what Ask Daoris may call there, in English and in 中文', async () => {
     const handing: PluginShown = {
-      ...PLUGIN, helpServers: [{ name: 'tickets', allow: ['search', 'get_issue'] }, { name: 'docs', allow: [] }],
+      ...PLUGIN,
+      helpServers: [
+        { name: 'tickets', allow: ['search', 'get_issue'], writes: ['create_issue'], state: 'approved', accepted: [] },
+        { name: 'docs', allow: [], state: 'approved' },
+      ],
     };
     const { unmount } = page({ plugin: handing });
     const section = screen.getByRole('region', { name: 'Ask Daoris' });
     expect(within(section).getByText('tickets')).toBeInTheDocument();
-    expect(within(section).getByText('Ask Daoris may call search, get_issue')).toBeInTheDocument();
+    expect(within(section).getByText('Reads with search, get_issue')).toBeInTheDocument();
+    expect(within(section).getByText('Writes outside Daoris with create_issue, not accepted: Ask Daoris is refused it')).toBeInTheDocument();
     expect(within(section).getByText('Ask Daoris may call none of what it serves')).toBeInTheDocument();
     expect(section).toHaveTextContent('a change to Daoris is still a proposal you apply');
+    // D170's note: a native plugin is trusted code, said plainly.
+    expect(section).toHaveTextContent('A plugin is code that runs as you');
     unmount();
 
     const { default: i18n } = await import('../locales/i18n');
@@ -194,7 +201,7 @@ describe("a plugin's page", () => {
     try {
       const shown = page({ plugin: handing });
       const zh = screen.getByRole('region', { name: '问道衍' });
-      expect(within(zh).getByText('问道衍可以调用 search, get_issue')).toBeInTheDocument();
+      expect(within(zh).getByText('读取：search, get_issue')).toBeInTheDocument();
       shown.unmount();
     } finally {
       await i18n.changeLanguage('en');
@@ -202,6 +209,37 @@ describe("a plugin's page", () => {
 
     page();
     expect(screen.queryByRole('region', { name: 'Ask Daoris' })).toBeNull();
+  });
+
+  /**
+   * HELPPLUG1a's tightening (D170's note): a server's tools reach Ask Daoris only once the person approves them here, its writes
+   * too or its reads only; an approved one can be withdrawn; a refused one says why and offers no approval.
+   */
+  it('approves what a server offers Ask Daoris, its reads only, or withdraws it, and offers nothing for a refused one', async () => {
+    const onHelp = vi.fn();
+    const { unmount } = page({
+      onHelp,
+      plugin: {
+        ...PLUGIN,
+        helpServers: [
+          { name: 'tickets', allow: ['search'], writes: ['create_issue'], state: 'waits' },
+          { name: 'wiki', allow: ['lookup'], state: 'approved' },
+          { name: 'shell', allow: ['run_command'], state: 'refused', refusal: 'its tool `run_command` runs commands, by its name.' },
+        ],
+      },
+    });
+    const section = screen.getByRole('region', { name: 'Ask Daoris' });
+
+    expect(within(section).getByText('Waits for your approval: Ask Daoris is handed nothing of it')).toBeInTheDocument();
+    await userEvent.click(within(section).getByRole('button', { name: 'Approve tickets for Ask Daoris' }));
+    expect(onHelp).toHaveBeenCalledWith('acme.gate', 'tickets', 'help-approve');
+    await userEvent.click(within(section).getByRole('button', { name: 'Approve its reads only' }));
+    expect(onHelp).toHaveBeenCalledWith('acme.gate', 'tickets', 'help-reads');
+    await userEvent.click(within(section).getByRole('button', { name: 'Withdraw wiki' }));
+    expect(onHelp).toHaveBeenCalledWith('acme.gate', 'wiki', 'help-withdraw');
+    expect(section).toHaveTextContent('its tool run_command runs commands, by its name.');
+    expect(within(section).queryByRole('button', { name: 'Approve shell for Ask Daoris' })).toBeNull();
+    unmount();
   });
 
   /**

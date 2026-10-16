@@ -601,34 +601,48 @@ public sealed class PluginCatalogTests : IDisposable
     private const string AllowProblem =
         "server `tickets`'s `allow` must list the tools Ask Daoris may call, once each, by name: letters, digits, `_` and `-`.";
 
+    private const string WritesProblem =
+        "server `tickets`'s `writes` must list the tools that change something outside Daoris, once each, by name: letters, digits, `_` and `-`.";
+
     private const string AllowNotHanded =
-        "server `tickets` allows tools in Ask Daoris but is not handed to it: its `to` must name `help`.";
+        "server `tickets` names tools for Ask Daoris but is not handed to it: its `to` must name `help`.";
+
+    private const string ReadsAndWrites =
+        "server `tickets` names `search` in both `allow` and `writes`: a tool it hands Ask Daoris reads, or writes, never both.";
 
     /// <summary>
-    /// The rules, in order, for a server's <c>to</c> and <c>allow</c>; a problem refuses the plugin, as a server's other problems
-    /// do. Twin: the CLI's <c>plugins.test.ts</c> holds the same rows, the same words, in the same order.
+    /// The rules, in order, for a server's <c>to</c>, <c>allow</c> (tools that read) and <c>writes</c> (tools that change something
+    /// outside Daoris); a problem refuses the plugin, as a server's other problems do. A wildcard is no tool's name. Twin: the
+    /// CLI's <c>plugins.test.ts</c> holds the same rows, the same words, in the same order.
     /// </summary>
-    public static TheoryData<string, string?, string[], string[]> ServerDestinations => new()
+    public static TheoryData<string, string?, string[], string[], string[]> ServerDestinations => new()
     {
-        { "", null, ["sessions"], [] },
-        { """, "to": ["help"], "allow": ["search", "get_issue"] """, null, ["help"], ["search", "get_issue"] },
-        { """, "to": ["sessions", "help"] """, null, ["sessions", "help"], [] },
-        { """, "to": ["sessions"] """, null, ["sessions"], [] },
-        { """, "to": "help" """, ToProblem, [], [] },
-        { """, "to": [] """, ToProblem, [], [] },
-        { """, "to": ["everyone"] """, ToProblem, [], [] },
-        { """, "to": ["help", "help"] """, ToProblem, [], [] },
-        { """, "to": ["help"], "allow": "search" """, AllowProblem, [], [] },
-        { """, "to": ["help"], "allow": ["Bash(rm:*)"] """, AllowProblem, [], [] },
-        { """, "to": ["help"], "allow": ["search", "search"] """, AllowProblem, [], [] },
-        { """, "to": ["help"], "allow": [""] """, AllowProblem, [], [] },
-        { """, "allow": ["search"] """, AllowNotHanded, [], [] },
-        { """, "to": ["sessions"], "allow": ["search"] """, AllowNotHanded, [], [] },
+        { "", null, ["sessions"], [], [] },
+        { """, "to": ["help"], "allow": ["search", "get_issue"] """, null, ["help"], ["search", "get_issue"], [] },
+        { """, "to": ["sessions", "help"] """, null, ["sessions", "help"], [], [] },
+        { """, "to": ["sessions"] """, null, ["sessions"], [], [] },
+        { """, "to": ["help"], "allow": ["search"], "writes": ["create_issue"] """, null, ["help"], ["search"], ["create_issue"] },
+        { """, "to": "help" """, ToProblem, [], [], [] },
+        { """, "to": [] """, ToProblem, [], [], [] },
+        { """, "to": ["everyone"] """, ToProblem, [], [], [] },
+        { """, "to": ["help", "help"] """, ToProblem, [], [], [] },
+        { """, "to": ["help"], "allow": "search" """, AllowProblem, [], [], [] },
+        { """, "to": ["help"], "allow": ["Bash(rm:*)"] """, AllowProblem, [], [], [] },
+        { """, "to": ["help"], "allow": ["*"] """, AllowProblem, [], [], [] },
+        { """, "to": ["help"], "allow": ["search", "search"] """, AllowProblem, [], [], [] },
+        { """, "to": ["help"], "allow": [""] """, AllowProblem, [], [], [] },
+        { """, "to": ["help"], "writes": "create_issue" """, WritesProblem, [], [], [] },
+        { """, "to": ["help"], "writes": ["create_*"] """, WritesProblem, [], [], [] },
+        { """, "allow": ["search"] """, AllowNotHanded, [], [], [] },
+        { """, "to": ["sessions"], "allow": ["search"] """, AllowNotHanded, [], [], [] },
+        { """, "writes": ["create_issue"] """, AllowNotHanded, [], [], [] },
+        { """, "to": ["help"], "allow": ["search"], "writes": ["search"] """, ReadsAndWrites, [], [], [] },
     };
 
     [Theory]
     [MemberData(nameof(ServerDestinations))]
-    public void A_servers_destination_and_the_tools_it_allows_are_read_by_the_twins_rules(string declared, string? problem, string[] to, string[] allow)
+    public void A_servers_destination_and_the_tools_it_allows_are_read_by_the_twins_rules(
+        string declared, string? problem, string[] to, string[] allow, string[] writes)
     {
         Plugin("acme.tickets", $$"""{ "id": "acme.tickets", "servers": [ { "name": "tickets", "command": ["tickets"]{{declared}} } ] }""");
 
@@ -644,6 +658,7 @@ public sealed class PluginCatalogTests : IDisposable
         var server = Assert.Single(entry.Manifest.Servers);
         Assert.Equal(to, server.To);
         Assert.Equal(allow, server.Allow);
+        Assert.Equal(writes, server.Writes);
     }
 
     // ——— A plugin's skills (HELPPLUG1b, D170 point 4): each a folder `skills/<name>` beside its manifest, for sessions,
@@ -687,11 +702,11 @@ public sealed class PluginCatalogTests : IDisposable
     }
 
     /// <summary>
-    /// What a tick hands every session is the servers declared for sessions; Ask Daoris is handed only those declared for it,
-    /// and allowed only the tools each declares, as the harness spells a server's tool (D170 point 3).
+    /// What a tick hands every session is the servers declared for sessions; those declared for Ask Daoris are its alone, and
+    /// reach it only once the person approves their tools (<see cref="HelpGrants"/>, D170's note).
     /// </summary>
     [Fact]
-    public void Sessions_are_handed_their_servers_and_ask_daoris_only_those_declared_for_it_with_their_tools()
+    public void Sessions_are_handed_their_servers_and_ask_daoris_only_those_declared_for_it()
     {
         Plugin("acme.tools", """
             { "id": "acme.tools", "servers": [
@@ -706,7 +721,6 @@ public sealed class PluginCatalogTests : IDisposable
 
         Assert.Equal(["browser", "docs"], catalog.Servers.Select(server => server.Name));
         Assert.Equal(["tickets", "docs"], catalog.HelpServers.Select(server => server.Name));
-        Assert.Equal(["mcp__tickets__search", "mcp__tickets__get_issue"], catalog.HelpAllows);
         Assert.Equal(catalog.Servers.Select(server => server.Name), catalog.ServersTo(PluginServerTo.Sessions).Select(server => server.Name));
         Assert.Equal(catalog.HelpServers.Select(server => server.Name), catalog.ServersTo(PluginServerTo.Help).Select(server => server.Name));
     }

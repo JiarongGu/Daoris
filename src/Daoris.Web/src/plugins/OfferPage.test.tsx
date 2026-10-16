@@ -68,7 +68,11 @@ describe("an offer's page", () => {
     const { unmount } = render(
       <OfferPage offer={{ ...OFFER, helpServers: [{ name: 'wiki', allow: ['search'] }] }} kitPoints={KIT} onInstall={vi.fn()} />,
     );
-    expect(screen.getByRole('region', { name: 'Ask Daoris' })).toHaveTextContent('wikiAsk Daoris may call search');
+    const section = screen.getByRole('region', { name: 'Ask Daoris' });
+    expect(section).toHaveTextContent('Reads with search');
+    expect(section).toHaveTextContent('A plugin is code that runs as you');
+    // Nothing here has installed it, so there is nothing to approve yet (D170's note).
+    expect(within(section).queryByRole('button')).toBeNull();
     unmount();
 
     render(<OfferPage offer={OFFER} kitPoints={KIT} onInstall={vi.fn()} />);

@@ -356,15 +356,20 @@ public sealed class HookSetLogTests : IDisposable
                 { "name": "docs", "command": ["node", "docs.mjs"] } ] }
             """);
 
+        // Withheld from Ask Daoris until the person approves its tools (D170's note), then handed.
+        var (waiting, _, _, _) = await ChatRunner.HandServersAsync(
+            _home, null, new PluginLog(_log), "s0a0b0c0", CancellationToken.None, PluginServerTo.Help);
+        HelpGrants.Approve(_home, PluginCatalog.Load(_home), "acme.tools", "tickets", readsOnly: false);
         var (help, _, _, _) = await ChatRunner.HandServersAsync(
             _home, null, new PluginLog(_log), "s1a2b3c4", CancellationToken.None, PluginServerTo.Help);
         var (session, _, _, _) = await ChatRunner.HandServersAsync(
             _home, null, new PluginLog(_log), "s5e6f7a8", CancellationToken.None);
 
+        Assert.Empty(waiting);
         Assert.Equal(["tickets"], help.Select(server => server.Name));
         Assert.Equal(["docs"], session.Select(server => server.Name));
         Assert.Equal(
-            [("tickets", "s1a2b3c4", true), ("docs", "s5e6f7a8", true)],
+            [("tickets", "s0a0b0c0", false), ("tickets", "s1a2b3c4", true), ("docs", "s5e6f7a8", true)],
             Lines().Select(l => (Text(l, "server"), Text(l, "session"), l.Data.GetProperty("handed").GetBoolean())));
     }
 

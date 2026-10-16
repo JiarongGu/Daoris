@@ -1,10 +1,18 @@
 import type { PluginSourceShown } from './PluginUpdate';
 
 /**
- * A server a plugin hands Ask Daoris (HELPPLUG1a, D170 point 3), as the driver's `PLUGINS` answers it: its name, and what
- * Ask Daoris may call on it, as the plugin declares it.
+ * A server a plugin offers Ask Daoris (HELPPLUG1a, D170 point 3), as the driver's `PLUGINS` answers it: its name, the tools
+ * that read and those that write outside Daoris, as the plugin declares them, and the person's approval as it stands (D170's
+ * note): `approved` (with the writes they `accepted`), `waits`, or `refused` with the driver's sentence.
  */
-export type HelpServerShown = { name: string; allow: string[] };
+export type HelpServerShown = {
+  name: string;
+  allow: string[];
+  writes?: string[];
+  state?: 'approved' | 'waits' | 'refused';
+  accepted?: string[];
+  refusal?: string | null;
+};
 
 /**
  * A skill a plugin hands (HELPPLUG1b, D170 point 4), as the driver's `PLUGINS` answers it: its name, who it is handed to

@@ -176,7 +176,8 @@ public sealed record PluginChange(string What, string Was, string Now)
     /// </summary>
     private static string ServerTo(PluginServer server) =>
         (server.To is [PluginServerTo.Sessions] ? "" : $" to {string.Join(" and ", server.To)}")
-        + (server.Allow.Count > 0 ? $" allowing {string.Join(", ", server.Allow)}" : "");
+        + (server.Allow.Count > 0 ? $" allowing {string.Join(", ", server.Allow)}" : "")
+        + (server.Writes.Count > 0 ? $" writing with {string.Join(", ", server.Writes)}" : "");
 
     /// <summary>A command as a terminal takes it: a word holding a space quoted, as the proposal card spells it.</summary>
     private static string Line(IEnumerable<string> command) =>

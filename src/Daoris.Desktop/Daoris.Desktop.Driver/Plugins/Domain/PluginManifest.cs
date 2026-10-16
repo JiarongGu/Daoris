@@ -49,10 +49,16 @@ public sealed record PluginServer(
     public IReadOnlyList<string> To { get; init; } = [PluginServerTo.Sessions];
 
     /// <summary>
-    /// The tools of it Ask Daoris may call, by name, as the plugin declares them (D170 point 3); none where it declares none.
-    /// Only a server handed to Ask Daoris declares any. Twin: the CLI's <c>PluginServer.allow</c>.
+    /// The tools of it that read, which Ask Daoris may call once the person approves them (D170 point 3 and its note); none
+    /// where it declares none. Only a server handed to Ask Daoris declares any. Twin: the CLI's <c>PluginServer.allow</c>.
     /// </summary>
     public IReadOnlyList<string> Allow { get; init; } = [];
+
+    /// <summary>
+    /// The tools of it that change something outside Daoris (HELPPLUG1a's tightening): never allowed silently, only as writes the
+    /// person accepted (<see cref="HelpGrants"/>). A tool is in <see cref="Allow"/> or here, never both. Twin: <c>PluginServer.writes</c>.
+    /// </summary>
+    public IReadOnlyList<string> Writes { get; init; } = [];
 
     /// <summary>Whether it is handed to <paramref name="to"/>.</summary>
     public bool HandedTo(string to) => To.Contains(to, StringComparer.Ordinal);

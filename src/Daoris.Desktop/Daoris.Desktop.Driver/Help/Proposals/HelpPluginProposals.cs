@@ -250,7 +250,7 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
     private static HelpPluginView View(PluginManifest manifest) => new(
         manifest.Id, manifest.Name, manifest.Version, manifest.Hooks?.Command, manifest.Hooks?.Points ?? [],
         [.. manifest.Harnesses.Select(harness => new HelpPluginPart(harness.Name, harness.Command))],
-        [.. manifest.Servers.Select(server => new HelpPluginPart(server.Name, server.Command) { To = server.To, Allow = server.Allow })]);
+        [.. manifest.Servers.Select(server => new HelpPluginPart(server.Name, server.Command) { To = server.To, Allow = server.Allow, Writes = server.Writes })]);
 
     /// <summary>What the plugin runs, said as its manifest writes it: its process and points, its harnesses, its servers.</summary>
     private static string Runs(HelpPluginView view)
@@ -267,18 +267,29 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// A server as the card says it (HELPPLUG1a, D170 point 3): who it is handed to, and for Ask Daoris the tools it may call,
-    /// so the person sees before Apply what a plugin hands the helper.
+    /// A server as the card says it (HELPPLUG1a, D170 point 3): who it is handed to, and what it offers Ask Daoris, its reads and
+    /// its writes outside Daoris, which reach the helper only once the person approves them on the plugin's page (D170's note).
     /// </summary>
     private static string Handed(HelpPluginPart server)
     {
         var sessions = server.To.Contains(PluginServerTo.Sessions, StringComparer.Ordinal);
         var help = server.To.Contains(PluginServerTo.Help, StringComparer.Ordinal);
-        var who = sessions && help ? "every session and Ask Daoris" : help ? "Ask Daoris" : "every session";
-        var tools = !help ? ""
-            : server.Allow.Count > 0 ? $", allowing Ask Daoris {string.Join(", ", server.Allow.Select(tool => $"`{tool}`"))}"
-            : ", allowing Ask Daoris none of its tools";
-        return $"It hands {who} server `{server.Name}` (`{Line(server.Command)}`){tools}.";
+        var line = $"server `{server.Name}` (`{Line(server.Command)}`)";
+        if (!help) return $"It hands every session {line}.";
+
+        static string Named(IEnumerable<string> tools) => string.Join(", ", tools.Select(tool => $"`{tool}`"));
+        var uses = new List<string>();
+        if (server.Allow.Count > 0) uses.Add($"to read with {Named(server.Allow)}");
+        if (server.Writes.Count > 0) uses.Add($"to change things outside Daoris with {Named(server.Writes)}");
+        if (sessions)
+        {
+            var tools = uses.Count > 0 ? string.Join(" and ", uses) : "with none of its tools";
+            return $"It hands every session {line}, and offers it to Ask Daoris {tools}, once you approve it on its page.";
+        }
+
+        return uses.Count > 0
+            ? $"It offers Ask Daoris {line}, {string.Join(" and ", uses)}, once you approve them on its page."
+            : $"It offers Ask Daoris {line} with none of its tools, once you approve it on its page.";
     }
 
     /// <summary>The name and version a manifest gives beside its id, where it gives either.</summary>
@@ -333,8 +344,11 @@ public sealed record HelpPluginPart(string Name, IReadOnlyList<string> Command)
     /// <summary>A server's: who it is handed to (HELPPLUG1a, D170 point 3), sessions where its manifest names none.</summary>
     public IReadOnlyList<string> To { get; init; } = [PluginServerTo.Sessions];
 
-    /// <summary>A server's: the tools of it Ask Daoris may call, as its manifest declares them.</summary>
+    /// <summary>A server's: the tools of it that read, which Ask Daoris may call once the person approves them.</summary>
     public IReadOnlyList<string> Allow { get; init; } = [];
+
+    /// <summary>A server's: the tools of it that change something outside Daoris, never allowed silently.</summary>
+    public IReadOnlyList<string> Writes { get; init; } = [];
 }
 
 public interface IHelpPluginDoors

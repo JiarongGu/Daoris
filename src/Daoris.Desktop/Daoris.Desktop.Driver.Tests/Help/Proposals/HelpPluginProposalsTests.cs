@@ -103,7 +103,7 @@ public sealed class HelpPluginProposalsTests : HelpProposalsFixture
         var facts = PluginMachine();
         Landed("tickets", """
             { "id": "acme.tickets", "servers": [
-                { "name": "tickets", "command": ["tickets", "--serve"], "to": ["help"], "allow": ["search", "get_issue"] },
+                { "name": "tickets", "command": ["tickets", "--serve"], "to": ["help"], "allow": ["search", "get_issue"], "writes": ["create_issue"] },
                 { "name": "docs", "command": ["docs"], "to": ["sessions", "help"] },
                 { "name": "browser", "command": ["browser"] } ] }
             """);
@@ -111,8 +111,11 @@ public sealed class HelpPluginProposalsTests : HelpProposalsFixture
         var plan = HelpProposals.Plan(PluginAdd("house-plugins", "tickets"), DriverConfig.Empty, facts);
 
         Assert.Null(plan.Refusal);
-        Assert.Contains("It hands Ask Daoris server `tickets` (`tickets --serve`), allowing Ask Daoris `search`, `get_issue`.", plan.Describe);
-        Assert.Contains("It hands every session and Ask Daoris server `docs` (`docs`), allowing Ask Daoris none of its tools.", plan.Describe);
+        // Its tools reach Ask Daoris only once the person approves them on its page (D170's note), so the card says so.
+        Assert.Contains(
+            "It offers Ask Daoris server `tickets` (`tickets --serve`), to read with `search`, `get_issue` and to change things "
+            + "outside Daoris with `create_issue`, once you approve them on its page.", plan.Describe);
+        Assert.Contains("It hands every session server `docs` (`docs`), and offers it to Ask Daoris with none of its tools, once you approve it on its page.", plan.Describe);
         Assert.Contains("It hands every session server `browser` (`browser`).", plan.Describe);
     }
 

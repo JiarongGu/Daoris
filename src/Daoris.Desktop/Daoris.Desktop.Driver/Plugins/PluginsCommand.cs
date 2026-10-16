@@ -27,7 +27,9 @@ public static class PluginsCommand
     public const string Usage =
         PluginKitCommand.Usage + "\n"
         + "       daoris-driver plugins show <id> [--json]\n"
-        + "       daoris-driver plugins activity <id> [--since <30m|2h|3d>] [--json]";
+        + "       daoris-driver plugins activity <id> [--since <30m|2h|3d>] [--json]\n"
+        + "       daoris-driver plugins approve <id> <server> [--reads-only]\n"
+        + "       daoris-driver plugins withdraw <id> <server>";
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
@@ -50,10 +52,28 @@ public static class PluginsCommand
                     return ShowVerb(rest, output, home);
                 case ["activity", .. var rest]:
                     return ActivityVerb(rest, output, home);
+                // HELPPLUG1a's tightening (D170's note): the page's Approve and Withdraw, at a terminal (D50).
+                case ["approve", var id, var server, .. var flags] when flags.All(flag => flag == "--reads-only"):
+                {
+                    var grant = HelpGrants.Approve(Home(home), PluginCatalog.Load(Home(home), AdapterSet.Built().Names), id, server, flags.Length > 0);
+                    var asked = grant.Server.Writes.Except(grant.Accepted, StringComparer.Ordinal).ToList();
+                    var may = new List<string>();
+                    if (grant.Server.Allow.Count > 0) may.Add($"read with {string.Join(", ", grant.Server.Allow)}");
+                    if (grant.Accepted.Count > 0) may.Add($"write outside Daoris with {string.Join(", ", grant.Accepted)}");
+                    output.WriteLine($"plugins: Ask Daoris may now {(may.Count > 0 ? string.Join(" and ", may) : "call none of its tools")} on `{server}`"
+                        + (asked.Count > 0 ? $"; {string.Join(", ", asked)} stays asked, a write you did not accept." : "."));
+                    return 0;
+                }
+
+                case ["withdraw", var id, var server]:
+                    HelpGrants.Withdraw(Home(home), id, server);
+                    output.WriteLine($"plugins: Ask Daoris is handed `{server}` of `{id}` no more, until you approve it again.");
+                    return 0;
                 default:
                     output.WriteLine(Usage);
                     output.WriteLine("  new and try are the plugin kit's; show is a plugin's page, its health read from the machine");
-                    output.WriteLine("  log's last word; activity is what it did, from the machine log, the last 7 days unless --since.");
+                    output.WriteLine("  log's last word; activity is what it did, from the machine log, the last 7 days unless --since;");
+                    output.WriteLine("  approve hands Ask Daoris a server's exact tools, its writes too unless --reads-only; withdraw takes it back.");
                     return 2;
             }
         }
@@ -152,11 +172,20 @@ public static class PluginsCommand
             var handed = new List<string>();
             if (server.DrivesBrowser) handed.Add("drives Daoris's browser, and is withheld where no shell answers");
             else if (server.To.Contains(PluginServerTo.Sessions, StringComparer.Ordinal)) handed.Add("handed to every session beside Daoris's own knowledge host");
-            // HELPPLUG1a (D170 point 3): what it hands Ask Daoris, and the tools it may call there.
-            if (server.To.Contains(PluginServerTo.Help, StringComparer.Ordinal))
+            // HELPPLUG1a (D170 point 3 and its note): what it offers Ask Daoris, and the person's approval of its tools.
+            if (server.Help is { } state)
             {
-                handed.Add("handed to Ask Daoris, which may call "
-                    + (server.Allow.Count > 0 ? string.Join(", ", server.Allow) : "none of its tools"));
+                var tools = new List<string>();
+                if (server.Allow.Count > 0) tools.Add($"reads with {string.Join(", ", server.Allow)}");
+                var accepted = server.Writes.Where(tool => server.Accepted.Contains(tool, StringComparer.Ordinal)).ToList();
+                var asked = server.Writes.Except(accepted, StringComparer.Ordinal).ToList();
+                if (state == HelpGrants.Approved && accepted.Count > 0) tools.Add($"writes outside Daoris with {string.Join(", ", accepted)}, accepted");
+                if (state == HelpGrants.Approved && asked.Count > 0) tools.Add($"writes outside Daoris with {string.Join(", ", asked)}, not accepted");
+                if (state != HelpGrants.Approved && server.Writes.Count > 0) tools.Add($"writes outside Daoris with {string.Join(", ", server.Writes)}");
+                var said = state == HelpGrants.Approved ? "approved"
+                    : state == HelpGrants.Refused ? $"refused, {server.Refusal}"
+                    : "waiting for your approval";
+                handed.Add($"offered to Ask Daoris, {said}: {(tools.Count > 0 ? string.Join("; ", tools) : "none of its tools")}");
             }
 
             Field(text, index == 0 ? "servers" : "", $"{server.Name}{taken}  `{string.Join(" ", server.Command)}`{environment}; {string.Join("; ", handed)}");

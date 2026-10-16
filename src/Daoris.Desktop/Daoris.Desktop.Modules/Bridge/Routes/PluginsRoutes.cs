@@ -42,6 +42,8 @@ public sealed class PluginsRoutes(DriverContext context)
         var reserved = AdapterSet.Built().Names;
         var catalog = PluginCatalog.Load(_loop.Home, reserved);
         var running = new HashSet<string>(_loop.RunningPlugins, StringComparer.Ordinal);
+        // HELPPLUG1a's tightening: the person's approvals of what each plugin offers Ask Daoris.
+        var grants = HelpGrants.Read(_loop.Home, catalog);
         return new
         {
             Folder = Path.Combine(_loop.Home, PluginCatalog.Folder),
@@ -67,7 +69,7 @@ public sealed class PluginsRoutes(DriverContext context)
                     // What the catalogue takes, as the rows above: a refused plugin hands nothing and speaks nowhere.
                     Servers = plugin.Manifest.Servers.Select(s => s.Name).ToArray(),
                     // HELPPLUG1a (D170 point 3): what it hands Ask Daoris, and the tools it may call there, which its page says.
-                    HelpServers = HelpServersOf(plugin.Manifest),
+                    HelpServers = HelpServersOf(plugin.Manifest, grants),
                     // HELPPLUG1b (D170 point 4): the skills it hands, who to, and why one is not handed.
                     Skills = SkillsOf(plugin.Manifest, plugin.Folder),
                     Hook = HookOf(plugin),
@@ -99,7 +101,7 @@ public sealed class PluginsRoutes(DriverContext context)
                     Harnesses = offer.Manifest.Harnesses.Select(h => h.Name).ToArray(),
                     Points = offer.Manifest.Hooks?.Points ?? [],
                     Servers = offer.Manifest.Servers.Select(s => s.Name).ToArray(),
-                    HelpServers = HelpServersOf(offer.Manifest),
+                    HelpServers = HelpServersOf(offer.Manifest, null),
                     Skills = SkillsOf(offer.Manifest, offer.Folder),
                     offer.Needs,
                     offer.Installed,
@@ -325,10 +327,21 @@ public sealed class PluginsRoutes(DriverContext context)
                 PluginState.Enable(_loop.Home, entry.Manifest.Id);
                 break;
             }
+            // HELPPLUG1a's tightening (D170's note): the person's approval of the exact tools a plugin's server offers Ask Daoris,
+            // its writes too or its reads only, or its withdrawal; `daoris-driver plugins approve|withdraw` is the terminal's half.
+            // A server that names a generic execution tool is refused with the reason, which the page says.
+            case "help-approve" or "help-reads":
+                HelpGrants.Approve(
+                    _loop.Home, PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names), entry.Manifest.Id,
+                    PayloadHelper.GetRequiredValue<string>(request.Payload, "server"), readsOnly: action == "help-reads");
+                break;
+            case "help-withdraw":
+                HelpGrants.Withdraw(_loop.Home, entry.Manifest.Id, PayloadHelper.GetRequiredValue<string>(request.Payload, "server"));
+                break;
             default:
                 throw Refusals.Because(
                     Refusals.PluginActionUnknown,
-                    $"unknown plugin action '{action}' — one of: enable, disable, remove",
+                    $"unknown plugin action '{action}' — one of: enable, disable, remove, help-approve, help-reads, help-withdraw",
                     ("action", action));
         }
 
@@ -416,9 +429,25 @@ public sealed class PluginsRoutes(DriverContext context)
     /// The servers a plugin hands Ask Daoris (HELPPLUG1a, D170 point 3), each with the tools it may call there, as the manifest
     /// declares them, for its page to say. Empty for one that hands it none, and for a refused plugin, which hands nothing.
     /// </summary>
-    private static object[] HelpServersOf(PluginManifest manifest) =>
+    /// <param name="grants">The person's approvals (<see cref="HelpGrants"/>); null for an offer, which nothing here has approved.</param>
+    private static object[] HelpServersOf(PluginManifest manifest, HelpGrantSet? grants) =>
     [
-        .. manifest.Servers.Where(server => server.HandedTo(PluginServerTo.Help)).Select(server => new { server.Name, server.Allow }),
+        .. manifest.Servers.Where(server => server.HandedTo(PluginServerTo.Help)).Select(server =>
+        {
+            var grant = grants?.All.FirstOrDefault(each =>
+                string.Equals(each.Plugin, manifest.Id, StringComparison.OrdinalIgnoreCase) && each.Server.Name == server.Name);
+            var refusal = grant?.Refusal ?? HelpGrants.Refusal(server);
+            return new
+            {
+                server.Name,
+                server.Allow,
+                server.Writes,
+                // Approved, waiting for the person, or refused: a refused plugin's, or an offer's, waits unless it is refused.
+                State = grant?.State ?? (refusal is null ? HelpGrants.Waits : HelpGrants.Refused),
+                Accepted = grant?.Accepted ?? [],
+                Refusal = refusal,
+            };
+        }),
     ];
 
     /// <summary>

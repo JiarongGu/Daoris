@@ -101,19 +101,11 @@ public sealed class PluginCatalog
     /// </summary>
     public IReadOnlyList<AcpMcpServer> Servers => ServersTo(PluginServerTo.Sessions);
 
-    /// <summary>The servers the contributing plugins hand Ask Daoris (HELPPLUG1a, D170 point 3): only those declared for it.</summary>
-    public IReadOnlyList<AcpMcpServer> HelpServers => ServersTo(PluginServerTo.Help);
-
     /// <summary>
-    /// The rules that let Ask Daoris call the tools its servers' plugins declare (D170 point 3), each as the harness spells a
-    /// server's tool, <c>mcp__&lt;server&gt;__&lt;tool&gt;</c>, in catalogue order. Nothing else: a tool's name was held to its
-    /// shape when the manifest was read, so no rule but a server's tool can come of one.
+    /// The servers the contributing plugins declare for Ask Daoris (HELPPLUG1a, D170 point 3), approved or not: what reaches it,
+    /// and the rules for their tools, are the person's approvals' (<see cref="HelpGrants"/>).
     /// </summary>
-    public IReadOnlyList<string> HelpAllows => Contributing
-        .SelectMany(p => p.Manifest.Servers)
-        .Where(s => s.HandedTo(PluginServerTo.Help))
-        .SelectMany(s => s.Allow.Select(tool => $"mcp__{s.Name}__{tool}"))
-        .ToList();
+    public IReadOnlyList<AcpMcpServer> HelpServers => ServersTo(PluginServerTo.Help);
 
     /// <summary>The servers the contributing plugins hand <paramref name="to"/>, in catalogue order, as the protocol door carries one.</summary>
     public IReadOnlyList<AcpMcpServer> ServersTo(string to) => Contributing
@@ -475,14 +467,33 @@ public sealed class PluginCatalog
                     // call, only where it is handed to Ask Daoris. Twin: `plugins.ts`, the same rules and words in the same order.
                     var to = DestinationsOf(row, $"server `{name}`", out var toProblem);
                     if (toProblem is not null) return (PluginManifest.Empty(id), toProblem);
-                    var allow = AllowedOf(row, name, out var allowProblem);
-                    if (allowProblem is not null) return (PluginManifest.Empty(id), allowProblem);
-                    if (allow.Count > 0 && !to.Contains(PluginServerTo.Help, StringComparer.Ordinal))
+                    var allow = ToolsOf(row, "allow");
+                    if (allow is null)
                     {
-                        return (PluginManifest.Empty(id), $"server `{name}` allows tools in Ask Daoris but is not handed to it: its `to` must name `help`.");
+                        return (PluginManifest.Empty(id),
+                            $"server `{name}`'s `allow` must list the tools Ask Daoris may call, once each, by name: letters, digits, `_` and `-`.");
                     }
 
-                    servers.Add(new PluginServer(name, command, environment) { To = to, Allow = allow });
+                    // HELPPLUG1a's tightening: the tools that change something outside Daoris, never allowed silently.
+                    var writes = ToolsOf(row, "writes");
+                    if (writes is null)
+                    {
+                        return (PluginManifest.Empty(id),
+                            $"server `{name}`'s `writes` must list the tools that change something outside Daoris, once each, by name: letters, digits, `_` and `-`.");
+                    }
+
+                    if ((allow.Count > 0 || writes.Count > 0) && !to.Contains(PluginServerTo.Help, StringComparer.Ordinal))
+                    {
+                        return (PluginManifest.Empty(id), $"server `{name}` names tools for Ask Daoris but is not handed to it: its `to` must name `help`.");
+                    }
+
+                    if (allow.FirstOrDefault(tool => writes.Contains(tool, StringComparer.Ordinal)) is { } both)
+                    {
+                        return (PluginManifest.Empty(id),
+                            $"server `{name}` names `{both}` in both `allow` and `writes`: a tool it hands Ask Daoris reads, or writes, never both.");
+                    }
+
+                    servers.Add(new PluginServer(name, command, environment) { To = to, Allow = allow, Writes = writes });
                 }
             }
 
@@ -585,18 +596,13 @@ public sealed class PluginCatalog
         return to;
     }
 
-    /// <summary>A server's <c>allow</c> (HELPPLUG1a): absent is none; otherwise a list of tool names, each once.</summary>
-    private static IReadOnlyList<string> AllowedOf(JsonElement server, string name, out string? problem)
+    /// <summary>A server's <c>allow</c> or <c>writes</c> (HELPPLUG1a): absent is none; otherwise tool names, each once; null where it breaks that.</summary>
+    private static IReadOnlyList<string>? ToolsOf(JsonElement server, string field)
     {
-        problem = null;
-        if (!server.TryGetProperty("allow", out _)) return [];
-        var allow = Strings(server, "allow", text => text);
-        if (allow is null || allow.Distinct(StringComparer.Ordinal).Count() != allow.Count || allow.Any(tool => !ToolName.IsMatch(tool)))
-        {
-            problem = $"server `{name}`'s `allow` must list the tools Ask Daoris may call, once each, by name: letters, digits, `_` and `-`.";
-            return [];
-        }
-
-        return allow;
+        if (!server.TryGetProperty(field, out _)) return [];
+        var tools = Strings(server, field, text => text);
+        return tools is null || tools.Distinct(StringComparer.Ordinal).Count() != tools.Count || tools.Any(tool => !ToolName.IsMatch(tool))
+            ? null
+            : tools;
     }
 }

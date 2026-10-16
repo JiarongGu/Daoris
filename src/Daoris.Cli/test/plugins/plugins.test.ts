@@ -313,31 +313,40 @@ test('a server without a command is a malformed manifest naming the server', () 
 
 const TO_PROBLEM = "server `tickets`'s `to` must list who it is handed to, once each: `sessions`, `help` (Ask Daoris) or both.";
 const ALLOW_PROBLEM = "server `tickets`'s `allow` must list the tools Ask Daoris may call, once each, by name: letters, digits, `_` and `-`.";
-const ALLOW_NOT_HANDED = 'server `tickets` allows tools in Ask Daoris but is not handed to it: its `to` must name `help`.';
+const WRITES_PROBLEM = "server `tickets`'s `writes` must list the tools that change something outside Daoris, once each, by name: letters, digits, `_` and `-`.";
+const ALLOW_NOT_HANDED = 'server `tickets` names tools for Ask Daoris but is not handed to it: its `to` must name `help`.';
+const READS_AND_WRITES = 'server `tickets` names `search` in both `allow` and `writes`: a tool it hands Ask Daoris reads, or writes, never both.';
 
 /**
- * The rules, in order, for a server's `to` and `allow`; a problem refuses the plugin, as a server's other problems do. Twin:
- * the driver's `PluginCatalogTests.ServerDestinations` holds the same rows, the same words, in the same order.
+ * The rules, in order, for a server's `to`, `allow` (tools that read) and `writes` (tools that change something outside Daoris);
+ * a problem refuses the plugin, as a server's other problems do. A wildcard is no tool's name. Twin: the driver's
+ * `PluginCatalogTests.ServerDestinations` holds the same rows, the same words, in the same order.
  */
-const SERVER_DESTINATIONS: Array<[declared: string, problem: string | null, to: string[], allow: string[]]> = [
-  ['', null, ['sessions'], []],
-  [', "to": ["help"], "allow": ["search", "get_issue"] ', null, ['help'], ['search', 'get_issue']],
-  [', "to": ["sessions", "help"] ', null, ['sessions', 'help'], []],
-  [', "to": ["sessions"] ', null, ['sessions'], []],
-  [', "to": "help" ', TO_PROBLEM, [], []],
-  [', "to": [] ', TO_PROBLEM, [], []],
-  [', "to": ["everyone"] ', TO_PROBLEM, [], []],
-  [', "to": ["help", "help"] ', TO_PROBLEM, [], []],
-  [', "to": ["help"], "allow": "search" ', ALLOW_PROBLEM, [], []],
-  [', "to": ["help"], "allow": ["Bash(rm:*)"] ', ALLOW_PROBLEM, [], []],
-  [', "to": ["help"], "allow": ["search", "search"] ', ALLOW_PROBLEM, [], []],
-  [', "to": ["help"], "allow": [""] ', ALLOW_PROBLEM, [], []],
-  [', "allow": ["search"] ', ALLOW_NOT_HANDED, [], []],
-  [', "to": ["sessions"], "allow": ["search"] ', ALLOW_NOT_HANDED, [], []],
+const SERVER_DESTINATIONS: Array<[declared: string, problem: string | null, to: string[], allow: string[], writes: string[]]> = [
+  ['', null, ['sessions'], [], []],
+  [', "to": ["help"], "allow": ["search", "get_issue"] ', null, ['help'], ['search', 'get_issue'], []],
+  [', "to": ["sessions", "help"] ', null, ['sessions', 'help'], [], []],
+  [', "to": ["sessions"] ', null, ['sessions'], [], []],
+  [', "to": ["help"], "allow": ["search"], "writes": ["create_issue"] ', null, ['help'], ['search'], ['create_issue']],
+  [', "to": "help" ', TO_PROBLEM, [], [], []],
+  [', "to": [] ', TO_PROBLEM, [], [], []],
+  [', "to": ["everyone"] ', TO_PROBLEM, [], [], []],
+  [', "to": ["help", "help"] ', TO_PROBLEM, [], [], []],
+  [', "to": ["help"], "allow": "search" ', ALLOW_PROBLEM, [], [], []],
+  [', "to": ["help"], "allow": ["Bash(rm:*)"] ', ALLOW_PROBLEM, [], [], []],
+  [', "to": ["help"], "allow": ["*"] ', ALLOW_PROBLEM, [], [], []],
+  [', "to": ["help"], "allow": ["search", "search"] ', ALLOW_PROBLEM, [], [], []],
+  [', "to": ["help"], "allow": [""] ', ALLOW_PROBLEM, [], [], []],
+  [', "to": ["help"], "writes": "create_issue" ', WRITES_PROBLEM, [], [], []],
+  [', "to": ["help"], "writes": ["create_*"] ', WRITES_PROBLEM, [], [], []],
+  [', "allow": ["search"] ', ALLOW_NOT_HANDED, [], [], []],
+  [', "to": ["sessions"], "allow": ["search"] ', ALLOW_NOT_HANDED, [], [], []],
+  [', "writes": ["create_issue"] ', ALLOW_NOT_HANDED, [], [], []],
+  [', "to": ["help"], "allow": ["search"], "writes": ["search"] ', READS_AND_WRITES, [], [], []],
 ];
 
 test('a server\'s destination and the tools it allows are read by the twins\' rules (HELPPLUG1a)', () => {
-  for (const [declared, problem, to, allow] of SERVER_DESTINATIONS) {
+  for (const [declared, problem, to, allow, writes] of SERVER_DESTINATIONS) {
     const fx = makeFixture('plugins-server-to');
     plugin(fx.root, 'acme.tickets', `{ "id": "acme.tickets", "servers": [ { "name": "tickets", "command": ["tickets"]${declared} } ] }`);
 
@@ -347,7 +356,7 @@ test('a server\'s destination and the tools it allows are read by the twins\' ru
       assert.deepEqual(entry!.manifest.servers, [], declared);
     } else {
       const [server] = entry!.manifest.servers;
-      assert.deepEqual([server!.to, server!.allow], [to, allow], declared);
+      assert.deepEqual([server!.to, server!.allow, server!.writes], [to, allow, writes], declared);
     }
     fx.cleanup();
   }
@@ -415,7 +424,8 @@ test('the list says what a plugin hands Ask Daoris beside what it hands sessions
   const { code, out } = run(['list'], fx.root);
   assert.equal(code, 0);
   assert.match(out, /hands sessions docs/);
-  assert.match(out, /hands Ask Daoris tickets/);
+  // Offered: its tools reach Ask Daoris only once the person approves them (D170's note).
+  assert.match(out, /offers Ask Daoris tickets \(search\)/);
   fx.cleanup();
 });
 

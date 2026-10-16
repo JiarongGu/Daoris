@@ -66,6 +66,15 @@ public sealed partial class HelpCoverageTests
         + "since a rule narrowing is applied with nobody's press (PERM2).";
 
     /// <summary>
+    /// HELPPLUG1a's tightening (D170's note): approving what a plugin's server offers Ask Daoris, its reads, its writes, or
+    /// withdrawing it, widens or narrows what the helper itself may call, as the person's trust in code that runs as them.
+    /// </summary>
+    private static readonly Exempt HelpApproval = new(
+        "approving the tools a plugin's server offers Ask Daoris widens what the helper itself may call, as the person's trust in "
+        + "code that runs as them (D170's note), so Ask Daoris never proposes it, as it never proposes a rule (HELP1c); the room "
+        + "names the plugin's page and `daoris-driver plugins approve`.");
+
+    /// <summary>
     /// ACCT2's <c>daoris agent profile rename</c> and the route's <c>profile-rename</c>: exempt, since an account's name is the
     /// person's own word. The agent's page presses it (UX7b), and this is its control's row.
     /// </summary>
@@ -735,6 +744,10 @@ public sealed partial class HelpCoverageTests
         ("plugins", "usePluginAction", "remove", new Exempt(
             "a removal takes an installed plugin away, which only a fresh install brings back, so like a discard it stays "
             + "the person's own press (D89); Ask Daoris proposes switching it off, which undoes itself.")),
+        // HELPPLUG1a's tightening (D170's note): the person's approval of what a plugin's server offers Ask Daoris.
+        ("plugins", "usePluginAction", "help-approve", HelpApproval),
+        ("plugins", "usePluginAction", "help-reads", HelpApproval),
+        ("plugins", "usePluginAction", "help-withdraw", HelpApproval),
         ("plugins", "usePluginUpdate", null, new Door("plugin", "update")),
         ("plugins", "usePluginInstall", null, new Door("plugin", "add")),
         ("plugins", "usePluginNew", null, new Exempt(

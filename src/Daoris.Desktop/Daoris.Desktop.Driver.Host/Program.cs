@@ -227,6 +227,10 @@ using Daoris.Driver;
 //                 a plugin's page and what it did (PLUGUI1d, D119 §4.4): what it declares as written, a
 //                 server's environment by name only, its health from the machine log's last word, said with
 //                 when; and its activity from the machine log over the last 7 days, or the span --since names.
+//   plugins approve <id> <server> [--reads-only]
+//   plugins withdraw <id> <server>
+//                 the person's approval of the exact tools a plugin's server offers Ask Daoris (HELPPLUG1a, D170's
+//                 note), its writes outside Daoris too unless --reads-only, or its withdrawal: the page's twin.
 //
 // While watching, a line marked `!` is what would have been a toast on a machine with a screen
 // (SURF5b): a session parked, or one ended without the person asking. `daoris driver notify off`

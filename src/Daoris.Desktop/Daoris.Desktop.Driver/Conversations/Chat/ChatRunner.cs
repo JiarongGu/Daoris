@@ -598,8 +598,9 @@ public sealed class ChatRunner : IDisposable
     /// one that ended go on in its own harness conversation by the id kept for it (D137 §2.2), as a repository's chat does.</para>
     ///
     /// <para><b>A plugin's server reaches it only where the plugin declares it for Ask Daoris</b> (HELPPLUG1a, D170 point 3), and
-    /// its tools are allowed only as the plugin declares them. HELP1a handed it none, since a browser brought up for a tool it may
-    /// not use is a window for nothing; a server declared for it names the tools it may use.</para>
+    /// only once the person approved its exact tools (<see cref="HelpGrants"/>, D170's note): its reads and the writes they
+    /// accepted are allowed, any other write asked, which its mode refuses. HELP1a handed it none, since a browser brought up for
+    /// a tool it may not use is a window for nothing; a server approved for it names the tools it may use.</para>
     /// </remarks>
     internal ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads) => HelpPlaceIn(_home, room, reads);
 
@@ -607,7 +608,11 @@ public sealed class ChatRunner : IDisposable
     internal static ChatPlace HelpPlaceIn(string home, string room, IReadOnlyList<HelpRead> reads) =>
         new(
             HelpRoom.Repository, room,
-            (file, id) => HelpRoom.Rules(file, ChatFiles.Folder(home, id), reads, PluginCatalog.Load(home, AdapterSet.Built().Names).HelpAllows),
+            (file, id) =>
+            {
+                var grants = HelpGrants.Read(home, PluginCatalog.Load(home, AdapterSet.Built().Names));
+                return HelpRoom.Rules(file, ChatFiles.Folder(home, id), reads, grants.Allow, grants.Ask);
+            },
             Plugins: true, ConnectorOnPipe: true, Posture: HelpRoom.Posture, ToolsUpFront: true)
         {
             Keeps = true,
@@ -663,7 +668,9 @@ public sealed class ChatRunner : IDisposable
         string home, IInAppBrowser? browser, PluginLog plugins, string sessionId, CancellationToken ct, string to = PluginServerTo.Sessions)
     {
         var catalog = PluginCatalog.Load(home, AdapterSet.Built().Names);
-        var handed = await InAppBrowserServers.HandNotedAsync(catalog.ServersTo(to), browser, ct).ConfigureAwait(false);
+        // Ask Daoris takes only the servers the person approved for it (HelpGrants, D170's note); a session, its own.
+        var servers = to == PluginServerTo.Help ? HelpGrants.Read(home, catalog).Servers : catalog.ServersTo(to);
+        var handed = await InAppBrowserServers.HandNotedAsync(servers, browser, ct).ConfigureAwait(false);
         plugins.Served(catalog, sessionId, handed.Handed, to);
         return handed;
     }

@@ -77,9 +77,13 @@ export const usePlugins = ({ enabled = true }: { enabled?: boolean } = {}) => {
  * The screen's half of `daoris plugin enable|disable|remove` (D50): a row, or the folder gone with the data named. The
  * catalogue, and the roster, since a declared harness came or went with it, are asked again by the route's `STATE_CHANGED`
  * in every window (STATEHUB1d, D169), as for the update and the install below.
+ *
+ * HELPPLUG1a's tightening (D170's note): `help-approve`, `help-reads` and `help-withdraw`, with the `server`, are the person's
+ * approval of the exact tools a plugin's server offers Ask Daoris, its reads only, or its withdrawal, the page's half of
+ * `daoris-driver plugins approve|withdraw`.
  */
 export const usePluginAction = () => useMutation({
-  mutationFn: (action: { id: string; action: 'enable' | 'disable' | 'remove' }) =>
+  mutationFn: (action: { id: string; action: 'enable' | 'disable' | 'remove' | 'help-approve' | 'help-reads' | 'help-withdraw'; server?: string }) =>
     call<{ id: string; action: string; data: string | null }>('PLUGIN_ACTION', action),
 });
 
