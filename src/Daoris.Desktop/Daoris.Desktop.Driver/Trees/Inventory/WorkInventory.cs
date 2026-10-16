@@ -373,7 +373,7 @@ public static partial class WorkInventory
         var quests = draft.Landings.Where(landing => landing.Quest is { Length: > 0 } && landing.Units.Count <= 1)
             .Select(landing => new WorkLink(WorkRelation.ProducedBy, QuestUnits.IdOf(landing.Quest!))).Distinct().ToList();
         return new WorkUnit(
-            draft.Id, WorkUnitKind.Branch, new WorkOwner(draft.Repository, draft.Workspace, record, WorkRecord.Driver),
+            draft.Id, WorkUnitKind.Branch, new WorkOwner(draft.Repository, draft.Workspace, record, WorkRecord.DriverWriter),
             new WorkSubject(branch?.Branch ?? draft.Landings.FirstOrDefault()?.Branch, end.Revision), end, entries)
         {
             Executors = [.. draft.Sessions],

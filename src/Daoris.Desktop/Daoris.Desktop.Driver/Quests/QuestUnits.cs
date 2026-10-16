@@ -29,7 +29,7 @@ public static class QuestUnits
         if (quest.Awaits is { Length: > 0 } awaits) links.Add(new WorkLink(WorkRelation.Awaits, IdOf(awaits)));
 
         return new WorkUnit(
-            id, WorkUnitKind.Quest, new WorkOwner(quest.To, quest.Workspace, WorkRecord.Quests, WorkRecord.Service),
+            id, WorkUnitKind.Quest, new WorkOwner(quest.To, quest.Workspace, WorkRecord.Quests, WorkRecord.ServiceWriter),
             new WorkSubject($"#{quest.Id}", quest.Updated is { } moved ? Moments.Write(moved) : null), End(quest),
             Evidence(id, InventoryKind.Quest, quest.Id, "its words, its done, its answers and its evidence", quest.Attachments))
         {

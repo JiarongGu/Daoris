@@ -76,9 +76,11 @@ public static class WorkRecord
     /// <summary>The service's ask store.</summary>
     public const string Asks = "asks";
 
-    public const string Driver = "driver";
+    /// <summary>The driver writes the branch records, in the process that holds the home's lease.</summary>
+    public const string DriverWriter = "driver";
 
-    public const string Service = "service";
+    /// <summary>The service writes the quest and ask records.</summary>
+    public const string ServiceWriter = "service";
 }
 
 /// <summary>Who answers for a unit (§D2's <c>owner</c>): the repository and workspace, and the record that names it with that record's writer.</summary>
@@ -88,7 +90,7 @@ public static class WorkRecord
 /// <see cref="AutoLandings.FileName"/>, <see cref="WorkRecord.Quests"/>, <see cref="WorkRecord.Asks"/>); null where no record names
 /// it, an unknown owner (canary 27), which blocks and is never guessed.
 /// </param>
-/// <param name="Writer">That record's one writer: <see cref="WorkRecord.Driver"/> or <see cref="WorkRecord.Service"/>.</param>
+/// <param name="Writer">That record's one writer: <see cref="WorkRecord.DriverWriter"/> or <see cref="WorkRecord.ServiceWriter"/>.</param>
 public sealed record WorkOwner(string? Repository, string Workspace, string? Record, string Writer);
 
 /// <summary>

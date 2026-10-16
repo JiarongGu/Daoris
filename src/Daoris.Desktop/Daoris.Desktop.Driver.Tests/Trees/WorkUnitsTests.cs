@@ -57,7 +57,7 @@ public sealed class WorkUnitsTests : IDisposable
         var milestone = Assert.Single(WorkInventory.Derive(facts));
 
         Assert.Equal(("unit-a", WorkUnitKind.Branch), (unit.Id, unit.Kind));
-        Assert.Equal(new WorkOwner("engine", "default", SessionBranches.FileName, WorkRecord.Driver), unit.Owner);
+        Assert.Equal(new WorkOwner("engine", "default", SessionBranches.FileName, WorkRecord.DriverWriter), unit.Owner);
         Assert.Equal(new WorkSubject("daoris/s1", "a1b2c3d4e5f6"), unit.Subject);
         Assert.Equal(["s1"], unit.Executors);
         var read = WorkMilestone.Of(unit);
@@ -121,7 +121,7 @@ public sealed class WorkUnitsTests : IDisposable
 
         var done = units.Single(unit => unit.Id == "quest:q3");
         Assert.Equal(WorkUnitKind.Quest, done.Kind);
-        Assert.Equal(new WorkOwner("engine", "default", WorkRecord.Quests, WorkRecord.Service), done.Owner);
+        Assert.Equal(new WorkOwner("engine", "default", WorkRecord.Quests, WorkRecord.ServiceWriter), done.Owner);
         Assert.Equal(("done", Then), (done.End.By, done.End.At));
         Assert.Equal(["s2", "s1"], done.Executors);
         Assert.Equal(WorkUnitState.Retired, done.State);
@@ -158,7 +158,7 @@ public sealed class WorkUnitsTests : IDisposable
 
         var published = units.Single(unit => unit.Id == "ask:a1");
         Assert.Equal(WorkUnitKind.Ask, published.Kind);
-        Assert.Equal(new WorkOwner(null, "default", WorkRecord.Asks, WorkRecord.Service), published.Owner);
+        Assert.Equal(new WorkOwner(null, "default", WorkRecord.Asks, WorkRecord.ServiceWriter), published.Owner);
         Assert.Equal(WorkEndState.NotEnded, published.End.State);
         Assert.Equal(["i1"], published.Executors);
         Assert.Equal([new WorkLink(WorkRelation.Produced, "quest:q1"), new WorkLink(WorkRelation.Produced, "quest:q2")], published.Links);

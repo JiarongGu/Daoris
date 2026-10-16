@@ -21,7 +21,7 @@ public static class AskUnits
     {
         var id = IdOf(ask.Id);
         return new WorkUnit(
-            id, WorkUnitKind.Ask, new WorkOwner(null, ask.Workspace, WorkRecord.Asks, WorkRecord.Service), new WorkSubject($"#{ask.Id}", null),
+            id, WorkUnitKind.Ask, new WorkOwner(null, ask.Workspace, WorkRecord.Asks, WorkRecord.ServiceWriter), new WorkSubject($"#{ask.Id}", null),
             End(ask), QuestUnits.Evidence(id, InventoryKind.Ask, ask.Id, "the person's words and the quests it became", ask.Attachments))
         {
             Executors = ask.Intake is { Length: > 0 } intake ? [intake] : [],
