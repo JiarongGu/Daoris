@@ -618,6 +618,7 @@ public sealed class Driver(
                     Asks = [.. held.Select(each => each.Started.Ask).OfType<string>()],
                     Repositories = [.. held.Select(each => each.Started.Where).Distinct(StringComparer.OrdinalIgnoreCase)],
                     SignedOut = SignedOutOf(held),
+                    NoAccount = held.Any(each => each.Came!.SignedOut!.NoAccount),
                 };
             })
             .ToList();

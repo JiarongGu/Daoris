@@ -295,7 +295,7 @@ public sealed class DriverLoop(
             // where there is none, and the id stays the fact a sign-in takes.
             WaitsFor = waiting is null ? null : new { waiting.Agent, waiting.Account, waiting.Name, waiting.Until, waiting.Stated },
             // The accounts its start passed not signed in (TOOL6g), whose: the page says each with its sign-in. Null otherwise.
-            SignedOut = consideration.SignedOut is { } passed ? new { passed.Agent, passed.Accounts, passed.Names } : null,
+            SignedOut = consideration.SignedOut is { } passed ? new { passed.Agent, passed.Accounts, passed.Names, passed.NoAccount } : null,
             // Held by an update's drain (UPDATE1, D139 §2): a fact the page says in the reader's language. Null otherwise.
             ForUpdate = InstallUpdate.IsHeldForUpdate(consideration) ? true : (bool?)null,
             // Whose take holds it, where it is not this machine's (CARRY2c): the machine and its session where a record named
@@ -336,6 +336,7 @@ public sealed class DriverLoop(
         wait.Quests,
         wait.Asks,
         wait.SignedOut,
+        wait.NoAccount,
     };
 
     /// <summary>
@@ -347,7 +348,7 @@ public sealed class DriverLoop(
         string.Join("\n", waits
             .Select(wait => string.Join("\t",
                 wait.Agent, wait.Account ?? "", wait.Workspace ?? "", wait.Until?.ToUnixTimeSeconds(), wait.Stated,
-                string.Join(",", wait.Quests), string.Join(",", wait.Asks), string.Join(",", wait.SignedOut)))
+                string.Join(",", wait.Quests), string.Join(",", wait.Asks), string.Join(",", wait.SignedOut), wait.NoAccount))
             .OrderBy(line => line, StringComparer.Ordinal));
 
     /// <summary>

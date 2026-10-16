@@ -963,7 +963,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     private static HarnessSelection NoAccount(string owner, IReadOnlyList<string> signedOut, IReadOnlyDictionary<string, string> names)
     {
         var note = RotationWords.NoAccountOf(owner);
-        return new HarnessSelection(note.Note) { SignedOut = SignedOutAccounts.Of(owner, signedOut, names), RefusalNote = note };
+        return new HarnessSelection(note.Note) { SignedOut = SignedOutAccounts.Of(owner, signedOut, names) with { NoAccount = true }, RefusalNote = note };
     }
 
     private async Task<HarnessSelection> WalkAsync(
@@ -1234,7 +1234,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         var scope = Settings.ResolveScope(agent, circle);
         var toolchain = OwnersToolchain(agent);
         if (toolchain is not null) scope = Walked(scope, agent, toolchain);
-        if (toolchain is { StartsInOwnHome: false } && scope.List.Count == 0 && scope.Begins is null) return new NextStart(null, NextReason.Waits, []);
+        if (toolchain is { StartsInOwnHome: false } && scope.List.Count == 0 && scope.Begins is null) return new NextStart(null, NextReason.NoAccount, []);
 
         var now = Clock();
         IReadOnlyList<string> present;
