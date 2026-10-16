@@ -240,6 +240,10 @@ repository.
   `CreateProcessW`, which no census of .NET's starts saw, in its synchronous part; it now runs that start through the gate's
   `RunAsync`, and a shell whose terminal was ended while it waited there is ended as it starts. The census counts
   `CreateProcessW` too. Verify: `TerminalOpenGateTests` (the start on the caller's thread before, off it after).
+- **And the update's relaunch (UPDATERELAUNCH1, 2026-10-16):** *Update now*'s `SET` looked, applied and started the launcher
+  synchronously; the look is awaited now and the launcher started through the gate (`UpdateLauncher`), and `App/Program.cs`
+  is off the census's list. Verify: `UpdateRelaunchGateTests` (the launcher started on the caller's thread before, off it
+  after), the census (red with `Program.cs` off its list before the move).
 
 ## 2026-10-15 — The person-door host missed its 15-second stop once under load: not reproduced, its one long wait bounded (FLAKE2)
 

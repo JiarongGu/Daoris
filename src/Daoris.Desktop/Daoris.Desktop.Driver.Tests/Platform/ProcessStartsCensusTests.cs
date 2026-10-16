@@ -27,8 +27,6 @@ public sealed class ProcessStartsCensusTests
     {
         ["Daoris.Desktop.Driver/Platform/ProcessStarts.cs"] = (1, "the gate itself: the one place the runtime's start is handed in"),
         ["Daoris.Desktop.Launcher/Program.cs"] = (1, "the launcher is a program of its own, with no window and no bridge: it starts the application once and exits"),
-        ["Daoris.Desktop.App/Program.cs"] = (1, "Relaunch: the launcher, through the shell (no CreateProcess lock), once, as the application closes for an update; "
-            + "the updater's look that asks it is synchronous"),
         ["Daoris.Desktop.Driver/Agents/Consoles/PseudoConsole.cs"] = (2, "a terminal's shell under a pseudo-console, which .NET cannot start: "
             + "CreateProcessW, declared and called once; the terminal module runs that start through the gate's RunAsync"),
     };
@@ -64,6 +62,7 @@ public sealed class ProcessStartsCensusTests
     [InlineData("Daoris.Desktop.Driver/Plugins/PluginTrialProcess.cs", "ProcessStarts.Shared.StartAsync(")]
     [InlineData("Daoris.Desktop.Modules/Loop/HostSupervisor.cs", "ProcessStarts.Shared.StartAsync(")]
     [InlineData("Daoris.Desktop.App/EngineBrowserHost.cs", "ProcessStarts.Shared.StartAsync(")]
+    [InlineData("Daoris.Desktop.Modules/Update/UpdateLauncher.cs", "ProcessStarts.Shared.StartAsync(")]
     [InlineData("Daoris.Desktop.Modules/Bridge/Routes/PluginsRoutes.cs", "_openFolder.OpenAsync(folder")]
     [InlineData("Daoris.Desktop.Modules/Bridge/Routes/SessionsRoutes.cs", "_openFolder.OpenAsync(folder")]
     [InlineData("Daoris.Desktop.Modules/Platform/LogModule.cs", "openFolder.OpenAsync(folder")]
