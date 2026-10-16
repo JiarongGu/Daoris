@@ -1,7 +1,7 @@
 # Events over polling, and the end of a piece of work (FABRIC-EVENT1, FABRIC-END1)
 
 **Parts A and B accepted by the owner, 2026-10-16, with three amendments in their words (D173's acceptance note); part C,
-which answers them, proposed, pending the owner's yes and a second maker's opinion.** The contract is D173's notes of
+which answers them, accepted with the owner's answers (D173's part C note).** The contract is D173's notes of
 2026-10-16, *the end of a piece of work*, *events over polling* and the acceptance. Parts A and B design both directions
 together because they share one shape (Part A), and the end of a piece of work is that shape's first consumer (Part B).
 Part C makes the end defined per workspace and repository, lets a plugin contribute a step or an end, and turns the
@@ -847,14 +847,17 @@ newer, and a failure never replaces a kept answer (D148 point 5).
 back through the world: the tidy deletes a branch, and the ref watcher hears it. What makes it converge:
 
 - **A fact link emits only on a change.** A judgement that finds what it found before emits nothing.
-- **A removed unit becomes a trace.** Its kept facts stay as they were at the removal, with `GoneAt` and `RemovedAs`, the
-  tombstone that `landings.json` already keeps and that §B5 adds for session branches. A trace is never judged again:
-  §B5's rule that a fact stops holding when the tip moves applies to standing units only. So a branch's disappearance
-  never reads as its end being lost.
-- **An effect is done once its unit no longer meets its condition.** A trace meets no effect's condition.
+- **A retired unit becomes a trace** (as amended by §D3's retirement). A branch's removal is not the unit's retirement.
+  The unit retires only once its end is reached (or the person drops it), every inventory entry has a terminal
+  disposition, and no attempt is unresolved. Until then it stays open on its record, its git facts frozen at the removal
+  with `GoneAt` and `RemovedAs`. A retired unit's kept facts are its tombstone, which `landings.json` already keeps and
+  §B5 adds for session branches. A trace is never judged again: §B5's rule that a fact stops holding when the tip moves
+  applies to standing branches only. So a branch's disappearance never reads as its end being lost.
+- **An effect is done once its unit no longer meets its condition.** A trace meets no effect's condition, and an open
+  unit whose branch is gone meets only the conditions of its remaining steps, attempts and resources.
 - **So each wake ends.** It runs one judgement per due subject (finitely many) and at most one try of each pending
-  effect. That try either completes, turning the unit into a trace, or leaves it pending until the next unblocking wake.
-  The world's echo of a completed effect is judged once, finds no change and no pending effect, and emits nothing.
+  effect. That try either completes, moving the unit towards retirement, or leaves it pending until the next unblocking
+  wake. The world's echo of a completed effect is judged once, finds no change and no pending effect, and emits nothing.
 - **The change stream answers families by their own revisions**, so the driver's own sync pass wakes nothing (§A4.2).
 - **No configuration adds a link that can feed itself.** On the bounded menu (FABRIC-CHAIN3), every effect is one that writes
   no git ref and no ledger family a link listens to.
@@ -930,7 +933,7 @@ Parts A-C remain the branch adapter's design.
 | **Recovery retained:** the moved-aside folder until its purge date, the recovery refs | the inventory's `recovery` entries |
 
 The milestone is shown on the work's foot, in What needs you when something waits on the person, on the Branches tab and
-WorkspaceTidied, by `daoris-driver trees state` and `work state`, and by Ask Daoris. It is built first (FABRIC-MILESTONE1),
+WorkspaceTidied, by `daoris-driver trees state` and `work state`, and by Ask Daoris. It is built first (FABRIC-MILESTONE1a and 1b),
 for the default cycle, before any configuration exists, so the person sees the lifecycle working as soon as it does.
 
 ## D1. What part D changes in parts A, B and C
@@ -964,7 +967,7 @@ writer, and reads the unit from it. A `WorkUnit` is a projection.
 | branch work | the session branch's `session-branches.json` entry, with the landing entries that reference it | the driver: the tree's opening, the end judgement, the landing | **the first**, built over parts B and C |
 | quest | `QuestStore` (Quests.cs) | the service, through `QuestExchange` | after the branch adapter, read-only first |
 | ask | `AskStore` (ServiceFactory.cs:291) | the service | read-only, as the quest's space |
-| delegated task | a quest whose commitment another repository accepted (D163's hand-over, the proposal's §3 `Commitment`) | the service | after the collaboration checkpoint (§D10) |
+| delegated task | a quest another repository's session took: its take (D69; the C0 audit's row 2), the proposal's §3 `Commitment` | the service | after the collaboration checkpoint (§D10) |
 
 **Deployments, documents and plugin artifacts are not kinds yet.** No canonical record holds one today, so for now each
 is a **result** or a **resource** of a step on another unit (§D3, §D4). It becomes a kind of its own only when a lifecycle
@@ -1010,10 +1013,40 @@ guess.
 - **Daoris** removes only the types its own executors own (worktrees, its branches, moved-aside folders at their purge),
   with fresh proof and every guard.
 - **A plugin's local resources** go only through the plugin's registered cleanup adapter. Its manifest declares
-  `resources: [{ schema, cleanup: "work/cleanup" }]`. At a true end, Daoris sends `work/cleanup { receipt }` for each
-  receipt the plugin owns. The plugin removes what it created and answers a disposition with its proof. Daoris runs no
-  command for it, and never hands it a path: `resource` is an opaque id the plugin issued.
+  `resources: [{ schema, cleanup: "work/cleanup" }]`. At a true end, Daoris sends a cleanup request for each receipt the
+  plugin owns. The plugin removes what it created and answers a disposition with its proof. Daoris runs no command for
+  it, and never hands it a path: `resource` is an opaque id the plugin issued.
 - **External resources** stay their owner's: Daoris records the disposition, or a notice that the resource was retained.
+
+**The cleanup is durable and idempotent.** A crash between a deletion and the recording of its disposition must converge:
+
+- **Daoris persists the request before sending it:** `cleanup: { state: requested, key, at, tries }` on the receipt.
+- **The frame:** `work/cleanup { receipt, resource, idempotencyKey }`, answered
+  `{ disposition: "removed" | "already-gone" | "retained" | "failed", proof?, message? }`.
+- **After a restart or a lost answer**, Daoris sends the same request again with the same key. The plugin answers
+  `already-gone` for what it already removed, so a second delivery never fails for having succeeded.
+- **`failed` is retried with a back-off** (1, 5, 15 and 60 minutes, then daily). After seven days it is shown as
+  *blocked* in the milestone, with the plugin's message. It never disappears.
+- **Every receipt ends** in `removed`, `already-gone` or `retained` (with its reason), or stays visibly blocked.
+
+**Invalidation keeps resource accountability.** A deployment may still be running when its prerequisite or the revision
+changes. The attempt is then marked `superseded`:
+
+- its completion is still recorded, as the outcome of a stale attempt, and never counts as current evidence;
+- its receipts are still taken, reconciled and kept in the inventory;
+- its resources become temporary whatever role they declared, since a stale attempt has no result. They are cleaned
+  through the adapter at once, unless the plugin answers `retained` (a reused environment, say).
+
+**A unit retires, a branch is removed.** The two are kept apart:
+
+- **The branch's removal** is the disposition of its git entries: the tree, the session branches, the landing's other
+  branches.
+- **The unit's retirement** comes only once its end is reached (or the person drops it), every entry has a terminal
+  disposition, and no attempt is unresolved.
+- §C3 lets the cleanup take the branch at *held* while later steps remain. The unit then stays **open** on its record:
+  its revision, frozen at the removal, still binds the remaining steps' evidence, and its attempts, resources and
+  cleanup obligations stay live.
+- **The traces' pruning** (`TracesKept`, LEFT3) never prunes an open unit. Only a retired one becomes an inert trace.
 
 **A plugin's word** establishes neither safe deletion of anything Daoris owns nor git preservation (*held*). A performed
 step never removes anything.
@@ -1087,15 +1120,66 @@ eligible, Daoris sends a request on the same supervised connection:
 - **This amends §C7:** dispatch receipts and unresolved attempts survive a restart; the due sets stay ephemeral.
 - **The capability is negotiated.** The handshake names `work.perform@1` among the plugin's capabilities, and
   `protocolVersion` stays 1 (D148 point 8's rule). §C4's sender checks, bounds and generations apply to every frame.
-- **What a performer may not do**, whatever its own authority:
-  - write a Daoris store, a rule or a ref Daoris owns;
-  - remove a resource (§D3);
-  - stand in for a person;
-  - make another step's evidence;
-  - inherit a publishing right or a credential (ADR-F);
-  - write into another repository.
 
-  It acts with its own external authority only.
+**The performer's contract**, which the kit promises (§D9), so that no author has to invent it.
+
+*What it declares.* In the step's `perform`:
+
+```json
+"perform": { "point": "work/perform", "idempotent": true, "reconcile": "work/reconcile",
+             "transient": ["unavailable", "rate-limited", "timeout"] }
+```
+
+- `idempotent`: the plugin deduplicates a redelivered key durably, so the same key never causes a second external
+  effect.
+- `reconcile`: the plugin can answer what became of an attempt.
+- `transient`: the failure codes worth retrying. A `failed` outcome carries a `code`; only a listed code retries, under
+  the step's `retry`, and every other code stops the step for the person.
+- Automatic retry needs `idempotent`, or `reconcile`, or both. A step with neither is never redelivered by itself.
+
+*How outputs flow.*
+
+- A `reached` outcome carries `outputs: { <name>: { ref: "<schema>:<opaque id>", revision } }`: at most 8, each ref at
+  most 200 characters. Daoris keeps them on the step's record (§C7), never their payloads.
+- A later step's `inputs` name `{ step, output }`. At dispatch, Daoris resolves each one to the ref recorded on the
+  producing step's **current, valid** acceptance. A stale or invalidated producer leaves the consumer ineligible, never
+  given an old ref.
+- The ref is opaque to Daoris. The plugin that made it, or one declaring its schema, reads it.
+
+*How reconciliation is asked.* Before any new attempt, Daoris asks after an attempt whose outcome is unknown: after a
+restart with an unresolved attempt, after its deadline, or after a lost connection. The request:
+
+`work/reconcile { unit, step, invocation, idempotencyKey, subjectRevision }`
+
+It is answered `{ state: "done" | "not-started" | "running" | "failed" | "unknown", outcome?, resources? }`:
+
+| The answer | What Daoris does |
+|---|---|
+| `done` | records `outcome` and `resources` as if they came by `work/step` |
+| `not-started` | delivers again with the same key |
+| `running` | waits to the deadline |
+| `failed` | follows `transient` |
+| `unknown` | stops the step, and the person sees it; no new attempt is made by itself |
+
+**The trust model.** Plugins are trusted code. A hook process is an ordinary process on the person's account, started in
+the plugin's folder and told the home (HookProcess.cs:83-99). Like anything the account runs, it can read and write
+whatever that account can, Daoris's stores included. Installing a plugin and switching it on (D64, D100) is the person's
+decision to trust it, as D156 §4.4 already says of anything on one account.
+
+So these are **protocol obligations**, which Daoris checks on every frame it receives (refusing a frame that claims what
+it may not, §C4) and the kit's contract test checks for each plugin. They are not isolation, and no enforcement against
+arbitrary plugin code is promised. A performer, whatever its own authority, does not:
+
+- write a Daoris store, a rule or a ref Daoris owns;
+- remove a resource except through its cleanup adapter (§D3);
+- stand in for a person;
+- make another step's evidence;
+- inherit a publishing right or a credential (ADR-F);
+- write into another repository.
+
+It acts with its own external authority only. If plugins from sources the person does not trust are ever wanted, running
+them isolated (a restricted token, an app container, another account) needs a design first. FABRIC-ISOLATE1 is named for
+that, and not scheduled.
 
 ## D7. Automatic by default
 
@@ -1145,19 +1229,47 @@ transition. There are no expressions and no scripts.
 2. Line → an approved deploy plugin performs → the end is reached automatically → `notifyPerson`.
 3. The end → `notifyPerson` → `offerPersonAction`, the quest's own done.
 
-**Loop safety:** no effect writes a ref, a ledger family or a fact, so no response can feed a link (§C6).
+**Why responses terminate.** That no effect writes is not enough: `requestReconcile` runs a judge, which can write facts,
+and `deliverPluginEvent` reaches a process, which can send another event. Rate limits bound the traffic, but they prove
+nothing. Termination rests on four rules, each with its canary:
+
+1. **A transition has an identity**: `(unit, kind, step, revision, attempt, outcome)`. Each effect runs at most once per
+   identity. `notifyPerson` and `offerPersonAction` are keyed by it in What needs you. `deliverPluginEvent` carries the
+   transition's `eventId`, which the plugin must deduplicate. `requestReconcile` only adds the unit to its due set, which
+   coalesces.
+2. **A judge is a function of the world.** Run again on unchanged git, unchanged kept evidence and unchanged person
+   answers, it finds the same facts and emits nothing. So `requestReconcile` alone can never make a transition.
+3. **A plugin cannot mint attempts.** For one `(step, revision)`, attempts are created only by Daoris's dispatch under
+   the step's `retry`, by the person, or by a new revision, never by a plugin's event. Each attempt's outcome is final
+   once `reached`, `failed` or `rejected`. An observed step may change its reported state for one revision at most 8
+   times; past that it is refused (`too-many`) and shown *unknown* to the person.
+4. **No response creates a revision.** No effect writes git, a ledger family or a step's evidence.
+
+So for every unit, the measure *remaining attempts plus remaining observation changes, over its steps at its revision*
+is finite. Every transition a response causes lowers it, and no response raises it. A chain of responses therefore ends;
+only the world (a commit, a person, a new event the rules accept) starts a new one. Canaries 32 and 33 hold it with a
+plugin that echoes every delivered event, and one that alternates *reached* and *failed*.
 
 ## D9. The plugin author's path
 
 - **The manifest:** `steps` hold step contracts (§D4); `hooks.points` names `work/watch`, `work/perform`, `work/step` and,
   where it cleans, `work/cleanup`; `resources` names the schemas it creates and who cleans them.
-- **The kit scaffolds** a performer, a receipt schema, a durable idempotency journal, a watch and resync handler, and a
-  contract test.
+- **The kit scaffolds** a performer, a receipt schema, a durable idempotency journal, a watch and resync handler, the
+  `work/reconcile` and `work/cleanup` handlers, and a contract test. It implements §D6's performer's contract (what is
+  declared, how outputs flow, how reconciliation is asked) and §D3's durable cleanup, so an author fills in only the
+  external calls.
 - **`daoris-driver plugins try --cycle <fixture>`** drives synthetic eligibility, duplicate delivery, failure, timeout,
   restart and stale evidence, without a real deployment.
 - **The author writes** the external execution, its reconciliation and the evidence. **Daoris supplies** ordering,
   references, dispatch recovery, the task's presentation, deadlines, validation and the cleanup accounting.
-- **The contract test** must show one external effect under duplicate delivery, and no forbidden Daoris mutation.
+- **The contract test** must show:
+  - one external effect under duplicate delivery;
+  - each `work/reconcile` answer;
+  - `already-gone` on a repeated cleanup;
+  - an echoed event deduplicated;
+  - no frame claiming a forbidden Daoris mutation.
+
+  It checks the protocol, not the code's honesty (§D6's trust model).
 
 ## D10. The collaboration fit
 
@@ -1189,45 +1301,61 @@ transition. There are no expressions and no scripts.
 
 This replaces the row table under **Canaries and proof, and the rows** for every row not yet built.
 
+**The collaboration gate runs in parallel, from now**, in its own lane, apart from the order below:
+
+| Gate | Row | Lanes | After | Fate | Builds |
+|---|---|---|---|---|---|
+| G1 | FABRIC-ACP1 → FABRIC-C2a → FABRIC-C2b | parent; service | as their rows | survive, **in parallel with every row below** | the collaboration checkpoint |
+| G2 | FABRIC-COLLAB1 | service, driver | G1 | **new** | one cross-harness round trip: a message and an artifact by reference |
+| G3 | FABRIC-DELEGATE1 | service, driver | G2, UNIT1b | **new** | a delegated step as a quest commitment, the delegated-task adapter |
+
+**The lifecycle, in order.** Each row is sized near a hundred turns:
+
 | Order | Row | Lanes | After | Fate | Builds |
 |---|---|---|---|---|---|
 | 1 | FABRIC-EVENT2 | driver | - | survives (in flight) | the change watch (§A3, §A4.1) |
 | 2 | FABRIC-END2a | driver | - | survives (in flight) | the end judgement, extracted, the cycle an input |
 | 3 | FABRIC-EVENT2b, 2c, 2d | driver; modules | 1 | survive | the watch's follow-ups |
 | 4 | FABRIC-CHAIN2a | driver | 1 | **split** from CHAIN2 | the minimal chain: fact links, the tidy as a pending effect, topic deadlines as `timer` events |
-| 5 | FABRIC-END2 | driver | 2, 4 | **merges** END2b and END2c, default cycle only | `Held` with `Since`, traces, the branch unit's id, the cross-process writer, lapse on standing units |
+| 5 | FABRIC-END2 | driver | 2, 4; **the cross-process writer chosen first** (RPC1's pipe for the verbs that write these records, or a lock on the two files) | **merges** END2b and END2c, default cycle only | `Held` with `Since`, traces never pruning an open unit, the branch unit's id, lapse on standing branches |
 | 6 | FABRIC-END3 | driver | 1, 5 | survives | the ref watcher |
-| 7 | FABRIC-MILESTONE1 | driver, web-shell | 5 | **new**, from the default parts of END4b and END5 | §D0's milestone for the default cycle, on the page, the CLI and Ask Daoris |
-| 8 | FABRIC-END4a | driver | 6, 7 | survives, **default only** | the safe cleanup at *held*, with the ownership inventory derived for the branch adapter (§D3) |
-| 9 | FABRIC-EVENT3a | driver | 1, 4 | survives, **moved forward** | the look's topics |
-| 10 | FABRIC-EVENT3b | service, driver | 9 | survives, **moved forward** | the change stream |
-| 11 | FABRIC-EVENT4 | driver, modules | 1, 4 | survives, **moved forward** | the home's record files |
-| 12 | FABRIC-END7 | driver | 6, 10, 11 | survives | auto-landing on its wakes |
-| 13 | FABRIC-END6 | driver | 6 | survives | a fetch and a plugin's ask when due |
-| 14 | FABRIC-UNIT1 | driver, cli | 5 | **merges** CYCLE1a, PLUGSTEP1a and CYCLE0's config | the `WorkUnit` adapter interface and branch adapter, the step contract (§D4), the cycle on the landing rule, and manifest `steps`, with both twins |
-| 15 | FABRIC-PERFORM1a | driver | 14 | **merges** PLUGSTEP1b and 1d | the watch connection supervised, the reverse `work/step`, `work/perform` with persisted dispatch, the capability |
-| 16 | FABRIC-PERFORM1b | driver | 15 | **merges** PLUGSTEP1e | belief and evidence binding (§C4, §D4), receipts and `Resources`, `work/cleanup`, a performer's limits |
-| 17 | FABRIC-PERFORM1c | driver, examples | 16 | **merges** PLUGSTEP1c and 1f | the kit's scaffold, `plugins try --cycle`, an example performed plugin |
-| 18 | FABRIC-END4c | driver | 8, 16 | **split** from END4a | the configured cleanup: the cycle's `wait`, the result per cycle, plugin resources through their adapters, every disposition |
-| 19 | FABRIC-HUMAN1 | driver, modules | 14 | survives, **reshaped** | human tasks (§D5): brief, attachments, approve or reject, their doors and twin |
-| 20 | FABRIC-CYCLE1b | web-shell, modules | 14, 19 | survives, **reshaped** | Setup's *Work → Cycle / Steps / Cleanup* |
-| 21 | FABRIC-END4b | driver, web-shell | 7, 18, 19 | survives, **configured part only** | the page draws configured cycles, tasks and performed steps |
-| 22 | FABRIC-CHAIN3 | driver, cli, web-shell | 4, 20 | survives, **specified** | §D8: transitions, the four effects, *Event responses*, `work responses` |
-| 23 | FABRIC-END5 | driver, modules | 21 | survives, **configured part only** | the CLI and Ask Daoris read configured cycles |
-| 24 | FABRIC-ACP1 → FABRIC-C2a → FABRIC-C2b | parent; service | as their rows | survive, **an independent gate** | the collaboration checkpoint |
-| 25 | FABRIC-COLLAB1 | service, driver | 24 | **new** | one cross-harness round trip: a message and an artifact by reference |
-| 26 | FABRIC-DELEGATE1 | service, driver | 25, 14 | **new** | a delegated step as a quest commitment, the delegated-task adapter |
-| 27 | FABRIC-EVENT5a, 5b, EVENT6, C1b, PROOF-UNREAD1 | as their rows | as their rows | survive | focused integrations and correctness |
-| 28 | FABRIC-EVENT7 | driver, cli | 6, 10, 11, 12 | survives, measurement-gated | the clocks as deadlines |
+| 7 | FABRIC-MILESTONE1a | driver | 5 | **new** | the default inventory **derived** (§D3's rows for the branch adapter, read-only) and the milestone's answer; `trees state`, `work state` |
+| 8 | FABRIC-MILESTONE1b | web-shell, modules | 7 | **new**, from the default parts of END4b and END5 | the milestone on the work's foot, What needs you, Branches and WorkspaceTidied, and Ask Daoris |
+| 9 | FABRIC-END4a | driver | 6, 7 | survives, **default only** | the safe cleanup at *held*, acting on the derived inventory; a branch's removal kept apart from the unit's retirement |
+| 10 | FABRIC-EVENT3a | driver | 1, 4 | survives, **moved forward** | the look's topics |
+| 11 | FABRIC-EVENT3b | service, driver | 10 | survives, **moved forward** | the change stream |
+| 12 | FABRIC-EVENT4 | driver, modules | 1, 4 | survives, **moved forward** | the home's record files |
+| 13 | FABRIC-END7 | driver | 6, 11, 12 | survives | auto-landing on its wakes |
+| 14 | FABRIC-END6 | driver | 6 | survives | a fetch and a plugin's ask when due |
+| 15 | FABRIC-UNIT1a | driver | 5 | **split** | the adapter model: `WorkUnit`, the branch adapter, `Units` on landings, read-only quest and ask adapters |
+| 16 | FABRIC-UNIT1b | driver | 15 | **split** | the common step contract (§D4): declaration, validation, evidence binding, invalidation, outcomes, persisted `timer.step` |
+| 17 | FABRIC-UNIT1c | driver, cli | 16 | **split**, takes CYCLE1a | the cycle's configuration: `cycle` on the landing rule and `workCycles`, both twins, D164, the refusals |
+| 18 | FABRIC-UNIT1d | driver, cli | 16 | **split**, takes PLUGSTEP1a | the manifest twins: `steps`, `resources`, `perform` (`idempotent`, `reconcile`, `transient`) |
+| 19 | FABRIC-PERFORM1a | driver | 18 | **split**, takes PLUGSTEP1b and 1d | transport and supervision: the reverse `work/step` with its bounds, the lease's loop owning the process, the capability, generations and `resync` |
+| 20 | FABRIC-PERFORM1b | driver | 17, 19 | **split** | durable execution: `work/perform`, dispatch persisted before sending, keys, `work/reconcile`, retries by `transient`, superseded attempts |
+| 21 | FABRIC-PERFORM1c | driver | 20 | **split**, takes PLUGSTEP1e | evidence authorization: §C4's rules, evidence binding, outputs resolved for later inputs |
+| 22 | FABRIC-PERFORM1d | driver | 9, 21 | **split** | resource cleanup: receipts and `Resources`, durable idempotent `work/cleanup`, accountability through invalidation, retirement with attempts and resources |
+| 23 | FABRIC-PERFORM1e | driver, examples | 22 | **merges** PLUGSTEP1c and 1f | the kit's scaffold of §D6's and §D3's contracts, `plugins try --cycle`, an example performed plugin |
+| 24 | FABRIC-END4c | driver | 9, 17, 22 | **split** from END4a | the configured cleanup: the cycle's `wait`, the result per cycle, the pre-line exception |
+| 25 | FABRIC-HUMAN1 | driver, modules | 16, 17; **RPC1d and D156 §4.2's confirmation** for the terminal twin | survives, **reshaped**, independent of the PERFORM rows | human tasks (§D5): brief, attachments, approve or reject, their doors and twin |
+| 26 | FABRIC-CYCLE1b | web-shell, modules | 17, 25 | survives, **reshaped** | Setup's *Work → Cycle / Steps / Cleanup* |
+| 27 | FABRIC-END4b | driver, web-shell | 8, 24, 25 | survives, **configured part only** | the page draws configured cycles, tasks and performed steps |
+| 28 | FABRIC-CHAIN3 | driver, cli, web-shell | 4, 26 | survives, **specified** | §D8: transitions, the four effects, *Event responses*, `work responses` |
+| 29 | FABRIC-END5 | driver, modules | 27 | survives, **configured part only** | the CLI and Ask Daoris read configured cycles |
+| 30 | FABRIC-EVENT5a, 5b, EVENT6, C1b, PROOF-UNREAD1 | as their rows | as their rows | survive | focused integrations and correctness |
+| 31 | FABRIC-EVENT7 | driver, cli | 6, 11, 12, 13 | survives, measurement-gated | the clocks as deadlines |
+
+FABRIC-ISOLATE1 (§D6's trust model) is named and not scheduled.
 
 **Gone:**
 
 - **CYCLE0**, done: its amendments are in §C2 and §C3, and part D supersedes the human press.
-- **CYCLE1a and PLUGSTEP1a**, merged into UNIT1.
-- **PLUGSTEP1b-1f**, merged into PERFORM1a-c.
+- **CYCLE1a**, now UNIT1c; **PLUGSTEP1a**, now UNIT1d.
+- **PLUGSTEP1b-1f**, now PERFORM1a-e.
 - **CHAIN2**, split: its minimal part is CHAIN2a, and the rest is CHAIN3's.
 - **END2b and END2c**, merged into END2.
 - **END4a**, split into its default part and END4c.
+- **MILESTONE1**, split into 1a and 1b.
 
 **Canaries for part D:**
 
@@ -1236,17 +1364,28 @@ This replaces the row table under **Canaries and proof, and the rows** for every
 28. A redelivered `work/perform` after a restart carries the same key and causes one external effect.
 29. A changed input or prerequisite invalidates every downstream acceptance.
 30. A human task's *Approve* is refused without its required attachments, and *Reject* without its reason.
-31. No menu effect writes a fact, a ref or a ledger family.
+31. No menu effect writes a fact, a ref or a ledger family, and each effect runs at most once per transition identity.
+32. A plugin that echoes every delivered event causes no second transition.
+33. A plugin that alternates *reached* and *failed* for one revision stops at the bound and reads *unknown*.
+34. A crash between a plugin's deletion and its recorded disposition converges: the same key is sent again and answered
+    `already-gone`.
+35. A branch removed while a later step, an attempt or a resource is unresolved leaves its unit open. The pruning of
+    traces skips it, and it retires once its last entry is terminal.
+36. A superseded attempt's completion is recorded and never counted as current evidence, and its receipts are reconciled
+    and cleaned.
+37. An output ref from an invalidated producer is never handed to a consumer, and an unknown outcome is reconciled
+    before any new attempt.
 
 ## D13. Questions for the owner
 
 1. **Should reaching the end close the quest by itself?** Today only the person's own done (`POST /api/quests/{id}/done`)
    or the agent's done closes one.
    - (a) Offer it: `offerPersonAction` puts the quest's done in front of the person.
-   - (b) Automatic: the driver records the end as the quest's evidence through its evidence door
-     (`/api/quests/{id}/evidence`, a `Driver` door), and a quest whose evidence is complete closes.
+   - (b) Automatic: a new contract by which the driver closes an open quest when its work's end is reached. No existing
+     door does this. The evidence door (`/api/quests/{id}/evidence`, a `Driver` door) records a verdict only on a quest
+     already done and awaiting its evidence, and refuses any other (QuestExchange.cs:1529-1540).
 
-   *Recommendation:* (a) now. Revisit (b) with the evidence rows, since it changes the quest's contract and D46's line.
+   *Recommendation:* (a) now. (b) is a change to the quest's contract and to D46's line, for the evidence rows to weigh.
    This replaces the earlier open question on the end and the quest.
 2. **Which kind of work should the fabric take on second, after branch work?**
    - (a) The delegated task (FABRIC-DELEGATE1), riding the collaboration checkpoint.
