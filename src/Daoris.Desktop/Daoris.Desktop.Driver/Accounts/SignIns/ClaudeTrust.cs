@@ -238,10 +238,32 @@ public static class ClaudeTrust
     /// The named account the hold read, if any — so the command it names grants THAT account, not the
     /// machine's default, and the same hold does not come straight back.
     /// </param>
+    /// <remarks>
+    /// 🔴 OWNSPACE1a (D175): a hold on a Daoris account names Daoris's door alone. A `claude` run at the person's terminal reads
+    /// their own home, never the account's, so it would trust the folder where no session of Daoris's runs, and the hold would
+    /// come straight back.
+    /// </remarks>
     public static string Refusal(string tree, string? profile = null) =>
         $"`{tree}` has never been trusted by this agent on this machine, so it ignores the "
         + "repository's own `permissions.allow` — a session here can do the work but cannot take or "
-        + "close its quest. Run `claude` in that directory once and accept the trust prompt, or "
-        + $"`daoris agent trust claude-code \"{tree}\"{(profile is null ? "" : $" --profile {ShellWord.Of(profile, ShellWord.Account)}")} --yes`. "
+        + "close its quest. "
+        + (profile is null
+            ? $"Run `claude` in that directory once and accept the trust prompt, or `daoris agent trust claude-code \"{tree}\" --yes`. "
+            : $"`daoris agent trust claude-code \"{tree}\" --profile {ShellWord.Of(profile, ShellWord.Account)} --yes` trusts it for "
+              + "the Daoris account the session runs as. ")
         + "Daoris sets that flag only when you tell it to: it is your grant to give.";
+
+    /// <summary>
+    /// The trust file a hold reads (OWNSPACE1a, D175): the one the session's harness reads, in the account's configuration home,
+    /// else in the tool's own home as the session inherits it, the configuration-home variable where the person set one, else
+    /// their profile folder. Before, the own home was always the profile folder, whatever the variable said.
+    /// </summary>
+    /// <param name="profileHome">The Daoris account's home the session runs in, or null for the tool's own home.</param>
+    /// <param name="variable">The harness's configuration-home variable, <see cref="HarnessToolchain.ProfileVariable"/>.</param>
+    /// <param name="read">How the environment is read; null reads this process's, which the session inherits.</param>
+    public static string PathFor(string trustFile, string? profileHome, string? variable, Func<string, string?>? read = null)
+    {
+        var own = variable is { Length: > 0 } && (read ?? Environment.GetEnvironmentVariable)(variable) is { Length: > 0 } set ? set : null;
+        return Path.Combine(profileHome ?? own ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), trustFile);
+    }
 }

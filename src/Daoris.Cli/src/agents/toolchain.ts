@@ -1010,7 +1010,9 @@ export function placeWords(place: AccountPlace): string {
 
 /**
  * Where an account runs, said at a sign-in's end and by `profile join` (ACCT1): each list and default that holds it, or
- * that none does and so no start runs on it — with the lists it could join and the command that joins them.
+ * that none does — with the lists it could join and the command that joins them. Where the machine's scope names nothing,
+ * none does and none names another, so Daoris takes its accounts in turn (OWNSPACE1d, D175; the modules' `PlacesSaid` says
+ * it alike); only where it names another does the account run nowhere.
  */
 export function placeLines(harness: string, account: string, settings: HarnessSettings, names: Record<string, string>): string[] {
   const places = placesOf(settings, harness, account);
@@ -1023,6 +1025,13 @@ export function placeLines(harness: string, account: string, settings: HarnessSe
       .filter(([, orders]) => orders[harness])
       .map(([workspace, orders]) => `\`${workspace}\`'s own (${orders[harness]!.map((id) => shownAs(names, id)).join(', ')})`),
   ];
+  const machine = resolveScope(settings, harness, null);
+  if (machine.default === null && machine.list.length === 0) {
+    return [
+      `  no list and no default names \`${shown}\`, and none names another, so Daoris takes its accounts in turn.`,
+      ...(lists.length > 0 ? [`  The lists here: ${lists.join('; ')}.`] : []),
+    ];
+  }
   return [
     `  no list and no default holds \`${shown}\`, so no start runs on it.`,
     ...(lists.length > 0 ? [`  The lists here: ${lists.join('; ')}.`] : []),
@@ -1411,6 +1420,11 @@ export function nextStartBeneath(
   return lines;
 }
 
+/** An agent with no Daoris account (OWNSPACE1d, D175): its starts wait for a sign-in, never run in the tool's own home. */
+function noAccountsWords(agent: string): string {
+  return `no accounts — Daoris's sessions wait until you sign in: \`daoris agent login ${agent} --new\``;
+}
+
 /**
  * What `agent list` says under one agent about its accounts (D49 §4, D66 §3, TOOL4e): each account and what marks it,
  * each one's cool-off under it, the tool's own sign-in's cool-off and what it last said of its windows (CODEXUSE3), the
@@ -1434,7 +1448,8 @@ export function accountLines(
   const col = Math.max(16, ...report.profiles.map((profile) => shown(profile.name).length));
   const gap = ''.padEnd(col);
 
-  if (report.profiles.length === 0) lines.push(`${indent}no accounts — sessions run in the agent's own configuration home`);
+  // OWNSPACE1d (D175): Daoris starts nothing in the tool's own home, so with no account its starts wait for a sign-in.
+  if (report.profiles.length === 0) lines.push(`${indent}${noAccountsWords(owner)}`);
 
   for (const profile of report.profiles) {
     const marks = [
@@ -1459,8 +1474,10 @@ export function accountLines(
     const said = saidOf(home, owner, profile.name, now);
     if (said) lines.push(`${indent}${gap} ${saidLine(said, now, zone)}`);
     // ACCT1: an account no list and no default holds runs nowhere, and says so where it is listed — the install's new
-    // account sat in no list while the work kept starting on an empty one.
-    if (placesOf(settings, owner, profile.name).length === 0) {
+    // account sat in no list while the work kept starting on an empty one. Where the machine names nothing, Daoris takes its
+    // accounts in turn, so this one runs (OWNSPACE1d, D175).
+    const machineScope = resolveScope(settings, owner, null);
+    if (placesOf(settings, owner, profile.name).length === 0 && (machineScope.default !== null || machineScope.list.length > 0)) {
       lines.push(`${indent}${gap} no workspace: no list and no default holds it, so no start runs on it — `
         + `\`daoris agent profile join ${owner} ${accountWord(shown(profile.name), profile.name)} <workspace>…|--machine\` puts it in one`);
     }
@@ -1502,10 +1519,11 @@ export function accountLines(
 
   if (!toolchain.accountOf && toolchain.login && report.present && !report.machineDefault) {
     const named = Object.entries(settings.workspaces).filter(([, map]) => map[owner]).map(([circle]) => circle);
-    lines.push(`${indent}starts run on your own sign-in, the account \`${name}\` uses at your own terminal`
+    // OWNSPACE1d (D175): Daoris never starts in it; what began there is read where it is and goes on there.
+    lines.push(`${indent}Daoris starts no session on your own sign-in, the account \`${name}\` uses at your own terminal`
       + `${named.length > 0 ? ` (outside ${named.join(', ')})` : ''}:`);
-    lines.push(`${indent}signing in to another account there moves Daoris's sessions with it, their records cannot say`);
-    lines.push(`${indent}which account ran, and Daoris cannot rotate it — \`daoris agent login ${name} --new\` gives Daoris an account of its own`);
+    lines.push(`${indent}a conversation begun there goes on there, and new starts take Daoris's accounts in turn —`);
+    lines.push(`${indent}\`daoris agent login ${name} --new\` signs in to one`);
   }
 
   return lines;
@@ -1947,7 +1965,7 @@ export function commandHarness(
         write(`  ${harness.name.padEnd(14)} ${present.present ? present.version : `absent — ${present.problem}`}`
           + `  (declared by plugin \`${plugin.manifest.id}\`)`);
         const existing = profiles(home, harness.name);
-        write(`  ${''.padEnd(14)} ${existing.length > 0 ? `accounts: ${existing.join(', ')}` : 'no accounts — sessions run in the agent\'s own configuration home'}`);
+        write(`  ${''.padEnd(14)} ${existing.length > 0 ? `accounts: ${existing.join(', ')}` : noAccountsWords(harness.name)}`);
       }
     }
 
@@ -2488,10 +2506,10 @@ export function commandHarness(
 
       const fallback = resolveProfile(after, name, workspace, null);
       write(!workspace
-        ? `daoris: this machine runs \`${name}\` in its own configuration home again, by default.`
+        ? `daoris: this machine names no default for \`${name}\` now: Daoris takes its accounts in turn.`
         : fallback
           ? `daoris: \`${workspace}\` names no account for \`${name}\` now: its sessions run as the machine's default, \`${fallback}\`.`
-          : `daoris: \`${workspace}\` names no account for \`${name}\` now: its sessions run in its own configuration home.`);
+          : `daoris: \`${workspace}\` names no account for \`${name}\` now: its sessions take Daoris's accounts in turn.`);
       write(`  No account was deleted. Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
       return 0;
     }
@@ -2588,9 +2606,9 @@ export function commandHarness(
     const account = (given === undefined ? null : accountNamed(owner, given)) ?? readHarnessSettings(path).defaults[owner] ?? null;
     if (!account) {
       throw new DaorisError(
-        `\`${owner}\` runs as its own sign-in on this machine — the tool's own configuration home, which Daoris `
-        + `never touches. Name one of Daoris's accounts with \`--account <name>\` (\`daoris agent list\` shows `
-        + 'them), or set the model with the tool itself.');
+        `\`${owner}\` has no Daoris account named here — Daoris never works in the tool's own configuration home. `
+        + `Name one of Daoris's accounts with \`--account <name>\` (\`daoris agent list\` shows them), sign in to one with `
+        + `\`daoris agent login ${owner} --new\`, or set the model with the tool itself.`);
     }
     // Refused rather than made: a setting is not how an account comes to exist (D66 §3).
     if (!profiles(home, owner).includes(account)) {

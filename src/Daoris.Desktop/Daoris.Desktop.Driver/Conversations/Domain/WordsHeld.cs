@@ -28,6 +28,12 @@ public sealed record WordsHeld(bool Sent, string? Reaches, string? Why)
     /// <summary>The id the record gave the words it kept, which its events say again where the session took them.</summary>
     public string? Word { get; init; }
 
+    /// <summary>
+    /// The person's *Send now* was carried out (STEER2c): steered into the running turn, or held with the turn stopped so they go
+    /// next. Where it was not, <see cref="Why"/> is its <see cref="SendNowWhy"/> code beside <c>Sent</c>. False for an older answer.
+    /// </summary>
+    public bool Now { get; init; }
+
     /// <summary>The sentence where nothing took them: the service's, or why the loop could not.</summary>
     public string? Message { get; init; }
 

@@ -135,7 +135,7 @@ using Daoris.Driver;
 //                 request in <home>/sessions/requests/ that its loop takes, waiting ten seconds for the record to move;
 //                 one nothing here runs is moved by the ledger, as the screen's stop moves an orphan. archive, unarchive
 //                 and delete are the screen's owners, and their log lines say this door. Sessions' rows are the other door.
-//   sessions say <id> "…" [--file <path>]…
+//   sessions say <id> "…" [--file <path>]… [--now]
 //                 say something to a session of this machine's (MSG1e, D137 §5.2): a say request in the same folder,
 //                 which the loop that runs it holds at its door, and any loop keeps on the record of one nothing here
 //                 runs, answering beside it. What never goes on is refused first, exit 1. Where no loop drives the
@@ -603,9 +603,11 @@ try
     // record of it, and the look nudged.
     await using var requests = new SessionRequestWatch(home, processes, () => service)
     {
-        Say = new LoopWords(processes, () => service) { Events = events, Nudge = () => watching?.Nudge() }.HoldAsync,
+        Say = new LoopWords(processes, () => service) { Events = events, Nudge = session => watching?.Said(session) }.HoldAsync,
         // SAIDBACK1c: a terminal's `sessions take-back` settles the word in this host's own record of the conversation.
-        TakeBack = new LoopWords(processes, () => service) { Events = events, Nudge = () => watching?.Nudge() }.TakeBackAsync,
+        TakeBack = new LoopWords(processes, () => service) { Events = events, Nudge = session => watching?.Said(session) }.TakeBackAsync,
+        // FABRIC-EVENT2: each look the folder woke, with its ms and why.
+        Log = log,
     };
 
     // The machine's remotes, one per workspace that has one ($DAORIS_HOME/remotes.json, environment

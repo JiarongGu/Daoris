@@ -128,11 +128,20 @@ async function speak(
   });
 
   const exited = new Promise<void>((resolve) => child.on('exit', () => resolve()));
-  const initialized = (await call(1, 'initialize', { protocolVersion: 1, plugin, points })).result;
-  const answered = await call(2, `hook/${point}`, params);
-  child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'shutdown' })}\n`);
-  await exited;
-  return { initialized, answer: answered.result, error: answered.error, stderr };
+  try {
+    const initialized = (await call(1, 'initialize', { protocolVersion: 1, plugin, points })).result;
+    const answered = await call(2, `hook/${point}`, params);
+    child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'shutdown' })}\n`);
+    await exited;
+    return { initialized, answer: answered.result, error: answered.error, stderr };
+  } finally {
+    // A call that timed out leaves the plugin waiting on its stdin, and a child left running holds the test run open for
+    // ever: verify hung for hours on one (2026-10-16). Whatever happened, the plugin ends with the test.
+    if (child.exitCode === null && child.signalCode === null) {
+      child.stdin.end();
+      child.kill();
+    }
+  }
 }
 
 function frame(root: string, title = 'Fix the API gap'): Record<string, unknown> {

@@ -305,8 +305,8 @@ public static class HelpPlaces
     // Permissions left it for a workspace's page with UX6g, and are kept below.
     public static readonly IReadOnlyList<(string Id, string Name)> Domains =
     [
-        ("start", "Get started"), ("appearance", "Appearance"), ("ai", "AI features"), ("driver", "Driver"),
-        ("browser", "Browser"), ("logs", "Machine log"),
+        ("start", "Get started"), ("appearance", "Appearance"), ("ai", "AI features"), ("wiring", "This Daoris"),
+        ("driver", "Driver"), ("browser", "Browser"), ("logs", "Machine log"),
     ];
 
     /// <summary>The parts, each within a view (Sessions, Quests, Repositories, Knowledge, Agents) or a Settings domain.</summary>

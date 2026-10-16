@@ -307,7 +307,15 @@ internal sealed class TreeTidies(
                 var grewIn = context.Grown.All().LastOrDefault(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
                                                                         && string.Equals(entry.Branch, branch, StringComparison.Ordinal))?.Workspace;
                 var line = (await context.LineAsync(root, repository, RemoteTarget.Workspace(grewIn), ct).ConfigureAwait(false)).Branch;
-                held = await ContentHolds.HeldByContentAsync(root, judged, line, content.LandedHere(repository), ct).ConfigureAwait(false);
+                var proof = await ContentHolds.HeldByContentAsync(root, judged, line, content.LandedHere(repository), ct).ConfigureAwait(false);
+                held = proof.Hold;
+                if (proof.Unread is { } unread)
+                {
+                    // PROOF-UNREAD1: a proof git could not read is not "held nowhere"; the refusal says it could not tell.
+                    return new(false, $"Daoris cannot tell whether the work on `{branch}` is held by content: {unread}. "
+                        + "The branch stays; say it again with --force to discard it.");
+                }
+
                 if (held is null)
                 {
                     return new(false, $"`{branch}` holds commits no branch of yours holds:\n{unlanded.Trim()}\n"

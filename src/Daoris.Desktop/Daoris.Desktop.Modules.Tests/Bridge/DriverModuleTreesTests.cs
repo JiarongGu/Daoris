@@ -257,6 +257,29 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         Assert.Equal(JsonValueKind.Null, branch.GetProperty("treeBranch").ValueKind);
     }
 
+    /// <summary>
+    /// ACCEPTFOOT1 (D164's note): a tree's review carries the driver's own offer to land it (LAND4's <see cref="LandOffer"/>, D88's proof
+    /// and SQUASHTIDY1b's content hold), so the page offers an open conversation exactly what a press would land; null where the driver
+    /// offers none, and on a landed branch's review.
+    /// </summary>
+    [Fact]
+    public void A_trees_review_carries_the_drivers_own_offer_to_land_it()
+    {
+        var offered = JsonSerializer.SerializeToElement(TreesRoutes.ReviewAnswer(
+            "s1", Diff("abc"), "tree", null, treeGone: false, treeBranch: "daoris/s-1", offer: new LandOffer("daoris/s-1", "s-1", 2, 1)), Camel);
+        var none = JsonSerializer.SerializeToElement(TreesRoutes.ReviewAnswer("s1", Diff("abc"), "tree", null, treeGone: false), Camel);
+        var branch = JsonSerializer.SerializeToElement(TreesRoutes.ReviewAnswer(
+            "s1", Diff("abc"), "branch", null, treeGone: true, offer: new LandOffer("daoris/s-1", "s-1", 2, 0)), Camel);
+
+        var offer = offered.GetProperty("offer");
+        Assert.Equal("daoris/s-1", offer.GetProperty("branch").GetString());
+        Assert.Equal("s-1", offer.GetProperty("tree").GetString());
+        Assert.Equal(2, offer.GetProperty("commits").GetInt32());
+        Assert.Equal(1, offer.GetProperty("uncommitted").GetInt32());
+        Assert.Equal(JsonValueKind.Null, none.GetProperty("offer").ValueKind);
+        Assert.Equal(JsonValueKind.Null, branch.GetProperty("offer").ValueKind);
+    }
+
     /// <summary>The landing plan's count: 0 where clean or not asked, else the paths the tree holds uncommitted.</summary>
     [Fact]
     public void The_landing_plan_says_how_many_paths_are_uncommitted()

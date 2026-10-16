@@ -5,8 +5,8 @@ import { byTool, type ToolDoor } from './tools';
 import { scopeOf, THREE } from '../settings/accountsFixtures';
 import type { AgentAccounts } from '../settings/accounts';
 import {
-  accountAct, accountName, accountState, accountWho, agentRows, doorsSummary, heldBy, joinChoices, nextStartSaid, nextStartSaidFor, ownRunsFor,
-  ownSaid, ownState, readLine, rulesSummary, runsFor, runsForLine, settingsSummary, signedOutHeld, stateWhen, stateWord,
+  accountAct, accountName, accountState, accountWho, agentRows, doorsSummary, heldBy, joinChoices, nextStartSaid, nextStartSaidFor,
+  ownSaid, ownState, readLine, rulesSummary, runsFor, runsForLine, settingsSummary, sharesOwn, signedOutHeld, stateWhen, stateWord,
   usageCells, usageSummary, useSummary, versionOnly, workspacesSummary,
 } from './agents';
 
@@ -136,11 +136,13 @@ describe('which accounts hold work', () => {
     expect(agentRows([tool!], { agents: [THREE] })[0]!.phrase).toBe('2 accounts · 1 signed out · 1 key refused');
   });
 
-  it("counts the tool's own sign-in too while starts run on it and it reads signed out", () => {
+  /** OWNSPACE1b-A (D175): nothing starts in the tool's own sign-in, so it holds no work and is never counted. */
+  it("never counts the tool's own sign-in, which holds no work, even signed out with no account named", () => {
     const [tool] = byTool([claude({ machineDefault: null, ownLogin: 'out', profiles: [], workspaceDefaults: [] })]);
     const none: AgentAccounts = { agent: 'claude-code', speaks: false, own: {}, accounts: [], scopes: [scopeOf()] };
-    expect(ownState(tool!, none).holdsWork).toBe(true);
-    expect(signedOutHeld(tool!, none)).toBe(1);
+    expect(sharesOwn(tool!, none)).toBe(false);
+    expect(ownState(tool!, none)).toMatchObject({ state: 'out', holdsWork: false });
+    expect(signedOutHeld(tool!, none)).toBe(0);
   });
 });
 
@@ -195,9 +197,9 @@ describe('the list', () => {
     expect(agentRows(byTool([{ harness: 'yinqing', product: '引擎', present: true, profiles: [] }]), undefined)[0]!.mark).toBe('引擎');
   });
 
-  it('names an agent with no account of its own by its own sign-in', () => {
+  it('says an agent with no Daoris account has none yet, not that it runs on its own sign-in', () => {
     const rows = agentRows(byTool([claude({ profiles: [], machineDefault: null, workspaceDefaults: [] })]), undefined);
-    expect(rows[0]!.phrase).toBe('its own sign-in');
+    expect(rows[0]!.phrase).toBe('no Daoris account yet');
     // A plugin's agent that signs in nowhere is installed, and nothing more is claimed of it.
     const declared = agentRows(byTool([{ harness: 'acme-agent', present: true, signsIn: false, profiles: [] }]), undefined);
     expect(declared[0]!.phrase).toBe('installed');
@@ -304,12 +306,12 @@ describe('where an account runs (ACCT1)', () => {
     expect(runsForLine(runs)).toBe('no workspace');
   });
 
-  it("says the workspaces your own sign-in runs, those naming no account, while this machine names none", () => {
+  /** OWNSPACE1b-A (D175): no workspace runs on your own sign-in, whatever this machine names. */
+  it("never says a workspace runs on your own sign-in", () => {
     const [tool] = byTool([claude({ machineDefault: null, workspaceDefaults: [] })]);
     const use: AgentAccounts = { ...THREE, scopes: [scopeOf(), THREE.scopes[1]!] };
-    expect(ownRunsFor(tool!, use, ['forge', 'work'])).toEqual([{ workspace: 'forge', first: false }]);
-    expect(ownRunsFor(tool!, use, ['work'])).toEqual([{ workspace: null, first: false }]);
-    expect(ownRunsFor(byTool([claude()])[0]!, THREE, ['forge', 'work'])).toEqual([]);
+    expect(sharesOwn(tool!, use)).toBe(false);
+    expect(sharesOwn(tool!, null)).toBe(false);
   });
 });
 
@@ -369,10 +371,17 @@ describe('the next start, above the accounts', () => {
     });
   });
 
-  it('says nothing where it runs on your own sign-in, or where the shell is older than the next start', () => {
+  it('says nothing where it runs in a test double\'s own home, or where the shell is older than the next start', () => {
     expect(nextStartSaid(scopeOf({ next: { account: null, reason: 'own', others: [] } }), labelOf)).toBeNull();
     expect(nextStartSaid(scopeOf({ list: ['account-1'] }), labelOf)).toBeNull();
     expect(nextStartSaid(null, labelOf)).toBeNull();
+  });
+
+  /** OWNSPACE1b-A (D175 point 4): no Daoris account signed in is its own line, said apart from a wait. */
+  it('says no Daoris account is signed in, once, where the reason arrives', () => {
+    expect(nextStartSaid(scopeOf({ next: { account: null, reason: 'noAccount', others: [] } }), labelOf)).toEqual({
+      takes: 'No Daoris account is signed in for it; its starts wait until you sign in.', held: null,
+    });
   });
 
   /** ACCTUX4c: the window's workspace speaks where it has a scope of its own with a next start, else this machine. */
@@ -625,14 +634,14 @@ describe('each folded section’s line', () => {
 
   it('says how accounts are used by naming each scope and what its starts run on (D152 §4.4)', () => {
     expect(useSummary({ ...THREE, scopes: [scopeOf(), THREE.scopes[1]!] }, labelOf))
-      .toBe('This machine: your own sign-in · work: its own list of 2');
+      .toBe("This machine: Daoris's accounts, in turn · work: its own list of 2");
     expect(useSummary({ ...THREE, scopes: [scopeOf({ default: 'account-2' })] }, labelOf)).toBe('This machine: you@home');
     expect(useSummary(THREE, labelOf)).toBe('This machine: a list of 3 · work: its own list of 2');
   });
 
   it('says it tight in 中文, a name set off by its colon and never by spaces', () => {
     i18n.changeLanguage('zh');
-    expect(useSummary({ ...THREE, scopes: [scopeOf(), THREE.scopes[1]!] }, labelOf)).toBe('本机：你自己的登录 · work：自有列表，2 个账户');
+    expect(useSummary({ ...THREE, scopes: [scopeOf(), THREE.scopes[1]!] }, labelOf)).toBe('本机：Daoris 的账户，轮流使用 · work：自有列表，2 个账户');
   });
 
   it('says a version as its number alone, without the product name the binary prints', () => {

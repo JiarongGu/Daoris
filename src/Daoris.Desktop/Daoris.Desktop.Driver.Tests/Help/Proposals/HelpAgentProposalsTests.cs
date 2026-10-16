@@ -453,7 +453,9 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         Assert.Contains("cools again", account.Describe);
         Assert.Null(own.Refusal);
         Assert.Equal("daoris agent profile ready claude-code --own", own.Terminal);
-        Assert.StartsWith("Try `claude-code`'s own sign-in now", own.Describe);
+        Assert.StartsWith("End the old cool-off of `claude-code`'s own sign-in", own.Describe);
+        Assert.Contains("Daoris starts no session in it", own.Describe);
+        Assert.DoesNotContain("starts may run on it again", own.Describe);
     }
 
     [Theory]

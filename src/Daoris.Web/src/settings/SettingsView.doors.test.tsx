@@ -169,7 +169,7 @@ describe("Settings' list, on the window", () => {
     const domains = screen.getByRole('navigation', { name: 'Settings domains' });
     await waitFor(() => expect(within(domains).getByRole('button', { name: 'Driver' })).toHaveAttribute('aria-current', 'page'));
     expect(within(domains).getAllByRole('button').map((domain) => domain.textContent)).toEqual([
-      'Get started', 'Appearance', 'AI features', 'Driver', 'Tools', 'Browser', 'Machine log',
+      'Get started', 'Appearance', 'AI features', 'This Daoris', 'Driver', 'Tools', 'Browser', 'Machine log',
     ]);
   });
 });

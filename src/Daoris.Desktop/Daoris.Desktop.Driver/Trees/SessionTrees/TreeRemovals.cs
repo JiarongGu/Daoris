@@ -112,10 +112,19 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                 // SQUASHTIDY1: a squash merge or a cherry-pick holds the work under commits of its own, which ancestry cannot see;
                 // the content can. Before it, a squashing landing's record, which vouches as ancestry would (PROCESS1b-ii point 3).
                 // Work held nowhere still refuses, and force stays its door.
+                ContentProof? proof = null;
                 if (!string.IsNullOrWhiteSpace(unmerged)
                     && (squashedOn = await squashes.SquashedHolderAsync(full, repository, judged, ct).ConfigureAwait(false)) is null
-                    && (held = await ContentHolds.HeldByContentAsync(full, judged, line, content.LandedHere(repository), ct).ConfigureAwait(false)) is null)
+                    && (held = (proof = await ContentHolds.HeldByContentAsync(full, judged, line, content.LandedHere(repository), ct).ConfigureAwait(false)).Hold) is null)
                 {
+                    // PROOF-UNREAD1: a proof git could not read is not "held nowhere"; the refusal says it could not tell.
+                    if (proof!.Unread is { } unread)
+                    {
+                        return new(false,
+                            $"Daoris cannot tell whether the work on `{branch}` is held by content: {unread}. "
+                            + "The tree stays; say it again with --force to discard it.");
+                    }
+
                     return new(false,
                         $"the tree at {path} holds commits `{canonical}` has not taken, and no other branch of yours holds "
                         + $"them:\n{unmerged.Trim()}\nLand them from the review, or say it again with --force to discard them.");

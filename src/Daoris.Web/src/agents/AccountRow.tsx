@@ -131,8 +131,8 @@ export function AccountRow({ name, who, id, home, why, state, runs, current, usa
   /** What the row is, on its name's ⓘ: your own sign-in's explanation, one press away rather than a paragraph (§4.3). */
   why?: string;
   state: AccountState;
-  /** *Runs for*, in words. */
-  runs: string;
+  /** *Runs for*, in words; absent for your own sign-in, which no start runs on (D175 point 1). */
+  runs?: string;
   /** *Now*: *1 session* while something runs on it; null leaves the cell blank. */
   current?: string | null;
   /** What its agent last said, under the row's line: a cell a window and the account's notes (`usageCells`); null says nothing. */
@@ -192,10 +192,12 @@ export function AccountRow({ name, who, id, home, why, state, runs, current, usa
             </Button>
           )}
         </span>
-        <span className="min-w-0 [overflow-wrap:anywhere] before:mr-1.5 before:text-ink-faint before:content-['·'] @min-[40rem]/main:col-start-3 @min-[40rem]/main:row-start-1 @min-[40rem]/main:before:content-none">
-          <Fact label={t('agents.col.runs')} />
-          {runs}
-        </span>
+        {runs !== undefined && (
+          <span className="min-w-0 [overflow-wrap:anywhere] before:mr-1.5 before:text-ink-faint before:content-['·'] @min-[40rem]/main:col-start-3 @min-[40rem]/main:row-start-1 @min-[40rem]/main:before:content-none">
+            <Fact label={t('agents.col.runs')} />
+            {runs}
+          </span>
+        )}
       </span>
 
       {current && (

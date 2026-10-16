@@ -208,7 +208,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("choose which account an agent's sessions use, for the machine or a workspace",
             Agent + "an account's ⋯ → Use by default, Use by default in a workspace",
             "`daoris agent profile default <agent> <profile>|--clear [--workspace <name>]` (`--clear` names none again: "
-            + "the tool's own home, or for a workspace the machine's default)"),
+            + "Daoris's accounts serve again, or for a workspace the machine's default)"),
         // TOOL4e (D125 §6): the order and *Try now*, the terminal's doors; TOOL4g gave them the screen, and TOOL4l-b Ask Daoris's
         // `order` and `ready` (HelpCoverageTests).
         ("choose the accounts rotation may use, in order, for the machine or a workspace (an account not listed never "
@@ -224,7 +224,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "[--curve <window>=<elapsed>:<used>,…] [--no-curve] [--workspace <name>]` (no flag prints them; `--clear` returns "
             + "to today's defaults)"),
         ("end an account's cool-off now, after its agent hit a limit", Agent + "the account's Try now",
-            "`daoris agent profile ready <agent> <profile>|--own` (`--own` is the tool's own sign-in)"),
+            "`daoris agent profile ready <agent> <profile>|--own` (`--own` only ends an old cool-off of the tool's own sign-in, which Daoris no longer starts sessions in)"),
         // HELP6: the doors built since, which the helper now proposes too.
         ("update an agent, or pin it to one version", Agent + "Ways in → Update, Pin a version",
             "`daoris agent update <agent>`, `daoris agent pin <agent> <version>`"),

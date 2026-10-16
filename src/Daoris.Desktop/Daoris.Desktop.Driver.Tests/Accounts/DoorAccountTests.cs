@@ -204,6 +204,10 @@ public sealed class DoorAccountTests : IDisposable
     [Fact]
     public async Task The_door_s_pin_is_still_its_own()
     {
+        // A Daoris account of the owner's to start on (OWNSPACE1a), so the pin is what is judged.
+        var work = HarnessSettings.ProfileHome(_home, "owner", "work");
+        Directory.CreateDirectory(work);
+        File.WriteAllText(Path.Combine(work, "credentials.json"), "{}");
         new HarnessSettings().WithVersion("owner", "1.0.0").Save(Settings);
 
         var selection = await Roster().SelectAsync("owner-acp", Config(), null, null);

@@ -54,7 +54,7 @@ const FRESH: World = {
 const DONE: World = {
   registry: [{ repository: 'engine', workspace: 'default' }],
   state: { ...FRESH.state, drivable: ['engine'], helperAdapter: 'claude-code-acp' },
-  harnesses: [{ harness: 'claude-code', present: true, ownLogin: 'in', product: 'Claude Code' }],
+  harnesses: [{ harness: 'claude-code', present: true, ownLogin: 'in', profiles: [{ name: 'work', home: 'h', login: 'in' }], product: 'Claude Code' }],
   lines: [{ repository: 'engine', workspace: 'default', branch: 'main', source: 'workspace' }],
   landings: [{ repository: 'engine', workspace: 'default', source: 'workspace', form: 'merge' }],
 };

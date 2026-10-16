@@ -298,6 +298,24 @@ public sealed class AcpSession(
     /// <summary>Whether the agent said it takes a prompt during a turn (<see cref="TakesWordsMidTurn"/>).</summary>
     private bool _takesWordsMidTurn;
 
+    /// <summary>Whether *Send now* steers into the running turn (<see cref="SteersNow"/>, STEER2a).</summary>
+    private bool _steersNow;
+
+    /// <summary>
+    /// The tool calls announced and not yet finished, by id, and those a steer cut (STEER2a): open when the steer was answered
+    /// <c>injected</c>, and never heard of since. Guarded by the lock, read and written on the reader's thread.
+    /// </summary>
+    private readonly object _callsGate = new();
+    private readonly HashSet<string> _openCalls = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _finishedCalls = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _cut = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The status the record closes a call with that a steer cut and that never heard again (STEER2a, D136's 2026-10-16 note;
+    /// evidence §6, turn B): written when the turn's prompt is answered, so the page shows it cut, never still running.
+    /// </summary>
+    public const string CutStatus = "cut";
+
     /// <summary>Told each of the person's words as the session takes them (SESS3, STEER1); a run's.</summary>
     private Action<ChatMessage>? _asked;
 
@@ -463,9 +481,11 @@ public sealed class AcpSession(
             // Where the agent says it takes a prompt during its turn, each word goes the moment it is said and reaches it
             // at its next step (STEER1, D136); anywhere else it waits for the turn's end. Words flow only once the target
             // is on the wire, so none overtakes the prompt it follows.
-            inbox?.Attach(CancelTurnAsync, _takesWordsMidTurn
-                ? words => SendPromptAsync(words.Prompt, words.Files, ct, sent: null, words)
-                : null);
+            // The person's *Send now* steers into the running turn where the agent offers that too (STEER2a).
+            inbox?.Attach(
+                CancelTurnAsync,
+                _takesWordsMidTurn ? words => SendPromptAsync(words.Prompt, words.Files, ct, sent: null, words) : null,
+                _steersNow ? words => SteeredAsync(words, ct, handBack: inbox is null ? null : inbox.HandBack) : null);
             Action? sent = inbox is null && prompted is null
                 ? null
                 : () =>
@@ -492,6 +512,13 @@ public sealed class AcpSession(
                 }
 
                 if (inbox?.NextOrClose() is not { } next) break;
+
+                // A steer, or a stop still on its way, is no turn of its own: the run waits for it, then asks again (STEER2a).
+                if (next.Waits is { } waits)
+                {
+                    await waits.ConfigureAwait(false);
+                    continue;
+                }
 
                 if (next.Held is { } held)
                 {
@@ -674,6 +701,7 @@ public sealed class AcpSession(
             },
             ct).ConfigureAwait(false);
         _takesWordsMidTurn = TakesWordsMidTurn(initialized);
+        _steersNow = SteersNow(initialized);
         return initialized;
     }
 
@@ -694,6 +722,21 @@ public sealed class AcpSession(
         && capabilities.TryGetProperty("_meta", out var meta) && meta.ValueKind == JsonValueKind.Object
         && meta.TryGetProperty("claudeCode", out var claudeCode) && claudeCode.ValueKind == JsonValueKind.Object
         && claudeCode.TryGetProperty("promptQueueing", out var queueing) && queueing.ValueKind == JsonValueKind.True;
+
+    /// <summary>
+    /// Whether the person's *Send now* steers into the running turn (STEER2a, D136's 2026-10-16 note): an agent that takes a
+    /// prompt during its turn (<see cref="TakesWordsMidTurn"/>) and offers the steering extension, the top-level
+    /// <c>_meta.steering.supported</c> as <c>true</c> (<c>claude-agent-acp</c> 0.84.0, <c>acp-agent.js:1291-1307</c>).
+    /// </summary>
+    /// <remarks>
+    /// Each by its own <c>true</c>. <c>codex-acp</c> offers the extension and not the first, and its <c>turn/steer</c> waits for
+    /// STEER3's measured turn: until then it is a turn-end door, where *Send now* stops the turn keeping the words.
+    /// </remarks>
+    internal static bool SteersNow(JsonElement initialized) =>
+        TakesWordsMidTurn(initialized)
+        && initialized.TryGetProperty("_meta", out var meta) && meta.ValueKind == JsonValueKind.Object
+        && meta.TryGetProperty("steering", out var steering) && steering.ValueKind == JsonValueKind.Object
+        && steering.TryGetProperty("supported", out var supported) && supported.ValueKind == JsonValueKind.True;
 
     /// <summary>The servers a session is handed (ACP4), in the wire's own shape: on a new session and on a resumed one alike.</summary>
     private static object[] Offer(IReadOnlyList<AcpMcpServer>? servers)
@@ -808,6 +851,150 @@ public sealed class AcpSession(
             ? SendPromptAsync(words.Prompt, words.Files, ct, sent: null, words)
             : throw new DriverException("this agent did not say it takes words during a turn — they wait for the turn to end.");
 
+    /// <summary>Whether the person's *Send now* steers into this session's running turn (<see cref="SteersNow"/>, STEER2a).</summary>
+    public bool Steers => _steersNow;
+
+    /// <summary>
+    /// The person's *Send now* (STEER2a, D136's 2026-10-16 note): the words steered into the running turn by the adapter's
+    /// <c>_session/steering</c>, which delivers them at priority <c>now</c>, cutting the step in flight (evidence §2, §6 turn B).
+    /// The request asks the adapter never to start a turn of its own (<c>idleBehavior: promptRequired</c>), since a turn it
+    /// started would answer nobody here. Answered <c>injected</c>, the words are taken there, told through the run's listener on
+    /// the reader's thread before anything after the answer is read, and the calls still open are marked as cut.
+    /// </summary>
+    /// <returns>The adapter's outcome: <c>injected</c>, or <c>promptRequired</c> where no turn was running after all.</returns>
+    /// <exception cref="AcpRefusal">The agent refused the steer, in its words.</exception>
+    /// <exception cref="DriverException">The agent never said it steers, or the session is not open: nothing is sent.</exception>
+    public async Task<string> SteerAsync(ChatMessage words, CancellationToken ct)
+    {
+        if (!_steersNow)
+        {
+            throw new DriverException(
+                "this agent did not say it steers words into a running turn — they reach it at its next step or its turn's end.");
+        }
+
+        if (_sessionId is null) throw new DriverException("this ACP session is not open — nothing can be steered into it.");
+
+        // The adapter's own parameters (claude-agent-acp 0.84.0, `parseSteerRequest`, acp-agent.js:215-238): the session, the
+        // prompt's content blocks as `session/prompt` carries them, and the steering `_meta`. The priority is the adapter's.
+        var answer = await RequestAsync(
+            "_session/steering",
+            new { sessionId = _sessionId, prompt = Blocks([words.Prompt], words.Files), _meta = new { steering = new { idleBehavior = "promptRequired" } } },
+            ct,
+            answered: frame =>
+            {
+                if (Outcome(frame) != "injected") return;
+                lock (_callsGate) _cut.UnionWith(_openCalls);
+                Asked(words);
+            }).ConfigureAwait(false);
+        return Outcome(answer) ?? "unknown";
+    }
+
+    /// <summary>
+    /// A driven session's steer, answered (STEER2a): where the agent refused it, answered anything but <c>injected</c>, or never
+    /// had it, it costs those words, said by its code with their id so the page settles them (D136 point 6), never the run.
+    /// </summary>
+    /// <param name="who">What the English calls the one that refused: a conversation's runner says "conversation".</param>
+    /// <returns>The adapter's outcome, or <c>refused</c> or <c>unreached</c>: never a stop reason, and never thrown.</returns>
+    /// <param name="handBack">
+    /// Where the steer was answered <c>promptRequired</c> (the turn ended between the press and the steer, STEER2d) the adapter
+    /// left the words to the client: this takes them back to be prompted next, and says whether it did. Said once, taken once
+    /// where they are finally taken, so nothing is noted when it did.
+    /// </param>
+    internal async Task<string> SteeredAsync(
+        ChatMessage words, CancellationToken ct, string who = "session", Func<ChatMessage, bool>? handBack = null)
+    {
+        try
+        {
+            var outcome = await SteerAsync(words, ct).ConfigureAwait(false);
+            if (outcome == "promptRequired" && handBack?.Invoke(words) == true) return outcome;
+            if (outcome != "injected") NoteWords(WordsNotes.NeverReached(NotSteered(outcome)), words);
+            return outcome;
+        }
+        catch (AcpRefusal refused)
+        {
+            NoteWords(WordsNotes.Refused(refused.Words, who), words);
+            return "refused";
+        }
+        catch (Exception error) when (error is DriverException or IOException or ObjectDisposedException or InvalidOperationException)
+        {
+            NoteWords(WordsNotes.NeverReached(error.Message), words);
+            return "unreached";
+        }
+    }
+
+    /// <summary>The program's sentence for a steer the agent answered with anything but <c>injected</c> (STEER2a).</summary>
+    public static string NotSteered(string outcome) =>
+        $"the agent answered the steer `{outcome}`, so no running turn took them.";
+
+    /// <summary>The driver's sentence about the person's words, by its code and with their id, so the page settles the words (MSG1f).</summary>
+    private void NoteWords(Noted noted, ChatMessage words)
+    {
+        _console.End();
+        onLine(noted.Note);
+        Emit(new SessionEvent
+        {
+            Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts.Count > 0 ? noted.Parts : null,
+            Words = words.Id is { } id ? [id] : null,
+        });
+    }
+
+    /// <summary>A steer's <c>outcome</c>, from its answer frame or its result; null where it said none.</summary>
+    private static string? Outcome(JsonElement answer)
+    {
+        var result = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("result", out var inner) ? inner : answer;
+        return result.ValueKind == JsonValueKind.Object && result.TryGetProperty("outcome", out var outcome)
+            && outcome.ValueKind == JsonValueKind.String
+            ? outcome.GetString()
+            : null;
+    }
+
+    /// <summary>
+    /// The calls a steer cut that never heard again, closed in the record as cut when the turn's prompt is answered (STEER2a),
+    /// before its turn's end, so the page never shows them running. Called on the reader's thread.
+    /// </summary>
+    private void CloseCut()
+    {
+        string[] cut;
+        lock (_callsGate)
+        {
+            if (_cut.Count == 0) return;
+            cut = [.. _cut.Order(StringComparer.Ordinal)];
+            _cut.Clear();
+            _openCalls.ExceptWith(cut);
+            _finishedCalls.UnionWith(cut);
+        }
+
+        foreach (var id in cut) Emit(new SessionEvent { Kind = SessionEventKind.Tool, Id = id, Status = CutStatus });
+    }
+
+    /// <summary>
+    /// A call announced or updated (STEER2a): heard again, it was not cut. <c>pending</c> and <c>in_progress</c> open it, as
+    /// does an announcement that says no status, which the protocol reads as <c>pending</c>; any other status finishes it. An
+    /// update that says no status keeps what the call was, so a finished call stays finished and is never closed as cut.
+    /// </summary>
+    private void Track(JsonElement update, SessionEvent? mapped)
+    {
+        if (mapped is not { Kind: SessionEventKind.Tool, Id: { } id }) return;
+        lock (_callsGate)
+        {
+            _cut.Remove(id);
+            switch (mapped.Status)
+            {
+                case "pending" or "in_progress":
+                    _finishedCalls.Remove(id);
+                    _openCalls.Add(id);
+                    break;
+                case null:
+                    if (Kind(update) == "tool_call" && !_finishedCalls.Contains(id)) _openCalls.Add(id);
+                    break;
+                default:
+                    _openCalls.Remove(id);
+                    _finishedCalls.Add(id);
+                    break;
+            }
+        }
+    }
+
     /// <summary>
     /// One prompt on the open session, answered by the agent's stop reason: the driver's own, or the person's words
     /// (<paramref name="words"/>), which the session takes as they go when no prompt is open, and when the one before
@@ -823,12 +1010,7 @@ public sealed class AcpSession(
     {
         if (_sessionId is null) throw new DriverException("this ACP session is not open — nothing can be prompted on it.");
 
-        object[] prompt =
-        [
-            .. texts.Select(text => (object)new { type = "text", text }),
-            .. (files ?? []).Select(file => (object)new { type = "resource_link", uri = new Uri(file.Path).AbsoluteUri, name = file.Name }),
-        ];
-
+        var prompt = Blocks(texts, files);
         var open = new OpenPrompt(words);
         bool takenNow;
         lock (_promptsGate)
@@ -864,6 +1046,13 @@ public sealed class AcpSession(
             : "unknown";
     }
 
+    /// <summary>A prompt's content: each text its own block (MSG1b), then each file a <c>resource_link</c> to where it is kept (CONV4c).</summary>
+    private static object[] Blocks(IReadOnlyList<string> texts, IReadOnlyList<KeptFile>? files) =>
+    [
+        .. texts.Select(text => (object)new { type = "text", text }),
+        .. (files ?? []).Select(file => (object)new { type = "resource_link", uri = new Uri(file.Path).AbsoluteUri, name = file.Name }),
+    ];
+
     /// <summary>
     /// A prompt answered, on the reader's thread before the next frame is read: its turn event, as the wire's word and
     /// nothing more, and the person's words behind it taken (STEER1) — so the record reads in the order the wire said it,
@@ -877,6 +1066,8 @@ public sealed class AcpSession(
             // A word an error handed nothing to, answered before the agent did anything else for it: it was taken after all.
             if (open.Words is not null && TakeLate(open) is { } own) Asked(own);
 
+            // A call a steer cut that never heard again ends with the turn it was cut in, as cut (STEER2a).
+            CloseCut();
             Emit(new SessionEvent
             {
                 Kind = SessionEventKind.Turn,
@@ -1155,6 +1346,7 @@ public sealed class AcpSession(
             }
 
             var structured = Refused(Map(update));
+            Track(update, structured);
             _console.Update(update, structured);
             if (structured is not null) Emit(structured);
         }

@@ -11,8 +11,11 @@ namespace Daoris.Driver;
 /// finish and a decline are <c>RESOLVE_SESSION</c>'s: the process goes first, then the ledger moves the record with the
 /// person's words (<see cref="SessionMoves.ResolveAsync"/>); one is taken only once this loop's service answers.</para>
 ///
-/// <para><b>Looked at every second</b>, not every tick: the asking door waits ten seconds for the record to move, and a
-/// tick may be a minute apart. A look lists one folder, which is nothing.</para>
+/// <para><b>Looked at when the folder says a request arrived</b> (FABRIC-EVENT2, the design §A4.1), on the
+/// <see cref="ChangeWatch"/>: within its quiet window, not at a tick, since the asking door waits ten seconds for the record to
+/// move and a tick may be a minute apart. A listing every <see cref="Listing"/> stays behind it, inside the door's ten seconds,
+/// for whatever the watcher missed. The folder hears a request or a press arriving, never what a look writes there itself (a
+/// take, an answer, a removal: <see cref="Hears"/>), so a look never wakes the next.</para>
 ///
 /// <para>The shell's loop and the headless host's run one each, with the registry their conversations and driven sessions
 /// share. A terminal's <c>daoris-driver chat</c> runs none: a stop asked of its session is withdrawn after the wait, and
@@ -39,9 +42,33 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     // and whether a process for it lives anywhere on this machine. The seams answer both by what runs here.
     private readonly Func<string, bool> _hears;
     private readonly Func<string, bool> _aliveHere;
-    private readonly CancellationTokenSource _stopping = new();
     private readonly SemaphoreSlim _one = new(1, 1);
-    private readonly Task _watching;
+
+    /// <summary>
+    /// The listing behind the change watch (FABRIC-EVENT2): the longest a request waits when the watcher missed it, a third of
+    /// the asking door's ten seconds (<see cref="SessionsWorld.Wait"/>), so a missed one is still taken in time.
+    /// </summary>
+    public static readonly TimeSpan Listing = TimeSpan.FromSeconds(3);
+
+    /// <summary>The folder's watch, or null on the test seams, which look only when <see cref="HonourAsync"/> is called.</summary>
+    internal ChangeWatch? Changes { get; }
+
+    /// <summary>
+    /// The chain on the folder's watch (FABRIC-CHAIN2, the design §C6), or null on the test seams: the folder is link 7's, its wake
+    /// a <c>home</c> event and its listing the topic's <c>timer</c>, and its reader the only row bound here.
+    /// </summary>
+    internal Chain? Chain { get; }
+
+    /// <summary>Where a look the folder woke is written with its ms (<c>change.judged</c>), and one that took something as the chain's (<c>chain.fired</c>); none by default.</summary>
+    public MachineLog? Log
+    {
+        get => Changes?.Log;
+        init
+        {
+            if (Changes is not null) Changes.Log = value;
+            if (Chain is not null) Chain.Log = value;
+        }
+    }
 
     /// <summary>
     /// A loop's half of a terminal's words (MSG1e, D137 §5.2): what it does with a say it takes, answered beside the request.
@@ -63,11 +90,16 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     /// </summary>
     public Action<PressTold>? Told { get; init; }
 
-    /// <summary>A loop's watch over its own registry, looking every <paramref name="every"/> (a second) until it is disposed.</summary>
+    /// <summary>
+    /// A loop's watch over its own registry, looking when the folder says a request arrived, and listing it every
+    /// <paramref name="every"/> (<see cref="Listing"/>) behind that, until it is disposed.
+    /// </summary>
     /// <param name="service">The loop's service once it answers; null before, when a request that needs the ledger waits.</param>
     /// <param name="clock">What a request's age is measured against; the real clock unless a test hands its own.</param>
+    /// <param name="source">What watches the folder: the machine's watcher unless a test hands its fake.</param>
     public SessionRequestWatch(
-        string home, SessionProcesses processes, Func<ServiceClient?> service, TimeSpan? every = null, Func<DateTimeOffset>? clock = null)
+        string home, SessionProcesses processes, Func<ServiceClient?> service, TimeSpan? every = null, Func<DateTimeOffset>? clock = null,
+        IChangeSource? source = null)
         : this(
             home, id => processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase), (id, note) => processes.Stop(id, note: note),
             service, clock)
@@ -77,8 +109,18 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         var words = new LoopWords(processes, service);
         Say = words.HoldAsync;
         TakeBack = words.TakeBackAsync;
-        _watching = WatchAsync(every ?? TimeSpan.FromSeconds(1));
+        // FABRIC-EVENT2c: made before the watch starts, so its watcher opens at once and the first request after an install is
+        // heard, not found at the listing. Both loops (the desktop's and the headless host's) build their watch here.
+        Directory.CreateDirectory(_requests.Folder);
+        Changes = new ChangeWatch(source);
+        Chain = new Chain(Changes).Bind(ChainRanks.Read, ReadAsync);
+        Chain.Topic(ChangeTopics.Requests, ChainEvents.Home, every ?? Listing);
+        Changes.Watch(ChangeTopics.Requests, ChangeTopics.Requests, _requests.Folder, Hears);
+        Changes.Start();
     }
+
+    /// <summary>The machine resumed, as its shell heard (FABRIC-EVENT2d): the folder's watcher is reopened and the requests judged now.</summary>
+    public void Resumed() => Changes?.Resumed();
 
     /// <summary>
     /// The test seam: what this loop runs, and how it stops one, in place of a registry of real processes. It looks only when
@@ -105,8 +147,18 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         _clock = clock ?? (() => DateTimeOffset.UtcNow);
         _hears = runsHere;
         _aliveHere = runsHere;
-        _watching = Task.CompletedTask;
     }
+
+    /// <summary>
+    /// What the folder hears (FABRIC-EVENT2): a request (<c>.json</c>) or a press (<see cref="PressesTold.Suffix"/>) arriving under
+    /// its final name. Never a deletion, a temporary, a take's or a withdrawal's name, or a say's answer: those are what a look
+    /// and the asking door write themselves, and a look they woke would wake the next.
+    /// </summary>
+    internal static bool Hears(string name, ChangeKind kind) =>
+        kind != ChangeKind.Deleted
+        && !name.Contains('/')
+        && (name.EndsWith(PressesTold.Suffix, StringComparison.Ordinal)
+            || (name.EndsWith(".json", StringComparison.Ordinal) && !name.EndsWith(SessionRequests.Answered, StringComparison.Ordinal)));
 
     /// <summary>
     /// One look: each request for a session this loop runs, taken and acted on, in the order they were asked. What was
@@ -233,36 +285,29 @@ public sealed class SessionRequestWatch : IAsyncDisposable
         return request;
     }
 
-    private async Task WatchAsync(TimeSpan every)
+    /// <summary>Link 7 on the requests folder (FABRIC-CHAIN2): its wake or its deadline reads the folder, and emits nothing into the chain.</summary>
+    private async Task<ChainFired> ReadAsync(IReadOnlyList<ChainEvent> heard, CancellationToken ct) =>
+        new(await LookAsync(ct).ConfigureAwait(false), []);
+
+    /// <summary>One look the change watch asked for: the requests honoured, and what a terminal pressed; how many of both.</summary>
+    private async Task<int> LookAsync(CancellationToken ct)
     {
-        using var timer = new PeriodicTimer(every);
         try
         {
-            while (await timer.WaitForNextTickAsync(_stopping.Token).ConfigureAwait(false))
-            {
-                try
-                {
-                    await HonourAsync(_stopping.Token).ConfigureAwait(false);
-                    // STATEHUB1e: and what a terminal pressed, in the same folder at the same look.
-                    Hear();
-                }
-                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-                {
-                    // A folder held for a moment: the next look reads it.
-                }
-            }
+            var honoured = await HonourAsync(ct).ConfigureAwait(false);
+            // STATEHUB1e: and what a terminal pressed, in the same folder at the same look.
+            return honoured.Count + Hear().Count;
         }
-        catch (OperationCanceledException)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            // The loop is going.
+            // A folder held for a moment: the listing behind the watch reads it again.
+            return 0;
         }
     }
 
     public async ValueTask DisposeAsync()
     {
-        await _stopping.CancelAsync().ConfigureAwait(false);
-        await _watching.ConfigureAwait(false);
-        _stopping.Dispose();
+        if (Changes is not null) await Changes.DisposeAsync().ConfigureAwait(false);
         _one.Dispose();
     }
 }

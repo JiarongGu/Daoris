@@ -6,7 +6,8 @@
   "harness.next.whyOrder": "Each start runs on the first ready account in the list's order, begun at its default; an account whose limit is reached, that draws on usage credits or whose use is over its curve goes last. Driven work passes the account kept for conversations.",
   "harness.next.takes": "The next start takes {{account}}: {{why}}.",
   "harness.next.takesIn": "In {{workspace}}, the next start takes {{account}}: {{why}}.",
-  "harness.next.own": "The next start runs on your own sign-in: nothing here names an account.",
+  "harness.next.own": "The next start runs in the tool's own home, which is nobody's sign-in: nothing here names an account.",
+  "harness.next.noAccount": "No Daoris account is signed in for it; its starts wait until you sign in.",
   "harness.next.waitsUntil": "No account here is ready, so the next start waits until {{when}}.",
   "harness.next.waits": "No account here is ready, and none comes ready by itself: the next start waits for you.",
   "harness.next.signInSooner": "Signing in to {{accounts}} starts it sooner.",
@@ -46,5 +47,5 @@
   "harness.next.comma": ", ",
   "harness.next.offered": "offered again since {{when}}",
   "harness.next.offeredSentence": "Its cool-off ended at {{when}}.",
-  "harness.next.ownSignIn": "{{product}}'s own sign-in, the account it uses at your terminal, carries none of these starts: they run only on the accounts used here, and it runs only starts where nothing names an account."
+  "harness.next.ownSignIn": "{{product}}'s own sign-in, the account it uses at your terminal, carries none of these starts: Daoris starts sessions only on the accounts used here."
 }

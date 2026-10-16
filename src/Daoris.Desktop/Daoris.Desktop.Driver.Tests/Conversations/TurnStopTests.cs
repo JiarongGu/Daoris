@@ -26,7 +26,12 @@ public sealed class TurnStopTests : IDisposable
     private readonly string _home = Path.Combine(
         Path.GetTempPath(), "daoris-turns-" + Guid.NewGuid().ToString("N")[..8]);
 
-    public TurnStopTests() => Directory.CreateDirectory(Path.Combine(_home, "engine"));
+    public TurnStopTests()
+    {
+        Directory.CreateDirectory(Path.Combine(_home, "engine"));
+        // A Daoris account for Claude Code's doors, where every start now runs (OWNSPACE1a): never the person's own home.
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "daoris"));
+    }
 
     public void Dispose()
     {

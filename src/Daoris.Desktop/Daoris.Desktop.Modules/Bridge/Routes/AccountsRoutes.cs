@@ -95,7 +95,9 @@ public sealed class AccountsRoutes(DriverLoop loop)
                             Running = running is null ? (int?)null : running.GetValueOrDefault(Key(agent, account)),
                         }).ToArray(),
                         Scopes = ScopesOf(settings, agent)
-                            .Select(scope => ScopeShown(scope.Workspace, scope.Scope, scope.Keep, said, NextOf(roster, agent, scope.Workspace), now))
+                            .Select(scope => ScopeShown(
+                                scope.Workspace, scope.Scope, scope.Keep, said, NextOf(roster, agent, scope.Workspace), now,
+                                Safe(() => roster.InheritsDaorisAccounts(agent, scope.Workspace))))
                             .ToArray(),
                     };
                 })
@@ -140,9 +142,13 @@ public sealed class AccountsRoutes(DriverLoop loop)
     }
 
     private static object ScopeShown(
-        string? workspace, RotationScope scope, string? keep, IReadOnlyDictionary<string, AccountSaid?> said, object? next, DateTimeOffset now) => new
+        string? workspace, RotationScope scope, string? keep, IReadOnlyDictionary<string, AccountSaid?> said, object? next, DateTimeOffset now,
+        bool inherited) => new
     {
         Workspace = workspace,
+        // OWNSPACE1b-A: nothing is named here, so Daoris's accounts are the list (D175 point 2); the page says so in place of
+        // the tool's own sign-in. A new field beside the old ones: a shell older than this answers none and reads false.
+        Inherited = inherited,
         scope.Default,
         scope.List,
         scope.Begins,
