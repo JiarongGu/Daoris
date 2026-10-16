@@ -1,4 +1,4 @@
-import type { SystemWiring, WiringFolder } from '../bridge/system';
+import type { SystemWiring, WiringFolder } from '../data/wiring';
 
 // What the wiring reads back, for the stories and the tests of This Daoris (WIRING1c): neutral paths by convention, like the
 // driver's fixtures, so a tracked file carries no machine path.

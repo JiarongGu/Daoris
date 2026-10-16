@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { refusedNoRoute } from '../bridge/call';
-import { useSystemWiring } from '../bridge/system';
+import { refusedNoRoute, useSystemWiring } from '../bridge/shell';
 import { failure, useErrorNotify } from '../design/ui';
 import { DomainLoading } from './DomainLoading';
 import type { SettingsDomainProps } from './domains';

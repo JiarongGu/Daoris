@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { SystemWiring, WiringLocated } from '../bridge/system';
+import type { SystemWiring, WiringLocated } from '../data/wiring';
 import { PathText, Pill, SettingRow } from '../design/ui';
 import { moment } from '../locales/format';
 import { Fact, Unread, WiringCard } from './WiringParts';

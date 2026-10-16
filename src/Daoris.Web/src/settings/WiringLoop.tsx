@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { SystemWiring } from '../bridge/system';
+import type { SystemWiring } from '../data/wiring';
 import { Button, Pill, SettingRow } from '../design/ui';
 import { moment } from '../locales/format';
 import { Fact, WiringCard } from './WiringParts';

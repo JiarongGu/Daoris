@@ -108,7 +108,7 @@
       "budget": { "en": 36, "zh": 14 },
       "case": "sentence",
       "keys": [
-        "about.index", "about.surface", "asks.channel.compose.to", "asks.channel.compose.reply", "asks.compose.circle", "asks.compose.sentence", "asks.compose.to",
+        "settings.daoris.label.*", "about.index", "about.surface", "asks.channel.compose.to", "asks.channel.compose.reply", "asks.compose.circle", "asks.compose.sentence", "asks.compose.to",
         "agents.col.account", "agents.col.state", "agents.col.runs", "agents.col.now", "agents.add.name", "agents.add.machine",
         "asks.record.abandonedAt", "asks.record.asked", "asks.record.asker", "asks.record.circle", "asks.record.closedBecause",
         "quests.detail.abandonedAt",
@@ -272,7 +272,7 @@
         "work.terminal.new", "work.terminal.open", "review.act.*", "review.ask.notYetMeanIt", "review.ask.skipMeanIt",
         "opinion.act.*", "opinion.ask.anywayMeanIt", "opinion.ask.myselfMeanIt", "opinion.ask.sendBackMeanIt", "opinion.ask.stopMeanIt",
         "opinion.findingsShow", "opinion.findingsHide",
-        "asks.record.reviewApply", "asks.record.reviewSet", "asks.record.kindApply", "settings.daoris.label.*",
+        "asks.record.reviewApply", "asks.record.reviewSet", "asks.record.kindApply",
         "workflow.door.setup", "workflow.door.workspaceSetup", "workflow.run.door.*"
       ]
     },
