@@ -89,10 +89,11 @@ public enum DrivenReach
 public sealed record DrivenNext(ChatMessage? Held, Task<string>? Answer)
 {
     /// <summary>
-    /// A steer the person's *Send now* sent (STEER2a), which the run waits for before it may close, since its answer is where
-    /// the words are taken; its outcome is no stop reason. Null for the other two.
+    /// What the run waits for before it goes on (STEER2a), which is no turn and no stop reason: a steer the person's *Send now*
+    /// sent, whose answer is where the words are taken; or a stop decided for the turn that just ended, still on its way, which
+    /// must reach the wire before the held words' own turn does. Never faults. Null for the other two.
     /// </summary>
-    public Task<string>? Steered { get; init; }
+    public Task? Waits { get; init; }
 }
 
 /// <summary>
@@ -121,6 +122,13 @@ public static class SendNowWhy
 
     /// <summary>The session's first prompt is not on the wire yet: the words go right after it, as any word said then.</summary>
     public const string Opening = "opening";
+
+    /// <summary>
+    /// On a next-step door, other words wait before these or are on their way to the agent (a word sent at its next step, a
+    /// helper's answer waiting as its own turn): the words go behind them, at the next step or as the next turn, and nothing is
+    /// stopped, since a stop would answer a word on its way cancelled while the agent may still act on it (D136 point 4).
+    /// </summary>
+    public const string Behind = "behind";
 
     /// <summary>A reach in the record's spelling (D136 §3), <c>now</c> for a steer.</summary>
     public static string? Spelled(DrivenReach? reach) => reach switch

@@ -307,6 +307,7 @@ public sealed class AcpSession(
     /// </summary>
     private readonly object _callsGate = new();
     private readonly HashSet<string> _openCalls = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _finishedCalls = new(StringComparer.Ordinal);
     private readonly HashSet<string> _cut = new(StringComparer.Ordinal);
 
     /// <summary>
@@ -512,10 +513,10 @@ public sealed class AcpSession(
 
                 if (inbox?.NextOrClose() is not { } next) break;
 
-                // A steer is no turn of its own: the run waits for its answer, which took the words or cost only them.
-                if (next.Steered is { } steered)
+                // A steer, or a stop still on its way, is no turn of its own: the run waits for it, then asks again (STEER2a).
+                if (next.Waits is { } waits)
                 {
-                    await steered.ConfigureAwait(false);
+                    await waits.ConfigureAwait(false);
                     continue;
                 }
 
@@ -953,20 +954,37 @@ public sealed class AcpSession(
             cut = [.. _cut.Order(StringComparer.Ordinal)];
             _cut.Clear();
             _openCalls.ExceptWith(cut);
+            _finishedCalls.UnionWith(cut);
         }
 
         foreach (var id in cut) Emit(new SessionEvent { Kind = SessionEventKind.Tool, Id = id, Status = CutStatus });
     }
 
-    /// <summary>A call announced or updated (STEER2a): open until the wire says it finished; heard again, it was not cut.</summary>
-    private void Track(SessionEvent? mapped)
+    /// <summary>
+    /// A call announced or updated (STEER2a): heard again, it was not cut. <c>pending</c> and <c>in_progress</c> open it, as
+    /// does an announcement that says no status, which the protocol reads as <c>pending</c>; any other status finishes it. An
+    /// update that says no status keeps what the call was, so a finished call stays finished and is never closed as cut.
+    /// </summary>
+    private void Track(JsonElement update, SessionEvent? mapped)
     {
         if (mapped is not { Kind: SessionEventKind.Tool, Id: { } id }) return;
         lock (_callsGate)
         {
             _cut.Remove(id);
-            if (mapped.Status is null or "pending" or "in_progress") _openCalls.Add(id);
-            else _openCalls.Remove(id);
+            switch (mapped.Status)
+            {
+                case "pending" or "in_progress":
+                    _finishedCalls.Remove(id);
+                    _openCalls.Add(id);
+                    break;
+                case null:
+                    if (Kind(update) == "tool_call" && !_finishedCalls.Contains(id)) _openCalls.Add(id);
+                    break;
+                default:
+                    _openCalls.Remove(id);
+                    _finishedCalls.Add(id);
+                    break;
+            }
         }
     }
 
@@ -1321,7 +1339,7 @@ public sealed class AcpSession(
             }
 
             var structured = Refused(Map(update));
-            Track(structured);
+            Track(update, structured);
             _console.Update(update, structured);
             if (structured is not null) Emit(structured);
         }

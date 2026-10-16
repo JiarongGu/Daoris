@@ -1714,7 +1714,8 @@ public sealed class ChatRunner : IDisposable
                 interrupt: CancelAsync,
                 changed,
                 steer: Steer,
-                steerNow: SteerNow);
+                steerNow: SteerNow,
+                nextStep: () => Session is { NextStep: true });
         }
 
         public string? Posture { get; }

@@ -33,6 +33,11 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     private readonly Queue<Task<string>> _sent = new();
     // The steers *Send now* sent (STEER2a), each until the agent answered it: where it answered `injected` the words were taken.
     private readonly Queue<Task<string>> _steered = new();
+    // Each turn the run takes a held word for, counted (STEER2a): a turn is asked to stop once, and the run takes no held word
+    // while a stop decided for the turn before is still on its way, which landing late would cut that word's own turn.
+    private int _turn;
+    private int _stoppedTurn = -1;
+    private Task _stopping = Task.CompletedTask;
     private bool _closed;
     private bool _flowing;
     private int _said;
@@ -209,17 +214,21 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     /// them, and the answer says why by its code. Null once the session has stopped taking any.
     /// </summary>
     /// <remarks>
-    /// The steer is answered by the run (<see cref="NextOrClose"/>), which closes nothing while one is on its way. The stop is
-    /// asked once the words are held, outside the lock, as <see cref="SendNowAsync"/> asks it.
+    /// <para>The steer is answered by the run (<see cref="NextOrClose"/>), which closes nothing while one is on its way. The stop
+    /// is asked once per turn, once the words are held, as <see cref="SendNowAsync"/> asks it.</para>
+    ///
+    /// <para>🔴 <b>Behind a word on its way, nothing is steered past it</b> (D136 point 4): the agent would read the later words
+    /// first. These go at its next step behind it, said <see cref="SendNowWhy.Behind"/>; that door is never stopped.</para>
     /// </remarks>
     public async Task<SentNow?> HoldNowAsync(ChatMessage message)
     {
-        Func<Task>? interrupt = null;
+        Stop? stop = null;
         SentNow now;
         lock (_gate)
         {
             if (_closed) return null;
-            if (_reach == DrivenReach.NextStep && _flowing && _steer is { } steer)
+            var onTheirWay = _sent.Any(answer => !answer.IsCompleted);
+            if (_reach == DrivenReach.NextStep && _flowing && _steer is { } steer && !onTheirWay)
             {
                 var said = message with { Id = $"said-{++_said}" };
                 Tell(said, DrivenReach.Steered);
@@ -234,9 +243,14 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
             {
                 now = new SentNow(SendNowWhy.Spelled(reach), Now: false, SendNowWhy.Opening);
             }
-            else if (reach == DrivenReach.TurnEnd && _interrupt is not null)
+            else if (reach == DrivenReach.NextStep)
             {
-                interrupt = _interrupt;
+                now = new SentNow(
+                    SendNowWhy.Spelled(reach), Now: false, _steer is not null && onTheirWay ? SendNowWhy.Behind : SendNowWhy.NoInterrupt);
+            }
+            else if (_interrupt is not null)
+            {
+                stop = StopThisTurn();
                 now = new SentNow(SendNowWhy.Spelled(reach), Now: true, Why: null);
             }
             else
@@ -245,7 +259,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
             }
         }
 
-        if (interrupt is not null) await interrupt().ConfigureAwait(false);
+        if (stop is not null) await SendStopAsync(stop).ConfigureAwait(false);
         return now;
     }
 
@@ -276,16 +290,22 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
             if (_closed) return null;
             if (_steered.TryDequeue(out var steered))
             {
-                next = new DrivenNext(null, null) { Steered = steered };
+                next = new DrivenNext(null, null) { Waits = steered };
             }
             else if (_sent.TryDequeue(out var answer))
             {
                 next = new DrivenNext(null, answer);
             }
+            else if (_held.Count > 0 && !_stopping.IsCompleted)
+            {
+                // 🔴 The stop decided for the turn that ended is on its way: the held word's own turn goes after it (STEER2a).
+                next = new DrivenNext(null, null) { Waits = _stopping };
+            }
             else if (_held.Count > 0)
             {
                 next = new DrivenNext(_held[0], null);
                 _held.RemoveAt(0);
+                _turn++;
             }
             else
             {
@@ -315,6 +335,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
             {
                 next = _held[0];
                 _held.RemoveAt(0);
+                _turn++;
             }
             else if (_sent.Count > 0 || _steered.Count > 0)
             {
@@ -347,6 +368,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
             if (_closed) return [];
             taken = [.. _held];
             _held.Clear();
+            if (taken.Count > 0) _turn++;
             if (taken.Count == 0 && _sent.Count == 0 && _steered.Count == 0)
             {
                 _closed = true;
@@ -390,17 +412,52 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     /// session is open, or where words go at once (STEER1): a stop while one is on its way would answer it cancelled while
     /// the agent may still act on it (docs/2026-10-03-steer-evidence.md §3).
     /// </summary>
+    /// <remarks>A turn is asked to stop once, however often the person presses (STEER2a): the answer still says it was.</remarks>
     public async Task<TurnStop> SendNowAsync()
     {
-        Func<Task>? interrupt;
+        Stop? stop;
         lock (_gate)
         {
             if (_closed || _held.Count == 0 || _interrupt is null || _reach == DrivenReach.NextStep) return TurnStop.Nothing;
-            interrupt = _interrupt;
+            stop = StopThisTurn();
         }
 
-        await interrupt().ConfigureAwait(false);
+        if (stop is not null) await SendStopAsync(stop).ConfigureAwait(false);
         return new TurnStop(Cancelled: true, Withdrawn: []);
+    }
+
+    /// <summary>A stop decided for one turn (STEER2a): the door's interrupt, the turn, and what tells the run it is on the wire or dropped.</summary>
+    private sealed record Stop(Func<Task> Interrupt, int Turn, TaskCompletionSource Sent);
+
+    /// <summary>
+    /// Decide the stop for the turn running now, once per turn; null where it was asked already or nothing can stop a turn. The
+    /// run takes no held word until it is on the wire or dropped (<see cref="NextOrClose"/>). Called under the gate.
+    /// </summary>
+    private Stop? StopThisTurn()
+    {
+        if (_interrupt is not { } interrupt || _stoppedTurn == _turn) return null;
+        _stoppedTurn = _turn;
+        var sent = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _stopping = _stopping.IsCompleted ? sent.Task : Task.WhenAll(_stopping, sent.Task);
+        return new Stop(interrupt, _turn, sent);
+    }
+
+    /// <summary>
+    /// Send a stop to the turn it was decided for, or drop it where the run took another turn or the inbox closed; the run may
+    /// then take the next held word, never before. Called outside the gate: the door's interrupt is its own.
+    /// </summary>
+    private async Task SendStopAsync(Stop stop)
+    {
+        try
+        {
+            bool current;
+            lock (_gate) current = !_closed && _turn == stop.Turn;
+            if (current) await stop.Interrupt().ConfigureAwait(false);
+        }
+        finally
+        {
+            stop.Sent.TrySetResult();
+        }
     }
 
     private ChatQueue Now() => _closed ? ChatQueue.Idle : new ChatQueue(Taking: true, [.. _held]);

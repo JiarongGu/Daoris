@@ -28,6 +28,12 @@ public sealed class ChatTurnsTests
         /// <summary>How many times the door was asked to stop the turn in flight.</summary>
         public int Interrupts;
 
+        /// <summary>Holds each stop on its way to the door until set: a slow wire (STEER2a).</summary>
+        public TaskCompletionSource? InterruptGate { get; set; }
+
+        /// <summary>How many turns had reached the door when each stop landed: the turn it cut.</summary>
+        public List<int> InterruptedAt { get; } = [];
+
         /// <summary>Whether a word said during a turn is handed to it: the door's own word, as the agent's promptQueueing is.</summary>
         public bool TakesWordsMidTurn { get; set; } = true;
 
@@ -53,10 +59,11 @@ public sealed class ChatTurnsTests
                 sent();
                 return ended.Task;
             },
-            interrupt: () =>
+            interrupt: async () =>
             {
+                if (InterruptGate is { } gate) await gate.Task;
+                lock (_gate) InterruptedAt.Add(Took.Count);
                 Interlocked.Increment(ref Interrupts);
-                return Task.CompletedTask;
             },
             changed: queue =>
             {
@@ -77,7 +84,8 @@ public sealed class ChatTurnsTests
                     lock (_gate) SteeredNow.Add(message.Text);
                     return Now.Task;
                 }
-                : null);
+                : null,
+            nextStep: steers ? () => TakesWordsMidTurn : null);
 
         public void EndTurn(int at)
         {
@@ -208,9 +216,70 @@ public sealed class ChatTurnsTests
         Assert.Equal(new SentNow("turn-end", true, null), now);
         Assert.Equal(1, door.Interrupts);
         Assert.Equal(["start with the tests"], turns.State.Queued.Select(message => message.Text));
+        // A second press asks the turn no second stop.
+        Assert.Equal(new SentNow("turn-end", true, null), await turns.TakeNowAsync(new ChatMessage("and the readme", [])));
+        Assert.Equal(1, door.Interrupts);
         door.EndTurn(0);
         await Poll.Until(() => door.Took.Count == 2, () => "the words never went after the stopped turn");
         Assert.Equal(["read the five files", "start with the tests"], door.Took);
+    }
+
+    /// <summary>
+    /// 🔴 STEER2a (a second maker's review): a stop decided for turn A is on the wire, or dropped, before the kept words' own
+    /// turn B goes. A slow stop that landed after B had gone would cut B, whose words have left the queue and would be lost.
+    /// </summary>
+    [Fact]
+    public async Task The_kept_words_turn_waits_for_the_stop_decided_for_the_turn_before_and_is_never_cut_by_it()
+    {
+        var door = new Door { TakesWordsMidTurn = false, SteersNow = false, InterruptGate = new(TaskCreationOptions.RunContinuationsAsynchronously) };
+        var turns = door.Turns();
+        turns.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+
+        var pressing = turns.TakeNowAsync(new ChatMessage("start with the tests", []));
+        door.EndTurn(0);
+        await Task.Delay(150);
+
+        Assert.Single(door.Took);
+        door.InterruptGate.SetResult();
+        Assert.Equal(new SentNow("turn-end", true, null), await pressing.WaitAsync(TimeSpan.FromSeconds(10)));
+        await Poll.Until(() => door.Took.Count == 2, () => "the kept words never went");
+        Assert.Equal([1], door.InterruptedAt);
+    }
+
+    /// <summary>
+    /// 🔴 STEER2a (D136 point 4, evidence §3): on a next-step door the driver never stops a turn while a word is on its way, nor
+    /// steers past one. With a helper's answer waiting as its own turn the press queues the words behind it; with nothing
+    /// waiting they go at the next step, behind the word on its way. Either way <c>now: false</c>, <c>behind</c>.
+    /// </summary>
+    [Fact]
+    public async Task Sending_now_behind_words_on_their_way_on_a_next_step_door_stops_nothing_and_says_so()
+    {
+        var door = new Door();
+        var turns = door.Turns();
+        turns.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+        Assert.Equal(TurnReach.NextStep, turns.Take(new ChatMessage("put PINEAPPLE after the words", [])));
+        var helper = new SaidWordView("h1w", "Another agent says five.", DateTimeOffset.UtcNow, [], true) { Helper = "h1" };
+        Assert.Equal(TurnReach.TurnEnd, turns.Take(new ChatMessage(helper.Text, []) { Helped = helper }));
+
+        var now = await turns.TakeNowAsync(new ChatMessage("start with the tests", []));
+
+        Assert.Equal(new SentNow("turn-end", false, SendNowWhy.Behind), now);
+        Assert.Equal(0, door.Interrupts);
+        Assert.Empty(door.SteeredNow);
+        Assert.Equal(["start with the tests"], turns.State.Queued.Select(message => message.Text));
+
+        var next = new Door();
+        var stepping = next.Turns();
+        stepping.Take(new ChatMessage("read the five files", []));
+        await Poll.Until(() => next.Took.Count == 1, () => "the first turn never reached the door");
+        stepping.Take(new ChatMessage("put PINEAPPLE after the words", []));
+
+        Assert.Equal(new SentNow("next-step", false, SendNowWhy.Behind), await stepping.TakeNowAsync(new ChatMessage("and MANGO", [])));
+        Assert.Equal(["put PINEAPPLE after the words", "and MANGO"], next.Steered);
+        Assert.Empty(next.SteeredNow);
+        Assert.Equal(0, next.Interrupts);
     }
 
     /// <summary>

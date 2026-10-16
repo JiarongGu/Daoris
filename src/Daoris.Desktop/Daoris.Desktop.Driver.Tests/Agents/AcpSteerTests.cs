@@ -103,7 +103,7 @@ public sealed class AcpSteerTests
         """{"protocolVersion":1,"_meta":{"steering":{"supported":true}},"agentCapabilities":{"_meta":{"claudeCode":{"promptQueueing":true}}}}""";
 
     /// <summary>A tool call announced or updated, as the adapter streams it.</summary>
-    private static string Call(string kind, string id, string status) =>
+    private static string Call(string kind, string id, string? status) =>
         JsonSerializer.Serialize(new
         {
             jsonrpc = "2.0",
@@ -679,6 +679,50 @@ public sealed class AcpSteerTests
                 "turn:end_turn",
             ],
             record.Lines);
+    }
+
+    /// <summary>
+    /// 🔴 STEER2a (a second maker's review): a call that finished stays finished through an update that says no status, so a
+    /// later steer never closes it as cut.
+    /// </summary>
+    [Fact]
+    public async Task A_call_that_finished_is_never_closed_as_cut_by_a_later_steer()
+    {
+        var first = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize":
+                    return Ok(frame, Steers);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    self.Push(Call("tool_call", "read-1", "pending"));
+                    self.Push(Call("tool_call_update", "read-1", "completed"));
+                    self.Push(Call("tool_call_update", "read-1", null));
+                    first.SetResult(frame.GetProperty("id").GetInt32());
+                    return null;
+                case "_session/steering":
+                    self.Push(Ok(frame, """{"outcome":"injected"}"""));
+                    self.Push(Answer(first.Task.Result, "end_turn"));
+                    return null;
+                default:
+                    return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var record = new Record();
+        var inbox = new DrivenInbox(_ => { });
+
+        var run = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event)
+            .RunAsync("D:/fam/Game", "read the five files", CancellationToken.None, inbox: inbox, asked: record.Asked);
+        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await Poll.Until(() => record.Lines.Contains("tool:read-1:"), () => string.Join(" | ", record.Lines), TimeSpan.FromSeconds(10));
+        await inbox.HoldNowAsync(new ChatMessage("one more thing", []));
+        await run.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Contains("turn:end_turn", record.Lines);
+        Assert.DoesNotContain("tool:read-1:cut", record.Lines);
     }
 
     /// <summary>

@@ -289,9 +289,79 @@ public sealed class DrivenInboxTests
         Assert.Equal(0, stopped);
 
         var next = inbox.NextOrClose();
-        Assert.Same(answer.Task, next?.Steered);
+        Assert.Same(answer.Task, next?.Waits);
         answer.SetResult("injected");
         Assert.Null(inbox.NextOrClose());
+    }
+
+    /// <summary>
+    /// 🔴 STEER2a (a second maker's review): a turn is asked to stop once, however many presses; a turn the run takes after it is
+    /// a turn of its own.
+    /// </summary>
+    [Fact]
+    public async Task A_turn_is_asked_to_stop_once_however_often_the_person_presses()
+    {
+        var stopped = 0;
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(() => { stopped++; return Task.CompletedTask; });
+
+        await inbox.HoldNowAsync(Said("one"));
+        await inbox.HoldNowAsync(Said("two"));
+        await inbox.SendNowAsync();
+        Assert.Equal(1, stopped);
+
+        Assert.Equal("one", inbox.NextOrClose()?.Held?.Text);
+        await inbox.SendNowAsync();
+        Assert.Equal(2, stopped);
+    }
+
+    /// <summary>
+    /// 🔴 STEER2a: the run takes no held word while the stop decided for the turn before is still on its way; it waits for it,
+    /// so a slow stop can never land on the kept words' own turn.
+    /// </summary>
+    [Fact]
+    public async Task The_run_takes_no_held_word_until_the_stop_for_the_turn_before_is_on_the_wire()
+    {
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var landed = 0;
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(async () => { await gate.Task; landed++; });
+
+        var pressing = inbox.HoldNowAsync(Said("start with the tests"));
+        var waiting = inbox.NextOrClose();
+
+        Assert.Null(waiting?.Held);
+        Assert.False(waiting?.Waits?.IsCompleted ?? true);
+        gate.SetResult();
+        await pressing.WaitAsync(TimeSpan.FromSeconds(10));
+        await waiting!.Waits!.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal(1, landed);
+        Assert.Equal("start with the tests", inbox.NextOrClose()?.Held?.Text);
+    }
+
+    /// <summary>
+    /// 🔴 STEER2a (D136 point 4): on a door that steers, words pressed while an earlier word is on its way are neither steered
+    /// past it nor sent with a stop: they go at the next step behind it, and the answer says <c>behind</c>.
+    /// </summary>
+    [Fact]
+    public async Task Sending_now_behind_a_word_on_its_way_sends_it_at_the_next_step_and_says_so()
+    {
+        var sent = new List<string>();
+        var steered = 0;
+        var stopped = 0;
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(
+            () => { stopped++; return Task.CompletedTask; },
+            message => { sent.Add(message.Text); return new TaskCompletionSource<string>().Task; },
+            _ => { steered++; return Task.FromResult("injected"); });
+        inbox.Flow();
+        inbox.Hold(Said("put PINEAPPLE after the words"));
+
+        var now = await inbox.HoldNowAsync(Said("and MANGO"));
+
+        Assert.Equal(new SentNow("next-step", false, SendNowWhy.Behind), now);
+        Assert.Equal(["put PINEAPPLE after the words", "and MANGO"], sent);
+        Assert.Equal((0, 0), (steered, stopped));
     }
 
     /// <summary>
