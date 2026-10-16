@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -85,9 +87,25 @@ public sealed class DriverWatch(
     public BranchTidying? Tidying { get; init; }
 
     /// <summary>Look now rather than at the next poll — a control that just changed something should
-    /// not leave the person watching a countdown.</summary>
-    public void Nudge()
+    /// not leave the person watching a countdown. A plain nudge carries no topic, and means everything.</summary>
+    public void Nudge() => Woken(null);
+
+    /// <summary>
+    /// Look now, because <paramref name="topic"/>'s <paramref name="subject"/> moved (FABRIC-EVENT2, the design §A3): a wake from a
+    /// change source, never a value. The look is the whole look still, as a plain nudge's is, until the look is split into its
+    /// topics (FABRIC-EVENT3a); the topic and subject are what its <c>watch.looked</c> line says woke it. A subject is a name, never
+    /// a path.
+    /// </summary>
+    public void Nudge(string topic, string subject) => Woken(new Wake(topic, subject));
+
+    // What the last nudge said woke the loop: null for a plain nudge, which means everything.
+    private Wake? _woke;
+
+    private sealed record Wake(string Topic, string Subject);
+
+    private void Woken(Wake? wake)
     {
+        Volatile.Write(ref _woke, wake);
         Interlocked.Increment(ref _nudges);
 
         // Swap first, atomically, so two racing nudges each cancel a source that is no longer current
@@ -153,6 +171,12 @@ public sealed class DriverWatch(
         var tidy = Tidying ?? new BranchTidying(home);
         Task<IReadOnlyList<string>>? tidying = null;
 
+        // What woke each look, for its line in the machine log (FABRIC-EVENT2): the loop's start, its pace, a session's end, or a
+        // nudge with what it said moved; and how many nudges the look took up at once.
+        var by = "start";
+        Wake? woke = null;
+        var counted = Volatile.Read(ref _nudges);
+
         // What the sessions run on: the loop's own token, and cancelled by the loop itself when a failure
         // ends it, so no session outlives the loop that watches it (DEV3).
         using var sessions = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -161,7 +185,10 @@ public sealed class DriverWatch(
             while (!ct.IsCancellationRequested)
             {
                 var nudged = Volatile.Read(ref _nudges);
+                var nudges = nudged - counted;
+                counted = nudged;
                 var failed = false;
+                var began = Stopwatch.GetTimestamp();
                 try
                 {
                     // 🔴 Inside the catch (REV3): a hand edit that tore the file threw from here, outside it,
@@ -224,6 +251,7 @@ public sealed class DriverWatch(
 
                     if (tidying is null && tidy.Due) tidying = TidyAsync(tidy, ct);
 
+                    Looked(by, woke, nudges, began, failed: false);
                     await onReport(report, config).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -234,6 +262,7 @@ public sealed class DriverWatch(
                 catch (Exception error) when (onError is not null)
                 {
                     failed = true;
+                    Looked(by, woke, nudges, began, failed: true);
                     SayCarried();
                     await onError(error).ConfigureAwait(false);
                 }
@@ -249,15 +278,27 @@ public sealed class DriverWatch(
                 }
                 catch (ObjectDisposedException)
                 {
-                    continue; // A nudge swapped the source as the wait began: that is a nudge, so look again.
+                    // A nudge swapped the source as the wait began: that is a nudge, so look again.
+                    (by, woke) = ("nudge", Volatile.Read(ref _woke));
+                    continue;
                 }
 
                 using (wait)
                 {
                     // A nudge during the look came before this wait could hear it: look again now.
-                    if (Volatile.Read(ref _nudges) != nudged) continue;
-                    await Running.NextAsync(TimeSpan.FromSeconds(config.PollSeconds), wait.Token, endings: !failed)
-                        .ConfigureAwait(false);
+                    if (Volatile.Read(ref _nudges) != nudged)
+                    {
+                        (by, woke) = ("nudge", Volatile.Read(ref _woke));
+                        continue;
+                    }
+
+                    var pace = TimeSpan.FromSeconds(config.PollSeconds);
+                    var waiting = Stopwatch.GetTimestamp();
+                    await Running.NextAsync(pace, wait.Token, endings: !failed).ConfigureAwait(false);
+                    woke = Volatile.Read(ref _nudges) != nudged ? Volatile.Read(ref _woke) : null;
+                    by = Volatile.Read(ref _nudges) != nudged ? "nudge"
+                        : failed || Stopwatch.GetElapsedTime(waiting) >= pace - Early ? "pace"
+                        : "ended";
                 }
             }
         }
@@ -277,6 +318,23 @@ public sealed class DriverWatch(
             if (tidying is not null) await tidying.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
         }
     }
+
+    /// <summary>How much sooner than its pace a wait may end and still be the pace's: a timer's own granularity.</summary>
+    private static readonly TimeSpan Early = TimeSpan.FromMilliseconds(50);
+
+    /// <summary>
+    /// The look, timed (FABRIC-EVENT2, the design §A2): <c>watch.looked</c> with its ms, what woke it (<c>start</c>, <c>pace</c>,
+    /// <c>ended</c> for a session's end, or <c>nudge</c> with the topic and subject a nudge carried, none for a plain one), how many
+    /// nudges it took up, and whether it failed. Up to the report, not the door's handling of it.
+    /// </summary>
+    private void Looked(string by, Wake? woke, int nudges, long began, bool failed) =>
+        Log?.Info("watch.looked",
+            ("ms", (long)Stopwatch.GetElapsedTime(began).TotalMilliseconds),
+            ("by", by),
+            ("topic", woke?.Topic),
+            ("subject", woke?.Subject),
+            ("nudges", nudges),
+            ("failed", failed));
 
     /// <summary>
     /// One tidy pass (AUTOTIDY1), started on the pool so the look beside it does not wait on its git. A closing loop ends it
