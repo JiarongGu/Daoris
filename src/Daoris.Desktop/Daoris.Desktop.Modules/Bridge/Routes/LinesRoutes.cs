@@ -73,8 +73,10 @@ public sealed class LinesRoutes(DriverContext context)
     }
 
     // Every repository's line here and what said so (WSR2), for the screen. The checkouts are
-    // the registry's, so this waits for the driver like the review does.
+    // the registry's, so this waits for the driver like the review does. Git is asked each checkout's line, so an ask while
+    // one runs shares it (SWEEPFLIGHT1).
     [DriverRoute("LINES")]
+    [OneFlight("LINES")]
     private async Task<object?> LinesAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
@@ -231,11 +233,14 @@ public sealed class LinesRoutes(DriverContext context)
     /// <summary>
     /// The clean-up's list, or its press (WSR3, D88), over every repository with a checkout here. A tree a
     /// session still running or waiting names is kept whatever it holds. Beside the session branches, the
-    /// branches landings made (WSR5): each goes where its work reached the line, by the same press.
+    /// branches landings made (WSR5): each goes where its work reached the line, by the same press. The list is a git fan-out
+    /// over every checkout, asked again at each change the page hears and by each window, so an ask while one runs shares it
+    /// (SWEEPFLIGHT1: the frozen window's stack held 22 at once); the press is never shared.
     /// </summary>
     [DriverRoute("SWEEP_PLAN")]
     [DriverRoute("SWEEP")]
     [Publishes("SWEEP", Moves)]
+    [OneFlight("SWEEP_PLAN")]
     private async Task<object?> SweepAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var (repositories, inUse) = await CheckoutsAndSessionsAsync(_loop, null, cancellationToken);
