@@ -328,6 +328,17 @@ internal sealed class TreeLands(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
         string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false, bool fetched = false)
     {
+        var landed = await LandingAsync(path, subject, ct, inUse, acceptedBy, gate, joins, fetched).ConfigureAwait(false);
+        // FABRIC-END3: Accept is Daoris's own ref move; its repository is judged at once by the ref watch, with its echo (§B4).
+        if (landed.Landed) RefMoves.Mine(context.Home, context.OwnerOf(Path.GetFullPath(path)).Repository);
+        return landed;
+    }
+
+    /// <summary>The landing itself, as <see cref="LandAsync"/> says it.</summary>
+    private async Task<TreeLanding> LandingAsync(
+        string path, LandingSubject subject, CancellationToken ct, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse,
+        string acceptedBy, LandingGate? gate, bool joins, bool fetched)
+    {
         // One look (UIFREEZE1, PROC1d-i): the landing and its tidy ask git's guess at the line once.
         using var look = context.OneLook();
         var full = Path.GetFullPath(path);

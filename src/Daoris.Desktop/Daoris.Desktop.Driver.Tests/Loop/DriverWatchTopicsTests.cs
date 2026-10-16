@@ -227,7 +227,44 @@ public sealed class DriverWatchTopicsTests : IDisposable
             .Select(line => line.GetProperty("data"))
             .ToArray();
 
-    private (DriverWatch Watch, StandInRuns Runs) Watch(RemoteSyncSet sync, int pollSeconds, MachineLog? log = null)
+    /// <summary>
+    /// Canary 4 on git (FABRIC-END3): a thousand ref hints on a repository holding Daoris's work are judged by the ref watch alone,
+    /// and run no look and no remote sync.
+    /// </summary>
+    [Fact]
+    public async Task A_thousand_ref_hints_run_no_look_and_no_remote_sync()
+    {
+        var common = Path.Combine(_home, "engine", ".git");
+        Directory.CreateDirectory(common);
+        new SessionBranches(_home).Record(new GrownBranch("engine", "default", "daoris/s-0001", "main", new string('a', 40), null, DateTimeOffset.UtcNow));
+        var source = new FakeChangeSource();
+        using var sync = Counted();
+        var (watch, _) = Watch(sync, pollSeconds: 60, source: source);
+        var reports = new List<TickReport>();
+
+        var watching = watch.RunAsync(Into(reports), onError: null, _closing.Token);
+        try
+        {
+            await Poll.Until(() => Count(reports) >= 1 && source.On(common) is not null, () => "no look, or the repository never watched", Bound);
+            var (looks, synced, judged) = (Count(reports), Passes(), watch.Refs!.Changes.Judgements);
+
+            var handle = source.On(common)!;
+            for (var each = 0; each < 1000; each++) handle.Raise(each % 2 == 0 ? "refs/heads/daoris/s-0001" : "worktrees/s-0001/HEAD", ChangeKind.Renamed);
+            await Poll.Until(() => watch.Refs.Changes.Judgements > judged, () => "the ref hints were never judged", Bound);
+            await Task.Delay(ChangeWatch.Cap + ChangeWatch.Quiet);
+
+            Assert.InRange(watch.Refs.Changes.Judgements - judged, 1, 2);
+            Assert.Equal(looks, Count(reports));
+            Assert.Equal(synced, Passes());
+        }
+        finally
+        {
+            await _closing.CancelAsync();
+            await Settled(watching);
+        }
+    }
+
+    private (DriverWatch Watch, StandInRuns Runs) Watch(RemoteSyncSet sync, int pollSeconds, MachineLog? log = null, IChangeSource? source = null)
     {
         var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, $$"""
@@ -242,6 +279,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
             Runner = runs.Runner,
             Stops = runs.Stops,
             Log = log,
+            Source = source,
         };
         runs.Keeping = watch.Running;
         return (watch, runs);
