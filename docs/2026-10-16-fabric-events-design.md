@@ -424,13 +424,22 @@ judged again inside the hold, once more right before each goes, the delete only 
 10. Measured on the owner's use: the machine log's look timing, its git starts per hour, and the delay from a ref move to
     its end, before and after (a Process class and a day's log, not a load).
 
-**The first three slices**, in two lanes, the first two able to run side by side:
+**The rows**, in order. The first two can run side by side; each later row names what it waits on.
 
-1. **FABRIC-EVENT2**, the change watch on the request folders (driver).
-2. **FABRIC-END2**, the end recorded at the existing judgements, with no watcher (driver).
-3. **FABRIC-END3**, the ref watcher feeding the end judgement (driver), after both.
-
-The full rows are in the hand-back to the steward, who places them in TASKS.md.
+| # | Row | Lanes | After | Builds | Proves |
+|---|---|---|---|---|---|
+| 1 | FABRIC-EVENT2 | driver | - | `ChangeWatch` (§A4.1), the topic-carrying `Nudge`, the request and presses folders on it with a 30 s listing behind, and a machine-log line timing the watch's look | canaries 1-4 on a fake source; a Process class with a real watcher on a scratch folder; a request answered within the debounce |
+| 2 | FABRIC-END2 | driver | - | the end judgement and its fields (§B5), run at the existing tidy's judgement and at *Accept*; no watcher, no reader changed | canaries 6, 7 and 9; each cycle of §B3; an old record reads as not yet judged |
+| 3 | FABRIC-END3 | driver | 1, 2 | the ref watcher (§B4); auto-landing looked at on a move or a done | canaries 1-5 on git; a Process class with real git; canary 10's first day |
+| 4 | FABRIC-END4 | driver, web-shell | 3 | the clean-up's candidates and the page read the end (§B6) | canary 8; a list's git starts counted down; both locales |
+| 5 | FABRIC-EVENT3 | service, driver | 1 | the change stream (§A4.2) | a second connection's write wakes the wait; an agent's quest starts without the poll |
+| 6 | FABRIC-END5 | driver, modules | 4 | the CLI, a quest's close and Ask Daoris read the end | the CLI's and the rehearsal's sentences; the help room's goldens |
+| 7 | FABRIC-END6 | driver | 3; §Q2, §Q6 | a fetch and a plugin's ask when due (§A4.3) | each moment and its bound; an end with no press |
+| 8 | FABRIC-EVENT4 | driver, modules | 1 | the home's record files on the watch (§A4.1) | each heard within the debounce, and found by its reconciliation when silenced |
+| 9 | FABRIC-EVENT5a | web-shell, modules | 8 | Ask Daoris's two polls (rows 23, 24) become publishes | no interval in a desktop window; a plain browser keeps its polls (D169 §4) |
+| 10 | FABRIC-EVENT5b | web-settings, modules | 8 | Settings' wiring poll (row 22) becomes a publish | as row 9 |
+| 11 | FABRIC-EVENT6 | service | 1 | the knowledge server marks a checkout stale on a watch (row 20); the service references no driver library, so its watch is a twin in `twins.md` or a shared home the row chooses | a document's edit read at the next search, with no minute's re-read |
+| 12 | FABRIC-EVENT7 | driver, cli | 3, 5, 8; §Q5 | the slow clocks raised, `pollSeconds` with its CLI twin | the machine log shows the wakes carry the work before and after |
 
 # Questions only the owner can answer
 
