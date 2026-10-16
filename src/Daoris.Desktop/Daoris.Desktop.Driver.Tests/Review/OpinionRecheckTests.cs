@@ -49,7 +49,9 @@ public sealed class OpinionRecheckTests : IDisposable
             var real = AdapterSet.Built().Resolve(name).Toolchain!;
             adapters[name] = new Adapter(name, new HarnessToolchain(
                 Binary: [absent.Contains(name) ? "daoris-xagent1e-no-such-command" : Command], VersionArguments: [],
-                ProfileVariable: real.ProfileVariable, AccountOf: real.AccountOf, ProbeByPresence: true, Product: real.Product, Maker: real.Maker));
+                ProfileVariable: real.ProfileVariable, AccountOf: real.AccountOf, ProbeByPresence: true, Product: real.Product, Maker: real.Maker,
+                // A test double whose own home is nobody's (OWNSPACE1a): the recheck is this file's subject, not the account.
+                RunsInOwnHome: true));
         }
 
         var set = new AdapterSet(adapters);

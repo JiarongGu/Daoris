@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- Daoris's sessions no longer run in your own agent sign-in. Where nothing names an account, a start takes one of the agent's
+  Daoris accounts; with none signed in, it waits and says so once (*No `claude-code` account of Daoris's own is signed in…*),
+  in English and 中文, until you sign one in for Daoris. A conversation begun in your own sign-in still goes on there. A
+  folder-trust hold on a Daoris account names Daoris's own command, since trusting the folder at your terminal would not
+  reach that account.
 - Switching accounts is in view on an agent's page. Each account's five-hour and weekly window says its use against its usage
   curve now (*its curve allows 45% now*, or *over its curve's 45% now*) and whether it was read from the agent or said by a
   session, and how long ago; the page reads each account's use as it opens where a reading is older than a minute, and at
