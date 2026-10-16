@@ -16,6 +16,9 @@ with the version and date at release.
 - A terminal's `sessions stop`, `say` or `take-back`, and its `trees` presses, reach the running Daoris as they are written
   (about a third of a second), where Daoris used to look for them once a second; it still looks every 3 s in case one is
   missed. The machine log times each look of the driver and says what woke it.
+- What wakes the driver between its looks (a terminal's words, a session's end) now plans and starts work at once without
+  asking your circles' remotes; the remotes are still synced every `pollSeconds`, after a session ends, and whenever a press
+  asks the loop to look. The machine log says which part each look ran.
 - `daoris-driver sessions say <id> --now …` is *Send now* from a terminal, and says what the agent's door did.
 - *This Daoris* also shows the settings files, the variables Daoris reads, the versions, the terminal's wiring, the
   knowledge store and the logs.

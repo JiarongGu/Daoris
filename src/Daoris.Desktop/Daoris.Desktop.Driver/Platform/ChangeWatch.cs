@@ -49,6 +49,12 @@ public static class ChangeTopics
 
     /// <summary>The part of the look no event yet carries, which the ledger wakes: <c>pollSeconds</c> is its deadline (§C5).</summary>
     public const string Look = "look";
+
+    /// <summary>
+    /// A ledger family moved, the subject naming it (§A4.2's change stream): its wake runs the look's local plan alone, the remote
+    /// sync left to the <see cref="Look"/> topic's deadline (FABRIC-EVENT3a).
+    /// </summary>
+    public const string Ledger = "ledger";
 }
 
 /// <summary>One judgement asked: of which topic's subject, and why. A subject is a name, never a path.</summary>
