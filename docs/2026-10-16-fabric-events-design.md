@@ -5,7 +5,11 @@ which answers them, proposed, pending the owner's yes and a second maker's opini
 2026-10-16, *the end of a piece of work*, *events over polling* and the acceptance. Parts A and B design both directions
 together because they share one shape (Part A), and the end of a piece of work is that shape's first consumer (Part B).
 Part C makes the end defined per workspace and repository, lets a plugin contribute a step or an end, and turns the
-clocks into events with chains; §C1 says what it changes in A and B. It builds nothing; the rows at the end do.
+clocks into events with chains; §C1 says what it changes in A and B. Part C was accepted with the owner's answers.
+**Part D** (proposed, pending a second maker's read and the owner's yes) sets the design under the owner's goal: a
+system easier to extend with plugins and new steps, maximizing automation. It adds the work unit, one step contract,
+human tasks, performed plugin steps, the ownership inventory and the completed menu; where it conflicts with A-C it
+governs (§D1), and its row order (§D12) replaces the earlier table. The design builds nothing; the rows do.
 
 The owner, in order:
 
@@ -884,6 +888,376 @@ back through the world: the tidy deletes a branch, and the ref watcher hears it.
 
 ---
 
+# Part D — the work unit, its steps and its cleanup, toward the owner's goal
+
+**Proposed, 2026-10-16, pending a second maker's read and the owner's yes.** The owner set the goal over this design
+(D173's note *"the owner's goal over the fabric's design"*):
+
+- *"all my input is kind of 'requirements', but if you have any better idea you can always update it; what I'm thinking of
+  is a system that's easier to work with plugins and new steps, maximizing the automation we can have"*
+- *"I hope you understand that's why we introduced the fabric system; please go ahead and work with Codex"*
+
+Codex checked parts A-C against that goal.
+
+- **What it found:** a strong event-driven landing lifecycle, but only a partial delivery of the goal:
+  - the branch lifecycle had become almost the whole fabric;
+  - human steps were thin attestations;
+  - "everything" in the cleanup was a fixed git set;
+  - plugins could bring neither a task lifecycle nor a cleanup contract;
+  - the chain menu was unspecified;
+  - the build order front-loaded plumbing.
+- **What it proposed:** this part, which takes its proposal, checks each claim against the code, and changes it where
+  the code or D173's guards ask.
+
+**Where part D conflicts with parts A-C, part D governs** (§D1). The guards stand throughout: ownership is local, there is
+one store per concept and no second writer, the person's doors (D156) decide who the person is, nothing runs a script,
+and D88's line rule holds.
+
+## D0. Scope, and the milestone the person sees
+
+**Scope.** Branch cycles are the fabric's **first adapter**, not the fabric. The fabric is units of work, their steps,
+and what each unit made. Quests, asks and delegated tasks join as adapters on the same unit and step contract (§D2, §D4),
+and the collaboration checkpoint (C2's proof, then one cross-harness round trip) runs beside them as its own gate (§D10).
+Parts A-C remain the branch adapter's design.
+
+**The milestone the person sees**, for every unit, from the first slice and with the default cycle:
+
+| Shown | Read from |
+|---|---|
+| **End reached:** which step, when, at which revision | the unit's kept steps (§C7, §D4) |
+| **Result kept:** what stays, by name | the inventory's `result` entries (§D3) |
+| **Cleanup:** *pending*, with what waits and why (a guard, the cycle's wait, a blocked entry), or *completed*, with what went and when | the inventory's dispositions (§D3) |
+| **Recovery retained:** the moved-aside folder until its purge date, the recovery refs | the inventory's `recovery` entries |
+
+The milestone is shown on the work's foot, in What needs you when something waits on the person, on the Branches tab and
+WorkspaceTidied, by `daoris-driver trees state` and `work state`, and by Ask Daoris. It is built first (FABRIC-MILESTONE1),
+for the default cycle, before any configuration exists, so the person sees the lifecycle working as soon as it does.
+
+## D1. What part D changes in parts A, B and C
+
+| Where | Change |
+|---|---|
+| §A1-§A6 | Unchanged. `timer.step` (§D4) and `work.cleanup` (§D8) join §C5's events |
+| §B1, the unit | The tree's branch becomes the **branch adapter** of `WorkUnit` (§D2). Its identity is a stable unit id, and the branch name and path are aliases |
+| §B5, §C7, the store | The facts stay where §C7 puts them. The unit id is added to the session branch's entry and referenced from landing entries (`Units`). Persisted attempts (§D6) and plugin receipts (§D3) join the same entries |
+| §C2, the steps | Every step, built-in, human or plugin, is one **step contract** (§D4). `cycle.steps` names declared steps. The `human` press becomes a **human task** (§D5) |
+| §C3, "everything" | Replaced by the **ownership inventory** with a disposition per entry (§D3). The result, the line rule, the wait and the guards stand |
+| §C4, a plugin's events | Kept: the sender checks, bounds, generations and `resync`. Added: **performed** steps through `work/perform` (§D6), a negotiated capability, and plugin resources with a cleanup adapter (§D3) |
+| §C6, the menu | Completed (§D8): typed transitions, four effects, Setup's *Work* pages and their terminal twin |
+| §C7, in flight | **Amended:** dispatch receipts and unresolved attempts persist on the unit's canonical record, and `timer.step` deadlines persist. The due sets stay ephemeral |
+| The rows | Re-cut toward what the person feels first (§D12) |
+
+## D2. The work unit
+
+A `WorkUnit` names responsibility toward a result, apart from whatever executes it:
+
+```ts
+{ id, kind, owner: { repository, record }, commitment?, space?, cycle,
+  subject: { artifact, revision }, results: [], resources: [] }
+```
+
+**An adapter interface, never a work database.** Each kind's adapter names its canonical record and that record's one
+writer, and reads the unit from it. A `WorkUnit` is a projection.
+
+| Kind | Canonical record | Writer | Adapter |
+|---|---|---|---|
+| branch work | the session branch's `session-branches.json` entry, with the landing entries that reference it | the driver: the tree's opening, the end judgement, the landing | **the first**, built over parts B and C |
+| quest | `QuestStore` (Quests.cs) | the service, through `QuestExchange` | after the branch adapter, read-only first |
+| ask | `AskStore` (ServiceFactory.cs:291) | the service | read-only, as the quest's space |
+| delegated task | a quest whose commitment another repository accepted (D163's hand-over, the proposal's §3 `Commitment`) | the service | after the collaboration checkpoint (§D10) |
+
+**Deployments, documents and plugin artifacts are not kinds yet.** No canonical record holds one today, so for now each
+is a **result** or a **resource** of a step on another unit (§D3, §D4). It becomes a kind of its own only when a lifecycle
+needs it, and then its adapter names its store first.
+
+- **Identity.** A branch unit's id is written once, into the session branch's entry when its tree opens. Landing entries
+  reference the ids of the units whose work they carry (`Units`), so a landing branch carrying several sessions' work
+  (LAND2c's advances) is one result of several units, never a unit itself.
+- **Sessions execute; they do not own.** A session is an execution binding (the proposal's §3). A hand-over changes the
+  executor and keeps the unit (D163). A native subagent's binding (C1a's lineage) identifies an executor, never an owner.
+- **Cycles stay optional routines over units.** They never become the fabric's universal execution graph (ADR-A).
+
+## D3. Ownership: the inventory and its dispositions
+
+Every resource a unit's work made has an **ownership entry**:
+
+```ts
+{ id, unit, resource, revision, createdBy, role: "temporary" | "result" | "evidence" | "recovery",
+  cleanup: { owner, policy, retainUntil?, proof? } }
+```
+
+**Derived where a record already names the resource, recorded only where none does.** No receipt duplicates a record:
+
+| Resource | Role | Where its entry comes from | Who cleans it |
+|---|---|---|---|
+| the session's tree (worktree) | temporary | the session record, the worktree list, `locks/trees` | Daoris: moved aside, with every guard (D88) |
+| its moved-aside folder | recovery | `trees/.tidied/…`, with its purge date | Daoris, at its purge, fourteen days after the move |
+| its session branches | temporary | `session-branches.json` | Daoris, with fresh proof (§C3) |
+| a landing branch | result, or temporary once the line holds it | `landings.json` | Daoris, as AUTOTIDY2b, when not the result |
+| the recovery refs | recovery | `refs/daoris/discarded/` | their own rule; never the end's |
+| the auto-landing entry | temporary | `sessions/auto-landings.json` | Daoris, when the unit ends |
+| the session's records and logs (`sessions/<id>/…`, `lineage.jsonl`) | evidence | the session record | never the end's: history, which D153's clearing governs |
+| a human task's attachments (§D5) | evidence | the unit's evidence folder, a new home entry placed under D172 | never the end's |
+| what a plugin step created (`creates`) | temporary or result, as declared | a **receipt** in the plugin's `work/step`, kept on the unit's canonical record (`Resources`, at most 32) | the plugin, through its cleanup adapter only |
+
+**Each entry gets a disposition:** *kept* (result, evidence), *retained until* (recovery), *removed* (with proof),
+*blocked* (with the guard or the unknown that blocks it), or *owner-notified* (an external resource, its owner told).
+**"Everything cleaned" means every entry has a disposition.** An unknown owner blocks the unit's cleanup; it is never a
+guess.
+
+**Who removes what:**
+
+- **Daoris** removes only the types its own executors own (worktrees, its branches, moved-aside folders at their purge),
+  with fresh proof and every guard.
+- **A plugin's local resources** go only through the plugin's registered cleanup adapter. Its manifest declares
+  `resources: [{ schema, cleanup: "work/cleanup" }]`. At a true end, Daoris sends `work/cleanup { receipt }` for each
+  receipt the plugin owns. The plugin removes what it created and answers a disposition with its proof. Daoris runs no
+  command for it, and never hands it a path: `resource` is an opaque id the plugin issued.
+- **External resources** stay their owner's: Daoris records the disposition, or a notice that the resource was retained.
+
+**A plugin's word** establishes neither safe deletion of anything Daoris owns nor git preservation (*held*). A performed
+step never removes anything.
+
+## D4. One step contract
+
+Built-in, human and plugin steps share one declaration:
+
+```json
+{ "id": "acme.deploy/deploy", "version": 1, "after": ["line", "human/qa"],
+  "inputs": { "release": { "step": "acme.build/build", "output": "artifact" } },
+  "reach": "performed", "evidence": { "schema": "acme.deploy/receipt@1" },
+  "perform": { "point": "work/perform" }, "retry": { "maxAttempts": 3, "delaysSeconds": [5, 30] },
+  "timeoutSeconds": 600, "creates": ["acme.deploy/preview@1"] }
+```
+
+- **`reach`** is `observed` (git or a plugin reports it: every built-in step, and §C4's events), `performed` (Daoris asks
+  a plugin to do it, §D6) or `pressed` (a person, §D5).
+- **`after`** names prerequisites, which may be several. **`inputs`** reference earlier steps' immutable outputs by id,
+  never copied payloads.
+- **Validated before a cycle is saved:** a missing reference, a dependency cycle, an unsupported version, an unreachable
+  step, a performer not installed, or a schema not declared is refused at the door that saves it, naming the field.
+- **Evidence is bound to the work:** `{ unit, subjectRevision, stepVersion, inputs, prerequisiteReceipts }`. A branch's
+  revision is the repository's identity and the full tip (§B5); any other subject is named by an immutable id and its
+  revision. **A changed dependency invalidates everything downstream.** This generalizes §B5's lapse: a new tip, a
+  changed input, or an invalidated prerequisite makes every later step's acceptance stale.
+- **Outcomes** are `reached`, `failed`, `unknown`, and for a person, `rejected`.
+  - A rejection blocks the cycle's progress and keeps its reason; reopening is a new attempt.
+  - Only failures the step declares transient retry automatically.
+  - An unknown external outcome must be reconciled before another attempt.
+- **Timeouts** are persisted deadlines, delivered as `timer.step` events. They never mean success, and never trigger a
+  deletion.
+- **The built-in steps** (`claimed`, `handed`, `pushed`, `pull-request`, `line`) are declarations with `reach: observed`,
+  their evidence where §C7 keeps it. `claimed` still can never be an end.
+- **Where steps are declared:** a plugin's in its manifest (twinned, §C4), a human task's in the cycle's configuration
+  (§D5), and the built-ins in code. A cycle composes them by id.
+
+## D5. Human tasks
+
+A human step is a task, not a bare press:
+
+- It declares a `brief`, an `attachmentSchema` (a note, files, links; each `required` or not), an `approveLabel` and a
+  `rejectLabel`, all the person's words, shown as written.
+- **It appears in What needs you and on the work's cycle line**, showing the subject and its revision, the prerequisites
+  reached, the checks the brief asks for, and its attachments.
+- **Approve or reject** records the person, the door (window, confirmed terminal, keyed terminal), the revision, the
+  evidence references and the reason. A rejection requires a reason. Required attachments must be present before
+  *Approve* is offered.
+- **Only D156's person doors answer it** (§C2's rules stand): never an agent, never a plugin. The terminal twin is
+  `daoris-driver work task <unit> <step> approve|reject`.
+- It lapses when anything it was bound to changes (§D4), and is offered again as a new attempt. The old answer stays
+  shown, as about its revision.
+
+## D6. Performed steps: `work/perform`
+
+`work/watch` still tells the plugin which units concern it, and still resyncs (§C4). When a performed step becomes
+eligible, Daoris sends a request on the same supervised connection:
+
+```json
+{ "jsonrpc": "2.0", "id": 7, "method": "work/perform",
+  "params": { "unit": "u1", "step": "acme.deploy/deploy", "stepVersion": 1, "invocation": "i1",
+              "idempotencyKey": "k1", "subjectRevision": "r1", "inputs": ["artifact:a1"], "deadlineAt": "…" } }
+```
+
+- **The plugin's answer acknowledges receipt.** Completion arrives later through `work/step`, carrying the `invocation`,
+  the outcome, evidence and output references, and ownership receipts.
+- **Dispatch is persisted before it is sent.** The attempt (invocation, key, revision, inputs, deadline, state) is written
+  on the unit's canonical record first. A redelivery after a restart uses the same key, and the plugin deduplicates it
+  durably and reconciles its external effects. A new key is a deliberate new attempt: a declared retry, or the person's.
+  A step that declares neither idempotency nor reconciliation gets no automatic retry.
+- **This amends §C7:** dispatch receipts and unresolved attempts survive a restart; the due sets stay ephemeral.
+- **The capability is negotiated.** The handshake names `work.perform@1` among the plugin's capabilities, and
+  `protocolVersion` stays 1 (D148 point 8's rule). §C4's sender checks, bounds and generations apply to every frame.
+- **What a performer may not do**, whatever its own authority:
+  - write a Daoris store, a rule or a ref Daoris owns;
+  - remove a resource (§D3);
+  - stand in for a person;
+  - make another step's evidence;
+  - inherit a publishing right or a credential (ADR-F);
+  - write into another repository.
+
+  It acts with its own external authority only.
+
+## D7. Automatic by default
+
+- **With nothing configured**, branch work is exactly part C's default: `end: line`, no added steps, the cleanup at
+  *held*. The existing landing choices and person gates are unchanged, and events replace the waits. No plugin is
+  installed and no approval is added.
+- **A configured cycle runs every eligible automatic step through to its end.** Observed steps are heard, and performed
+  steps are dispatched as soon as their prerequisites and inputs are reached. Only a human task, or an authority not
+  granted, stops it, and that stop is shown: What needs you names the task, or the authority missing and who grants it.
+- **Authority is never granted by a step.** Adding a step gives a plugin nothing. A performer uses its own, independently
+  approved authority, and production stays the person's press (D157 §3.6).
+- **Configuration homes:** branch cycles on the landing rules (§C2, D164's inheritance). Other kinds use `workCycles` and
+  `workspaceWorkCycles`, keyed by kind, inherited the same way. No kind has two homes, and named workflows keep their
+  version binding.
+- **D88's line proof** remains the branch default. The pre-line exception (§C3) still needs preservation in the kept
+  result, independently verified by git. A plugin's evidence alone never permits a removal.
+
+## D8. The bounded menu, completed
+
+**Transitions** are typed and validated; source events stay wakes:
+
+- `work.step`: `reached`, `failed`, `rejected`, `invalidated`;
+- `work.held`: `acquired`, `lost`;
+- `work.end`: `reached`, `invalidated`;
+- `work.cleanup`: `completed`, `blocked`;
+- `timer.step`: `due`.
+
+Each carries an envelope: `{ eventId, unit, revision, causationId, receipt }`.
+
+**The four effects.** None writes domain state or touches a resource:
+
+- `notifyPerson`: an item in What needs you, with the transition's words;
+- `deliverPluginEvent`: an observation to a named, switched-on plugin (a subscription; performance belongs to §D6);
+- `requestReconcile`: the unit's judgement asked again, at most once per unit and transition;
+- `offerPersonAction`: an existing person's action offered in What needs you, the person pressing it at a person's door.
+  For example, a quest's own done (`POST /api/quests/{id}/done`, a `Person` door, QUESTCLOSE1).
+
+**Setup** gains **Work → Cycle / Steps / Cleanup / Event responses**, with the terminal twin
+`daoris-driver work cycle|responses`. That is a new verb group beside `workflow`, which stays D157's choice of a named
+workflow. Both doors use the shared handlers and the same validation. Selectors are enumerated: a kind, a step, a
+transition. There are no expressions and no scripts.
+
+**Three scenarios:**
+
+1. Line → a QA task with a brief and a required screenshot → approval → a deploy plugin performs → its deployment receipt
+   is the end.
+2. Line → an approved deploy plugin performs → the end is reached automatically → `notifyPerson`.
+3. The end → `notifyPerson` → `offerPersonAction`, the quest's own done.
+
+**Loop safety:** no effect writes a ref, a ledger family or a fact, so no response can feed a link (§C6).
+
+## D9. The plugin author's path
+
+- **The manifest:** `steps` hold step contracts (§D4); `hooks.points` names `work/watch`, `work/perform`, `work/step` and,
+  where it cleans, `work/cleanup`; `resources` names the schemas it creates and who cleans them.
+- **The kit scaffolds** a performer, a receipt schema, a durable idempotency journal, a watch and resync handler, and a
+  contract test.
+- **`daoris-driver plugins try --cycle <fixture>`** drives synthetic eligibility, duplicate delivery, failure, timeout,
+  restart and stale evidence, without a real deployment.
+- **The author writes** the external execution, its reconciliation and the evidence. **Daoris supplies** ordering,
+  references, dispatch recovery, the task's presentation, deadlines, validation and the cleanup accounting.
+- **The contract test** must show one external effect under duplicate delivery, and no forbidden Daoris mutation.
+
+## D10. The collaboration fit
+
+- **A delegated step references a quest commitment**, its correlated messages (the ask's channel, D167) and its returned
+  artifacts by reference. The receiving repository accepts the responsibility and executes locally (repository owns its
+  work).
+- **Native subagents** keep native spawning. Their bindings identify executors, never owners, and D173's lineage
+  restrictions (C2a), restricted grants and honest partial visibility stand.
+- **The checkpoint is its own gate:** FABRIC-ACP1 → FABRIC-C2a → FABRIC-C2b, then FABRIC-COLLAB1, the first cross-harness
+  round trip of a message and an artifact. Delegation (FABRIC-DELEGATE1) follows its contract tests. Neither waits for
+  the menu, and no correctness proof is dropped.
+
+## D11. Rejected, in part D
+
+| Shape | Why not |
+|---|---|
+| **The branch as the universal unit** | It excludes work that is not git's (a quest, a delegated task, a deployment) |
+| **A new work database** | A second authoritative store of quests, asks and branches; adapters read the canonical records |
+| **A kind with no canonical record** (deployment, document, plugin artifact as kinds now) | An adapter must name its store and writer first; until then they are results and resources |
+| **Label-only human approvals** | A press with no brief, evidence or reason weakens the person's judgement into a click |
+| **Arbitrary cleanup scripts, or a plugin-supplied deletion path** | They bypass ownership; a plugin cleans only what it created, through its adapter, by an opaque id |
+| **Receipts for what a record already names** | A second store of the same fact |
+| **Volatile dispatch deduplication** | A crash would duplicate an external effect |
+| **A step that grants authority** | Authority is approved apart from the step, and production stays the person's |
+| **A central scheduler assigning all collaboration** | Contrary to ADR-A and D173's foundation |
+| **Automatic quest closure in this pass** | It would amend the menu's non-writing rule and the quest's contract (§Q1) |
+
+## D12. The rows, re-cut toward what the person feels first
+
+This replaces the row table under **Canaries and proof, and the rows** for every row not yet built.
+
+| Order | Row | Lanes | After | Fate | Builds |
+|---|---|---|---|---|---|
+| 1 | FABRIC-EVENT2 | driver | - | survives (in flight) | the change watch (§A3, §A4.1) |
+| 2 | FABRIC-END2a | driver | - | survives (in flight) | the end judgement, extracted, the cycle an input |
+| 3 | FABRIC-EVENT2b, 2c, 2d | driver; modules | 1 | survive | the watch's follow-ups |
+| 4 | FABRIC-CHAIN2a | driver | 1 | **split** from CHAIN2 | the minimal chain: fact links, the tidy as a pending effect, topic deadlines as `timer` events |
+| 5 | FABRIC-END2 | driver | 2, 4 | **merges** END2b and END2c, default cycle only | `Held` with `Since`, traces, the branch unit's id, the cross-process writer, lapse on standing units |
+| 6 | FABRIC-END3 | driver | 1, 5 | survives | the ref watcher |
+| 7 | FABRIC-MILESTONE1 | driver, web-shell | 5 | **new**, from the default parts of END4b and END5 | §D0's milestone for the default cycle, on the page, the CLI and Ask Daoris |
+| 8 | FABRIC-END4a | driver | 6, 7 | survives, **default only** | the safe cleanup at *held*, with the ownership inventory derived for the branch adapter (§D3) |
+| 9 | FABRIC-EVENT3a | driver | 1, 4 | survives, **moved forward** | the look's topics |
+| 10 | FABRIC-EVENT3b | service, driver | 9 | survives, **moved forward** | the change stream |
+| 11 | FABRIC-EVENT4 | driver, modules | 1, 4 | survives, **moved forward** | the home's record files |
+| 12 | FABRIC-END7 | driver | 6, 10, 11 | survives | auto-landing on its wakes |
+| 13 | FABRIC-END6 | driver | 6 | survives | a fetch and a plugin's ask when due |
+| 14 | FABRIC-UNIT1 | driver, cli | 5 | **merges** CYCLE1a, PLUGSTEP1a and CYCLE0's config | the `WorkUnit` adapter interface and branch adapter, the step contract (§D4), the cycle on the landing rule, and manifest `steps`, with both twins |
+| 15 | FABRIC-PERFORM1a | driver | 14 | **merges** PLUGSTEP1b and 1d | the watch connection supervised, the reverse `work/step`, `work/perform` with persisted dispatch, the capability |
+| 16 | FABRIC-PERFORM1b | driver | 15 | **merges** PLUGSTEP1e | belief and evidence binding (§C4, §D4), receipts and `Resources`, `work/cleanup`, a performer's limits |
+| 17 | FABRIC-PERFORM1c | driver, examples | 16 | **merges** PLUGSTEP1c and 1f | the kit's scaffold, `plugins try --cycle`, an example performed plugin |
+| 18 | FABRIC-END4c | driver | 8, 16 | **split** from END4a | the configured cleanup: the cycle's `wait`, the result per cycle, plugin resources through their adapters, every disposition |
+| 19 | FABRIC-HUMAN1 | driver, modules | 14 | survives, **reshaped** | human tasks (§D5): brief, attachments, approve or reject, their doors and twin |
+| 20 | FABRIC-CYCLE1b | web-shell, modules | 14, 19 | survives, **reshaped** | Setup's *Work → Cycle / Steps / Cleanup* |
+| 21 | FABRIC-END4b | driver, web-shell | 7, 18, 19 | survives, **configured part only** | the page draws configured cycles, tasks and performed steps |
+| 22 | FABRIC-CHAIN3 | driver, cli, web-shell | 4, 20 | survives, **specified** | §D8: transitions, the four effects, *Event responses*, `work responses` |
+| 23 | FABRIC-END5 | driver, modules | 21 | survives, **configured part only** | the CLI and Ask Daoris read configured cycles |
+| 24 | FABRIC-ACP1 → FABRIC-C2a → FABRIC-C2b | parent; service | as their rows | survive, **an independent gate** | the collaboration checkpoint |
+| 25 | FABRIC-COLLAB1 | service, driver | 24 | **new** | one cross-harness round trip: a message and an artifact by reference |
+| 26 | FABRIC-DELEGATE1 | service, driver | 25, 14 | **new** | a delegated step as a quest commitment, the delegated-task adapter |
+| 27 | FABRIC-EVENT5a, 5b, EVENT6, C1b, PROOF-UNREAD1 | as their rows | as their rows | survive | focused integrations and correctness |
+| 28 | FABRIC-EVENT7 | driver, cli | 6, 10, 11, 12 | survives, measurement-gated | the clocks as deadlines |
+
+**Gone:**
+
+- **CYCLE0**, done: its amendments are in §C2 and §C3, and part D supersedes the human press.
+- **CYCLE1a and PLUGSTEP1a**, merged into UNIT1.
+- **PLUGSTEP1b-1f**, merged into PERFORM1a-c.
+- **CHAIN2**, split: its minimal part is CHAIN2a, and the rest is CHAIN3's.
+- **END2b and END2c**, merged into END2.
+- **END4a**, split into its default part and END4c.
+
+**Canaries for part D:**
+
+26. With nothing configured, every suite of the default lifecycle is unchanged, and the milestone shows on the page.
+27. Every inventory entry has a disposition, and an unknown owner blocks the cleanup and says so.
+28. A redelivered `work/perform` after a restart carries the same key and causes one external effect.
+29. A changed input or prerequisite invalidates every downstream acceptance.
+30. A human task's *Approve* is refused without its required attachments, and *Reject* without its reason.
+31. No menu effect writes a fact, a ref or a ledger family.
+
+## D13. Questions for the owner
+
+1. **Should reaching the end close the quest by itself?** Today only the person's own done (`POST /api/quests/{id}/done`)
+   or the agent's done closes one.
+   - (a) Offer it: `offerPersonAction` puts the quest's done in front of the person.
+   - (b) Automatic: the driver records the end as the quest's evidence through its evidence door
+     (`/api/quests/{id}/evidence`, a `Driver` door), and a quest whose evidence is complete closes.
+
+   *Recommendation:* (a) now. Revisit (b) with the evidence rows, since it changes the quest's contract and D46's line.
+   This replaces the earlier open question on the end and the quest.
+2. **Which kind of work should the fabric take on second, after branch work?**
+   - (a) The delegated task (FABRIC-DELEGATE1), riding the collaboration checkpoint.
+   - (b) A quest's own cycle: claimed, its evidence verified, the person's done.
+   - (c) A deployment as a unit of its own, with a store.
+
+   *Recommendation:* (a). It is the collaboration the fabric exists for, and its gate is already on the way. (b) follows
+   with question 1's answer.
+
+---
+
 # Rejected shapes
 
 | Shape | Why not | Against an earlier rejection |
@@ -978,6 +1352,8 @@ back through the world: the tidy deletes a branch, and the ref watcher hears it.
     a restart; `end` alone waits for the end or the person's *Clean up now*, and an end reached out of order does not end
     the work.
 
+*Superseded by §D12 for every row not yet built: the table below is part C's order, kept as the record of it.*
+
 **The rows**, in order, re-cut on part C. Each is sized near a hundred turns, and each later row names what it waits on.
 The first two were dispatched as part B proposed them; FABRIC-END2a takes the cycle as an input, so part C's defined
 cycles plug into it.
@@ -1027,11 +1403,7 @@ cycles plug into it.
   - a plugin is asked at the new due moments, within D148's minute, with no redundant fetch, and never at a removing
     press (§A4.3).
 
-Still open, and not needed by any row before FABRIC-END5:
-
-1. **The end and the quest.** Should a quest's Done wait for the end, or the end be written on the quest's record (D144's
-   evidence) so an asker on another machine sees it? *Recommendation:* not in this pass. This machine's quest page shows
-   it beside the claim (FABRIC-END5); the evidence rows decide, and the service keeps knowing nothing of landing (D46).
+Still open: §D13's two questions. The first replaces the earlier question on the end and the quest.
 
 # What this design does not decide
 
