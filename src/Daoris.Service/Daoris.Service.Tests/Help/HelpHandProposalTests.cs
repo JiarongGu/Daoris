@@ -41,7 +41,7 @@ public sealed class HelpHandProposalTests : HelpProposalBoxFixture
         Assert.Null(written);
         Assert.Contains(says, message);
         Assert.Contains("Nothing was proposed", message);
-        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
         Assert.Null(Box().ProposeHand("s2a3b4c5", null, null, " ", "h1", Now).Id);
     }
 

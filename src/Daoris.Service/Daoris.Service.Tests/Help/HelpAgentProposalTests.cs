@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Knowledge;
 
 namespace Daoris.Service.Tests;
 
@@ -49,7 +50,7 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
 
         Assert.Null(id);
         Assert.Contains(says, message);
-        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 
     /// <summary>TOOL4l-a: a use door carries exactly the fields the driver reads; keep none is an explicit null, unchanged is absent.</summary>
@@ -87,7 +88,7 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
 
         Assert.Null(id);
         Assert.Contains(says, message);
-        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 
     [Fact]
@@ -118,7 +119,7 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
 
         Assert.Null(id);
         Assert.Contains(says, message);
-        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 
     [Theory]
@@ -142,7 +143,7 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
 
         Assert.Null(id);
         Assert.Contains(says, message);
-        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 
     /// <summary>The shape, checked here and nothing more; what the Agents screen's route says is the driver's.</summary>
@@ -160,6 +161,6 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
         Assert.Null(id);
         Assert.Contains(says, message);
         Assert.Contains("Nothing was proposed", message);
-        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 }

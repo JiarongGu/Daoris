@@ -1,3 +1,5 @@
+using Daoris.Knowledge;
+
 namespace Daoris.Service.Tests;
 
 /// <summary>
@@ -48,7 +50,7 @@ public sealed class HelpSessionProposalTests : HelpProposalBoxFixture
         Assert.Null(id);
         Assert.Contains(says, message);
         Assert.Contains("Nothing was proposed", message);
-        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 
     /// <summary>A teammate's session is <c>&lt;origin&gt;/&lt;id&gt;</c> (SYNC4), and §5.2 lets it be archived here.</summary>

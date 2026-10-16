@@ -126,7 +126,7 @@ public sealed class ConnectorStartFailureTests : IDisposable
     /// <summary>Every line the connector's machine log holds, across its files.</summary>
     private IReadOnlyList<JsonElement> LogLines()
     {
-        var folder = Path.Combine(Home, MachineLog.Folder);
+        var folder = DaorisHome.Entry(Home, HomeEntry.Logs);
         if (!Directory.Exists(folder)) return [];
         return Directory.EnumerateFiles(folder, "*.mcp.jsonl")
             .SelectMany(path => File.ReadAllText(path).Split('\n', StringSplitOptions.RemoveEmptyEntries))
