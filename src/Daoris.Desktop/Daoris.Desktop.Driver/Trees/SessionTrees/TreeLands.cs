@@ -33,7 +33,8 @@ internal sealed record Branched(
 /// line holds by content (<see cref="TreeWorkReads"/>), the removal and the tidy. The front keeps its public calls.
 /// </summary>
 internal sealed class TreeLands(
-    TreeContext context, TreeFollows follows, TreeWorkReads workReads, TreeRemovals removals, TreeTidies tidies, TreeLandSyncs syncs)
+    TreeContext context, TreeFollows follows, TreeWorkReads workReads, TreeRemovals removals, TreeTidies tidies, TreeLandSyncs syncs,
+    EndKeeping ends)
 {
     /// <summary>
     /// What a press on this tree would do under its repository's landing rule (WSR1, D87): merge into
@@ -431,7 +432,7 @@ internal sealed class TreeLands(
                         AcceptedBy = acceptedBy, Review = review?.Landing, Opinion = gate?.Opinion.Landing, Workflow = named?.Record,
                         // The record moves to the session tip this advance squashed (PROCESS1b-ii point 4); a fast-forward keeps it.
                         Squashed = branched.Squashed,
-                    }));
+                    }, UnitOf(full, repository)));
             }
             else if (landed.Landed && tip is not null)
             {
@@ -455,6 +456,8 @@ internal sealed class TreeLands(
                     Workflow = named?.Record,
                     // The session tip its one commit was made from (PROCESS1b-ii point 3): what proves the session landed.
                     Squashed = branched.Squashed,
+                    // The branch work unit whose work it carries (FABRIC-END2, design §D2), where the session's entry has one.
+                    Units = UnitOf(full, repository) is { } unit ? [unit] : [],
                 }));
             }
 
@@ -517,6 +520,15 @@ internal sealed class TreeLands(
         if (!landed.Landed || !landing.Rule.Tidy) return landed;
         // Read before the tree goes (LAND3): the repository it belongs to and the branch it was on.
         var (factsCode, commonDir, _, pressedOut, _) = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
+        if (factsCode == 0)
+        {
+            // FABRIC-END2: what the line holds now (a merge's work) is kept before the tidy takes the branch, so its entry outlives it as a
+            // trace; work handed to a landing branch stays open on its unit. The end judgement's own writer, in the lease's process only.
+            var checkout = Path.GetDirectoryName(commonDir.Trim())!;
+            var judged = (await context.LineAsync(checkout, repository, workspace, ct).ConfigureAwait(false)).Branch;
+            await ends.KeepAsync(checkout, repository, workspace, judged, ct).ConfigureAwait(false);
+        }
+
         var tidied = await removals.RemoveAsync(path, force: false, ct).ConfigureAwait(false);
         landed = landed with
         {
@@ -540,6 +552,15 @@ internal sealed class TreeLands(
             .ConfigureAwait(false);
         return landed with { Message = landed.Message + TreeTidies.TidiedSaid(held, into), Tidied = held };
     }
+
+    /// <summary>
+    /// The branch work unit of the session tree at <paramref name="full"/> (FABRIC-END2): its standing entry's, found by the folder the
+    /// layout names for its branch; null for an entry from before the unit was written, which no landing can name.
+    /// </summary>
+    private string? UnitOf(string full, string repository) => context.Grown.All()
+        .LastOrDefault(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(Path.GetFullPath(Path.Combine(context.TreesRoot, entry.Workspace, entry.Repository, Path.GetFileName(entry.Branch))),
+                Path.TrimEndingDirectorySeparator(full), StringComparison.OrdinalIgnoreCase))?.Unit;
 
     /// <summary>Words said before the sentence that the tree stays, which a tidy takes out; at the end where it is not there.</summary>
     private static string BeforeTreeStays(string message, string words) => message.EndsWith(TreeStays, StringComparison.Ordinal)
