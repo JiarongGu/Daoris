@@ -21,7 +21,9 @@ DOORS1a (`helpers` and `commits`, D164's note) went into every place below, and 
 - **The tool's words lag.** The helper is told which doors exist only by the tool's description. A door it is not told
   of is never proposed, and a flag it is not told of is never spelled.
 - **The coverage row stays `Exempt`.** D110 holds every verb and control as a door, a door owed or an exemption with its
-  reason; a row that still says *owed* when the door is built fails nothing but lies to the next reader.
+  reason; a row that still says *owed* when the door is built fails nothing but lies to the next reader. An owed answer
+  is a row of the room's `HelpRoomOwed` (HELPOWED1, D170 point 2), which the helper reads as a door Daoris still owes:
+  building the door removes that row with the coverage answer, and the coverage test fails on either one left alone.
 - **The room does not teach it.** Ask Daoris answers *how do I* from the room's doors; a door absent from them is one
   the person is never shown, and the three goldens and the settings golden fail to say so.
 

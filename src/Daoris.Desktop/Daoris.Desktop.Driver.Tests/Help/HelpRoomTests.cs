@@ -133,6 +133,54 @@ public sealed class HelpRoomTests : IDisposable
     }
 
     /// <summary>
+    /// HELPPLUG1a (D170 point 3): a plugin's server declared for Ask Daoris is allowed only the tools the plugin declares, each
+    /// as the harness spells a server's tool, after the room's own; the person's denies still win, and nothing else is added.
+    /// </summary>
+    [Fact]
+    public void Its_rules_allow_a_plugins_tools_only_as_the_plugin_declares_them()
+    {
+        var kept = Path.Combine(_home, "chats", "s1");
+        var file = PermissionFile.Empty with { Machine = new RuleLists([], [], ["mcp__tickets__delete"]) };
+
+        var rules = HelpRoom.Rules(file, kept, [], ["mcp__tickets__search", "mcp__tickets__get_issue"], ["mcp__tickets__create_issue"]);
+
+        Assert.Equal([.. HelpRoom.Allowed, PermissionRules.ReadRule(kept), "mcp__tickets__search", "mcp__tickets__get_issue"], rules.Allow);
+        // A write the person did not accept is asked, which its asking mode refuses (D89).
+        Assert.Equal(["mcp__tickets__create_issue"], rules.Ask);
+        Assert.Contains("mcp__tickets__delete", rules.Deny);
+        Assert.DoesNotContain(rules.Allow, rule => rule.StartsWith("Bash", StringComparison.Ordinal)
+            || rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// HELPPLUG1a: where its conversation runs takes the plugins' servers declared for Ask Daoris (never a session's), and its
+    /// rules allow their tools only once the person approved them (<see cref="HelpGrants"/>), read under the home at each
+    /// spawn; still its own asking mode.
+    /// </summary>
+    [Fact]
+    public void Its_place_allows_a_plugins_tools_only_once_the_person_approved_them()
+    {
+        Directory.CreateDirectory(Path.Combine(_home, PluginCatalog.Folder, "acme.tools"));
+        File.WriteAllText(Path.Combine(_home, PluginCatalog.Folder, "acme.tools", PluginCatalog.ManifestName), """
+            { "id": "acme.tools", "servers": [
+                { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search"] },
+                { "name": "docs", "command": ["docs"] } ] }
+            """);
+        var place = ChatRunner.HelpPlaceIn(_home, HelpRoom.PathOf(_home), []);
+
+        Assert.True(place.Plugins);
+        Assert.Equal(PluginServerTo.Help, place.ServersTo);
+        Assert.Equal(HelpRoom.Posture, place.Posture);
+        Assert.DoesNotContain("mcp__tickets__search", place.Rules(PermissionFile.Empty, "s1").Allow);
+
+        HelpGrants.Approve(_home, PluginCatalog.Load(_home), "acme.tools", "tickets", readsOnly: false);
+        var rules = place.Rules(PermissionFile.Empty, "s1");
+
+        Assert.Contains("mcp__tickets__search", rules.Allow);
+        Assert.DoesNotContain(rules.Allow, rule => rule.StartsWith("mcp__docs", StringComparison.Ordinal));
+    }
+
+    /// <summary>
     /// The machine the room describes is read from what the driver already holds — its file, the
     /// registry, the lines and the roster — so the room and the screens cannot disagree.
     /// </summary>

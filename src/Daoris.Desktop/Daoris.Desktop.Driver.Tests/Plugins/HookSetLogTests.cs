@@ -342,6 +342,37 @@ public sealed class HookSetLogTests : IDisposable
         Assert.DoesNotContain(Words, Raw());
     }
 
+    /// <summary>
+    /// HELPPLUG1a (D170 point 3): Ask Daoris is handed only the servers declared for it, and a session only those declared for
+    /// sessions; each logs a line for its own, so a server declared for the other is never said withheld from it.
+    /// </summary>
+    [Fact]
+    public async Task Ask_daoris_is_handed_only_the_servers_declared_for_it_and_a_session_only_its_own()
+    {
+        Directory.CreateDirectory(Path.Combine(_home, "plugins", "acme.tools"));
+        File.WriteAllText(Path.Combine(_home, "plugins", "acme.tools", "plugin.json"), """
+            { "id": "acme.tools", "servers": [
+                { "name": "tickets", "command": ["node", "tickets.mjs"], "to": ["help"], "allow": ["search"] },
+                { "name": "docs", "command": ["node", "docs.mjs"] } ] }
+            """);
+
+        // Withheld from Ask Daoris until the person approves its tools (D170's note), then handed.
+        var (waiting, _, _, _) = await ChatRunner.HandServersAsync(
+            _home, null, new PluginLog(_log), "s0a0b0c0", CancellationToken.None, PluginServerTo.Help);
+        HelpGrants.Approve(_home, PluginCatalog.Load(_home), "acme.tools", "tickets", readsOnly: false);
+        var (help, _, _, _) = await ChatRunner.HandServersAsync(
+            _home, null, new PluginLog(_log), "s1a2b3c4", CancellationToken.None, PluginServerTo.Help);
+        var (session, _, _, _) = await ChatRunner.HandServersAsync(
+            _home, null, new PluginLog(_log), "s5e6f7a8", CancellationToken.None);
+
+        Assert.Empty(waiting);
+        Assert.Equal(["tickets"], help.Select(server => server.Name));
+        Assert.Equal(["docs"], session.Select(server => server.Name));
+        Assert.Equal(
+            [("tickets", "s0a0b0c0", false), ("tickets", "s1a2b3c4", true), ("docs", "s5e6f7a8", true)],
+            Lines().Select(l => (Text(l, "server"), Text(l, "session"), l.Data.GetProperty("handed").GetBoolean())));
+    }
+
     private sealed class AnsweringBrowser(string endpoint) : IInAppBrowser
     {
         public Task<string?> EnsureAsync(CancellationToken ct = default) => Task.FromResult<string?>(endpoint);

@@ -1,5 +1,25 @@
 import type { PluginSourceShown } from './PluginUpdate';
 
+/**
+ * A server a plugin offers Ask Daoris (HELPPLUG1a, D170 point 3), as the driver's `PLUGINS` answers it: its name, the tools
+ * that read and those that write outside Daoris, as the plugin declares them, and the person's approval as it stands (D170's
+ * note): `approved` (with the writes they `accepted`), `waits`, or `refused` with the driver's sentence.
+ */
+export type HelpServerShown = {
+  name: string;
+  allow: string[];
+  writes?: string[];
+  state?: 'approved' | 'waits' | 'refused';
+  accepted?: string[];
+  refusal?: string | null;
+};
+
+/**
+ * A skill a plugin hands (HELPPLUG1b, D170 point 4), as the driver's `PLUGINS` answers it: its name, who it is handed to
+ * (`sessions`, `help` or both), and the driver's sentence where it is not handed.
+ */
+export type SkillShown = { name: string; to: string[]; problem?: string | null };
+
 // The Plugins view's list and page as values (PLUGUI1b, D119 §3.1): a plugin's state, its group, and what the list's
 // chosen item names. Pure, so every machine a person could have is an argument, and the list, the strip and the page
 // read one answer.
@@ -19,6 +39,10 @@ export type PluginOfferShown = {
   harnesses: string[];
   points: string[];
   servers: string[];
+  /** The servers it would hand Ask Daoris (HELPPLUG1a); an older shell sends none. */
+  helpServers?: HelpServerShown[];
+  /** The skills it would hand (HELPPLUG1b); an older shell sends none. */
+  skills?: SkillShown[];
   needs: string[];
   installed: boolean;
   /** Its declared icon as its own bytes (PLUGUI2, D140 §3.2), never a path; absent until the host answers it. */
@@ -60,6 +84,10 @@ export type PluginShown = {
   icon?: string | null;
   /** Why its declared icon is not drawn, in the reader's sentence (D140 §3.1). */
   iconProblem?: string | null;
+  /** The servers it hands Ask Daoris, with what Ask Daoris may call on each (HELPPLUG1a); an older shell sends none. */
+  helpServers?: HelpServerShown[];
+  /** The skills it hands sessions or Ask Daoris (HELPPLUG1b); an older shell sends none. */
+  skills?: SkillShown[];
 };
 
 /** One of Daoris's own plugins the install carries (D103), with what its manifest declares and its README needs. */
@@ -73,6 +101,10 @@ export type OfferShown = {
   harnesses: string[];
   points: string[];
   servers: string[];
+  /** The servers it would hand Ask Daoris (HELPPLUG1a); an older shell sends none. */
+  helpServers?: HelpServerShown[];
+  /** The skills it would hand (HELPPLUG1b); an older shell sends none. */
+  skills?: SkillShown[];
   needs: string[];
   installed: boolean;
   /** Its declared icon as its bytes (D140 §3.2); none from a shell older than PLUGUI2b. */

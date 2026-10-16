@@ -63,6 +63,22 @@ describe("an offer's page", () => {
   });
 
   /** Installing runs nothing, and a landing plugin runs only where a landing rule names it (D103). */
+  /** HELPPLUG1a (D170 point 3): what it would hand Ask Daoris is said before Install; one that hands it nothing says nothing. */
+  it('says what it would hand Ask Daoris before Install', () => {
+    const { unmount } = render(
+      <OfferPage offer={{ ...OFFER, helpServers: [{ name: 'wiki', allow: ['search'] }] }} kitPoints={KIT} onInstall={vi.fn()} />,
+    );
+    const section = screen.getByRole('region', { name: 'Ask Daoris' });
+    expect(section).toHaveTextContent('Reads with search');
+    expect(section).toHaveTextContent('A plugin is code that runs as you');
+    // Nothing here has installed it, so there is nothing to approve yet (D170's note).
+    expect(within(section).queryByRole('button')).toBeNull();
+    unmount();
+
+    render(<OfferPage offer={OFFER} kitPoints={KIT} onInstall={vi.fn()} />);
+    expect(screen.queryByRole('region', { name: 'Ask Daoris' })).toBeNull();
+  });
+
   it('says installing runs nothing, and names its terminal twin', () => {
     render(<OfferPage offer={OFFER} kitPoints={KIT} onInstall={vi.fn()} />);
 
