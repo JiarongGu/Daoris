@@ -98,6 +98,12 @@ public sealed class DriverWatch(
     /// </summary>
     public void Nudge(string topic, string subject) => Woken(new Wake(topic, subject));
 
+    /// <summary>
+    /// Look now, because a terminal's words for <paramref name="session"/> were kept (FABRIC-EVENT2b): the requests topic's wake,
+    /// so <c>watch.looked</c> says the words woke it, not that something nudged.
+    /// </summary>
+    public void Said(string session) => Nudge(ChangeTopics.Requests, session);
+
     // What the last nudge said woke the loop: null for a plain nudge, which means everything.
     private Wake? _woke;
 

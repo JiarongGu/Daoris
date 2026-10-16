@@ -208,6 +208,13 @@ public sealed class DriverLoop(
         _watch?.Nudge();
     }
 
+    /// <summary>Look now because a terminal's words for <paramref name="session"/> were kept: the requests topic's wake (FABRIC-EVENT2b).</summary>
+    public void Said(string session)
+    {
+        Interlocked.Increment(ref _nudges);
+        _watch?.Said(session);
+    }
+
     private long _nudges;
 
     /// <summary>How many times a route asked the loop to look now: what a test holds "the loop is nudged" by (MSG1d).</summary>
