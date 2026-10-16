@@ -59,7 +59,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs` | 47 | 735 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs` | 47 | 737 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/TreesConsole.cs` | 44 | 658 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Accounts/HarnessTests.cs` | 49 | 1101 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AcpSteerTests.cs` | 48 | 953 |
@@ -119,7 +119,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/AgentsRoutes.cs` | 44 | 799 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 66 | 1143 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs` | 53 | 932 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 59 | 1088 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 59 | 1090 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/SessionWords.cs` | 50 | 1028 |
 
 ### Service (`service`)
@@ -186,7 +186,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-09-21-working-surface-components.md` | 54 | 354 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |
 | `docs/2026-09-26-ux5-screen-audit.md` | 46 | 141 |
-| `docs/2026-09-30-machine-log-design.md` | 54 | 501 |
+| `docs/2026-09-30-machine-log-design.md` | 56 | 504 |
 | `docs/2026-10-01-account-rotation-design.md` | 52 | 613 |
 | `docs/2026-10-01-agent-layout-design.md` | 59 | 790 |
 | `docs/2026-10-01-development-documents-design.md` | 62 | 825 |
@@ -207,6 +207,6 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-review-environment-design.md` | 56 | 692 |
 | `docs/2026-10-08-second-agent-design.md` | 57 | 769 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
-| `docs/2026-10-16-fabric-events-design.md` | 85 | 941 |
+| `docs/2026-10-16-fabric-events-design.md` | 52 | 554 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `src/Daoris.Desktop/README.md` | 85 | 483 |

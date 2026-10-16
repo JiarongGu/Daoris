@@ -138,7 +138,8 @@ public sealed partial class SessionRequests(string home)
     /// </summary>
     private const int WithdrawTries = 100;
 
-    private const string Answered = ".answer.json";
+    /// <summary>A say's answer's ending, beside it: what the loop writes, so the folder's watch never hears it (FABRIC-EVENT2).</summary>
+    internal const string Answered = ".answer.json";
 
     public string Folder => DaorisHome.Entry(home, HomeEntry.Requests);
 

@@ -13,6 +13,9 @@ with the version and date at release.
   starts no session in it, and a conversation begun there goes on there. Ask Daoris and the setup guide count only Daoris's
   accounts as signed in, and the terminal says the same.
 - A session starts sooner: it asks git once per fact before it starts (11 commands, from 18).
+- A terminal's `sessions stop`, `say` or `take-back`, and its `trees` presses, reach the running Daoris as they are written
+  (about a third of a second), where Daoris used to look for them once a second; it still looks every 3 s in case one is
+  missed. The machine log times each look of the driver and says what woke it.
 - `daoris-driver sessions say <id> --now …` is *Send now* from a terminal, and says what the agent's door did.
 - *This Daoris* also shows the settings files, the variables Daoris reads, the versions, the terminal's wiring, the
   knowledge store and the logs.
