@@ -1,6 +1,7 @@
 // The milestone of a unit of work (FABRIC-MILESTONE1b; the fabric events design §D0): whether its end was reached, the result kept,
 // its cleanup (pending, with what waits and why, or completed, with what went) and the recovery retained and until when. The
 // driver derives it at each read from the records it keeps (`WORK_STATE`, `daoris-driver work state`); the page stores nothing.
+import type { TFunction } from 'i18next';
 
 /** One thing a unit owns, with the role it has and what became of it (the inventory's entry). */
 export type MilestoneEntry = {
@@ -46,6 +47,15 @@ export type MilestoneUnit = {
 
 /** What `WORK_STATE` answers: the units, and what could not be read (a repository with no checkout here). */
 export type WorkState = { units: MilestoneUnit[]; unread: string[] };
+
+/** The kinds of thing a unit owns that have a word of the page's; a `line` or an `end` is its resource's own name. */
+const KINDS = ['tree', 'session-branch', 'landing-branch', 'moved-aside', 'recovery-ref', 'auto-landing', 'history'] as const;
+
+/** An entry by what it is: its kind in the reader's language, where the page has a word, and its name. */
+export function entryName(t: TFunction, entry: MilestoneEntry): string {
+  const kind = KINDS.find((one) => one === entry.kind);
+  return [kind ? t(`work.milestone.kind.${kind}`) : null, entry.resource].filter(Boolean).join(' ');
+}
 
 /**
  * What of a unit waits on the person (design §D0, *What needs you* only where something waits on them): the entries its cleanup

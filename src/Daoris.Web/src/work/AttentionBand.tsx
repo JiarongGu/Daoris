@@ -7,7 +7,7 @@ import {
 } from '../data/queries';
 import {
   retryNotice, useAccounts, useApproveHelper, useConsidered, useDeclineHelper, useHarnessAction, useHarnesses, useHelperWaits, useNudge,
-  useOpinionWaits, useRefreshHarnesses, useRetryQuest, useRules, useSessionGroups, useTrustFolder, useUntrusted, useWaits,
+  useOpinionWaits, useRefreshHarnesses, useWorkState, useRetryQuest, useRules, useSessionGroups, useTrustFolder, useUntrusted, useWaits,
 } from '../bridge/shell';
 import { useSay } from '../bridge/conversation';
 import { SignIn } from '../agents/SignIn';
@@ -118,6 +118,9 @@ function Band({ doors, notify, onSessions, onRun }: {
   const proposed = Array.isArray(proposals) && proposals.some((one) => one.session);
   const ended = useSessions(null, true, reviewing || onRun !== undefined || proposed);
   const opinionWaits = useOpinionWaits(reviewing);
+  // Each unit's milestone (FABRIC-MILESTONE1b): the band lists only a unit with something waiting on the person, as the driver's
+  // derivation says it. Every unit is read, one answer the page shares with Branches; a browser has none.
+  const workState = useWorkState();
   // The agents' asks for a helper that wait on the person's yes (MIXAGENT2c): the driver's own list, so a browser has none.
   const helperWaits = useHelperWaits();
   const approveHelper = useApproveHelper();
@@ -149,7 +152,7 @@ function Band({ doors, notify, onSessions, onRun }: {
   const waiting = needsAPerson(
     (reviewing ? ended.data : undefined) ?? sessions.data ?? [], quests.data ?? [], registry.data ?? [], asks.data ?? [],
     untrusted.data ?? [], Array.isArray(proposals) ? proposals : [], considered.data ?? [], groups.data ?? [], accounts,
-    opinionWaits.data ?? [], helperWaits.data ?? []);
+    opinionWaits.data ?? [], helperWaits.data ?? [], workState.data?.units ?? []);
 
   if (waiting.length === 0) {
     return (

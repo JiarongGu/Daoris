@@ -3,19 +3,12 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { moment } from '../locales/format';
 import { cn } from '../lib/cn';
-import type { MilestoneEntry, MilestoneUnit } from './milestone';
+import { entryName, type MilestoneUnit } from './milestone';
 
 /** The proofs the driver names by code (`EndBy`): any other code is said by the driver's own sentence. */
 const PROOFS = ['merged', 'empty', 'on-line', 'pull-request', 'landed', 'carried'] as const;
 
-/** The kinds of thing a unit owns that have a word of the page's; a `line` or an `end` is its resource's own name. */
-const KINDS = ['tree', 'session-branch', 'landing-branch', 'moved-aside', 'recovery-ref', 'auto-landing', 'history'] as const;
-
-/** An entry by what it is: its kind in the reader's language, where the page has a word, and its name. */
-function what(t: TFunction, entry: MilestoneEntry): string {
-  const kind = KINDS.find((one) => one === entry.kind);
-  return [kind ? t(`work.milestone.kind.${kind}`) : null, entry.resource].filter(Boolean).join(' ');
-}
+const what = entryName;
 
 /** The proof of an end in the reader's language, or the driver's own sentence where the page has no word for its code. */
 function proof(t: TFunction, unit: MilestoneUnit): string {

@@ -78,5 +78,6 @@
   "work.attention.ask.letRun": "{{account}} joins {{workspace}}'s list, so Daoris may start {{workspace}}'s work on it and spend what that account allows. In a terminal: {{command}}",
   "work.attention.ask.letRunMachine": "{{account}} joins this machine's list, which {{workspace}} runs on with every workspace that names no account of its own, so Daoris may start their work on it and spend what that account allows. In a terminal: {{command}}",
   "work.attention.helper": "an agent asks for a helper",
-  "work.attention.helperWhy": "{{session}} asked for another agent’s help. Nothing is asked until you let it."
+  "work.attention.helperWhy": "{{session}} asked for another agent’s help. Nothing is asked until you let it.",
+  "work.attention.work": "clean-up is blocked"
 }
