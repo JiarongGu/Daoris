@@ -116,6 +116,12 @@ public sealed class Driver(
     public LookPart Part { get; init; } = LookPart.Look;
 
     /// <summary>
+    /// The wakes a plan was woken by (FABRIC-END7), which its landing looks at alone (<see cref="AutoLander.ChooseAsync"/>): null, as
+    /// the whole look hands it, lands on every due entry.
+    /// </summary>
+    public IReadOnlyCollection<LandingWake>? Woke { get; init; }
+
+    /// <summary>
     /// What the loop's classes share (PART10m, D166): the constructor's objects, the sessions and trees, the per-look adapters,
     /// servers and catalogue, and the settables. Built once, here; the classes below hold it, and the ones that run through this
     /// driver's machinery hold the driver as well.
@@ -666,7 +672,7 @@ public sealed class Driver(
                 home, new ServiceAutoLandingWorld(service),
                 new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => output?.Append($"plugin:{plugin}", line), pluginLog: Context.Hooks?.Log)),
                 Context.Events, service.LandingSaid);
-            var (chosen, said) = await lander.ChooseAsync(config, ct).ConfigureAwait(false);
+            var (chosen, said) = await lander.ChooseAsync(config, ct, Woke).ConfigureAwait(false);
             events.AddRange(said);
             if (chosen.Count > 0) Context.Runs.Beside(token => lander.LandAsync(chosen, token), ct);
         }

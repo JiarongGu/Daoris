@@ -154,9 +154,13 @@ public sealed class DriverWatch(
     // that counts it is whole, whatever topic's wake came after it and replaced `_woke`.
     private int _everything;
 
+    // The wakes since the last look, which a plan's landing looks at alone (FABRIC-END7); the whole look takes them and lands on all.
+    private readonly LandingWakes _landing = new();
+
     private void Woken(Wake? wake)
     {
         if (wake is null) Interlocked.Exchange(ref _everything, 1);
+        else _landing.Hear(wake.Topic, wake.Subject);
         Volatile.Write(ref _woke, wake);
         Interlocked.Increment(ref _nudges);
 
@@ -249,7 +253,8 @@ public sealed class DriverWatch(
 
         // The refs heard on each repository's common git dir (FABRIC-END3, §B4, link 1): a ref move judges that repository's ends on its
         // own, never the look and never the remote sync, and the tidy's pass below stays the reconciliation at its pace.
-        await using var refs = RefWatch.ForDriver(home, service.RegistryAsync, source: Source, log: Log);
+        await using var refs = RefWatch.ForDriver(home, service.RegistryAsync, source: Source, log: Log,
+            heard: repository => LandingWakes.Moved(home, repository, Nudge)); // FABRIC-END7: a due tree that moved wakes its landing.
         _refs = refs;
         refs.Start();
 
@@ -272,7 +277,7 @@ public sealed class DriverWatch(
             var report = await new Driver(
                     service, draining ? InstallUpdate.Drained(config) : config, AdapterSet.Built(), home, processes, sync, output,
                     _harnesses, usage, hooks, events, browser, Running)
-                { Runner = Runner, Stops = Stops, Log = Log, Reviews = Reviews, Part = part }
+                { Runner = Runner, Stops = Stops, Log = Log, Reviews = Reviews, Part = part, Woke = _landing.For(part) }
                 .TickAsync(token, failed: said =>
                 {
                     carried.AddRange(said.Events);

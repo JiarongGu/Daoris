@@ -95,7 +95,11 @@ public sealed class AutoLander(
     /// The look's half: every open entry read against its rule, its records, its quest and its tree. What can no longer land is
     /// closed and said, a hold is kept once, uncommitted work is a try of its own, and the rest that is worth a try is chosen.
     /// </summary>
-    public async Task<AutoChosen> ChooseAsync(DriverConfig config, CancellationToken ct = default)
+    /// <param name="woke">
+    /// The wakes a plan was woken by (FABRIC-END7): only the entries they can release are read (<see cref="LandingConcerns"/>), found
+    /// without git, so a wake that concerns none starts no process. Null, the whole look, reads every entry: the deadline.
+    /// </param>
+    public async Task<AutoChosen> ChooseAsync(DriverConfig config, CancellationToken ct = default, IReadOnlyCollection<LandingWake>? woke = null)
     {
         var open = Due.Open();
         if (open.Count == 0) return new([], []);
@@ -105,6 +109,8 @@ public sealed class AutoLander(
         IReadOnlyList<SessionRecord>? records = null;
         foreach (var entry in open)
         {
+            if (!LandingConcerns.Concerns(entry, woke, TreeTips.Read)) continue;
+
             // The switch is read as it stands now: switched off, the person's press is the way again. Under a named workflow it is
             // its run's bound version's landing step (WORKFLOW1f), read once here and handed to the gate below; a workflow that
             // cannot be read here holds the entry at the gate, never closes it as off.

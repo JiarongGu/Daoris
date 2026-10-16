@@ -40,11 +40,18 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
         if (File.Exists(path)) return false;
         Directory.CreateDirectory(WorkflowRunBindings.FolderOf(home));
         AtomicFile.WriteText(path, ToJson(binding));
+        // This process's own write wakes no landing (FABRIC-END7, EVENT2's rule): the gate's files are heard for another's.
+        HomeWrites.Mine(path);
         return true;
     }
 
-    /// <summary>A run's binding written over its file, atomically.</summary>
-    public void Write(string run, WorkflowRunBinding binding) => AtomicFile.WriteText(WorkflowRunBindings.PathOf(home, run), ToJson(binding));
+    /// <summary>A run's binding written over its file, atomically, and marked as this process's own (FABRIC-END7).</summary>
+    public void Write(string run, WorkflowRunBinding binding)
+    {
+        var path = WorkflowRunBindings.PathOf(home, run);
+        AtomicFile.WriteText(path, ToJson(binding));
+        HomeWrites.Mine(path);
+    }
 
     /// <summary>
     /// Whether any run here is bound to a named workflow in <paramref name="repository"/> (WORKFLOW1f): where a gate cannot read
