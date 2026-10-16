@@ -15,6 +15,7 @@ repository.
   passed alone.
 - **Verification:** `merge-branch.test.ts`, the re-run case: two failed in the full run, one passing alone, the note naming
   only the other as failed again (seen red with the old note).
+
 ## 2026-10-16 — The plugin skills spawn tests started Claude Code with no Daoris account (HELPPLUG1c beside OWNSPACE1a)
 
 - **Symptom:** the merge gate at OWNSPACE1a, WIRING1c-i, HELPPLUG1c and STEER2a's merge: `IntakeTests`' and

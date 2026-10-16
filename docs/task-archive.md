@@ -15591,3 +15591,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STEER2b — the composer's *Send now*, and where queued words arrive** (web; with STEER2a's contract; D136's STEER2 note, points 1 and 3). A second press beside *Queue* while a turn runs, on a conversation and a driven session; a queued word's line says when it arrives and carries no *Send now* on the next-step door. Proof: `Composer`/`WorkFrame`/`SessionBox` tests, both catalogues and the glossary.
 
 **Outcome** 2026-10-16: *Send now* beside *Queue* while a turn runs, on a conversation's Composer and a driven session's SessionBox: typed words go by `SESSION_INPUT now:true`, an empty box with held words by `CANCEL_TURN keep:true`; each refusal code has its own line (en/zh); words sent now show where they were taken, never as waiting; a call the steer cut is found by id in an earlier turn and reads *cut off* (已中断); the next-step line says it arrives once the step in flight ends. On Sonnet: about 133 tool calls over two rounds. Detail: D136's STEER2 notes; commits c9fe83872, 07e5e26fe, 73841dbdf.
+
+## PROCFIX — this batch's Process failures, sorted (2026-10-16, FLAKE1)
+
+> - (parent's row) Four driver Process tests failed on main after the OWNSPACE1a, STEER2a, HELPPLUG1c and WIRING1c-i merges.
+
+**Outcome** 2026-10-16: HELPPLUG1c's two spawn tests start Claude Code's doors, which since OWNSPACE1a hold a start with no Daoris account; they now sign one in (`SkillsSpawnProbe.SignIn`). `StopHoldTickTests` and the `ProbeRaceTests` control passed alone and are load flakes, measured: a session's start runs about 18 git commands one after another (STARTGIT1), and the Process half ran beside the heavy gates (GATEORDER1). On Opus: about 79 tool calls. Detail: FIX-LOG 2026-10-16 (the plugin skills spawn tests).
