@@ -1125,6 +1125,11 @@ public sealed class Driver(
         using var starting = isolated ? TreeLock.TryStarting(home, start.Workspace, quest.To) : null;
         if (isolated && starting is null) return Hold(TreeLock.Replaying(quest.To));
 
+        // STARTGIT1: git's guess at the checkout's line is asked once for this start, by the tree's opening and by the landing it
+        // tells the session of, which each asked it afresh (three `symbolic-ref origin/HEAD`, up to four `rev-parse --verify`).
+        // Let go before the spawn: a session runs for minutes, and what follows it asks git as it stands then.
+        var oneLook = Context.Trees.OneLook();
+
         TreeOpened? opened = null;
         if (isolated && resumedIn is null && joinedIn is null)
         {
@@ -1442,6 +1447,7 @@ public sealed class Driver(
                 SetUp = setUp,
                 SetUpFrom = setUp is null ? null : ReviewRules.Resolve(config, quest.To, start.Workspace)?.Source,
             };
+            oneLook.Dispose();
             var (info, harnessNotice) = Prepare(adapter, target, selection);
 
             // The creating sentence, on the record while the session runs (D51 rule 4): where it grew from and what a fresh
