@@ -198,7 +198,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-02-knowledge-design-review.md` | 43 | 542 |
 | `docs/2026-10-02-pause-and-clean-up-design.md` | 49 | 670 |
 | `docs/2026-10-02-session-management-design.md` | 69 | 856 |
-| `docs/2026-10-03-session-messages-design.md` | 41 | 485 |
+| `docs/2026-10-03-session-messages-design.md` | 41 | 486 |
 | `docs/2026-10-04-ux6-redesign.md` | 72 | 895 |
 | `docs/2026-10-05-ux7-design.md` | 67 | 792 |
 | `docs/2026-10-07-history-clearing-design.md` | 52 | 623 |
