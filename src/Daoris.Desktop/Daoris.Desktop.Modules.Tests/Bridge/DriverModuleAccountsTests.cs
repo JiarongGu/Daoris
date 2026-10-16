@@ -313,7 +313,7 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         var none = Scope(Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code"), null).GetProperty("next");
 
         Assert.Equal(JsonValueKind.Null, none.GetProperty("account").ValueKind);
-        Assert.Equal("waits", none.GetProperty("reason").GetString());
+        Assert.Equal("noAccount", none.GetProperty("reason").GetString());
         Assert.Empty(none.GetProperty("others").EnumerateArray());
 
         Accounts("claude-code", "account-1");
