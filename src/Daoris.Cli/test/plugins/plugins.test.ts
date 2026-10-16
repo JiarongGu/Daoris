@@ -213,6 +213,24 @@ test('a declared harness may say its product and maker, and an older manifest re
   fx.cleanup();
 });
 
+/**
+ * OWNSPACE1c (D175): a declared harness whose own home is nobody's (a sandboxed tool) says `ownHome`, which only JSON `true`
+ * sets; it is the plugin's own word and never refuses the plugin. Twin: `PluginCatalogTests`'
+ * `A_declared_harness_may_say_its_own_home_is_nobodys_and_only_true_says_it`, the same manifest read the same.
+ */
+test('a declared harness may say its own home is nobody\'s, and only true says it', () => {
+  const fx = makeFixture('plugins-ownhome');
+  plugin(fx.root, 'acme.agent', `{ "id": "acme.agent",
+    "harnesses": [ { "name": "boxed-agent", "command": ["boxed"], "profileVariable": "BOXED_HOME", "ownHome": true },
+                   { "name": "plain-agent", "command": ["plain"], "profileVariable": "PLAIN_HOME" },
+                   { "name": "odd-agent", "command": ["odd"], "profileVariable": "ODD_HOME", "ownHome": "yes" } ] }`);
+
+  const [entry] = readPlugins(fx.root).plugins;
+  assert.equal(entry!.problem, null);
+  assert.deepEqual(entry!.manifest.harnesses.map((harness) => harness.ownHome), [true, false, false]);
+  fx.cleanup();
+});
+
 // ——— Servers (D65 §1f, INT1): what a plugin hands every session, beside the knowledge host.
 
 test('servers are read with the placeholder expanded in the command and the environment', () => {
