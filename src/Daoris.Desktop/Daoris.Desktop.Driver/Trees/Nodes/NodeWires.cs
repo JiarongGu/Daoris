@@ -319,17 +319,18 @@ public static class NodeWires
             case WireKinds.Data:
                 var output = wire.From!.Port!;
                 var input = wire.To.Port!;
-                if (SourceSchema(from!, output) is not { } produced)
+                var producer = from!;
+                if (SourceSchema(producer, output) is not { } produced)
                 {
-                    return Refuse(WireRefusal.MissingPort, from!.Id, output == WireEnd.Evidence
-                        ? $"`{from.Id}` declares no evidence to pass on."
-                        : $"`{from.Id}` has no output `{output}`.");
+                    return Refuse(WireRefusal.MissingPort, producer.Id, output == WireEnd.Evidence
+                        ? $"`{producer.Id}` declares no evidence to pass on."
+                        : $"`{producer.Id}` has no output `{output}`.");
                 }
 
                 if (!to.Inputs.TryGetValue(input, out var taken)) return Refuse(WireRefusal.MissingPort, to.Id, $"`{to.Id}` has no input `{input}`.");
                 if (!string.Equals(produced, taken, StringComparison.Ordinal))
                 {
-                    return Refuse(WireRefusal.IncompatibleSchema, to.Id, $"`{from.Id}`'s `{output}` is `{produced}`, and `{to.Id}`'s input `{input}` takes `{taken}`.");
+                    return Refuse(WireRefusal.IncompatibleSchema, to.Id, $"`{producer.Id}`'s `{output}` is `{produced}`, and `{to.Id}`'s input `{input}` takes `{taken}`.");
                 }
 
                 break;
