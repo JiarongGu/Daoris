@@ -121,10 +121,8 @@ public sealed class DriverModule : ModuleBase
     /// The route's handler from the table, or the framework's own answer for a route nobody declared.
     /// </summary>
     /// <remarks>
-    /// A route that is not in the table answers <c>NO_ROUTE</c> through <c>UnknownType</c>, exactly as the
-    /// switch's default did. The table is case-sensitive, as the switch's labels were (MOD5).
-    /// </remarks>
-    /// <remarks>
+    /// <para>A route that is not in the table answers <c>NO_ROUTE</c> through <c>UnknownType</c>, exactly as the
+    /// switch's default did. The table is case-sensitive, as the switch's labels were (MOD5).</para>
     /// <para><b>A read marked <see cref="OneFlightAttribute"/></b> joins the identical ask under way (SWEEPFLIGHT1): the same
     /// route with the same payload, answered to every caller that joined it (<see cref="RouteFlights"/>).</para>
     /// <para><b>A press</b> (one whose route declares a change) forgets every read under way once it has answered or thrown,
