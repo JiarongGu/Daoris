@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../locales/i18n';
+import type { Session } from '../data/api';
 import { SessionBox } from './SessionBox';
 
 // The box at the foot of a session's page (MSG1f, D137 §5.1), props in: the running door's box, the park's answer, the
@@ -178,6 +179,38 @@ describe('SessionBox', () => {
   it('names the conversation a continued one went on in', () => {
     show({ box: { kind: 'line', why: 'continued', to: 'c2' } });
     expect(screen.getByText('It went on in conversation c2; say it to that one.')).toBeInTheDocument();
+  });
+
+  /**
+   * HANDWORDS1-ii (D165's HANDWORDS1-i note, design §4): where the frame holds the conversation it went on in, the line names it
+   * by its title and *Open session* attends it; one the frame does not hold is said by its id, as before.
+   */
+  it('names the conversation it went on in by its title, and opens it', async () => {
+    const onOpenSession = vi.fn();
+    const successor = { id: 'c2' } as Session;
+    show({ box: { kind: 'line', why: 'continued', to: 'c2' }, continued: { session: successor, title: 'Tidy the build' }, onOpenSession });
+
+    expect(screen.getByText('This conversation went on in Tidy the build.')).toBeInTheDocument();
+    expect(screen.queryByText(/say it to that one/)).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Open session' }));
+    expect(onOpenSession).toHaveBeenCalledWith(successor);
+  });
+
+  it('says the conversation by its id where the link names another one', () => {
+    show({ box: { kind: 'line', why: 'continued', to: 'c3' }, continued: { session: { id: 'c2' } as Session, title: 'Tidy' }, onOpenSession: () => {} });
+    expect(screen.getByText('It went on in conversation c3; say it to that one.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Open session' })).toBeNull();
+  });
+
+  it('names the conversation it went on in, in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      show({ box: { kind: 'line', why: 'continued', to: 'c2' }, continued: { session: { id: 'c2' } as Session, title: '整理构建' }, onOpenSession: () => {} });
+      expect(screen.getByText('这个对话已在「整理构建」中继续。')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '打开会话' })).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   it('says the line in 中文', async () => {

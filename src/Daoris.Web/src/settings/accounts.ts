@@ -1,5 +1,6 @@
 import i18n from '../locales/i18n';
 import { ago, elapsed, moment } from '../locales/format';
+import { type CURVE_WINDOWS, type CurvePoint, type CurveScope, type Switch, tightestSaid, wholePoints } from './usageCurves';
 
 // How each agent's accounts are used, as the page reads it (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6): the shape
 // `bridge/accounts.ts` answers, and the words each account's row and each scope say, in the reader's language. Pure: the
@@ -34,6 +35,11 @@ export type WindowSaid = {
   /** Whether it said the request drew on usage credits. */
   credits: boolean;
   seen: string;
+  /**
+   * Where its reading came from (USAGEREAD2a, SWITCH1d): `read` from its agent's own answer, asked with no prompt, or `said` by
+   * a session's frame. A shell older than SWITCH1d answers none, read as `said`.
+   */
+  source?: 'read' | 'said' | null;
 };
 
 /** What an account's agent last said: each window whose reset has not passed. Absent is nothing said, never zero. */
@@ -83,8 +89,12 @@ export type NextStart = {
   others: AccountHeld[];
 };
 
-/** How one scope's list is used (D130 §16.6). */
-export type ScopeUse = { use: 'goal' | 'order'; keep?: string | null; early: boolean; near: number };
+/**
+ * How one scope's list is used (D130 §16.6, D165 §6): `switch` and `curve` (SWITCH1d), which a shell older than that answers
+ * neither of, read as the smart switch with no curve; `early` and `near`, the old names, derived from them for a page that still
+ * reads them.
+ */
+export type ScopeUse = { use: 'goal' | 'order'; keep?: string | null; early: boolean; near: number } & CurveScope;
 
 /**
  * Why an account of a list is passed at a start (D130 §6 as D165 point 2 amends it): a limit reached, usage credits, or its
@@ -120,6 +130,11 @@ export type AgentAccounts = {
   /** Whether its sessions say how near their limits are (TOOL6c): what switching before the limit waits for. */
   speaks: boolean;
   /**
+   * Whether its accounts' use is read by asking its agent, with no prompt (USAGEREAD2a, CODEXUSE1): what *Read now* and the read
+   * as its page opens ask (SWITCH1d). A shell older than that answers none, and neither is offered.
+   */
+  reads?: boolean;
+  /**
    * The tool's own sign-in's cool-off (D125 §3.7), or when it ended (TOOL6e): never one of the accounts, never in a list. What
    * its agent last said of its windows where a press read them (CODEXUSE3); a shell older than that answers none.
    */
@@ -136,16 +151,28 @@ export type AccountUseChange = {
   use?: 'goal' | 'order';
   keep?: string;
   noKeep?: boolean;
+  /** The old names (D165 §6), which the modules still take, and which this page no longer sends. */
   early?: boolean;
   near?: number;
+  /** When to switch (SWITCH1d, `--switch`): Daoris's curve, the person's own, or no switch while a session runs. */
+  switch?: Switch;
+  /** Each window of the person's curve set, the others kept (`--curve`); one that breaks a rule is `ACCOUNT_USE_CURVE`. */
+  curve?: Partial<Record<(typeof CURVE_WINDOWS)[number], CurvePoint[]>>;
+  /** The person's curve taken out, the switch kept (`--no-curve`). */
+  noCurve?: boolean;
   clear?: boolean;
 };
 
 /** Today's defaults (D130 §16.6), the CLI's `USE_DEFAULTS` and the driver's `RotationUse.Default`, for a scope with no list. */
 export const USE_DEFAULTS: ScopeUse = { use: 'goal', keep: null, early: true, near: 90 };
 
-/** *Near*'s range (D130 §14): a whole percent from the one to the other. */
-export const NEAR_RANGE = { lowest: 50, highest: 99 } as const;
+/**
+ * When a scope switches (SWITCH1d, D165 §6): its `switch`; from a shell older than that, which answers only the old names,
+ * `off` where `early` is false and else the smart switch, its `near` alone naming no curve the page could draw.
+ */
+export function switchOf(use: ScopeUse): Switch {
+  return use.switch ?? (use.early === false ? 'off' : 'smart');
+}
 
 /**
  * An agent's accounts as the answer holds them, read defensively: a shell older than TOOL4g answers no such route, and a
@@ -166,6 +193,17 @@ export function machineScope(agent: AgentAccounts): AccountScope {
 /** A workspace's own scope, or null where it names neither a default nor a list of its own: it runs on this machine's. */
 export function workspaceScope(agent: AgentAccounts, workspace: string): AccountScope | null {
   return agent.scopes.find((scope) => scope.workspace === workspace) ?? null;
+}
+
+/**
+ * How the list an account is measured by is used, for its windows against the curve (SWITCH1d): this machine's where its list
+ * holds the account or none does, else the first workspace's whose own list holds it. An account in two lists is drawn against
+ * this machine's, the scope its row's next start says first.
+ */
+export function useOf(agent: AgentAccounts, account: string): ScopeUse {
+  const machine = machineScope(agent);
+  if (machine.list.includes(account)) return machine.use;
+  return agent.scopes.find((scope) => scope.workspace && scope.list.includes(account))?.use ?? machine.use;
 }
 
 /** The workspaces whose own list holds an account (D130 §3.2: each account's row names the workspaces that may run on it). */
@@ -253,9 +291,17 @@ export function orderedWindows(windows: readonly WindowSaid[]): WindowSaid[] {
  * What an account's agent last said, as its row says it (TOOL6c, D130 §5.2): how long ago, its own word where it gave one,
  * credits, and each window's use and reset. The CLI's `saidLine` says the same in the terminal's words. Nothing said is
  * said so, and is neither spent nor fresh (D57). Its pace warning is *ahead of its pace*, as the start's note says it, and
- * never near its limit (USAGEREAD3b).
+ * never near its limit (USAGEREAD3b). Where a scope is handed, its tightest window over the scope's curve is said with the
+ * curve's value now, and the line is led by its newest reading's source, *read* or *said* (SWITCH1d).
  */
-export function saidLine(said: AccountSaid | null | undefined): string {
+export function saidLine(
+  said: AccountSaid | null | undefined,
+  { use, now = new Date() }: {
+    /** The scope's switch and curve: its tightest window over it is said with the curve's value now (SWITCH1d). */
+    use?: CurveScope;
+    now?: Date;
+  } = {},
+): string {
   if (!said || said.windows.length === 0) return i18n.t('harness.said.nothing');
   const parts: string[] = [];
   const reached = said.windows.find((each) => each.standing === 'refused');
@@ -268,8 +314,19 @@ export function saidLine(said: AccountSaid | null | undefined): string {
       parts.push(i18n.t('harness.said.window', { used: percent(each.used), window: windowName(each.window), when: moment(each.reset) }));
     }
   }
+  // Over its curve on its tightest window, as the terminal's said line and the start's line add it (SWITCH1d, the twins'
+  // `tightest` rows); on its curve is not over it.
+  const over = use ? tightestSaid(use, said.windows, now) : null;
+  if (over && over.room < 0) {
+    parts.push(i18n.t('harness.said.over', { window: windowName(over.window.window), curve: `${wholePoints(over.curve)}%` }));
+  }
   if (parts.length === 0) parts.push(i18n.t('harness.said.clear'));
-  return i18n.t('harness.said.line', { age: ago(said.seen), what: parts.join(i18n.t('harness.said.join')) });
+  // Led by where its newest reading came from (USAGEREAD2b's lead, the terminal's): read from its agent, or said by a session.
+  const newest = said.windows.reduce((best, each) => (
+    each.seen > best.seen || (each.seen === best.seen && each.source === 'read') ? each : best));
+  return i18n.t(newest.source === 'read' ? 'harness.said.lineRead' : 'harness.said.line', {
+    age: ago(said.seen), what: parts.join(i18n.t('harness.said.join')),
+  });
 }
 
 /**
@@ -298,7 +355,7 @@ export function nextWhy(next: NextStart, scope: AccountScope, labelOf: (name: st
       return i18n.t(`harness.next.why.near${by.suffix}`, { over, window: by.window });
     }
     case 'pace':
-      return i18n.t(scope.use.early ? 'harness.next.why.room' : 'harness.next.why.pace', { over });
+      return i18n.t(switchOf(scope.use) !== 'off' ? 'harness.next.why.room' : 'harness.next.why.pace', { over });
     case 'list':
       if (next.account === scope.default) return i18n.t('harness.next.why.listDefault');
       if (next.account === scope.begins || !next.over) return i18n.t('harness.next.why.listFirst');

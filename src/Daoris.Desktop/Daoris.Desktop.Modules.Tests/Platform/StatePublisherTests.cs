@@ -473,6 +473,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SESSION_OPTIONS", "", null)]
     [InlineData("ACCOUNT_USE", "harnesses", null)]
     [InlineData("ACCOUNTS", "", null)]
+    [InlineData("ACCOUNTS_READ", "harnesses", null)]
     [InlineData("HARNESS_ACTION", "harnesses", null)]
     [InlineData("SET_AGENT_SETTINGS", "harnesses", null)]
     [InlineData("HARNESS_INPUT", "", null)]

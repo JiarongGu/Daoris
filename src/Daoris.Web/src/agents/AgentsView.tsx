@@ -6,7 +6,7 @@ import { useRegistry, useSessions } from '../data/queries';
 import { useScope } from '../data/scope';
 import { SessionConsole } from '../work/SessionConsole';
 import {
-  useAccountUse, useAccounts, useHarnessAction, useHarnesses, useRefreshHarnesses, useRuleAction, useRules,
+  useAccountUse, useAccounts, useHarnessAction, useHarnesses, useReadAccounts, useRefreshHarnesses, useRuleAction, useRules,
   useSetAgentSettings, useUsage,
 } from '../bridge/shell';
 import { ruleHearing, useRuleAnswer } from '../work/ruleAnswer';
@@ -25,6 +25,9 @@ import { type AgentPart, accountName, agentRows, runsForLine, signedOutHeld } fr
 /** What a door runs, and so what streams under it in *Ways in* (D49 §2). */
 const DOOR_ACTIONS = ['install', 'update', 'pin', 'unpin'] as const;
 
+/** A reading older than this is read again as an agent's page opens (the switch design §1.2): Claude's read floor, a minute. */
+const STALE_AFTER = 60_000;
+
 /**
  * **The Agents place** (UX6e, D150 §5): what it hands the frame (D118 §5), its list pane and its main area. The list is
  * each agent this machine knows, once; the main area is the chosen agent's page.
@@ -32,9 +35,11 @@ const DOOR_ACTIONS = ['install', 'update', 'pin', 'unpin'] as const;
  * @remarks
  * **A hook, because a view hands the frame a value**, as the Plugins view does. The application holds it on every view.
  *
- * 🔴 **Opening it starts no process and asks no account** (§5.3). It reads the roster the frame already holds (asked once,
- * and kept: `staleTime: Infinity`) and the accounts' files (`ACCOUNTS`, a file read the tick refreshes); each account says
- * its last known state with when it was read. Only *Read again* asks, on the press, one agent's accounts one at a time.
+ * 🔴 **Opening it asks no sign-in** (§5.3). It reads the roster the frame already holds (asked once, and kept:
+ * `staleTime: Infinity`) and the accounts' files (`ACCOUNTS`, a file read the tick refreshes); each account says its last
+ * known state with when it was read. Only *Read again* asks, on the press, one agent's accounts one at a time. An agent's page
+ * reads its accounts' use as it opens, where a reading is older than a minute, and at *Read now* (SWITCH1d): the agent answers
+ * it with no prompt and no model request (D165 point 1, amending §5.3 for that read alone).
  *
  * **Every act has its terminal twin** (D50): `daoris agent …`, named at the page's foot.
  */
@@ -181,6 +186,24 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
   const product = tool.product ?? tool.name;
   const use = agentOf(accounts.data, tool.name);
   const busy = acting || act.isPending || accountUse.isPending || ruleAct.isPending || ruleAnswer.busy;
+
+  // Each account's use read as its page opens (SWITCH1d; the switch design §1.2), once a page, where its agent is asked it and
+  // a reading is older than a minute or none was had: a read asks no sign-in and spends nothing (D165 point 1), and the driver
+  // skips an account cooling, refused, signed out or busy and floors each at its question's minute. A key is never read.
+  const readAccounts = useReadAccounts();
+  const stale = Boolean(use?.reads) && tool.present && tool.accounts.some((account) => {
+    if (account.key) return false;
+    const seen = use?.accounts.find((facts) => facts.name === account.name)?.said?.seen;
+    return !seen || Date.now() - new Date(seen).getTime() > STALE_AFTER;
+  });
+  const readOnOpen = useRef<string | null>(null);
+  const mutateRead = readAccounts.mutate;
+  useEffect(() => {
+    if (!stale || readOnOpen.current === tool.name) return;
+    readOnOpen.current = tool.name;
+    // Unasked, so a failure is not said: *Read now* says its own.
+    mutateRead({ harness: door });
+  }, [stale, tool.name, door, mutateRead]);
   // The new account this agent's sign-in kept, waiting on its name and its lists (UX7b): the add flow's step 3.
   const addedHere = added && added.harness === door ? added : null;
   // A key added here asks the same question (the UX7 design §4.5, ACCTUX3): by its id and its key's handle, held while the
@@ -247,6 +270,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
   const acts: AgentActs = {
     onReadAgain: () => read.mutate({ agent: tool.name }, { onError }),
     onReadOne: (account) => read.mutate({ agent: tool.name, profile: account }, { onError }),
+    onReadNow: () => readAccounts.mutate({ harness: door }, { onError }),
     onSignInNew: () => run(door, 'login-new'),
     // ACCTUX3: told back to the key's field, which closes once the key is kept and says a refusal in it; kept, the account
     // goes to the add flow's last step for its name and lists, where a toast said it was added and left it in no list.
@@ -329,6 +353,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
       adapter={adapter}
       part={part}
       reading={read.isPending}
+      readingNow={readAccounts.isPending}
       busy={busy}
       settingsBusy={tune.isPending}
       signingIn={running === `${door}:login` ? runningProfile : null}

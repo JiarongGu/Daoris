@@ -225,7 +225,13 @@ public sealed class HelpStandInDoors : IHelpDoors
     public Task SetAccountUseAsync(string harness, UseChange change, string? workspace, CancellationToken ct)
     {
         if (UseRefusal is { } refused) throw new DriverException(refused);
-        Calls.Add($"ACCOUNT_USE {harness} use={change.Use} keep={change.Keep} noKeep={change.NoKeep} early={change.Early} near={change.Near} {workspace}".TrimEnd());
+        // SWITCH1d: the switch and each window of the curve, as `session=0:90;weekly=0:30,100:100`.
+        var curve = change.Curve is { } set
+            ? string.Join(";", UseCurve.Windows.Where(window => set[window] is not null)
+                .Select(window => $"{window}={string.Join(",", set[window]!.Select(point => $"{point.Elapsed}:{point.Used}"))}"))
+            : "";
+        Calls.Add($"ACCOUNT_USE {harness} use={change.Use} keep={change.Keep} noKeep={change.NoKeep} early={change.Early} near={change.Near} "
+            + $"switch={change.Switch} curve={curve} noCurve={change.NoCurve} {workspace}".TrimEnd());
         return Task.CompletedTask;
     }
 

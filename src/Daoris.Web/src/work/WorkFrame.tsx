@@ -2094,6 +2094,11 @@ export function WorkFrame({
             onSendNow={onSteerNow}
             onRemove={editQueued.remove}
             onEdit={editQueued.reword}
+            // The conversation it went on in, by its record's title (HANDWORDS1-ii); one the frame does not hold is said by its id.
+            continued={box.kind === 'line' && box.why === 'continued' && box.to
+              ? headLink((sessions.data ?? []).find((row) => row.id === box.to))
+              : null}
+            onOpenSession={(session) => attend(session.id)}
           />
         )}
 

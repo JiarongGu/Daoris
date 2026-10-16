@@ -1,7 +1,9 @@
 import { useTranslation } from 'react-i18next';
+import type { Session } from '../data/api';
 import { Composer } from './Composer';
 import type { ChatMessage } from './conversation';
 import { type Box, neverSentence } from './say';
+import type { HeadLink } from './SessionHead';
 
 /**
  * The box at the foot of a session's page (MSG1f, D137 §5.1): offered on every session that takes words, saying what the
@@ -18,15 +20,23 @@ import { type Box, neverSentence } from './say';
  *   above the box, each with *Edit* and *Remove* by its id until a session takes them, as a running turn's queue does.
  * - **Winding up**: words said as its run ends wait for its record to end and then reopen it (D137 §2.1), shown above the
  *   box until its record keeps them and the conversation shows them.
- * - **The line**: nothing takes words, in the page's own words by the code.
+ * - **The line**: nothing takes words, in the page's own words by the code; a conversation that went on in another says
+ *   that one's title with *Open session* where the frame holds it (HANDWORDS1-ii).
  * - **Words on their way** (SENDLOST1b): above every box, as sending, and kept where the page stopped waiting on their send.
  *
  * A molecule: the box it is handed, the words in and a press out.
  */
 export function SessionBox({
   box, quest, draft, onDraft, sending = false, refusal, held, ending = [], waiting = [], stopping = false, focus = 0, accepts, onSend,
-  onSendNow, onRemove, onEdit, going,
+  onSendNow, onRemove, onEdit, going, continued, onOpenSession,
 }: {
+  /**
+   * The conversation a handed-over or moved one went on in (HANDWORDS1-ii), as the frame holds it: its record and its title.
+   * The line names it only where it is the one the driver's `continued` names.
+   */
+  continued?: HeadLink | null;
+  /** Attend the conversation it went on in, from the line's *Open session*. */
+  onOpenSession?: (session: Session) => void;
   /**
    * Words on their way to the session (SENDLOST1b), shown above every box that takes words until it holds them: as sending,
    * or `late` where the page stopped waiting on their send.
@@ -62,9 +72,24 @@ export function SessionBox({
   const { t } = useTranslation();
 
   if (box.kind === 'line') {
+    // The conversation it went on in, where the frame holds it, by its title with its door (HANDWORDS1-ii); else its id.
+    const went = box.why === 'continued' && continued && continued.session.id === box.to ? continued : null;
     return (
       <div className="border-t border-line px-4 py-3">
-        <p className="m-0 text-small text-ink-soft">{neverSentence(t, box.why, { quest, to: box.to })}</p>
+        {went ? (
+          <p className="m-0 text-small text-ink-soft">
+            <span>{t('work.say.continuedIn', { title: went.title })}</span>
+            {onOpenSession && (
+              <button
+                type="button"
+                onClick={() => onOpenSession(went.session)}
+                className="ml-2 cursor-pointer border-0 bg-transparent p-0 font-sans text-small text-accent hover:underline"
+              >
+                {t('work.head.openSession')}
+              </button>
+            )}
+          </p>
+        ) : <p className="m-0 text-small text-ink-soft">{neverSentence(t, box.why, { quest, to: box.to })}</p>}
         {refusal && <p role="status" className="m-0 mt-1 text-small text-ink-soft [overflow-wrap:anywhere]">{refusal}</p>}
       </div>
     );

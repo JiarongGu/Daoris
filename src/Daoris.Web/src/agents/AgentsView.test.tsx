@@ -1917,6 +1917,65 @@ describe('how accounts are used', () => {
       'DAORIS.DRIVER', 'HARNESSES_REFRESH', { payload: { agent: 'claude-code' } }));
   });
 
+  /**
+   * SWITCH1d (the switch design §1.2, §5): an agent whose accounts' use is read by asking it reads them as its page opens, once,
+   * where a reading is older than a minute, and again at *Read now*; each window says its share against its curve now and where
+   * its reading came from.
+   */
+  it('reads each account’s use as its page opens and at Read now, and says each window against its curve', async () => {
+    const reset = new Date(Date.now() + 2 * 3_600_000).toISOString();
+    const seen = new Date(Date.now() - 20 * 60_000).toISOString();
+    const reads = {
+      agents: [{
+        ...ACCOUNTS.agents[0]!, reads: true,
+        accounts: [
+          {
+            name: 'personal', running: 0,
+            said: { seen, windows: [{ window: 'session', used: 0.95, reset, standing: null, credits: false, seen, source: 'read' }] },
+          },
+          { name: 'work', running: 0 },
+        ],
+        scopes: [{ ...MACHINE, use: { ...MACHINE.use, switch: 'smart', curve: {} } }],
+      }],
+    };
+    invoke.mockImplementation(answer(ROSTER, reads));
+    place();
+
+    const personal = await screen.findByRole('listitem', { name: 'personal' });
+    // The smart curve's five-hour window is flat at 90%, so 95% is over it.
+    expect(await within(personal).findByText(/over its curve's 90% now/)).toBeTruthy();
+    expect(within(personal).getByText('read from Claude Code 20m ago')).toBeTruthy();
+    const readsOf = () => invoke.mock.calls.filter(([, type]) => type === 'ACCOUNTS_READ');
+    await waitFor(() => expect(readsOf()).toEqual([['DAORIS.DRIVER', 'ACCOUNTS_READ', { payload: { harness: 'claude-code' } }]]));
+
+    await userEvent.click(screen.getByRole('button', { name: 'Read now' }));
+    await waitFor(() => expect(readsOf()).toHaveLength(2));
+    // Never the sign-ins' read, which only *Read again* asks.
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESSES_REFRESH', expect.anything());
+  });
+
+  /** And reads nothing as it opens where every reading is younger than a minute, nor offers *Read now* where nothing is asked. */
+  it('reads nothing as its page opens where every reading is fresh, and offers no Read now where its agent is asked nothing', async () => {
+    const reset = new Date(Date.now() + 2 * 3_600_000).toISOString();
+    const seen = new Date(Date.now() - 10_000).toISOString();
+    const fresh = (name: string) => ({
+      name, running: 0, said: { seen, windows: [{ window: 'session', used: 0.2, reset, standing: null, credits: false, seen, source: 'read' }] },
+    });
+    invoke.mockImplementation(answer(ROSTER, { agents: [{ ...ACCOUNTS.agents[0]!, reads: true, accounts: [fresh('personal'), fresh('work')] }] }));
+    const { unmount } = place();
+
+    expect(await within(await screen.findByRole('listitem', { name: 'personal' })).findByText(/its curve allows 90% now/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Read now' })).toBeTruthy();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNTS_READ', expect.anything());
+    unmount();
+
+    invoke.mockImplementation(answer(ROSTER, ACCOUNTS));
+    place();
+    await screen.findByRole('listitem', { name: 'personal' });
+    expect(screen.queryByRole('button', { name: 'Read now' })).toBeNull();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNTS_READ', expect.anything());
+  });
+
   /** TOOL6e: each scope says which account its next start takes and why, with what holds the others. */
   it('says which account the next start takes and why', async () => {
     const next = {

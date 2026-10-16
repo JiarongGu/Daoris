@@ -5,6 +5,15 @@ with the version and date at release.
 
 ## Unreleased
 
+- Switching accounts is in view on an agent's page. Each account's five-hour and weekly window says its use against its usage
+  curve now (*its curve allows 45% now*, or *over its curve's 45% now*) and whether it was read from the agent or said by a
+  session, and how long ago; the page reads each account's use as it opens where a reading is older than a minute, and at
+  *Read now*, with no prompt and no model request. *How accounts are used* replaces *Switch before the limit* and *Near at*
+  with *Switch accounts*: *Smart* (Daoris's curve), *My own curve* or *Off*, a chart for each window with each account on it,
+  and under *My own curve* each window's points to edit and *Clear my own curve*, a curve that breaks a rule said in the
+  terminal's words in English and 中文. The list says what passes an account as *over its curve*, *limit reached* or *on usage
+  credits*. Ask Daoris proposes the switch and your own curve. A conversation that went on in another now names that one by
+  its title, with *Open session*.
 - `daoris-driver` and `daoris` from an install's `app/bin/`, in a terminal of your own with nothing set, now find the Daoris
   that runs: its home is the install's `data/` when `DAORIS_HOME` names none, and its service is the one the running window
   holds, by the address it leaves in that home. With Daoris not running, a verb that needs its service says so and names the

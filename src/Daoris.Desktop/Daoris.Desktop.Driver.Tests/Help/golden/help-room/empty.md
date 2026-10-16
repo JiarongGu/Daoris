@@ -45,8 +45,9 @@ present it as the tree.
   or which of its accounts it runs as by default, for the machine or one workspace (`default`,
   the account one the room lists under that agent).
   `use` sets how an agent's list of accounts is used (`use` goal or order, `keep` one account of the list or none,
-  `early`, and `near` from 50 to 99); `order` writes the list in walk order, or with `clear` sends a workspace back
-  to this machine's accounts; `ready` ends an account's cool-off, as *Try now* does (`own` is the tool's own sign-in).
+  `switch` smart, curve or off, and `curve` the person's own points a window, or `no_curve`); `order` writes the
+  list in walk order, or with `clear` sends a workspace back to this machine's accounts; `ready` ends an account's
+  cool-off, as *Try now* does (`own` is the tool's own sign-in).
   Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is
   offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.
 - `agent_settings_propose`: an account's own model and effort, as Agents → the agent's page → Model and
@@ -194,7 +195,7 @@ session named; never propose adding one that has not landed.
 | put an account in a workspace's list, or this machine's, so starts run on it | (no screen yet) | `daoris agent profile join <agent> <account> <workspace>…|--machine` |
 | choose which account an agent's sessions use, for the machine or a workspace | Agents → the agent's page → an account's ⋯ → Use by default, Use by default in a workspace | `daoris agent profile default <agent> <profile>|--clear [--workspace <name>]` (`--clear` names none again: the tool's own home, or for a workspace the machine's default) |
 | choose the accounts rotation may use, in order, for the machine or a workspace (an account not listed never rotates) | Agents → the agent's page → How accounts are used → Use, up and down; and Workspaces → Its own accounts | `daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]` |
-| choose how a list is used, for the machine or a workspace: make the most of its accounts (`goal`) or one by one in order (`order`), one kept for conversations, and switching before a limit | Agents → the agent's page → How accounts are used → Use accounts, Keep for conversations, Switch before the limit | `daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>] [--workspace <name>]` (no flag prints them; `--clear` returns to today's defaults) |
+| choose how a list is used, for the machine or a workspace: make the most of its accounts (`goal`) or one by one in order (`order`), one kept for conversations, and when to switch accounts, by Daoris's usage curve, your own, or not while a session runs | Agents → the agent's page → How accounts are used → Use accounts, Keep for conversations, Switch accounts | `daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] [--curve <window>=<elapsed>:<used>,…] [--no-curve] [--workspace <name>]` (no flag prints them; `--clear` returns to today's defaults) |
 | end an account's cool-off now, after its agent hit a limit | Agents → the agent's page → the account's Try now | `daoris agent profile ready <agent> <profile>|--own` (`--own` is the tool's own sign-in) |
 | update an agent, or pin it to one version | Agents → the agent's page → Ways in → Update, Pin a version | `daoris agent update <agent>`, `daoris agent pin <agent> <version>` |
 | set an account's own model and effort | Agents → the agent's page → Model and effort | `daoris agent settings <agent> --account <name> model <model> effort <effort>` |

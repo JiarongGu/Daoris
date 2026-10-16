@@ -663,6 +663,8 @@ public sealed partial class HelpCoverageTests
         ("agents", "useHarnessAction", "profile-join", JoinDoor),
         ("agents", "useSetAgentSettings", null, new Door("account", "settings")),
         ("agents", "useRefreshHarnesses", null, new Exempt("it reads the roster again and changes nothing.")),
+        // SWITCH1d: *Read now*, and the read as an agent's page opens, ask each account's use with no prompt (D165 point 1).
+        ("agents", "useReadAccounts", null, new Exempt("it reads each account's use again and changes nothing.")),
 
         // TOOLS7: Settings → Tools, answered as D121 §4.3 decides, its doors owed until TOOLS8 builds the `tool` kind.
         ("tools", "useToolUse", "system", new Owed(ToolUseOwed)),

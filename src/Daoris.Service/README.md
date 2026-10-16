@@ -380,7 +380,7 @@ their verbs take, and a landing's `--key` and `--squash`; the tool says a reposi
 proposal the person applies) and `ask_propose` (something to start, as
 an ask at a workspace; since ENTRY1c with the review choice the person said and their words, as the
 composer sends them, and never a kind or a workflow, which are the person's), and since HELP6 `agent_propose` (an agent's update, or a pin to one exact
-version; since HELP10 also the account it runs as by default; since TOOL4l-a also an account's `use`, the walk's `order` and a cool-off's `ready`), `delete_propose` (a quest or an ask made by mistake), `agent_settings_propose` (an account's
+version; since HELP10 also the account it runs as by default; since TOOL4l-a also an account's `use`, the walk's `order` and a cool-off's `ready`; since SWITCH1d the `use` door's `switch` and the person's `curve`, a window each as the terminal's `--curve` spells it, or `no_curve`, in place of `early` and `near`), `delete_propose` (a quest or an ask made by mistake), `agent_settings_propose` (an account's
 own model and effort) and `go_propose` (a place to open, changing nothing: a view, a Settings domain, or a part
 such as Knowledge's mode or a workspace's tab, as D150's UX6i2a and UX6g2b notes list them; since D161 the front door's
 way to take a person to the place, and since ENTRY1f1 one quest or ask on Quests as its `item`, which the driver judges

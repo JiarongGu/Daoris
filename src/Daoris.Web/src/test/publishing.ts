@@ -80,6 +80,8 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   CANCEL_TURN: { scopes: ['sessions'], session: 'id' },
   SESSION_QUEUE_EDIT: { scopes: ['sessions'], session: 'session' },
   ACCOUNT_USE: { scopes: ['harnesses'] },
+  // The accounts' *Read now* and the read as Agents opens (SWITCH1d): each account's use read into its windows.
+  ACCOUNTS_READ: { scopes: ['harnesses'] },
   HARNESS_ACTION: { scopes: ['harnesses'] },
   HARNESSES_REFRESH: { scopes: ['harnesses'] },
   SET_AGENT_SETTINGS: { scopes: ['harnesses'] },

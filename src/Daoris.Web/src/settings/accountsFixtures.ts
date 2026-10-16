@@ -78,10 +78,13 @@ export const AHEAD: AccountFacts = {
   },
 };
 
-/** The machine's list near by its own near of 85: account-2's five-hour window at 88%. */
+/**
+ * The machine's list on the person's own curve, its five-hour window flat at 85 (SWITCH1d; the old `near` derived from it):
+ * account-2's five-hour window at 88% is over it.
+ */
 export const MACHINE_NEAR = scopeOf({
   default: 'account-1', list: ['account-1', 'account-2', 'account-3'], begins: 'account-1',
-  use: { ...USE_DEFAULTS, keep: 'account-3', near: 85 },
+  use: { ...USE_DEFAULTS, keep: 'account-3', near: 85, switch: 'curve', curve: { session: [[0, 85]] } },
   near: [{ account: 'account-2', window: 'session', by: 'number' }],
 });
 
