@@ -236,6 +236,10 @@ repository.
   `DriverModuleOneFlightTests` (two asks read the registry twice before, once after; the next ask reads again),
   `RouteFlightsTests`, `ProcessStartsCensusTests` (red with nine files starting directly and three bare folder doors),
   `GatedStartsTests` and `OpenFolderGateTests` (each start seen nowhere, or on the caller's thread, before; off it after).
+- **And the terminal's shell (TERMSTART1, 2026-10-16):** `DAORIS.TERMINAL`'s `OPEN` started the shell with the pseudo-console's
+  `CreateProcessW`, which no census of .NET's starts saw, in its synchronous part; it now runs that start through the gate's
+  `RunAsync`, and a shell whose terminal was ended while it waited there is ended as it starts. The census counts
+  `CreateProcessW` too. Verify: `TerminalOpenGateTests` (the start on the caller's thread before, off it after).
 
 ## 2026-10-15 — The person-door host missed its 15-second stop once under load: not reproduced, its one long wait bounded (FLAKE2)
 
