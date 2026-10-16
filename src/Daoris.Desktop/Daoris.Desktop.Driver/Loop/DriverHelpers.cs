@@ -417,9 +417,15 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 handed = SpawnServers.Hand(adapter, info, home, sessionId, connector is null ? [] : [connector]);
             }
 
+            // HELPPLUG1c (D170 point 4): the skills plugins hand sessions, as a reviewer's are handed them: words, never a tool.
+            var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
+            using var skilled = new Disposer(() => SpawnSkills.Remove(skills));
+
             // What it may do: the person's composition under the reviewer's read-only shape with `helper_answer`, held to its copy
             // by the tree guard.
-            var handedRules = _driver.HandRules(adapter, info, sessionId, ask.Workspace, ask.Repository, tree: copy.Path, kept: null, opinion: true, helper: true);
+            var handedRules = _driver.HandRules(
+                adapter, info, sessionId, ask.Workspace, ask.Repository, tree: copy.Path, kept: null, opinion: true, helper: true,
+                plugins: skillPlugins);
             var opening = HelperPass.Opening(ask.Repository, ask.Tip, posture);
 
             return await _driver.HoldAsync(
