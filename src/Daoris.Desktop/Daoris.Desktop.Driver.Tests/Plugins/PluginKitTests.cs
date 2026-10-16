@@ -553,13 +553,13 @@ public sealed class PluginKitTests : IDisposable
     public async Task An_installed_plugin_is_tried_by_its_id_with_its_own_data_folder()
     {
         var home = Path.Combine(_scratch, "home");
-        Directory.CreateDirectory(Path.Combine(home, "plugins"));
-        PluginKit.Write(PluginKit.Plan("acme.installed", [HookPoints.SessionEnded], Path.Combine(home, "plugins")));
+        Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Plugins));
+        PluginKit.Write(PluginKit.Plan("acme.installed", [HookPoints.SessionEnded], DaorisHome.Entry(home, HomeEntry.Plugins)));
 
         var trial = await PluginTrials.TryInstalledAsync(home, "acme.installed");
 
         Assert.True(trial.Passed, Describe(trial));
-        Assert.True(Directory.Exists(Path.Combine(home, "plugins", ".data", "acme.installed")));
+        Assert.True(Directory.Exists(DaorisHome.Entry(home, HomeEntry.Plugins,".data", "acme.installed")));
         Assert.Contains("no plugin `acme.nobody`",
             (await Assert.ThrowsAsync<DriverException>(() => PluginTrials.TryInstalledAsync(home, "acme.nobody"))).Message);
     }
@@ -844,8 +844,8 @@ public sealed class PluginKitTests : IDisposable
     [Fact]
     public async Task The_terminals_trial_of_an_installed_plugin_is_one_line_in_the_machine_log_and_a_folders_is_none()
     {
-        Directory.CreateDirectory(Path.Combine(Home, "plugins"));
-        PluginKit.Write(PluginKit.Plan("acme.logged", [HookPoints.SessionEnded], Path.Combine(Home, "plugins")));
+        Directory.CreateDirectory(DaorisHome.Entry(Home, HomeEntry.Plugins));
+        PluginKit.Write(PluginKit.Plan("acme.logged", [HookPoints.SessionEnded], DaorisHome.Entry(Home, HomeEntry.Plugins)));
         var folder = New("acme.loose", [HookPoints.SessionEnded]);
         using (var log = new MachineLog(Home, "driver"))
         {
@@ -853,7 +853,7 @@ public sealed class PluginKitTests : IDisposable
             Assert.Equal(0, await PluginKitCommand.RunAsync(["try", folder], new StringWriter(), Home, log: log));
         }
 
-        var line = Assert.Single(MachineLogReader.Read(Path.Combine(Home, MachineLog.Folder), new LogFilter()).Lines);
+        var line = Assert.Single(MachineLogReader.Read(DaorisHome.Entry(Home, HomeEntry.Logs), new LogFilter()).Lines);
         Assert.Equal("plugin.tried", line.Event);
         Assert.Equal("acme.logged", line.Data.GetProperty("plugin").GetString());
         Assert.True(line.Data.GetProperty("passed").GetBoolean());
@@ -903,7 +903,7 @@ public sealed class PluginKitTests : IDisposable
 
     private static void InstallManifest(string home, string id, IReadOnlyList<string> points)
     {
-        var folder = Path.Combine(home, "plugins", id);
+        var folder = DaorisHome.Entry(home, HomeEntry.Plugins,id);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), JsonSerializer.Serialize(new
         {

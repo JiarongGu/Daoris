@@ -56,7 +56,7 @@ public sealed class AccountRotationTickTests : IDisposable
         }
 
         new HarnessSettings().WithDefault("stub", "account-1").WithRotation("stub", ["account-1", "account-2"])
-            .Save(Path.Combine(_home, "harnesses.json"));
+            .Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
     }
 
     public void Dispose()
@@ -83,7 +83,7 @@ public sealed class AccountRotationTickTests : IDisposable
     {
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         var adapters = AdapterSet.Built();
-        var roster = new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone };
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var lines = new List<AccountLine>();
         client.AccountLined += line => { lock (lines) lines.Add(line); };
@@ -144,7 +144,7 @@ public sealed class AccountRotationTickTests : IDisposable
 
         // Its conversation record opens saying both accounts, the cut-off session and its refused turn, and that no account
         // has said what it has left (TOOL6b, D130 §16.4): the goal's walk chose it, by the step that passed account-1.
-        var opening = new SessionEvents(Path.Combine(_home, "sessions")).After("s2", 0).Events[0];
+        var opening = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s2", 0).Events[0];
         Assert.Equal(SessionEventKind.Note, opening.Kind);
         Assert.Equal(
             $"carried on from session `s1` on `account-2`; the `stub` account `account-1` is cooling until Oct 3, 16:02 "
@@ -176,7 +176,7 @@ public sealed class AccountRotationTickTests : IDisposable
     {
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         var adapters = AdapterSet.Built();
-        var roster = new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone };
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var lines = new List<AccountLine>();
         client.AccountLined += line => { lock (lines) lines.Add(line); };
@@ -244,7 +244,7 @@ public sealed class AccountRotationTickTests : IDisposable
         Assert.DoesNotContain("account-2", note);
 
         // Its conversation record opens naming both stub accounts, the cut-off session and the turn the limit refused.
-        var opening = new SessionEvents(Path.Combine(_home, "sessions")).After("s2", 0).Events[0];
+        var opening = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s2", 0).Events[0];
         Assert.Equal(SessionEventKind.Note, opening.Kind);
         Assert.Equal(
             $"carried on from session `s1` on `account-2`; the `stub` account `account-1` is cooling until Oct 3, 16:02 "
@@ -272,7 +272,7 @@ public sealed class AccountRotationTickTests : IDisposable
     [Fact]
     public async Task A_signed_out_default_the_order_lists_is_walked_past_to_the_next_account()
     {
-        var roster = new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone };
+        var roster = new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         await roster.ReportAsync("stub", Config(signedOut: "account-1"), refresh: true);
 
         var selection = await roster.SelectAsync("stub", Config(signedOut: "account-1"), "default", null);
@@ -289,7 +289,7 @@ public sealed class AccountRotationTickTests : IDisposable
     [Fact]
     public async Task An_order_all_signed_out_is_refused_naming_each_account_and_its_sign_in()
     {
-        var roster = new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone };
+        var roster = new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         await roster.ReportAsync("stub", Config(signedOut: "account-1,account-2"), refresh: true);
 
         var selection = await roster.SelectAsync("stub", Config(signedOut: "account-1,account-2"), "default", null);
@@ -307,7 +307,7 @@ public sealed class AccountRotationTickTests : IDisposable
 
     private JsonObject[] Frames() => [.. StubFile.Lines(ResumeLog).Select(line => JsonNode.Parse(line)!.AsObject())];
 
-    private IReadOnlyList<SessionEvent> Events(string session) => new SessionEvents(Path.Combine(_home, "sessions")).After(session, 0).Events;
+    private IReadOnlyList<SessionEvent> Events(string session) => new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(session, 0).Events;
 
     /// <summary>The protocol door onto the stub's accounts, its agent resuming conversations; <paramref name="signedOut"/> as the stub's sign-in answers it.</summary>
     private DriverConfig Resuming(string mode, string signedOut = "-") => DriverConfig.Empty with
@@ -337,7 +337,7 @@ public sealed class AccountRotationTickTests : IDisposable
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
         var adapters = AdapterSet.Built();
-        var roster = new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone };
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var driver = new Daoris.Driver.Driver(client, Resuming("closes"), adapters, _home, processes: new SessionProcesses(), harnesses: roster);
 
@@ -367,7 +367,7 @@ public sealed class AccountRotationTickTests : IDisposable
     {
         await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
         var adapters = AdapterSet.Built();
-        var roster = new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone };
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         using var client = new ServiceClient(service.Url, null);
         var driver = new Daoris.Driver.Driver(client, Resuming("fails"), adapters, _home, processes: new SessionProcesses(), harnesses: roster);
 
@@ -438,13 +438,13 @@ public sealed class AccountRotationTickTests : IDisposable
         using var client = new ServiceClient(service.Url, null);
         var first = new Daoris.Driver.Driver(
             client, Resuming("fails"), adapters, _home, processes: new SessionProcesses(),
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone });
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone });
         await first.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
         Assert.Equal(("failed", "account-1"), (service.State("s1"), Profile(service, "s1")));
         await service.SayAsync("s1", "Also log the port.");
 
         // account-1 signs out, and the person's press reads it so, before the next look.
-        var roster = new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone };
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
         await roster.ReportAsync("stub", Resuming("fails", signedOut: "account-1"), refresh: true);
         var signedOut = new Daoris.Driver.Driver(
             client, Resuming("fails", signedOut: "account-1"), adapters, _home, processes: new SessionProcesses(),

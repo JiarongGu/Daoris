@@ -47,7 +47,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     [Fact]
     public async Task A_declared_harness_is_on_the_roster_naming_the_plugin_it_came_from()
     {
-        var folder = Path.Combine(Home, "plugins", "acme.gate");
+        var folder = DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.gate");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), """
             { "id": "acme.gate", "harnesses": [ { "name": "acme-agent", "command": ["${plugin}/agent.mjs"], "profileVariable": "ACME_HOME" } ] }
@@ -107,7 +107,7 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     [Fact]
     public async Task The_roster_says_each_doors_mark_and_whether_it_has_an_installer()
     {
-        var folder = Path.Combine(Home, "plugins", "acme.gate");
+        var folder = DaorisHome.Entry(Home, HomeEntry.Plugins,"acme.gate");
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), """
             { "id": "acme.gate", "harnesses": [ { "name": "acme-agent", "command": ["${plugin}/agent.mjs"] } ] }

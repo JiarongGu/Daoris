@@ -34,7 +34,7 @@ public sealed class HelpClearDoorTests : DriverModuleBridge
         var outcome = await doors.ClearHistoryAsync(HistoryScope.Quest, "q1", [new HistoryUnitName("quest", "q1")], CancellationToken.None);
 
         Assert.Equal(["q1"], outcome.Cleared.Select(each => each.Id));
-        Assert.False(File.Exists(Path.Combine(Home, "sessions", "s1.log")));
+        Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions,"s1.log")));
     }
 
     [Fact]
@@ -63,12 +63,12 @@ public sealed class HelpClearDoorTests : DriverModuleBridge
 
         Assert.Equal("p1a2b3c4", drawn.GetProperty("proposals")[0].GetProperty("id").GetString());
         Assert.Contains("\"units\"", File.ReadAllText(path));
-        Assert.True(File.Exists(Path.Combine(Home, "sessions", "s1.log")));
+        Assert.True(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions,"s1.log")));
 
         var applied = await AnswerAsync(module, "HELP_APPLY", new { id = "p1a2b3c4" });
 
         Assert.True(applied.GetProperty("applied").GetBoolean());
-        Assert.False(File.Exists(Path.Combine(Home, "sessions", "s1.log")));
+        Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions,"s1.log")));
     }
 
     /// <summary>HIST1f-d: the <c>failed</c> door is read as the quest's failed sessions, so its card lists that unit, not the quest.</summary>
@@ -103,14 +103,14 @@ public sealed class HelpClearDoorTests : DriverModuleBridge
 
         await Assert.ThrowsAnyAsync<Exception>(() => AnswerAsync(module, "HELP_APPLY", new { id = "p1a2b3c4" }));
 
-        Assert.True(File.Exists(Path.Combine(Home, "sessions", "s1.log")));
+        Assert.True(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions,"s1.log")));
     }
 
     private void Kept(string id)
     {
-        Directory.CreateDirectory(Path.Combine(Home, "sessions", id, "files"));
-        File.WriteAllText(Path.Combine(Home, "sessions", $"{id}.events.jsonl"), "{\"seq\":1,\"kind\":\"user\",\"text\":\"a plan\"}\n");
-        File.WriteAllText(Path.Combine(Home, "sessions", $"{id}.log"), "the transcript");
+        Directory.CreateDirectory(DaorisHome.Entry(Home, HomeEntry.SessionFiles, id));
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Sessions,$"{id}.events.jsonl"), "{\"seq\":1,\"kind\":\"user\",\"text\":\"a plan\"}\n");
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Sessions,$"{id}.log"), "the transcript");
     }
 
     private async Task<DriverModule> UpAsync(LoopbackHost ledger)

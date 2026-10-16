@@ -41,7 +41,7 @@ public static class OpinionPackets
             throw new DriverException($"`{opinion}` is no second opinion's id, so it names no folder.");
         }
 
-        return Path.Combine(home, "opinions", id);
+        return DaorisHome.Entry(home, HomeEntry.OpinionPackets, id);
     }
 
     /// <summary>The commits git listed, each a full id, each once, in its order; a line that is no full id is none.</summary>

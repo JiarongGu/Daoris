@@ -231,7 +231,7 @@ public sealed class OpeningNoteTests : IDisposable
     {
         using var ledger = new StandInLedger();
         using var service = ledger.Client();
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var passed = new AccountState("account-1", AccountReadiness.Cooling, Cooling);
         var selection = Chosen("account-2", new WalkChoice(WalkStep.Cooling, WalkStep.LeastRecent), passed, AccountRotationWalkTests.Facts("account-2:s-1d"), rotated: true);
 
@@ -266,7 +266,7 @@ public sealed class OpeningNoteTests : IDisposable
     {
         using var ledger = new StandInLedger();
         using var service = ledger.Client();
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var facts = AccountRotationWalkTests.Facts("account-1:S95");
         var selection = Chosen("account-2", new WalkChoice(WalkStep.Near) { Over = "account-1" }, null, facts, rotated: true) with { Choice = null };
 
@@ -293,7 +293,7 @@ public sealed class OpeningNoteTests : IDisposable
     {
         using var ledger = new StandInLedger();
         using var service = ledger.Client();
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var bare = new HarnessSelection(null, "account-3") { Choice = new AccountChoice(WalkStep.Fewest, "it runs the fewest of Daoris's sessions") };
         var mismatched = bare with { Steps = [new StepSaid("Daoris started on it least recently", OpeningWhy.LeastRecent, [])] };
 

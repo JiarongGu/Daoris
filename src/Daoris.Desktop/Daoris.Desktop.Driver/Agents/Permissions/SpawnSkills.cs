@@ -60,7 +60,7 @@ public static class SpawnSkills
     /// </summary>
     public static (string? Folder, IReadOnlyList<string> Plugins) Write(string home, string sessionId, PluginCatalog catalog, string to)
     {
-        var folder = Path.Combine(home, SpawnServers.Folder, $"{sessionId}.plugins");
+        var folder = DaorisHome.Entry(home, HomeEntry.Spawn, $"{sessionId}.plugins");
         var plugins = new List<string>();
         foreach (var entry in catalog.Contributing)
         {

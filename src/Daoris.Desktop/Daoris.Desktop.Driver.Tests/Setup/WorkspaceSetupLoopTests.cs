@@ -86,7 +86,7 @@ public sealed class WorkspaceSetupLoopTests : IDisposable
         var runs = new StandInRuns(service, _ledger);
         var adapters = AdapterSet.Built();
         var driver = new Daoris.Driver.Driver(
-            service, Config, adapters, _home, harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")))
+            service, Config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Runner = runs.Runner,
             SetupPlans = () => _world,

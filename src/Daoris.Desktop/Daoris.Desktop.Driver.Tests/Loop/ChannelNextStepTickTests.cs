@@ -52,7 +52,7 @@ public sealed class ChannelNextStepTickTests : IDisposable
 
     private JsonObject[] Prompts() => [.. Heard().Where(line => line["method"]!.GetValue<string>() == "session/prompt")];
 
-    private IReadOnlyList<SessionEvent> Events(string session) => new SessionEvents(Path.Combine(_home, "sessions")).After(session, 0).Events;
+    private IReadOnlyList<SessionEvent> Events(string session) => new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(session, 0).Events;
 
     private Daoris.Driver.Driver Protocol(ChannelStandIn service, string mode, SessionProcesses processes)
     {
@@ -68,7 +68,7 @@ public sealed class ChannelNextStepTickTests : IDisposable
         };
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: processes,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     /// <summary>

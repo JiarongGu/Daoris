@@ -15,14 +15,14 @@ public sealed class SessionDeletionTests : IDisposable
 {
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-delete-" + Guid.NewGuid().ToString("N")[..8]);
 
-    public SessionDeletionTests() => Directory.CreateDirectory(Path.Combine(_home, "sessions"));
+    public SessionDeletionTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     public void Dispose()
     {
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private string Sessions => Path.Combine(_home, "sessions");
+    private string Sessions => DaorisHome.Entry(_home, HomeEntry.Sessions);
 
     private static JsonObject Record(string id, string state = "completed", string kind = "chat", string repository = "engine",
         string? quest = null, string? tree = null, string? ask = null, bool deletable = true) => new()
@@ -85,9 +85,9 @@ public sealed class SessionDeletionTests : IDisposable
             Kept(id);
             File.WriteAllText(Path.Combine(Sessions, id + GoOnMarks.Suffix), "{\"said\":[\"w1\"],\"why\":\"closed\",\"at\":\"2026-10-03T09:00:00Z\"}\n");
             File.WriteAllText(Path.Combine(Sessions, id + NewSessionChoices.Suffix), "{\"said\":[\"w1\"],\"at\":\"2026-10-03T09:00:00Z\"}\n");
-            Directory.CreateDirectory(Path.Combine(_home, SpawnServers.Folder));
-            File.WriteAllText(Path.Combine(_home, SpawnServers.Folder, $"{id}.mcp.json"), "{}");
-            File.WriteAllText(Path.Combine(_home, SpawnServers.Folder, $"{id}.settings.json"), "{}");
+            Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Spawn));
+            File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Spawn,$"{id}.mcp.json"), "{}");
+            File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Spawn,$"{id}.settings.json"), "{}");
             var landings = new AutoLandings(_home);
             landings.Due(new AutoLanding(id, "q1", "engine", "default", "a tree", DateTimeOffset.UtcNow));
             landings.Tried(id, new AutoTry(DateTimeOffset.UtcNow, AutoLandingCode.Landed), close: true);
@@ -110,15 +110,15 @@ public sealed class SessionDeletionTests : IDisposable
         Assert.Equal(["record", "conversation", "transcript", "files", "harness", "mark", "choice", "spawn", "held", "landing", "archived"], outcome.Removed);
         Assert.False(File.Exists(Path.Combine(Sessions, "c1" + GoOnMarks.Suffix)));
         Assert.False(File.Exists(Path.Combine(Sessions, "c1" + NewSessionChoices.Suffix)));
-        Assert.False(File.Exists(Path.Combine(_home, SpawnServers.Folder, "c1.mcp.json")));
-        Assert.False(File.Exists(Path.Combine(_home, SpawnServers.Folder, "c1.settings.json")));
+        Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.Spawn,"c1.mcp.json")));
+        Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.Spawn,"c1.settings.json")));
         Assert.Null(new AutoLandings(_home).Of("c1"));
         Assert.DoesNotContain("c1", File.ReadAllText(HeldWordsFile.PathOf(_home)));
 
         Assert.True(AnyKept("c2"));
         Assert.True(File.Exists(Path.Combine(Sessions, "c2" + GoOnMarks.Suffix)));
         Assert.True(File.Exists(Path.Combine(Sessions, "c2" + NewSessionChoices.Suffix)));
-        Assert.True(File.Exists(Path.Combine(_home, SpawnServers.Folder, "c2.settings.json")));
+        Assert.True(File.Exists(DaorisHome.Entry(_home, HomeEntry.Spawn,"c2.settings.json")));
         Assert.NotNull(new AutoLandings(_home).Of("c2"));
         Assert.Contains("\"c2\"", File.ReadAllText(HeldWordsFile.PathOf(_home)));
     }
@@ -250,7 +250,7 @@ public sealed class SessionDeletionTests : IDisposable
     [Fact]
     public async Task Its_tree_still_here_refuses_before_the_ledger_is_asked_to_delete()
     {
-        var tree = Path.Combine(_home, "trees", "default", "engine", "s-1a2b3c4d");
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees,"default", "engine", "s-1a2b3c4d");
         Directory.CreateDirectory(tree);
         File.WriteAllText(Path.Combine(tree, "work.txt"), "work");
         Kept("c1");
@@ -269,7 +269,7 @@ public sealed class SessionDeletionTests : IDisposable
     [Fact]
     public async Task A_tree_gone_or_a_checkout_does_not_refuse()
     {
-        var gone = Path.Combine(_home, "trees", "default", "engine", "s-gone0000");
+        var gone = DaorisHome.Entry(_home, HomeEntry.Trees,"default", "engine", "s-gone0000");
         var checkout = Path.Combine(_home, "checkouts", "engine");
         Directory.CreateDirectory(checkout);
         File.WriteAllText(Path.Combine(checkout, "README.md"), "a checkout");
@@ -312,7 +312,7 @@ public sealed class SessionDeletionTests : IDisposable
     [MemberData(nameof(LedgerRefusals))]
     public async Task The_ledgers_refusal_is_said_first_with_its_word_and_facts(string word, DeleteVerdict verdict)
     {
-        var tree = Path.Combine(_home, "trees", "default", "engine", "s-9f8e7d6c");
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees,"default", "engine", "s-9f8e7d6c");
         Directory.CreateDirectory(tree);
         File.WriteAllText(Path.Combine(tree, "work.txt"), "work");
         var ledger = new Ledger(Record("s1", kind: "driven", quest: "q1", tree: tree, deletable: false))
@@ -400,7 +400,7 @@ public sealed class SessionDeletionTests : IDisposable
     [Fact]
     public void Kept_names_the_sessions_whose_tree_or_landing_this_machine_holds()
     {
-        var tree = Path.Combine(_home, "trees", "default", "engine", "s-1a2b3c4d");
+        var tree = DaorisHome.Entry(_home, HomeEntry.Trees,"default", "engine", "s-1a2b3c4d");
         Directory.CreateDirectory(tree);
         File.WriteAllText(Path.Combine(tree, "work.txt"), "work");
         new LandedBranches(_home).Record(new LandedBranch(
@@ -432,7 +432,7 @@ public sealed class SessionDeletionTests : IDisposable
         public IReadOnlyList<string> Lines()
         {
             Log.Dispose();
-            var folder = Path.Combine(home, MachineLog.Folder);
+            var folder = DaorisHome.Entry(home, HomeEntry.Logs);
             return Directory.Exists(folder) ? [.. Directory.GetFiles(folder).SelectMany(StubFile.Lines)] : [];
         }
     }

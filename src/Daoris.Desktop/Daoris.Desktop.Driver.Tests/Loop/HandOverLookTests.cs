@@ -25,7 +25,7 @@ public sealed class HandOverLookTests : IDisposable
 
     public HandOverLookTests()
     {
-        Directory.CreateDirectory(Path.Combine(_home, "sessions"));
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
         _ledger.Register("engine", Path.Combine(_home, "engine"));
         _ledger.Publish("q1", "engine");
         _ledger.Driven("s1", "q1", Path.Combine(_home, "tree-s1"), adapter: "claude-code", profile: "account-1");
@@ -44,7 +44,7 @@ public sealed class HandOverLookTests : IDisposable
     {
         var service = _ledger.Client();
         var adapters = AdapterSet.Built();
-        return new Daoris.Driver.Driver(service, Config(), adapters, _home, harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")))
+        return new Daoris.Driver.Driver(service, Config(), adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Stops = (session, note) =>
             {

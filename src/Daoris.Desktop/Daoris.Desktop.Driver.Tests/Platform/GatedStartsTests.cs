@@ -124,7 +124,8 @@ public sealed class GatedStartsTests : IDisposable
 
     private PluginEntry Plugin() =>
         new(new PluginManifest("probe", 1, "probe", "1.0.0", "", [], new PluginHooks([Nowhere, "hooks.mjs"], ["quest/consider"]), []),
-            Path.Combine(_home, "plugins", "probe"), Path.Combine(_home, "plugins", ".data", "probe"), Enabled: true, Problem: null);
+            DaorisHome.Entry(_home, HomeEntry.Plugins, "probe"), DaorisHome.Entry(_home, HomeEntry.Plugins, PluginCatalog.DataFolder, "probe"),
+            Enabled: true, Problem: null);
 
     /// <summary>A service that answers every read with nothing: the start is refused before the driver asks it anything.</summary>
     private sealed class Empty : HttpMessageHandler

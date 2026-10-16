@@ -140,7 +140,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         Assert.Equal(2, plan.Pilot);
         Assert.Null(plan.Paused);
         Assert.True(plan.Live);
-        Assert.Equal(Path.Combine(_home, "setup", "work.json"), WorkspaceSetupFile.PathOf(_home, "work"));
+        Assert.Equal(DaorisHome.Entry(_home, HomeEntry.Setup,"work.json"), WorkspaceSetupFile.PathOf(_home, "work"));
         Assert.Equal(Four, Plan().Order);
         Assert.Empty(world.Published);
 
@@ -650,7 +650,7 @@ public sealed class WorkspaceSetupTests : IDisposable
         var bytes = File.ReadAllBytes(path);
         var (read, problem) = WorkspaceSetupFile.Load(_home, "work things");
 
-        Assert.StartsWith(Path.Combine(_home, "setup"), path, StringComparison.Ordinal);
+        Assert.StartsWith(DaorisHome.Entry(_home, HomeEntry.Setup), path, StringComparison.Ordinal);
         Assert.False(bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF);
         Assert.DoesNotContain("\r", Encoding.UTF8.GetString(bytes), StringComparison.Ordinal);
         Assert.Null(problem);

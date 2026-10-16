@@ -45,7 +45,7 @@ public sealed class SessionLogTests : IDisposable
     private Watching Watch()
     {
         var client = new ServiceClient(Ledger, null, new HttpClient(_ledger));
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var log = new MachineLog(_home, "desktop", () => _now);
         return new Watching(client, events, log, new SessionLog(log, client, events, () => _now));
     }
@@ -53,7 +53,7 @@ public sealed class SessionLogTests : IDisposable
     /// <summary>Every line written so far, parsed.</summary>
     private List<JsonElement> Lines()
     {
-        var folder = Path.Combine(_home, MachineLog.Folder);
+        var folder = DaorisHome.Entry(_home, HomeEntry.Logs);
         if (!Directory.Exists(folder)) return [];
         return
         [
@@ -63,7 +63,7 @@ public sealed class SessionLogTests : IDisposable
         ];
     }
 
-    private string Raw() => string.Join("\n", Directory.GetFiles(Path.Combine(_home, MachineLog.Folder)).Select(StubFile.Text));
+    private string Raw() => string.Join("\n", Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs)).Select(StubFile.Text));
 
     private List<JsonElement> Named(string @event) =>
         [.. Lines().Where(line => line.GetProperty("event").GetString() == @event)];

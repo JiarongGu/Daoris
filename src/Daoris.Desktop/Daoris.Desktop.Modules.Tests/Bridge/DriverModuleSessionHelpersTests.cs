@@ -93,7 +93,7 @@ public sealed class DriverModuleSessionHelpersTests : DriverModuleBridge
     public async Task A_sessions_asks_are_listed_with_where_the_look_left_each()
     {
         var files = new HelperFiles(Home);
-        Directory.CreateDirectory(Path.Combine(Home, HelperFiles.Folder));
+        Directory.CreateDirectory(DaorisHome.Entry(Home, HomeEntry.Helpers));
         var first = files.WriteAsk("c1", "Read the loader.", null, DateTimeOffset.Parse("2026-10-16T09:00:00Z"));
         var second = AgentAsk(files, "a2", "c1", "Is the cap right?", "2026-10-16T09:01:00Z");
         var third = AgentAsk(files, "a3", "c1", "Which test?", "2026-10-16T09:02:00Z");
@@ -122,7 +122,7 @@ public sealed class DriverModuleSessionHelpersTests : DriverModuleBridge
     public async Task The_persons_yes_lets_an_agents_ask_go_and_refuses_by_code_what_waits_on_none()
     {
         var files = new HelperFiles(Home);
-        Directory.CreateDirectory(Path.Combine(Home, HelperFiles.Folder));
+        Directory.CreateDirectory(DaorisHome.Entry(Home, HomeEntry.Helpers));
         var waiting = AgentAsk(files, "a1", "c1", "Is the cap right?", "2026-10-16T09:00:00Z");
         files.WriteState(new HelperState(waiting, HelperStates.Waiting, null, null, DateTimeOffset.UtcNow));
         var unread = AgentAsk(files, "a2", "c1", "Not looked at yet.", "2026-10-16T09:01:00Z");
@@ -163,7 +163,7 @@ public sealed class DriverModuleSessionHelpersTests : DriverModuleBridge
     public async Task The_persons_no_refuses_an_agents_ask_with_its_note_and_refuses_by_code_what_waits_on_none()
     {
         var files = new HelperFiles(Home);
-        Directory.CreateDirectory(Path.Combine(Home, HelperFiles.Folder));
+        Directory.CreateDirectory(DaorisHome.Entry(Home, HomeEntry.Helpers));
         var waiting = AgentAsk(files, "a1", "c1", "Is the cap right?", "2026-10-16T09:00:00Z");
         files.WriteState(new HelperState(waiting, HelperStates.Waiting, null, null, DateTimeOffset.UtcNow));
         var unread = AgentAsk(files, "a2", "c1", "Not looked at yet.", "2026-10-16T09:01:00Z");
@@ -216,7 +216,7 @@ public sealed class DriverModuleSessionHelpersTests : DriverModuleBridge
     public async Task The_asks_waiting_on_the_persons_word_are_listed_across_sessions_oldest_first()
     {
         var files = new HelperFiles(Home);
-        Directory.CreateDirectory(Path.Combine(Home, HelperFiles.Folder));
+        Directory.CreateDirectory(DaorisHome.Entry(Home, HomeEntry.Helpers));
         foreach (var (id, asker, at, state, code) in new[]
                  {
                      ("a1", "c1", "2026-10-16T09:01:00Z", HelperStates.Waiting, (string?)null),

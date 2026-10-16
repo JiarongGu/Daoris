@@ -21,7 +21,7 @@ public sealed class MachineLogProviderTests : IDisposable
 
     private string[] Lines()
     {
-        var folder = Path.Combine(_home, MachineLog.Folder);
+        var folder = DaorisHome.Entry(_home, HomeEntry.Logs);
         if (!Directory.Exists(folder)) return [];
         return Directory.GetFiles(folder).SelectMany(path =>
         {

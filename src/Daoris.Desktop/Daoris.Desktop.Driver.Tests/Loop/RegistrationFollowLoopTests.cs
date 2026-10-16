@@ -18,7 +18,7 @@ public sealed class RegistrationFollowLoopTests : IDisposable
 
     private readonly CancellationTokenSource _closing = new(TimeSpan.FromSeconds(60));
 
-    private string Tree => Path.Combine(_home, "trees", "engine-1");
+    private string Tree => DaorisHome.Entry(_home, HomeEntry.Trees,"engine-1");
 
     public RegistrationFollowLoopTests()
     {
@@ -38,7 +38,7 @@ public sealed class RegistrationFollowLoopTests : IDisposable
 
     private Daoris.Driver.Driver Driver() => new(
         _ledger.Client(), DriverConfig.Empty, AdapterSet.Built(), _home,
-        harnesses: new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")));
+        harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
     [Fact]
     public async Task A_look_follows_a_line_daoris_moved_once_and_says_what_must_be_fixed()
@@ -65,11 +65,11 @@ public sealed class RegistrationFollowLoopTests : IDisposable
     [Fact]
     public async Task A_watch_follows_every_line_once_as_it_starts_and_says_it_in_a_looks_report()
     {
-        var config = Path.Combine(_home, "driver.json");
+        var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, """{ "drivable": [], "pollSeconds": 1 }""");
         var watch = new DriverWatch(
             _ledger.Client(), config, _home, new SessionProcesses(), sync: null,
-            harnesses: new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
         var said = new List<string>();
         var looks = 0;
         var watching = watch.RunAsync(

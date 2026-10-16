@@ -29,7 +29,7 @@ public sealed class SessionBranchDiscardTests : IDisposable
     }
 
     /// <summary>The tree Daoris's layout gives the branch, under this home's trees.</summary>
-    private string Tree => Path.Combine(_home, "trees", "aurora", "engine", "s-1a2b3c4d");
+    private string Tree => DaorisHome.Entry(_home, HomeEntry.Trees,"aurora", "engine", "s-1a2b3c4d");
 
     private SessionBranchDiscard Discard() => new(new SessionTrees(_home));
 
@@ -89,8 +89,8 @@ public sealed class SessionBranchDiscardTests : IDisposable
         {
             Live =
             [
-                ("s2", "working", Path.Combine(_home, "trees", "aurora", "engine", "s-ffffffff")),
-                ("s3", "working", Path.Combine(_home, "trees", "aurora", "game", "s-1a2b3c4d")),
+                ("s2", "working", DaorisHome.Entry(_home, HomeEntry.Trees,"aurora", "engine", "s-ffffffff")),
+                ("s3", "working", DaorisHome.Entry(_home, HomeEntry.Trees,"aurora", "game", "s-1a2b3c4d")),
             ],
         };
 

@@ -1,3 +1,5 @@
+using Daoris.Knowledge;
+
 namespace Daoris.Service.Tests;
 
 /// <summary>The <c>delete</c> kind's writer (HELP6): a quest or an ask made by mistake, by its id — the drawer's and the record's Delete.</summary>
@@ -28,6 +30,6 @@ public sealed class HelpDeleteProposalTests : HelpProposalBoxFixture
         Assert.Null(id);
         Assert.Contains(says, message);
         Assert.Contains("Nothing was proposed", message);
-        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 }

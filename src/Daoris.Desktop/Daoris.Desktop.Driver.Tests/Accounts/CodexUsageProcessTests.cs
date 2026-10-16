@@ -17,7 +17,7 @@ public sealed class CodexUsageProcessTests : IDisposable
 {
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-codexuse-run-" + Guid.NewGuid().ToString("N")[..8]);
 
-    private string Settings => Path.Combine(_home, "harnesses.json");
+    private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
     private string Script => Path.Combine(_home, "app-server.mjs");
 

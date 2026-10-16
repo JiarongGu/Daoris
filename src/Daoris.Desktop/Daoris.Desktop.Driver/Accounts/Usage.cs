@@ -47,7 +47,7 @@ public sealed class SessionUsage(string home)
     /// </summary>
     public const int Retained = 500;
 
-    private readonly string _path = Path.Combine(home, "usage.json");
+    private readonly string _path = DaorisHome.Entry(home, HomeEntry.Usage);
 
     /// <summary>Every measured session, oldest first.</summary>
     public IReadOnlyList<UsageEntry> Sessions => Load();

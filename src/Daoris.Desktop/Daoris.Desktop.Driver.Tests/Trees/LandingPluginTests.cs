@@ -49,7 +49,7 @@ public sealed class LandingPluginTests : LandingPluginFixture
         Assert.False(Directory.Exists(opened.Path));
 
         // What the plugin was told, and that the branch was already there when it was.
-        var told = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(Home, "plugins", ".data", Id, "landed.json"))).RootElement;
+        var told = JsonDocument.Parse(await File.ReadAllTextAsync(DaorisHome.Entry(Home, HomeEntry.Plugins,".data", Id, "landed.json"))).RootElement;
         Assert.True(told.GetProperty("branchExisted").GetBoolean());
         var frame = told.GetProperty("frame");
         Assert.Equal(branch, frame.GetProperty("branch").GetString());

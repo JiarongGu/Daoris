@@ -283,7 +283,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     /// <summary>A plugin switched on, speaking on the points named.</summary>
     private void Plugin(string id, string[] points)
     {
-        var folder = Path.Combine(Home, "plugins", id);
+        var folder = DaorisHome.Entry(Home, HomeEntry.Plugins,id);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), JsonSerializer.Serialize(new
         {

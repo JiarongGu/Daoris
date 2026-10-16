@@ -30,7 +30,7 @@ public static class PluginActivity
     {
         var (entry, manifest, _) = PluginPage.Installed(home, id);
         var plugin = entry.Manifest.Id;
-        var folder = Path.Combine(home, MachineLog.Folder);
+        var folder = DaorisHome.Entry(home, HomeEntry.Logs);
         var read = MachineLogReader.Read(folder, new LogFilter(Since: since));
 
         var pushes = new LandedBranches(home).PushedBy(plugin)

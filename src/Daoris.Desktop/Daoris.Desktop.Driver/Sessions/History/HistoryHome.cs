@@ -20,8 +20,8 @@ internal static class HistoryHome
     internal static HistoryBytes KeptFiles(SessionHomeFiles files, IEnumerable<string> quests, IEnumerable<string> asks)
     {
         var home = files.Home;
-        var kept = quests.Where(Plain).Sum(quest => HistoryBytes.Of(Path.Combine(home, QuestFolder, quest)))
-                   + asks.Where(Plain).Sum(ask => HistoryBytes.Of(Path.Combine(home, AskFolder, ask)))
+        var kept = quests.Where(Plain).Sum(quest => HistoryBytes.Of(DaorisHome.Entry(home, HomeEntry.QuestFiles, quest)))
+                   + asks.Where(Plain).Sum(ask => HistoryBytes.Of(DaorisHome.Entry(home, HomeEntry.AskFiles, ask)))
                    + BoundRuns(home, quests).Sum(run => HistoryBytes.Of(WorkflowRunBindings.PathOf(home, run)));
         return new HistoryBytes(0, 0, 0, kept, 0);
     }
@@ -87,7 +87,7 @@ internal static class HistoryHome
             ConversationBytes = chats.Sum(record => machine.Files.Size(record.Id).Total),
             LeftOver = leftOver.Count,
             LeftOverBytes = leftOver.Sum(file => file.Bytes),
-            Log = HistoryBytes.Of(Path.Combine(world.Home, MachineLog.Folder)),
+            Log = HistoryBytes.Of(DaorisHome.Entry(world.Home, HomeEntry.Logs)),
         };
     }
 
@@ -114,7 +114,7 @@ internal static class HistoryHome
             if (Touched(path, folder) < before) found.Add(new LeftOverFile(path, folder, HistoryBytes.Of(path)));
         }
 
-        var sessions = Path.Combine(world.Home, "sessions");
+        var sessions = DaorisHome.Entry(world.Home, HomeEntry.Sessions);
         foreach (var file in Files(sessions))
         {
             if (IdOf(Path.GetFileName(file), SessionHomeFiles.SessionSuffixes) is { } id && Gone(id)) Add(file, folder: false);
@@ -126,18 +126,18 @@ internal static class HistoryHome
             if (!string.Equals(id, RequestsFolder, StringComparison.OrdinalIgnoreCase) && Gone(id)) Add(folder, folder: true);
         }
 
-        foreach (var file in Files(Path.Combine(world.Home, SpawnServers.Folder)))
+        foreach (var file in Files(DaorisHome.Entry(world.Home, HomeEntry.Spawn)))
         {
             if (IdOf(Path.GetFileName(file), SessionHomeFiles.SpawnSuffixes) is { } id && Gone(id)) Add(file, folder: false);
         }
 
-        foreach (var folder in Folders(Path.Combine(world.Home, QuestFolder)))
+        foreach (var folder in DaorisHome.Places(world.Home, HomeEntry.QuestFiles).SelectMany(Folders))
         {
             var id = Path.GetFileName(folder);
             if (Plain(id) && !quests.Contains(id)) Add(folder, folder: true);
         }
 
-        foreach (var folder in Folders(Path.Combine(world.Home, AskFolder)))
+        foreach (var folder in DaorisHome.Places(world.Home, HomeEntry.AskFiles).SelectMany(Folders))
         {
             var id = Path.GetFileName(folder);
             if (Plain(id) && !asks.Contains(id)) Add(folder, folder: true);

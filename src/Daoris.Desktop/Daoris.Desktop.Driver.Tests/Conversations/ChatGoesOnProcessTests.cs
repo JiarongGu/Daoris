@@ -37,13 +37,13 @@ public sealed class ChatGoesOnProcessTests : IDisposable
 
     private string[] HeardLines() => StubFile.Lines(Heard);
 
-    private SessionEvents Events => new(Path.Combine(_home, "sessions"));
+    private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     /// <summary>The machine's choices, saved where the runner reads them when it takes words up by itself.</summary>
     private DriverConfig Config(string adapter, params string[] command)
     {
         var config = DriverConfig.Empty with { Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = command } };
-        config.Save(Path.Combine(_home, "driver.json"));
+        config.Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         return config;
     }
 
@@ -51,8 +51,8 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     {
         var adapters = AdapterSet.Built();
         return new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
     /// <summary>
@@ -115,8 +115,8 @@ public sealed class ChatGoesOnProcessTests : IDisposable
             .Select(e => (e.Id, e.Text, e.Origin));
         Assert.Equal([("w1", "Also log the port.", "person"), ("w2", "No, 9090.", "person")], taken);
         Assert.Contains(events.After(id, 0).Events, e => e.Kind == SessionEventKind.Note && e.Text!.Contains("resumed on `acp-stub`"));
-        Assert.Contains("carrying on: Also log the port.", StubFile.Text(Path.Combine(_home, "sessions", $"{id}.log")));
-        Assert.Contains("heard first", StubFile.Text(Path.Combine(_home, "sessions", $"{id}.log")));
+        Assert.Contains("carrying on: Also log the port.", StubFile.Text(DaorisHome.Entry(_home, HomeEntry.Sessions,$"{id}.log")));
+        Assert.Contains("heard first", StubFile.Text(DaorisHome.Entry(_home, HomeEntry.Sessions,$"{id}.log")));
     }
 
     /// <summary>

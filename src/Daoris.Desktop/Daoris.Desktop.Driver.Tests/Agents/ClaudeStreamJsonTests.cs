@@ -353,7 +353,7 @@ public sealed class ClaudeStreamJsonTests
         Directory.CreateDirectory(home);
         try
         {
-            var events = new SessionEvents(Path.Combine(home, "sessions"));
+            var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
             using var log = new MachineLog(home, "desktop");
             using var client = new ServiceClient("http://ledger.test", null, new HttpClient());
             using var watch = new SessionLog(log, client, events);
@@ -363,7 +363,7 @@ public sealed class ClaudeStreamJsonTests
                 stdout, new StringReader(""), Path.Combine(home, "s1.log"), "s1", output: null, events,
                 new ClaudeStreamJson(), prompt: "push it", CancellationToken.None);
 
-            var written = string.Join('\n', Directory.GetFiles(Path.Combine(home, MachineLog.Folder)).Select(StubFile.Text));
+            var written = string.Join('\n', Directory.GetFiles(DaorisHome.Entry(home, HomeEntry.Logs)).Select(StubFile.Text));
             var asks = written.Split('\n', StringSplitOptions.RemoveEmptyEntries)
                 .Select(line => System.Text.Json.JsonDocument.Parse(line).RootElement)
                 .Where(line => line.GetProperty("event").GetString() == "permission.refused")

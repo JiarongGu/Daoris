@@ -39,7 +39,7 @@ public static class UpdateRequests
     /// <summary>The request, or null when there is none or it does not read: the default, when idle, then holds.</summary>
     public static UpdateRequest? Read(string home)
     {
-        var path = Path.Combine(home, FileName);
+        var path = DaorisHome.Entry(home, HomeEntry.Update);
         if (!File.Exists(path)) return null;
         try
         {

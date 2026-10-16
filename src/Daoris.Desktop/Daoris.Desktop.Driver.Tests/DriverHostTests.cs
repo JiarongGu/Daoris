@@ -23,7 +23,7 @@ public sealed class DriverHostTests : IDisposable
         Path.GetTempPath(), "daoris-driver-host-" + Guid.NewGuid().ToString("N")[..8]);
 
     // The home's lease (HOMELEASE1), DRV8a's lock grown to cover every writer.
-    private string LockFile => Path.Combine(_home, "home.lease");
+    private string LockFile => DaorisHome.Entry(_home, HomeEntry.HomeLease);
 
     public DriverHostTests() => Directory.CreateDirectory(_home);
 
@@ -121,7 +121,7 @@ public sealed class DriverHostTests : IDisposable
 
         await RunAsync(service, "plugins", "install", package);
         Assert.False(File.Exists(LockFile), "the verb kept the home after it ended");
-        Assert.True(File.Exists(Path.Combine(_home, "home.json")), "the lease records the home's id, minted where it had none");
+        Assert.True(File.Exists(HomeIdentity.PathIn(_home)), "the lease records the home's id, minted where it had none");
 
         Plant("desktop", Environment.ProcessId, OurStart());
         var planted = File.ReadAllText(LockFile);

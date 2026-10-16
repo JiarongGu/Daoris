@@ -28,7 +28,7 @@ public sealed class RefusedByTheHarnessTests : IDisposable
 
     public RefusedByTheHarnessTests()
     {
-        Directory.CreateDirectory(Path.Combine(_home, "sessions"));
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
         File.WriteAllText(Command, "");
     }
 
@@ -38,12 +38,12 @@ public sealed class RefusedByTheHarnessTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private string Settings => Path.Combine(_home, "harnesses.json");
+    private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
     /// <summary>A file that is there, so the agent is present by a look and nothing runs.</summary>
     private string Command => Path.Combine(_home, "agent-here");
 
-    private string Transcript => Path.Combine(_home, "sessions", "s1.log");
+    private string Transcript => DaorisHome.Entry(_home, HomeEntry.Sessions,"s1.log");
 
     /// <summary>An agent declaring Claude Code's refused words, on the door a test names, present by a look.</summary>
     private sealed class Adapter(SessionWire wire, bool structured, HarnessToolchain toolchain) : ISessionAdapter

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Knowledge;
 
 namespace Daoris.Service.Tests;
 
@@ -84,7 +85,7 @@ public sealed class HelpPluginProposalTests : HelpProposalBoxFixture
         Assert.Null(written);
         Assert.Contains(says, message);
         Assert.Contains("Nothing was proposed", message);
-        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 
     /// <summary>PLUG9: a plugin proposal's shape, checked here and nothing more; the driver's twin table holds what the catalogue says.</summary>
@@ -105,7 +106,7 @@ public sealed class HelpPluginProposalTests : HelpProposalBoxFixture
         Assert.Null(written);
         Assert.Contains(says, message);
         Assert.Contains("Nothing was proposed", message);
-        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 
     /// <summary>PLUG9: a folder in a repository is written from its checkout's root, never as a whole path.</summary>

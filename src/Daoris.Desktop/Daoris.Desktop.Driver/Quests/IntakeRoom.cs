@@ -25,9 +25,6 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class IntakeRoom
 {
-    /// <summary>The folder under the home that holds a room per circle.</summary>
-    public const string Folder = "intake";
-
     /// <summary>Which ask an intake answers — on its spawn, and on the connector it is offered.</summary>
     public const string AskVariable = "DAORIS_ASK_ID";
 
@@ -60,9 +57,9 @@ public static class IntakeRoom
         "WebFetch",
     ];
 
-    /// <summary>Where a circle's room is — one folder under the home, whatever the circle is called.</summary>
+    /// <summary>Where a circle's room is — the home's <see cref="HomeEntry.Intake"/>, one per circle, whatever it is called.</summary>
     public static string PathOf(string home, string workspace) =>
-        Path.Combine(home, Folder, SafeName(workspace));
+        DaorisHome.Entry(home, HomeEntry.Intake, SafeName(workspace));
 
     /// <summary>Seed the room with the circle's declarations as they stand now, and answer where it is.</summary>
     /// <param name="kinds">The kinds its workspace declares, per repository (WORKFLOW1i-b); null or empty where it declares none.</param>

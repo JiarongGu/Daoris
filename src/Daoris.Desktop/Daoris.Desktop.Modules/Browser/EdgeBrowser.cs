@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Daoris.Driver;
 
 namespace Daoris.Desktop;
 
@@ -20,10 +21,10 @@ namespace Daoris.Desktop;
 /// </remarks>
 public static class EdgeBrowser
 {
-    public static string ProfileFolder(string home) => Path.Combine(home, "browser", "edge");
+    public static string ProfileFolder(string home) => DaorisHome.Entry(home, HomeEntry.BrowserEdge);
 
-    /// <summary>What Daoris started its Edge with, beside the profile.</summary>
-    public static string RecordPath(string home) => Path.Combine(home, "browser", "edge.json");
+    /// <summary>What Daoris started its Edge with, beside the profile: the home's <see cref="HomeEntry.EdgeRecord"/>.</summary>
+    public static string RecordPath(string home) => DaorisHome.Entry(home, HomeEntry.EdgeRecord);
 
     /// <summary>Where Edge is installed: for the machine (both program folders), then for one person.</summary>
     public static IReadOnlyList<string> Candidates(Func<string, string?> environment)

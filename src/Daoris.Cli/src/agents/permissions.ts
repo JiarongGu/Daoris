@@ -125,7 +125,7 @@ const empty = (): RuleLists => ({ allow: [], ask: [], deny: [] });
 
 /** Where the rules live: the file under the Daoris home (D63), or a refusal naming what to set. */
 export function permissionsPath(env: Record<string, string | undefined> = process.env): string {
-  return requireHomeFile(env, PERMISSIONS_FILE);
+  return requireHomeFile(env, 'permissions');
 }
 
 /** Why a rule is refused, or null when it is the harness's shape. */

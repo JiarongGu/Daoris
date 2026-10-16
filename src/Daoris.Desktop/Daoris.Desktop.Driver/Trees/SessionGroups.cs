@@ -760,7 +760,7 @@ public static class SessionGroups
         var chats = new HashSet<string>(StringComparer.Ordinal);
         var held = new Dictionary<string, WordsHold>(StringComparer.Ordinal);
         var marks = new GoOnMarks(home);
-        var events = new SessionEvents(Path.Combine(home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
         foreach (var record in look.Records)
         {
             // Ask Daoris's own conversation among them (ASKHIST1): its runner takes its words up as a chat's.
@@ -818,7 +818,7 @@ public static class SessionGroups
     {
         var built = AdapterSet.Built();
         var adapters = built.WithPlugins(PluginCatalog.Load(home, built.Names));
-        var roster = new HarnessRoster(adapters, Path.Combine(home, "harnesses.json"));
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(home, HomeEntry.Harnesses));
         return (adapter, profile) => roster.CoolingOf(adapter ?? "", profile);
     }
 

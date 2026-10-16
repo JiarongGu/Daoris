@@ -24,7 +24,7 @@ public abstract class LandedFixture : IDisposable
         Home = Path.Combine(Scratch, "daoris-home");
         Directory.CreateDirectory(Home);
         DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"))
-            .Save(Path.Combine(Home, "driver.json"));
+            .Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
     }
 
     public void Dispose()

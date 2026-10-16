@@ -38,7 +38,7 @@ public sealed class AccountRotationGoalTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private string Settings => Path.Combine(_home, "harnesses.json");
+    private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
     private string Command => Path.Combine(_home, "agent-here");
 
@@ -452,7 +452,7 @@ public sealed class AccountRotationGoalTests : IDisposable
         using var service = ledger.Client();
         var lines = new List<AccountLine>();
         service.AccountLined += lines.Add;
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var moved = new HarnessSelection(null, "account-3")
         {
             Choice = new AccountChoice(WalkStep.Fewest, "it runs the fewest of Daoris's sessions"),
@@ -538,7 +538,7 @@ public sealed class AccountRotationGoalTests : IDisposable
         using var service = ledger.Client();
         var lines = new List<AccountLine>();
         service.AccountLined += lines.Add;
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
         var selection = await Present().SelectAsync("fake", Config, null, null);
         RotatedOpening.Say(service, events, "s1", "fake", selection, carried: null);
@@ -633,7 +633,7 @@ public sealed class AccountRotationGoalTests : IDisposable
         Said("account-1", 0.95);
         using var ledger = new StandInLedger();
         using var service = ledger.Client();
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
         RotatedOpening.Say(service, events, "s1", "fake", await Present().SelectAsync("fake", Config, null, null), carried: null);
 

@@ -12,14 +12,12 @@ namespace Daoris.Driver;
 /// <remarks>The records are the Domain's (<see cref="HelperAsk"/>, <see cref="HelperState"/>, <see cref="HelperAnswer"/>; STRUCT3h).</remarks>
 public sealed class HelperFiles(string home)
 {
-    public const string Folder = "helpers";
-
-    public string PathOf(string id, string kind) => Path.Combine(home, Folder, $"{id}.{kind}.json");
+    public string PathOf(string id, string kind) => DaorisHome.Entry(home, HomeEntry.Helpers, $"{id}.{kind}.json");
 
     /// <summary>Every ask on file, oldest first; one unreadable or of another shape is not an ask here.</summary>
     public IReadOnlyList<HelperAsk> Asks()
     {
-        var folder = Path.Combine(home, Folder);
+        var folder = DaorisHome.Entry(home, HomeEntry.Helpers);
         if (!Directory.Exists(folder)) return [];
         var asks = new List<HelperAsk>();
         foreach (var path in Directory.EnumerateFiles(folder, "*.ask.json"))

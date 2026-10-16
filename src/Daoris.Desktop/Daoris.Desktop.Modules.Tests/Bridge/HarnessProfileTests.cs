@@ -28,7 +28,7 @@ public sealed class HarnessProfileTests : Bridge
     private DriverModule Module() => new(Bus, Loop());
 
     private string ProfileAt(string harness, string profile) =>
-        Path.Combine(Home, "harnesses", harness, profile);
+        DaorisHome.Entry(Home, HomeEntry.AgentHomes,harness, profile);
 
     [Fact]
     public async Task Adding_a_profile_makes_a_directory_and_nothing_else()
@@ -232,7 +232,7 @@ public sealed class HarnessProfileTests : Bridge
         Assert.True(File.Exists(Path.Combine(ProfileAt("codex", made), "auth.json")));
         Assert.Equal(LoginState.In, AccountReads.Of(Home, "codex").Accounts[made].Login);
         Assert.Contains(Raised.Select(Line), line => line.Contains("`codex` did not say who"));
-        Assert.False(Directory.Exists(Path.Combine(Home, "harnesses", "codex-acp")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(Home, HomeEntry.AgentHomes,"codex-acp")));
     }
 
     /// <summary>
@@ -372,7 +372,7 @@ public sealed class HarnessProfileTests : Bridge
         Assert.False(HarnessSettings.Load(HarnessSettingsPath).Defaults.ContainsKey("claude-code-acp"));
         Assert.Equal("sk-ant-api03-door-5678",
             HarnessKeys.Of(Home, "claude-code", keyed.GetProperty("profile").GetString()!));
-        Assert.False(Directory.Exists(Path.Combine(Home, "harnesses", "claude-code-acp")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(Home, HomeEntry.AgentHomes,"claude-code-acp")));
     }
 
     /// <summary>An agent whose toolchain declares no key variable takes no key, and makes nothing trying.</summary>

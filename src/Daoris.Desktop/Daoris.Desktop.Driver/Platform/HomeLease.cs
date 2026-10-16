@@ -73,8 +73,8 @@ public sealed class HomeLeaseException(string message, Exception? inner = null) 
 /// <para><b>An older build's <c>driver.lock</c></b> is read as that build's lease while its holder lives, so a desktop or a loop
 /// from before HOMELEASE1 still holds the home against this one; a stale one is left where it is and ignored.</para>
 ///
-/// <para><b>Compiled into the launcher too</b>, with <see cref="HomeIdentity"/> (<c>Daoris.Desktop.Launcher.csproj</c>), so it
-/// uses nothing but the base library. The CLI's <c>lease.ts</c> is its twin and shares no code (<c>twins.md</c>).</para>
+/// <para><b>Compiled into the launcher too</b>, with <see cref="HomeIdentity"/> and <see cref="DaorisHome"/>, whose table names
+/// the lease's place (<c>Daoris.Desktop.Launcher.csproj</c>), so it uses nothing but the base library. The CLI's <c>lease.ts</c> is its twin and shares no code (<c>twins.md</c>).</para>
 /// </remarks>
 public sealed class HomeLease : IDisposable
 {
@@ -111,8 +111,11 @@ public sealed class HomeLease : IDisposable
     /// <summary>The live instance this one runs beside, holding nothing, or null when it holds the home.</summary>
     public LeaseHolder? Beside { get; }
 
-    /// <summary>Where a home's lease is.</summary>
-    public static string PathIn(string home) => Path.Combine(home, FileName);
+    /// <summary>Where a home's lease is: the home's <c>home-lease</c> entry (D172, HOMELAYOUT2).</summary>
+    public static string PathIn(string home) => DaorisHome.Entry(home, HomeEntry.HomeLease);
+
+    /// <summary>Where an older build's lock is: the home's <c>driver-lock</c> entry.</summary>
+    private static string LegacyIn(string home) => DaorisHome.Entry(home, HomeEntry.DriverLock);
 
     /// <summary>Take the home, or null with the live holder that already has it.</summary>
     /// <param name="what">A verb's own words, which a refusal names; never its arguments.</param>
@@ -120,7 +123,7 @@ public sealed class HomeLease : IDisposable
     public static HomeLease? TryAcquire(string home, LeaseKind kind, out LeaseHolder? holder, string? what = null)
     {
         Directory.CreateDirectory(home);
-        if (Live(Path.Combine(home, LegacyFileName)) is { } legacy)
+        if (Live(LegacyIn(home)) is { } legacy)
         {
             holder = legacy;
             return null;
@@ -174,7 +177,7 @@ public sealed class HomeLease : IDisposable
     }
 
     /// <summary>The live holder of the home, or null when none holds it.</summary>
-    public static LeaseHolder? HeldBy(string home) => Live(PathIn(home)) ?? Live(Path.Combine(home, LegacyFileName));
+    public static LeaseHolder? HeldBy(string home) => Live(PathIn(home)) ?? Live(LegacyIn(home));
 
     /// <summary>What a terminal's loop says when an instance holds the home.</summary>
     public static string Refusal(string home, LeaseHolder holder) =>

@@ -20,7 +20,7 @@ public sealed class PressesToldTests : IDisposable
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private string Folder => Path.Combine(_home, "sessions", "requests");
+    private string Folder => DaorisHome.Entry(_home, HomeEntry.Requests);
 
     private IEnumerable<string> Told() =>
         Directory.Exists(Folder) ? Directory.EnumerateFiles(Folder, "*" + PressesTold.Suffix) : [];

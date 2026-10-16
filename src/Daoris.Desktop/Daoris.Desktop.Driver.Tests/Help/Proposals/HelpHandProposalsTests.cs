@@ -13,7 +13,7 @@ public sealed class HelpHandProposalsTests : HelpProposalsFixture
     {
         if (installed)
         {
-            var folder = Path.Combine(_home, PluginCatalog.Folder, "example.lands");
+            var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,"example.lands");
             Directory.CreateDirectory(folder);
             System.IO.File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName),
                 """{ "id": "example.lands", "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": ["work/land"] } }""");

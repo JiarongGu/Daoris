@@ -21,7 +21,7 @@ public sealed class SessionsCommandTests : IDisposable
 {
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-sessions-" + Guid.NewGuid().ToString("N")[..8]);
 
-    public SessionsCommandTests() => Directory.CreateDirectory(Path.Combine(_home, "sessions"));
+    public SessionsCommandTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     public void Dispose()
     {
@@ -83,7 +83,7 @@ public sealed class SessionsCommandTests : IDisposable
     private void Alive(string id)
     {
         using var self = Process.GetCurrentProcess();
-        File.WriteAllText(Path.Combine(_home, "sessions", $"{id}.pid"), $"{self.Id} {self.StartTime.ToUniversalTime().Ticks}");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.SessionPids, id), $"{self.Id} {self.StartTime.ToUniversalTime().Ticks}");
     }
 
     public static TheoryData<string[]> Problems => new()
@@ -189,7 +189,7 @@ public sealed class SessionsCommandTests : IDisposable
     [Fact]
     public async Task The_listing_prints_each_group_in_order_with_a_row_per_session()
     {
-        new SessionEvents(Path.Combine(_home, "sessions")).Append(
+        new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).Append(
             "c0ffee11", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Why is the frame budget 4 ms?" });
 
         var (exit, said) = await RunAsync(Family(), []);
@@ -245,7 +245,7 @@ public sealed class SessionsCommandTests : IDisposable
     [Fact]
     public async Task A_chat_whose_words_wait_is_going_on_and_one_its_runner_held_resumes_later()
     {
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         foreach (var chat in new[] { "g01ng000", "h0ld1ng0" })
         {
             events.Append(chat, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Why is the frame budget 4 ms?" });
@@ -524,7 +524,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Equal(2, exit);
         Assert.Contains("withdrawn", said);
         Assert.Equal("working", ledger.State("w0rk1ng0"));
-        Assert.False(File.Exists(Path.Combine(_home, "sessions", "requests", "w0rk1ng0.json")));
+        Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.Requests, "w0rk1ng0.json")));
     }
 
     /// <summary>§7.1 rule 4: nothing on this machine runs it, so it is ended as the screen's stop ends an orphan: the person's stop.</summary>
@@ -690,7 +690,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Contains("kept p4rk3d00: it is waiting on you", keptSaid);
 
         log.Dispose();
-        var lines = Directory.GetFiles(Path.Combine(_home, MachineLog.Folder)).SelectMany(StubFile.Lines)
+        var lines = Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs)).SelectMany(StubFile.Lines)
             .Where(line => line.Contains("\"sessions.archived\"", StringComparison.Ordinal)).ToList();
         var line = Assert.Single(lines);
         Assert.Contains("\"count\":1", line);
@@ -743,7 +743,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Contains("worked on", why);
 
         log.Dispose();
-        Assert.Contains(Directory.GetFiles(Path.Combine(_home, MachineLog.Folder)).SelectMany(StubFile.Lines),
+        Assert.Contains(Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs)).SelectMany(StubFile.Lines),
             line => line.Contains("\"session.deleted\"", StringComparison.Ordinal) && line.Contains("\"door\":\"terminal\"", StringComparison.Ordinal));
     }
 
@@ -756,7 +756,7 @@ public sealed class SessionsCommandTests : IDisposable
     {
         var ledger = Family();
         using var service = ledger.Client();
-        var transcript = Path.Combine(_home, "sessions", "c0ffee11.log");
+        var transcript = DaorisHome.Entry(_home, HomeEntry.Sessions,"c0ffee11.log");
         File.WriteAllText(transcript, "the transcript\n");
         var world = World(ledger, service) with
         {

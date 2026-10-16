@@ -25,7 +25,7 @@ public sealed class OrphanedSessionTests : IDisposable
     private readonly string _home = Path.Combine(
         Path.GetTempPath(), "daoris-orphans-" + Guid.NewGuid().ToString("N")[..8]);
 
-    private string Markers => Path.Combine(_home, "sessions");
+    private string Markers => DaorisHome.Entry(_home, HomeEntry.Sessions);
 
     private readonly List<Process> _spawned = [];
 
@@ -145,7 +145,7 @@ public sealed class OrphanedSessionTests : IDisposable
         {
             using var runner = new ChatRunner(
                 client, adapters, _home, processes,
-                harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+                harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
             id = (await runner.StartAsync("engine", "stub", config)).SessionId;
             Assert.NotNull(id);
@@ -167,15 +167,15 @@ public sealed class OrphanedSessionTests : IDisposable
     {
         await using var service = StandInService.Start(Path.Combine(_home, "engine"));
         service.Seed("a1", "working");
-        File.WriteAllText(Path.Combine(_home, "driver.json"), "{}");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.DriverConfig), "{}");
 
         using var client = new ServiceClient(service.Url, null);
         using var stop = new CancellationTokenSource(TimeSpan.FromSeconds(20));
         var reports = new List<TickReport>();
         var errors = new List<Exception>();
         var watch = new DriverWatch(
-            client, Path.Combine(_home, "driver.json"), _home, new SessionProcesses(Markers), sync: null,
-            harnesses: new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")));
+            client, DaorisHome.Entry(_home, HomeEntry.DriverConfig), _home, new SessionProcesses(Markers), sync: null,
+            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         await watch.RunAsync(
             (report, _) => { reports.Add(report); stop.Cancel(); return Task.CompletedTask; },
@@ -196,7 +196,7 @@ public sealed class OrphanedSessionTests : IDisposable
     public async Task A_torn_driver_json_is_said_and_watched_never_the_end_of_the_loop()
     {
         await using var service = StandInService.Start(Path.Combine(_home, "engine"));
-        var config = Path.Combine(_home, "driver.json");
+        var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, """{ "drivable": [], "pollSeconds": 1, }""");
 
         using var client = new ServiceClient(service.Url, null);
@@ -205,7 +205,7 @@ public sealed class OrphanedSessionTests : IDisposable
         var errors = new List<Exception>();
         var watch = new DriverWatch(
             client, config, _home, new SessionProcesses(Markers), sync: null,
-            harnesses: new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
 
         var running = watch.RunAsync(
             (report, _) => { reports.Add(report); stop.Cancel(); return Task.CompletedTask; },

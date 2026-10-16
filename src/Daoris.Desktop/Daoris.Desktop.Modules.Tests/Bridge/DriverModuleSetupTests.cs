@@ -61,7 +61,7 @@ public sealed class DriverModuleSetupTests : DriverModuleBridge
         Assert.True(plan.GetProperty("pressable").GetBoolean());
         // `--plan`'s promise: nothing was published, and no rule was added.
         Assert.Empty(_world.Published);
-        Assert.False(File.Exists(Path.Combine(Home, "permissions.json")));
+        Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Permissions)));
     }
 
     /// <summary>Every refusal that applies, at once, each with its code and the sentence naming the door that answers it.</summary>
@@ -113,6 +113,6 @@ public sealed class DriverModuleSetupTests : DriverModuleBridge
         Assert.Contains("is not driven here", pressed.GetProperty("message").GetString());
         Assert.False(pressed.GetProperty("plan").GetProperty("pressable").GetBoolean());
         Assert.Empty(_world.Published);
-        Assert.False(File.Exists(Path.Combine(Home, "permissions.json")));
+        Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Permissions)));
     }
 }

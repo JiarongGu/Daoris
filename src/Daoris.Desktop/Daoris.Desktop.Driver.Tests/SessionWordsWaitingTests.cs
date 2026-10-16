@@ -19,14 +19,14 @@ public sealed class SessionWordsWaitingTests : IDisposable
 
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-waiting-" + Guid.NewGuid().ToString("N")[..8]);
 
-    public SessionWordsWaitingTests() => Directory.CreateDirectory(Path.Combine(_home, "sessions"));
+    public SessionWordsWaitingTests() => Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     public void Dispose()
     {
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    private SessionEvents Events => new(Path.Combine(_home, "sessions"));
+    private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
     private static JsonObject Record(
         string id, string state, string? quest = null, string kind = "driven", string repository = "engine", string[]? said = null,

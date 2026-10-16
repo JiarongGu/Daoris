@@ -24,7 +24,7 @@ public sealed class UpdateDrainTests : IDisposable
     public UpdateDrainTests()
     {
         Directory.CreateDirectory(_home);
-        _ledger.Register("engine", Path.Combine(_home, "engine")).Register("tools", Path.Combine(_home, "tools"));
+        _ledger.Register("engine", Path.Combine(_home, "engine")).Register("tools", DaorisHome.Entry(_home, HomeEntry.ToolVersions));
     }
 
     public void Dispose()
@@ -168,7 +168,7 @@ public sealed class UpdateDrainTests : IDisposable
 
     private (DriverWatch Watch, StandInRuns Runs) Watch(Func<bool> draining, string holds = "[]")
     {
-        var config = Path.Combine(_home, "driver.json");
+        var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         File.WriteAllText(config, $$"""
             { "drivable": ["engine", "tools"], "holds": {{holds}}, "adapter": "stub", "cap": 3, "pollSeconds": 1, "trees": ["engine", "tools"] }
             """);
@@ -176,7 +176,7 @@ public sealed class UpdateDrainTests : IDisposable
         var runs = new StandInRuns(service, _ledger);
         var watch = new DriverWatch(
             service, config, _home, new SessionProcesses(), sync: null,
-            harnesses: new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")))
+            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)))
         {
             Runner = runs.Runner,
             Draining = draining,

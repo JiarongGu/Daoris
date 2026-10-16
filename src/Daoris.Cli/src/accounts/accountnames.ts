@@ -22,8 +22,8 @@
 // It spawns nothing and opens no socket.
 
 import { randomBytes } from 'node:crypto';
-import { join } from 'node:path';
 import { findName, foldName, sameName } from '../platform/casefold.ts';
+import { homeEntry } from '../platform/home.ts';
 import { DaorisError } from '../platform/errors.ts';
 import { readJsonObject, writeTextAtomic } from '../platform/fsx.ts';
 
@@ -56,7 +56,7 @@ export class AccountNameError extends DaorisError {
 
 /** Where the file is: beside `reads.json`, under the home. */
 export function accountsPath(home: string): string {
-  return join(home, ACCOUNTS_FILE);
+  return homeEntry(home, 'accounts');
 }
 
 type Root = Record<string, unknown>;

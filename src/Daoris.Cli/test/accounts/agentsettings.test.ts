@@ -6,6 +6,7 @@ import {
   AGENT_EFFORTS, AGENT_MODELS, AGENT_SETTINGS_FILE, readAgentSettings, writeAgentSettings,
 } from '../../src/accounts/agentsettings.ts';
 import { TOOLCHAINS, commandHarness, profileHome, writeHarnessSettings } from '../../src/agents/toolchain.ts';
+import { homeEntry } from '../../src/platform/home.ts';
 import { captureError, makeFixture } from '../_fixture.ts';
 
 /**
@@ -206,7 +207,7 @@ test('a new file holds exactly what was written, in the tool’s formatting', ()
 
 function run(argv: string[], home: string): { code: number; out: string } {
   const saved = process.env.DAORIS_HARNESS_CONFIG;
-  process.env.DAORIS_HARNESS_CONFIG = join(home, 'harnesses.json');
+  process.env.DAORIS_HARNESS_CONFIG = homeEntry(home, 'harnesses');
   const lines: string[] = [];
   try {
     const code = commandHarness({
