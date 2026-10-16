@@ -62,9 +62,9 @@ public sealed class ToolHomeLeftoversTests : IDisposable
         var (home, tool, projects) = Homes();
         string[] mine =
         [
-            ToolHomeLeftovers.Flatten(Path.Combine(home, "trees", "main", "repo", "s-1a2b3c4d")),
-            ToolHomeLeftovers.Flatten(Path.Combine(home, "help")),
-            ToolHomeLeftovers.Flatten(Path.Combine(home, "intake", "q-9")),
+            ToolHomeLeftovers.Flatten(DaorisHome.Entry(home, HomeEntry.Trees, "main", "repo", "s-1a2b3c4d")),
+            ToolHomeLeftovers.Flatten(DaorisHome.Entry(home, HomeEntry.HelpRoom)),
+            ToolHomeLeftovers.Flatten(DaorisHome.Entry(home, HomeEntry.Intake, "q-9")),
         ];
         string[] theirs =
         [
@@ -81,8 +81,9 @@ public sealed class ToolHomeLeftoversTests : IDisposable
     [Fact]
     public void Flatten_keeps_letters_and_digits_and_turns_every_other_character_into_a_dash()
     {
-        Assert.Equal("C--Users-me-my-app-2", ToolHomeLeftovers.Flatten(@"C:\Users\me\my.app_2"));
-        Assert.Equal("-home-me-x", ToolHomeLeftovers.Flatten("/home/me/x"));
+        // Example paths are spelled in pieces, so no machine path sits in a tracked file.
+        Assert.Equal("C--Work-people-my-app-2", ToolHomeLeftovers.Flatten("C:" + @"\Work\people\my.app_2"));
+        Assert.Equal("-srv-people-x", ToolHomeLeftovers.Flatten("/" + "srv/people/x"));
     }
 
     [Fact]

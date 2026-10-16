@@ -44,7 +44,7 @@ public sealed class DriverModuleSystemTests : DriverModuleBridge
     [Fact]
     public async Task The_wiring_lists_the_tool_home_s_folders_Daoris_made_and_the_press_removes_only_those()
     {
-        var mine = Project(Path.Combine(Home, "trees", "main", "repo", "s-1"));
+        var mine = Project(DaorisHome.Entry(Home, HomeEntry.Trees, "main", "repo", "s-1"));
         var theirs = Project(Path.Combine(Path.GetTempPath(), "somebody", "app"));
         var module = WiredModule(new WiringSizes());
 
