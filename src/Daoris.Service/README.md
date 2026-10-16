@@ -456,7 +456,8 @@ and the merge tool runs it once a merge's gates pass. A session started by hand,
 gets that build over a home of its own under `local/knowledge-server/home/` (never the install's, whose store a
 workspace build must not open), serving the main checkout alone (`DAORIS_KNOWLEDGE_REPOSITORY`), its `docs/`
 a section each and its `docs/index/` a row each (`DAORIS_KNOWLEDGE_DOCUMENTS`, `DAORIS_KNOWLEDGE_INDEX`), by
-words only, and re-read once its reading is a minute old. Its instructions say so before the first search.
+words only, and re-read at the next search once the checkout moved (a watch of its git refs and knowledge folders marks it stale,
+FABRIC-EVENT6) or its reading is five minutes old, a minute where nothing could be watched. Its instructions say so before the first search.
 A session a driver started keeps the environment it was handed and runs the machine's host first. With no
 build the launcher answers the protocol itself: the handshake says why and lists no tool, and the session
 works as before. Measured on the first build: the first search of a process, which reads the checkout, 1.2
@@ -605,7 +606,7 @@ Configuration is by environment, and every variable is optional — the defaults
 | `DAORIS_HOME` | The Daoris home (D63) — every default below that names a file derives from it. Unset, a host the install carries takes the install's own `data/` (SERVICEHOME2); elsewhere, with the file's own variable unset too, a host refuses rather than defaulting under the profile |
 | `DAORIS_KNOWLEDGE_ROOT` | Where the repositories are. Default: the folder containing this workspace |
 | `DAORIS_KNOWLEDGE_DB` | Where the index lives. Default: `$DAORIS_HOME/knowledge.db` |
-| `DAORIS_KNOWLEDGE_REPOSITORY` | The one checkout a workspace's own server serves (ORIENT1c): the bootstrap registers it alone, and each process re-reads it at its first use and once its reading is a minute old. Not a folder, and a host refuses to start. Unset: the folder of repositories, read once |
+| `DAORIS_KNOWLEDGE_REPOSITORY` | The one checkout a workspace's own server serves (ORIENT1c): the bootstrap registers it alone, and each process re-reads it at its first use and again once the checkout moved (watched) or its reading is five minutes old (a minute where nothing could be watched). Not a folder, and a host refuses to start. Unset: the folder of repositories, read once |
 | `DAORIS_KNOWLEDGE_DOCUMENTS` | A repository-relative folder read in each registered checkout, each markdown file split at its headings (ORIENT1c). Unset reads none. One that leaves the repository is refused |
 | `DAORIS_KNOWLEDGE_INDEX` | A repository-relative folder holding a generated index, each table row and list item one entry of the kind `index`, naming no lines (ORIENT1c; ORIENT2e). Read before a declared index, so a folder named here is read a row at a time even where the repository declares it. Unset reads none |
 | `DAORIS_EMBED_MODEL` | Names an embedding model to **enable semantic search**. Unset = lexical only |
