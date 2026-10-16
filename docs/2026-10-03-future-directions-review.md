@@ -1,7 +1,8 @@
 # Future directions, reviewed against the record
 
-**What this is.** [`DAORIS_FUTURE_DIRECTIONS.md`](DAORIS_FUTURE_DIRECTIONS.md) is an outside analysis the owner
-brought in on 2026-10-03, kept with its words unchanged. Its 73 sections suggest how Daoris could prove, explain,
+**What this is.** The outside analysis the owner brought in on 2026-10-03 (now Appendix A of
+[`DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md`](DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md),
+its words unchanged; it was the file `DAORIS_FUTURE_DIRECTIONS.md` until 2026-10-16). Its 73 sections suggest how Daoris could prove, explain,
 recover and learn from the work it drives. This review weighs each one as a suggestion against what is built and
 decided, at main `5d149602`. Where a suggestion conflicts with a decision the owner made, it is reported as a conflict,
 with the reason, and not adopted. Nothing here is decided. The order in §3 is a recommendation for the owner.
