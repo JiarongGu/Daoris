@@ -134,7 +134,7 @@ public sealed class HomeWatch : IAsyncDisposable
     }
 
     /// <summary>
-    /// The driver's own: <c>driver.json</c> (<paramref name="configPath"/>, which <see cref="DriverConfig.PathVariable"/> may name elsewhere),
+    /// The driver's own: <c>driver.json</c> (<paramref name="configPath"/>, wherever the config's own resolution put it),
     /// the plugins folder, <c>lines-moved.json</c> and the held words, each its topic (<see cref="ChangeTopics"/>).
     /// </summary>
     public static HomeWatch ForDriver(

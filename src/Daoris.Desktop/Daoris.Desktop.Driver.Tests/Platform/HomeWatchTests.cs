@@ -28,7 +28,7 @@ public sealed class HomeWatchTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    private string Config => Path.Combine(_home, "driver.json");
+    private string Config => DaorisHome.Entry(_home, HomeEntry.DriverConfig);
 
     private string Plugins => DaorisHome.Entry(_home, HomeEntry.Plugins);
 
