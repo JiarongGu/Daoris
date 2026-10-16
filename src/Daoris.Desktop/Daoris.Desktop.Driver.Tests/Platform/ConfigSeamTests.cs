@@ -76,7 +76,6 @@ public sealed partial class ConfigSeamTests
         string? owner = null;
         // The owner found by name, wherever the driver keeps it (STRUCT1, D166).
         var owning = Path.GetFullPath(SourceFiles.Driver("DriverConfig.cs"));
-        var table = Path.GetFullPath(SourceFiles.Driver("DaorisHome.cs"));
 
         foreach (var project in Projects)
         {
@@ -99,7 +98,8 @@ public sealed partial class ConfigSeamTests
                     continue;
                 }
 
-                if (string.Equals(Path.GetFullPath(file), table, StringComparison.OrdinalIgnoreCase)) continue;
+                // The home's table, the driver's one copy of D172's (HOMELAYOUT2), names the file as an entry's place.
+                if (project == "Daoris.Desktop.Driver" && Path.GetFileName(file) == "DaorisHome.cs") continue;
 
                 foreach (Match bypass in Bypass().Matches(source))
                 {
