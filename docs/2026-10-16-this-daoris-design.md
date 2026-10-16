@@ -23,7 +23,7 @@ wiring set up from there** (§4).
 - **A terminal finds the running Daoris** by `<home>/running.json` (D171's FINDDAORIS1 note), and nothing on the window
   shows that file, the launchers in `app/bin/`, or whether they are on a `PATH` (D124 §10: nothing puts them there).
 - **Nothing answers** the folders' sizes, which variables are in effect and where each came from, who holds the home's
-  driver lock (`DriverLock.HeldBy`, `DriverLock.cs:127`), when the loop last looked (`DriverLoop.Look`, `DriverLoop.cs:356`),
+  lease (`HomeLease.HeldBy`, HOMELEASE1), when the loop last looked (`DriverLoop.Look`, `DriverLoop.cs:356`),
   whether this window hosted or adopted its service (`HostSupervisor.cs:8`), which host and connector programs were
   found and how (`ServiceHostLocator.Locate`, `ServiceHostLocator.cs:100`; `KnowledgeConnector.cs:23, 41, 153`), or the
   versions of the programs this install carries. `/api/status` answers no version.
@@ -81,7 +81,7 @@ following links or junctions, and the answer carries each folder's bytes and whe
 
 | Fact | Read from | Shown as |
 |---|---|---|
-| Who holds the home | `DriverLock.HeldBy` (`DriverHolder`: kind, process, since) | *this window*, *a terminal's `daoris-driver drive`* with its process and since when, or *nobody* |
+| Who holds the home | `HomeLease.HeldBy` (`LeaseHolder`: kind, process, since) | *this window*, *a terminal's `daoris-driver drive`*, or an act holding it (`LeaseHolder`'s other kinds), with its process and since when, or *nobody* |
 | When it last looked | `DriverLoop.Look` | a time (`format.ts`), and *starting* until the service is up (`STATE`'s `ready`) |
 | What holds its starts | `STATE`'s `holds` and the update's drain | *draining for an update*, the holds' count, a door to Driver |
 | How often it looks | `driver.json`'s `pollSeconds` | the value, *Open Driver* |
