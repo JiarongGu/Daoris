@@ -193,6 +193,49 @@ describe('the composer', () => {
   });
 
   /**
+   * STEER2b (D136): while a turn runs, *Send now* stands beside *Queue* and sends the box's words with the press, where
+   * Enter stays the queue. With the box empty and words held it presses what is held (a stop that keeps them); with
+   * neither it is not drawn. It is one press at a time: not while words are being sent or the turn is stopping.
+   */
+  it('sends the box’s words now beside Queue, and the held words when the box is empty', async () => {
+    const sendNow = vi.fn();
+    const sendHeld = vi.fn();
+    const send = vi.fn();
+    const { rerender } = show({ taking: true, stoppable: true, onSend: send, onSendNow: sendNow, onSendHeld: sendHeld });
+
+    expect(screen.queryByRole('button', { name: 'Send now' })).not.toBeInTheDocument();
+    await userEvent.type(box(), 'cap it now');
+    expect(screen.getByRole('button', { name: 'Queue' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
+    expect(sendNow).toHaveBeenCalledWith('cap it now', []);
+    expect(send).not.toHaveBeenCalled();
+    expect(box()).toHaveValue('');
+
+    // Enter is still the queue.
+    await userEvent.type(box(), 'later{Enter}');
+    expect(send).toHaveBeenCalledWith('later', []);
+    expect(sendNow).toHaveBeenCalledTimes(1);
+
+    const again = (props: Partial<Parameters<typeof Composer>[0]>) => rerender(
+      <Tooltip.Provider>
+        <Composer live onSend={send} onFinish={() => {}} onSendNow={sendNow} onSendHeld={sendHeld} {...props} />
+      </Tooltip.Provider>,
+    );
+    again({ taking: true, stoppable: true, queued: [{ id: 'a', text: 'cap it', files: [] }] });
+    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
+    expect(sendHeld).toHaveBeenCalledOnce();
+    expect(sendNow).toHaveBeenCalledTimes(1);
+
+    again({ taking: true, stoppable: true, stopping: true, queued: [{ id: 'a', text: 'cap it', files: [] }] });
+    expect(screen.getByRole('button', { name: 'Send now' })).toBeDisabled();
+    // No turn, no press; and a held word on a door that cannot stop a turn has nothing to press.
+    again({ taking: false, queued: [{ id: 'a', text: 'cap it', files: [] }] });
+    expect(screen.queryByRole('button', { name: 'Send now' })).not.toBeInTheDocument();
+    again({ taking: true, stoppable: false, queued: [{ id: 'a', text: 'cap it', files: [] }] });
+    expect(screen.queryByRole('button', { name: 'Send now' })).not.toBeInTheDocument();
+  });
+
+  /**
    * HELP4: words waiting while no turn runs are waiting for the conversation to open, not for a turn:
    * the label says which. Seen on the window, where a new Ask Daoris conversation's first words said
    * they were waiting for a turn that did not exist yet.

@@ -15561,3 +15561,255 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **RPC1a — the running Daoris answers on a pipe** (designed in RPC1; built in the same round; see the outcome).
 
 **Outcome** 2026-10-16: the desktop serves `daoris-<home id>-<session>` once its loop holds the home (`InstancePipe`), carrying the kit's envelopes into its own dispatcher; `PipeCensus` classes the driver's routes (60 open, 79 person refused `confirm-in-window`, 6 window, `TOOLS_GIT` and `PLUGIN_UPDATE` by payload) after a second opinion moved `TREES_SYNC`, `ASK_OPINION` and `HARNESSES_REFRESH` to person; each id is journaled a day under the home's `pipe` entry, bound to its route, payload and the sender's key (`id-taken`, `unrecorded`), `RESULT` answering only that key; connections bounded; `running.json` names the pipe; the stop drains before the address and lease go. On Opus: about 320 tool calls over three rounds. Detail: D171's RPC1a note and its review paragraph.
+
+## OWNSPACE1a — no start runs in the person's own tool home (2026-10-16, D175)
+
+> - [ ] **OWNSPACE1 — every session Daoris starts runs in a configuration home Daoris owns** (driver/modules/web; D175; the owner, 2026-10-16: *"Daoris is still using the global .claude space instead of its own data space"*). Where a start would run in the tool's own home (no `CLAUDE_CONFIG_DIR`/`CODEX_HOME` handed), hand a Daoris profile instead: driven sessions, conversations, Ask Daoris's room, an intake, a helper, a reviewer; with no Daoris account signed in for that harness, the start waits, said once, with *Sign in for Daoris* (the add-account flow), never falling back to the person's home; a conversation begun in the person's home resumes there. Proof: a spawn test per kind showing the variable set; a start with only the tool's own home waits and says so; the Accounts and Ask Daoris screens' words en and zh; on the install, a new session's transcript under Daoris's profiles and none new in the person's home.
+
+**Outcome** 2026-10-16: the driver half (1a). Every real harness's start is handed a Daoris profile: with nothing named, the agent's signed-in Daoris accounts are the walk's list, and with none it holds on `held.no-account` (en/zh); the protocol stub and declared test harnesses are exempt (`RunsInOwnHome`); a record that began in the person's home resumes there, and a failed resume of one takes the walk before a new record opens; the Accounts page's next start resolves an owner's toolchain (Codex's `codex-acp`). A second maker's review found the last two; both fixed with tests seen red. The screens are OWNSPACE1b, a plugin's own-home flag OWNSPACE1c, the CLI's words OWNSPACE1d. On Opus: about 280 tool calls over three rounds. Detail: D175's OWNSPACE1a note; FIX-LOG 2026-10-16 (OWNSPACE1a); `OwnSpaceTests`.
+
+## WIRING1c-i — Settings → This Daoris: the head, Folders, Service and Loop (2026-10-16, D171)
+
+> - [ ] **WIRING1c — the page** (web; after 1b). Settings → *This Daoris* (本机) after AI features; Driver's home row moved, a door left; the glossary's *This Daoris*; Ask Daoris's go door. Design §2, §3.1-3.9, §5, §7, §8. Proof: tests, stories, i18n and names checks, the installed window at 1546 and 680 px, both themes and languages.
+
+**Outcome** 2026-10-16: the first part (1c-i). Settings → This Daoris (本机), a machine domain after AI features, shows the head (*development run*, the older-shell line on `NO_ROUTE`), the Folders, Service and Loop cards read from `SYSTEM_WIRING` (measured once on opening, *Measure again*), and Driver's home row becomes a door to it, kept as the fallback for a shell older than the page; Ask Daoris's go door is in both twins; the wire types moved to `data/wiring.ts` (the presentational rule forbids type imports from the bridge); *This Daoris* folds into the glossary's *this machine* term (one Chinese name, 本机). The rest of the cards are WIRING1c-ii; the window's proof stays with the row. On Sonnet: about 157 tool calls. Detail: `docs/2026-10-16-this-daoris-design.md` §2, §3.1-3.3, §7.
+
+## HELPPLUG1c — a plugin's skills for an intake's, a reviewer's and a helper's sessions (2026-10-16, D170)
+
+> - [ ] **HELPPLUG1c — a plugin's skills for an intake's, a reviewer's and a helper's sessions** (driver). `DriverIntakes`, `DriverOpinions` and `DriverHelpers` spawn without them. D170 point 4. Proof: a spawn test per kind on both doors, the folder removed at the session's end.
+
+**Outcome** 2026-10-16: an intake's, a reviewer's and a helper's sessions are handed the skills plugins hand sessions, on both doors, and the folder is removed with the session; reviewers and helpers still get no plugin servers. On Sonnet: about 51 tool calls. Detail: D170's HELPPLUG1c note; `SkillsSpawnProbe` and the three spawn Theories.
+
+## STEER2a — *Send now* in the driver, by the door it has (2026-10-16, D136)
+
+> - [ ] **STEER2a — *Send now* in the driver, by the door it has** (driver/modules; D136's STEER2 note, points 1, 2 and 4; the owner, 2026-10-16: *"there is no way to force the message to go through"*). `SESSION_INPUT` `now: true` steers at `now` on a `promptQueueing` door, and on a turn-end door holds the words and stops the turn keeping them; `CANCEL_TURN` `keep: true` for a conversation. Proof: `AcpSteerTests`, `DrivenInboxTests`, the route test; the cut call closed at the turn's end.
+
+**Outcome** 2026-10-16: `SESSION_INPUT` with `now: true` steers the words into the running turn by `_session/steering` where the agent declares both `promptQueueing` and `steering.supported` (the installed adapter 0.84.0 does), past any word on its way and any waiting word, which keep their places; it never stops such a turn. On a turn-end door it holds the words and stops the turn keeping them, once per turn, the next turn going only after that stop is on the wire. Elsewhere it answers `now: false` with `no-interrupt`, `opening` or `behind`. `CANCEL_TURN` with `keep: true` stops a conversation's turn withdrawing nothing; a call the steer cut is closed `cut` when the turn ends, and a finished call is never cut. A second maker's review found three defects (a late stop cutting the kept words' turn, a stop behind words on their way, a finished call reopened); all fixed with tests seen red. On Opus: about 190 tool calls over four rounds. Detail: D136's STEER2a note; FIX-LOG 2026-10-16 (STEER2a).
+
+## STEER2b — the composer's *Send now*, and where queued words arrive (2026-10-16, D136)
+
+> - [ ] **STEER2b — the composer's *Send now*, and where queued words arrive** (web; with STEER2a's contract; D136's STEER2 note, points 1 and 3). A second press beside *Queue* while a turn runs, on a conversation and a driven session; a queued word's line says when it arrives and carries no *Send now* on the next-step door. Proof: `Composer`/`WorkFrame`/`SessionBox` tests, both catalogues and the glossary.
+
+**Outcome** 2026-10-16: *Send now* beside *Queue* while a turn runs, on a conversation's Composer and a driven session's SessionBox: typed words go by `SESSION_INPUT now:true`, an empty box with held words by `CANCEL_TURN keep:true`; each refusal code has its own line (en/zh); words sent now show where they were taken, never as waiting; a call the steer cut is found by id in an earlier turn and reads *cut off* (已中断); the next-step line says it arrives once the step in flight ends. On Sonnet: about 133 tool calls over two rounds. Detail: D136's STEER2 notes; commits c9fe83872, 07e5e26fe, 73841dbdf.
+
+## PROCFIX — this batch's Process failures, sorted (2026-10-16, FLAKE1)
+
+> - (parent's row) Four driver Process tests failed on main after the OWNSPACE1a, STEER2a, HELPPLUG1c and WIRING1c-i merges.
+
+**Outcome** 2026-10-16: HELPPLUG1c's two spawn tests start Claude Code's doors, which since OWNSPACE1a hold a start with no Daoris account; they now sign one in (`SkillsSpawnProbe.SignIn`). `StopHoldTickTests` and the `ProbeRaceTests` control passed alone and are load flakes, measured: a session's start runs about 18 git commands one after another (STARTGIT1), and the Process half ran beside the heavy gates (GATEORDER1). On Opus: about 79 tool calls. Detail: FIX-LOG 2026-10-16 (the plugin skills spawn tests).
+
+## OWNSPACE1b-A — the Agents and Accounts screens say D175 (2026-10-16, D175)
+
+> - [ ] **OWNSPACE1b-A — the Agents and Accounts screens say D175** (web/modules; after OWNSPACE1a; D175's OWNSPACE1b note, settlements 1, 4, 5 and 8). The own sign-in row stays, read-only and never loud, with no *Runs for* and no work held; with nothing named, the page says *Daoris's accounts, in turn* (`inherited` on the accounts answer); the add flow's toast and the *own sign-in* words that are now false are reworded en and zh. Proof: the agents, accounts and AccountUse tests and stories; i18n and names checks.
+
+**Outcome** 2026-10-16: the own sign-in row is read-only (no *Runs for*, no *Try now*, no work, never loud); the accounts answer carries `inherited` (true wherever the agent never starts in the person's own home and nothing is named) and the page says *Daoris's accounts, in turn*; `NextReason.NoAccount` has its page line; the add flow's toast no longer says no start runs on the account; the false words are reworded en and zh. On Sonnet: about 162 tool calls. Detail: D175's OWNSPACE1b note.
+
+## OWNSPACE1b-B — the hold on the page and *Sign in for Daoris (2026-10-16, D175)
+
+> - [ ] **OWNSPACE1b-B — the hold on the page and *Sign in for Daoris*** (driver/web; after 1b-A; settlements 3, 4, 6 and 7). `AccountWait` and a consideration carry `noAccount`, `NextReason.NoAccount` is said, and *What needs you*'s row runs `login-new` in place (*Sign in for Daoris* / 为 Daoris 登录). Proof: the tick and accounts tests, accountAttention and AttentionBand tests, en and zh.
+
+**Outcome** 2026-10-16: a start held for no Daoris account is a fact on the tick (`noAccount` on the wait and on a consideration's `signedOut`), so *What needs you* lists one row, keyed `wait:<agent>:no-account`, whose *Sign in for Daoris* (为 Daoris 登录) runs `login-new` in place with no step 3; the agent's page heads with the same label while it has no Daoris account; `NextReason.NoAccount` is said apart from `Waits`; the own sign-in's attention row is gone; the add flow says Daoris takes its accounts in turn where the machine names nothing (`PlacesSaid`). On Sonnet: about 162 tool calls. Detail: D175's OWNSPACE1b note.
+
+## OWNSPACE1b-C — Ask Daoris's room and the setup guide (2026-10-16, D175)
+
+> - [ ] **OWNSPACE1b-C — Ask Daoris's room and the setup guide** (driver/web; after OWNSPACE1a, beside 1b-A). The room's Agents section says which Daoris accounts are signed in, or that none is and starts wait; its doors and owed lines stop offering the tool's own home; the setup guide and starters count only Daoris's accounts as signed in. Proof: HelpRoom tests, the three goldens, help setup and starters tests, en and zh.
+
+**Outcome** 2026-10-16: Ask Daoris's room says each Daoris account's sign-in, or that none is and starts wait; `--clear` returns to Daoris's accounts and `--own` only ends an old cool-off; the setup guide and starters count only Daoris's accounts (an `unknown` one still counts as in); the three goldens regenerated and read. On Sonnet: about 57 tool calls. Detail: D175's OWNSPACE1b note.
+
+## OWNSPACE1c — a plugin's agent may say its own home is Daoris's to use (2026-10-16, D175)
+
+> - [ ] **OWNSPACE1c — a plugin's agent may say its own home is Daoris's to use** (driver/CLI; D175's OWNSPACE1a note, settlement 1). A plugin's agent that names a configuration-home variable always takes a Daoris account, and one whose own home is nobody's (a sandboxed tool) has no way to say so: `PluginManifest` gains an optional `ownHome` that sets `HarnessToolchain.RunsInOwnHome` (via `DeclaredAcpAdapter`), with the CLI manifest twin and its `PluginCatalog` read. Proof: a declared plugin with `ownHome` starts with no account and no variable set; one without it holds with `held.no-account`; the twins test holds both readers to the field.
+
+**Outcome** 2026-10-16: a plugin's agent may say its own home is nobody's with `ownHome` (only JSON `true`, default false, never a refusal); it reaches `HarnessToolchain.RunsInOwnHome` through `DeclaredAcpAdapter`, and the CLI twin reads it alike. On Sonnet, with OWNSPACE1d: about 92 tool calls. Detail: D175's OWNSPACE1c note; `PluginCatalogTests` and `plugins.test.ts`.
+
+## OWNSPACE1d — the CLI says D175 (2026-10-16, D175)
+
+> - [ ] **OWNSPACE1d — the CLI says D175** (cli; after OWNSPACE1a). The toolchain's words that say sessions run in the agent's own configuration home (`src/Daoris.Cli/src/agents/toolchain.ts` about 1437, 1950, 2491, 2494, 2591) say Daoris's accounts, or the wait. Proof: `toolchain.test.ts`, `windows.test.ts`.
+
+**Outcome** 2026-10-16: the CLI's words say Daoris's accounts, or the wait (`agent list`, `profile default --clear`, `agent settings`, the own-sign-in block), and the sign-in's end says Daoris takes its accounts in turn where the machine names nothing, the twin of `PlacesSaid`. Detail: D175's OWNSPACE1d note; `toolchain.test.ts`, `windows.test.ts`, `cooling.test.ts`.
+
+## WIRING1c-ii — This Daoris's other cards (2026-10-16, D171)
+
+> - [ ] **WIRING1c-ii — This Daoris's other cards** (web; after 1c-i). Settings files, Variables, Versions, Terminal (read-only), Knowledge store and Logs, as design §3.4-3.9 says, with their `settings.daoris.*` keys en and zh; the window's proof of the whole page (1c-i's cards too) at 1546 and 680 px, both themes and languages. Design §3.4-3.9, §5, §7, §8. Proof: tests, stories, i18n and names checks, the installed window.
+
+**Outcome** 2026-10-16: the Settings files, Variables, Versions, Terminal (read-only), Knowledge store and Logs cards, as molecules over props with en and zh `settings.daoris.*` keys, 25 stories and 15 page tests; the update line comes from the shell's `useUpdateState`, since `SYSTEM_WIRING` carries none; doors go to Driver, Tools, Browser, Agents, Plugins, a workspace's remote and Machine log. The window's proof of the whole page is WIRING1f. On Sonnet: about 82 tool calls. Detail: `docs/2026-10-16-this-daoris-design.md` §3.4-3.9, §7.
+
+## STARTGIT1 — a session's start asks git once per fact (2026-10-16, FLAKE1)
+
+> - [ ] **STARTGIT1 — a session's start asks git once per fact** (driver). Before a session spawns, the tree opener runs about 18 git commands one after another, repeating `symbolic-ref origin/HEAD` three times and `rev-parse --verify refs/heads/<base>` four or five: 8–12 s on this machine, where antivirus makes each process start slow, and past `StopHoldTickTests`' 30 s under the gate's load. Resolve the base once per start and carry it through. Proof: a `ProcessStarts.Within` count of a stub start's git calls, pinned lower; StopHold's start time before and after.
+
+**Outcome** 2026-10-16: a stub driven start's git commands before the spawn fell from 18 to 11: the line's guess is asked once per start through `OneLook`, a guessed line's branch is not re-verified, and a fresh tree is not judged against itself; nothing a start decides changed. `StartGitCountTests` (Process) pins the count. On Sonnet: about 51 tool calls. Detail: commit e9d9d8fc6.
+
+## STEER2c — `sessions say --now` (2026-10-16, D136)
+
+> - [ ] **STEER2c — `sessions say --now`** (CLI/driver host; after STEER2a; D136's STEER2 note, point 5). The terminal's twin of *Send now*, saying what the door did. Proof: the say command's tests.
+
+**Outcome** 2026-10-16: `sessions say --now` sends `now: true` through the request folder to the judge the page's press uses, and prints what the door did: taken at once, the turn stopping so the words go next, or not now with `no-interrupt`, `opening` or `behind`. On Sonnet, with STEER2d: about 104 tool calls. Detail: D136's STEER2c note; `SessionsSayCommandTests`, `SessionWordsTerminalTests`.
+
+## STEER2d — a steer that arrived after the turn ended goes as the next prompt (2026-10-16, D136)
+
+> - [ ] **STEER2d — a steer that arrived after the turn ended goes as the next prompt** (driver; D136's STEER2a note). Where `_session/steering` answers `promptRequired` (the turn ended between the press and the steer), the words are handed back to the held queue and prompted next, not lost with a `words.not-reached` note: the adapter leaves the words to the client for exactly this. Proof: `AcpSteerTests`, the `promptRequired` case asserting the words are prompted next and taken.
+
+**Outcome** 2026-10-16: a steer answered `promptRequired` is handed back to the held queue (`DrivenInbox.HandBack`, `ChatTurns.HandBack`) and prompted next, said once and taken once, with no `words.not-reached` note while the queue is open; a conversation records the handed-back words as taken under their own id (`ChatMessage.Said`). Detail: D136's STEER2d note; `AcpSteerTests`, `ChatTurnsTests`.
+
+## FABRIC-END1 — the end of a piece of work, observed in git, by each workspace's end cycle: the design (2026-10-16, D173)
+
+> - [ ] **FABRIC-END1 — the end of a piece of work, observed in git, by each workspace's end cycle: the design** (design; D173's end-of-work note; the owner, 2026-10-16: *"if we have a git watcher as the end, we should clarify this as the new design of the fabric"*). Map every place that reads an end today (the look's tidy, AUTOTIDY2; the plugin's pull-request query, D148; *Accept*'s landing and LAND3's tidy, D164; a quest's close; a conversation's end removes nothing, the look's tidy does once its work is on the line) and each workspace's and repository's configured cycle (the commit and landing rules, the platform plugin); then design the one end event, the watcher that observes it (local refs at once, the remote by fetch or plugin), and what reads it, with its rejected shapes. A second maker's opinion before it is accepted. Proof: the design document and a decision, the owner's yes.
+
+**Outcome** 2026-10-16: the design of events over polling and of the end of a piece of work, with a watcher measured under this machine's antivirus (16 of 16 ref writes heard), revised on a second maker's opinion and accepted by the owner with three amendments (a defined end per workspace and repository; plugins contributing steps and ends; event chains in place of fixed clocks), carried by FABRIC-CHAIN1. On Opus: about 87 tool calls. Detail: docs/2026-10-16-fabric-events-design.md; D173's notes of 2026-10-16.
+
+## FABRIC-EVENT1 — events over polling: the inventory and the design (2026-10-16, D173)
+
+> - [ ] **FABRIC-EVENT1 — events over polling: the inventory and the design** (design; D173's events-over-polling note; the owner, 2026-10-16: *"I think we have a lot of polling logic that can be improved"*). Every poll in Daoris (driver, modules, service, web, CLI, the host) with its interval, what it waits for, its cost on this machine, and the event that could replace it: a file watcher on git's refs and Daoris's records, the service's push, a platform's webhook, behind a slow reconciliation. Ranked by what the person feels (latency, load). FABRIC-END1 is its first consumer. Proof: the inventory and the design, a second maker's opinion, the owner's yes.
+
+**Outcome** 2026-10-16: the design of events over polling and of the end of a piece of work, with a watcher measured under this machine's antivirus (16 of 16 ref writes heard), revised on a second maker's opinion and accepted by the owner with three amendments (a defined end per workspace and repository; plugins contributing steps and ends; event chains in place of fixed clocks), carried by FABRIC-CHAIN1. On Opus: about 87 tool calls. Detail: docs/2026-10-16-fabric-events-design.md; D173's notes of 2026-10-16.
+
+## ACCEPTFOOT1 and ACCEPTFOOT2 — a conversation's Accept in the chat, and its branch named for its work (2026-10-16, D164)
+
+> - (the owner's report, 2026-10-16) *"found a bug: the last session, there is no 采纳 [Accept] popup when it's done"*, then *"it's not showing in the chat"*: a conversation's turn ended with a commit in its own tree; *Accept* was offered only in the right panel, and the branch it made was named from the conversation's opening words.
+
+**Outcome** 2026-10-16: an open conversation whose turn ended with commits beyond its line offers *Accept…* at its foot and head, the driver's own offer carried on `SESSION_DIFF` and read for the turn that ended, none while a turn runs, for a detached tree or for work held by content (ACCEPTFOOT1); its branch is named for its work's oldest commit subject (an empty one names it `work`), an entry's parts by its first part's work, never the opening, which is still searched for a ticket, and git is read only for a pattern that uses the words (ACCEPTFOOT2). A second maker's review found six defects in the first round; all fixed with tests seen red. On Opus: about 217 tool calls over two rounds. Detail: D164's ACCEPTFOOT1 and ACCEPTFOOT2 notes; the fix log.
+
+## FABRIC-CHAIN1 — event chains, a defined end, plugin-contributed steps: the design's part C (2026-10-16, D173)
+
+> - [ ] **FABRIC-CHAIN1 — event chains, a defined end per workspace and repository, and plugin-contributed steps: the design's part C** (design; D173's acceptance note, the owner's three amendments). The accepted design derives a workspace's end from its landing rule and keeps fixed clocks as reconciliation; the owner asked instead for an end each workspace and repository defines (its cycle's steps, which one ends the work), for plugins to contribute a step or an end and learn it their own way, and for events with chains in place of fixed clocks. Design the event types and their chains (what each leads to, configured per workspace), the cycle's definition (its key, its inheritance, its CLI twin and Setup row), a plugin's point for events and ends (manifest, wire, evidence), and how a timer becomes one source among others; re-cut the remaining FABRIC rows on it. A second maker's opinion. Proof: the design's part C and its rows, the owner's yes.
+
+**Outcome** 2026-10-16: part C written and twice revised on a second maker's opinion (pending, unreadable and unreachable ends; effect links that stay pending until done; traces never judged again; the plugin wire's identity, bounds and replay), then accepted by the owner with their answers: the wait and the end's cleanup configured per cycle, everything but the result going at a true end, human steps in a cycle, a bounded chain menu, the plugin's new moments. Its rows are in TASKS.md. On Opus: about 175 tool calls over four rounds. Detail: docs/2026-10-16-fabric-events-design.md part C; D173's notes of 2026-10-16.
+
+## FABRIC-EVENT2 — the change watch, first on the request folders (2026-10-17, D173)
+
+> - [ ] **FABRIC-EVENT2 — the change watch, first on the request folders** (driver; the fabric events design §A3, §A4.1). Nothing in Daoris hears a file change; every wait is a timer. Build `ChangeWatch` in the driver library's `Platform/`: a path filter, a per-key debounce (250 ms, 2 s cap), a topic queue drained in one step with one judgement per subject and a deadline per topic, recovery (generations, reopen with back-off, an absent or replaced root, a resume) and a fake-source seam; `DriverWatch.Nudge` gains a topic and a subject; `SessionRequestWatch`'s 1 s timer becomes the watch with a 3 s listing behind it, inside the caller's 10 s (`SessionsCommand.cs`:68, 885); the watch's look writes a machine-log line with its ms and what woke it. Proof: canaries 1-3 on the fake source; a Process class with a real watcher on a scratch folder, handles measured; a request answered within the debounce, and inside 10 s with the source silenced.
+
+**Outcome** 2026-10-17: `ChangeWatch` in the driver's `Platform/`: a per-key debounce (250 ms, 2 s cap), a topic queue drained in one step with one judgement per subject, a deadline per topic, recovery (generations, reopen with back-off, an absent or replaced root by file id, a resume inferred from a 30 s overrun), at most 32 roots, and a fake-source seam; the requests folder is its first source, with a 3 s listing in place of the 1 s timer; `DriverWatch.Nudge` takes a topic and a subject, and each look writes `watch.looked`. Measured once here: one handle and about 1.3 KB nonpaged per watcher; a say answered in 333 ms. On Opus: about 158 tool calls. Detail: D173's FABRIC-EVENT2 note; the machine log design §4.
+
+## FABRIC-END2a — the end judgement, extracted (2026-10-17, D173)
+
+> - [ ] **FABRIC-END2a — the end judgement, extracted** (driver; the design §B3). Four places judge an end alone, each with its own proofs: gather §B3's cycles and proofs into one pure judgement over a `RefSnapshot`, its cycle resolved as *Accept* resolves it (`TreeLands.cs`:346-350) or from the landing's recorded rule and workflow; no store or reader changes, and the judgement takes the cycle as an input so FABRIC-CHAIN1's defined cycles plug in. Proof: canary 6; a fast test per cycle, a named workflow's landing included; the Trees suites unchanged.
+
+**Outcome** 2026-10-17: the end judgement extracted: `EndJudgement` answers claim, handed, ended or unknown with the proof named, over a `RefSnapshot`, its cycle an input (`EndCycle.Accepts` as *Accept* resolves it, `EndCycle.Recorded` from the landing's rule and workflow); no store, reader or caller changed; 28 tests. On Sonnet: about 56 tool calls. Detail: D173's FABRIC-END2a note; `Trees/SessionTrees/EndJudgement.cs`.
+
+## FABRIC-CHAIN2 — the chains (2026-10-17, D173)
+
+> - [ ] **FABRIC-CHAIN2 — the chains** (driver; after EVENT2; §C5, §C6). Fact links fire on a change; effect links stay pending until done, retried on their unblocking wakes and recovered at start; each topic's deadline a `timer` event; ranked links, `chain.*` log lines. Proof: canaries 4, 11, 12, 16, 17, 18; a link to a lower rank fails a test.
+
+**Outcome** 2026-10-17: the chains run on the change watch: a ranked link table that refuses a link to its own or a lower rank, fact links emitting only on a change, the tidy's effect seam pending until done and tried on its unblocking wakes, recovered at start, each topic's deadline a timer event, and `chain.fired/pending/dropped`; link 7 wired on the requests folder, links 1-6 unbound for the rows that feed them. Part D later split the row: this is its minimal part (CHAIN2a), the menu is CHAIN3's. On Opus: about 86 tool calls. Detail: D173's FABRIC-CHAIN2 note; `ChainTests`.
+
+## FABRIC-EVENT2b — the terminal's words wake by their topic (2026-10-17, D173)
+
+> - [ ] **FABRIC-EVENT2b — the terminal's words wake by their topic** (driver; after EVENT2). `LoopWords.Nudge` and the shell's `Words` call `Nudge(ChangeTopics.Requests, <session>)` so `watch.looked` says the words woke it. Proof: a `DriverWatchLookTests` case.
+
+**Outcome** 2026-10-17: a terminal's kept words wake the look by `Nudge(requests, <session>)` through `DriverWatch.Said`, from the headless host's `LoopWords` and the shell's `Words`, so `watch.looked` names the words. On Sonnet, with EVENT2c and 2d: about 70 tool calls. Detail: D173's EVENT2b-2d note.
+
+## FABRIC-EVENT2c — the requests folder made at a loop's start (2026-10-17, D173)
+
+> - [ ] **FABRIC-EVENT2c — the requests folder made at a loop's start** (driver; after EVENT2). Create `sessions/requests/` before `Changes.Start()` so the first request after an install is heard at once. Proof: `SessionRequestChangeTests` with no folder, answered within the debounce.
+
+**Outcome** 2026-10-17: `SessionRequestWatch` makes `sessions/requests/` before its watch starts, so the first request after an install is heard by the watcher, on both loops. Detail: D173's EVENT2b-2d note; `SessionRequestChangeTests`.
+
+## FABRIC-EVENT2d — a resume heard from the shell's power events (2026-10-17, D173)
+
+> - [ ] **FABRIC-EVENT2d — a resume heard from the shell's power events** (modules; after EVENT2). The shell hears `PowerModeChanged` and calls `ChangeWatch.Resumed()`. Proof: a modules fast test with a stand-in power event.
+
+**Outcome** 2026-10-17: the desktop shell raises `PowerResume` from `SystemEvents` and the requests watch reopens and judges its roots; the 30 s overrun stays the fallback (the headless host has only it). Detail: D173's EVENT2b-2d note; `PowerResumeTests`.
+
+## PROOF-UNREAD1 — a proof that could not read git says so (2026-10-17, D57)
+
+> - [ ] **PROOF-UNREAD1 — a proof that could not read git says so** (driver; design §B7, D57). `ContentHolds.HeldByContentAsync` (and `LandedProofs.ProveAsync` if it shares it) tell "not held" from "could not read". Proof: a fast test per failed read.
+
+**Outcome** 2026-10-17: the content proof returns held, not held or unread (git's words): a git missing, timed out or unable to read a ref no longer reads as held nowhere; the sweep keeps such a row unread, the branch tidy and the tree's removal refuse saying git could not tell, and `LandedProofs.ReadLineFormsAsync` reports the line's unread forms. On Sonnet, with ACCEPTFOOT2b: about 74 tool calls. Detail: FIX-LOG (PROOF-UNREAD1); `ContentHoldsUnreadTests`.
+
+## ACCEPTFOOT2b — a conversation's squash subject is its work's, not its opening (2026-10-17, D164)
+
+> - [ ] **ACCEPTFOOT2b — a conversation's squash subject is its work's, not its opening** (driver; D164's PROCESS1b-ii and ACCEPTFOOT2 notes). A squash still names its one commit by a conversation's opening; by ACCEPTFOOT2's reading it takes the oldest commit's subject. Proof: a `LandingSquashTests` case.
+
+**Outcome** 2026-10-17: a conversation's squash commit takes the oldest commit's subject beyond the line, not its opening, read once with the branch's name; a quest's squash and the body are unchanged. Detail: D164's ACCEPTFOOT2b note; `LandingSquashTests`.
+
+## FABRIC-EVENT3a — the look's topics (2026-10-17, D173)
+
+> - [ ] **FABRIC-EVENT3a — the look's topics** (driver; after EVENT2 and CHAIN2; §A3). The remote sync on its own clock, a `ledger` wake running only the local plan, `pollSeconds` the `look` topic's deadline. Proof: canary 4; the planner's tests unchanged.
+
+**Outcome** 2026-10-17: a wake (`ledger`, a terminal's words, a session's end) runs only the local plan, link 5 on the loop's own chain; the remote sync and the lost-claim stop run with the whole look at the `look` topic's deadline, at the start and on a plain nudge; `watch.looked` says the part; canary 4 holds. On Opus: about 101 tool calls. Detail: D173's EVENT3a note.
+
+## FABRIC-EVENT4 — the home's record files wake their topics (2026-10-17, D173)
+
+> - [ ] **FABRIC-EVENT4 — the home's record files wake their topics** (driver, modules; after EVENT2 and CHAIN2; §A4.1). `driver.json`, the plugins folder, `lines-moved.json`, the held words and the staged update's folder on the watch, their reads the topics' deadlines. Proof: each heard within the debounce and found by its deadline when silenced.
+
+**Outcome** 2026-10-17: the config file, the plugins folder, `lines-moved.json`, the held words and the staged update's folder and request are on the change watch as link 7, each waking its topic's plan look (or the updater's own), their reads kept as the topics' deadlines; the loop's own writes are marked and wake nothing. On Sonnet: about 77 tool calls. Detail: D173's EVENT4 note.
+
+## FABRIC-END2b — the facts kept (2026-10-17, D173)
+
+> - [ ] **FABRIC-END2b — the facts kept** (driver; after END2a, CYCLE1a and a cross-process writer chosen first; §C7, §B5). `Held { At, Since, By, Tip, Line, On, OnAt, Repository }` and `Steps` on `landings.json` and `session-branches.json` entries, *ended* derived at read, traces kept on both forget paths, written only by the lease's loop. Proof: canaries 9 and 20; a trace survives every removal path.
+
+**Outcome** 2026-10-17: built as part D's FABRIC-END2 (with END2c): `HeldFact` on session-branch and landing entries, written only by `EndKeeping` in the process holding the home's lease, lapsing on standing branches only; units and `Units`; traces on both forget paths with open units never pruned; both records edited under a lock file in `locks/records/`, chosen over RPC1b. On Opus: about 144 tool calls. Detail: D173's FABRIC-END2 note.
+
+## FABRIC-END2c — when a fact stops holding (2026-10-17, D173)
+
+> - [ ] **FABRIC-END2c — when a fact stops holding** (driver; after END2b; §B5, §C6). On standing units, `Held` and `Steps` read as not known and the unit is due again when its tip, the line's commit, the cycle's line or the repository's identity changes; a trace is never judged again. Proof: canary 7; a Process class with real git.
+
+**Outcome** 2026-10-17: built inside FABRIC-END2 (see FABRIC-END2b's entry): a fact lapses when its tip, the line's commit, the cycle's line or the repository's identity changes, on standing branches only.
+
+## OWNSPACE2 — what Daoris left in the person's tool home, listed and cleared by the person (2026-10-17, D175)
+
+> - [ ] **OWNSPACE2 — what Daoris left in the person's tool home, listed and cleared by the person** (driver/web; after OWNSPACE1, WIRING1c). The project folders Daoris's sessions left in the person's own tool home (its room's, its intakes', its trees') are listed on *This Daoris* as Daoris's, matched by the folder names its own homes make, and removed only by the person's press after the list (D88), the person's own projects never touched. Proof: a driver test listing only Daoris's folders from a mixed home; the press removes only those.
+
+**Outcome** 2026-10-17: *This Daoris* lists, read-only, the folders in the person's own tool home that Daoris's own session records show its sessions ran in (exact flattened name, collisions refused over every claim, what would keep each said: a live or resumable session, an unreadable record); the move-aside press was built, found unsafe over three reviews by a second maker and withdrawn, and returns as OWNSPACE2e. On Sonnet: about 270 tool calls over four rounds. Detail: D175's OWNSPACE2 note.
+
+## FABRIC-CYCLE0 — human steps and the end's cleanup, in the design (2026-10-17, D173)
+
+> - [ ] **FABRIC-CYCLE0 — human steps and the end's cleanup, in the design** (design; D173's part C acceptance note). The owner's answers add steps a person reaches by a press, and "a true end cleans up everything except the result": amend §C2 (a `human` step kind, its press, who may press it, its evidence) and §C3 (what the result is per cycle, what an end removes, the wait configured per cycle, the line's rule kept) before CYCLE1a. Proof: the design's amended sections, a second maker's read.
+
+**Outcome** 2026-10-17: done as a design round: human steps and the end's cleanup written into §C2/§C3, then superseded by part D (human tasks, the ownership inventory) and part E (nodes). Detail: the design's §C2, §C3, §D5, §D3.
+
+## FABRIC-CYCLE1a — the cycle defined on the landing rule (2026-10-17, D173)
+
+> - [ ] **FABRIC-CYCLE1a — the cycle defined on the landing rule** (driver, cli; after END2a and CYCLE0; the fabric events design §C2). A `cycle` `{ end, steps }` on `landings`/`workspaceLandings` and its `driverconfig.ts` twin, inherited under D164, a workflow's `end` governing, absent reading `line`, refusals naming the Setup row. Proof: canary 14; both twins read one table; each refusal; a repository's rule replacing its workspace's cycle whole.
+
+**Outcome** 2026-10-17: superseded by part E: the cycle on the landing rule is FABRIC-GRAPH1 (the graph and its homes).
+
+## FABRIC-CYCLE1b — the *Work ends* Setup row and Ask Daoris (2026-10-17, D173)
+
+> - [ ] **FABRIC-CYCLE1b — the *Work ends* Setup row and Ask Daoris** (web-shell, modules; after CYCLE1a; §C2). A defined end needs a door the person sees: the Setup row on the repository's and workspace's Setup (both locales; a plugin's labels as written), and Ask Daoris saying a repository's cycle. Proof: the Setup rows' tests, i18n and names checks, the help room's goldens.
+
+**Outcome** 2026-10-17: superseded by part E: Setup's Work pages are FABRIC-GRAPHEDIT1 (one graph editor, with D157's WORKFLOW1g).
+
+## FABRIC-END4b — the page draws the cycle (2026-10-17, D173)
+
+> - [ ] **FABRIC-END4b — the page draws the cycle** (driver, web-shell; after END2b and CYCLE1b; §B6, §C3). The head's foot, DiffPane, What needs you, WorkspaceTidied, Sweep and BranchPage show the steps reached, the end, pending/unreadable/unreachable apart, *held*, and a human step's press. Proof: web tests in both locales; rehearsal and e2e hits listed; the window shows a merged pull request's session ended with no press.
+
+**Outcome** 2026-10-17: superseded by part D/E: the default milestone is FABRIC-MILESTONE1b and a configured graph's view is FABRIC-GRAPHVIEW1.
+
+## FABRIC-PLUGSTEP1a — a plugin's own steps in its manifest (2026-10-17, D173)
+
+> - [ ] **FABRIC-PLUGSTEP1a — a plugin's own steps in its manifest** (driver, cli; after CYCLE1a; §C4). `steps` `{ id, after, label }` in `plugins.ts` and `PluginManifest`, twinned, the cycle's plugin steps validated. Proof: the twins' tables; each manifest refusal.
+
+**Outcome** 2026-10-17: superseded by part D: the manifest twins are FABRIC-UNIT1d.
+
+## FABRIC-PLUGSTEP1b — the handshake and the reverse transport (2026-10-17, D173)
+
+> - [ ] **FABRIC-PLUGSTEP1b — the handshake and the reverse transport** (driver; after PLUGSTEP1a; §C4). `work/watch`, `work/step`, `work/ended` in `HookPoints`; the reader takes `work/step` on a watch process only, bounded (64 KB a frame, 60 a minute, a queue of 256). Proof: other notifications still ignored; each bound; `protocolVersion` 1.
+
+**Outcome** 2026-10-17: superseded by part D: transport and supervision are FABRIC-PERFORM1a.
+
+## FABRIC-PLUGSTEP1c — the kit sends and tests a step (2026-10-17, D173)
+
+> - [ ] **FABRIC-PLUGSTEP1c — the kit sends and tests a step** (driver; after PLUGSTEP1b; §C4). The template sends the frame and tests its bounds and refusals. Proof: the kit's tests; a kit-made plugin's frame read by the host.
+
+**Outcome** 2026-10-17: superseded by part D: the kit is FABRIC-PERFORM1e.
+
+## FABRIC-PLUGSTEP1d — a watching plugin supervised (2026-10-17, D173)
+
+> - [ ] **FABRIC-PLUGSTEP1d — a watching plugin supervised** (driver; after CHAIN2 and PLUGSTEP1b; §C4). Owned by the lease's loop, started while a unit awaits its step, shut down otherwise; restarts on an unasked exit only, three in an hour unsound; generations and `resync`. Proof: canary 19; an intentional shutdown never counted.
+
+**Outcome** 2026-10-17: superseded by part D: supervision is FABRIC-PERFORM1a.
+
+## FABRIC-PLUGSTEP1e — a plugin's event authorized (2026-10-17, D173)
+
+> - [ ] **FABRIC-PLUGSTEP1e — a plugin's event authorized** (driver; after END2b and PLUGSTEP1d; §C4, §C7). §C4's five rules (the sender is the process, a rule names the plugin, the unit was in the last frame, bound to the tip, the shape reads); a built-in `pull-request` event writes `PullRequestState` by its existing writer; refusal codes. Proof: canary 13; each rule refusing a fake event; no event removes anything.
+
+**Outcome** 2026-10-17: superseded by part D: authorization is FABRIC-PERFORM1c.
+
+## FABRIC-PLUGSTEP1f — an example plugin that contributes a step (2026-10-17, D173)
+
+> - [ ] **FABRIC-PLUGSTEP1f — an example plugin that contributes a step** (examples, tools; after PLUGSTEP1c and 1e; §C4). A stand-in source reporting one declared step, its README and `plugins try` samples. Proof: its tests; a rehearsal check for the parent.
+
+**Outcome** 2026-10-17: superseded by part D: the example is FABRIC-PERFORM1e.

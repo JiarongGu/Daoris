@@ -107,7 +107,7 @@ describe('Get started, on the desktop', () => {
     machine({
       ...FRESH,
       registry: [{ repository: 'engine', workspace: 'aurora' }],
-      harnesses: [{ harness: 'claude-code', present: true, ownLogin: 'in', product: 'Claude Code' }],
+      harnesses: [{ harness: 'claude-code', present: true, ownLogin: 'in', product: 'Claude Code', profiles: [{ name: 'work', home: 'h', login: 'in' }] }],
     });
     show();
 

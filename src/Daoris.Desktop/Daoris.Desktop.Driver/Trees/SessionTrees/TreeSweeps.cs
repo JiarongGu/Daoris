@@ -308,7 +308,7 @@ internal sealed class TreeSweeps(
                 // AUTOTIDY2a: the look's only once the line holds the branch the landing made, or the work by content.
                 var squashOnLine = byItself
                     && (await LineHoldingAsync(root, line, $"refs/heads/{squashedOn.Branch}", ct, refs).ConfigureAwait(false) is not null
-                        || (await ContentHolds.HeldByContentAsync(root, tip, line, content.LandedHere(repository), ct, refs).ConfigureAwait(false)) is { } byContent
+                        || (await ContentHolds.HeldByContentAsync(root, tip, line, content.LandedHere(repository), ct, refs).ConfigureAwait(false)).Hold is { } byContent
                             && IsLineForm(byContent.Where, line));
                 return (Item(SweepKind.Landed, unlanded.Length, squashedOn.Branch, string.Join('\n', unlanded.Take(3))) with { OnLine = squashOnLine }, tip);
             }
@@ -322,11 +322,20 @@ internal sealed class TreeSweeps(
 
             // SQUASHTIDY1: the review's Discard's proof by content, so the list offers what that door would take unforced. Its
             // work is where the row says, and the row is landed. Not a branch checked out outside the trees home, as above.
-            if ((tree is null || context.Holds(tree))
-                && await ContentHolds.HeldByContentAsync(root, tip, line, content.LandedHere(repository), ct, refs).ConfigureAwait(false) is { } held)
+            if (tree is null || context.Holds(tree))
             {
-                return (Item(SweepKind.Landed, unlanded.Length, held.Where, string.Join('\n', unlanded.Take(3)))
-                    with { HeldBy = held, OnLine = byItself && IsLineForm(held.Where, line) }, tip);
+                var proof = await ContentHolds.HeldByContentAsync(root, tip, line, content.LandedHere(repository), ct, refs).ConfigureAwait(false);
+                if (proof.Hold is { } held)
+                {
+                    return (Item(SweepKind.Landed, unlanded.Length, held.Where, string.Join('\n', unlanded.Take(3)))
+                        with { HeldBy = held, OnLine = byItself && IsLineForm(held.Where, line) }, tip);
+                }
+
+                // PROOF-UNREAD1: a proof git could not read is no "unlanded" finding: the row is kept as unread, as the reads above are.
+                if (proof.Unread is { } why)
+                {
+                    return (Item(SweepKind.Unlanded, unlanded.Length, detail: $"git could not tell whether its work is held by content: {why}") with { Unread = true }, tip);
+                }
             }
 
             return (Item(SweepKind.Unlanded, unlanded.Length, detail: string.Join('\n', unlanded.Take(3))), tip);

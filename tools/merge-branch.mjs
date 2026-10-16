@@ -1769,18 +1769,18 @@ async function withLog(file, work) {
 async function rerunAlone(root, gate, dir, tests, step) {
   const log = join(dir, `${gate.name}.rerun.log`);
   const cwd = gate.cwd ? join(root, gate.cwd) : root;
-  const passed = await withLog(log, async (fd, partial) => {
-    let all = true;
+  const failed = [];
+  await withLog(log, async (fd, partial) => {
     for (const test of tests) {
       const from = statSync(partial).size;
       const code = await step(rerunCommand(gate.run, test), cwd, fd);
       const output = readFileSync(partial).subarray(from).toString('utf8');
       writeSync(fd, `\n(exited ${code})\n\n`);
-      if (code !== 0 || !rerunPassed(output)) all = false;
+      if (code !== 0 || !rerunPassed(output)) failed.push(test);
     }
-    return all;
   });
-  return { passed, log };
+  // Which failed again, not only whether any did: a note naming every re-run test as failed sends a reader after ones that passed.
+  return { passed: failed.length === 0, failed, log };
 }
 
 /** A gate's steps before it, then the gate (as `command`, its own run unless given), into one log: the gate's exit. */
@@ -1838,7 +1838,9 @@ export async function runGate(root, gate, dir, { step = runStep, settled = null 
       if (rerun.passed) {
         Object.assign(result, { verdict: 'FLAKE', flakes: decision.rerun, note: `failed in the full run and passed alone: ${names}; ${shown(root, rerun.log)}` });
       } else {
-        result.note = `exit ${code}; failed again alone: ${names}; ${shown(root, rerun.log)}`;
+        const alone = decision.rerun.filter((test) => !rerun.failed.includes(test));
+        const passedAlone = alone.length ? `; passed alone: ${alone.map(short).join(', ')}` : '';
+        result.note = `exit ${code}; failed again alone: ${rerun.failed.map(short).join(', ')}${passedAlone}; ${shown(root, rerun.log)}`;
       }
     }
   }

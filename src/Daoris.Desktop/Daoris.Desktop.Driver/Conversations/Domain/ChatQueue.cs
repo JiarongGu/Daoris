@@ -56,6 +56,12 @@ public enum TurnReach
 
     /// <summary>Waiting for the running turn to end, then its own turn (CONV4a).</summary>
     TurnEnd,
+
+    /// <summary>
+    /// The person's *Send now* (STEER2a, D136's 2026-10-16 note): handed to the turn on the wire by the steering extension,
+    /// which cuts the step in flight, and taken there; spelled <c>now</c>.
+    /// </summary>
+    Steered,
 }
 
 /// <summary>When what a person tells a driven session reaches it (STEER1, D136).</summary>
@@ -69,9 +75,77 @@ public enum DrivenReach
     /// (docs/2026-10-03-steer-evidence.md §1).
     /// </summary>
     NextStep,
+
+    /// <summary>
+    /// The person's *Send now* (STEER2a): steered into the running turn at once, cutting the step in flight
+    /// (docs/2026-10-03-steer-evidence.md §2, §6 turn B); spelled <c>now</c>. A word's reach only, never the inbox's.
+    /// </summary>
+    Steered,
 }
 
 /// <summary>What a run does next with what the person said: prompt a word still held, or wait for one already sent.</summary>
 /// <param name="Held">A word held for the turn's end, to prompt now; null when <paramref name="Answer"/> is set.</param>
 /// <param name="Answer">The answer to a word sent during the turn, in the order sent; null when <paramref name="Held"/> is set.</param>
-public sealed record DrivenNext(ChatMessage? Held, Task<string>? Answer);
+public sealed record DrivenNext(ChatMessage? Held, Task<string>? Answer)
+{
+    /// <summary>
+    /// What the run waits for before it goes on (STEER2a), which is no turn and no stop reason: a steer the person's *Send now*
+    /// sent, whose answer is where the words are taken; or a stop decided for the turn that just ended, still on its way, which
+    /// must reach the wire before the held words' own turn does. Never faults. Null for the other two.
+    /// </summary>
+    public Task? Waits { get; init; }
+}
+
+/// <summary>
+/// What the person's *Send now* did with their words (STEER2a, D136's 2026-10-16 note): the answer <c>SESSION_INPUT</c> gives
+/// with <c>now</c>, for a driven session and a conversation alike.
+/// </summary>
+/// <param name="Reaches">
+/// When they reach the session, in the record's spelling: <c>now</c> (steered into the running turn), <c>next-step</c>,
+/// <c>turn-end</c>; null where no turn ran and they are its turn at once, or where the door is not known yet.
+/// </param>
+/// <param name="Now">
+/// The press was carried out: steered into the running turn, held with the turn stopped so they go next (D90), or taken at
+/// once because no turn ran.
+/// </param>
+/// <param name="Why">Where it was not, why, by a <see cref="SendNowWhy"/> code; null where it was.</param>
+public sealed record SentNow(string? Reaches, bool Now, string? Why);
+
+/// <summary>Why the person's *Send now* was not carried out (STEER2a): codes the page words itself. The words still go as before.</summary>
+public static class SendNowWhy
+{
+    /// <summary>
+    /// A turn runs on a door that can neither steer it nor stop it keeping the session: the native door's driven run, a text-only
+    /// door, or a next-step door whose agent never said it steers (a stop there would answer a word on its way cancelled).
+    /// </summary>
+    public const string NoInterrupt = "no-interrupt";
+
+    /// <summary>The session's first prompt is not on the wire yet: the words go right after it, as any word said then.</summary>
+    public const string Opening = "opening";
+
+    /// <summary>
+    /// On a next-step door whose agent cannot steer, other words wait before these or are on their way to the agent (a word sent
+    /// at its next step, a helper's answer waiting as its own turn): the words go behind them, at the next step or as the next
+    /// turn, and nothing is stopped, since a stop would answer a word on its way cancelled while the agent may still act on it
+    /// (D136 point 4). Where the agent steers, the words are steered past them instead.
+    /// </summary>
+    public const string Behind = "behind";
+
+    /// <summary>A reach in the record's spelling (D136 §3), <c>now</c> for a steer.</summary>
+    public static string? Spelled(DrivenReach? reach) => reach switch
+    {
+        DrivenReach.NextStep => "next-step",
+        DrivenReach.TurnEnd => "turn-end",
+        DrivenReach.Steered => "now",
+        _ => null,
+    };
+
+    /// <summary>A conversation's reach in the record's spelling (MSG1c), <c>now</c> for a steer and null for a turn taken at once.</summary>
+    public static string? Spelled(TurnReach? reach) => reach switch
+    {
+        TurnReach.NextStep => "next-step",
+        TurnReach.TurnEnd => "turn-end",
+        TurnReach.Steered => "now",
+        _ => null,
+    };
+}

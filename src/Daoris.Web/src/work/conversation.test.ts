@@ -159,6 +159,48 @@ describe('toTurns', () => {
   });
 
   /**
+   * STEER2b (D136): words *Send now* put into the running turn are taken where they were said. They show there as theirs,
+   * never waiting: no waiting entry for a later ask to take, and no "never read" once the session ends. A call the steer
+   * cut is closed by the record as `cut`, which the session's end does not turn into a stop.
+   */
+  it('shows words sent now where they were taken, never as waiting, and a call the steer cut as cut', () => {
+    // The driver's order: the words said, taken as the ask of the turn that goes on, and only then the cut call's close,
+    // written when the prompt is answered, just before the turn's end.
+    const said = [
+      e(1, { kind: 'user', origin: 'target', text: 'take quest #q1' }),
+      e(2, { kind: 'tool', id: 'c1', title: 'npm test', status: 'in_progress' }),
+      e(3, { kind: 'user', origin: 'person', id: 'said-1', reaches: 'now', text: 'stop, use the blue one' }),
+    ];
+    const waiting = toTurns(said);
+    expect(waiting.turns[0]!.items.map((b) => b.kind)).toEqual(['tool', 'held']);
+    expect(waiting.turns[0]!.items[1]).toMatchObject({ reaches: 'now' });
+
+    const events = [
+      ...said,
+      e(4, { kind: 'user', origin: 'person', id: 'said-1', text: 'stop, use the blue one' }),
+      e(5, { kind: 'message', text: 'Blue it is.' }),
+      e(6, { kind: 'tool', id: 'c1', status: 'cut' }),
+      e(7, { kind: 'turn', stopReason: 'end_turn' }),
+    ];
+    const taken = toTurns(events);
+
+    // The first card reads cut, and no second card appears for the close.
+    expect(taken.turns).toHaveLength(2);
+    expect(taken.turns[0]!.items.map((b) => b.kind)).toEqual(['tool']);
+    expect(taken.turns[0]!.items[0]).toMatchObject({ status: 'cut' });
+    expect(taken.turns[1]!.items.map((b) => b.kind)).toEqual(['message']);
+    expect(taken.turns[1]!.ask).toMatchObject({ text: 'stop, use the blue one' });
+    expect(settle(taken.turns, false)[0]!.items[0]!.stopped).toBeUndefined();
+
+    // A steer refused or not reached is settled by its note (it names the word), and waits no longer.
+    const refused = toTurns([...said, e(4, { kind: 'note', text: 'refused', words: ['said-1'], code: 'refused' })]);
+    expect(refused.turns[0]!.items[1]).toMatchObject({ kind: 'held', settled: true });
+    expect(settle(refused.turns, false)[0]!.items[1]!.unreached).toBeUndefined();
+    // Not settled and the session over: never read.
+    expect(settle(waiting.turns, false)[0]!.items[1]!.unreached).toBe(true);
+  });
+
+  /**
    * MSG1f (D137 §3.1): words to a session that parked or ended show at once as a new turn waiting at its foot, never in
    * the run that ended before them. Where the resumed run took them, the same words under the same id are its ask, and
    * the waiting turn goes, keeping the driver's note that the run opened with.

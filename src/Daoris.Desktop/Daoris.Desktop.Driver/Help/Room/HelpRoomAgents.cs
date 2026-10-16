@@ -3,8 +3,8 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The agents (HELP1a): each installed or not, and who is signed in, by the tool's own answer — an account
-/// by its name, never its key (AGT3). One not installed is said, not dropped.
+/// The agents (HELP1a): each installed or not, and which of Daoris's accounts are signed in, by the tool's own
+/// answer — an account by its name, never its key (AGT3). One not installed is said, not dropped.
 /// </summary>
 internal sealed class HelpRoomAgents : IHelpRoomSection
 {
@@ -18,7 +18,6 @@ internal sealed class HelpRoomAgents : IHelpRoomSection
                 Product = sources.Product(report.Adapter),
                 Present = report.Present,
                 Version = report.Version,
-                Login = Spell(report.OwnLogin),
                 Accounts = [.. report.Profiles.Select(profile => new HelpAccount(profile.Name, Spell(profile.Login)))],
             })],
         };
@@ -41,8 +40,12 @@ internal sealed class HelpRoomAgents : IHelpRoomSection
 
         var named = string.Join(" ", new[] { agent.Product, agent.Version }.Where(part => part is { Length: > 0 }));
         var line = named.Length > 0 ? $"`{agent.Name}` ({named}): " : $"`{agent.Name}`: ";
-        line += Login(agent.Login);
-        foreach (var account in agent.Accounts) line += $"; account `{account.Name}` {Login(account.Login)}";
+        // Only Daoris's accounts are signed in for Daoris (D175): the tool's own sign-in is not said here, and a start
+        // waits for a sign-in when no account is, as the roster's walk holds it (OWNSPACE1b-C).
+        var accounts = string.Join("; ", agent.Accounts.Select(account => $"account `{account.Name}` {Login(account.Login)}"));
+        var noneSignedIn = agent.Accounts.All(account => account.Login == "out");
+        if (accounts.Length > 0) line += accounts;
+        if (noneSignedIn) line += (accounts.Length > 0 ? "; " : "") + "no Daoris account is signed in, so its starts wait for a sign-in";
         return line;
     }
 
@@ -54,7 +57,7 @@ internal sealed class HelpRoomAgents : IHelpRoomSection
     };
 }
 
-/// <summary>One agent as the room tells it: installed or not, and who is signed in, by the tool's own answer.</summary>
+/// <summary>One agent as the room tells it: installed or not, and which of Daoris's accounts are signed in.</summary>
 /// <param name="Name">The harness's name, as `daoris driver` takes it.</param>
 public sealed record HelpAgent(string Name)
 {
@@ -64,9 +67,6 @@ public sealed record HelpAgent(string Name)
     public bool Present { get; init; }
 
     public string? Version { get; init; }
-
-    /// <summary>The tool's own home's sign-in: `in`, `out` or `unknown`.</summary>
-    public string Login { get; init; } = "unknown";
 
     public IReadOnlyList<HelpAccount> Accounts { get; init; } = [];
 }

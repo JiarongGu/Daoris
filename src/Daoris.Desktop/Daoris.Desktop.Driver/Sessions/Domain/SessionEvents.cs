@@ -164,8 +164,9 @@ public sealed record SessionEvent
 
     /// <summary>
     /// For the person's words to a driven session, on the event that shows them the moment they are said (STEER1, D136):
-    /// when they reach it, <c>next-step</c> or <c>turn-end</c>. The words where the session took them come again without
-    /// it, under the same <see cref="Id"/>, and that one is the turn's ask.
+    /// when they reach it, <c>next-step</c> or <c>turn-end</c>, or <c>now</c> where the person's *Send now* steered them into
+    /// the running turn (STEER2a). The words where the session took them come again without it, under the same
+    /// <see cref="Id"/>, and that one is the turn's ask.
     /// </summary>
     public string? Reaches { get; init; }
 

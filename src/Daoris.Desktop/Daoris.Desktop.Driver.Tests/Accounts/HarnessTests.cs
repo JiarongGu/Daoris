@@ -736,32 +736,44 @@ public sealed class HarnessSelectionTests : IDisposable
         return script;
     }
 
-    private HarnessToolchain Toolchain(string script) => new(
+    /// <param name="ownHome">
+    /// A test double whose own home is nobody's (<see cref="HarnessToolchain.RunsInOwnHome"/>, OWNSPACE1a): the version, the pin
+    /// and the default are this class's subjects, so a start that names no account runs there; false is a real agent's.
+    /// </param>
+    private HarnessToolchain Toolchain(string script, bool ownHome = true) => new(
         Binary: ["node", script],
         VersionArguments: ["--version"],
         ProfileVariable: "FAKE_HOME",
         Install: ["npm", "install", "-g", "fake"],
-        LoginCheck: new LoginQuestion(["auth"], "logged-in", "logged-out"));
+        LoginCheck: new LoginQuestion(["auth"], "logged-in", "logged-out"),
+        RunsInOwnHome: ownHome);
 
     private static DriverConfig Config() => DriverConfig.Empty with { Adapter = "fake" };
 
     /// <summary>
-    /// <b>The additive case, and the one that must never regress.</b> No profile named anywhere: the
-    /// spawn proceeds, the environment seam is not touched, and the harness uses the configuration
-    /// home it always has. This is what keeps "Daoris works alone" true through a feature about
-    /// accounts (D48 §2a) — a person who never asked for profiles must not be logged out by one.
+    /// OWNSPACE1a (D175 point 2, amending D48 §2a's own home): with no account named and no Daoris account, a real agent's start
+    /// waits for a sign-in and the spawn never reaches the person's own home; with a Daoris account signed in, it runs there,
+    /// its home in the environment seam.
     /// </summary>
     [Fact]
-    public async Task With_no_profile_named_the_spawn_proceeds_on_the_harness_s_own_home()
+    public async Task With_no_profile_named_a_real_agent_takes_its_Daoris_account_or_waits_for_one()
     {
-        var roster = new HarnessRoster(Set(Toolchain(Present())), Settings);
+        var roster = new HarnessRoster(Set(Toolchain(Present(), ownHome: false)), Settings);
 
-        var selection = await roster.SelectAsync("fake", Config(), workspace: "aurora", chosen: null);
+        var waits = await roster.SelectAsync("fake", Config(), workspace: "aurora", chosen: null);
 
-        Assert.True(selection.Allowed);
-        Assert.Null(selection.Profile);
-        Assert.Null(selection.ProfileHome);
-        Assert.Equal("present 1.2.3", selection.Version);
+        Assert.False(waits.Allowed);
+        Assert.Null(waits.ProfileHome);
+        Assert.StartsWith("No `fake` account of Daoris's own is signed in", waits.Refusal);
+
+        var home = HarnessSettings.ProfileHome(_home, "fake", "daoris");
+        Directory.CreateDirectory(home);
+        File.WriteAllText(Path.Combine(home, "credentials.json"), "{}");
+        var runs = await roster.SelectAsync("fake", Config(), workspace: "aurora", chosen: null);
+
+        Assert.True(runs.Allowed, runs.Refusal);
+        Assert.Equal(("daoris", home), (runs.Profile, runs.ProfileHome));
+        Assert.Equal("present 1.2.3", runs.Version);
     }
 
     /// <summary>

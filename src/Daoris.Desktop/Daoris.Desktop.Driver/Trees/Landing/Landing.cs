@@ -120,6 +120,28 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
     public string Slug => LandingRules.Slug(Name ?? Title);
 
     /// <summary>
+    /// Whether this is a conversation's subject, its title its opening (<see cref="LandingRules.SubjectAsync"/>): no quest, no name, and
+    /// the person's first words as its title (ACCEPTFOOT2, D164's 2026-10-16 note).
+    /// </summary>
+    public bool NamedByOpening => Quest is null && Name is null && Title is not null;
+
+    /// <summary>
+    /// This subject named for its work where it is a conversation's (ACCEPTFOOT2): its name the oldest commit subject its work holds
+    /// beyond the line, as PROCESS1b-ii names a squash with no title, or empty where none was read, so its branch is never a slug of
+    /// the person's first words. The opening stays its title, for the record and the squash, and is searched for a ticket's key after
+    /// that subject. Any other subject is as it was.
+    /// </summary>
+    public LandingSubject ForWork(string? oldest) =>
+        NamedByOpening ? this with { Name = string.IsNullOrWhiteSpace(oldest) ? "" : oldest.Trim() } : this;
+
+    /// <summary>
+    /// The title a squash's subject takes (ACCEPTFOOT2b): a quest's own title, but for a conversation, whose title is its opening, the
+    /// oldest commit's subject <see cref="ForWork"/> named it by, or null where none was read, so the squash's own fallback takes the
+    /// commits' first subject.
+    /// </summary>
+    public string? SquashTitle => Quest is null && Title is not null ? (string.IsNullOrWhiteSpace(Name) ? null : Name) : Title;
+
+    /// <summary>
     /// The subject a quest is landed as: its title for the record, its name for the branch where they differ, and its body and
     /// links for a ticket's key to be found in. Blank and empty are carried as none, so a quest without them is the subject it was.
     /// </summary>
@@ -915,6 +937,26 @@ public static class LandingRules
     /// <summary>The branch a branch rule's pattern names for one session: what the plan says and the press makes.</summary>
     public static string Branch(LandingSubject subject, LandingRule rule, string repository) =>
         Expand(rule.Pattern ?? "", Names(subject, rule, repository));
+
+    /// <summary>
+    /// Whether a rule's pattern reads a subject's words (ACCEPTFOOT2): <c>{slug}</c>, or <c>{ticket}</c>, searched in them. A pattern
+    /// of ids alone names the branch the same whatever the work's words, so nothing need be read for them.
+    /// </summary>
+    public static bool ReadsWords(LandingRule rule) =>
+        (rule.Pattern ?? "").Contains("{slug}", StringComparison.Ordinal) || (rule.Pattern ?? "").Contains("{ticket}", StringComparison.Ordinal);
+
+    /// <summary>The git log format <see cref="OldestSubject"/> reads: each commit's subject after a unit separator, oldest first.</summary>
+    public const string SubjectsFormat = "--format=%x1f%s";
+
+    /// <summary>
+    /// The oldest commit's subject from <c>git log --reverse</c> in <see cref="SubjectsFormat"/> (ACCEPTFOOT2): the first commit's,
+    /// trimmed, empty where its message is, never a later commit's; null where the log names no commit.
+    /// </summary>
+    public static string? OldestSubject(string log)
+    {
+        var commits = log.Split('\u001f');
+        return commits.Length < 2 ? null : commits[1].Trim();
+    }
 
     /// <summary>
     /// What a landing is named for (WSR5): the session, and the chain's FIRST quest with its title — the

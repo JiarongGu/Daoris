@@ -74,7 +74,9 @@ export function starters(
   }
 
   for (const tool of machine.tools) {
-    if (tool.present && tool.ownLogin === 'out' && !tool.accounts.some((account) => account.login === 'in')) {
+    // No Daoris account signed in: none, or each a definite out (an `unknown` is not a lack). The tool's own
+    // sign-in does not count (D175, OWNSPACE1b-C).
+    if (tool.present && tool.accounts.every((account) => account.login === 'out')) {
       found.push({
         id: 'agent-signed-out', values: { tool: tool.product ?? tool.name },
         // The agent's page, at its accounts (UX6e, D150 §5): where an account is signed in.

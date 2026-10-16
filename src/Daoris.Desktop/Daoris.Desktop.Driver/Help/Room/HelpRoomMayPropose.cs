@@ -36,7 +36,7 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // SWITCH1d: the switch and the person's curve, in place of `early` and `near`.
         text.Append("  `switch` smart, curve or off, and `curve` the person's own points a window, or `no_curve`); `order` writes the\n");
         text.Append("  list in walk order, or with `clear` sends a workspace back to this machine's accounts; `ready` ends an account's\n");
-        text.Append("  cool-off, as *Try now* does (`own` is the tool's own sign-in).\n");
+        text.Append("  cool-off, as *Try now* does (`own` ends only an old cool-off of the tool's own sign-in).\n");
         text.Append("  Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is\n");
         text.Append("  offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.\n");
         text.Append("- `agent_settings_propose`: an account's own model and effort, as Agents → the agent's page → Model and\n");

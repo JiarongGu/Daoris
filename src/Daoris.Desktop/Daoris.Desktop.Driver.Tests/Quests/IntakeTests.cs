@@ -573,6 +573,30 @@ public sealed class IntakeTests : IDisposable
         Assert.Equal("stopped", service.Session("i1")["state"]!.GetValue<string>());
     }
 
+    /// <summary>
+    /// HELPPLUG1c (D170 point 4): an intake is handed the skills plugins hand sessions, by the harness's own door on either wire,
+    /// and the composed folder goes when its session does.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(SkillsSpawnProbe.Doors), MemberType = typeof(SkillsSpawnProbe))]
+    public async Task An_intake_is_handed_a_plugins_skills_on_either_door_and_the_folder_goes_with_its_session(string adapter)
+    {
+        SkillsSpawnProbe.Install(_home);
+        SkillsSpawnProbe.SignIn(_home);
+        var config = DriverConfig.Empty with
+        {
+            Adapter = adapter,
+            TimeoutMinutes = 1,
+            Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = SkillsSpawnProbe.Command(_home, adapter) },
+        };
+        await using var service = StandInService.Start(Circle, Ask());
+
+        await Driver(config.WithIntake(adapter), service).RunOnceAsync();
+
+        Assert.Single(service.Intakes);
+        SkillsSpawnProbe.AssertHandedAndRemoved(_home);
+    }
+
     private static Task Until(Func<bool> condition) =>
         Poll.Until(condition, () => "the intake never started", TimeSpan.FromSeconds(15));
 

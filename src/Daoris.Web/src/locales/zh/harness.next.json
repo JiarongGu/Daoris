@@ -6,7 +6,8 @@
   "harness.next.whyOrder": "每次启动都运行在列表顺序中第一个就绪的账户上，从默认账户开始；已达上限、正在使用用量额度或用量超出曲线的账户排到最后。驱动的工作跳过留作对话的账户。",
   "harness.next.takes": "下一次启动使用 {{account}}：{{why}}。",
   "harness.next.takesIn": "在 {{workspace}} 中，下一次启动使用 {{account}}：{{why}}。",
-  "harness.next.own": "下一次启动运行在你自己的登录上：这里没有指定任何账户。",
+  "harness.next.own": "下一次启动运行在工具自己的配置目录中，那里不是任何人的登录：这里没有指定任何账户。",
+  "harness.next.noAccount": "没有为它登录任何 Daoris 账户；它的启动要等你登录后才会开始。",
   "harness.next.waitsUntil": "这里没有就绪的账户，所以下一次启动要等到 {{when}}。",
   "harness.next.waits": "这里没有就绪的账户，也不会自行就绪：下一次启动在等你处理。",
   "harness.next.signInSooner": "登录 {{accounts}}，它就能更早开始。",
@@ -46,5 +47,5 @@
   "harness.next.comma": "、",
   "harness.next.offered": "自 {{when}} 起重新可用",
   "harness.next.offeredSentence": "它的冷却在 {{when}} 结束。",
-  "harness.next.ownSignIn": "{{product}} 自己的登录（它在你终端里使用的账户）不承担这些启动：它们只运行在这里使用的账户上；它只运行没有指定任何账户的启动。"
+  "harness.next.ownSignIn": "{{product}} 自己的登录（它在你终端里使用的账户）不承担这些启动：Daoris 只在这里使用的账户上启动会话。"
 }

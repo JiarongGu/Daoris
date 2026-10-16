@@ -99,6 +99,15 @@ public sealed record LandedBranch(
     /// </summary>
     public string? Squashed { get; init; }
 
+    /// <summary>That the line held the branch's work, and the evidence (FABRIC-END2, design §B5, §C7); null where not yet judged held. Written only by <see cref="EndKeeping"/>.</summary>
+    public HeldFact? Held { get; init; }
+
+    /// <summary>
+    /// The branch work units whose work it carries (FABRIC-END2, design §D2): the landing's own session's and each advance's, where its
+    /// entry had one. A landing carrying several sessions' work is one result of several units, never a unit itself.
+    /// </summary>
+    public IReadOnlyList<string> Units { get; init; } = [];
+
     /// <summary>Whether this landing names <paramref name="session"/>: the session that made it, or one whose done moved it on (LAND2c).</summary>
     public bool Names(string session) =>
         string.Equals(Session, session, StringComparison.OrdinalIgnoreCase)
@@ -177,6 +186,9 @@ public sealed class LandedBranches(string home)
 
     public string FilePath => DaorisHome.Entry(home, HomeEntry.Landings);
 
+    /// <summary>The record's lock across processes (FABRIC-END2): the loop and a verb beside it edit this file one at a time.</summary>
+    public string LockPath => RecordLock.PathOf(home, FileName);
+
     /// <summary>Every branch recorded that still stands, in the order they landed: what the clean-up, the hand-off and Ask Daoris act on.</summary>
     public IReadOnlyList<LandedBranch> All() => [.. Everything().Where(entry => entry.GoneAt is null)];
 
@@ -248,10 +260,22 @@ public sealed class LandedBranches(string home)
     /// (PROCESS1b-ii): its tip is the advance's, the session tip squashed moves with it where the advance squashed one, and the
     /// advance is kept with the rest. The branch stays the landing's, so the clean-up and the hand-off judge it at its new tip.
     /// </summary>
-    public void Advanced(string repository, string branch, LandedAdvance advance) => Edit(all =>
+    /// <param name="unit">The advancing session's branch work unit (FABRIC-END2), added to <see cref="LandedBranch.Units"/> where it is new.</param>
+    public void Advanced(string repository, string branch, LandedAdvance advance, string? unit = null) => Edit(all =>
         [.. all.Select(each => Standing(each, repository, branch)
-            ? each with { Tip = advance.To, Squashed = advance.Squashed ?? each.Squashed, Advances = [.. each.Advances, advance] }
+            ? each with
+            {
+                Tip = advance.To, Squashed = advance.Squashed ?? each.Squashed, Advances = [.. each.Advances, advance],
+                Units = unit is null || each.Units.Contains(unit, StringComparer.Ordinal) ? each.Units : [.. each.Units, unit],
+            }
             : each)]);
+
+    /// <summary>
+    /// The end judgement's write (FABRIC-END2, <see cref="EndKeeping"/>, its only caller): the standing entry's held fact, or none where it
+    /// stopped holding. A trace is never written again.
+    /// </summary>
+    internal void Hold(LandedBranch entry, HeldFact? held) => Edit(all =>
+        [.. all.Select(each => each.GoneAt is null && SameEntry(each, entry) ? each with { Held = held } : each)]);
 
     /// <summary>
     /// Where bringing it up to date replayed it (WSR6): its new tip, and the line's commit it now grows from.
@@ -301,6 +325,7 @@ public sealed class LandedBranches(string home)
     {
         lock (Gate)
         {
+            using var held = RecordLock.Take(LockPath);
             var all = Everything();
             bool Forgotten(LandedBranch entry) => entry.GoneAt is not null && forget(entry);
             var count = all.Count(Forgotten);
@@ -321,7 +346,7 @@ public sealed class LandedBranches(string home)
         && each.LandedAt == entry.LandedAt;
 
     // Every entry, traces included: a write that read only the standing ones would drop every trace (D113).
-    private void Edit(Func<IReadOnlyList<LandedBranch>, IReadOnlyList<LandedBranch>> change) => List.Edit(FilePath, change);
+    private void Edit(Func<IReadOnlyList<LandedBranch>, IReadOnlyList<LandedBranch>> change) => List.Edit(FilePath, change, LockPath);
 
     /// <summary>
     /// The entries with each repository's traces beyond its newest <see cref="TracesKept"/> dropped (LEFT3), the one that
@@ -429,6 +454,15 @@ public sealed class LandedBranches(string home)
                     writer.WriteEndObject();
                 }
 
+                writer.WriteEndArray();
+            }
+
+            // FABRIC-END2: each only where it is known, so an entry from before reads as it did.
+            if (entry.Held is { } held) HeldFact.Write(writer, held);
+            if (entry.Units.Count > 0)
+            {
+                writer.WriteStartArray("units");
+                foreach (var unit in entry.Units) writer.WriteStringValue(unit);
                 writer.WriteEndArray();
             }
 
@@ -652,7 +686,22 @@ public sealed class LandedBranches(string home)
             PullRequestAskFailed = AskFailedOf(element),
             Carried = CarriedOf(element),
             Squashed = Text(element, "squashed"),
+            Held = HeldFact.Read(element),
+            Units = UnitsOf(element),
         };
+    }
+
+    /// <summary>The units an entry carries (FABRIC-END2), each a non-empty string. Absent is none, which is every landing from before.</summary>
+    private static IReadOnlyList<string> UnitsOf(JsonElement element)
+    {
+        if (!element.TryGetProperty("units", out var list) || list.ValueKind != JsonValueKind.Array) return [];
+        var units = list.EnumerateArray()
+            .Where(each => each.ValueKind == JsonValueKind.String && each.GetString() is { Length: > 0 })
+            .Select(each => each.GetString()!)
+            .ToList();
+        // The empty case is the property's own default, so an entry from before still equals itself read twice.
+        if (units.Count == 0) return [];
+        return units;
     }
 
     /// <summary>

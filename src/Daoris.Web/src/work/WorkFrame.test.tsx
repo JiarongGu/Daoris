@@ -2182,6 +2182,93 @@ describe('starting and holding a conversation', () => {
   });
 
   /**
+   * STEER2b (D136): *Send now* beside *Queue* sends the typed words with `now: true`. The answer says what came of it: taken
+   * at once in the running turn (nothing to say), the turn stopping so they go next, or that the door could not, the words
+   * held as a queue's are, said in one line.
+   */
+  it('sends typed words to a working driven session now, and says what the door did', async () => {
+    let answer: object = { sent: true, reaches: 'now', why: null, now: true };
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_QUEUE') return { session: 's1a2b3c4', queued: [], taking: true, listening: true };
+      if (type === 'SESSION_INPUT') return answer;
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show('s1a2b3c4', notify);
+
+    const box = await screen.findByLabelText('Message');
+    await userEvent.type(box, 'drop the cache');
+    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: { id: 's1a2b3c4', text: 'drop the cache', now: true } });
+    expect(box).toHaveValue('');
+    expect(notify).not.toHaveBeenCalled();
+
+    answer = { sent: true, reaches: 'turn-end', why: null, now: true };
+    await userEvent.type(box, 'then the build');
+    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Stopping its turn: what you added goes next.'));
+
+    answer = { sent: true, reaches: 'turn-end', why: 'no-interrupt', now: false };
+    await userEvent.type(box, 'and the tests');
+    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'Its door cannot take words in a running turn, so these are held for its turn to end.'));
+    // Held, not lost: nothing is put back in the box.
+    expect(box).toHaveValue('');
+
+    // Each code has its line: a next-step door that never steers, a session still opening, and a code not known.
+    const refusals: [object, string][] = [
+      [{ sent: true, reaches: 'next-step', why: 'no-interrupt', now: false }, 'Its agent cannot be steered mid-turn, so these go at its next step.'],
+      [{ sent: true, reaches: 'next-step', why: 'behind', now: false }, 'Other words are already on their way to it, so these wait behind them.'],
+      [{ sent: true, reaches: 'resume', why: 'opening', now: false }, 'It is still opening, so these go as soon as it has opened.'],
+      [{ sent: true, reaches: 'turn-end', why: 'something-new', now: false }, 'It could not take these now, so they are held as queued words are.'],
+    ];
+    for (const [reply, line] of refusals) {
+      answer = reply;
+      await userEvent.type(box, 'more');
+      await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
+      await waitFor(() => expect(notify).toHaveBeenCalledWith(line));
+    }
+
+    // No turn was running: an ordinary send, with nothing said.
+    notify.mockClear();
+    answer = { sent: true, reaches: null, why: null, now: true };
+    await userEvent.type(box, 'idle');
+    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
+    await waitFor(() => expect(box).toHaveValue(''));
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  /**
+   * STEER2b (D136): a conversation's *Send now* with words in the box sends them with `now: true`; with the box empty and
+   * words waiting it stops the turn and keeps them (`CANCEL_TURN` with `keep`), which comes back with nothing withdrawn.
+   * *Stop turn* stays the withdrawal.
+   */
+  it('sends a conversation’s words now, and with an empty box stops the turn keeping what waits', async () => {
+    SESSIONS = [CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return STRUCTURED_ROSTER;
+      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [{ id: 'q1', text: 'and then test it', files: [] }], taking: true };
+      if (type === 'SESSION_INPUT') return { sent: true, reaches: 'now', why: null, now: true };
+      if (type === 'CANCEL_TURN') return { cancelled: true, withdrawn: [] };
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show('c0ffee11', notify);
+
+    await screen.findByRole('list', { name: 'waiting for this turn to end' });
+    // Empty box, words waiting: the stop that keeps them.
+    await userEvent.click(await screen.findByRole('button', { name: 'Send now' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CANCEL_TURN', { payload: { id: 'c0ffee11', keep: true } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Stopping its turn: what you added goes next.'));
+    expect(screen.getByLabelText('Message')).toHaveValue('');
+
+    await userEvent.type(screen.getByLabelText('Message'), 'use the blue one');
+    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: { id: 'c0ffee11', text: 'use the blue one', now: true } });
+  });
+
+  /**
    * SENDLOST1b: words to a working driven session's running door show as sending; a send the page stopped waiting on keeps
    * them, saying the machine has not answered yet, with no error and nothing back in the box, until the driver holds them.
    */
@@ -4291,6 +4378,102 @@ describe('acting on what a session landed', () => {
     expect(within(strip).getByRole('button', { name: 'Accept…' })).toBeInTheDocument();
     // The name typed at the foot went with its ask.
     expect(within(asks()[0]!).getByRole('textbox', { name: 'Branch name' })).toHaveValue('');
+  });
+
+  /**
+   * ACCEPTFOOT1 (D164's note, D168 point 2): the owner, 2026-10-16, found no *Accept* in an open conversation whose turn ended
+   * with a commit beyond the line: its record stays `working`, so the driver's look offered nothing, and only the review's side
+   * bar had the press. Once its turn ends, the head and the foot offer it from the review's own answer; never while a turn runs.
+   */
+  describe('an open conversation whose turn ended with work', () => {
+    const TALK = { ...CHAT, tree: 'C:/somewhere/.daoris/trees/default/engine/s-c0ffee11' };
+    const BEYOND = {
+      ...DIFF, session: 'c0ffee11', behind: { line: 'main', commits: 0, ahead: 1 }, treeBranch: 'daoris/s-c0ffee11',
+      offer: { branch: 'daoris/s-c0ffee11', tree: 's-c0ffee11', commits: 1, uncommitted: 0 },
+    };
+    const NOTHING = { ...BEYOND, files: [], behind: { line: 'main', commits: 0, ahead: 0 }, offer: null };
+    const answering = (review: object | (() => unknown), taking = false) => async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return STRUCTURED_ROSTER;
+      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [], taking };
+      if (type === 'SESSION_GROUPS') return { sessions: [{ session: 'c0ffee11', group: 'working', shown: 'working', archived: false, teammate: false }] };
+      if (type === 'LANDING') return { session: 'c0ffee11', form: 'branch', target: 'feature/delta', source: 'workspace' };
+      if (type === 'SESSION_DIFF') return typeof review === 'function' ? review() : review;
+      return DRIVER_STATE;
+    };
+    const turn = (taking: boolean) => act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c0ffee11', queued: [], taking }));
+    const diffs = () => invoke.mock.calls.filter((call) => call[1] === 'SESSION_DIFF').length;
+
+    // The second maker's review: a review read before the turn's last commit was reused at its end, within the 15 s a live review
+    // is fresh for, so a turn that committed offered nothing; and a stale answer that offered stayed pressable while it was read again.
+    it('reads the review again for the turn that ended, never offering from an answer read before it', async () => {
+      SESSIONS = [TALK];
+      let review: () => unknown = () => NOTHING;
+      invoke.mockImplementation(answering(() => review()));
+
+      show('c0ffee11');
+      await waitFor(() => expect(diffs()).toBe(1));
+      expect(await screen.findByRole('button', { name: 'Send' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Accept…' })).not.toBeInTheDocument();
+
+      turn(true);
+      review = () => BEYOND;
+      turn(false);
+      const strip = await screen.findByRole('region', { name: 'Waiting on you' });
+      expect(await within(strip).findByRole('button', { name: 'Accept…' })).toBeInTheDocument();
+
+      // The next turn's answer is not in yet: the one before it, which offered, offers nothing meanwhile.
+      turn(true);
+      review = () => new Promise(() => {});
+      turn(false);
+      await waitFor(() => expect(diffs()).toBe(3));
+      expect(screen.queryByRole('button', { name: 'Accept…' })).not.toBeInTheDocument();
+    });
+
+    it('offers none where the driver would land nothing, its work held by content', async () => {
+      SESSIONS = [TALK];
+      invoke.mockImplementation(answering({ ...BEYOND, offer: null }));
+
+      show('c0ffee11');
+      await waitFor(() => expect(diffs()).toBe(1));
+      expect(await screen.findByRole('button', { name: 'Send' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Accept…' })).not.toBeInTheDocument();
+    });
+
+    it('offers *Accept…* at its foot and its head once the turn has ended', async () => {
+      SESSIONS = [TALK];
+      invoke.mockImplementation(answering(BEYOND));
+
+      show('c0ffee11');
+      const strip = await screen.findByRole('region', { name: 'Waiting on you' });
+      expect(await within(strip).findByRole('button', { name: 'Accept…' })).toBeInTheDocument();
+      // The head's and the foot's, one press (D56).
+      expect(screen.getAllByRole('button', { name: 'Accept…' })).toHaveLength(2);
+    });
+
+    it('offers none while a turn runs, and offers it the moment the turn ends', async () => {
+      SESSIONS = [TALK];
+      invoke.mockImplementation(answering(BEYOND, true));
+
+      show('c0ffee11');
+      expect(await screen.findByRole('button', { name: 'Stop turn' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Accept…' })).not.toBeInTheDocument();
+      expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DIFF', expect.anything());
+
+      act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c0ffee11', queued: [], taking: false }));
+      const strip = await screen.findByRole('region', { name: 'Waiting on you' });
+      expect(await within(strip).findByRole('button', { name: 'Accept…' })).toBeInTheDocument();
+    });
+
+    it('offers none where its tree holds nothing beyond the line (REVIEWBASE4)', async () => {
+      SESSIONS = [TALK];
+      invoke.mockImplementation(answering(NOTHING));
+
+      show('c0ffee11');
+      await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DIFF', expect.anything()));
+      expect(await screen.findByRole('button', { name: 'Send' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Accept…' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('region', { name: 'Waiting on you' })).not.toBeInTheDocument();
+    });
   });
 
   // WAITFOOT2a: the strip stands aside while the head's waits are on screen, never from under an ask open in it.
