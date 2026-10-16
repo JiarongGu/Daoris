@@ -330,8 +330,11 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
         Assert.DoesNotContain(moved.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
         Assert.Equal("feature/x", (await GitAsync(moved.Path, "branch", "--show-current")).Trim());
         Assert.True(File.Exists(Path.Combine(moved.Path, "work.txt")));
-        // Learned, and kept while the tree or its branch stands, so it is known after the tree goes.
-        Assert.Equal("feature/x", trees.Grown.Of("engine", moved.Branch)!.Now);
+        // Learned, and kept so it is known after the tree goes: the removed branch's trace at once (FABRIC-END4a review), never a
+        // standing entry of a deleted branch.
+        var trace = trees.Grown.Entries().Last(entry => entry.Branch == moved.Branch);
+        Assert.Equal(("feature/x", true), (trace.Now, trace.GoneAt is not null));
+        Assert.Null(trees.Grown.Of("engine", moved.Branch));
 
         var work = await trees.WorkAsync(moved.Path);
         Assert.Equal(1, work!.Commits);

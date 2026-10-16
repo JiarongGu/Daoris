@@ -113,10 +113,15 @@ public sealed class SessionBranches(string home)
     /// The tidy's effect's write (FABRIC-END4a, <see cref="TidyEffect"/>, its only caller): the guard that kept the standing branch, written
     /// only where it says something new, so a refusal repeated on every wake writes the file once.
     /// </summary>
+    /// <remarks>
+    /// Only the home's lease holder writes it, as only it keeps ends (FABRIC-END2): a process beside it (<c>drive --share</c>) writes nothing.
+    /// The reason is compared again inside the record's lock, so two writers never rewrite one reason with two moments.
+    /// </remarks>
     internal void Block(string repository, string branch, string why, DateTimeOffset at)
     {
+        if (!HomeLease.HeldHere(home)) return;
         if (Of(repository, branch) is not { } standing || standing.Blocked?.Why == why) return;
-        Edit(all => [.. all.Select(each => Standing(each, repository, branch) ? each with { Blocked = new TidyBlock(why, at) } : each)]);
+        Edit(all => [.. all.Select(each => Standing(each, repository, branch) && each.Blocked?.Why != why ? each with { Blocked = new TidyBlock(why, at) } : each)]);
     }
 
     /// <summary>
@@ -153,6 +158,22 @@ public sealed class SessionBranches(string home)
 
             return kept;
         });
+    }
+
+    /// <summary>
+    /// The look's tidy removed these branches (FABRIC-END4a review): each standing entry whose tree moved onto a branch of its own
+    /// (<see cref="GrownBranch.Now"/>) becomes its trace at once, keeping where the tree's work is, since <c>ForgetGoneAsync</c> keeps
+    /// such an entry standing while that tree or branch exists, and a standing entry of a deleted branch would stay pending for ever.
+    /// The rest are forgotten as ever, by <c>ForgetGoneAsync</c>.
+    /// </summary>
+    public void Gone(string repository, IReadOnlyCollection<string> branches)
+    {
+        if (!All().Any(each => each.Now is not null && Same(each, repository, each.Branch) && branches.Contains(each.Branch, StringComparer.Ordinal))) return;
+        var now = DateTimeOffset.UtcNow;
+        Edit(all => [.. all.Select(each => each.GoneAt is null && each.Now is not null
+            && string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase) && branches.Contains(each.Branch, StringComparer.Ordinal)
+                ? each with { GoneAt = now, Blocked = null }
+                : each)]);
     }
 
     /// <summary>

@@ -79,6 +79,36 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
     }
 
     /// <summary>
+    /// 🔴 The review's P1: the delete's compare-and-swap covers the branch alone, so the line rewound, or the branch checked out, after
+    /// the last proof and before its ref goes puts the branch back at the commit judged, kept.
+    /// </summary>
+    [Theory]
+    [InlineData("rewound")]
+    [InlineData("checked-out")]
+    public async Task What_the_proof_rested_on_moving_as_the_branch_goes_puts_it_back(string how)
+    {
+        var root = await RepositoryAsync("engine");
+        var branch = await WorkAsync(new SessionTrees(Home), root, "a.txt", merged: true);
+        var tip = (await GitAsync(root, "rev-parse", branch)).Trim();
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
+        var late = Path.Combine(Path.GetDirectoryName(root)!, $"late-{Guid.NewGuid():N}"[..13]);
+        var trees = new SessionTrees(Home)
+        {
+            BeforeRefDeleted = async _ =>
+            {
+                if (how == "rewound") await GitAsync(root, "reset", "--hard", "--quiet", "HEAD~1");
+                else await GitAsync(root, "worktree", "add", "--quiet", late, branch);
+            },
+        };
+
+        var pass = await TidyAsync(trees, root);
+
+        Assert.DoesNotContain(pass.Results, result => result.Removed);
+        Assert.Equal(tip, (await GitAsync(root, "rev-parse", branch)).Trim());
+        Assert.Contains(pass.Results, result => result.Message.Contains("put back where it was", StringComparison.Ordinal));
+    }
+
+    /// <summary>
     /// The git starts counted down (END3 measured the keeper at 0.4-4 s of them per repository): a pace's tidy of a repository whose
     /// branches the line holds none of starts no more git than the end judgement's keeper already did for each of them, however many.
     /// Before FABRIC-END4a each was judged again by the press's list as well.
@@ -103,9 +133,13 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
         Assert.True(overFour - overOne <= 3, $"the tidy judged branches the line holds none of: {overOne} starts beyond the keeper with one, {overFour} with four");
     }
 
-    /// <summary>The git starts a tidy of <paramref name="root"/> makes, less those its keeper alone makes over the same refs.</summary>
+    /// <summary>
+    /// The git starts a pace's tidy of <paramref name="root"/> makes, less those its keeper alone makes over the same refs, once a first
+    /// pass has judged its recorded branches the keeper could not prove: those are judged again only when their tip or the line moves.
+    /// </summary>
     private static async Task<int> BeyondTheKeeperAsync(SessionTrees trees, string root)
     {
+        await trees.TidyEmptyAsync(root, Path.GetFileName(root), "aurora", InUseAsync, CancellationToken.None);
         var keeper = await CountedAsync(() => trees.Ends.KeepAsync(root, Path.GetFileName(root), "aurora", "main", CancellationToken.None));
         var tidy = await CountedAsync(() => trees.TidyEmptyAsync(root, Path.GetFileName(root), "aurora", InUseAsync, CancellationToken.None));
         return tidy - keeper;

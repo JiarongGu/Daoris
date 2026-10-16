@@ -196,6 +196,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     /// </summary>
     internal Func<string, Task>? BeforeDeleting { get => _context.BeforeDeleting; init => _context.BeforeDeleting = value; }
 
+    /// <inheritdoc cref="TreeContext.BeforeRefDeleted"/>
+    internal Func<string, Task>? BeforeRefDeleted { get => _context.BeforeRefDeleted; init => _context.BeforeRefDeleted = value; }
+
     /// <summary>The test seam (AUTOTIDY1): true for a checkout whose working trees git could not list. Production sets none.</summary>
     internal Func<string, bool>? ListFails { get => _context.ListFails; init => _context.ListFails = value; }
 

@@ -12,7 +12,10 @@ public sealed class TidyEffectTests : IDisposable
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-tidy-effect-" + Guid.NewGuid().ToString("N")[..8]);
     private readonly HashSet<string> _inUse = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<string> _tidied = [];
-    private readonly DateTimeOffset _now = new(2026, 10, 17, 9, 0, 0, TimeSpan.Zero);
+    private DateTimeOffset _now = new(2026, 10, 17, 9, 0, 0, TimeSpan.Zero);
+
+    // Whether the stand-in tidy removes what it is handed, or keeps it as a dirty tree would.
+    private bool _keeps;
 
     public TidyEffectTests() => Directory.CreateDirectory(_home);
 
@@ -52,6 +55,12 @@ public sealed class TidyEffectTests : IDisposable
         {
             _tidied.Add(repository.Repository);
             var going = TidyEffect.Pending(_home, _now).SelectMany(unit => unit.Branches).ToList();
+            if (_keeps)
+            {
+                return Task.FromResult(new TidyPass(
+                    [.. going.Select(branch => new SweepResult(new SweepItem("engine", "default", branch, null, SweepKind.Dirty, 0, "main", null), false, "kept"))]));
+            }
+
             Grown.Forget(repository.Repository, going);
             return Task.FromResult(new TidyPass(
                 [.. going.Select(branch => new SweepResult(new SweepItem("engine", "default", branch, null, SweepKind.Empty, 0, "main", null), true, "removed"))]));
@@ -102,6 +111,7 @@ public sealed class TidyEffectTests : IDisposable
         Record("a", Held("tip-a"));
         _inUse.Add(TreeOf("a"));
         var chain = ChainOf(Effect());
+        using var lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
 
         Assert.Equal(0, await chain.FireAsync([new ChainEvent(ChainEvents.WorkHeld, "engine", ChangeTopics.Refs)], CancellationToken.None));
         Assert.Empty(_tidied);
@@ -115,6 +125,45 @@ public sealed class TidyEffectTests : IDisposable
 
         Assert.Equal(["engine"], _tidied);
         Assert.Equal("completed", Milestone("unit-a").Cleanup.State);
+    }
+
+    /// <summary>
+    /// 🔴 The review's P2s: an unchanged blocker is one try, whatever wakes come, until the <c>refs</c> deadline passes; and a process
+    /// that does not hold the home's lease writes no <c>blocked</c>.
+    /// </summary>
+    [Fact]
+    public async Task An_unchanged_blocker_is_tried_once_until_the_deadline_and_only_the_lease_writes_it()
+    {
+        Record("a", Held("tip-a"));
+        _keeps = true;
+        var chain = ChainOf(Effect());
+
+        foreach (var wake in RefWatch.Unblocking) await chain.FireAsync([new ChainEvent(wake, wake, wake)], CancellationToken.None);
+
+        Assert.Equal(["engine"], _tidied);
+        Assert.Null(Grown.Of("engine", "daoris/a")!.Blocked);
+
+        _now += RefWatch.Deadline;
+        using var lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
+        await chain.FireAsync([new ChainEvent(ChainEvents.Ledger, "sessions", ChangeTopics.Ledger)], CancellationToken.None);
+
+        Assert.Equal(["engine", "engine"], _tidied);
+        Assert.Equal(SweepKind.Dirty, Grown.Of("engine", "daoris/a")!.Blocked?.Why);
+    }
+
+    /// <summary>🔴 The review's P2: a removed branch whose tree moved onto a branch of its own is a trace at once, keeping where it went, and no longer pending.</summary>
+    [Fact]
+    public void A_removed_branch_whose_tree_moved_on_is_a_trace_at_once()
+    {
+        Grown.Record(new GrownBranch("engine", "default", "daoris/a", "main", "base", null, _now, Now: "feature/x") { Unit = "unit-a" });
+        Grown.Hold("engine", "daoris/a", Held("tip-a"));
+
+        Grown.Gone("engine", ["daoris/a"]);
+
+        var trace = Grown.Entries().Single();
+        Assert.NotNull(trace.GoneAt);
+        Assert.Equal("feature/x", trace.Now);
+        Assert.Empty(TidyEffect.Pending(_home, _now));
     }
 
     /// <summary>🔴 Canary 27: a tree no record names is its own unit, blocked and said so, and never pending; nothing is tried for it.</summary>
