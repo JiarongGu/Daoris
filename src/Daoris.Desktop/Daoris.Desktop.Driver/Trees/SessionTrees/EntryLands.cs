@@ -318,7 +318,9 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
         var landing = process is { Named: true } named ? named.Landing : LandingRules.Choose(context.Config(), repository, workspace);
         if (landing.Rule.Form != LandingForm.Branch) return null;
 
-        var name = LandingRules.Branch(subject, landing.Rule, repository);
+        // A conversation's entry comes named for its first part's work (ACCEPTFOOT2, `TreeLands.EntryForWorkAsync`), whichever part's
+        // tree this is; its opening never names it.
+        var name = LandingRules.Branch(subject.NamedByOpening ? subject.ForWork(null) : subject, landing.Rule, repository);
         var here = Directory.Exists(full) ? await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false) : null;
         if (here is not { Code: 0 }) return name;
         var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(here.CommonDir.Trim()))!;

@@ -395,7 +395,7 @@ describe('the Agents place', () => {
     expect(rows.at(-1)).toBe(own);
     expect(within(own).getByText('signed in')).toBeTruthy();
     expect(within(own).queryByRole('button', { name: /^Sign in/ })).toBeNull();
-    expect(within(own).getByRole('note', { name: /^Sessions run on your own sign-in/ })).toBeTruthy();
+    expect(within(own).getByRole('note', { name: /Daoris does not start sessions in it; conversations that began there go on there\.$/ })).toBeTruthy();
     const menu = await more('Your own sign-in');
     expect(within(menu).queryByRole('menuitem', { name: /Sign in/ })).toBeNull();
     await userEvent.click(within(menu).getByRole('menuitem', { name: 'Use by default' }));
@@ -404,15 +404,16 @@ describe('the Agents place', () => {
     });
   });
 
-  /** D152 §4.3: *Runs for* says the workspaces that start on your own sign-in because they name no account; no chip. */
-  it('says which workspaces run on your own sign-in when nothing is named', async () => {
+  /** D175 point 1 (it was D152 §4.3's *Runs for*): no workspace runs on your own sign-in, whatever nothing names. */
+  it('says no workspace runs on your own sign-in when nothing is named', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
       ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], machineDefault: null, profiles: [] }] }
       : WIRING));
     place();
 
     const own = await screen.findByRole('listitem', { name: 'Your own sign-in' });
-    expect(within(own).getByText('default')).toBeTruthy();
+    expect(within(own).queryByText('Runs for')).toBeNull();
+    expect(within(own).queryByText('default')).toBeNull();
     expect(screen.queryByText('used by sessions')).toBeNull();
   });
 
@@ -450,11 +451,31 @@ describe('the Agents place', () => {
     });
 
     expect(notify).toHaveBeenCalledWith(
-      "Signed in as someone@example.invalid. No list holds it yet, so no start runs on it: its agent's page asks where it runs.");
+      "Signed in as someone@example.invalid. No list holds it yet: its agent's page asks where it runs.");
     await waitFor(() => expect(screen.queryByText('Signing in to another Claude Code account')).toBeNull());
     const asking = screen.getByRole('region', { name: 'Add an account' });
     expect(within(asking).getByText('Signed in as someone@example.invalid.')).toBeTruthy();
     expect((within(asking).getByRole('textbox', { name: /Its name/ }) as HTMLInputElement).value).toBe('someone@example.invalid');
+  });
+
+  /**
+   * OWNSPACE1b-B (D175 point 6): while the agent has no Daoris account, the header's add press is *Sign in for Daoris*, a label
+   * that names no account, and runs the same `login-new` flow, its panel under the header as *Add an account…*'s is.
+   */
+  it('heads with Sign in for Daoris while the agent has no Daoris account, and runs login-new', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: 'login-new', started: true };
+      return type === 'HARNESSES' ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], profiles: [] }] } : WIRING;
+    });
+    place();
+
+    expect(screen.queryByRole('button', { name: 'Add an account…' })).toBeNull();
+    await userEvent.click(await screen.findByRole('button', { name: 'Sign in for Daoris' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'login-new' },
+    });
+    expect(await screen.findByText('Signing in to another Claude Code account')).toBeTruthy();
   });
 
   /** With no account signed out or unknown there is nobody to bring back: *Add an account…* starts the sign-in at once. */
@@ -1854,7 +1875,8 @@ describe('how accounts are used', () => {
     expect(twin()).toEqual(['daoris agent profile rename claude-code work "O\'Brien"']);
   });
 
-  it('says starts run on the tool\'s own sign-in while the machine names no account, with its cool-off', async () => {
+  /** OWNSPACE1b-A (D175 point 1): read-only, so its old cool-off is said and no *Try now* is offered. */
+  it('says the own sign-in is read-only while the machine names no account, with its old cool-off and no Try now', async () => {
     const shared = { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0]!, machineDefault: null, ownAccount: 'someone@example.invalid' }] };
     const cooling = {
       agents: [{
@@ -1868,12 +1890,10 @@ describe('how accounts are used', () => {
 
     // Its explanation is its row's ⓘ, kept whole, one press away (D152 §4.3), and no longer a callout before the accounts.
     const own = await screen.findByRole('listitem', { name: 'Your own sign-in' });
-    expect(within(own).getByRole('note', { name: /^Sessions run on your own sign-in, someone@example\.invalid: .+ It is cooling until / })).toBeTruthy();
+    expect(within(own).getByRole('note', { name: /^Your own sign-in, someone@example\.invalid: .+ Daoris does not start sessions in it; .+ It was cooling until / })).toBeTruthy();
     expect(within(own).getByText('cooling')).toBeTruthy();
-    await userEvent.click(within(own).getByRole('button', { name: 'try Your own sign-in now' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNT_USE', {
-      payload: { harness: 'claude-code', action: 'ready', own: true },
-    });
+    expect(within(own).queryByRole('button', { name: 'try Your own sign-in now' })).toBeNull();
+    expect(within(own).queryByText('Runs for')).toBeNull();
   });
 
   /**

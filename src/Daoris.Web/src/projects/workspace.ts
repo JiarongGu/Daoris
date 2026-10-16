@@ -1,3 +1,4 @@
+import i18n from '../locales/i18n';
 import { type AccountsAnswer, agentOf, machineScope, workspaceScope } from '../settings/accounts';
 import type { Tool } from '../agents/tools';
 
@@ -35,13 +36,18 @@ export function accountsHere(
     const machine = use ? machineScope(use) : null;
     const machineNames = machine && machine.list.length > 0
       ? machine.list
-      : (machine?.default ?? tool.machineDefault) ? [(machine?.default ?? tool.machineDefault)!] : [null];
-    const names: (string | null)[] = ownNames.length > 0 ? ownNames : machineNames;
+      : (machine?.default ?? tool.machineDefault) ? [(machine?.default ?? tool.machineDefault)!] : [];
+    const names = ownNames.length > 0 ? ownNames : machineNames;
+    // OWNSPACE1b-A (D175 point 2): where nothing is named, Daoris's accounts are taken in turn, or the start waits for a
+    // sign-in where none exists; the tool's own sign-in is never what a start runs on, except a test double's own home.
+    const nothing = machine?.inherited === false
+      ? [nameOf(tool.name, null)]
+      : [tool.accounts.length > 0 ? i18n.t('agents.use.summary.own') : i18n.t('harness.next.noAccount')];
     return {
       agent: tool.name,
       product: tool.product ?? tool.name,
       own: ownNames.length > 0,
-      accounts: names.map((name) => nameOf(tool.name, name)),
+      accounts: names.length > 0 ? names.map((name) => nameOf(tool.name, name)) : nothing,
     };
   });
 }

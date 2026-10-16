@@ -104,6 +104,29 @@ public sealed class TickWaitTests
     }
 
     /// <summary>
+    /// OWNSPACE1b-B (D175 point 3): the page learns "no account" from <c>noAccount</c>, on the wait and on a consideration's
+    /// <c>signedOut</c>, never from an empty list; and the fact moves the signature, so the tick reaches the page when it changes.
+    /// </summary>
+    [Fact]
+    public void A_no_account_hold_is_said_by_a_fact_on_the_wait_and_on_the_consideration()
+    {
+        var hold = SignedOut() with { SignedOut = [], NoAccount = true };
+
+        var wait = JsonSerializer.SerializeToElement(DriverLoop.TickWait(hold), Wire);
+        Assert.True(wait.GetProperty("noAccount").GetBoolean());
+        Assert.False(JsonSerializer.SerializeToElement(DriverLoop.TickWait(SignedOut()), Wire).GetProperty("noAccount").GetBoolean());
+        Assert.NotEqual(DriverLoop.WaitsSignature([SignedOut() with { SignedOut = [] }]), DriverLoop.WaitsSignature([hold]));
+
+        var quest = new QuestView("q1", "game", "engine", "Cap the chunk budget", "A body.", "Taken");
+        var sitting = new Consideration(quest, StartVerdict.Blocked, "No account.")
+        {
+            SignedOut = new SignedOutAccounts("claude-code", []) { NoAccount = true },
+        };
+        var shape = JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(sitting), Wire);
+        Assert.True(shape.GetProperty("signedOut").GetProperty("noAccount").GetBoolean());
+    }
+
+    /// <summary>
     /// UX6d1: a wait on signed-out accounts moves the signature as it begins, as its accounts change and as one of them comes to
     /// cool, so the tick reaches the page; with no time it signs as any wait does.
     /// </summary>

@@ -86,6 +86,9 @@ public sealed record SessionRequest(string Session, string Move, DateTimeOffset 
     /// </summary>
     public string? Key { get; init; }
 
+    /// <summary>A say's *Send now* (STEER2c): what <c>SESSION_INPUT</c> sends as <c>now: true</c>. An older request has none, and is read as not now.</summary>
+    public bool Now { get; init; }
+
     /// <summary>A take-back's word: the id it waits under on the record (SAIDBACK1c); null for any other move.</summary>
     public string? Word { get; init; }
 }
@@ -442,6 +445,7 @@ public sealed partial class SessionRequests(string home)
                     ? [.. files.EnumerateArray().Where(name => name.ValueKind == JsonValueKind.String).Select(name => name.GetString()!)]
                     : [],
                 Key = Text("key"),
+                Now = root.TryGetProperty("now", out var now) && now.ValueKind == JsonValueKind.True,
                 Word = Text("takeBackWord"),
             };
         }
@@ -466,6 +470,7 @@ public sealed partial class SessionRequests(string home)
             {
                 Word = Text("word"),
                 Message = Text("message"),
+                Now = root.TryGetProperty("now", out var now) && now.ValueKind == JsonValueKind.True,
             };
         }
         catch (JsonException)
@@ -499,6 +504,7 @@ public sealed partial class SessionRequests(string home)
         }
 
         if (request.Key is not null) writer.WriteString("key", request.Key);
+        if (request.Now) writer.WriteBoolean("now", true);
         if (request.Word is not null) writer.WriteString("takeBackWord", request.Word);
         writer.WriteEndObject();
     });
@@ -511,6 +517,7 @@ public sealed partial class SessionRequests(string home)
         if (held.Why is not null) writer.WriteString("why", held.Why);
         if (held.Word is not null) writer.WriteString("word", held.Word);
         if (held.Message is not null) writer.WriteString("message", held.Message);
+        if (held.Now) writer.WriteBoolean("now", true);
         writer.WriteEndObject();
     });
 }

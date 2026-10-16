@@ -60,6 +60,10 @@ internal static class LineHolds
     /// </summary>
     internal static async Task<LineHeld?> JudgeAsync(string root, string tip, string onto, string? line, CancellationToken ct)
     {
+        // STARTGIT1: a tree still at the commit it is judged against (a session's just opened) left the line where the line stands and
+        // has no commits beyond it, as `merge-base` and `log` would answer; neither is asked. Both are full commit ids.
+        if (tip.Length == 40 && string.Equals(tip, onto, StringComparison.OrdinalIgnoreCase)) return new(onto, tip, [], [], []);
+
         var (baseCode, baseOut, _) = await WorkingTree.GitAsync(root, ["merge-base", tip, onto], ct).ConfigureAwait(false);
         if (baseCode != 0) return null;
         var leaves = baseOut.Trim();

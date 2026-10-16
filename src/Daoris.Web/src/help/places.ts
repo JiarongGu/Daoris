@@ -39,7 +39,7 @@ export const PLACE_VIEWS: readonly View[] = [
 
 // UX6i2a: the guide is Get started since UX6j, and Plugins left Settings for its place. UX6g2b: Workspace and Permissions
 // left it for a workspace's page with UX6g, and are kept below.
-export const PLACE_DOMAINS: readonly SettingsSection[] = ['start', 'appearance', 'ai', 'driver', 'browser', 'logs'];
+export const PLACE_DOMAINS: readonly SettingsSection[] = ['start', 'appearance', 'ai', 'wiring', 'driver', 'browser', 'logs'];
 
 /**
  * The views a go may name one item in (ENTRY1f1, D161's ENTRY1f note): Quests, whose list holds quests and asks, an ask

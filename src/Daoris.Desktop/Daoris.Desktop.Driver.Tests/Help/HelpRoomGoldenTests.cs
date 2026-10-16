@@ -76,11 +76,11 @@ public sealed class HelpRoomGoldenTests
         [
             new("claude-code")
             {
-                Product = "Claude Code", Present = true, Version = "2.1.0", Login = "in",
+                Product = "Claude Code", Present = true, Version = "2.1.0",
                 Accounts = [new("work", "out"), new("play", "unknown")],
             },
-            new("codex") { Present = false, Login = "unknown" },
-            new("dsh") { Present = true, Login = "out" },
+            new("codex") { Present = false },
+            new("dsh") { Present = true, Accounts = [new("home", "in")] },
         ],
         OpenAsks =
         [

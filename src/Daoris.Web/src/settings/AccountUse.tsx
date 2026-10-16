@@ -82,9 +82,8 @@ export function CoolingLine({ cooling, label, busy, onTryNow, now }: {
 }
 
 /**
- * The tool's own sign-in, said while a start would run on it (D125 §3.7): who it is where the tool says, that it moves with
- * the person's terminal and no record can say which account ran, its cool-off where it cools, and the press that gives
- * Daoris accounts of its own.
+ * The tool's own sign-in, read-only (D175 point 1): who it is where the tool says, that Daoris starts no session in it and
+ * conversations begun there go on there, an old cool-off where it holds one, and the press that signs in an account for Daoris.
  */
 export function OwnSignInLine({ who, cooling, signsIn, busy, onSignIn }: {
   who?: string | null;
@@ -277,7 +276,13 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
         </ol>
         {!listed && (
           <p className="m-0 mt-1 text-small text-ink-faint">
-            {t('harness.use.empty', { fallback: scope.default ? labelOf(scope.default) : t('harness.use.emptyOwn') })}
+            {/* Where nothing is named, Daoris's accounts are taken in turn (D175 point 2); only a test double's own home
+                runs on the tool's own sign-in, which the answer says by `inherited: false`. */}
+            {t('harness.use.empty', {
+              fallback: scope.default
+                ? labelOf(scope.default)
+                : t(scope.inherited === false ? 'harness.use.emptyOwn' : 'harness.use.emptyInherited'),
+            })}
           </p>
         )}
         {scope.problem && (

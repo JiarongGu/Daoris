@@ -71,7 +71,7 @@
   "help.starter.waiting_other": "{{count}} 个会话在等你。",
   "help.starter.nothing-registered": "本机还没有注册任何仓库。",
   "help.starter.nothing-driven": "本机没有驱动任何仓库，因此这里的委托不会为你启动。",
-  "help.starter.agent-signed-out": "{{tool}} 没有登录任何账户，因此无法在其上启动会话。",
+  "help.starter.agent-signed-out": "{{tool}} 没有登录任何 Daoris 账户，因此其上的会话会等你登录一个账户后再开始。",
   "help.starter.no-line": "{{first}} 未设置主线，git 也未指明：它的工作无处生长。",
   "help.starter.no-line_other": "{{count}} 个仓库未设置主线，git 也未指明——先看 {{first}}。",
   "help.starter.helper-off": "问道衍未运行任何智能体：指定一个即可在此与它对话。",

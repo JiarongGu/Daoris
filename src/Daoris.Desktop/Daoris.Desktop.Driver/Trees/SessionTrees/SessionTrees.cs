@@ -207,6 +207,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     /// <summary>Every tree this machine's Daoris has opened lives under here, and only here.</summary>
     public string TreesRoot => _context.TreesRoot;
 
+    /// <inheritdoc cref="TreeContext.OneLook"/>
+    internal IDisposable OneLook() => _context.OneLook();
+
     /// <summary>
     /// Open a fresh tree for a session in <paramref name="root"/>. Throws <see cref="DriverException"/>
     /// with git's own words when it cannot — before any record exists, which is the caller's contract.
@@ -494,10 +497,12 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     /// </summary>
     private static async Task<string> StartOfAsync(string root, string branch, Line line, string repository, CancellationToken ct)
     {
+        // STARTGIT1: the checkout's own guess is the branch either way (its answer is the same where it stands or not), so git is
+        // not asked whether it does; a line the person set is the one checked.
+        if (line.Source == LineSource.Checkout) return branch;
         var (local, _, _) = await WorkingTree.GitAsync(
             root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct).ConfigureAwait(false);
         if (local == 0) return branch;
-        if (line.Source == LineSource.Checkout) return branch;
 
         var (remote, _, _) = await WorkingTree.GitAsync(
             root, ["rev-parse", "--verify", "--quiet", $"refs/remotes/origin/{branch}"], ct).ConfigureAwait(false);
@@ -550,11 +555,17 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
         var named = lead?.Id ?? session;
         var subject = await LandingRules.SubjectAsync(named, lead is null ? quest : lead.Quest, find, opening(named)).ConfigureAwait(false);
         if (lead is null) return subject;
+        // ACCEPTFOOT2: a conversation's entry is named for its first part's work, not for the part pressed here.
+        subject = await Lands.EntryForWorkAsync(subject, lead.Tree, path, ct).ConfigureAwait(false);
         var joined = await JoinEntryAsync(path, session, subject, ct, process).ConfigureAwait(false);
         // TREEFOLLOWNAME1: a tree on a branch of its own lands as that branch, so it is named for its own quest, not its entry's first part's.
         if (joined.EntryBranch is null || !await Entries.FollowsOwnAsync(path, ct).ConfigureAwait(false)) return joined;
         return joined.NamedFor(await LandingRules.SubjectAsync(session, quest, find, opening(session)).ConfigureAwait(false));
     }
+
+    /// <inheritdoc cref="TreeLands.EntryForWorkAsync"/>
+    public Task<LandingSubject> EntryForWorkAsync(LandingSubject entry, string? leadTree, string anyTree, CancellationToken ct = default) =>
+        Lands.EntryForWorkAsync(entry, leadTree, anyTree, ct);
 
     /// <inheritdoc cref="EntryLands.PlanAsync"/>
     public Task<EntryPlan> PlanEntryAsync(IReadOnlyList<EntryLandingPart> parts, LandingSubject subject, CancellationToken ct = default) =>

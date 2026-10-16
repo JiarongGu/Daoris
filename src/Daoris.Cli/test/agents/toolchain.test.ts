@@ -350,7 +350,9 @@ test('`profile default --clear` clears the machine’s default, or one workspace
 
   const machine = run(['profile', 'default', 'claude-code', '--clear'], at(fx));
 
-  assert.match(machine.out, /this machine runs `claude-code` in its own configuration home again/);
+  // OWNSPACE1d (D175): with no default the start takes Daoris's accounts in turn, never the tool's own home.
+  assert.match(machine.out, /this machine names no default for `claude-code` now: Daoris takes its accounts in turn/);
+  assert.doesNotMatch(machine.out, /own configuration home/);
   assert.equal(resolveProfile(readHarnessSettings(at(fx)), 'claude-code', 'aurora', null), null);
   // The accounts stay: a default cleared deletes nothing.
   assert.deepEqual(profiles(fx.root, 'claude-code'), ['personal', 'work']);
@@ -720,9 +722,29 @@ test('a new account in no list says no start runs on it, and names the lists and
     return 0;
   }, (line) => lines.push(line), { path: at(fx) });
 
+  // OWNSPACE1d (D175): the machine's scope names nothing, so Daoris takes its accounts in turn (the modules' `PlacesSaid`, said alike).
+  const said = lines.join('\n');
+  assert.match(said, /no list and no default names `acct-[0-9a-f]{8}`, and none names another, so Daoris takes its accounts in turn/);
+  assert.match(said, /The lists here: `work`'s own \(account-1\)/);
+  assert.doesNotMatch(said, /no start runs on it/);
+  fx.cleanup();
+});
+
+/** A machine that names another account keeps the join: the new one runs nowhere until a list holds it (ACCT1). */
+test('a new account in no list, where the machine names another, says no start runs on it and names the join', () => {
+  const fx = makeFixture('harness-sign-in-nowhere-named');
+  const toolchain = fakeHarness(fx);
+  mkdirSync(profileHome(fx.root, 'fake', 'account-1'), { recursive: true });
+  writeFileSync(at(fx), JSON.stringify({ rotation: { fake: ['account-1'] } }), 'utf8');
+  const lines: string[] = [];
+
+  signInNew('fake', toolchain, fx.root, (where) => {
+    writeFileSync(join(where, 'credentials.json'), 'spare@example.invalid', 'utf8');
+    return 0;
+  }, (line) => lines.push(line), { path: at(fx) });
+
   const said = lines.join('\n');
   assert.match(said, /no list and no default holds `acct-[0-9a-f]{8}`, so no start runs on it/);
-  assert.match(said, /The lists here: `work`'s own \(account-1\)/);
   assert.match(said, /daoris agent profile join fake acct-[0-9a-f]{8} <workspace>…\|--machine/);
   fx.cleanup();
 });
@@ -786,7 +808,7 @@ test('signing back in to an account with no name offers who signed in as its nam
   }, (line) => lines.push(line), { path: at(fx) });
 
   assert.match(lines.join('\n'), /daoris agent profile rename fake account-1 back@example\.invalid/);
-  assert.match(lines.join('\n'), /no list and no default holds `account-1`/);
+  assert.match(lines.join('\n'), /no list and no default names `account-1`, and none names another, so Daoris takes its accounts in turn/);
   assert.ok(!existsSync(join(fx.root, 'accounts.json')));
   fx.cleanup();
 });
@@ -885,6 +907,8 @@ test('`agent list` says an account\'s email once when it is the name, and sizes 
     ],
   };
   writeFileSync(join(fx.root, 'accounts.json'), JSON.stringify({ 'claude-code': { 'account-1': { name: long } } }), 'utf8');
+  // The machine names account-1, so account-2 runs nowhere and its continuation line is said (OWNSPACE1d: with nothing named, none is).
+  writeFileSync(at(fx), JSON.stringify({ defaults: { 'claude-code': 'account-1' } }), 'utf8');
   const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, report, readHarnessSettings(at(fx)), fx.root, new Date(), 'UTC');
   const first = lines.find((line) => line.includes(long))!;
   // Once: the email after the name is dropped where it folds equal; another account's is kept.
@@ -953,6 +977,20 @@ test('`agent list` says an account no list and no default holds runs nowhere, an
   const nowhere = lines.filter((line) => /no workspace: no list and no default holds it/.test(line));
   assert.equal(nowhere.length, 1);
   assert.match(nowhere[0]!, /daoris agent profile join claude-code account-2 <workspace>…\|--machine/);
+  fx.cleanup();
+});
+
+/** OWNSPACE1d (D175): where the machine names nothing, an account in no list is in Daoris's turn, so the list does not say it runs nowhere. */
+test('`agent list` says no account runs nowhere where the machine names nothing', () => {
+  const fx = makeFixture('harness-list-in-turn');
+  run(['profile', 'add', 'claude-code', 'account-1'], at(fx));
+
+  const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, {
+    harness: 'claude-code', present: true, version: '1', problem: null, machineDefault: null,
+    profiles: [{ name: 'account-1', home: '', login: 'in', account: null, key: null }],
+  }, readHarnessSettings(at(fx)), fx.root, new Date(), 'UTC');
+
+  assert.equal(lines.filter((line) => /no workspace: no list and no default holds it/.test(line)).length, 0);
   fx.cleanup();
 });
 

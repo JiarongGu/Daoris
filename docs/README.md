@@ -86,6 +86,7 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-14-co-working-design.md` | Contract: one session per line of work, its records its parts; an ask's channel | D167; SESSONE rows in TASKS |
 | `2026-10-16-install-layout-design.md` | Contract: the Daoris folder's top folders, every home path placed, and the move into them | D172; HOMELAYOUT rows in TASKS |
 | `2026-10-16-terminal-rpc-design.md` | Contract: the running Daoris answers the terminal's verbs over a pipe into its own dispatcher; the census of what acts outside the loop; a home's identity and its one lease | D171 point 3; HOMEID1, HOMELEASE1 and RPC1 rows in TASKS |
+| `2026-10-16-fabric-events-design.md` | Contract: events over polling (every wait inventoried, the source-to-publish shape, a watcher measured under antivirus) and the end of a piece of work observed in git (parts A and B, accepted); part C, proposed: a cycle each workspace and repository defines, plugin-contributed steps, and events with chains in place of clocks | D173's FABRIC-EVENT1, acceptance and FABRIC-CHAIN1 notes; FABRIC rows in TASKS |
 
 ## UI, browser, tools and plugin contracts
 

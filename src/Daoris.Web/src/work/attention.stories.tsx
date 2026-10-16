@@ -25,7 +25,7 @@ const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 /** Every act handed, as a shell's band hands them; a story reports nothing. */
 const ACTS: Required<AttentionActs> = {
   publish: () => {}, retry: () => {}, answer: () => {}, trust: () => {}, acceptDeparture: () => {}, acceptRule: () => {},
-  declineRule: () => {}, signIn: () => {}, read: () => {}, letRun: () => {}, reviewed: () => {}, notYet: () => {},
+  declineRule: () => {}, signIn: () => {}, signInNew: () => {}, read: () => {}, letRun: () => {}, reviewed: () => {}, notYet: () => {},
   showAgain: () => {}, opinionAgain: () => {}, opinionAnyway: () => {}, helper: () => {},
 };
 /** Every door, as a shell's Overview hands them. */
@@ -474,6 +474,15 @@ export const AccountRows: StoryObj = {
           acts={ACTS}
           onOpen={() => {}}
         />
+        <AttentionRow
+          item={{
+            ...ACCOUNT_WAIT, id: 'no-account', title: 'Intake for 2 asks',
+            detail: 'No Daoris account is signed in for Claude Code, so its starts wait until you sign in.',
+            account: { ...CLAUDE, outside: null, named: [], noAccount: true },
+          }}
+          acts={ACTS}
+          onOpen={() => {}}
+        />
         <AttentionRow item={{ ...SIGNED_OUT, id: 'held' }} acts={ACTS} onOpen={() => {}} busy />
         <AttentionRow
           item={{
@@ -522,9 +531,10 @@ function chineseRows(): Attention[] {
       account: { ...CLAUDE, outside: null, named: [{ id: null, label: t('agents.account.own'), state: 'cooling', read: null, until: RESET }] },
     },
     {
-      ...SIGNED_OUT, id: 'own-out', title: t('agents.account.own'),
-      detail: t('work.attention.signedOut.own'),
-      account: { ...CLAUDE, outside: null, named: [{ id: null, label: t('agents.account.own'), state: 'out', read: READ, until: null }] },
+      // OWNSPACE1b-B: the hold for no Daoris account signed in, whose one press is *Sign in for Daoris*.
+      ...ACCOUNT_WAIT, id: 'no-account', title: t('work.attention.held.intakes', { count: 2 }),
+      detail: t('work.attention.accounts.noAccount', { product: 'Claude Code' }),
+      account: { ...CLAUDE, outside: null, named: [], noAccount: true },
     },
   ];
 }

@@ -54,7 +54,9 @@ public sealed class DeclaredAcpAdapter(PluginHarness harness, string plugin) : I
         ProbeByPresence: harness.VersionArguments is null,
         // What the plugin says its tool is and who makes it (XAGENT1b), so its agent's family reads as a built-in one's.
         Product: harness.Product,
-        Maker: harness.Maker);
+        Maker: harness.Maker,
+        // OWNSPACE1c (D175): the plugin's word that its agent's own home is nobody's; otherwise a variable means a Daoris account.
+        RunsInOwnHome: harness.OwnHome);
 
     private IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
         command is { Count: > 0 } ? command : harness.Command;

@@ -46,7 +46,7 @@ describe('the domain list, in a shell', () => {
     show(<SettingsView notify={() => {}} section="driver" onSection={onSection} />);
 
     const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
-    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(7));
+    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(8));
     expect(within(domains).getByRole('button', { name: 'Driver' })).toHaveAttribute('aria-current', 'page');
     // The programs Daoris runs beside its agents follow the driver, and Agents is a place of its own (UX6e, D150 §5).
     const names = within(domains).getAllByRole('button').map((button) => button.textContent);
@@ -81,7 +81,7 @@ describe('the domain list, in a shell', () => {
     show(<SettingsView notify={() => {}} section="driver" />);
 
     const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
-    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(7));
+    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(8));
     expect(screen.queryByText(/on the desktop, where the machine is/)).toBeNull();
   });
 });

@@ -43,6 +43,9 @@ public sealed record SessionsAsk(string Verb)
     /// <summary>A say's files, each as the person named its path.</summary>
     public IReadOnlyList<string> Files { get; init; } = [];
 
+    /// <summary>A say's <c>--now</c> (STEER2c): the terminal's twin of the page's *Send now*, which <c>SESSION_INPUT</c> carries as <c>now: true</c>.</summary>
+    public bool Now { get; init; }
+
     /// <summary>A hand-over's agent (MIXAGENT1a-i): the adapter the conversation goes on with.</summary>
     public string? Agent { get; init; }
 
@@ -148,7 +151,7 @@ public static class SessionsCommand
         usage: daoris-driver sessions [--group you|review|working|later|ended|archived] [--repository <name>] [--json]
                daoris-driver sessions stop <id>  ·  sessions finish <id> [--note "…"]  ·  sessions decline <id> --reason "…"
                daoris-driver sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>
-               daoris-driver sessions say <id> "…" [--file <path>]…
+               daoris-driver sessions say <id> "…" [--file <path>]… [--now]
                daoris-driver sessions take-back <id> [<word>]  ·  sessions reword <id> <word> "…"
                daoris-driver sessions go-on-new <id>
                daoris-driver sessions start-from <id>
@@ -278,13 +281,20 @@ public static class SessionsCommand
     /// <summary><c>say &lt;id&gt; "…" [--file &lt;path&gt;]…</c>: the words after the id joined by a space, and each path after its flag.</summary>
     private static SessionsAsk? ReadSay(IReadOnlyList<string> args, out string? problem)
     {
-        problem = "`say` takes one session's id, then your words, and `--file <path>` for each file you give with them.";
+        problem = "`say` takes one session's id, then your words, `--file <path>` for each file you give with them, and `--now` to send them now.";
         if (args.Count < 2 || !Id(args[1])) return null;
 
         var words = new List<string>();
         var files = new List<string>();
+        var now = false;
         for (var at = 2; at < args.Count; at++)
         {
+            if (args[at] == "--now")
+            {
+                now = true;
+                continue;
+            }
+
             if (args[at] != "--file")
             {
                 words.Add(args[at]);
@@ -299,7 +309,7 @@ public static class SessionsCommand
         if (text.Length == 0) return null;
 
         problem = null;
-        return new SessionsAsk("say") { Ids = [args[1]], Text = text, Files = files };
+        return new SessionsAsk("say") { Ids = [args[1]], Text = text, Files = files, Now = now };
     }
 
     public static async Task<int> RunAsync(SessionsAsk ask, SessionsWorld world, TextWriter output, CancellationToken ct = default) =>
@@ -869,7 +879,7 @@ public static class SessionsCommand
         var runs = world.Processes.AliveOnThisMachine(id);
         if (!runs && !world.LoopRuns()) return await KeepAsync(world, record, text, files, loop: false, output, ct).ConfigureAwait(false);
 
-        var (held, taken) = await AskLoopAsync(world, record, text, files, waited, ct).ConfigureAwait(false);
+        var (held, taken) = await AskLoopAsync(world, record, text, files, waited, ask.Now, ct).ConfigureAwait(false);
         if (held is not null) return await SaidAsync(world, record, held, waited, output, ct).ConfigureAwait(false);
         if (taken)
         {
@@ -898,7 +908,7 @@ public static class SessionsCommand
     /// no loop acts on it after the person was told.
     /// </summary>
     private static async Task<(WordsHeld? Held, bool Taken)> AskLoopAsync(
-        SessionsWorld world, SessionRecord record, string text, IReadOnlyList<string> files, Waited waited, CancellationToken ct)
+        SessionsWorld world, SessionRecord record, string text, IReadOnlyList<string> files, Waited waited, bool now, CancellationToken ct)
     {
         var requests = new SessionRequests(world.Home);
         WordsHeld? winding = null;
@@ -906,7 +916,7 @@ public static class SessionsCommand
         {
             var request = new SessionRequest(record.Id, SessionMove.Say, DateTimeOffset.UtcNow)
             {
-                Text = text, Files = files, Key = SessionRequests.NewKey(),
+                Text = text, Files = files, Key = SessionRequests.NewKey(), Now = now,
             };
             requests.Write(request);
 
@@ -955,6 +965,25 @@ public static class SessionsCommand
     {
         switch (held)
         {
+            // STEER2c: what the door did with a *Send now*, in the terminal's words (D136's 2026-10-16 note).
+            case { Sent: true, Now: true, Reaches: "now" }:
+                output.WriteLine("sessions: sent now: it took this at once, cutting its step in flight.");
+                return 0;
+            case { Sent: true, Now: true, Reaches: "turn-end" }:
+                output.WriteLine("sessions: sent now: its turn is stopping, so this goes next.");
+                return 0;
+            case { Sent: true, Why: SendNowWhy.NoInterrupt or SendNowWhy.Opening or SendNowWhy.Behind }:
+                var reason = held.Why switch
+                {
+                    SendNowWhy.NoInterrupt => "it cannot be interrupted",
+                    SendNowWhy.Opening => "its first prompt has not left yet",
+                    _ => "words ahead of these are still on their way",
+                };
+                output.WriteLine($"sessions: not sent now: {reason}; it reads this {(held.Reaches == "next-step" ? "at its next step" : "when its turn ends")}.");
+                return 0;
+            case { Sent: true, Now: true, Reaches: not "resume" }:
+                output.WriteLine("sessions: sent now: it takes this as its next turn.");
+                return 0;
             case { Sent: true, Reaches: "resume" }:
                 return await GoesOnAsync(world, record, held.Word, waited, output, ct).ConfigureAwait(false);
             case { Sent: true, Reaches: "next-step" }:

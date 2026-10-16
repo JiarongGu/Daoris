@@ -762,6 +762,14 @@ public sealed record HarnessSettings(
     }
 
     /// <summary>
+    /// This machine's scope for <paramref name="agent"/> with <paramref name="accounts"/> as its list (OWNSPACE1a, D175's
+    /// OWNSPACE1a note): what a start walks where neither the machine nor the workspace names an account, the agent's Daoris
+    /// accounts on this machine, begun at the first and used as the machine's use for the agent says.
+    /// </summary>
+    public RotationScope Over(string agent, IReadOnlyList<string> accounts) =>
+        ScopeOf(ChoiceFrom.Machine, null, accounts, Uses.GetValueOrDefault(agent));
+
+    /// <summary>
     /// An agent's settings changed, the machine's or one workspace's; null clears them, and a scope or a workspace left
     /// with none is dropped. What this build does not know is kept, unless the change sets that field.
     /// </summary>

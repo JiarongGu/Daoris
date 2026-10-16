@@ -330,6 +330,24 @@ describe('sittingSentence', () => {
     expect(sittingSentence({ ...named, waitsFor: undefined })).toContain('personal、acct-77aa00ff 未登录');
   });
 
+  /**
+   * OWNSPACE1b-B (D175 point 3): no Daoris account is signed in, said from the tick's `noAccount` fact. English passes the driver's
+   * sentence (its only copy); 中文 says it from the agent, with the terminal's twin of the sign-in.
+   */
+  it('says a hold for no Daoris account from the fact, never from an empty list', async () => {
+    const reason = 'No `claude-code` account of Daoris\'s own is signed in.';
+    const none: Consideration = { ...sits('Blocked', reason), signedOut: { agent: 'claude-code', accounts: [], noAccount: true } };
+
+    await i18n.changeLanguage('en');
+    expect(sittingSentence(none)).toBe(reason);
+
+    await i18n.changeLanguage('zh');
+    const said = sittingSentence(none);
+    expect(said).toContain('claude-code');
+    expect(said).toContain('`daoris agent login claude-code --new`');
+    expect(said).not.toContain(reason);
+  });
+
   /** ACCTQUOTE1 (D125's ACCTQUOTE1 note): each sign-in is a command a person pastes, so its id is spelled for a shell. */
   it('spells each sign-in\'s account for a shell, and names one no shell can take by a placeholder', async () => {
     const reason = 'no `claude-code` account this start may use is ready.';

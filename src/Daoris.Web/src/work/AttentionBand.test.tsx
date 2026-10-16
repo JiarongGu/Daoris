@@ -125,6 +125,7 @@ function start({ considered = [], untrusted = [], proposals = [], groups = [], w
     if (type === 'HARNESSES') return roster;
     if (type === 'ACCOUNTS') return accounts;
     if (type === 'HARNESS_ACTION' && request?.payload?.action === 'login') return { harness: 'claude-code', action: 'login', started: true };
+    if (type === 'HARNESS_ACTION' && request?.payload?.action === 'login-new') return { harness: 'claude-code', action: 'login-new', started: true };
     if (type === 'HARNESS_ACTION' && request?.payload?.action === 'profile-join') {
       // Its default there, and still no place marked first: *first* is a next start the join's answer never names (ACCTUX4b).
       return { harness: 'claude-code', action: 'profile-join', profile: 'account-4', places: [{ workspace: 'default', list: true, default: true }] };
@@ -254,6 +255,22 @@ describe('What needs you on a machine', () => {
       payload: { harness: 'claude-code', action: 'login', profile: 'account-1' },
     });
     expect(await within(row).findByRole('region', { name: 'Signing in to account-1' })).toBeInTheDocument();
+  });
+
+  /**
+   * OWNSPACE1b-B (D175 point 7): the start held for no Daoris account is a row whose press is *Sign in for Daoris*, running
+   * `login-new` in place with the sign-in's steps under the row, and no step 3 there (a new account serves by default).
+   */
+  it('signs in for Daoris from the row of a start held for no account, its steps under the row', async () => {
+    const none: AccountWaitTick = { ...WAIT, account: null, until: null, stated: false, signedOut: [], noAccount: true };
+    start({ waits: [none], roster: { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0]!, profiles: [] }] }, accounts: ACCOUNTS([]) });
+    const row = await screen.findByRole('listitem', { name: 'Intake for ask #a1' });
+    expect(await within(row).findByText(/No Daoris account is signed in for Claude Code/)).toBeInTheDocument();
+
+    await userEvent.click(within(row).getByRole('button', { name: 'Sign in for Daoris' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', { payload: { harness: 'claude-code', action: 'login-new' } });
+    expect(await within(row).findByRole('region', { name: 'Signing in to another Claude Code account' })).toBeInTheDocument();
   });
 
   /** D130 §3.3: a ready account outside the workspace's list joins it only after the row says what that lets Daoris spend. */

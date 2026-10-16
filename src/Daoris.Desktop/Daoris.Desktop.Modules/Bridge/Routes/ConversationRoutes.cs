@@ -95,14 +95,17 @@ public sealed class ConversationRoutes(DriverContext context)
         var text = PayloadHelper.GetRequiredValue<string>(request.Payload, "text");
         // What the person attached, kept for its session before the words go (CONV4c).
         var files = request.Payload is { } payload ? FilesOf(payload) : [];
-        // Where the person is (HELP1b), which a conversation's agent is handed ahead of the words; absent for most.
-        var said = await _loop.Words.SayAsync(id, text, files, Optional(request, "preface"), door: "screen", cancellationToken)
+        // Where the person is (HELP1b), which a conversation's agent is handed ahead of the words; absent for most. `now: true`
+        // is the person's *Send now* (STEER2a, D136's 2026-10-16 note), which a running session carries out by its door.
+        var said = await _loop.Words
+            .SayAsync(id, text, files, Optional(request, "preface"), door: "screen", cancellationToken, now: Flag(request, "now"))
             .ConfigureAwait(false) ?? throw NotReady();
         // Words a running session took are kept on its ask now (DRIFT1a2); words kept on a record are kept there once a
         // session takes them (MSG1a's taken door), so they are never posted twice.
         if (said.Running) _loop.Words.KeepOnAsk(id, text);
         // `to`: the conversation a conversation handed over or moved went on in, where `why` is `continued` (HANDWORDS1).
-        return new { said.Sent, said.Reaches, said.Why, said.To };
+        // `now`: the press was carried out; false where it was not asked, or the door could do neither, `why` saying so.
+        return new { said.Sent, said.Reaches, said.Why, said.To, said.Now };
     }
 
     // *Start a conversation with these words* (MSG1f2, D137 §2.2, §5.3): words a session cannot go on with, and that nothing
@@ -195,7 +198,8 @@ public sealed class ConversationRoutes(DriverContext context)
     // and stopping the session. What was waiting comes back, so the page can hand it to the
     // person rather than lose it. Refused for a session that takes no input, as a message is,
     // and for a door that carries only text, in the driver's words: it has no turn to stop. It publishes as a word said does
-    // (STATEHUB1h, D169): a driven session's held words go as its next prompt.
+    // (STATEHUB1h, D169): a driven session's held words go as its next prompt. `keep: true` (STEER2a) stops a conversation's
+    // turn keeping what waits for the next turn, withdrawing nothing: the turn-end door's *Send now* (D90).
     [DriverRoute("CANCEL_TURN")]
     [Publishes("CANCEL_TURN", StateScopes.Sessions, Session = "id")]
     private async Task<object?> CancelTurnAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -210,7 +214,7 @@ public sealed class ConversationRoutes(DriverContext context)
         }
 
         if (_loop.Processes.RefusesInput(id) is { } why) throw new DriverException(why);
-        var stop = _loop.Chat is { } chat ? await chat.CancelTurnAsync(id).ConfigureAwait(false) : TurnStop.Nothing;
+        var stop = _loop.Chat is { } chat ? await chat.CancelTurnAsync(id, keep: Flag(request, "keep")).ConfigureAwait(false) : TurnStop.Nothing;
         return new { stop.Cancelled, Withdrawn = stop.Withdrawn.Select(Said).ToArray() };
     }
 

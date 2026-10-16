@@ -9,7 +9,8 @@ import type { ToolDoor } from '../agents/tools';
 // registered, everything done, and a browser, which may learn nothing of a machine (D47 §4).
 
 const door = (over: Partial<ToolDoor> = {}): ToolDoor => ({
-  harness: 'claude-code', present: true, product: 'Claude Code', ownLogin: 'in', profiles: [], ...over,
+  harness: 'claude-code', present: true, product: 'Claude Code', ownLogin: 'in',
+  profiles: [{ name: 'work', home: 'h', login: 'in' }], ...over,
 });
 
 /** What each machine's queries answer, as the page receives them. */
@@ -145,7 +146,7 @@ describe('the machine, read once for the guide and the starters', () => {
       expect(said.includes('nothing-registered')).toBe(step.repositories === 'todo');
       expect(said.includes('helper-off')).toBe(step.helper === 'todo');
       expect(said.includes('nothing-driven')).toBe(step.repositories === 'done' && step.driven === 'todo');
-      if (said.includes('agent-signed-out') && machine.tools.every((tool) => !tool.present || tool.ownLogin === 'out')) {
+      if (said.includes('agent-signed-out') && machine.tools.every((tool) => !tool.present || tool.accounts.every((account) => account.login === 'out'))) {
         expect(step.agent).toBe('todo');
       }
     }
@@ -186,14 +187,16 @@ describe('each step: its state, its doors and its commands', () => {
       .toEqual(['agent', 'helper', 'repositories', 'driven', 'landing', 'rules']);
   });
 
-  it('counts an unknown sign-in as signed in, the roster\'s rule, and a definite out as not', () => {
-    expect(byId({ ...MACHINES.signedInNothingRegistered, harnesses: [door({ ownLogin: 'unknown' })] }).agent.state).toBe('done');
-    expect(byId({ ...MACHINES.signedInNothingRegistered, harnesses: [door({ ownLogin: 'out' })] }).agent.state).toBe('todo');
-    // A named account signed in is an account, whatever the tool's own home says.
-    expect(byId({
-      ...MACHINES.signedInNothingRegistered,
-      harnesses: [door({ ownLogin: 'out', profiles: [{ name: 'work', home: 'h', login: 'in' }] })],
-    }).agent.state).toBe('done');
+  it('counts only Daoris\'s accounts as signed in: an unknown one as in, a definite out or none as not (OWNSPACE1b-C)', () => {
+    const profile = (login: 'in' | 'out' | 'unknown') => [{ name: 'work', home: 'h', login }];
+    const state = (over: Partial<ToolDoor>) => byId({ ...MACHINES.signedInNothingRegistered, harnesses: [door(over)] }).agent.state;
+    expect(state({ profiles: profile('unknown') })).toBe('done');
+    expect(state({ profiles: profile('in') })).toBe('done');
+    expect(state({ profiles: profile('out') })).toBe('todo');
+    expect(state({ profiles: [] })).toBe('todo');
+    // The tool's own sign-in is no account of Daoris's, signed in or not (D175).
+    expect(state({ ownLogin: 'in', profiles: [] })).toBe('todo');
+    expect(state({ ownLogin: 'out', profiles: profile('in') })).toBe('done');
   });
 
   it('leaves how work lands to do while a driven repository lands by the default, or has no line', () => {

@@ -184,7 +184,9 @@ describe('what is said', () => {
     expect(nextLine(next({ account: 'account-2', reason: 'named', over: null }), list, labelOf))
       .toBe('The next start takes account-2: it is the one account used here.');
     expect(nextLine(next({ account: null, reason: 'own', over: null }), scope(), labelOf))
-      .toBe('The next start runs on your own sign-in: nothing here names an account.');
+      .toBe("The next start runs in the tool's own home, which is nobody's sign-in: nothing here names an account.");
+    expect(nextLine(next({ account: null, reason: 'noAccount', over: null }), scope(), labelOf))
+      .toBe('No Daoris account is signed in for it; its starts wait until you sign in.');
     expect(nextLine(next({ account: null, reason: 'waits', over: null, when: '2026-10-03T16:02:00Z' }), list, labelOf))
       .toMatch(/^No account here is ready, so the next start waits until .+\.$/);
     expect(nextLine(next({ account: null, reason: 'waits', over: null }), list, labelOf))
@@ -200,7 +202,7 @@ describe('what is said', () => {
     expect(nextLine(next({ account: 'account-2', reason: 'pace', over: 'account-1' }), list, labelOf))
       .toBe('下一次启动使用 account-2：它在曲线下的余量比 work@example.invalid 多。');
     expect(nextLine(next({ account: null, reason: 'own', over: null }), scope(), labelOf))
-      .toBe('下一次启动运行在你自己的登录上：这里没有指定任何账户。');
+      .toBe('下一次启动运行在工具自己的配置目录中，那里不是任何人的登录：这里没有指定任何账户。');
   });
 
   /**
@@ -302,10 +304,12 @@ describe('what is said', () => {
     expect(offeredLine('2026-10-03T10:17:00Z')).toMatch(/^自 .+ 起重新可用$/);
   });
 
-  /** D125 §3.7: who the tool's own sign-in is where it says, and its cool-off where it cools. */
-  it('says the tool\'s own sign-in, who it is, and its cool-off', () => {
-    expect(ownLine('someone@example.invalid', null)).toMatch(/^Sessions run on your own sign-in, someone@example\.invalid: /);
-    expect(ownLine(null, null)).toMatch(/^Sessions run on your own sign-in: /);
-    expect(ownLine(null, cooling)).toMatch(/It is cooling until .+\. If you have signed in to another account since, look again\.$/);
+  /** D175 point 1: who the tool's own sign-in is, that Daoris starts nothing in it, and an old cool-off where it holds one. */
+  it('says the tool\'s own sign-in, who it is, that Daoris starts no session in it, and its old cool-off', () => {
+    expect(ownLine('someone@example.invalid', null)).toBe(
+      'Your own sign-in, someone@example.invalid: the account this tool uses at your own terminal. Daoris does not start sessions in it; conversations that began there go on there.',
+    );
+    expect(ownLine(null, null)).toMatch(/^Your own sign-in: .+ Daoris does not start sessions in it; conversations that began there go on there\.$/);
+    expect(ownLine(null, cooling)).toMatch(/It was cooling until .+: an old cool-off, which nothing of Daoris's waits on\. If you have signed in to another account since, look again\.$/);
   });
 });
