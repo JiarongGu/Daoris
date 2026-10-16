@@ -10,6 +10,7 @@ import type { OpinionChange, RepositoryOpinion } from '../settings/Opinions';
 import type { RepositoryReview, ReviewChange } from '../settings/Reviews';
 import type { BranchDiscard, LandedBranch, SweepBranch } from '../settings/Sweep';
 import type { LinePull, RebaseBranch, SyncInclude, SyncPlan, SyncRepository } from '../settings/Sync';
+import { readWorkState } from '../work/milestone';
 import { call, lookBound, pressBound } from './call';
 import { type DriverState, useDriverChange } from './driver';
 
@@ -67,6 +68,24 @@ export const useSweepPlan = () => {
     queryFn: () => call<{ branches: SweepBranch[]; landed?: LandedBranch[] }>('SWEEP_PLAN'),
     enabled: isAvailable,
     // It asks git in every repository with a checkout here: a minute is fresh enough to read a session by.
+    staleTime: 60_000,
+  });
+};
+
+/**
+ * Each unit of work's milestone (FABRIC-MILESTONE1b, the fabric events design §D0): whether its end was reached, the result kept, its
+ * cleanup pending or completed and the recovery retained, as `daoris-driver work state` says it. With `unit`, the units that name
+ * picks (its id, its session or its branch). A read of this machine's records and git: shell-only, and stored nowhere. A shell older
+ * than the route answers nothing of the kind, which reads as no unit. The state hub asks it again with the landings, the sweep and
+ * the sessions (`landing`, `sweep`, `sessions`), which are what move it.
+ */
+export const useWorkState = (unit: string | null = null, enabled = true) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.workState(unit),
+    queryFn: async () => readWorkState(await call<unknown>('WORK_STATE', unit ? { unit } : {})),
+    enabled: isAvailable && enabled,
+    // It asks git in each repository with a checkout here: a minute is fresh enough to say where work stands by.
     staleTime: 60_000,
   });
 };
