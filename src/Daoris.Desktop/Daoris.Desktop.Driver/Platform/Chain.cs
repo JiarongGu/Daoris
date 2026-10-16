@@ -83,28 +83,28 @@ public enum ChainKind
     Reader,
 }
 
-/// <summary>The design §C6's links by number, which is their rank.</summary>
+/// <summary>The design §C6's links by number, which is their rank. Which rows are bound, and by whom, is D173's FABRIC-CHAIN2 note.</summary>
 public static class ChainRanks
 {
-    /// <summary>The end judgement for a repository or a unit (§B4): FABRIC-END2b's facts, on FABRIC-END3's ref watcher.</summary>
+    /// <summary>The end judgement for a repository or a unit (§B4).</summary>
     public const int Judge = 1;
 
-    /// <summary>The look's automatic tidy, judging again inside its hold (D88): FABRIC-END4a.</summary>
+    /// <summary>The look's automatic tidy, judging again inside its hold (D88).</summary>
     public const int Tidy = 2;
 
-    /// <summary><c>work/ended</c> to the plugins that listen: FABRIC-PLUGSTEP1b.</summary>
+    /// <summary><c>work/ended</c> to the plugins that listen.</summary>
     public const int Ended = 3;
 
     /// <summary><c>STATE_CHANGED</c> with the existing scopes (D169).</summary>
     public const int Publish = 4;
 
-    /// <summary>The local plan: FABRIC-EVENT3a.</summary>
+    /// <summary>The local plan.</summary>
     public const int Plan = 5;
 
-    /// <summary>A plugin's <c>work/state</c> ask with a fetch of the line (§A4.3): FABRIC-END6.</summary>
+    /// <summary>A plugin's <c>work/state</c> ask with a fetch of the line (§A4.3).</summary>
     public const int Ask = 6;
 
-    /// <summary>A home folder's reader: the requests folder today (FABRIC-EVENT2), the home's record files with FABRIC-EVENT4.</summary>
+    /// <summary>A home folder's reader.</summary>
     public const int Read = 7;
 }
 
@@ -393,7 +393,7 @@ public sealed class Chain
                 continue;
             }
 
-            // A row left unbound: its source or its effect is a later row's (FABRIC-END2b, END3, END4a, PLUGSTEP1b, EVENT3a, END6).
+            // A row this chain's owner left unbound: its source or its effect is not this owner's.
             if (fired is null) continue;
             acted += fired.Acted;
             foreach (var emitted in fired.Emitted.Distinct())
