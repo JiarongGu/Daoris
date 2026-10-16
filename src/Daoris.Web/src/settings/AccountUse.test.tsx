@@ -226,7 +226,7 @@ describe('how a scope\'s list is used', () => {
       ['use', null, { switch: 'smart' }],
     ]);
     expect(screen.getByText(/^Each start goes to the account running the fewest/)).toBeTruthy();
-    expect(screen.getByText(/^Your own points, a window each; a window you leave out takes Daoris's curve\.$/)).toBeTruthy();
+    expect(screen.getByText(/^Your own rows, a window each; a window you leave out takes Daoris's curve\.$/)).toBeTruthy();
     expect(screen.queryByText('Near at')).toBeNull();
     expect(screen.queryByText('Switch before the limit')).toBeNull();
   });
@@ -247,7 +247,7 @@ describe('how a scope\'s list is used', () => {
     const session = charts[0]!.querySelector('[data-account="account-2"]')!;
     expect(session.querySelector('title')!.textContent).toMatch(/^home@example\.invalid: 88% used, \d+% of the window gone$/);
     expect(charts[0]!.querySelector('[data-curve]')!.getAttribute('data-curve')).toBe('0:90 100:90');
-    expect(screen.queryByRole('group', { name: /^Your points/ })).toBeNull();
+    expect(screen.queryByRole('group', { name: /^Your rows/ })).toBeNull();
   });
 
   /** SWITCH1d (the switch design §5, §6): *My own curve* edits a window's points, saved as `--curve`, and clears them all. */
@@ -258,8 +258,8 @@ describe('how a scope\'s list is used', () => {
 
     expect(screen.getAllByRole('img')[0]!.querySelector('[data-curve]')!.getAttribute('data-curve')).toBe('0:80 100:80');
     expect(screen.getByText("The weekly window takes Daoris's curve.")).toBeTruthy();
-    const session = screen.getByRole('group', { name: 'Your points for the five-hour window' });
-    const used = within(session).getByRole('spinbutton', { name: 'Used, % · point 1' });
+    const session = screen.getByRole('group', { name: 'Your rows for the five-hour window' });
+    const used = within(session).getByRole('spinbutton', { name: 'Used, % · row 1' });
     await userEvent.clear(used);
     await userEvent.type(used, '85');
     await userEvent.click(within(session).getByRole('button', { name: 'Save the curve' }));
@@ -314,7 +314,7 @@ describe('how a scope\'s list is used', () => {
   it('says what passes an account: its limit reached, usage credits, or its use over its curve', async () => {
     wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={MACHINE_NEAR} accounts={CHOICES} acts={acts()} />);
 
-    expect(screen.getByRole('note', { name: /^Per window, a curve says the most of it an account should have used by each point of the window's time\. A start passes an account whose limit is reached, that draws on usage credits, or whose use is over its curve, while another account is ready/ })).toBeTruthy();
+    expect(screen.getByRole('note', { name: /^Per window, a curve says the most of it an account should have used at each moment of the window's time\. A start passes an account whose limit is reached, that draws on usage credits, or whose use is over its curve, while another account is ready/ })).toBeTruthy();
     expect(screen.getByText(/^Each start goes to [^.]+, and an account whose limit is reached, that draws on usage credits or whose use is over its curve is passed while another is ready\.$/)).toBeTruthy();
     expect(document.body.textContent).not.toMatch(/near its limit|at or over this share|Near at/);
   });

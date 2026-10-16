@@ -69,10 +69,10 @@ describe('a window’s own points, edited', () => {
     expect(screen.getByText("The weekly window takes Daoris's curve.")).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: 'Set my own curve' }));
 
-    const editor = screen.getByRole('group', { name: 'Your points for the weekly window' });
+    const editor = screen.getByRole('group', { name: 'Your rows for the weekly window' });
     expect(within(editor).getAllByRole('spinbutton').map((field) => (field as HTMLInputElement).value)).toEqual(['0', '20', '75', '95', '100', '95']);
-    await userEvent.clear(within(editor).getByRole('spinbutton', { name: 'Used, % · point 1' }));
-    await userEvent.type(within(editor).getByRole('spinbutton', { name: 'Used, % · point 1' }), '30');
+    await userEvent.clear(within(editor).getByRole('spinbutton', { name: 'Used, % · row 1' }));
+    await userEvent.type(within(editor).getByRole('spinbutton', { name: 'Used, % · row 1' }), '30');
     await userEvent.click(within(editor).getByRole('button', { name: 'Save the curve' }));
 
     expect(onSave).toHaveBeenCalledWith([[0, 30], [75, 95], [100, 95]]);
@@ -83,10 +83,10 @@ describe('a window’s own points, edited', () => {
     const onSave = vi.fn();
     render(<CurvePoints window="session" points={[[0, 50], [80, 90]]} hint="`daoris agent profile use claude-code --curve session=0:50,80:90`" onSave={onSave} />);
 
-    const editor = screen.getByRole('group', { name: 'Your points for the five-hour window' });
+    const editor = screen.getByRole('group', { name: 'Your rows for the five-hour window' });
     expect(document.body.textContent).toContain('daoris agent profile use claude-code --curve session=0:50,80:90');
     await userEvent.click(within(editor).getByRole('button', { name: 'Add a row' }));
-    await userEvent.click(within(editor).getByRole('button', { name: 'Remove point 1' }));
+    await userEvent.click(within(editor).getByRole('button', { name: 'Remove row 1' }));
     await userEvent.click(within(editor).getByRole('button', { name: 'Save the curve' }));
 
     expect(onSave).toHaveBeenCalledWith([[80, 90], [90, 90]]);
@@ -97,16 +97,16 @@ describe('a window’s own points, edited', () => {
     const onSave = vi.fn();
     render(<CurvePoints window="weekly" points={[[0, 30], [50, 70]]} hint="" onSave={onSave} />);
 
-    const editor = screen.getByRole('group', { name: 'Your points for the weekly window' });
-    await userEvent.clear(within(editor).getByRole('spinbutton', { name: 'Used, % · point 2' }));
-    await userEvent.type(within(editor).getByRole('spinbutton', { name: 'Used, % · point 2' }), '20');
+    const editor = screen.getByRole('group', { name: 'Your rows for the weekly window' });
+    await userEvent.clear(within(editor).getByRole('spinbutton', { name: 'Used, % · row 2' }));
+    await userEvent.type(within(editor).getByRole('spinbutton', { name: 'Used, % · row 2' }), '20');
     await userEvent.click(within(editor).getByRole('button', { name: 'Save the curve' }));
 
     expect(screen.getByRole('alert').textContent)
       .toBe("`weekly`'s point 2 has used 20%, less than point 1's 30% — used never falls.");
     expect(onSave).not.toHaveBeenCalled();
 
-    await userEvent.clear(within(editor).getByRole('spinbutton', { name: 'Used, % · point 2' }));
+    await userEvent.clear(within(editor).getByRole('spinbutton', { name: 'Used, % · row 2' }));
     await userEvent.click(within(editor).getByRole('button', { name: 'Save the curve' }));
     expect(screen.getByRole('alert').textContent).toBe("`weekly`'s point 2 is not two whole numbers [elapsed, used].");
   });
@@ -116,6 +116,6 @@ describe('a window’s own points, edited', () => {
     render(<CurvePoints window="weekly" points={null} hint="" onSave={() => {}} />);
     expect(screen.getByText('每周窗口沿用 Daoris 的曲线。')).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: '设定我的曲线' }));
-    expect(screen.getByRole('group', { name: '你为每周窗口设的点' })).toBeTruthy();
+    expect(screen.getByRole('group', { name: '你为每周窗口设的行' })).toBeTruthy();
   });
 });
