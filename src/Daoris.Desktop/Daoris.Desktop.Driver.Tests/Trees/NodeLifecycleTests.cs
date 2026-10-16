@@ -540,7 +540,7 @@ public sealed class NodeLifecycleTests
     [Fact]
     public void A_reach_whose_evidence_or_outputs_name_another_acceptance_is_refused()
     {
-        var node = Declared("acme.deploy/deploy") with { Evidence = "acme/receipt@1" };
+        var node = Declared("acme.deploy/deploy") with { Evidence = "acme/receipt@1", Outputs = new Dictionary<string, string> { ["preview"] = "acme/preview@1" } };
         var active = Moved(node, At(NodeStates.Ready, attempt: 0, tries: 0), Start(1));
         var binding = Bind(1);
         var evidence = new NodePort("acme/receipt@1", "deploy#1", "tip-1", null);
@@ -557,6 +557,41 @@ public sealed class NodeLifecycleTests
         var unnamed = Reach(evidence, preview);
         Assert.Equal((binding.Id, binding.Id), (unnamed.Status.Current?.Evidence?.Acceptance, unnamed.Status.Current?.Outputs["preview"].Acceptance));
         Assert.True(own.Status.Current!.SameResult(unnamed.Status.Current!));
+    }
+
+    /// <summary>
+    /// FABRIC-NODE1e: a reach exposes exactly its node's declared outputs, each at its declared schema, so a <c>data</c> wire's schema checked
+    /// when saved (WIRE1a) holds at run time. An undeclared output, a declared one at another schema, and a declared one missing are each
+    /// refused with their code; the design's example (a deploy with a declared preview, and a node declaring none) still reaches.
+    /// </summary>
+    [Fact]
+    public void A_reach_exposes_exactly_its_declared_outputs()
+    {
+        var node = Declared("acme.deploy/deploy") with
+        {
+            Evidence = "acme/receipt@1",
+            Outputs = new Dictionary<string, string> { ["preview"] = "acme/preview@1", ["notes"] = "acme/notes@1" },
+        };
+        var active = Moved(node, At(NodeStates.Ready, attempt: 0, tries: 0), Start(1));
+        var evidence = new NodePort("acme/receipt@1", "deploy#1", "tip-1", null);
+        var preview = new NodePort("acme/preview@1", "deploy.preview", "tip-1", null);
+        var notes = new NodePort("acme/notes@1", "deploy.notes", "tip-1", null);
+        NodeMoved Reach(NodeDeclaration declared, NodeStatus status, Dictionary<string, NodePort> outputs) =>
+            NodeLifecycle.Apply(declared, status, new NodeMove(NodeStates.Reached, NodeCause.Authority)
+            {
+                Source = NodeSource.Plugin, Attempt = 1, Acceptance = Bind(1) with { Evidence = evidence, Outputs = outputs },
+            });
+
+        Assert.Equal(NodeRefusal.UndeclaredOutput, Reach(node, active, new() { ["preview"] = preview, ["notes"] = notes, ["log"] = notes with { Schema = "acme/log@1" } }).Refused);
+        Assert.Equal(NodeRefusal.OutputSchema, Reach(node, active, new() { ["preview"] = preview with { Schema = "acme/preview@2" }, ["notes"] = notes }).Refused);
+        Assert.Equal(NodeRefusal.NoOutput, Reach(node, active, new() { ["preview"] = preview }).Refused);
+
+        var reached = Reach(node, active, new() { ["preview"] = preview, ["notes"] = notes });
+        Assert.Equal((NodeStates.Reached, 2), (reached.Status.State, reached.Status.Current?.Outputs.Count));
+
+        var bare = Declared("acme.deploy/deploy") with { Evidence = "acme/receipt@1" };
+        Assert.Equal(NodeRefusal.UndeclaredOutput, Reach(bare, Moved(bare, At(NodeStates.Ready, attempt: 0, tries: 0), Start(1)), new() { ["preview"] = preview }).Refused);
+        Assert.Equal(NodeStates.Reached, Reach(bare, Moved(bare, At(NodeStates.Ready, attempt: 0, tries: 0), Start(1)), []).Status.State);
     }
 
     /// <summary>Choice 3, changed: a plugin's declaration may forbid a skip; a built-in's skip is its kind's, never a declaration's.</summary>

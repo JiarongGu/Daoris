@@ -161,6 +161,18 @@ public static class NodeRefusal
     /// </summary>
     public const string OtherAcceptance = "other-acceptance";
 
+    /// <summary>
+    /// A reach exposing an output its node does not declare: a <c>data</c> wire's schema, checked when saved, would mean nothing at run time
+    /// (FABRIC-NODE1e).
+    /// </summary>
+    public const string UndeclaredOutput = "undeclared-output";
+
+    /// <summary>A reach exposing a declared output at another schema than its declaration's (FABRIC-NODE1e).</summary>
+    public const string OutputSchema = "output-schema";
+
+    /// <summary>A reach without one of its node's declared outputs: every declared output is exposed (FABRIC-NODE1e).</summary>
+    public const string NoOutput = "no-output";
+
     /// <summary>A skip that names no graph and run.</summary>
     public const string NoScope = "no-scope";
 
@@ -297,6 +309,7 @@ public static class NodeLifecycle
                 if (accepted.Id != expected.Id) return Refuse(NodeRefusal.NotBound);
                 if (authority.Evidenced && accepted.Evidence is null) return Refuse(NodeRefusal.NoEvidence);
                 if (node.Evidence is { } schema && accepted.Evidence?.Schema != schema) return Refuse(NodeRefusal.NoEvidence);
+                if (Outputs(node, accepted) is { } outputs) return Refuse(outputs);
                 // FABRIC-NODE1d: a port names the acceptance that produced it, which is what its consumers' invalidation follows.
                 if (Others(accepted.Evidence, accepted.Id) || accepted.Outputs.Values.Any(port => Others(port, accepted.Id))) return Refuse(NodeRefusal.OtherAcceptance);
                 return To(next with { Acceptance = Owned(accepted), By = move.Source, Code = null, Transient = false, Unreconciled = null });
@@ -368,6 +381,17 @@ public static class NodeLifecycle
     }
 
     private static bool Others(NodePort? port, string acceptance) => port?.Acceptance is { } named && named != acceptance;
+
+    /// <summary>
+    /// FABRIC-NODE1e: what a reach's outputs break of its declaration, or null: an output it does not declare, a declared one at another
+    /// schema, a declared one missing. A <c>data</c> wire's schema is checked when saved (WIRE1a), so the outputs a reach exposes are the
+    /// declared ones exactly, or that check means nothing at run time.
+    /// </summary>
+    private static string? Outputs(NodeDeclaration node, NodeAcceptance accepted) =>
+        accepted.Outputs.Keys.Any(name => !node.Outputs.ContainsKey(name)) ? NodeRefusal.UndeclaredOutput
+        : accepted.Outputs.Any(output => !string.Equals(output.Value.Schema, node.Outputs[output.Key], StringComparison.Ordinal)) ? NodeRefusal.OutputSchema
+        : node.Outputs.Keys.Any(name => !accepted.Outputs.ContainsKey(name)) ? NodeRefusal.NoOutput
+        : null;
 
     /// <summary>The acceptance with every port naming it: one the authority handed in without its acceptance is this reach's.</summary>
     private static NodeAcceptance Owned(NodeAcceptance accepted) => accepted with
