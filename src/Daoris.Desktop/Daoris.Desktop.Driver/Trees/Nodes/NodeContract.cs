@@ -204,6 +204,12 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
     /// kind's judgement is the kind's, never a declaration's.
     /// </summary>
     public bool Rejectable { get; init; }
+
+    /// <summary>
+    /// Whether the person may pass a plugin's own node over (D157's skip): a plugin's declaration may forbid it with <c>false</c>
+    /// (FABRIC-NODE1c). A built-in kind's skip is the kind's, never a declaration's.
+    /// </summary>
+    public bool Skippable { get; init; } = true;
 }
 
 /// <summary>
@@ -216,37 +222,52 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
 /// <param name="PersonJudges">Whether a person may reject it, at D156's doors.</param>
 /// <param name="PersonSkips">Whether the person may pass it over for this work (D157's skip).</param>
 /// <param name="MayEnd">Whether it may be a graph's end: <c>claimed</c> never is (§C2, §E4).</param>
-public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, string? FailureBy, bool PersonJudges, bool PersonSkips, bool MayEnd);
+/// <param name="Evidenced">
+/// Whether a reach must carry an evidence reference (§E2, <i>ports are references</i>): every record's or answer's kind does. The
+/// person's kinds do not, since their word is the outcome (HUMAN1 adds attachments), nor a join, whose receipts are its members'.
+/// </param>
+public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, string? FailureBy, bool PersonJudges, bool PersonSkips, bool MayEnd, bool Evidenced)
+{
+    /// <summary>
+    /// Whether its start sends an effect outside Daoris (a performed or a waited reach): until its authority's outcome or a
+    /// reconciliation establishes how that attempt ended, no new attempt starts, whatever moved the node off it (FABRIC-NODE1c).
+    /// </summary>
+    public bool Dispatches => Reach is NodeReach.Performed or NodeReach.Waited;
+}
 
 /// <summary>The authority by kind (§E2): the built-ins' table, and a plugin's own node's from its declaration.</summary>
 /// <remarks>
 /// <para><b>Skips</b> (§E2 leaves which nodes allow one to the node; FABRIC-NODE1's reading, D173's note): git's proofs
 /// (<c>claimed</c>, <c>handed</c>, <c>line</c>) are never skipped, since <i>held</i> and the cleanup rest on them and a skip would read
 /// as evidence; nor is <c>quest.close</c>, whose override is the person's own done (§E5), nor a join, whose members are skipped
-/// instead. Every other kind may be.</para>
+/// instead. Every other kind may be, and a plugin's own node unless its declaration forbids it (FABRIC-NODE1c).</para>
 /// </remarks>
 public static class NodeAuthorities
 {
     public static readonly IReadOnlyDictionary<string, NodeAuthority> BuiltIn = new Dictionary<string, NodeAuthority>(StringComparer.Ordinal)
     {
-        [NodeKinds.Claimed] = new(NodeKinds.Claimed, NodeReach.Observed, NodeSource.Ledger, null, false, false, MayEnd: false),
-        [NodeKinds.Handed] = new(NodeKinds.Handed, NodeReach.Observed, NodeSource.Git, null, false, false, true),
-        [NodeKinds.Line] = new(NodeKinds.Line, NodeReach.Observed, NodeSource.Git, null, false, false, true),
-        [NodeKinds.Pushed] = new(NodeKinds.Pushed, NodeReach.Observed, NodeSource.PluginRef, NodeSource.Plugin, false, true, true),
-        [NodeKinds.PullRequest] = new(NodeKinds.PullRequest, NodeReach.Observed, NodeSource.Plugin, NodeSource.Plugin, false, true, true),
-        [NodeKinds.Human] = new(NodeKinds.Human, NodeReach.Pressed, NodeSource.Person, null, true, true, true),
+        [NodeKinds.Claimed] = new(NodeKinds.Claimed, NodeReach.Observed, NodeSource.Ledger, null, false, false, MayEnd: false, Evidenced: true),
+        [NodeKinds.Handed] = new(NodeKinds.Handed, NodeReach.Observed, NodeSource.Git, null, false, false, true, true),
+        [NodeKinds.Line] = new(NodeKinds.Line, NodeReach.Observed, NodeSource.Git, null, false, false, true, true),
+        [NodeKinds.Pushed] = new(NodeKinds.Pushed, NodeReach.Observed, NodeSource.PluginRef, NodeSource.Plugin, false, true, true, true),
+        [NodeKinds.PullRequest] = new(NodeKinds.PullRequest, NodeReach.Observed, NodeSource.Plugin, NodeSource.Plugin, false, true, true, true),
+        [NodeKinds.Human] = new(NodeKinds.Human, NodeReach.Pressed, NodeSource.Person, null, true, true, true, false),
         // §E4: the look is its gate, observed, and the person's *reviewed* is what reaches it.
-        [NodeKinds.Look] = new(NodeKinds.Look, NodeReach.Observed, NodeSource.Person, null, true, true, true),
-        [NodeKinds.GoAhead] = new(NodeKinds.GoAhead, NodeReach.Pressed, NodeSource.Person, null, true, true, true),
-        [NodeKinds.WaitUnit] = new(NodeKinds.WaitUnit, NodeReach.Waited, NodeSource.Commitment, NodeSource.Commitment, false, true, true),
-        [NodeKinds.QuestClose] = new(NodeKinds.QuestClose, NodeReach.Performed, NodeSource.CloseDoor, NodeSource.CloseDoor, false, false, true),
-        [NodeKinds.All] = new(NodeKinds.All, NodeReach.Observed, NodeSource.Members, NodeSource.Members, false, false, true),
+        [NodeKinds.Look] = new(NodeKinds.Look, NodeReach.Observed, NodeSource.Person, null, true, true, true, false),
+        [NodeKinds.GoAhead] = new(NodeKinds.GoAhead, NodeReach.Pressed, NodeSource.Person, null, true, true, true, false),
+        [NodeKinds.WaitUnit] = new(NodeKinds.WaitUnit, NodeReach.Waited, NodeSource.Commitment, NodeSource.Commitment, false, true, true, true),
+        [NodeKinds.QuestClose] = new(NodeKinds.QuestClose, NodeReach.Performed, NodeSource.CloseDoor, NodeSource.CloseDoor, false, false, true, true),
+        [NodeKinds.All] = new(NodeKinds.All, NodeReach.Observed, NodeSource.Members, NodeSource.Members, false, false, true, false),
     };
 
-    /// <summary>The node's authority: its built-in kind's, or a plugin's own (its believed answer either way, a person only where declared); null for a kind this build does not know.</summary>
+    /// <summary>
+    /// The node's authority: its built-in kind's, or a plugin's own (its believed answer either way, a person only where declared, a
+    /// skip unless declared otherwise); null for a kind this build does not know. A plugin's answer is named <see cref="NodeSource.Plugin"/>
+    /// here alone: that the answer came from the declaring plugin is PERFORM1c's authenticated sender check, not the lifecycle's.
+    /// </summary>
     public static NodeAuthority? Of(NodeDeclaration node) =>
         BuiltIn.TryGetValue(node.Kind, out var builtIn) ? builtIn
-        : NodeKinds.IsPlugin(node.Kind) ? new NodeAuthority(node.Kind, node.Reach, NodeSource.Plugin, NodeSource.Plugin, node.Rejectable, true, true)
+        : NodeKinds.IsPlugin(node.Kind) ? new NodeAuthority(node.Kind, node.Reach, NodeSource.Plugin, NodeSource.Plugin, node.Rejectable, node.Skippable, true, true)
         : null;
 }
 
@@ -256,7 +277,8 @@ public static class NodeDeclarations
     /// <summary>
     /// What does not hold, by its field, or null: a kind this build does not know (<see cref="NodeRefusal.UnknownKind"/>), a reach not
     /// the kind's (a plugin's is observed or performed), a version below 1, a retry of fewer than one attempt or on a kind nothing can
-    /// fail, a timeout not above zero, or a rejection a built-in's declaration tries to grant.
+    /// fail, a timeout not above zero, or a rejection a built-in's declaration tries to grant or a skip it tries to forbid (the kind's
+    /// own, never a declaration's).
     /// </summary>
     public static string? Problem(NodeDeclaration node)
     {
@@ -269,6 +291,7 @@ public static class NodeDeclarations
         if (node.Retry is { } retry && (retry.MaxAttempts < 1 || retry.DelaysSeconds.Any(delay => delay < 0) || authority.FailureBy is null)) return "retry";
         if (node.TimeoutSeconds is <= 0) return "timeoutSeconds";
         if (builtIn && node.Rejectable) return "rejectable";
+        if (builtIn && !node.Skippable) return "skippable";
         return null;
     }
 }

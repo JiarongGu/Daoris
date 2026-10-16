@@ -19,6 +19,9 @@ public sealed record NodeObservation(string Unit, string Node, string Kind, stri
     /// <summary>The outcome's source, which the kind's authority must name.</summary>
     public string? Source { get; init; }
 
+    /// <summary>The attempt it was observed for: its outcome is that attempt's, never a later one's.</summary>
+    public int Attempt { get; init; }
+
     /// <summary>A reach's acceptance, bound to the commit its evidence names and pointing at its record.</summary>
     public NodeAcceptance? Acceptance { get; init; }
 
@@ -31,7 +34,10 @@ public sealed record NodeObservation(string Unit, string Node, string Kind, stri
     /// <summary>The report as a move on an active node: an outcome by its authority, an unknown by Daoris; none where there is no outcome.</summary>
     public NodeMove? Move => Refused is not null || Outcome is null
         ? null
-        : new NodeMove(Outcome, Outcome == NodeStates.Unknown ? NodeCause.Daoris : NodeCause.Authority) { Source = Source, Acceptance = Acceptance, Code = Code };
+        : new NodeMove(Outcome, Outcome == NodeStates.Unknown ? NodeCause.Daoris : NodeCause.Authority)
+        {
+            Source = Source, Attempt = Attempt, Acceptance = Acceptance, Code = Code,
+        };
 }
 
 /// <summary>
@@ -52,14 +58,26 @@ public static class BuiltInNodes
     /// <summary>The kinds observed from records.</summary>
     public static readonly IReadOnlyList<string> Observed = [NodeKinds.Claimed, NodeKinds.Handed, NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Line];
 
-    /// <summary>What <paramref name="unit"/>'s records say of <paramref name="node"/>, bound for <paramref name="attempt"/> under <paramref name="graphDigest"/>.</summary>
-    public static NodeObservation Observe(WorkUnit unit, NodeDeclaration node, string graphDigest, int attempt, NodeGitReads? git = null)
+    /// <summary>
+    /// What <paramref name="unit"/>'s records say of <paramref name="node"/>, bound for <paramref name="attempt"/> under
+    /// <paramref name="graphDigest"/>, where no wire evaluated a binding: no inputs and no prerequisite receipts.
+    /// </summary>
+    public static NodeObservation Observe(WorkUnit unit, NodeDeclaration node, string graphDigest, int attempt, NodeGitReads? git = null) =>
+        Observe(unit, node, new NodeAcceptance(unit.Id, unit.Subject.Revision, graphDigest, node.Id, node.Version, attempt), git);
+
+    /// <summary>
+    /// What <paramref name="unit"/>'s records say of <paramref name="node"/> on the binding Daoris evaluated for its attempt (FABRIC-NODE1c):
+    /// a reach's acceptance carries that binding's graph, attempt, inputs and prerequisite receipts, so invalidating anything it rests on
+    /// reaches it. Its revision is the commit its evidence names; where that is not the binding's, the one table refuses the reach as
+    /// another binding's. A binding of another unit, node or version is no observation (<see cref="NodeRefusal.NotBound"/>).
+    /// </summary>
+    public static NodeObservation Observe(WorkUnit unit, NodeDeclaration node, NodeAcceptance binding, NodeGitReads? git = null)
     {
-        NodeObservation Seen(string? outcome, string said) => new(unit.Id, node.Id, node.Kind, outcome, said);
+        NodeObservation Seen(string? outcome, string said) => new(unit.Id, node.Id, node.Kind, outcome, said) { Attempt = binding.Attempt };
 
         NodeObservation Reached(string source, string? revision, string record, string artifact, string said)
         {
-            var accepted = new NodeAcceptance(unit.Id, revision, graphDigest, node.Id, node.Version, attempt);
+            var accepted = binding with { SubjectRevision = revision, Evidence = null, Outputs = NodeAcceptance.NoPorts };
             return Seen(NodeStates.Reached, said) with
             {
                 Source = source,
@@ -68,6 +86,11 @@ public static class BuiltInNodes
         }
 
         if (!Observed.Contains(node.Kind)) return Seen(null, "this kind is not observed from records") with { Refused = NodeRefusal.NotObserved };
+        if (binding.Unit != unit.Id || binding.Node != node.Id || binding.NodeVersion != node.Version)
+        {
+            return Seen(null, "its binding names another unit, node or version") with { Refused = NodeRefusal.NotBound };
+        }
+
         var wants = node.Kind == NodeKinds.Claimed ? WorkUnitKind.Quest : WorkUnitKind.Branch;
         if (unit.Kind != wants) return Seen(null, $"it observes a {wants} unit, and this is a {unit.Kind}") with { Refused = NodeRefusal.NotThisUnit };
 

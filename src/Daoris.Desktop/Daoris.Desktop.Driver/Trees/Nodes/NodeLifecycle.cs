@@ -19,8 +19,21 @@ public sealed record NodeStatus(string Unit, string Node, string State)
     /// <summary>Attempts started since the binding was fresh or the person last asked: what <see cref="NodeRetry.MaxAttempts"/> bounds.</summary>
     public int Tries { get; init; }
 
-    /// <summary>The attempt whose outcome went unknown and is not established yet: no new attempt starts while it is set.</summary>
+    /// <summary>
+    /// The attempt whose outcome is not established yet, apart from the visible state: one that went unknown, and a dispatched one
+    /// (<see cref="NodeAuthority.Dispatches"/>) from its start until its authority's outcome, whatever moved the node off it (a stop, a
+    /// skip, a rejection, an invalidation). No new attempt starts while it is set (FABRIC-NODE1c).
+    /// </summary>
     public int? Unreconciled { get; init; }
+
+    /// <summary>
+    /// The binding the newest attempt runs on, as the acceptance it would be reached on (no evidence): set at its start from Daoris's
+    /// evaluation, and what a reach must match. Kept as history until a reset to ready or blocked (FABRIC-NODE1c).
+    /// </summary>
+    public NodeAcceptance? Binding { get; init; }
+
+    /// <summary>A skip's graph and run: it holds for those alone (<see cref="NodeLifecycle.Skips"/>).</summary>
+    public NodeScope? Scope { get; init; }
 
     /// <summary>The acceptance it was reached on; kept as history once invalidated (<see cref="Current"/> is null then).</summary>
     public NodeAcceptance? Acceptance { get; init; }
@@ -49,8 +62,20 @@ public sealed record NodeMove(string To, string By)
     /// <summary>An outcome's source: the kind's authority must name it.</summary>
     public string? Source { get; init; }
 
-    /// <summary>A reach's bound evidence: this unit, this node, this attempt.</summary>
+    /// <summary>
+    /// The attempt an outcome or an unknown is about: required of a reach, a failure, a rejection and an unknown, and refused unless it
+    /// is the current attempt, so a late report of an earlier attempt never lands on a newer one (FABRIC-NODE1c).
+    /// </summary>
+    public int? Attempt { get; init; }
+
+    /// <summary>A reach's bound evidence: it must be the status's <see cref="NodeStatus.Binding"/>, with the evidence its kind needs.</summary>
     public NodeAcceptance? Acceptance { get; init; }
+
+    /// <summary>
+    /// A start's binding, as Daoris evaluated it: this unit, this node at its declared version, the next attempt, and the revision,
+    /// graph, inputs and prerequisite receipts it runs on. Its evidence and outputs are not read.
+    /// </summary>
+    public NodeAcceptance? Binding { get; init; }
 
     /// <summary>A failure's code.</summary>
     public string? Code { get; init; }
@@ -59,12 +84,27 @@ public sealed record NodeMove(string To, string By)
 
     /// <summary>The person's words: required for a rejection and a skip.</summary>
     public string? Words { get; init; }
+
+    /// <summary>A skip's graph and run: required, since a skip holds for its own alone.</summary>
+    public NodeScope? Scope { get; init; }
 }
+
+/// <summary>Where a skip holds (FABRIC-NODE1c): the graph that bound the run, and the run, D157's skip on a run (§E7).</summary>
+/// <param name="GraphDigest">The graph's digest.</param>
+/// <param name="Run">The run's id.</param>
+public sealed record NodeScope(string GraphDigest, string Run);
 
 /// <summary>What a move came to: the node's status after it, or as it was with the refusal's code.</summary>
 public sealed record NodeMoved(NodeStatus Status, string? Refused)
 {
     public bool Moved => Refused is null;
+
+    /// <summary>
+    /// The status as it stood, when the move cleared any of what it held: a binding, an acceptance, an outcome's source, code or words,
+    /// a skip's scope. What the record writer keeps as the attempt's history before the reset (§D3: history is kept); null when the
+    /// move cleared nothing (FABRIC-NODE1c).
+    /// </summary>
+    public NodeStatus? Cleared { get; init; }
 }
 
 /// <summary>Why a move, a declaration or an observation is refused, as a code a test holds and a page words.</summary>
@@ -97,11 +137,32 @@ public static class NodeRefusal
     /// <summary>A reach without bound evidence.</summary>
     public const string NoAcceptance = "no-acceptance";
 
-    /// <summary>The acceptance names another attempt: a stale attempt's completion never counts as current evidence (§D3).</summary>
+    /// <summary>An outcome or an unknown that names no attempt.</summary>
+    public const string NoAttempt = "no-attempt";
+
+    /// <summary>The outcome names another attempt: a stale attempt's completion never counts as current evidence (§D3).</summary>
     public const string StaleAttempt = "stale-attempt";
 
-    /// <summary>The acceptance names another unit or node.</summary>
+    /// <summary>
+    /// The acceptance is not the binding its attempt started on (another unit, node, revision, graph, version, inputs or prerequisite
+    /// receipts), or a start's binding is not this node's next attempt at its declared version.
+    /// </summary>
     public const string NotBound = "not-bound";
+
+    /// <summary>A start that brings no binding, or a reach on a status that holds none.</summary>
+    public const string NoBinding = "no-binding";
+
+    /// <summary>A reach without the evidence reference its kind needs, or with evidence of a schema the node does not declare.</summary>
+    public const string NoEvidence = "no-evidence";
+
+    /// <summary>A skip that names no graph and run.</summary>
+    public const string NoScope = "no-scope";
+
+    /// <summary>The declaration judged is another node's than the status's.</summary>
+    public const string NotThisNode = "not-this-node";
+
+    /// <summary>A second, different result for a binding that already has one: one immutable result per binding.</summary>
+    public const string OtherResult = "other-result";
 
     /// <summary>A retry of a failure not declared transient: the person's new attempt is the way on.</summary>
     public const string NotTransient = "not-transient";
@@ -163,8 +224,12 @@ public static class NodeLifecycle
         ];
         foreach (var from in new[] { NodeStates.Ready, NodeStates.Blocked, NodeStates.Active })
         {
-            rows.Add(new(from, NodeStates.Skipped, person, "the person passes it over for this work, with their words, where the node allows a skip"));
+            rows.Add(new(from, NodeStates.Skipped, person, "the person passes it over for this graph and run, with their words, where the node allows a skip"));
         }
+
+        // FABRIC-NODE1c: a skip is the person's word for one graph and run, so they may take it back, and another graph or run lapses it.
+        rows.Add(new(NodeStates.Skipped, NodeStates.Blocked, person, "the person withdraws their skip: it is judged again"));
+        rows.Add(new(NodeStates.Skipped, NodeStates.Invalidated, daoris, "its graph or run is another: a skip holds for its own alone"));
 
         foreach (var from in NodeStates.Live) rows.Add(new(from, NodeStates.Stopped, person, "the person stops this node"));
         foreach (var from in NodeStates.Bound)
@@ -187,19 +252,29 @@ public static class NodeLifecycle
             : TimeSpan.FromSeconds(retry.DelaysSeconds[Math.Min(attempt - 2, retry.DelaysSeconds.Count - 1)]);
 
     /// <summary>
-    /// An earlier attempt's outcome established after it stopped being current (a stopped or superseded attempt's completion, recorded as
-    /// a stale attempt's, §D3): it no longer holds a new attempt back. Any other attempt changes nothing.
+    /// An earlier attempt's outcome established after it stopped being current (a stopped, skipped, rejected or superseded attempt's
+    /// completion, recorded as a stale attempt's, §D3, or its authority's answer that it never started): it no longer holds a new attempt
+    /// back. Any other attempt changes nothing, and so does a current one: an active or unknown attempt's outcome is a move.
     /// </summary>
     public static NodeStatus Reconciled(NodeStatus status, int attempt) =>
-        status.Unreconciled == attempt ? status with { Unreconciled = null } : status;
+        status.Unreconciled == attempt && status.State is not (NodeStates.Active or NodeStates.Unknown) ? status with { Unreconciled = null } : status;
+
+    /// <summary>Whether <paramref name="status"/> is a skip that holds for <paramref name="scope"/>: its own graph and run alone.</summary>
+    public static bool Skips(NodeStatus status, NodeScope scope) => status.State == NodeStates.Skipped && status.Scope == scope;
 
     /// <summary>The move judged against the one table and the kind's authority: the next status, or the status as it was and why not.</summary>
     public static NodeMoved Apply(NodeDeclaration node, NodeStatus status, NodeMove move)
     {
         NodeMoved Refuse(string code) => new(status, code);
+        NodeMoved To(NodeStatus next) => new(next, null) { Cleared = Clears(status, next) ? status : null };
+
+        // FABRIC-NODE1c: an outcome or an unknown is about one attempt; a late report of an earlier one never lands on the current one.
+        string? Unbound(int? attempt) =>
+            attempt is null ? NodeRefusal.NoAttempt : attempt != status.Attempt ? NodeRefusal.StaleAttempt : null;
 
         var authority = NodeAuthorities.Of(node);
         if (authority is null) return Refuse(NodeRefusal.UnknownKind);
+        if (node.Id != status.Node) return Refuse(NodeRefusal.NotThisNode);
         var rows = Table.Where(row => row.From == status.State && row.To == move.To).ToList();
         if (rows.Count == 0) return Refuse(NodeRefusal.NotInTable);
         if (!rows.Any(row => row.By == move.By)) return Refuse(NodeRefusal.NotCause);
@@ -209,55 +284,90 @@ public static class NodeLifecycle
         {
             case NodeStates.Reached:
                 if (move.Source != authority.ReachBy) return Refuse(NodeRefusal.NotAuthority);
+                if (Unbound(move.Attempt) is { } reachAttempt) return Refuse(reachAttempt);
                 if (move.Acceptance is not { } accepted) return Refuse(NodeRefusal.NoAcceptance);
-                if (accepted.Unit != status.Unit || accepted.Node != status.Node) return Refuse(NodeRefusal.NotBound);
-                if (accepted.Attempt != status.Attempt) return Refuse(NodeRefusal.StaleAttempt);
-                return new(next with { Acceptance = accepted, By = move.Source, Code = null, Transient = false, Unreconciled = null }, null);
+                if (status.Binding is not { } expected) return Refuse(NodeRefusal.NoBinding);
+                // The id is the whole binding: unit, revision, graph, node, version, inputs, receipts and attempt.
+                if (accepted.Id != expected.Id) return Refuse(NodeRefusal.NotBound);
+                if (authority.Evidenced && accepted.Evidence is null) return Refuse(NodeRefusal.NoEvidence);
+                if (node.Evidence is { } schema && accepted.Evidence?.Schema != schema) return Refuse(NodeRefusal.NoEvidence);
+                return To(next with { Acceptance = accepted, By = move.Source, Code = null, Transient = false, Unreconciled = null });
 
             case NodeStates.Failed:
                 if (authority.FailureBy is null) return Refuse(NodeRefusal.NoFailureAuthority);
                 if (move.Source != authority.FailureBy) return Refuse(NodeRefusal.NotAuthority);
+                if (Unbound(move.Attempt) is { } failAttempt) return Refuse(failAttempt);
                 if (string.IsNullOrWhiteSpace(move.Code)) return Refuse(NodeRefusal.NoCode);
-                return new(next with { By = move.Source, Code = move.Code, Transient = move.Transient, Unreconciled = null }, null);
+                return To(next with { By = move.Source, Code = move.Code, Transient = move.Transient, Unreconciled = null });
 
             case NodeStates.Rejected:
+                // The person's word judges the attempt; it establishes no dispatched effect's outcome, so Unreconciled stays.
                 if (!authority.PersonJudges) return Refuse(NodeRefusal.NotJudged);
+                if (Unbound(move.Attempt) is { } rejectAttempt) return Refuse(rejectAttempt);
                 if (string.IsNullOrWhiteSpace(move.Words)) return Refuse(NodeRefusal.NoWords);
-                return new(next with { By = NodeSource.Person, Words = move.Words }, null);
+                return To(next with { By = NodeSource.Person, Words = move.Words });
 
             case NodeStates.Skipped:
                 if (!authority.PersonSkips) return Refuse(NodeRefusal.NotSkippable);
                 if (string.IsNullOrWhiteSpace(move.Words)) return Refuse(NodeRefusal.NoWords);
-                return new(next with { By = NodeSource.Person, Words = move.Words }, null);
+                if (move.Scope is null) return Refuse(NodeRefusal.NoScope);
+                return To(next with { By = NodeSource.Person, Words = move.Words, Scope = move.Scope });
 
             case NodeStates.Stopped:
-                return new(next with { By = NodeSource.Person, Words = move.Words }, null);
+                return To(next with { By = NodeSource.Person, Words = move.Words });
 
             case NodeStates.Unknown:
-                return new(next with { Unreconciled = status.Attempt }, null);
+                if (Unbound(move.Attempt) is { } unknownAttempt) return Refuse(unknownAttempt);
+                return To(next with { Unreconciled = status.Attempt });
 
             case NodeStates.Active when status.State == NodeStates.Unknown:
                 // Reconciliation found the same attempt running, or never started (redelivered with its key, §D6): not a new attempt.
-                return new(next with { Unreconciled = null }, null);
+                // A dispatched one still running stays unreconciled until its outcome.
+                return To(next with { Unreconciled = authority.Dispatches ? status.Attempt : null });
 
             case NodeStates.Active:
                 if (status.Unreconciled is not null) return Refuse(NodeRefusal.Unreconciled);
-                return new(next with { Attempt = status.Attempt + 1, Tries = status.Tries + 1, Acceptance = null, Code = null, Transient = false, Words = null }, null);
+                if (move.Binding is not { } binding) return Refuse(NodeRefusal.NoBinding);
+                if (binding.Unit != status.Unit || binding.Node != status.Node || binding.NodeVersion != node.Version || binding.Attempt != status.Attempt + 1)
+                {
+                    return Refuse(NodeRefusal.NotBound);
+                }
+
+                return To(Reset(next) with
+                {
+                    Attempt = status.Attempt + 1,
+                    Tries = status.Tries + 1,
+                    Binding = binding with { Evidence = null, Outputs = NodeAcceptance.NoPorts },
+                    Unreconciled = authority.Dispatches ? status.Attempt + 1 : null,
+                });
 
             case NodeStates.Ready when status.State == NodeStates.Failed && move.By == NodeCause.Daoris:
                 if (!status.Transient) return Refuse(NodeRefusal.NotTransient);
                 if (status.Tries >= (node.Retry?.MaxAttempts ?? 1)) return Refuse(NodeRefusal.NoAttemptsLeft);
-                return new(next with { Code = null, Transient = false }, null);
+                return To(Reset(next));
 
-            case NodeStates.Ready or NodeStates.Blocked when status.State is NodeStates.Invalidated:
-                return new(next with { Tries = 0, Acceptance = null, By = null, Code = null, Transient = false, Words = null }, null);
+            case NodeStates.Ready or NodeStates.Blocked when status.State is NodeStates.Invalidated or NodeStates.Skipped:
+                // Judged again on a fresh binding, or the person's skip withdrawn: the bound counts afresh.
+                return To(Reset(next) with { Tries = 0 });
 
             case NodeStates.Ready when move.By == NodeCause.Person:
-                return new(next with { Tries = 0, Code = null, Transient = false, Words = null }, null);
+                return To(Reset(next) with { Tries = 0 });
 
             default:
-                // blocked ↔ ready on Daoris's evaluation, and an invalidation, which keeps the acceptance as history.
-                return new(next, null);
+                // blocked ↔ ready on Daoris's evaluation, and an invalidation, which keeps the binding and acceptance as history.
+                return To(next);
         }
+    }
+
+    /// <summary>A status with nothing of an attempt's record left: what a reset to ready or blocked, and a start, begin from.</summary>
+    private static NodeStatus Reset(NodeStatus status) =>
+        status with { Binding = null, Acceptance = null, By = null, Code = null, Transient = false, Words = null, Scope = null };
+
+    /// <summary>Whether a move took away anything the status held, which the record writer keeps before it is gone (FABRIC-NODE1c).</summary>
+    private static bool Clears(NodeStatus was, NodeStatus next)
+    {
+        static bool Lost(object? held, object? kept) => held is not null && !Equals(held, kept);
+        return Lost(was.Binding, next.Binding) || Lost(was.Acceptance, next.Acceptance) || Lost(was.By, next.By) || Lost(was.Code, next.Code)
+            || Lost(was.Words, next.Words) || Lost(was.Scope, next.Scope);
     }
 }
