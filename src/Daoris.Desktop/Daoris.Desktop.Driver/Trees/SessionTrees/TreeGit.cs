@@ -49,11 +49,16 @@ internal static class TreeGit
         var (code, output, _) = await WorkingTree.GitAsync(
             tree, ["rev-parse", "--path-format=absolute", "--git-common-dir", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
         var lines = output.Split('\n').Select(line => line.TrimEnd('\r')).Where(line => line.Length > 0).ToArray();
-        if (code == 0 && lines.Length == 2) return new CommonDirAndBranch(0, lines[0], "", lines[1], Once: true);
+        if (code == 0 && lines.Length == 2)
+        {
+            GitFacts.SameRepository(tree, lines[0]);
+            return new CommonDirAndBranch(0, lines[0], "", lines[1], Once: true);
+        }
 
         var (rootCode, commonDir, rootErr) = await WorkingTree.GitAsync(
             tree, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct).ConfigureAwait(false);
         if (rootCode != 0) return new CommonDirAndBranch(rootCode, commonDir, rootErr, "", Once: false);
+        GitFacts.SameRepository(tree, commonDir.Trim());
         var (_, branch, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
         return new CommonDirAndBranch(0, commonDir, rootErr, branch, Once: false);
     }

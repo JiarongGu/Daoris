@@ -947,10 +947,24 @@ public static class WorkingTree
     /// the person, and one that waits on a credential nobody is there to type must end rather than hold a press.
     /// </summary>
     /// <remarks>On the bound, git and whatever it started are stopped, and the answer is a failure that says why.</remarks>
-    internal static async Task<(int Code, string Stdout, string Stderr)> GitAsync(
+    internal static Task<(int Code, string Stdout, string Stderr)> GitAsync(
         string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string>? environment, TimeSpan? timeout,
         CancellationToken ct)
     {
+        // LANDGIT1: within a landing, a read of a ref or a repository is asked of git once; a call with a variable of its own or a
+        // bound (a fetch) and a test's stand-in answer are always asked as written.
+        var run = () => RunGitAsync(root, arguments, environment, timeout, ct);
+        return environment is null && timeout is null && Answered.Value is null
+            ? GitFacts.Asked(root, arguments, run) ?? run()
+            : run();
+    }
+
+    private static async Task<(int Code, string Stdout, string Stderr)> RunGitAsync(
+        string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string>? environment, TimeSpan? timeout,
+        CancellationToken ct)
+    {
+        // LANDGIT1: a git that may move a ref drops what this flow was told, before it starts as well as after it ends.
+        GitFacts.Ran(arguments);
         Started.Value?.Invoke(arguments);
         if (Answered.Value?.Invoke(arguments) is { } answered) return answered;
         var (info, refusal) = GitStart(root, arguments, DaorisHome.Resolve());
@@ -978,6 +992,7 @@ public static class WorkingTree
         {
             // PROC1d-ii: a git that may have moved a ref, finished, stopped or failed, drops the refs this flow read at once.
             RefSnapshot.Ran(arguments);
+            GitFacts.Ran(arguments);
         }
     }
 

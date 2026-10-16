@@ -109,17 +109,33 @@ public sealed class LandGitCountTests : IDisposable
         Judge(starts, MergeCeiling);
     }
 
-    // The counts before LANDGIT1 and after (each ceiling is the count after, on this repository's fixture).
-    private const int AutomaticCeiling = int.MaxValue;
-    private const int SquashCeiling = int.MaxValue;
-    private const int MergeCeiling = int.MaxValue;
+    // Git starts of one landing on this fixture, before LANDGIT1 and after: the look's automatic landing 61 and 34, the press on a
+    // squash rule 54 and 42, the press on a merge rule 45 and 34. The tidy's own reads (its proof and its delete) are asked as they
+    // were: what they repeat of the head is read after the landing's writes, so it is read again.
+    private const int AutomaticCeiling = 34;
+    private const int SquashCeiling = 42;
+    private const int MergeCeiling = 34;
 
     private static void Judge(List<string> starts, int ceiling)
     {
         var git = starts.Where(each => each.StartsWith("git ", StringComparison.Ordinal)).ToList();
         var report = $"{git.Count} git starts:\n{string.Join('\n', git)}";
-        var repeated = git.GroupBy(each => each).Where(each => each.Count() > 1).Select(each => $"{each.Key} x{each.Count()}").ToList();
-        Assert.True(repeated.Count == 0, $"repeated: {string.Join("; ", repeated)}\n{report}");
+        // A command asked again is a repeat unless a git that may move a ref ran between its two askings: what the landing wrote is
+        // read again, as a later step depends on it. `status` is the files', never a ref's: each gate that refuses on uncommitted work
+        // reads it as it acts, so two of them are two askings by design.
+        var repeated = new List<string>();
+        var since = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var each in git)
+        {
+            // The folder is not part of a fact here: the landing is of one repository and one tree, so a command asked in the tree and
+            // again in the checkout is asked twice.
+            var command = each.Split("  @ ")[0];
+            var arguments = command["git ".Length..].Split(' ');
+            if (RefSnapshot.MayWrite(arguments)) since.Clear();
+            else if (!command.StartsWith("git status ", StringComparison.Ordinal) && !since.Add(command)) repeated.Add(each);
+        }
+
+        Assert.True(repeated.Count == 0, $"repeated without a write between: {string.Join("; ", repeated)}\n{report}");
         Assert.True(git.Count <= ceiling, report);
     }
 
