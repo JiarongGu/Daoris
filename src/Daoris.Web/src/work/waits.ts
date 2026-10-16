@@ -62,31 +62,30 @@ export function landingStands({ lands, landing, behind }: {
 }
 
 /**
- * What an open conversation's own tree offers to land once its turn has ended (ACCEPTFOOT1, D164's note): the commits beyond its
- * line, on the branch its tree is on, from the review's own answer. Its record stays `working` between turns, so the driver's look,
- * which reads records alone, offers it nothing (LAND4 leaves a live session's tree to it); the turn's state is the driver's word
- * the page holds (CONV4a). None while a turn runs or words wait to start one, before that word is known, in the person's checkout
- * (no tree of its own), where the line was not read or nothing is beyond it (REVIEWBASE4), or once the review reads as landed. The
- * press is the review's Accept, which judges again; this only says there is work it would land.
+ * What an open conversation's own tree offers to land once its turn has ended (ACCEPTFOOT1, D164's notes): the driver's own offer,
+ * LAND4's, which the review's answer carries (`offer`: D88's proof and SQUASHTIDY1b's content hold), so the page offers what a press
+ * would land. Its record stays `working` between turns, so the driver's look, which reads records alone, offers it nothing; the
+ * turn's state is the driver's word the page holds (CONV4a). None while a turn runs or words wait to start one, before that word is
+ * known, until a review read after the turn ended is in (an earlier read is another turn's work), in the person's checkout, where
+ * the tree is detached (`treeBranch` null: no branch for a press to land), where the line was not read or nothing is beyond it
+ * (REVIEWBASE4), once the review reads as landed, or from a host whose answer carries no offer. The press judges again.
  */
-export function conversationOffer({ tree, turn, review }: {
+export function conversationOffer({ tree, turn, review, endedAt, readAt }: {
   /** Its own tree's name (`ownTree`), null where it works in the person's checkout. */
   tree: string | null;
   /** Where its turns stand, as the driver holds them; absent until it answers. */
   turn?: { taking: boolean; queued: readonly unknown[] } | null;
   review?: SessionDiff | null;
+  /** When the page saw this turn end (or first saw it at rest); null before. */
+  endedAt?: number | null;
+  /** When the review's answer was read (the query's `dataUpdatedAt`). */
+  readAt?: number;
 }): LandOffer | null {
   if (!tree || !turn || turn.taking || turn.queued.length > 0) return null;
-  if (!review || review.source === 'branch' || review.landed?.asLanded) return null;
-  const ahead = review.behind?.ahead ?? 0;
-  if (ahead <= 0) return null;
-  return {
-    // The tree's own branch where it moved onto one (TREEFOLLOW1), else the layout's name, as the driver's offer says it.
-    branch: review.treeBranch ?? `daoris/${tree}`,
-    tree,
-    commits: ahead,
-    uncommitted: review.uncommitted?.files.length ?? 0,
-  };
+  if (endedAt == null || readAt === undefined || readAt < endedAt) return null;
+  if (!review || review.source === 'branch' || review.landed?.asLanded || review.treeBranch === null) return null;
+  if ((review.behind?.ahead ?? 0) <= 0 || !review.offer) return null;
+  return review.offer;
 }
 
 /**

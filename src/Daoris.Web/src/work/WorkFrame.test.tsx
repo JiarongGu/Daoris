@@ -4387,15 +4387,57 @@ describe('acting on what a session landed', () => {
    */
   describe('an open conversation whose turn ended with work', () => {
     const TALK = { ...CHAT, tree: 'C:/somewhere/.daoris/trees/default/engine/s-c0ffee11' };
-    const BEYOND = { ...DIFF, session: 'c0ffee11', behind: { line: 'main', commits: 0, ahead: 1 }, treeBranch: 'daoris/s-c0ffee11' };
-    const answering = (review: object, taking = false) => async (_module: string, type: string) => {
+    const BEYOND = {
+      ...DIFF, session: 'c0ffee11', behind: { line: 'main', commits: 0, ahead: 1 }, treeBranch: 'daoris/s-c0ffee11',
+      offer: { branch: 'daoris/s-c0ffee11', tree: 's-c0ffee11', commits: 1, uncommitted: 0 },
+    };
+    const NOTHING = { ...BEYOND, files: [], behind: { line: 'main', commits: 0, ahead: 0 }, offer: null };
+    const answering = (review: object | (() => unknown), taking = false) => async (_module: string, type: string) => {
       if (type === 'HARNESSES') return STRUCTURED_ROSTER;
       if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [], taking };
       if (type === 'SESSION_GROUPS') return { sessions: [{ session: 'c0ffee11', group: 'working', shown: 'working', archived: false, teammate: false }] };
       if (type === 'LANDING') return { session: 'c0ffee11', form: 'branch', target: 'feature/delta', source: 'workspace' };
-      if (type === 'SESSION_DIFF') return review;
+      if (type === 'SESSION_DIFF') return typeof review === 'function' ? review() : review;
       return DRIVER_STATE;
     };
+    const turn = (taking: boolean) => act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c0ffee11', queued: [], taking }));
+    const diffs = () => invoke.mock.calls.filter((call) => call[1] === 'SESSION_DIFF').length;
+
+    // The second maker's review: a review read before the turn's last commit was reused at its end, within the 15 s a live review
+    // is fresh for, so a turn that committed offered nothing; and a stale answer that offered stayed pressable while it was read again.
+    it('reads the review again for the turn that ended, never offering from an answer read before it', async () => {
+      SESSIONS = [TALK];
+      let review: () => unknown = () => NOTHING;
+      invoke.mockImplementation(answering(() => review()));
+
+      show('c0ffee11');
+      await waitFor(() => expect(diffs()).toBe(1));
+      expect(await screen.findByRole('button', { name: 'Send' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Accept…' })).not.toBeInTheDocument();
+
+      turn(true);
+      review = () => BEYOND;
+      turn(false);
+      const strip = await screen.findByRole('region', { name: 'Waiting on you' });
+      expect(await within(strip).findByRole('button', { name: 'Accept…' })).toBeInTheDocument();
+
+      // The next turn's answer is not in yet: the one before it, which offered, offers nothing meanwhile.
+      turn(true);
+      review = () => new Promise(() => {});
+      turn(false);
+      await waitFor(() => expect(diffs()).toBe(3));
+      expect(screen.queryByRole('button', { name: 'Accept…' })).not.toBeInTheDocument();
+    });
+
+    it('offers none where the driver would land nothing, its work held by content', async () => {
+      SESSIONS = [TALK];
+      invoke.mockImplementation(answering({ ...BEYOND, offer: null }));
+
+      show('c0ffee11');
+      await waitFor(() => expect(diffs()).toBe(1));
+      expect(await screen.findByRole('button', { name: 'Send' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Accept…' })).not.toBeInTheDocument();
+    });
 
     it('offers *Accept…* at its foot and its head once the turn has ended', async () => {
       SESSIONS = [TALK];
@@ -4424,7 +4466,7 @@ describe('acting on what a session landed', () => {
 
     it('offers none where its tree holds nothing beyond the line (REVIEWBASE4)', async () => {
       SESSIONS = [TALK];
-      invoke.mockImplementation(answering({ ...BEYOND, files: [], behind: { line: 'main', commits: 0, ahead: 0 } }));
+      invoke.mockImplementation(answering(NOTHING));
 
       show('c0ffee11');
       await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DIFF', expect.anything()));

@@ -1372,12 +1372,22 @@ export function WorkFrame({
     : null;
   const turnHeld = talksInTree ? chatTurns[attended!.id] : undefined;
   const turnEnded = Boolean(turnHeld && !turnHeld.taking && turnHeld.queued.length === 0);
+  // When this frame saw that turn end, or first saw the conversation at rest: its record need not move with a turn, so the review is
+  // read again from then, and an answer read before it, another turn's, offers nothing meanwhile.
+  const [restsSince, setRestsSince] = useState<{ session: string; at: number } | null>(null);
+  useEffect(() => {
+    setRestsSince(turnEnded && attended ? { session: attended.id, at: Date.now() } : null);
+  }, [attended?.id, turnEnded]);
+  const endedAt = restsSince && restsSince.session === attended?.id ? restsSince.at : null;
   // How the tree stands against its line, from the review's own answer (REVIEWBASE5): the same query the review reads, so the
   // head offers no *Accept…* where the review says nothing is beyond the line. Asked only where there is something offered, or a
-  // conversation's turn has ended in a tree of its own.
-  const reviewRead = useSessionDiff(driverOffers || turnEnded ? attended!.id : null, attended ? { updated: attended.updated, live: SESSION_ACTIVE.has(attended.state) } : null);
+  // conversation's turn has ended in a tree of its own, whose read is as fresh as that end.
+  const reviewMoved = attended && endedAt !== null && endedAt > Date.parse(attended.updated) ? new Date(endedAt).toISOString() : attended?.updated;
+  const reviewRead = useSessionDiff(driverOffers || turnEnded ? attended!.id : null, attended ? { updated: reviewMoved!, live: SESSION_ACTIVE.has(attended.state) } : null);
   const behind = reviewRead.data?.behind ?? null;
-  const lands = driverOffers ?? conversationOffer({ tree: talksInTree, turn: turnHeld, review: reviewRead.data });
+  const lands = driverOffers ?? conversationOffer({
+    tree: talksInTree, turn: turnHeld, review: reviewRead.data, endedAt, readAt: reviewRead.dataUpdatedAt,
+  });
   // The branch a moved tree is on (TREEFOLLOWWEB2): the head names it where the clean-up lists no `daoris/<folder>` row for it.
   const ownBranch = attended && here ? grouping?.work?.branch ?? null : null;
   // LANDNAME1b: the branch name typed in the head's land ask, so its plan is asked again with it and a refusal shows first.

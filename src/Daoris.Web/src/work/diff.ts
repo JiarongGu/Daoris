@@ -146,6 +146,12 @@ export type SessionDiff = {
    * where the files were read from a branch. Absent from a host older than REVIEWBASE4, whose head says the record's guess.
    */
   treeBranch?: string | null;
+  /**
+   * What the driver would land of the session's own tree (ACCEPTFOOT1, D164's note): LAND4's offer as `SESSION_GROUPS` says it, by
+   * D88's proof and SQUASHTIDY1b's content hold, read where the work is beyond the line and nothing landed it. Null where it offers
+   * none; absent from a host before it.
+   */
+  offer?: { branch: string; tree: string; commits: number; uncommitted: number | null } | null;
 };
 
 /** The line's name, the commits it has that the tree does not, and the commits the tree has beyond it (REVIEWBASE1). */
