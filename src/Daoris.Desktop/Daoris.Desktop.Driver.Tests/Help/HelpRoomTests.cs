@@ -160,8 +160,8 @@ public sealed class HelpRoomTests : IDisposable
     [Fact]
     public void Its_place_allows_a_plugins_tools_only_once_the_person_approved_them()
     {
-        Directory.CreateDirectory(Path.Combine(_home, PluginCatalog.Folder, "acme.tools"));
-        File.WriteAllText(Path.Combine(_home, PluginCatalog.Folder, "acme.tools", PluginCatalog.ManifestName), """
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.tools"));
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.tools", PluginCatalog.ManifestName), """
             { "id": "acme.tools", "servers": [
                 { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search"] },
                 { "name": "docs", "command": ["docs"] } ] }

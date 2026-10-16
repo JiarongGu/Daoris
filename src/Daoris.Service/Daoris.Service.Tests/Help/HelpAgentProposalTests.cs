@@ -108,7 +108,7 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
 
         Assert.Null(id);
         Assert.Contains(says, message);
-        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
     }
 
     [Theory]

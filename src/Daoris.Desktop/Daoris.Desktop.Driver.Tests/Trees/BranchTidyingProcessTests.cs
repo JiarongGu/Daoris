@@ -90,7 +90,7 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
             && line.EndsWith($"Its commits stay at `{discarded}` until you delete that ref; `git branch {squashed.Branch} {discarded}` brings the branch back.",
                 StringComparison.Ordinal));
         // Each folder was moved aside, never deleted: what it held is all there, an ignored file only it held and a build's output.
-        var asides = Directory.GetDirectories(Path.Combine(_home, "trees", ".tidied", "default", "engine"));
+        var asides = Directory.GetDirectories(DaorisHome.Entry(_home, HomeEntry.Trees, ".tidied", "default", "engine"));
         Assert.Equal(gone.Length, asides.Length);
         string Aside(TreeOpened tree) => asides.Single(folder => Path.GetFileName(folder).StartsWith(Path.GetFileName(tree.Path) + "-", StringComparison.Ordinal));
         Assert.True(File.Exists(Path.Combine(Aside(merged), "README.md")));
@@ -335,7 +335,7 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
         Assert.Equal(1, work!.Commits);
         Assert.Equal("feature/x", work.Branch);
         DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: false))
-            .Save(Path.Combine(_home, "driver.json"));
+            .Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         var plan = await trees.PlanAsync(moved.Path, new LandingSubject("s1", null, "Fix the gap"));
         Assert.Equal(("branch", "feature/x", true), (plan.Form, plan.Target, plan.Own));
     }
@@ -406,7 +406,7 @@ public sealed class BranchTidyingProcessTests : BranchTidyingFixture
         var said = await new BranchTidying(_home).LookAsync(_ledger.Client(), null, _closing.Token).WaitAsync(Bound);
 
         Assert.StartsWith(Removed(scratch), Assert.Single(said), StringComparison.Ordinal);
-        var aside = Assert.Single(Directory.GetDirectories(Path.Combine(_home, "trees", ".tidied", "default", "engine")));
+        var aside = Assert.Single(Directory.GetDirectories(DaorisHome.Entry(_home, HomeEntry.Trees, ".tidied", "default", "engine")));
         Assert.Equal("the session's own scratch\n", await File.ReadAllTextAsync(Path.Combine(aside, "session.db")));
         Assert.Equal("a session's log\n", await File.ReadAllTextAsync(Path.Combine(aside, ".tmp", "run.log")));
         Assert.Contains(loose.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);

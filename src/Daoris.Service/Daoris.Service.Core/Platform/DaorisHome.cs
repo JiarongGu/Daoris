@@ -246,6 +246,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Tools = new("tools", HomeCategory.Data, "tools.json", "tools.json");
     public static readonly HomeEntry PluginState = new("plugin-state", HomeCategory.Data, "plugins.json", "plugins.json");
     public static readonly HomeEntry Plugins = new("plugins", HomeCategory.Data, "plugins", "plugins");
+    public static readonly HomeEntry PluginApprovals = new("plugin-approvals", HomeCategory.Data, "plugin-approvals.json", "plugin-approvals.json");
     public static readonly HomeEntry Usage = new("usage", HomeCategory.Data, "usage.json", "usage.json");
     public static readonly HomeEntry Landings = new("landings", HomeCategory.Data, "landings.json", "landings.json");
     public static readonly HomeEntry SessionBranches = new("session-branches", HomeCategory.Data, "session-branches.json", "session-branches.json");
@@ -300,7 +301,8 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     /// <summary>Every entry, in the table's order, which the twins hold in the same order.</summary>
     public static IReadOnlyList<HomeEntry> Table { get; } =
     [
-        DriverConfig, Harnesses, Accounts, Cooling, Windows, Reads, Permissions, RuleProposals, Tools, PluginState, Plugins, Usage,
+        DriverConfig, Harnesses, Accounts, Cooling, Windows, Reads, Permissions, RuleProposals, Tools, PluginState, Plugins,
+        PluginApprovals, Usage,
         Landings, SessionBranches, LinesMoved, RegistryFollowed, Abandoned, Update, Knowledge, Sessions, Helpers, Handed, Setup,
         Workflows, HelpProposals, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, Window,

@@ -65,7 +65,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     [Fact]
     public async Task The_list_answers_what_each_plugin_hands_ask_daoris_and_the_tools_it_may_call()
     {
-        var tickets = Path.Combine(Home, "plugins", "acme.tickets");
+        var tickets = DaorisHome.Entry(Home, HomeEntry.Plugins, "acme.tickets");
         Directory.CreateDirectory(tickets);
         File.WriteAllText(Path.Combine(tickets, "plugin.json"), """
             { "id": "acme.tickets", "servers": [
@@ -102,7 +102,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     [Fact]
     public async Task The_page_approves_what_a_plugin_offers_ask_daoris_its_reads_only_or_withdraws_it()
     {
-        var tickets = Path.Combine(Home, "plugins", "acme.tickets");
+        var tickets = DaorisHome.Entry(Home, HomeEntry.Plugins, "acme.tickets");
         Directory.CreateDirectory(tickets);
         File.WriteAllText(Path.Combine(tickets, "plugin.json"), """
             { "id": "acme.tickets", "servers": [
@@ -140,7 +140,7 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     [Fact]
     public async Task The_list_answers_each_plugins_skills_who_each_is_handed_to_and_why_one_is_not()
     {
-        var folder = Path.Combine(Home, "plugins", "acme.skills");
+        var folder = DaorisHome.Entry(Home, HomeEntry.Plugins, "acme.skills");
         Directory.CreateDirectory(Path.Combine(folder, "skills", "triage"));
         File.WriteAllText(Path.Combine(folder, "skills", "triage", "SKILL.md"), "---\nname: triage\n---\n");
         File.WriteAllText(Path.Combine(folder, "plugin.json"), """

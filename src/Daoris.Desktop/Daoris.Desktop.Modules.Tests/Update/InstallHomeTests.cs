@@ -293,6 +293,8 @@ public sealed class InstallHomeTests : IDisposable
         var project = File.ReadAllText(Path.Combine(launcher, "Daoris.Desktop.Launcher.csproj"));
         Assert.Contains(@"Include=""..\Daoris.Desktop.Driver\Platform\HomeLease.cs""", project);
         Assert.Contains(@"Include=""..\Daoris.Desktop.Driver\Platform\HomeIdentity.cs""", project);
+        // The home's table names the lease's place and the id's (HOMELAYOUT2), so the launcher compiles it too.
+        Assert.Contains(@"Include=""..\Daoris.Desktop.Driver\Platform\DaorisHome.cs""", project);
 
         var program = File.ReadAllText(Path.Combine(launcher, "Program.cs"));
         var leased = program.IndexOf("HomeLease.Await(", StringComparison.Ordinal);

@@ -106,6 +106,7 @@ export const HOME_ENTRIES = [
   row('tools', 'data', 'tools.json', 'tools.json'),
   row('plugin-state', 'data', 'plugins.json', 'plugins.json'),
   row('plugins', 'data', 'plugins', 'plugins'),
+  row('plugin-approvals', 'data', 'plugin-approvals.json', 'plugin-approvals.json'),
   row('usage', 'data', 'usage.json', 'usage.json'),
   row('landings', 'data', 'landings.json', 'landings.json'),
   row('session-branches', 'data', 'session-branches.json', 'session-branches.json'),

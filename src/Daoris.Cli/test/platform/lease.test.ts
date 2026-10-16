@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { homeId } from '../../src/platform/home.ts';
+import { homeEntry, homeId } from '../../src/platform/home.ts';
 import {
   LEASE_FILE, LEGACY_LOCK_FILE, leaseForVerb, leaseHolder, leaseNamed, tryLease, VERB_WAIT_MS,
 } from '../../src/platform/lease.ts';
@@ -32,7 +32,7 @@ test('a free home is taken, named after its holder and the home’s id, and let 
     assert.ok('lease' in taken);
     assert.equal(taken.lease.holds, true);
 
-    const written = JSON.parse(readFileSync(join(home, LEASE_FILE), 'utf8')) as Record<string, unknown>;
+    const written = JSON.parse(readFileSync(homeEntry(home, 'home-lease'), 'utf8')) as Record<string, unknown>;
     assert.equal(written.kind, 'verb');
     assert.equal(written.pid, process.pid);
     assert.equal(written.what, 'daoris driver cap');
@@ -41,7 +41,7 @@ test('a free home is taken, named after its holder and the home’s id, and let 
     assert.deepEqual(leaseHolder(home, alive), { kind: 'verb', pid: process.pid, since: written.since, what: 'daoris driver cap' });
 
     taken.lease.release();
-    assert.equal(existsSync(join(home, LEASE_FILE)), false);
+    assert.equal(existsSync(homeEntry(home, 'home-lease')), false);
     assert.equal(leaseHolder(home, alive), null);
   } finally {
     fx.cleanup();

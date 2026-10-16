@@ -114,7 +114,7 @@ public sealed class SessionsHelperTests : IDisposable
     private HelperFiles Held(string id, string? state, string? code = null, string by = HelperAsk.ByAgent)
     {
         var files = new HelperFiles(_home);
-        Directory.CreateDirectory(Path.Combine(_home, "helpers"));
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Helpers));
         File.WriteAllText(files.PathOf(id, "ask"),
             $$"""{"id":"{{id}}","asker":"s1","question":"Why?","agent":null,"askedBy":"{{by}}","at":"{{At:O}}"}""");
         if (state is not null) files.WriteState(new HelperState(id, state, code, null, At));
@@ -172,7 +172,7 @@ public sealed class SessionsHelperTests : IDisposable
 
         Assert.Equal(0, await SessionsCommand.RunAsync(Read("helper", "--decline", "a1"), world, output));
         Assert.Equal((HelperStates.Refused, HelperWhy.Declined), (files.ReadState("a1")!.State, files.ReadState("a1")!.Code));
-        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
         var note = Assert.Single(events.After("s1", 0).Events, e => e.Kind == SessionEventKind.Note);
         Assert.Equal(["helper.refused"], NoteAssert.Codes(note.Parts!));
 

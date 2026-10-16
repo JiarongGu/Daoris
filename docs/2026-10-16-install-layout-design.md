@@ -81,6 +81,8 @@ where it is, while one made after the change is made at its new place (D172 poin
 | `permissions.json`, `proposals/` | `Permissions.cs:91`, `RuleProposals.cs:81`; the service's `RuleProposals.cs:50`; the CLI's `permissions.ts:29`, `ruleproposals.ts:32`; `DAORIS_RULES_HOME` names the home they go under | same |
 | `tools.json` | `Tools.cs:79`; the CLI's `tools.ts:35` | same |
 | `plugins.json`, `plugins/` (with `.data/` and `.trials/`) | `PluginState.cs:11`, `PluginCatalog.cs:39, 42`, `PluginTrials.cs:15`; the CLI's `plugins.ts:63, 66` | same. A plugin's folder may be its only copy (D101: one copied in by hand), and `.data/` is what it keeps |
+| `plugin-approvals.json`, the person's approval of what a plugin hands Ask Daoris (HELPPLUG1a, placed by HOMELAYOUT2's merge) | `HelpGrants.cs` | same |
+| `home.json`, the home's id (HOMEID1, placed by HOMELAYOUT2's merge): a new one would be another home to every terminal | `HomeIdentity.cs` in the driver and the service; the CLI's `home.ts` (`ensureHomeId`) | same |
 | `usage.json` | `Usage.cs:50` | same |
 | `landings.json`, `session-branches.json`, `lines-moved.json`, `registry-followed.json`, `abandoned.json` | `LandedBranches.cs:163`, `SessionBranches.cs:41`, `RegistryFollowing.cs:30, 32`, `AbandonRecord.cs:24` | same |
 | `update.json`, the person's word on a staged build | `StagedBuild.cs:37` | same: D139 §7's request under the home |
@@ -127,9 +129,10 @@ where it is, while one made after the change is made at its new place (D172 poin
 
 | Old place | Written by | New place |
 |---|---|---|
-| `driver.lock` | `DriverLock.cs:50` | `run/driver.lock` |
+| `home.lease`, the home's one writer (HOMELEASE1, placed by HOMELAYOUT2's merge) | `HomeLease.cs`, compiled into the launcher; the CLI's `lease.ts` | `run/home.lease` |
+| `driver.lock`, read as an older build's lease while its holder lives | a build from before HOMELEASE1; read by `HomeLease.cs` and `lease.ts` | `run/driver.lock` |
 | `running.json`, the address a terminal finds (D171) | `RunningAddress.cs:30`; the CLI's `service.ts:62` | `run/running.json` |
-| `locks/`, `spawn/`, `starts/`, `hooks/` | `TreeLock.cs:32`, `SpawnServers.cs:21` and `Permissions.cs:467`, `StartRequests.cs:24`, `TreeGuard.cs:45` | `run/locks/`, `run/spawn/`, `run/starts/`, `run/hooks/` |
+| `locks/`, `spawn/` (with each session's `<session>.plugins/`, HELPPLUG1b), `starts/`, `hooks/` | `TreeLock.cs:32`, `SpawnServers.cs:21`, `Permissions.cs:467` and `SpawnSkills.cs`, `StartRequests.cs:24`, `TreeGuard.cs:45` | `run/locks/`, `run/spawn/`, `run/starts/`, `run/hooks/` |
 | `harnesses/.probing/`, the usage read's locks | `ProbeLock.cs:29, 44-53`; the CLI's `probelock.ts:41-50` | `run/probing/` |
 | `sessions/<id>.pid`, `sessions/requests/` | `SessionProcesses.cs:389`, `SessionRequests.cs:140` | `run/sessions/<id>.pid`, `run/requests/` |
 | `browser/edge.json`, what Daoris started its Edge with | `EdgeBrowser.cs:26` | `run/edge.json` |

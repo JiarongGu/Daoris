@@ -121,7 +121,7 @@ public sealed class DriverHostTests : IDisposable
 
         await RunAsync(service, "plugins", "install", package);
         Assert.False(File.Exists(LockFile), "the verb kept the home after it ended");
-        Assert.True(File.Exists(Path.Combine(_home, "home.json")), "the lease records the home's id, minted where it had none");
+        Assert.True(File.Exists(HomeIdentity.PathIn(_home)), "the lease records the home's id, minted where it had none");
 
         Plant("desktop", Environment.ProcessId, OurStart());
         var planted = File.ReadAllText(LockFile);

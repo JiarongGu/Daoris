@@ -349,8 +349,8 @@ public sealed class HookSetLogTests : IDisposable
     [Fact]
     public async Task Ask_daoris_is_handed_only_the_servers_declared_for_it_and_a_session_only_its_own()
     {
-        Directory.CreateDirectory(Path.Combine(_home, "plugins", "acme.tools"));
-        File.WriteAllText(Path.Combine(_home, "plugins", "acme.tools", "plugin.json"), """
+        Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.tools"));
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Plugins, "acme.tools", "plugin.json"), """
             { "id": "acme.tools", "servers": [
                 { "name": "tickets", "command": ["node", "tickets.mjs"], "to": ["help"], "allow": ["search"] },
                 { "name": "docs", "command": ["node", "docs.mjs"] } ] }

@@ -715,7 +715,7 @@ public sealed class PluginCatalogTests : IDisposable
                 { "name": "docs", "command": ["docs"], "to": ["sessions", "help"] } ] }
             """);
         Plugin("acme.off", """{ "id": "acme.off", "servers": [ { "name": "off", "command": ["off"], "to": ["help"], "allow": ["x"] } ] }""");
-        File.WriteAllText(Path.Combine(_home, PluginState.FileName), """{ "disabled": ["acme.off"] }""");
+        File.WriteAllText(PluginState.PathIn(_home), """{ "disabled": ["acme.off"] }""");
 
         var catalog = PluginCatalog.Load(_home);
 
