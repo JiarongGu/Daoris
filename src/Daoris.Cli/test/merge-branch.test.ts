@@ -59,6 +59,7 @@ const tool = await import(
   }) => Promise<GateResult[]>;
   isProcessLane: (gate: { name: string; run: string }) => boolean;
   dotnetComponent: (run: string) => string | null;
+  isHeavyGate: (gate: { name: string; run: string }) => boolean;
   laneSchedule: (gates: Gate[]) => Schedule;
   gateKind: (run: string) => string;
   gatePlan: (declared: { name: string; run: string }[], workflow?: string) => Gate[];
@@ -1711,8 +1712,11 @@ test("this repository's light lane runs the desktop suites' fast halves first, a
   assert.deepEqual(schedule.process.map((gate) => gate.name),
     ['driver-process', 'driver-process-git', 'modules-process', 'rehearse', 'rehearse-family', 'deployment']);
   for (const name of ['driver-process', 'driver-process-git', 'modules-process']) {
-    assert.deepEqual(schedule.waits[name], { after: ['driver', 'modules'], component: 'src/Daoris.Desktop' }, name);
+    // GATEORDER1: and for the heavy light gates (the CLI, service, devkit and web suites), so no Process half runs under their load.
+    assert.deepEqual(schedule.waits[name], { after: ['driver', 'modules', 'cli', 'service', 'devkit', 'web'], component: 'src/Daoris.Desktop' }, name);
   }
+  assert.deepEqual(repoPlan.filter((gate) => tool.isHeavyGate(gate)).map((gate) => gate.name), ['cli', 'service', 'devkit', 'driver', 'modules', 'web']);
+  assert.equal(tool.isHeavyGate({ name: 'x', run: 'node tools/orient-index.mjs --check' }), false);
   // A rehearsal builds what its command does not name, and the deployment's build-server shutdown clears every build's server.
   for (const name of ['rehearse', 'rehearse-family', 'deployment']) {
     assert.deepEqual(schedule.waits[name], { after: schedule.light.map((gate) => gate.name), component: null }, name);
@@ -1828,15 +1832,17 @@ test("a Process gate starts once the light gates of its component have ended, wh
     planned('u', 'node u.mjs'),
     planned('d', 'dotnet test src/X/X.Tests --filter Category!=Process'),
     planned('m', 'dotnet test src/X/M.Tests --filter Category!=Process'),
+    planned('h', 'npm run test:web'),
     planned('dp', processRun('src/X/X.Tests')),
     planned('r', 'npm run rehearse:family'),
   ];
   const schedule = tool.laneSchedule(gates);
-  assert.deepEqual(schedule.light.map((gate) => gate.name), ['d', 'm', 'u']);
-  assert.deepEqual(schedule.waits['dp'], { after: ['d', 'm'], component: 'src/X' });
-  assert.deepEqual(schedule.waits['r'], { after: ['d', 'm', 'u'], component: null });
+  assert.deepEqual(schedule.light.map((gate) => gate.name), ['d', 'm', 'u', 'h']);
+  // GATEORDER1: the heavy light gate h is waited for too; the cheap one, u, is not.
+  assert.deepEqual(schedule.waits['dp'], { after: ['d', 'm', 'h'], component: 'src/X' });
+  assert.deepEqual(schedule.waits['r'], { after: ['d', 'm', 'u', 'h'], component: null });
 
-  const lanes = laneRun(['u', 'd', 'm', 'dp', 'r']);
+  const lanes = laneRun(['u', 'd', 'm', 'h', 'dp', 'r']);
   // dp waits, as its re-run alone would, for the light lane's end that it is handed.
   lanes.until['dp'] = async () => {
     await lanes.heard['dp']!.settled!();
@@ -1847,11 +1853,12 @@ test("a Process gate starts once the light gates of its component have ended, wh
   const at = (event: string) => lanes.events.indexOf(event);
   assert.equal(lanes.events[0], 'start d', 'the light gates the Process lane waits for go first');
   assert.ok(at('start dp') > at('end m'), `dp starts after the light gates of src/X: ${lanes.events.join(', ')}`);
+  assert.ok(at('start dp') > at('end h'), `dp starts after the heavy light gate: ${lanes.events.join(', ')}`);
   assert.ok(at('settled') > at('end u'), 'the light lane ended before what dp was handed resolved');
   assert.ok(at('start r') > at('end u'), 'the rehearsal starts once the light lane has ended');
-  assert.match(printed.join('\n'), /dp starts once d, m have ended: they build src\/X first/);
+  assert.match(printed.join('\n'), /dp starts once d, m, h have ended: d, m build src\/X first, h loads the machine/);
   assert.match(printed.join('\n'), /r starts once the light lane has ended/);
-  assert.deepEqual(summary(printed), ['PASS u', 'PASS d', 'PASS m', 'PASS dp', 'PASS r']);
+  assert.deepEqual(summary(printed), ['PASS u', 'PASS d', 'PASS m', 'PASS h', 'PASS dp', 'PASS r']);
 });
 
 test('--one-at-a-time runs every gate in turn, in the plan\'s order, as before the lanes', async () => {
