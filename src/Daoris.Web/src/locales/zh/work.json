@@ -194,7 +194,7 @@
   "work.steer.placeholder": "在它工作时补充信息——对话里会显示它何时读到。回车排队，Shift+回车换行。",
   "work.steer.now": "立即发送",
   "work.steer.nowTip": "立即在它当前这一轮里发送这条——输入框为空时，则停止这一轮，让等待中的内容接着送达。会话会继续，已完成的工作都保留。",
-  "work.steer.notNow": "它的通道无法在一轮进行中接收消息，所以这些先暂存，等本轮结束再发出。",
+  "work.steer.notNow": "它的通道无法在一轮运行期间收下消息，所以这些先暂存，等本轮结束再发出。",
   "work.steer.sending": "正在停止这一轮：你补充的内容接着送达。",
   "work.say.placeholder": "写给它——同一个会话会带着你的话继续",
   "work.say.heldEnding": "暂存到这次运行结束——之后同一个会话会带着它们继续",
