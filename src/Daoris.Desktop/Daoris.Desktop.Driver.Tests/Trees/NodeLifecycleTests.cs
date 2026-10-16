@@ -495,6 +495,70 @@ public sealed class NodeLifecycleTests
         Assert.Equal("shipped by hand", withdrawn.Cleared?.Words);
     }
 
+    /// <summary>
+    /// FABRIC-NODE1d: a declaration copies its collections when they are set, so a caller changing what it supplied changes neither the
+    /// declaration nor its <see cref="NodeDeclarations.Problem"/>, and a graph's digest over declarations cannot move under it.
+    /// </summary>
+    [Fact]
+    public void A_declaration_keeps_its_collections_when_what_was_supplied_changes()
+    {
+        var inputs = new Dictionary<string, string> { ["release"] = "acme/artifact@1" };
+        var outputs = new Dictionary<string, string> { ["preview"] = "acme/preview@1" };
+        var delays = new List<int> { 5, 30 };
+        var node = new NodeDeclaration("deploy", "acme.deploy/deploy", 1, NodeReach.Performed)
+        {
+            Inputs = inputs,
+            Outputs = outputs,
+            Retry = new NodeRetry(3, delays),
+        };
+        Assert.Null(NodeDeclarations.Problem(node));
+
+        inputs["release"] = "acme/other@1";
+        inputs["extra"] = "acme/other@1";
+        outputs.Clear();
+        delays[0] = -1;
+        delays.Add(60);
+
+        Assert.Equal(("acme/artifact@1", 1), (node.Inputs["release"], node.Inputs.Count));
+        Assert.Equal("acme/preview@1", Assert.Single(node.Outputs).Value);
+        Assert.Equal(new[] { 5, 30 }, node.Retry!.DelaysSeconds);
+        Assert.Null(NodeDeclarations.Problem(node));
+        Assert.Equal(TimeSpan.FromSeconds(30), NodeLifecycle.DelayBefore(node, 5));
+
+        var widened = node with { Inputs = inputs, Retry = node.Retry with { DelaysSeconds = delays } };
+        inputs.Clear();
+        delays.Clear();
+        Assert.Equal(2, widened.Inputs.Count);
+        Assert.Equal(new[] { -1, 30, 60 }, widened.Retry!.DelaysSeconds);
+        Assert.Equal("retry", NodeDeclarations.Problem(widened));
+    }
+
+    /// <summary>
+    /// FABRIC-NODE1d: a reach's evidence and outputs name the reach's own acceptance, since a consumer's invalidation follows the one a
+    /// port names. Another is refused; a port that names none is kept naming its own.
+    /// </summary>
+    [Fact]
+    public void A_reach_whose_evidence_or_outputs_name_another_acceptance_is_refused()
+    {
+        var node = Declared("acme.deploy/deploy") with { Evidence = "acme/receipt@1" };
+        var active = Moved(node, At(NodeStates.Ready, attempt: 0, tries: 0), Start(1));
+        var binding = Bind(1);
+        var evidence = new NodePort("acme/receipt@1", "deploy#1", "tip-1", null);
+        var preview = new NodePort("acme/preview@1", "deploy.preview", "tip-1", null);
+        var reach = new NodeMove(NodeStates.Reached, NodeCause.Authority) { Source = NodeSource.Plugin, Attempt = 1 };
+        NodeMoved Reach(NodePort port, NodePort output) =>
+            NodeLifecycle.Apply(node, active, reach with { Acceptance = binding with { Evidence = port, Outputs = new Dictionary<string, NodePort> { ["preview"] = output } } });
+
+        Assert.Equal(NodeRefusal.OtherAcceptance, Reach(evidence with { Acceptance = "acc-other" }, preview).Refused);
+        Assert.Equal(NodeRefusal.OtherAcceptance, Reach(evidence, preview with { Acceptance = "acc-other" }).Refused);
+
+        var own = Reach(evidence with { Acceptance = binding.Id }, preview with { Acceptance = binding.Id });
+        Assert.Equal((binding.Id, binding.Id), (own.Status.Current?.Evidence?.Acceptance, own.Status.Current?.Outputs["preview"].Acceptance));
+        var unnamed = Reach(evidence, preview);
+        Assert.Equal((binding.Id, binding.Id), (unnamed.Status.Current?.Evidence?.Acceptance, unnamed.Status.Current?.Outputs["preview"].Acceptance));
+        Assert.True(own.Status.Current!.SameResult(unnamed.Status.Current!));
+    }
+
     /// <summary>Choice 3, changed: a plugin's declaration may forbid a skip; a built-in's skip is its kind's, never a declaration's.</summary>
     [Fact]
     public void A_plugins_declaration_may_forbid_a_skip()

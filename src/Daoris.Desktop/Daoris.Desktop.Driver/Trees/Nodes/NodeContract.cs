@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Daoris.Driver;
 
 /// <summary>How a node starts (the fabric events design §E2's <c>reach</c>; §D4, with <c>waited</c> added by §E1).</summary>
@@ -161,8 +163,17 @@ public static class NodeSource
 
 /// <summary>A node's declared retry (§D4, §D6): how many attempts it may take on one binding, and the delay before each new one.</summary>
 /// <param name="MaxAttempts">Attempts on one binding, the first included; a person's new attempt or a fresh binding counts afresh.</param>
-/// <param name="DelaysSeconds">The delay before the second attempt, the third, and so on; the last repeats.</param>
-public sealed record NodeRetry(int MaxAttempts, IReadOnlyList<int> DelaysSeconds);
+/// <param name="DelaysSeconds">The delay before the second attempt, the third, and so on; the last repeats. A copy of what was set.</param>
+public sealed record NodeRetry(int MaxAttempts, IReadOnlyList<int> DelaysSeconds)
+{
+    // FABRIC-NODE1d: copied when set, so a caller's list changing later moves neither the retry nor its declaration's Problem.
+    private readonly IReadOnlyList<int> delaysSeconds = Copied(DelaysSeconds);
+
+    public IReadOnlyList<int> DelaysSeconds { get => delaysSeconds; init => delaysSeconds = Copied(value); }
+
+    private static ImmutableArray<int> Copied(IReadOnlyList<int> delays) =>
+        ImmutableArray.CreateRange(delays ?? throw new ArgumentNullException(nameof(delays)));
+}
 
 /// <summary>
 /// An immutable reference a port carries (§E2, <i>ports are references</i>): a consumer receives this, never a copied payload or a
@@ -185,11 +196,25 @@ public sealed record NodePort(string Schema, string Ref, string? Revision, strin
 /// <param name="Reach">One of <see cref="NodeReach"/>: a built-in kind's own, a plugin's observed or performed.</param>
 public sealed record NodeDeclaration(string Id, string Kind, int Version, string Reach)
 {
-    /// <summary>Its inputs by name, each with the schema it takes: filled by <c>data</c> wires with references, never payloads.</summary>
-    public IReadOnlyDictionary<string, string> Inputs { get; init; } = new Dictionary<string, string>();
+    /// <summary>No ports: a declaration's inputs or outputs before any are named.</summary>
+    public static readonly IReadOnlyDictionary<string, string> NoPorts = ImmutableSortedDictionary.Create<string, string>(StringComparer.Ordinal);
 
-    /// <summary>Its declared outputs by name, each with its schema: a reached node exposes each as a <see cref="NodePort"/>.</summary>
-    public IReadOnlyDictionary<string, string> Outputs { get; init; } = new Dictionary<string, string>();
+    // FABRIC-NODE1d: each collection is copied when it is set, in name order, so a graph's digest over declarations never moves with a
+    // caller's dictionary.
+    private readonly IReadOnlyDictionary<string, string> inputs = NoPorts;
+    private readonly IReadOnlyDictionary<string, string> outputs = NoPorts;
+
+    /// <summary>
+    /// Its inputs by name, each with the schema it takes: filled by <c>data</c> wires with references, never payloads. Each is mandatory
+    /// (§E3). A copy of what was set.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Inputs { get => inputs; init => inputs = Frozen(value); }
+
+    /// <summary>Its declared outputs by name, each with its schema: a reached node exposes each as a <see cref="NodePort"/>. A copy of what was set.</summary>
+    public IReadOnlyDictionary<string, string> Outputs { get => outputs; init => outputs = Frozen(value); }
+
+    private static IReadOnlyDictionary<string, string> Frozen(IReadOnlyDictionary<string, string> ports) =>
+        (ports ?? throw new ArgumentNullException(nameof(ports))).ToImmutableSortedDictionary(StringComparer.Ordinal);
 
     /// <summary>The schema of the evidence it is reached on, or null for a built-in, whose evidence is its record's.</summary>
     public string? Evidence { get; init; }

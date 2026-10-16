@@ -155,6 +155,12 @@ public static class NodeRefusal
     /// <summary>A reach without the evidence reference its kind needs, or with evidence of a schema the node does not declare.</summary>
     public const string NoEvidence = "no-evidence";
 
+    /// <summary>
+    /// A reach whose evidence or an output names another acceptance than the reach's own: a consumer's invalidation follows the
+    /// acceptance a port names, so it must be the one that produced it (FABRIC-NODE1d).
+    /// </summary>
+    public const string OtherAcceptance = "other-acceptance";
+
     /// <summary>A skip that names no graph and run.</summary>
     public const string NoScope = "no-scope";
 
@@ -291,7 +297,9 @@ public static class NodeLifecycle
                 if (accepted.Id != expected.Id) return Refuse(NodeRefusal.NotBound);
                 if (authority.Evidenced && accepted.Evidence is null) return Refuse(NodeRefusal.NoEvidence);
                 if (node.Evidence is { } schema && accepted.Evidence?.Schema != schema) return Refuse(NodeRefusal.NoEvidence);
-                return To(next with { Acceptance = accepted, By = move.Source, Code = null, Transient = false, Unreconciled = null });
+                // FABRIC-NODE1d: a port names the acceptance that produced it, which is what its consumers' invalidation follows.
+                if (Others(accepted.Evidence, accepted.Id) || accepted.Outputs.Values.Any(port => Others(port, accepted.Id))) return Refuse(NodeRefusal.OtherAcceptance);
+                return To(next with { Acceptance = Owned(accepted), By = move.Source, Code = null, Transient = false, Unreconciled = null });
 
             case NodeStates.Failed:
                 if (authority.FailureBy is null) return Refuse(NodeRefusal.NoFailureAuthority);
@@ -358,6 +366,15 @@ public static class NodeLifecycle
                 return To(next);
         }
     }
+
+    private static bool Others(NodePort? port, string acceptance) => port?.Acceptance is { } named && named != acceptance;
+
+    /// <summary>The acceptance with every port naming it: one the authority handed in without its acceptance is this reach's.</summary>
+    private static NodeAcceptance Owned(NodeAcceptance accepted) => accepted with
+    {
+        Evidence = accepted.Evidence is { } evidence ? evidence with { Acceptance = accepted.Id } : null,
+        Outputs = accepted.Outputs.ToDictionary(output => output.Key, output => output.Value with { Acceptance = accepted.Id }, StringComparer.Ordinal),
+    };
 
     /// <summary>A status with nothing of an attempt's record left: what a reset to ready or blocked, and a start, begin from.</summary>
     private static NodeStatus Reset(NodeStatus status) =>
