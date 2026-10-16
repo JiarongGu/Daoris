@@ -234,8 +234,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// The clean-up's list, or its press (WSR3, D88), over every repository with a checkout here. A tree a
     /// session still running or waiting names is kept whatever it holds. Beside the session branches, the
     /// branches landings made (WSR5): each goes where its work reached the line, by the same press. The list is a git fan-out
-    /// over every checkout, asked again at each change the page hears and by each window, so an ask while one runs shares it
-    /// (SWEEPFLIGHT1: the frozen window's stack held 22 at once); the press is never shared.
+    /// over every checkout, so an ask while one runs shares it (<see cref="OneFlightAttribute"/>); the press is never shared.
     /// </summary>
     [DriverRoute("SWEEP_PLAN")]
     [DriverRoute("SWEEP")]
