@@ -798,7 +798,7 @@ public sealed class AcpSteerTests
     /// </summary>
     [Theory]
     [InlineData("""{"error":{"code":-32603,"message":"Internal error: Session ended"}}""", "words.refused")]
-    [InlineData("""{"result":{"outcome":"promptRequired","reason":"noRunningTurn"}}""", "words.not-reached")]
+    [InlineData("""{"result":{"outcome":"somethingElse"}}""", "words.not-reached")]
     public async Task A_steer_the_agent_does_not_take_costs_only_those_words_and_the_run_goes_on(string answer, string code)
     {
         var first = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -836,6 +836,61 @@ public sealed class AcpSteerTests
         Assert.Equal(code, note.Parts![0].Code);
         Assert.Equal(["said-1"], note.Words);
         NoteAssert.Holds(note.Text, note.Parts);
+        Assert.Equal("session/close", agent.Methods[^1]);
+    }
+
+    /// <summary>
+    /// STEER2d: a steer answered <c>promptRequired</c> (the turn ended between the press and the steer) is not lost: the adapter
+    /// left the words to the client, so they are handed back to the held queue and prompted next. They are said once and taken
+    /// once, where they are finally taken, and no <c>words.not-reached</c> note is written.
+    /// </summary>
+    [Fact]
+    public async Task A_steer_answered_prompt_required_goes_as_the_next_prompt_and_is_taken_there()
+    {
+        var first = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var prompts = new List<string>();
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize":
+                    return Ok(frame, Steers);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    lock (prompts) prompts.Add(frame.GetProperty("params").GetProperty("prompt")[0].GetProperty("text").GetString()!);
+                    if (prompts.Count == 1)
+                    {
+                        first.SetResult(frame.GetProperty("id").GetInt32());
+                        return null;
+                    }
+
+                    self.Push(Said("MANGO"));
+                    return Answer(frame.GetProperty("id").GetInt32(), "end_turn");
+                case "_session/steering":
+                    self.Push(Ok(frame, """{"outcome":"promptRequired","reason":"noRunningTurn"}"""));
+                    self.Push(Answer(first.Task.Result, "end_turn"));
+                    return null;
+                default:
+                    return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var record = new Record();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.OnSaid(record.SaidTo);
+
+        var run = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event)
+            .RunAsync("D:/fam/Game", "read the five files", CancellationToken.None, inbox: inbox, asked: record.Asked);
+        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal(new SentNow("now", true, null), await inbox.HoldNowAsync(new ChatMessage("one more thing", [])));
+        var outcome = await run.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal(["read the five files", "one more thing"], prompts);
+        Assert.Empty(record.Notes);
+        Assert.Single(record.Lines, line => line.StartsWith("said:", StringComparison.Ordinal));
+        Assert.Single(record.Lines, line => line.StartsWith("taken:", StringComparison.Ordinal));
+        Assert.Contains("taken:said-1:one more thing", record.Lines);
         Assert.Equal("session/close", agent.Methods[^1]);
     }
 
