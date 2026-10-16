@@ -31,12 +31,18 @@ export interface WiringLocated { path: string | null; pathWhy: Why; from: 'varia
 /** A project folder Daoris's sessions left in the person's own tool home (OWNSPACE2): its name there, its size and newest file once measured. */
 export interface WiringToolFolder {
   name: string; path: string; bytes: number | null; bytesWhy: Why; partial: boolean; newest: string | null; newestWhy: Why;
+  /** The identity the list saw it with: the press sends it back, and a folder made anew in the same place is refused. */
+  id: string;
+  /** Which of Daoris's records named its working directory: `tree`, `help` or `intake`. */
+  source: string;
+  /** Why it must stay: `session` (live or waiting), `resumable` (a conversation that goes on in this home), `records-unread`; null where it may move. */
+  keeps: string | null;
 }
 
-/** What `SYSTEM_TOOL_CLEAR` did: each folder removed with its bytes, and each kept with why (`not-listed`, `in-use`, `not-removed`). */
+/** What `SYSTEM_TOOL_CLEAR` did: each folder moved aside (where to) with its bytes, and each kept with why. */
 export interface WiringToolCleared {
-  cleared: { name: string; bytes: number }[];
-  kept: { name: string; why: 'not-listed' | 'in-use' | 'not-removed' }[];
+  cleared: { name: string; bytes: number; to: string }[];
+  kept: { name: string; why: string }[];
 }
 
 export interface SystemWiring {
@@ -83,5 +89,11 @@ export interface SystemWiring {
   logs: { path: string | null; pathWhy: Why; bytes: number | null; bytesWhy: Why; days: number; newest: string | null; newestWhy: Why; engineLog: boolean };
   // What Daoris's sessions left in the person's own tool home (OWNSPACE2, D175 point 3). Added after the first shape: a shell
   // older than it sends none, so the page reads it as absent.
-  toolHome?: { path: string | null; pathWhy: Why; from: 'variable' | 'default' | 'named' | null; present: boolean; folders: WiringToolFolder[] };
+  toolHome?: {
+    path: string | null; pathWhy: Why; from: 'process' | 'account' | 'default' | 'named' | null; present: boolean;
+    // Why nothing is listed where nothing can be (`linked`, `no-tool-home`, …), the file system's case rule, the folders left out
+    // because their name is not proven Daoris's, and how long a moved folder is kept.
+    why: string | null; caseInsensitive: boolean; ambiguous: number; uncertain: number; recoveryDays: number;
+    folders: WiringToolFolder[];
+  };
 }

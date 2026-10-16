@@ -112,7 +112,11 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
           measuring={wiring.measuring}
           onClear={(names, answered) => clear.mutate(names, {
             onSuccess: (outcome) => {
-              // What stayed is said where the person is, with why; what went is the list's next read.
+              // Where they went and for how long, then what stayed with why; what moved is the list's next read.
+              if (outcome.cleared.length > 0) {
+                const where = outcome.cleared[0]!.to.replace(/[\\/][^\\/]*$/, '');
+                notify(t('settings.daoris.toolHome.moved', { count: outcome.cleared.length, where, days: wiring.toolHome?.recoveryDays ?? 14 }));
+              }
               if (outcome.kept.length > 0) {
                 notify(t('settings.daoris.toolHome.kept', { count: outcome.kept.length, why: [...new Set(outcome.kept.map((each) => t(`settings.daoris.toolHome.why.${each.why}`, { defaultValue: each.why })))].join(', ') }));
               }

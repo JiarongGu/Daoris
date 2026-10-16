@@ -40,14 +40,15 @@ export const useSystemWiring = () => {
 };
 
 /**
- * *Remove these* (OWNSPACE2, D175 point 3, D88): the project folders Daoris's sessions left in the person's own tool home, the
- * `names` the list showed. The driver judges each again right before it goes and answers what it removed and what stayed and
- * why; the wiring is read again either way, so the list is what is there now. The person's own projects are never named.
+ * *Move these aside* (OWNSPACE2, D175 point 3, D88): the folders Daoris's sessions left in the person's own tool home, each
+ * the `name` and `id` the list showed. The driver judges each again right before it moves, moves it into Daoris's own folder for
+ * fourteen days (never deletes it), and answers what moved, where, and what stayed and why; the wiring is read again either way,
+ * so the list is what is there now. The person's own folders are never named.
  */
 export const useClearToolFolders = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (names: string[]) => call<WiringToolCleared>('SYSTEM_TOOL_CLEAR', { names }),
+    mutationFn: (folders: { name: string; id: string }[]) => call<WiringToolCleared>('SYSTEM_TOOL_CLEAR', { folders }),
     onSettled: () => void client.invalidateQueries({ queryKey: keys.systemWiring }),
   });
 };
