@@ -33,7 +33,8 @@ internal sealed record Branched(
 /// line holds by content (<see cref="TreeWorkReads"/>), the removal and the tidy. The front keeps its public calls.
 /// </summary>
 internal sealed class TreeLands(
-    TreeContext context, TreeFollows follows, TreeWorkReads workReads, TreeRemovals removals, TreeTidies tidies, TreeLandSyncs syncs)
+    TreeContext context, TreeFollows follows, TreeWorkReads workReads, TreeRemovals removals, TreeTidies tidies, TreeLandSyncs syncs,
+    EndKeeping ends)
 {
     /// <summary>
     /// What a press on this tree would do under its repository's landing rule (WSR1, D87): merge into
@@ -126,7 +127,8 @@ internal sealed class TreeLands(
                 { Own = true };
             }
 
-            var name = BranchNamed(subject, landing.Rule, repository);
+            // A conversation's for its work, never its opening (ACCEPTFOOT2), as the press names it.
+            var name = BranchNamed(await ForWorkAsync(full, workspace, repository, landing.Rule, subject, ct).ConfigureAwait(false), landing.Rule, repository);
             // A name the press would refuse is said before it (LANDNAME1a), where the plan keeps the sentence a press is refused with.
             var problem = subject.EnteredName is not null && !BranchName.IsValid(name) ? EnteredInvalid(name)
                 : plugin is null ? null : context.Plugins.Problem(plugin);
@@ -326,6 +328,17 @@ internal sealed class TreeLands(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
         string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false, bool fetched = false)
     {
+        var landed = await LandingAsync(path, subject, ct, inUse, acceptedBy, gate, joins, fetched).ConfigureAwait(false);
+        // FABRIC-END3: Accept is Daoris's own ref move; its repository is judged at once by the ref watch, with its echo (§B4).
+        if (landed.Landed) RefMoves.Mine(context.Home, context.OwnerOf(Path.GetFullPath(path)).Repository);
+        return landed;
+    }
+
+    /// <summary>The landing itself, as <see cref="LandAsync"/> says it.</summary>
+    private async Task<TreeLanding> LandingAsync(
+        string path, LandingSubject subject, CancellationToken ct, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse,
+        string acceptedBy, LandingGate? gate, bool joins, bool fetched)
+    {
         // One look (UIFREEZE1, PROC1d-i): the landing and its tidy ask git's guess at the line once.
         using var look = context.OneLook();
         var full = Path.GetFullPath(path);
@@ -405,9 +418,12 @@ internal sealed class TreeLands(
         }
         else
         {
+            // A squash reads the work's subject whatever the pattern reads (ACCEPTFOOT2b): its commit is named by it too.
+            var worked = await ForWorkAsync(full, workspace, repository, landing.Rule, subject, ct, always: landing.Rule.Squash).ConfigureAwait(false);
             var branched = await BranchAsync(full, workspace, repository,
-                BranchNamed(subject, landing.Rule, repository), handedOn: plugin is not null, ct,
-                entered: subject.EnteredName is not null, squash: landing.Rule.Squash ? subject : null, sync: replaying,
+                BranchNamed(worked, landing.Rule, repository),
+                handedOn: plugin is not null, ct,
+                entered: subject.EnteredName is not null, squash: landing.Rule.Squash ? worked : null, sync: replaying,
                 join: joins ? sync : null).ConfigureAwait(false);
             landed = Fetched(branched.Landing, notFetched);
             replayed = landed.Landed ? branched.Replay : null;
@@ -427,7 +443,7 @@ internal sealed class TreeLands(
                         AcceptedBy = acceptedBy, Review = review?.Landing, Opinion = gate?.Opinion.Landing, Workflow = named?.Record,
                         // The record moves to the session tip this advance squashed (PROCESS1b-ii point 4); a fast-forward keeps it.
                         Squashed = branched.Squashed,
-                    }));
+                    }, UnitOf(full, repository)));
             }
             else if (landed.Landed && tip is not null)
             {
@@ -451,6 +467,8 @@ internal sealed class TreeLands(
                     Workflow = named?.Record,
                     // The session tip its one commit was made from (PROCESS1b-ii point 3): what proves the session landed.
                     Squashed = branched.Squashed,
+                    // The branch work unit whose work it carries (FABRIC-END2, design §D2), where the session's entry has one.
+                    Units = UnitOf(full, repository) is { } unit ? [unit] : [],
                 }));
             }
 
@@ -513,6 +531,15 @@ internal sealed class TreeLands(
         if (!landed.Landed || !landing.Rule.Tidy) return landed;
         // Read before the tree goes (LAND3): the repository it belongs to and the branch it was on.
         var (factsCode, commonDir, _, pressedOut, _) = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
+        if (factsCode == 0)
+        {
+            // FABRIC-END2: what the line holds now (a merge's work) is kept before the tidy takes the branch, so its entry outlives it as a
+            // trace; work handed to a landing branch stays open on its unit. The end judgement's own writer, in the lease's process only.
+            var checkout = Path.GetDirectoryName(commonDir.Trim())!;
+            var judged = (await context.LineAsync(checkout, repository, workspace, ct).ConfigureAwait(false)).Branch;
+            await ends.KeepAsync(checkout, repository, workspace, judged, ct).ConfigureAwait(false);
+        }
+
         var tidied = await removals.RemoveAsync(path, force: false, ct).ConfigureAwait(false);
         landed = landed with
         {
@@ -536,6 +563,15 @@ internal sealed class TreeLands(
             .ConfigureAwait(false);
         return landed with { Message = landed.Message + TreeTidies.TidiedSaid(held, into), Tidied = held };
     }
+
+    /// <summary>
+    /// The branch work unit of the session tree at <paramref name="full"/> (FABRIC-END2): its standing entry's, found by the folder the
+    /// layout names for its branch; null for an entry from before the unit was written, which no landing can name.
+    /// </summary>
+    private string? UnitOf(string full, string repository) => context.Grown.All()
+        .LastOrDefault(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(Path.GetFullPath(Path.Combine(context.TreesRoot, entry.Workspace, entry.Repository, Path.GetFileName(entry.Branch))),
+                Path.TrimEndingDirectorySeparator(full), StringComparison.OrdinalIgnoreCase))?.Unit;
 
     /// <summary>Words said before the sentence that the tree stays, which a tidy takes out; at the end where it is not there.</summary>
     private static string BeforeTreeStays(string message, string words) => message.EndsWith(TreeStays, StringComparison.Ordinal)
@@ -783,12 +819,12 @@ internal sealed class TreeLands(
             }
 
             var squashing = replayed?.Landed ?? commits;
-            var (made, why) = await TreeSquashes.SquashAsync(root, tip, mergeBase.Trim(), SquashMessage.Of(squash.Title, squashing, squash.Session), ct)
+            var (made, why) = await TreeSquashes.SquashAsync(root, tip, mergeBase.Trim(), SquashMessage.Of(squash.SquashTitle, squashing, squash.Session), ct)
                 .ConfigureAwait(false);
             if (made is null) return new TreeLanding(false, $"git would not make the squashed commit for `{name}`: {why} Nothing was landed.");
             start = made;
             squashed = tip;
-            carried = [new LandingCommit(made, SquashMessage.Subject(squash.Title, squashing, squash.Session))];
+            carried = [new LandingCommit(made, SquashMessage.Subject(squash.SquashTitle, squashing, squash.Session))];
         }
 
         var (code, _, err) = await WorkingTree.GitAsync(root, ["branch", name, start], ct).ConfigureAwait(false);
@@ -935,4 +971,45 @@ internal sealed class TreeLands(
     /// </summary>
     private static string BranchNamed(LandingSubject subject, LandingRule rule, string repository) =>
         subject.EnteredName ?? subject.EntryBranch ?? LandingRules.Branch(subject, rule, repository);
+
+    /// <summary>
+    /// The subject a conversation's branch is named for (ACCEPTFOOT2, D164's 2026-10-16 note): <see cref="LandingSubject.ForWork"/>
+    /// with the oldest commit subject its work holds beyond the line, as the press's own log reads it. Git is asked only where the rule
+    /// would read a conversation's words (<see cref="LandingRules.ReadsWords"/>), so a quest's plan, an entered name, an entry's branch
+    /// and a pattern of ids alone start none.
+    /// </summary>
+    /// <param name="full">A tree of the repository the work is in; its HEAD is the work unless <paramref name="tip"/> names it.</param>
+    /// <param name="tip">The work's tip where it is not that tree's HEAD: an entry's first part landed from a tree since gone.</param>
+    internal async Task<LandingSubject> ForWorkAsync(
+        string full, string workspace, string repository, LandingRule rule, LandingSubject subject, CancellationToken ct, string? tip = null, bool always = false)
+    {
+        if (!subject.NamedByOpening || subject.EnteredName is not null || subject.EntryBranch is not null || !(always || LandingRules.ReadsWords(rule))) return subject;
+        var here = Directory.Exists(full) ? await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false) : null;
+        if (here is not { Code: 0 }) return subject.ForWork(null);
+        var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(here.CommonDir.Trim()))!;
+        var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        if (line is null) return subject.ForWork(null);
+        var against = await ComparableAsync(root, line, ct).ConfigureAwait(false) ?? line;
+        var (code, log, _) = await WorkingTree.GitAsync(
+            full, ["log", "--reverse", LandingRules.SubjectsFormat, $"{against}..{tip ?? "HEAD"}"], ct).ConfigureAwait(false);
+        return subject.ForWork(code == 0 ? LandingRules.OldestSubject(log) : null);
+    }
+
+    /// <summary>
+    /// An entry's subject named for its first part's work (ACCEPTFOOT2): read from that part's tree where it is here, else from the tip
+    /// its landing recorded, in <paramref name="anyTree"/>, a tree of the same repository; so the press, the plan and each part's own
+    /// Accept name the entry's one branch alike, whichever part's tree they are pressed in.
+    /// </summary>
+    internal async Task<LandingSubject> EntryForWorkAsync(LandingSubject entry, string? leadTree, string anyTree, CancellationToken ct)
+    {
+        if (!entry.NamedByOpening) return entry;
+        var lead = leadTree is { Length: > 0 } && Directory.Exists(leadTree) ? Path.GetFullPath(leadTree) : null;
+        var full = lead ?? Path.GetFullPath(anyTree);
+        var (workspace, repository) = context.OwnerOf(full);
+        var landing = LandingRules.Choose(context.Config(), repository, workspace);
+        if (lead is not null) return await ForWorkAsync(lead, workspace, repository, landing.Rule, entry, ct).ConfigureAwait(false);
+        return context.Recorded.Landing(entry.Session) is { } landed
+            ? await ForWorkAsync(full, workspace, repository, landing.Rule, entry, ct, landed.Tip).ConfigureAwait(false)
+            : LandingRules.ReadsWords(landing.Rule) ? entry.ForWork(null) : entry;
+    }
 }

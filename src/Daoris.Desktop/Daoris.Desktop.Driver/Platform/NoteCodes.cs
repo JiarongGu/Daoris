@@ -705,6 +705,8 @@ public static class NoteCodes
     public static readonly NoteCode HeldCoolingAccount = new("held.cooling-account", ["owner", "account", "until", "why"]) { Why = Cooling };
     public static readonly NoteCode HeldCoolingOwn = new("held.cooling-own", ["owner", "until", "why"]) { Why = Cooling };
     public static readonly NoteCode HeldSignedOut = new("held.signed-out", ["owner", "account", "profile"]);
+    // OWNSPACE1a (D175 point 2): no Daoris account of the agent's is signed in, and its own home is never a start's.
+    public static readonly NoteCode HeldNoAccount = new("held.no-account", ["owner"]);
     public static readonly NoteCode HeldNotInstalled = new("held.not-installed", ["agent"]);
     public static readonly NoteCode HeldPinNotInstalled = new("held.pin-not-installed", ["agent", "version"]);
 

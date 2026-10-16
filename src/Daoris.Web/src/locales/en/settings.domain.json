@@ -1,6 +1,7 @@
 {
   "settings.domain.appearance": "Appearance",
   "settings.domain.ai": "AI features",
+  "settings.domain.wiring": "This Daoris",
   "settings.domain.driver": "Driver",
   "settings.domain.tools": "Tools",
   "settings.domain.browser": "Browser",

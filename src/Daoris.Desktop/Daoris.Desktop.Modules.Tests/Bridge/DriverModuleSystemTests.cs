@@ -14,15 +14,67 @@ public sealed class DriverModuleSystemTests : DriverModuleBridge
 {
     private const string Secret = "a-service-key-never-shown";
 
-    private DriverModule WiredModule(WiringSizes sizes) => new(Bus, Loop())
+    /// <summary>🔴 A scratch tool home, handed to every world: no test here reads or touches the machine's own.</summary>
+    private string ToolHome => Path.Combine(Home, "scratch-person", ".claude");
+
+    private DriverModule WiredModule(WiringSizes sizes, IReadOnlyList<ToolOrigin>? origins = null) => new(Bus, Loop())
     {
         WiringWorlds = world => world with
         {
             Account = name => name == "DAORIS_SERVICE_KEY" ? Secret + "-account" : null,
             Machine = _ => null,
             Sizes = sizes,
+            ToolHome = ToolHome,
+            ToolHomeFrom = "process",
+            ToolOrigins = origins,
         },
     };
+
+    /// <summary>A project folder in the scratch tool home, named as Claude Code names the folder a session ran in, written long ago.</summary>
+    private string Project(string ranIn)
+    {
+        var folder = Path.Combine(ToolHome, "projects", ToolHomeLeftovers.Flatten(ranIn));
+        Directory.CreateDirectory(folder);
+        var file = Path.Combine(folder, "s.jsonl");
+        File.WriteAllBytes(file, new byte[7]);
+        File.SetLastWriteTimeUtc(file, DateTime.UtcNow.AddHours(-3));
+        Directory.SetLastWriteTimeUtc(folder, DateTime.UtcNow.AddHours(-3));
+        return folder;
+    }
+
+    [Fact]
+    public async Task The_wiring_lists_the_tool_home_s_folders_Daoris_made_and_the_route_removes_nothing()
+    {
+        var tree = DaorisHome.Entry(Home, HomeEntry.Trees, "main", "repo", "s-1");
+        var mine = Project(tree);
+        var theirs = Project(Path.Combine(Path.GetTempPath(), "somebody", "app"));
+        var module = WiredModule(new WiringSizes(), [new ToolOrigin(tree, "tree", null)]);
+
+        var listed = (await AnswerAsync(module, "SYSTEM_WIRING")).GetProperty("toolHome");
+        Assert.Equal(ToolHome, listed.GetProperty("path").GetString());
+        Assert.Equal("process", listed.GetProperty("from").GetString());
+        var row = Assert.Single(listed.GetProperty("folders").EnumerateArray());
+        Assert.Equal(Path.GetFileName(mine), row.GetProperty("name").GetString());
+        // Listed by name alone: no size until a measure is asked, and its why is a field, not an absent one.
+        Assert.Equal(JsonValueKind.Null, row.GetProperty("bytes").ValueKind);
+
+        // Read-only: nothing here removes or moves a folder, the person's own or Daoris's.
+        Assert.True(Directory.Exists(mine));
+        Assert.True(Directory.Exists(theirs));
+        Assert.DoesNotContain("SYSTEM_TOOL_CLEAR", DriverModule.Routes);
+    }
+
+    [Fact]
+    public async Task With_no_service_to_read_the_records_from_nothing_is_claimed_and_the_list_says_why()
+    {
+        Project(HelpRoom.PathOf(Home));
+        var module = WiredModule(new WiringSizes());
+
+        var listed = (await AnswerAsync(module, "SYSTEM_WIRING")).GetProperty("toolHome");
+
+        Assert.Empty(listed.GetProperty("folders").EnumerateArray());
+        Assert.Equal("records-unread", listed.GetProperty("why").GetString());
+    }
 
     [Fact]
     public async Task The_window_answers_its_wiring_with_what_only_it_knows_and_each_unread_fact_as_a_null_field()
@@ -56,6 +108,32 @@ public sealed class DriverModuleSystemTests : DriverModuleBridge
         Assert.True(asked.GetProperty("measuring").GetBoolean() || asked.GetProperty("measured").ValueKind != JsonValueKind.Null);
         var data = read.GetProperty("folders").EnumerateArray().First(row => row.GetProperty("id").GetString() == "data");
         Assert.Equal(2, data.GetProperty("bytes").GetInt64());
+    }
+
+    /// <summary>
+    /// FABRIC-EVENT5b: a walk that started and a walk that ended each tell the windows <c>wiring</c>, in place of the page's 2 s read: a
+    /// size lands once, as the walk's reading is kept, and the end is told after the walk has left the home, so the read that follows
+    /// says it is no longer measuring. A measure asked while one is under way starts nothing and tells nothing more.
+    /// </summary>
+    [Fact]
+    public async Task A_walk_s_start_and_its_end_are_told_as_wiring()
+    {
+        File.WriteAllText(DriverConfigPath, "{}");
+        var sizes = new WiringSizes();
+        var module = WiredModule(sizes);
+
+        await AnswerAsync(module, "SYSTEM_WIRING", new { measure = true });
+        await sizes.Finished(Home);
+
+        await UntilAsync(() => Raised.Count(m => m.Type == StatePublisher.Type) == 2);
+        Assert.All(Raised.Where(m => m.Type == StatePublisher.Type), told =>
+            Assert.Equal("""{"scopes":["wiring"]}""", JsonSerializer.Serialize(told.Payload, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })));
+        Assert.False(sizes.Measuring(Home));
+
+        // A plain read tells nothing: the open walks no folder.
+        await AnswerAsync(module, "SYSTEM_WIRING");
+        await Task.Delay(100);
+        Assert.Equal(2, Raised.Count(m => m.Type == StatePublisher.Type));
     }
 
     [Fact]

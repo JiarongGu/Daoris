@@ -65,6 +65,7 @@
   "work.attention.accounts.refused": "{{accounts}}: key refused",
   "work.attention.accounts.join": "; ",
   "work.attention.accounts.line": "{{clauses}}.",
+  "work.attention.accounts.noAccount": "No Daoris account is signed in for {{product}}, so its starts wait until you sign in.",
   "work.attention.held.quests": "{{count}} quest",
   "work.attention.held.quests_other": "{{count}} quests",
   "work.attention.held.intakes": "Intake for {{count}} ask",
@@ -72,11 +73,11 @@
   "work.attention.held.both": "{{quests}} and intake for {{count}} ask",
   "work.attention.held.both_other": "{{quests}} and intake for {{count}} asks",
   "work.attention.signedOut.runs": "It runs work in {{runs}}.",
-  "work.attention.signedOut.own": "Daoris's starts run on it, since no account is named.",
   "work.attention.signedOut.refused": "Key refused: put a new API key into it on {{product}}'s page.",
   "work.attention.act.letRun": "Let {{account}} run {{workspace}}…",
   "work.attention.ask.letRun": "{{account}} joins {{workspace}}'s list, so Daoris may start {{workspace}}'s work on it and spend what that account allows. In a terminal: {{command}}",
   "work.attention.ask.letRunMachine": "{{account}} joins this machine's list, which {{workspace}} runs on with every workspace that names no account of its own, so Daoris may start their work on it and spend what that account allows. In a terminal: {{command}}",
   "work.attention.helper": "an agent asks for a helper",
-  "work.attention.helperWhy": "{{session}} asked for another agent’s help. Nothing is asked until you let it."
+  "work.attention.helperWhy": "{{session}} asked for another agent’s help. Nothing is asked until you let it.",
+  "work.attention.work": "clean-up is blocked"
 }

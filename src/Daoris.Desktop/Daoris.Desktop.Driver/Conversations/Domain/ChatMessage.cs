@@ -75,7 +75,14 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     /// Whether the record already shows this message waiting, so the queue a page is told never lists it and a stop never hands
     /// it back to the person's composer: the words a conversation goes on with, and a helper's answer.
     /// </summary>
-    internal bool OnRecord => GoesOn is not null || Helped is not null;
+    internal bool OnRecord => GoesOn is not null || Helped is not null || Said;
+
+    /// <summary>
+    /// Words the record already shows as said under <see cref="Id"/> and what was told beside them, handed back to be the next
+    /// turn because the agent answered their steer <c>promptRequired</c> (STEER2d): that turn records them only as taken under
+    /// the same id, once, and never says them or what was told again.
+    /// </summary>
+    internal bool Said { get; init; }
 
     /// <summary>What the agent is handed: the briefing, the process, the preface, then the person's words, each after a blank line.</summary>
     public string Prompt => string.Join(

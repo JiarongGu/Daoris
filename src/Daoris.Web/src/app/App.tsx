@@ -41,7 +41,7 @@ import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from '..
 import { ShellSignals } from './ShellSignals';
 import {
   logEvent, useConsidered, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
-  useHelperWaits, useOpinionWaits, useRules, useSayUpdate, useSessionGroups, useShowReviewAgain, useSyncNow, useTaskbarCount, useUntrusted, useUpdateState,
+  useHelperWaits, useOpinionWaits, useWorkState, useRules, useSayUpdate, useSessionGroups, useShowReviewAgain, useSyncNow, useTaskbarCount, useUntrusted, useUpdateState,
 } from '../bridge/shell';
 import { byTool } from '../agents/tools';
 import { useSay } from '../bridge/conversation';
@@ -296,6 +296,8 @@ export function App() {
   // (MIXAGENT2c) and a second opinion (XAGENT1g), the second asked only while there is work to review, as the band asks it.
   const opinionWaits = useOpinionWaits((sessionGroups.data ?? []).some((placed) => placed.group === 'review'));
   const helperWaits = useHelperWaits();
+  // The units whose clean-up waits on the person (FABRIC-MILESTONE1b): the same answer the band reads, so the badge and the band agree.
+  const workState = useWorkState();
   // The install's update (UPDATE1, D139): what is staged, the drain, and the person's word on it, as the banner's.
   const update = useUpdateState();
   const sayUpdate = useSayUpdate();
@@ -449,7 +451,7 @@ export function App() {
   // roster and the accounts' files the Agents badge reads, and the tick's waits.
   const waiting = needsAPerson(
     running.data ?? [], outstanding.data ?? [], registry.data ?? [], asks.data ?? [], untrusted.data ?? [],
-    proposals, considered.data ?? [], sessionGroups.data ?? [], accountsKnown, opinionWaits.data ?? [], helperWaits.data ?? []).length;
+    proposals, considered.data ?? [], sessionGroups.data ?? [], accountsKnown, opinionWaits.data ?? [], helperWaits.data ?? [], workState.data?.units ?? []).length;
   // The same count on the window's taskbar button and in its title (NOTIFY1b), so it is seen with the window behind others.
   useTaskbarCount(waiting, t('nav.waiting', { count: waiting }));
   const sessionsWaiting = waitingInSessions(running.data ?? [], considered.data ?? []);
@@ -883,6 +885,8 @@ export function App() {
     // An agent's ask for a helper opens the session that asked, whose head and foot carry its yes and no with its other waits
     // (MIXAGENT2c, D168). A shell's alone: the asks are this machine's files.
     ...(attached ? { helper: (item: Attention) => { if (item.session) open('sessions', item.session); } } : {}),
+    // A unit whose clean-up is blocked opens the session whose foot says what waits and why (FABRIC-MILESTONE1b). A shell's alone.
+    ...(attached ? { work: (item: Attention) => { if (item.session) open('sessions', item.session); } } : {}),
     // An account's row opens its agent's page at its accounts (UX6d, D150 §6.2), where every account's act is. A shell's alone.
     ...(attached ? {
       'account-wait': (item: Attention) => open('agents', item.account?.agent ?? null, { agentPart: 'accounts' }),

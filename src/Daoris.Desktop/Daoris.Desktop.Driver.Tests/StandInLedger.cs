@@ -86,6 +86,94 @@ internal sealed class StandInLedger : HttpMessageHandler
 
     private int _syncPasses;
 
+    /// <summary>What the change stream's door does (FABRIC-EVENT3b).</summary>
+    public enum ChangeDoor
+    {
+        /// <summary>No such door, as a host from before answers: 404.</summary>
+        Absent,
+
+        /// <summary>The door, as a local host answers it: the quests family moves with each publish.</summary>
+        Answers,
+
+        /// <summary>The door refuses every wait: 503.</summary>
+        Refuses,
+    }
+
+    /// <summary>The change stream's door (FABRIC-EVENT3b): absent unless a test opens it, as every older stand-in had none.</summary>
+    public ChangeDoor Changes { get; set; }
+
+    /// <summary>How many waits the driver asked the change stream for.</summary>
+    public int ChangesAsked => Volatile.Read(ref _changesAsked);
+
+    /// <summary>How many waits are held now.</summary>
+    public int ChangesHeld => Volatile.Read(ref _changesHeld);
+
+    private int _changesAsked;
+    private int _changesHeld;
+
+    // The stream's count and where the quests family last moved; one epoch for this stand-in's life.
+    private long _changeCount;
+    private long _questsMovedAt;
+    private TaskCompletionSource _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private const string ChangeEpoch = "5ad1e";
+
+    /// <summary>
+    /// A wait on the change stream, as the service answers it (the design §A4.2): a cursor it does not know answered every family
+    /// at once, and its own cursor held until the quests family moves or the wait ends. Held outside the gate.
+    /// </summary>
+    private async Task<HttpResponseMessage> ChangesAsync(string query, CancellationToken ct)
+    {
+        if (Changes is ChangeDoor.Refuses)
+        {
+            return Answer(HttpStatusCode.ServiceUnavailable, new JsonObject { ["error"] = "the stand-in refuses the change stream" });
+        }
+
+        var asked = System.Web.HttpUtility.ParseQueryString(query);
+        var wait = TimeSpan.FromSeconds(int.TryParse(asked["wait"], out var seconds) ? seconds : 0);
+        var since = asked["since"];
+        var until = DateTimeOffset.UtcNow + wait;
+        Interlocked.Increment(ref _changesHeld);
+        try
+        {
+            while (true)
+            {
+                Task changed;
+                JsonObject answer;
+                lock (_gate)
+                {
+                    changed = _changed.Task;
+                    var cursor = $"{ChangeEpoch}.{_changeCount}";
+                    var known = since is { } s && s.StartsWith(ChangeEpoch + ".", StringComparison.Ordinal)
+                        && long.TryParse(s[(ChangeEpoch.Length + 1)..], out var n) && n <= _changeCount;
+                    JsonArray moved = !known ? ["sessions", "quests"]
+                        : _questsMovedAt > long.Parse(since![(ChangeEpoch.Length + 1)..]) ? ["quests"] : [];
+                    answer = new JsonObject { ["since"] = cursor, ["moved"] = moved };
+                }
+
+                var left = until - DateTimeOffset.UtcNow;
+                if (answer["moved"]!.AsArray().Count > 0 || left <= TimeSpan.Zero) return Answer(HttpStatusCode.OK, answer);
+                try
+                {
+                    await changed.WaitAsync(left, ct);
+                }
+                catch (TimeoutException)
+                {
+                }
+            }
+        }
+        finally
+        {
+            Interlocked.Decrement(ref _changesHeld);
+        }
+    }
+
+    // The quests family moved: a publish. Under the gate.
+    private void QuestsMoved()
+    {
+        _questsMovedAt = ++_changeCount;
+        Interlocked.Exchange(ref _changed, new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)).TrySetResult();
+    }
+
     /// <summary>A client over this ledger, as a driver is handed one; <paramref name="timeout"/> is the client's own.</summary>
     public ServiceClient Client(TimeSpan? timeout = null)
     {
@@ -124,6 +212,7 @@ internal sealed class StandInLedger : HttpMessageHandler
             };
             if (parent is not null) quest["parent"] = parent;
             _quests.Add(quest);
+            QuestsMoved();
         }
     }
 
@@ -361,6 +450,12 @@ internal sealed class StandInLedger : HttpMessageHandler
         {
             Interlocked.Increment(ref _questsAsked);
             await Task.Delay(Timeout.Infinite, ct);
+        }
+
+        if (request.Method == HttpMethod.Get && path == "/api/changes")
+        {
+            Interlocked.Increment(ref _changesAsked);
+            if (Changes is not ChangeDoor.Absent) return await ChangesAsync(request.RequestUri.Query, ct);
         }
 
         lock (_gate)

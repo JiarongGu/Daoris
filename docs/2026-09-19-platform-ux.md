@@ -623,7 +623,9 @@ controls are in the frame design's §3.
   one shown at a time and reachable by name. D150 moves Workspace and Permissions to the workspace
   and repository pages, Agents to its own place, and Plugins to its place (UX6j). **Seven domains
   remain**, the machine's and the person's: Get started, Appearance, AI features, Driver, Tools,
-  Browser and Machine log; `settings/domains.ts` and the translated catalogues own their displayed
+  Browser and Machine log; **WIRING1c adds an eighth, This Daoris (本机), after AI features**, a machine domain that shows how
+  this install is wired (its folders with their sizes, its service, the driver's loop) and sets nothing, Driver's home row
+  being its door (the this-Daoris design §2); `settings/domains.ts` and the translated catalogues own their displayed
   names. A domain remembered from before it left opens where what it held stayed (Plugins at Driver),
   else on Appearance. Every way in opens the domain its
   fact is set in, at the part it names, and a browser is offered only the first three, its list saying

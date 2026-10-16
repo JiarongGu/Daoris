@@ -32,6 +32,7 @@ import { useRules } from './rules';
 import { useSessionGroups } from './sessions';
 import { useLandEntry } from './entries';
 import { useStateHub, useUnderWay, useUnderWayStep, useUnderWaySubject } from './stateHub';
+import { useSystemWiring } from './system';
 import { ALL_TOOLS, useTools } from './tools';
 import { useLandSessionTree } from './trees';
 import { useWorkPlan, workKey } from './work';
@@ -132,6 +133,8 @@ describe('the state hub (STATE_CHANGED)', () => {
     ['tools', [[...ALL_TOOLS, 'list', false], [...ALL_TOOLS, 'git', 'system', '', '']]],
     ['help', [[...HELP_HISTORY, ''], [...HELP_HISTORY, 'pinned'], [...HELP_PROPOSALS, 's1']]],
     ['browser', [keys.browserSettings]],
+    // FABRIC-EVENT5b: How this Daoris is wired, told as a walk starts and as its sizes land.
+    ['wiring', [keys.systemWiring]],
   ];
 
   it.each(families)('%s asks its own family again and no other', (scope, family) => {
@@ -160,6 +163,7 @@ describe('the state hub (STATE_CHANGED)', () => {
     ['tools', 'the tools', () => useTools(), 'TOOLS_LIST'],
     ['help', 'Ask Daoris’s history', () => useHelpConversations(''), 'HELP_CONVERSATIONS'],
     ['browser', 'the browser’s settings', () => useBrowserSettings(), 'STATE'],
+    ['wiring', 'This Daoris’s wiring', () => useSystemWiring(), 'SYSTEM_WIRING'],
   ];
 
   it.each(views)('%s: an event alone asks %s again', async (scope, _what, useView, route) => {
@@ -178,6 +182,36 @@ describe('the state hub (STATE_CHANGED)', () => {
     act(() => changed({ scopes: [scope] }));
 
     await waitFor(() => expect(asked()).toBe(2));
+  });
+
+  /**
+   * FABRIC-EVENT5: a change told while a view's first read is on its way must not be lost to it. The query has no data yet, so an
+   * invalidation would reuse the read in flight, whose answer pre-dates the change; the hub asks once more after it.
+   */
+  it('a change told during a first read asks once more after it, whatever scope', async () => {
+    let first: (answer: unknown) => void = () => undefined;
+    let reads = 0;
+    invoke.mockReset();
+    invoke.mockImplementation(async (_module: string, route: string) => {
+      if (route !== 'RULES') return {};
+      reads += 1;
+      if (reads === 1) return new Promise((resolve) => { first = resolve; });
+      return { reads };
+    });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    function View() {
+      useStateHub();
+      useRules();
+      return null;
+    }
+    render(<QueryClientProvider client={client}><View /></QueryClientProvider>);
+    await waitFor(() => expect(reads).toBe(1));
+
+    act(() => changed({ scopes: ['rules'] }));
+    await act(async () => first({ reads: 'stale' }));
+
+    await waitFor(() => expect(reads).toBe(2));
+    await waitFor(() => expect(client.getQueryData(keys.rules)).toEqual({ reads: 2 }));
   });
 });
 

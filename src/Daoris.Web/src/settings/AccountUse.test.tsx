@@ -81,12 +81,12 @@ describe('an account\'s facts', () => {
 });
 
 describe('the tool\'s own sign-in, and the terms', () => {
-  /** D125 §3.7: the line while starts run on it, with who and its cool-off, and the press that gives Daoris an account. */
-  it('says who it is and that it cools, with Sign in to another account', async () => {
+  /** D175 point 1: the read-only line, with who and an old cool-off, and the press that signs in an account for Daoris. */
+  it('says who it is and its old cool-off, with Sign in to another account', async () => {
     const onSignIn = vi.fn();
     wrap(<OwnSignInLine who="someone@example.invalid" cooling={OWN_COOLING} signsIn onSignIn={onSignIn} />);
 
-    expect(screen.getByText(/^Sessions run on your own sign-in, someone@example\.invalid: .+ It is cooling until .+look again\.$/)).toBeTruthy();
+    expect(screen.getByText(/^Your own sign-in, someone@example\.invalid: .+ Daoris does not start sessions in it; .+ It was cooling until .+look again\.$/)).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: 'Sign in to another account' }));
     expect(onSignIn).toHaveBeenCalledOnce();
   });
@@ -94,7 +94,7 @@ describe('the tool\'s own sign-in, and the terms', () => {
   it('offers no sign-in a tool has none of', () => {
     wrap(<OwnSignInLine signsIn={false} onSignIn={() => {}} />);
 
-    expect(screen.getByText(/^Sessions run on your own sign-in: /)).toBeTruthy();
+    expect(screen.getByText(/^Your own sign-in: /)).toBeTruthy();
     expect(screen.queryByRole('button')).toBeNull();
   });
 
@@ -190,10 +190,15 @@ describe('a scope\'s list', () => {
 
   /** A scope with no list has no settings: it says where its starts run, and the first Use gives it a list. */
   it('says where starts run while the scope has no list, and offers no settings', () => {
-    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf()} accounts={CHOICES} acts={acts()} />);
+    const { unmount } = wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ inherited: true })} accounts={CHOICES} acts={acts()} />);
 
-    expect(screen.getByText(/^No account is used here yet, so starts run on the tool's own sign-in\./)).toBeTruthy();
+    expect(screen.getByText(/^No account is used here yet, so starts take Daoris's accounts, in turn\./)).toBeTruthy();
     expect(screen.queryByRole('radiogroup')).toBeNull();
+    unmount();
+
+    // A test double that runs in its own home says so by `inherited: false`: the own sign-in is said there alone.
+    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ inherited: false })} accounts={CHOICES} acts={acts()} />);
+    expect(screen.getByText(/^No account is used here yet, so starts take the tool's own sign-in\./)).toBeTruthy();
     expect(screen.queryByText('Keep for conversations')).toBeNull();
   });
 
@@ -345,15 +350,21 @@ describe('the next start', () => {
    * third sentence; its wait is said, and never that it carries none of the starts it does carry.
    */
   it('says the tool\'s own sign-in once, and its wait without claiming it carries none', () => {
-    const { unmount } = wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ next: { account: null, reason: 'own', others: [] } })} accounts={CHOICES} acts={acts()} />);
+    const { unmount } = wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ inherited: true, next: { account: null, reason: 'own', others: [] } })} accounts={CHOICES} acts={acts()} />);
     expect(screen.queryByText('Next start')).toBeNull();
-    expect(screen.getByText(/^No account is used here yet, so starts run on the tool's own sign-in\./)).toBeTruthy();
+    expect(screen.getByText(/^No account is used here yet, so starts take Daoris's accounts, in turn\./)).toBeTruthy();
     unmount();
 
     wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ next: { account: null, reason: 'waits', when: OWN_COOLING.until, others: [{ account: null, hold: 'cooling', until: OWN_COOLING.until }] } })} accounts={CHOICES} acts={acts()} />);
     expect(screen.getByText(/^No account here is ready, so the next start waits until .+\.$/)).toBeTruthy();
     expect(screen.getByText(/^the tool's own sign-in is cooling until .+\.$/)).toBeTruthy();
     expect(screen.queryByText(/carries none of these starts/)).toBeNull();
+  });
+
+  /** D175 point 2 and OWNSPACE1b settlement 4: no Daoris account signed in is its own line, apart from a wait. */
+  it('says no Daoris account is signed in, when the reason arrives', () => {
+    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ inherited: true, next: { account: null, reason: 'noAccount', others: [] } })} accounts={CHOICES} acts={acts()} />);
+    expect(screen.getByText('No Daoris account is signed in for it; its starts wait until you sign in.')).toBeTruthy();
   });
 
   /** A workspace whose every account is held waits, and its own-sign-in sentence stands: switching that would not help. */
@@ -465,7 +476,7 @@ describe('a workspace\'s scope', () => {
   /** A workspace on this machine's accounts where the machine has none says the tool's own sign-in, or the default. */
   it('says the tool\'s own sign-in, or this machine\'s default, where the machine has no list', () => {
     const { unmount } = wrap(<WorkspaceScope agent={THREE} product="Claude Code" workspace="lab" scope={null} machine={scopeOf()} accounts={CHOICES} acts={acts()} />);
-    expect(screen.getByText("Its starts run on the tool's own sign-in, as this machine's do.")).toBeTruthy();
+    expect(screen.getByText("Its starts take Daoris's accounts, in turn, as this machine's do.")).toBeTruthy();
     unmount();
 
     wrap(<WorkspaceScope agent={THREE} product="Claude Code" workspace="lab" scope={null} machine={scopeOf({ default: 'account-2', begins: 'account-2', use: USE_DEFAULTS })} accounts={CHOICES} acts={acts()} />);

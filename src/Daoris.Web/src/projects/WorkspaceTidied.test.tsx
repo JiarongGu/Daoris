@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../locales/i18n';
 import type { LogRow } from '../settings/Logs';
+import type { MilestoneUnit } from '../work/milestone';
 import { WorkspaceTidied } from './WorkspaceTidied';
 
 // What the look cleaned up on its own, in a workspace's Branches tab (AUTOTIDY1a, D88): a molecule over the log's lines, each
@@ -167,6 +168,21 @@ describe('what was cleaned up on its own', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Show 2 more' }));
     expect(screen.getAllByRole('listitem')).toHaveLength(7);
     expect(screen.queryByRole('button', { name: /Show/ })).toBeNull();
+  });
+
+  // FABRIC-MILESTONE1b (the fabric events design §D0): a branch the look cleaned or kept says where its unit's work stands.
+  it('says under a branch where its unit stands: the end, the clean-up and the recovery kept', () => {
+    const unit: MilestoneUnit = {
+      unit: 'u1', repository: 'billing', branch: 'daoris/s-1f2e3d4c', session: 's-1',
+      end: { state: 'ended', by: 'merged', on: 'main', at: '2026-10-17T09:00:00Z', said: 'on main' },
+      result: [], cleanup: { state: 'completed', waits: [], gone: [] },
+      recovery: [{ unit: 'u1', kind: 'moved-aside', resource: 's-1-x', role: 'recovery', disposition: 'retained', detail: 'set aside', until: '2026-10-24T09:00:00Z' }],
+      entries: [],
+    };
+    render(<WorkspaceTidied lines={[tidied('daoris/s-1f2e3d4c', 3), tidied('daoris/s-other', 4)]} units={[unit]} />);
+    const [first, second] = screen.getAllByRole('listitem');
+    expect(first).toHaveTextContent('Ended · clean-up completed · recovery kept until');
+    expect(second).not.toHaveTextContent('Ended');
   });
 
   it('reads in Chinese, with the glossary\'s words', async () => {

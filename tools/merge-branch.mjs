@@ -145,6 +145,11 @@
  * Two builds of one .NET project at once fight over its `obj/` and `bin/`. So a Process-lane gate starts only once the
  * light gates of its component (`dotnetComponent`: the first two folders of the project its command names) have ended,
  * and the light lane runs those first: the desktop's fast halves build what its Process halves then run. A Process-lane
+ * gate also waits for the heavy light gates (`isHeavyGate`: the CLI's verify, the .NET suites, the web gate), GATEORDER1:
+ * the 0b44c7a run started `driver-process` beside cli, service and web and two timing tests failed there. The cost is
+ * the light lane's tail, about 7 to 8 minutes of a full set of an hour or more, since the Process lane is the long pole
+ * either way. The git half and the serial half never overlap: the Process lane is one gate at a time. `--stale` and
+ * `--rerun` run through the same `runGates`, so they follow the same order. A Process-lane
  * gate whose command names no project, a rehearsal, starts once the light lane has ended: it builds the hosts behind its
  * script's name, and the deployment rehearsal first shuts the build servers down. A Process gate's failures are re-run
  * alone only once the light lane has ended, so a pass alone is still a pass with nothing beside it (FLAKE1).
@@ -227,6 +232,15 @@ export const isLongGate = (gate) => isProcessGate(gate) || /\brehearse:deploy\b/
 export const isProcessLane = (gate) => isProcessGate(gate) || /^npm run rehearse/.test(gate.run.trim());
 
 /**
+ * The heavy light gates (GATEORDER1): the suites that load the CPU for minutes (the CLI's verify, the .NET test suites,
+ * the web's build and end-to-end run). The 0b44c7a run started `driver-process` beside cli, service and web, and two
+ * timing tests failed there and passed alone. A Process gate starts after these, not only after its own component's.
+ * Named by what a gate runs, as `isProcessLane` is. The cheap light gates (universal, code-map, orient-index) are not.
+ */
+export const isHeavyGate = (gate) => !isProcessLane(gate)
+  && (/^npm run (verify|test:web)\b/.test(gate.run.trim()) || /^dotnet test\b/.test(gate.run.trim()));
+
+/**
  * The component a `dotnet test|build|run|publish` command builds (GATELANES1): the first two folders of the project it
  * names (`src/Daoris.Desktop`), or null when it names none. A project references only projects of its own component
  * (a test holds it), so gates of two components never build one project.
@@ -258,7 +272,9 @@ export function laneSchedule(gates) {
   const light = [...planned.filter((gate) => first.has(gate.name)), ...planned.filter((gate) => !first.has(gate.name))];
   const waits = Object.fromEntries(process.map((gate) => {
     const component = dotnetComponent(gate.run);
-    return [gate.name, { after: (component === null ? light : sharing(component)).map((other) => other.name), component }];
+    // GATEORDER1: beside the component's own gates, the heavy light gates, so a Process half's timing tests run with no suite loading the CPU.
+    const after = component === null ? light : light.filter((other) => sharing(component).includes(other) || isHeavyGate(other));
+    return [gate.name, { after: after.map((other) => other.name), component }];
   }));
   return { light, process, waits };
 }
@@ -1769,18 +1785,18 @@ async function withLog(file, work) {
 async function rerunAlone(root, gate, dir, tests, step) {
   const log = join(dir, `${gate.name}.rerun.log`);
   const cwd = gate.cwd ? join(root, gate.cwd) : root;
-  const passed = await withLog(log, async (fd, partial) => {
-    let all = true;
+  const failed = [];
+  await withLog(log, async (fd, partial) => {
     for (const test of tests) {
       const from = statSync(partial).size;
       const code = await step(rerunCommand(gate.run, test), cwd, fd);
       const output = readFileSync(partial).subarray(from).toString('utf8');
       writeSync(fd, `\n(exited ${code})\n\n`);
-      if (code !== 0 || !rerunPassed(output)) all = false;
+      if (code !== 0 || !rerunPassed(output)) failed.push(test);
     }
-    return all;
   });
-  return { passed, log };
+  // Which failed again, not only whether any did: a note naming every re-run test as failed sends a reader after ones that passed.
+  return { passed: failed.length === 0, failed, log };
 }
 
 /** A gate's steps before it, then the gate (as `command`, its own run unless given), into one log: the gate's exit. */
@@ -1838,7 +1854,9 @@ export async function runGate(root, gate, dir, { step = runStep, settled = null 
       if (rerun.passed) {
         Object.assign(result, { verdict: 'FLAKE', flakes: decision.rerun, note: `failed in the full run and passed alone: ${names}; ${shown(root, rerun.log)}` });
       } else {
-        result.note = `exit ${code}; failed again alone: ${names}; ${shown(root, rerun.log)}`;
+        const alone = decision.rerun.filter((test) => !rerun.failed.includes(test));
+        const passedAlone = alone.length ? `; passed alone: ${alone.map(short).join(', ')}` : '';
+        result.note = `exit ${code}; failed again alone: ${rerun.failed.map(short).join(', ')}${passedAlone}; ${shown(root, rerun.log)}`;
       }
     }
   }
@@ -1887,9 +1905,12 @@ function laneLines(schedule) {
   }
   for (const { after, component, gates } of groups.values()) {
     const verb = gates.length === 1 ? 'starts' : 'start';
+    const runs = new Map(schedule.light.map((gate) => [gate.name, gate.run]));
+    const own = after.filter((name) => dotnetComponent(runs.get(name)) === component);
+    const loud = after.filter((name) => !own.includes(name));
     out.push(component === null
       ? `    ${names(gates)} ${verb} once the light lane has ended: a rehearsal builds what its command does not name`
-      : `    ${names(gates)} ${verb} once ${names(after)} ${after.length === 1 ? 'has' : 'have'} ended: they build ${component} first`);
+      : `    ${names(gates)} ${verb} once ${names(after)} ${after.length === 1 ? 'has' : 'have'} ended: ${own.length ? `${names(own)} build ${component} first${loud.length ? ', ' : ''}` : ''}${loud.length ? `${names(loud)} load${loud.length === 1 ? 's' : ''} the machine` : ''}`);
   }
   return out;
 }

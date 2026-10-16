@@ -201,6 +201,11 @@ var composed = await ServiceFactory.CreateAsync(
     mode: mode);
 builder.Services.AddSingleton(composed);
 
+// FABRIC-EVENT3b (the fabric events design §A4.2): which ledger families moved, heard on an observer connection of its own, so
+// the driver wakes on a quest an agent published rather than at its pace. A local host's alone: a shared host serves no machine's
+// waits, and its circles keep their own cursors.
+var changes = mode == ServiceMode.Local ? await ChangeStream.OpenAsync(options.DatabasePath, log) : null;
+
 // KSCHEMA1: an index a newer Daoris wrote is left as it is; the host starts, and what is not derived works. Said once,
 // here: on stderr with the folder to update, and in the log by its versions. Each route over the index refuses below.
 if (composed.IndexRefusal is { } refusedIndex)
@@ -229,6 +234,9 @@ if (origins.Count > 0)
 }
 
 var app = builder.Build();
+
+// The change stream's observer closes with the host, once the stop has answered every wait it held (FABRIC-EVENT3b).
+if (changes is not null) app.Lifetime.ApplicationStopped.Register(() => changes.DisposeAsync().AsTask().GetAwaiter().GetResult());
 
 // PERSONDOOR1b (D156 point 4): what a terminal asks the person to confirm, held in this start's memory only and judged by
 // the clock the services hold (the system's, unless a test moves one), and the gate that takes a confirmed grant once.
@@ -275,7 +283,9 @@ app.Use(async (context, next) =>
     }
     finally
     {
-        if (status >= 500 || clock.ElapsedMilliseconds > MachineLogProvider.SlowRequestMs)
+        // A change stream's wait is held by design (FABRIC-EVENT3b): its time is its wait, never slowness.
+        var held = UnhandledRequests.RouteOf(context) == ChangeStream.Route;
+        if (status >= 500 || (!held && clock.ElapsedMilliseconds > MachineLogProvider.SlowRequestMs))
         {
             log.Warn("request.failed",
                 ("method", context.Request.Method),
@@ -1453,6 +1463,20 @@ if (mode == ServiceMode.Local)
             [.. outcomes.Select(outcome => new HistoryClearedResponse(
                 ToHistoryUnit(outcome.Unit), outcome.Cleared, outcome.Message,
                 outcome.Failed.Any ? new HistoryFailedResponse(outcome.Failed.Quests, outcome.Failed.Asks) : null))]));
+    });
+}
+
+// FABRIC-EVENT3b (the fabric events design §A4.2): which ledger families moved after `since` (`<epoch>.<n>`), answered as soon
+// as one moves or at `wait` seconds (30 at most) with none. A missing, malformed, stale or future cursor is answered at once with
+// every family and the current cursor; a ninth wait at once with the cursor. A read every caller may make, as the connector reads
+// the same store; LOCAL mode only. The host's stop answers a held wait at once, so a long-poll never holds the shell's wait.
+if (changes is not null)
+{
+    app.MapGet(ChangeStream.Route, async (string? since, int? wait, CancellationToken ct) =>
+    {
+        using var ends = CancellationTokenSource.CreateLinkedTokenSource(ct, app.Lifetime.ApplicationStopping);
+        var answer = await changes.WaitAsync(since, TimeSpan.FromSeconds(Math.Clamp(wait ?? 0, 0, 30)), ends.Token);
+        return new ChangesResponse(answer.Since, answer.Moved);
     });
 }
 

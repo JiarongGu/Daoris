@@ -77,6 +77,9 @@ public enum StateScopes
 
     /// <summary>Daoris's browser's settings and favorites.</summary>
     Browser = 1 << 18,
+
+    /// <summary>How this Daoris is wired: its sizes, once a walk has counted them (FABRIC-EVENT5b). Told by the driver, declared by no route.</summary>
+    Wiring = 1 << 19,
 }
 
 /// <summary>
@@ -241,6 +244,14 @@ public static class StatePublisher
     {
         if (Told(press) is { } changed) bus.Emit(Module, Type, changed);
     }
+
+    /// <summary>
+    /// A change the driver makes itself, with no press behind it (FABRIC-EVENT5, D169 point 3): words taken up by a conversation, a
+    /// proposal written, a size landed. Published as a press's change is, in the same words, so the page's one hub asks again what
+    /// it names; <paramref name="session"/> narrows it to the one session it was about. Not awaited, as the publisher's own is not.
+    /// </summary>
+    public static void Publish(IEventBus bus, StateScopes scopes, string? session = null) =>
+        bus.Emit(Module, Type, new StateChanged(Names(scopes), session is { Length: > 0 } ? [session] : null));
 
     /// <summary>The scopes' names on the wire, in the page's words and in their declared order.</summary>
     public static IReadOnlyList<string> Names(StateScopes scopes) =>

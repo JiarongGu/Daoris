@@ -8,6 +8,8 @@ import type { Tool } from '../agents/tools';
 const tool = (over: Partial<Tool> = {}): Tool => ({
   name: 'claude-code', product: 'Claude Code', maker: 'Anthropic', doors: [], accounts: [],
   machineDefault: null, present: true, ownLogin: 'in', ownAccount: null, ownRead: null, takesRules: false, workspaceDefaults: [], ...over,
+  // A signed-in account of Daoris's, which the other starters' machines need to be quiet about the agent (OWNSPACE1b-C).
+  ...(over.accounts ? {} : { accounts: [{ name: 'work', home: '', login: 'in' }] as Tool['accounts'] }),
 });
 
 const READY = {
@@ -26,7 +28,7 @@ describe('starters', () => {
 
   it('puts what waits on the person first, then what the machine lacks, in the order a setup goes', () => {
     const all = starters({
-      repositories: [], drivable: [], tools: [tool({ ownLogin: 'out' })], waiting: 2, unnamedLines: [], helper: null,
+      repositories: [], drivable: [], tools: [tool({ accounts: [] })], waiting: 2, unnamedLines: [], helper: null,
     });
 
     expect(all.map((starter) => starter.id)).toEqual(['waiting', 'nothing-registered', 'agent-signed-out', 'helper-off']);
@@ -44,16 +46,17 @@ describe('starters', () => {
     })]);
   });
 
-  it('names a tool no account is signed in to, only on a definite out', () => {
-    const out = starters({ ...READY, tools: [tool({ ownLogin: 'out' }), tool({ name: 'codex', product: 'Codex', ownLogin: 'unknown' })] });
+  it('names a tool no Daoris account is signed in to: none, or each a definite out (OWNSPACE1b-C)', () => {
+    const work = (login: string) => [{ name: 'work', home: '', login }] as Tool['accounts'];
+    const out = starters({ ...READY, tools: [tool({ ownLogin: 'in', accounts: [] }), tool({ name: 'codex', product: 'Codex', accounts: work('unknown') })] });
 
     expect(out).toEqual([expect.objectContaining({
       id: 'agent-signed-out', values: { tool: 'Claude Code' }, door: { view: 'agents', item: 'claude-code', agentPart: 'accounts' },
       command: 'daoris agent login claude-code',
     })]);
-    // A named account signed in is an account, whatever the tool's own home says.
-    expect(starters({ ...READY, tools: [tool({ ownLogin: 'out', accounts: [{ name: 'work', home: '', login: 'in' }] })] }))
-      .toEqual([]);
+    // Each account out is none signed in, whatever the tool's own home says; one in, or not known, is an account.
+    expect(starters({ ...READY, tools: [tool({ ownLogin: 'in', accounts: work('out') })] })).toHaveLength(1);
+    expect(starters({ ...READY, tools: [tool({ ownLogin: 'out', accounts: work('in') })] })).toEqual([]);
   });
 
   it('names the repositories with no line git can name, and where to set one', () => {

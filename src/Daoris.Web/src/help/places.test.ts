@@ -14,7 +14,7 @@ const spelled = ({ view, domain, part }: HelpPlace) => [view, domain, part].filt
 describe('the places a go may name', () => {
   it('are the driver\'s table, line for line', () => {
     expect(PLACE_VIEWS).toEqual(['overview', 'sessions', 'quests', 'projects', 'map', 'knowledge', 'agents', 'plugins', 'settings']);
-    expect(PLACE_DOMAINS).toEqual(['start', 'appearance', 'ai', 'driver', 'browser', 'logs']);
+    expect(PLACE_DOMAINS).toEqual(['start', 'appearance', 'ai', 'wiring', 'driver', 'browser', 'logs']);
     expect(PLACE_PARTS.map(({ within, part }) => `${within}/${part}`)).toEqual([
       'sessions/waiting', 'sessions/review', 'sessions/new', 'quests/asks', 'quests/held',
       'projects/add', 'projects/import', 'projects/setup', 'projects/branches', 'projects/history',

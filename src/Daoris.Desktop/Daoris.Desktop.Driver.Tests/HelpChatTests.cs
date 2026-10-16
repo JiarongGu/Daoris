@@ -16,7 +16,12 @@ public sealed class HelpChatTests : IDisposable
     private readonly string _home = Path.Combine(
         Path.GetTempPath(), "daoris-help-chat-" + Guid.NewGuid().ToString("N")[..8]);
 
-    public HelpChatTests() => Directory.CreateDirectory(Path.Combine(_home, "engine"));
+    public HelpChatTests()
+    {
+        Directory.CreateDirectory(Path.Combine(_home, "engine"));
+        // A Daoris account for Claude Code's doors, where Ask Daoris's room now runs (OWNSPACE1a): never the person's own home.
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "daoris"));
+    }
 
     public void Dispose()
     {

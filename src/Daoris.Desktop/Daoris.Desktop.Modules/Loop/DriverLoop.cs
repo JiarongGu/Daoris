@@ -208,6 +208,16 @@ public sealed class DriverLoop(
         _watch?.Nudge();
     }
 
+    /// <summary>Look now because a terminal's words for <paramref name="session"/> were kept: the requests topic's wake (FABRIC-EVENT2b).</summary>
+    public void Said(string session)
+    {
+        Interlocked.Increment(ref _nudges);
+        _watch?.Said(session);
+    }
+
+    /// <summary>The machine's resume as the shell hears it (FABRIC-EVENT2d); null where the shell hears none, and the watch's overrun rule is all.</summary>
+    public PowerResume? Power { get; set; }
+
     private long _nudges;
 
     /// <summary>How many times a route asked the loop to look now: what a test holds "the loop is nudged" by (MSG1d).</summary>
@@ -295,7 +305,7 @@ public sealed class DriverLoop(
             // where there is none, and the id stays the fact a sign-in takes.
             WaitsFor = waiting is null ? null : new { waiting.Agent, waiting.Account, waiting.Name, waiting.Until, waiting.Stated },
             // The accounts its start passed not signed in (TOOL6g), whose: the page says each with its sign-in. Null otherwise.
-            SignedOut = consideration.SignedOut is { } passed ? new { passed.Agent, passed.Accounts, passed.Names } : null,
+            SignedOut = consideration.SignedOut is { } passed ? new { passed.Agent, passed.Accounts, passed.Names, passed.NoAccount } : null,
             // Held by an update's drain (UPDATE1, D139 §2): a fact the page says in the reader's language. Null otherwise.
             ForUpdate = InstallUpdate.IsHeldForUpdate(consideration) ? true : (bool?)null,
             // Whose take holds it, where it is not this machine's (CARRY2c): the machine and its session where a record named
@@ -336,6 +346,7 @@ public sealed class DriverLoop(
         wait.Quests,
         wait.Asks,
         wait.SignedOut,
+        wait.NoAccount,
     };
 
     /// <summary>
@@ -347,7 +358,7 @@ public sealed class DriverLoop(
         string.Join("\n", waits
             .Select(wait => string.Join("\t",
                 wait.Agent, wait.Account ?? "", wait.Workspace ?? "", wait.Until?.ToUnixTimeSeconds(), wait.Stated,
-                string.Join(",", wait.Quests), string.Join(",", wait.Asks), string.Join(",", wait.SignedOut)))
+                string.Join(",", wait.Quests), string.Join(",", wait.Asks), string.Join(",", wait.SignedOut), wait.NoAccount))
             .OrderBy(line => line, StringComparer.Ordinal));
 
     /// <summary>
@@ -566,7 +577,21 @@ public sealed class DriverLoop(
             // STATEHUB1e (D169 point 8): a terminal's `trees` press, told here, reaches every window as the window's press would,
             // and the plugins at `state/changed` with it.
             Told = press => StatePublisher.Publish(eventBus, press),
+            // FABRIC-EVENT2: each look the folder woke, with its ms and why.
+            Log = log,
         };
+
+        // FABRIC-EVENT2d: the shell's power event reopens this watch's roots at a resume; its own overrun rule is the fallback.
+        using var resumeHeard = Power?.Hear(requests.Resumed);
+
+        // FABRIC-EVENT5a: Ask Daoris's proposals, heard by this window's process whoever holds the home's lease (a headless loop may
+        // drive while this shell's page and chats are live, and the connector writes there either way). Told once at the start, since
+        // one written before the watch opened is already in its first read, and again at each arrival. Before the lease is waited on.
+        await using var proposals = HomeWatch.ForProposals(
+            homeDirectory, (_, _) => StatePublisher.Publish(eventBus, StateScopes.Help), log: log);
+        proposals.Start();
+        using var proposalsResumed = Power?.Hear(proposals.Resumed);
+        StatePublisher.Publish(eventBus, StateScopes.Help);
 
         // A plugin's word goes to the console under `plugin:<id>` (D49 §2, D64 §4) — the same buffer
         // a session's lines and a harness action's lines land in, readable only over this bridge.
@@ -610,6 +635,8 @@ public sealed class DriverLoop(
             // A set-up step's tab and its build kept served until the verdict (REVIEWENV1d), across every look.
             Reviews = Reviews,
         };
+        // FABRIC-EVENT4: and the record files' watchers, reopened at a resume as the requests folder's are.
+        using var filesResumed = Power?.Hear(_watch.Resumed);
         await _watch.RunAsync(
             async (report, ticked) =>
             {
@@ -793,6 +820,10 @@ public sealed class DriverLoop(
         // would do is told again as a record moves or a later session of its quest opens (MSG1f2).
         service.Moved += Words.OnMoved;
         service.Opened += Words.OnOpened;
+        // FABRIC-EVENT5a: every move of a record here (words taken up on an ended conversation, among them, and the move back where
+        // the words were withdrawn before the run began, which announces no end) tells the windows `sessions` for it, so Ask Daoris's
+        // list is not read again every 1.5 s while words wait, and a page that read `working` is told the record is not.
+        service.Moved += moved => StatePublisher.Publish(eventBus, StateScopes.Sessions, moved.Session);
         Words.Reached += (session, reach) =>
             _ = eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", ConversationRoutes.QueueAnswer(this, session, reach));
 

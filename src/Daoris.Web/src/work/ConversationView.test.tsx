@@ -450,7 +450,7 @@ describe('ConversationView', () => {
     const { unmount } = view(working);
 
     expect(screen.getByText('the budget is in level.json')).toBeTruthy();
-    expect(screen.getByText('Held: it reads this at its next step.')).toBeTruthy();
+    expect(screen.getByText('Held: it reads this at its next step, once the step in flight ends.')).toBeTruthy();
     expect(screen.getByText('Held: it reads this when its turn ends.')).toBeTruthy();
     expect(screen.getByText('level.json')).toBeTruthy();
     unmount();
@@ -458,6 +458,33 @@ describe('ConversationView', () => {
     render(<Tooltip.Provider><ConversationView turns={settle(toTurns(working).turns, false)} /></Tooltip.Provider>);
     expect(screen.getAllByText('It ended before reading this.')).toHaveLength(2);
     expect(screen.queryByText(/Held:/)).toBeNull();
+  });
+
+  /**
+   * STEER2b (D136): words *Send now* put into the running turn show where they were taken, saying so, never as waiting; and
+   * a call the steer cut reads as cut, in the quiet tone, even after the session ended.
+   */
+  it('shows words sent now where they were taken, and a call the steer cut as cut', () => {
+    const going = [
+      ev({ kind: 'user', origin: 'target', text: 'go' }),
+      ev({ kind: 'tool', id: 'h1', title: 'npm run gates', toolKind: 'execute', status: 'in_progress' }),
+      ev({ kind: 'user', origin: 'person', id: 'said-1', reaches: 'now', text: 'use the blue one' }),
+    ];
+    const { unmount } = view(going);
+
+    expect(screen.getByText('use the blue one')).toBeTruthy();
+    expect(screen.getByText('Sent now: it took this at once, in the turn it was on.')).toBeTruthy();
+    expect(screen.queryByText(/Held:/)).toBeNull();
+    unmount();
+
+    // Taken as the ask of the turn that goes on, with the cut call closed in the turn it began in.
+    render(<Tooltip.Provider><ConversationView turns={toTurns([
+      ...going,
+      ev({ kind: 'user', origin: 'person', id: 'said-1', text: 'use the blue one' }),
+      ev({ kind: 'tool', id: 'h1', status: 'cut' }),
+    ]).turns} /></Tooltip.Provider>);
+    expect(screen.queryByText('Sent now: it took this at once, in the turn it was on.')).toBeNull();
+    expect(screen.getAllByText('use the blue one')).toHaveLength(1);
   });
 
   /**

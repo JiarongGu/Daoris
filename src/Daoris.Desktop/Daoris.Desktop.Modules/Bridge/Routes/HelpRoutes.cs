@@ -201,6 +201,26 @@ public sealed class HelpRoutes(DriverContext context)
             // Left null: the room says `not read`.
         }
 
+        // Where each unit's work has got to (FABRIC-MILESTONE1b): the inventory's read-only derivation, as `work state` and the
+        // WORK_STATE route read it; null where the service or git could not be read, and the room says so.
+        IReadOnlyList<WorkMilestone>? work = null;
+        var workUnread = new List<string>();
+        try
+        {
+            var (checkouts, inUse) = await LinesRoutes.CheckoutsAndSessionsAsync(_loop, null, cancellationToken).ConfigureAwait(false);
+            var roots = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (repository, _, root) in checkouts)
+            {
+                if (!string.IsNullOrWhiteSpace(root)) roots.TryAdd(repository, root);
+            }
+
+            work = await WorkInventories.MilestonesAsync(_loop.Home, roots, inUse, workUnread, cancellationToken).ConfigureAwait(false);
+        }
+        catch (DriverException)
+        {
+            // Left null: the room says the milestones were not read.
+        }
+
         // The asks by id too (HELP6), so a delete of one made by mistake can name it.
         // And the branches landings made here (WSR5b), so a hand-off names one the record holds.
         var plugins = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
@@ -219,7 +239,7 @@ public sealed class HelpRoutes(DriverContext context)
             // The named workflows saved here, so each repository's Workflow column names the version it follows (WORKFLOW1h-c).
             WorkflowStore.List(_loop.Home),
             // What the person approved of the servers plugins offer it (HELPPLUG1a's tightening, D170's note).
-            HelpGrants.Read(_loop.Home, plugins));
+            HelpGrants.Read(_loop.Home, plugins), work, workUnread);
     }
 
     /// <summary>

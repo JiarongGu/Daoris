@@ -17,6 +17,7 @@ import {
   useDiscardSessionBranch, useSetCommits, useSetHelpers, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross,
   useSetReview, useStarts,
   useSweep, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
+  useWorkState,
 } from '../bridge/shell';
 import { byTool } from '../agents/tools';
 import { failure, type Notify, useErrorNotify } from '../design/ui';
@@ -249,6 +250,8 @@ function BranchesPart({ workspace, notify, onOpenRepository, onOpenBranch, onOpe
   const sync = useTreesSync(workspace);
   // What the look cleaned up on its own (AUTOTIDY1a): the machine log's, so a browser has none; a failed read draws nothing.
   const tidied = useTidiedBranches(workspace);
+  // Where each unit's work stands (FABRIC-MILESTONE1b): a tidied or kept branch says it beneath itself; the band's answer, shared.
+  const workState = useWorkState();
   // A landing's branch tidied names its session by id (TIDIEDLANDING1): the sessions are asked only while a line does, so the
   // row says it by name where the list holds the session.
   const tidiedLines = Array.isArray(tidied.data?.lines) ? tidied.data.lines : null;
@@ -272,7 +275,7 @@ function BranchesPart({ workspace, notify, onOpenRepository, onOpenBranch, onOpe
   return (
     <InclusionContext.Provider value={inclusion}>
       <WorkspaceBranchGroups workspace={workspace} onOpenRepository={onOpenRepository} onOpenBranch={onOpenBranch} onOpenHistory={onOpenHistory} />
-      <WorkspaceTidied lines={tidiedLines} titles={titles} />
+      <WorkspaceTidied lines={tidiedLines} titles={titles} units={workState.data?.units} />
       <SweepList
         branches={Array.isArray(plan.data?.branches) ? mine(plan.data.branches, workspace) : undefined}
         landed={Array.isArray(plan.data?.landed) ? mine(plan.data.landed, workspace) : undefined}

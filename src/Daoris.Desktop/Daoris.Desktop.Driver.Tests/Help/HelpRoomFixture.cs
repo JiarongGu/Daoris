@@ -36,10 +36,10 @@ internal static class HelpRoomFixture
         [
             new("claude-code")
             {
-                Product = "Claude Code", Present = true, Version = "2.1.0", Login = "in",
+                Product = "Claude Code", Present = true, Version = "2.1.0",
                 Accounts = [new("work", "out")],
             },
-            new("codex") { Present = false, Login = "unknown" },
+            new("codex") { Present = false },
         ],
     };
 }

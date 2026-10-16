@@ -1,0 +1,186 @@
+using Daoris.Knowledge;
+
+namespace Daoris.Service.Tests;
+
+/// <summary>
+/// The knowledge server's freshness on a watch (FABRIC-EVENT6; the events design part A): a checkout's moving is heard and
+/// marked, the next search reads it, and a silenced watch is caught by its deadline, never by a timer of the search's own.
+/// </summary>
+public sealed class CheckoutFreshnessTests : IDisposable
+{
+    private readonly string _root = Path.Combine(
+        Path.GetTempPath(), "daoris-fresh-" + Guid.NewGuid().ToString("N")[..8]);
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
+    }
+
+    private string Write(string relative, string content)
+    {
+        var file = Path.Combine(_root, relative.Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        File.WriteAllText(file, content);
+        return file;
+    }
+
+    private string Checkout()
+    {
+        Write("served/daoris.json", """{ "source": "s" }""");
+        Write("served/docs/design.md", "# The probe lock\n\n## Why a lock\n\nOne probe at a time.\n");
+        Write("served/.git/HEAD", "ref: refs/heads/main\n");
+        Write("served/.git/refs/heads/main", "0000000000000000000000000000000000000000\n");
+        return Path.Combine(_root, "served");
+    }
+
+    private static KnowledgeService Serve(string checkout, CheckoutFreshness? freshness, TimeProvider time)
+    {
+        var store = new InMemoryKnowledgeStore();
+        return new KnowledgeService(
+            store, new LexicalKnowledgeSearch(store), new FileSystemKnowledgeSource([checkout], new RepositoryScanner(documents: "docs")),
+            rereadAfter: TimeSpan.FromMinutes(1), time: time, freshness: freshness);
+    }
+
+    private static async Task<bool> Finds(KnowledgeService service) =>
+        (await service.SearchAsync(new KnowledgeQuery("zeppelins"))).Any(hit => hit.Entry.Title == "Zeppelins");
+
+    [Fact]
+    public async Task An_edit_that_was_heard_is_read_at_the_next_search_with_no_time_gone_by()
+    {
+        var checkout = Checkout();
+        var time = new SteppedTime(DateTimeOffset.Parse("2026-10-17T10:00:00Z"));
+        using var freshness = CheckoutFreshness.Silent();
+        var service = Serve(checkout, freshness, time);
+        Assert.False(await Finds(service));
+
+        Write("served/docs/later.md", "# Zeppelins\n\nWritten while the session ran.\n");
+        Assert.False(await Finds(service));
+
+        freshness.MarkStale();
+        Assert.True(await Finds(service));
+    }
+
+    [Fact]
+    public async Task A_watched_checkout_is_not_read_again_by_the_minute_only_by_its_deadline()
+    {
+        var checkout = Checkout();
+        var time = new SteppedTime(DateTimeOffset.Parse("2026-10-17T10:00:00Z"));
+        using var freshness = CheckoutFreshness.Silent();
+        var service = Serve(checkout, freshness, time);
+        Assert.False(await Finds(service));
+
+        // The watch heard nothing: a silenced source. The minute that once caught it no longer does.
+        Write("served/docs/later.md", "# Zeppelins\n\nWritten while the watch was silent.\n");
+        time.Advance(TimeSpan.FromMinutes(1));
+        Assert.False(await Finds(service));
+
+        time.Advance(CheckoutFreshness.Deadline - TimeSpan.FromMinutes(1) - TimeSpan.FromSeconds(1));
+        Assert.False(await Finds(service));
+
+        time.Advance(TimeSpan.FromSeconds(1));
+        Assert.True(await Finds(service));
+    }
+
+    [Fact]
+    public async Task A_stale_mark_is_taken_once_so_a_second_search_does_not_read_again()
+    {
+        var checkout = Checkout();
+        var time = new SteppedTime(DateTimeOffset.Parse("2026-10-17T10:00:00Z"));
+        using var freshness = CheckoutFreshness.Silent();
+        var service = Serve(checkout, freshness, time);
+        Assert.False(await Finds(service));
+
+        freshness.MarkStale();
+        Assert.False(await Finds(service));
+        Assert.False(freshness.IsStale);
+
+        Write("served/docs/later.md", "# Zeppelins\n\nWritten after the read the mark asked for.\n");
+        Assert.False(await Finds(service));
+    }
+
+    [Fact]
+    public void An_overflow_marks_stale_and_a_lost_watcher_marks_stale_and_falls_back_to_the_minute()
+    {
+        using var freshness = CheckoutFreshness.Silent();
+        Assert.True(freshness.Watching);
+        Assert.False(freshness.IsStale);
+
+        freshness.Failed(new InternalBufferOverflowException());
+        Assert.True(freshness.IsStale);
+        Assert.True(freshness.Watching);
+
+        Assert.True(freshness.Take());
+        freshness.Failed(new IOException("the handle is gone"));
+        Assert.True(freshness.IsStale);
+        Assert.False(freshness.Watching);
+    }
+
+    [Fact]
+    public async Task A_lost_watch_leaves_the_checkout_on_the_minute_as_it_was()
+    {
+        var checkout = Checkout();
+        var time = new SteppedTime(DateTimeOffset.Parse("2026-10-17T10:00:00Z"));
+        using var freshness = CheckoutFreshness.Silent();
+        var service = Serve(checkout, freshness, time);
+        Assert.False(await Finds(service));
+        freshness.Failed(new IOException("gone"));
+        await service.SearchAsync(new KnowledgeQuery("probe"));
+
+        Write("served/docs/later.md", "# Zeppelins\n\nWritten after the loss.\n");
+        time.Advance(TimeSpan.FromMinutes(1));
+
+        Assert.True(await Finds(service));
+    }
+
+    [Fact]
+    public async Task The_machines_watchers_hear_a_document_and_a_ref_and_the_next_search_reads_them()
+    {
+        var checkout = Checkout();
+        using var freshness = new CheckoutFreshness(checkout, documents: "docs", index: "docs/index");
+        Assert.True(freshness.Watching);
+        var service = Serve(checkout, freshness, TimeProvider.System);
+        Assert.False(await Finds(service));
+
+        Write("served/docs/later.md", "# Zeppelins\n\nWritten while the session ran.\n");
+        await Heard(freshness);
+        Assert.True(await Finds(service));
+
+        // A ref moved by a commit or a switch: no document changed, and the reading is still marked.
+        // (The write's own later events are let in and taken, so the next hearing is the ref's alone.)
+        await Task.Delay(500);
+        freshness.Take();
+        Write("served/.git/refs/heads/main", "1111111111111111111111111111111111111111\n");
+        await Heard(freshness);
+    }
+
+    [Fact]
+    public async Task A_checkout_that_is_a_worktree_is_watched_at_the_refs_its_git_file_names()
+    {
+        var checkout = Checkout();
+        Directory.Delete(Path.Combine(checkout, ".git"), recursive: true);
+        Write("common/HEAD", "ref: refs/heads/main\n");
+        Write("common/refs/heads/main", "0000000000000000000000000000000000000000\n");
+        Write("common/worktrees/served/HEAD", "ref: refs/heads/side\n");
+        Write("common/worktrees/served/commondir", "../..\n");
+        Write("served/.git", "gitdir: " + Path.Combine(_root, "common", "worktrees", "served") + "\n");
+        using var freshness = new CheckoutFreshness(checkout, documents: "docs", index: null);
+
+        Write("common/refs/heads/main", "2222222222222222222222222222222222222222\n");
+        await Heard(freshness);
+    }
+
+    private static async Task Heard(CheckoutFreshness freshness)
+    {
+        for (var waited = 0; waited < 100 && !freshness.IsStale; waited++) await Task.Delay(100);
+        Assert.True(freshness.IsStale, "a file moved under a watched folder and nothing was marked within ten seconds");
+    }
+
+    private sealed class SteppedTime(DateTimeOffset start) : TimeProvider
+    {
+        private DateTimeOffset _now = start;
+
+        public override DateTimeOffset GetUtcNow() => _now;
+
+        public void Advance(TimeSpan by) => _now += by;
+    }
+}

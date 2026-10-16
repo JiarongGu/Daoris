@@ -57,7 +57,7 @@ under *Doors Daoris still owes* (below), say Daoris still owes that door and nam
   `use` sets how an agent's list of accounts is used (`use` goal or order, `keep` one account of the list or none,
   `switch` smart, curve or off, and `curve` the person's own points a window, or `no_curve`); `order` writes the
   list in walk order, or with `clear` sends a workspace back to this machine's accounts; `ready` ends an account's
-  cool-off, as *Try now* does (`own` is the tool's own sign-in).
+  cool-off, as *Try now* does (`own` ends only an old cool-off of the tool's own sign-in).
   Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is
   offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.
 - `agent_settings_propose`: an account's own model and effort, as Agents → the agent's page → Model and
@@ -214,10 +214,10 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | sign an agent in, or add an account | Agents → the agent's page → Accounts | `daoris agent login <agent> --profile <account>` (an account that is here, never a new one), `daoris agent login <agent> --new [--name <name>] [--join <workspace>] [--join-machine]` |
 | name an account: its id stays, so every list, default and record keeps it | (no screen yet) | `daoris agent profile rename <agent> <account> <name>` |
 | put an account in a workspace's list, or this machine's, so starts run on it | (no screen yet) | `daoris agent profile join <agent> <account> <workspace>…|--machine` |
-| choose which account an agent's sessions use, for the machine or a workspace | Agents → the agent's page → an account's ⋯ → Use by default, Use by default in a workspace | `daoris agent profile default <agent> <profile>|--clear [--workspace <name>]` (`--clear` names none again: the tool's own home, or for a workspace the machine's default) |
+| choose which account an agent's sessions use, for the machine or a workspace | Agents → the agent's page → an account's ⋯ → Use by default, Use by default in a workspace | `daoris agent profile default <agent> <profile>|--clear [--workspace <name>]` (`--clear` names none again: Daoris's accounts serve again, or for a workspace the machine's default) |
 | choose the accounts rotation may use, in order, for the machine or a workspace (an account not listed never rotates) | Agents → the agent's page → How accounts are used → Use, up and down; and Workspaces → Its own accounts | `daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]` |
 | choose how a list is used, for the machine or a workspace: make the most of its accounts (`goal`) or one by one in order (`order`), one kept for conversations, and when to switch accounts, by Daoris's usage curve, your own, or not while a session runs | Agents → the agent's page → How accounts are used → Use accounts, Keep for conversations, Switch accounts | `daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--switch smart|curve|off] [--curve <window>=<elapsed>:<used>,…] [--no-curve] [--workspace <name>]` (no flag prints them; `--clear` returns to today's defaults) |
-| end an account's cool-off now, after its agent hit a limit | Agents → the agent's page → the account's Try now | `daoris agent profile ready <agent> <profile>|--own` (`--own` is the tool's own sign-in) |
+| end an account's cool-off now, after its agent hit a limit | Agents → the agent's page → the account's Try now | `daoris agent profile ready <agent> <profile>|--own` (`--own` only ends an old cool-off of the tool's own sign-in, which Daoris no longer starts sessions in) |
 | update an agent, or pin it to one version | Agents → the agent's page → Ways in → Update, Pin a version | `daoris agent update <agent>`, `daoris agent pin <agent> <version>` |
 | set an account's own model and effort | Agents → the agent's page → Model and effort | `daoris agent settings <agent> --account <name> model <model> effort <effort>` |
 | pause an ask's work, or one quest's, on this machine: what of it runs is stopped as your stop, and nothing of it starts until you resume it, which carries it on where it stood | Quests → the ask's page or the quest's page → Pause…, Resume; Sessions → the session's header or its row's ⋯ → Pause quest…, Pause ask…, Resume quest, Resume ask | `daoris-driver ask --pause|--resume <id>`, `daoris-driver quest pause|resume <id>` |
@@ -262,7 +262,7 @@ design.
 - apply a workflow's version from a file, import a workflow whole, or declare a workspace's kind of task: `daoris driver workflow apply <id> <file> [--base <v>]`, `daoris driver workflow import <file>`, `daoris driver workflow kind <name> <kind> --label "…" [--paths <p,…>]`
 - choose which version of a tool Daoris runs: the one on the PATH, or one kept in the home (Settings → Tools): `daoris tool use <tool> system`, `daoris tool use <tool> managed [<version>]`
 - remove a location tool versions are offered from (Settings → Tools): `daoris tool locations [add|remove <address>]`
-- clear an account's default, back to the tool's own home: `daoris agent profile default <agent> <profile>|--clear`
+- clear an account's default, back to Daoris's accounts: `daoris agent profile default <agent> <profile>|--clear`
 
 A landing pattern may say `{quest}`, `{session}`, `{slug}` (the quest's title, as words) and
 `{repository}`. It needs `{quest}` or `{session}`, or every session's work would land on one branch,
@@ -282,7 +282,7 @@ or the Plugins place), so never propose a rule naming one until it is installed;
 view, for Settings its domain, and a part where the place has one.
 
 - Views: `overview` (Overview), `sessions` (Sessions), `quests` (Quests), `projects` (Repositories), `map` (Map), `knowledge` (Knowledge), `agents` (Agents), `plugins` (Plugins), `settings` (Settings).
-- Settings domains: `start` (Get started), `appearance` (Appearance), `ai` (AI features), `driver` (Driver), `browser` (Browser), `logs` (Machine log).
+- Settings domains: `start` (Get started), `appearance` (Appearance), `ai` (AI features), `wiring` (This Daoris), `driver` (Driver), `browser` (Browser), `logs` (Machine log).
 - Parts of `sessions`: `waiting` (Waiting on you), `review` (To review), `new` (New conversation).
 - Parts of `quests`: `asks` (Asks), `held` (Waiting on you).
 - Parts of `projects`: `add` (Add repository), `import` (Import a folder), `setup` (a repository's Setup), `branches` (a repository's Branches), `history` (a repository's History), `workspace-details` (a workspace's Details), `workspace-branches` (a workspace's Branches), `workspace-workflow` (a workspace's Workflow), `workspace-setup` (a workspace's Setup), `workspace-defaults` (a workspace's Defaults), `workspace-remote` (a workspace's Remote and reach).
@@ -360,6 +360,25 @@ while the screen still shows it. For anything else on the screen, ask them rathe
 - Plugins: `example.lands` (on, speaks on `work/land`, added from a folder), `example.off` (off, installed from this install's offer), `example.broken` (on, contributes nothing: `apiVersion` must be an integer., no record of where it came from), `example.quiet` (on, added from a folder).
 - Landed branches: `feature/q2-second` in `engine` (session `s2a3b4c5`, not pushed), `feature/q3-third` in `game` (session `s3`, pushed, pull request https://example.test/pr/3; its pull request: completed by squash into `main` on 2026-10-04 13:50 UTC, as `example.lands` answered at 2026-10-04 14:02 UTC), `feature/q4-fourth` in `game` (session `s4`, pushed; asking `example.lands` at 2026-10-04 14:30 UTC failed (`late`)).
 
+## Where work has got to
+
+Each unit's milestone is read from this machine's records and never judged again here: whether its end was reached,
+the result kept, its cleanup (pending, with what waits and why, or completed, with what went) and the recovery
+retained and until when. Say it as listed; the terminal's `daoris-driver work state [<unit>]` says the same.
+
+```text
+u-held  console-ui  daoris/s1c2d3e4
+  end       reached: every commit of it is on `feature/app`
+  result    kept: `feature/app` (the line holds it)
+  cleanup   pending:
+              blocked  tree `s1c2d3e4`: a session still holds this tree
+  recovery  moved-aside `s1c2d3e4-20261017`: kept until 2026-10-24 09:00 UTC
+```
+
+1 unit finished its cleanup with nothing retained.
+
+- not read: `reports-db` has no checkout here, so its recovery refs were not read
+
 ### Workspace `default`
 
 | Repository | Driven | Line | Work lands | Reviewed before landing | Second opinion before landing | Workflow |
@@ -381,9 +400,9 @@ Kinds of work `work` declares (`daoris driver workflow kind <workspace> <kind> -
 
 ### Agents
 
-- `claude-code` (Claude Code 2.1.0): signed in; account `work` signed out; account `play` sign-in not known
+- `claude-code` (Claude Code 2.1.0): account `work` signed out; account `play` sign-in not known
 - `codex`: not installed
-- `dsh`: signed out
+- `dsh`: account `home` signed in
 
 ### Asks
 

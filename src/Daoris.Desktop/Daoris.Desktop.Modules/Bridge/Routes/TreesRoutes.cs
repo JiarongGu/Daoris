@@ -86,7 +86,14 @@ public sealed class TreesRoutes(DriverLoop loop)
                 // HEAD's own name, never the layout's (`SessionTrees.BranchNowAsync` falls back to it where detached, REVIEWBASE4). Git
                 // just read the range from this HEAD, so a refusal to name it is a fault, thrown as `BranchAsync` throws it.
                 var branch = await WorkingTree.BranchAsync(tree!, cancellationToken);
-                return ReviewAnswer(id, diff, ReviewSource.Tree, standing, treeGone: false, uncommitted: dirty, behind: range.Behind, treeBranch: branch);
+                // ACCEPTFOOT1: the driver's own offer to land this tree (LAND4: D88's proof and SQUASHTIDY1b's content hold), read where
+                // the work is beyond the line and nothing landed it, so an open conversation is offered exactly what a press would land.
+                var offer = landing is null && range.Behind is { Ahead: > 0 } && OwnTree(trees, tree)
+                    && await trees.WorkAsync(tree!, cancellationToken) is { } work
+                    ? LandOffer.Of(tree!, work)
+                    : null;
+                return ReviewAnswer(
+                    id, diff, ReviewSource.Tree, standing, treeGone: false, uncommitted: dirty, behind: range.Behind, treeBranch: branch, offer: offer);
             }
         }
 
@@ -193,7 +200,7 @@ public sealed class TreesRoutes(DriverLoop loop)
     /// <remarks>Never a machine path: the checkout the branch was read in is the registry's, and the page has no use for it.</remarks>
     public static object ReviewAnswer(
         string session, WorkingTree.TreeDiff? diff, string source, LandedReview? landed, bool treeGone, WorkingTree.TreeDiff? uncommitted = null,
-        LineBehind? behind = null, string? treeBranch = null) => new
+        LineBehind? behind = null, string? treeBranch = null, LandOffer? offer = null) => new
     {
         Session = session,
         Base = diff?.Base ?? "",
@@ -223,6 +230,9 @@ public sealed class TreesRoutes(DriverLoop loop)
         // agent may have switched it (TREEFOLLOW1) or deleted its `daoris/` branch and detached. Null where detached, and where the
         // source is a landed branch, whose tree was not read; a shape added.
         TreeBranch = source == ReviewSource.Tree ? treeBranch : null,
+        // What the driver would land of the tree (ACCEPTFOOT1, LAND4's offer as `SESSION_GROUPS` says it): null where it offers none, the
+        // work not beyond the line or landed, and on a landed branch's review; a shape added.
+        Offer = source == ReviewSource.Tree && offer is not null ? new { offer.Branch, offer.Tree, offer.Commits, offer.Uncommitted } : null,
         Landed = landed is null ? null : new
         {
             landed.Entry.Branch,

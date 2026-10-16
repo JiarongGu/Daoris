@@ -27,6 +27,21 @@ public sealed class HelpRoomGoldenTests
         // SESSUX1h3: past the cap, so the golden shows the "and N more" too.
         Sessions = new(1, 1, 2, 1, 12, [.. Enumerable.Range(1, 10).Select(n => new HelpEndedSession($"s{n}e0f1a2", n % 2 == 0 ? "engine" : "console-ui"))]),
         Asks = 2,
+        // FABRIC-MILESTONE1b: one unit ended with its cleanup waiting on a tree a session holds and a folder kept, one cleaned.
+        Work =
+        [
+            new("u-held", "console-ui", "daoris/s1c2d3e4", "s1c2d3e4",
+                new MilestoneEnd("ended", EndBy.Merged, "feature/app", "a1b2c3d4e5f6", new DateTimeOffset(2026, 10, 17, 9, 0, 0, TimeSpan.Zero), "every commit of it is on `feature/app`"),
+                [new("u-held", InventoryKind.Line, "feature/app", InventoryRole.Result, InventoryDisposition.Kept, "the line holds it")],
+                new MilestoneCleanup("pending", [new("u-held", InventoryKind.Tree, "s1c2d3e4", InventoryRole.Temporary, InventoryDisposition.Blocked, "a session still holds this tree")], []),
+                [new("u-held", InventoryKind.MovedAside, "s1c2d3e4-20261017", InventoryRole.Recovery, InventoryDisposition.Retained, "kept until 2026-10-24 09:00 UTC")], []),
+            new("u-clean", "engine", "daoris/s5f6a7b8", "s5f6a7b8",
+                new MilestoneEnd("ended", EndBy.Merged, "main", "b2c3d4e5f6a1", new DateTimeOffset(2026, 10, 16, 9, 0, 0, TimeSpan.Zero), "every commit of it is on `main`"),
+                [new("u-clean", InventoryKind.Line, "main", InventoryRole.Result, InventoryDisposition.Kept, "the line holds it")],
+                new MilestoneCleanup("completed", [], [new("u-clean", InventoryKind.SessionBranch, "daoris/s5f6a7b8", InventoryRole.Temporary, InventoryDisposition.Removed, "went 2026-10-16 11:00 UTC")]),
+                [], []),
+        ],
+        WorkUnread = ["`reports-db` has no checkout here, so its recovery refs were not read"],
         Repositories =
         [
             new("console-ui", "work")
@@ -76,11 +91,11 @@ public sealed class HelpRoomGoldenTests
         [
             new("claude-code")
             {
-                Product = "Claude Code", Present = true, Version = "2.1.0", Login = "in",
+                Product = "Claude Code", Present = true, Version = "2.1.0",
                 Accounts = [new("work", "out"), new("play", "unknown")],
             },
-            new("codex") { Present = false, Login = "unknown" },
-            new("dsh") { Present = true, Login = "out" },
+            new("codex") { Present = false },
+            new("dsh") { Present = true, Accounts = [new("home", "in")] },
         ],
         OpenAsks =
         [

@@ -46,6 +46,8 @@ public static class RegistryFollowing
                         .Select(pair => KeyValuePair.Create(pair.Key, (JsonNode?)Stamp(pair.Value)))),
                 };
                 JsonFile.Write(DaorisHome.Entry(home, HomeEntry.LinesMoved), file);
+                // The loop's own write, which its watch of the file hears and wakes no look for (FABRIC-EVENT4).
+                HomeWrites.Mine(DaorisHome.Entry(home, HomeEntry.LinesMoved));
             }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
