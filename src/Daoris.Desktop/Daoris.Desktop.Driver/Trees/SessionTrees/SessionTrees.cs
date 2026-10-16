@@ -378,6 +378,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
             throw;
         }
 
+        // FABRIC-END3: a tree opened is Daoris's own ref move; its repository is watched from here, and judged at once (§B4).
+        RefMoves.Mine(_context.Home, repository, workspace, root);
+
         // What it grew from as a fact (LANG1a): the branch it started at, never the sentence spelling it for a person.
         var opening = OpeningOf(path, branch, basedOn, grewFrom ?? line.Branch ?? "HEAD", unrecorded);
         return new(path, branch, basedOn, opening.Note, grewFrom) { Opening = opening };
@@ -612,10 +615,29 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null) : 
     public bool GoesByItself(SweepItem item) => SetAsides.GoesByItself(item);
 
     /// <inheritdoc cref="AutoTidies.TidyEmptyAsync"/>
-    public Task<TidyPass> TidyEmptyAsync(
+    public async Task<TidyPass> TidyEmptyAsync(
         string root, string repository, string? workspace, Func<CancellationToken, Task<IReadOnlySet<string>>> inUse,
-        CancellationToken ct = default) =>
-        AutoTidy.TidyEmptyAsync(root, repository, workspace, inUse, ct);
+        CancellationToken ct = default)
+    {
+        var pass = await AutoTidy.TidyEmptyAsync(root, repository, workspace, inUse, ct).ConfigureAwait(false);
+        // FABRIC-END3: the tidy's own removals are Daoris's ref moves, judged at once by the ref watch with their echo (§B4, canary 11).
+        if (pass.Results.Any(result => result.Removed) || pass.Landed.Any(result => result.Removed)) RefMoves.Mine(_context.Home, repository);
+        return pass;
+    }
+
+    /// <summary>
+    /// One repository's end judgement, its line read here as the look's tidy reads it (FABRIC-END3, link 1 of the design §C6): what the
+    /// ref watch's hint asks. How many facts were written; nothing where this process does not hold the home's lease.
+    /// </summary>
+    /// <param name="root">The repository's main checkout, whose <c>.git</c> folder is its common dir.</param>
+    internal async Task<int> KeepEndsAsync(string root, string repository, string? workspace, CancellationToken ct = default)
+    {
+        if (!HomeLease.HeldHere(_context.Home)) return 0;
+        using var look = _context.OneLook();
+        var space = RemoteTarget.Workspace(workspace);
+        var line = (await _context.LineAsync(root, repository, space, ct).ConfigureAwait(false)).Branch;
+        return await Ends.KeepAsync(root, repository, space, line, ct).ConfigureAwait(false);
+    }
 
     /// <inheritdoc cref="TreeSetAside.SetAsideRoot"/>
     public string SetAsideRoot => SetAsides.SetAsideRoot;

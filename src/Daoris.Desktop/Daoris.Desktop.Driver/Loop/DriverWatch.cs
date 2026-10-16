@@ -124,8 +124,20 @@ public sealed class DriverWatch(
 
     private HomeWatch? _files;
 
-    /// <summary>The machine resumed from sleep (FABRIC-EVENT4): the record files' watchers are reopened and each file judged now.</summary>
-    public void Resumed() => _files?.Resumed();
+    private RefWatch? _refs;
+
+    /// <summary>
+    /// The machine resumed from sleep (FABRIC-EVENT4, FABRIC-END3): the record files' and the repositories' watchers are reopened and each
+    /// judged now.
+    /// </summary>
+    public void Resumed()
+    {
+        _files?.Resumed();
+        _refs?.Resumed();
+    }
+
+    /// <summary>The ref watch this loop runs (FABRIC-END3), which a test steps and counts; null until the loop starts.</summary>
+    internal RefWatch? Refs => _refs;
 
     /// <summary>
     /// Look now, because a terminal's words for <paramref name="session"/> were kept (FABRIC-EVENT2b): the requests topic's wake,
@@ -234,6 +246,12 @@ public sealed class DriverWatch(
         await using var files = HomeWatch.ForDriver(home, configPath, Nudge, source: Source, log: Log);
         _files = files;
         files.Start();
+
+        // The refs heard on each repository's common git dir (FABRIC-END3, §B4, link 1): a ref move judges that repository's ends on its
+        // own, never the look and never the remote sync, and the tidy's pass below stays the reconciliation at its pace.
+        await using var refs = RefWatch.ForDriver(home, service.RegistryAsync, source: Source, log: Log);
+        _refs = refs;
+        refs.Start();
         TickReport? looked = null;
         chain.Bind(ChainRanks.Plan, async (heard, token) =>
         {

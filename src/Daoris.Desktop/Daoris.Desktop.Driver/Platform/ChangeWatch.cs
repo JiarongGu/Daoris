@@ -36,6 +36,12 @@ public static class ChangeWhy
 
     /// <summary>The machine resumed from sleep: every root is reopened and judged.</summary>
     public const string Resumed = "resumed";
+
+    /// <summary>
+    /// This process moved it itself (FABRIC-END3: a tree opened, <i>Accept</i>, the tidy's removals): judged at once, without the quiet
+    /// window, and the watcher's echo already heard is taken up with it (<see cref="ChangeWatch.Now"/>).
+    /// </summary>
+    public const string Own = "own";
 }
 
 /// <summary>The topics a change wakes: each is one judge's, and says which of its stores to read again.</summary>
@@ -248,6 +254,53 @@ public sealed class ChangeWatch : IAsyncDisposable
             Heard(topic, subject, _clock());
         }
 
+        Poke();
+    }
+
+    /// <summary>
+    /// This process moved <paramref name="subject"/> itself and is done writing (FABRIC-END3, the design §B4): due at once, without the
+    /// quiet window, so the next read does not wait on the debounce. A watcher's events arrive before the writer's process exits (§A5,
+    /// measured), so the echo already heard is taken up with it, and the move is judged once.
+    /// </summary>
+    public void Now(string topic, string subject)
+    {
+        lock (_gate)
+        {
+            if (_disposed) return;
+            _hinted.Remove((topic, subject));
+            Due(topic, subject, ChangeWhy.Own, _clock());
+        }
+
+        Poke();
+    }
+
+    /// <summary>
+    /// Let go of every root naming <paramref name="topic"/>'s <paramref name="subject"/> (FABRIC-END3: a repository that no longer holds
+    /// Daoris's work): its watchers closed, so nothing they still say is heard, and a root the cap left on its deadline takes each place
+    /// given back, opened and judged.
+    /// </summary>
+    public void Unwatch(string topic, string subject)
+    {
+        lock (_gate)
+        {
+            var gone = _roots.Where(root => root.Topic == topic && root.Subject == subject).ToList();
+            if (gone.Count == 0) return;
+            foreach (var root in gone)
+            {
+                Close(root);
+                _roots.Remove(root);
+            }
+
+            _subjects.Remove((topic, subject));
+            _hinted.Remove((topic, subject));
+            foreach (var waiting in _roots.Where(root => root.Capped).Take(gone.Count(root => !root.Capped)).ToList())
+            {
+                waiting.Capped = false;
+                if (_open && Open(waiting) is { } opened) Due(waiting.Topic, waiting.Subject, opened, null);
+            }
+        }
+
+        Release();
         Poke();
     }
 
@@ -744,7 +797,7 @@ public sealed class ChangeWatch : IAsyncDisposable
 
         public Func<string, ChangeKind, bool> Hears { get; } = hears;
 
-        public bool Capped { get; init; }
+        public bool Capped { get; set; }
 
         public IChangeHandle? Handle { get; set; }
 
