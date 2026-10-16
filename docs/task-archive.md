@@ -15723,3 +15723,93 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ACCEPTFOOT2b — a conversation's squash subject is its work's, not its opening** (driver; D164's PROCESS1b-ii and ACCEPTFOOT2 notes). A squash still names its one commit by a conversation's opening; by ACCEPTFOOT2's reading it takes the oldest commit's subject. Proof: a `LandingSquashTests` case.
 
 **Outcome** 2026-10-17: a conversation's squash commit takes the oldest commit's subject beyond the line, not its opening, read once with the branch's name; a quest's squash and the body are unchanged. Detail: D164's ACCEPTFOOT2b note; `LandingSquashTests`.
+
+## FABRIC-EVENT3a — the look's topics (2026-10-17, D173)
+
+> - [ ] **FABRIC-EVENT3a — the look's topics** (driver; after EVENT2 and CHAIN2; §A3). The remote sync on its own clock, a `ledger` wake running only the local plan, `pollSeconds` the `look` topic's deadline. Proof: canary 4; the planner's tests unchanged.
+
+**Outcome** 2026-10-17: a wake (`ledger`, a terminal's words, a session's end) runs only the local plan, link 5 on the loop's own chain; the remote sync and the lost-claim stop run with the whole look at the `look` topic's deadline, at the start and on a plain nudge; `watch.looked` says the part; canary 4 holds. On Opus: about 101 tool calls. Detail: D173's EVENT3a note.
+
+## FABRIC-EVENT4 — the home's record files wake their topics (2026-10-17, D173)
+
+> - [ ] **FABRIC-EVENT4 — the home's record files wake their topics** (driver, modules; after EVENT2 and CHAIN2; §A4.1). `driver.json`, the plugins folder, `lines-moved.json`, the held words and the staged update's folder on the watch, their reads the topics' deadlines. Proof: each heard within the debounce and found by its deadline when silenced.
+
+**Outcome** 2026-10-17: the config file, the plugins folder, `lines-moved.json`, the held words and the staged update's folder and request are on the change watch as link 7, each waking its topic's plan look (or the updater's own), their reads kept as the topics' deadlines; the loop's own writes are marked and wake nothing. On Sonnet: about 77 tool calls. Detail: D173's EVENT4 note.
+
+## FABRIC-END2b — the facts kept (2026-10-17, D173)
+
+> - [ ] **FABRIC-END2b — the facts kept** (driver; after END2a, CYCLE1a and a cross-process writer chosen first; §C7, §B5). `Held { At, Since, By, Tip, Line, On, OnAt, Repository }` and `Steps` on `landings.json` and `session-branches.json` entries, *ended* derived at read, traces kept on both forget paths, written only by the lease's loop. Proof: canaries 9 and 20; a trace survives every removal path.
+
+**Outcome** 2026-10-17: built as part D's FABRIC-END2 (with END2c): `HeldFact` on session-branch and landing entries, written only by `EndKeeping` in the process holding the home's lease, lapsing on standing branches only; units and `Units`; traces on both forget paths with open units never pruned; both records edited under a lock file in `locks/records/`, chosen over RPC1b. On Opus: about 144 tool calls. Detail: D173's FABRIC-END2 note.
+
+## FABRIC-END2c — when a fact stops holding (2026-10-17, D173)
+
+> - [ ] **FABRIC-END2c — when a fact stops holding** (driver; after END2b; §B5, §C6). On standing units, `Held` and `Steps` read as not known and the unit is due again when its tip, the line's commit, the cycle's line or the repository's identity changes; a trace is never judged again. Proof: canary 7; a Process class with real git.
+
+**Outcome** 2026-10-17: built inside FABRIC-END2 (see FABRIC-END2b's entry): a fact lapses when its tip, the line's commit, the cycle's line or the repository's identity changes, on standing branches only.
+
+## OWNSPACE2 — what Daoris left in the person's tool home, listed and cleared by the person (2026-10-17, D175)
+
+> - [ ] **OWNSPACE2 — what Daoris left in the person's tool home, listed and cleared by the person** (driver/web; after OWNSPACE1, WIRING1c). The project folders Daoris's sessions left in the person's own tool home (its room's, its intakes', its trees') are listed on *This Daoris* as Daoris's, matched by the folder names its own homes make, and removed only by the person's press after the list (D88), the person's own projects never touched. Proof: a driver test listing only Daoris's folders from a mixed home; the press removes only those.
+
+**Outcome** 2026-10-17: *This Daoris* lists, read-only, the folders in the person's own tool home that Daoris's own session records show its sessions ran in (exact flattened name, collisions refused over every claim, what would keep each said: a live or resumable session, an unreadable record); the move-aside press was built, found unsafe over three reviews by a second maker and withdrawn, and returns as OWNSPACE2e. On Sonnet: about 270 tool calls over four rounds. Detail: D175's OWNSPACE2 note.
+
+## FABRIC-CYCLE0 — human steps and the end's cleanup, in the design (2026-10-17, D173)
+
+> - [ ] **FABRIC-CYCLE0 — human steps and the end's cleanup, in the design** (design; D173's part C acceptance note). The owner's answers add steps a person reaches by a press, and "a true end cleans up everything except the result": amend §C2 (a `human` step kind, its press, who may press it, its evidence) and §C3 (what the result is per cycle, what an end removes, the wait configured per cycle, the line's rule kept) before CYCLE1a. Proof: the design's amended sections, a second maker's read.
+
+**Outcome** 2026-10-17: done as a design round: human steps and the end's cleanup written into §C2/§C3, then superseded by part D (human tasks, the ownership inventory) and part E (nodes). Detail: the design's §C2, §C3, §D5, §D3.
+
+## FABRIC-CYCLE1a — the cycle defined on the landing rule (2026-10-17, D173)
+
+> - [ ] **FABRIC-CYCLE1a — the cycle defined on the landing rule** (driver, cli; after END2a and CYCLE0; the fabric events design §C2). A `cycle` `{ end, steps }` on `landings`/`workspaceLandings` and its `driverconfig.ts` twin, inherited under D164, a workflow's `end` governing, absent reading `line`, refusals naming the Setup row. Proof: canary 14; both twins read one table; each refusal; a repository's rule replacing its workspace's cycle whole.
+
+**Outcome** 2026-10-17: superseded by part E: the cycle on the landing rule is FABRIC-GRAPH1 (the graph and its homes).
+
+## FABRIC-CYCLE1b — the *Work ends* Setup row and Ask Daoris (2026-10-17, D173)
+
+> - [ ] **FABRIC-CYCLE1b — the *Work ends* Setup row and Ask Daoris** (web-shell, modules; after CYCLE1a; §C2). A defined end needs a door the person sees: the Setup row on the repository's and workspace's Setup (both locales; a plugin's labels as written), and Ask Daoris saying a repository's cycle. Proof: the Setup rows' tests, i18n and names checks, the help room's goldens.
+
+**Outcome** 2026-10-17: superseded by part E: Setup's Work pages are FABRIC-GRAPHEDIT1 (one graph editor, with D157's WORKFLOW1g).
+
+## FABRIC-END4b — the page draws the cycle (2026-10-17, D173)
+
+> - [ ] **FABRIC-END4b — the page draws the cycle** (driver, web-shell; after END2b and CYCLE1b; §B6, §C3). The head's foot, DiffPane, What needs you, WorkspaceTidied, Sweep and BranchPage show the steps reached, the end, pending/unreadable/unreachable apart, *held*, and a human step's press. Proof: web tests in both locales; rehearsal and e2e hits listed; the window shows a merged pull request's session ended with no press.
+
+**Outcome** 2026-10-17: superseded by part D/E: the default milestone is FABRIC-MILESTONE1b and a configured graph's view is FABRIC-GRAPHVIEW1.
+
+## FABRIC-PLUGSTEP1a — a plugin's own steps in its manifest (2026-10-17, D173)
+
+> - [ ] **FABRIC-PLUGSTEP1a — a plugin's own steps in its manifest** (driver, cli; after CYCLE1a; §C4). `steps` `{ id, after, label }` in `plugins.ts` and `PluginManifest`, twinned, the cycle's plugin steps validated. Proof: the twins' tables; each manifest refusal.
+
+**Outcome** 2026-10-17: superseded by part D: the manifest twins are FABRIC-UNIT1d.
+
+## FABRIC-PLUGSTEP1b — the handshake and the reverse transport (2026-10-17, D173)
+
+> - [ ] **FABRIC-PLUGSTEP1b — the handshake and the reverse transport** (driver; after PLUGSTEP1a; §C4). `work/watch`, `work/step`, `work/ended` in `HookPoints`; the reader takes `work/step` on a watch process only, bounded (64 KB a frame, 60 a minute, a queue of 256). Proof: other notifications still ignored; each bound; `protocolVersion` 1.
+
+**Outcome** 2026-10-17: superseded by part D: transport and supervision are FABRIC-PERFORM1a.
+
+## FABRIC-PLUGSTEP1c — the kit sends and tests a step (2026-10-17, D173)
+
+> - [ ] **FABRIC-PLUGSTEP1c — the kit sends and tests a step** (driver; after PLUGSTEP1b; §C4). The template sends the frame and tests its bounds and refusals. Proof: the kit's tests; a kit-made plugin's frame read by the host.
+
+**Outcome** 2026-10-17: superseded by part D: the kit is FABRIC-PERFORM1e.
+
+## FABRIC-PLUGSTEP1d — a watching plugin supervised (2026-10-17, D173)
+
+> - [ ] **FABRIC-PLUGSTEP1d — a watching plugin supervised** (driver; after CHAIN2 and PLUGSTEP1b; §C4). Owned by the lease's loop, started while a unit awaits its step, shut down otherwise; restarts on an unasked exit only, three in an hour unsound; generations and `resync`. Proof: canary 19; an intentional shutdown never counted.
+
+**Outcome** 2026-10-17: superseded by part D: supervision is FABRIC-PERFORM1a.
+
+## FABRIC-PLUGSTEP1e — a plugin's event authorized (2026-10-17, D173)
+
+> - [ ] **FABRIC-PLUGSTEP1e — a plugin's event authorized** (driver; after END2b and PLUGSTEP1d; §C4, §C7). §C4's five rules (the sender is the process, a rule names the plugin, the unit was in the last frame, bound to the tip, the shape reads); a built-in `pull-request` event writes `PullRequestState` by its existing writer; refusal codes. Proof: canary 13; each rule refusing a fake event; no event removes anything.
+
+**Outcome** 2026-10-17: superseded by part D: authorization is FABRIC-PERFORM1c.
+
+## FABRIC-PLUGSTEP1f — an example plugin that contributes a step (2026-10-17, D173)
+
+> - [ ] **FABRIC-PLUGSTEP1f — an example plugin that contributes a step** (examples, tools; after PLUGSTEP1c and 1e; §C4). A stand-in source reporting one declared step, its README and `plugins try` samples. Proof: its tests; a rehearsal check for the parent.
+
+**Outcome** 2026-10-17: superseded by part D: the example is FABRIC-PERFORM1e.
