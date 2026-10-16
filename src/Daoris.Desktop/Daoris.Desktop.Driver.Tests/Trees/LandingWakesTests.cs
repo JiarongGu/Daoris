@@ -173,6 +173,72 @@ public sealed class LandingWakesTests : IDisposable
         Assert.Equal([new LandingWake(ChangeTopics.Ledger, "sessions")], wakes.For(whole: false)!);
     }
 
+    /// <summary>
+    /// FABRIC-END7's review: a wake is spent only where a landing judged with it. What a look took goes back ahead of what was heard
+    /// meanwhile, a plan's session end with it; held back for a running landing, that landing's end offers it again, once; and a whole
+    /// look's goes back as every entry, which the next plan judges.
+    /// </summary>
+    [Fact]
+    public void Wakes_a_landing_did_not_judge_with_go_back_and_a_running_landing_s_end_offers_them_again()
+    {
+        var wakes = new LandingWakes();
+        wakes.Hear(ChangeTopics.Ledger, "quests");
+        var failed = wakes.Take(whole: false);
+        wakes.Hear(ChangeTopics.Refs, "engine");
+        wakes.Hear(ChangeTopics.Ledger, "quests");
+        wakes.Unspent(failed, heldBack: false);
+        Assert.False(wakes.Reoffer());
+        Assert.Equal([new LandingWake(ChangeTopics.Ledger, "quests"), new LandingWake(ChangeTopics.Refs, "engine")], wakes.For(whole: false)!);
+
+        var skipped = wakes.Take(whole: false);
+        wakes.Unspent(skipped, heldBack: true);
+        Assert.True(wakes.Reoffer());
+        Assert.False(wakes.Reoffer());
+        Assert.Equal([new LandingWake(ChangeTopics.Ledger, "sessions")], wakes.For(whole: false)!);
+
+        wakes.Hear(ChangeTopics.Gates, "opinions");
+        wakes.Unspent(wakes.Take(whole: true), heldBack: false);
+        Assert.Null(wakes.For(whole: false));
+        Assert.Equal([new LandingWake(ChangeTopics.Ledger, "sessions")], wakes.For(whole: false)!);
+    }
+
+    /// <summary>
+    /// FABRIC-END7's review: a look that fails before its landing judged anything puts the wakes it took back, so the hold a quest's
+    /// release woke is not left to the whole look. The stand-in's quest list does not answer, so the plan fails after it took them.
+    /// </summary>
+    [Fact]
+    public async Task A_look_that_fails_before_its_landing_puts_its_wakes_back()
+    {
+        using var ledger = new StandInLedger { Down = true };
+        var config = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+        File.WriteAllText(config, """{ "drivable": ["engine"], "adapter": "stub", "pollSeconds": 600 }""");
+        using var service = ledger.Client();
+        using var stop = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        IReadOnlyCollection<LandingWake>? left = null;
+        var failures = 0;
+        DriverWatch? watch = null;
+        watch = new DriverWatch(service, config, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.SessionPids)), sync: null,
+            harnesses: new HarnessRoster(AdapterSet.Built(), DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+
+        await watch.RunAsync(
+            (_, _) => Task.CompletedTask,
+            _ =>
+            {
+                if (++failures == 1) watch.Nudge(ChangeTopics.Ledger, "quests");
+                else
+                {
+                    left = watch.Landing.For(whole: false);
+                    stop.Cancel();
+                }
+
+                return Task.CompletedTask;
+            },
+            stop.Token);
+
+        Assert.Equal(2, failures);
+        Assert.Equal([new LandingWake(ChangeTopics.Ledger, "quests")], left!);
+    }
+
     // ——— the refs' wake, found without git
 
     private void Due(AutoLanding entry)

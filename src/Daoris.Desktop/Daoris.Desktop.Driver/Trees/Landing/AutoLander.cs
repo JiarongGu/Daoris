@@ -15,6 +15,12 @@ public interface IAutoLandingWorld : IOpinionWorld
 
     /// <summary>The trees sessions still running or waiting name, which the rule's tidy keeps (LAND3).</summary>
     Task<IReadOnlySet<string>> InUseAsync(CancellationToken ct);
+
+    /// <summary>
+    /// A world that reads the service afresh (FABRIC-END7's review): each chosen entry is judged again from it just before its own
+    /// landing. A world that keeps nothing between reads answers itself.
+    /// </summary>
+    IAutoLandingWorld Again() => this;
 }
 
 /// <summary>The world over this machine's service: the quests read once per instance, since a look builds one.</summary>
@@ -44,6 +50,9 @@ public sealed class ServiceAutoLandingWorld(ServiceClient service) : IAutoLandin
         (await service.ActiveSessionsAsync(ct).ConfigureAwait(false))
         .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
         .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A new world over the same service, so nothing this one read is kept.</summary>
+    public IAutoLandingWorld Again() => new ServiceAutoLandingWorld(service);
 }
 
 /// <summary>A due session the look chose to try, with what it read of it there: its quest, and its tree's tip and status.</summary>

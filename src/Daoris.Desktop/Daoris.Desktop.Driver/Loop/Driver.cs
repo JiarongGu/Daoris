@@ -122,6 +122,22 @@ public sealed class Driver(
     public IReadOnlyCollection<LandingWake>? Woke { get; init; }
 
     /// <summary>
+    /// Whether this look's landing judged with <see cref="Woke"/> (FABRIC-END7's review): set once its selection read the due list, or
+    /// found it is not this process's to land. False where the look failed before it, the selection failed, or a landing still ran: the
+    /// loop puts the wakes back.
+    /// </summary>
+    internal bool WokeSpent { get; private set; }
+
+    /// <summary>Whether the selection was left because a landing still ran (FABRIC-END7's review): that landing's end offers the wakes again.</summary>
+    internal bool LandingBusy { get; private set; }
+
+    /// <summary>
+    /// Told once a landing pass this look started has ended and no longer runs (FABRIC-END7's review), so the loop offers again the wakes
+    /// it held back meanwhile.
+    /// </summary>
+    public Action? LandingEnded { get; init; }
+
+    /// <summary>
     /// What the loop's classes share (PART10m, D166): the constructor's objects, the sessions and trees, the per-look adapters,
     /// servers and catalogue, and the settables. Built once, here; the classes below hold it, and the ones that run through this
     /// driver's machinery hold the driver as well.

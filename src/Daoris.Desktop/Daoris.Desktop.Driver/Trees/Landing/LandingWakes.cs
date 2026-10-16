@@ -3,6 +3,16 @@ namespace Daoris.Driver;
 /// <summary>A wake the landing hears (FABRIC-END7): the topic and subject that woke a look, never a value and never a path.</summary>
 public sealed record LandingWake(string Topic, string Subject);
 
+/// <summary>What one look took of the loop's wakes (FABRIC-END7's review): the wakes heard, and whether it is the whole look.</summary>
+public sealed record LandingTaken(IReadOnlyList<LandingWake> Heard, bool Whole)
+{
+    /// <summary>A plan no wake asked for: the loop's own session end, which the ledger's <c>sessions</c> family carries too.</summary>
+    internal static readonly LandingWake Ended = new(ChangeTopics.Ledger, "sessions");
+
+    /// <summary>What the look's landing judges with: every due entry (null) for the whole look, else the wakes, or a session's end.</summary>
+    public IReadOnlyCollection<LandingWake>? Woke => Whole ? null : Heard.Count == 0 ? [Ended] : Heard;
+}
+
 /// <summary>
 /// What a due entry waits on (FABRIC-END7), read from its last try alone, so a wake finds the entries it can release without git.
 /// </summary>
@@ -155,9 +165,6 @@ public static class TreeTips
 /// </summary>
 public sealed class LandingWakes
 {
-    /// <summary>A plan no wake asked for: the loop's own session end, which the ledger's <c>sessions</c> family carries too.</summary>
-    private static readonly LandingWake Ended = new(ChangeTopics.Ledger, "sessions");
-
     private readonly object _gate = new();
     private List<LandingWake> _heard = [];
 
@@ -175,7 +182,10 @@ public sealed class LandingWakes
     /// What a look lands on: every due entry (null) for the <paramref name="whole"/> look; the wakes heard since the last look for a
     /// plan, or a session's end where none was. Either way the wakes are taken.
     /// </summary>
-    public IReadOnlyCollection<LandingWake>? For(bool whole)
+    public IReadOnlyCollection<LandingWake>? For(bool whole) => Take(whole).Woke;
+
+    /// <summary>The wakes one look takes (FABRIC-END7's review), which go back unless its landing judged with them.</summary>
+    public LandingTaken Take(bool whole)
     {
         List<LandingWake> taken;
         lock (_gate)
@@ -184,9 +194,20 @@ public sealed class LandingWakes
             _heard = [];
         }
 
-        if (whole) return null;
-        return taken.Count == 0 ? [Ended] : taken;
+        return new LandingTaken(taken, whole);
     }
+
+    /// <summary>
+    /// A look's landing did not judge with what it took (FABRIC-END7's review): its look failed first, the selection failed, or a landing
+    /// still ran.
+    /// </summary>
+    /// <param name="heldBack">A landing still ran: its end offers them again (<see cref="Reoffer"/>).</param>
+    public void Unspent(LandingTaken taken, bool heldBack)
+    {
+    }
+
+    /// <summary>Whether wakes were held back for a running landing's end, which then offers them again; asked once.</summary>
+    public bool Reoffer() => false;
 
     /// <summary>
     /// The ref watch judged <paramref name="repository"/> (FABRIC-END3, <see cref="RefWatch.Heard"/>): its <c>refs</c> wake asked of

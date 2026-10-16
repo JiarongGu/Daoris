@@ -157,6 +157,9 @@ public sealed class DriverWatch(
     // The wakes since the last look, which a plan's landing looks at alone (FABRIC-END7); the whole look takes them and lands on all.
     private readonly LandingWakes _landing = new();
 
+    /// <summary>The wakes the landing has not judged with yet (FABRIC-END7), which a test reads.</summary>
+    internal LandingWakes Landing => _landing;
+
     private void Woken(Wake? wake)
     {
         if (wake is null) Interlocked.Exchange(ref _everything, 1);

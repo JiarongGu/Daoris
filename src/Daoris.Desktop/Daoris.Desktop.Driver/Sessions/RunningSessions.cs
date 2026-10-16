@@ -96,8 +96,12 @@ public sealed class RunningSessions
     /// Run a landing pass beside the looks (LAND2b, D145 point 2), as a start runs beside the look that began it, so a plugin's
     /// two minutes never hold one. What it says joins the next look's report, as an ending does, and wakes a wait as one does.
     /// </summary>
+    /// <param name="ended">
+    /// Told once the pass has ended and <see cref="Landing"/> is false again (FABRIC-END7's review), so what was held back for it can be
+    /// offered at once.
+    /// </param>
     /// <returns>False where a pass already works: one at a time, and the next look chooses again.</returns>
-    internal bool Beside(Func<CancellationToken, Task<IReadOnlyList<string>>> pass, CancellationToken ct)
+    internal bool Beside(Func<CancellationToken, Task<IReadOnlyList<string>>> pass, CancellationToken ct, Action? ended = null)
     {
         lock (_gate)
         {
