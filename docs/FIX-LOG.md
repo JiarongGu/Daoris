@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-17 — The publish failed: the launcher compiled a driver file that named a type it did not carry (FABRIC-EVENT4)
+
+- **Symptom:** the merge gate's deployment rehearsal failed at its first check, `publish:desktop --service exits 0`, on main
+  3b2e1fbc5, and again when re-run alone; the rehearsal keeps only the publish's last 12 lines, a stack's tail, so the cause
+  showed only in a publish run by hand: `StagedBuild.cs(439,9): error CS0103: The name 'HomeWrites' does not exist` in
+  `Daoris.Desktop.Launcher.csproj`.
+- **Root cause:** the launcher references nothing and compiles a few driver files in by link (`StagedBuild.cs`, `InstallSwap.cs`,
+  the home's lease). FABRIC-EVENT4 made `StagedBuild` mark the journal it writes with `HomeWrites.Mine`, a class then inside
+  `HomeWatch.cs`, which the launcher does not link. No light gate builds the launcher (the driver's and the modules' suites build
+  their own projects), so only the publish, inside the deployment rehearsal, compiled it.
+- **Fix:** `HomeWrites` moved, unchanged, into its own `Platform/HomeWrites.cs`, using the base library alone, and linked into the
+  launcher beside `StagedBuild.cs`, with the reason in the project file.
+- **Verification:** the launcher builds in Release with no warning; `HomeWatchTests`, `StagedBuildTests` and `StructureTests` pass
+  (57); the deployment gate re-run on the fix. The gap that let it through is a row: a light gate builds the launcher.
+
 ## 2026-10-16 — A content proof git could not read said the work was held nowhere (PROOF-UNREAD1)
 
 - **Symptom:** none seen on an install; found reading the fabric events design §B7 against the code. `ContentHolds.HeldByContentAsync`

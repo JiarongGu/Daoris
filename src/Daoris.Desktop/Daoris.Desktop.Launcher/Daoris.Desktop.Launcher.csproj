@@ -22,6 +22,9 @@
          and writes on the disk, and the swap. Each uses the base library alone; `StagedBuildTests` holds them. -->
     <Compile Include="..\Daoris.Desktop.Driver\Setup\StagedBuild.cs" Link="StagedBuild.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Setup\InstallSwap.cs" Link="InstallSwap.cs" />
+    <!-- The marks of a process's own writes (FABRIC-EVENT4): `StagedBuild` marks the journal it writes, so the updater's watch
+         wakes nothing on it. It uses the base library alone. -->
+    <Compile Include="..\Daoris.Desktop.Driver\Platform\HomeWrites.cs" Link="HomeWrites.cs" />
     <!-- The home's lease (HOMELEASE1, the terminal RPC design §5): the swap holds it while it replaces app/, so no verb the
          install carries acts alone from a folder being replaced. With the home's id, which a lease records, and the home's
          table, which names both their places (D172, HOMELAYOUT2), with the error its refusal is. Each uses the base library
