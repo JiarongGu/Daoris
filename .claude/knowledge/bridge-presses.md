@@ -60,7 +60,9 @@ each is still held:
 1. **Its handler** in the domain class named after the bridge file that sends it (row 1), with no `[Publishes]`: a read
    never declares a change (D169 point 2), and one that did would make every window read again without end (the
    `HARNESSES` split, D169's HARNESSREFRESH1 note). Its `StatePublisherTests` row says so, `""` and `null` (row 3), and it
-   has no entry in `DECLARED` (row 4).
+   has no entry in `DECLARED` (row 4). A read that fans out over every checkout (git per repository) says
+   `[OneFlight("ROUTE")]` beside its mark, so the identical asks every window makes share the one under way (SWEEPFLIGHT1);
+   `DriverModuleOneFlightTests` names the routes that do.
 2. **Its domain's README row** (row 5), held by the same census, `The_readme_names_each_route_in_its_domains_row`.
 3. **Its hook in that bridge file** (row 6), a `useQuery` enabled only where the shell answers it (`useShenora`'s
    `isAvailable`), its answer read defensively, an older shell's none read as empty.

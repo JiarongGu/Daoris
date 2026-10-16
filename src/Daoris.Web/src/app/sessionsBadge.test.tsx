@@ -70,11 +70,20 @@ function respond(url: string): Response {
   return Response.json([]);
 }
 
-function start(considered: Consideration[], proposals: RuleProposal[] = []) {
+/** What the driver's own lists say waits on the person besides the tick's: an agent's ask for a helper, and a second opinion. */
+type DriverWaits = { helpers?: unknown[]; opinions?: unknown[] };
+
+function start(considered: Consideration[], proposals: RuleProposal[] = [], driverWaits: DriverWaits = {}) {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
   invoke.mockImplementation(async (module: string, type: string) => {
     if (module === 'DAORIS.REMOTES') return { path: 'remotes.json', fromEnvironment: false, remotes: [] };
     if (module === 'DAORIS.DRIVER' && type === 'RULES') return { proposals };
+    if (module === 'DAORIS.DRIVER' && type === 'HELPER_WAITS') return { waits: driverWaits.helpers ?? [] };
+    if (module === 'DAORIS.DRIVER' && type === 'OPINION_WAITS') return { waits: driverWaits.opinions ?? [] };
+    if (module === 'DAORIS.DRIVER' && type === 'SESSION_GROUPS' && driverWaits.opinions) {
+      // One session to review, so the second opinions are asked at all (the band asks them only while there is one to name).
+      return { sessions: [{ session: 'r3v13w00', group: 'review', shown: 'completed', archived: false, teammate: false }] };
+    }
     if (module === 'DAORIS.DRIVER' && type === 'STATE') {
       return { drivable: ['engine'], holds: [], trees: [], running: [], notify: false, strikes: 3, forgiven: {} };
     }
@@ -199,6 +208,25 @@ describe("The taskbar's count", () => {
     await waitFor(() => expect(within(overviewButton()).getByText('3')).toBeInTheDocument());
     await waitFor(() => expect(badges().at(-1)).toEqual(
       ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 waiting on you' } }]));
+  });
+
+  /**
+   * WAITCOUNT1: the band listed an agent's ask for a helper and a second opinion that waits on the person, and the badge and
+   * the taskbar did not count them: two answers to "how many need me". One count, with every row the band lists.
+   */
+  it('counts an agent’s ask for a helper and a second opinion that wait on the person, as the band lists them', async () => {
+    start([], [], {
+      helpers: [{ id: 'a1b2c3d4', session: 'c4a7c4a7', question: 'Which test covers the loader?', agent: null, at: '2026-10-01T11:00:00Z' }],
+      opinions: [{
+        session: 'r3v13w00', quest: 'q1', repository: 'engine', since: '2026-10-01T10:00:00Z', auto: false,
+        opinion: { state: 'unavailable', holds: true, required: true, code: 'no-reviewer' },
+      }],
+    });
+
+    // The two the band lists with no tick (see 'holds no parked quest'), the work ready to review, the helper's ask and the opinion.
+    await waitFor(() => expect(within(overviewButton()).getByText('5')).toBeInTheDocument());
+    await waitFor(() => expect(badges().at(-1)).toEqual(
+      ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 5, description: '5 waiting on you' } }]));
   });
 
   it('is never told from a secondary window’s page', async () => {

@@ -64,7 +64,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     /// What the last probe heard, with when (WIRING1b): This Daoris shows it rather than asking again, so the page's open asks
     /// no network. Null before the first probe.
     /// </summary>
-    public ServiceStatus? Last { get; private set; }
+    public ServiceProbe? Last { get; private set; }
 
     /// <summary>True when the host answers — found running, or started here and now answering.</summary>
     public async Task<bool> EnsureAsync(CancellationToken ct = default)
@@ -112,7 +112,8 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
 
         try
         {
-            _owned = Process.Start(StartInfo(location));
+            // Through the start gate (PROCSTART2), as every start of the desktop's is.
+            _owned = await ProcessStarts.Shared.StartAsync(StartInfo(location), CancellationToken.None).ConfigureAwait(false);
             // HOSTSTART1: read from the start, so a host that prints more than a pipe holds never waits on it.
             if (_owned is not null) _said = LastLines.Drain(_owned.StandardError);
         }
@@ -273,18 +274,18 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
                 .ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
             {
-                Last = new ServiceStatus(false, asked, "foreign", null, null);
+                Last = new ServiceProbe(false, asked, "foreign", null, null);
                 return Answer.Foreign;
             }
 
             var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
             // What it said, its tier and version, kept for This Daoris (WIRING1b), read by the same rule as a Daoris host's.
-            Last = ServiceStatus.Of(body, asked);
+            Last = ServiceProbe.Of(body, asked);
             return IsDaorisStatus(body) ? Answer.Daoris : Answer.Foreign;
         }
         catch (Exception error) when (error is HttpRequestException or TaskCanceledException)
         {
-            Last = new ServiceStatus(false, asked, "no-answer", null, null);
+            Last = new ServiceProbe(false, asked, "no-answer", null, null);
             return Answer.None;
         }
     }

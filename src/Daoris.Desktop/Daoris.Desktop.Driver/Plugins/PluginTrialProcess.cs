@@ -21,7 +21,8 @@ internal sealed class PluginTrialProcess : IDisposable
     /// </param>
     /// <exception cref="DriverException">Its first word's tool cannot run as the person chose: the driver would refuse it too.</exception>
     /// <exception cref="Win32Exception">The program did not start.</exception>
-    public static PluginTrialProcess Start(PluginEntry entry, string home, string? noRepositoryAt)
+    /// <remarks>Through the start gate (PROCSTART2): the plugin page's trial is a press.</remarks>
+    public static async Task<PluginTrialProcess> StartAsync(PluginEntry entry, string home, string? noRepositoryAt)
     {
         var info = HookProcess.StartInfo(entry, home);
         if (noRepositoryAt is not null)
@@ -30,7 +31,8 @@ internal sealed class PluginTrialProcess : IDisposable
             info.Environment["GIT_TERMINAL_PROMPT"] = "0";
         }
 
-        return new(Process.Start(info) ?? throw new Win32Exception("the process did not start"));
+        return new(await ProcessStarts.Shared.StartAsync(info, CancellationToken.None).ConfigureAwait(false)
+            ?? throw new Win32Exception("the process did not start"));
     }
 
     /// <summary>Its stdout: the wire.</summary>

@@ -120,7 +120,8 @@ public sealed class HookProcess : IHookChannel
         Process process;
         try
         {
-            process = Process.Start(info)
+            // Through the start gate (PROCSTART2): a plugin is started at a press's point too.
+            process = await ProcessStarts.Shared.StartAsync(info, CancellationToken.None).ConfigureAwait(false)
                 ?? throw new DriverException($"plugin `{plugin.Manifest.Id}`'s hook process did not start.");
         }
         catch (System.ComponentModel.Win32Exception error)

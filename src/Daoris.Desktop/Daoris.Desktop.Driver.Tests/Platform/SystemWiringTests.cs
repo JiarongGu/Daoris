@@ -80,7 +80,7 @@ public sealed class SystemWiringTests : IDisposable
         HomeNotice = homeNotice,
         HostNotice = hostNotice,
         ServiceUrl = "http://localhost:5177",
-        Status = new ServiceStatus(true, DateTimeOffset.Parse("2026-10-16T09:00:00Z"), null, "lexical only", "1.2.3+abc"),
+        Status = new ServiceProbe(true, DateTimeOffset.Parse("2026-10-16T09:00:00Z"), null, "lexical only", "1.2.3+abc"),
         Kit = "0.21.1",
         Ready = true,
         Looked = DateTimeOffset.Parse("2026-10-16T09:01:00Z"),
@@ -410,20 +410,36 @@ public sealed class SystemWiringTests : IDisposable
     }
 
     [Fact]
-    public void Who_holds_the_home_is_read_from_its_driver_lock()
+    public void Who_holds_the_home_is_read_from_its_lease()
     {
         var (_, home, driver) = Install();
         Assert.Null(SystemWiring.Read(Terminal(home, driver))["loop"]!["holder"]);
 
-        using var held = DriverLock.TryAcquire(home, DriverKind.Headless, out _);
-        Assert.NotNull(held);
-        var holder = SystemWiring.Read(Terminal(home, driver))["loop"]!["holder"]!;
-        Assert.Equal("headless", (string?)holder["kind"]);
-        Assert.Equal(Environment.ProcessId, (int)holder["pid"]!);
-        Assert.False((bool)holder["thisWindow"]!);
+        using (var held = HomeLease.TryAcquire(home, LeaseKind.Headless, out _))
+        {
+            Assert.NotNull(held);
+            var holder = SystemWiring.Read(Terminal(home, driver))["loop"]!["holder"]!;
+            Assert.Equal("headless", (string?)holder["kind"]);
+            Assert.True((bool)holder["instance"]!);
+            Assert.Equal(Environment.ProcessId, (int)holder["pid"]!);
+            Assert.False((bool)holder["thisWindow"]!);
+            // A headless loop in this process is no window's, whatever its process.
+            Assert.False((bool)SystemWiring.Read(Terminal(home, driver) with { Window = Window() })["loop"]!["holder"]!["thisWindow"]!);
+        }
 
-        var windowed = SystemWiring.Read(Terminal(home, driver) with { Window = Window() });
-        Assert.True((bool)windowed["loop"]!["holder"]!["thisWindow"]!);
+        using (HomeLease.TryAcquire(home, LeaseKind.Desktop, out _))
+        {
+            Assert.True((bool)SystemWiring.Read(Terminal(home, driver) with { Window = Window() })["loop"]!["holder"]!["thisWindow"]!);
+        }
+
+        // A verb holds it for its act, said by its verb alone.
+        using (HomeLease.TryAcquire(home, LeaseKind.Verb, out _, what: "trees remove"))
+        {
+            var verb = SystemWiring.Read(Terminal(home, driver))["loop"]!["holder"]!;
+            Assert.Equal("verb", (string?)verb["kind"]);
+            Assert.False((bool)verb["instance"]!);
+            Assert.Equal("trees remove", (string?)verb["what"]);
+        }
     }
 
     [Fact]
@@ -466,15 +482,20 @@ public sealed class SystemWiringTests : IDisposable
     public void The_address_file_is_read_as_a_terminal_reads_it()
     {
         var (_, home, driver) = Install();
-        string? Why(Func<int, long, bool> lives, Func<string, ServiceStatus?> ask) =>
+        string? Why(Func<int, long, bool> lives, Func<string, ServiceProbe?> ask) =>
             (string?)SystemWiring.Read(Terminal(home, driver) with { Lives = lives, AskStatus = ask })["terminal"]!["address"]!["why"];
-        ServiceStatus Answering(string _) => new(true, DateTimeOffset.UtcNow, null, "lexical only", null);
+        // A host answering as this home's (HOMEID1): its status names the home's id.
+        var mine = HomeIdentity.Ensure(home);
+        ServiceProbe Answering(string _) => new(true, DateTimeOffset.UtcNow, null, "lexical only", null, mine);
 
         Assert.Equal("absent", Why((_, _) => true, Answering));
 
         File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Running), """{ "url": "http://localhost:5177", "pid": 42, "started": 1 }""");
         Assert.Equal("ended", Why((_, _) => false, Answering));
-        Assert.Equal("not-answering", Why((_, _) => true, _ => new ServiceStatus(false, DateTimeOffset.UtcNow, "no-answer", null, null)));
+        Assert.Equal("not-answering", Why((_, _) => true, _ => new ServiceProbe(false, DateTimeOffset.UtcNow, "no-answer", null, null)));
+        // Another home's host, or one naming none, is not taken, as RunningService.Find judges it.
+        Assert.Equal("another-home", Why((_, _) => true, _ => new ServiceProbe(true, DateTimeOffset.UtcNow, null, "lexical only", null, "0123456789abcdef0123456789abcdef")));
+        Assert.Equal("another-home", Why((_, _) => true, _ => new ServiceProbe(true, DateTimeOffset.UtcNow, null, "lexical only", null)));
 
         var taken = SystemWiring.Read(Terminal(home, driver) with { Lives = (_, _) => true, AskStatus = Answering });
         Assert.True((bool)taken["terminal"]!["address"]!["taken"]!);
@@ -585,12 +606,15 @@ public sealed class SystemWiringTests : IDisposable
     public void A_status_body_is_read_for_its_tier_and_version_only_from_a_daoris_host()
     {
         var at = DateTimeOffset.Parse("2026-10-16T10:00:00Z");
-        var status = ServiceStatus.Of("""{ "semantic": false, "tier": "lexical only", "note": "x", "version": "2.0.0+deadbeef" }""", at);
+        var status = ServiceProbe.Of(
+            """{ "semantic": false, "tier": "lexical only", "note": "x", "home": "0123456789abcdef0123456789abcdef", "version": "2.0.0+deadbeef" }""", at);
         Assert.True(status.Answers);
         Assert.Equal("2.0.0+deadbeef", status.Version);
         Assert.Equal("lexical only", status.Tier);
+        // The home's id read as discovery reads it (RunningService.ReadStatus, HOMEID1).
+        Assert.Equal("0123456789abcdef0123456789abcdef", status.Home);
 
-        var foreign = ServiceStatus.Of("<html>not a status</html>", at);
+        var foreign = ServiceProbe.Of("<html>not a status</html>", at);
         Assert.False(foreign.Answers);
         Assert.Equal("foreign", foreign.Why);
     }
@@ -598,9 +622,9 @@ public sealed class SystemWiringTests : IDisposable
     [Fact]
     public void This_process_is_named_only_as_a_window_holder_and_its_since_is_a_moment()
     {
-        // The holder's since is the lock's moment, written as a moment the page formats (format.ts), never a sentence.
+        // The holder's since is the lease's moment, written as a moment the page formats (format.ts), never a sentence.
         var (_, home, driver) = Install();
-        using var held = DriverLock.TryAcquire(home, DriverKind.Desktop, out _);
+        using var held = HomeLease.TryAcquire(home, LeaseKind.Desktop, out _);
         var since = (string?)SystemWiring.Read(Terminal(home, driver))["loop"]!["holder"]!["since"];
         Assert.True(DateTimeOffset.TryParse(since, out _), since);
         Assert.Equal(Process.GetCurrentProcess().Id, Environment.ProcessId);

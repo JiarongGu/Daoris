@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { GoAhead } from '../data/api';
 import {
-  ANCHOR_BOUND_MS, anchorOf, anchorsOf, goAheadKey, marksOf, opinionKey, proposalKey, turnEnd, waitEvents, workKey,
+  ANCHOR_BOUND_MS, anchorOf, anchorsOf, goAheadKey, helperKey, marksOf, opinionKey, proposalKey, turnEnd, waitEvents, workKey,
 } from './anchors';
 import { lastWords, type SessionEvent, toTurns } from './conversation';
 import type { Wait } from './waits';
@@ -171,6 +171,66 @@ describe('a rule proposal', () => {
     const page = turnsOf([said(50, 'I proposed the rule.', 30), ended(51, 31)]);
     expect(anchorsOf(page, asks, { earlier: true, from: at(30) }).earlier).toEqual(['rule:r1']);
     expect(anchorsOf(page, asks, { earlier: true, from: at(5) }).earlier).toEqual([]);
+  });
+});
+
+// WAITFOOT1e (D168 point 4): an agent's ask for a helper that waits on the person is raised by its `helper_ask` call, joined on the
+// question the call's input carries (and the agent, where the ask named one), nearest when the ask was made, within the bound.
+describe('an agent\'s ask for a helper', () => {
+  const ask = { id: 'a1', question: 'Which test covers the loader?', agent: null, at: at(20) };
+  const input = { question: 'Which test covers the loader?' };
+  const asks = { session: SESSION, waits: [{ kind: 'helper', id: 'a1' } as Wait], helpers: [ask] };
+
+  it('is raised by the call whose input asks its question', () => {
+    const turns = turnsOf([target, call(2, 20, { title: 'helper_ask', input: JSON.stringify(input) }), ended(3)]);
+    expect(helperKey(turns, ask)).toBe('e2');
+  });
+
+  it('is joined on the input, never the title, and by the agent the ask named', () => {
+    const named = { ...ask, agent: 'codex-acp' };
+    const turns = turnsOf([
+      target,
+      call(2, 20, { title: 'something else', input: JSON.stringify({ question: ` ${ask.question}\n`, agent: 'CODEX-ACP' }) }),
+      call(3, 20, { title: 'helper_ask', input: JSON.stringify({ question: ask.question, agent: 'dsh' }) }),
+      ended(4),
+    ]);
+    expect(helperKey(turns, named)).toBe('e2');
+    expect(helperKey(turns, { ...named, agent: 'gemini' })).toBeUndefined();
+  });
+
+  it('has none where no call asks the question, and takes the nearest within the bound', () => {
+    const turns = turnsOf([
+      target,
+      call(2, 20, { title: 'helper_ask', input: JSON.stringify({ question: 'Another question?' }) }),
+      call(3, 2, { title: 'helper_ask', input: JSON.stringify(input) }),
+      call(4, 19, { title: 'helper_ask', input: JSON.stringify(input) }),
+      ended(5),
+    ]);
+    expect(helperKey(turns, ask)).toBe('e4');
+    expect(helperKey(turns, { ...ask, question: 'Not asked at all?' })).toBeUndefined();
+    const farOnly = turnsOf([target, call(2, 20 + ANCHOR_BOUND_MS / 60_000 + 1, { title: 'helper_ask', input: JSON.stringify(input) }), ended(3)]);
+    expect(helperKey(farOnly, ask)).toBeUndefined();
+  });
+
+  it('anchors the wait the ask is by its call, and is on an earlier page only where it was asked before the page begins', () => {
+    expect(anchorOf({ kind: 'helper', id: 'a1' })).toBe('helper:a1');
+    const turns = turnsOf([target, call(2, 20, { title: 'helper_ask', input: JSON.stringify(input) }), ended(3)]);
+    expect(anchorsOf(turns, asks).held).toEqual({ 'helper:a1': 'e2' });
+    // A wait whose ask the frame does not hand has none.
+    expect(anchorsOf(turns, { ...asks, helpers: [] }, { earlier: true })).toEqual({ held: {}, earlier: [] });
+
+    const page = turnsOf([said(50, 'I asked.', 30), ended(51, 31)]);
+    expect(anchorsOf(page, asks, { earlier: true, from: at(30) }).earlier).toEqual(['helper:a1']);
+    expect(anchorsOf(page, asks, { earlier: true, from: at(5) }).earlier).toEqual([]);
+  });
+
+  it('marks its call with the wait and hands the wait its press', () => {
+    const wait = { kind: 'helper', id: 'a1' } as Wait;
+    expect(marksOf([wait], { 'helper:a1': 'e2' })).toEqual({ e2: [wait] });
+    const shown: string[] = [];
+    const events = waitEvents(['helper:a1'], (anchor) => shown.push(anchor));
+    events!.helpers!.a1!();
+    expect(shown).toEqual(['helper:a1']);
   });
 });
 

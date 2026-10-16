@@ -133,6 +133,9 @@ public static class DriverCommand
           sessions helper <id> "<question>" [--agent <name>]
               ask another agent, read-only, to answer one question about a session's work (D163): the driver takes
               it at its next look, and the answer comes back to that session as its next turn, marked as the helper's.
+          sessions helper --approve|--decline <ask>
+              your yes or no to an agent's ask for a helper that waits on you (the `helpers` rule's `ask`), as its
+              session's page takes it: a yes starts it at the driver's next look; a no refuses it and says so.
           help list [--search "…"] [--json] [--offset <n>] [--limit <n>]  ·  help resume <id> "…" [--file <path>]…
           help rename <id> "…" | --clear  ·  help pin <id>  ·  help unpin <id>  ·  help delete <id> [--yes]
               Ask Daoris's conversations, kept on this machine only: list or search them a page at a time, go on
@@ -180,6 +183,9 @@ public static class DriverCommand
               make a plugin, or try one as the driver would.
           plugins show <id> [--json]  ·  plugins activity <id> [--since <30m|2h|3d>] [--json]
               a plugin's page and its health, or what it did, from the machine log.
+          plugins approve <id> <server> [--reads-only]  ·  plugins withdraw <id> <server>
+              let Ask Daoris call the exact tools a plugin's server offers it, its writes too unless --reads-only,
+              or take that back; an update that adds or widens a tool asks again.
 
         Only `drive` starts a loop. DAORIS_HOME names the home; DAORIS_SERVICE_URL the service, which
         `drive` and every verb that reads a record need.

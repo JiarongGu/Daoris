@@ -350,7 +350,12 @@ export function SessionHead({
           className="grid gap-1"
         >
           <h3 id={`helpers-${session.id}`} className="m-0 text-small font-semibold">{t('work.helper.heading')}</h3>
-          <HelperAsks {...helpers} asks={openAsks(helpers.asks)} />
+          <HelperAsks
+            {...helpers}
+            asks={openAsks(helpers.asks)}
+            inConversation={toEvent?.helpers}
+            marked={sought?.startsWith('helper:') ? sought.slice('helper:'.length) : undefined}
+          />
         </section>
       )}
 

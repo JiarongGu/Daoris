@@ -188,7 +188,24 @@ public static class PluginPackageCommand
         var parts = new List<string>();
         if (manifest.Harnesses.Count > 0) parts.Add($"declares {string.Join(", ", manifest.Harnesses.Select(harness => harness.Name))}");
         if (manifest.Hooks is { } hooks) parts.Add($"speaks on {string.Join(", ", hooks.Points)}");
-        if (manifest.Servers.Count > 0) parts.Add($"hands sessions {string.Join(", ", manifest.Servers.Select(server => server.Name))}");
+        var sessions = manifest.Servers.Where(server => server.HandedTo(PluginServerTo.Sessions)).ToList();
+        if (sessions.Count > 0) parts.Add($"hands sessions {string.Join(", ", sessions.Select(server => server.Name))}");
+        // HELPPLUG1a (D170 point 3): what it offers Ask Daoris, its tools reaching it only once the person approves them.
+        var help = manifest.Servers.Where(server => server.HandedTo(PluginServerTo.Help)).ToList();
+        if (help.Count > 0)
+        {
+            static List<string> Tools(PluginServer server) => [.. server.Allow, .. server.Writes.Select(tool => $"{tool}, writes")];
+            parts.Add($"offers Ask Daoris {string.Join(", ", help.Select(server =>
+                Tools(server).Count > 0 ? $"{server.Name} ({string.Join("; ", Tools(server))})" : server.Name))}");
+        }
+
+        // HELPPLUG1b (D170 point 4): the skills it hands each, as the CLI's `describe` says them.
+        foreach (var (to, who) in new[] { (PluginServerTo.Sessions, "sessions"), (PluginServerTo.Help, "Ask Daoris") })
+        {
+            var skills = manifest.Skills.Where(skill => skill.HandedTo(to)).Select(skill => skill.Name).ToList();
+            if (skills.Count > 0) parts.Add($"hands {who} skill{(skills.Count == 1 ? "" : "s")} {string.Join(", ", skills)}");
+        }
+
         return parts.Count > 0 ? string.Join("; ", parts) : "declares nothing and speaks nothing";
     }
 }

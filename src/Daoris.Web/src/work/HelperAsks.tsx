@@ -2,7 +2,9 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Button } from '../design/ui';
+import { cn } from '../lib/cn';
 import { type Answered, Refused } from './InlineConfirm';
+import { InConversation, SOUGHT } from './WaitAnchor';
 
 /**
  * One ask a session made of a helper (MIXAGENT2b, D163 point 2), as `SESSION_HELPERS` answers it: the ask as written, who asked
@@ -111,7 +113,7 @@ export function helperLine(t: TFunction, row: HelperAskRow, nameOf: (agent: stri
  * `onDecline` no no, and without `onOpen` no door: a browser, a story. Each waits in place and a refusal is said beside it
  * (UXFIX2b3b), as a rule's *Decline* does; nothing goes, so neither asks first.
  */
-export function HelperAsks({ asks, nameOf, onApprove, onDecline, onOpen, busy = false }: {
+export function HelperAsks({ asks, nameOf, onApprove, onDecline, onOpen, busy = false, inConversation, marked }: {
   asks: readonly HelperAskRow[];
   /** An agent's name as the roster says it; its id where the roster does not hold it. */
   nameOf: (agent: string) => string;
@@ -121,23 +123,32 @@ export function HelperAsks({ asks, nameOf, onApprove, onDecline, onOpen, busy = 
   onOpen?: (helper: string) => void;
   /** A yes or a no is on its way: every press waits for it. */
   busy?: boolean;
+  /** The way from an ask to its `helper_ask` call in the conversation, by the ask's id (WAITFOOT1e). */
+  inConversation?: Readonly<Record<string, () => void>>;
+  /** The ask a raising block's *To the wait* led to, outlined (WAITFOOT1e). */
+  marked?: string;
 }) {
   return (
     <ul className="m-0 grid list-none gap-2 p-0">
       {asks.map((row) => (
-        <HelperAskLine key={row.id} row={row} nameOf={nameOf} onApprove={onApprove} onDecline={onDecline} onOpen={onOpen} busy={busy} />
+        <HelperAskLine
+          key={row.id} row={row} nameOf={nameOf} onApprove={onApprove} onDecline={onDecline} onOpen={onOpen} busy={busy}
+          onConversation={inConversation?.[row.id]} marked={marked === row.id}
+        />
       ))}
     </ul>
   );
 }
 
-function HelperAskLine({ row, nameOf, onApprove, onDecline, onOpen, busy }: {
+function HelperAskLine({ row, nameOf, onApprove, onDecline, onOpen, busy, onConversation, marked }: {
   row: HelperAskRow;
   nameOf: (agent: string) => string;
   onApprove?: HelperApprove;
   onDecline?: HelperApprove;
   onOpen?: (helper: string) => void;
   busy: boolean;
+  onConversation?: () => void;
+  marked: boolean;
 }) {
   const { t } = useTranslation();
   const [pending, setPending] = useState(false);
@@ -168,8 +179,15 @@ function HelperAskLine({ row, nameOf, onApprove, onDecline, onOpen, busy }: {
   };
 
   return (
-    <li className="grid gap-1 rounded-control border border-line bg-raised px-3 py-2">
-      <p className="m-0 whitespace-pre-wrap break-words text-body">{row.question}</p>
+    <li
+      tabIndex={-1}
+      data-helper={row.id}
+      className={cn('grid gap-1 rounded-control border border-line bg-raised px-3 py-2', marked ? SOUGHT : 'outline-none')}
+    >
+      <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+        <span className="min-w-0 whitespace-pre-wrap break-words text-body">{row.question}</span>
+        {onConversation && <span className="ml-auto"><InConversation onPress={onConversation} /></span>}
+      </p>
       <p className="m-0 text-small text-ink-soft">{helperLine(t, row, nameOf)}</p>
       {(yes || no || door) && (
         <div className="mt-1 flex flex-wrap items-center gap-2">

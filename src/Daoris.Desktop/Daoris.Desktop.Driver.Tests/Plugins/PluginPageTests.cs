@@ -46,6 +46,38 @@ public sealed class PluginPageTests : IDisposable
         Assert.DoesNotContain(Secret, JsonSerializer.Serialize(page));
     }
 
+    /// <summary>
+    /// HELPPLUG1a (D170 point 3): the page says who each server is handed to, and the tools Ask Daoris may call there, and the
+    /// terminal's <c>plugins show</c> says it in words.
+    /// </summary>
+    [Fact]
+    public void The_page_says_who_each_server_is_handed_to_and_the_tools_ask_daoris_may_call()
+    {
+        Install("acme.tools", """
+            { "id": "acme.tools", "servers": [
+                { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search", "get_issue"], "writes": ["create_issue"] },
+                { "name": "docs", "command": ["docs"], "to": ["sessions", "help"] },
+                { "name": "browser", "command": ["browser"] } ] }
+            """);
+        HelpGrants.Approve(Home, PluginCatalog.Load(Home), "acme.tools", "tickets", readsOnly: true);
+
+        var page = PluginPage.Read(Home, "acme.tools");
+
+        Assert.Equal([["help"], ["sessions", "help"], ["sessions"]], page.Servers.Select(server => server.To));
+        Assert.Equal([["search", "get_issue"], [], []], page.Servers.Select(server => server.Allow));
+        Assert.Equal([["create_issue"], [], []], page.Servers.Select(server => server.Writes));
+        // The person's approval, as HelpGrants judges it (D170's note).
+        Assert.Equal([HelpGrants.Approved, HelpGrants.Waits, null], page.Servers.Select(server => server.Help));
+        var shown = PluginsCommand.Show(page);
+        Assert.Contains(
+            "tickets  `tickets`; offered to Ask Daoris, approved: reads with search, get_issue; writes outside Daoris with create_issue, not accepted",
+            shown);
+        Assert.Contains(
+            "docs  `docs`; handed to every session beside Daoris's own knowledge host; offered to Ask Daoris, waiting for your approval: none of its tools",
+            shown);
+        Assert.Contains("browser  `browser`; handed to every session beside Daoris's own knowledge host", shown);
+    }
+
     [Fact]
     public void The_manifest_is_read_as_written_with_each_agent_and_the_hook()
     {

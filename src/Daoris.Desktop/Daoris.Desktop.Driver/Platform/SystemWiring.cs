@@ -11,17 +11,19 @@ namespace Daoris.Driver;
 /// <param name="Why">Why it did not answer, a code: <c>no-answer</c>, <c>foreign</c>, <c>no-host</c>, <c>unstartable</c>, <c>exited</c>, <c>never-answered</c>.</param>
 /// <param name="Tier">Its search tier, as it says it.</param>
 /// <param name="Version">Its version, as it says it (<c>/api/status</c>'s <c>version</c>, WIRING1b); null from a host older than that.</param>
-public sealed record ServiceStatus(bool Answers, DateTimeOffset Asked, string? Why, string? Tier, string? Version)
+/// <param name="Home">The id of the home it serves (HOMEID1), as <see cref="RunningService.ReadStatus"/> reads it; null where it names none.</param>
+/// <remarks>Discovery's own reading is <see cref="ServiceStatus"/>: this one keeps when it was asked, why not, and the version.</remarks>
+public sealed record ServiceProbe(bool Answers, DateTimeOffset Asked, string? Why, string? Tier, string? Version, string? Home = null)
 {
     /// <summary>The longest tier or version kept: a status is the service's words, and a host is not trusted to keep them short.</summary>
     private const int Longest = 200;
 
-    /// <summary>A status body read: a Daoris host's names its tier (<see cref="RunningService.IsDaorisStatus"/>), any other is foreign.</summary>
-    public static ServiceStatus Of(string body, DateTimeOffset asked)
+    /// <summary>A status body read as discovery reads it (<see cref="RunningService.ReadStatus"/>): a Daoris host's names its tier, any other is foreign.</summary>
+    public static ServiceProbe Of(string body, DateTimeOffset asked)
     {
-        if (!RunningService.IsDaorisStatus(body)) return new(false, asked, "foreign", null, null);
+        if (RunningService.ReadStatus(body) is not { } read) return new(false, asked, "foreign", null, null);
         using var status = JsonDocument.Parse(body);
-        return new(true, asked, null, Short(status.RootElement, "tier"), Short(status.RootElement, "version"));
+        return new(true, asked, null, Short(status.RootElement, "tier"), Short(status.RootElement, "version"), read.Home);
     }
 
     private static string? Short(JsonElement status, string name) =>
@@ -29,12 +31,17 @@ public sealed record ServiceStatus(bool Answers, DateTimeOffset Asked, string? W
             ? text.Length > Longest ? text[..Longest] : text
             : null;
 
-    /// <summary>Ask <paramref name="url"/>'s status door within two seconds, as a terminal finding the running service does.</summary>
+    /// <summary>
+    /// Ask <paramref name="url"/>'s status door within two seconds and with redirects off, as a terminal finding the running
+    /// service does (HOMEID1: where an address sends its asker is no answer).
+    /// </summary>
     /// <param name="handler">A test's host; null asks over the network.</param>
-    public static ServiceStatus Ask(string url, HttpMessageHandler? handler = null)
+    public static ServiceProbe Ask(string url, HttpMessageHandler? handler = null)
     {
         var asked = DateTimeOffset.UtcNow;
-        using var http = handler is null ? new HttpClient() : new HttpClient(handler, disposeHandler: false);
+        using var http = handler is null
+            ? new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = false })
+            : new HttpClient(handler, disposeHandler: false);
         http.Timeout = TimeSpan.FromSeconds(2);
         try
         {
@@ -78,7 +85,7 @@ public sealed record WindowWiring
     public string? ServiceUrl { get; init; }
 
     /// <summary>The supervisor's last probe of that address; null where it has asked nothing.</summary>
-    public ServiceStatus? Status { get; init; }
+    public ServiceProbe? Status { get; init; }
 
     /// <summary>Whether the host proved it holds this start's person key (PERSONDOOR1); null where nothing was asked.</summary>
     public bool? Proved { get; init; }
@@ -130,7 +137,7 @@ public sealed record WiringWorld
     /// How a terminal asks an address's status door; null asks nothing. 🔴 The window is handed none: its service's status is its
     /// supervisor's last probe, and the page's open asks no network, starts no program and probes no git (the second opinion).
     /// </summary>
-    public Func<string, ServiceStatus?>? AskStatus { get; init; }
+    public Func<string, ServiceProbe?>? AskStatus { get; init; }
 
     /// <summary>Whether the process an address file names still runs as the process it named.</summary>
     public Func<int, long, bool> Lives { get; init; } = RunningService.Lives;
@@ -149,7 +156,7 @@ public sealed record WiringWorld
         Process = Environment.GetEnvironmentVariable,
         Account = Stored(EnvironmentVariableTarget.User),
         Machine = Stored(EnvironmentVariableTarget.Machine),
-        AskStatus = url => ServiceStatus.Ask(url),
+        AskStatus = url => ServiceProbe.Ask(url),
         DriverVersion = SystemWiring.VersionOf(Assembly.GetEntryAssembly()),
     };
 
@@ -424,7 +431,7 @@ public static class SystemWiring
     }
 
     /// <summary>The address file read as a terminal reads it (D171, FINDDAORIS1): its entry, and the status that judged it.</summary>
-    private static (JsonObject Address, ServiceStatus? Status) Address(WiringWorld world)
+    private static (JsonObject Address, ServiceProbe? Status) Address(WiringWorld world)
     {
         var address = new JsonObject();
         var entry = world.Home is { } home ? RunningAddress.Read(home) : null;
@@ -432,7 +439,7 @@ public static class SystemWiring
         address["url"] = WiringRedact.Address(entry?.Url);
         address["pid"] = entry?.Pid;
         address["since"] = entry is null ? null : Since(entry.Started);
-        ServiceStatus? status = null;
+        ServiceProbe? status = null;
         string? why;
         if (entry is null) why = "absent";
         else if (!world.Lives(entry.Pid, entry.Started)) why = "ended";
@@ -440,7 +447,11 @@ public static class SystemWiring
         else
         {
             status = world.Window is { } window && SameAddress(window.ServiceUrl, entry.Url) ? window.Status : world.AskStatus?.Invoke(entry.Url);
-            why = status is null ? "not-asked" : status.Answers ? null : "not-answering";
+            // HOMEID1, as RunningService.Find judges it: only a host naming this home's id is taken, and none where it has no id.
+            why = status is null ? "not-asked"
+                : !status.Answers ? "not-answering"
+                : HomeIdentity.Read(world.Home!) is not { } mine || status.Home != mine ? "another-home"
+                : null;
         }
 
         address["taken"] = entry is null ? false : why is null ? true : why == "not-asked" ? null : false;
@@ -461,7 +472,7 @@ public static class SystemWiring
         }
     }
 
-    private static JsonObject Service(WiringWorld world, string? install, JsonObject address, ServiceStatus? addressStatus)
+    private static JsonObject Service(WiringWorld world, string? install, JsonObject address, ServiceProbe? addressStatus)
     {
         var service = new JsonObject();
         var named = world.Process(WiringVariables.ServiceUrl);
@@ -583,13 +594,25 @@ public static class SystemWiring
     private static JsonObject Loop(WiringWorld world)
     {
         var loop = new JsonObject();
-        var holder = world.Home is { } home ? DriverLock.HeldBy(home) : null;
+        // Who holds the home's lease (HOMELEASE1): an instance for its life, or a verb, a migration or a swap for its act.
+        var holder = world.Home is { } home ? HomeLease.HeldBy(home) : null;
         loop["holder"] = holder is null ? null : new JsonObject
         {
-            ["kind"] = holder.Kind == DriverKind.Desktop ? "desktop" : "headless",
+            ["kind"] = holder.Kind switch
+            {
+                LeaseKind.Desktop => "desktop",
+                LeaseKind.Headless => "headless",
+                LeaseKind.Verb => "verb",
+                LeaseKind.Migration => "migration",
+                LeaseKind.Swap => "swap",
+                _ => "unknown",
+            },
+            ["instance"] = holder.IsInstance,
+            // A verb's own words, its verb and never its arguments, as the lease keeps them.
+            ["what"] = holder.What,
             ["pid"] = holder.Pid,
             ["since"] = Moments.Write(holder.Since),
-            ["thisWindow"] = world.Window is { } window && holder.Pid == window.ProcessId,
+            ["thisWindow"] = world.Window is { } window && holder.Kind == LeaseKind.Desktop && holder.Pid == window.ProcessId,
         };
 
         Fact(loop, "looked", world.Window?.Looked is { } looked ? Moments.Write(looked) : null, world.Window is null ? "window" : "starting");

@@ -74,6 +74,43 @@ public sealed class HelpAgentProposalTests : HelpProposalBoxFixture
         Assert.Equal(JsonValueKind.False, unchanged.GetProperty("early").ValueKind);
     }
 
+    /// <summary>
+    /// SWITCH1d: the use door's switch and curve, the curve spelled as the terminal's `--curve` a window and written as
+    /// `harnesses.json` keeps it; no curve is an explicit null, which the driver reads as `--no-curve`.
+    /// </summary>
+    [Fact]
+    public void A_use_is_written_with_its_switch_and_curve_and_no_curve_as_null()
+    {
+        var (own, _) = Box().ProposeAgent("use", "claude-code", null, "the person asked", "h1", Now,
+            switched: "curve", curve: ["weekly=0:30,50:70,100:100", "session=0:85"]);
+        var (cleared, _) = Box().ProposeAgent("use", "claude-code", null, "the person asked", "h1", Now, switched: "smart", noCurve: true);
+
+        var file = Written(own!);
+        Assert.Equal("curve", file.GetProperty("switch").GetString());
+        Assert.Equal(
+            """{"weekly":[[0,30],[50,70],[100,100]],"session":[[0,85]]}""",
+            System.Text.Json.Nodes.JsonNode.Parse(file.GetProperty("curve").GetRawText())!.ToJsonString());
+        Assert.False(file.TryGetProperty("early", out _));
+        var none = Written(cleared!);
+        Assert.Equal("smart", none.GetProperty("switch").GetString());
+        Assert.Equal(JsonValueKind.Null, none.GetProperty("curve").ValueKind);
+    }
+
+    [Theory]
+    [InlineData("sometimes", null, false, "`smart`, `curve` or `off`")]
+    [InlineData(null, "weekly", false, "`<window>=<elapsed>:<used>,…`")]
+    [InlineData(null, "weekly=0:30,fifty:70", false, "`<window>=<elapsed>:<used>,…`")]
+    [InlineData(null, "weekly=0:30", true, "a curve or no curve, not both")]
+    public void A_malformed_switch_or_curve_is_refused_with_nothing_written(string? switched, string? curve, bool noCurve, string says)
+    {
+        var (id, message) = Box().ProposeAgent("use", "claude-code", null, "a reason", "h1", Now,
+            switched: switched, curve: curve is null ? null : [curve], noCurve: noCurve);
+
+        Assert.Null(id);
+        Assert.Contains(says, message);
+        Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.HelpProposals)));
+    }
+
     [Theory]
     [InlineData(null, null, false, null, null, "names what changes")]
     [InlineData("random", null, false, null, null, "`goal` or `order`")]

@@ -33,10 +33,28 @@ public sealed class RunningAddressTests : IDisposable
         using var self = Process.GetCurrentProcess();
         Assert.Equal(self.StartTime.ToUniversalTime().Ticks, named.Started);
 
+        // HOMEID1: and the home's id, minted where it had none, so a reader tells this home's address from a copy's.
+        Assert.True(HomeIdentity.IsId(named.Home), named.Home);
+        Assert.Equal(HomeIdentity.Read(_home), named.Home);
+
         // One JSON object, BOM-less, beside nothing half-written.
         var text = File.ReadAllText(RunningAddress.PathIn(_home));
         Assert.Equal(JsonValueKind.Object, JsonDocument.Parse(text).RootElement.ValueKind);
-        Assert.Equal([RunningAddress.PathIn(_home)], Directory.GetFiles(_home));
+        Assert.Equal(
+            [HomeIdentity.FileName, Path.GetFileName(RunningAddress.PathIn(_home))],
+            Directory.GetFiles(_home).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+    }
+
+    /// <summary>A file from before HOMEID1 names no home, and still reads: fields are added, never changed in place.</summary>
+    [Fact]
+    public void A_file_from_before_names_no_home_and_still_reads()
+    {
+        File.WriteAllText(RunningAddress.PathIn(_home), "{\"url\":\"http://localhost:5177\",\"pid\":1,\"started\":1,\"since\":\"2026-10-16T08:00:00+00:00\"}");
+
+        var named = RunningAddress.Read(_home);
+
+        Assert.Equal("http://localhost:5177", named!.Url);
+        Assert.Null(named.Home);
     }
 
     [Fact]

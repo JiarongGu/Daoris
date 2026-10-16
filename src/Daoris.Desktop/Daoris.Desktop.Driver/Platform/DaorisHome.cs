@@ -252,6 +252,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Tools = new("tools", HomeCategory.Data, "tools.json", "tools.json");
     public static readonly HomeEntry PluginState = new("plugin-state", HomeCategory.Data, "plugins.json", "plugins.json");
     public static readonly HomeEntry Plugins = new("plugins", HomeCategory.Data, "plugins", "plugins");
+    public static readonly HomeEntry PluginApprovals = new("plugin-approvals", HomeCategory.Data, "plugin-approvals.json", "plugin-approvals.json");
     public static readonly HomeEntry Usage = new("usage", HomeCategory.Data, "usage.json", "usage.json");
     public static readonly HomeEntry Landings = new("landings", HomeCategory.Data, "landings.json", "landings.json");
     public static readonly HomeEntry SessionBranches = new("session-branches", HomeCategory.Data, "session-branches.json", "session-branches.json");
@@ -270,6 +271,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry OpinionDues = new("opinion-dues", HomeCategory.Data, "opinions/due.json", "opinions/due.json");
     public static readonly HomeEntry BrowserSettings = new("browser-settings", HomeCategory.Data, "browser/settings.json", "browser/settings.json");
     public static readonly HomeEntry BrowserFavorites = new("browser-favorites", HomeCategory.Data, "browser/favorites.json", "browser/favorites.json");
+    public static readonly HomeEntry HomeId = new("home-id", HomeCategory.Data, "home.json", "home.json");
     public static readonly HomeEntry Keys = new("keys", HomeCategory.Profiles, "keys.json", "keys.json");
     public static readonly HomeEntry Remotes = new("remotes", HomeCategory.Profiles, "remotes.json", "remotes.json");
     public static readonly HomeEntry AgentHomes = new("agent-homes", HomeCategory.Profiles, "harnesses/*/*", "harnesses/*/*");
@@ -289,6 +291,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Toolchain = new("toolchain", HomeCategory.Cache, "toolchain", "toolchain");
     public static readonly HomeEntry ToolVersions = new("tool-versions", HomeCategory.Cache, "tools", "tools");
     public static readonly HomeEntry Bin = new("bin", HomeCategory.Cache, "bin", "bin");
+    public static readonly HomeEntry HomeLease = new("home-lease", HomeCategory.Run, "home.lease", "home.lease");
     public static readonly HomeEntry DriverLock = new("driver-lock", HomeCategory.Run, "driver.lock", "driver.lock");
     public static readonly HomeEntry Running = new("running", HomeCategory.Run, "running.json", "running.json");
     public static readonly HomeEntry Locks = new("locks", HomeCategory.Run, "locks", "locks");
@@ -304,13 +307,14 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     /// <summary>Every entry, in the table's order, which the twins hold in the same order.</summary>
     public static IReadOnlyList<HomeEntry> Table { get; } =
     [
-        DriverConfig, Harnesses, Accounts, Cooling, Windows, Reads, Permissions, RuleProposals, Tools, PluginState, Plugins, Usage,
+        DriverConfig, Harnesses, Accounts, Cooling, Windows, Reads, Permissions, RuleProposals, Tools, PluginState, Plugins,
+        PluginApprovals, Usage,
         Landings, SessionBranches, LinesMoved, RegistryFollowed, Abandoned, Update, Knowledge, Sessions, Helpers, Handed, Setup,
-        Workflows, HelpProposals, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites,
+        Workflows, HelpProposals, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, Window,
         Trees, HelpRoom, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead,
         Toolchain, ToolVersions, Bin,
-        DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord,
+        HomeLease, DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord,
         Logs,
     ];
 

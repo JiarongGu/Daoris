@@ -20,17 +20,23 @@ function Allowance({ used, warned }: { used: number; warned: boolean }) {
 
 /**
  * One window's cell (ACCTUX4): its name, its bar and what a person acts on in the ink (ACCTUX1: at 11 px in the faint ink
- * the line read 3.38:1 in light, as metadata, which it is not); then its reset and its reading's age together in the soft
- * ink, on the same line where the cell is wide enough and whole on the next where it is not, the mock-ups' two lines, never
- * a time stranded on a line of its own. An unknown window says so in the soft ink, with no bar.
+ * the line read 3.38:1 in light, as metadata, which it is not), its share against its curve after it (SWITCH1d); then its
+ * reset and its reading's age and source together in the soft ink, on the same line where the cell is wide enough and whole
+ * on the next where it is not, the mock-ups' two lines, never a time stranded on a line of its own. An unknown window says so
+ * in the soft ink, with no bar.
  */
 function WindowCellView({ cell }: { cell: WindowCell }) {
+  const { t } = useTranslation();
   return (
     <span data-window={cell.window} className="flex min-w-0 flex-wrap items-baseline gap-x-3">
       <span className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
         <span className="whitespace-nowrap text-ink-soft">{cell.name}</span>
-        {cell.used !== null && <Allowance used={cell.used} warned={cell.warned} />}
-        <span className={cell.known ? 'text-ink' : 'text-ink-soft'}>{cell.reading}</span>
+        {cell.used !== null && <Allowance used={cell.used} warned={cell.warned || cell.over === true} />}
+        <span className={cell.known ? 'text-ink' : 'text-ink-soft'}>
+          {cell.reading}
+          {/* Against its curve now (SWITCH1d): over it is what a person acts on, in the ink; under it, the soft ink. */}
+          {cell.curve && <span className={cell.over ? 'text-ink' : 'text-ink-soft'}>{t('agents.said.comma')}{cell.curve}</span>}
+        </span>
       </span>
       {cell.times.length > 0 && (
         <span className="min-w-0 text-ink-soft">

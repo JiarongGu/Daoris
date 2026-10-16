@@ -94,10 +94,20 @@ public sealed class PluginCatalog
     /// <summary>
     /// Every server the contributing plugins hand to a session, in catalogue order, as the protocol
     /// door carries one (ACP4). The knowledge host is not among them: it is Daoris's own, offered
-    /// first by the driver, and a plugin may not declare its name.
+    /// first by the driver, and a plugin may not declare its name. Since HELPPLUG1a, the ones declared for sessions.
     /// </summary>
-    public IReadOnlyList<AcpMcpServer> Servers => Contributing
+    public IReadOnlyList<AcpMcpServer> Servers => ServersTo(PluginServerTo.Sessions);
+
+    /// <summary>
+    /// The servers the contributing plugins declare for Ask Daoris (HELPPLUG1a, D170 point 3), approved or not: what reaches it,
+    /// and the rules for their tools, are the person's approvals' (<see cref="HelpGrants"/>).
+    /// </summary>
+    public IReadOnlyList<AcpMcpServer> HelpServers => ServersTo(PluginServerTo.Help);
+
+    /// <summary>The servers the contributing plugins hand <paramref name="to"/>, in catalogue order, as the protocol door carries one.</summary>
+    public IReadOnlyList<AcpMcpServer> ServersTo(string to) => Contributing
         .SelectMany(p => p.Manifest.Servers)
+        .Where(s => s.HandedTo(to))
         .Select(s => new AcpMcpServer(s.Name, s.Command[0], s.Command.Skip(1).ToList(), s.Environment))
         .ToList();
 
@@ -266,7 +276,7 @@ public sealed class PluginCatalog
             // Nothing of a refused plugin is taken — not a harness, not a hook, not a server, not a tool it would run
             // (PLUGTOOL1a). Its icon stays: it is how the person recognises the plugin the sentence is about, never something
             // the plugin contributes (D140 §3.1).
-            if (problem is not null) manifest = manifest with { Harnesses = [], Hooks = null, Servers = [], Tools = [], ToolsProblem = null };
+            if (problem is not null) manifest = manifest with { Harnesses = [], Hooks = null, Servers = [], Skills = [], Tools = [], ToolsProblem = null };
 
             entries.Add(new(manifest, folder, Path.Combine(root, DataFolder, manifest.Id), enabled, problem));
         }
@@ -450,7 +460,61 @@ public sealed class PluginCatalog
                         }
                     }
 
-                    servers.Add(new PluginServer(name, command, environment));
+                    // HELPPLUG1a (D170 point 3): who it is handed to, sessions where it says none, and the tools Ask Daoris may
+                    // call, only where it is handed to Ask Daoris. Twin: `plugins.ts`, the same rules and words in the same order.
+                    var to = DestinationsOf(row, $"server `{name}`", out var toProblem);
+                    if (toProblem is not null) return (PluginManifest.Empty(id), toProblem);
+                    var allow = ToolsOf(row, "allow");
+                    if (allow is null)
+                    {
+                        return (PluginManifest.Empty(id),
+                            $"server `{name}`'s `allow` must list the tools Ask Daoris may call, once each, by name: letters, digits, `_` and `-`.");
+                    }
+
+                    // HELPPLUG1a's tightening: the tools that change something outside Daoris, never allowed silently.
+                    var writes = ToolsOf(row, "writes");
+                    if (writes is null)
+                    {
+                        return (PluginManifest.Empty(id),
+                            $"server `{name}`'s `writes` must list the tools that change something outside Daoris, once each, by name: letters, digits, `_` and `-`.");
+                    }
+
+                    if ((allow.Count > 0 || writes.Count > 0) && !to.Contains(PluginServerTo.Help, StringComparer.Ordinal))
+                    {
+                        return (PluginManifest.Empty(id), $"server `{name}` names tools for Ask Daoris but is not handed to it: its `to` must name `help`.");
+                    }
+
+                    if (allow.FirstOrDefault(tool => writes.Contains(tool, StringComparer.Ordinal)) is { } both)
+                    {
+                        return (PluginManifest.Empty(id),
+                            $"server `{name}` names `{both}` in both `allow` and `writes`: a tool it hands Ask Daoris reads, or writes, never both.");
+                    }
+
+                    servers.Add(new PluginServer(name, command, environment) { To = to, Allow = allow, Writes = writes });
+                }
+            }
+
+            // HELPPLUG1b (D170 point 4): the skills it hands, each a folder `skills/<name>` beside the manifest, and who to. Twin:
+            // `plugins.ts`, the same rules and words in the same order; a problem refuses the plugin, as a server's does.
+            var skills = new List<PluginSkill>();
+            if (root.TryGetProperty("skills", out var carried))
+            {
+                if (carried.ValueKind != JsonValueKind.Array) return (PluginManifest.Empty(id), "`skills` must be an array.");
+                foreach (var row in carried.EnumerateArray())
+                {
+                    var name = row.ValueKind == JsonValueKind.Object && row.TryGetProperty("name", out var named) && named.ValueKind == JsonValueKind.String
+                        ? named.GetString()!
+                        : null;
+                    if (name is null || !PluginSkill.NameShape.IsMatch(name))
+                    {
+                        return (PluginManifest.Empty(id),
+                            "a declared skill needs a `name` — lowercase letters, digits and dashes; its folder is `skills/<name>` beside the manifest.");
+                    }
+
+                    if (skills.Any(skill => skill.Name == name)) return (PluginManifest.Empty(id), $"skill `{name}` is declared twice.");
+                    var to = DestinationsOf(row, $"skill `{name}`", out var toProblem);
+                    if (toProblem is not null) return (PluginManifest.Empty(id), toProblem);
+                    skills.Add(new PluginSkill(name) { To = to });
                 }
             }
 
@@ -476,6 +540,7 @@ public sealed class PluginCatalog
                 icon,
                 iconProblem)
             {
+                Skills = skills,
                 Tools = tools,
                 ToolsProblem = toolsProblem,
             }, null);
@@ -500,5 +565,41 @@ public sealed class PluginCatalog
         }
 
         return items;
+    }
+
+    /// <summary>
+    /// A tool's name as Ask Daoris's rules may name it (HELPPLUG1a): letters, digits, <c>_</c> and <c>-</c>, as the harness names
+    /// a tool, so a rule made of one is a server's tool and never a command or a path. Twin: the CLI's <c>TOOL_NAME</c>.
+    /// </summary>
+    private static readonly Regex ToolName = new(@"^[A-Za-z0-9_-]{1,64}\z", RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// A server's or a skill's <c>to</c> (HELPPLUG1a, HELPPLUG1b): absent is sessions alone; otherwise a list naming each
+    /// destination once, at least one, and none but <see cref="PluginServerTo.All"/>.
+    /// </summary>
+    /// <param name="said">The declaration as its problem names it: "server `x`" or "skill `x`".</param>
+    private static IReadOnlyList<string> DestinationsOf(JsonElement declared, string said, out string? problem)
+    {
+        problem = null;
+        if (!declared.TryGetProperty("to", out _)) return [PluginServerTo.Sessions];
+        var to = Strings(declared, "to", text => text);
+        if (to is not { Count: > 0 } || to.Distinct(StringComparer.Ordinal).Count() != to.Count
+            || to.Any(each => !PluginServerTo.All.Contains(each, StringComparer.Ordinal)))
+        {
+            problem = $"{said}'s `to` must list who it is handed to, once each: `sessions`, `help` (Ask Daoris) or both.";
+            return [];
+        }
+
+        return to;
+    }
+
+    /// <summary>A server's <c>allow</c> or <c>writes</c> (HELPPLUG1a): absent is none; otherwise tool names, each once; null where it breaks that.</summary>
+    private static IReadOnlyList<string>? ToolsOf(JsonElement server, string field)
+    {
+        if (!server.TryGetProperty(field, out _)) return [];
+        var tools = Strings(server, field, text => text);
+        return tools is null || tools.Distinct(StringComparer.Ordinal).Count() != tools.Count || tools.Any(tool => !ToolName.IsMatch(tool))
+            ? null
+            : tools;
     }
 }

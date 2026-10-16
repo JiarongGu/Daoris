@@ -78,6 +78,116 @@ public sealed class HelpRoomMayDoTests
         Assert.DoesNotContain("switched off", agents);
     }
 
+    /// <summary>
+    /// HELPPLUG1a (D170 point 3, and its tightening): the servers plugins hand it, as the person approved them, are named with the
+    /// tools it may call on each, a write outside Daoris said as one the person accepted; what such a tool does is the plugin's
+    /// act, and a change to Daoris itself is still a proposal. One waiting for the person's approval is named as handed nothing.
+    /// </summary>
+    [Fact]
+    public void The_room_names_the_servers_plugins_hand_it_and_the_tools_it_may_call()
+    {
+        var agents = HelpRoom.Render(HelpRoomFixture.Machine with
+        {
+            PluginServers =
+            [
+                new("acme.tickets", "tickets", ["search", "get_issue"]) { Writes = ["create_issue"] }, new("acme.docs", "docs", []),
+            ],
+            PluginServersWaiting = [new("acme.wiki", "wiki", ["lookup"])],
+        });
+
+        Assert.Contains("Plugins installed here hand you these servers, as the person approved them", agents);
+        Assert.Contains(
+            "- `tickets` (plugin `acme.tickets`): reads with `search`, `get_issue`; changes things outside Daoris with `create_issue`, "
+            + "a write the person accepted", agents);
+        Assert.Contains("- `docs` (plugin `acme.docs`): none of its tools", agents);
+        Assert.Contains("the plugin's own act", agents);
+        Assert.Contains("a change to Daoris itself is still a proposal", agents);
+        Assert.Contains("wait for the person's approval on the plugin's page", agents);
+        Assert.Contains("`wiki` (plugin `acme.wiki`)", agents);
+    }
+
+    /// <summary>
+    /// HELPPLUG1b (D170 point 4): the skills plugins hand it are named as the harness names them, <c>plugin:skill</c>; with none,
+    /// nothing is said. A skill declared for sessions alone, one with no skill file, and one that would allow itself tools are
+    /// not among them.
+    /// </summary>
+    [Fact]
+    public void The_room_names_the_skills_plugins_hand_it()
+    {
+        Assert.Contains(
+            "Plugins installed here also hand you these skills: `acme.tickets:triage`, `acme.tickets:write-up`.",
+            HelpRoom.Render(HelpRoomFixture.Machine with { PluginSkills = ["acme.tickets:triage", "acme.tickets:write-up"] }));
+        Assert.DoesNotContain("hand you these skills", HelpRoom.Render(HelpRoomFixture.Machine));
+
+        var home = Path.Combine(Path.GetTempPath(), "daoris-help-skills-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var folder = DaorisHome.Entry(home, HomeEntry.Plugins, "acme.tickets");
+            Directory.CreateDirectory(folder);
+            File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), """
+                { "id": "acme.tickets", "skills": [ { "name": "triage", "to": ["help"] }, { "name": "write-up" },
+                    { "name": "wide", "to": ["help"] }, { "name": "missing", "to": ["help"] } ] }
+                """);
+            foreach (var (skill, text) in new[] { ("triage", "---\nname: triage\n---\n"), ("write-up", "---\nname: write-up\n---\n"), ("wide", "---\nallowed-tools: Bash\n---\n") })
+            {
+                Directory.CreateDirectory(Path.Combine(folder, "skills", skill));
+                File.WriteAllText(Path.Combine(folder, "skills", skill, SpawnSkills.SkillFile), text);
+            }
+
+            var machine = HelpRoom.Describe(
+                DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, plugins: PluginCatalog.Load(home));
+
+            Assert.Equal(["acme.tickets:triage"], machine.PluginSkills);
+        }
+        finally
+        {
+            try { Directory.Delete(home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    /// <summary>With no plugin handing it a server, nothing is said of one.</summary>
+    [Fact]
+    public void With_no_plugin_server_nothing_is_said_of_one()
+    {
+        Assert.DoesNotContain("hand you these servers", HelpRoom.Render(HelpRoomFixture.Machine));
+    }
+
+    /// <summary>
+    /// The servers it is handed are the grants' (<see cref="HelpGrants"/>): a session's are not its, one the person has not
+    /// approved waits, and one approved with its writes says the writes accepted.
+    /// </summary>
+    [Fact]
+    public void The_servers_it_is_handed_are_described_from_the_persons_approvals()
+    {
+        var home = Path.Combine(Path.GetTempPath(), "daoris-help-servers-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Plugins, "acme.tools"));
+            File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Plugins, "acme.tools", PluginCatalog.ManifestName), """
+                { "id": "acme.tools", "servers": [
+                    { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search"], "writes": ["create_issue"] },
+                    { "name": "wiki", "command": ["wiki"], "to": ["help"], "allow": ["lookup"] },
+                    { "name": "docs", "command": ["docs"] } ] }
+                """);
+            var catalog = PluginCatalog.Load(home);
+            HelpGrants.Approve(home, catalog, "acme.tools", "tickets", readsOnly: false);
+
+            var machine = HelpRoom.Describe(
+                DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, plugins: catalog,
+                grants: HelpGrants.Read(home, catalog));
+
+            var server = Assert.Single(machine.PluginServers);
+            Assert.Equal(("acme.tools", "tickets"), (server.Plugin, server.Server));
+            Assert.Equal(["search"], server.Tools);
+            Assert.Equal(["create_issue"], server.Writes);
+            Assert.Equal("wiki", Assert.Single(machine.PluginServersWaiting).Server);
+        }
+        finally
+        {
+            try { Directory.Delete(home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
     /// <summary>The checkouts it may read are the driver's own answer: each readable one, in every workspace.</summary>
     [Fact]
     public void The_checkouts_it_may_read_are_described_from_the_drivers_setting_and_registry()

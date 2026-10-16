@@ -205,6 +205,27 @@ public sealed class RotationUseTwinTests : IDisposable
         Assert.True((said is null) == (UseCurve.Read(document.RootElement) is not null), $"{why}: a curve reads exactly where none is refused");
     }
 
+    /// <summary>
+    /// SWITCH1d: a curve's problem names its rule and the window, point and numbers it weighs, so the modules refuse it in a
+    /// code the page words in the reader's language; its sentence is the twins'.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"weekly":[[0,30],[50,70],[100,60]]}""", "falling weekly 3 60 70 ")]
+    [InlineData("""{"weekly":[[50,30],[40,70]]}""", "rising weekly 2 40 50 ")]
+    [InlineData("""{"session":[[0,101]]}""", "used session 1 101  ")]
+    [InlineData("""{"weekly":[]}""", "count weekly    0")]
+    [InlineData("""{"monthly":[[0,50]]}""", "window monthly    ")]
+    [InlineData("""[[0,30]]""", "shape     ")]
+    public void A_curve_s_problem_names_its_rule_and_what_it_weighs(string curve, string named)
+    {
+        using var document = JsonDocument.Parse(curve);
+
+        var problem = UseCurve.ProblemOf(document.RootElement)!;
+
+        Assert.Equal(named, $"{problem.Kind} {problem.Window} {problem.Point} {problem.Value} {problem.Before} {problem.Count}");
+        Assert.Equal(UseCurve.Problem(document.RootElement), problem.Sentence);
+    }
+
     // ——— What the twin table does not hold: a kept account read only of its list, the save's refusal, and the settings as
     // the old names spelled them, which the modules' tests still build.
 

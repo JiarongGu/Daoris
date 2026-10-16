@@ -173,12 +173,51 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
 
         Assert.Null(machine.Refusal);
         Assert.Equal("daoris agent profile use claude-code order --keep play --early off --near 85", machine.Terminal);
+        // SWITCH1d: the old names said in the curve's terms, as the file reads them on.
         Assert.Equal("On this machine, `claude-code` uses its accounts one by one, in order, keeps `play` for conversations, does not "
-            + "switch before the limit and counts an account near its limit at 85%.", machine.Describe);
+            + "switch accounts while a session runs and holds its own curve's five-hour window at 85%.", machine.Describe);
         Assert.Equal("daoris agent profile use claude-code goal --workspace lab", lab.Terminal);
         Assert.Equal("In `lab`, `claude-code` makes the most of its accounts.", lab.Describe);
         Assert.Equal("daoris agent profile use claude-code --no-keep", none.Terminal);
         Assert.Contains("keeps no account for conversations", none.Describe);
+    }
+
+    /// <summary>
+    /// SWITCH1d (D165 point 2; the switch design §5): the <c>use</c> door's <c>switch</c> and <c>curve</c>, as <c>profile use
+    /// --switch</c>, <c>--curve</c> and <c>--no-curve</c> take them, said in the curve's terms.
+    /// </summary>
+    [Fact]
+    public void The_switch_and_the_curve_are_judged_and_said_as_the_terminal_says_them()
+    {
+        var weekly = new UseCurve(new Dictionary<string, IReadOnlyList<CurvePoint>>
+        {
+            ["weekly"] = [new CurvePoint(0, 30), new CurvePoint(50, 70), new CurvePoint(100, 100)],
+        });
+        var own = HelpProposals.Plan(Use("claude-code", new UseChange(Switch: "curve", Curve: weekly)), DriverConfig.Empty, Listed);
+        var smart = HelpProposals.Plan(Use("claude-code", new UseChange(Switch: "smart")), DriverConfig.Empty, Listed);
+        var off = HelpProposals.Plan(Use("claude-code", new UseChange(Switch: "off", NoCurve: true), "lab"), DriverConfig.Empty, Listed);
+
+        Assert.Null(own.Refusal);
+        Assert.Equal("daoris agent profile use claude-code --switch curve --curve weekly=0:30,50:70,100:100", own.Terminal);
+        Assert.Equal("On this machine, `claude-code` switches accounts by its own curve and sets its own curve's weekly window to "
+            + "0:30, 50:70, 100:100.", own.Describe);
+        Assert.Equal("On this machine, `claude-code` switches accounts by Daoris's curve.", smart.Describe);
+        Assert.Equal("daoris agent profile use claude-code --switch off --no-curve --workspace lab", off.Terminal);
+        Assert.Equal("In `lab`, `claude-code` does not switch accounts while a session runs and clears its own curve, every window "
+            + "back to Daoris's.", off.Describe);
+    }
+
+    /// <summary>SWITCH1d: a switch this build does not know, and a curve that breaks a rule, refused in the door's words.</summary>
+    [Fact]
+    public void A_switch_or_a_curve_the_route_would_refuse_is_refused()
+    {
+        var unknown = HelpProposals.Plan(Use("claude-code", new UseChange(Switch: "sometimes")), DriverConfig.Empty, Listed);
+        var broken = HelpProposals.Plan(
+            Use("claude-code", new UseChange(Switch: "curve")) with { AccountCurveRefused = "`weekly` has 0 points — a window's curve has one to twelve." },
+            DriverConfig.Empty, Listed);
+
+        Assert.Contains("`sometimes` is not when to switch accounts — smart (Daoris's curve), curve (your own) or off.", unknown.Refusal);
+        Assert.Equal("`weekly` has 0 points — a window's curve has one to twelve.", broken.Refusal);
     }
 
     /// <summary><c>profile use</c>'s refusals, in its words, before the person ever sees a card.</summary>
@@ -207,7 +246,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
             Use("claude-code", new UseChange(Use: "goal")) with { Id = "p10" }, new HelpStandInDoors { UseRefusal = "the list moved." }, Listed);
 
         Assert.True(applied.Applied);
-        Assert.Equal(["ACCOUNT_USE claude-code-acp use=order keep= noKeep=False early=True near= lab"], doors.Calls);
+        Assert.Equal(["ACCOUNT_USE claude-code-acp use=order keep= noKeep=False early=True near= switch= curve= noCurve=False lab"], doors.Calls);
         Assert.Equal([applied.Told], later);
         Assert.False(refused.Applied);
         Assert.Contains("the list moved.", refused.Told);
@@ -232,6 +271,32 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
 
         Assert.Equal(new UseChange("order", null, NoKeep: true, Early: false, Near: 85), read.AccountUse);
         Assert.Null(HelpProposals.Find(_home, "u2")!.AccountUse);
+    }
+
+    /// <summary>
+    /// SWITCH1d: the file's <c>switch</c> and <c>curve</c>, as the service's writer writes them: a curve of JSON null takes the
+    /// person's curve out, and one that breaks a rule is kept as the twins' sentence the card refuses with.
+    /// </summary>
+    [Fact]
+    public void The_use_doors_switch_and_curve_are_read_from_its_file()
+    {
+        void Write(string id, string fields) => System.IO.File.WriteAllText(Path.Combine(HelpProposals.FolderOf(_home), $"{id}.json"), $$"""
+            { "id": "{{id}}", "kind": "agent", "door": "use", "target": "claude-code", "workspace": null, "value": null, {{fields}},
+              "why": "the person asked", "state": "proposed", "by": { "session": "h1" } }
+            """);
+        Write("s1", """ "switch": "curve", "curve": { "weekly": [[0, 30], [100, 100]] } """);
+        Write("s2", """ "curve": null """);
+        Write("s3", """ "switch": "curve", "curve": { "weekly": [] } """);
+
+        var set = HelpProposals.Find(_home, "s1")!;
+        var cleared = HelpProposals.Find(_home, "s2")!;
+        var broken = HelpProposals.Find(_home, "s3")!;
+
+        Assert.Equal("curve", set.AccountUse!.Switch);
+        Assert.Equal([new CurvePoint(0, 30), new CurvePoint(100, 100)], set.AccountUse.Curve!["weekly"]);
+        Assert.Null(set.AccountCurveRefused);
+        Assert.True(cleared.AccountUse!.NoCurve);
+        Assert.Equal("`weekly` has 0 points — a window's curve has one to twelve.", broken.AccountCurveRefused);
     }
 
     /// <summary>TOOL4l-b: the use, order and ready doors are listed, since the service's <c>agent_propose</c> writes them.</summary>

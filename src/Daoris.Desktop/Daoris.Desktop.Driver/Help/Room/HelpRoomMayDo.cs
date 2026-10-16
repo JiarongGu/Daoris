@@ -19,6 +19,15 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         {
             Reads = [.. AcrossRules.Readable(sources.Config, sources.Snapshot.Repositories)
                 .Select(checkout => new HelpRead(checkout.Repository, workspaceOf[checkout.Repository], checkout.Path))],
+            // HELPPLUG1a: the servers the person approved for it, as its spawn is handed them (HelpGrants), and those waiting.
+            PluginServers = [.. (sources.Grants?.All ?? []).Where(grant => grant.State == HelpGrants.Approved)
+                .Select(grant => new HelpPluginServer(grant.Plugin, grant.Server.Name, grant.Server.Allow) { Writes = grant.Accepted })],
+            PluginServersWaiting = [.. (sources.Grants?.All ?? []).Where(grant => grant.State == HelpGrants.Waits)
+                .Select(grant => new HelpPluginServer(grant.Plugin, grant.Server.Name, [.. grant.Server.Allow, .. grant.Server.Writes]))],
+            // HELPPLUG1b: the skills its spawn is handed (SpawnSkills.Write), as the harness names them.
+            PluginSkills = [.. sources.Plugins.Contributing.SelectMany(plugin => plugin.Manifest.Skills
+                .Where(skill => skill.HandedTo(PluginServerTo.Help) && SpawnSkills.Judge(plugin.Folder, skill.Name) is null)
+                .Select(skill => $"{plugin.Manifest.Id}:{skill.Name}"))],
         };
     }
 
@@ -71,6 +80,45 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("are cleaned up under the workspace's page → Branches → Session branches. When the family's knowledge and quests\n");
         text.Append("are all you can see, say what you could not see: never build a repository's state from its quests and\n");
         text.Append("present it as the tree.\n\n");
+        // HELPPLUG1a (D170 point 3): a plugin's server reaches it only where declared for it, and only its declared tools are
+        // allowed; what such a tool does outside Daoris is the plugin's, and Daoris itself still changes only by a proposal.
+        if (machine.PluginServers.Count > 0)
+        {
+            text.Append("Plugins installed here hand you these servers, as the person approved them. Call only the tools listed for\n");
+            text.Append("each; any other is refused:\n\n");
+            foreach (var server in machine.PluginServers)
+            {
+                static string Named(IEnumerable<string> tools) => string.Join(", ", tools.Select(tool => $"`{tool}`"));
+                var said = new List<string>();
+                if (server.Tools.Count > 0) said.Add($"reads with {Named(server.Tools)}");
+                if (server.Writes.Count > 0) said.Add($"changes things outside Daoris with {Named(server.Writes)}, a write the person accepted");
+                text.Append($"- `{server.Server}` (plugin `{server.Plugin}`): {(said.Count > 0 ? string.Join("; ", said) : "none of its tools")}\n");
+            }
+
+            text.Append('\n');
+            text.Append("What such a tool does outside Daoris is the plugin's own act, as the person who installed it;\n");
+            text.Append("a change to Daoris itself is still a proposal, with the tool for its kind.\n\n");
+        }
+
+        // A manifest describes and grants nothing (D170's note): a server waiting for the person's approval is handed nothing.
+        if (machine.PluginServersWaiting.Count > 0)
+        {
+            text.Append("These servers wait for the person's approval on the plugin's page (Plugins → the plugin's page → Ask Daoris),\n");
+            text.Append("so you are handed none of them; point the person there when a question needs one: ");
+            text.Append(string.Join(", ", machine.PluginServersWaiting.Select(server => $"`{server.Server}` (plugin `{server.Plugin}`)")));
+            text.Append(".\n\n");
+        }
+
+        // HELPPLUG1b (D170 point 4): the skills a plugin hands it, by the names the harness gives them.
+        if (machine.PluginSkills.Count > 0)
+        {
+            text.Append($"Plugins installed here also hand you these skills: {string.Join(", ", machine.PluginSkills.Select(skill => $"`{skill}`"))}.\n\n");
+        }
+
+        // HELPOWED1 (D170 point 2): asked to set a repository up, the helper said it had no shell and no door, as if that were
+        // the design. A door it lacks is one Daoris owes, and the room lists them.
+        text.Append("Where you have no door to propose what the person wants, that is never a limit of yours: where the act is\n");
+        text.Append("under *Doors Daoris still owes* (below), say Daoris still owes that door and name its command.\n\n");
         if (machine.Reads.Count == 0 && machine.Repositories.Any(repository => repository.Checkout))
         {
             // HELPSETUP1: a repository's reading is on its Setup since UX6f; a workspace's is on its own page since UX6g.
@@ -86,3 +134,10 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
 
 /// <summary>A checkout Ask Daoris may read (D107): its repository, its workspace, and where it is.</summary>
 public sealed record HelpRead(string Name, string Workspace, string Path);
+
+/// <summary>A server a plugin hands Ask Daoris (HELPPLUG1a): the plugin, the server's name, and the tools that read it may call there.</summary>
+public sealed record HelpPluginServer(string Plugin, string Server, IReadOnlyList<string> Tools)
+{
+    /// <summary>The writes outside Daoris the person accepted, which it may call too.</summary>
+    public IReadOnlyList<string> Writes { get; init; } = [];
+}

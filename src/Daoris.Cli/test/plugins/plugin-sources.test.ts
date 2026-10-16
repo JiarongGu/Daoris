@@ -223,6 +223,38 @@ test('update shows what changes and replaces nothing without --yes', () => {
   fx.cleanup();
 });
 
+test('a server handed to Ask Daoris, or allowed other tools there, is a change an update shows (HELPPLUG1a)', () => {
+  const { fx, home } = machine('plugsrc-plan-to');
+  const tickets = (server: Record<string, unknown>) => JSON.stringify({
+    id: 'acme.tickets', version: '1.0.0', servers: [{ name: 'tickets', command: ['tickets'], ...server }],
+  });
+  const source = folder(join(fx.root, 'checkout', 'tickets'), tickets({}), {});
+  run(['add', source], home);
+  folder(source, tickets({ to: ['sessions', 'help'], allow: ['search'] }), {});
+
+  const { plan, refusal } = planUpdate(home, 'acme.tickets');
+  assert.equal(refusal, null);
+  // Twin: the driver's `PluginSourceTests` holds the same words.
+  assert.deepEqual(plan!.changes, [
+    { what: 'servers', was: 'tickets (tickets)', now: 'tickets (tickets) to sessions and help allowing search' },
+  ]);
+  fx.cleanup();
+});
+
+test('a skill handed elsewhere is a change an update shows (HELPPLUG1b)', () => {
+  const { fx, home } = machine('plugsrc-plan-skill');
+  const skills = (to?: string[]) => JSON.stringify({ id: 'acme.skills', version: '1.0.0', skills: [{ name: 'triage', ...(to ? { to } : {}) }] });
+  const source = folder(join(fx.root, 'checkout', 'skills'), skills(), {});
+  run(['add', source], home);
+  folder(source, skills(['sessions', 'help']), {});
+
+  const { plan, refusal } = planUpdate(home, 'acme.skills');
+  assert.equal(refusal, null);
+  // Twin: the driver's `PluginSourceTests` holds the same words.
+  assert.deepEqual(plan!.changes, [{ what: 'skills', was: 'triage to sessions', now: 'triage to sessions and help' }]);
+  fx.cleanup();
+});
+
 test('update swaps the install folder whole, keeping .data and the record', () => {
   const { fx, home } = machine('plugsrc-swap');
   const source = folder(join(fx.root, 'checkout', 'gate'), GATE_V1, { 'gate.mjs': '// v1' });

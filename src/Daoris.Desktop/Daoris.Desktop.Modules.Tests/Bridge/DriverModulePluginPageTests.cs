@@ -59,6 +59,105 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
     };
 
     /// <summary>
+    /// HELPPLUG1a (D170 point 3): the list answers, for each plugin and each offer, the servers it hands Ask Daoris with the
+    /// tools Ask Daoris may call there, for its page to say; one that hands it none answers an empty list.
+    /// </summary>
+    [Fact]
+    public async Task The_list_answers_what_each_plugin_hands_ask_daoris_and_the_tools_it_may_call()
+    {
+        var tickets = DaorisHome.Entry(Home, HomeEntry.Plugins, "acme.tickets");
+        Directory.CreateDirectory(tickets);
+        File.WriteAllText(Path.Combine(tickets, "plugin.json"), """
+            { "id": "acme.tickets", "servers": [
+                { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search", "get_issue"] },
+                { "name": "docs", "command": ["docs"] } ] }
+            """);
+        var offers = Path.Combine(Home, "offers");
+        Directory.CreateDirectory(Path.Combine(offers, "acme.offered"));
+        File.WriteAllText(Path.Combine(offers, "acme.offered", "plugin.json"), """
+            { "id": "acme.offered", "servers": [ { "name": "wiki", "command": ["wiki"], "to": ["sessions", "help"] } ] }
+            """);
+        using var loop = Loop();
+        var module = new DriverModule(Bus, loop) { Offers = offers };
+
+        var answered = await AnswerAsync(module, "PLUGINS");
+
+        var help = Assert.Single(Row(answered, "acme.tickets").GetProperty("helpServers").EnumerateArray());
+        Assert.Equal("tickets", help.GetProperty("name").GetString());
+        Assert.Equal(["search", "get_issue"], Strings(help.GetProperty("allow")));
+        // D170's note: offered, and waiting for the person's approval.
+        Assert.Equal(HelpGrants.Waits, help.GetProperty("state").GetString());
+        Assert.Empty(help.GetProperty("writes").EnumerateArray());
+        Assert.Equal(["tickets", "docs"], Strings(Row(answered, "acme.tickets").GetProperty("servers")));
+        var offered = Assert.Single(answered.GetProperty("offers").EnumerateArray().Single(o => o.GetProperty("id").GetString() == "acme.offered")
+            .GetProperty("helpServers").EnumerateArray());
+        Assert.Equal(("wiki", 0), (offered.GetProperty("name").GetString(), offered.GetProperty("allow").GetArrayLength()));
+    }
+
+    /// <summary>
+    /// HELPPLUG1a's tightening (D170's note): <c>PLUGIN_ACTION</c>'s <c>help-approve</c>, <c>help-reads</c> and
+    /// <c>help-withdraw</c> are the person's approval of the exact tools a server offers Ask Daoris, the page's half of
+    /// <c>daoris-driver plugins approve|withdraw</c>; a generic execution tool is refused with its reason.
+    /// </summary>
+    [Fact]
+    public async Task The_page_approves_what_a_plugin_offers_ask_daoris_its_reads_only_or_withdraws_it()
+    {
+        var tickets = DaorisHome.Entry(Home, HomeEntry.Plugins, "acme.tickets");
+        Directory.CreateDirectory(tickets);
+        File.WriteAllText(Path.Combine(tickets, "plugin.json"), """
+            { "id": "acme.tickets", "servers": [
+                { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search"], "writes": ["create_issue"] },
+                { "name": "shell", "command": ["shell"], "to": ["help"], "allow": ["run_command"] } ] }
+            """);
+        using var loop = Loop();
+        var module = new DriverModule(Bus, loop) { Offers = Path.Combine(Home, "no-offers") };
+        JsonElement Server(JsonElement answered, string name) =>
+            Row(answered, "acme.tickets").GetProperty("helpServers").EnumerateArray().Single(s => s.GetProperty("name").GetString() == name);
+
+        await AnswerAsync(module, "PLUGIN_ACTION", new { action = "help-reads", id = "acme.tickets", server = "tickets" });
+        var reads = Server(await AnswerAsync(module, "PLUGINS"), "tickets");
+        Assert.Equal(HelpGrants.Approved, reads.GetProperty("state").GetString());
+        Assert.Empty(reads.GetProperty("accepted").EnumerateArray());
+
+        await AnswerAsync(module, "PLUGIN_ACTION", new { action = "help-approve", id = "acme.tickets", server = "tickets" });
+        Assert.Equal(["create_issue"], Strings(Server(await AnswerAsync(module, "PLUGINS"), "tickets").GetProperty("accepted")));
+
+        await AnswerAsync(module, "PLUGIN_ACTION", new { action = "help-withdraw", id = "acme.tickets", server = "tickets" });
+        Assert.Equal(HelpGrants.Waits, Server(await AnswerAsync(module, "PLUGINS"), "tickets").GetProperty("state").GetString());
+
+        var shell = Server(await AnswerAsync(module, "PLUGINS"), "shell");
+        Assert.Equal(HelpGrants.Refused, shell.GetProperty("state").GetString());
+        Assert.Contains("`run_command`", shell.GetProperty("refusal").GetString());
+        var refused = await AskAsync(module, "PLUGIN_ACTION", new { action = "help-approve", id = "acme.tickets", server = "shell" });
+        Assert.False(refused.Success);
+        Assert.Contains("`run_command`", refused.Error!.Message);
+    }
+
+    /// <summary>
+    /// HELPPLUG1b (D170 point 4): the list answers each plugin's skills, who each is handed to, and why one is not handed, for
+    /// its page to say.
+    /// </summary>
+    [Fact]
+    public async Task The_list_answers_each_plugins_skills_who_each_is_handed_to_and_why_one_is_not()
+    {
+        var folder = DaorisHome.Entry(Home, HomeEntry.Plugins, "acme.skills");
+        Directory.CreateDirectory(Path.Combine(folder, "skills", "triage"));
+        File.WriteAllText(Path.Combine(folder, "skills", "triage", "SKILL.md"), "---\nname: triage\n---\n");
+        File.WriteAllText(Path.Combine(folder, "plugin.json"), """
+            { "id": "acme.skills", "skills": [ { "name": "triage", "to": ["sessions", "help"] }, { "name": "missing" } ] }
+            """);
+        using var loop = Loop();
+        var module = new DriverModule(Bus, loop) { Offers = Path.Combine(Home, "no-offers") };
+
+        var skills = Row(await AnswerAsync(module, "PLUGINS"), "acme.skills").GetProperty("skills").EnumerateArray().ToList();
+
+        Assert.Equal(["triage", "missing"], skills.Select(skill => skill.GetProperty("name").GetString()));
+        Assert.Equal(["sessions", "help"], Strings(skills[0].GetProperty("to")));
+        Assert.Equal(JsonValueKind.Null, skills[0].GetProperty("problem").ValueKind);
+        Assert.Contains("`skills/missing/SKILL.md`", skills[1].GetProperty("problem").GetString());
+    }
+
+    /// <summary>
     /// P3 (D119 §4.1): the list answers what each plugin hands sessions and speaks on, which points its running process
     /// listens on, its health from the loop's own record, and whether its source declares something new. The list
     /// stays light: names, a command as written, a state, a word.

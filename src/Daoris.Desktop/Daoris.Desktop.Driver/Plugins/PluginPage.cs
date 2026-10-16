@@ -37,6 +37,20 @@ public static class PluginPage
     {
         var (entry, manifest, catalog) = Installed(home, id);
         var plugin = entry.Manifest.Id;
+        // HELPPLUG1a's tightening: what it offers Ask Daoris, with the person's approval as it stands.
+        var grants = HelpGrants.Read(home, catalog).All.Where(grant => string.Equals(grant.Plugin, plugin, StringComparison.OrdinalIgnoreCase)).ToList();
+        PageServer Granted(PageServer page, PluginServer server)
+        {
+            if (!server.HandedTo(PluginServerTo.Help)) return page;
+            var grant = grants.FirstOrDefault(each => string.Equals(each.Server.Name, server.Name, StringComparison.Ordinal));
+            return page with
+            {
+                Help = grant?.State ?? (HelpGrants.Refusal(server) is null ? HelpGrants.Waits : HelpGrants.Refused),
+                Accepted = grant?.Accepted ?? [],
+                Refusal = grant?.Refusal ?? HelpGrants.Refusal(server),
+            };
+        }
+
         var said = health is not null ? health.Of(entry) : PluginHealth.FromLog(entry, home);
 
         // A process runs now when the loop's is up; with none, whether a point is listened on has no answer.
@@ -53,11 +67,14 @@ public static class PluginPage
             points,
             [.. manifest.Harnesses.Select(harness => new PageAgent(
                 harness.Name, harness.Command, "protocol", harness.Posture, harness.ProfileVariable, harness.Package, harness.Install))],
-            [.. manifest.Servers.Select(server => new PageServer(
+            [.. manifest.Servers.Select(server => Granted(new PageServer(
                 server.Name, server.Command,
                 // Names only: the value is read for nothing but whether it names the browser.
                 [.. server.Environment.Keys.Order(StringComparer.Ordinal)],
-                server.Command.Any(DrivesBrowser) || server.Environment.Values.Any(DrivesBrowser)))],
+                server.Command.Any(DrivesBrowser) || server.Environment.Values.Any(DrivesBrowser))
+            {
+                To = server.To, Allow = server.Allow, Writes = server.Writes,
+            }, server))],
             manifest.Hooks?.Points.Contains(HookPoints.Land, StringComparer.Ordinal) == true ? Landing(home, plugin, catalog) : null,
             Source(home, entry, offers),
             Count(entry.Data, CountBound, CountTime),

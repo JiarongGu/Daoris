@@ -1431,10 +1431,14 @@ public sealed class Driver(
             // one under Daoris's home, and the file goes when the session does.
             Context.Hooks?.Log.Served(Context.Catalog, sessionId, servers);
             var handed = SpawnServers.Hand(adapter, info, home, sessionId, servers);
+            // HELPPLUG1b (D170 point 4): the skills plugins hand sessions, composed under the home, gone with the session.
+            var (skills, skillPlugins) = SpawnSkills.Hand(adapter, info, home, sessionId, Context.Catalog, PluginServerTo.Sessions);
+            using var skilled = new Disposer(() => SpawnSkills.Remove(skills));
 
             // What this session may do (PERM1, D72): the rules composed for its circle and repository,
             // handed over as the harness's own settings tier.
-            var rules = HandRules(adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across);
+            var rules = HandRules(
+                adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across, plugins: skillPlugins);
 
             Context.Runs.Live[quest.Id] = sessionId;
             using var live = new Disposer(() => Context.Runs.Live.TryRemove(quest.Id, out var _));
@@ -1681,10 +1685,14 @@ public sealed class Driver(
     /// The file, which goes when the session does, what the protocol door carries, and what was handed, for the instruction's
     /// account (CONTEXT1), which outlives the file.
     /// </returns>
+    /// <param name="plugins">
+    /// The harness plugins composed for it (HELPPLUG1b, <see cref="SpawnSkills"/>), which the protocol door carries beside its rules;
+    /// the pipe door was handed them by its own flag already.
+    /// </param>
     internal (string? File, object? Meta, HandedSection Handed) HandRules(
         ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
         string tree, string? kept, IReadOnlyList<string>? job = null, AcrossReach? across = null, string? said = null,
-        bool opinion = false, bool helper = false)
+        bool opinion = false, bool helper = false, IReadOnlyList<string>? plugins = null)
     {
         // A harness a Claude Code rule means nothing to is handed nothing, and no file is written.
         if (!adapter.TakesSettings) return (null, null, RulesHanded(takes: false, PermissionFile.Empty, RuleLists.Empty, workspace, repository));
@@ -1723,7 +1731,7 @@ public sealed class Driver(
             return (file, null, handed);
         }
 
-        return (file, adapter.AcpSessionMeta(file), handed);
+        return (file, adapter.AcpSessionMeta(file, plugins ?? []), handed);
     }
 
     /// <summary>
@@ -2123,7 +2131,9 @@ public sealed class Driver(
         Action? working = null, Func<CancellationToken, Task<bool>>? waitsOnBackground = null, int? minutes = null,
         string? noConnector = null, Action<SessionStop?>? stopMade = null, bool movedFirst = false, Action? spawned = null)
     {
-        using var process = Process.Start(info)
+        // Through the start gate (PROCSTART2): a press that starts a session reaches here before its first wait, and the
+        // runtime's start lock is no thread's to wait on but the pool's. Seen through once begun, as the start always was.
+        using var process = await ProcessStarts.Shared.StartAsync(info, CancellationToken.None).ConfigureAwait(false)
             ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
         spawned?.Invoke();
         // Kept beside the process, so who is driving Daoris's browser lasts exactly as long as it (BRW8).

@@ -41,21 +41,21 @@ public sealed class InstallUpdaterTests : Bridge
     private InstallUpdater Updater(string? install = "") => new(
         install == "" ? _install : install, DataHome, new MachineLog(DataHome, "desktop", () => Now),
         work: () => _work,
-        relaunch: () =>
+        relaunch: _ =>
         {
             _relaunched++;
-            return _launches;
+            return Task.FromResult(_launches);
         },
         close: () => _closed++,
         bus: Bus, clock: () => Now, pid: 4242);
 
     [Fact]
-    public void A_workspace_build_is_no_install_and_never_drains()
+    public async Task A_workspace_build_is_no_install_and_never_drains()
     {
         Stage("b1");
         using var updater = Updater(install: null);
 
-        var state = updater.Look();
+        var state = await updater.LookAsync();
 
         Assert.Equal(UpdateStates.None, state.State);
         Assert.False(updater.Draining);
@@ -63,11 +63,11 @@ public sealed class InstallUpdaterTests : Bridge
     }
 
     [Fact]
-    public void Nothing_staged_is_nothing_to_do()
+    public async Task Nothing_staged_is_nothing_to_do()
     {
         using var updater = Updater();
 
-        Assert.Equal(UpdateStates.None, updater.Look().State);
+        Assert.Equal(UpdateStates.None, (await updater.LookAsync()).State);
         Assert.False(updater.Draining);
         Assert.Null(updater.State.Staged);
         // No journal: no swap to tell of.
@@ -75,29 +75,29 @@ public sealed class InstallUpdaterTests : Bridge
     }
 
     [Fact]
-    public void A_staged_build_drains_by_default_while_work_runs_and_installs_itself_once_none_does()
+    public async Task A_staged_build_drains_by_default_while_work_runs_and_installs_itself_once_none_does()
     {
         Stage("b1");
         _work = new UpdateWork(Driven: 1, Turns: 1);
         using var updater = Updater();
 
-        var draining = updater.Look();
+        var draining = await updater.LookAsync();
         Assert.Equal(UpdateStates.Draining, draining.State);
         Assert.True(updater.Draining);
         Assert.Equal(1, draining.Driven);
         Assert.Equal(1, draining.Turns);
         Assert.Equal(UpdateMode.WhenIdle, draining.Mode);
         Assert.Equal(new UpdateBuild("b1", "0.0.1", "abc1234", Now), draining.Staged);
-        updater.Look();
+        await updater.LookAsync();
         Assert.Equal(0, _relaunched);
 
         _work = new UpdateWork(0, 0);
-        var applying = updater.Look();
+        var applying = await updater.LookAsync();
 
         Assert.Equal(UpdateStates.Applying, applying.State);
         Assert.Equal(1, _relaunched);
         Assert.Equal(1, _closed);
-        updater.Look();
+        await updater.LookAsync();
         Assert.Equal(1, _relaunched);
         Assert.Equal(1, _closed);
 
@@ -109,13 +109,13 @@ public sealed class InstallUpdaterTests : Bridge
     }
 
     [Fact]
-    public void Update_now_installs_at_once_whatever_runs_and_the_request_is_cleared_as_it_closes()
+    public async Task Update_now_installs_at_once_whatever_runs_and_the_request_is_cleared_as_it_closes()
     {
         Stage("b1");
         _work = new UpdateWork(Driven: 2, Turns: 0);
         using var updater = Updater();
 
-        updater.Say(UpdateMode.Now, "screen");
+        await updater.SayAsync(UpdateMode.Now, "screen");
 
         Assert.Equal(UpdateStates.Applying, updater.State.State);
         Assert.Equal(1, _relaunched);
@@ -128,37 +128,37 @@ public sealed class InstallUpdaterTests : Bridge
     }
 
     [Fact]
-    public void Not_now_keeps_the_build_staged_and_starts_work_again_until_a_newer_build_is_staged()
+    public async Task Not_now_keeps_the_build_staged_and_starts_work_again_until_a_newer_build_is_staged()
     {
         Stage("b1");
         _work = new UpdateWork(Driven: 1, Turns: 0);
         using var updater = Updater();
-        updater.Look();
+        await updater.LookAsync();
         Assert.True(updater.Draining);
 
-        var waiting = updater.Say(UpdateMode.NotNow, "screen");
+        var waiting = await updater.SayAsync(UpdateMode.NotNow, "screen");
 
         Assert.Equal(UpdateStates.Waiting, waiting.State);
         Assert.False(updater.Draining);
         Assert.Equal(new UpdateRequest(UpdateMode.NotNow, "b1", Now), InstallUpdate.Read(DataHome));
         _work = new UpdateWork(0, 0);
-        Assert.Equal(UpdateStates.Waiting, updater.Look().State);
+        Assert.Equal(UpdateStates.Waiting, (await updater.LookAsync()).State);
         Assert.Equal(0, _relaunched);
 
         Stage("b2");
         _work = new UpdateWork(Driven: 1, Turns: 0);
-        Assert.Equal(UpdateStates.Draining, updater.Look().State);
+        Assert.Equal(UpdateStates.Draining, (await updater.LookAsync()).State);
         Assert.True(updater.Draining);
     }
 
     [Fact]
-    public void A_build_that_fails_the_check_is_refused_before_anything_closes_and_the_drain_ends()
+    public async Task A_build_that_fails_the_check_is_refused_before_anything_closes_and_the_drain_ends()
     {
         Stage("b1");
         File.WriteAllText(Path.Combine(_install, "update", "staged", "app", "Daoris.Desktop.exe"), "NEW application");
         using var updater = Updater();
 
-        var refused = updater.Look();
+        var refused = await updater.LookAsync();
 
         Assert.Equal(UpdateStates.Refused, refused.State);
         Assert.Equal("hash", refused.Problem?.Code);
@@ -166,7 +166,7 @@ public sealed class InstallUpdaterTests : Bridge
         Assert.Equal(0, _relaunched);
         Assert.Equal(0, _closed);
         Assert.Equal("old application", File.ReadAllText(Path.Combine(_install, "app", "Daoris.Desktop.exe")));
-        updater.Look();
+        await updater.LookAsync();
         var line = Logged("update.refused", "warn").Single();
         Assert.Equal("hash", line["reason"]!.GetValue<string>());
     }
@@ -176,27 +176,27 @@ public sealed class InstallUpdaterTests : Bridge
     /// running, moved the build aside — stops draining once the build is gone, rather than holding every start for ever.
     /// </summary>
     [Fact]
-    public void An_application_left_open_after_applying_stops_draining_once_the_launcher_has_moved_the_build_aside()
+    public async Task An_application_left_open_after_applying_stops_draining_once_the_launcher_has_moved_the_build_aside()
     {
         Stage("b1");
         using var updater = Updater();
-        Assert.Equal(UpdateStates.Applying, updater.Look().State);
+        Assert.Equal(UpdateStates.Applying, (await updater.LookAsync()).State);
         Assert.True(updater.Draining);
 
         Directory.Delete(Path.Combine(_install, "update", "staged"), recursive: true);
 
-        Assert.Equal(UpdateStates.None, updater.Look().State);
+        Assert.Equal(UpdateStates.None, (await updater.LookAsync()).State);
         Assert.False(updater.Draining);
     }
 
     [Fact]
-    public void A_launcher_that_will_not_start_refuses_the_update_and_the_application_stays_open()
+    public async Task A_launcher_that_will_not_start_refuses_the_update_and_the_application_stays_open()
     {
         Stage("b1");
         _launches = false;
         using var updater = Updater();
 
-        var refused = updater.Look();
+        var refused = await updater.LookAsync();
 
         Assert.Equal(UpdateStates.Refused, refused.State);
         Assert.Equal("launcher", refused.Problem?.Code);
@@ -206,12 +206,12 @@ public sealed class InstallUpdaterTests : Bridge
     }
 
     [Fact]
-    public void A_start_that_confirms_a_swap_says_once_it_was_updated()
+    public async Task A_start_that_confirms_a_swap_says_once_it_was_updated()
     {
         StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.Started, "b1", "0.0.2", "def5678", Now, []));
         using var updater = Updater();
 
-        updater.Started();
+        await updater.StartedAsync();
 
         Assert.Equal(new UpdateOutcome(SwapPhase.Installed, "b1", "0.0.2", "def5678", null, null), updater.State.Outcome);
         Assert.Equal(SwapPhase.Confirmed, StagedBuild.ReadJournal(_install)!.Phase);
@@ -221,28 +221,28 @@ public sealed class InstallUpdaterTests : Bridge
         Assert.True(line["confirmed"]!.GetValue<bool>());
 
         using var later = Updater();
-        later.Started();
+        await later.StartedAsync();
         Assert.Null(later.State.Outcome);
     }
 
     [Fact]
-    public void A_start_after_a_roll_back_says_it_once_with_its_reason_and_marks_it_told()
+    public async Task A_start_after_a_roll_back_says_it_once_with_its_reason_and_marks_it_told()
     {
         StagedBuild.WriteJournal(_install, new SwapRecord(
             SwapPhase.RolledBack, "b1", "0.0.2", null, Now, [], Reason: "exited",
             Detail: "the new build's application ended before it came up; the build before it was put back."));
         using var updater = Updater();
 
-        updater.Started();
+        await updater.StartedAsync();
 
         Assert.Equal(SwapPhase.RolledBack, updater.State.Outcome?.Phase);
         Assert.Equal("exited", updater.State.Outcome?.Reason);
         Assert.True(StagedBuild.ReadJournal(_install)!.Told);
         Assert.Equal("exited", Logged("update.rolled-back", "warn").Single()["reason"]!.GetValue<string>());
 
-        Assert.Null(updater.Dismiss().Outcome);
+        Assert.Null((await updater.DismissAsync()).Outcome);
         using var later = Updater();
-        later.Started();
+        await later.StartedAsync();
         Assert.Null(later.State.Outcome);
     }
 
@@ -251,12 +251,12 @@ public sealed class InstallUpdaterTests : Bridge
     /// longest in milliseconds, on the line that says how the swap ended; a swap that met none says nothing of them.
     /// </summary>
     [Fact]
-    public void The_line_that_says_how_a_swap_ended_counts_its_holds_and_the_longest()
+    public async Task The_line_that_says_how_a_swap_ended_counts_its_holds_and_the_longest()
     {
         StagedBuild.WriteJournal(_install, new SwapRecord(
             SwapPhase.Started, "b1", "0.0.2", "def5678", Now, [],
             Holds: [new SwapHold("app", "update/previous/app", 14_200, 72, true), new SwapHold("update/staged/app", "app", 3_000, 16, true)]));
-        using (var updater = Updater()) updater.Started();
+        using (var updater = Updater()) await updater.StartedAsync();
 
         var installed = Logged("update.installed").Single();
         Assert.Equal(2, installed["holds"]!.GetValue<int>());
@@ -265,7 +265,7 @@ public sealed class InstallUpdaterTests : Bridge
         StagedBuild.WriteJournal(_install, new SwapRecord(
             SwapPhase.RolledBack, "b2", "0.0.3", null, Now, [], Reason: "busy", Detail: "a file the swap had to move was held.",
             Holds: [new SwapHold("update/staged/app", "app", 120_000, 601, false)]));
-        using (var updater = Updater()) updater.Started();
+        using (var updater = Updater()) await updater.StartedAsync();
 
         var rolledBack = Logged("update.rolled-back", "warn").Single();
         Assert.Equal("busy", rolledBack["reason"]!.GetValue<string>());
@@ -273,7 +273,7 @@ public sealed class InstallUpdaterTests : Bridge
         Assert.Equal(120_000, rolledBack["heldMs"]!.GetValue<long>());
 
         StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.RolledBack, "b3", "0.0.4", null, Now, [], Reason: "exited"));
-        using (var updater = Updater()) updater.Started();
+        using (var updater = Updater()) await updater.StartedAsync();
 
         var plain = Logged("update.rolled-back", "warn").Single(line => line["build"]!.GetValue<string>() == "b3");
         Assert.Null(plain["holds"]);
@@ -286,24 +286,24 @@ public sealed class InstallUpdaterTests : Bridge
     /// terminal's plain <c>daoris-driver update</c> still says it from the same journal.
     /// </summary>
     [Fact]
-    public void The_last_swap_outlives_a_dismissal_and_a_later_start_told_or_not()
+    public async Task The_last_swap_outlives_a_dismissal_and_a_later_start_told_or_not()
     {
         StagedBuild.WriteJournal(_install, new SwapRecord(
             SwapPhase.RolledBack, "b1", "0.0.2", "def5678", Now, [], Reason: "exited", Detail: "it ended before it came up."));
         var last = new UpdateOutcome(SwapPhase.RolledBack, "b1", "0.0.2", "def5678", "exited", "it ended before it came up.");
         using var updater = Updater();
 
-        updater.Started();
+        await updater.StartedAsync();
         Assert.Equal(last, updater.State.Outcome);
         Assert.Equal(last, updater.State.Last);
 
-        var dismissed = updater.Dismiss();
+        var dismissed = await updater.DismissAsync();
         Assert.Null(dismissed.Outcome);
         Assert.Equal(last, dismissed.Last);
 
         // Told by the start before, so this one says nothing: the swap is still the last one.
         using var later = Updater();
-        later.Started();
+        await later.StartedAsync();
         Assert.Null(later.State.Outcome);
         Assert.Equal(last, later.State.Last);
     }
@@ -313,22 +313,22 @@ public sealed class InstallUpdaterTests : Bridge
     /// launcher finishes; a journal still under way names no ending, so it is no last swap yet.
     /// </summary>
     [Fact]
-    public void A_swap_this_start_confirmed_is_the_last_swap_installed_and_one_under_way_is_none_yet()
+    public async Task A_swap_this_start_confirmed_is_the_last_swap_installed_and_one_under_way_is_none_yet()
     {
         StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.Started, "b1", "0.0.2", "def5678", Now, []));
         var installed = new UpdateOutcome(SwapPhase.Installed, "b1", "0.0.2", "def5678", null, null);
         using var updater = Updater();
 
-        updater.Started();
+        await updater.StartedAsync();
         Assert.Equal(SwapPhase.Confirmed, StagedBuild.ReadJournal(_install)!.Phase);
         Assert.Equal(installed, updater.State.Last);
 
         StagedBuild.WriteJournal(_install, new SwapRecord(
             SwapPhase.Installed, "b1", "0.0.2", "def5678", Now, [], Pid: 4242, Confirmed: true, Told: true));
-        Assert.Equal(installed, updater.Look().Last);
+        Assert.Equal(installed, (await updater.LookAsync()).Last);
 
         StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.Swapping, "b2", "0.0.3", null, Now, []));
-        Assert.Null(updater.Look().Last);
+        Assert.Null((await updater.LookAsync()).Last);
     }
 
     /// <summary>
@@ -336,48 +336,48 @@ public sealed class InstallUpdaterTests : Bridge
     /// delete, so a whole build was left there until the next update. The application clears it once the swap is done.
     /// </summary>
     [Fact]
-    public void A_build_left_in_previous_after_a_finished_swap_is_cleared_by_a_look_and_never_during_one()
+    public async Task A_build_left_in_previous_after_a_finished_swap_is_cleared_by_a_look_and_never_during_one()
     {
         Write("update/previous/Daoris.exe", "the launcher that swapped");
         Write("update/previous/app/Daoris.Desktop.exe", "the build before it");
         StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.Swapping, "b1", "0.0.2", null, Now, []));
         using var updater = Updater();
 
-        updater.Look();
+        await updater.LookAsync();
         Assert.True(Directory.Exists(Path.Combine(_install, "update", "previous")), "never while the launcher swaps");
 
         StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.Installed, "b1", "0.0.2", null, Now, [], Confirmed: true));
-        updater.Look();
+        await updater.LookAsync();
         Assert.False(Directory.Exists(Path.Combine(_install, "update", "previous")));
     }
 
     [Fact]
-    public void A_word_with_nothing_staged_or_in_a_mode_this_build_does_not_know_is_refused_and_nothing_is_written()
+    public async Task A_word_with_nothing_staged_or_in_a_mode_this_build_does_not_know_is_refused_and_nothing_is_written()
     {
         using var updater = Updater();
 
         Assert.Equal(
             Refusals.UpdateNothingStaged,
-            Assert.Throws<Shenora.Core.Ipc.ShenoraException>(() => updater.Say(UpdateMode.Now, "screen")).Code);
+            (await Assert.ThrowsAsync<Shenora.Core.Ipc.ShenoraException>(() => updater.SayAsync(UpdateMode.Now, "screen"))).Code);
         Stage("b1");
         Assert.Equal(
             Refusals.UpdateModeUnknown,
-            Assert.Throws<Shenora.Core.Ipc.ShenoraException>(() => updater.Say("later", "screen")).Code);
+            (await Assert.ThrowsAsync<Shenora.Core.Ipc.ShenoraException>(() => updater.SayAsync("later", "screen"))).Code);
         Assert.Null(InstallUpdate.Read(DataHome));
         Assert.Equal(0, _relaunched);
     }
 
     [Fact]
-    public void The_page_is_told_each_change_once_and_not_a_look_that_changed_nothing()
+    public async Task The_page_is_told_each_change_once_and_not_a_look_that_changed_nothing()
     {
         Stage("b1");
         _work = new UpdateWork(Driven: 1, Turns: 0);
         using var updater = Updater();
 
-        updater.Look();
-        updater.Look();
+        await updater.LookAsync();
+        await updater.LookAsync();
         _work = new UpdateWork(Driven: 0, Turns: 1);
-        updater.Look();
+        await updater.LookAsync();
 
         var told = Raised.Where(message => message.Type == "UPDATE_STATE").ToList();
         Assert.Equal(2, told.Count);

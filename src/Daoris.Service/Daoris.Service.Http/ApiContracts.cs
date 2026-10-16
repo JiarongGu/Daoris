@@ -10,9 +10,12 @@ namespace Daoris.Knowledge.Http;
 
 // `Proof` (PERSONDOOR1a, the person-door design §2.3): asked with `prove`, a host holding a person key answers the proof of
 // possession its starter checks before it trusts the host; absent otherwise, so the answer is what it always was.
+// `Home` (HOMEID1, the terminal RPC design §3.2): a local host's home's id (`HomeIdentity`), which a terminal's discovery checks
+// before it takes an address; absent from a shared host, and where the home's id does not read.
 // `Version` (WIRING1b, the this-Daoris design §3.6): the host's informational version as the release workflow stamped it, which
 // This Daoris shows. Added after the others, a wire shape's field being added and never renamed; a reader older than it skips it.
-public sealed record StatusResponse(bool Semantic, string Tier, string? Note, string? Proof = null, string? Version = null);
+public sealed record StatusResponse(
+    bool Semantic, string Tier, string? Note, string? Proof = null, string? Home = null, string? Version = null);
 
 /// <summary>This host's informational version, read once: what <c>/api/status</c> answers as <c>version</c> (WIRING1b).</summary>
 public static class HostVersion

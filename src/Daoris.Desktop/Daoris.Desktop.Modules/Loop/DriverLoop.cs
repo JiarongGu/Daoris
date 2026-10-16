@@ -844,43 +844,66 @@ public sealed class DriverLoop(
 
     private SessionWords? _words;
 
-    /// <summary>How often a loop waiting on another driver's lock looks again (DRV8a).</summary>
+    /// <summary>How often a loop waiting on another holder of the home's lease looks again (DRV8a).</summary>
     public TimeSpan HoldRetry { get; init; } = TimeSpan.FromSeconds(5);
 
+    /// <summary>How long the loop waits on an act's hold (a verb, a migration, a swap) before it says so (HOMELEASE1).</summary>
+    public TimeSpan TellAfter { get; init; } = HomeLease.Wait;
+
     /// <summary>
-    /// This home's driver lock, taken for the desktop's loop (DRV8a, D104). While another live driver
-    /// holds it — a terminal's `daoris-driver drive` — the loop waits, and says so once, on the channel a
-    /// person acts on; it takes the lock the moment that one lets go. Null when the shell closes first.
+    /// This home's lease, taken for the desktop's loop for its life (DRV8a, D104; HOMELEASE1, the terminal RPC design §5).
+    /// While another live driver holds it — a terminal's `daoris-driver drive` — the loop waits, and says so at once, on the
+    /// channel a person acts on; while an act holds it — a terminal's verb acting alone, the first-start move, the launcher's
+    /// swap — it waits, and says so once that hold has lasted <see cref="TellAfter"/>, on that channel and in the machine log.
+    /// Either way it takes the lease the moment the holder lets go. Null when the shell closes first.
     /// </summary>
     /// <remarks>
     /// Waited for rather than refused, as a terminal's loop is: the desktop is where a person drives from,
     /// and nothing else it carries races anyone for a quest.
     /// </remarks>
-    public async Task<DriverLock?> HoldHomeAsync(CancellationToken ct)
+    public async Task<HomeLease?> HoldHomeAsync(CancellationToken ct)
     {
         var told = false;
+        DateTimeOffset? actSince = null;
         while (true)
         {
-            DriverLock? held;
+            HomeLease? held;
             string? said;
+            LeaseHolder? holder = null;
             try
             {
-                held = DriverLock.TryAcquire(Home, DriverKind.Desktop, out var holder);
+                held = HomeLease.TryAcquire(Home, LeaseKind.Desktop, out holder);
                 said = holder is null
                     ? null
-                    : $"The driver loop is waiting: this home is already driven by {holder.Named}. It starts "
-                      + "here the moment that one stops.";
+                    : holder.IsInstance
+                        ? $"The driver loop is waiting: this home is already driven by {holder.Named}. It starts "
+                          + "here the moment that one stops."
+                        : $"The driver loop is waiting: this home is held by {holder.Named}, which has not let it go in "
+                          + $"{TellAfter.TotalSeconds:0} seconds. It starts here the moment that one ends.";
             }
-            catch (DriverException error)
+            catch (HomeLeaseException error)
             {
                 held = null;
                 said = error.Message;
             }
 
             if (held is not null) return held;
+
+            // An act holds the home for a moment, as a verb's press does: said only once it has lasted the wait.
+            if (holder is { IsInstance: false })
+            {
+                actSince ??= DateTimeOffset.UtcNow;
+                if (DateTimeOffset.UtcNow - actSince < TellAfter) said = null;
+            }
+
             if (!told && said is not null)
             {
                 await eventBus.EmitAsync("DAORIS", "DRIVER_ERROR", new { Message = said }).ConfigureAwait(false);
+                if (holder is not null)
+                {
+                    log?.Warn("home.waiting", ("holder", holder.Kind.ToString().ToLowerInvariant()), ("pid", holder.Pid), ("what", holder.What));
+                }
+
                 told = true;
             }
 

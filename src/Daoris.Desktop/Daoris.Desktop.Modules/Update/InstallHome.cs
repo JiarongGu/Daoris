@@ -83,10 +83,14 @@ public static class InstallHome
 
     /// <summary>
     /// What the install's own runtime writes under `data/` before Daoris has: the engine's profile
-    /// (`chromium`, and `webview2` from before D92) and the window's geometry. Their presence does not
-    /// make the home a home that has state.
+    /// (`chromium`, and `webview2` from before D92) and the window's geometry; and what a verb the install carries may leave
+    /// before the first start, the home's id and its lease (HOMEID1, HOMELEASE1). Their presence does not make the home a
+    /// home that has state.
     /// </summary>
-    private static readonly HashSet<string> Runtime = new(StringComparer.OrdinalIgnoreCase) { "config", "webview2", "chromium" };
+    private static readonly HashSet<string> Runtime = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "config", "webview2", "chromium", HomeIdentity.FileName, HomeLease.FileName,
+    };
 
     /// <summary>
     /// The install a shell runs in (D93): its own folder when that holds the marker, the folder above
@@ -110,13 +114,17 @@ public static class InstallHome
     /// respected whole. A home the environment only inherited from the account, naming another folder,
     /// is overridden: the install's own `data/` wins (HOME1, D105).
     /// </summary>
+    /// <param name="leaseWait">
+    /// How long the move waits for the home's lease while another act holds it (HOMELEASE1); <see cref="HomeLease.Wait"/>.
+    /// </param>
     public static HomeEstablished? Establish(
         string baseDirectory,
         Func<string, string?> processEnvironment,
         Action<string, string> setProcess,
         Func<string?> userEnvironment,
         Action<string> setUser,
-        string legacy)
+        string legacy,
+        TimeSpan? leaseWait = null)
     {
         var root = RootOf(baseDirectory);
         if (!File.Exists(Path.Combine(root, Marker))) return null;
@@ -151,7 +159,7 @@ public static class InstallHome
             setForUser = true;
         }
 
-        var (moved, failed) = HasState(home) ? ([], []) : MoveIn(legacy, home);
+        var (moved, failed) = HasState(home) ? ([], []) : Migrate(legacy, home, leaseWait ?? HomeLease.Wait);
 
         var notice = $"Daoris home: {home}";
         if (overrode is not null)
@@ -228,6 +236,28 @@ public static class InstallHome
         Directory.EnumerateFileSystemEntries(home)
             .Select(Path.GetFileName)
             .Any(name => name is not null && !Runtime.Contains(name));
+
+    /// <summary>
+    /// The move, under the home's lease (HOMELEASE1, the terminal RPC design §5): taken for the move alone, so no verb acting
+    /// alone writes beside it, and waited for up to <paramref name="within"/> where another act holds it; still held then,
+    /// nothing moves, and the holder is said as what could not move and why. Judged again under the lease, since another start
+    /// may have moved it meanwhile.
+    /// </summary>
+    private static (List<string> Moved, List<string> Failed) Migrate(string legacy, string home, TimeSpan within)
+    {
+        if (!Directory.Exists(legacy)) return ([], []);
+
+        try
+        {
+            using var lease = HomeLease.Await(home, LeaseKind.Migration, null, within, out var holder);
+            if (lease is null) return ([], [$"anything, since {holder!.Named} held this home; the next start moves it"]);
+            return HasState(home) ? ([], []) : MoveIn(legacy, home);
+        }
+        catch (HomeLeaseException error)
+        {
+            return ([], [$"anything ({error.Message.TrimEnd('.')})"]);
+        }
+    }
 
     /// <summary>
     /// Move a legacy profile directory's state in — every entry but the ones that stay — one by one,

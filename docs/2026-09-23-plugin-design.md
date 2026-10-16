@@ -109,6 +109,18 @@ repository names one, and a scratch run redirects it with everything else.
   claim keeps the first by id. A server handed is a tool *available*, not a tool *approved*: what a
   session may call is its permission rules — Daoris's scopes handed at spawn and the repository's own,
   a deny winning (D72, which amended "the repository's allow-list" here).
+  *(D170, HELPPLUG1a: a server's `to` names who it is handed to, `sessions`, `help` (Ask Daoris) or both, and absent is
+  `sessions`, as before. A server for Ask Daoris may declare `allow`, the tools of it Ask Daoris may call, each a tool's name
+  (letters, digits, `_` and `-`), which its spawn's rules allow as `mcp__<server>__<tool>` and nothing else. A bad `to` or
+  `allow`, or an `allow` on a server not handed to Ask Daoris, refuses the plugin as a server's other problems do. Tightened
+  the same day (D170's note): `writes` names the tools that change something outside Daoris, and a server's tools reach Ask
+  Daoris only once the person approved them on the plugin's page or with `daoris-driver plugins approve`, a write only where
+  they accepted it; a generic execution tool is refused for Ask Daoris whatever the manifest says.)*
+
+- *(D170, HELPPLUG1b)* **`skills`** names the skills the plugin hands, each `{ "name": "<skill>", "to": [...] }`, its folder
+  `skills/<name>/` beside the manifest holding a `SKILL.md`; `to` as a server's. Daoris copies each for a session as it starts,
+  into a harness plugin under `<home>/spawn/`, and hands it by the harness's session-only door (`--plugin-dir`); never into a
+  repository. A skill declaring `allowed-tools` is handed nowhere.
 
 - *(D150, PLUGTOOL1a)* **`tools`** names the programs the plugin's process runs: each an `id`, a range of
   `versions`, `for` (why it runs it) and at most four `ready` checks. A problem there never refuses the plugin, and a tool

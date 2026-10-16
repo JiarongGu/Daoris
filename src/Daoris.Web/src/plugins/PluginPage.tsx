@@ -6,7 +6,7 @@ import { type KitPoint, type PluginTrialResult, pointGloss, TrialReport } from '
 import { PluginSourceLine, PluginUpdatePlan, type PluginUpdatePlanShown, updatable } from './PluginUpdate';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
-import { type PluginShown, pluginState, speaks, updateWaits } from './catalog';
+import { type HelpServerShown, type PluginShown, pluginState, type SkillShown, speaks, updateWaits } from './catalog';
 import { PluginIcon } from './PluginIcon';
 import { STATE_WORD } from './PluginList';
 
@@ -51,6 +51,105 @@ export function PointRows({ points, kitPoints }: { points: string[]; kitPoints?:
   );
 }
 
+/** The person's presses on what a plugin's server offers Ask Daoris (HELPPLUG1a's tightening, D170's note). */
+export type HelpPress = 'help-approve' | 'help-reads' | 'help-withdraw';
+
+/**
+ * **What a plugin offers Ask Daoris** (HELPPLUG1a, D170 point 3 and its note): a line saying plainly that a plugin is code that
+ * runs as the person, then each server in the mono face with the person's approval as it stands, what it reads with, what it
+ * writes outside Daoris with and which of those writes they accepted, the driver's sentence for one refused, and the presses:
+ * *Approve* (its exact tools, writes included) and *Approve its reads only* while it waits, *Withdraw* once approved. None for
+ * a refused one, and none on an offer's page, which nothing here has installed. Nothing where it offers nothing.
+ */
+export function HelpServers({ plugin, servers, onHelp }: {
+  /** The plugin's id, which a press names; absent on an offer's page. */
+  plugin?: string;
+  servers?: HelpServerShown[];
+  onHelp?: (id: string, server: string, action: HelpPress) => void;
+}) {
+  const { t } = useTranslation();
+  if (!servers?.length) return null;
+  return (
+    <PageSection title={t('plugin.section.help')}>
+      <Body className="mb-2">{t('plugin.help.trusted')}</Body>
+      <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+        {servers.map((server) => {
+          const writes = server.writes ?? [];
+          const accepted = writes.filter((tool) => server.accepted?.includes(tool));
+          const asked = writes.filter((tool) => !accepted.includes(tool));
+          const state = server.state ?? 'waits';
+          return (
+            <li key={server.name} className="flex flex-col gap-0.5 text-small text-ink-soft">
+              <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                <code className="font-mono text-meta text-ink">{server.name}</code>
+                <span>{t(`plugin.help.state.${state}`)}</span>
+              </span>
+              {server.allow.length > 0 && <span>{t('plugin.help.reads', { tools: server.allow.join(', ') })}</span>}
+              {state === 'approved' && accepted.length > 0 && <span>{t('plugin.help.writesAccepted', { tools: accepted.join(', ') })}</span>}
+              {state === 'approved' && asked.length > 0 && <span>{t('plugin.help.writesAsked', { tools: asked.join(', ') })}</span>}
+              {state !== 'approved' && writes.length > 0 && <span>{t('plugin.help.writes', { tools: writes.join(', ') })}</span>}
+              {server.allow.length === 0 && writes.length === 0 && <span>{t('plugin.help.callsNone')}</span>}
+              {state === 'refused' && server.refusal && <span><Inline text={server.refusal} /></span>}
+              {plugin && onHelp && state !== 'refused' && (
+                <span className="mt-1 flex flex-wrap gap-2">
+                  {state === 'approved' ? (
+                    <Button variant="ghost" aria-label={t('plugin.help.withdrawNamed', { name: server.name })} onClick={() => onHelp(plugin, server.name, 'help-withdraw')}>
+                      {t('plugin.help.withdraw')}
+                    </Button>
+                  ) : (
+                    <>
+                      <Button aria-label={t('plugin.help.approveNamed', { name: server.name })} onClick={() => onHelp(plugin, server.name, 'help-approve')}>
+                        {t('plugin.help.approve')}
+                      </Button>
+                      {writes.length > 0 && (
+                        <Button variant="ghost" onClick={() => onHelp(plugin, server.name, 'help-reads')}>{t('plugin.help.approveReads')}</Button>
+                      )}
+                    </>
+                  )}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      <Body className="mt-2">{t('plugin.help.body')}</Body>
+    </PageSection>
+  );
+}
+
+/** Who a skill is handed to, by the words the page says it in (HELPPLUG1b). */
+function skillTo(to: string[]): string {
+  const sessions = to.includes('sessions');
+  const help = to.includes('help');
+  return sessions && help ? 'plugin.skills.to.both' : help ? 'plugin.skills.to.help' : 'plugin.skills.to.sessions';
+}
+
+/**
+ * **The skills a plugin hands** (HELPPLUG1b, D170 point 4): each in the mono face with who it is handed to, the driver's own
+ * sentence under one it does not hand, and a line saying each is copied into a session as it starts and never into a
+ * repository. None where it hands no skill.
+ */
+export function SkillRows({ skills }: { skills?: SkillShown[] }) {
+  const { t } = useTranslation();
+  if (!skills?.length) return null;
+  return (
+    <PageSection title={t('plugin.section.skills')}>
+      <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+        {skills.map((skill) => (
+          <li key={skill.name} className="flex flex-col gap-0.5 text-small">
+            <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+              <code className="font-mono text-meta text-ink">{skill.name}</code>
+              <span className="text-ink-soft">{t(skillTo(skill.to))}</span>
+            </span>
+            {skill.problem && <span className="text-ink-soft"><Inline text={skill.problem} /></span>}
+          </li>
+        ))}
+      </ul>
+      <Body className="mt-1.5">{t('plugin.skills.body')}</Body>
+    </PageSection>
+  );
+}
+
 /** Names in the mono face, one a line: the agents a plugin declares, the servers an offer hands. */
 export function NameRows({ names }: { names: string[] }) {
   return (
@@ -62,7 +161,7 @@ export function NameRows({ names }: { names: string[] }) {
 
 /**
  * **A plugin's page** (D119 §3.2) on today's answers (PLUGUI1b): a header with its switch, *Try*, *Update…* and
- * *Remove…*, then Points, Agents, Tests, Data folder and Source, and its terminal twins at its foot.
+ * *Remove…*, then Points, Agents, Ask Daoris and Skills (D170), Tests, Data folder and Source, and its terminal twins at its foot.
  *
  * @remarks
  * **A molecule**: every state is reached by its props, the ask and the plan included, and every press goes out.
@@ -79,7 +178,7 @@ export function NameRows({ names }: { names: string[] }) {
  */
 export function PluginPage({
   plugin, kitPoints, canTry = false, trial, trying = false, plan, updating = false, acting = false, asking = false,
-  onSwitch, onTry, onAskUpdate, onApplyUpdate, onCancelUpdate, onAskRemove, onRemove, onCancelRemove,
+  onSwitch, onHelp, onTry, onAskUpdate, onApplyUpdate, onCancelUpdate, onAskRemove, onRemove, onCancelRemove,
 }: {
   plugin: PluginShown;
   /** The kit's points with their kinds, which name what each point asks; an older shell sends none. */
@@ -98,6 +197,8 @@ export function PluginPage({
   /** *Remove…*'s first press was made, and the page asks. */
   asking?: boolean;
   onSwitch: (id: string, action: 'enable' | 'disable') => void;
+  /** The person's approval of what a server offers Ask Daoris, or its withdrawal (D170's note); none offers no press. */
+  onHelp?: (id: string, server: string, action: HelpPress) => void;
   onTry: (id: string) => void;
   onAskUpdate: (id: string) => void;
   onApplyUpdate: (id: string) => void;
@@ -199,6 +300,9 @@ export function PluginPage({
           <NameRows names={plugin.harnesses} />
         </PageSection>
       )}
+
+      <HelpServers plugin={plugin.id} servers={plugin.helpServers} onHelp={onHelp} />
+      <SkillRows skills={plugin.skills} />
 
       <PageSection title={t('plugin.section.tests')}>
         <h3 className="m-0 mb-1.5 text-small font-medium text-ink-soft">{t('plugin.tests.trial')}</h3>

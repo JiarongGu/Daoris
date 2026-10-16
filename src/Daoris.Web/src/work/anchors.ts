@@ -15,9 +15,9 @@ export const ANCHOR_BOUND_MS = 10 * 60_000;
 /**
  * A wait the conversation can show the raising event of (WAITFOOT1c, D168 point 4): a park's question (an intake's too), the work
  * to land (*Accept…* or the rebase words), the second opinion handed to the session, each go-ahead by its number, and each rule
- * proposal by its id (PROPOSEHERE1b). A review's gate and a discard the line holds are raised by no event of the session's.
+ * proposal by its id (PROPOSEHERE1b), and each agent's ask for a helper by its id (WAITFOOT1e). A review's gate and a discard the line holds are raised by no event of the session's.
  */
-export type AnchorWait = 'question' | 'work' | 'opinion' | `goAhead:${number}` | `rule:${string}`;
+export type AnchorWait = 'question' | 'work' | 'opinion' | `goAhead:${number}` | `rule:${string}` | `helper:${string}`;
 
 /** The anchor a wait is found by, or null for one with no raising event. */
 export function anchorOf(wait: Wait): AnchorWait | null {
@@ -29,6 +29,7 @@ export function anchorOf(wait: Wait): AnchorWait | null {
     case 'opinion': return 'opinion';
     case 'goAhead': return `goAhead:${wait.number}`;
     case 'rule': return `rule:${wait.id}`;
+    case 'helper': return `helper:${wait.id}`;
     default: return null;
   }
 }
@@ -127,6 +128,22 @@ export function proposalKey(turns: readonly Turn[], proposal: ProposalFacts): st
     && (proposal.action === 'default' ? text(input.id) : text(input.rule)) === named);
 }
 
+/** What an agent's ask for a helper is joined on (WAITFOOT1e): the question as written, the agent it named, when it was made. */
+export type HelperFacts = { question: string; agent: string | null; at: string };
+
+/**
+ * An agent's ask for a helper is raised by its `helper_ask` call (WAITFOOT1e, D168 point 4), which no id joins to it: the call
+ * whose input carries the ask's question, word for word once trimmed, and the agent where the ask named one (as the tool's input
+ * spells it, in either case); nearest when the ask was made, within `ANCHOR_BOUND_MS`. Never by the call's title (D52). None
+ * where no call says so.
+ */
+export function helperKey(turns: readonly Turn[], ask: HelperFacts): string | undefined {
+  const question = ask.question.trim();
+  if (!question) return undefined;
+  const agent = ask.agent?.trim().toLowerCase();
+  return nearest(turns, ask.at, (input) => text(input.question) === question && (!agent || text(input.agent).toLowerCase() === agent));
+}
+
 /** What the anchors are read for: the waits that stand, and what their joins name. */
 export type AnchorAsks = {
   /** The session the conversation is, whose go-ahead requests are its own. */
@@ -138,6 +155,8 @@ export type AnchorAsks = {
   opinion?: string | null;
   /** The rules it proposed that wait on the person, as the frame read them (PROPOSEHERE1b): what each call is joined on. */
   proposals?: readonly (ProposalFacts & { id: string })[] | null;
+  /** The helpers it asked for, as the frame read them (WAITFOOT1e): what each `helper_ask` call is joined on. */
+  helpers?: readonly (HelperFacts & { id: string })[] | null;
 };
 
 /**
@@ -172,6 +191,11 @@ export function anchorsOf(
       const proposal = asks.proposals?.find((row) => row.id === wait.id);
       key = proposal ? proposalKey(turns, proposal) : undefined;
       older = earlier && Boolean(proposal) && (Number.isNaN(begins) || time(proposal!.proposed) <= begins + ANCHOR_BOUND_MS);
+    } else if (wait.kind === 'helper') {
+      // As a rule's: asked after the page began, its call would be on it, so where it is not found here it has none.
+      const helper = asks.helpers?.find((row) => row.id === wait.id);
+      key = helper ? helperKey(turns, helper) : undefined;
+      older = earlier && Boolean(helper) && (Number.isNaN(begins) || time(helper!.at) <= begins + ANCHOR_BOUND_MS);
     } else if (anchor === 'question') key = lastWords(turns);
     else if (anchor === 'work') key = workKey(turns);
     else if (anchor === 'opinion') {
@@ -207,6 +231,8 @@ export type WaitEvents = {
   goAheads?: Readonly<Record<number, () => void>>;
   /** Each rule proposal's, by its id (PROPOSEHERE1b). */
   rules?: Readonly<Record<string, () => void>>;
+  /** Each agent's ask for a helper, by its id (WAITFOOT1e). */
+  helpers?: Readonly<Record<string, () => void>>;
 };
 
 /** The presses for the anchored waits, each showing its own; undefined where none is anchored. */
@@ -215,12 +241,15 @@ export function waitEvents(anchored: readonly AnchorWait[], show: (wait: AnchorW
   const events: WaitEvents = {};
   const goAheads: Record<number, () => void> = {};
   const rules: Record<string, () => void> = {};
+  const helpers: Record<string, () => void> = {};
   for (const anchor of anchored) {
     if (anchor.startsWith('goAhead:')) goAheads[Number(anchor.slice('goAhead:'.length))] = () => show(anchor);
     else if (anchor.startsWith('rule:')) rules[anchor.slice('rule:'.length)] = () => show(anchor);
+    else if (anchor.startsWith('helper:')) helpers[anchor.slice('helper:'.length)] = () => show(anchor);
     else events[anchor as 'question' | 'work' | 'opinion'] = () => show(anchor);
   }
   if (Object.keys(goAheads).length > 0) events.goAheads = goAheads;
   if (Object.keys(rules).length > 0) events.rules = rules;
+  if (Object.keys(helpers).length > 0) events.helpers = helpers;
   return events;
 }

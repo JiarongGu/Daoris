@@ -11,6 +11,7 @@
     "casefold.test.ts": "platform",
     "fsx.test.ts": "platform",
     "home.test.ts": "platform",
+    "lease.test.ts": "platform",
     "shellword.test.ts": "platform",
     "tarball.test.ts": "platform",
     "analyze.test.ts": "doctrine",

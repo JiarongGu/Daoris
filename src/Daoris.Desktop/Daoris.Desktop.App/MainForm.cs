@@ -40,6 +40,10 @@ public sealed class MainForm : OptimizedForm
     private readonly Daoris.Driver.MachineLog _log;
     // When the splash comes down (SPLASHDATA1): the page's word that its first screen has its data, or the bound.
     private readonly SplashLift _lift = new();
+    // Whether a close puts this window away or ends the application (MAINWINDOWS2): the others' count, and a close from code
+    // that is for good, since the kit reports one as the person's.
+    private readonly MainWindows? _mains;
+    private bool _forGood;
     private ChromePalette _palette;
     private Label? _trouble;
 
@@ -54,7 +58,8 @@ public sealed class MainForm : OptimizedForm
         IColorScheme colorScheme,
         ILogger<ChromiumView>? viewLog = null,
         UiStallWatch? watch = null,
-        Daoris.Driver.MachineLog? log = null)
+        Daoris.Driver.MachineLog? log = null,
+        MainWindows? mains = null)
         : base(new OptimizedFormOptions
         {
             FramelessChrome = true,
@@ -75,6 +80,7 @@ public sealed class MainForm : OptimizedForm
         _driver = driver;
         _supervisor = supervisor;
         _log = log ?? Daoris.Driver.MachineLog.None;
+        _mains = mains;
         _palette = StartingPalette(colorScheme);
 
         // Still set: it is the taskbar's label and the caption of the one MessageBox left. While anything
@@ -129,11 +135,17 @@ public sealed class MainForm : OptimizedForm
         // The OS notification (SURF5b), which closes driver design open question 5: a session that
         // parks while nobody is looking at this window now reaches the person. It decides nothing —
         // `AttentionWatch` in the driver does, so a machine with no screen answers the same question.
-        _notifier = new SessionNotifier(this, eventBus);
+        // Its double-click and a balloon's click take this window back where it was put away (MAINWINDOWS2) before showing it.
+        _notifier = new SessionNotifier(this, eventBus, takingBack: () => _mains?.TakeBackFirst());
         _notifier.Attend += session => eventBus.Emit(
             new EventMessage { Module = "DAORIS", Type = "ATTEND_SESSION", Payload = new { Session = session } });
 
         Load += async (_, _) => await BringUpAsync();
+        // Shown again while put away, by the kit's bringing it forward for a later launch: that launch's window (MAINWINDOWS2).
+        VisibleChanged += (_, _) =>
+        {
+            if (Visible) _mains?.Shown();
+        };
         FormClosed += (_, _) => _notifier.Dispose();
         FormClosed += (_, _) => _badge.Dispose();
 
@@ -145,6 +157,53 @@ public sealed class MainForm : OptimizedForm
             FormClosed += (_, _) => watch.Dispose();
         }
     }
+
+    /// <summary>
+    /// The application ends with its last main window, not this one (MAINWINDOWS2, D171 point 2). The kit's message loop runs
+    /// until this form closes, and the pickers, the taskbar's count, the tray and the update are resolved as this window, so
+    /// the person's close of it while another main window is open hides it instead, its page and all of that kept, as the
+    /// kit's own close-to-tray hides a window and keeps the loop. Cancelled before the base hears it, so nothing of the kit's
+    /// reads a close that did not happen. Any other close (the machine's shutdown, the task manager, <see cref="CloseForGood"/>)
+    /// ends the application, as one with no other main window does.
+    /// </summary>
+    protected override void OnFormClosing(FormClosingEventArgs e)
+    {
+        if (!e.Cancel && _mains?.FirstClosing(byPerson: e.CloseReason == CloseReason.UserClosing && !_forGood) == true)
+        {
+            e.Cancel = true;
+            Hide();
+            return;
+        }
+
+        base.OnFormClosing(e);
+    }
+
+    /// <summary>
+    /// Close this window for good, which ends the application, from any thread, never blocking (MAINWINDOWS2): the update's
+    /// close, and the last main window's. The kit reports a close from code as the person's, so this says it is not.
+    /// </summary>
+    public void CloseForGood() => Post(() =>
+    {
+        _forGood = true;
+        Close();
+    });
+
+    /// <summary>
+    /// Show this window again where it was put away, from any thread, never blocking (MAINWINDOWS2): a later launch's window.
+    /// Un-minimized before it is activated, then brought forward on the OS's side too, as the tray's restore does.
+    /// </summary>
+    public void TakeBack() => Post(() =>
+    {
+        if (WindowState == FormWindowState.Minimized) WindowState = FormWindowState.Normal;
+        Show();
+        Activate();
+        BringToFront();
+        SetForegroundWindow(Handle);
+    });
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+    private static extern bool SetForegroundWindow(IntPtr window);
 
     /// <summary>Run <paramref name="action"/> on this window's thread later, or false where there is no window to run it on.</summary>
     private bool Post(Action action)

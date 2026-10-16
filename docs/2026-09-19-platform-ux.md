@@ -598,9 +598,11 @@ controls are in the frame design's §3.
   workspaces it runs for, *no workspace* said; what runs on it now; and **one act by state**, *Sign in* to that account,
   *Read* that account, *Try now*, *Use in a workspace…*, the rest in its ⋯. *Your own sign-in* is the last row, its
   explanation on its ⓘ. *Add an account…* offers a signed-out or unknown account's own *Sign in* first, then the tool's
-  sign-in, then the new account's name and the lists it joins. **Opening the page asks no account**: *Read again* at the
+  sign-in, then the new account's name and the lists it joins. **Opening the page asks no sign-in**: *Read again* at the
   list's head asks that agent's accounts, one at a time, and a row's *Read* or its ⋯'s *Read again* asks that one account
-  (ROSTER1). Then its sections, each folded to a line naming its values
+  (ROSTER1). Each account's use is read as the page opens where a reading is older than a minute, and at *Read now* beside
+  *Read again*: the agent answers it with no prompt and no model request (D165 point 1, SWITCH1d), and each window's cell says
+  its share against its curve now and whether it was read from the agent or said by a session. Then its sections, each folded to a line naming its values
   and opened by its chevron: *How accounts are used*, *Workspaces*, *Ways in* (a door is a property, never a second list),
   *What it may do* (only where Daoris hands the agent the rules file; a proposal waiting opens it), *Model and effort*
   (only where Daoris knows the tool's settings) and *Usage*; its terminal twins at its foot.

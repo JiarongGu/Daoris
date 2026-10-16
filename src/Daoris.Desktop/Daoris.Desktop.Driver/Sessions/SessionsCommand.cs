@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
 
@@ -72,16 +71,23 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     public TimeSpan Poll { get; init; } = TimeSpan.FromMilliseconds(250);
 
     /// <summary>
+    /// The clock <see cref="Wait"/> and <see cref="Answer"/> are read by: the machine's, or a test's that stands still until the
+    /// loop has taken the words (FLAKE5), so the wait a test means is not the load's.
+    /// </summary>
+    public TimeProvider Clock { get; init; } = TimeProvider.System;
+
+    /// <summary>
     /// How long the answer of a loop that took a say is waited for once <see cref="Wait"/> is over (FLAKE3): that loop's own bound
     /// on a say, its client's timeout, since a loop that took one always answers it, a failure included.
     /// </summary>
     public TimeSpan Answer { get; init; } = DriverHttp.Timeout;
 
     /// <summary>
-    /// Whether a driver loop holds this home (DRV8a, <see cref="DriverLock.HeldBy"/>): where none does, nothing would take a
-    /// say up, so the verb keeps the words on the record itself (MSG1e, D137 §5.2).
+    /// Whether a driver loop holds this home (DRV8a, <see cref="HomeLease.HeldBy"/>): where none does, nothing would take a
+    /// say up, so the verb keeps the words on the record itself (MSG1e, D137 §5.2). A verb's or a migration's hold is no loop
+    /// (HOMELEASE1): only an instance's counts, and this verb's own lease among them never does.
     /// </summary>
-    public Func<bool> LoopRuns { get; init; } = () => DriverLock.HeldBy(Home) is not null;
+    public Func<bool> LoopRuns { get; init; } = () => HomeLease.HeldBy(Home) is { IsInstance: true };
 
     /// <summary>
     /// The cool-off a start on an adapter would read for an account, or null where it is ready (MSG1g's <c>go-on-new</c>): read
@@ -148,6 +154,7 @@ public static class SessionsCommand
                daoris-driver sessions start-from <id>
                daoris-driver sessions hand-over <id> --agent <adapter> [--account <name>]
                daoris-driver sessions helper <id> "<question>" [--agent <name>]
+               daoris-driver sessions helper --approve|--decline <ask>
         """;
 
     /// <summary>The fields of a row in <c>--json</c>, in order: <c>SESSION_GROUPS</c>' row, field for field.</summary>
@@ -304,6 +311,7 @@ public static class SessionsCommand
             "start-from" => await StartFromAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
             "hand-over" => await HandOverAsync(world, ask, output, ct).ConfigureAwait(false),
             "helper" => await SessionsHelperCommand.RunAsync(world, ask, output, ct).ConfigureAwait(false),
+            "helper-approve" or "helper-decline" => await SessionsHelperCommand.RunWordAsync(world, ask, output).ConfigureAwait(false),
             "stop" => await StopAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
             "finish" or "decline" => await ResolveAsync(world, ask, output, ct).ConfigureAwait(false),
             "archive" when ask.Ended => await ArchiveEndedAsync(world, ask.Yes, output, ct).ConfigureAwait(false),
@@ -756,7 +764,7 @@ public static class SessionsCommand
     {
         var requests = new SessionRequests(world.Home);
         requests.Write(request);
-        var waited = Stopwatch.StartNew();
+        var waited = Waited.From(world);
         while (waited.Elapsed < world.Wait)
         {
             await Task.Delay(world.Poll, ct).ConfigureAwait(false);
@@ -813,7 +821,7 @@ public static class SessionsCommand
     {
         var id = ask.Ids[0];
         var text = ask.Text ?? "";
-        var waited = Stopwatch.StartNew();
+        var waited = Waited.From(world);
 
         // Read here, on the machine that has them, as `ask --file` reads them.
         var uploads = new List<ChatUpload>();
@@ -890,7 +898,7 @@ public static class SessionsCommand
     /// no loop acts on it after the person was told.
     /// </summary>
     private static async Task<(WordsHeld? Held, bool Taken)> AskLoopAsync(
-        SessionsWorld world, SessionRecord record, string text, IReadOnlyList<string> files, Stopwatch waited, CancellationToken ct)
+        SessionsWorld world, SessionRecord record, string text, IReadOnlyList<string> files, Waited waited, CancellationToken ct)
     {
         var requests = new SessionRequests(world.Home);
         WordsHeld? winding = null;
@@ -931,7 +939,7 @@ public static class SessionsCommand
     private static async Task<WordsHeld?> AnsweredAsync(
         SessionsWorld world, SessionRequests requests, SessionRequest request, CancellationToken ct)
     {
-        var answering = Stopwatch.StartNew();
+        var answering = Waited.From(world);
         while (true)
         {
             if (requests.AnswerOf(request) is { } held) return held;
@@ -943,7 +951,7 @@ public static class SessionsCommand
 
     /// <summary>Where the words stand, in one line, from the loop's answer (§5.2); words kept on the record are followed.</summary>
     private static async Task<int> SaidAsync(
-        SessionsWorld world, SessionRecord record, WordsHeld held, Stopwatch waited, TextWriter output, CancellationToken ct)
+        SessionsWorld world, SessionRecord record, WordsHeld held, Waited waited, TextWriter output, CancellationToken ct)
     {
         switch (held)
         {
@@ -984,7 +992,7 @@ public static class SessionsCommand
     /// judged unable to go on, or still held, with what holds them.
     /// </summary>
     private static async Task<int> GoesOnAsync(
-        SessionsWorld world, SessionRecord record, string? word, Stopwatch waited, TextWriter output, CancellationToken ct)
+        SessionsWorld world, SessionRecord record, string? word, Waited waited, TextWriter output, CancellationToken ct)
     {
         var events = new SessionEvents(DaorisHome.Entry(world.Home, HomeEntry.Sessions));
         var gone = false;
@@ -1234,7 +1242,7 @@ public static class SessionsCommand
         };
         requests.Write(request);
 
-        var waited = Stopwatch.StartNew();
+        var waited = Waited.From(world);
         WordsHeld? held = null;
         while (held is null && waited.Elapsed < world.Wait)
         {
@@ -1419,4 +1427,15 @@ public static class SessionsCommand
 
     /// <summary>A word that can be a session's id or a repository's name: not a flag, not blank.</summary>
     private static bool Id(string word) => word.Trim().Length > 0 && !word.StartsWith('-');
+
+    /// <summary>
+    /// How long a verb has waited, read off <see cref="SessionsWorld.Clock"/> (FLAKE5): the machine's, or a test's that counts
+    /// from the moment the loop took the words rather than from a loaded machine's late start.
+    /// </summary>
+    private readonly record struct Waited(TimeProvider Clock, long Since)
+    {
+        public static Waited From(SessionsWorld world) => new(world.Clock, world.Clock.GetTimestamp());
+
+        public TimeSpan Elapsed => Clock.GetElapsedTime(Since);
+    }
 }

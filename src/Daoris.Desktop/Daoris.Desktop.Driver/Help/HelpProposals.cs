@@ -38,6 +38,12 @@ public sealed record HelpProposal(
     /// <summary>How a scope's list is used, as the proposal names it; null where it names nothing of it.</summary>
     public UseChange? AccountUse { get; init; }
 
+    /// <summary>
+    /// The <c>use</c> door's curve where the file's breaks a rule (SWITCH1d): the twins' sentence, which its card refuses with;
+    /// null where it names no curve or a curve that reads.
+    /// </summary>
+    public string? AccountCurveRefused { get; init; }
+
     /// <summary>The <c>order</c> door's list or clear, as the file names them; null for any other door (TOOL4l-b).</summary>
     public AccountOrder? AccountOrder { get; init; }
 

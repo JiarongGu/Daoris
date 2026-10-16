@@ -22,7 +22,8 @@ public sealed class DriverHostTests : IDisposable
     private readonly string _home = Path.Combine(
         Path.GetTempPath(), "daoris-driver-host-" + Guid.NewGuid().ToString("N")[..8]);
 
-    private string LockFile => DaorisHome.Entry(_home, HomeEntry.DriverLock);
+    // The home's lease (HOMELEASE1), DRV8a's lock grown to cover every writer.
+    private string LockFile => DaorisHome.Entry(_home, HomeEntry.HomeLease);
 
     public DriverHostTests() => Directory.CreateDirectory(_home);
 
@@ -106,6 +107,26 @@ public sealed class DriverHostTests : IDisposable
 
         Assert.True(service.Requests > 0, said);
         Assert.False(File.Exists(LockFile), "the loop kept the home after it ended");
+    }
+
+    /// <summary>
+    /// 🔴 HOMELEASE1: a verb that changes the home holds its lease while it acts alone, and lets it go as it ends, whatever its
+    /// answer; beside a running desktop it acts as it always did, holding nothing and leaving the desktop's lease as it was.
+    /// </summary>
+    [Fact]
+    public async Task A_verb_holds_the_home_for_its_act_alone_and_acts_beside_a_running_desktop()
+    {
+        await using var service = CountingService.Start();
+        var package = Path.Combine(_home, "no-such-plugin.nupkg");
+
+        await RunAsync(service, "plugins", "install", package);
+        Assert.False(File.Exists(LockFile), "the verb kept the home after it ended");
+        Assert.True(File.Exists(HomeIdentity.PathIn(_home)), "the lease records the home's id, minted where it had none");
+
+        Plant("desktop", Environment.ProcessId, OurStart());
+        var planted = File.ReadAllText(LockFile);
+        await RunAsync(service, "plugins", "install", package);
+        Assert.Equal(planted, File.ReadAllText(LockFile));
     }
 
     private void Plant(string kind, int pid, long started) =>

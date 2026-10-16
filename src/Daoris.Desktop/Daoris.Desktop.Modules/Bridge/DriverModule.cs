@@ -61,6 +61,9 @@ public sealed class DriverModule : ModuleBase
     // Each domain's handler, built over the context, in the order of Domains: a route's entry names its domain's place.
     private readonly object[] _handlers;
 
+    // The reads under way that an identical ask joins (SWEEPFLIGHT1), forgotten as a press answers.
+    private readonly RouteFlights _flights = new();
+
     /// <remarks>
     /// The bus is held as well as handed to the base: this module both ANSWERS requests and, since
     /// D49 §3, raises one of its own — a conversation ending is news the page wants without asking.
@@ -80,6 +83,14 @@ public sealed class DriverModule : ModuleBase
         _handlers = [.. Domains.Select(domain => domain.Build(_context))];
         // Ask Daoris's room as START_HELP writes it, for a conversation going on in it (ASKHIST1).
         loop.DescribeHelp = cancellationToken => HelpRoutes.HelpMachineNowAsync(_context, cancellationToken);
+        // A change told from elsewhere (the terminal's press, the loop's own) overtakes the reads under way as this module's
+        // presses do (SWEEPFLIGHT1). The bus does not wait for its subscribers, so this is the backstop; a press made here
+        // forgets them before it answers.
+        _ = events.Subscribe(StatePublisher.Module, StatePublisher.Type, _ =>
+        {
+            _flights.Forget();
+            return Task.CompletedTask;
+        });
     }
 
     /// <summary>
@@ -120,16 +131,47 @@ public sealed class DriverModule : ModuleBase
     /// The route's handler from the table, or the framework's own answer for a route nobody declared.
     /// </summary>
     /// <remarks>
-    /// A route that is not in the table answers <c>NO_ROUTE</c> through <c>UnknownType</c>, exactly as the
-    /// switch's default did. The table is case-sensitive, as the switch's labels were (MOD5).
+    /// <para>A route that is not in the table answers <c>NO_ROUTE</c> through <c>UnknownType</c>, exactly as the
+    /// switch's default did. The table is case-sensitive, as the switch's labels were (MOD5).</para>
+    /// <para><b>A read marked <see cref="OneFlightAttribute"/></b> joins the identical ask under way (SWEEPFLIGHT1): the same
+    /// route with the same payload, answered to every caller that joined it (<see cref="RouteFlights"/>).</para>
+    /// <para><b>A press</b> (one whose route declares a change) forgets every read under way once it has answered or thrown,
+    /// before the publisher tells the windows, so the page's ask again after it never joins a look begun before it.</para>
     /// </remarks>
-    private Task<object?> RouteAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        request.Type is { } type && Table.TryGetValue(type, out var route)
-            ? route.Answer(_handlers[route.Domain], request, cancellationToken)
-            : throw UnknownType(request);
+    private Task<object?> RouteAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        if (request.Type is not { } type || !Table.TryGetValue(type, out var route)) throw UnknownType(request);
+        var handler = _handlers[route.Domain];
+        if (route.OneFlight)
+        {
+            return _flights.JoinAsync(FlightOf(type, request), token => route.Answer(handler, request, token), cancellationToken);
+        }
+
+        return route.Change is null ? route.Answer(handler, request, cancellationToken) : PressAsync(route, handler, request, cancellationToken);
+    }
+
+    private async Task<object?> PressAsync(Handler route, object handler, IpcRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            // No ConfigureAwait: the kit's pipeline keeps the caller's context, as the publisher's says.
+            return await route.Answer(handler, request, cancellationToken);
+        }
+        finally
+        {
+            _flights.Forget();
+        }
+    }
+
+    /// <summary>What makes two asks identical: the route and its payload as the page sent it.</summary>
+    private static string FlightOf(string type, IpcRequest request) =>
+        request.Payload is { ValueKind: not System.Text.Json.JsonValueKind.Undefined } payload ? $"{type}\n{payload.GetRawText()}" : type;
 
     /// <summary>Every route this module answers, by name: what the page's bridge may call (MOD5).</summary>
     public static IReadOnlyCollection<string> Routes => Table.Keys;
+
+    /// <summary>The reads whose identical asks share the one under way (SWEEPFLIGHT1), by name.</summary>
+    public static IReadOnlyCollection<string> OneFlightRoutes => [.. Table.Where(entry => entry.Value.OneFlight).Select(entry => entry.Key)];
 
     /// <summary>
     /// What a request's route declares a successful answer changed (STATEHUB1b, D169 point 2), read off the
@@ -182,44 +224,53 @@ public sealed class DriverModule : ModuleBase
         var table = new Dictionary<string, Handler>(StringComparer.Ordinal);
         for (var place = 0; place < Domains.Length; place++)
         {
-            foreach (var (route, answer, change) in Domains[place].Routes) table.Add(route, new Handler(place, answer, change));
+            foreach (var (route, answer, change, oneFlight) in Domains[place].Routes) table.Add(route, new Handler(place, answer, change, oneFlight));
         }
 
         return table.ToFrozenDictionary(StringComparer.Ordinal);
     }
 
     /// <summary>
-    /// A route's entry in the table: its domain's place in <see cref="Domains"/>, the handler over that domain's instance, and
-    /// what it declares a successful answer changed (D169), null for a read.
+    /// A route's entry in the table: its domain's place in <see cref="Domains"/>, the handler over that domain's instance, what
+    /// it declares a successful answer changed (D169), null for a read, and whether its identical asks share one under way.
     /// </summary>
-    private readonly record struct Handler(int Domain, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change);
+    private readonly record struct Handler(
+        int Domain, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, bool OneFlight);
 
     /// <summary>One line of <see cref="Domains"/>: how a domain's handler class is built over the context, and the routes that class marks.</summary>
     private sealed class Domain(
         Func<DriverContext, object> build,
-        IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change)> routes)
+        IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, bool OneFlight)> routes)
     {
-        public IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change)> Routes => routes;
+        public IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, bool OneFlight)> Routes => routes;
 
         public object Build(DriverContext context) => build(context);
 
         /// <summary>
         /// A domain whose handler class is <typeparamref name="T"/>: each <see cref="DriverRouteAttribute"/> on one of its
-        /// non-public instance methods, by its route, with what its <see cref="PublishesAttribute"/> beside it declares. A
-        /// handler answers at once, <c>object? M(IpcRequest)</c>, or later, <c>Task&lt;object?&gt; M(IpcRequest, CancellationToken)</c>.
+        /// non-public instance methods, by its route, with what its <see cref="PublishesAttribute"/> beside it declares and
+        /// whether its <see cref="OneFlightAttribute"/> shares it. A handler answers at once, <c>object? M(IpcRequest)</c>, or
+        /// later, <c>Task&lt;object?&gt; M(IpcRequest, CancellationToken)</c>.
         /// </summary>
         public static Domain Of<T>(Func<DriverContext, T> build) where T : class
         {
-            var routes = new List<(string, Func<object, IpcRequest, CancellationToken, Task<object?>>, StateChange?)>();
+            var routes = new List<(string, Func<object, IpcRequest, CancellationToken, Task<object?>>, StateChange?, bool)>();
             foreach (var method in typeof(T).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic))
             {
                 var marks = method.GetCustomAttributes<DriverRouteAttribute>().ToList();
                 var publishes = method.GetCustomAttributes<PublishesAttribute>().ToDictionary(each => each.Route, StringComparer.Ordinal);
+                var shared = method.GetCustomAttributes<OneFlightAttribute>().Select(each => each.Route).ToHashSet(StringComparer.Ordinal);
                 // A declaration for a route this method does not mark is a typo that would publish nothing: refused here, at the
                 // module's first use, as a route marked twice is.
-                if (publishes.Keys.FirstOrDefault(route => marks.All(mark => mark.Type != route)) is { } stray)
+                if (publishes.Keys.Concat(shared).FirstOrDefault(route => marks.All(mark => mark.Type != route)) is { } stray)
                 {
-                    throw new InvalidOperationException($"{typeof(T).Name}.{method.Name} declares what `{stray}` changes, and marks no such route.");
+                    throw new InvalidOperationException($"{typeof(T).Name}.{method.Name} declares `{stray}`, and marks no such route.");
+                }
+
+                // Two presses are two acts, each the person's: only a read is ever shared (SWEEPFLIGHT1).
+                if (shared.FirstOrDefault(publishes.ContainsKey) is { } press)
+                {
+                    throw new InvalidOperationException($"{typeof(T).Name}.{method.Name} shares `{press}`, a press: only a read is shared.");
                 }
 
                 foreach (var route in marks)
@@ -227,7 +278,8 @@ public sealed class DriverModule : ModuleBase
                     routes.Add((route.Type, method.GetParameters().Length == 1
                         ? Now(method.CreateDelegate<Func<T, IpcRequest, object?>>())
                         : Later(method.CreateDelegate<Func<T, IpcRequest, CancellationToken, Task<object?>>>()),
-                        publishes.TryGetValue(route.Type, out var declared) ? new StateChange(declared.Changes, declared.Session, declared.Subject) : null));
+                        publishes.TryGetValue(route.Type, out var declared) ? new StateChange(declared.Changes, declared.Session, declared.Subject) : null,
+                        shared.Contains(route.Type)));
                 }
             }
 
@@ -280,4 +332,18 @@ internal sealed class PublishesAttribute(string route, StateScopes changes) : At
 
     /// <summary>The payload's field naming the entry or ask the press is for, where it is no one session's (ACCEPTALL1e).</summary>
     public string? Subject { get; set; }
+}
+
+/// <summary>
+/// One of a handler's reads whose identical asks share the one under way (SWEEPFLIGHT1): an ask of the same route with the same
+/// payload, made while one runs, is answered what that one answers rather than starting another (<see cref="RouteFlights"/>).
+/// For a read whose answer is a fan-out over every checkout, which the page asks again at each change it hears and each window
+/// asks for itself. A press is never shared, refused at the module's first use; named by its route, as
+/// <see cref="PublishesAttribute"/> is, since a handler may answer a read and the press it plans.
+/// </summary>
+/// <param name="route">The read it shares, one this method marks.</param>
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+internal sealed class OneFlightAttribute(string route) : Attribute
+{
+    public string Route { get; } = route;
 }

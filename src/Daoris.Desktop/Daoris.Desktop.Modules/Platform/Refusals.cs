@@ -75,8 +75,18 @@ public static class Refusals
     /// <summary>How a list is used, asked of a scope with no list of its own (D130 §16.6, TOOL4g): there is nothing to use.</summary>
     public const string AccountUseNoList = "ACCOUNT_USE_NO_LIST";
 
-    /// <summary>A setting's value this build does not take (D130 §16.6, TOOL4g): a way to use accounts, or a near out of range.</summary>
+    /// <summary>
+    /// A setting's value this build does not take (D130 §16.6, TOOL4g): a way to use accounts, when to switch (SWITCH1d), or a near
+    /// out of range.
+    /// </summary>
     public const string AccountUseValue = "ACCOUNT_USE_VALUE";
+
+    /// <summary>
+    /// A curve that breaks a rule (D165 point 2; the switch design §2, SWITCH1d): its <c>context</c> the rule
+    /// (<see cref="Daoris.Driver.CurveProblem.Kind"/>), with the window, point and numbers it names, and <c>said</c> the
+    /// terminal's sentence, which a page with no form for a newer rule says as it is.
+    /// </summary>
+    public const string AccountUseCurve = "ACCOUNT_USE_CURVE";
 
     /// <summary>
     /// A default outside its scope's own list (D130 §3.1; TOOL6a's terminal refusal, the screen's since TOOL4g): the default is
