@@ -398,6 +398,7 @@ function Attached({ files }: { files?: string[] }) {
 /** When the person's words reach the session, by the door's reach (D136, MSG1f): a chat's conversation opens again. */
 const heldKey = (reaches: string | null | undefined, chat: boolean) => {
   if (reaches === 'next-step') return 'work.conversation.held.nextStep';
+  if (reaches === 'now') return 'work.conversation.held.now';
   if (reaches === 'resume') return chat ? 'work.conversation.held.reopen' : 'work.conversation.held.resume';
   return 'work.conversation.held.turnEnd';
 };
@@ -423,7 +424,8 @@ function HeldAsk({ block }: { block: Block }) {
         : t(heldKey(block.reaches, chat));
 
   return (
-    <div className="rounded-card border border-dashed border-line-strong px-3 py-2">
+    // Dashed while it waits; words taken already (`now`, STEER2b) are drawn solid, as a turn's ask is.
+    <div className={cn('rounded-card border px-3 py-2', block.reaches === 'now' ? 'border-line-strong' : 'border-dashed border-line-strong')}>
       <span className="text-meta text-ink-faint">{t('work.conversation.you')}</span>
       {block.text && <p className="m-0 mt-0.5 whitespace-pre-wrap wrap-anywhere text-body text-ink-soft">{block.text}</p>}
       <Attached files={block.files} />

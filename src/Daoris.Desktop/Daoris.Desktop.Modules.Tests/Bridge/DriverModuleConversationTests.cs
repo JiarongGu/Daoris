@@ -597,6 +597,71 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// STEER2a (D136's 2026-10-16 note): <c>SESSION_INPUT</c> with <c>now</c> answers what the session's door did, as
+    /// <c>{ sent, reaches, why, to, now }</c>: steered into the running turn (<c>now</c>), held with the turn stopped so they go
+    /// next (<c>turn-end</c>), or held as before where the door has no way, <c>now: false</c> by its code. Without <c>now</c> the
+    /// words go as they always did, and the answer says it was not asked.
+    /// </summary>
+    [Fact]
+    public async Task Send_now_to_a_driven_session_answers_what_its_door_did()
+    {
+        var (loop, module) = await UpAsync(new Ledger());
+        var stopped = 0;
+        var steered = new List<string>();
+        loop.Processes.OpenInbox("d1").Attach(() => { stopped++; return Task.CompletedTask; });
+        loop.Processes.OpenInbox("d2").Attach(interrupt: null);
+        var steering = loop.Processes.OpenInbox("d3");
+        steering.Attach(
+            () => { stopped++; return Task.CompletedTask; },
+            _ => new TaskCompletionSource<string>().Task,
+            message => { steered.Add(message.Text); return Task.FromResult("injected"); });
+        steering.Flow();
+
+        foreach (var (id, reaches, now, why) in new[]
+                 {
+                     ("d1", "turn-end", true, (string?)null), ("d2", "turn-end", false, SendNowWhy.NoInterrupt), ("d3", "now", true, null),
+                 })
+        {
+            var sent = await AnswerAsync(module, "SESSION_INPUT", new { id, text = "start with the tests", now = true });
+            Assert.Equal(
+                (id, true, reaches, now, why),
+                (id, sent.GetProperty("sent").GetBoolean(), sent.GetProperty("reaches").GetString(), sent.GetProperty("now").GetBoolean(),
+                    sent.GetProperty("why").GetString()));
+        }
+
+        Assert.Equal(1, stopped);
+        Assert.Equal(["start with the tests"], steered);
+        var plain = await AnswerAsync(module, "SESSION_INPUT", new { id = "d1", text = "and the readme" });
+        Assert.False(plain.GetProperty("now").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, plain.GetProperty("why").ValueKind);
+        Assert.Equal(1, stopped);
+    }
+
+    /// <summary>
+    /// STEER2a: <c>CANCEL_TURN</c> with <c>keep</c> stops the turn and withdraws nothing. A driven session's stop already sends what
+    /// is held now; a turn nothing here holds stops nothing, keep or not.
+    /// </summary>
+    [Fact]
+    public async Task A_stop_that_keeps_withdraws_nothing_and_sends_a_driven_sessions_held_words_now()
+    {
+        var (loop, module) = await UpAsync(new Ledger());
+        var stopped = 0;
+        var inbox = loop.Processes.OpenInbox("d1");
+        inbox.Attach(() => { stopped++; return Task.CompletedTask; });
+        inbox.Hold(new ChatMessage("the tests are in /spec", []));
+
+        var stop = await AnswerAsync(module, "CANCEL_TURN", new { id = "d1", keep = true });
+        var nothing = await AnswerAsync(module, "CANCEL_TURN", new { id = "nothing-here", keep = true });
+
+        Assert.True(stop.GetProperty("cancelled").GetBoolean());
+        Assert.Empty(stop.GetProperty("withdrawn").EnumerateArray());
+        Assert.Equal(1, stopped);
+        Assert.Equal("the tests are in /spec", inbox.TakeOrClose()?.Text);
+        Assert.False(nothing.GetProperty("cancelled").GetBoolean());
+        Assert.Empty(nothing.GetProperty("withdrawn").EnumerateArray());
+    }
+
+    /// <summary>
     /// CONV4a: what a conversation has waiting is asked for by a page that just opened it, and takes
     /// every change after that live — nothing waiting is an empty list.
     /// </summary>

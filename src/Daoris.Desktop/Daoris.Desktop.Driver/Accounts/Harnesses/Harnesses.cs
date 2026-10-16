@@ -228,11 +228,22 @@ public sealed record HarnessToolchain(
     // The two-letter mark this tool wears on the page's strip (AGENTMARK1, D152): "CC" for Claude Code, "Cx" for Codex, so
     // two doors onto different tools never share one. Declared by the harness, never derived from its name; null declares
     // none and the page derives its own. Page-only: the CLI prints no strip, so there is no twin.
-    string? Mark = null)
+    string? Mark = null,
+    // Whether a start that names no account may run in this tool's own home (OWNSPACE1a, D175's OWNSPACE1a note): true only
+    // for a test double whose own home is nobody's, the stub, its protocol twin and a test's fake. Every real agent leaves it
+    // false, since its own home is the person's and never Daoris's working space (D175 point 1). Not a twin: the CLI starts
+    // no session.
+    bool RunsInOwnHome = false)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>
         configured is { Count: > 0 } ? configured : Binary;
+
+    /// <summary>
+    /// Whether a start that names no account runs in the tool's own home (OWNSPACE1a, D175 point 1): a test double's, or a tool
+    /// with no configuration-home variable, which no account of Daoris's can be handed to. Otherwise it takes a Daoris account.
+    /// </summary>
+    public bool StartsInOwnHome => RunsInOwnHome || ProfileVariable is not { Length: > 0 };
 
     /// <summary>
     /// Whose accounts this runs as (AGT7): <see cref="AccountOf"/> for a door onto another agent,

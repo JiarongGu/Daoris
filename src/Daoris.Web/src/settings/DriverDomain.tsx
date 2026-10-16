@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   useDriver, usePlugins, useSayUpdate, useSetCoolOff, useSetNotify, useSetStrikes, useUpdateState,
 } from '../bridge/shell';
+import { useSystemWiring } from '../bridge/system';
 import { Button, Card, CheckField, failure, Icon, PathText, SettingRow } from '../design/ui';
 import type { SettingsDomainProps } from './domains';
 import { UpdateSection } from './Update';
@@ -47,6 +48,10 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   // The catalogue the Plugins place reads, asked for its folder alone. An older shell names none, and the row is absent.
   const plugins = usePlugins();
   const pluginsFolder = typeof plugins.data?.folder === 'string' ? plugins.data.folder : null;
+  // Whether this shell answers This Daoris's read (WIRING1c): by its schema, so an older shell's refusal and a stranger's
+  // answer both leave the row as it was. The open asks no measure, so it walks no folder.
+  const wiring = useSystemWiring();
+  const placeAnswers = typeof wiring.query.data?.schema === 'number';
   const setNotify = useSetNotify();
   const setStrikesMutation = useSetStrikes();
 
@@ -78,7 +83,21 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
             floated above the card with no label once the page lost its "This machine" heading. The
             notice is the shell's own sentence about what the start did, carried in the state rather
             than only raised: a toast raised before the page subscribed reached nobody. */}
-        {driver.data?.home && (
+        {/* The home's page is This Daoris since WIRING1c, and this row is its door (the this-Daoris design §2). A shell that
+            answers no wiring is older than that page, so the row stays as it was: path, hint and the two notices. */}
+        {driver.data?.home && placeAnswers && (
+          <SettingRow
+            label={t('settings.home.label')}
+            hint={t('settings.daoris.door')}
+            control={(
+              <>
+                <PathText path={driver.data.home} className="text-small text-ink-soft" />
+                <Button onClick={() => onGo({ view: 'settings', section: 'wiring' })}>{t('settings.daoris.button.here')}</Button>
+              </>
+            )}
+          />
+        )}
+        {driver.data?.home && !placeAnswers && (
           <SettingRow
             label={t('settings.home.label')}
             why={t(HOME_HINT[driver.data.homeAccount ?? ''] ?? 'settings.home.hint')}

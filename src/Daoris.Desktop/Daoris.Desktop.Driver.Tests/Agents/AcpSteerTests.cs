@@ -95,6 +95,22 @@ public sealed class AcpSteerTests
 
     private const string Silent = """{"protocolVersion":1,"agentCapabilities":{}}""";
 
+    /// <summary>
+    /// What <c>claude-agent-acp</c> 0.84.0 answers at <c>initialize</c> where it also offers the steering extension (evidence §2,
+    /// <c>acp-agent.js:1291-1307</c>): the top-level <c>_meta.steering.supported</c>.
+    /// </summary>
+    private const string Steers =
+        """{"protocolVersion":1,"_meta":{"steering":{"supported":true}},"agentCapabilities":{"_meta":{"claudeCode":{"promptQueueing":true}}}}""";
+
+    /// <summary>A tool call announced or updated, as the adapter streams it.</summary>
+    private static string Call(string kind, string id, string? status) =>
+        JsonSerializer.Serialize(new
+        {
+            jsonrpc = "2.0",
+            method = "session/update",
+            @params = new { sessionId = "s-1", update = new { sessionUpdate = kind, toolCallId = id, title = "Read", kind = "read", status } },
+        });
+
     /// <summary>The run's record and what it was told, in one order: the events, each word said and each word taken.</summary>
     private sealed class Record
     {
@@ -121,6 +137,7 @@ public sealed class AcpSteerTests
                 SessionEventKind.Turn => $"turn:{e.StopReason}",
                 SessionEventKind.Message => $"message:{e.Text}",
                 SessionEventKind.Note => $"note:{e.Text}",
+                SessionEventKind.Tool => $"tool:{e.Id}:{e.Status}",
                 _ => null,
             };
             if (line is not null) lock (_lines) _lines.Add(line);
@@ -575,5 +592,307 @@ public sealed class AcpSteerTests
         await Assert.ThrowsAsync<DriverException>(() => session.SayAsync(new ChatMessage("one more thing", []), CancellationToken.None));
         Assert.DoesNotContain("session/prompt", agent.Methods);
         session.Release();
+    }
+
+    /// <summary>
+    /// STEER2a: *Send now* steers only where the agent said both that it takes words during a turn (the next-step door) and that
+    /// it offers the steering extension, each by its own <c>true</c>. Codex offers the extension without the first, and stays a
+    /// turn-end door until STEER3 measures its <c>turn/steer</c>.
+    /// </summary>
+    [Theory]
+    [InlineData(Steers, true)]
+    [InlineData(Queues, false)]
+    [InlineData("""{"_meta":{"steering":{"supported":true}},"agentCapabilities":{}}""", false)]
+    [InlineData("""{"_meta":{"steering":{"supported":"true"}},"agentCapabilities":{"_meta":{"claudeCode":{"promptQueueing":true}}}}""", false)]
+    [InlineData("""{"agentCapabilities":{"_meta":{"claudeCode":{"promptQueueing":true},"steering":{"supported":true}}}}""", false)]
+    [InlineData("""[]""", false)]
+    public void Whether_send_now_steers_is_the_agents_own_word(string initialized, bool steers)
+    {
+        using var answer = JsonDocument.Parse(initialized);
+        Assert.Equal(steers, AcpSession.SteersNow(answer.RootElement));
+    }
+
+    /// <summary>
+    /// 🔴 STEER2a, the measured shape (evidence §6, turn B): *Send now* while the task's first call is announced sends the words
+    /// by <c>_session/steering</c>, in the adapter's own parameters, asking it never to start a turn of its own. Answered
+    /// <c>injected</c>, they are taken there and the running turn goes on as their answer; the call the steer cut never hears
+    /// again, and the record closes it as cut when the turn ends, before the turn's end, never leaving it running.
+    /// </summary>
+    [Fact]
+    public async Task Sending_now_steers_the_words_into_the_running_turn_and_the_call_it_cut_is_closed_at_the_turns_end()
+    {
+        var first = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        JsonElement? steering = null;
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize":
+                    return Ok(frame, Steers);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    // The task's first call, its input not yet streamed (turn B at 34,668 ms).
+                    self.Push(Call("tool_call", "read-1", "pending"));
+                    first.SetResult(frame.GetProperty("id").GetInt32());
+                    return null;
+                case "_session/steering":
+                    steering = frame.GetProperty("params").Clone();
+                    self.Push(Ok(frame, """{"outcome":"injected"}"""));
+                    // The cut call never hears again; the work goes on in the same prompt, as the words' answer.
+                    self.Push(Call("tool_call", "read-2", "pending"));
+                    self.Push(Call("tool_call_update", "read-2", "completed"));
+                    self.Push(Said("MANGO"));
+                    self.Push(Answer(first.Task.Result, "end_turn"));
+                    return null;
+                default:
+                    return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var record = new Record();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.OnSaid(record.SaidTo);
+
+        var run = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event)
+            .RunAsync("D:/fam/Game", "read the five files in reverse", CancellationToken.None, inbox: inbox, asked: record.Asked);
+        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await Poll.Until(() => record.Lines.Contains("tool:read-1:pending"), () => string.Join(" | ", record.Lines), TimeSpan.FromSeconds(10));
+
+        var now = await inbox.HoldNowAsync(new ChatMessage("put MANGO after the words", []));
+        var outcome = await run.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal(new SentNow("now", true, null), now);
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal(["initialize", "session/new", "session/prompt", "_session/steering", "session/close"], agent.Methods);
+        Assert.Equal("s-1", steering!.Value.GetProperty("sessionId").GetString());
+        Assert.Equal("put MANGO after the words", steering.Value.GetProperty("prompt")[0].GetProperty("text").GetString());
+        Assert.Equal("promptRequired", steering.Value.GetProperty("_meta").GetProperty("steering").GetProperty("idleBehavior").GetString());
+        Assert.Equal(
+            [
+                "tool:read-1:pending",
+                "said:said-1:Steered:put MANGO after the words",
+                "taken:said-1:put MANGO after the words",
+                "tool:read-2:pending",
+                "tool:read-2:completed",
+                "message:MANGO",
+                "tool:read-1:cut",
+                "turn:end_turn",
+            ],
+            record.Lines);
+    }
+
+    /// <summary>
+    /// 🔴 STEER2a (the owner's case): a word queued at the next step is on its way when the person, finding it urgent, presses
+    /// *Send now* with new words. Those are steered past it, the person's choice to go first; nothing is stopped, the queued
+    /// word is still taken at its next step, and the record reads in the wire's order.
+    /// </summary>
+    [Fact]
+    public async Task Sending_now_past_a_word_on_its_way_steers_and_the_word_is_still_taken_at_its_next_step()
+    {
+        var first = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var second = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize":
+                    return Ok(frame, Steers);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt" when !first.Task.IsCompleted:
+                    first.SetResult(frame.GetProperty("id").GetInt32());
+                    return null;
+                case "session/prompt":
+                    // The queued word: on its way, taken at the next step.
+                    second.SetResult(frame.GetProperty("id").GetInt32());
+                    return null;
+                case "_session/steering":
+                    self.Push(Ok(frame, """{"outcome":"injected"}"""));
+                    self.Push(Said("MANGO"));
+                    // The next step: the task's prompt handed off to the queued word, which the agent works on to the end.
+                    self.Push(Answer(first.Task.Result, "end_turn"));
+                    self.Push(Said("PINEAPPLE"));
+                    self.Push(Answer(second.Task.Result, "end_turn"));
+                    return null;
+                default:
+                    return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var record = new Record();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.OnSaid(record.SaidTo);
+
+        var run = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event)
+            .RunAsync("D:/fam/Game", "read the five files", CancellationToken.None, inbox: inbox, asked: record.Asked);
+        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.True(inbox.Hold(new ChatMessage("put PINEAPPLE after the words", [])));
+        await second.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        var now = await inbox.HoldNowAsync(new ChatMessage("stop: the tests are in /spec", []));
+        var outcome = await run.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal(new SentNow("now", true, null), now);
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal(["initialize", "session/new", "session/prompt", "session/prompt", "_session/steering", "session/close"], agent.Methods);
+        Assert.Equal(
+            [
+                "said:said-1:NextStep:put PINEAPPLE after the words",
+                "said:said-2:Steered:stop: the tests are in /spec",
+                "taken:said-2:stop: the tests are in /spec",
+                "message:MANGO",
+                "turn:end_turn",
+                "taken:said-1:put PINEAPPLE after the words",
+                "message:PINEAPPLE",
+                "turn:end_turn",
+            ],
+            record.Lines);
+    }
+
+    /// <summary>
+    /// 🔴 STEER2a (a second maker's review): a call that finished stays finished through an update that says no status, so a
+    /// later steer never closes it as cut.
+    /// </summary>
+    [Fact]
+    public async Task A_call_that_finished_is_never_closed_as_cut_by_a_later_steer()
+    {
+        var first = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize":
+                    return Ok(frame, Steers);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    self.Push(Call("tool_call", "read-1", "pending"));
+                    self.Push(Call("tool_call_update", "read-1", "completed"));
+                    self.Push(Call("tool_call_update", "read-1", null));
+                    first.SetResult(frame.GetProperty("id").GetInt32());
+                    return null;
+                case "_session/steering":
+                    self.Push(Ok(frame, """{"outcome":"injected"}"""));
+                    self.Push(Answer(first.Task.Result, "end_turn"));
+                    return null;
+                default:
+                    return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var record = new Record();
+        var inbox = new DrivenInbox(_ => { });
+
+        var run = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event)
+            .RunAsync("D:/fam/Game", "read the five files", CancellationToken.None, inbox: inbox, asked: record.Asked);
+        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await Poll.Until(() => record.Lines.Contains("tool:read-1:"), () => string.Join(" | ", record.Lines), TimeSpan.FromSeconds(10));
+        await inbox.HoldNowAsync(new ChatMessage("one more thing", []));
+        await run.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Contains("turn:end_turn", record.Lines);
+        Assert.DoesNotContain("tool:read-1:cut", record.Lines);
+    }
+
+    /// <summary>
+    /// STEER2a (D136 point 6): a steer the agent refuses, or answers with anything but <c>injected</c>, costs those words, said
+    /// in the record by its code and the words' id, so the page settles them; the run's own work goes on to its end.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"error":{"code":-32603,"message":"Internal error: Session ended"}}""", "words.refused")]
+    [InlineData("""{"result":{"outcome":"promptRequired","reason":"noRunningTurn"}}""", "words.not-reached")]
+    public async Task A_steer_the_agent_does_not_take_costs_only_those_words_and_the_run_goes_on(string answer, string code)
+    {
+        var first = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize":
+                    return Ok(frame, Steers);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    first.SetResult(frame.GetProperty("id").GetInt32());
+                    return null;
+                case "_session/steering":
+                    self.Push($$"""{"jsonrpc":"2.0","id":{{frame.GetProperty("id").GetRawText()}},{{answer[1..^1]}}}""");
+                    self.Push(Answer(first.Task.Result, "end_turn"));
+                    return null;
+                default:
+                    return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var record = new Record();
+        var inbox = new DrivenInbox(_ => { });
+
+        var run = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event)
+            .RunAsync("D:/fam/Game", "read the five files", CancellationToken.None, inbox: inbox, asked: record.Asked);
+        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal(new SentNow("now", true, null), await inbox.HoldNowAsync(new ChatMessage("one more thing", [])));
+        var outcome = await run.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.DoesNotContain(record.Lines, line => line.StartsWith("taken:", StringComparison.Ordinal));
+        var note = Assert.Single(record.Notes);
+        Assert.Equal(code, note.Parts![0].Code);
+        Assert.Equal(["said-1"], note.Words);
+        NoteAssert.Holds(note.Text, note.Parts);
+        Assert.Equal("session/close", agent.Methods[^1]);
+    }
+
+    /// <summary>
+    /// STEER2a: a conversation's *Send now* is the same steer, taken through <see cref="AcpSession.OnTaken"/> where the agent
+    /// answered <c>injected</c>, before anything after the answer is read; an agent that never said it steers is sent nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_conversations_steer_is_taken_where_the_agent_answers_injected_and_never_sent_to_one_that_does_not_steer()
+    {
+        var first = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize":
+                    return Ok(frame, Steers);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    first.SetResult(frame.GetProperty("id").GetInt32());
+                    return null;
+                case "_session/steering":
+                    self.Push(Ok(frame, """{"outcome":"injected"}"""));
+                    self.Push(Said("MANGO"));
+                    self.Push(Answer(first.Task.Result, "end_turn"));
+                    return null;
+                default:
+                    return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var record = new Record();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event);
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+        session.OnTaken(record.Asked);
+        Assert.True(session.Steers);
+        var turn = session.PromptAsync("read the five files", CancellationToken.None);
+        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        var steered = await session.SteerAsync(new ChatMessage("put MANGO after the words", []) { Id = "said-c1" }, CancellationToken.None);
+
+        Assert.Equal("injected", steered);
+        Assert.Equal("end_turn", await turn.WaitAsync(TimeSpan.FromSeconds(10)));
+        Assert.Equal(["taken:said-c1:put MANGO after the words", "message:MANGO", "turn:end_turn"], record.Lines);
+        session.Release();
+
+        var silent = new Agent((frame, self) => frame.GetProperty("method").GetString() switch
+        {
+            "initialize" => Ok(frame, Queues),
+            "session/new" => Ok(frame, """{"sessionId":"s-1"}"""),
+            _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
+        });
+        var queues = new AcpSession(silent.Incoming, silent.Outgoing, _ => { });
+        await queues.OpenAsync("D:/fam/Game", CancellationToken.None);
+        Assert.False(queues.Steers);
+        await Assert.ThrowsAsync<DriverException>(() => queues.SteerAsync(new ChatMessage("one more thing", []), CancellationToken.None));
+        Assert.DoesNotContain("_session/steering", silent.Methods);
+        queues.Release();
     }
 }

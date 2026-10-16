@@ -5,6 +5,19 @@ with the version and date at release.
 
 ## Unreleased
 
+- *Send now* (立即发送) sits beside *Queue* while an agent works. On Claude Code it steers your words into the running turn
+  at once, cutting the step in flight while earlier queued words keep their places; on an agent that takes words only when
+  its turn ends, it stops the turn and keeps your words, so they go next. Where the agent can do neither, it says why in
+  one line. A tool call cut by your words reads *cut off*.
+- Settings → *This Daoris* (本机) shows how this Daoris is wired: its folders and their sizes (*Measure again*), the service
+  it talks to and where that address came from, and who holds the loop. Driver's home row opens it.
+- A plugin's skills now reach an intake's, a reviewer's and a helper's sessions too, as they reach a driven session's and a
+  conversation's.
+- Daoris's sessions no longer run in your own agent sign-in. Where nothing names an account, a start takes one of the agent's
+  Daoris accounts; with none signed in, it waits and says so once (*No `claude-code` account of Daoris's own is signed in…*),
+  in English and 中文, until you sign one in for Daoris. A conversation begun in your own sign-in still goes on there. A
+  folder-trust hold on a Daoris account names Daoris's own command, since trusting the folder at your terminal would not
+  reach that account.
 - `daoris-driver wiring` says how this Daoris is wired: its folder and each top folder as it runs (with what is still at an
   old place and why), the service (its address and where it came from, its tier and version), who holds the home, each
   settings file (whether it reads, what overrides it), every variable Daoris reads with where it came from, the versions,

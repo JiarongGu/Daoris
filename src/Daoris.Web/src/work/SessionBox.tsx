@@ -12,7 +12,8 @@ import type { HeadLink } from './SessionHead';
  *
  * @remarks
  * - **The running door** (D136): a working driven session whose door listens. What it holds waits above the box, and
- *   *Send now* stops the turn so it goes, offered only while something is held.
+ *   *Send now* beside *Queue* sends the box's words in the running turn (STEER2b), and with the box empty stops the turn
+ *   so what is held goes, offered then only while something is held.
  * - **The park's answer** (D126 §3.1): its box is the answer, as *Answer…* opens it; a second word joins the first.
  * - **A session that ended**: the same session goes on with the words. Nothing to attach: the resumed run is handed the
  *   words alone (MSG1d), so a file would be promised and never read.
@@ -28,7 +29,7 @@ import type { HeadLink } from './SessionHead';
  */
 export function SessionBox({
   box, quest, draft, onDraft, sending = false, refusal, held, ending = [], waiting = [], stopping = false, focus = 0, accepts, onSend,
-  onSendNow, onRemove, onEdit, going, continued, onOpenSession,
+  onSendNow, onSayNow, onRemove, onEdit, going, continued, onOpenSession,
 }: {
   /**
    * The conversation a handed-over or moved one went on in (HANDWORDS1-ii), as the frame holds it: its record and its title.
@@ -66,8 +67,10 @@ export function SessionBox({
   /** Bumped to put the focus in the box: *Answer…* from a row, *Send back…* from a review. */
   focus?: number;
   onSend: (text: string) => void;
-  /** *Send now* on the running door: stop the turn so what is held goes now. */
+  /** *Send now* on the running door with the box empty: stop the turn so what is held goes now. */
   onSendNow?: () => void;
+  /** *Send now* with words in the box (STEER2b): they go in the running turn, as `SESSION_INPUT` with `now`. */
+  onSayNow?: (text: string) => void;
 }) {
   const { t } = useTranslation();
 
@@ -109,12 +112,12 @@ export function SessionBox({
         placeholder={t('work.steer.placeholder')}
         queued={held?.queued ?? []}
         taking={held?.taking ?? false}
-        // Only something held can be sent now; with nothing held, stopping the turn would end the work.
-        stoppable={(held?.queued.length ?? 0) > 0}
+        // One *Send now* (STEER2b): the box's words go in the running turn; with the box empty it stops the turn so what is
+        // held goes, which only something held can ask (with nothing held, stopping the turn would end the work).
+        stoppable
         stopping={stopping}
-        stopTurnLabel={t('work.steer.now')}
-        stopTurnTip={t('work.steer.nowTip')}
-        onStopTurn={onSendNow}
+        onSendNow={onSayNow ? (text) => onSayNow(text.trim()) : undefined}
+        onSendHeld={onSendNow}
         onRemove={onRemove}
         onEdit={onEdit}
       />

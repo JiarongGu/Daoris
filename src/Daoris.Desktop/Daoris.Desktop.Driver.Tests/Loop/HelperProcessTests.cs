@@ -132,6 +132,42 @@ public sealed class HelperProcessTests : IDisposable
         Assert.Empty(Directory.EnumerateDirectories(DaorisHome.Entry(_home, HomeEntry.Trees,"work", "reports")));
     }
 
+    /// <summary>
+    /// HELPPLUG1c (D170 point 4): a helper is handed the skills plugins hand sessions, by the harness's own door on either wire,
+    /// and the folder goes with its session.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(SkillsSpawnProbe.Doors), MemberType = typeof(SkillsSpawnProbe))]
+    public async Task A_helper_is_handed_a_plugins_skills_on_either_door_and_the_folder_goes_with_its_session(string adapter)
+    {
+        SkillsSpawnProbe.Install(_home);
+        Ask();
+        var service = HelperStandIn.Start(_repository.Root, _tip);
+        await using var _ = service;
+        var config = DriverConfig.Empty with
+        {
+            Adapter = adapter,
+            Cap = 3,
+            TimeoutMinutes = 2,
+            Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = SkillsSpawnProbe.Command(_home, adapter) },
+            Helpers = new Dictionary<string, HelperRule> { ["reports"] = new(HelperRules.On, [adapter]) },
+        };
+        var adapters = AdapterSet.Built();
+        var driver = new Daoris.Driver.Driver(
+            new ServiceClient(service.Url, null), config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+        {
+            HelperTrees = (_, _) => Task.FromResult<(string?, string?)>((_tip, _repository.Root)),
+        };
+        // A tick loads the catalogue at its top; a look called alone is handed the plugins as that tick would.
+        driver.Context.Catalog = PluginCatalog.Load(_home, adapters.Names);
+
+        await driver.HelpersAsync(new Snapshot([], [], []), 0, [], CancellationToken.None);
+        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(90));
+
+        Assert.Single(service.Opened);
+        SkillsSpawnProbe.AssertHandedAndRemoved(_home);
+    }
+
     /// <summary>The helper never used its tool and said words: its last words, bounded, stand as the answer, marked.</summary>
     [Fact]
     public async Task A_helper_that_used_no_tool_has_its_last_words_stand_as_the_answer()

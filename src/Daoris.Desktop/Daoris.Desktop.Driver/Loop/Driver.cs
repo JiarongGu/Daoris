@@ -1190,19 +1190,24 @@ public sealed class Driver(
         ISessionAdapter? preflight = null;
         try { preflight = Context.Adapters.Resolve(agent); } catch (DriverException) { }
 
-        if (preflight is { Toolchain.TrustFile: { Length: > 0 } trustFile }
-            && !HandedConnector(preflight, start.Workspace, quest.To, "quest_respond"))
+        // Asked of the account the session runs as, and again of the walk's pick where a resume's words go to a new record below.
+        StartRun? Untrusted(HarnessSelection chosen)
         {
-            var configHome = selection.ProfileHome
-                ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            var trustPath = Path.Combine(configHome, trustFile);
-            if (ClaudeTrust.Accepted(trustPath, workTree) == false)
+            if (preflight is not { Toolchain.TrustFile: { Length: > 0 } trustFile }
+                || HandedConnector(preflight, start.Workspace, quest.To, "quest_respond"))
             {
-                // Said twice, on purpose: the sentence for a person, the fact for a screen (D73).
-                lock (untrusted) untrusted.Add(new TrustHold(workTree, trustPath, Quest: quest.Id));
-                return Hold(ClaudeTrust.Refusal(workTree, selection.ProfileHome is null ? null : selection.Profile));
+                return null;
             }
+
+            var trustPath = ClaudeTrust.PathFor(trustFile, chosen.ProfileHome, preflight.Toolchain!.ProfileVariable);
+            if (ClaudeTrust.Accepted(trustPath, workTree) != false) return null;
+
+            // Said twice, on purpose: the sentence for a person, the fact for a screen (D73).
+            lock (untrusted) untrusted.Add(new TrustHold(workTree, trustPath, Quest: quest.Id));
+            return Hold(ClaudeTrust.Refusal(workTree, chosen.ProfileHome is null ? null : chosen.Profile));
         }
+
+        if (Untrusted(selection) is { } untrustedHold) return untrustedHold;
 
         // An answer continues its own session (ANSWER1a, D131), and so do words to a session that had ended (MSG1b, D137
         // §2.2): the record they wait on goes on itself where its harness conversation resumes. Otherwise a park ends, and
@@ -1257,6 +1262,37 @@ public sealed class Driver(
 
             // A taken quest is carried on, an open one started, handed the words, in the tree the session worked in.
             start = start with { Resumes = park.Parked || park.Said is null ? park with { State = "completed" } : park };
+
+            // 🔴 OWNSPACE1a (D175 point 3): only the record that began in the tool's own home goes on there. Its words carried to a
+            // new record are a new start, which takes the walk (D130 §16.2) and holds where the walk holds, before the record opens:
+            // never a new session in the person's home.
+            if (resume is not null)
+            {
+                var resumed = selection;
+                try
+                {
+                    (selection, var passed) = await Context.Harnesses
+                        .CarriedOnAsync(resume, agent, config, start.Workspace, handedQuest?.Account, ct).ConfigureAwait(false);
+                    passedAccount ??= passed;
+                }
+                catch (DriverException error)
+                {
+                    if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                    return Hold(error.Message);
+                }
+
+                if (!selection.Allowed)
+                {
+                    if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                    return Hold(selection.Refusal!) with { Cooling = selection.Cooling, SignedOut = selection.SignedOut };
+                }
+
+                if (!ReferenceEquals(resumed, selection) && Untrusted(selection) is { } walkedUntrusted)
+                {
+                    if (opened is not null) await Context.Trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+                    return walkedUntrusted;
+                }
+            }
         }
 
         // A resume that was tried let go of the starting hold (LEFT2) when the park held the tree; the carry-on's open below
@@ -2518,10 +2554,14 @@ public sealed class Driver(
                 // Another session's message on the ask's channel is that agent's claim, never the person's (SESSONE2b).
                 Line(message.Channel is { Person: false } claim
                     ? $"— another session's message `{claim.Id}` on the ask's channel, which reaches the session at its next step"
-                    : reach == DrivenReach.NextStep
-                    ? $"— the person added, which reaches the session at its next step: {message.Text}"
-                    : $"— the person added, which reaches the session when its turn ends: {message.Text}");
-                Event(ChatMessage.Words(message) with { Reaches = reach == DrivenReach.NextStep ? "next-step" : "turn-end" });
+                    : reach switch
+                    {
+                        DrivenReach.NextStep => $"— the person added, which reaches the session at its next step: {message.Text}",
+                        // The person's *Send now* (STEER2a): steered into the running turn, cutting the step in flight.
+                        DrivenReach.Steered => $"— the person sent now, which the session takes at once: {message.Text}",
+                        _ => $"— the person added, which reaches the session when its turn ends: {message.Text}",
+                    });
+                Event(ChatMessage.Words(message) with { Reaches = SendNowWhy.Spelled(reach) });
             });
             // A word the person took back or reworded while it waited is settled, by its id (QUEUEEDIT1a).
             inbox?.OnWithdrawn(message =>

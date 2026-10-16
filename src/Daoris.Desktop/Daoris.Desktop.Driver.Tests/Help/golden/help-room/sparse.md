@@ -263,7 +263,7 @@ Plugins that can land work here: `example.github-pull-request`, `example.lands`.
 view, for Settings its domain, and a part where the place has one.
 
 - Views: `overview` (Overview), `sessions` (Sessions), `quests` (Quests), `projects` (Repositories), `map` (Map), `knowledge` (Knowledge), `agents` (Agents), `plugins` (Plugins), `settings` (Settings).
-- Settings domains: `start` (Get started), `appearance` (Appearance), `ai` (AI features), `driver` (Driver), `browser` (Browser), `logs` (Machine log).
+- Settings domains: `start` (Get started), `appearance` (Appearance), `ai` (AI features), `wiring` (This Daoris), `driver` (Driver), `browser` (Browser), `logs` (Machine log).
 - Parts of `sessions`: `waiting` (Waiting on you), `review` (To review), `new` (New conversation).
 - Parts of `quests`: `asks` (Asks), `held` (Waiting on you).
 - Parts of `projects`: `add` (Add repository), `import` (Import a folder), `setup` (a repository's Setup), `branches` (a repository's Branches), `history` (a repository's History), `workspace-details` (a workspace's Details), `workspace-branches` (a workspace's Branches), `workspace-workflow` (a workspace's Workflow), `workspace-setup` (a workspace's Setup), `workspace-defaults` (a workspace's Defaults), `workspace-remote` (a workspace's Remote and reach).

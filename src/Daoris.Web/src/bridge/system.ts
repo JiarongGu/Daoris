@@ -1,79 +1,17 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../data/queries';
-import { call } from './call';
+import type { SystemWiring } from '../data/wiring';
+import { call, refusedNoRoute } from './call';
 
 // How this Daoris is wired (WIRING1b, the this-Daoris design §6, D50): Settings → This Daoris's read, the screen's door to
 // `daoris-driver wiring`, one reader in the driver library. Shell-only: this machine's paths, variables and service (D47 §4).
-// The shape is a wire shape: a field is added, never renamed. A fact not read is `null` beside its `…Why` code.
-
-/** A fact's why where it is `null`: `window` (only the window knows), `adopted`, `not-measured`, `measuring`, … */
-type Why = string | null;
-
-export interface WiringOld { entry: string; path: string; bytes: number | null; why: string }
-
-export interface WiringFolder {
-  id: 'app' | 'update' | 'data' | 'profiles' | 'work' | 'cache' | 'run' | 'logs';
-  path: string | null; pathWhy: Why; present: boolean; bytes: number | null; bytesWhy: Why; measured: string | null;
-  old: WiringOld[];
-}
-
-export interface WiringFile {
-  id: string; folder: string; path: string | null; pathWhy: Why; present: boolean; bytes: number | null; bytesWhy: Why;
-  written: string | null; reads: boolean | null; readsWhy: Why; overriddenBy: string | null; door: string | null; record: boolean;
-}
-
-export interface WiringVariable {
-  name: string; set: boolean; value: string | null; valueWhy: Why; secret: boolean; prefix: string | null;
-  from: 'this-start' | 'inherited' | 'set-by-daoris' | 'not-set' | 'unknown';
-  account: string | null; accountSet: boolean | null; machine: string | null; machineSet: boolean | null;
-  instead: string | null; readBy: string[];
-}
-
-export interface WiringLocated { path: string | null; pathWhy: Why; from: 'variable' | 'beside' | 'home' | 'workspace' | null }
-
-export interface SystemWiring {
-  schema: number;
-  reader: 'window' | 'terminal';
-  measuring: boolean;
-  measured: string | null;
-  partial: boolean;
-  partialWhy: Why;
-  folder: {
-    path: string | null; pathWhy: Why; kind: 'install' | 'development' | 'named' | null;
-    account: string | null; accountWhy: Why; accountNames: 'root' | 'data' | 'none' | null; accountNamesWhy: Why;
-    notice: string | null; noticeWhy: Why; hostNotice: string | null; hostNoticeWhy: Why;
-  };
-  folders: WiringFolder[];
-  leftOver: { name: string; path: string; bytes: number | null; why: 'earlier-build' | 'not-daoris' }[];
-  service: {
-    url: string | null; urlWhy: Why; from: 'variable' | 'default' | 'address-file' | 'none';
-    held: 'hosted' | 'adopted' | 'none' | null; heldWhy: Why;
-    answers: boolean | null; answersWhy: Why; asked: string | null;
-    tier: string | null; tierWhy: Why; version: string | null; versionWhy: Why; proved: boolean | null; provedWhy: Why;
-    host: WiringLocated; connector: WiringLocated;
-  };
-  remotes: { workspace: string; url: string | null; urlWhy: Why; keySet: boolean; keyPrefix: string | null; from: 'file' | 'environment' }[];
-  remotesWhy: Why;
-  loop: {
-    holder: { kind: 'desktop' | 'headless'; pid: number; since: string; thisWindow: boolean } | null;
-    looked: string | null; lookedWhy: Why; ready: boolean | null; readyWhy: Why; draining: boolean | null; drainingWhy: Why;
-    holds: number | null; holdsWhy: Why; pollSeconds: number | null; pollSecondsWhy: Why;
-  };
-  files: WiringFile[];
-  variables: WiringVariable[];
-  versions: Record<'program' | 'build' | 'kit' | 'cli' | 'driver' | 'service' | 'connector' | 'dotnet' | 'node', string | null>
-    & Record<string, string | null>;
-  terminal: {
-    launchers: { name: string; present: boolean }[]; launchersWhy: Why;
-    onAccountPath: boolean | null; onAccountPathWhy: Why; onMachinePath: boolean | null; onMachinePathWhy: Why;
-    firstDaoris: { is: 'this' | 'another' | 'none'; path: string | null };
-    firstDriver: { is: 'this' | 'another' | 'none'; path: string | null };
-    address: { present: boolean; url: string | null; pid: number | null; since: string | null; taken: boolean | null; why: Why };
-  };
-  knowledge: { path: string | null; pathWhy: Why; from: 'variable' | 'home' | null; bytes: number | null; bytesWhy: Why; familyRoot: string | null; familyRootWhy: Why };
-  logs: { path: string | null; pathWhy: Why; bytes: number | null; bytesWhy: Why; days: number; newest: string | null; newestWhy: Why; engineLog: boolean };
-}
+// The shape is a wire shape (`data/wiring.ts`, where the cards that draw it can name it): a field is added, never renamed.
+export type {
+  SystemWiring, WiringFile, WiringFolder, WiringLocated, WiringOld, WiringVariable,
+} from '../data/wiring';
+// The page tells a shell older than it by this refusal, and reaches the route helper through the domain, not around it.
+export { refusedNoRoute } from './call';
 
 /** While a walk is under way the page reads again every two seconds, so each size arrives as it is counted; else not at all. */
 export const wiringAgainIn = (wiring: SystemWiring | undefined): number | false => (wiring?.measuring ? 2_000 : false);
@@ -89,6 +27,8 @@ export const useSystemWiring = () => {
     queryKey: keys.systemWiring,
     queryFn: () => call<SystemWiring>('SYSTEM_WIRING'),
     enabled: isAvailable,
+    // A shell older than the route answers `NO_ROUTE` every time, so asking again only delays the page saying so.
+    retry: (count, error) => !refusedNoRoute(error) && count < 2,
     refetchInterval: (current) => wiringAgainIn(current.state.data),
   });
   const measure = async () => {

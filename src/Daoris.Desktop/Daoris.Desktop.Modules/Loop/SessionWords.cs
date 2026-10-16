@@ -15,10 +15,19 @@ namespace Daoris.Desktop;
 /// </param>
 /// <param name="Why">
 /// Where nothing takes them, why, by a code the page words itself: <c>teammate</c>, <c>intake</c>, <c>stood-down</c>,
-/// <c>help</c>, <c>superseded</c>, <c>continued</c>, <c>not-found</c> or <c>no-words</c>. Null where they are taken or held.
+/// <c>help</c>, <c>superseded</c>, <c>continued</c>, <c>not-found</c> or <c>no-words</c>. Null where they are taken or held,
+/// except where the person's *Send now* was not carried out (STEER2a): then its <see cref="SendNowWhy"/> code, beside
+/// <c>sent: true</c>.
 /// </param>
 public sealed record WordsAnswer(bool Sent, string? Reaches, string? Why)
 {
+    /// <summary>
+    /// The person's *Send now* was carried out (STEER2a, D136's 2026-10-16 note): steered into the running turn (reach
+    /// <c>now</c>), held with the turn stopped so they go next (<c>turn-end</c>), or taken at once because no turn ran. False
+    /// where it was not asked, and where the door could do neither, with <see cref="Why"/> saying why.
+    /// </summary>
+    public bool Now { get; init; }
+
     /// <summary>
     /// Where <see cref="Why"/> is <c>continued</c> (HANDWORDS1), the conversation it went on in, the latest that continues it: where
     /// the words go instead. Null otherwise.
@@ -299,17 +308,27 @@ public sealed class SessionWords : IDisposable
     /// not answering yet and nothing here runs the session, so nothing can keep them.
     /// </summary>
     /// <param name="door">Where they were said, <c>screen</c> or <c>terminal</c>: the machine log names it (D137 §3.3).</param>
+    /// <param name="now">
+    /// The person's *Send now* (STEER2a, D136's 2026-10-16 note): a session running here carries it out by its door
+    /// (<see cref="DrivenInbox.HoldNowAsync"/>, <see cref="ChatRunner.SayNowAsync"/>). One that parked or ended has no turn to
+    /// steer or stop, and goes on with the words as before.
+    /// </param>
     /// <exception cref="DriverException">
     /// A session this machine runs that takes no words at all (an intake, INT4h), in the driver's words; files the person
     /// attached that a conversation cannot carry; or a service whose answer could not be read.
     /// </exception>
     public async Task<WordsAnswer?> SayAsync(
-        string id, string text, IReadOnlyList<ChatUpload> files, string? preface, string door, CancellationToken ct)
+        string id, string text, IReadOnlyList<ChatUpload> files, string? preface, string door, CancellationToken ct, bool now = false)
     {
         // A driven session that hears words during its run (SESS3, D136; the native door's run, MSG1b).
-        if (_loop.Processes.InboxOf(id) is { } inbox && inbox.Hold(new ChatMessage(text, [])))
+        if (_loop.Processes.InboxOf(id) is { } inbox)
         {
-            return new(true, Spelled(inbox.Reach), null) { Running = true };
+            if (now && await inbox.HoldNowAsync(new ChatMessage(text, [])).ConfigureAwait(false) is { } sentNow)
+            {
+                return new(true, sentNow.Reaches, sentNow.Why) { Running = true, Now = sentNow.Now };
+            }
+
+            if (!now && inbox.Hold(new ChatMessage(text, []))) return new(true, Spelled(inbox.Reach), null) { Running = true };
         }
 
         if (id.Contains('/')) return WordsAnswer.Refused("teammate");
@@ -327,7 +346,17 @@ public sealed class SessionWords : IDisposable
         {
             // A conversation this machine runs (D49 §3): its turns take the words, into the running turn at its next step where
             // its agent takes them then (MSG1c), when the running one ends elsewhere (CONV4a), or now; its runner says which.
-            if (chat.Say(id, text, out var reaches, files, preface)) return new(true, reaches, null) { Running = true };
+            if (now)
+            {
+                if (await chat.SayNowAsync(id, text, files, preface).ConfigureAwait(false) is { } sentNow)
+                {
+                    return new(true, sentNow.Reaches, sentNow.Why) { Running = true, Now = sentNow.Now };
+                }
+            }
+            else if (chat.Say(id, text, out var reaches, files, preface))
+            {
+                return new(true, reaches, null) { Running = true };
+            }
         }
 
         Read? read;

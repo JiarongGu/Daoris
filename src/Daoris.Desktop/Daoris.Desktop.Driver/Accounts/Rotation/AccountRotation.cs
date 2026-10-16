@@ -759,6 +759,17 @@ public static class RotationWords
             code, SignIn(agent, accounts, lead)[1..],
             ("logins", (IReadOnlyList<string>)[.. accounts.Select(account => $"daoris agent login {agent} --profile {ShellWord.Of(account, ShellWord.Account)}")])));
 
+    /// <summary>
+    /// A start whose scope names no account, with no Daoris account of the agent's signed in (OWNSPACE1a, D175 point 2): it waits
+    /// for the person's sign-in, said once as D125 point 6 says a wait, and never falls back to the person's own tool home. One
+    /// coded line, the agent its value; both doors to a sign-in named (D50), the window's and the terminal's.
+    /// </summary>
+    public static Noted NoAccountOf(string agent) => Noted.Of(
+        NoteCodes.HeldNoAccount,
+        $"No `{agent}` account of Daoris's own is signed in, and Daoris never starts its sessions in your own `{agent}` sign-in — "
+        + $"sign one in for Daoris on the agent's page under Agents, or with `daoris agent login {agent} --new`. The start waits until then.",
+        ("owner", agent));
+
     /// <summary>The accounts of a walk not signed in, in the order it tried them.</summary>
     public static IReadOnlyList<string> SignedOut(IReadOnlyList<AccountState> states) =>
         [.. states.Where(state => state.Readiness == AccountReadiness.SignedOut && state.Account is not null).Select(state => state.Account!)];
