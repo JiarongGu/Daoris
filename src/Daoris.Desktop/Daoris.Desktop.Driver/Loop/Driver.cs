@@ -110,6 +110,12 @@ public sealed class Driver(
     private readonly TimeSpan _syncBeside = TimeSpan.FromSeconds(Math.Max(1, config.PollSeconds));
 
     /// <summary>
+    /// Which part of the look <see cref="TickAsync"/> runs (FABRIC-EVENT3a, the fabric events design §A3, §C6 link 5): the whole look
+    /// unless the watch hands a wake's <see cref="LookPart.Plan"/>, which leaves the remote sync to the <c>look</c> topic's deadline.
+    /// </summary>
+    public LookPart Part { get; init; } = LookPart.Look;
+
+    /// <summary>
     /// What the loop's classes share (PART10m, D166): the constructor's objects, the sessions and trees, the per-look adapters,
     /// servers and catalogue, and the settables. Built once, here; the classes below hold it, and the ones that run through this
     /// driver's machinery hold the driver as well.
@@ -300,6 +306,10 @@ public sealed class Driver(
     /// session record or come to nothing, never waiting for a session to end (DEV3, D115 §3.1): the sessions
     /// run on, and what ended since the last look joins this one's report.
     /// </summary>
+    /// <remarks>
+    /// A <see cref="LookPart.Plan"/> (FABRIC-EVENT3a) is the same look without the remote sync at its head and the lost-claim stop
+    /// after it; everything else it runs as the whole look does, the sync after an ending it reports included (the sync design §8).
+    /// </remarks>
     /// <param name="failed">
     /// Handed what the look had said when it fails or is closed (DEV3c): its lines and what ended, which its report would have
     /// carried, when there is any; the failure then goes on as it was. A look that stopped a session and then failed lost the
@@ -329,13 +339,16 @@ public sealed class Driver(
     /// <summary><see cref="TickAsync"/>'s look, saying into <paramref name="events"/> and <paramref name="concluded"/> as it goes.</summary>
     private async Task<TickReport> LookAsync(List<string> events, List<SessionEnded> concluded, CancellationToken ct)
     {
-        await SyncAsync(events, ct).ConfigureAwait(false);
-
-        // The sync runs BESIDE the sessions, not only around them (D68 §6): every look syncs, and a look comes
+        // The sync runs BESIDE the sessions, not only around them (D68 §6): every whole look syncs, and a whole look comes
         // round at the watch's pace while sessions work. After it, every session this driver runs whose take came
         // back LOST is stopped, because its quest is another machine's and its work would double theirs (D68 §5).
-        // An unconfirmed take keeps working.
-        if (sync is not null) await StopLostClaimsAsync(events, ct).ConfigureAwait(false);
+        // An unconfirmed take keeps working. A wake's plan does neither (FABRIC-EVENT3a): the claims it would ask after move
+        // only when the sync runs, so both wait for the `look` topic's deadline, and a wake costs the remote nothing.
+        if (Part == LookPart.Look)
+        {
+            await SyncAsync(events, ct).ConfigureAwait(false);
+            if (sync is not null) await StopLostClaimsAsync(events, ct).ConfigureAwait(false);
+        }
 
         // The plugins, read fresh each tick like the config (D64): a harness declared since the
         // last look is spawnable now, a server declared since is handed now, a hook process

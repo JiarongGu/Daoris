@@ -69,6 +69,8 @@ public sealed class DriverWatchLookTests : IDisposable
         Assert.Equal(["start", "nudge", "nudge", "nudge"], looks.Select(data => data.GetProperty("by").GetString()));
         Assert.Equal([null, "requests", null, "requests"], looks.Select(data => data.GetProperty("topic").GetString()));
         Assert.Equal([null, "requests", null, "s1"], looks.Select(data => data.GetProperty("subject").GetString()));
+        // FABRIC-EVENT3a: a topic's wake runs the local plan alone; the start and a plain nudge, which means everything, the whole look.
+        Assert.Equal(["look", "plan", "look", "plan"], looks.Select(data => data.GetProperty("part").GetString()));
         Assert.All(looks, data =>
         {
             Assert.True(data.GetProperty("failed").GetBoolean());
