@@ -806,7 +806,7 @@ public sealed partial class HelpCoverageTests
     private static readonly (string Control, string Form, Answer Answer)[] Forms =
     [
         // LEFT3: the terminal's `--clear` made this the screen's and the terminal's both (D50), and Ask Daoris's next.
-        ("agents: useHarnessAction profile-default", "clearing an account's default back to the tool's own home",
+        ("agents: useHarnessAction profile-default", "clearing an account's default back to Daoris's accounts",
             new Owed(HelpRoomOwed.DefaultClear)),
     ];
 
