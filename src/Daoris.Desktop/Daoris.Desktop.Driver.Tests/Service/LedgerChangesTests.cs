@@ -34,24 +34,44 @@ public sealed class LedgerChangesTests : IDisposable
     }
 
     [Fact]
-    public async Task A_publish_wakes_the_ledger_topic_once_and_the_bootstrap_wakes_nothing()
+    public async Task A_publish_wakes_the_ledger_topic_once()
     {
         _ledger.Changes = StandInLedger.ChangeDoor.Answers;
         using var service = _ledger.Client();
         var listening = Listen(service);
 
         await Poll.Until(() => _ledger.ChangesHeld == 1, () => "no wait held", Bound);
-        Assert.Empty(Woken());
+        Assert.Equal([(ChangeTopics.Ledger, "sessions,quests")], Woken());
 
         _ledger.Publish("q1", "engine", from: "agent");
-        await Poll.Until(() => Woken().Count == 1, () => "the publish woke nothing", Bound);
-        Assert.Equal((ChangeTopics.Ledger, "quests"), Woken()[0]);
+        await Poll.Until(() => Woken().Count == 2, () => "the publish woke nothing", Bound);
+        Assert.Equal((ChangeTopics.Ledger, "quests"), Woken()[1]);
 
         // Asked again from where it answered: held, and one wait at a time (the bootstrap, the wait the publish answered, this one).
         await Poll.Until(() => _ledger.ChangesHeld == 1, () => "no wait held after the answer", Bound);
         await Task.Delay(300);
-        Assert.Single(Woken());
+        Assert.Equal(2, Woken().Count);
         Assert.Equal(3, _ledger.ChangesAsked);
+
+        await _closing.CancelAsync();
+        await listening.WaitAsync(Bound);
+    }
+
+    /// <summary>
+    /// Review of FABRIC-EVENT3b: the bootstrap's answer comes beside the loop's first look, not before it, and its cursor already
+    /// holds a quest published between that look's reads and the answer. So the bootstrap wakes the plan once, and the quest is
+    /// planned now, not at the deadline.
+    /// </summary>
+    [Fact]
+    public async Task A_quest_published_before_the_bootstrap_s_answer_wakes_the_plan()
+    {
+        _ledger.Changes = StandInLedger.ChangeDoor.Answers;
+        _ledger.Publish("q1", "engine", from: "agent");
+        using var service = _ledger.Client();
+        var listening = Listen(service);
+
+        await Poll.Until(() => Woken().Count == 1, () => "the bootstrap woke nothing", Bound);
+        Assert.Equal((ChangeTopics.Ledger, "sessions,quests"), Woken()[0]);
 
         await _closing.CancelAsync();
         await listening.WaitAsync(Bound);

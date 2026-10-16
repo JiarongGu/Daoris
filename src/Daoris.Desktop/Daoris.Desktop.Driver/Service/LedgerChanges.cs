@@ -15,8 +15,10 @@ namespace Daoris.Driver;
 /// wait, or a host stopping), is backed off the same way; and a host with no such door (one from before) is asked again only
 /// after <see cref="Absent"/>.</para>
 ///
-/// <para><b>The bootstrap wakes nothing</b>: the loop's start runs the whole look already. A cursor the host no longer knows (a
-/// restart, a reconnected observer) is answered every family, which wakes the plan once.</para>
+/// <para><b>The bootstrap wakes the plan once</b>, as a cursor the host no longer knows (a restart, a reconnected observer) does:
+/// it is asked beside the loop's first look, not before it, so its cursor may already hold a change that look read too early, and
+/// without a wake that change would wait for the deadline. One plan more at the start is the cost; a pass that moves nothing still
+/// wakes nothing after it (canary 5).</para>
 /// </remarks>
 internal static class LedgerChanges
 {
@@ -62,7 +64,7 @@ internal static class LedgerChanges
                 else
                 {
                     var (next, moved) = Read(reply.Payload);
-                    if (since is not null && moved.Count > 0) wake(ChangeTopics.Ledger, string.Join(',', moved));
+                    if (moved.Count > 0) wake(ChangeTopics.Ledger, string.Join(',', moved));
 
                     var took = Stopwatch.GetElapsedTime(began);
                     var early = since is not null && moved.Count == 0 && took < TimeSpan.FromSeconds(WaitSeconds / 2.0);
