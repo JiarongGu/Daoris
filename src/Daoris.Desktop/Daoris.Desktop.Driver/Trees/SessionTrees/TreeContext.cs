@@ -29,6 +29,9 @@ internal sealed class TreeContext
     /// <summary>The test seam (SQUASHTIDY1c): run with the branch's name between a judgement and the delete it cleared. Production sets none.</summary>
     internal Func<string, Task>? BeforeDeleting { get; set; }
 
+    /// <summary>A test's seam (FABRIC-END4a review): run once the trees were read, right before the branch's ref goes.</summary>
+    internal Func<string, Task>? BeforeRefDeleted { get; set; }
+
     /// <summary>The test seam (AUTOTIDY1): true for a checkout whose working trees git could not list. Production sets none.</summary>
     internal Func<string, bool>? ListFails { get; set; }
 
