@@ -456,6 +456,16 @@ describe('Settings → This Daoris', () => {
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringMatching(/stayed: 1.*written to lately/i)));
   });
 
+  it('lists the folders but offers no press, and says why, where the tool home is on another drive than Daoris\'s', async () => {
+    invoke.mockImplementation(shell({ ...WIRED, toolHome: { ...WIRED.toolHome!, pressWhy: 'other-volume' } }));
+    open();
+    const card = within(await screen.findByRole('region', { name: 'Left in your own tool home' }));
+
+    for (const each of WIRED.toolHome!.folders) expect(card.getByText(each.name)).toBeTruthy();
+    expect(card.getByText(/different drive from Daoris's own folder.*Nothing is copied/)).toBeTruthy();
+    expect(card.queryByRole('button', { name: 'Move these aside' })).toBeNull();
+  });
+
   it('lists nothing and says why where the home named is not the person\'s own, and offers no press', async () => {
     const refused = { ...WIRED.toolHome!, path: null, pathWhy: 'inside-daoris', from: 'process' as const, why: 'no-tool-home', folders: [] };
     invoke.mockImplementation(shell({ ...WIRED, toolHome: refused }));

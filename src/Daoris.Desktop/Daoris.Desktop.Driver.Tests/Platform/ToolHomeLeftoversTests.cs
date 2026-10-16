@@ -240,7 +240,7 @@ public sealed class ToolHomeLeftoversTests : IDisposable
         var listed = Assert.Single(ToolHomeLeftovers.List(world).Folders);
 
         // A budget the walk cannot finish inside is a failed read, and unknown activity keeps the folder.
-        var outcome = ToolHomeLeftovers.Clear(world, [new ToolAsk(name, listed.Id)], Now, new WiringBudget(1, TimeSpan.FromMinutes(1)));
+        var outcome = ToolHomeLeftovers.Clear(world, [new ToolAsk(name, listed.Id)], Now, new ToolClearOptions { Budget = new WiringBudget(1, TimeSpan.FromMinutes(1)) });
 
         Assert.Equal("unread", Assert.Single(outcome.Kept).Why);
         Assert.True(Directory.Exists(folder));
@@ -345,29 +345,165 @@ public sealed class ToolHomeLeftoversTests : IDisposable
     }
 
     [Fact]
-    public void A_move_across_volumes_is_a_verified_copy_then_a_removal_and_never_follows_a_link()
+    public void Where_the_tool_home_and_Daoris_s_folder_are_on_different_volumes_the_folders_are_listed_and_no_press_is_offered()
     {
         var tree = Tree(Homes().Home, "s-cccc3333");
         var (world, projects, home) = Mixed(Record("a", tree));
         var name = ToolHomeLeftovers.Flatten(tree);
         var folder = Project(projects, name, Old);
-        Directory.CreateDirectory(Path.Combine(folder, "sub"));
-        File.WriteAllBytes(Path.Combine(folder, "sub", "more.jsonl"), new byte[5]);
-        foreach (var each in new[] { Path.Combine(folder, "sub", "more.jsonl"), Path.Combine(folder, "sub"), folder })
+        // One volume for Daoris's home, another for everything else: a rename cannot cross, and no copy is ever made.
+        Func<string, string> volumeOf = path => path.StartsWith(home, StringComparison.OrdinalIgnoreCase) ? "A:" : "B:";
+
+        var listing = ToolHomeLeftovers.List(world, volumeOf);
+        var outcome = ToolHomeLeftovers.Clear(world, [new ToolAsk(name, Assert.Single(listing.Folders).Id)], Now, new ToolClearOptions { VolumeOf = volumeOf });
+
+        Assert.Equal("other-volume", listing.PressWhy);
+        Assert.Empty(outcome.Cleared);
+        Assert.Equal("other-volume", Assert.Single(outcome.Kept).Why);
+        Assert.True(Directory.Exists(folder));
+        Assert.Null(ToolHomeLeftovers.List(world).PressWhy);
+    }
+
+    [Fact]
+    public void A_path_outside_Daoris_s_roots_that_flattens_like_one_inside_them_collides_and_neither_is_listed()
+    {
+        var (home, tool, projects) = Homes();
+        var inside = Tree(home, "s-1");
+        // The sibling folder `<home>-trees/…` flattens to the same name, and lies outside every working root.
+        var outside = Path.Combine(home + "-trees", "main", "repo", "s-1");
+        var origins = ToolHomeLeftovers.Origins(home, Records(Record("a", inside), Record("b", outside)));
+        Project(projects, ToolHomeLeftovers.Flatten(inside), Old);
+
+        var listing = ToolHomeLeftovers.List(WorldOf(home, tool, origins));
+
+        Assert.Empty(listing.Folders);
+        Assert.Equal(1, listing.Ambiguous);
+    }
+
+    [Fact]
+    public void A_session_that_resumes_during_the_press_keeps_its_folder_for_the_records_are_read_again_for_each()
+    {
+        var (home, tool, projects) = Homes();
+        var (treeA, treeB) = (Tree(home, "s-aaaa5555"), Tree(home, "s-bbbb6666"));
+        var (a, b) = (ToolHomeLeftovers.Flatten(treeA), ToolHomeLeftovers.Flatten(treeB));
+        Project(projects, a, Old);
+        Project(projects, b, Old);
+        var free = ToolHomeLeftovers.Origins(home, Records(Record("a", treeA), Record("b", treeB)));
+        var world = WorldOf(home, tool, free);
+        var ids = ToolHomeLeftovers.List(world).Folders.ToDictionary(folder => folder.Name, folder => folder.Id);
+        var reads = 0;
+
+        // The second read finds session b live again.
+        var outcome = ToolHomeLeftovers.Clear(world, [new ToolAsk(a, ids[a]), new ToolAsk(b, ids[b])], Now, new ToolClearOptions
         {
-            // Making the inner file touched the folders: they are as old as the first file again.
-            if (Directory.Exists(each)) Directory.SetLastWriteTimeUtc(each, (Now - Old).UtcDateTime);
-            else File.SetLastWriteTimeUtc(each, (Now - Old).UtcDateTime);
-        }
+            OriginsNow = () => ++reads == 1 ? free : ToolHomeLeftovers.Origins(home, Records(Record("a", treeA), Record("b", treeB, state: "running"))),
+        });
+
+        Assert.Equal([a], outcome.Cleared.Select(done => done.Name));
+        Assert.Equal(("session", b), (Assert.Single(outcome.Kept).Why, outcome.Kept[0].Name));
+        Assert.True(Directory.Exists(Path.Combine(projects, b)));
+        Assert.Equal(2, reads);
+    }
+
+    [Fact]
+    public void A_conversation_record_that_cannot_be_read_is_not_absent_and_keeps_the_folder()
+    {
+        var (home, tool, projects) = Homes();
+        var legacy = Tree(home, "s-dddd7777");
+        Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Sessions));
+        File.WriteAllText(new HarnessConversations(home).PathOf("legacy"), "{ this is not json");
+        var origins = ToolHomeLeftovers.Origins(home, Records(Record("legacy", legacy, profile: null)));
+        Project(projects, ToolHomeLeftovers.Flatten(legacy), Old);
+
+        var listed = Assert.Single(ToolHomeLeftovers.List(WorldOf(home, tool, origins)).Folders);
+        var outcome = ToolHomeLeftovers.Clear(WorldOf(home, tool, origins), [new ToolAsk(listed.Name, listed.Id)], Now);
+
+        Assert.Equal("record-unread", listed.Keeps);
+        Assert.Equal("record-unread", Assert.Single(outcome.Kept).Why);
+    }
+
+    [Fact]
+    public void The_identity_reads_the_volume_and_the_whole_file_id_and_a_replacement_that_shares_a_half_is_refused()
+    {
+        var tree = Tree(Homes().Home, "s-eeee8888");
+        var (world, projects, _) = Mixed(Record("a", tree));
+        var name = ToolHomeLeftovers.Flatten(tree);
+        var folder = Project(projects, name, Old);
         var listed = Assert.Single(ToolHomeLeftovers.List(world).Folders);
 
-        var outcome = ToolHomeLeftovers.Clear(world, [new ToolAsk(name, listed.Id)], Now, copy: true);
+        // FILE_ID_INFO is a 64-bit volume serial then a 128-bit id: 24 bytes, no filler between.
+        Assert.Equal((24, 0, 8), ToolHomeLeftovers.IdentityLayout);
+        Assert.Matches("^[0-9a-f]{16}-[0-9a-f]{32}$", listed.Id);
+        Assert.Equal(listed.Id, ToolHomeLeftovers.FileId(folder));
+        // A folder that shares the volume and the low half of the id but not the high half is another folder.
+        var lookalike = listed.Id[..^32] + new string('0', 16) + listed.Id[^16..];
+        if (lookalike == listed.Id) lookalike = listed.Id[..^1] + (listed.Id[^1] == '0' ? '1' : '0');
+        var outcome = ToolHomeLeftovers.Clear(world, [new ToolAsk(name, lookalike)], Now);
 
-        var moved = Assert.Single(outcome.Cleared);
-        Assert.Equal(15, moved.Bytes);
-        Assert.False(Directory.Exists(folder));
-        Assert.Equal(5, new FileInfo(Path.Combine(moved.To, "sub", "more.jsonl")).Length);
-        Assert.StartsWith(DaorisHome.Entry(home, HomeEntry.Trees), moved.To);
+        Assert.Equal("changed", Assert.Single(outcome.Kept).Why);
+        Assert.True(Directory.Exists(folder));
+    }
+
+    [Fact]
+    public void A_link_anywhere_on_the_destination_s_way_is_refused_before_anything_is_created()
+    {
+        var tree = Tree(Homes().Home, "s-ffff9999");
+        var (world, projects, home) = Mixed(Record("a", tree));
+        var name = ToolHomeLeftovers.Flatten(tree);
+        var folder = Project(projects, name, Old);
+        var elsewhere = Path.Combine(_root, "elsewhere");
+        Directory.CreateDirectory(elsewhere);
+        var trees = DaorisHome.Entry(home, HomeEntry.Trees);
+        Directory.CreateDirectory(trees);
+        try
+        {
+            Directory.CreateSymbolicLink(Path.Combine(trees, ".tidied"), elsewhere);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or PlatformNotSupportedException)
+        {
+            Assert.Fail("this machine could not create a symbolic link, so the destination-link refusal is unproven here: " + error.Message);
+        }
+
+        var listed = Assert.Single(ToolHomeLeftovers.List(world).Folders);
+        var outcome = ToolHomeLeftovers.Clear(world, [new ToolAsk(name, listed.Id)], Now);
+
+        Assert.Equal("linked", Assert.Single(outcome.Kept).Why);
+        Assert.True(Directory.Exists(folder));
+        Assert.Empty(Directory.EnumerateFileSystemEntries(elsewhere));
+    }
+
+    [Fact]
+    public void The_destination_is_unique_and_made_by_the_rename_alone_so_one_that_exists_is_never_used_or_touched()
+    {
+        var home = Homes().Home;
+        var (treeA, treeB) = (Tree(home, "s-1111aaaa"), Tree(home, "s-2222bbbb"));
+        var (world, projects, _) = Mixed(Record("a", treeA), Record("b", treeB));
+        var (a, b) = (ToolHomeLeftovers.Flatten(treeA), ToolHomeLeftovers.Flatten(treeB));
+        Project(projects, a, Old);
+        Project(projects, b, Old);
+        var ids = ToolHomeLeftovers.List(world).Folders.ToDictionary(folder => folder.Name, folder => folder.Id);
+
+        var outcome = ToolHomeLeftovers.Clear(world, [new ToolAsk(a, ids[a]), new ToolAsk(b, ids[b])], Now);
+
+        Assert.Equal(2, outcome.Cleared.Select(done => done.To).Distinct().Count());
+        // `<name>-<8 hex>-<moment>`: the moment is the last part, as the purge reads it.
+        Assert.All(outcome.Cleared, done => Assert.Matches("-[0-9a-f]{8}-\\d{8}T\\d{9}Z$", done.To));
+        Assert.All(outcome.Cleared, done => Assert.NotNull(TreeSetAside.MovedAt(Path.GetFileName(done.To))));
+
+        // A destination already there is no place to move to: nothing is replaced, and the folder stays.
+        var (c, treeC) = ("", Tree(home, "s-3333cccc"));
+        c = ToolHomeLeftovers.Flatten(treeC);
+        Project(projects, c, Old);
+        var worldC = WorldOf(home, Path.GetDirectoryName(projects)!, ToolHomeLeftovers.Origins(home, Records(Record("c", treeC))));
+        var taken = Path.Combine(DaorisHome.Entry(home, HomeEntry.Trees), ".tidied", "tool-home", "projects", "fixed-leaf");
+        Directory.CreateDirectory(taken);
+        File.WriteAllText(Path.Combine(taken, "mine.txt"), "x");
+        var refused = ToolHomeLeftovers.Clear(worldC, [new ToolAsk(c, ToolHomeLeftovers.List(worldC).Folders.Single().Id)], Now,
+            new ToolClearOptions { NameOf = _ => "fixed-leaf" });
+
+        Assert.Equal("not-moved", Assert.Single(refused.Kept).Why);
+        Assert.True(Directory.Exists(Path.Combine(projects, c)));
+        Assert.Equal("x", File.ReadAllText(Path.Combine(taken, "mine.txt")));
     }
 
     [Fact]
@@ -383,6 +519,17 @@ public sealed class ToolHomeLeftoversTests : IDisposable
         // A relative one is no place Daoris can name; one inside Daoris's own folder is a Daoris profile, never the person's.
         Assert.Equal((null, "process", "relative"), ToolHomeLeftovers.OwnHome(_ => "rel" + Path.DirectorySeparatorChar + "claude", null, profile, home));
         Assert.Equal((null, "process", "inside-daoris"), ToolHomeLeftovers.OwnHome(_ => Path.Combine(home, "profiles", "work"), null, profile, home));
+    }
+
+    [Fact]
+    public void A_tool_home_equal_to_Daoris_s_home_or_its_install_is_refused_too()
+    {
+        var (home, _, _) = Homes();
+        var install = Path.GetDirectoryName(home)!;
+        File.WriteAllText(Path.Combine(install, DaorisHome.InstallMarker), "# Daoris\n");
+
+        Assert.Equal((null, "process", "inside-daoris"), ToolHomeLeftovers.OwnHome(_ => home, null, _root, home));
+        Assert.Equal((null, "account", "inside-daoris"), ToolHomeLeftovers.OwnHome(_ => null, _ => install + Path.DirectorySeparatorChar, _root, home));
     }
 
     [Fact]

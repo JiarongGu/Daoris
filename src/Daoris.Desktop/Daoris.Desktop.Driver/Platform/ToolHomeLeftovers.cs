@@ -18,7 +18,25 @@ public sealed record ToolFolder(string Name, string Path, string Source, string?
 /// <summary>What was listed, and why not where nothing could be: <c>Why</c> is a code (<c>linked</c>, <c>relative</c>, <c>inside-daoris</c>, <c>no-tool-home</c>, <c>no-home</c>).</summary>
 /// <param name="Ambiguous">Folders present whose name two distinct working directories flatten to: listed for neither.</param>
 /// <param name="Uncertain">Folders present whose only claimant's path flattens in a way not proven (a non-ASCII letter, an over-long name).</param>
-public sealed record ToolListing(IReadOnlyList<ToolFolder> Folders, string? Why, bool CaseInsensitive, int Ambiguous, int Uncertain);
+/// <param name="PressWhy">Why no press is offered though folders are listed: <c>other-volume</c>, where a rename cannot reach Daoris's folder (nothing is ever copied).</param>
+public sealed record ToolListing(
+    IReadOnlyList<ToolFolder> Folders, string? Why, bool CaseInsensitive, int Ambiguous, int Uncertain, string? PressWhy = null);
+
+/// <summary>What a press may be handed beyond the world and the folders: each a seam a test drives, null for the real thing.</summary>
+public sealed record ToolClearOptions
+{
+    /// <summary>What the walk of each folder may count; null is the home's own budget.</summary>
+    public WiringBudget? Budget { get; init; }
+
+    /// <summary>The volume a path is on; null reads its root.</summary>
+    public Func<string, string>? VolumeOf { get; init; }
+
+    /// <summary>The working directories Daoris's records hold NOW, read again for each folder just before it moves; null keeps the world's.</summary>
+    public Func<IReadOnlyList<ToolOrigin>>? OriginsNow { get; init; }
+
+    /// <summary>The last part of where a folder goes; null makes one that cannot already exist.</summary>
+    public Func<string, string>? NameOf { get; init; }
+}
 
 /// <summary>One folder measured: its bytes, its newest file's time, and whether any read failed (so the numbers are not whole).</summary>
 public sealed record ToolMeasure(long Bytes, DateTimeOffset? Newest, bool Partial);
@@ -53,8 +71,9 @@ public sealed record ToolClear(IReadOnlyList<ToolCleared> Cleared, IReadOnlyList
 /// not fully read. Each is judged again right before it moves.</para>
 ///
 /// <para><b>Moved, not deleted.</b> A folder goes into <c>trees/.tidied/tool-home/projects/</c> under Daoris's own home, named
-/// as the trees' moved-aside folders are, so the look's own purge takes it after <see cref="RecoveryDays"/> days with nothing
-/// written in it since. Putting one back within those days is a row of its own.</para>
+/// as the trees' moved-aside folders are (with a unique part before the moment), so the look's own purge takes it after
+/// <see cref="RecoveryDays"/> days with nothing written in it since. It is one rename on one volume, never a copy: where the
+/// volumes differ the folders are listed and no press is offered. Putting one back within those days is a row of its own.</para>
 ///
 /// <para><b>Codex is not listed.</b> Its home files a session by the date it ran, and the folder it ran in is said only inside
 /// the session's file, which this never reads.</para>
@@ -99,7 +118,9 @@ public static class ToolHomeLeftovers
             var full = System.IO.Path.TrimEndingDirectorySeparator(System.IO.Path.GetFullPath(named));
             foreach (var daoris in new[] { daorisHome, SystemWiring.RootOf(daorisHome) }.Where(each => each is not null).Distinct())
             {
-                if (IsUnder(full, System.IO.Path.GetFullPath(daoris!), StringComparer.OrdinalIgnoreCase)) return (null, from, "inside-daoris");
+                // The folder itself is no more the person's own than anything inside it.
+                var top = System.IO.Path.TrimEndingDirectorySeparator(System.IO.Path.GetFullPath(daoris!));
+                if (string.Equals(full, top, StringComparison.OrdinalIgnoreCase) || IsUnder(full, top, StringComparer.OrdinalIgnoreCase)) return (null, from, "inside-daoris");
             }
 
             return (full, from, null);
@@ -155,13 +176,12 @@ public static class ToolHomeLeftovers
         {
             using var document = JsonDocument.Parse(recordsJson);
             if (document.RootElement.ValueKind != JsonValueKind.Array) return Origins(home, null);
-            var conversations = new HarnessConversations(home);
             foreach (var record in document.RootElement.EnumerateArray())
             {
                 if (record.ValueKind != JsonValueKind.Object || Text(record, "id") is not { Length: > 0 } id || id.Contains('/')) continue;
                 var live = new SessionRecord(id, "", Text(record, "state") ?? "").Live;
                 var keeps = live ? "session"
-                    : string.IsNullOrWhiteSpace(Text(record, "profile")) && conversations.Read(id) is not null ? "resumable"
+                    : string.IsNullOrWhiteSpace(Text(record, "profile")) ? ConversationKeeps(home, id)
                     : null;
                 if (Text(record, "tree") is { Length: > 0 } tree) origins.Add(new ToolOrigin(tree, "tree", keeps));
                 if (Text(record, "repository") == "daoris:help") origins.Add(new ToolOrigin(HelpRoom.PathOf(home), "help", keeps));
@@ -177,6 +197,32 @@ public static class ToolHomeLeftovers
         }
 
         return origins;
+    }
+
+    /// <summary>
+    /// What a record that began in the person's own home keeps its folder for: <c>resumable</c> where a conversation is kept to
+    /// resume, <c>record-unread</c> where one is there and cannot be read (an access failure or invalid JSON is not an absent
+    /// record: <see cref="HarnessConversations.Read"/> answers null for both, so this reads the file's presence itself), null
+    /// where there is none. Other callers of the store keep their behaviour.
+    /// </summary>
+    private static string? ConversationKeeps(string home, string session)
+    {
+        var conversations = new HarnessConversations(home);
+        if (!SessionEventText.IsLocalId(session)) return null;
+        try
+        {
+            using var _ = File.OpenRead(conversations.PathOf(session));
+        }
+        catch (Exception error) when (error is FileNotFoundException or DirectoryNotFoundException)
+        {
+            return null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return "record-unread";
+        }
+
+        return conversations.Read(session) is not null ? "resumable" : "record-unread";
     }
 
     private static string? Text(JsonElement element, string name) =>
@@ -197,7 +243,8 @@ public static class ToolHomeLeftovers
     /// listing alone, nothing opened. A folder reached through a link is never listed: where any ancestor of the tool home or its
     /// projects folder is a link, nothing is, and <c>Why</c> is <c>linked</c>.
     /// </summary>
-    public static ToolListing List(WiringWorld world)
+    /// <param name="volumeOf">The volume a path is on; null reads its root. A test's seam for two volumes.</param>
+    public static ToolListing List(WiringWorld world, Func<string, string>? volumeOf = null)
     {
         if (world.Home is not { } home) return new ToolListing([], "no-home", false, 0, 0);
         if (world.ToolHome is not { } tool) return new ToolListing([], world.ToolHomeWhy ?? "no-tool-home", false, 0, 0);
@@ -220,18 +267,18 @@ public static class ToolHomeLeftovers
         var names = present.Select(folder => folder.Name).ToHashSet(comparer);
         var roots = Roots(home);
         var origins = world.ToolOrigins ?? Origins(home, null);
-        var claims = new Dictionary<string, List<(string Full, ToolOrigin Origin, bool Sure)>>(comparer);
+        var claims = new Dictionary<string, List<(string Full, ToolOrigin Origin, bool Sure, bool Ours)>>(comparer);
         foreach (var origin in origins)
         {
             if (!System.IO.Path.IsPathFullyQualified(origin.Folder)) continue;
             var full = System.IO.Path.TrimEndingDirectorySeparator(System.IO.Path.GetFullPath(origin.Folder));
-            // Only a working directory under Daoris's own working roots is Daoris's to claim: a record naming the person's own
-            // checkout names nothing of ours.
-            if (!roots.Any(root => comparer.Equals(full, root) || IsUnder(full, root, comparer))) continue;
+            // Every recorded path takes part in the collision check, those outside Daoris's working roots included: a record
+            // naming the person's own checkout can flatten to the name of one of ours, and then neither is provable.
+            var ours = roots.Any(root => comparer.Equals(full, root) || IsUnder(full, root, comparer));
             var flat = Flatten(full);
             var sure = full.All(letter => letter < 128) && flat.Length <= LongestName;
             if (!claims.TryGetValue(flat, out var group)) claims[flat] = group = [];
-            group.Add((full, origin, sure));
+            group.Add((full, origin, sure, ours));
         }
 
         var folders = new List<ToolFolder>();
@@ -247,6 +294,8 @@ public static class ToolHomeLeftovers
                 continue;
             }
 
+            // One path, outside Daoris's roots: a person's own, and nothing of ours.
+            if (group.Any(claim => !claim.Ours)) continue;
             if (group.Any(claim => !claim.Sure))
             {
                 uncertain++;
@@ -257,10 +306,18 @@ public static class ToolHomeLeftovers
             var keeps = group.Select(claim => claim.Origin.Keeps).FirstOrDefault(why => why == "session")
                 ?? group.Select(claim => claim.Origin.Keeps).FirstOrDefault(why => why == "resumable")
                 ?? group.Select(claim => claim.Origin.Keeps).FirstOrDefault(why => why is not null);
-            folders.Add(new ToolFolder(folder.Name, folder.FullName, group[0].Origin.Source, keeps, FileId(folder.FullName)));
+            // An identity that cannot be read cannot be bound, so the folder stays.
+            var id = FileId(folder.FullName);
+            folders.Add(new ToolFolder(folder.Name, folder.FullName, group[0].Origin.Source, keeps ?? (id is null ? "identity-unread" : null), id ?? ""));
         }
 
-        return new ToolListing(folders, null, insensitive, ambiguous, uncertain);
+        // A rename is the only move: where the tool home is on another volume than Daoris's folder, the folders are listed and no
+        // press is offered. Nothing is ever copied.
+        var volume = volumeOf ?? (path => System.IO.Path.GetPathRoot(System.IO.Path.GetFullPath(path)) ?? "");
+        var pressWhy = string.Equals(volume(projects), volume(DaorisHome.Entry(home, HomeEntry.Trees)), StringComparison.OrdinalIgnoreCase)
+            ? null
+            : "other-volume";
+        return new ToolListing(folders, null, insensitive, ambiguous, uncertain, pressWhy);
     }
 
     /// <summary>Whether a folder's own file system folds case, read from it: the folder's name with its case swapped is the same folder.</summary>
@@ -303,37 +360,34 @@ public static class ToolHomeLeftovers
     // Identity
 
     /// <summary>
-    /// A folder's identity: on Windows its volume and file index, which a folder made anew in the same place does not have, as
-    /// the file system gives them; where that is not read, its creation time, a weaker stand-in.
+    /// A folder's identity: on Windows its 64-bit volume serial and 128-bit file id (<c>FILE_ID_INFO</c>), which a folder made anew
+    /// in the same place does not share whole. Null where it cannot be read, and a folder with no identity stays: there is no
+    /// weaker stand-in (a creation time can be set), and off Windows none is read.
     /// </summary>
-    internal static string FileId(string folder)
+    internal static string? FileId(string folder)
     {
-        if (OperatingSystem.IsWindows())
-        {
-            using var handle = CreateFileW(folder, 0, 7, IntPtr.Zero, 3, 0x02000000 | 0x00200000, IntPtr.Zero);
-            if (!handle.IsInvalid && GetFileInformationByHandle(handle, out var info))
-            {
-                return string.Create(CultureInfo.InvariantCulture, $"{info.VolumeSerialNumber:x}-{info.FileIndexHigh:x}{info.FileIndexLow:x8}");
-            }
-        }
-
-        return "created-" + Directory.GetCreationTimeUtc(folder).Ticks.ToString(CultureInfo.InvariantCulture);
+        if (!OperatingSystem.IsWindows()) return null;
+        // Backup semantics to open a folder; open the link itself, never what it points at.
+        using var handle = CreateFileW(folder, 0, 7, IntPtr.Zero, 3, 0x02000000 | 0x00200000, IntPtr.Zero);
+        if (handle.IsInvalid || !GetFileInformationByHandleEx(handle, FileIdInfoClass, out var info, (uint)Marshal.SizeOf<FileIdInfo>())) return null;
+        return string.Create(CultureInfo.InvariantCulture, $"{info.VolumeSerialNumber:x16}-{info.IdHigh:x16}{info.IdLow:x16}");
     }
 
+    private const int FileIdInfoClass = 18;
+
+    /// <summary>Windows' <c>FILE_ID_INFO</c>: a 64-bit volume serial, then the 128-bit id as its two halves, low first (24 bytes).</summary>
     [StructLayout(LayoutKind.Sequential)]
-    private struct ByHandleFileInformation
+    private struct FileIdInfo
     {
-        public uint FileAttributes;
-        public long CreationTime;
-        public long LastAccessTime;
-        public long LastWriteTime;
-        public uint VolumeSerialNumber;
-        public uint FileSizeHigh;
-        public uint FileSizeLow;
-        public uint NumberOfLinks;
-        public uint FileIndexHigh;
-        public uint FileIndexLow;
+        public ulong VolumeSerialNumber;
+        public ulong IdLow;
+        public ulong IdHigh;
     }
+
+    /// <summary>The identity struct's size and the offsets of its volume serial and its id, which a test holds to Windows' own.</summary>
+    internal static (int Size, int VolumeOffset, int IdOffset) IdentityLayout =>
+        (Marshal.SizeOf<FileIdInfo>(), (int)Marshal.OffsetOf<FileIdInfo>(nameof(FileIdInfo.VolumeSerialNumber)),
+            (int)Marshal.OffsetOf<FileIdInfo>(nameof(FileIdInfo.IdLow)));
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern SafeFileHandle CreateFileW(
@@ -341,7 +395,7 @@ public static class ToolHomeLeftovers
 
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetFileInformationByHandle(SafeFileHandle handle, out ByHandleFileInformation information);
+    private static extern bool GetFileInformationByHandleEx(SafeFileHandle handle, int informationClass, out FileIdInfo information, uint size);
 
     // ---------------------------------------------------------------------------------------------------------------------
     // Size
@@ -370,29 +424,35 @@ public static class ToolHomeLeftovers
     /// <c>unread</c>; one written to within <see cref="Quiet"/> of <paramref name="now"/>, <c>in-use</c>. Where a link lies on the
     /// way to the projects folder or to where it would go, nothing moves. Never deleted: see the class remarks.
     /// </summary>
-    /// <param name="budget">What the walk of each folder may count; null is the home's own budget.</param>
-    /// <param name="copy">Copy then remove, as a move across volumes must; a test's seam to prove it on one volume.</param>
-    public static ToolClear Clear(
-        WiringWorld world, IReadOnlyList<ToolAsk> asked, DateTimeOffset now, WiringBudget? budget = null, bool copy = false)
+    /// <remarks>
+    /// <para>Each folder is judged on a listing read afresh just for it, from the records read again
+    /// (<see cref="ToolClearOptions.OriginsNow"/>), so a session that resumed during the press keeps its folder.</para>
+    /// <para>The move is one rename on one volume: atomic, no copy and no removal, to a name made unique (<c>&lt;name&gt;-&lt;8 hex&gt;-&lt;moment&gt;</c>,
+    /// the moment last as the purge reads it) that must not already exist. The whole way to the destination, up to the root, is
+    /// checked for a link before anything is created. Where the volumes differ, nothing moves (<c>other-volume</c>).</para>
+    /// </remarks>
+    public static ToolClear Clear(WiringWorld world, IReadOnlyList<ToolAsk> asked, DateTimeOffset now, ToolClearOptions? options = null)
     {
         var cleared = new List<ToolCleared>();
         var kept = new List<ToolKept>();
-        var listing = List(world);
-        var comparer = listing.CaseInsensitive ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
         var home = world.Home;
-        foreach (var ask in asked.GroupBy(each => each.Name, comparer).Select(group => group.First()))
+        foreach (var ask in asked.GroupBy(each => each.Name, StringComparer.Ordinal).Select(group => group.First()))
         {
+            var current = options?.OriginsNow is { } read ? world with { ToolOrigins = read() } : world;
+            var listing = List(current, options?.VolumeOf);
+            var comparer = listing.CaseInsensitive ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
             if (listing.Why is { } why) { kept.Add(new ToolKept(ask.Name, why)); continue; }
+            if (listing.PressWhy is { } noPress) { kept.Add(new ToolKept(ask.Name, noPress)); continue; }
             if (listing.Folders.FirstOrDefault(each => comparer.Equals(each.Name, ask.Name)) is not { } folder)
             {
                 kept.Add(new ToolKept(ask.Name, "not-listed"));
                 continue;
             }
 
-            if (folder.Id != ask.Id) { kept.Add(new ToolKept(folder.Name, "changed")); continue; }
+            if (folder.Id.Length == 0 || folder.Id != ask.Id) { kept.Add(new ToolKept(folder.Name, "changed")); continue; }
             if (folder.Keeps is { } keeps) { kept.Add(new ToolKept(folder.Name, keeps)); continue; }
 
-            var (bytes, newest, partial) = WiringSizes.MeasureFolder(folder.Path, budget ?? WiringBudget.Default, CancellationToken.None);
+            var (bytes, newest, partial) = WiringSizes.MeasureFolder(folder.Path, options?.Budget ?? WiringBudget.Default, CancellationToken.None);
             if (partial) { kept.Add(new ToolKept(folder.Name, "unread")); continue; }
             if (Lately(folder.Path, newest, now)) { kept.Add(new ToolKept(folder.Name, "in-use")); continue; }
 
@@ -401,14 +461,18 @@ public static class ToolHomeLeftovers
             if (Lately(folder.Path, null, now)) { kept.Add(new ToolKept(folder.Name, "in-use")); continue; }
 
             var aside = Path.Combine(DaorisHome.Entry(home!, HomeEntry.Trees), ".tidied", "tool-home", "projects");
-            var to = Path.Combine(aside, $"{folder.Name}-{DateTimeOffset.UtcNow.ToString(TreeSetAside.SetAsideStamp, CultureInfo.InvariantCulture)}");
+            var leaf = options?.NameOf?.Invoke(folder.Name)
+                ?? $"{folder.Name}-{Guid.NewGuid().ToString("N")[..8]}-{DateTimeOffset.UtcNow.ToString(TreeSetAside.SetAsideStamp, CultureInfo.InvariantCulture)}";
+            var to = Path.Combine(aside, leaf);
             try
             {
+                // The whole way, up to the root and Daoris's trees folder included, is looked at before a folder is made.
+                if (LinkOnChain(aside) is not null) { kept.Add(new ToolKept(folder.Name, "linked")); continue; }
                 Directory.CreateDirectory(aside);
-                if (LinkOnChain(aside, DaorisHome.Entry(home!, HomeEntry.Trees)) is not null) { kept.Add(new ToolKept(folder.Name, "linked")); continue; }
-                var sameVolume = string.Equals(Path.GetPathRoot(folder.Path), Path.GetPathRoot(to), StringComparison.OrdinalIgnoreCase);
-                if (!copy && sameVolume) Directory.Move(folder.Path, to);
-                else if (!CopyThenRemove(folder.Path, to)) { kept.Add(new ToolKept(folder.Name, "linked")); continue; }
+                if (LinkOnChain(aside) is not null) { kept.Add(new ToolKept(folder.Name, "linked")); continue; }
+                // Exclusive: a destination that is there is never used, replaced or removed.
+                if (Directory.Exists(to) || File.Exists(to)) { kept.Add(new ToolKept(folder.Name, "not-moved")); continue; }
+                Directory.Move(folder.Path, to);
                 cleared.Add(new ToolCleared(folder.Name, bytes, to));
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -424,86 +488,5 @@ public static class ToolHomeLeftovers
     private static bool Lately(string folder, DateTimeOffset? newest, DateTimeOffset now) =>
         newest is { } at && at > now - Quiet || Directory.GetLastWriteTimeUtc(folder) > (now - Quiet).UtcDateTime;
 
-    /// <summary>
-    /// The folder copied to <paramref name="to"/>, checked file for file and byte for byte, then removed: a move across volumes
-    /// is no rename. A link met on the way is never followed: the copy is taken away and nothing is removed (false). Where the
-    /// removal fails after a whole copy, the folder is counted moved and what is left of it is the person's to see.
-    /// </summary>
-    private static bool CopyThenRemove(string from, string to)
-    {
-        try
-        {
-            var (files, bytes) = CopyInto(from, to);
-            var (copiedFiles, copiedBytes) = Count(to);
-            if (files != copiedFiles || bytes != copiedBytes) throw new IOException("the copy did not match what it was copied from");
-        }
-        catch (NotSupportedException)
-        {
-            Directory.Delete(to, recursive: true);
-            return false;
-        }
-        catch (IOException)
-        {
-            if (Directory.Exists(to)) Directory.Delete(to, recursive: true);
-            throw;
-        }
 
-        try
-        {
-            Remove(from);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // The copy is whole and kept; a partly removed original is left where it is.
-        }
-
-        return true;
-    }
-
-    private static (int Files, long Bytes) CopyInto(string from, string to)
-    {
-        Directory.CreateDirectory(to);
-        var (files, bytes) = (0, 0L);
-        foreach (var entry in new DirectoryInfo(from).EnumerateFileSystemInfos("*", new EnumerationOptions { AttributesToSkip = 0, IgnoreInaccessible = false }))
-        {
-            if (entry.Attributes.HasFlag(FileAttributes.ReparsePoint)) throw new NotSupportedException("a link is never followed");
-            var target = Path.Combine(to, entry.Name);
-            if (entry is DirectoryInfo inner)
-            {
-                var (more, size) = CopyInto(inner.FullName, target);
-                files += more;
-                bytes += size;
-            }
-            else
-            {
-                File.Copy(entry.FullName, target);
-                files++;
-                bytes += ((FileInfo)entry).Length;
-            }
-        }
-
-        return (files, bytes);
-    }
-
-    private static (int Files, long Bytes) Count(string folder)
-    {
-        var (files, bytes) = (0, 0L);
-        foreach (var file in new DirectoryInfo(folder).EnumerateFiles("*", SearchOption.AllDirectories))
-        {
-            files++;
-            bytes += file.Length;
-        }
-
-        return (files, bytes);
-    }
-
-    private static void Remove(string folder)
-    {
-        foreach (var file in new DirectoryInfo(folder).EnumerateFiles("*", SearchOption.AllDirectories))
-        {
-            if (file.Attributes.HasFlag(FileAttributes.ReadOnly)) file.Attributes &= ~FileAttributes.ReadOnly;
-        }
-
-        Directory.Delete(folder, recursive: true);
-    }
 }

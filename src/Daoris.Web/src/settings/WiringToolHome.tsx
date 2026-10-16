@@ -62,12 +62,15 @@ export function WiringToolHome({ toolHome, measuring = false, onClear }: {
           )}
           {left > 0 && <Prose className="text-small">{t('settings.daoris.toolHome.left', { count: left })}</Prose>}
           {toolHome.caseInsensitive && folders.length > 0 && <Prose className="text-small">{t('settings.daoris.toolHome.caseFolded')}</Prose>}
-          {movable.length > 0 && !asking && (
+          {toolHome.pressWhy && folders.length > 0 && (
+            <Prose className="text-small">{t(`settings.daoris.toolHome.pressWhy.${toolHome.pressWhy}`, { defaultValue: t('settings.daoris.why.unknown') })}</Prose>
+          )}
+          {movable.length > 0 && !toolHome.pressWhy && !asking && (
             <p className="m-0">
               <Button variant="ghost" onClick={() => setAsking(true)}>{t('settings.daoris.button.removeThese')}</Button>
             </p>
           )}
-          {movable.length > 0 && asking && (
+          {movable.length > 0 && !toolHome.pressWhy && asking && (
             <InlineConfirm
               label={t('settings.daoris.toolHome.askTitle')}
               says={t(counted ? 'settings.daoris.toolHome.askSays' : 'settings.daoris.toolHome.askSaysUncounted', {

@@ -97,7 +97,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 48 | 784 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverConfig.cs` | 63 | 1117 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 67 | 1098 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SystemWiring.cs` | 50 | 1067 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SystemWiring.cs` | 50 | 1069 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 75 | 1303 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 122 | 2206 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Domain/Trace.Chain.cs` | 59 | 1282 |

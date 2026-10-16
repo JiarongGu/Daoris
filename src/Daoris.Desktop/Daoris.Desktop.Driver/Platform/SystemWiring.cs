@@ -1019,6 +1019,8 @@ public static class SystemWiring
         tool["present"] = ToolHomeLeftovers.ProjectsOf(world) is { } projects && Directory.Exists(projects);
         // Why nothing is listed where nothing can be (a link on the way, a home that is not the person's), and what was left out.
         tool["why"] = listing.Why;
+        // Folders listed with no press offered: the tool home and Daoris's folder are on different volumes (a rename cannot cross).
+        tool["pressWhy"] = listing.PressWhy;
         tool["caseInsensitive"] = listing.CaseInsensitive;
         tool["ambiguous"] = listing.Ambiguous;
         tool["uncertain"] = listing.Uncertain;

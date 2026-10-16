@@ -94,6 +94,8 @@ export interface SystemWiring {
     // Why nothing is listed where nothing can be (`linked`, `no-tool-home`, …), the file system's case rule, the folders left out
     // because their name is not proven Daoris's, and how long a moved folder is kept.
     why: string | null; caseInsensitive: boolean; ambiguous: number; uncertain: number; recoveryDays: number;
+    // Why folders are listed with no press (`other-volume`: a rename cannot cross drives, and nothing is ever copied).
+    pressWhy?: string | null;
     folders: WiringToolFolder[];
   };
 }

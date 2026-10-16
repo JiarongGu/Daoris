@@ -51,9 +51,15 @@ public sealed class SystemRoutes(DriverContext context)
                     Text(each, "name") ?? "", Text(each, "id") ?? "")).ToList()
                 : throw new DriverException("a clear sends the folders its list held: each folder's `name` and `id`.");
         var world = await WorldWithOriginsAsync(cancellationToken).ConfigureAwait(false);
+        var fixedOrigins = _context.WiringWorldOf().ToolOrigins;
         return await Task.Run(() =>
         {
-            var outcome = ToolHomeLeftovers.Clear(world, folders, DateTimeOffset.UtcNow);
+            // The records are read again for each folder, just before it moves: a session may have resumed during the press. A
+            // world that names its origins (a test's) is read as it stands.
+            var outcome = ToolHomeLeftovers.Clear(world, folders, DateTimeOffset.UtcNow, new ToolClearOptions
+            {
+                OriginsNow = () => fixedOrigins ?? OriginsNowAsync(world.Home!, cancellationToken).GetAwaiter().GetResult(),
+            });
             return (object?)new
             {
                 cleared = outcome.Cleared.Select(done => new { name = done.Name, bytes = done.Bytes, to = done.To }).ToList(),
@@ -74,6 +80,12 @@ public sealed class SystemRoutes(DriverContext context)
     {
         var world = _context.WiringWorldOf();
         if (world.ToolOrigins is not null || world.Home is not { } home) return world;
+        return world with { ToolOrigins = await OriginsNowAsync(home, cancellationToken).ConfigureAwait(false) };
+    }
+
+    /// <summary>Daoris's records read now: the service's session records, or none where it does not answer (everything then stays).</summary>
+    private async Task<IReadOnlyList<ToolOrigin>> OriginsNowAsync(string home, CancellationToken cancellationToken)
+    {
         string? json = null;
         if (_context.Loop.Service is { } service)
         {
@@ -87,6 +99,6 @@ public sealed class SystemRoutes(DriverContext context)
             }
         }
 
-        return world with { ToolOrigins = await Task.Run(() => ToolHomeLeftovers.Origins(home, json), cancellationToken).ConfigureAwait(false) };
+        return await Task.Run(() => ToolHomeLeftovers.Origins(home, json), cancellationToken).ConfigureAwait(false);
     }
 }

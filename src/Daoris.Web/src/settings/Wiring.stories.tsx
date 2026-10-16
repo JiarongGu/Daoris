@@ -219,6 +219,11 @@ export const ToolHomeMeasuring: Story = { render: () => <WiringToolHome toolHome
 /** Nothing of Daoris's is left there, so there is no press. */
 export const ToolHomeNothing: Story = { render: () => <WiringToolHome toolHome={DEVELOPMENT.toolHome!} onClear={none} /> };
 
+/** The tool home is on another drive than Daoris's: the folders are listed and no press is offered. */
+export const ToolHomeOtherDrive: Story = {
+  render: () => <WiringToolHome toolHome={{ ...WIRED.toolHome!, pressWhy: 'other-volume' }} onClear={none} />,
+};
+
 /** A narrow main area: a long folder name breaks anywhere. */
 export const ToolHomeNarrow: Story = { render: () => <WiringToolHome toolHome={WIRED.toolHome!} onClear={none} />, decorators: narrow };
 
