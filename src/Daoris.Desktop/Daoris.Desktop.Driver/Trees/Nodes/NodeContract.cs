@@ -302,8 +302,8 @@ public static class NodeDeclarations
     /// <summary>
     /// What does not hold, by its field, or null: a kind this build does not know (<see cref="NodeRefusal.UnknownKind"/>), a reach not
     /// the kind's (a plugin's is observed or performed), a version below 1, a retry of fewer than one attempt or on a kind nothing can
-    /// fail, a timeout not above zero, or a rejection a built-in's declaration tries to grant or a skip it tries to forbid (the kind's
-    /// own, never a declaration's).
+    /// fail, a timeout not above zero, an output named <c>evidence</c> (the evidence port's name, <see cref="WireEnd.Evidence"/>), or a
+    /// rejection a built-in's declaration tries to grant or a skip it tries to forbid (the kind's own, never a declaration's).
     /// </summary>
     public static string? Problem(NodeDeclaration node)
     {
@@ -315,6 +315,8 @@ public static class NodeDeclarations
         if (node.Version < 1) return "version";
         if (node.Retry is { } retry && (retry.MaxAttempts < 1 || retry.DelaysSeconds.Any(delay => delay < 0) || authority.FailureBy is null)) return "retry";
         if (node.TimeoutSeconds is <= 0) return "timeoutSeconds";
+        // FABRIC-WIRE1a: a data wire names a node's evidence by this port, so no output may take its name.
+        if (node.Outputs.ContainsKey(WireEnd.Evidence)) return "outputs";
         if (builtIn && node.Rejectable) return "rejectable";
         if (builtIn && !node.Skippable) return "skippable";
         return null;

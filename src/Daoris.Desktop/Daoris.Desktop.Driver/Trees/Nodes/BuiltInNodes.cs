@@ -58,6 +58,9 @@ public static class BuiltInNodes
     /// <summary>The kinds observed from records.</summary>
     public static readonly IReadOnlyList<string> Observed = [NodeKinds.Claimed, NodeKinds.Handed, NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Line];
 
+    /// <summary>The schema of an observed built-in's evidence, its record's: what a <c>data</c> wire from its evidence port carries (WIRE1a).</summary>
+    public static string EvidenceSchema(string kind) => $"daoris/{kind}@1";
+
     /// <summary>
     /// What <paramref name="unit"/>'s records say of <paramref name="node"/>, bound for <paramref name="attempt"/> under
     /// <paramref name="graphDigest"/>, where no wire evaluated a binding: no inputs and no prerequisite receipts.
@@ -81,7 +84,7 @@ public static class BuiltInNodes
             return Seen(NodeStates.Reached, said) with
             {
                 Source = source,
-                Acceptance = accepted with { Evidence = new NodePort($"daoris/{node.Kind}@1", $"{record}#{artifact}", revision, accepted.Id) },
+                Acceptance = accepted with { Evidence = new NodePort(EvidenceSchema(node.Kind), $"{record}#{artifact}", revision, accepted.Id) },
             };
         }
 
