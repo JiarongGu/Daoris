@@ -229,6 +229,14 @@ repository.
   `SweepLineProcessTests` (the list asked the line 3 times a repository before, once after; the press once; the next look
   asks again). Reasoned from the stack, not reproduced on the owner's machine; the install's `ui.stalled` lines after the
   republish are the field proof.
+- **What it left, done (SWEEPFLIGHT1, PROCSTART2, 2026-10-16):** the stack's 22 `SweepPlanAsync` threads were as many lists
+  asked at once, so identical `LINES` and `SWEEP_PLAN` asks now join the one under way (`[OneFlight]`, `RouteFlights`; a
+  press forgets them as it answers). The starts still made directly (a session's, its going on, a conversation's, a harness
+  action's, a usage read's, a plugin's and its trial, the host, Edge, the file manager) now pass `ProcessStarts`. Verify:
+  `DriverModuleOneFlightTests` (two asks read the registry twice before, once after; the next ask reads again),
+  `RouteFlightsTests`, `ProcessStartsCensusTests` (red with nine files starting directly and three bare folder doors),
+  `GatedStartsTests` and `OpenFolderGateTests` (each start seen nowhere, or on the caller's thread, before; off it after).
+
 ## 2026-10-15 — The person-door host missed its 15-second stop once under load: not reproduced, its one long wait bounded (FLAKE2)
 
 - **Symptom:** `PersonDoorProcessTests.The_real_host_reads_its_key_from_its_input_gates_by_it_and_still_stops_when_the_input_ends`

@@ -148,7 +148,9 @@ scopes it moved, and the payload field naming the session where the change is on
 reads marks), and `StatePublisher`, the dispatcher's innermost middleware, raises
 `STATE_CHANGED` {scopes, sessions?} once it has answered successfully, a refusal answered as data included; the page's
 state hub asks those scopes again in every window (D169, whose table names what each route declares). A handler never
-raises it by hand. A new scope is a `StateScopes` member added at the end (a wire's word, never renamed), its row in the
+raises it by hand. A read whose answer is a fan-out over every checkout says `[OneFlight("ROUTE")]` beside its mark (today
+`LINES` and `SWEEP_PLAN`, SWEEPFLIGHT1): an identical ask while one runs joins it rather than starting another, a press
+forgets every one under way as it answers, and a press is never shared (D56's SWEEPFLIGHT1 note). A new scope is a `StateScopes` member added at the end (a wire's word, never renamed), its row in the
 page's `bridge/stateHub.ts`, and a case in `StatePublisherTests` and `stateHub.test.tsx`. The same middleware tells what is
 under way (STATEHUB1c): each declared press from its dispatch until it answers or throws, as `UNDER_WAY` {seq, presses:
 [{route, session?}]}, whole and numbered at each change, which the page's `useUnderWay` reads so every view and window says a
