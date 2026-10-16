@@ -17,7 +17,7 @@ import { ACCOUNT_COLUMNS, AccountColumnsHead, AccountRow } from './AccountRow';
 import { type BackAccount, PlaceAccount, RenameAccount, ReSignIn } from './AddAccount';
 import {
   type AccountAct, type AccountState, type AgentPart, type AgentUsage, accountAct, accountName, accountStates, accountWho,
-  doorsSummary, joinChoices, latestRead, nextStartSaidFor, ownRunsFor, ownSaid, ownState, rulesSummary, runsFor, runsForLine,
+  doorsSummary, joinChoices, latestRead, nextStartSaidFor, ownSaid, ownState, rulesSummary, runsFor, runsForLine,
   settingsSummary, usageCells, usageSummary, useSummary, versionOnly, workspacesSummary,
 } from './agents';
 
@@ -189,8 +189,8 @@ export function AgentPage({
   const settingsShown = Boolean(tool.settingsChoices) && tool.accounts.some((account) => account.settings);
   const joinable = (name: string) => joinChoices(tool, use, scopeWorkspaces, labelOf, name);
   // The next start, said above the accounts (ACCTUX4b): the workspace in view's where it has a scope of its own (ACCTUX4c),
-  // else this machine's; every workspace's is also said in its fold under *Workspaces*. None on the tool's own sign-in, nor
-  // from a shell that names none.
+  // else this machine's; every workspace's is also said in its fold under *Workspaces*. None where a test double runs in its
+  // own home, nor from a shell that names none.
   const nextSaid = nextStartSaidFor(use, inView, labelOf, (name) => Boolean(accountOf(name)?.key));
 
   // What the person has open: a section, the add flow's first step, a row's question or rename, *Remove…*'s ask, the model
@@ -350,7 +350,8 @@ export function AgentPage({
           {tool.present && signsIn && (
             <Button disabled={busy} onClick={startAdding}>
               <Icon name="plus" size={13} />
-              {t('agents.add.open')}
+              {/* While the agent has no Daoris account the press is the first sign-in, which names no account (D175 point 6). */}
+              {t(tool.accounts.length === 0 ? 'harness.login.forDaoris' : 'agents.add.open')}
             </Button>
           )}
           {tool.present && door.takesKey && !keying && (
@@ -381,7 +382,7 @@ export function AgentPage({
   );
 
   const ownMenu: MenuAct[] = [
-    // Naming no account clears the default: the tool's own sign-in again (D49 §4).
+    // Naming no account clears the default: Daoris's accounts, in turn, again (D49 §4, D175 point 2).
     ...(tool.machineDefault !== null ? [{ id: 'default', label: t('agents.account.useDefault'), onSelect: () => acts.onDefault(null) }] : []),
     ...tool.workspaceDefaults.map((circle) => ({
       id: `clear:${circle.workspace}`, label: t('agents.account.clearIn', { workspace: circle.workspace }),
@@ -662,13 +663,13 @@ export function AgentPage({
                 who={tool.ownAccount}
                 why={ownLine(tool.ownAccount, use?.own.cooling)}
                 state={own}
-                runs={runsForLine(ownRunsFor(tool, use, scopeWorkspaces))}
+                // No *Runs for* and no *Try now*: no start runs on it, so an old cool-off is only said (D175 point 1).
                 // What its agent last said of its windows, where a press asked its own server (CODEXUSE3), in the cells an
                 // account's row draws (ACCTUX4); else only that a cool-off Daoris chose the length of has no known reset
                 // (ACCTUX1). No unknown cells where nothing was said: Claude Code's own sign-in is never read.
                 // No curve: no list holds your own sign-in, so no switch measures it.
                 usage={usageCells({ said: ownSaid(use) }, own, { now, product })}
-                act={actOf(own.state === 'cooling' || own.state === 'unknown' ? accountAct(own, { signsIn: false, present: tool.present, runs: 1 }) : null, null, ownLabel)}
+                act={actOf(own.state === 'unknown' ? accountAct(own, { signsIn: false, present: tool.present, runs: 1 }) : null, null, ownLabel)}
                 menu={ownMenu}
                 now={now}
               />

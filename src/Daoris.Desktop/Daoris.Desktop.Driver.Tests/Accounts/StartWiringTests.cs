@@ -106,14 +106,23 @@ public sealed class StartWiringTests : IDisposable
         Assert.Equal(("work", ChoiceFrom.Machine), (other.Profile, other.ProfileFrom));
     }
 
-    /// <summary>No default anywhere is the agent's own sign-in — a real answer, not a missing one.</summary>
+    /// <summary>
+    /// No default anywhere and no Daoris account is a start that waits for a sign-in, never the agent's own sign-in (OWNSPACE1a,
+    /// D175 point 2); with one, the start takes it, though nothing named it.
+    /// </summary>
     [Fact]
-    public async Task No_default_is_the_agent_s_own_sign_in()
+    public async Task No_default_and_no_Daoris_account_waits_for_a_sign_in_and_one_account_takes_the_start()
     {
-        var wiring = await Roster().WiringAsync("agent", Config(), "aurora");
+        var waits = await Roster().WiringAsync("agent", Config(), "aurora");
 
-        Assert.Null(wiring.Profile);
-        Assert.Equal(ChoiceFrom.Unset, wiring.ProfileFrom);
+        Assert.Null(waits.Profile);
+        Assert.Equal(ChoiceFrom.Unset, waits.ProfileFrom);
+        Assert.StartsWith("No `agent` account of Daoris's own is signed in", waits.Refusal);
+
+        SignedIn("agent", "work");
+        var takes = await Roster().WiringAsync("agent", Config(), "aurora");
+
+        Assert.Equal(("work", ChoiceFrom.Unset, (string?)null), (takes.Profile, takes.ProfileFrom, takes.Refusal));
     }
 
     /// <summary>
@@ -170,6 +179,8 @@ public sealed class StartWiringTests : IDisposable
     [Fact]
     public async Task A_pin_says_where_it_was_set_and_a_missing_pin_is_the_refusal()
     {
+        // A Daoris account to start on (OWNSPACE1a), so the pin is what refuses it.
+        SignedIn("agent", "work");
         new HarnessSettings().WithVersion("agent", "9.9.9").Save(Settings);
 
         var wiring = await Roster().WiringAsync("agent", Config(), "aurora");
@@ -183,6 +194,7 @@ public sealed class StartWiringTests : IDisposable
     [Fact]
     public async Task A_command_driver_json_names_outranks_the_pin()
     {
+        SignedIn("agent", "work");
         new HarnessSettings().WithVersion("agent", "9.9.9").Save(Settings);
         var script = Path.Combine(_home, "agent.mjs");
         var config = Config() with

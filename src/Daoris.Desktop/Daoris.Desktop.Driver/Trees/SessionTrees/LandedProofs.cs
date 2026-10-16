@@ -45,18 +45,34 @@ internal static class LandedProofs
     /// platform's squash merge reaches the second before anyone pulls it into the first.
     /// </summary>
     /// <param name="refs">The judgement's refs (PROC1d-ii), where it holds them; null asks git.</param>
-    internal static async Task<IReadOnlyList<LineForm>> LineFormsAsync(string root, string? line, CancellationToken ct, RefSnapshot? refs = null)
+    internal static async Task<IReadOnlyList<LineForm>> LineFormsAsync(string root, string? line, CancellationToken ct, RefSnapshot? refs = null) =>
+        (await ReadLineFormsAsync(root, line, ct, refs).ConfigureAwait(false)).Forms;
+
+    /// <summary>
+    /// <see cref="LineFormsAsync"/> with what it could not read (PROOF-UNREAD1): git's exit 1 from <c>rev-parse --verify --quiet</c> is
+    /// "there is no such ref", and any other failure (git missing, a timeout, a repository it cannot open) is a read that was not
+    /// made, which must not read as a line with no forms.
+    /// </summary>
+    internal static async Task<(IReadOnlyList<LineForm> Forms, string? Unread)> ReadLineFormsAsync(
+        string root, string? line, CancellationToken ct, RefSnapshot? refs = null)
     {
         var forms = new List<LineForm>();
-        if (line is null) return forms;
+        string? unread = null;
+        if (line is null) return (forms, null);
         foreach (var (reference, name) in new[] { ($"refs/heads/{line}", line), ($"refs/remotes/origin/{line}", $"origin/{line}") })
         {
             var there = refs is null ? null : await refs.HasAsync(reference, ct).ConfigureAwait(false);
-            there ??= (await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], ct).ConfigureAwait(false)).Code == 0;
+            if (there is null)
+            {
+                var (code, _, err) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], ct).ConfigureAwait(false);
+                there = code == 0;
+                if (code is not (0 or 1)) unread ??= $"git could not look for `{name}`: {(string.IsNullOrWhiteSpace(err) ? "git said nothing" : FirstLine(err))}";
+            }
+
             if (there == true) forms.Add(new LineForm(name, reference));
         }
 
-        return forms;
+        return (forms, unread);
     }
 
     /// <summary>

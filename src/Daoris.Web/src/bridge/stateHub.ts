@@ -23,12 +23,13 @@ const allHandOffs: QueryKey = keys.handOff('').slice(0, -1);
  * one session's own: a landing is every plan's, since each is judged against the line it moved.
  */
 const scopes = new Map<string, (sessions: string[] | null) => QueryKey[]>([
-  ['sessions', () => [keys.allSessions]],
-  // Every plan and gate, with the second opinions and what of them waits, which sit under the landings' key.
-  ['landing', () => [keys.allLandings]],
+  // The sessions, and each unit's milestone, which reads their records (FABRIC-MILESTONE1b).
+  ['sessions', () => [keys.allSessions, keys.allWorkState]],
+  // Every plan and gate, with the second opinions and what of them waits, which sit under the landings' key; and each unit's milestone.
+  ['landing', () => [keys.allLandings, keys.allWorkState]],
   ['diff', (sessions) => sessions?.map((session) => keys.diff(session)) ?? [keys.allDiffs]],
   ['handOff', (sessions) => sessions?.map((session) => keys.handOff(session)) ?? [allHandOffs]],
-  ['sweep', () => [keys.sweep]],
+  ['sweep', () => [keys.sweep, keys.allWorkState]],
   ['treesSync', () => [treesSyncScopeKey]],
   // Each repository's rules, and the Current workflow drawn from them, which sits under their key.
   ['lines', () => [keys.lines]],

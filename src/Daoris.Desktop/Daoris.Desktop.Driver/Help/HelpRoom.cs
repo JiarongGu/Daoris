@@ -129,11 +129,16 @@ public static class HelpRoom
         IReadOnlyList<AskView>? standing = null, PluginCatalog? plugins = null, IReadOnlyList<LandedBranch>? landed = null,
         IReadOnlyList<PluginOffer>? offers = null, IReadOnlyList<ParkedQuest>? parked = null, HelpBrowserFacts? browser = null,
         IReadOnlyList<HeldQuest>? held = null, SessionLook? sessions = null, IReadOnlyList<HistoryReading>? history = null,
-        IReadOnlyList<WorkflowFileFound>? workflows = null, HelpGrantSet? grants = null)
+        IReadOnlyList<WorkflowFileFound>? workflows = null, HelpGrantSet? grants = null,
+        IReadOnlyList<WorkMilestone>? work = null, IReadOnlyList<string>? workUnread = null)
     {
         var sources = new HelpMachineSources(
             config, snapshot, lines, roster, product, asks, standing ?? [], plugins ?? PluginCatalog.None, landed ?? [], offers ?? [],
-            parked ?? [], browser) { Held = held ?? [], Sessions = sessions, History = history, Workflows = workflows, Grants = grants };
+            parked ?? [], browser)
+        {
+            Held = held ?? [], Sessions = sessions, History = history, Workflows = workflows, Grants = grants,
+            Work = work, WorkUnread = workUnread ?? [],
+        };
         return HelpRoomSections.All.Aggregate(new HelpMachine(), (machine, section) => section.Describe(machine, sources));
     }
 
@@ -241,6 +246,14 @@ public sealed record HelpMachine
     /// <summary>The skills plugins hand it (HELPPLUG1b, D170 point 4), as the harness names them, <c>plugin:skill</c>.</summary>
     public IReadOnlyList<string> PluginSkills { get; init; } = [];
 
+    // The work section's.
+
+    /// <summary>Each unit of work's milestone as the records say it (FABRIC-MILESTONE1b); null where none was read.</summary>
+    public IReadOnlyList<WorkMilestone>? Work { get; init; }
+
+    /// <summary>What the milestones could not read, each in a clause (a repository with no checkout here).</summary>
+    public IReadOnlyList<string> WorkUnread { get; init; } = [];
+
     // The own-plugins section's.
 
     /// <summary>The install's own plugins not installed here and sound, which an add may name by id (PLUG9 d).</summary>
@@ -285,4 +298,10 @@ internal sealed record HelpMachineSources(
 
     /// <summary>The person's approvals of what plugins hand Ask Daoris (HELPPLUG1a's tightening); null where none were read.</summary>
     public HelpGrantSet? Grants { get; init; }
+
+    /// <summary>Each unit of work's milestone (FABRIC-MILESTONE1b); null where none was read.</summary>
+    public IReadOnlyList<WorkMilestone>? Work { get; init; }
+
+    /// <summary>What the milestones could not read.</summary>
+    public IReadOnlyList<string> WorkUnread { get; init; } = [];
 }

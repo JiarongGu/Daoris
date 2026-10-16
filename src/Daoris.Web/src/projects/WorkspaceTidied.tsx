@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { ago } from '../locales/format';
 import type { LogRow } from '../settings/Logs';
 import { Button } from '../design/ui';
+import { unitOfBranch, type MilestoneUnit } from '../work/milestone';
+import { MilestoneLine } from '../work/WorkMilestone';
 
 /** Rows drawn before the rest are one press away, as the groups above are (UX6h2b2). */
 export const TIDIED_SHOWN = 5;
@@ -53,8 +55,13 @@ function group(rows: readonly LogRow[]): Group[] {
  * word of the page's by its code, and a folder, which is the machine's, is never named. A code the page does not know is
  * left unworded rather than written out.
  */
-export function WorkspaceTidied({ lines, titles = {} }: {
+export function WorkspaceTidied({ lines, titles = {}, units = [] }: {
   lines: readonly LogRow[] | null | undefined;
+  /**
+   * Each unit's milestone (FABRIC-MILESTONE1b, the fabric events design §D0): a row whose branch one names says, under it, where
+   * that work stands: the end, the clean-up and the recovery kept. Absent in a browser, which has no driver to read it from.
+   */
+  units?: readonly MilestoneUnit[];
   /** Session ids to the names the page gives them (TIDIEDLANDING1): a landing's line names its session by id, shown by name where known. */
   titles?: Readonly<Record<string, string>>;
 }) {
@@ -69,7 +76,7 @@ export function WorkspaceTidied({ lines, titles = {} }: {
     <section className="grid min-w-0 gap-2 border-t border-line pt-4">
       <h2 className="m-0 text-body font-semibold text-ink">{t('projects.tidied.title')}</h2>
       <ul className="m-0 grid list-none gap-2 p-0">
-        {shown.map((row, index) => <Tidied key={`${row.line.time}-${index}`} line={row.line} oldest={row.oldest} titles={titles} />)}
+        {shown.map((row, index) => <Tidied key={`${row.line.time}-${index}`} line={row.line} oldest={row.oldest} titles={titles} units={units} />)}
       </ul>
       {hidden > 0 && (
         <div>
@@ -81,13 +88,16 @@ export function WorkspaceTidied({ lines, titles = {} }: {
 }
 
 /** One line: the branch where the log names one, then what became of it and when, with its repository. */
-function Tidied({ line, oldest, titles }: { line: LogRow; oldest: string | null; titles: Readonly<Record<string, string>> }) {
+function Tidied({ line, oldest, titles, units }: {
+  line: LogRow; oldest: string | null; titles: Readonly<Record<string, string>>; units: readonly MilestoneUnit[];
+}) {
   const { t } = useTranslation();
   const branch = text(line.data.branch);
   // A landing's branch name carries the quest title's words, which the log never holds (AUTOTIDY2b, D88): its line names the
   // session whose work it carried and no branch (TIDIEDLANDING1).
   const session = line.event === 'branch.tidied' && !branch ? text(line.data.session) : null;
   const repository = text(line.data.repository);
+  const unit = branch && repository ? unitOfBranch(units, repository, branch) : undefined;
   const done = line.event === 'branch.tidied';
   const why = WHY.find((code) => code === line.data.why);
   const cause = CAUSE.find((code) => code === line.data.cause);
@@ -108,6 +118,7 @@ function Tidied({ line, oldest, titles }: { line: LogRow; oldest: string | null;
       {branch && <span className="font-mono text-small text-ink [overflow-wrap:anywhere]">{branch}</span>}
       {session && <span className="text-small text-ink">{t('projects.tidied.landing', { session: titles[session] ?? session })}</span>}
       <span className="text-small text-ink-soft">{meta.join(' · ')}</span>
+      {unit && <MilestoneLine unit={unit} />}
     </li>
   );
 }

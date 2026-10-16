@@ -9,6 +9,7 @@
   "work.tool.status.failed": "failed",
   "work.tool.status.refused": "not allowed here",
   "work.tool.status.stopped": "stopped",
+  "work.tool.status.cut": "cut off",
   "work.tool.status.cancelled": "cancelled",
   "work.tool.status.disconnected": "disconnected",
   "work.tool.status.session-ended": "ended with its session",

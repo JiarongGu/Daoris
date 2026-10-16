@@ -31,6 +31,12 @@ public sealed record SignedOutAccounts(string Agent, IReadOnlyList<string> Accou
     /// </summary>
     public IReadOnlyList<string?> Names { get; init; } = [];
 
+    /// <summary>
+    /// True where this is OWNSPACE1a's no-account hold (D175): no Daoris account of the agent's is signed in, so a start waits
+    /// for a sign-in. The page says that hold from this fact, never from <see cref="Accounts"/> being empty (OWNSPACE1b-B).
+    /// </summary>
+    public bool NoAccount { get; init; }
+
     /// <summary>The accounts, each with the name the person gave it where <paramref name="names"/> holds one.</summary>
     public static SignedOutAccounts Of(string agent, IReadOnlyList<string> accounts, IReadOnlyDictionary<string, string>? names) =>
         new(agent, accounts)
@@ -161,6 +167,9 @@ public enum NextReason
 
     /// <summary>No account the scope may use is ready: the start waits (D125 §4).</summary>
     Waits,
+
+    /// <summary>No Daoris account of the agent's exists for the scope to take: its starts wait until a sign-in (D175, OWNSPACE1b-B).</summary>
+    NoAccount,
 }
 
 /// <summary>What keeps the next start off an account of the agent's (TOOL6e), or that nothing does.</summary>
@@ -758,6 +767,17 @@ public static class RotationWords
         : wait.Then(" ", Noted.Of(
             code, SignIn(agent, accounts, lead)[1..],
             ("logins", (IReadOnlyList<string>)[.. accounts.Select(account => $"daoris agent login {agent} --profile {ShellWord.Of(account, ShellWord.Account)}")])));
+
+    /// <summary>
+    /// A start whose scope names no account, with no Daoris account of the agent's signed in (OWNSPACE1a, D175 point 2): it waits
+    /// for the person's sign-in, said once as D125 point 6 says a wait, and never falls back to the person's own tool home. One
+    /// coded line, the agent its value; both doors to a sign-in named (D50), the window's and the terminal's.
+    /// </summary>
+    public static Noted NoAccountOf(string agent) => Noted.Of(
+        NoteCodes.HeldNoAccount,
+        $"No `{agent}` account of Daoris's own is signed in, and Daoris never starts its sessions in your own `{agent}` sign-in — "
+        + $"sign one in for Daoris on the agent's page under Agents, or with `daoris agent login {agent} --new`. The start waits until then.",
+        ("owner", agent));
 
     /// <summary>The accounts of a walk not signed in, in the order it tried them.</summary>
     public static IReadOnlyList<string> SignedOut(IReadOnlyList<AccountState> states) =>

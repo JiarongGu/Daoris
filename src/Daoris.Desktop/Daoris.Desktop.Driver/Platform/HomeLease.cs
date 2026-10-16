@@ -179,6 +179,13 @@ public sealed class HomeLease : IDisposable
     /// <summary>The live holder of the home, or null when none holds it.</summary>
     public static LeaseHolder? HeldBy(string home) => Live(PathIn(home)) ?? Live(LegacyIn(home));
 
+    /// <summary>
+    /// Whether this process holds the home's lease (FABRIC-END2, design §B5): its instance's loop, or a verb acting alone under the lease
+    /// it took. A verb beside an instance holds nothing, so what only the lease's holder writes, such as an end, it never writes. Read
+    /// from the lease file, so any path to the home meets the one answer.
+    /// </summary>
+    public static bool HeldHere(string home) => HeldBy(home) is { } holder && holder.Pid == Environment.ProcessId;
+
     /// <summary>What a terminal's loop says when an instance holds the home.</summary>
     public static string Refusal(string home, LeaseHolder holder) =>
         $"{home} is already driven by {holder.Named}. A second loop on one home races the first for the "

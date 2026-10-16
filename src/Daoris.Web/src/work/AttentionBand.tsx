@@ -7,7 +7,7 @@ import {
 } from '../data/queries';
 import {
   retryNotice, useAccounts, useApproveHelper, useConsidered, useDeclineHelper, useHarnessAction, useHarnesses, useHelperWaits, useNudge,
-  useOpinionWaits, useRefreshHarnesses, useRetryQuest, useRules, useSessionGroups, useTrustFolder, useUntrusted, useWaits,
+  useOpinionWaits, useRefreshHarnesses, useWorkState, useRetryQuest, useRules, useSessionGroups, useTrustFolder, useUntrusted, useWaits,
 } from '../bridge/shell';
 import { useSay } from '../bridge/conversation';
 import { SignIn } from '../agents/SignIn';
@@ -118,6 +118,9 @@ function Band({ doors, notify, onSessions, onRun }: {
   const proposed = Array.isArray(proposals) && proposals.some((one) => one.session);
   const ended = useSessions(null, true, reviewing || onRun !== undefined || proposed);
   const opinionWaits = useOpinionWaits(reviewing);
+  // Each unit's milestone (FABRIC-MILESTONE1b): the band lists only a unit with something waiting on the person, as the driver's
+  // derivation says it. Every unit is read, one answer the page shares with Branches; a browser has none.
+  const workState = useWorkState();
   // The agents' asks for a helper that wait on the person's yes (MIXAGENT2c): the driver's own list, so a browser has none.
   const helperWaits = useHelperWaits();
   const approveHelper = useApproveHelper();
@@ -149,7 +152,7 @@ function Band({ doors, notify, onSessions, onRun }: {
   const waiting = needsAPerson(
     (reviewing ? ended.data : undefined) ?? sessions.data ?? [], quests.data ?? [], registry.data ?? [], asks.data ?? [],
     untrusted.data ?? [], Array.isArray(proposals) ? proposals : [], considered.data ?? [], groups.data ?? [], accounts,
-    opinionWaits.data ?? [], helperWaits.data ?? []);
+    opinionWaits.data ?? [], helperWaits.data ?? [], workState.data?.units ?? []);
 
   if (waiting.length === 0) {
     return (
@@ -271,6 +274,12 @@ function Band({ doors, notify, onSessions, onRun }: {
       const harness = item.account?.harness;
       if (harness) harnessRun.run(harness, 'login', account);
     },
+    // *Sign in for Daoris* (OWNSPACE1b-B, D175 point 7): the add flow's new sign-in, through the same door, in place. Its end is
+    // said wherever the person is; a new account serves by default, so there is no step 3 here.
+    signInNew: (item) => {
+      const harness = item.account?.harness;
+      if (harness) harnessRun.run(harness, 'login-new');
+    },
     // That one account, read on the press (ROSTER1): the reading a person may ask for, one account at a time.
     read: (item, account) => {
       const agent = item.account?.agent;
@@ -303,7 +312,14 @@ function Band({ doors, notify, onSessions, onRun }: {
     ? waiting.find((item) => item.account?.harness === signing.harness
       && item.account.named.some((one) => one.id === signing.account))
     : undefined;
+  // A new account's sign-in, from the no-account row (OWNSPACE1b-B): under the first row that offers it for that door.
+  const signingNewRow = harnessRun.signingInNew
+    ? waiting.find((item) => item.account?.noAccount && item.account.harness === harnessRun.signingInNew)
+    : undefined;
   const below = (item: Attention) => {
+    if (signingNewRow && item === signingNewRow) {
+      return <SignIn id={`${signingNewRow.account!.harness}:login-new`} harness={signingNewRow.account!.harness!} action="login-new" tool={signingNewRow.account!.product} />;
+    }
     if (!signing || item !== signingRow) return null;
     const label = item.account?.named.find((one) => one.id === signing.account)?.label ?? signing.account;
     return <SignIn id={harnessRun.running!} harness={signing.harness} profile={label} />;

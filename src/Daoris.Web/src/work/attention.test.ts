@@ -7,6 +7,7 @@ import { byTool } from '../agents/tools';
 import type { AccountRowFacts, NamedAccount } from './accountAttention';
 import type { Attention } from './AttentionRow';
 import type { SessionGrouping } from './groups';
+import type { MilestoneEntry, MilestoneUnit } from './milestone';
 import {
   ASKS_ONCE, ATTENTION_GROUP, attentionActs, attentionGroups, attentionOffers, needsAPerson, waitingInSessions,
 } from './attention';
@@ -683,8 +684,34 @@ describe('the groups', () => {
       parked: 'holding', 'parked-quest': 'holding', 'go-ahead': 'holding', trust: 'holding',
       'account-wait': 'holding', 'signed-out': 'holding',
       proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
-      unanswerable: 'word', review: 'ready',
+      unanswerable: 'word', review: 'ready', work: 'word',
     });
+  });
+
+  /**
+   * FABRIC-MILESTONE1b (the fabric events design §D0): a unit's milestone is in *What needs you* only where something waits on the
+   * person: a clean-up blocked on an entry, and an owner nothing records. A wait the cycle ends by itself, a finished clean-up and a
+   * recovery kept are not theirs. The row's door is the session, where its foot says the rest.
+   */
+  it('lists a unit whose clean-up is blocked, and no unit whose wait ends by itself', () => {
+    const entry = (over: Partial<MilestoneEntry>): MilestoneEntry => ({
+      unit: 'u1', kind: 'tree', resource: 's1a2b3c4', role: 'temporary', disposition: 'blocked', detail: 'a session still holds this tree', ...over,
+    });
+    const unit = (over: Partial<MilestoneUnit>): MilestoneUnit => ({
+      unit: 'u1', repository: 'engine', branch: 'daoris/s1a2b3c4', session: 's1a2b3c4',
+      end: { state: 'ended', by: 'merged', on: 'main', at: '2026-09-21T09:00:00Z', said: 'on main' },
+      result: [], cleanup: { state: 'pending', waits: [entry({})], gone: [] }, recovery: [], entries: [], ...over,
+    });
+    const rows = needsAPerson([], [], [], [], [], [], [], [], undefined, [], [], [
+      unit({}),
+      unit({ unit: 'u2', session: null, cleanup: { state: 'pending', waits: [entry({ unit: 'u2', disposition: 'pending', kind: 'end', resource: 'the end' })], gone: [] } }),
+      unit({ unit: 'u3', cleanup: { state: 'completed', waits: [], gone: [] } }),
+    ]);
+
+    expect(rows.map((row) => `${row.kind}:${row.id}`)).toEqual(['work:s1a2b3c4']);
+    expect(rows[0]).toMatchObject({ title: 'daoris/s1a2b3c4', where: 'engine', session: 's1a2b3c4', since: '2026-09-21T09:00:00Z' });
+    expect(rows[0]!.detail).toContain('a session still holds this tree');
+    expect(attentionActs(rows[0]!)).toEqual([]);
   });
 
   /**
@@ -835,6 +862,19 @@ describe('what an account’s row offers', () => {
   it('reads only an account never read, and signs in nothing where Daoris runs no sign-in', () => {
     expect(attentionOffers(row('account-wait', facts({ named: [named('account-5', 'unknown')] })))).toEqual([]);
     expect(attentionOffers(row('account-wait', facts({ signsIn: false, named: [named('account-1', 'out')] })))).toEqual([]);
+  });
+
+  /**
+   * OWNSPACE1b-B (D175 points 6-7): the hold for no Daoris account names no account, so its press is *Sign in for Daoris*, which
+   * runs `login-new` in place; with accounts it passed signed out, their sign-ins follow it, two acts at most.
+   */
+  it('signs in for Daoris where no Daoris account is signed in, first, and nowhere Daoris runs no sign-in', () => {
+    expect(attentionOffers(row('account-wait', facts({ noAccount: true })))).toEqual([{ act: 'sign-in-new' }]);
+    expect(attentionActs(row('account-wait', facts({ noAccount: true })))).toEqual(['sign-in-new']);
+    expect(attentionOffers(row('account-wait', facts({ noAccount: true, named: [named('account-1', 'out'), named('account-3', 'out')] }))))
+      .toEqual([{ act: 'sign-in-new' }, { act: 'sign-in', account: 'account-1' }]);
+    expect(attentionOffers(row('account-wait', facts({ noAccount: true, signsIn: false })))).toEqual([]);
+    expect(attentionOffers(row('account-wait', facts({ named: [named('account-2', 'cooling')] })))).toEqual([]);
   });
 
   it('signs a signed-out account in, and never the tool’s own sign-in, which is the person’s', () => {

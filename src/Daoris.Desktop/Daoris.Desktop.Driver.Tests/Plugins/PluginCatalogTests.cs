@@ -463,6 +463,35 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Equal(((string?)null, (string?)null), (adapters.Resolve("older-agent").Toolchain!.Product, adapters.Resolve("older-agent").Toolchain!.Maker));
     }
 
+    /// <summary>
+    /// OWNSPACE1c (D175): a plugin's agent that names a configuration-home variable always takes a Daoris account, and one whose own
+    /// home is nobody's (a sandboxed tool) says so with <c>ownHome</c>, which only JSON <c>true</c> sets. It is the plugin's own word,
+    /// never a reason to refuse the plugin, and the agent without it keeps its variable and holds without an account. Twin:
+    /// <c>plugins.test.ts</c>' row, the same manifest read the same.
+    /// </summary>
+    [Fact]
+    public void A_declared_harness_may_say_its_own_home_is_nobodys_and_only_true_says_it()
+    {
+        Plugin("acme.agent", """
+            { "id": "acme.agent",
+              "harnesses": [ { "name": "boxed-agent", "command": ["boxed"], "profileVariable": "BOXED_HOME", "ownHome": true },
+                             { "name": "plain-agent", "command": ["plain"], "profileVariable": "PLAIN_HOME" },
+                             { "name": "odd-agent", "command": ["odd"], "profileVariable": "ODD_HOME", "ownHome": "yes" } ] }
+            """);
+
+        var entry = Assert.Single(PluginCatalog.Load(_home).Plugins);
+
+        Assert.Null(entry.Problem);
+        Assert.Equal([true, false, false], entry.Manifest.Harnesses.Select(harness => harness.OwnHome));
+
+        var adapters = AdapterSet.Built().WithPlugins(PluginCatalog.Load(_home, AdapterSet.Built().Names));
+        Assert.Equal(
+            [true, false, false],
+            new[] { "boxed-agent", "plain-agent", "odd-agent" }.Select(name => adapters.Resolve(name).Toolchain!.RunsInOwnHome));
+        Assert.False(adapters.Resolve("plain-agent").Toolchain!.StartsInOwnHome);
+        Assert.True(adapters.Resolve("boxed-agent").Toolchain!.StartsInOwnHome);
+    }
+
     /// <summary>What the loop watches between ticks: a plugin added, removed, enabled or disabled changes it; nothing else does.</summary>
     [Fact]
     public void The_signature_moves_when_the_set_of_enabled_plugins_moves_and_only_then()

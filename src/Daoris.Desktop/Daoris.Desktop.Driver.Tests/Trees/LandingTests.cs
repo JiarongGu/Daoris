@@ -218,6 +218,47 @@ public sealed class LandingTests : IDisposable
         Assert.True(Directory.Exists(opened.Path), "the tree is the person's to discard");
     }
 
+    /// <summary>
+    /// ACCEPTFOOT2 (D164's 2026-10-16 note): a conversation's plan and press name its branch for its work's oldest commit subject
+    /// beyond the line, never for its opening, and the two name one branch.
+    /// </summary>
+    [Fact]
+    public async Task A_conversations_branch_is_named_for_its_oldest_commit_never_its_opening()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{slug}-{session}"));
+        var trees = new SessionTrees(_home);
+        var opened = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(opened.Path, "work.txt", "the conversation's work", "Cap the chunk budget");
+        await CommitAsync(opened.Path, "more.txt", "and its test", "Test the cap");
+        var subject = new LandingSubject("s1a2b3c4", null, "ok so that is merged now, what about the rest");
+
+        var plan = await trees.PlanAsync(opened.Path, subject);
+        var landed = await trees.LandAsync(opened.Path, subject);
+
+        Assert.Equal("feature/cap-the-chunk-budget-s1a2b3c4", plan.Target);
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal(plan.Target, landed.Branch);
+    }
+
+    /// <summary>An oldest commit with an empty message names the work `work`, never the commit after it (ACCEPTFOOT2).</summary>
+    [Fact]
+    public async Task A_conversations_oldest_commit_with_no_message_names_it_work()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{slug}-{session}"));
+        var trees = new SessionTrees(_home);
+        var opened = await trees.OpenAsync(root, "engine", "aurora");
+        await File.WriteAllTextAsync(Path.Combine(opened.Path, "work.txt"), "the conversation's work\n");
+        await GitAsync(opened.Path, "add", "work.txt");
+        await GitAsync(opened.Path, "commit", "--quiet", "--allow-empty-message", "-m", "");
+        await CommitAsync(opened.Path, "more.txt", "and its test", "Add tests");
+
+        var plan = await trees.PlanAsync(opened.Path, new LandingSubject("s1a2b3c4", null, "ok so that is merged now"));
+
+        Assert.Equal("feature/work-s1a2b3c4", plan.Target);
+    }
+
     [Fact]
     public async Task A_branch_that_exists_is_refused_and_never_moved()
     {

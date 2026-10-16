@@ -419,15 +419,16 @@ public sealed class AccountRotationGoalTests : IDisposable
         Assert.Equal(("account-1", (AccountChoice?)null, (RotatedStart?)null), (selection.Profile, selection.Choice, selection.Rotated));
     }
 
+    /// <summary>OWNSPACE1a (D175 point 2): a scope that names no account runs on the agent's one Daoris account, chosen by no step.</summary>
     [Fact]
-    public async Task A_scope_that_names_no_account_runs_on_the_tool_s_own_sign_in_as_before()
+    public async Task A_scope_that_names_no_account_runs_on_the_agent_s_one_Daoris_account()
     {
         Accounts("account-1");
 
         var selection = await Present().SelectAsync("fake", Config, null, null);
 
         Assert.True(selection.Allowed);
-        Assert.Equal(((string?)null, (AccountChoice?)null), (selection.Profile, selection.Choice));
+        Assert.Equal(("account-1", (AccountChoice?)null), (selection.Profile, selection.Choice));
     }
 
     [Fact]

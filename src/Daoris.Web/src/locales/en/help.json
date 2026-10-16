@@ -71,7 +71,7 @@
   "help.starter.waiting_other": "{{count}} sessions are waiting on you.",
   "help.starter.nothing-registered": "No repository is registered on this machine yet.",
   "help.starter.nothing-driven": "No repository is driven on this machine, so no quest here is started for you.",
-  "help.starter.agent-signed-out": "{{tool}} has no account signed in, so a session on it cannot start.",
+  "help.starter.agent-signed-out": "{{tool}} has no Daoris account signed in, so a session on it waits until you sign one in.",
   "help.starter.no-line": "{{first}} has no line set, and git names none: its work has nowhere to grow from.",
   "help.starter.no-line_other": "{{count}} repositories have no line set, and git names none — {{first}} first.",
   "help.starter.helper-off": "Ask Daoris runs no agent: name one to talk with it here.",

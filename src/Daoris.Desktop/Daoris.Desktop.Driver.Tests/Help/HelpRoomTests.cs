@@ -46,7 +46,8 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("2 sessions wait on the person", agents);
         Assert.Contains("1 ask waits for an answer", agents);
         // The agents, by the tool's own answer — and one that is not installed is said, not dropped.
-        Assert.Contains("- `claude-code` (Claude Code 2.1.0): signed in; account `work` signed out", agents);
+        Assert.Contains("- `claude-code` (Claude Code 2.1.0): account `work` signed out; no Daoris account is signed in, so its starts wait for a sign-in", agents);
+        Assert.DoesNotContain("tool's own home", agents);
         Assert.Contains("- `codex`: not installed", agents);
         // One harness reads AGENTS.md, another CLAUDE.md (D59).
         Assert.Equal("@AGENTS.md\n", File.ReadAllText(Path.Combine(room, "CLAUDE.md")));
@@ -241,7 +242,7 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Equal(["q1"], machine.OpenAsks[1].Quests);
         Assert.Equal(("claude-code", "claude-code-acp", "claude-code-acp", 4), (machine.Adapter, machine.Intake, machine.Helper, machine.Cap));
         var agent = Assert.Single(machine.Agents, agent => agent.Name == "claude-code");
-        Assert.Equal(("Claude Code", "in"), (agent.Product, agent.Login));
+        Assert.Equal("Claude Code", agent.Product);
         Assert.Equal([new HelpAccount("work", "out")], agent.Accounts);
         // A key is an account's handle and never its value (AGT3), and the room carries neither.
         Assert.DoesNotContain("sk-", HelpRoom.Render(machine));

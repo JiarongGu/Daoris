@@ -159,6 +159,8 @@ test('`agent list` names an account in no list by its name where a shell can tak
   accounts(fx, 'account-1', 'account-2');
   run(['profile', 'rename', 'claude-code', 'account-1', 'R&D'], at(fx));
   run(['profile', 'rename', 'claude-code', 'account-2', "O'Brien"], at(fx));
+  // The machine names another account, so these run nowhere and the join is said (OWNSPACE1d: with nothing named, they are in turn).
+  writeFileSync(at(fx), JSON.stringify({ defaults: { 'claude-code': 'elsewhere' } }), 'utf8');
 
   const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, {
     harness: 'claude-code', present: true, version: '1', problem: null, machineDefault: null,

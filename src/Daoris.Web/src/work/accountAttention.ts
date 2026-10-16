@@ -66,6 +66,11 @@ export type AccountRowFacts = {
    * out, so the row offers to read it, in *Let … run …*'s place, and lets it run only once a reading says it is ready.
    */
   readFirst?: { id: string; label: string } | null;
+  /**
+   * The start is held because no Daoris account of the agent's is signed in (OWNSPACE1b-B, D175): the row names no account and
+   * offers *Sign in for Daoris*, which runs the add flow's sign-in in place.
+   */
+  noAccount?: boolean;
 };
 
 /** One start the driver held on its accounts, gathered from the tick: what it holds, whose accounts, and why. */
@@ -79,6 +84,8 @@ type Held = {
   quests: string[];
   asks: string[];
   workspace: string | null;
+  /** The hold is the one for no Daoris account signed in (OWNSPACE1b-B, D175): said from the tick's fact, never an empty list. */
+  noAccount: boolean;
 };
 
 /**
@@ -98,7 +105,9 @@ function heldStarts(
   registry: readonly Registration[],
 ): Held[] {
   const held: Held[] = waits.map((wait) => ({
-    key: wait.until ? `wait:${wait.agent}/${wait.account ?? ''}` : `wait:${wait.agent}/:signed-out`,
+    key: wait.until
+      ? `wait:${wait.agent}/${wait.account ?? ''}`
+      : wait.noAccount ? `wait:${wait.agent}:no-account` : `wait:${wait.agent}/:signed-out`,
     agent: wait.agent,
     cooling: wait.until
       ? { account: wait.account ?? null, name: wait.name ?? null, until: wait.until, stated: wait.stated }
@@ -107,13 +116,15 @@ function heldStarts(
     quests: wait.quests ?? [],
     asks: wait.asks ?? [],
     workspace: wait.workspace ?? null,
+    noAccount: !wait.until && wait.noAccount === true,
   }));
   const inAWait = new Set(held.flatMap((wait) => wait.quests));
   const grouped = new Map<string, Held>();
   for (const consideration of considered) {
     const { waitsFor, signedOut } = consideration;
     if (consideration.verdict !== 'Blocked' || inAWait.has(consideration.quest)) continue;
-    if (!waitsFor && !signedOut?.accounts?.length) continue;
+    const noAccount = !waitsFor && signedOut?.noAccount === true;
+    if (!waitsFor && !signedOut?.accounts?.length && !noAccount) continue;
     const agent = waitsFor?.agent ?? signedOut!.agent;
     const quest = quests.find((one) => one.id === consideration.quest);
     const registered = registry.find((row) => row.repository === consideration.repository);
@@ -121,7 +132,7 @@ function heldStarts(
     const passed = (signedOut?.accounts ?? []).map((id, at) => ({ id, name: signedOut?.names?.[at]?.trim() || null }));
     const key = [
       'quest', agent, waitsFor ? `${waitsFor.account ?? ''}@${waitsFor.until}` : '', passed.map(({ id }) => id).sort().join(','),
-      workspace ?? '',
+      workspace ?? '', noAccount ? 'no-account' : '',
     ].join('/');
     const seen = grouped.get(key);
     if (seen) {
@@ -133,7 +144,7 @@ function heldStarts(
       cooling: waitsFor
         ? { account: waitsFor.account ?? null, name: waitsFor.name?.trim() || null, until: waitsFor.until, stated: waitsFor.stated }
         : null,
-      signedOut: passed, quests: [consideration.quest], asks: [], workspace,
+      signedOut: passed, quests: [consideration.quest], asks: [], workspace, noAccount,
     });
   }
   return [...held, ...grouped.values()];
@@ -149,9 +160,10 @@ function scopeOf(use: AgentAccounts | null, workspace: string | null): AccountSc
 }
 
 /**
- * The accounts that would serve a held start: its scope's list, else its default, else the tool's own sign-in (D125 §3.7),
- * less the account kept for conversations, which a driven start drops (D130 point 6) unless it would leave none; then
- * whatever the tick named that the list no longer holds, since that is what held it.
+ * The accounts that would serve a held start: its scope's list, else its default, less the account kept for conversations,
+ * which a driven start drops (D130 point 6) unless it would leave none; then whatever the tick named that the list no longer
+ * holds, since that is what held it. Where the scope names none, Daoris's accounts serve in turn and the tick names the ones
+ * that held it; the tool's own sign-in never serves (D175 point 1, OWNSPACE1b-B).
  */
 function servingIds(scope: AccountScope | null, held: Held): (string | null)[] {
   const ids: (string | null)[] = [];
@@ -160,7 +172,6 @@ function servingIds(scope: AccountScope | null, held: Held): (string | null)[] {
     const listed = scope.list.length > 0 ? scope.list : scope.default ? [scope.default] : [];
     const kept = listed.filter((id) => id !== scope.use.keep);
     for (const id of kept.length > 0 ? kept : listed) add(id);
-    if (listed.length === 0) add(null);
   }
   if (held.cooling) add(held.cooling.account);
   for (const { id } of held.signedOut) add(id);
@@ -367,8 +378,14 @@ export function accountAttention(
       where: inOne ? repositories[0]! : held.workspace ?? '',
       circle: !inOne && Boolean(held.workspace),
       since: heldSince(held, use, quests, asks, now),
-      detail: whyLine(accounts, now),
-      account: { ...rowFacts(held.agent, tool), named: accounts, ...outsideOf(tool, use, scope, held, accounts) },
+      // No account to name where none is signed in: the hold says so itself (OWNSPACE1b-B), once, as the driver does.
+      detail: held.noAccount && accounts.length === 0
+        ? i18n.t('work.attention.accounts.noAccount', { product: tool?.product ?? held.agent })
+        : whyLine(accounts, now),
+      account: {
+        ...rowFacts(held.agent, tool), named: accounts, ...outsideOf(tool, use, scope, held, accounts),
+        ...(held.noAccount ? { noAccount: true } : {}),
+      },
     };
   });
 
@@ -402,24 +419,7 @@ export function accountAttention(
         },
       }];
     });
-    // The tool's own sign-in, while the starts run on it (D125 §3.7): only the person signs it in, where they use the tool.
-    const own = ownState(tool, use);
-    if (own.state === 'out' && own.holdsWork && !named.has(`${tool.name}/`)) {
-      rows.push({
-        id: `signed-out:${tool.name}/`,
-        kind: 'signed-out',
-        title: i18n.t('agents.account.own'),
-        where: facts.product,
-        since: null,
-        read: own.read,
-        detail: i18n.t('work.attention.signedOut.own'),
-        account: {
-          ...facts,
-          named: [{ id: null, label: i18n.t('agents.account.own'), state: 'out', read: own.read, until: null }],
-          outside: null,
-        },
-      });
-    }
+    // The tool's own sign-in has no row: no start runs on it (D175 point 1, OWNSPACE1b-B), so it holds no work and is never loud.
     return rows;
   });
 

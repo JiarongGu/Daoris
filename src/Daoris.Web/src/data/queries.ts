@@ -58,6 +58,12 @@ export const keys = {
   /** How each repository's checkout stands for reading and writing across (D107) — shell-only, like the lines. */
   across: ['driver', 'across'] as const,
   allLandings: ['driver', 'landing'] as const,
+  /**
+   * Each unit of work's milestone (FABRIC-MILESTONE1b), derived by the driver from the landing, session-branch and tree records:
+   * asked again with the landings, the sweep and the sessions, which are what move it. Null is every unit's.
+   */
+  allWorkState: ['driver', 'work-state'] as const,
+  workState: (unit: string | null) => ['driver', 'work-state', unit] as const,
   sweep: ['driver', 'sweep'] as const,
   landing: (session: string) => ['driver', 'landing', session] as const,
   /**

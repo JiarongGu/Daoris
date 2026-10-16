@@ -227,6 +227,43 @@ public sealed class ReviewTreeTests : IDisposable
         Assert.True(File.Exists(Path.Combine(OpinionPackets.Folder(_home, "op1"), OpinionPackets.DiffName)));
     }
 
+    /// <summary>
+    /// HELPPLUG1c (D170 point 4): a reviewer is handed the skills plugins hand sessions, by the harness's own door on either wire
+    /// (a skill's own tools are never pre-approved, so the reviewer's read-only rules stand), and the folder goes with its pass.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(SkillsSpawnProbe.Doors), MemberType = typeof(SkillsSpawnProbe))]
+    public async Task A_reviewer_is_handed_a_plugins_skills_on_either_door_and_the_folder_goes_with_its_pass(string adapter)
+    {
+        SkillsSpawnProbe.Install(_home);
+        await using var service = OpinionStandIn.Start();
+        var config = DriverConfig.Empty with
+        {
+            Adapter = adapter,
+            TimeoutMinutes = 2,
+            Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = SkillsSpawnProbe.Command(_home, adapter) },
+        };
+        var adapters = AdapterSet.Built();
+        var driver = new Daoris.Driver.Driver(new ServiceClient(service.Url, null), config, adapters, _home);
+        // A tick loads the catalogue at its top; a pass called alone is handed the plugins as that tick would.
+        driver.Context.Catalog = PluginCatalog.Load(_home, adapters.Names);
+        var choice = new ReviewerChoice(adapter, ReviewerLabels.MakerNotDeclared, ReviewerUnavailable.NotIndependent, "x")
+        {
+            Selection = new HarnessSelection(null),
+            Family = AgentFamily.Of(adapters, adapter),
+        };
+
+        var run = await driver.PassAsync(
+            new OpinionPassAsk(OpinionRules.Landing, "w1", "reports", _repository.Root, _base, "daoris/s-1a2b3c4d", new OpinionRule([adapter], [OpinionRules.Landing]))
+            {
+                Workspace = "work",
+            },
+            choice);
+
+        Assert.True(run.Opened, run.Line);
+        SkillsSpawnProbe.AssertHandedAndRemoved(_home);
+    }
+
     [Fact]
     public async Task A_record_the_service_refuses_starts_nothing_and_leaves_no_copy()
     {
