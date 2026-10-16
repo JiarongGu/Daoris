@@ -125,7 +125,10 @@ with the version and date at release.
   fails is said, with when origin was last fetched, without stopping the landing. `daoris-driver trees land <session> --plan`
   says the same.
 - The window no longer freezes for minutes while the Sessions page's clean-up list is read: its git work goes on away from
-  the window's thread, at most four programs start at once, and each repository's line is asked of git once per list.
+  the window's thread, at most four programs start at once, and each repository's line is asked of git once per list. The
+  clean-up list and the lines asked again while one is still being read wait for that one rather than reading it all again,
+  and every program Daoris starts (an agent, its sign-in or install, a plugin, the file manager) starts away from the
+  window's thread too.
 - Daoris now removes its own session branches by itself wherever *Clean up* would, once their work is on the line: a branch
   whose work was merged into the line or its copy on origin, is on the line by content after a squash merge (its commits kept
   on a ref, which the report names with how to bring the branch back), or was carried by a completed pull request, not only one

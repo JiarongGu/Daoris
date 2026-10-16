@@ -2123,7 +2123,9 @@ public sealed class Driver(
         Action? working = null, Func<CancellationToken, Task<bool>>? waitsOnBackground = null, int? minutes = null,
         string? noConnector = null, Action<SessionStop?>? stopMade = null, bool movedFirst = false, Action? spawned = null)
     {
-        using var process = Process.Start(info)
+        // Through the start gate (PROCSTART2): a press that starts a session reaches here before its first wait, and the
+        // runtime's start lock is no thread's to wait on but the pool's. Seen through once begun, as the start always was.
+        using var process = await ProcessStarts.Shared.StartAsync(info, CancellationToken.None).ConfigureAwait(false)
             ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
         spawned?.Invoke();
         // Kept beside the process, so who is driving Daoris's browser lasts exactly as long as it (BRW8).

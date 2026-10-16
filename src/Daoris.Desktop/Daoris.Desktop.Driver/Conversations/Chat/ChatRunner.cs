@@ -743,7 +743,8 @@ public sealed class ChatRunner : IDisposable
                     resolved, info, _home, sessionId, place.ConnectorOnPipe ? Servers(sessionId, pluginServers) : pluginServers);
             }
 
-            process = Process.Start(info)
+            // Through the start gate (PROCSTART2): a conversation's press may reach here before its first wait.
+            process = await ProcessStarts.Shared.StartAsync(info, CancellationToken.None).ConfigureAwait(false)
                 ?? throw new DriverException($"the {resolved.Name} adapter's process did not start");
         }
         catch (Exception error)

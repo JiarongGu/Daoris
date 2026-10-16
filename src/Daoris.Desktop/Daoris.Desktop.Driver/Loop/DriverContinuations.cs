@@ -708,7 +708,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 return (exitCode, used);
             }
 
-            var process = System.Diagnostics.Process.Start(info)
+            // Through the start gate (PROCSTART2), as the first run's start is.
+            var process = await ProcessStarts.Shared.StartAsync(info, CancellationToken.None).ConfigureAwait(false)
                 ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
             // As the first run's: the process, tracked so a stop reaches it, and a reaper that ends it while still tracked.
             keep.Add(process);
