@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// persisted facts; each topic's deadline is a <c>timer</c> event. The design's canaries 4, 11, 12, 16, 17 and 18.
 /// </summary>
 /// <remarks>
-/// Links 1, 2, 4 and 5 are fakes here, over a world of persisted facts that a restart keeps: their facts are FABRIC-END2b's,
+/// Links 1, 2, 4 and 5 are fakes here, over a world of persisted facts that a restart keeps: their facts are FABRIC-END2's,
 /// their ref source FABRIC-END3's, the tidy FABRIC-END4a's and the look's split FABRIC-EVENT3a's. Link 7 is wired on the requests
 /// folder today (<see cref="SessionRequestChangeTests"/>).
 /// </remarks>
@@ -454,7 +454,7 @@ public sealed class ChainTests : IDisposable
 
         public bool Branch { get; set; } = true;
 
-        /// <summary>The kept fact: <c>Held</c>, as END2b keeps it.</summary>
+        /// <summary>The kept fact: <c>Held</c>, as END2 keeps it (<see cref="HeldFact"/>).</summary>
         public bool Held { get; set; }
 
         /// <summary>The kept fact: the end judged reached.</summary>

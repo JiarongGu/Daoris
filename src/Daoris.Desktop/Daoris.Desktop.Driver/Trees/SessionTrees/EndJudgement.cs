@@ -180,8 +180,8 @@ internal sealed record EndVerdict(EndState State, string? By, string? Where, str
 /// <see cref="Judge"/> is pure over <see cref="EndFacts"/>; <see cref="GatherAsync"/> reads them through the proofs' own seams.
 /// </summary>
 /// <remarks>
-/// <para>Nothing is stored and nothing removed here (§B8), and no reader calls it yet: each caller keeps its own judgement until its
-/// row moves it (END2b, END4).</para>
+/// <para>Nothing is stored and nothing removed here (§B8). <see cref="EndKeeping"/> keeps what it finds held (FABRIC-END2); the tidy,
+/// the sweep and the page keep their own judgement until their rows move them (END4a, MILESTONE1a).</para>
 /// <para>🔴 <b>Never ended by a guess</b> (§B7): the agent's done, a remote branch reading <c>[gone]</c>, patch equivalence, a plugin's
 /// word without its merge commit on the line here, an unread answer, a work only another branch of the person's holds. A dirty tree
 /// does not make an end a guess, it is carried beside it.</para>
